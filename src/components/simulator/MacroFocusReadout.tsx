@@ -12,6 +12,7 @@ import {
 export type MacroFocusReadoutProps = {
   diagnostics: DerivedOpticsState["diagnostics"];
   focalLengthMm: number;
+  lensCoverage: DerivedOpticsState["lensCoverage"];
   /** Optional workspace-derived metrics so all readers share one resolved model. */
   metrics?: MacroFocusMetrics | null;
   teachingCapability?: SceneMacroTeachingCapability;
@@ -20,6 +21,7 @@ export type MacroFocusReadoutProps = {
 export const MacroFocusReadout = ({
   diagnostics,
   focalLengthMm,
+  lensCoverage,
   metrics: resolvedMetrics,
   teachingCapability,
 }: MacroFocusReadoutProps) => {
@@ -48,6 +50,13 @@ export const MacroFocusReadout = ({
   const ratioLabel = bellowsTeachingCapability
     ? keys.selectedFocusPlaneRatio
     : keys.reproductionRatio;
+  const imageCircleDiameterMm =
+    bellowsTeachingCapability &&
+    lensCoverage?.kind === "angular" &&
+    Number.isFinite(lensCoverage.imageCircleDiameterMm) &&
+    lensCoverage.imageCircleDiameterMm > 0
+      ? lensCoverage.imageCircleDiameterMm
+      : null;
   return (
     <section className="simulator-info-card macro-focus-readout" aria-label={t(keys.title)}>
       <h3>{t(keys.title)}</h3>
@@ -59,6 +68,9 @@ export const MacroFocusReadout = ({
         )}
         <div><dt>{t(keys.factor)}</dt><dd>{metrics.bellowsFactor.toFixed(2)}×</dd></div>
         <div><dt>{t(keys.exposure)}</dt><dd>{t(keys.stops, { value: metrics.exposureCompensationStops.toFixed(2) })}</dd></div>
+        {imageCircleDiameterMm !== null && (
+          <div><dt>{t(keys.imageCircle)}</dt><dd>{t(keys.imageCircleValue, { diameter: imageCircleDiameterMm.toFixed(1) })}</dd></div>
+        )}
         {bellowsTeachingCapability && (
           <div><dt>{t(keys.availableTravel)}</dt><dd>{bellowsTeachingCapability.availableBellowsTravelMm.toFixed(1)} mm</dd></div>
         )}

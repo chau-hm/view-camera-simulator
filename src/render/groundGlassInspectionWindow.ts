@@ -2,6 +2,7 @@ import type { GroundGlassPanOffset } from "./groundGlassStageTransform";
 import type { GroundGlassPreviewMode } from "./groundGlassTargetProjection";
 import {
   applyGroundGlassRttDisplayTransform,
+  mapGroundGlassRttTextureUvToCanonicalFilmUv,
   resolveGroundGlassRttDisplayTransform,
 } from "./groundGlassRttOrientation";
 
@@ -29,7 +30,7 @@ export type GroundGlassInspectionPreviewMode = GroundGlassPreviewMode;
  * used by Focus Distribution. Raw samples the upright RTT source through a
  * 180-degree transform; Upright Assist samples it without a transform.
  */
-export const mapGroundGlassDisplayUvToFilmUv = (
+export const mapGroundGlassDisplayUvToRttSourceTopUv = (
   displayUv: { u: number; v: number },
   previewMode: GroundGlassInspectionPreviewMode,
 ): { u: number; v: number } => applyGroundGlassRttDisplayTransform(
@@ -146,18 +147,61 @@ export const resolveSampledFilmDimensionsMm = (input: {
 });
 
 /**
+ * Resolve the RTT source crop in rear-standard physical film millimetres.
+ * The crop window uses top-origin V, matching the off-axis frustum. Convert
+ * to bottom-origin WebGL texture V exactly once before resolving film-local mm.
+ */
+export const resolveGroundGlassInspectionFilmWindowMm = (input: {
+  filmWidthMm: number;
+  filmHeightMm: number;
+  inspectionWindow: GroundGlassInspectionWindow;
+}): {
+  centerXMm: number;
+  centerYMm: number;
+  widthMm: number;
+  heightMm: number;
+} => {
+  const widthFraction = clamp(
+    finiteOr(input.inspectionWindow.widthFraction, 1),
+    Number.EPSILON,
+    1,
+  );
+  const heightFraction = clamp(
+    finiteOr(input.inspectionWindow.heightFraction, 1),
+    Number.EPSILON,
+    1,
+  );
+  const centerU = clamp(finiteOr(input.inspectionWindow.centerU, 0.5), widthFraction / 2, 1 - widthFraction / 2);
+  const centerV = clamp(finiteOr(input.inspectionWindow.centerV, 0.5), heightFraction / 2, 1 - heightFraction / 2);
+  const sourceTextureCenterUv = {
+    u: centerU,
+    v: 1 - centerV,
+  };
+  const canonicalFilmCenterUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
+    sourceTextureCenterUv,
+  );
+
+  return {
+    centerXMm: (canonicalFilmCenterUv.u - 0.5) * input.filmWidthMm,
+    centerYMm: (0.5 - canonicalFilmCenterUv.v) * input.filmHeightMm,
+    widthMm: input.filmWidthMm * widthFraction,
+    heightMm: input.filmHeightMm * heightFraction,
+  };
+};
+
+/**
  * Stage pan coordinates follow the displayed Ground Glass image. Inspection
  * cropping configures the pre-composite RTT camera/frustum, so display-space
  * coordinates must be mapped through the same transform used by the composite
  * shader. The transform is self-inverse, so it is also the
  * display-to-source mapping needed for the crop.
  */
-export const mapGroundGlassInspectionWindowToFilmSpace = (
+export const mapGroundGlassInspectionWindowToRttSourceCrop = (
   window: GroundGlassInspectionWindow,
   previewMode: GroundGlassInspectionPreviewMode,
 ): GroundGlassInspectionWindow => {
   if (!window.active) return window;
-  const filmCenter = mapGroundGlassDisplayUvToFilmUv(
+  const filmCenter = mapGroundGlassDisplayUvToRttSourceTopUv(
     { u: window.centerU, v: window.centerV },
     previewMode,
   );

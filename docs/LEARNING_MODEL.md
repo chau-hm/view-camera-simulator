@@ -97,6 +97,13 @@ help text, documentation, and translations.
 | Rear standard | The camera standard carrying the film; its movement changes film position or orientation. |
 | Lens plane | The plane associated with the lens standard and its orientation. |
 | Film plane | The image-recording plane associated with the rear standard. |
+| Lens coverage | The projected region a lens profile models as usable, represented by a perpendicular reference circle or its intersection with the actual film plane. |
+| Image Circle | The circular finite-coverage region on a plane perpendicular to the optical axis; it is the actual film region when the film plane is perpendicular to that axis. |
+| Reference Image Circle | The perpendicular-plane circle derived from lens coverage, used as a reference when the actual film plane is tilted or swung. |
+| Coverage Footprint | The finite coverage region formed where the coverage cone intersects a non-parallel film plane. |
+| Natural illumination | Gradual off-axis brightness falloff, approximated separately from the finite-coverage boundary. |
+| Bellows extension | The physical lens-to-film separation required by the selected focus. |
+| Bellows factor | The exposure multiplier caused by image distance in the current thin-lens model. |
 | Plane of sharp focus | The plane rendered sharply by the instructional optics model. |
 | Depth of field | The finite tolerance region around the focused geometry that appears acceptably sharp. |
 | Focus distance | The selected subject depth used to establish focus. |
@@ -113,6 +120,97 @@ help text, documentation, and translations.
 “Front” and “Rear” identify the standard being moved. Keep those words in the
 term whenever the distinction matters; do not replace both with an ambiguous
 “camera movement.”
+
+## Image circle and lens coverage
+
+### Lens coverage
+
+Lens coverage is the projected region that a lens profile models as usable.
+Real lenses do not provide useful image indefinitely, but this simulator does
+not model measured coverage for every real lens. Here, `Not modelled` means
+that the simulator does not impose a finite coverage boundary for that lens
+option; it does not claim that the real lens has unlimited coverage.
+
+Coverage is a lens property separate from focal length. Focal length changes
+angle of view and framing at a fixed camera position, but does not determine
+coverage by itself. Two lenses with the same focal length may have different
+coverage. The published simulator teaching family has explicit finite angular
+profiles for 90, 105, 120, and 150 mm. Their full angles are approximately
+100.9°, 92.1°, 84.5°, and 72°, respectively, and all are simulator data, not
+manufacturer specifications. The angles are calibrated so each profile has
+the same approximately 217.963 mm infinity reference Image Circle as the
+existing 150 mm / 72° profile. This deliberate family design keeps coverage
+and movement room approximately constant while learners compare focal length
+and framing. It does not imply that shorter real lenses inherently have wider
+coverage. Unknown positive focal lengths remain `Not modelled`; that fallback
+means the simulator imposes no finite boundary for an unpublished option.
+
+### Image Circle
+
+A finite circular coverage cone intersects any plane perpendicular to the
+optical axis as a circle. When that plane is the actual film plane, the finite
+film coverage region is the Image Circle. The fixed rectangular 4×5 film
+format sits within the available coverage; the film dimensions do not grow or
+shrink with a movement.
+
+Rise and Shift change how the film rectangle and available coverage overlap.
+Front Rise or Front Shift moves the lens standard and its projected coverage
+relative to the fixed rear standard and film; Rear Rise or Rear Shift moves the
+film through the lens coverage. Name the standard because these are different
+physical actions. Both can use up spare coverage in the movement direction;
+neither creates more coverage. A film edge or corner that reaches the current
+usable boundary is clipped by this teaching model.
+
+### Coverage Footprint
+
+When the actual film plane is not perpendicular to the finite coverage cone,
+its intersection is generally not circular. The simulator calls this actual
+film-plane region the Coverage Footprint. It is the same lens coverage
+intersecting a different plane, not a second optical phenomenon. The current
+canonical state represents the bounded region with `Q(x,y) <= 0` and the
+image-side condition `T(x,y) > 0`. Ground Glass clipping and the 3D footprint
+consume that same `GroundGlassCoverageState`; UI components do not reconstruct
+the cone or invent an equivalent conic diameter.
+
+`DerivedLensCoverage` remains separate: it describes the perpendicular
+reference Image Circle from the lens profile and canonical image distance.
+That reference remains useful for a tilted film, but it is not the size or
+shape of the actual Coverage Footprint on that film.
+
+### Natural illumination is separate
+
+The simulator's current parallel-film natural-illumination approximation is
+gradual `cos⁴(theta)` off-axis falloff. It can darken image edges before finite
+coverage clips points outside the usable region. Natural illumination is not
+the Image Circle, does not define its boundary, and is neutral for current
+non-parallel Tilt/Swing states. The finite-coverage boundary is a hard teaching
+boundary with only about one output pixel of raster anti-aliasing; it is not a
+measured real-lens illumination, contrast, or resolution transition. Future
+usable-coverage roll-off or optical/mechanical vignetting may soften that
+boundary as a separate model from `cos⁴` illumination.
+
+### Macro extension
+
+For the simulator's fixed angular-coverage teaching profile, the perpendicular
+reference-circle diameter is
+
+```text
+D = 2 v tan(alpha / 2)
+```
+
+where `v` is canonical image distance and `alpha` is the profile's full
+included coverage angle. In Macro Bellows Extension, closer focus increases
+`v`, so the physical reference Image Circle grows. This is a simulator profile
+relationship, not a universal measured rule for real lenses.
+
+Coverage growth and bellows exposure loss are separate effects. At the 1:1
+thin-lens checkpoint, `v ≈ 2f`, so the reference-circle diameter is about
+twice its infinity-reference diameter while the current bellows factor
+`(v/f)²` is about 4×, or +2 stops of exposure compensation. The larger circle
+does not cause a 4× exposure change through its area. At a fixed aperture the
+bellows loss dims the Ground Glass overall even while coverage grows. Aperture
+affects exposure and depth of field under their existing models; it does not
+set the Image Circle diameter.
 
 ## Movement and image-effect model
 
@@ -140,9 +238,20 @@ assert a required course order.
 This free-only anatomy lesson introduces the conceptual view camera before the
 movement studies. The learner identifies the Front Standard, Lens Board, Lens,
 Aperture, Bellows, Rear Standard, Ground Glass, Film Holder, and Camera
-Support, then connects Front Rise, Front Shift, Front Tilt, Front Swing,
-Front/Rear focusing, and Aperture controls to the physical parts they change.
-It is an anatomy and control walkthrough, not a scored movement task.
+Support, then learns the Image Circle as the conceptual prerequisite for Front
+Rise and Front Shift before connecting Front Rise, Front Shift, Front Tilt,
+Front Swing, Front/Rear focusing, and Aperture controls to the physical parts
+they change. It is an anatomy and control walkthrough, not a scored movement
+task.
+
+The Image Circle step is a presentation-only teaching illustration: it shows a
+rose circular projection around the rectangular 4×5 film format, using the
+same visual language as the physical finite-coverage overlay shown in the Rise
+and Shift steps. Its diameter is deliberately conceptual and is not a measured
+lens specification, finite coverage model, movement limit, or Ground Glass
+rendering input. Rise and Shift then show canonical finite coverage moving
+relative to the unchanged film rectangle to teach vertical and horizontal spare
+coverage consistently.
 
 ### Understanding Camera Movements
 
@@ -185,6 +294,13 @@ same viewpoint + appropriate film-plane orientation + Front Rise
 
 Teach this as framing and perspective control under level-camera geometry, not
 as the simplistic claim that “rise corrects perspective.”
+
+The public focus range is scene-calibrated to the nearest foreground focus
+probe and far scene bound (3,090–13,000 mm at the current 150 mm lens). The
+generic real-image minimum only protects the mathematical condition `U > f`;
+it is not a suitable learner-facing focus range for every scene. Rear-standard
+position and bellows length continue to follow the canonical thin-lens image
+distance without a rendering travel cap.
 
 ### Table Tilt
 

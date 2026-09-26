@@ -84,10 +84,29 @@ describe("scene definitions", () => {
     expect(architectureRiseScene.finiteFocusStrategy?.focusDistanceReference).toBe(
       "lens-to-focus-plane",
     );
-    expect(getSceneFocusDistanceRange(architectureRiseScene.id, 150).min).toBe(160);
+    expect(getSceneFocusDistanceRange(architectureRiseScene.id, 150).min).toBe(3090);
     expect(getSceneFocusDistanceRange(tableTiltScene.id, 150).min).toBe(160);
     expect(getSceneFocusDistanceRange(architectureRiseScene.id, 150).min).toBeGreaterThan(150);
     expect(getSceneFocusDistanceRange(tableTiltScene.id, 150).min).toBeGreaterThan(150);
+    expect(getSceneFocusDistanceRange(architectureRiseScene.id, 150).max).toBe(13000);
+    expect(architectureRiseScene.cameraPreset.focusDistanceMm).toBeGreaterThanOrEqual(3090);
+    expect(architectureRiseScene.cameraPreset.focusDistanceMm).toBeLessThanOrEqual(13000);
+  });
+
+  it("keeps Architecture Rise minimum focus at a scene-scale real-image distance", () => {
+    const minimumFocusMm = getSceneFocusDistanceRange(architectureRiseScene.id, 150).min;
+    const optics = deriveOpticsState({
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      focusDistanceMm: minimumFocusMm,
+    }, architectureRiseScene);
+
+    expect(minimumFocusMm).toBe(3090);
+    expect(optics.diagnostics.focusObjectDistanceMm).toBeCloseTo(3090, 8);
+    expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(150 * 3090 / (3090 - 150), 8);
+    expect(optics.diagnostics.imageDistanceMm).toBeLessThan(160);
+    expect(optics.diagnostics.imageDistanceMm).not.toBeCloseTo(2400, 0);
   });
 
   it("defines near/mid/far table focus targets", () => {
@@ -178,7 +197,15 @@ describe("scene definitions", () => {
 
   it("keeps Mirror Shift in a fixed neutral camera state", () => {
     expect(mirrorShiftScene.name).toBe("Mirror Shift");
+    expect(mirrorShiftScene.cameraPreset.focalLengthMm).toBe(120);
+    expect(mirrorShiftScene.cameraPreset.focusDistanceMm).toBe(6000);
     expect(mirrorShiftScene.cameraPreset.aperture).toBe(11);
+    expect(mirrorShiftScene.finiteFocusStrategy).toEqual({
+      kind: "rear-standard-thin-lens",
+      lensDatum: "baseline-origin",
+      focusDistanceReference: "lens-to-focus-plane",
+      filmDepthReference: "rear-standard-z",
+    });
     expect(mirrorShiftScene.cameraControlPolicy).toEqual({
       movement: "fixed",
       focusDistance: "fixed",

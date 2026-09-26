@@ -223,8 +223,120 @@ uniform float useNearGather;
 uniform float flipDisplayX;
 uniform float flipDisplayY;
 uniform float groundGlassIlluminanceGain;
+uniform float groundGlassNaturalIlluminationEnabled;
+uniform float groundGlassNaturalIlluminationImageDistanceMm;
+uniform float groundGlassNaturalIlluminationOffsetXMm;
+uniform float groundGlassNaturalIlluminationOffsetYMm;
+uniform float groundGlassCoverageEnabled;
+uniform float groundGlassCoverageMode;
+uniform float groundGlassCoverageRadiusMm;
+uniform float groundGlassCoverageOffsetXMm;
+uniform float groundGlassCoverageOffsetYMm;
+uniform vec3 groundGlassCoverageConicQuadratic;
+uniform vec3 groundGlassCoverageConicLinear;
+uniform vec3 groundGlassCoverageConicAxial;
+uniform float groundGlassCoverageEdgeFeatherMm;
+uniform float groundGlassFilmWindowCenterXMm;
+uniform float groundGlassFilmWindowCenterYMm;
+uniform float groundGlassFilmWindowWidthMm;
+uniform float groundGlassFilmWindowHeightMm;
 uniform float renderWidth;
 uniform float renderHeight;
+
+float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
+  if (groundGlassNaturalIlluminationEnabled < 0.5) return 1.0;
+
+  float imageDistanceMm = groundGlassNaturalIlluminationImageDistanceMm;
+  float imageDistanceSquared = imageDistanceMm * imageDistanceMm;
+  vec2 offsetMm = vec2(
+    groundGlassNaturalIlluminationOffsetXMm,
+    groundGlassNaturalIlluminationOffsetYMm
+  );
+  vec2 deltaMm = filmPointMm - offsetMm;
+  float denominator = imageDistanceSquared + dot(deltaMm, deltaMm);
+  if (imageDistanceMm <= 0.0 || denominator <= 0.0) return 1.0;
+
+  float cosineSquared = imageDistanceSquared / denominator;
+  return cosineSquared * cosineSquared;
+}
+
+float resolveGroundGlassCoverage(vec2 filmPointMm) {
+  if (groundGlassCoverageEnabled < 0.5) return 1.0;
+
+  if (groundGlassCoverageMode < 1.5) {
+    float radiusMm = groundGlassCoverageRadiusMm;
+    if (radiusMm <= 0.0) return 1.0;
+
+    vec2 offsetMm = vec2(
+      groundGlassCoverageOffsetXMm,
+      groundGlassCoverageOffsetYMm
+    );
+    vec2 deltaMm = filmPointMm - offsetMm;
+    float distanceSquared = dot(deltaMm, deltaMm);
+    float radiusSquared = radiusMm * radiusMm;
+    if (distanceSquared < 0.0 || radiusSquared <= 0.0) return 1.0;
+
+    float edgeFeatherMm = groundGlassCoverageEdgeFeatherMm;
+    if (edgeFeatherMm <= 0.0) {
+      return distanceSquared <= radiusSquared ? 1.0 : 0.0;
+    }
+
+    float distanceMm = sqrt(distanceSquared);
+    float halfFeatherMm = edgeFeatherMm * 0.5;
+    return 1.0 - smoothstep(
+      max(0.0, radiusMm - halfFeatherMm),
+      radiusMm + halfFeatherMm,
+      distanceMm
+    );
+  }
+
+  float imageSideDistanceMm = dot(
+    groundGlassCoverageConicAxial,
+    vec3(filmPointMm, 1.0)
+  );
+  if (imageSideDistanceMm <= 0.0) return 0.0;
+
+  vec3 quadratic = groundGlassCoverageConicQuadratic;
+  vec3 linear = groundGlassCoverageConicLinear;
+  float x = filmPointMm.x;
+  float y = filmPointMm.y;
+  float conicValue = quadratic.x * x * x +
+    quadratic.y * x * y +
+    quadratic.z * y * y +
+    linear.x * x +
+    linear.y * y +
+    linear.z;
+  vec2 conicGradient = vec2(
+    2.0 * quadratic.x * x + quadratic.y * y + linear.x,
+    quadratic.y * x + 2.0 * quadratic.z * y + linear.y
+  );
+  float signedDistanceMm = conicValue / max(length(conicGradient), 1e-6);
+  float edgeFeatherMm = groundGlassCoverageEdgeFeatherMm;
+  if (edgeFeatherMm <= 0.0) return conicValue <= 0.0 ? 1.0 : 0.0;
+  float halfFeatherMm = edgeFeatherMm * 0.5;
+  return 1.0 - smoothstep(
+    -halfFeatherMm,
+    halfFeatherMm,
+    signedDistanceMm
+  );
+}
+
+vec2 mapGroundGlassRttTextureUvToCanonicalFilmUv(vec2 textureUv) {
+  // The off-axis camera's reflected film corners make each sampled source
+  // texel correspond directly to this physical film-local coordinate.
+  return textureUv;
+}
+
+vec2 resolveGroundGlassFilmPointMm(vec2 textureUv) {
+  vec2 canonicalFilmLocalUv =
+    mapGroundGlassRttTextureUvToCanonicalFilmUv(textureUv) - vec2(0.5);
+  return vec2(
+    groundGlassFilmWindowCenterXMm +
+      canonicalFilmLocalUv.x * groundGlassFilmWindowWidthMm,
+    groundGlassFilmWindowCenterYMm -
+      canonicalFilmLocalUv.y * groundGlassFilmWindowHeightMm
+  );
+}
 
 void main(){
   vec2 screenUv = vUv;
@@ -238,11 +350,21 @@ void main(){
     gathered.rgb = mix(gathered.rgb, nearLayer.rgb, clamp(nearLayer.a, 0.0, 1.0));
   }
 
+  // Keep the source sample in its configured off-axis camera coordinates.
+  // Raw/Upright only select the source texel; they do not redefine its
+  // physical film-local position.
+  vec2 filmPointMm = resolveGroundGlassFilmPointMm(sampleUv);
+  float groundGlassNaturalIlluminationGain =
+    resolveGroundGlassNaturalIllumination(filmPointMm);
+  float groundGlassCoverageGain = resolveGroundGlassCoverage(filmPointMm);
+
   // The post-process render targets carry linear-light scene values. Apply
-  // the resolved aperture and bellows-extension throughput here so scene
-  // lighting and the main viewport remain independent from Ground Glass
-  // presentation.
+  // global aperture/bellows throughput and the separate spatial natural
+  // illumination factor so scene lighting and Ground Glass optics remain
+  // independent from one another.
   gathered.rgb *= groundGlassIlluminanceGain;
+  gathered.rgb *= groundGlassNaturalIlluminationGain;
+  gathered.rgb *= groundGlassCoverageGain;
   gl_FragColor = gathered;
 }
 `;

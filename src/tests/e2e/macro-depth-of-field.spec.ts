@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
-import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { setPublicRangeInput } from "./helpers/publicRangeInput";
 
 const TARGET_IDS = [
   "macro-depth-near",
@@ -99,24 +99,24 @@ test("Macro 2 teaches shallow physical depth of field across a 3D subject", asyn
   expect(stoppedDownLabels.some((label) => label?.includes("Soft"))).toBe(true);
 
   await aperture.getByRole("radio", { name: "f/5.6" }).check();
-  await setStepRangeInput(page, "Focus distance", 390);
+  await setPublicRangeInput(focus, 390);
   await expect(teaching).toHaveAttribute("data-stage", "wide-open");
   await expect(teaching).toHaveAttribute("data-focused-region", "near");
   const nearFocusScores = await readFocusDistributionScores(page, TARGET_IDS);
   expect(nearFocusScores["macro-depth-near"]).toBeGreaterThan(nearFocusScores["macro-depth-middle"]);
   expect(nearFocusScores["macro-depth-near"]).toBeGreaterThan(nearFocusScores["macro-depth-far"]);
 
-  await setStepRangeInput(page, "Focus distance", 410);
+  await setPublicRangeInput(focus, 410);
   await expect(teaching).toHaveAttribute("data-focused-region", "far");
   const farFocusScores = await readFocusDistributionScores(page, TARGET_IDS);
   expect(farFocusScores["macro-depth-far"]).toBeGreaterThan(farFocusScores["macro-depth-near"]);
   expect(farFocusScores["macro-depth-far"]).toBeGreaterThan(farFocusScores["macro-depth-middle"]);
 
-  await setStepRangeInput(page, "Focus distance", 360);
+  await setPublicRangeInput(focus, 360);
   await expect(teaching).toHaveAttribute("data-focused-region", "near");
   await expect(taskView).toContainText("Near detail is currently strongest");
 
-  await setStepRangeInput(page, "Focus distance", 440);
+  await setPublicRangeInput(focus, 440);
   await expect(teaching).toHaveAttribute("data-focused-region", "far");
   await expect(taskView).toContainText("Far detail is currently strongest");
 

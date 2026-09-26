@@ -68,6 +68,8 @@ import {
   resolveSampledFilmDimensionsMm,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
+import { resolveGroundGlassNaturalIlluminationUniformState } from "./groundGlassNaturalIllumination";
+import { resolveGroundGlassCoverageUniformState } from "./groundGlassCoverage";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
   GroundGlassProfiler,
@@ -100,7 +102,7 @@ export type GroundGlassRTTProps = {
   renderQuality?: import("../types/ui").RenderQualityProfile;
   /** Deprecated presentation input; loupe scaling is owned by GroundGlassStage. */
   zoomEnabled?: boolean;
-  /** Physical film window sampled by the RTT; presentation stays at CSS scale 1. */
+  /** Top-origin RTT-source crop. Spatial effects resolve it into canonical rear-standard film millimetres. */
   inspectionWindow?: GroundGlassInspectionWindow;
   /** Independent RTT resource/diagnostic channel for comparison panes. */
   channel?: GroundGlassRttChannel;
@@ -444,6 +446,23 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         flipDisplayX: { value: 1.0 },
         flipDisplayY: { value: 1.0 },
         groundGlassIlluminanceGain: { value: 1.0 },
+        groundGlassNaturalIlluminationEnabled: { value: 0.0 },
+        groundGlassNaturalIlluminationImageDistanceMm: { value: 0.0 },
+        groundGlassNaturalIlluminationOffsetXMm: { value: 0.0 },
+        groundGlassNaturalIlluminationOffsetYMm: { value: 0.0 },
+        groundGlassCoverageEnabled: { value: 0.0 },
+        groundGlassCoverageMode: { value: 0.0 },
+        groundGlassCoverageRadiusMm: { value: 0.0 },
+        groundGlassCoverageOffsetXMm: { value: 0.0 },
+        groundGlassCoverageOffsetYMm: { value: 0.0 },
+        groundGlassCoverageConicQuadratic: { value: new THREE.Vector3() },
+        groundGlassCoverageConicLinear: { value: new THREE.Vector3() },
+        groundGlassCoverageConicAxial: { value: new THREE.Vector3() },
+        groundGlassCoverageEdgeFeatherMm: { value: 0.0 },
+        groundGlassFilmWindowCenterXMm: { value: 0.0 },
+        groundGlassFilmWindowCenterYMm: { value: 0.0 },
+        groundGlassFilmWindowWidthMm: { value: initialSampledFilmDimensions.widthMm },
+        groundGlassFilmWindowHeightMm: { value: initialSampledFilmDimensions.heightMm },
       },
     });
 
@@ -548,6 +567,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           gatherScale: initialQualitySettings.gatherScale,
           sampleCount: initialQualitySettings.sampleCount,
           maximumCoCRadiusPx: initialMaximumCoCRadiusPx,
+          groundGlassPhysicalBoundaryRadiusPx:
+            (ACCEPTABLE_COC_DIAMETER_MM * dims.logicalWidthPx) /
+            initialSampledFilmDimensions.widthMm / 2,
           cocStorageFormat: cocStorage.storageFormat,
           cocAvailable: true,
           cocTargetWidthPx: cocW,
@@ -876,6 +898,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         maximumBlurRadiusPx,
         qualitySettings.maximumCoCRadiusPx,
       ),
+      groundGlassPhysicalBoundaryRadiusPx:
+        (ACCEPTABLE_COC_DIAMETER_MM * dims.logicalWidthPx) /
+        sampledFilmDimensions.widthMm / 2,
       cocStorageFormat: post.cocStorageFormat,
       cocAvailable: true,
       cocTargetWidthPx: post.cocRT.width,
@@ -900,7 +925,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       sampledFilmHeightMm: sampledFilmDimensions.heightMm,
       profilingSnapshot: undefined,
     });
-  }, [gl, heightPx, maximumBlurRadiusPx, readRuntimeInfo, renderQuality, setRuntimeInfo, widthPx]);
+  }, [
+    gl,
+    heightPx,
+    maximumBlurRadiusPx,
+    readRuntimeInfo,
+    renderQuality,
+    setRuntimeInfo,
+    widthPx,
+  ]);
 
   useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
@@ -912,6 +945,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
+    });
+    const naturalIlluminationUniformState = resolveGroundGlassNaturalIlluminationUniformState({
+      state: opticsState.groundGlassNaturalIllumination,
+      rawDebug,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow,
+    });
+    const coverageUniformState = resolveGroundGlassCoverageUniformState({
+      state: opticsState.groundGlassCoverage,
+      rawDebug,
+      filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+      filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+      inspectionWindow,
+      renderWidthPx: dimsRef.current.internalWidthPx,
+      renderHeightPx: dimsRef.current.internalHeightPx,
     });
 
     // Configure once with a conservative preliminary range so the actual
@@ -1192,6 +1241,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           currentMaximumCoCRadiusPx,
           sampledFilmDimensions.widthMm,
           sampledFilmDimensions.heightMm,
+          dimsRef.current.logicalWidthPx,
         );
         if (!rawDebug) {
           groundGlassIlluminanceGain = resolveGroundGlassRelativeIlluminance({
@@ -1277,14 +1327,144 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
       compositeMaterial.uniforms.groundGlassIlluminanceGain.value = groundGlassIlluminanceGain;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationEnabled.value =
+        naturalIlluminationUniformState.enabled ? 1.0 : 0.0;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value =
+        naturalIlluminationUniformState.imageDistanceMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetXMm.value =
+        naturalIlluminationUniformState.opticalAxisOffsetXMm;
+      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetYMm.value =
+        naturalIlluminationUniformState.opticalAxisOffsetYMm;
+      compositeMaterial.uniforms.groundGlassCoverageEnabled.value =
+        coverageUniformState.enabled ? 1.0 : 0.0;
+      compositeMaterial.uniforms.groundGlassCoverageMode.value = coverageUniformState.mode;
+      compositeMaterial.uniforms.groundGlassCoverageRadiusMm.value =
+        coverageUniformState.imageCircleRadiusMm;
+      compositeMaterial.uniforms.groundGlassCoverageOffsetXMm.value =
+        coverageUniformState.opticalAxisOffsetXMm;
+      compositeMaterial.uniforms.groundGlassCoverageOffsetYMm.value =
+        coverageUniformState.opticalAxisOffsetYMm;
+      compositeMaterial.uniforms.groundGlassCoverageConicQuadratic.value.set(
+        ...coverageUniformState.conicQuadratic,
+      );
+      compositeMaterial.uniforms.groundGlassCoverageConicLinear.value.set(
+        ...coverageUniformState.conicLinear,
+      );
+      compositeMaterial.uniforms.groundGlassCoverageConicAxial.value.set(
+        ...coverageUniformState.conicAxial,
+      );
+      compositeMaterial.uniforms.groundGlassCoverageEdgeFeatherMm.value =
+        coverageUniformState.edgeFeatherMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowCenterXMm.value =
+        coverageUniformState.filmWindow.centerXMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowCenterYMm.value =
+        coverageUniformState.filmWindow.centerYMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowWidthMm.value =
+        coverageUniformState.filmWindow.widthMm;
+      compositeMaterial.uniforms.groundGlassFilmWindowHeightMm.value =
+        coverageUniformState.filmWindow.heightMm;
       const currentIlluminanceInfo = readRuntimeInfo();
+      const coverageConicQuadratic = opticsState.groundGlassCoverage.kind === "nonparallel-conic"
+        ? [
+            opticsState.groundGlassCoverage.quadratic.a,
+            opticsState.groundGlassCoverage.quadratic.b,
+            opticsState.groundGlassCoverage.quadratic.c,
+            opticsState.groundGlassCoverage.quadratic.d,
+            opticsState.groundGlassCoverage.quadratic.e,
+            opticsState.groundGlassCoverage.quadratic.f,
+          ].map((value) => value.toPrecision(12)).join(",")
+        : undefined;
+      const coverageConicAxial = opticsState.groundGlassCoverage.kind === "nonparallel-conic"
+        ? [
+            opticsState.groundGlassCoverage.axial.x,
+            opticsState.groundGlassCoverage.axial.y,
+            opticsState.groundGlassCoverage.axial.constant,
+          ].map((value) => value.toPrecision(12)).join(",")
+        : undefined;
       if (
         currentIlluminanceInfo &&
-        currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain
+        (
+          currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationEnabled !==
+            naturalIlluminationUniformState.enabled ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationKind !==
+            opticsState.groundGlassNaturalIllumination.kind ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationImageDistanceMm !==
+            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.imageDistanceMm
+              : undefined) ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationOffsetXMm !==
+            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetXMm
+              : undefined) ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationOffsetYMm !==
+            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
+              : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageEnabled !==
+            coverageUniformState.enabled
+          || currentIlluminanceInfo.groundGlassCoverageKind !==
+            opticsState.groundGlassCoverage.kind
+          || currentIlluminanceInfo.groundGlassPhysicalBoundaryRadiusPx !==
+            (preparedDofState?.visibleBoundaryBlurRadiusPx ??
+              (ACCEPTABLE_COC_DIAMETER_MM * dimsRef.current.logicalWidthPx) /
+                sampledFilmDimensions.widthMm / 2)
+          || currentIlluminanceInfo.groundGlassCoverageRadiusMm !==
+            (opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.imageCircleRadiusMm
+              : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageOffsetXMm !==
+            (opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetXMm
+              : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageOffsetYMm !==
+            (opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetYMm
+              : undefined)
+          || currentIlluminanceInfo.groundGlassCoverageConicQuadratic !==
+            coverageConicQuadratic
+          || currentIlluminanceInfo.groundGlassCoverageConicAxial !==
+            coverageConicAxial
+        )
       ) {
         setRuntimeInfo({
           ...currentIlluminanceInfo,
           groundGlassIlluminanceGain,
+          groundGlassNaturalIlluminationEnabled: naturalIlluminationUniformState.enabled,
+          groundGlassNaturalIlluminationKind:
+            opticsState.groundGlassNaturalIllumination.kind,
+          groundGlassNaturalIlluminationImageDistanceMm:
+            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.imageDistanceMm
+              : undefined,
+          groundGlassNaturalIlluminationOffsetXMm:
+            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetXMm
+              : undefined,
+          groundGlassNaturalIlluminationOffsetYMm:
+            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
+              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
+              : undefined,
+          groundGlassCoverageEnabled: coverageUniformState.enabled,
+          groundGlassCoverageKind: opticsState.groundGlassCoverage.kind,
+          groundGlassPhysicalBoundaryRadiusPx:
+            preparedDofState?.visibleBoundaryBlurRadiusPx ??
+            (ACCEPTABLE_COC_DIAMETER_MM * dimsRef.current.logicalWidthPx) /
+              sampledFilmDimensions.widthMm / 2,
+          groundGlassCoverageRadiusMm:
+            opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.imageCircleRadiusMm
+              : undefined,
+          groundGlassCoverageOffsetXMm:
+            opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetXMm
+              : undefined,
+          groundGlassCoverageOffsetYMm:
+            opticsState.groundGlassCoverage.kind === "parallel-circle"
+              ? opticsState.groundGlassCoverage.opticalAxisOffsetYMm
+              : undefined,
+          groundGlassCoverageConicQuadratic: coverageConicQuadratic,
+          groundGlassCoverageConicAxial: coverageConicAxial,
         });
       }
 

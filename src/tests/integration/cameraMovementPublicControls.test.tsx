@@ -9,6 +9,7 @@ import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSc
 import { resolveCameraRigViewpointAnchor } from "../../scenes/cameraRigViewpointGeometry";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { useAppStore } from "../../state/appStore";
+import { selectDerivedOpticsState } from "../../state/selectors";
 import { matchCameraMovementTeachingCase } from "../../scenes/cameraMovementPublicTeaching";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -53,7 +54,7 @@ afterEach(() => {
 });
 
 describe("public camera movement controls in the workspace", () => {
-  it("exposes the localized 90/150 lens selector with accessible selected state", () => {
+  it("exposes all four finite simulator lens profiles with accessible selected state", () => {
     render(publicWorkspace());
     const cameraControls = screen.getByRole("region", { name: "Camera Controls" });
     const lensOptions = within(cameraControls).getByRole("radiogroup", {
@@ -63,16 +64,107 @@ describe("public camera movement controls in the workspace", () => {
     const standard = within(lensOptions).getByRole("radio", {
       name: /150 mm.*Standard/,
     });
+    const middleProfiles = [
+      { focalLengthMm: 105, angle: "92.1" },
+      { focalLengthMm: 120, angle: "84.5" },
+    ];
+    for (const { focalLengthMm, angle } of middleProfiles) {
+      const option = within(lensOptions).getByRole("radio", {
+        name: new RegExp(`${focalLengthMm} mm.*${angle.replace(".", "\\.")}° simulator coverage`),
+      });
+      expect(option).toBeInTheDocument();
+    }
 
     expect(wide).toBeChecked();
     expect(standard).not.toBeChecked();
+    expect(screen.getByText("Lens coverage", { exact: true })).toBeInTheDocument();
+    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent(
+      "100.9° simulator coverage",
+    );
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(/mm/);
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-coverage-kind",
+      "angular",
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-id",
+      "simulator-parametric-90mm",
+    );
     wide.focus();
     expect(document.activeElement).toBe(wide);
+
+    for (const { focalLengthMm, angle } of middleProfiles) {
+      const option = within(lensOptions).getByRole("radio", {
+        name: new RegExp(`${focalLengthMm} mm.*${angle.replace(".", "\\.")}° simulator coverage`),
+      });
+      fireEvent.click(option);
+      expect(option).toBeChecked();
+      expect(useAppStore.getState().camera.focalLengthMm).toBe(focalLengthMm);
+      expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent(
+        `${angle}° simulator coverage`,
+      );
+      expect(screen.getByTestId("lens-control")).toHaveAttribute(
+        "data-selected-lens-id",
+        `simulator-parametric-${focalLengthMm}mm`,
+      );
+      expect(screen.getByTestId("lens-control")).toHaveAttribute(
+        "data-selected-lens-coverage-kind",
+        "angular",
+      );
+    }
 
     fireEvent.click(standard);
     expect(standard).toBeChecked();
     expect(wide).not.toBeChecked();
     expect(useAppStore.getState().camera.focalLengthMm).toBe(150);
+    expect(screen.getByTestId("lens-control-coverage-value")).toHaveTextContent(
+      "72° simulator coverage",
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-id",
+      "simulator-parametric-150mm",
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-coverage-kind",
+      "angular",
+    );
+    const derivedOptics = selectDerivedOpticsState(useAppStore.getState().camera);
+    const derivedCoverage = derivedOptics.lensCoverage;
+    expect(derivedCoverage?.kind).toBe("angular");
+    if (derivedCoverage?.kind !== "angular") {
+      throw new Error("Expected the 150 mm simulator lens to derive angular coverage");
+    }
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(
+      `${derivedCoverage.imageCircleDiameterMm.toFixed(1)} mm`,
+    );
+    expect(screen.getByTestId("lens-control-image-circle-label")).toHaveTextContent("Image circle");
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-image-circle-diameter-mm",
+      derivedCoverage.imageCircleDiameterMm.toFixed(6),
+    );
+
+    const tilt = screen.getByRole("slider", { name: "Tilt" });
+    fireEvent.change(tilt, { target: { value: "0.5" } });
+    const tiltedOptics = selectDerivedOpticsState(useAppStore.getState().camera);
+    const tiltedLensCoverage = tiltedOptics.lensCoverage;
+    expect(tiltedLensCoverage?.kind).toBe("angular");
+    if (tiltedLensCoverage?.kind !== "angular") {
+      throw new Error("Expected the tilted 150 mm state to retain its reference circle");
+    }
+    expect(tiltedOptics.groundGlassCoverage.kind).toBe("nonparallel-conic");
+    expect(screen.getByTestId("lens-control-image-circle-label")).toHaveTextContent(
+      "Reference image circle",
+    );
+    expect(screen.getByTestId("lens-control-image-circle-reference-note")).toHaveTextContent(
+      "Coverage Footprint",
+    );
+    expect(screen.getByTestId("lens-control-image-circle-value")).toHaveTextContent(
+      `${tiltedLensCoverage.imageCircleDiameterMm.toFixed(1)} mm`,
+    );
+    expect(screen.getByTestId("lens-control")).toHaveAttribute(
+      "data-selected-lens-image-circle-diameter-mm",
+      tiltedLensCoverage.imageCircleDiameterMm.toFixed(6),
+    );
   });
 
   it("hides the public lens selector while the calibration workbench is active", () => {

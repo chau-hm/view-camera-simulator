@@ -83,6 +83,19 @@ export const GroundGlassRenderSurface = ({
         data-rtt-lattice-presentation-region={rttRuntimeInfo?.latticePresentationRegion}
         data-rtt-lattice-subject-generation={rttRuntimeInfo?.latticeSubjectGeneration}
         data-rtt-ground-glass-illuminance-gain={rttRuntimeInfo?.groundGlassIlluminanceGain}
+        data-rtt-natural-illumination-enabled={rttRuntimeInfo?.groundGlassNaturalIlluminationEnabled === undefined ? undefined : String(rttRuntimeInfo.groundGlassNaturalIlluminationEnabled)}
+        data-rtt-natural-illumination-kind={rttRuntimeInfo?.groundGlassNaturalIlluminationKind}
+        data-rtt-natural-illumination-image-distance-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationImageDistanceMm}
+        data-rtt-natural-illumination-offset-x-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetXMm}
+        data-rtt-natural-illumination-offset-y-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetYMm}
+        data-rtt-coverage-enabled={rttRuntimeInfo?.groundGlassCoverageEnabled === undefined ? undefined : String(rttRuntimeInfo.groundGlassCoverageEnabled)}
+        data-rtt-coverage-kind={rttRuntimeInfo?.groundGlassCoverageKind}
+        data-rtt-physical-boundary-blur-radius-px={rttRuntimeInfo?.groundGlassPhysicalBoundaryRadiusPx}
+        data-rtt-coverage-radius-mm={rttRuntimeInfo?.groundGlassCoverageRadiusMm}
+        data-rtt-coverage-offset-x-mm={rttRuntimeInfo?.groundGlassCoverageOffsetXMm}
+        data-rtt-coverage-offset-y-mm={rttRuntimeInfo?.groundGlassCoverageOffsetYMm}
+        data-rtt-coverage-conic-quadratic={rttRuntimeInfo?.groundGlassCoverageConicQuadratic}
+        data-rtt-coverage-conic-axial={rttRuntimeInfo?.groundGlassCoverageConicAxial}
         data-rtt-camera-position={rttRuntimeInfo?.cameraPositionWorld?.join(",")}
         data-rtt-camera-up={rttRuntimeInfo?.cameraUpWorld?.join(",")}
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}

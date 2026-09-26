@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { GroundGlassRenderer, projectWorldPointToGroundGlass } from "../../render/GroundGlassRenderer";
-import { projectSceneFocusTargetsToGroundGlass, mapGroundGlassUvToDisplayUv } from "../../render/groundGlassTargetProjection";
+import { projectSceneFocusTargetsToGroundGlass, mapPhysicalFilmUvToGroundGlassDisplayUv } from "../../render/groundGlassTargetProjection";
 import { GroundGlassViewport } from "../../components/simulator/GroundGlassViewport";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
@@ -44,6 +44,9 @@ describe("GroundGlassRenderer", () => {
     // The preview and physical focus-distance overlays remain visible.
     expect(screen.getByText("Ground glass preview")).toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-focus-label")).toBeInTheDocument();
+    expect(screen.getByTestId("ground-glass-blur-display-hint")).toHaveTextContent(
+      "Ground Glass blur follows the physical optical model. Use the Focus Loupe to inspect critical focus.",
+    );
     expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
     expect(screen.queryByText("Focus assist")).not.toBeInTheDocument();
   });
@@ -101,6 +104,7 @@ describe("GroundGlassRenderer", () => {
     );
 
     expect(screen.queryByTestId("ground-glass-focus-loupe")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ground-glass-blur-display-hint")).not.toBeInTheDocument();
     expect(screen.getByTestId("ground-glass-rtt")).not.toHaveAttribute("data-focus-loupe-active");
   });
 
@@ -440,14 +444,14 @@ describe("GroundGlassRenderer", () => {
   });
 
   it("display mapping follows the RTT Raw/Upright presentation contract", () => {
-    // The RTT composite displays physical film coordinates directly in Raw;
-    // Upright Assist is the 180-degree display transform.
+    // Raw views the physical film from the rear-standard side; Upright Assist
+    // applies the display-only 180-degree presentation transform.
     const raw = { u: 0.25, v: 0.4 };
-    const mappedRaw = mapGroundGlassUvToDisplayUv(raw, "raw");
-    expect(mappedRaw.u).toBeCloseTo(0.25);
+    const mappedRaw = mapPhysicalFilmUvToGroundGlassDisplayUv(raw, "raw");
+    expect(mappedRaw.u).toBeCloseTo(0.75);
     expect(mappedRaw.v).toBeCloseTo(0.4);
-    const mappedUpright = mapGroundGlassUvToDisplayUv(raw, "upright");
-    expect(mappedUpright.u).toBeCloseTo(0.75);
+    const mappedUpright = mapPhysicalFilmUvToGroundGlassDisplayUv(raw, "upright");
+    expect(mappedUpright.u).toBeCloseTo(0.25);
     expect(mappedUpright.v).toBeCloseTo(0.6);
 
     // Legacy assertions for backward compatibility using projectWorldPointToGroundGlass
@@ -458,21 +462,22 @@ describe("GroundGlassRenderer", () => {
     const target = focusFundamentalsTwoTargets.focusTargets[0].worldPosition;
     const p = projectWorldPointToGroundGlass(target, opticsState.lensCenterWorld, imgDist, CAMERA_CONSTANTS.filmWidthMm, CAMERA_CONSTANTS.filmHeightMm);
 
-    // Raw display uses the physical film coordinate directly.
     const uRaw = p.uRaw;
     const vRaw = p.vRaw;
-    const displayRawU = uRaw;
-    const displayRawV = vRaw;
+    const displayRaw = mapPhysicalFilmUvToGroundGlassDisplayUv({ u: uRaw, v: vRaw }, "raw");
+    const displayRawU = displayRaw.u;
+    const displayRawV = displayRaw.v;
     expect(displayRawU).toBeGreaterThanOrEqual(0);
     expect(displayRawU).toBeLessThanOrEqual(1);
     expect(displayRawV).toBeGreaterThanOrEqual(0);
     expect(displayRawV).toBeLessThanOrEqual(1);
 
-    // Upright Assist applies the display-only 180-degree transform.
-    const displayUprightU = 1 - uRaw;
-    const displayUprightV = 1 - vRaw;
-    expect(displayUprightU).toBeCloseTo(1 - uRaw);
-    expect(displayUprightV).toBeCloseTo(1 - vRaw);
+    // Upright Assist applies the display-only 180-degree transform from Raw.
+    const displayUpright = mapPhysicalFilmUvToGroundGlassDisplayUv({ u: uRaw, v: vRaw }, "upright");
+    const displayUprightU = displayUpright.u;
+    const displayUprightV = displayUpright.v;
+    expect(displayUprightU).toBeCloseTo(1 - displayRawU);
+    expect(displayUprightV).toBeCloseTo(1 - displayRawV);
   });
 
   it("off-frame target returns visible:false rather than clamping", () => {
@@ -525,21 +530,21 @@ describe("GroundGlassRenderer", () => {
 
     expect(projected.length).toBeGreaterThan(0);
     expect(projected[0].visible).toBe(true);
-    expect(projected[0].rawUv.u).toBeGreaterThanOrEqual(0);
-    expect(projected[0].rawUv.u).toBeLessThanOrEqual(1);
-    expect(projected[0].rawUv.v).toBeGreaterThanOrEqual(0);
-    expect(projected[0].rawUv.v).toBeLessThanOrEqual(1);
+    expect(projected[0].physicalFilmUv.u).toBeGreaterThanOrEqual(0);
+    expect(projected[0].physicalFilmUv.u).toBeLessThanOrEqual(1);
+    expect(projected[0].physicalFilmUv.v).toBeGreaterThanOrEqual(0);
+    expect(projected[0].physicalFilmUv.v).toBeLessThanOrEqual(1);
   });
 
-  // Test B: projected targets expose rawUv and displayUv
-  it("projected targets include rawUv and displayUv fields", () => {
+  // Test B: projected targets expose physical film and visible display coordinates.
+  it("projected targets include physicalFilmUv and displayUv fields", () => {
     const opticsState = deriveOpticsState(DEFAULT_CAMERA_STATE, architectureRiseScene);
     const projected = projectSceneFocusTargetsToGroundGlass({ sceneDef: architectureRiseScene, opticsState, aperture: DEFAULT_CAMERA_STATE.aperture, previewMode: "upright" });
     expect(projected.length).toBeGreaterThan(0);
     for (const pt of projected) {
       expect(pt).toHaveProperty("id");
       expect(pt).toHaveProperty("visible");
-      expect(pt).toHaveProperty("rawUv");
+      expect(pt).toHaveProperty("physicalFilmUv");
       expect(pt).toHaveProperty("displayUv");
       expect(pt).toHaveProperty("leftPercent");
       expect(pt).toHaveProperty("topPercent");

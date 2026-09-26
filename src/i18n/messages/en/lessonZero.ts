@@ -81,17 +81,23 @@ export const lessonZeroMessages = {
         "The controls change the physical camera parts you just identified. Each short exercise focuses on one real control and its visible result.",
       cue: "Use the highlighted control, then continue when the relationship is clear.",
     },
+    imageCircle: {
+      title: "Understanding the Image Circle",
+      body:
+        "Conceptually, finite lens coverage forms a circular Image Circle on a plane perpendicular to the optical axis. The 4×5 film rectangle uses only part of it, leaving spare area around its edges. This is a teaching illustration, not measured coverage data for a particular lens. Front Rise and Front Shift change coverage's position relative to the film rectangle.",
+      cue: "Compare the 4×5 film rectangle with the larger rose Image Circle around it. The extra area is the movement room used by Rise and Shift.",
+    },
     frontRiseControl: {
       title: "Front Rise",
       body:
-        "Rise moves the Front Standard vertically while the Camera Support stays in place.",
-      cue: "Drag Rise until the Front Standard's vertical movement is easy to see.",
+        "Front Rise moves the lens and Front Standard vertically while the rear standard and film rectangle stay in place. The projected Image Circle shifts relative to the film, using spare coverage above or below it.",
+      cue: "Drag Rise and watch the rose coverage move against the 4×5 film rectangle; it shows the spare vertical room used by the movement.",
     },
     frontShiftControl: {
       title: "Front Shift",
       body:
-        "Shift moves the Front Standard sideways without rotating it.",
-      cue: "Drag Front Shift until the lateral movement is easy to see.",
+        "Front Shift moves the lens and Front Standard sideways without rotating them, while the rear standard and film rectangle stay in place. The same projected Image Circle shifts relative to the film, using spare coverage to its left or right.",
+      cue: "Drag Front Shift and watch the rose coverage move against the 4×5 film rectangle; it shows the spare horizontal room used by the movement.",
     },
     frontTiltControl: {
       title: "Front Tilt",

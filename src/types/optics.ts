@@ -1,3 +1,5 @@
+import type { DerivedLensCoverage, LensDefinition } from "./lens";
+
 export type Vec3 = {
   x: number;
   y: number;
@@ -128,6 +130,74 @@ export type LensFilmRelationship = {
   isParallel: boolean;
   commonLine: Line3 | null;
 };
+
+/**
+ * Physical Ground Glass natural-illumination geometry.
+ *
+ * The parallel cos^4 model is deliberately limited to a film plane that is
+ * parallel to the lens plane.  The offsets are measured in the canonical
+ * rear-standard basis from the film centre to the optical-axis intersection.
+ */
+export type GroundGlassNaturalIlluminationState = Readonly<
+  | {
+      kind: "parallel-cos4";
+      imageDistanceMm: number;
+      opticalAxisOffsetXMm: number;
+      opticalAxisOffsetYMm: number;
+    }
+  | {
+      kind: "neutral";
+      reason: "non-parallel-lens-film" | "invalid-geometry";
+  }
+>;
+
+/**
+ * Physical finite-coverage state available to the Ground Glass renderer.
+ *
+ * `DerivedLensCoverage` defines the finite right-circular cone from its
+ * perpendicular reference plane. The Ground Glass state stores that cone's
+ * intersection with the actual film plane: a circle for parallel geometry or
+ * a film-local quadratic conic for non-parallel geometry. `unbounded`
+ * deliberately has no fabricated finite boundary.
+ */
+export type GroundGlassCoverageQuadratic = Readonly<{
+  /** Q(x,y) = a*x² + b*x*y + c*y² + d*x + e*y + f. */
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  e: number;
+  f: number;
+}>;
+
+export type GroundGlassCoverageAxial = Readonly<{
+  /** Image-side distance T(x,y) = xCoefficient*x + yCoefficient*y + constant. */
+  x: number;
+  y: number;
+  constant: number;
+}>;
+
+export type GroundGlassCoverageState = Readonly<
+  | {
+      kind: "parallel-circle";
+      imageCircleRadiusMm: number;
+      opticalAxisOffsetXMm: number;
+      opticalAxisOffsetYMm: number;
+    }
+  | {
+      kind: "nonparallel-conic";
+      quadratic: GroundGlassCoverageQuadratic;
+      axial: GroundGlassCoverageAxial;
+    }
+  | {
+      kind: "unbounded";
+    }
+  | {
+      kind: "neutral";
+      reason: "invalid-coverage" | "invalid-geometry";
+    }
+>;
+
 export type DerivedOpticsState = {
   /** Validated resolved outer placement consumed by every downstream view. */
   cameraRigPlacement: CameraRigPlacement;
@@ -141,6 +211,14 @@ export type DerivedOpticsState = {
   cameraBodyLocalGeometry: CameraBodyLocalGeometry;
   /** Body-pitch pivot resolved into world coordinates. */
   cameraBodyPivotWorld: Vec3;
+  /** Resolved lens specification at the current focalLengthMm compatibility boundary. */
+  lensDefinition: LensDefinition | null;
+  /** Coverage derived from the trusted canonical image distance, when valid. */
+  lensCoverage: DerivedLensCoverage | null;
+  /** Physical natural-illumination geometry consumed by the Ground Glass RTT. */
+  groundGlassNaturalIllumination: GroundGlassNaturalIlluminationState;
+  /** Physical finite-coverage geometry consumed by the Ground Glass RTT. */
+  groundGlassCoverage: GroundGlassCoverageState;
   lensCenterWorld: Vec3;
   lensNormalWorld: Vec3;
   lensPlane: Plane;

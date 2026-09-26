@@ -159,7 +159,7 @@ const sanitizeGroundGlassFootprintAxes = (
  * Half-float targets retain physical millimetres. Byte targets first apply
  * one uniform scale when either axis exceeds the representable range, then
  * quantize both normalized channels on the actual RGBA8 code grid. Scaling
- * the pair together preserves anisotropy before display-space clamping.
+ * the pair together preserves anisotropy before the gather cap is applied.
  */
 export const encodeGroundGlassFootprintAxesMm = (input: {
   majorRadiusMm: number;
@@ -321,9 +321,11 @@ export const createGroundGlassCocTarget = (
 };
 
 /**
- * Physical CoC diameter range represented by the source-render radius cap.
- * This is used only for byte storage normalization; the Focus Loupe is applied
- * later to the completed Ground Glass image and does not change this range.
+ * Physical CoC diameter range represented by encoded-byte storage. The range
+ * reaches the renderer's gather-radius cap using the same physical millimetre
+ * to source-pixel conversion as the shader. It is representational only: byte
+ * values still encode/decode physical millimetres. Half-float storage bypasses
+ * this normalization and stores physical millimetres directly.
  */
 export const resolveGroundGlassCocStorageMaxMm = (input: {
   maximumCoCRadiusPx: number;
@@ -344,7 +346,6 @@ export const resolveGroundGlassCocStorageMaxMm = (input: {
 
   return Math.max(
     1e-6,
-    (maximumCoCRadiusPx * 2 * filmWidthMm) /
-      renderWidthPx,
+    (maximumCoCRadiusPx * 2 * filmWidthMm) / renderWidthPx,
   );
 };

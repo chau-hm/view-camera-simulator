@@ -2,6 +2,9 @@
 // Define unambiguous coordinate anchors so everything (subject, targets, bounds)
 // derives from the same canonical values.
 
+import { CAMERA_CONTROL_STEPS } from "../utils/constants";
+import { roundToStep } from "../utils/roundToStep";
+
 export type ArchitectureGroundGeometry = {
   y: number;
   nearZ: number;
@@ -183,6 +186,21 @@ export const sceneBounds = {
 
 // canonical façade focus distance measured from lens centre (0,0,0) to focus target along +Z
 export const architectureFacadeFocusDistanceMm = focusTarget.worldPosition.z;
+
+/**
+ * The public focus domain spans the scene's intentional depth cues: from the
+ * nearest foreground reference-object probe to the far edge of the scene.
+ * The generic real-image floor only protects U > f mathematically; it is not
+ * a scene-calibrated public focus range.
+ */
+const nearestReferenceFocusDistanceMm = Math.min(
+  ...referenceObjects.map((object) => getArchitectureReferenceObjectProbePoint(object).z),
+  architectureFacadeFocusDistanceMm,
+);
+export const architectureRiseFocusDistanceRangeMm = {
+  min: roundToStep(nearestReferenceFocusDistanceMm, CAMERA_CONTROL_STEPS.focusDistanceMm),
+  max: roundToStep(sceneBounds.max.z, CAMERA_CONTROL_STEPS.focusDistanceMm),
+} as const;
 
 // Façade detail canonical thickness & sizes (mm). Details are thin panels placed immediately in front of the front façade.
 export const facadeDetailThicknessMm = 20; // 10-30 recommended
@@ -490,6 +508,7 @@ export default {
   focusTarget,
   focusChart,
   architectureFacadeFocusDistanceMm,
+  architectureRiseFocusDistanceRangeMm,
   facadeDetailThicknessMm,
   facadeDetailSmallGapMm,
   mullionWidthMm,

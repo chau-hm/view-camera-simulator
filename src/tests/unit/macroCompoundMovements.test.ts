@@ -151,6 +151,7 @@ describe("macro-compound-movements scene foundation", () => {
     });
     expect(macroCompoundMovementsScene.movementCapabilities).toEqual({
       available: ["frontTiltDeg", "frontSwingDeg"],
+      hideUnavailableControls: true,
       selectionMode: "multiple",
       defaultMovement: "frontTiltDeg",
     });

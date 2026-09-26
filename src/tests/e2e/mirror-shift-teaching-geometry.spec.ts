@@ -1,6 +1,8 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 
-test("Mirror Shift top-view geometry follows canonical A/B/C state relationships", async ({ page }) => {
+test("Mirror Shift top-view geometry follows canonical A/B/C state relationships", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/mirror-shift?rttDiagnostics=1");
 
@@ -8,6 +10,36 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   const position = page.getByRole("slider", { name: "Camera Position" });
   const frontShift = page.getByRole("slider", { name: "Front Shift" });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
+  const scene = page.getByTestId("scene-canvas");
+  await expect(scene).toHaveAttribute("data-optical-geometry-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-capability", "angular");
+  await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
+  await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute(
+    "data-camera-lens-center-world",
+    "0.000000,0.000000,0.000000",
+  );
+  await expect(scene).toHaveAttribute(
+    "data-camera-film-center-world",
+    "0.000000,0.000000,-122.448980",
+  );
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
+  await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
+  const physicalScale = await expectGroundGlassPhysicalScale(rtt);
+  await testInfo.attach("mirror-shift-120mm-physical-blur-scale", {
+    body: JSON.stringify(physicalScale),
+    contentType: "application/json",
+  });
+  await writeFile(
+    testInfo.outputPath("mirror-shift-120mm-physical-blur-scale.json"),
+    JSON.stringify(physicalScale, null, 2),
+  );
+  await page.getByTestId("scene-canvas").locator("canvas").screenshot({
+    path: testInfo.outputPath("mirror-shift-120mm-image-circle.png"),
+  });
+  await rtt.locator("canvas").screenshot({
+    path: testInfo.outputPath("mirror-shift-120mm-ground-glass-coverage.png"),
+  });
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometry = page.getByTestId("mirror-shift-teaching-svg");
@@ -33,6 +65,14 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   // control before verifying that Ground Glass renders the changed state.
   await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
+  await expect(scene).toHaveAttribute(
+    "data-camera-lens-center-world",
+    "1945.000000,0.000000,0.000000",
+  );
+  await expect(scene).toHaveAttribute(
+    "data-camera-film-center-world",
+    "2000.000000,0.000000,-122.448980",
+  );
   await page.getByRole("button", { name: "Reset movements" }).click();
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");

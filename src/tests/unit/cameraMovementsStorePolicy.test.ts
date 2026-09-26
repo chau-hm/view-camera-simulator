@@ -98,9 +98,14 @@ describe("Store-enforced cameraControlPolicy", () => {
   describe("Architecture Rise (no policy)", () => {
     beforeEach(initArchitectureRise);
 
-    it("setFocusDistance works normally", () => {
+    it("setFocusDistance works normally within the scene range", () => {
+      useAppStore.getState().setFocusDistance(5000);
+      expect(useAppStore.getState().camera.focusDistanceMm).toBe(5000);
+    });
+
+    it("clamps focus below the Architecture Rise range to its calibrated minimum", () => {
       useAppStore.getState().setFocusDistance(3000);
-      expect(useAppStore.getState().camera.focusDistanceMm).toBe(3000);
+      expect(useAppStore.getState().camera.focusDistanceMm).toBe(3090);
     });
 
     it("setAperture works normally", () => {

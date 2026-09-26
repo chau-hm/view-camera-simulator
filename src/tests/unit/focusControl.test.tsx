@@ -178,8 +178,16 @@ describe("FocusControl presets for Focus Fundamentals", () => {
     expect(screen.queryByRole("radio", { name: "Front standard" })).not.toBeInTheDocument();
   });
 
-  it("exposes the real-image minimum for a 150 mm Architecture Rise lens", () => {
+  it("exposes the Architecture Rise scene focus range for a 150 mm lens", () => {
     useAppStore.getState().setActiveScene("architecture-rise");
+    render(<FocusControl focusEnabled={true} lockReason="" />);
+
+    expect(screen.getByLabelText("Focus distance")).toHaveAttribute("min", "3090");
+    expect(screen.getByLabelText("Focus distance")).toHaveAttribute("max", "13000");
+  });
+
+  it("keeps the generic real-image minimum for a scene without an explicit range", () => {
+    useAppStore.getState().setActiveScene("table-tilt");
     render(<FocusControl focusEnabled={true} lockReason="" />);
 
     expect(screen.getByLabelText("Focus distance")).toHaveAttribute("min", "160");

@@ -40,6 +40,7 @@ export const architectureRiseScene: SceneDefinition = {
     rearTiltDeg: 0,
     rearSwingDeg: 0,
  },
+  focusDistanceRangeMm: geometry.architectureRiseFocusDistanceRangeMm,
   finiteFocusStrategy: {
     kind: "rear-standard-thin-lens",
     lensDatum: "baseline-origin",

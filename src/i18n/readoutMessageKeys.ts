@@ -8,6 +8,8 @@ export const readoutMessageKeys = {
     selectedFocusPlaneRatio: "readouts.macroFocus.selectedFocusPlaneRatio",
     factor: "readouts.macroFocus.factor",
     exposure: "readouts.macroFocus.exposure",
+    imageCircle: "readouts.macroFocus.imageCircle",
+    imageCircleValue: "readouts.macroFocus.imageCircleValue",
     stops: "readouts.macroFocus.stops",
     requiredExtension: "readouts.macroFocus.requiredExtension",
     availableTravel: "readouts.macroFocus.availableTravel",

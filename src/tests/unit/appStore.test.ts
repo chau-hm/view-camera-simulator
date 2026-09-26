@@ -77,7 +77,7 @@ describe("app store STA-001", () => {
     expect(camera.frontRiseMm).toBe(DEFAULT_CAMERA_STATE.frontRiseMm);
     expect(camera.frontTiltDeg).toBe(DEFAULT_CAMERA_STATE.frontTiltDeg);
     expect(camera.frontSwingDeg).toBe(DEFAULT_CAMERA_STATE.frontSwingDeg);
-    expect(camera.focusDistanceMm).toBe(DEFAULT_CAMERA_STATE.focusDistanceMm);
+    expect(camera.focusDistanceMm).toBe(getSceneFocusDistanceRange("architecture-rise").min);
     expect(camera.aperture).toBe(DEFAULT_CAMERA_STATE.aperture);
   });
 
@@ -164,26 +164,44 @@ describe("app store STA-001", () => {
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(tableTiltRange.max);
   });
 
-  it("enforces the real-image floor for Architecture Rise and Table Tilt", () => {
+  it("uses the scene-calibrated Architecture Rise range and keeps Table Tilt's real-image floor", () => {
     const { setActiveScene, setFocusDistance } = useAppStore.getState();
+    const architectureRange = getSceneFocusDistanceRange("architecture-rise", 150);
 
     setActiveScene("architecture-rise");
     setFocusDistance(100);
-    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
-    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(architectureRange.min);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(architectureRange.min);
 
     setFocusDistance(150);
-    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
-    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(architectureRange.min);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(architectureRange.min);
 
     setFocusDistance(160);
-    expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
-    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(architectureRange.min);
+    expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(architectureRange.min);
 
     setActiveScene("table-tilt");
     setFocusDistance(100);
     expect(useAppStore.getState().camera.focusDistanceMm).toBe(160);
     expect(useAppStore.getState().camera.lastFiniteFocusDepthMm).toBe(160);
+  });
+
+  it("re-clamps stale Macro focus when entering Architecture Rise without changing Macro range", () => {
+    const store = useAppStore.getState();
+    expect(getSceneFocusDistanceRange(macroBellowsExtensionScene.id, 150)).toEqual({
+      min: 300,
+      max: 900,
+    });
+
+    store.setActiveScene(macroBellowsExtensionScene.id);
+    store.setFocusDistance(300);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(300);
+
+    store.setActiveScene("architecture-rise");
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(
+      getSceneFocusDistanceRange("architecture-rise", 150).min,
+    );
   });
 
   it("re-clamps focus when active scene changes", () => {

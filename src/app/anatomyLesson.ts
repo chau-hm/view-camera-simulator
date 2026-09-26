@@ -68,6 +68,7 @@ export type LessonZeroStepId =
   | "camera-support"
   | "recap"
   | "controls-overview"
+  | "image-circle"
   | "front-rise-control"
   | "front-shift-control"
   | "front-tilt-control"
@@ -203,6 +204,16 @@ export const LESSON_ZERO_STEPS: readonly LessonZeroStep[] = [
     rearBackMode: "ground-glass",
   },
   {
+    id: "image-circle",
+    section: "controls",
+    titleKey: lessonZeroMessageKeys.steps.imageCircle.title,
+    bodyKey: lessonZeroMessageKeys.steps.imageCircle.body,
+    cueKey: lessonZeroMessageKeys.steps.imageCircle.cue,
+    anatomyTargets: [],
+    inspectionTarget: "image-circle",
+    rearBackMode: "ground-glass",
+  },
+  {
     id: "front-rise-control",
     section: "controls",
     titleKey: lessonZeroMessageKeys.steps.frontRiseControl.title,
@@ -312,6 +323,12 @@ export const resolveLessonZeroCameraPresentation = (
     rearBackMode: step.rearBackMode,
     ...(step.id === "aperture"
       ? { aperture: showSmallAperture ? 32 : 5.6 }
+      : {}),
+    ...(step.id === "image-circle"
+      ? { imageCircle: { visible: true } }
+      : {}),
+    ...(step.id === "front-rise-control" || step.id === "front-shift-control"
+      ? { showFiniteCoverageOverlay: true }
       : {}),
   };
 };

@@ -12,6 +12,8 @@ export const readoutsMessages = {
     factor: "皮腔曝光因子",
     exposure: "曝光補償",
     stops: "+{{value}} 級",
+    imageCircle: "成像圈",
+    imageCircleValue: "{{diameter}} mm · 模擬器成像範圍",
     requiredExtension: "所需皮腔伸長",
     availableTravel: "可用皮腔行程",
     travelWarning: "正在接近可用皮腔行程。",

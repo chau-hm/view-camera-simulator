@@ -168,7 +168,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
         worldPoint,
         objectDistanceAlongAxisMm,
         targetRayDistanceMm,
-        "Non-finite display CoC in wedge path",
+        "Non-finite physical CoC in wedge path",
       );
     }
     const blurRadiusPx = dofBlurModel.calculateDofBlurRadiusPx({
@@ -187,7 +187,7 @@ export function sampleGroundGlassBlurAtWorldPoint(input: {
         worldPoint,
         objectDistanceAlongAxisMm,
         targetRayDistanceMm,
-        "Invalid display blur radius in wedge path",
+        "Invalid physical blur radius in wedge path",
       );
     }
 

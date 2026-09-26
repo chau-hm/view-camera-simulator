@@ -1,6 +1,8 @@
+import { writeFile } from "node:fs/promises";
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Locator, type Page } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
+import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 import {
   focusFundamentalsFarFocusDepthMm,
   focusFundamentalsFocusDepthRangeMm,
@@ -89,7 +91,7 @@ const expectRttCameraAtLens = async (scene: Locator, rtt: Locator) => {
     .toBeLessThan(1e-5);
 };
 
-test("Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources", async ({ page }) => {
+test("Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources", async ({ page }, testInfo) => {
   test.setTimeout(240_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -116,6 +118,18 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   const focusStandard = page.getByRole("group", { name: "Focus standard" });
   const readNearSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-near-detail" });
   const readFarSharpness = () => readFocusDistributionPercent(page, { targetId: "focus-far-detail" });
+  const captureBlurState = async (name: string) => {
+    const physicalScale = await expectGroundGlassPhysicalScale(rtt);
+    await testInfo.attach(`${name}-physicalScale`, {
+      body: JSON.stringify(physicalScale),
+      contentType: "application/json",
+    });
+    await writeFile(
+      testInfo.outputPath(`${name}-physicalScale.json`),
+      JSON.stringify(physicalScale, null, 2),
+    );
+    await rttCanvas.screenshot({ path: testInfo.outputPath(`${name}.png`) });
+  };
 
   await expect(scene).toHaveAttribute("data-scene-subject-id", "focus-fundamentals-two-targets");
   await expect(page.getByRole("group", { name: "Focus standard" })).toBeVisible();
@@ -128,13 +142,15 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
   await expect(slider).toHaveAttribute("min", String(focusFundamentalsFocusDepthRangeMm.min));
   await expect(slider).toHaveAttribute("max", String(focusFundamentalsFocusDepthRangeMm.max));
-  await expect(page.getByText("Focus method")).toBeVisible();
-  await expect(page.getByText("Movement · Lens moves · Film fixed")).toBeVisible();
+  await expect(
+    focusStandard.getByText("Front focusing moves the lens/viewpoint. The film stays fixed."),
+  ).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "false");
   expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeLessThan(1e-6);
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", String(focusFundamentalsFocalLengthMm));
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-front-reference-1200mm");
 
   await page.getByRole("button", { name: "Expand 2D Geometry" }).click();
   const geometrySvg = page.getByTestId("geometry-svg-side");
@@ -174,7 +190,9 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   expect(await readZ(scene, "data-camera-film-center-world")).toBeCloseTo(0, 8);
   const frontNearLensZ = await readZ(scene, "data-camera-lens-center-world");
   expect(frontNearLensZ).not.toBeCloseTo(referenceLensZ, 8);
-  await expect(page.getByText("Movement · Lens moves · Film fixed")).toBeVisible();
+  await expect(
+    focusStandard.getByText("Front focusing moves the lens/viewpoint. The film stays fixed."),
+  ).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "front");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   expect(Number(await scene.getAttribute("data-focus-teaching-displacement-mm"))).toBeGreaterThan(0.5);
@@ -185,6 +203,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .toBeGreaterThan(0);
   await expect.poll(() => rtt.getAttribute("data-rtt-sanity-state"), { timeout: 120_000 }).not.toBe(initialSanityState);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-front-near-1050mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await page.getByRole("button", { name: "Focus Far Detail" }).click();
@@ -200,14 +219,18 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .poll(async () => (await readFarSharpness()) - (await readNearSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-front-far-1350mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await rear.click();
   await expect(rear).toBeChecked();
+  await expectGroundGlassPhysicalScale(rtt);
   await expect(slider).toHaveValue(String(focusFundamentalsFarFocusDepthMm));
   await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
   await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
-  await expect(page.getByText("Movement · Film moves · Lens/viewpoint fixed")).toBeVisible();
+  await expect(
+    focusStandard.getByText("Rear focusing moves the film while the lens/viewpoint stays fixed."),
+  ).toBeVisible();
   await expect(scene).toHaveAttribute("data-focus-teaching-active-standard", "rear");
   await expect(scene).toHaveAttribute("data-focus-teaching-movement-visible", "true");
   expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(referenceLensZ, 8);
@@ -216,6 +239,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
   await expectRttCameraAtLens(scene, rtt);
   const rearFarRttPosition = await readVector(rtt, "data-rtt-camera-position");
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-rear-far-1350mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await page.getByRole("button", { name: "Focus Near Detail" }).click();
@@ -232,6 +256,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .poll(async () => (await readNearSharpness()) - (await readFarSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-rear-near-1050mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await page.getByRole("button", { name: "Focus Far Detail" }).click();
@@ -243,6 +268,7 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
     .poll(async () => (await readFarSharpness()) - (await readNearSharpness()))
     .toBeGreaterThan(0);
   await expectContentfulRtt(rtt);
+  await captureBlurState("focus-fundamentals-rear-far-restored-1350mm");
   await expectStableRttIdentity(page, rtt, rttHandle, rttCanvasHandle, sceneCanvasHandle, ownerId, resourceGeneration);
 
   await front.click();
@@ -294,6 +320,40 @@ test("Focus Fundamentals proves front/rear viewpoint behavior without replacing 
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `React/Three.js/WebGL warnings: ${consoleProblems.join("\n")}`).toEqual([]);
+});
+
+test("Focus Fundamentals rear reference station keeps physical blur and lens position", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/focus-fundamentals-two-targets?rttDiagnostics=1");
+
+  const scene = page.getByTestId("scene-canvas");
+  const rtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+  const slider = page.getByLabel("Focus distance");
+  const rear = page.getByRole("radio", { name: "Rear standard" });
+  await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  const lensBefore = await readVector(scene, "data-camera-lens-center-world");
+
+  await rear.click();
+  await expect(rear).toBeChecked();
+  await expect(slider).toHaveValue(String(focusFundamentalsReferenceFocusDepthMm));
+  await expect(scene).toHaveAttribute("data-focus-standard-selected", "rear");
+  await expect(scene).toHaveAttribute("data-focus-standard-resolved", "rear");
+  expect(await readZ(scene, "data-camera-lens-center-world")).toBeCloseTo(lensBefore[2], 8);
+  await expectContentfulRtt(rtt);
+
+  const physicalScale = await expectGroundGlassPhysicalScale(rtt);
+  await testInfo.attach("focus-fundamentals-rear-reference-1200mm-physical-scale", {
+    body: JSON.stringify(physicalScale),
+    contentType: "application/json",
+  });
+  await writeFile(
+    testInfo.outputPath("focus-fundamentals-rear-reference-1200mm-physical-scale.json"),
+    JSON.stringify(physicalScale, null, 2),
+  );
+  await rtt.locator("canvas").screenshot({
+    path: testInfo.outputPath("focus-fundamentals-rear-reference-1200mm.png"),
+  });
 });
 
 test("Focus Fundamentals controls remain usable at responsive viewports", async ({ page }) => {

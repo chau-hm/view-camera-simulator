@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getLessonZeroStep,
@@ -133,6 +133,7 @@ export const SimulatorWorkspace = ({
   const [anatomyStepIndex, setAnatomyStepIndex] = useState(0);
   const [anatomyShowSmallAperture, setAnatomyShowSmallAperture] = useState(false);
   const [anatomyViewResetNonce, setAnatomyViewResetNonce] = useState(0);
+  const anatomyLessonScrollRef = useRef<HTMLDivElement | null>(null);
   // All registered scenes still available through engine registry
   // const allScenes = getAllScenes();
   const task = taskId ? getTaskById(taskId) ?? null : null;
@@ -263,6 +264,11 @@ export const SimulatorWorkspace = ({
       ? t(guidedLessonMessageKeys.common.title)
       : t(simulatorMessageKeys.headerContext.freeExploration);
   const isAnatomyLesson = anatomyLessonEnabled && sceneId === "view-camera-anatomy";
+  useEffect(() => {
+    if (!isAnatomyLesson) return;
+    if (anatomyLessonScrollRef.current) anatomyLessonScrollRef.current.scrollTop = 0;
+  }, [anatomyStepIndex, isAnatomyLesson]);
+
   const anatomyStep = getLessonZeroStep(anatomyStepIndex);
   const anatomyViewportInspectionTarget = isAnatomyLesson
     ? resolveLessonZeroViewportInspectionTarget(anatomyStep)
@@ -313,8 +319,9 @@ export const SimulatorWorkspace = ({
         capability: safeScene.macroTeachingCapability,
         metrics: macroFocusMetrics,
         focusObjectDistanceMm: opticsState.diagnostics.focusObjectDistanceMm,
+        lensCoverage: opticsState.lensCoverage,
       }),
-    [macroFocusMetrics, opticsState.diagnostics.focusObjectDistanceMm, safeScene.macroTeachingCapability],
+    [macroFocusMetrics, opticsState.diagnostics.focusObjectDistanceMm, opticsState.lensCoverage, safeScene.macroTeachingCapability],
   );
   const macroDepthTeaching = useMemo(
     () =>
@@ -502,9 +509,19 @@ export const SimulatorWorkspace = ({
     !movementLocked &&
     !showPublicTeachingControls &&
     !(safeScene.movementCapabilities?.selectionMode === "single" && selectedMovement);
+  const availableMovements = safeScene.movementCapabilities?.available;
+  const hideUnavailableMovementControls = safeScene.movementCapabilities?.hideUnavailableControls === true;
+  const showRiseMovement =
+    !hideUnavailableMovementControls || !availableMovements || availableMovements.includes("frontRiseMm");
+  const showTiltMovement =
+    !hideUnavailableMovementControls || !availableMovements || availableMovements.includes("frontTiltDeg");
+  const showSwingMovement =
+    !hideUnavailableMovementControls || !availableMovements || availableMovements.includes("frontSwingDeg");
   const commonMovementHasDisabledControl =
     showCommonMovementControls &&
-    (!enabledControls.has("rise") || !enabledControls.has("tilt") || !enabledControls.has("swing"));
+    ((showRiseMovement && !enabledControls.has("rise")) ||
+      (showTiltMovement && !enabledControls.has("tilt")) ||
+      (showSwingMovement && !enabledControls.has("swing")));
   const hasSharedControlLockReason =
     (commonMovementHasDisabledControl && Boolean(lockReason)) ||
     (!focusControlEnabled && focusControlLockReason === lockReason && Boolean(lockReason)) ||
@@ -724,6 +741,7 @@ export const SimulatorWorkspace = ({
                 onRequestExpand={() => requestViewportExpansion("scene")}
                 onRequestRestore={requestViewportRestore}
                 cameraPresentation={anatomyPresentation}
+                showFiniteCoverageOverlay={anatomyPresentation?.showFiniteCoverageOverlay}
                 cameraInspectionTarget={anatomyViewportInspectionTarget}
                 initialViewFocus={isAnatomyLesson ? "camera" : undefined}
                 suppressOpticalOverlays={isAnatomyLesson}
@@ -843,7 +861,7 @@ export const SimulatorWorkspace = ({
         {/* Right aside: independent scroll */}
         <aside className="simulator-aside">
           {isAnatomyLesson ? (
-            <div className="simulator-aside__lesson">
+            <div ref={anatomyLessonScrollRef} className="simulator-aside__lesson">
               <AnatomyLessonPanel
                 stepIndex={anatomyStepIndex}
                 onStepIndexChange={handleAnatomyStepIndexChange}
@@ -891,7 +909,7 @@ export const SimulatorWorkspace = ({
 
               {safeScene.focalLengthCapability?.enabled && !calibrationEnabled ? (
                 <div className="sim-section">
-                  <LensControl capability={safeScene.focalLengthCapability} />
+                  <LensControl capability={safeScene.focalLengthCapability} opticsState={opticsState} />
                 </div>
               ) : null}
 
@@ -917,6 +935,9 @@ export const SimulatorWorkspace = ({
                     riseEnabled={enabledControls.has("rise")}
                     tiltEnabled={enabledControls.has("tilt")}
                     swingEnabled={enabledControls.has("swing")}
+                    showRise={showRiseMovement}
+                    showTilt={showTiltMovement}
+                    showSwing={showSwingMovement}
                     lockReason={lockReason}
                     lockReasonId={commonMovementHasDisabledControl ? sharedControlLockReasonId : undefined}
                     showLockReason={!hasSharedControlLockReason}
@@ -984,6 +1005,7 @@ export const SimulatorWorkspace = ({
                   <MacroFocusReadout
                     diagnostics={opticsState.diagnostics}
                     focalLengthMm={camera.focalLengthMm}
+                    lensCoverage={opticsState.lensCoverage}
                     metrics={macroFocusMetrics}
                     teachingCapability={safeScene.macroTeachingCapability}
                   />

@@ -1,7 +1,7 @@
 name = "vcs_ui_tasks"
 description = "Implements bounded React UI, responsive layout, accessibility, controls, routes, catalog, state, and guided-task work when shared UI/task contracts are involved."
-model = "gpt-6-astra"
-model_reasoning_effort = "low"
+model = "gpt-6-luna"
+model_reasoning_effort = "max"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Canvas", "Relay", "Mosaic"]
 

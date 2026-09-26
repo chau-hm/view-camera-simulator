@@ -58,6 +58,7 @@ describe("Lesson 0 anatomy vocabulary", () => {
       "camera-support",
       "recap",
       "controls-overview",
+      "image-circle",
       "front-rise-control",
       "front-shift-control",
       "front-tilt-control",
@@ -85,6 +86,45 @@ describe("Lesson 0 anatomy vocabulary", () => {
     expect(wide).not.toHaveProperty("visualAperture");
   });
 
+  it("places the conceptual Image Circle step before Front Rise without a control requirement", () => {
+    const imageCircleIndex = LESSON_ZERO_STEPS.findIndex((step) => step.id === "image-circle");
+    const imageCircleStep = LESSON_ZERO_STEPS[imageCircleIndex];
+    const frontRiseIndex = LESSON_ZERO_STEPS.findIndex((step) => step.id === "front-rise-control");
+    const controlsOverviewStep = LESSON_ZERO_STEPS.find((step) => step.id === "controls-overview");
+    const frontRiseStep = LESSON_ZERO_STEPS[frontRiseIndex];
+
+    expect(imageCircleIndex).toBeGreaterThanOrEqual(0);
+    expect(frontRiseIndex).toBe(imageCircleIndex + 1);
+    expect(controlsOverviewStep).toBeDefined();
+    expect(frontRiseStep).toBeDefined();
+    expect(imageCircleStep.controlTeachingId).toBeUndefined();
+    expect(imageCircleStep.inspectionTarget).toBe("image-circle");
+    expect(resolveLessonZeroCameraPresentation(imageCircleStep).imageCircle).toEqual({
+      visible: true,
+    });
+    expect(resolveLessonZeroCameraPresentation(imageCircleStep).showFiniteCoverageOverlay).toBeUndefined();
+    expect(resolveLessonZeroCameraPresentation(controlsOverviewStep!).imageCircle).toBeUndefined();
+    expect(resolveLessonZeroCameraPresentation(frontRiseStep!).imageCircle).toBeUndefined();
+    expect(resolveLessonZeroCameraPresentation(getLessonZeroStep(0)).imageCircle).toBeUndefined();
+    expect(resolveLessonZeroCameraPresentation(getLessonZeroStep(19)).imageCircle).toBeUndefined();
+    expect(isLessonZeroStepComplete(imageCircleStep, { ...DEFAULT_CAMERA_STATE })).toBe(true);
+  });
+
+  it("shows the same finite coverage model only on the Rise and Shift teaching steps", () => {
+    const imageCircle = resolveLessonZeroCameraPresentation(getLessonZeroStep(11));
+    const rise = resolveLessonZeroCameraPresentation(getLessonZeroStep(12));
+    const shift = resolveLessonZeroCameraPresentation(getLessonZeroStep(13));
+    const tilt = resolveLessonZeroCameraPresentation(getLessonZeroStep(14));
+
+    expect(imageCircle.imageCircle).toEqual({ visible: true });
+    expect(imageCircle.showFiniteCoverageOverlay).toBeUndefined();
+    expect(rise.showFiniteCoverageOverlay).toBe(true);
+    expect(shift.showFiniteCoverageOverlay).toBe(true);
+    expect(rise.imageCircle).toBeUndefined();
+    expect(shift.imageCircle).toBeUndefined();
+    expect(tilt.showFiniteCoverageOverlay).toBeUndefined();
+  });
+
   it("maps interactive steps to the centralized control teaching definitions", () => {
     expect(CAMERA_CONTROL_TEACHING["front-rise"]).toMatchObject({
       kind: "movement",
@@ -104,13 +144,14 @@ describe("Lesson 0 anatomy vocabulary", () => {
   });
 
   it("requires a reachable canonical control change before advancing", () => {
-    const riseStep = getLessonZeroStep(11);
+    const riseStep = LESSON_ZERO_STEPS.find((step) => step.id === "front-rise-control");
+    if (!riseStep) throw new Error("Front Rise step is missing");
     const camera = { ...DEFAULT_CAMERA_STATE };
 
     expect(isLessonZeroStepComplete(riseStep, camera)).toBe(false);
     expect(isLessonZeroStepComplete(riseStep, { ...camera, frontRiseMm: 8 })).toBe(true);
     expect(
-      resolveLessonZeroCameraPresentation(getLessonZeroStep(17)).anatomy?.targets,
+      resolveLessonZeroCameraPresentation(getLessonZeroStep(18)).anatomy?.targets,
     ).toEqual([
       { kind: "element", name: "lens-aperture-iris", parentPart: "lens" },
     ]);
@@ -118,10 +159,10 @@ describe("Lesson 0 anatomy vocabulary", () => {
 
   it("keeps moving control steps on the stable camera inspection anchor", () => {
     expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(1))).toBe("front-standard");
-    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(11))).toBeUndefined();
     expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(12))).toBeUndefined();
-    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(15))).toBeUndefined();
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(13))).toBeUndefined();
     expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(16))).toBeUndefined();
-    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(17))).toBe("aperture");
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(17))).toBeUndefined();
+    expect(resolveLessonZeroViewportInspectionTarget(getLessonZeroStep(18))).toBe("aperture");
   });
 });

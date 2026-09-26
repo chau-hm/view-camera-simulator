@@ -20,7 +20,6 @@ import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import { createGroundGlassDofPipeline } from "./groundGlassPipeline";
 import { createDepthOfFieldPass } from "./postprocessing/DepthOfFieldPass";
 import { formatGroundGlassFocusLabel } from "./groundGlassFocusLabel";
-import { resolveGroundGlassPresentationPolicy } from "./groundGlassPresentationPolicy";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -30,7 +29,7 @@ import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementS
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import {
   FULL_GROUND_GLASS_INSPECTION_WINDOW,
-  mapGroundGlassInspectionWindowToFilmSpace,
+  mapGroundGlassInspectionWindowToRttSourceCrop,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
 
@@ -181,12 +180,10 @@ export const GroundGlassRenderer = ({
     [opticsState, renderQuality, resolvedAperture],
   );
 
-  const blurOpacity = Math.min(0.85, dofSample.blurStrength * 1.2);
   const backgroundPositionY = `${pipeline.verticalFrameOffsetPx}px`;
-  const presentationPolicy = resolveGroundGlassPresentationPolicy(scene);
   const isRttSceneFinal = isRttScene;
-  const physicalInspectionWindow = useMemo(
-    () => mapGroundGlassInspectionWindowToFilmSpace(inspectionWindow, previewMode),
+  const rttSourceInspectionWindow = useMemo(
+    () => mapGroundGlassInspectionWindowToRttSourceCrop(inspectionWindow, previewMode),
     [inspectionWindow, previewMode],
   );
   const physicalGrid = scene.macroTeachingCapability?.kind === "bellows-extension" && gridEnabled && !rawDebug
@@ -275,14 +272,14 @@ export const GroundGlassRenderer = ({
           heightPx={isRttSceneFinal ? rttLogicalSize.height : PANEL_HEIGHT_PX}
           renderQuality={renderQuality}
           channel={channel}
-          inspectionWindow={physicalInspectionWindow}
+          inspectionWindow={rttSourceInspectionWindow}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           runtimeInfo={runtimeInfo}
           onRuntimeInfoChange={onRuntimeInfoChange}
         />
 
-        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} showDecorativeVignette={presentationPolicy.showDecorativeVignette} blurOpacity={blurOpacity} physicalGrid={physicalGrid} />
+        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} physicalGrid={physicalGrid} />
       </div>
     </>
   );
@@ -326,6 +323,14 @@ export const GroundGlassRenderer = ({
         imageLayer={transformedImageLayer}
         fixedOverlayLayer={fixedOverlayLayer}
       />
+      {isRttSceneFinal && !rawDebug && (
+        <div
+          data-testid="ground-glass-blur-display-hint"
+          style={{ color: "#64748b", fontSize: "0.75rem", lineHeight: 1.25 }}
+        >
+          {t(simulatorMessageKeys.viewport.groundGlassBlurDisplayHint)}
+        </div>
+      )}
       {isRttSceneFinal && !rawDebug && zoomEnabled && (
         <div
           data-testid="ground-glass-focus-loupe"

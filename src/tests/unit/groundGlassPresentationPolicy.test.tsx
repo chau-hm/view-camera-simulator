@@ -1,11 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { GroundGlassFocusRing } from "../../render/GroundGlassFocusRing";
-import { GroundGlassTransformedOverlays } from "../../render/GroundGlassOverlays";
-import { resolveGroundGlassPresentationPolicy } from "../../render/groundGlassPresentationPolicy";
 import type { ProjectedGroundGlassTarget } from "../../render/groundGlassTargetProjection";
-import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 
 afterEach(() => {
   cleanup();
@@ -17,47 +13,9 @@ const projectedTarget: ProjectedGroundGlassTarget = {
   leftPercent: 25,
   topPercent: 35,
   blurStrengthAtTarget: 0.1,
-  rawUv: { u: 0.25, v: 0.35 },
+  physicalFilmUv: { u: 0.25, v: 0.35 },
   displayUv: { u: 0.25, v: 0.35 },
 };
-
-describe("Ground Glass presentation policy", () => {
-  it("suppresses the decorative vignette only for Focus Fundamentals", () => {
-    expect(resolveGroundGlassPresentationPolicy(focusFundamentalsTwoTargets)).toEqual({
-      showDecorativeVignette: false,
-    });
-    expect(resolveGroundGlassPresentationPolicy(architectureRiseScene)).toEqual({
-      showDecorativeVignette: true,
-    });
-  });
-
-  it("passes the vignette decision to overlays as presentation semantics", () => {
-    const hasVignette = (container: HTMLElement) =>
-      Array.from(container.querySelectorAll("div")).some((element) =>
-        element.style.background.includes("radial-gradient"),
-      );
-
-    const { container, rerender } = render(
-      <GroundGlassTransformedOverlays
-        gridEnabled={false}
-        rawDebug={false}
-        showDecorativeVignette={false}
-        blurOpacity={0.5}
-      />,
-    );
-    expect(hasVignette(container)).toBe(false);
-
-    rerender(
-      <GroundGlassTransformedOverlays
-        gridEnabled={false}
-        rawDebug={false}
-        showDecorativeVignette
-        blurOpacity={0.5}
-      />,
-    );
-    expect(hasVignette(container)).toBe(true);
-  });
-});
 
 describe("Ground Glass presentation components", () => {
   it("renders the focus ring from explicit projected-target inputs", () => {

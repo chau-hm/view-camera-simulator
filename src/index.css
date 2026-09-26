@@ -1447,16 +1447,24 @@ button {
 .lens-control__option {
  position: relative;
  display: flex;
- align-items: center;
- gap: 4px;
+ flex-direction: column;
+ align-items: flex-start;
+ gap: 2px;
  min-width: 0;
- min-height: 36px;
+ min-height: 48px;
  padding: 6px 8px;
  border: 1px solid var(--border);
  border-radius: var(--radius-md);
  background: var(--surface-muted);
  color: var(--text);
  cursor: pointer;
+}
+
+.lens-control__option-heading {
+ display: flex;
+ align-items: center;
+ gap: 4px;
+ min-width: 0;
 }
 
 .lens-control__option:focus-within {
@@ -1492,6 +1500,47 @@ button {
 .lens-control__option-separator {
  color: var(--text-muted);
  font-size: 12px;
+}
+
+.lens-control__option-coverage {
+ color: var(--text-muted);
+ font-size: 11px;
+ line-height: 1.2;
+}
+
+.lens-control__summary {
+ display: grid;
+ gap: 2px;
+ padding: 6px 8px;
+ border: 1px solid var(--border);
+ border-radius: var(--radius-md);
+ background: var(--surface-muted);
+ font-size: 12px;
+ line-height: 1.25;
+}
+
+.lens-control__summary-title {
+ color: var(--text-muted);
+ font-size: 11px;
+ font-weight: 700;
+ text-transform: uppercase;
+ letter-spacing: 0.04em;
+}
+
+.lens-control__summary-value {
+ font-weight: 700;
+}
+
+.lens-control__summary-row {
+ display: flex;
+ justify-content: space-between;
+ gap: 8px;
+ color: var(--text-muted);
+}
+
+.lens-control__summary-row span:last-child {
+ color: var(--text);
+ text-align: right;
 }
 
 .sim-control-row {
@@ -1745,7 +1794,8 @@ button {
 }
 
 /* Keep Camera Controls range rows usable throughout the responsive rail. */
-.simulator-aside__scroll .compact-range-row {
+.simulator-aside__scroll .compact-range-row,
+.simulator-aside__lesson .compact-range-row {
  grid-template-columns: minmax(0, 1fr) auto;
  grid-template-areas:
   "label value"
@@ -1753,20 +1803,25 @@ button {
  row-gap: 4px;
 }
 
-.simulator-aside__scroll .compact-range-row--with-trailing {
+.simulator-aside__scroll .compact-range-row--with-trailing,
+.simulator-aside__lesson .compact-range-row--with-trailing {
  grid-template-columns: minmax(0, 1fr) auto auto;
  grid-template-areas:
   "label value trailing"
   "slider slider slider";
 }
 
-.simulator-aside__scroll .compact-range-row__label { grid-area: label; }
-.simulator-aside__scroll .compact-range-row__slider { grid-area: slider; }
-.simulator-aside__scroll .compact-range-row__value {
+.simulator-aside__scroll .compact-range-row__label,
+.simulator-aside__lesson .compact-range-row__label { grid-area: label; }
+.simulator-aside__scroll .compact-range-row__slider,
+.simulator-aside__lesson .compact-range-row__slider { grid-area: slider; }
+.simulator-aside__scroll .compact-range-row__value,
+.simulator-aside__lesson .compact-range-row__value {
  grid-area: value;
  width: auto;
 }
-.simulator-aside__scroll .compact-range-row__trailing { grid-area: trailing; }
+.simulator-aside__scroll .compact-range-row__trailing,
+.simulator-aside__lesson .compact-range-row__trailing { grid-area: trailing; }
 
 /* Six ~48px options plus five 4px gaps need about 308px; below that use 3 x 2. */
 @container camera-controls-rail (max-width: 307px) {
@@ -3098,8 +3153,11 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 }
 
 .simulator-shell .lens-control__copy,
-.simulator-shell .lens-control__option-label {
-  color: var(--sim-text-muted);
+.simulator-shell .lens-control__option-label,
+.simulator-shell .lens-control__option-coverage,
+.simulator-shell .lens-control__summary-title,
+.simulator-shell .lens-control__summary-row {
+ color: var(--sim-text-muted);
 }
 
 .simulator-shell .lens-control__option {
@@ -3119,8 +3177,18 @@ fieldset[aria-label="Focus standard"] > .focus-parallax-help { display: grid; }
 }
 
 .simulator-shell .lens-control__option[data-selected="true"] {
-  border-color: var(--sim-accent);
-  background: var(--sim-accent-soft);
+ border-color: var(--sim-accent);
+ background: var(--sim-accent-soft);
+}
+
+.simulator-shell .lens-control__summary {
+ border-color: var(--sim-border);
+ background: var(--sim-surface-inset);
+ color: var(--sim-text);
+}
+
+.simulator-shell .lens-control__summary-row span:last-child {
+ color: var(--sim-text);
 }
 
 .simulator-shell .simulator-aside .aside-header h3 {

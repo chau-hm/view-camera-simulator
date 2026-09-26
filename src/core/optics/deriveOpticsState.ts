@@ -14,6 +14,16 @@ import type { SceneDefinition } from "../../types/scene";
 import { calculateDepthOfField } from "./calculateDepthOfField";
 import { calculateFocusPlaneWithFallback, calculateFocusPoint } from "./calculateFocusPlane";
 import { calculateGroundGlassProjection } from "./calculateGroundGlassProjection";
+import { deriveLensCoverage } from "./lensCoverage";
+import { resolveLensDefinitionForFocalLengthMm } from "./lensCatalog";
+import {
+  createNeutralGroundGlassCoverage,
+  deriveGroundGlassCoverage,
+} from "./groundGlassCoverage";
+import {
+  createNeutralGroundGlassNaturalIllumination,
+  deriveGroundGlassNaturalIllumination,
+} from "./groundGlassNaturalIllumination";
 import {
   resolveSceneRelativeSelectableFocus,
   resolveFocusFundamentalsFocusing,
@@ -204,6 +214,19 @@ const toLegacyCameraBodyTransform = (
   pivotWorld: transform.bodyPitchPivotRigLocal,
 });
 
+const resolveDerivedLensState = (
+  focalLengthMm: number,
+  imageDistanceMm: number | null,
+) => {
+  const lensDefinition = resolveLensDefinitionForFocalLengthMm(focalLengthMm);
+  const lensCoverage =
+    lensDefinition && imageDistanceMm !== null
+      ? deriveLensCoverage(lensDefinition.coverage, imageDistanceMm)
+      : null;
+
+  return { lensDefinition, lensCoverage };
+};
+
 const createCameraBodyLocalGeometry = ({
   lensCenterLocal,
   lensNormalLocal,
@@ -358,6 +381,12 @@ const baseFallbackState = (
     cameraBodyTransform,
     cameraBodyLocalGeometry,
     cameraBodyPivotWorld,
+    lensDefinition: null,
+    lensCoverage: null,
+    groundGlassNaturalIllumination: createNeutralGroundGlassNaturalIllumination(
+      "invalid-geometry",
+    ),
+    groundGlassCoverage: createNeutralGroundGlassCoverage("invalid-coverage"),
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,
@@ -572,11 +601,38 @@ export const deriveOpticsState = (
       filmPlane,
       scene.id === "table-tilt",
     );
+    const groundGlassNaturalIllumination = focusFundamentalsFocusing?.fallbackApplied
+      ? createNeutralGroundGlassNaturalIllumination("invalid-geometry")
+      : deriveGroundGlassNaturalIllumination({
+          lensCenterWorld,
+          filmPlane,
+          rearStandardFrame: rearFrame,
+          opticalAxis,
+          isParallelLensFilm: infinityLensFilmRel.isParallel,
+        });
 
     const offAxisProjectionInput = createOffAxisProjectionInput(
       lensCenterWorld,
       filmPlaneCornersWorld,
     );
+    const infinityImageDistanceMm =
+      focusFundamentalsFocusing?.fallbackApplied
+        ? null
+        : focusFundamentalsFocusing?.imageDistanceVMm ?? f;
+    const derivedLensState = resolveDerivedLensState(
+      f,
+      infinityImageDistanceMm,
+    );
+    const groundGlassCoverage = deriveGroundGlassCoverage({
+      lensCoverage: derivedLensState.lensCoverage,
+      geometry: {
+        lensCenterWorld,
+        filmPlane,
+        rearStandardFrame: rearFrame,
+        opticalAxis,
+        isParallelLensFilm: infinityLensFilmRel.isParallel,
+      },
+    });
 
     return {
       cameraRigPlacement,
@@ -584,6 +640,9 @@ export const deriveOpticsState = (
       cameraBodyTransform,
       cameraBodyLocalGeometry,
       cameraBodyPivotWorld,
+      ...derivedLensState,
+      groundGlassNaturalIllumination,
+      groundGlassCoverage,
       lensCenterWorld,
       lensNormalWorld,
       lensPlane,
@@ -817,6 +876,13 @@ export const deriveOpticsState = (
   const lensFilmRel = deriveLensFilmRelationship(lensPlane, filmPlane, isTableTilt);
   const isParallelLensFilm = lensFilmRel.isParallel;
   const lensFilmHingeLine = lensFilmRel.commonLine;
+  const groundGlassNaturalIllumination = deriveGroundGlassNaturalIllumination({
+    lensCenterWorld,
+    filmPlane,
+    rearStandardFrame: rearFrame,
+    opticalAxis,
+    isParallelLensFilm,
+  });
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
     focusPointWorld,
     filmPlane,
@@ -890,6 +956,27 @@ export const deriveOpticsState = (
     filmPlaneCornersWorld,
   );
   const offAxisProjectionMatrix = calculateOffAxisProjectionMatrix(offAxisProjectionInput);
+  const coverageImageDistanceMm = focusFundamentalsFocusing
+    ? focusFundamentalsFocusing.fallbackApplied
+      ? null
+      : focusFundamentalsFocusing.imageDistanceVMm
+    : scene.finiteFocusStrategy
+      ? baselineFilm.rawImageDistanceMm
+      : baselineFilm.imageDistanceMm;
+  const derivedLensState = resolveDerivedLensState(
+    cameraState.focalLengthMm,
+    coverageImageDistanceMm,
+  );
+  const groundGlassCoverage = deriveGroundGlassCoverage({
+    lensCoverage: derivedLensState.lensCoverage,
+    geometry: {
+      lensCenterWorld,
+      filmPlane,
+      rearStandardFrame: rearFrame,
+      opticalAxis,
+      isParallelLensFilm,
+    },
+  });
 
   return {
     cameraRigPlacement,
@@ -897,6 +984,9 @@ export const deriveOpticsState = (
     cameraBodyTransform,
     cameraBodyLocalGeometry,
     cameraBodyPivotWorld,
+    ...derivedLensState,
+    groundGlassNaturalIllumination,
+    groundGlassCoverage,
     lensCenterWorld,
     lensNormalWorld,
     lensPlane,

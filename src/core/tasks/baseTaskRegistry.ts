@@ -957,7 +957,7 @@ const mirrorShiftTask: TaskDefinition = {
     {
       id: "mirror-reflection-clear",
       type: "mirror-reflection-clear",
-      minimumClearanceMm:
+      clearanceForFullProgressMm:
         MIRROR_SHIFT_SCENE_CALIBRATION.tolerances.cameraReflectionClearanceMm,
     },
     {

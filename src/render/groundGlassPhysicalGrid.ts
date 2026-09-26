@@ -3,7 +3,7 @@ import {
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
 import {
-  mapGroundGlassUvToDisplayUv,
+  mapPhysicalFilmUvToGroundGlassDisplayUv,
   type GroundGlassPreviewMode,
 } from "./groundGlassTargetProjection";
 
@@ -12,9 +12,10 @@ import {
  * physical Ground Glass film window rather than from a decorative screen
  * pixel size.
  *
- * `origin*Px` is the display-space position of the raw physical film origin
- * (u/v = 0). The repeating CSS pattern continues in both directions, so the
- * same origin also handles the reversed display axes used by Upright Assist.
+ * `origin*Px` is the display-space position of the physical film origin
+ * (u/v = 0). The repeating CSS pattern continues in both directions; its
+ * origin follows the selected Raw/Upright screen transform without changing
+ * the underlying film coordinates.
  */
 export type GroundGlassPhysicalGrid = {
   gridSquareMm: number;
@@ -105,7 +106,7 @@ export const resolveGroundGlassPhysicalGrid = (input: {
 
   const windowOriginU = centerU - halfWidth;
   const windowOriginV = centerV - halfHeight;
-  const displayOrigin = mapGroundGlassUvToDisplayUv(
+  const displayOrigin = mapPhysicalFilmUvToGroundGlassDisplayUv(
     { u: 0, v: 0 },
     input.previewMode,
   );

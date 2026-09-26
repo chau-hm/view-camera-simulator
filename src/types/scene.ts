@@ -52,6 +52,8 @@ export type CameraMovementField =
 export type SceneMovementCapabilities = {
   /** Movement field names available for this scene. */
   available: readonly CameraMovementField[];
+  /** Render only the available movement rows instead of showing locked rows for unsupported fields. */
+  hideUnavailableControls?: boolean;
   /** How many movements may be active simultaneously. */
   selectionMode: "single" | "multiple";
   /** Default selected movement on scene entry. */

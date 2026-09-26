@@ -1,23 +1,12 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
-import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { setPublicRangeInput } from "./helpers/publicRangeInput";
 
 const TARGET_IDS = [
   "macro-compound-near-left",
   "macro-compound-centre",
   "macro-compound-far-right",
 ] as const;
-
-const setPublicRangeValue = async (slider: Locator, target: number): Promise<void> => {
-  await slider.evaluate((element, value) => {
-    const input = element as HTMLInputElement;
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    if (!setter) throw new Error("Range input value setter unavailable");
-    setter.call(input, String(value));
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, target);
-  await expect(slider).toHaveValue(String(target));
-};
 
 test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", async ({ page }) => {
   test.setTimeout(120_000);
@@ -46,6 +35,8 @@ test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", a
   await expect(movement).toContainText("Front standard");
   await expect(tilt).toBeEnabled();
   await expect(swing).toBeEnabled();
+  await expect(page.getByRole("slider", { name: "Rise" })).toHaveCount(0);
+  await expect(page.getByRole("slider", { name: "Shift" })).toHaveCount(0);
   await expect(focus).toHaveValue("500");
   await expect(focus).toHaveAttribute("min", "450");
   await expect(focus).toHaveAttribute("max", "540");
@@ -81,29 +72,29 @@ test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", a
   await expect(taskView).toContainText("Near-left");
   await expect(taskView).toContainText("Far-right");
 
-  await setStepRangeInput(page, "Tilt", 2);
+  await setPublicRangeInput(tilt, 2);
   await expect(teaching).toHaveAttribute("data-stage", "tilt-only");
   await expect(taskView).toContainText("one orientation component");
 
-  await setStepRangeInput(page, "Tilt", 0);
-  await setStepRangeInput(page, "Swing", -2);
+  await setPublicRangeInput(tilt, 0);
+  await setPublicRangeInput(swing, -2);
   await expect(teaching).toHaveAttribute("data-stage", "swing-only");
   await expect(taskView).toContainText("lateral orientation component");
 
-  await setStepRangeInput(page, "Tilt", 2);
-  await setStepRangeInput(page, "Focus distance", 490);
+  await setPublicRangeInput(tilt, 2);
+  await setPublicRangeInput(focus, 490);
   await expect(teaching).toHaveAttribute("data-stage", "compound-alignment");
   await expect(teaching).toHaveAttribute("data-tilt-neutral", "false");
   await expect(teaching).toHaveAttribute("data-swing-neutral", "false");
 
-  await setStepRangeInput(page, "Tilt", 3.3);
-  await setStepRangeInput(page, "Swing", -2.7);
+  await setPublicRangeInput(tilt, 3.3);
+  await setPublicRangeInput(swing, -2.7);
   await expect(teaching).toHaveAttribute("data-stage", "refine-compound");
   await expect(teaching).toHaveAttribute("data-sharp-count", "2");
   await expect(taskView).toContainText("public 0.1° Tilt and Swing steps");
 
-  await setStepRangeInput(page, "Tilt", 3.4);
-  await setStepRangeInput(page, "Swing", -2.8);
+  await setPublicRangeInput(tilt, 3.4);
+  await setPublicRangeInput(swing, -2.8);
   await expect(teaching).toHaveAttribute("data-stage", "aligned");
   await expect(teaching).toHaveAttribute("data-sharp-count", "3");
   await expect(teaching).toHaveAttribute("data-all-sharp", "true");
@@ -118,7 +109,11 @@ test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", a
     );
   }
 
-  await page.getByRole("button", { name: "Feedback", exact: true }).click();
+  const feedbackButton = page.getByRole("button", { name: "Feedback", exact: true });
+  await feedbackButton.scrollIntoViewIfNeeded();
+  await expect(feedbackButton).toBeVisible();
+  await expect(feedbackButton).toBeEnabled();
+  await feedbackButton.click();
   const feedback = page.getByTestId("macro-compound-feedback");
   await expect(feedback).toHaveAttribute("data-stage", "aligned");
   await expect(feedback).toContainText("all Sharp");
@@ -127,11 +122,15 @@ test("Macro 4 teaches compound Tilt + Swing + Focus through the public route", a
   await expect(feedback).toContainText("Focus Distance 490 mm");
   await expect(page.getByTestId("macro-compound-feedback")).toHaveCount(1);
 
-  await setPublicRangeValue(tilt, 3.9);
+  await setPublicRangeInput(tilt, 3.9);
   await expect(feedback).toHaveAttribute("data-all-sharp", "false");
   await expect(feedback).not.toHaveAttribute("data-stage", "aligned");
 
-  await page.getByRole("button", { name: "Reset movements" }).click();
+  const resetMovements = page.getByRole("button", { name: "Reset movements" });
+  await resetMovements.scrollIntoViewIfNeeded();
+  await expect(resetMovements).toBeVisible();
+  await expect(resetMovements).toBeEnabled();
+  await resetMovements.click();
   await expect(tilt).toHaveValue("0");
   await expect(swing).toHaveValue("0");
   await expect(focus).toHaveValue("500");

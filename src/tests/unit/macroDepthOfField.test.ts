@@ -1,10 +1,16 @@
+import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
 import {
   projectSceneFocusTargetsToGroundGlass,
   type GroundGlassPreviewMode,
 } from "../../render/groundGlassTargetProjection";
+import {
+  applyGroundGlassRttDisplayTransform,
+  resolveGroundGlassRttDisplayTransform,
+} from "../../render/groundGlassRttOrientation";
 import { quantizeFocusDistributionDisplayUv } from "../../components/simulator/focusDistributionLayout";
 import { getSceneById, getSceneFocusDistanceRange, sceneOrder } from "../../scenes/definitions";
 import {
@@ -16,6 +22,7 @@ import {
 import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
 import type { ApertureValue, CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { WORLD_SCALE } from "../../render/rttUtils";
 
 const cameraAt = (
   focusDistanceMm: number,
@@ -184,7 +191,7 @@ describe("macro-depth-of-field scene", () => {
     expect(targetById("macro-depth-middle").worldPosition).toEqual({ x: 0, y: 5, z: 400 });
   });
 
-  it("projects the three semantic regions through the canonical Ground Glass path", () => {
+  it("projects the three semantic regions in the PR #183 Raw/Upright raster order", () => {
     const targetIds = [
       "macro-depth-near",
       "macro-depth-middle",
@@ -192,14 +199,14 @@ describe("macro-depth-of-field scene", () => {
     ] as const;
     const expectedColumns: Record<GroundGlassPreviewMode, Record<(typeof targetIds)[number], number>> = {
       upright: {
-        "macro-depth-near": 0,
-        "macro-depth-middle": 1,
-        "macro-depth-far": 2,
-      },
-      raw: {
         "macro-depth-near": 2,
         "macro-depth-middle": 1,
         "macro-depth-far": 0,
+      },
+      raw: {
+        "macro-depth-near": 0,
+        "macro-depth-middle": 1,
+        "macro-depth-far": 2,
       },
     };
 
@@ -219,9 +226,12 @@ describe("macro-depth-of-field scene", () => {
         Number.isFinite(displayUv.u) &&
         Number.isFinite(displayUv.v),
       )).toBe(true);
+      // Direct camera projection establishes far-to-near across Upright;
+      // Raw applies the 180-degree composite transform. The previous test had
+      // the mode labels reversed relative to PR #183's rendered raster.
       const expectedHorizontalOrder = previewMode === "upright"
-        ? targetIds
-        : [...targetIds].reverse();
+        ? [...targetIds].reverse()
+        : targetIds;
       expect(
         [...byId.values()]
           .sort((first, second) => first.displayUv.u - second.displayUv.u)
@@ -244,11 +254,98 @@ describe("macro-depth-of-field scene", () => {
     }
   });
 
+  it("aligns Macro target display and Focus Distribution with the configured RTT raster", () => {
+    const cameraState = cameraAt(400);
+    const optics = deriveOpticsState(cameraState, macroDepthOfFieldScene);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
+    const configuration = configureGroundGlassCamera(camera, optics, 0.01, 100);
+    expect(configuration.ok).toBe(true);
+    if (!configuration.ok) return;
+
+    const expectedTargetIds = [
+      "macro-depth-near",
+      "macro-depth-middle",
+      "macro-depth-far",
+    ];
+    const rasterByMode = new Map<GroundGlassPreviewMode, Map<string, { u: number; v: number }>>();
+
+    for (const previewMode of ["upright", "raw"] as const) {
+      const projectedTargets = projectSceneFocusTargetsToGroundGlass({
+        sceneDef: macroDepthOfFieldScene,
+        opticsState: optics,
+        aperture: cameraState.aperture,
+        previewMode,
+      });
+      const targetById = new Map(projectedTargets.map((target) => [target.id, target]));
+      const displayById = new Map<string, { u: number; v: number }>();
+      const displayTransform = resolveGroundGlassRttDisplayTransform(previewMode);
+
+      for (const targetId of expectedTargetIds) {
+        const target = macroDepthOfFieldScene.focusTargets?.find(({ id }) => id === targetId);
+        const projectedOverlay = targetById.get(targetId);
+        expect(target).toBeDefined();
+        expect(projectedOverlay?.visible).toBe(true);
+        if (!target || !projectedOverlay) continue;
+
+        // World point -> the production off-axis RTT camera -> NDC -> bottom-origin
+        // source texture UV. The production composite selects this texel through
+        // the same self-inverse Raw/Upright flip used by the full-screen pass.
+        const ndc = new THREE.Vector3(
+          target.worldPosition.x * WORLD_SCALE,
+          target.worldPosition.y * WORLD_SCALE,
+          target.worldPosition.z * WORLD_SCALE,
+        ).project(camera);
+        const sourceTextureUv = { u: (ndc.x + 1) / 2, v: (ndc.y + 1) / 2 };
+        const compositeScreenUv = applyGroundGlassRttDisplayTransform(
+          sourceTextureUv,
+          displayTransform,
+        );
+        const rasterDisplayUv = {
+          u: compositeScreenUv.u,
+          v: 1 - compositeScreenUv.v,
+        };
+
+        // The overlay must sit over the source detail seen after the actual
+        // composite sample transform and WebGL-to-CSS V conversion.
+        expect(projectedOverlay.displayUv.u).toBeCloseTo(rasterDisplayUv.u, 8);
+        expect(projectedOverlay.displayUv.v).toBeCloseTo(rasterDisplayUv.v, 8);
+        expect(projectedOverlay.physicalFilmUv.u).toBeCloseTo(sourceTextureUv.u, 8);
+        expect(projectedOverlay.physicalFilmUv.v).toBeCloseTo(sourceTextureUv.v, 8);
+
+        const rasterCell = quantizeFocusDistributionDisplayUv(rasterDisplayUv, true);
+        const distributionCell = quantizeFocusDistributionDisplayUv(
+          projectedOverlay.displayUv,
+          projectedOverlay.visible,
+        );
+        expect(distributionCell).toEqual(rasterCell);
+        displayById.set(targetId, rasterDisplayUv);
+      }
+
+      rasterByMode.set(previewMode, displayById);
+      const actualOrder = [...displayById.entries()]
+        .sort((first, second) => first[1].u - second[1].u)
+        .map(([id]) => id);
+      expect(actualOrder).toEqual(previewMode === "upright"
+        ? [...expectedTargetIds].reverse()
+        : expectedTargetIds);
+    }
+
+    for (const targetId of expectedTargetIds) {
+      const upright = rasterByMode.get("upright")?.get(targetId);
+      const raw = rasterByMode.get("raw")?.get(targetId);
+      expect(upright).toBeDefined();
+      expect(raw).toBeDefined();
+      if (!upright || !raw) continue;
+      expect(upright.u).toBeCloseTo(1 - raw.u, 8);
+      expect(upright.v).toBeCloseTo(1 - raw.v, 8);
+    }
+  });
+
   it("keeps semantic sharpness and horizontal display placement aligned at each depth station", () => {
     const cases = [
-      { focusDistanceMm: 390, sharpTargetId: "macro-depth-near", expectedUprightColumn: 0 },
+      { focusDistanceMm: 390, sharpTargetId: "macro-depth-near", expectedUprightColumn: 2 },
       { focusDistanceMm: 400, sharpTargetId: "macro-depth-middle", expectedUprightColumn: 1 },
-      { focusDistanceMm: 410, sharpTargetId: "macro-depth-far", expectedUprightColumn: 2 },
+      { focusDistanceMm: 410, sharpTargetId: "macro-depth-far", expectedUprightColumn: 0 },
     ] as const;
 
     for (const { focusDistanceMm, sharpTargetId, expectedUprightColumn } of cases) {

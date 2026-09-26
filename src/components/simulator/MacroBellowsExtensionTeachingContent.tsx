@@ -31,6 +31,9 @@ const formatTeachingValues = (
   extension: `${model.metrics.bellowsExtensionMm.toFixed(1)} mm`,
   factor: `${model.metrics.bellowsFactor.toFixed(2)}×`,
   stops: formatStops(model.metrics.exposureCompensationStops.toFixed(2)),
+  imageCircle: model.imageCircleDiameterMm === null
+    ? ""
+    : `${model.imageCircleDiameterMm.toFixed(1)} mm`,
   availableTravel: `${model.availableBellowsTravelMm.toFixed(1)} mm`,
 });
 
@@ -45,6 +48,7 @@ export const MacroBellowsExtensionTeachingContent = ({
     model,
     (value) => t(readoutMessageKeys.macroFocus.stops, { value }),
   );
+  const coverageCopy = model.imageCircleDiameterMm === null ? null : t(stage.coverage, values);
 
   if (variant === "feedback") {
     return (
@@ -55,7 +59,7 @@ export const MacroBellowsExtensionTeachingContent = ({
         aria-live="polite"
       >
         <h3>{t(stage.title)}</h3>
-        <p>{t(stage.observe, values)}</p>
+        <p>{t(stage.observe, values)}{coverageCopy ? ` ${coverageCopy}` : ""}</p>
         <p className="macro-bellows-teaching__muted">{t(stage.whyItMatters, values)}</p>
         {model.capacityWarning ? (
           <p className="macro-bellows-teaching__warning">
@@ -84,7 +88,7 @@ export const MacroBellowsExtensionTeachingContent = ({
         </div>
         <div>
           <strong>{t(messages.labels.observe)}</strong>
-          <p>{t(stage.observe, values)}</p>
+          <p>{t(stage.observe, values)}{coverageCopy ? ` ${coverageCopy}` : ""}</p>
         </div>
         <div>
           <strong>{t(messages.labels.whyItMatters)}</strong>

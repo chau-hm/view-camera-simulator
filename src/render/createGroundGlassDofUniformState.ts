@@ -32,6 +32,8 @@ export type GroundGlassDofUniformState = {
   circleOfConfusionMm: number;
   boundaryCoCDiameterPx: number;
   boundaryBlurRadiusPx: number;
+  /** Physical CoC boundary radius in visible CSS pixels. */
+  visibleBoundaryBlurRadiusPx: number;
   /** Complete physical film dimensions retained for diagnostics/compatibility. */
   filmWidthMm: number;
   filmHeightMm: number;
@@ -111,6 +113,8 @@ export function createGroundGlassDofUniformState(
   maximumBlurRadiusPx: number,
   sampledFilmWidthMm = filmWidthMm,
   sampledFilmHeightMm = filmHeightMm,
+  /** Visible CSS viewport width; internal render width is used for shader pixels. */
+  displayWidthPx = width,
 ): GroundGlassDofUniformState {
   const groundGlassDofModel =
     opticsState.diagnostics.groundGlassDofModel ??
@@ -135,6 +139,9 @@ export function createGroundGlassDofUniformState(
   if (!Number.isFinite(aperture) || aperture <= 0) throw new Error("Invalid aperture");
   if (!Number.isFinite(maximumBlurRadiusPx) || maximumBlurRadiusPx < 0) {
     throw new Error("Invalid maximumBlurRadiusPx");
+  }
+  if (!Number.isFinite(displayWidthPx) || displayWidthPx <= 0) {
+    throw new Error("Invalid display width");
   }
   const lens = opticsState.lensCenterWorld;
   const lensBasis = deriveOrthonormalPlaneBasis(
@@ -187,8 +194,14 @@ export function createGroundGlassDofUniformState(
 
   const boundaryCoCDiameterPx = (circleOfConfusionMm * width) / sampledFilmWidthMm;
   const boundaryBlurRadiusPx = boundaryCoCDiameterPx / 2;
-  if (!Number.isFinite(boundaryCoCDiameterPx) || !Number.isFinite(boundaryBlurRadiusPx)) {
-    throw new Error("Ground Glass boundary blur calibration is non-finite");
+  const visibleBoundaryBlurRadiusPx =
+    (circleOfConfusionMm * displayWidthPx) / sampledFilmWidthMm / 2;
+  if (
+    !Number.isFinite(boundaryCoCDiameterPx) ||
+    !Number.isFinite(boundaryBlurRadiusPx) ||
+    !Number.isFinite(visibleBoundaryBlurRadiusPx)
+  ) {
+    throw new Error("Physical Ground Glass blur scale is non-finite");
   }
 
   // compute image distance along optical axis using shared helper
@@ -235,6 +248,7 @@ export function createGroundGlassDofUniformState(
     circleOfConfusionMm,
     boundaryCoCDiameterPx,
     boundaryBlurRadiusPx,
+    visibleBoundaryBlurRadiusPx,
     filmWidthMm,
     filmHeightMm,
     sampledFilmWidthMm,

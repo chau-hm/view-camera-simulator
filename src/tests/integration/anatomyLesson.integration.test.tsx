@@ -71,6 +71,11 @@ describe("Lesson 0 integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Now try the controls" })).toBeInTheDocument();
 
+    const cameraBeforeImageCircle = { ...useAppStore.getState().camera };
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("heading", { name: "Understanding the Image Circle" })).toBeInTheDocument();
+    expect(useAppStore.getState().camera).toEqual(cameraBeforeImageCircle);
+
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("heading", { name: "Front Rise" })).toBeInTheDocument();
     const rise = screen.getByRole("slider", { name: "Front Rise" });

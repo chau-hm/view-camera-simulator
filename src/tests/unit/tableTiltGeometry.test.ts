@@ -142,10 +142,10 @@ describe("canonical Table Tilt geometry", () => {
 
     projectedTargets.forEach((target) => {
       expect(target.visible, `${target.id} should be inside the initial film frame`).toBe(true);
-      expect(target.rawUv.u).toBeGreaterThan(0.02);
-      expect(target.rawUv.u).toBeLessThan(0.98);
-      expect(target.rawUv.v).toBeGreaterThan(0.02);
-      expect(target.rawUv.v).toBeLessThan(0.98);
+      expect(target.physicalFilmUv.u).toBeGreaterThan(0.02);
+      expect(target.physicalFilmUv.u).toBeLessThan(0.98);
+      expect(target.physicalFilmUv.v).toBeGreaterThan(0.02);
+      expect(target.physicalFilmUv.v).toBeLessThan(0.98);
     });
 
     [-1100, 0, 1100].forEach((localDepth) => {

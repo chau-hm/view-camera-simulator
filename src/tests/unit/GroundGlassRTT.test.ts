@@ -4,12 +4,19 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { resolveGroundGlassRelativeIlluminance } from "../../core/optics/groundGlassIlluminance";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
   type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
 import { synchronizeGroundGlassDofClipRange } from "../../render/createGroundGlassDofUniformState";
+import {
+  decodeGroundGlassSignedCoC,
+  encodeGroundGlassSignedCoC,
+  quantizeGroundGlassSignedCoCByte,
+  resolveGroundGlassCocStorageMaxMm,
+} from "../../render/groundGlassCocTarget";
 import {
   createGroundGlassCamera,
   createGroundGlassDepthTarget,
@@ -29,7 +36,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type {
   GroundGlassRttChannel,
   GroundGlassRttRuntimeInfo,
@@ -40,6 +47,7 @@ import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInsp
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
   renderedScenes: [] as unknown[],
+  cocFramebufferStatuses: [] as number[],
   currentTarget: null as unknown,
   gl: {
     getPixelRatio: () => 1,
@@ -50,7 +58,8 @@ const fiberTestState = vi.hoisted(() => ({
     getContext: () => ({
       FRAMEBUFFER: 0x8d40,
       FRAMEBUFFER_COMPLETE: 0x8cd5,
-      checkFramebufferStatus: () => 0x8cd5,
+      checkFramebufferStatus: () =>
+        fiberTestState.cocFramebufferStatuses.shift() ?? 0x8cd5,
     }),
     setClearColor: () => undefined,
     clear: () => undefined,
@@ -97,6 +106,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   fiberTestState.frameCallback = null;
   fiberTestState.renderedScenes.length = 0;
+  fiberTestState.cocFramebufferStatuses.length = 0;
   fiberTestState.currentTarget = null;
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
@@ -149,6 +159,178 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("passes Architecture Rise physical CoC inputs without a display blur gain", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      focusDistanceMm: 13000,
+      aperture: 5.6 as const,
+      frontRiseMm: 22,
+      frontTiltDeg: 0.4,
+      frontSwingDeg: -1.1,
+    };
+    const optics = deriveOpticsState(camera, architectureRiseScene);
+    const diagnostics = createRuntimeInfoCollector();
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: optics,
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        aperture: camera.aperture,
+        renderQuality: "standard",
+        previewMode: "upright",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const materials = renderedShaderMaterials();
+    const cocMaterial = materials.find((material) =>
+      material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
+    );
+    const gatherMaterial = materials.find((material) =>
+      material.fragmentShader.includes("goldenAngle"),
+    );
+    expect(cocMaterial?.uniforms.fNumber.value).toBe(5.6);
+    expect(cocMaterial?.uniforms.circleOfConfusionMm.value).toBe(0.1);
+    expect(cocMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(gatherMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(gatherMaterial?.uniforms.fNumber.value).toBe(5.6);
+    expect(gatherMaterial?.uniforms.circleOfConfusionMm.value).toBe(0.1);
+    expect(diagnostics.get()?.groundGlassPhysicalBoundaryRadiusPx).toBeCloseTo(
+      ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
+      12,
+    );
+
+    view.unmount();
+  });
+
+  it("wires physical encoded-byte CoC and footprint ranges to both RTT shaders", () => {
+    // Force the production fallback policy: half-float attachment fails and
+    // the RGBA8 target succeeds.
+    fiberTestState.cocFramebufferStatuses.push(0x8cd6, 0x8cd5);
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      focusDistanceMm: 13000,
+      aperture: 5.6 as const,
+      frontRiseMm: 22,
+      frontTiltDeg: 0.4,
+      frontSwingDeg: -1.1,
+    };
+    const optics = deriveOpticsState(camera, architectureRiseScene);
+    const diagnostics = createRuntimeInfoCollector();
+    const initialProps = {
+      opticsState: optics,
+      focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene,
+      widthPx: 500,
+      heightPx: 400,
+      aperture: camera.aperture,
+      renderQuality: "standard" as const,
+      previewMode: "upright" as const,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, initialProps),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const findCocAndGatherMaterials = () => {
+      const materials = renderedShaderMaterials();
+      const cocMaterial = materials.find((material) =>
+        material.fragmentShader.includes("calculateCoCDiameterMmAtFragment"),
+      );
+      const gatherMaterial = materials.find((material) =>
+        material.fragmentShader.includes("goldenAngle"),
+      );
+      expect(cocMaterial).toBeDefined();
+      expect(gatherMaterial).toBeDefined();
+      return { cocMaterial: cocMaterial!, gatherMaterial: gatherMaterial! };
+    };
+    const expectByteStorageRanges = (displayWidthPx: number) => {
+      const { cocMaterial, gatherMaterial } = findCocAndGatherMaterials();
+      expect(cocMaterial.uniforms.cocStorageEncoded.value).toBe(1);
+      expect(gatherMaterial.uniforms.cocStorageEncoded.value).toBe(1);
+      expect(cocMaterial.uniforms).not.toHaveProperty("displayBlurScale");
+      expect(gatherMaterial.uniforms).not.toHaveProperty("displayBlurScale");
+
+      const expectedCocStorageMaxMm = resolveGroundGlassCocStorageMaxMm({
+        maximumCoCRadiusPx: Number(cocMaterial.uniforms.maximumCoCRadiusPx.value),
+        filmWidthMm: Number(cocMaterial.uniforms.sampledFilmWidthMm.value),
+        renderWidthPx: Number(cocMaterial.uniforms.renderWidth.value),
+      });
+      const expectedFootprintStorageMaxMm = expectedCocStorageMaxMm * 0.5;
+
+      expect(cocMaterial.uniforms.cocStorageMaxMm.value).toBeCloseTo(
+        expectedCocStorageMaxMm,
+        12,
+      );
+      expect(gatherMaterial.uniforms.cocStorageMaxMm.value).toBeCloseTo(
+        expectedCocStorageMaxMm,
+        12,
+      );
+      expect(cocMaterial.uniforms.footprintStorageMaxMm.value).toBeCloseTo(
+        expectedFootprintStorageMaxMm,
+        12,
+      );
+      expect(gatherMaterial.uniforms.footprintStorageMaxMm.value).toBeCloseTo(
+        expectedFootprintStorageMaxMm,
+        12,
+      );
+      expect(cocMaterial.uniforms.cocStorageMaxMm.value).toBe(
+        gatherMaterial.uniforms.cocStorageMaxMm.value,
+      );
+      expect(cocMaterial.uniforms.footprintStorageMaxMm.value).toBe(
+        gatherMaterial.uniforms.footprintStorageMaxMm.value,
+      );
+      expect(diagnostics.get()?.cocStorageFormat).toBe("encoded-byte");
+      expect(diagnostics.get()?.groundGlassPhysicalBoundaryRadiusPx).toBeCloseTo(
+        ACCEPTABLE_COC_DIAMETER_MM * displayWidthPx / CAMERA_CONSTANTS.filmWidthMm / 2,
+        12,
+      );
+      for (const physicalMm of [0.169, -0.169]) {
+        const encoded = encodeGroundGlassSignedCoC(
+          physicalMm,
+          "encoded-byte",
+          expectedCocStorageMaxMm,
+        );
+        const byte = quantizeGroundGlassSignedCoCByte(encoded);
+        const decoded = decodeGroundGlassSignedCoC(
+          encoded,
+          "encoded-byte",
+          expectedCocStorageMaxMm,
+        );
+        expect(byte).not.toBe(128);
+        expect(Math.sign(decoded)).toBe(Math.sign(physicalMm));
+      }
+      return Number(cocMaterial.uniforms.renderWidth.value);
+    };
+
+    const initialWidthPx = expectByteStorageRanges(initialProps.widthPx);
+    expect(initialWidthPx).toBeGreaterThan(0);
+    expect(fiberTestState.cocFramebufferStatuses).toHaveLength(0);
+
+    view.rerender(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        ...initialProps,
+        widthPx: 640,
+      }),
+    );
+    const resizedWidthPx = expectByteStorageRanges(640);
+    expect(resizedWidthPx).toBeGreaterThan(initialWidthPx);
+
+    act(() => fiberTestState.frameCallback?.());
+    expectByteStorageRanges(640);
+    view.unmount();
+  });
+
   it("synchronizes the active clip range into both CoC and aperture gather materials", () => {
     const cocMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -219,6 +401,12 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(gatherMaterial?.uniforms.filmPlaneBasisX.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.filmPlaneBasisY.value.length()).toBeCloseTo(1, 6);
     expect(gatherMaterial?.uniforms.footprintStorageMaxMm.value).toBeGreaterThan(0);
+    expect(cocMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(gatherMaterial?.uniforms).not.toHaveProperty("displayBlurScale");
+    expect(diagnostics.get()?.groundGlassPhysicalBoundaryRadiusPx).toBeCloseTo(
+      ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
+      12,
+    );
     expect(diagnostics.get()?.nearGatherTargetWidthPx).toBe(
       diagnostics.get()?.gatherTargetWidthPx,
     );
@@ -276,6 +464,25 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     });
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(initialGain, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(initialGain, 12);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBeCloseTo(
+      optics.groundGlassNaturalIllumination.kind === "parallel-cos4"
+        ? optics.groundGlassNaturalIllumination.imageDistanceMm
+        : 0,
+      12,
+    );
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("parallel-cos4");
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageMode.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageRadiusMm.value).toBeCloseTo(
+      optics.groundGlassCoverage.kind === "parallel-circle"
+        ? optics.groundGlassCoverage.imageCircleRadiusMm
+        : 0,
+      12,
+    );
+    expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassCoverageKind).toBe("parallel-circle");
     expect(compositeMaterial?.uniforms.flipDisplayX.value).toBe(1);
     expect(compositeMaterial?.uniforms.flipDisplayY.value).toBe(1);
     const initialGeneration = diagnostics.get()?.resourceGeneration;
@@ -340,6 +547,13 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     act(() => fiberTestState.frameCallback?.());
 
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassIlluminanceGain).toBe(1);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(false);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(false);
+    expect(diagnostics.get()?.groundGlassCoverageKind).toBe("parallel-circle");
     expect(diagnostics.get()?.resourceGeneration).toBe(initialGeneration);
     expect(createSubject).toHaveBeenCalledTimes(1);
     expect(setSize).not.toHaveBeenCalled();
@@ -377,6 +591,13 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(compositeMaterial).toBeDefined();
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(1 / 1.44, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(1 / 1.44, 12);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBeCloseTo(180, 12);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageRadiusMm.value).toBeCloseTo(
+      180 * Math.tan((36 * Math.PI) / 180),
+      12,
+    );
 
     const oneToOneCamera = {
       ...initialCamera,
@@ -392,8 +613,82 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     act(() => fiberTestState.frameCallback?.());
 
     expect(oneToOneOptics.diagnostics.imageDistanceMm).toBeCloseTo(300, 12);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBeCloseTo(300, 12);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageRadiusMm.value).toBeCloseTo(
+      300 * Math.tan((36 * Math.PI) / 180),
+      12,
+    );
     expect(compositeMaterial?.uniforms.groundGlassIlluminanceGain.value).toBeCloseTo(0.25, 12);
     expect(diagnostics.get()?.groundGlassIlluminanceGain).toBeCloseTo(0.25, 12);
+
+    view.unmount();
+  });
+
+  it("sends canonical non-parallel conic coefficients to the composite and preserves Raw Debug bypass", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+      frontSwingDeg: 5,
+    };
+    const optics = deriveOpticsState(camera, architectureRiseScene);
+    expect(optics.groundGlassCoverage.kind).toBe("nonparallel-conic");
+    if (optics.groundGlassCoverage.kind !== "nonparallel-conic") return;
+
+    const diagnostics = createRuntimeInfoCollector();
+    const props = {
+      opticsState: optics,
+      focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene,
+      widthPx: 500,
+      heightPx: 400,
+      aperture: 11 as const,
+      previewMode: "raw" as const,
+      renderQuality: "standard" as const,
+      onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+    };
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, props));
+    act(() => fiberTestState.frameCallback?.());
+
+    const compositeMaterial = renderedShaderMaterials().find((material) =>
+      material.fragmentShader.includes("uniform float groundGlassCoverageMode"),
+    );
+    expect(compositeMaterial).toBeDefined();
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageMode.value).toBe(2);
+    const q = compositeMaterial?.uniforms.groundGlassCoverageConicQuadratic.value as THREE.Vector3;
+    const linear = compositeMaterial?.uniforms.groundGlassCoverageConicLinear.value as THREE.Vector3;
+    const axial = compositeMaterial?.uniforms.groundGlassCoverageConicAxial.value as THREE.Vector3;
+    expect([q.x, q.y, q.z]).toEqual([
+      optics.groundGlassCoverage.quadratic.a,
+      optics.groundGlassCoverage.quadratic.b,
+      optics.groundGlassCoverage.quadratic.c,
+    ]);
+    expect([linear.x, linear.y, linear.z]).toEqual([
+      optics.groundGlassCoverage.quadratic.d,
+      optics.groundGlassCoverage.quadratic.e,
+      optics.groundGlassCoverage.quadratic.f,
+    ]);
+    expect([axial.x, axial.y, axial.z]).toEqual([
+      optics.groundGlassCoverage.axial.x,
+      optics.groundGlassCoverage.axial.y,
+      optics.groundGlassCoverage.axial.constant,
+    ]);
+    expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
+    expect(diagnostics.get()?.groundGlassCoverageConicQuadratic?.split(",")).toHaveLength(6);
+    expect(diagnostics.get()?.groundGlassCoverageConicAxial?.split(",")).toHaveLength(3);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("neutral");
+
+    const canonicalDiagnostic = diagnostics.get()?.groundGlassCoverageConicQuadratic;
+    view.rerender(React.createElement(UnconnectedGroundGlassRTT, { ...props, rawDebug: true }));
+    act(() => fiberTestState.frameCallback?.());
+    expect(compositeMaterial?.uniforms.groundGlassCoverageEnabled.value).toBe(0);
+    expect(compositeMaterial?.uniforms.groundGlassCoverageMode.value).toBe(0);
+    expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(false);
+    expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
+    expect(diagnostics.get()?.groundGlassCoverageConicQuadratic).toBe(canonicalDiagnostic);
 
     view.unmount();
   });

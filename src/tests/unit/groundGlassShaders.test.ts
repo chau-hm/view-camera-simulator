@@ -52,8 +52,8 @@ function extractFunctionBody(source: string, name: string) {
 
 describe("GroundGlass DOF shader source", () => {
   test("shared uniform decls include required uniforms", () => {
-    expect(groundGlassUniformDecls).not.toContain("displayBlurScale");
     expect(groundGlassUniformDecls).toContain("maximumCoCRadiusPx");
+    expect(groundGlassUniformDecls).not.toContain("displayBlurScale");
     expect(groundGlassUniformDecls).toContain("sampleCount");
     expect(groundGlassUniformDecls).toContain("sampledFilmWidthMm");
     expect(groundGlassUniformDecls).toContain("sampledFilmHeightMm");
@@ -152,6 +152,9 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassApertureGatherFragmentShader).toContain("orientedFootprintOffsetPx");
     expect(groundGlassApertureGatherFragmentShader).toContain("footprintAreaPx");
     expect(groundGlassApertureGatherFragmentShader).toContain("ellipseFootprintWeight");
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "majorRadiusMm * renderWidth / sampledFilmWidthMm",
+    );
     expect(groundGlassApertureGatherFragmentShader).toContain("coverageMass");
     expect(groundGlassApertureGatherFragmentShader).toContain("proposalCompensation");
     expect(groundGlassApertureGatherFragmentShader).toContain(
@@ -198,6 +201,37 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassCompositeFragmentShader).toContain("useNearGather");
     expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassIlluminanceGain");
     expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassIlluminanceGain");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassNaturalIlluminationEnabled");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassNaturalIlluminationImageDistanceMm");
+    expect(groundGlassCompositeFragmentShader).toContain("resolveGroundGlassNaturalIllumination");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassCoverageEnabled");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassCoverageMode");
+    expect(groundGlassCompositeFragmentShader).toContain("if (groundGlassCoverageMode < 1.5)");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform float groundGlassCoverageRadiusMm");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform vec3 groundGlassCoverageConicQuadratic");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform vec3 groundGlassCoverageConicLinear");
+    expect(groundGlassCompositeFragmentShader).toContain("uniform vec3 groundGlassCoverageConicAxial");
+    expect(groundGlassCompositeFragmentShader).toContain("resolveGroundGlassCoverage");
+    expect(groundGlassCompositeFragmentShader).toContain("groundGlassCoverageEdgeFeatherMm");
+    expect(groundGlassCompositeFragmentShader).toContain("mapGroundGlassRttTextureUvToCanonicalFilmUv");
+    expect(groundGlassCompositeFragmentShader).toContain(
+      "resolveGroundGlassFilmPointMm(sampleUv)",
+    );
+    expect(groundGlassCompositeFragmentShader).not.toContain("sourceUprightUv");
+    expect(groundGlassCompositeFragmentShader).toContain("resolveGroundGlassFilmPointMm");
+    expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassNaturalIlluminationGain");
+    expect(groundGlassCompositeFragmentShader).toContain("gathered.rgb *= groundGlassCoverageGain");
+    expect(groundGlassCompositeFragmentShader).toContain("smoothstep");
+    expect(groundGlassCompositeFragmentShader).toContain("float imageSideDistanceMm = dot(");
+    expect(groundGlassCompositeFragmentShader).toContain("if (imageSideDistanceMm <= 0.0) return 0.0;");
+    expect(groundGlassCompositeFragmentShader).toContain("float conicValue = quadratic.x * x * x +");
+    expect(groundGlassCompositeFragmentShader).toContain("quadratic.y * x * y +");
+    expect(groundGlassCompositeFragmentShader).toContain("quadratic.z * y * y +");
+    expect(groundGlassCompositeFragmentShader).toContain("vec2 conicGradient = vec2(");
+    expect(groundGlassCompositeFragmentShader).toContain("float signedDistanceMm = conicValue / max(length(conicGradient), 1e-6);");
+    expect(groundGlassCompositeFragmentShader).toContain("1.0 - smoothstep(");
+    expect(groundGlassCompositeFragmentShader).toContain("-halfFeatherMm,");
+    expect(groundGlassCompositeFragmentShader).toContain("groundGlassIlluminanceGain");
     expect(groundGlassCompositeFragmentShader).not.toContain("applyFocusRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("showRing");
     expect(groundGlassCompositeFragmentShader).not.toContain("sigma");

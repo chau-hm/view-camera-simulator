@@ -9,6 +9,8 @@ export const readoutsMessages = {
     factor: "Bellows factor",
     exposure: "Exposure compensation",
     stops: "+{{value}} stops",
+    imageCircle: "Image circle",
+    imageCircleValue: "{{diameter}} mm · simulator profile",
     requiredExtension: "Required bellows extension",
     availableTravel: "Available bellows travel",
     travelWarning: "Approaching the available bellows travel.",

@@ -47,6 +47,8 @@ test("Lesson 0 presents the anatomy sequence and isolates its presentation state
   await expect(lessonHeading).toHaveText("Now try the controls");
 
   await next.click();
+  await expect(lessonHeading).toHaveText("Understanding the Image Circle");
+  await next.click();
   await expect(lessonHeading).toHaveText("Front Rise");
   const sceneCanvas = page.getByTestId("scene-canvas");
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");

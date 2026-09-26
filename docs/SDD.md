@@ -471,9 +471,193 @@ export type DerivedOpticsState = {
   depthOfFieldFarPlane: Plane;
 
   groundGlassProjection: ProjectionData;
-  imageCircleData: ImageCircleData;
+  lensDefinition: LensDefinition | null;
+  lensCoverage: DerivedLensCoverage | null;
+  groundGlassNaturalIllumination: GroundGlassNaturalIlluminationState;
+  groundGlassCoverage: GroundGlassCoverageState;
 };
 ```
+
+## 9.1 Lens specification and coverage contract
+
+The thin-lens equation determines conjugate image distance; it does not, by
+itself, define a finite image circle. Finite coverage belongs to the reusable
+lens specification, not to a scene, renderer, or camera-state constant.
+
+Coverage profiles use an explicit complete included angle in degrees. For an
+image distance `v` in millimetres, the derived circle is on a plane
+perpendicular to the optical axis:
+
+```text
+half-angle = fullCoverageAngleDeg / 2
+radius = v * tan(half-angle)
+diameter = 2 * radius
+```
+
+The physical image distance is therefore part of the derivation. Bellows
+extension in macro focus increases `v` and increases the projected coverage
+diameter for a fixed angular profile. The simulator publishes explicit 90,
+105, 120, and 150 mm angular teaching profiles. Their angles are derived from
+the existing 150 mm / 72° anchor so the infinity reference Image Circle is
+approximately 217.963 mm for every published choice. This equal movement-room
+calibration is a simulator-family design decision, not a real-lens rule or
+manufacturer claim. Unknown positive focal lengths continue to resolve to
+`unbounded-ideal`; invalid physical inputs fail closed instead of producing a
+sentinel diameter.
+
+Macro Scene 1 uses this fixed angular-coverage profile as a teaching model:
+the perpendicular reference Image Circle diameter grows with canonical image
+distance `v`. Because this scene keeps lens and film planes parallel, that
+reference circle is also the actual film-plane Image Circle. This is not a
+universal measured law for real photographic lenses, whose coverage may depend
+on optical design and mechanical limits. Keep this coverage growth separate
+from bellows exposure loss: extension enlarges the Image Circle while bellows
+loss reduces overall Ground Glass exposure.
+
+`DerivedLensCoverage` remains the perpendicular-reference-plane authority. For
+finite coverage, its canonical radius and reference image distance define the
+same image-side right-circular coverage cone used to intersect a tilted or
+swung film plane.
+
+## 9.2 Ground Glass natural illumination
+
+Ground Glass exposure and off-axis illumination remain separate optical
+factors. The existing global gain combines aperture throughput with valid
+bellows-extension loss; the Ground Glass RTT then applies the parallel-film
+thin-lens natural-illumination approximation independently:
+
+```text
+global Ground Glass gain
+  = aperture throughput × bellows-extension loss
+
+natural off-axis gain
+  = cos⁴(theta)
+```
+
+For a perpendicular film plane, `theta` is measured from the image-side
+optical axis to each physical film point, using the actual lens-to-film image
+distance. The falloff centre is the canonical optical-axis intersection with
+the film plane, so front rise and shift move it relative to the film. Raw and
+Upright presentation transforms and the inspection crop operate on the same
+physical source-film sample; the falloff is not a screen-space radial
+gradient.
+
+The current approximation is enabled only for a materially parallel
+lens-film relationship. Non-parallel Tilt/Swing states remain neutral until a
+later PR derives their film-plane illumination geometry. Natural illumination
+does not define a finite image circle or mechanical-vignetting cutoff.
+
+## 9.3 Ground Glass finite coverage
+
+For a finite angular lens profile, `DerivedLensCoverage` describes a circle on a
+plane perpendicular to the optical axis. The Ground Glass coverage state
+describes that cone's intersection with the actual film plane:
+
+```text
+parallel film       → parallel-circle
+non-parallel film   → nonparallel-conic
+unbounded profile   → unbounded (no finite boundary)
+```
+
+The authority and consumer flow is:
+
+```text
+LensDefinition coverage + canonical image distance
+  → DerivedLensCoverage (perpendicular reference Image Circle)
+  → intersect with the actual canonical film plane
+  → GroundGlassCoverageState
+      ├─ parallel-circle
+      ├─ nonparallel-conic
+      ├─ unbounded
+      └─ neutral (invalid coverage or geometry)
+  → Ground Glass mask and physical 3D coverage overlay
+```
+
+`DerivedLensCoverage` and `GroundGlassCoverageState` are distinct contracts.
+The first remains the lens-level reference-circle authority; the second is the
+actual film-plane intersection authority consumed by both renderers. Neither
+UI nor renderer presentation code recalculates the coverage cone.
+
+For a non-parallel film, the conic is expressed in the canonical rear-standard
+film basis. Let `a` be the image-side unit optical axis, `L` the lens centre,
+`F` the film centre, `r/u` the rear-standard right/up basis, and
+`P(x,y) = F + x*r + y*u`. The cone slope comes from canonical
+`imageCircleRadiusMm / imageDistanceMm`; coverage is the quadratic cone
+condition `Q(x,y) <= 0` together with the image-side half-space `T(x,y) > 0`.
+The Ground Glass shader consumes these canonical coefficients; it does not
+recompute the coverage angle or approximate the conic as a stretched circle.
+
+The final linear-light response keeps the optical factors separate:
+
+```text
+scene radiance
+  × aperture throughput
+  × bellows-extension loss
+  × cos⁴ natural illumination
+  × finite coverage mask
+```
+
+The established parallel-circle path remains unchanged. The non-parallel conic
+mask evaluates the same physical Raw-film point as the circle mask and includes
+the image-side half-space so the object-side branch of the double cone is never
+accepted. Inspection crops change the viewed film window but do not recenter the
+conic. Raw RTT Debug bypasses the finite mask. A narrow edge feather derived
+from one output pixel is raster anti-aliasing only, not an optical transition.
+Natural illumination remains parallel-only and neutral for non-parallel planes;
+finite coverage and natural illumination are independent effects.
+
+The 3D finite-coverage footprint and the Ground Glass mask use the same
+canonical rear-standard film-local X/Y coordinates. The off-axis RTT camera
+maps each source texel to that physical film basis; Raw and Upright Assist only
+select the displayed source texel and do not alter the physical coverage
+direction.
+
+The simulator's 150 mm lens is currently identified as
+`simulator-parametric-150mm` with a 72° full coverage angle. It is an explicit
+teaching profile and must not be read as measured or manufacturer lens data.
+
+The same `GroundGlassCoverageState` is consumed by the physical 3D Scene
+overlay. `parallel-circle` keeps the existing canonical circular perimeter;
+`nonparallel-conic` is decomposed locally into a closed ellipse for display,
+with its film-local centre and principal axes lifted through the canonical
+rear-standard frame. The 3D adapter consumes the stored quadratic directly and
+does not reconstruct the cone from lens angles. Its outline, triangle-fan
+surface, and 12 sparse coverage rays share the same perimeter samples. Generic
+coverage diagnostics distinguish this footprint from the parallel Image
+Circle, and the legend is anchored at the resolved coverage centre.
+
+The 3D overlay currently supports finite closed image-side conics within the
+simulator's movement envelope. Open, empty, singular, or numerically unstable
+conics are omitted from the 3D view without changing the authoritative Ground
+Glass quadratic mask. Unbounded or invalid profiles have no finite 3D
+footprint.
+
+This physical 3D Image Circle is separate from the Lesson 0 conceptual Image
+Circle illustration. The Lesson 0 circle remains presentation-only and is not a
+lens specification, Ground Glass input, or movement-limit calculation.
+
+## 9.4 Catalog-aware lens control
+
+`CameraState.focalLengthMm` remains the current public/runtime compatibility
+boundary. The learner-facing Lens control resolves each declared numeric scene
+option through `resolveLensDefinitionForFocalLengthMm` and presents the
+catalog's coverage semantics without introducing a second selected-lens state.
+
+The current public choices resolve to four explicit finite simulator teaching
+profiles: 90 mm / 100.9°, 105 mm / 92.1°, 120 mm / 84.5°, and 150 mm / 72°.
+Their shared infinity reference Image Circle is deliberate calibration data,
+not manufacturer data. `Not modelled` applies only to an unpublished focal
+length whose compatibility fallback is `unbounded-ideal`; it means the
+simulator imposes no finite boundary for that option, not that a real lens has
+infinite coverage. The selected readout consumes canonical
+`DerivedLensCoverage`: when Ground Glass state is `parallel-circle`, it is
+labelled “Image circle”; for `nonparallel-conic`, it is labelled “Reference
+image circle” and identifies the actual film region as the Coverage Footprint.
+The number remains the perpendicular reference-circle diameter. LensControl
+does not calculate an equivalent conic diameter. Multiple distinct lens
+definitions sharing one focal length are not representable by this
+compatibility boundary; a future `lensId` migration would be required for that
+catalog expansion.
 
 ---
 
