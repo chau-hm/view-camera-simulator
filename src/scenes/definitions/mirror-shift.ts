@@ -8,9 +8,8 @@ export const mirrorShiftScene: SceneDefinition = {
     "See a planar mirror as a viewing aperture containing reflected props and a simplified view-camera reflection.",
   assets: [],
   cameraPreset: {
-    // The shared 120 mm ideal lens profile has unbounded coverage. The
-    // physical Image Circle overlay is therefore intentionally unavailable
-    // here; do not fabricate a finite boundary for this viewpoint lesson.
+    // The published 120 mm simulator profile has explicit finite angular coverage
+    // and uses the shared canonical Image Circle path.
     focalLengthMm: 120,
     focusDistanceMm: 6000,
     aperture: 11,
@@ -22,6 +21,12 @@ export const mirrorShiftScene: SceneDefinition = {
     rearShiftMm: 0,
     rearTiltDeg: 0,
     rearSwingDeg: 0,
+  },
+  finiteFocusStrategy: {
+    kind: "rear-standard-thin-lens",
+    lensDatum: "baseline-origin",
+    focusDistanceReference: "lens-to-focus-plane",
+    filmDepthReference: "rear-standard-z",
   },
   cameraPlacement: {
     position: { x: 7600, y: 4200, z: -8200 },

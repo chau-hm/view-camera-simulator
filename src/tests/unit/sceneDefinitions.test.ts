@@ -197,7 +197,15 @@ describe("scene definitions", () => {
 
   it("keeps Mirror Shift in a fixed neutral camera state", () => {
     expect(mirrorShiftScene.name).toBe("Mirror Shift");
+    expect(mirrorShiftScene.cameraPreset.focalLengthMm).toBe(120);
+    expect(mirrorShiftScene.cameraPreset.focusDistanceMm).toBe(6000);
     expect(mirrorShiftScene.cameraPreset.aperture).toBe(11);
+    expect(mirrorShiftScene.finiteFocusStrategy).toEqual({
+      kind: "rear-standard-thin-lens",
+      lensDatum: "baseline-origin",
+      focusDistanceReference: "lens-to-focus-plane",
+      filmDepthReference: "rear-standard-z",
+    });
     expect(mirrorShiftScene.cameraControlPolicy).toEqual({
       movement: "fixed",
       focusDistance: "fixed",

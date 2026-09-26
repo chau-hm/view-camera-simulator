@@ -15,6 +15,14 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   await expect(scene).toHaveAttribute("data-lens-coverage-capability", "angular");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
+  await expect(scene).toHaveAttribute(
+    "data-camera-lens-center-world",
+    "0.000000,0.000000,0.000000",
+  );
+  await expect(scene).toHaveAttribute(
+    "data-camera-film-center-world",
+    "0.000000,0.000000,-122.448980",
+  );
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   const physicalScale = await expectGroundGlassPhysicalScale(rtt);
@@ -57,6 +65,14 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
   // control before verifying that Ground Glass renders the changed state.
   await page.getByRole("button", { name: "Restore 2D Geometry" }).click();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
+  await expect(scene).toHaveAttribute(
+    "data-camera-lens-center-world",
+    "1945.000000,0.000000,0.000000",
+  );
+  await expect(scene).toHaveAttribute(
+    "data-camera-film-center-world",
+    "2000.000000,0.000000,-122.448980",
+  );
   await page.getByRole("button", { name: "Reset movements" }).click();
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");

@@ -96,7 +96,7 @@ describe("Mirror Shift guided task", () => {
     expect(result.secondaryFeedback[0]?.key).toBe("tasks.mirrorShift.feedback.passSecondary");
   });
 
-  it("accepts a nearby outcome that satisfies the measured contracts", () => {
+  it("keeps the unchanged framing threshold tied to the corrected film projection", () => {
     if (!task) throw new Error("Mirror Shift task is not registered");
     const camera = cameraFor("framing-restored");
     camera.mirrorShiftLessonState = { rigLateralMm: 2000 };
@@ -107,7 +107,8 @@ describe("Mirror Shift guided task", () => {
       camera,
       deriveOpticsState(camera, mirrorShiftScene),
     );
-    expect(result.status).toBe("passed");
+    expect(result.status).toBe("failed");
+    expect(result.criteria.map(({ passed }) => passed)).toEqual([true, false, true]);
   });
 
   it("fails a front-shift-only shortcut", () => {
