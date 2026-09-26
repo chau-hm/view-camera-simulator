@@ -1,9 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 
-vi.mock("../utils/webgl", () => ({
-  isWebGLAvailable: () => true,
-}));
+vi.mock("../render/backend/rendererBackend", async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import("../render/backend/rendererBackend")
+  >();
+  return {
+    ...actual,
+    detectAvailableRendererBackend: () => "webgl",
+  };
+});
 
 vi.mock("@react-three/fiber", () => ({
   Canvas: () => null,
