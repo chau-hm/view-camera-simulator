@@ -50,6 +50,7 @@ const fiberTestState = vi.hoisted(() => ({
   cocFramebufferStatuses: [] as number[],
   currentTarget: null as unknown,
   gl: {
+    isWebGLRenderer: true,
     getPixelRatio: () => 1,
     getRenderTarget: () => fiberTestState.currentTarget,
     setRenderTarget: (target: unknown) => {
