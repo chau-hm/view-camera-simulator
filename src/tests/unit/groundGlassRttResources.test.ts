@@ -1,6 +1,33 @@
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { resizeGroundGlassRttResources } from "../../render/groundGlassRttResources";
+import * as groundGlassCocTarget from "../../render/groundGlassCocTarget";
+import {
+  createGroundGlassRttResources,
+  resizeGroundGlassRttResources,
+} from "../../render/groundGlassRttResources";
+
+const FRAMEBUFFER_COMPLETE = 0x8cd5;
+
+const createRenderer = () => {
+  const previousTarget = null;
+  const boundTargets: Array<THREE.WebGLRenderTarget | null> = [];
+  let currentTarget: THREE.WebGLRenderTarget | null = previousTarget;
+  const context = {
+    FRAMEBUFFER: 0x8d40,
+    FRAMEBUFFER_COMPLETE,
+    checkFramebufferStatus: vi.fn(() => FRAMEBUFFER_COMPLETE),
+  } as unknown as WebGLRenderingContext;
+  const renderer = {
+    isWebGLRenderer: true,
+    getContext: vi.fn(() => context),
+    getRenderTarget: vi.fn(() => currentTarget),
+    setRenderTarget: vi.fn((target: THREE.WebGLRenderTarget | null) => {
+      boundTargets.push(target);
+      currentTarget = target;
+    }),
+  } as unknown as THREE.WebGLRenderer;
+  return { renderer, context, boundTargets, previousTarget };
+};
 
 const createMaterial = (width: number, height: number) =>
   new THREE.ShaderMaterial({
@@ -10,82 +37,192 @@ const createMaterial = (width: number, height: number) =>
     },
   });
 
+const disposeMaterials = (materials: readonly THREE.ShaderMaterial[]) =>
+  materials.forEach((material) => material.dispose());
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("resizeGroundGlassRttResources", () => {
-  it("keeps CoC full resolution while scaling the aperture gather target", () => {
-    const renderTarget = new THREE.WebGLRenderTarget(100, 80);
-    renderTarget.depthTexture = new THREE.DepthTexture(100, 80);
-    const cocTarget = new THREE.WebGLRenderTarget(100, 80);
-    const gatherTarget = new THREE.WebGLRenderTarget(100, 80);
-    const nearGatherTarget = new THREE.WebGLRenderTarget(100, 80);
-    const finalTarget = new THREE.WebGLRenderTarget(100, 80);
-    const cocMaterial = createMaterial(100, 80);
-    const gatherMaterial = createMaterial(100, 80);
-    const compositeMaterial = createMaterial(100, 80);
-    const targets = [renderTarget, cocTarget, gatherTarget, nearGatherTarget, finalTarget];
-    const setSizeSpies = targets.map((target) => vi.spyOn(target, "setSize"));
+describe("Ground Glass RTT semantic resource ownership", () => {
+  it("creates stage-owned targets, preserves the W1 CoC probe, and resizes the consuming resources", () => {
+    const { renderer, context, boundTargets, previousTarget } = createRenderer();
+    const resources = createGroundGlassRttResources({
+      renderer,
+      widthPx: 100,
+      heightPx: 80,
+      gatherScale: 0.5,
+    });
+    const materials = {
+      coc: createMaterial(100, 80),
+      gather: createMaterial(100, 80),
+      composite: createMaterial(100, 80),
+    };
+    const resizableTargets = [
+      resources.scene.colorDepthTarget,
+      resources.coc.classificationTarget,
+      resources.gather.farTarget,
+      resources.gather.nearTarget,
+      resources.composite.outputTarget,
+    ];
+    const setSizeSpies = resizableTargets.map((target) =>
+      vi.spyOn(target, "setSize"),
+    );
+
+    expect(resources.scene.colorDepthTarget.depthTexture).toBeInstanceOf(
+      THREE.DepthTexture,
+    );
+    expect(resources.gather.farTarget.width).toBe(50);
+    expect(resources.gather.farTarget.height).toBe(40);
+    expect(resources.gather.nearTarget.width).toBe(50);
+    expect(resources.gather.nearTarget.height).toBe(40);
+    expect(resources.diagnostics.rawSceneTarget.width).toBe(32);
+    expect(resources.diagnostics.compositeOutputTarget.width).toBe(32);
+    expect(context.checkFramebufferStatus).toHaveBeenCalledTimes(1);
+    expect(boundTargets).toContain(resources.coc.classificationTarget);
+    expect(boundTargets[boundTargets.length - 1]).toBe(previousTarget);
 
     const changed = resizeGroundGlassRttResources(
-      { renderTarget, cocTarget, gatherTarget, nearGatherTarget, finalTarget, cocMaterial, gatherMaterial, compositeMaterial },
+      resources,
+      materials,
       640,
       512,
       0.5,
     );
 
     expect(changed).toBe(true);
-    expect(renderTarget.width).toBe(640);
-    expect(renderTarget.height).toBe(512);
-    expect(cocTarget.width).toBe(640);
-    expect(cocTarget.height).toBe(512);
-    expect(gatherTarget.width).toBe(320);
-    expect(gatherTarget.height).toBe(256);
-    expect(nearGatherTarget.width).toBe(320);
-    expect(nearGatherTarget.height).toBe(256);
-    expect(finalTarget.width).toBe(640);
-    expect(finalTarget.height).toBe(512);
-    expect(renderTarget.depthTexture.image.width).toBe(640);
-    expect(renderTarget.depthTexture.image.height).toBe(512);
-    for (const material of [cocMaterial, gatherMaterial, compositeMaterial]) {
+    expect(resources.scene.colorDepthTarget.width).toBe(640);
+    expect(resources.scene.colorDepthTarget.height).toBe(512);
+    expect(resources.coc.classificationTarget.width).toBe(640);
+    expect(resources.coc.classificationTarget.height).toBe(512);
+    expect(resources.gather.farTarget.width).toBe(320);
+    expect(resources.gather.farTarget.height).toBe(256);
+    expect(resources.gather.nearTarget.width).toBe(320);
+    expect(resources.gather.nearTarget.height).toBe(256);
+    expect(resources.composite.outputTarget.width).toBe(640);
+    expect(resources.composite.outputTarget.height).toBe(512);
+    expect(resources.scene.colorDepthTarget.depthTexture?.image).toMatchObject({
+      width: 640,
+      height: 512,
+    });
+    expect(resources.diagnostics.rawSceneTarget.width).toBe(32);
+    expect(resources.diagnostics.compositeOutputTarget.width).toBe(32);
+    for (const material of Object.values(materials)) {
       expect(material.uniforms.renderWidth.value).toBe(640);
       expect(material.uniforms.renderHeight.value).toBe(512);
     }
     setSizeSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
 
-    targets.forEach((target) => target.dispose());
-    cocMaterial.dispose();
-    gatherMaterial.dispose();
-    compositeMaterial.dispose();
+    resources.dispose();
+    disposeMaterials(Object.values(materials));
   });
 
-  it("does not perform redundant target resizes for an unchanged desired size", () => {
-    const renderTarget = new THREE.WebGLRenderTarget(640, 512);
-    renderTarget.depthTexture = new THREE.DepthTexture(640, 512);
-    const cocTarget = new THREE.WebGLRenderTarget(640, 512);
-    const gatherTarget = new THREE.WebGLRenderTarget(320, 256);
-    const nearGatherTarget = new THREE.WebGLRenderTarget(320, 256);
-    const finalTarget = new THREE.WebGLRenderTarget(640, 512);
-    const cocMaterial = createMaterial(640, 512);
-    const gatherMaterial = createMaterial(640, 512);
-    const compositeMaterial = createMaterial(640, 512);
-    const targets = [renderTarget, cocTarget, gatherTarget, nearGatherTarget, finalTarget];
-    const setSizeSpies = targets.map((target) => vi.spyOn(target, "setSize"));
-
-    const changed = resizeGroundGlassRttResources(
-      { renderTarget, cocTarget, gatherTarget, nearGatherTarget, finalTarget, cocMaterial, gatherMaterial, compositeMaterial },
-      640,
-      512,
-      0.5,
+  it("does not resize targets or change uniforms when the semantic dimensions are unchanged", () => {
+    const { renderer } = createRenderer();
+    const resources = createGroundGlassRttResources({
+      renderer,
+      widthPx: 640,
+      heightPx: 512,
+      gatherScale: 0.5,
+    });
+    const materials = {
+      coc: createMaterial(640, 512),
+      gather: createMaterial(640, 512),
+      composite: createMaterial(640, 512),
+    };
+    const resizableTargets = [
+      resources.scene.colorDepthTarget,
+      resources.coc.classificationTarget,
+      resources.gather.farTarget,
+      resources.gather.nearTarget,
+      resources.composite.outputTarget,
+    ];
+    const setSizeSpies = resizableTargets.map((target) =>
+      vi.spyOn(target, "setSize"),
     );
 
-    expect(changed).toBe(false);
+    expect(
+      resizeGroundGlassRttResources(resources, materials, 640, 512, 0.5),
+    ).toBe(false);
     setSizeSpies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
 
-    targets.forEach((target) => target.dispose());
-    cocMaterial.dispose();
-    gatherMaterial.dispose();
-    compositeMaterial.dispose();
+    resources.dispose();
+    disposeMaterials(Object.values(materials));
+  });
+
+  it("disposes every owned target and fallback texture exactly once", () => {
+    const { renderer } = createRenderer();
+    const resources = createGroundGlassRttResources({
+      renderer,
+      widthPx: 100,
+      heightPx: 80,
+      gatherScale: 1,
+    });
+    const ownedTargets = [
+      resources.scene.colorDepthTarget,
+      resources.coc.classificationTarget,
+      resources.gather.farTarget,
+      resources.gather.nearTarget,
+      resources.composite.outputTarget,
+      resources.diagnostics.rawSceneTarget,
+      resources.diagnostics.compositeOutputTarget,
+    ];
+    const targetDisposeSpies = ownedTargets.map((target) =>
+      vi.spyOn(target, "dispose"),
+    );
+    const depthFallbackDispose = vi.spyOn(resources.scene.depthFallback, "dispose");
+
+    resources.dispose();
+    resources.dispose();
+
+    targetDisposeSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    expect(depthFallbackDispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("disposes already-owned resources once and rethrows the original failure when CoC creation fails", () => {
+    const { renderer } = createRenderer();
+    const constructionFailure = new Error("injected CoC target construction failure");
+    const cocFactory = vi
+      .spyOn(groundGlassCocTarget, "createGroundGlassCocTarget")
+      .mockImplementation(() => {
+        throw constructionFailure;
+      });
+    const disposedTargets: THREE.WebGLRenderTarget[] = [];
+    const targetDispose = vi
+      .spyOn(THREE.WebGLRenderTarget.prototype, "dispose")
+      .mockImplementation(function (this: THREE.WebGLRenderTarget) {
+        disposedTargets.push(this);
+        throw new Error("injected render target cleanup failure");
+      });
+    const disposedFallbacks: THREE.DataTexture[] = [];
+    const fallbackDispose = vi
+      .spyOn(THREE.DataTexture.prototype, "dispose")
+      .mockImplementation(function (this: THREE.DataTexture) {
+        disposedFallbacks.push(this);
+        throw new Error("injected fallback cleanup failure");
+      });
+
+    let thrownError: unknown;
+    try {
+      createGroundGlassRttResources({
+        renderer,
+        widthPx: 100,
+        heightPx: 80,
+        gatherScale: 0.5,
+      });
+    } catch (error) {
+      thrownError = error;
+    }
+
+    expect(thrownError).toBe(constructionFailure);
+    expect(cocFactory).toHaveBeenCalledTimes(1);
+    expect(disposedTargets).toHaveLength(1);
+    expect(disposedTargets[0]).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(disposedTargets[0]).toMatchObject({ width: 100, height: 80 });
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    expect(disposedFallbacks).toHaveLength(1);
+    expect(disposedFallbacks[0]).toBeInstanceOf(THREE.DataTexture);
+    expect(disposedFallbacks[0].image).toMatchObject({ width: 1, height: 1 });
+    expect(fallbackDispose).toHaveBeenCalledTimes(1);
   });
 });
