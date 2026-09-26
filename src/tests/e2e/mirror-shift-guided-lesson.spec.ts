@@ -3,6 +3,7 @@ import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
   getLearningOverlay,
+  openLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 
@@ -16,9 +17,12 @@ test("Mirror Shift guided task teaches camera movement followed by opposite Fron
   const rtt = page.getByTestId("ground-glass-rtt").first();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/mirror-shift\/mirror-shift-01/);
-  await expect(page.getByText("Restore mirror framing after changing viewpoint")).toBeVisible();
+  const taskDrawer = await openLearningDrawer(page);
   await expect(
-    page.getByText(
+    taskDrawer.getByRole("heading", { name: "Restore mirror framing after changing viewpoint" }),
+  ).toBeVisible();
+  await expect(
+    taskDrawer.getByText(
       "Move the whole camera sideways to clear its reflection, then use opposite Front Shift to restore the mirror framing while keeping the changed viewpoint.",
     ),
   ).toBeVisible();

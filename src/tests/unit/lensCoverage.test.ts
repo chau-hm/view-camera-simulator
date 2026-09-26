@@ -4,6 +4,7 @@ import {
   calculateAngularImageCircleDiameterMm,
   deriveLensCoverage,
 } from "../../core/optics/lensCoverage";
+import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { resolveLensDefinitionForFocalLengthMm } from "../../core/optics/lensCatalog";
 import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
@@ -122,14 +123,35 @@ describe("lens specification compatibility boundary", () => {
       activeSceneId: mirrorShiftScene.id,
     };
     const optics = deriveOpticsState(camera, mirrorShiftScene);
+    const expectedImageDistanceMm = imageDistanceMm(120, 6000);
+    const expectedImageCircleDiameterMm = calculateAngularImageCircleDiameterMm(
+      84.4900859515,
+      expectedImageDistanceMm,
+    )!;
 
     expect(camera.focalLengthMm).toBe(120);
+    expect(optics.diagnostics.fallbackApplied).toBe(false);
+    expect(optics.diagnostics.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 10);
     expect(optics.lensDefinition?.coverage).toMatchObject({
       kind: "angular",
       fullCoverageAngleDeg: 84.4900859515,
     });
     expect(optics.lensCoverage?.kind).toBe("angular");
+    if (optics.lensCoverage?.kind !== "angular") return;
+    expect(optics.lensCoverage.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 10);
+    expect(optics.lensCoverage.imageCircleDiameterMm).toBeCloseTo(
+      expectedImageCircleDiameterMm,
+      10,
+    );
     expect(optics.groundGlassCoverage.kind).toBe("parallel-circle");
+    if (optics.groundGlassCoverage.kind !== "parallel-circle") return;
+    expect(optics.groundGlassCoverage.imageCircleRadiusMm).toBeCloseTo(
+      expectedImageCircleDiameterMm / 2,
+      10,
+    );
+    expect(optics.lensCoverage.imageCircleDiameterMm).toBeGreaterThan(
+      calculateAngularImageCircleDiameterMm(84.4900859515, 120)!,
+    );
   });
 
   it("does not invent a finite profile for an otherwise valid unknown focal length", () => {
