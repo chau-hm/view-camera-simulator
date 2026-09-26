@@ -36,7 +36,7 @@ Neither correction required rewriting canonical optics or the camera assembly bo
 | **Camera** | **Mostly self-contained with defined exceptions.** The simulator owns a shared rig-placement root and local camera-part hierarchy; current and ghost cameras use the same renderer. The calibrated camera-movement rail and anatomy presentation are deliberate inputs. |
 | **Scenes** | Scene definition, publication, tasks, subject registration, and renderer policy are distinct systems. The boundary is healthy, with scene-ID dispatch spread across a few domain and presentation modules. Registered subjects are executable renderer code, so the contract prevents direct access to canonical camera state by convention rather than type isolation. |
 | **Optics** | One canonical `deriveOpticsState` path supplies the important physical planes, coverage, focus metrics, and camera geometry. React and renderer code adapt that state. Scene-specific physical strategies are intentional; a cache key omission around Mirror Shift lesson state is a latent exception. |
-| **Ground Glass** | Canonical optics supplies physical CoC and per-pixel physical footprints; the active RTT converts millimetres through the sampled film width into source pixels, then gathers and composites. There is no normal-view teaching gain. Crop, gather cap, quality, storage, and Raw/Upright presentation are renderer concerns. The active path remains directly coupled to Three.js/WebGL, and a renderer DOF hint is written into optics diagnostics. |
+| **Ground Glass** | `deriveOpticsState()` supplies canonical lens/film/aperture geometry and physical focus state. The active RTT reconstructs per-pixel world position and derives signed CoC / local-affine footprint from those inputs, then maps millimetres through sampled-film dimensions into source pixels before gather/composite. There is no normal-view teaching gain. Crop, gather cap, quality, storage, and Raw/Upright presentation remain renderer concerns; the active path is Three.js/WebGL-coupled, and a renderer DOF hint still enters optics diagnostics. |
 | **Coordinates** | The highest-risk coordinate chain is world millimetres → rear-standard film basis → RTT source UV → WebGL texture sampling → Raw/Upright display transform → CSS top-origin interactions. The conversions are mostly explicit and tested. Misleading `*World` field names inside rig-local camera geometry are a smaller naming hazard. |
 | **Global features** | Shared coverage and focus features are derived from canonical state; visibility is controlled separately. The four published lens choices have finite explicit catalog profiles, and Mirror Shift 120 mm now demonstrates finite coverage through the shared canonical pipeline without a scene-specific override. |
 | **Renderer** | The highest migration risk is Ground Glass: an inner R3F Canvas owns a direct WebGL render-target and custom GLSL multipass pipeline, with no backend selection seam. Observer and Ground Glass also construct separate subject representations. |
@@ -189,7 +189,7 @@ flowchart LR
 
 ### Canonical optics assessment
 
-One canonical optics path drives public scene views. Ground Glass and 3D consume the same physical derived state, and 2D Geometry projects the same world planes/targets into its diagram coordinates. Projection, UV mapping, clipping, antialias feathering, CoC encoding, and screen-pixel readouts are legitimate adapters, not duplicate optical authority.
+One canonical optics path drives public scene views. Ground Glass and 3D consume the same physical derived state, and 2D Geometry projects the same world planes/targets into its diagram coordinates. Projection, UV mapping, clipping, antialias feathering, per-pixel physical CoC/footprint evaluation, CoC encoding, and screen-pixel readouts are legitimate adapters, not duplicate optical authority. Renderer-side physical evaluation is appropriate when it deterministically projects canonical physical inputs rather than introducing a competing optics model; `DerivedOpticsState` need not store every per-fragment result.
 
 Scene-specific branches in `deriveOpticsState.ts` cover calibrated lesson geometry and legacy focus/DOF behavior. They are contained in core but increase branch density; the evidence does not justify moving optics into scene React components or rewriting the core derivation.
 
@@ -459,7 +459,7 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 ### Must fix before WebGPU migration
 
-**M1 — Define a renderer-neutral Ground Glass pass/resource contract before porting the active RTT.** `GroundGlassRTT` owns WebGL target creation/format probing, direct `gl` execution, GLSL programs, readback, timer-query profiling, and cleanup. Porting it without a pass/resource boundary would duplicate lifecycle and physical presentation behavior in a second backend. Preserve the physical CoC/footprint, sampled-film-to-pixel mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, and Raw/Upright contract. Complete the DOF/Focus Physics Convergence diagnosis first; this gate does not require rewriting canonical optics.
+**M1 — Define a renderer-neutral Ground Glass pass/resource contract before porting the active RTT.** `GroundGlassRTT` owns WebGL target creation/format probing, direct `gl` execution, GLSL programs, readback, timer-query profiling, and cleanup. Porting it without a pass/resource boundary would duplicate lifecycle and physical presentation behavior in a second backend. Preserve canonical physical inputs and the per-pixel physical footprint evaluation contract across backends, along with sampled-film-to-pixel mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, and Raw/Upright output. Complete the DOF/Focus Physics Convergence diagnosis first; this gate does not require rewriting canonical optics.
 
 ### Should fix before realistic lighting/material expansion
 
@@ -509,11 +509,11 @@ Complete the **DOF / Focus Physics Convergence Diagnosis** described in §18 aft
 
 **Problem:** Active Ground Glass pass, resource, diagnostics and lifecycle responsibilities are owned by one direct WebGL component.
 
-**Why this matters:** WebGPU needs separate implementation of targets/shaders/passes, but must preserve physical CoC inputs, coverage, fallback, diagnostics and disposal.
+**Why this matters:** WebGPU needs separate implementation of targets/shaders/passes, but must preserve canonical lens/film/aperture/focus inputs and the physical per-pixel footprint evaluation contract, along with coverage, fallback, diagnostics and disposal.
 
 **Why now / why later:** Do this before porting Ground Glass and after the DOF/Focus Physics Convergence diagnosis and any justified narrow cleanup.
 
-**Scope:** Extract the smallest current pass/resource contract from actual `GroundGlassRTT` responsibilities; keep the WebGL adapter behavior unchanged; expose per-surface capability and lifecycle diagnostics; preserve physical CoC/footprint → sampled-film-pixel mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, Raw/Upright output, and ownership tests.
+**Scope:** Extract the smallest current pass/resource contract from actual `GroundGlassRTT` responsibilities; keep the WebGL adapter behavior unchanged; expose per-surface capability and lifecycle diagnostics; preserve canonical physical inputs → per-pixel CoC/footprint evaluation → sampled-film-pixel mapping, encoded-byte fallback, gather-cap semantics, Focus Loupe crop, Raw/Upright output, and ownership tests.
 
 **Dependencies:** Final #203 architecture refresh and the convergence diagnosis; no optics refactor.
 
