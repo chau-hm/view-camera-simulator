@@ -442,7 +442,7 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 | Camera assembly | Healthy | Shared simulator-owned root, local geometry, canonical rig transform, ghost reuse |
 | Canonical optics | Healthy with exceptions | One producer; deliberate special-case paths and Mirror Shift cache key gap |
 | Lens coverage | Healthy | Explicit published simulator profiles → reference circle → actual film state; unknown lengths retain the unbounded fallback |
-| Ground Glass physical pipeline | High architectural risk | The physical scale contract is explicit and active RTT maps canonical footprints through sampled film dimensions; CoC/gather/composite remain direct WebGL/GLSL and target/resource-specific, while CPU diagnostics retain historical model selection |
+| Ground Glass physical pipeline | High architectural risk | The physical scale contract is explicit: active RTT derives per-pixel physical CoC/footprints from canonical inputs and maps them through sampled-film dimensions; gather/composite remain direct WebGL/GLSL and target/resource-specific, while CPU diagnostics retain historical model selection |
 | Ground Glass presentation pipeline | Needs boundary cleanup | No global teaching multiplier remains; crop, quality, byte storage, gather caps and display transforms remain renderer-owned, and Shelf Swing's model hint still crosses into diagnostics |
 | Coordinate transforms | Healthy with exceptions | Helpers and asymmetric tests exist; several conversions cross core/Three/WebGL/CSS and legacy local fields are mislabeled |
 | Global optical overlays | Healthy | Consume canonical state; visibility policy remains distinct |
@@ -613,7 +613,7 @@ The sequence is #204 merged → #203 final refresh → DOF / Focus Physics Conve
 | Camera assembly | Shared root and rig-local children after #202 | Simulator owns one canonical part hierarchy and rig transform | Calibrated vs generic support rail; legacy local names | No assembly rewrite; names can be cleaned |
 | Canonical optics | Central `deriveOpticsState` with domain helpers | One physical derivation; adapters only project/encode/display | Scene special branches and latent selector key dependency | Preserve; fix narrow dependency issue |
 | Lens coverage | Explicit finite published simulator profile → reference-plane coverage → actual film state | One coverage authority for all renderers; unknown lengths remain unbounded unless catalogued | No current product gap; backend consumers remain renderer-specific | Healthy; preserve explicit catalog policy |
-| Ground Glass | Canonical physical CoC/footprint maps through sampled-film dimensions to direct WebGL/GLSL multipass | Physical mm-to-pixel contract plus backend-owned pass/resource implementation | No backend seam; CPU diagnostic path retains historical model selection; Shelf Swing hint leaks into diagnostics | Convergence diagnosis, then contract, before Ground Glass migration |
+| Ground Glass | Canonical lens/film/aperture/focus inputs feed RTT per-pixel physical CoC/footprint evaluation, followed by sampled-film mapping and the current WebGL/GLSL multipass | Physical mm-to-pixel contract plus backend-owned pass/resource implementation | No backend seam; CPU diagnostic path retains historical model selection; Shelf Swing hint leaks into diagnostics | Convergence diagnosis, then contract, before Ground Glass migration |
 | Coordinate transforms | Explicit helpers across mm, rig-local, film UV, Three meters, WebGL and CSS | Named conversion boundaries with asymmetric conformance tests | Cross-module chain and legacy `*World` names | Before alternate Ground Glass backend |
 | Global overlays | Shared derived geometry and separate visibility | Global feature consumes canonical capability/state; lesson owns visibility | No material gap; published finite lens capability now reaches Mirror Shift through shared state | Healthy |
 | Subject registration | Paired React subject/imperative RTT factory and disposer | Explicit per-view adapter/parity and ownership | Two graphs can drift | Before major scene complexity |
@@ -633,14 +633,15 @@ flowchart TD
   STATE --> OPT[Canonical deriveOpticsState]
   OPT --> DER[DerivedOpticsState: rig/local geometry, planes, metrics, coverage, diagnostics]
   DER --> OBS[Observer 3D adapter]
-  DER --> GGSTATE[Ground Glass physical camera / CoC / coverage input]
+  DER --> GGSTATE[Ground Glass physical camera / geometry / coverage input]
   DER --> GEO[2D Geometry adapter]
   DER --> READ[UI / focus and lens readouts]
   DER --> DIAG[Domain diagnostics]
   SUBJ[Registered scene subject + explicit look policy] --> OBS
   SUBJ --> RTTGROUP[Ground Glass subject adapter]
-  GGSTATE --> GGPOST[Ground Glass crop, CoC, gather, composite, Raw/Upright]
-  RTTGROUP --> GGPOST
+  GGSTATE --> GGPHYS[RTT world-position reconstruction and per-pixel physical CoC / footprint evaluation]
+  RTTGROUP --> GGPHYS
+  GGPHYS --> GGPOST[Ground Glass renderer: crop, sampled-film mapping, gather/composite, Raw/Upright]
   OBS --> BACKEND[Renderer backend boundary]
   GGPOST --> BACKEND
   BACKEND --> THREE[Current Three.js / WebGL implementation]
