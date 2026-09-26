@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as groundGlassCocTarget from "../../render/groundGlassCocTarget";
 import {
   createGroundGlassRttResources,
   resizeGroundGlassRttResources,
@@ -176,5 +177,52 @@ describe("Ground Glass RTT semantic resource ownership", () => {
 
     targetDisposeSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     expect(depthFallbackDispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("disposes already-owned resources once and rethrows the original failure when CoC creation fails", () => {
+    const { renderer } = createRenderer();
+    const constructionFailure = new Error("injected CoC target construction failure");
+    const cocFactory = vi
+      .spyOn(groundGlassCocTarget, "createGroundGlassCocTarget")
+      .mockImplementation(() => {
+        throw constructionFailure;
+      });
+    const disposedTargets: THREE.WebGLRenderTarget[] = [];
+    const targetDispose = vi
+      .spyOn(THREE.WebGLRenderTarget.prototype, "dispose")
+      .mockImplementation(function (this: THREE.WebGLRenderTarget) {
+        disposedTargets.push(this);
+        throw new Error("injected render target cleanup failure");
+      });
+    const disposedFallbacks: THREE.DataTexture[] = [];
+    const fallbackDispose = vi
+      .spyOn(THREE.DataTexture.prototype, "dispose")
+      .mockImplementation(function (this: THREE.DataTexture) {
+        disposedFallbacks.push(this);
+        throw new Error("injected fallback cleanup failure");
+      });
+
+    let thrownError: unknown;
+    try {
+      createGroundGlassRttResources({
+        renderer,
+        widthPx: 100,
+        heightPx: 80,
+        gatherScale: 0.5,
+      });
+    } catch (error) {
+      thrownError = error;
+    }
+
+    expect(thrownError).toBe(constructionFailure);
+    expect(cocFactory).toHaveBeenCalledTimes(1);
+    expect(disposedTargets).toHaveLength(1);
+    expect(disposedTargets[0]).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(disposedTargets[0]).toMatchObject({ width: 100, height: 80 });
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    expect(disposedFallbacks).toHaveLength(1);
+    expect(disposedFallbacks[0]).toBeInstanceOf(THREE.DataTexture);
+    expect(disposedFallbacks[0].image).toMatchObject({ width: 1, height: 1 });
+    expect(fallbackDispose).toHaveBeenCalledTimes(1);
   });
 });
