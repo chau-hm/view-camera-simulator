@@ -32,7 +32,8 @@ import {
 } from "./configureGroundGlassCamera";
 import { createGroundGlassDofRenderState } from "./groundGlassDofRenderState";
 import {
-  bindGroundGlassDofStateToShaderMaterial,
+  bindGroundGlassDofStateToCocMaterial,
+  bindGroundGlassDofStateToGatherMaterial,
   bindGroundGlassPhysicalStateToComposite,
   synchronizeGroundGlassDofClipRange,
 } from "./groundGlassShaderBindings";
@@ -1206,7 +1207,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       };
 
       if (preparedDofState) {
-        bindGroundGlassDofStateToShaderMaterial(cocMaterial, preparedDofState);
+        bindGroundGlassDofStateToCocMaterial(cocMaterial, preparedDofState);
         reportedUniformPreparationErrorRef.current = null;
       } else {
         // Keep the last valid shader state. Do not conceal configuration errors
@@ -1236,7 +1237,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         gatherMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
         gatherMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
         if (preparedDofState) {
-          bindGroundGlassDofStateToShaderMaterial(gatherMaterial, preparedDofState);
+          bindGroundGlassDofStateToGatherMaterial(gatherMaterial, preparedDofState);
         } else {
           if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
             console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);

@@ -130,8 +130,14 @@ export function createGroundGlassDofRenderState(
 
   const inverseProjectionMatrixElements = Array.from(camera.projectionMatrixInverse.elements);
   const worldMatrixElements = Array.from(camera.matrixWorld.elements);
-  if (![...inverseProjectionMatrixElements, ...worldMatrixElements].every(Number.isFinite)) {
-    throw new Error("Ground Glass camera matrices contain non-finite values");
+  if (
+    inverseProjectionMatrixElements.length !== 16 ||
+    !inverseProjectionMatrixElements.every(Number.isFinite)
+  ) {
+    throw new Error("Ground Glass inverse projection matrix must contain exactly 16 finite elements");
+  }
+  if (worldMatrixElements.length !== 16 || !worldMatrixElements.every(Number.isFinite)) {
+    throw new Error("Ground Glass world matrix must contain exactly 16 finite elements");
   }
 
   const finiteVec = (value: Vec3 | null | undefined) =>

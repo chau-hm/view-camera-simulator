@@ -3,41 +3,55 @@ import { describe, expect, it } from "vitest";
 import type { GroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import type { GroundGlassPhysicalRenderState } from "../../render/groundGlassPhysicalRenderState";
 import {
-  bindGroundGlassDofStateToShaderMaterial,
+  bindGroundGlassDofStateToCocMaterial,
+  bindGroundGlassDofStateToGatherMaterial,
   bindGroundGlassPhysicalStateToComposite,
 } from "../../render/groundGlassShaderBindings";
 
-const createDofMaterial = () => new THREE.ShaderMaterial({
+const createDofStateUniforms = () => ({
+  dofMode: { value: 0 },
+  lensCenterWorld: { value: new THREE.Vector3() },
+  lensPlaneNormal: { value: new THREE.Vector3() },
+  lensPlaneBasisX: { value: new THREE.Vector3() },
+  lensPlaneBasisY: { value: new THREE.Vector3() },
+  filmPlanePoint: { value: new THREE.Vector3() },
+  filmPlaneNormal: { value: new THREE.Vector3() },
+  filmPlaneBasisX: { value: new THREE.Vector3() },
+  filmPlaneBasisY: { value: new THREE.Vector3() },
+  focusPlanePoint: { value: new THREE.Vector3() },
+  focusPlaneNormal: { value: new THREE.Vector3() },
+  nearPlanePoint: { value: new THREE.Vector3() },
+  nearPlaneNormal: { value: new THREE.Vector3() },
+  farPlanePoint: { value: new THREE.Vector3() },
+  farPlaneNormal: { value: new THREE.Vector3() },
+  hasFiniteFar: { value: 0 },
+  inverseProjectionMatrix: { value: new THREE.Matrix4() },
+  cameraMatrixWorld: { value: new THREE.Matrix4() },
+  maximumCoCRadiusPx: { value: 0 },
+  focalLengthMm: { value: 0 },
+  sampledFilmWidthMm: { value: 0 },
+  sampledFilmHeightMm: { value: 0 },
+  fNumber: { value: 0 },
+  imageDistanceMm: { value: 0 },
+  renderWidth: { value: 0 },
+  renderHeight: { value: 0 },
+  circleOfConfusionMm: { value: 0 },
+});
+
+const createCocMaterial = () => new THREE.ShaderMaterial({
   uniforms: {
-    dofMode: { value: 0 },
-    lensCenterWorld: { value: new THREE.Vector3() },
-    lensPlaneNormal: { value: new THREE.Vector3() },
-    lensPlaneBasisX: { value: new THREE.Vector3() },
-    lensPlaneBasisY: { value: new THREE.Vector3() },
-    filmPlanePoint: { value: new THREE.Vector3() },
-    filmPlaneNormal: { value: new THREE.Vector3() },
-    filmPlaneBasisX: { value: new THREE.Vector3() },
-    filmPlaneBasisY: { value: new THREE.Vector3() },
-    focusPlanePoint: { value: new THREE.Vector3() },
-    focusPlaneNormal: { value: new THREE.Vector3() },
-    nearPlanePoint: { value: new THREE.Vector3() },
-    nearPlaneNormal: { value: new THREE.Vector3() },
-    farPlanePoint: { value: new THREE.Vector3() },
-    farPlaneNormal: { value: new THREE.Vector3() },
-    hasFiniteFar: { value: 0 },
-    inverseProjectionMatrix: { value: new THREE.Matrix4() },
-    cameraMatrixWorld: { value: new THREE.Matrix4() },
-    maximumCoCRadiusPx: { value: 0 },
-    focalLengthMm: { value: 0 },
-    filmWidthMm: { value: 0 },
-    filmHeightMm: { value: 0 },
-    sampledFilmWidthMm: { value: 0 },
-    sampledFilmHeightMm: { value: 0 },
-    fNumber: { value: 0 },
-    imageDistanceMm: { value: 0 },
-    renderWidth: { value: 0 },
-    renderHeight: { value: 0 },
-    circleOfConfusionMm: { value: 0 },
+    tDepth: { value: null },
+    ...createDofStateUniforms(),
+  },
+});
+
+const createGatherMaterial = () => new THREE.ShaderMaterial({
+  uniforms: {
+    tColor: { value: null },
+    tDepth: { value: null },
+    tCoC: { value: null },
+    gatherLayer: { value: 0 },
+    ...createDofStateUniforms(),
   },
 });
 
@@ -102,9 +116,13 @@ const createCompositeMaterial = () => new THREE.ShaderMaterial({
 });
 
 describe("Ground Glass semantic state and current GLSL binding", () => {
-  it("keeps DOF semantics free of uniform wrappers and binds their exact current values", () => {
-    const material = createDofMaterial();
-    bindGroundGlassDofStateToShaderMaterial(material, dofState);
+  it("binds the semantic snapshot to the CoC material without requiring gather-only uniforms", () => {
+    const material = createCocMaterial();
+    expect(material.uniforms).not.toHaveProperty("tColor");
+    expect(material.uniforms).not.toHaveProperty("tCoC");
+    expect(material.uniforms).not.toHaveProperty("gatherLayer");
+
+    bindGroundGlassDofStateToCocMaterial(material, dofState);
 
     expect("uniforms" in dofState).toBe(false);
     expect(dofState.optics).toEqual({
@@ -128,6 +146,63 @@ describe("Ground Glass semantic state and current GLSL binding", () => {
     );
     expect(material.uniforms.cameraMatrixWorld.value.elements).toEqual(
       dofState.camera.worldMatrixElements,
+    );
+    material.dispose();
+  });
+
+  it("binds the semantic snapshot to the gather material with its distinct pass inputs", () => {
+    const material = createGatherMaterial();
+    expect(material.uniforms).toHaveProperty("tColor");
+    expect(material.uniforms).toHaveProperty("tDepth");
+    expect(material.uniforms).toHaveProperty("tCoC");
+    expect(material.uniforms).toHaveProperty("gatherLayer");
+    expect(material.uniforms).not.toHaveProperty("maximumBlurRadiusPx");
+
+    bindGroundGlassDofStateToGatherMaterial(material, dofState);
+
+    expect(material.uniforms.fNumber.value).toBe(11);
+    expect(material.uniforms.maximumCoCRadiusPx.value).toBe(24);
+    expect(material.uniforms.sampledFilmWidthMm.value).toBe(63.5);
+    material.dispose();
+  });
+
+  it("fails with the missing CoC-stage DOF uniform named", () => {
+    const material = createCocMaterial();
+    delete material.uniforms.lensPlaneNormal;
+
+    expect(() => bindGroundGlassDofStateToCocMaterial(material, dofState)).toThrow(
+      'Ground Glass CoC shader is missing required uniform "lensPlaneNormal"',
+    );
+    expect(material.uniforms.lensCenterWorld.value.toArray()).toEqual([0, 0, 0]);
+    material.dispose();
+  });
+
+  it("fails when the required CoC depth input is absent", () => {
+    const material = createCocMaterial();
+    delete material.uniforms.tDepth;
+
+    expect(() => bindGroundGlassDofStateToCocMaterial(material, dofState)).toThrow(
+      'Ground Glass CoC shader is missing required uniform "tDepth"',
+    );
+    material.dispose();
+  });
+
+  it("fails with the missing gather-stage DOF uniform named", () => {
+    const material = createGatherMaterial();
+    delete material.uniforms.sampledFilmWidthMm;
+
+    expect(() => bindGroundGlassDofStateToGatherMaterial(material, dofState)).toThrow(
+      'Ground Glass gather shader is missing required uniform "sampledFilmWidthMm"',
+    );
+    material.dispose();
+  });
+
+  it("fails when a required gather pass input is absent", () => {
+    const material = createGatherMaterial();
+    delete material.uniforms.gatherLayer;
+
+    expect(() => bindGroundGlassDofStateToGatherMaterial(material, dofState)).toThrow(
+      'Ground Glass gather shader is missing required uniform "gatherLayer"',
     );
     material.dispose();
   });

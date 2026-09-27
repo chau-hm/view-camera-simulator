@@ -2,48 +2,100 @@ import * as THREE from "three";
 import type { GroundGlassDofRenderState } from "./groundGlassDofRenderState";
 import type { GroundGlassPhysicalRenderState } from "./groundGlassPhysicalRenderState";
 
-/** Apply the semantic DOF snapshot to the current GLSL CoC/gather contract. */
-export const bindGroundGlassDofStateToShaderMaterial = (
+type GroundGlassDofShaderStage = "CoC" | "gather";
+
+const dofStateUniformNames = [
+  "dofMode",
+  "lensCenterWorld",
+  "lensPlaneNormal",
+  "lensPlaneBasisX",
+  "lensPlaneBasisY",
+  "filmPlanePoint",
+  "filmPlaneNormal",
+  "filmPlaneBasisX",
+  "filmPlaneBasisY",
+  "focusPlanePoint",
+  "focusPlaneNormal",
+  "nearPlanePoint",
+  "nearPlaneNormal",
+  "farPlanePoint",
+  "farPlaneNormal",
+  "hasFiniteFar",
+  "inverseProjectionMatrix",
+  "cameraMatrixWorld",
+  "maximumCoCRadiusPx",
+  "focalLengthMm",
+  "sampledFilmWidthMm",
+  "sampledFilmHeightMm",
+  "fNumber",
+  "imageDistanceMm",
+  "renderWidth",
+  "renderHeight",
+  "circleOfConfusionMm",
+] as const;
+
+const stageUniformNames: Record<GroundGlassDofShaderStage, readonly string[]> = {
+  // Stage textures and gatherLayer are routed by the RTT executor; validate
+  // their current GLSL declarations here without taking over their values.
+  CoC: ["tDepth"],
+  gather: ["tColor", "tDepth", "tCoC", "gatherLayer"],
+};
+
+const requireGroundGlassDofShaderContract = (
+  material: THREE.ShaderMaterial,
+  stage: GroundGlassDofShaderStage,
+): void => {
+  for (const name of [...dofStateUniformNames, ...stageUniformNames[stage]]) {
+    if (material.uniforms[name] == null) {
+      throw new Error(`Ground Glass ${stage} shader is missing required uniform "${name}"`);
+    }
+  }
+};
+
+const bindGroundGlassDofState = (
   material: THREE.ShaderMaterial,
   state: GroundGlassDofRenderState,
+  stage: GroundGlassDofShaderStage,
 ): void => {
+  requireGroundGlassDofShaderContract(material, stage);
+
   material.uniforms.dofMode.value = state.model === "derived-planes" ? 1 : 0;
   material.uniforms.lensCenterWorld.value.set(
     state.lens.centerWorldM.x,
     state.lens.centerWorldM.y,
     state.lens.centerWorldM.z,
   );
-  if (material.uniforms.lensPlaneNormal) material.uniforms.lensPlaneNormal.value.set(
+  material.uniforms.lensPlaneNormal.value.set(
     state.lens.planeNormal.x,
     state.lens.planeNormal.y,
     state.lens.planeNormal.z,
   );
-  if (material.uniforms.lensPlaneBasisX) material.uniforms.lensPlaneBasisX.value.set(
+  material.uniforms.lensPlaneBasisX.value.set(
     state.lens.planeBasisX.x,
     state.lens.planeBasisX.y,
     state.lens.planeBasisX.z,
   );
-  if (material.uniforms.lensPlaneBasisY) material.uniforms.lensPlaneBasisY.value.set(
+  material.uniforms.lensPlaneBasisY.value.set(
     state.lens.planeBasisY.x,
     state.lens.planeBasisY.y,
     state.lens.planeBasisY.z,
   );
-  if (material.uniforms.filmPlanePoint) material.uniforms.filmPlanePoint.value.set(
+  material.uniforms.filmPlanePoint.value.set(
     state.film.planePointWorldM.x,
     state.film.planePointWorldM.y,
     state.film.planePointWorldM.z,
   );
-  if (material.uniforms.filmPlaneNormal) material.uniforms.filmPlaneNormal.value.set(
+  material.uniforms.filmPlaneNormal.value.set(
     state.film.planeNormal.x,
     state.film.planeNormal.y,
     state.film.planeNormal.z,
   );
-  if (material.uniforms.filmPlaneBasisX) material.uniforms.filmPlaneBasisX.value.set(
+  material.uniforms.filmPlaneBasisX.value.set(
     state.film.planeBasisX.x,
     state.film.planeBasisX.y,
     state.film.planeBasisX.z,
   );
-  if (material.uniforms.filmPlaneBasisY) material.uniforms.filmPlaneBasisY.value.set(
+  material.uniforms.filmPlaneBasisY.value.set(
     state.film.planeBasisY.x,
     state.film.planeBasisY.y,
     state.film.planeBasisY.z,
@@ -90,38 +142,28 @@ export const bindGroundGlassDofStateToShaderMaterial = (
   material.uniforms.inverseProjectionMatrix.value.fromArray(state.camera.inverseProjectionMatrixElements);
   material.uniforms.cameraMatrixWorld.value.fromArray(state.camera.worldMatrixElements);
 
-  // CoC and gather stages share physical values. The currently defined GLSL
-  // material contract differs slightly by stage, so optional fields stay
-  // guarded at this implementation boundary.
-  if (material.uniforms.maximumBlurRadiusPx) {
-    material.uniforms.maximumBlurRadiusPx.value = state.render.maximumBlurRadiusPx;
-  }
-  if (material.uniforms.maximumCoCRadiusPx) {
-    material.uniforms.maximumCoCRadiusPx.value = state.render.maximumBlurRadiusPx;
-  }
-  if (material.uniforms.focalLengthMm) {
-    material.uniforms.focalLengthMm.value = state.optics.focalLengthMm;
-  }
-  if (material.uniforms.filmWidthMm) material.uniforms.filmWidthMm.value = state.film.widthMm;
-  if (material.uniforms.filmHeightMm) material.uniforms.filmHeightMm.value = state.film.heightMm;
-  if (material.uniforms.sampledFilmWidthMm) {
-    material.uniforms.sampledFilmWidthMm.value = state.film.sampledWidthMm;
-  }
-  if (material.uniforms.sampledFilmHeightMm) {
-    material.uniforms.sampledFilmHeightMm.value = state.film.sampledHeightMm;
-  }
-  if (material.uniforms.fNumber) {
-    material.uniforms.fNumber.value = state.optics.apertureFNumber;
-  }
-  if (material.uniforms.imageDistanceMm) {
-    material.uniforms.imageDistanceMm.value = state.optics.imageDistanceMm;
-  }
-  if (material.uniforms.renderWidth) material.uniforms.renderWidth.value = state.render.widthPx;
-  if (material.uniforms.renderHeight) material.uniforms.renderHeight.value = state.render.heightPx;
-  if (material.uniforms.circleOfConfusionMm) {
-    material.uniforms.circleOfConfusionMm.value = state.optics.acceptableCoCDiameterMm;
-  }
+  material.uniforms.maximumCoCRadiusPx.value = state.render.maximumBlurRadiusPx;
+  material.uniforms.focalLengthMm.value = state.optics.focalLengthMm;
+  material.uniforms.sampledFilmWidthMm.value = state.film.sampledWidthMm;
+  material.uniforms.sampledFilmHeightMm.value = state.film.sampledHeightMm;
+  material.uniforms.fNumber.value = state.optics.apertureFNumber;
+  material.uniforms.imageDistanceMm.value = state.optics.imageDistanceMm;
+  material.uniforms.renderWidth.value = state.render.widthPx;
+  material.uniforms.renderHeight.value = state.render.heightPx;
+  material.uniforms.circleOfConfusionMm.value = state.optics.acceptableCoCDiameterMm;
 };
+
+/** Apply semantic DOF state to the current GLSL CoC material contract. */
+export const bindGroundGlassDofStateToCocMaterial = (
+  material: THREE.ShaderMaterial,
+  state: GroundGlassDofRenderState,
+): void => bindGroundGlassDofState(material, state, "CoC");
+
+/** Apply semantic DOF state to the current GLSL gather material contract. */
+export const bindGroundGlassDofStateToGatherMaterial = (
+  material: THREE.ShaderMaterial,
+  state: GroundGlassDofRenderState,
+): void => bindGroundGlassDofState(material, state, "gather");
 
 /** Apply only semantic physical effects to the current GLSL composite. */
 export const bindGroundGlassPhysicalStateToComposite = (
