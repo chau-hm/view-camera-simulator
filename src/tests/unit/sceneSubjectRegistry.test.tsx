@@ -16,7 +16,7 @@ import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
-import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
+import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/assets/CameraMovementLatticeAsset";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import {
   mirrorShiftGeometry,

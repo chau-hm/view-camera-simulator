@@ -51,9 +51,9 @@ import {
   type ConceptualCameraPresentation,
 } from "./ConceptualViewCamera";
 import {
-  resolveCameraMovementLatticeRenderModel,
-  type CameraMovementLatticeRenderModel,
-} from "./cameraMovementLatticeRenderModel";
+  resolveCameraMovementLatticePresentation,
+  type CameraMovementLatticePresentation,
+} from "../scenes/presentation/understandingCameraMovements";
 import { FocusFundamentalsTeachingCues } from "./FocusFundamentalsTeachingCues";
 import {
   deriveFocusFundamentalsReferenceOptics,
@@ -93,7 +93,7 @@ type SceneRendererProps = {
 
 export const shouldRenderReferenceCamera = (
   scene: SceneDefinition,
-  cameraMovementRenderModel?: CameraMovementLatticeRenderModel,
+  cameraMovementRenderModel?: CameraMovementLatticePresentation,
 ): boolean =>
   scene.showReferenceCamera !== false &&
   Boolean(scene.movementCapabilities) &&
@@ -910,7 +910,7 @@ const SceneContent = ({
   onSubjectCapacityChange,
 }: {
   scene: SceneDefinition;
-  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
+  cameraMovementRenderModel?: CameraMovementLatticePresentation;
   opticsState: DerivedOpticsState;
   lensCoverageGeometry: PhysicalLensCoverageRenderGeometry | null;
   showFocusPlaneOverlay: boolean;
@@ -1087,7 +1087,7 @@ export const SceneRenderer = ({
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
-  const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
+  const cameraMovementRenderModel = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
   );
   const renderScene = useMemo(
@@ -1095,7 +1095,7 @@ export const SceneRenderer = ({
       scene.id === "understanding-camera-movements"
         ? {
             ...scene,
-            bounds: cameraMovementRenderModel.subjectBounds,
+            bounds: cameraMovementRenderModel.subjectBoundsWorldMm,
           }
         : scene,
     [cameraMovementRenderModel, scene],

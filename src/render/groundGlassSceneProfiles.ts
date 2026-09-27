@@ -5,7 +5,7 @@ import type { SceneDefinition } from "../types/scene";
 import {
   updateMirrorShiftCameraReflection,
 } from "./MirrorShiftSubjectFactory";
-import type { CameraMovementLatticeRenderModel } from "./cameraMovementLatticeRenderModel";
+import type { CameraMovementLatticePresentation } from "../scenes/presentation/understandingCameraMovements";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
@@ -24,7 +24,7 @@ import { configureMirrorShiftRttShadowParticipation } from "./mirrorShiftShadowP
 
 export type GroundGlassSceneProfileContext = Readonly<{
   scene: SceneDefinition;
-  cameraMovementRenderModel: CameraMovementLatticeRenderModel;
+  cameraMovementRenderModel: CameraMovementLatticePresentation;
   presentationRegion: CameraMovementPresentationRegion;
 }>;
 
@@ -144,7 +144,7 @@ const cameraMovementSceneProfile = createProfile({
     };
   },
   resolveRenderBounds: ({ cameraMovementRenderModel }) =>
-    cameraMovementRenderModel.subjectBounds,
+    cameraMovementRenderModel.subjectBoundsWorldMm,
 });
 
 const mirrorShiftSceneProfile = createProfile({

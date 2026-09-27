@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import {
-  cameraMovementsGroupOptionsFromRenderModel,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
-} from "../../render/CameraMovementsSubjectFactory";
+  cameraMovementsGroupOptionsFromPresentation,
+} from "../../render/assets/CameraMovementLatticeAsset";
 import {
-  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-  resolveCameraMovementLatticeRenderModel,
-} from "../../render/cameraMovementLatticeRenderModel";
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+  resolveCameraMovementLatticePresentation,
+} from "../../scenes/presentation/understandingCameraMovements";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
@@ -31,7 +31,7 @@ import {
 const resolveModel = (
   overrides: Parameters<typeof resolveEffectiveCameraMovementCalibration>[1] = {},
 ) =>
-  resolveCameraMovementLatticeRenderModel(
+  resolveCameraMovementLatticePresentation(
     resolveEffectiveCameraMovementCalibration(
       CAMERA_MOVEMENT_CALIBRATION_BASELINE,
       overrides,
@@ -124,10 +124,10 @@ describe("dynamic camera-movement lattice render model", () => {
     expect(edgeIds.length).toBeGreaterThan(0);
     expect(new Set(edgeIds).size).toBe(edgeIds.length);
     expect(allPoints.every(Number.isFinite)).toBe(true);
-    expect(model.subjectBounds).toBe(model.lattice.bounds);
-    expect(model.subjectBounds.min.x).toBeLessThan(model.subjectBounds.max.x);
-    expect(model.subjectBounds.min.y).toBeLessThan(model.subjectBounds.max.y);
-    expect(model.subjectBounds.min.z).toBeLessThan(model.subjectBounds.max.z);
+    expect(model.subjectBoundsWorldMm).toBe(model.lattice.bounds);
+    expect(model.subjectBoundsWorldMm.min.x).toBeLessThan(model.subjectBoundsWorldMm.max.x);
+    expect(model.subjectBoundsWorldMm.min.y).toBeLessThan(model.subjectBoundsWorldMm.max.y);
+    expect(model.subjectBoundsWorldMm.min.z).toBeLessThan(model.subjectBoundsWorldMm.max.z);
   });
 
   it("feeds the same effective lattice and identity to interactive and RTT groups", () => {
@@ -136,7 +136,7 @@ describe("dynamic camera-movement lattice render model", () => {
       presentation: { internalEdgeOpacity: 0.6 },
     });
     const interactive = createCameraMovementsGroup(
-      cameraMovementsGroupOptionsFromRenderModel(model, "upper"),
+      cameraMovementsGroupOptionsFromPresentation(model, "upper"),
     );
     const rtt = createRegisteredRttSubject(
       "understanding-camera-movements",
@@ -173,7 +173,7 @@ describe("dynamic camera-movement lattice render model", () => {
     for (const caseId of CAMERA_MOVEMENT_TEACHING_CASE_IDS) {
       const teachingCase = teachingCases[caseId];
       const interactive = createCameraMovementsGroup(
-        cameraMovementsGroupOptionsFromRenderModel(
+        cameraMovementsGroupOptionsFromPresentation(
           model,
           teachingCase.presentationTargetRegion,
         ),
@@ -229,7 +229,7 @@ describe("dynamic camera-movement lattice render model", () => {
     const diagnostics = registration.resolveCanonicalLattice?.(options);
     const lighting = registration.resolveRttLighting?.(options);
     const group = createCameraMovementsGroup(
-      cameraMovementsGroupOptionsFromRenderModel(model),
+      cameraMovementsGroupOptionsFromPresentation(model),
     );
     try {
       const grid = group.getObjectByName(
@@ -241,11 +241,11 @@ describe("dynamic camera-movement lattice render model", () => {
         presentationKey: model.presentationKey,
         edgeCount: model.lattice.edges.length,
       });
-      expect(diagnostics?.bounds).toBe(model.subjectBounds);
-      expect(lighting?.targetMm).toEqual(model.lightingTargetMm);
+      expect(diagnostics?.bounds).toBe(model.subjectBoundsWorldMm);
+      expect(lighting?.targetMm).toEqual(model.lightingTargetWorldMm);
       expect(grid.userData.geometryKey).toBe(model.geometryKey);
-      expect(grid.userData.cellSizeMm).toBe(model.grid.cellSizeMm);
-      expect(grid.userData.halfExtentMm).toBe(model.grid.halfExtentMm);
+      expect(grid.userData.cellSizeMm).toBe(model.referenceGrid.cellSizeMm);
+      expect(grid.userData.halfExtentMm).toBe(model.referenceGrid.halfExtentMm);
     } finally {
       disposeCameraMovementsGroup(group);
     }
@@ -259,7 +259,7 @@ describe("camera-movement RTT subject lifecycle", () => {
     const postTarget = new THREE.WebGLRenderTarget(8, 8);
     const disposeColorTarget = vi.spyOn(colorTarget, "dispose");
     const disposePostTarget = vi.spyOn(postTarget, "dispose");
-    const baseline = CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+    const baseline = CAMERA_MOVEMENT_BASELINE_PRESENTATION;
     const first = mountCameraMovementRttSubject(scene, baseline, "middle");
     const firstResources = collectOwnedResources(first.group);
     const firstGeometryDispose = [
@@ -308,7 +308,7 @@ describe("camera-movement RTT subject lifecycle", () => {
     const scene = new THREE.Scene();
     const mounted = mountCameraMovementRttSubject(
       scene,
-      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+      CAMERA_MOVEMENT_BASELINE_PRESENTATION,
       "lower",
     );
     const resources = collectOwnedResources(mounted.group);

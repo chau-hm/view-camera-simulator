@@ -2,21 +2,23 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import {
-  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
   clearInteractiveLatticeRuntime,
-  createCameraMovementsGroup,
-  disposeCameraMovementsGroup,
-  applyCameraMovementsGroupStyle,
   publishAttachedInteractiveLatticeRuntime,
   updateAttachedInteractiveLatticeRuntime,
 } from "../../render/CameraMovementsSubjectFactory";
+import {
+  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+  createCameraMovementsGroup,
+  disposeCameraMovementsGroup,
+  applyCameraMovementsGroupStyle,
+} from "../../render/assets/CameraMovementLatticeAsset";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
   updateCameraMovementRttSubjectTarget,
 } from "../../render/cameraMovementRttSubjectLifecycle";
-import { CAMERA_MOVEMENT_BASELINE_RENDER_MODEL } from "../../render/cameraMovementLatticeRenderModel";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 import { CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES } from "../../scenes/cameraMovementPublicTeaching";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
@@ -315,7 +317,7 @@ describe("Camera Movements subject factory", () => {
 
     const rtt = mountCameraMovementRttSubject(
       scene,
-      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+      CAMERA_MOVEMENT_BASELINE_PRESENTATION,
       "middle",
     );
     const initialGeometryId = interactive.userData.canonicalGeometryId;
@@ -384,13 +386,13 @@ describe("Camera Movements subject factory", () => {
       const presentationRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].presentationTargetRegion;
       applyCameraMovementsGroupStyle(
         interactive,
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation,
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation,
         presentationRegion,
       );
       updateAttachedInteractiveLatticeRuntime(interactive, presentationRegion);
       updateCameraMovementRttSubjectTarget(
         rtt,
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION,
         presentationRegion,
       );
 

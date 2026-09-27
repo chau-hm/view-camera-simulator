@@ -17,9 +17,9 @@ import {
   updateTeachingLightingRig,
 } from "./TeachingLighting";
 import {
-  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-  resolveCameraMovementLatticeRenderModel,
-} from "./cameraMovementLatticeRenderModel";
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+  resolveCameraMovementLatticePresentation,
+} from "../scenes/presentation/understandingCameraMovements";
 import {
   getGroundGlassSceneProfile,
   type GroundGlassSceneProfileContext,
@@ -147,8 +147,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const presentationRegion = explicitPresentationRegion ?? "middle";
   presentationRegionRef.current = presentationRegion;
   const cameraMovementRenderModel = effectiveCameraMovementCalibration
-    ? resolveCameraMovementLatticeRenderModel(effectiveCameraMovementCalibration)
-    : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+    ? resolveCameraMovementLatticePresentation(effectiveCameraMovementCalibration)
+    : CAMERA_MOVEMENT_BASELINE_PRESENTATION;
   const resolvedSceneId = sceneDefinition.id;
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
