@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -40,7 +40,7 @@ describe("scene focal length propagation", () => {
       expect(projection.ok).toBe(true);
       expect(camera.projectionMatrix.elements.every(Number.isFinite)).toBe(true);
 
-      const uniforms = createGroundGlassDofUniformState(
+      const uniforms = createGroundGlassDofRenderState(
         optics,
         camera,
         focalLengthMm,
@@ -52,10 +52,10 @@ describe("scene focal length propagation", () => {
         400,
         12,
       );
-      expect(uniforms.focalLengthMm).toBe(focalLengthMm);
-      expect(Number.isFinite(uniforms.imageDistanceMm)).toBe(true);
-      expect(uniforms.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
-      expect(uniforms.inverseProjectionMatrix.every(Number.isFinite)).toBe(true);
+      expect(uniforms.optics.focalLengthMm).toBe(focalLengthMm);
+      expect(Number.isFinite(uniforms.optics.imageDistanceMm)).toBe(true);
+      expect(uniforms.optics.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
+      expect(uniforms.camera.inverseProjectionMatrixElements.every(Number.isFinite)).toBe(true);
     },
   );
 

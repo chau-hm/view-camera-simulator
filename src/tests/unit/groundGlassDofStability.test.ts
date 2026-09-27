@@ -9,7 +9,7 @@ import {
 } from "../../core/optics/dofWedge";
 import { calculateDofBlurRadiusPx } from "../../core/optics/dofBlurModel";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
 import { getGroundGlassDofVisualSettings } from "../../render/groundGlassVisualSettings";
@@ -173,7 +173,7 @@ describe("Ground Glass DOF numerical stability", () => {
     const camera = new THREE.PerspectiveCamera(45, 1.25, clip.near, clip.far);
     expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
     const visual = getGroundGlassDofVisualSettings(architectureForegroundScene.id);
-    const uniforms = createGroundGlassDofUniformState(
+    const uniforms = createGroundGlassDofRenderState(
       optics,
       camera,
       CAMERA_CONSTANTS.focalLengthMm,
@@ -186,29 +186,39 @@ describe("Ground Glass DOF numerical stability", () => {
       visual.maximumBlurRadiusPx,
     );
     const values = [
-      ...uniforms.lensCenterWorld,
-      ...uniforms.focusPlanePoint,
-      ...uniforms.focusPlaneNormal,
-      ...(uniforms.nearPlanePoint ?? []),
-      ...(uniforms.nearPlaneNormal ?? []),
-      ...(uniforms.farPlanePoint ?? []),
-      ...(uniforms.farPlaneNormal ?? []),
-      ...uniforms.inverseProjectionMatrix,
-      ...uniforms.cameraMatrixWorld,
-      uniforms.imageDistanceMm,
-      uniforms.focalLengthMm,
-      uniforms.fNumber,
-      uniforms.renderWidth,
-      uniforms.renderHeight,
-      uniforms.maximumBlurRadiusPx,
-      uniforms.circleOfConfusionMm,
-      uniforms.boundaryCoCDiameterPx,
-      uniforms.boundaryBlurRadiusPx,
-      uniforms.filmWidthMm,
-      uniforms.filmHeightMm,
+      ...Object.values(uniforms.lens.centerWorldM),
+      ...Object.values(uniforms.lens.planeNormal),
+      ...Object.values(uniforms.lens.planeBasisX),
+      ...Object.values(uniforms.lens.planeBasisY),
+      ...Object.values(uniforms.film.planePointWorldM),
+      ...Object.values(uniforms.film.planeNormal),
+      ...Object.values(uniforms.film.planeBasisX),
+      ...Object.values(uniforms.film.planeBasisY),
+      ...Object.values(uniforms.focus.plane?.pointWorldM ?? {}),
+      ...Object.values(uniforms.focus.plane?.normal ?? {}),
+      ...Object.values(uniforms.focus.nearPlane?.pointWorldM ?? {}),
+      ...Object.values(uniforms.focus.nearPlane?.normal ?? {}),
+      ...Object.values(uniforms.focus.farPlane?.pointWorldM ?? {}),
+      ...Object.values(uniforms.focus.farPlane?.normal ?? {}),
+      ...uniforms.camera.inverseProjectionMatrixElements,
+      ...uniforms.camera.worldMatrixElements,
+      uniforms.optics.imageDistanceMm,
+      uniforms.optics.focalLengthMm,
+      uniforms.optics.apertureFNumber,
+      uniforms.render.widthPx,
+      uniforms.render.heightPx,
+      uniforms.render.maximumBlurRadiusPx,
+      uniforms.render.displayWidthPx,
+      uniforms.optics.acceptableCoCDiameterMm,
+      uniforms.physicalCoC.boundaryDiameterPx,
+      uniforms.physicalCoC.boundaryRadiusPx,
+      uniforms.film.widthMm,
+      uniforms.film.heightMm,
     ];
     expect(values.every(Number.isFinite)).toBe(true);
-    expect(uniforms.boundaryBlurRadiusPx).toBeLessThanOrEqual(uniforms.maximumBlurRadiusPx);
+    expect(uniforms.physicalCoC.boundaryRadiusPx).toBeLessThanOrEqual(
+      uniforms.render.maximumBlurRadiusPx,
+    );
   });
 
   it("preserves identical derived DOF results regardless of state construction order", () => {

@@ -8,7 +8,7 @@ import {
 } from "../../core/optics/computePhysicalBlurFootprint";
 import { imageDistanceMm } from "../../core/optics/thinLensModel";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import architectureForegroundGeometry from "../../scenes/architectureForegroundGeometry";
@@ -158,7 +158,7 @@ describe("Architecture + Foreground focus-to-film propagation", () => {
       const clip = getGroundGlassClipRangeWorld(architectureForegroundScene, optics.lensCenterWorld);
       const camera = new THREE.PerspectiveCamera(45, 1.25, clip.near, clip.far);
       expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
-      return createGroundGlassDofUniformState(
+      return createGroundGlassDofRenderState(
         optics,
         camera,
         CAMERA_CONSTANTS.focalLengthMm,
@@ -172,22 +172,22 @@ describe("Architecture + Foreground focus-to-film propagation", () => {
       );
     });
 
-    expect(uniforms[0].filmPlanePoint[2]).toBeCloseTo(
+    expect(uniforms[0].film.planePointWorldM.z).toBeCloseTo(
       -imageDistanceMm(CAMERA_CONSTANTS.focalLengthMm, 3920) * 0.001,
       10,
     );
-    expect(uniforms[1].filmPlanePoint[2]).toBeCloseTo(
+    expect(uniforms[1].film.planePointWorldM.z).toBeCloseTo(
       -imageDistanceMm(CAMERA_CONSTANTS.focalLengthMm, 9450) * 0.001,
       10,
     );
-    expect(uniforms[0].filmPlanePoint).not.toEqual(uniforms[1].filmPlanePoint);
-    expect(uniforms[0].lensCenterWorld).toEqual(uniforms[1].lensCenterWorld);
+    expect(uniforms[0].film.planePointWorldM).not.toEqual(uniforms[1].film.planePointWorldM);
+    expect(uniforms[0].lens.centerWorldM).toEqual(uniforms[1].lens.centerWorldM);
     expect(uniforms.every((state) =>
       [
-        ...state.filmPlanePoint,
-        ...state.filmPlaneNormal,
-        ...state.filmPlaneBasisX,
-        ...state.filmPlaneBasisY,
+        ...Object.values(state.film.planePointWorldM),
+        ...Object.values(state.film.planeNormal),
+        ...Object.values(state.film.planeBasisX),
+        ...Object.values(state.film.planeBasisY),
       ].every(Number.isFinite),
     )).toBe(true);
   });

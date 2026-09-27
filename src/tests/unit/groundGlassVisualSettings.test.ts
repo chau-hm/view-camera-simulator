@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
-import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import {
   getGroundGlassDofVisualSettings,
   resolveGroundGlassDisplayOpticsState,
@@ -70,7 +70,7 @@ describe("Ground Glass visual settings", () => {
     const optics = deriveOpticsState(camera, architectureRiseScene);
     const target = optics.focusTargets[0];
     const visual = getGroundGlassDofVisualSettings(architectureRiseScene.id);
-    const uniformState = createGroundGlassDofUniformState(
+    const uniformState = createGroundGlassDofRenderState(
       optics,
       new THREE.PerspectiveCamera(),
       camera.focalLengthMm,
@@ -88,12 +88,12 @@ describe("Ground Glass visual settings", () => {
 
     expect(target.pointEquivalentCoCDiameterMm).toBeCloseTo(0.169, 2);
     expect(target.physicalPointSharpness).toBe(0);
-    expect(uniformState.circleOfConfusionMm).toBe(ACCEPTABLE_COC_DIAMETER_MM);
-    expect(uniformState.visibleBoundaryBlurRadiusPx).toBeCloseTo(
+    expect(uniformState.optics.acceptableCoCDiameterMm).toBe(ACCEPTABLE_COC_DIAMETER_MM);
+    expect(uniformState.physicalCoC.visibleBoundaryRadiusPx).toBeCloseTo(
       ACCEPTABLE_COC_DIAMETER_MM * 500 / CAMERA_CONSTANTS.filmWidthMm / 2,
       12,
     );
-    expect(uniformState.visibleBoundaryBlurRadiusPx).toBeCloseTo(0.1968503937, 9);
+    expect(uniformState.physicalCoC.visibleBoundaryRadiusPx).toBeCloseTo(0.1968503937, 9);
   });
 
   it("leaves unrelated scene optics untouched", () => {
@@ -121,7 +121,7 @@ describe("Ground Glass visual settings", () => {
       infinityOptics,
     );
     expect(displayOptics).toBe(infinityOptics);
-    const uniforms = createGroundGlassDofUniformState(
+    const uniforms = createGroundGlassDofRenderState(
       displayOptics,
       new THREE.PerspectiveCamera(),
       CAMERA_CONSTANTS.focalLengthMm,
@@ -133,7 +133,7 @@ describe("Ground Glass visual settings", () => {
       400,
       42,
     );
-    expect(uniforms.mode).toBe(0);
-    expect(uniforms.imageDistanceMm).toBeGreaterThan(0);
+    expect(uniforms.model).toBe("parallel-thin-lens");
+    expect(uniforms.optics.imageDistanceMm).toBeGreaterThan(0);
   });
 });

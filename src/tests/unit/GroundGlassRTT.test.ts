@@ -10,7 +10,7 @@ import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
   type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
-import { synchronizeGroundGlassDofClipRange } from "../../render/createGroundGlassDofUniformState";
+import { synchronizeGroundGlassDofClipRange } from "../../render/groundGlassShaderBindings";
 import {
   decodeGroundGlassSignedCoC,
   encodeGroundGlassSignedCoC,
