@@ -22,13 +22,13 @@ import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
-} from "../../render/CameraMovementsSubjectFactory";
+} from "../../render/assets/CameraMovementLatticeAsset";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
   updateCameraMovementRttSubjectTarget,
 } from "../../render/cameraMovementRttSubjectLifecycle";
-import { CAMERA_MOVEMENT_BASELINE_RENDER_MODEL } from "../../render/cameraMovementLatticeRenderModel";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 
@@ -258,7 +258,7 @@ describe("Camera Movements RTT focal uniforms", () => {
     const scene = new THREE.Scene();
     const mounted = mountCameraMovementRttSubject(
       scene,
-      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+      CAMERA_MOVEMENT_BASELINE_PRESENTATION,
       "middle",
     );
     const group = mounted.group;
@@ -286,16 +286,16 @@ describe("Camera Movements RTT focal uniforms", () => {
       vi.spyOn(material, "dispose"),
     );
     const expectedColourByTargetRegion = {
-      upper: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.upperRegionColour,
-      middle: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.middleRegionColour,
-      lower: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.lowerRegionColour,
-      neutral: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.inactiveColour,
+      upper: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.upperRegionColour,
+      middle: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.middleRegionColour,
+      lower: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.lowerRegionColour,
+      neutral: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.inactiveColour,
     } as const;
 
     (["whole", "upper", "lower", "middle"] as const).forEach((presentationRegion) => {
       updateCameraMovementRttSubjectTarget(
         mounted,
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION,
         presentationRegion,
       );
       expect(group.userData.presentationRegion).toBe(presentationRegion);

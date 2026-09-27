@@ -51,9 +51,9 @@ import {
   type ConceptualCameraPresentation,
 } from "./ConceptualViewCamera";
 import {
-  resolveCameraMovementLatticeRenderModel,
-  type CameraMovementLatticeRenderModel,
-} from "./cameraMovementLatticeRenderModel";
+  resolveCameraMovementLatticePresentation,
+  type CameraMovementLatticePresentation,
+} from "../scenes/presentation/understandingCameraMovements";
 import { FocusFundamentalsTeachingCues } from "./FocusFundamentalsTeachingCues";
 import {
   deriveFocusFundamentalsReferenceOptics,
@@ -93,13 +93,13 @@ type SceneRendererProps = {
 
 export const shouldRenderReferenceCamera = (
   scene: SceneDefinition,
-  cameraMovementRenderModel?: CameraMovementLatticeRenderModel,
+  cameraMovementPresentation?: CameraMovementLatticePresentation,
 ): boolean =>
   scene.showReferenceCamera !== false &&
   Boolean(scene.movementCapabilities) &&
   (
     getSceneSubjectRegistration(scene.id)?.resolveShowReferenceCamera?.({
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
     }) ??
     getSceneSubjectRegistration(scene.id)?.showReferenceCamera ??
     true
@@ -896,7 +896,7 @@ const OpticalGeometryOverlays = ({
 
 const SceneContent = ({
   scene,
-  cameraMovementRenderModel,
+  cameraMovementPresentation,
   opticsState,
   lensCoverageGeometry,
   showFocusPlaneOverlay,
@@ -910,7 +910,7 @@ const SceneContent = ({
   onSubjectCapacityChange,
 }: {
   scene: SceneDefinition;
-  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
+  cameraMovementPresentation?: CameraMovementLatticePresentation;
   opticsState: DerivedOpticsState;
   lensCoverageGeometry: PhysicalLensCoverageRenderGeometry | null;
   showFocusPlaneOverlay: boolean;
@@ -934,17 +934,17 @@ const SceneContent = ({
     : null;
   const referenceCameraVisible = shouldRenderReferenceCamera(
     scene,
-    cameraMovementRenderModel,
+    cameraMovementPresentation,
   );
   const teachingLightingPlacement = useMemo(() => {
     const lighting =
       registration?.viewportLighting ??
       registration?.resolveRttLighting?.({
-        cameraMovementRenderModel,
+        cameraMovementPresentation,
         presentationRegion: "middle",
       }) ?? registration?.rttLighting;
     return resolveTeachingLightingPlacement(lighting);
-  }, [cameraMovementRenderModel, registration]);
+  }, [cameraMovementPresentation, registration]);
 
   return (
     <>
@@ -1087,7 +1087,7 @@ export const SceneRenderer = ({
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
-  const cameraMovementRenderModel = resolveCameraMovementLatticeRenderModel(
+  const cameraMovementPresentation = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
   );
   const renderScene = useMemo(
@@ -1095,10 +1095,10 @@ export const SceneRenderer = ({
       scene.id === "understanding-camera-movements"
         ? {
             ...scene,
-            bounds: cameraMovementRenderModel.subjectBounds,
+            bounds: cameraMovementPresentation.subjectBoundsWorldMm,
           }
         : scene,
-    [cameraMovementRenderModel, scene],
+    [cameraMovementPresentation, scene],
   );
   const observerCameraPosition = observerViews[viewFocus].position;
   const [observerViewState, setObserverViewState] = useState<ObserverViewState>(
@@ -1193,7 +1193,7 @@ export const SceneRenderer = ({
     : null;
   const referenceCameraVisible = shouldRenderReferenceCamera(
     renderScene,
-    cameraMovementRenderModel,
+    cameraMovementPresentation,
   );
 
   return (
@@ -1380,7 +1380,7 @@ export const SceneRenderer = ({
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} lensCoverageGeometry={renderedLensCoverageGeometry} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
         <SceneContent
           scene={{ ...renderScene, assets: activeAssets }}
-          cameraMovementRenderModel={cameraMovementRenderModel}
+          cameraMovementPresentation={cameraMovementPresentation}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}
           showDofOverlay={showDofOverlay}
