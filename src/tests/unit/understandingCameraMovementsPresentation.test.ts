@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import * as THREE from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import {
@@ -21,11 +21,13 @@ import {
   resolveCameraMovementLatticePresentation,
   type CameraMovementLatticePresentation,
 } from "../../scenes/presentation/understandingCameraMovements";
+import * as cameraMovementLatticeAsset from "../../render/assets/CameraMovementLatticeAsset";
 import {
   cameraMovementsGroupOptionsFromPresentation,
-  createCameraMovementsGroup,
   disposeCameraMovementsGroup,
+  type CameraMovementsGroupOptions,
 } from "../../render/assets/CameraMovementLatticeAsset";
+import { createCameraMovementLatticeAsset } from "../../render/cameraMovementLatticeAssetConsumer";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { CameraMovementTargetRegion } from "../../scenes/cameraMovementSceneCalibration";
 
@@ -85,6 +87,7 @@ const sceneSemanticResults = () => {
     cameraPreset: understandingCameraMovementsScene.cameraPreset,
     movementCapabilities: understandingCameraMovementsScene.movementCapabilities,
     lesson: {
+      state: lesson.lessonState,
       study: lesson.lessonState.study,
       targetRegion: lesson.targetRegion,
       presentationTargetRegion: lesson.presentationTargetRegion,
@@ -100,6 +103,17 @@ const sceneSemanticResults = () => {
       },
     },
     focusReferenceWorld: geometry.focusReferenceWorld,
+    presentationSemantics: {
+      object: presentation.object,
+      geometryKey: presentation.geometryKey,
+      presentationKey: presentation.presentationKey,
+      geometryId: presentation.geometryId,
+      subjectBoundsWorldMm: presentation.subjectBoundsWorldMm,
+      referenceGrid: presentation.referenceGrid,
+      calibration: presentation.presentation,
+      lightingTargetWorldMm: presentation.lightingTargetWorldMm,
+      showReferenceCamera: presentation.showReferenceCamera,
+    },
     optics: {
       lensCenterWorld: opticsState.lensCenterWorld,
       filmCenterWorld: opticsState.filmCenterWorld,
@@ -173,35 +187,83 @@ describe("Understanding Camera Movements presentation boundary", () => {
     expect(presentationSource).not.toMatch(/from\s+["'][^"']*assets\//);
   });
 
-  it("allows an alternate visual implementation without changing optical or task results", () => {
+  it("uses the same consumer seam for production and substitute assets without changing semantic results", () => {
     const presentation: CameraMovementLatticePresentation =
       CAMERA_MOVEMENT_BASELINE_PRESENTATION;
+    const options: CameraMovementsGroupOptions =
+      cameraMovementsGroupOptionsFromPresentation(presentation, "middle");
     const resultsBeforeReplacement = sceneSemanticResults();
-    const productionAsset = createCameraMovementsGroup(
-      cameraMovementsGroupOptionsFromPresentation(presentation),
+    const productionFactorySpy = vi.spyOn(
+      cameraMovementLatticeAsset,
+      "createCameraMovementsGroup",
     );
-    const substituteAsset = (contract: CameraMovementLatticePresentation) => {
-      const replacement = new THREE.Group();
-      replacement.name = `substitute:${contract.object.id}`;
-      replacement.userData.semanticObjectId = contract.object.id;
-      replacement.position.set(3, -2, 5);
-      replacement.add(new THREE.Object3D());
-      return replacement;
-    };
-    const replacement = substituteAsset(presentation);
+    let productionAsset: THREE.Group | null = null;
+    let substituteAsset: THREE.Group | null = null;
+    const scene = new THREE.Scene();
 
     try {
-      expect(productionAsset.userData.semanticObjectId).toBe(presentation.object.id);
-      expect(replacement.position.toArray()).toEqual([3, -2, 5]);
+      productionAsset = createCameraMovementLatticeAsset(options);
+      expect(productionFactorySpy).toHaveBeenCalledTimes(1);
+      const productionFactoryOptions = productionFactorySpy.mock.calls[0]?.[0];
+      expect(productionFactoryOptions).toBe(options);
+      if (
+        !productionFactoryOptions ||
+        typeof productionFactoryOptions !== "object"
+      ) {
+        throw new Error("The default asset factory did not receive presentation options");
+      }
+      expect(productionFactoryOptions.presentation).toBe(presentation);
+      expect(productionAsset.userData.canonicalEdgeCount).toBe(
+        presentation.lattice.edges.length,
+      );
+      const productionAssetReference = productionAsset;
+      disposeCameraMovementsGroup(productionAsset);
+      productionAsset = null;
+
+      const substituteGroup = new THREE.Group();
+      substituteGroup.name = "substitute:" + presentation.object.id;
+      substituteGroup.userData.semanticObjectId = presentation.object.id;
+      substituteGroup.position.set(3, -2, 5);
+      substituteGroup.add(new THREE.Object3D());
+      const substituteFactory = vi.fn(
+        (receivedOptions: CameraMovementsGroupOptions) => {
+          expect(receivedOptions.presentation).toBe(presentation);
+          return substituteGroup;
+        },
+      );
+
+      substituteAsset = createCameraMovementLatticeAsset(
+        options,
+        substituteFactory,
+      );
+
+      expect(substituteFactory).toHaveBeenCalledTimes(1);
+      expect(substituteFactory.mock.calls[0][0]).toBe(options);
+      expect(substituteAsset).toBe(substituteGroup);
+      expect(substituteAsset).not.toBe(productionAssetReference);
+      expect(substituteAsset.position.toArray()).toEqual([3, -2, 5]);
+      expect(substituteAsset.userData.canonicalEdgeCount).toBeUndefined();
+      expect(substituteAsset.children).toHaveLength(1);
+      expect(productionFactorySpy).toHaveBeenCalledTimes(1);
+
+      scene.add(substituteAsset);
+      expect(substituteAsset.parent).toBe(scene);
       expect(sceneSemanticResults()).toEqual(resultsBeforeReplacement);
       expect(sceneSemanticResults().optics.selectedTargetWorld).toEqual({
         x: 0,
         y: 0,
         z: 2000,
       });
+      expect(sceneSemanticResults().lattice.targets.middle).toEqual({
+        x: 0,
+        y: 0,
+        z: 2000,
+      });
     } finally {
-      disposeCameraMovementsGroup(productionAsset);
-      replacement.clear();
+      if (productionAsset) disposeCameraMovementsGroup(productionAsset);
+      if (substituteAsset?.parent) substituteAsset.parent.remove(substituteAsset);
+      substituteAsset?.clear();
+      productionFactorySpy.mockRestore();
     }
   });
 });

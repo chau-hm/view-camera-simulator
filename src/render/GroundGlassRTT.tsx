@@ -146,7 +146,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const { gl } = useThree();
   const presentationRegion = explicitPresentationRegion ?? "middle";
   presentationRegionRef.current = presentationRegion;
-  const cameraMovementRenderModel = effectiveCameraMovementCalibration
+  const cameraMovementPresentation = effectiveCameraMovementCalibration
     ? resolveCameraMovementLatticePresentation(effectiveCameraMovementCalibration)
     : CAMERA_MOVEMENT_BASELINE_PRESENTATION;
   const resolvedSceneId = sceneDefinition.id;
@@ -623,7 +623,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
       presentationRegion: presentationRegionRef.current,
     };
     const lighting = sceneProfile.resolveRttLighting(profileContext);
@@ -693,7 +693,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       }
     };
   }, [
-    cameraMovementRenderModel,
+    cameraMovementPresentation,
     sceneDefinition,
     sceneProfile,
     readRuntimeInfo,
@@ -709,7 +709,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
     const profileUpdateContext: GroundGlassSceneProfileUpdateContext = {
       scene: sceneDefinition,
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
       presentationRegion,
       opticsState,
     };
@@ -728,7 +728,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       latticePresentationRegion: presentationRegion,
     });
   }, [
-    cameraMovementRenderModel,
+    cameraMovementPresentation,
     opticsState,
     presentationRegion,
     readRuntimeInfo,
@@ -903,7 +903,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     // Three.js camera forward vector can drive the final pitch-safe range.
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
       presentationRegion,
     };
     const effectiveBounds = sceneProfile.resolveRenderBounds(profileContext);

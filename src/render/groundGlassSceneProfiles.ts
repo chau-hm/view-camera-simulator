@@ -24,7 +24,7 @@ import { configureMirrorShiftRttShadowParticipation } from "./mirrorShiftShadowP
 
 export type GroundGlassSceneProfileContext = Readonly<{
   scene: SceneDefinition;
-  cameraMovementRenderModel: CameraMovementLatticePresentation;
+  cameraMovementPresentation: CameraMovementLatticePresentation;
   presentationRegion: CameraMovementPresentationRegion;
 }>;
 
@@ -120,31 +120,31 @@ const createProfile = (
 const ordinarySceneProfile = createProfile();
 
 const cameraMovementSceneProfile = createProfile({
-  resolveSubjectOptions: ({ cameraMovementRenderModel, presentationRegion }) => ({
-    cameraMovementRenderModel,
+  resolveSubjectOptions: ({ cameraMovementPresentation, presentationRegion }) => ({
+    cameraMovementPresentation,
     presentationRegion,
   }),
   mountSubject: (scene, context) => {
     const mounted = mountCameraMovementRttSubject(
       scene,
-      context.cameraMovementRenderModel,
+      context.cameraMovementPresentation,
       context.presentationRegion,
     );
     return {
       group: mounted.group,
       runtimeInfo: mounted.runtimeInfo,
-      update: ({ cameraMovementRenderModel, presentationRegion }) => {
+      update: ({ cameraMovementPresentation, presentationRegion }) => {
         updateCameraMovementRttSubjectTarget(
           mounted,
-          cameraMovementRenderModel,
+          cameraMovementPresentation,
           presentationRegion,
         );
       },
       dispose: () => unmountCameraMovementRttSubject(mounted),
     };
   },
-  resolveRenderBounds: ({ cameraMovementRenderModel }) =>
-    cameraMovementRenderModel.subjectBoundsWorldMm,
+  resolveRenderBounds: ({ cameraMovementPresentation }) =>
+    cameraMovementPresentation.subjectBoundsWorldMm,
 });
 
 const mirrorShiftSceneProfile = createProfile({

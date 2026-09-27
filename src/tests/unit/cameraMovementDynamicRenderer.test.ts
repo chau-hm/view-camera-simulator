@@ -28,7 +28,7 @@ import {
   createCameraMovementTeachingCases,
 } from "../../scenes/cameraMovementTeachingCases";
 
-const resolveModel = (
+const resolvePresentation = (
   overrides: Parameters<typeof resolveEffectiveCameraMovementCalibration>[1] = {},
 ) =>
   resolveCameraMovementLatticePresentation(
@@ -60,19 +60,19 @@ const collectOwnedResources = (group: THREE.Group) => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
-describe("dynamic camera-movement lattice render model", () => {
+describe("dynamic camera-movement lattice presentation", () => {
   it("changes geometry identity only for geometry-affecting calibration", () => {
-    const baseline = resolveModel();
-    const presentation = resolveModel({
+    const baseline = resolvePresentation();
+    const presentation = resolvePresentation({
       presentation: { inactiveColour: "#123456" },
     });
-    const optics = resolveModel({
+    const optics = resolvePresentation({
       optics: { provisionalFocalLengthMm: 120 },
     });
-    const rig = resolveModel({
+    const rig = resolvePresentation({
       rig: { arcAngleDeg: 22 },
     });
-    const geometry = resolveModel({
+    const geometry = resolvePresentation({
       geometry: { columns: 4 },
     });
 
@@ -86,14 +86,14 @@ describe("dynamic camera-movement lattice render model", () => {
   });
 
   it("reuses one canonical lattice object for presentation, optics, and rig edits", () => {
-    const baseline = resolveModel();
-    const presentation = resolveModel({
+    const baseline = resolvePresentation();
+    const presentation = resolvePresentation({
       presentation: { internalEdgeOpacity: 0.7 },
     });
-    const optics = resolveModel({
+    const optics = resolvePresentation({
       optics: { provisionalFocusDistanceMm: 2400 },
     });
-    const rig = resolveModel({
+    const rig = resolvePresentation({
       rig: { provisionalBasePitchDeg: 3 },
     });
 
@@ -103,7 +103,7 @@ describe("dynamic camera-movement lattice render model", () => {
   });
 
   it("publishes deterministic unique edge IDs and exact finite bounds", () => {
-    const model = resolveModel({
+    const presentation = resolvePresentation({
       geometry: {
         columns: 4,
         rows: 2,
@@ -114,8 +114,8 @@ describe("dynamic camera-movement lattice render model", () => {
         subjectDistanceMm: 2300,
       },
     });
-    const edgeIds = model.lattice.edges.map(({ id }) => id);
-    const allPoints = model.lattice.vertices.flatMap(({ positionWorld }) => [
+    const edgeIds = presentation.lattice.edges.map(({ id }) => id);
+    const allPoints = presentation.lattice.vertices.flatMap(({ positionWorld }) => [
       positionWorld.x,
       positionWorld.y,
       positionWorld.z,
@@ -124,37 +124,37 @@ describe("dynamic camera-movement lattice render model", () => {
     expect(edgeIds.length).toBeGreaterThan(0);
     expect(new Set(edgeIds).size).toBe(edgeIds.length);
     expect(allPoints.every(Number.isFinite)).toBe(true);
-    expect(model.subjectBoundsWorldMm).toBe(model.lattice.bounds);
-    expect(model.subjectBoundsWorldMm.min.x).toBeLessThan(model.subjectBoundsWorldMm.max.x);
-    expect(model.subjectBoundsWorldMm.min.y).toBeLessThan(model.subjectBoundsWorldMm.max.y);
-    expect(model.subjectBoundsWorldMm.min.z).toBeLessThan(model.subjectBoundsWorldMm.max.z);
+    expect(presentation.subjectBoundsWorldMm).toBe(presentation.lattice.bounds);
+    expect(presentation.subjectBoundsWorldMm.min.x).toBeLessThan(presentation.subjectBoundsWorldMm.max.x);
+    expect(presentation.subjectBoundsWorldMm.min.y).toBeLessThan(presentation.subjectBoundsWorldMm.max.y);
+    expect(presentation.subjectBoundsWorldMm.min.z).toBeLessThan(presentation.subjectBoundsWorldMm.max.z);
   });
 
   it("feeds the same effective lattice and identity to interactive and RTT groups", () => {
-    const model = resolveModel({
+    const presentation = resolvePresentation({
       geometry: { columns: 4, levels: 4 },
       presentation: { internalEdgeOpacity: 0.6 },
     });
     const interactive = createCameraMovementsGroup(
-      cameraMovementsGroupOptionsFromPresentation(model, "upper"),
+      cameraMovementsGroupOptionsFromPresentation(presentation, "upper"),
     );
     const rtt = createRegisteredRttSubject(
       "understanding-camera-movements",
       {
         presentationRegion: "upper",
-        cameraMovementRenderModel: model,
+        cameraMovementPresentation: presentation,
       },
     )!;
     try {
-      expect(interactive.userData.canonicalGeometryId).toBe(model.geometryId);
-      expect(rtt.userData.canonicalGeometryId).toBe(model.geometryId);
+      expect(interactive.userData.canonicalGeometryId).toBe(presentation.geometryId);
+      expect(rtt.userData.canonicalGeometryId).toBe(presentation.geometryId);
       expect(interactive.userData.canonicalEdgeIds).toEqual(
-        model.lattice.edges.map(({ id }) => id),
+        presentation.lattice.edges.map(({ id }) => id),
       );
       expect(rtt.userData.canonicalEdgeIds).toEqual(
         interactive.userData.canonicalEdgeIds,
       );
-      expect(rtt.userData.canonicalBounds).toBe(model.lattice.bounds);
+      expect(rtt.userData.canonicalBounds).toBe(presentation.lattice.bounds);
     } finally {
       disposeCameraMovementsGroup(interactive);
       disposeRegisteredRttSubject(
@@ -165,7 +165,7 @@ describe("dynamic camera-movement lattice render model", () => {
   });
 
   it("keeps canonical R3F and RTT geometry stable across every selected teaching case", () => {
-    const model = resolveModel();
+    const presentation = resolvePresentation();
     const teachingCases = createCameraMovementTeachingCases(
       CAMERA_MOVEMENT_SELECTED_TEACHING_CALIBRATION,
     );
@@ -174,7 +174,7 @@ describe("dynamic camera-movement lattice render model", () => {
       const teachingCase = teachingCases[caseId];
       const interactive = createCameraMovementsGroup(
         cameraMovementsGroupOptionsFromPresentation(
-          model,
+          presentation,
           teachingCase.presentationTargetRegion,
         ),
       );
@@ -182,21 +182,21 @@ describe("dynamic camera-movement lattice render model", () => {
         "understanding-camera-movements",
         {
           presentationRegion: teachingCase.presentationTargetRegion,
-          cameraMovementRenderModel: model,
+          cameraMovementPresentation: presentation,
         },
       )!;
       try {
         expect(interactive.userData.canonicalGeometryId, caseId).toBe(
-          model.geometryId,
+          presentation.geometryId,
         );
         expect(rtt.userData.canonicalGeometryId, caseId).toBe(
-          model.geometryId,
+          presentation.geometryId,
         );
         expect(interactive.userData.canonicalEdgeCount, caseId).toBe(
-          model.lattice.edges.length,
+          presentation.lattice.edges.length,
         );
         expect(rtt.userData.canonicalEdgeCount, caseId).toBe(
-          model.lattice.edges.length,
+          presentation.lattice.edges.length,
         );
         expect(rtt.userData.canonicalEdgeIds, caseId).toEqual(
           interactive.userData.canonicalEdgeIds,
@@ -214,8 +214,8 @@ describe("dynamic camera-movement lattice render model", () => {
     }
   });
 
-  it("derives grid, lighting, bounds, and registry diagnostics from the same model", () => {
-    const model = resolveModel({
+  it("derives grid, lighting, bounds, and registry diagnostics from the same presentation", () => {
+    const presentation = resolvePresentation({
       geometry: {
         columns: 4,
         cubeSizeMm: 200,
@@ -225,27 +225,27 @@ describe("dynamic camera-movement lattice render model", () => {
     const registration = getSceneSubjectRegistration(
       "understanding-camera-movements",
     )!;
-    const options = { cameraMovementRenderModel: model };
+    const options = { cameraMovementPresentation: presentation };
     const diagnostics = registration.resolveCanonicalLattice?.(options);
     const lighting = registration.resolveRttLighting?.(options);
     const group = createCameraMovementsGroup(
-      cameraMovementsGroupOptionsFromPresentation(model),
+      cameraMovementsGroupOptionsFromPresentation(presentation),
     );
     try {
       const grid = group.getObjectByName(
         "camera-movements-reference-grid",
       ) as THREE.GridHelper;
       expect(diagnostics).toMatchObject({
-        geometryId: model.geometryId,
-        geometryKey: model.geometryKey,
-        presentationKey: model.presentationKey,
-        edgeCount: model.lattice.edges.length,
+        geometryId: presentation.geometryId,
+        geometryKey: presentation.geometryKey,
+        presentationKey: presentation.presentationKey,
+        edgeCount: presentation.lattice.edges.length,
       });
-      expect(diagnostics?.bounds).toBe(model.subjectBoundsWorldMm);
-      expect(lighting?.targetMm).toEqual(model.lightingTargetWorldMm);
-      expect(grid.userData.geometryKey).toBe(model.geometryKey);
-      expect(grid.userData.cellSizeMm).toBe(model.referenceGrid.cellSizeMm);
-      expect(grid.userData.halfExtentMm).toBe(model.referenceGrid.halfExtentMm);
+      expect(diagnostics?.bounds).toBe(presentation.subjectBoundsWorldMm);
+      expect(lighting?.targetMm).toEqual(presentation.lightingTargetWorldMm);
+      expect(grid.userData.geometryKey).toBe(presentation.geometryKey);
+      expect(grid.userData.cellSizeMm).toBe(presentation.referenceGrid.cellSizeMm);
+      expect(grid.userData.halfExtentMm).toBe(presentation.referenceGrid.halfExtentMm);
     } finally {
       disposeCameraMovementsGroup(group);
     }
@@ -265,7 +265,7 @@ describe("camera-movement RTT subject lifecycle", () => {
     const firstGeometryDispose = [
       ...firstResources.geometries,
     ].map((resource) => vi.spyOn(resource, "dispose"));
-    const presentation = resolveModel({
+    const presentation = resolvePresentation({
       presentation: {
         inactiveColour: "#334455",
         internalEdgeOpacity: 0.7,

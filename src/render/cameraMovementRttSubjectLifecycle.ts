@@ -25,12 +25,12 @@ export type MountedCameraMovementRttSubject = Readonly<{
  */
 export const mountCameraMovementRttSubject = (
   scene: THREE.Scene,
-  renderModel: CameraMovementLatticePresentation,
+  presentation: CameraMovementLatticePresentation,
   presentationRegion: CameraMovementPresentationRegion,
 ): MountedCameraMovementRttSubject => {
   const group = createRegisteredRttSubject(CAMERA_MOVEMENT_SCENE_ID, {
     presentationRegion,
-    cameraMovementRenderModel: renderModel,
+    cameraMovementPresentation: presentation,
   });
   if (!group) {
     throw new Error("Camera-movement RTT subject registration is missing");
@@ -56,12 +56,12 @@ export const unmountCameraMovementRttSubject = (
 /** Update only target presentation on the mounted subject. */
 export const updateCameraMovementRttSubjectTarget = (
   mounted: MountedCameraMovementRttSubject,
-  renderModel: CameraMovementLatticePresentation,
+  presentation: CameraMovementLatticePresentation,
   presentationRegion: CameraMovementPresentationRegion,
 ): void => {
   applyCameraMovementsGroupStyle(
     mounted.group,
-    renderModel.presentation,
+    presentation.presentation,
     presentationRegion,
   );
 };

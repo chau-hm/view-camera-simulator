@@ -36,10 +36,10 @@ import {
   disposeMirrorShiftGroup,
 } from "./MirrorShiftSubjectFactory";
 import { CameraMovementsSubject } from "./CameraMovementsSubjectFactory";
+import { createCameraMovementLatticeAsset } from "./cameraMovementLatticeAssetConsumer";
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   cameraMovementsGroupOptionsFromPresentation,
-  createCameraMovementsGroup,
   disposeCameraMovementsGroup,
 } from "./assets/CameraMovementLatticeAsset";
 import {
@@ -148,7 +148,7 @@ export type SceneSubjectRegistration = {
 
 export type SceneSubjectRttOptions = {
   presentationRegion?: CameraMovementPresentationRegion;
-  cameraMovementRenderModel?: CameraMovementLatticePresentation;
+  cameraMovementPresentation?: CameraMovementLatticePresentation;
 };
 
 export const ArchitectureRiseRegisteredSubject = ({
@@ -301,12 +301,12 @@ export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
     createRttGroup: (options) => {
-      const model =
-        options?.cameraMovementRenderModel ??
+      const presentation =
+        options?.cameraMovementPresentation ??
         CAMERA_MOVEMENT_BASELINE_PRESENTATION;
-      return createCameraMovementsGroup(
+      return createCameraMovementLatticeAsset(
         cameraMovementsGroupOptionsFromPresentation(
-          model,
+          presentation,
           options?.presentationRegion,
         ),
       );
@@ -316,7 +316,7 @@ export const sceneSubjectRegistry = {
       CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
     resolveShowReferenceCamera: (options) =>
       (
-        options?.cameraMovementRenderModel ??
+        options?.cameraMovementPresentation ??
         CAMERA_MOVEMENT_BASELINE_PRESENTATION
       ).showReferenceCamera,
     canonicalLattice: {
@@ -324,15 +324,15 @@ export const sceneSubjectRegistry = {
       edgeCount: CAMERA_MOVEMENT_LATTICE.edges.length,
     },
     resolveCanonicalLattice: (options) => {
-      const model =
-        options?.cameraMovementRenderModel ??
+      const presentation =
+        options?.cameraMovementPresentation ??
         CAMERA_MOVEMENT_BASELINE_PRESENTATION;
       return {
-        geometryId: model.geometryId,
-        geometryKey: model.geometryKey,
-        presentationKey: model.presentationKey,
-        edgeCount: model.lattice.edges.length,
-        bounds: model.subjectBoundsWorldMm,
+        geometryId: presentation.geometryId,
+        geometryKey: presentation.geometryKey,
+        presentationKey: presentation.presentationKey,
+        edgeCount: presentation.lattice.edges.length,
+        bounds: presentation.subjectBoundsWorldMm,
       };
     },
     rttLighting: {
@@ -343,7 +343,7 @@ export const sceneSubjectRegistry = {
     resolveRttLighting: (options) => ({
       targetMm: {
         ...(
-          options?.cameraMovementRenderModel ??
+          options?.cameraMovementPresentation ??
           CAMERA_MOVEMENT_BASELINE_PRESENTATION
         ).lightingTargetWorldMm,
       },

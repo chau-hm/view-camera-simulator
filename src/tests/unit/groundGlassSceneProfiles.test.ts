@@ -19,13 +19,13 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const contextFor = (
   scene: GroundGlassSceneProfileContext["scene"],
-  cameraMovementRenderModel: CameraMovementLatticePresentation =
+  cameraMovementPresentation: CameraMovementLatticePresentation =
     CAMERA_MOVEMENT_BASELINE_PRESENTATION,
   presentationRegion: GroundGlassSceneProfileContext["presentationRegion"] =
     "middle",
 ): GroundGlassSceneProfileContext => ({
   scene,
-  cameraMovementRenderModel,
+  cameraMovementPresentation,
   presentationRegion,
 });
 

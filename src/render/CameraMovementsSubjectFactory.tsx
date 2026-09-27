@@ -10,9 +10,9 @@ import type {
 import {
   applyCameraMovementsGroupStyle,
   cameraMovementsGroupOptionsFromPresentation,
-  createCameraMovementsGroup,
   disposeCameraMovementsGroup,
 } from "./assets/CameraMovementLatticeAsset";
+import { createCameraMovementLatticeAsset } from "./cameraMovementLatticeAssetConsumer";
 import {
   nextInteractiveLatticeGeneration,
   readInteractiveLatticeRuntimeInfo,
@@ -136,7 +136,7 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   );
   const group = useMemo(
     () =>
-      createCameraMovementsGroup(
+      createCameraMovementLatticeAsset(
         cameraMovementsGroupOptionsFromPresentation(presentation),
       ),
     [presentation],
