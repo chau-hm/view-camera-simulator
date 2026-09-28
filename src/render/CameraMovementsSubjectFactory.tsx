@@ -10,9 +10,11 @@ import type {
 import {
   applyCameraMovementsGroupStyle,
   cameraMovementsGroupOptionsFromPresentation,
-  disposeCameraMovementsGroup,
 } from "./assets/CameraMovementLatticeAsset";
-import { createCameraMovementLatticeAsset } from "./cameraMovementLatticeAssetConsumer";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "./cameraMovementLatticeAssetConsumer";
 import {
   nextInteractiveLatticeGeneration,
   readInteractiveLatticeRuntimeInfo,
@@ -156,7 +158,7 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
       publishAttachedInteractiveLatticeRuntime(group, r3fScene);
     onGroupChangeRef.current?.(group);
     return () => {
-      disposeCameraMovementsGroup(group);
+      disposeCameraMovementLatticeAsset(group);
       clearInteractiveLatticeRuntime(runtimeInfo);
       onGroupChangeRef.current?.(null);
     };

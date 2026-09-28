@@ -36,11 +36,13 @@ import {
   disposeMirrorShiftGroup,
 } from "./MirrorShiftSubjectFactory";
 import { CameraMovementsSubject } from "./CameraMovementsSubjectFactory";
-import { createCameraMovementLatticeAsset } from "./cameraMovementLatticeAssetConsumer";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "./cameraMovementLatticeAssetConsumer";
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   cameraMovementsGroupOptionsFromPresentation,
-  disposeCameraMovementsGroup,
 } from "./assets/CameraMovementLatticeAsset";
 import {
   CAMERA_MOVEMENT_BASELINE_PRESENTATION,
@@ -311,7 +313,7 @@ export const sceneSubjectRegistry = {
         ),
       );
     },
-    disposeRttGroup: disposeCameraMovementsGroup,
+    disposeRttGroup: disposeCameraMovementLatticeAsset,
     showReferenceCamera:
       CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
     resolveShowReferenceCamera: (options) =>
