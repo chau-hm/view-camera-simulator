@@ -7,9 +7,14 @@ import {
   CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
   resolveSceneAsset,
   sceneAssetRegistry,
+  type SceneAssetKey,
   type SceneAssetRegistry,
 } from "../../render/assets/sceneAssetRegistry";
 import { cameraMovementsGroupOptionsFromPresentation } from "../../render/assets/CameraMovementLatticeAsset";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "../../render/cameraMovementLatticeAssetConsumer";
 
 describe("scene asset registry", () => {
   it("resolves the production lattice factory and its matching exactly-once disposer", () => {
@@ -18,7 +23,8 @@ describe("scene asset registry", () => {
       presentation,
       "middle",
     );
-    const registration = resolveSceneAsset(presentation.object.id);
+    const presentationAssetKey: SceneAssetKey = presentation.object.id;
+    const registration = resolveSceneAsset(presentationAssetKey);
     const factorySpy = vi.spyOn(
       cameraMovementLatticeAsset,
       "createCameraMovementsGroup",
@@ -33,10 +39,14 @@ describe("scene asset registry", () => {
       expect(registration.implementationId).toBe(
         CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
       );
+      expect(Object.keys(sceneAssetRegistry)).toEqual([
+        CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+      ]);
+      expect(presentationAssetKey).toBe(CAMERA_MOVEMENT_LATTICE_ASSET_KEY);
       expect(Object.isFrozen(sceneAssetRegistry)).toBe(true);
       expect(Object.isFrozen(registration)).toBe(true);
 
-      group = registration.create(options);
+      group = createCameraMovementLatticeAsset(options);
       expect(factorySpy).toHaveBeenCalledTimes(1);
       const factoryOptions = factorySpy.mock.calls[0]?.[0];
       expect(factoryOptions).toBe(options);
@@ -67,15 +77,19 @@ describe("scene asset registry", () => {
         vi.spyOn(material, "dispose"),
       );
 
-      registration.dispose(group);
-      registration.dispose(group);
+      expect(group.userData.assetImplementationId).toBe(
+        registration.implementationId,
+      );
+      group.userData.assetImplementationId = "tampered-diagnostic-value";
+      disposeCameraMovementLatticeAsset(group);
+      disposeCameraMovementLatticeAsset(group);
 
       expect(group.userData.resourcesDisposed).toBe(true);
       geometryDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
       materialDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     } finally {
       if (group && group.userData.resourcesDisposed !== true) {
-        registration.dispose(group);
+        disposeCameraMovementLatticeAsset(group);
       }
       vi.restoreAllMocks();
     }

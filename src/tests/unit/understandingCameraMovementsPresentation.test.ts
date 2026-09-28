@@ -294,6 +294,7 @@ describe("Understanding Camera Movements presentation boundary", () => {
         z: 2000,
       });
 
+      delete substituteAsset.userData.assetImplementationId;
       disposeCameraMovementLatticeAsset(substituteAsset, substituteRegistry);
       substituteAsset = null;
       expect(substituteDisposer).toHaveBeenCalledTimes(1);

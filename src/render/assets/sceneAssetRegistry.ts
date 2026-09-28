@@ -1,14 +1,12 @@
 import * as THREE from "three";
-import type { CameraMovementLatticePresentation } from "../../scenes/presentation/understandingCameraMovements";
 import type { CameraMovementsGroupOptions } from "./CameraMovementLatticeAsset";
 import * as cameraMovementLatticeAsset from "./CameraMovementLatticeAsset";
 
-/** Stable asset slot for the semantic camera-movement lattice object. */
-export type SceneAssetKey =
-  CameraMovementLatticePresentation["object"]["id"];
+/** Stable asset slot owned by the scene asset registry layer. */
+export const CAMERA_MOVEMENT_LATTICE_ASSET_KEY =
+  "camera-movement-lattice" as const;
 
-export const CAMERA_MOVEMENT_LATTICE_ASSET_KEY: SceneAssetKey =
-  "camera-movement-lattice";
+export type SceneAssetKey = typeof CAMERA_MOVEMENT_LATTICE_ASSET_KEY;
 
 /** Identity of the current concrete Three.js implementation registered for the slot. */
 export const CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID =
