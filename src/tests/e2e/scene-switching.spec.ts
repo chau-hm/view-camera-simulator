@@ -12,6 +12,7 @@ const visits: SceneVisit[] = [
   { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
   { heading: "Table Tilt", sceneId: "table-tilt" },
   { heading: "Shelf Swing", sceneId: "shelf-swing" },
+  { heading: "Oblique Architecture", sceneId: "oblique-architecture" },
   { heading: "Oblique Tabletop", sceneId: "oblique-tabletop" },
   { heading: "Mirror Shift", sceneId: "mirror-shift" },
   { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
@@ -55,6 +56,7 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   let previousGroundGlasses: ElementHandle<Node>[] = [];
   let previousSanityState: string | null = null;
   let previousSceneId: string | null = null;
+  const seenRttOwnerIds = new Set<string>();
 
   for (const visit of visits) {
     await openPublicScene(page, visit);
@@ -89,6 +91,12 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       await expect(pane).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
       await expect(pane).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
     }
+    await expect(groundGlass).toHaveAttribute("data-rtt-owner-id", /^ground-glass-rtt-owner-/, { timeout: 60_000 });
+    await expect(groundGlass).toHaveAttribute("data-rtt-resource-generation", /^[1-9]\d*$/, { timeout: 60_000 });
+    const rttOwnerId = await groundGlass.getAttribute("data-rtt-owner-id");
+    expect(rttOwnerId).toBeTruthy();
+    expect(seenRttOwnerIds.has(rttOwnerId!)).toBe(false);
+    seenRttOwnerIds.add(rttOwnerId!);
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");
     expect(sanityState).toBeTruthy();
     if (previousSceneId && previousSceneId !== visit.sceneId) {
