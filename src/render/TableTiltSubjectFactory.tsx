@@ -1,7 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry, { type TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
+import type { TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
+import type { TableTiltPresentation } from "../scenes/presentation/tableTilt";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -15,10 +14,14 @@ const standardMaterial = (color: string, roughness = 0.85) =>
 
 const basicMaterial = (color: string) => new THREE.MeshBasicMaterial({ color });
 
-const addCup = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
+const addCup = (
+  parent: THREE.Group,
+  subject: TableTiltSubjectDefinition,
+  presentation: TableTiltPresentation,
+) => {
   const { width, height, depth } = subject.dimensions;
   const radius = Math.min(width, depth) / 2;
-  const detail = geometry.detailGeometry.cup;
+  const detail = presentation.geometry.detailGeometry.cup;
   const body = new THREE.Mesh(
     new THREE.CylinderGeometry(
       toWorld(radius),
@@ -148,9 +151,13 @@ const addCup = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
   }
 };
 
-const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
+const addNotebook = (
+  parent: THREE.Group,
+  subject: TableTiltSubjectDefinition,
+  presentation: TableTiltPresentation,
+) => {
   const { width, height, depth } = subject.dimensions;
-  const detail = geometry.detailGeometry.notebook;
+  const detail = presentation.geometry.detailGeometry.notebook;
   const pageBlock = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(width - detail.pageInset * 2),
@@ -262,9 +269,13 @@ const addNotebook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) =
   parent.add(binding);
 };
 
-const addBook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
+const addBook = (
+  parent: THREE.Group,
+  subject: TableTiltSubjectDefinition,
+  presentation: TableTiltPresentation,
+) => {
   const { width, height, depth } = subject.dimensions;
-  const detail = geometry.detailGeometry.book;
+  const detail = presentation.geometry.detailGeometry.book;
   const pageBlock = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(width - detail.pageHorizontalInset * 2),
@@ -367,7 +378,10 @@ const addBook = (parent: THREE.Group, subject: TableTiltSubjectDefinition) => {
   }
 };
 
-const createSemanticSubject = (subject: TableTiltSubjectDefinition): THREE.Group => {
+const createSemanticSubject = (
+  subject: TableTiltSubjectDefinition,
+  presentation: TableTiltPresentation,
+): THREE.Group => {
   const surfaceAnchor = new THREE.Group();
   surfaceAnchor.name = `${subject.semanticName}-anchor`;
   surfaceAnchor.position.set(
@@ -375,7 +389,7 @@ const createSemanticSubject = (subject: TableTiltSubjectDefinition): THREE.Group
     toWorld(subject.worldPosition.y),
     toWorld(subject.worldPosition.z),
   );
-  surfaceAnchor.rotation.x = geometry.tabletop.tiltAngleRad;
+  surfaceAnchor.rotation.x = presentation.geometry.tabletop.tiltAngleRad;
   surfaceAnchor.userData = {
     focusTargetId: subject.id,
     focusAnchorWorldMm: { ...subject.focusAnchorWorld },
@@ -386,9 +400,9 @@ const createSemanticSubject = (subject: TableTiltSubjectDefinition): THREE.Group
   yawGroup.rotation.y = degreesToRadians(subject.yawDeg);
   surfaceAnchor.add(yawGroup);
 
-  if (subject.id === "near-cup") addCup(yawGroup, subject);
-  if (subject.id === "mid-notebook") addNotebook(yawGroup, subject);
-  if (subject.id === "far-book") addBook(yawGroup, subject);
+  if (subject.id === "near-cup") addCup(yawGroup, subject, presentation);
+  if (subject.id === "mid-notebook") addNotebook(yawGroup, subject, presentation);
+  if (subject.id === "far-book") addBook(yawGroup, subject, presentation);
 
   // A semantic, non-rendering node marks the exact visible detail surface used
   // by optics evaluation. RTT and R3F share this same object hierarchy.
@@ -424,7 +438,11 @@ const createSemanticSubject = (subject: TableTiltSubjectDefinition): THREE.Group
   return surfaceAnchor;
 };
 
-const addTableTiltContext = (root: THREE.Group): void => {
+const addTableTiltContext = (
+  root: THREE.Group,
+  presentation: TableTiltPresentation,
+): void => {
+  const { geometry } = presentation;
   const context = new THREE.Group();
   context.name = "table-tilt-context-structure";
 
@@ -481,7 +499,7 @@ const addTableTiltContext = (root: THREE.Group): void => {
     depth: number;
     material: THREE.Material;
   }) => {
-    const position = geometry.tabletopLocalToWorld({
+      const position = geometry.tabletopLocalToWorld({
       localX,
       localDepth,
       verticalOffsetMm: height / 2,
@@ -527,8 +545,16 @@ const addTableTiltContext = (root: THREE.Group): void => {
   root.add(context);
 };
 
-/** Create the canonical Table Tilt subject for future offscreen RTT use. */
-export function createTableTiltGroup(): THREE.Group {
+export type TableTiltAssetRequest = Readonly<{
+  presentation: TableTiltPresentation;
+}>;
+
+/** Create the canonical Table Tilt subject for interactive and RTT use. */
+export function createTableTiltGroup(
+  request: TableTiltAssetRequest,
+): THREE.Group {
+  const { presentation } = request;
+  const { geometry } = presentation;
   const root = new THREE.Group();
   root.name = "table-tilt-subject";
 
@@ -597,7 +623,7 @@ export function createTableTiltGroup(): THREE.Group {
   }
   root.add(tabletopAssembly);
 
-  addTableTiltContext(root);
+  addTableTiltContext(root, presentation);
 
   geometry.tableSupports.forEach((support) => {
     const leg = new THREE.Mesh(
@@ -617,7 +643,9 @@ export function createTableTiltGroup(): THREE.Group {
     root.add(leg);
   });
 
-  geometry.subjects.forEach((subject) => root.add(createSemanticSubject(subject)));
+  geometry.subjects.forEach((subject) =>
+    root.add(createSemanticSubject(subject, presentation)),
+  );
 
   return root;
 }
@@ -625,17 +653,3 @@ export function createTableTiltGroup(): THREE.Group {
 export function disposeTableTiltGroup(group: THREE.Group): void {
   disposeTeachingSubjectResources(group);
 }
-
-/** React Three Fiber boundary backed by the exact same group factory as RTT. */
-export const TableTiltSubject: React.FC = () => {
-  const group = useMemo(() => createTableTiltGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeTableTiltGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
-};
