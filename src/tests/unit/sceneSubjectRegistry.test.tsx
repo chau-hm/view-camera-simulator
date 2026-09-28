@@ -1,7 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
+import type { ComponentType } from "react";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ShelfSwingSubject } from "../../render/ShelfSwingSubjectFactory";
+import { ShelfSwingSubject } from "../../render/SceneAssetSubjects";
 import {
   ArchitectureRiseRegisteredSubject,
   createRegisteredRttSubject,
@@ -28,8 +29,29 @@ import {
 } from "../../scenes/lessonZeroGroundGlassSubject";
 import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
 import { WORLD_SCALE } from "../../render/rttUtils";
+import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
+import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
+import * as tableTiltAsset from "../../render/TableTiltSubjectFactory";
+import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
+import {
+  ARCHITECTURE_RISE_ASSET_KEY,
+  OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  TABLE_TILT_ASSET_KEY,
+  SHELF_SWING_ASSET_KEY,
+  resolveSceneAsset,
+} from "../../render/assets/sceneAssetRegistry";
+import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const collectDisposableSpies = (group: THREE.Group) => {
   const geometries = new Set<THREE.BufferGeometry>();
@@ -137,6 +159,62 @@ describe("scene subject registry", () => {
       expect(group?.getObjectByName(subject.focusChart.semanticName)).toBeInstanceOf(THREE.Group);
     });
     disposeRegisteredRttSubject("shelf-swing", group!);
+  });
+
+  it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
+    const candidates = [
+      {
+        scene: architectureRiseScene,
+        assetKey: ARCHITECTURE_RISE_ASSET_KEY,
+        presentation: ARCHITECTURE_RISE_PRESENTATION,
+        factory: vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup"),
+        disposer: vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup"),
+      },
+      {
+        scene: obliqueArchitectureScene,
+        assetKey: OBLIQUE_ARCHITECTURE_ASSET_KEY,
+        presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+        factory: vi.spyOn(obliqueArchitectureAsset, "createObliqueArchitectureGroup"),
+        disposer: vi.spyOn(obliqueArchitectureAsset, "disposeObliqueArchitectureGroup"),
+      },
+      {
+        scene: tableTiltScene,
+        assetKey: TABLE_TILT_ASSET_KEY,
+        presentation: TABLE_TILT_PRESENTATION,
+        factory: vi.spyOn(tableTiltAsset, "createTableTiltGroup"),
+        disposer: vi.spyOn(tableTiltAsset, "disposeTableTiltGroup"),
+      },
+      {
+        scene: shelfSwingScene,
+        assetKey: SHELF_SWING_ASSET_KEY,
+        presentation: SHELF_SWING_PRESENTATION,
+        factory: vi.spyOn(shelfSwingAsset, "createShelfSwingGroup"),
+        disposer: vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup"),
+      },
+    ];
+
+    candidates.forEach(({ scene, assetKey, presentation, factory, disposer }) => {
+      const subject = getRegisteredSceneSubject(scene.id);
+      expect(subject).toBeDefined();
+      const Subject = subject as ComponentType<{ scene: typeof scene }>;
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const view = render(<Subject scene={scene} />);
+      consoleError.mockRestore();
+      const rttGroup = createRegisteredRttSubject(scene.id);
+
+      expect(rttGroup).toBeInstanceOf(THREE.Group);
+      expect(factory).toHaveBeenCalledTimes(2);
+      expect(factory.mock.calls[0]?.[0]?.presentation).toBe(presentation);
+      expect(factory.mock.calls[1]?.[0]?.presentation).toBe(presentation);
+      expect(rttGroup?.userData.assetImplementationId).toBe(
+        resolveSceneAsset(assetKey).implementationId,
+      );
+
+      disposeRegisteredRttSubject(scene.id, rttGroup!);
+      view.unmount();
+      expect(disposer).toHaveBeenCalledTimes(2);
+      expect(disposer.mock.calls[0]?.[0]).toBe(rttGroup);
+    });
   });
 
   it("resolves Mirror Shift to the shared static reflection subject and RTT factory", () => {

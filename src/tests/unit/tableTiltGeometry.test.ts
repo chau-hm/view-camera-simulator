@@ -15,6 +15,7 @@ import geometry, {
   type TableTiltVec3,
 } from "../../scenes/tableTiltGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 
 const TOLERANCE = 1e-7;
 
@@ -232,7 +233,7 @@ describe("canonical Table Tilt geometry", () => {
   });
 
   it("creates stable semantic subject and focus-probe nodes without debug spheres", () => {
-    const group = createTableTiltGroup();
+    const group = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
     try {
       expect(group.name).toBe("table-tilt-subject");
       expect(group.getObjectByName("table-tilt-tabletop")).toBeInstanceOf(THREE.Mesh);
@@ -280,7 +281,7 @@ describe("canonical Table Tilt geometry", () => {
   });
 
   it("lays notebook lines and the far checker chart parallel to the calibrated focus plane", () => {
-    const group = createTableTiltGroup();
+    const group = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
     try {
       group.updateMatrixWorld(true);
       const assertHorizontalDetailSurface = (prefix: string, expectedCount: number) => {

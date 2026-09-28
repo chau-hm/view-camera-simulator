@@ -226,7 +226,9 @@ describe("Understanding Camera Movements presentation boundary", () => {
       },
     );
     const substituteDisposer = vi.fn((group: THREE.Group) => group.clear());
-    const substituteRegistration: SceneAssetRegistration = Object.freeze({
+    const substituteRegistration: SceneAssetRegistration<
+      typeof CAMERA_MOVEMENT_LATTICE_ASSET_KEY
+    > = Object.freeze({
       assetKey: CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
       implementationId: "test-substitute",
       create: substituteFactory,

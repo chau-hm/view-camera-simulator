@@ -29,6 +29,8 @@ import {
   createMirrorShiftRttGroup,
   disposeMirrorShiftGroup,
 } from "../../render/MirrorShiftSubjectFactory";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 
 const expectMappedStandardMaterial = (object: THREE.Object3D | undefined): void => {
   expect(object).toBeInstanceOf(THREE.Mesh);
@@ -69,9 +71,9 @@ describe("focus-friendly teaching materials", () => {
 
   it("uses lit mapped materials on representative photographic surfaces", () => {
     const architecture = createArchitectureForegroundGroup();
-    const tableTilt = createTableTiltGroup();
+    const tableTilt = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
     const obliqueTabletop = createObliqueTabletopGroup();
-    const shelf = createShelfSwingGroup();
+    const shelf = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     const interior = createInteriorCornerGroup();
     const mirror = createMirrorShiftRttGroup();
 

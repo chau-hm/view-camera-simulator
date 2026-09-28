@@ -18,6 +18,7 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 
 describe("SceneRenderer Shelf Swing integration", () => {
   it("serializes only finite resolved renderer vectors", () => {
@@ -48,7 +49,7 @@ describe("SceneRenderer Shelf Swing integration", () => {
   );
 
   it("the registered canonical subject contains exactly one floor and all stations", () => {
-    const group = createShelfSwingGroup();
+    const group = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     try {
       const namedObjects: string[] = [];
       group.traverse((object) => namedObjects.push(object.name));
