@@ -2,6 +2,10 @@ import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 import * as cameraMovementLatticeAsset from "../../render/assets/CameraMovementLatticeAsset";
 import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
+import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
@@ -9,6 +13,7 @@ import {
   TABLE_TILT_ASSET_KEY,
   CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
   CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
+  createRegisteredSceneAsset,
   resolveSceneAsset,
   sceneAssetRegistry,
   type SceneAssetKey,
@@ -19,6 +24,43 @@ import {
   createCameraMovementLatticeAsset,
   disposeCameraMovementLatticeAsset,
 } from "../../render/cameraMovementLatticeAssetConsumer";
+
+const assertSceneAssetRequestKeyPairings = (): void => {
+  createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+    presentation: ARCHITECTURE_RISE_PRESENTATION,
+  });
+  createRegisteredSceneAsset(OBLIQUE_ARCHITECTURE_ASSET_KEY, {
+    presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+  });
+  createRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, {
+    presentation: TABLE_TILT_PRESENTATION,
+  });
+  createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
+    presentation: SHELF_SWING_PRESENTATION,
+  });
+
+  // The Architecture Rise slot rejects the Table Tilt request.
+  createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+    // @ts-expect-error The key selects ArchitectureRiseAssetRequest.
+    presentation: TABLE_TILT_PRESENTATION,
+  });
+  // The Oblique Architecture slot rejects the Shelf Swing request.
+  createRegisteredSceneAsset(OBLIQUE_ARCHITECTURE_ASSET_KEY, {
+    // @ts-expect-error The key selects ObliqueArchitectureAssetRequest.
+    presentation: SHELF_SWING_PRESENTATION,
+  });
+  // The Table Tilt slot rejects the Architecture Rise request.
+  createRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, {
+    // @ts-expect-error The key selects TableTiltAssetRequest.
+    presentation: ARCHITECTURE_RISE_PRESENTATION,
+  });
+  // The Shelf Swing slot rejects the Oblique Architecture request.
+  createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
+    // @ts-expect-error The key selects ShelfSwingAssetRequest.
+    presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+  });
+};
+void assertSceneAssetRequestKeyPairings;
 
 describe("scene asset registry", () => {
   it("resolves the production lattice factory and its matching exactly-once disposer", () => {
