@@ -24,10 +24,19 @@ import {
 import * as cameraMovementLatticeAsset from "../../render/assets/CameraMovementLatticeAsset";
 import {
   cameraMovementsGroupOptionsFromPresentation,
-  disposeCameraMovementsGroup,
   type CameraMovementsGroupOptions,
 } from "../../render/assets/CameraMovementLatticeAsset";
-import { createCameraMovementLatticeAsset } from "../../render/cameraMovementLatticeAssetConsumer";
+import {
+  CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+  resolveSceneAsset,
+  sceneAssetRegistry,
+  type SceneAssetRegistration,
+  type SceneAssetRegistry,
+} from "../../render/assets/sceneAssetRegistry";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "../../render/cameraMovementLatticeAssetConsumer";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { CameraMovementTargetRegion } from "../../scenes/cameraMovementSceneCalibration";
 
@@ -182,26 +191,59 @@ describe("Understanding Camera Movements presentation boundary", () => {
     );
 
     expect(definitionSource).not.toMatch(/from\s+["']three(?:\/|["'])/);
+    expect(definitionSource).not.toMatch(/sceneAssetRegistry/);
     expect(definitionSource).not.toMatch(/from\s+["'][^"']*assets\//);
     expect(presentationSource).not.toMatch(/from\s+["']three(?:\/|["'])/);
+    expect(presentationSource).not.toMatch(/sceneAssetRegistry/);
     expect(presentationSource).not.toMatch(/from\s+["'][^"']*assets\//);
   });
 
-  it("uses the same consumer seam for production and substitute assets without changing semantic results", () => {
+  it("resolves production and substitute implementations through isolated registries without changing semantic results", () => {
     const presentation: CameraMovementLatticePresentation =
       CAMERA_MOVEMENT_BASELINE_PRESENTATION;
     const options: CameraMovementsGroupOptions =
       cameraMovementsGroupOptionsFromPresentation(presentation, "middle");
     const resultsBeforeReplacement = sceneSemanticResults();
+    const productionRegistration = resolveSceneAsset(presentation.object.id);
     const productionFactorySpy = vi.spyOn(
       cameraMovementLatticeAsset,
       "createCameraMovementsGroup",
     );
-    let productionAsset: THREE.Group | null = null;
-    let substituteAsset: THREE.Group | null = null;
     const scene = new THREE.Scene();
+    let productionAsset: THREE.Group | null = null;
+    let restoredProductionAsset: THREE.Group | null = null;
+    let substituteAsset: THREE.Group | null = null;
+
+    const substituteGroup = new THREE.Group();
+    substituteGroup.name = "substitute:" + presentation.object.id;
+    substituteGroup.userData.semanticObjectId = presentation.object.id;
+    substituteGroup.position.set(3, -2, 5);
+    substituteGroup.add(new THREE.Object3D());
+    const substituteFactory = vi.fn(
+      (receivedOptions: CameraMovementsGroupOptions): THREE.Group => {
+        expect(receivedOptions.presentation).toBe(presentation);
+        return substituteGroup;
+      },
+    );
+    const substituteDisposer = vi.fn((group: THREE.Group) => group.clear());
+    const substituteRegistration: SceneAssetRegistration = Object.freeze({
+      assetKey: CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+      implementationId: "test-substitute",
+      create: substituteFactory,
+      dispose: substituteDisposer,
+    });
+    const substituteRegistry: SceneAssetRegistry = Object.freeze({
+      [CAMERA_MOVEMENT_LATTICE_ASSET_KEY]: substituteRegistration,
+    });
 
     try {
+      expect(sceneAssetRegistry[CAMERA_MOVEMENT_LATTICE_ASSET_KEY]).toBe(
+        productionRegistration,
+      );
+      expect(productionRegistration.implementationId).not.toBe(
+        substituteRegistration.implementationId,
+      );
+
       productionAsset = createCameraMovementLatticeAsset(options);
       expect(productionFactorySpy).toHaveBeenCalledTimes(1);
       const productionFactoryOptions = productionFactorySpy.mock.calls[0]?.[0];
@@ -210,38 +252,30 @@ describe("Understanding Camera Movements presentation boundary", () => {
         !productionFactoryOptions ||
         typeof productionFactoryOptions !== "object"
       ) {
-        throw new Error("The default asset factory did not receive presentation options");
+        throw new Error("The registered factory did not receive options");
       }
       expect(productionFactoryOptions.presentation).toBe(presentation);
       expect(productionAsset.userData.canonicalEdgeCount).toBe(
         presentation.lattice.edges.length,
       );
-      const productionAssetReference = productionAsset;
-      disposeCameraMovementsGroup(productionAsset);
-      productionAsset = null;
-
-      const substituteGroup = new THREE.Group();
-      substituteGroup.name = "substitute:" + presentation.object.id;
-      substituteGroup.userData.semanticObjectId = presentation.object.id;
-      substituteGroup.position.set(3, -2, 5);
-      substituteGroup.add(new THREE.Object3D());
-      const substituteFactory = vi.fn(
-        (receivedOptions: CameraMovementsGroupOptions) => {
-          expect(receivedOptions.presentation).toBe(presentation);
-          return substituteGroup;
-        },
+      expect(productionAsset.userData.assetImplementationId).toBe(
+        productionRegistration.implementationId,
       );
+      disposeCameraMovementLatticeAsset(productionAsset);
+      productionAsset = null;
 
       substituteAsset = createCameraMovementLatticeAsset(
         options,
-        substituteFactory,
+        substituteRegistry,
       );
 
       expect(substituteFactory).toHaveBeenCalledTimes(1);
-      expect(substituteFactory.mock.calls[0][0]).toBe(options);
+      expect(substituteFactory.mock.calls[0]?.[0]).toBe(options);
       expect(substituteAsset).toBe(substituteGroup);
-      expect(substituteAsset).not.toBe(productionAssetReference);
       expect(substituteAsset.position.toArray()).toEqual([3, -2, 5]);
+      expect(substituteAsset.userData.assetImplementationId).toBe(
+        "test-substitute",
+      );
       expect(substituteAsset.userData.canonicalEdgeCount).toBeUndefined();
       expect(substituteAsset.children).toHaveLength(1);
       expect(productionFactorySpy).toHaveBeenCalledTimes(1);
@@ -259,10 +293,35 @@ describe("Understanding Camera Movements presentation boundary", () => {
         y: 0,
         z: 2000,
       });
+
+      disposeCameraMovementLatticeAsset(substituteAsset, substituteRegistry);
+      substituteAsset = null;
+      expect(substituteDisposer).toHaveBeenCalledTimes(1);
+      expect(substituteDisposer).toHaveBeenCalledWith(substituteGroup);
+      expect(sceneAssetRegistry[CAMERA_MOVEMENT_LATTICE_ASSET_KEY]).toBe(
+        productionRegistration,
+      );
+      expect(resolveSceneAsset(presentation.object.id)).toBe(
+        productionRegistration,
+      );
+
+      restoredProductionAsset = createCameraMovementLatticeAsset(options);
+      expect(productionFactorySpy).toHaveBeenCalledTimes(2);
+      expect(restoredProductionAsset.userData.assetImplementationId).toBe(
+        productionRegistration.implementationId,
+      );
+      disposeCameraMovementLatticeAsset(restoredProductionAsset);
+      restoredProductionAsset = null;
     } finally {
-      if (productionAsset) disposeCameraMovementsGroup(productionAsset);
-      if (substituteAsset?.parent) substituteAsset.parent.remove(substituteAsset);
-      substituteAsset?.clear();
+      if (productionAsset) disposeCameraMovementLatticeAsset(productionAsset);
+      if (restoredProductionAsset) {
+        disposeCameraMovementLatticeAsset(restoredProductionAsset);
+      }
+      if (substituteAsset) {
+        if (substituteAsset.parent) substituteAsset.parent.remove(substituteAsset);
+        disposeCameraMovementLatticeAsset(substituteAsset, substituteRegistry);
+      }
+      if (substituteGroup.parent) substituteGroup.parent.remove(substituteGroup);
       productionFactorySpy.mockRestore();
     }
   });

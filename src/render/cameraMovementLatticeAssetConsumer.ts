@@ -1,19 +1,48 @@
-import type { Group } from "three";
-import * as cameraMovementLatticeAsset from "./assets/CameraMovementLatticeAsset";
+import * as THREE from "three";
 import type { CameraMovementsGroupOptions } from "./assets/CameraMovementLatticeAsset";
+import {
+  CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+  resolveSceneAsset,
+  sceneAssetRegistry,
+  type SceneAssetRegistry,
+} from "./assets/sceneAssetRegistry";
 
-/** Scene-specific factory type for the replaceable camera-movement lattice asset. */
-export type CameraMovementLatticeAssetFactory = (
-  options: CameraMovementsGroupOptions,
-) => Group;
+export type { CameraMovementLatticeAssetFactory } from "./assets/sceneAssetRegistry";
 
 /**
- * Shared construction seam for the interactive and RTT consumers.
- * Application callers use the current Three.js asset by default; the optional
- * factory is an explicit dependency only for focused substitution tests.
+ * Scene-specific adapter shared by interactive and RTT consumers. Tests may
+ * supply an isolated registry; application callers use the immutable default.
  */
 export const createCameraMovementLatticeAsset = (
   options: CameraMovementsGroupOptions,
-  assetFactory: CameraMovementLatticeAssetFactory =
-    cameraMovementLatticeAsset.createCameraMovementsGroup,
-): Group => assetFactory(options);
+  registry: SceneAssetRegistry = sceneAssetRegistry,
+): THREE.Group => {
+  const registration = resolveSceneAsset(
+    options.presentation.object.id,
+    registry,
+  );
+  const group = registration.create(options);
+  group.userData.assetImplementationId = registration.implementationId;
+  return group;
+};
+
+/** Dispose through the registration paired with this scene-specific asset slot. */
+export const disposeCameraMovementLatticeAsset = (
+  group: THREE.Group,
+  registry: SceneAssetRegistry = sceneAssetRegistry,
+): void => {
+  const registration = resolveSceneAsset(
+    CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+    registry,
+  );
+  if (group.userData.assetImplementationId !== registration.implementationId) {
+    throw new Error(
+      'Cannot dispose scene asset "' +
+        registration.assetKey +
+        '" with implementation "' +
+        registration.implementationId +
+        '"',
+    );
+  }
+  registration.dispose(group);
+};

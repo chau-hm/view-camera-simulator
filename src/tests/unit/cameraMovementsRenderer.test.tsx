@@ -7,12 +7,22 @@ import {
   publishAttachedInteractiveLatticeRuntime,
   updateAttachedInteractiveLatticeRuntime,
 } from "../../render/CameraMovementsSubjectFactory";
+import * as cameraMovementLatticeAsset from "../../render/assets/CameraMovementLatticeAsset";
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+  cameraMovementsGroupOptionsFromPresentation,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
   applyCameraMovementsGroupStyle,
 } from "../../render/assets/CameraMovementLatticeAsset";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "../../render/cameraMovementLatticeAssetConsumer";
+import {
+  CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
+  resolveSceneAsset,
+} from "../../render/assets/sceneAssetRegistry";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
@@ -266,6 +276,9 @@ describe("Camera Movements subject factory", () => {
       );
     };
     const first = mountedGroups[0];
+    expect(first.userData.assetImplementationId).toBe(
+      CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
+    );
     assertCanonicalGroup(first, "upper");
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     const firstGeometry = (first.children[0] as THREE.Mesh).geometry;
@@ -307,19 +320,43 @@ describe("Camera Movements subject factory", () => {
   it("keeps both subjects stable across the complete public teaching transition sequence", () => {
     useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
     const scene = new THREE.Scene();
-    const interactive = createCameraMovementsGroup("middle");
+    const presentation = CAMERA_MOVEMENT_BASELINE_PRESENTATION;
+    const registration = resolveSceneAsset(presentation.object.id);
+    const productionFactorySpy = vi.spyOn(
+      cameraMovementLatticeAsset,
+      "createCameraMovementsGroup",
+    );
+    const interactive = createCameraMovementLatticeAsset(
+      cameraMovementsGroupOptionsFromPresentation(presentation, "middle"),
+    );
     scene.add(interactive);
     const initialInteractive = publishAttachedInteractiveLatticeRuntime(
       interactive,
       scene,
     );
     expect(initialInteractive).not.toBeNull();
-
-    const rtt = mountCameraMovementRttSubject(
-      scene,
-      CAMERA_MOVEMENT_BASELINE_PRESENTATION,
-      "middle",
+    expect(interactive.userData.assetImplementationId).toBe(
+      registration.implementationId,
     );
+    expect(productionFactorySpy).toHaveBeenCalledTimes(1);
+
+    const rtt = mountCameraMovementRttSubject(scene, presentation, "middle");
+    expect(rtt.group.userData.assetImplementationId).toBe(
+      registration.implementationId,
+    );
+    expect(productionFactorySpy).toHaveBeenCalledTimes(2);
+    const interactiveFactoryOptions = productionFactorySpy.mock.calls[0]?.[0];
+    const rttFactoryOptions = productionFactorySpy.mock.calls[1]?.[0];
+    if (
+      !interactiveFactoryOptions ||
+      typeof interactiveFactoryOptions !== "object" ||
+      !rttFactoryOptions ||
+      typeof rttFactoryOptions !== "object"
+    ) {
+      throw new Error("Both consumers must deliver camera-movement options");
+    }
+    expect(interactiveFactoryOptions.presentation).toBe(presentation);
+    expect(rttFactoryOptions.presentation).toBe(presentation);
     const initialGeometryId = interactive.userData.canonicalGeometryId;
     const initialEdgeCount = interactive.userData.canonicalEdgeCount;
     const initialResourceKey = interactive.userData.resourceKey;
@@ -442,7 +479,7 @@ describe("Camera Movements subject factory", () => {
     unmountCameraMovementRttSubject(rtt);
     scene.remove(interactive);
     clearInteractiveLatticeRuntime(initialInteractive);
-    disposeCameraMovementsGroup(interactive);
+    disposeCameraMovementLatticeAsset(interactive);
     geometryDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     materialDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
