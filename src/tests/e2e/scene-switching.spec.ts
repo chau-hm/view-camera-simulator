@@ -12,6 +12,7 @@ const visits: SceneVisit[] = [
   { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
   { heading: "Table Tilt", sceneId: "table-tilt" },
   { heading: "Shelf Swing", sceneId: "shelf-swing" },
+  { heading: "Oblique Architecture", sceneId: "oblique-architecture" },
   { heading: "Oblique Tabletop", sceneId: "oblique-tabletop" },
   { heading: "Mirror Shift", sceneId: "mirror-shift" },
   { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
