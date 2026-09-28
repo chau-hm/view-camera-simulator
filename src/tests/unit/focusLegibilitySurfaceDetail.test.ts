@@ -18,6 +18,9 @@ import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import architectureRiseGeometry from "../../scenes/architectureRiseGeometry";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 
 const expectFinitePositive = (value: number) => {
   expect(Number.isFinite(value)).toBe(true);
@@ -109,9 +112,11 @@ describe("focus-legibility surface detail", () => {
   });
 
   it("exposes the new detail nodes through the shared RTT subject factories", () => {
-    const architectureGroup = createArchitectureRiseGroup();
-    const shelfGroup = createShelfSwingGroup();
-    const tableGroup = createTableTiltGroup();
+    const architectureGroup = createArchitectureRiseGroup({
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+    });
+    const shelfGroup = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
+    const tableGroup = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
     try {
       const architectureDetail = architectureGroup.getObjectByName(
         "architecture-rise-facade-fine-detail",

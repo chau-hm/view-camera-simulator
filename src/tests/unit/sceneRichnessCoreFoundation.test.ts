@@ -20,6 +20,9 @@ import {
 import architectureRiseGeometry from "../../scenes/architectureRiseGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
+import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 import { reflectPointAcrossMirrorPlane } from "../../scenes/mirrorShiftGeometry";
 import { toWorld } from "../../render/rttUtils";
 
@@ -33,7 +36,9 @@ const worldZBounds = (object: THREE.Object3D): { min: number; max: number } => {
 
 describe("core scene visual richness foundation", () => {
   it("adds architectural context at intended Architecture Rise scale without moving the canonical target", () => {
-    const group = createArchitectureRiseGroup();
+    const group = createArchitectureRiseGroup({
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+    });
     try {
       group.updateMatrixWorld(true);
 
@@ -114,7 +119,9 @@ describe("core scene visual richness foundation", () => {
   });
 
   it("adds depth-bearing Oblique Architecture structure while preserving focus probes", () => {
-    const group = createObliqueArchitectureGroup();
+    const group = createObliqueArchitectureGroup({
+      presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+    });
     try {
       group.updateMatrixWorld(true);
       const context = group.getObjectByName("oblique-architecture-context-structure");
@@ -142,7 +149,7 @@ describe("core scene visual richness foundation", () => {
   });
 
   it("adds near, middle, and far Table Tilt context without changing calibrated subjects", () => {
-    const group = createTableTiltGroup();
+    const group = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
     try {
       group.updateMatrixWorld(true);
       const near = group.getObjectByName("table-tilt-context-near-tray");

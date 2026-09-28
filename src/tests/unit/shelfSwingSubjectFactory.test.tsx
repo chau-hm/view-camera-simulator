@@ -1,17 +1,18 @@
 import { render } from "@testing-library/react";
 import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
+import { ShelfSwingSubject } from "../../render/SceneAssetSubjects";
 import {
   createShelfSwingGroup,
   disposeShelfSwingGroup,
-  ShelfSwingSubject,
 } from "../../render/ShelfSwingSubjectFactory";
 import { toWorld } from "../../render/rttUtils";
 import geometry from "../../scenes/shelfSwingGeometry";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 
 describe("Shelf Swing subject factory", () => {
   it("creates stable floor, station, probe, and sample semantics from canonical geometry", () => {
-    const group = createShelfSwingGroup();
+    const group = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     try {
       expect(group.name).toBe("shelf-swing-subject");
       expect(group.getObjectByName("shelf-swing-floor")).toBeInstanceOf(THREE.Mesh);
@@ -61,7 +62,7 @@ describe("Shelf Swing subject factory", () => {
   });
 
   it("keeps chart planes canonical and offsets each backing behind by the configured gap", () => {
-    const group = createShelfSwingGroup();
+    const group = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     try {
       group.updateMatrixWorld(true);
 
@@ -106,7 +107,7 @@ describe("Shelf Swing subject factory", () => {
   });
 
   it("disposes each unique geometry and material exactly once", () => {
-    const group = createShelfSwingGroup();
+    const group = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();
     group.traverse((object) => {

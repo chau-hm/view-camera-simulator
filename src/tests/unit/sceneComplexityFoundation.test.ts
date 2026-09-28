@@ -20,6 +20,7 @@ import architectureGeometry from "../../scenes/architectureForegroundGeometry";
 import interiorGeometry from "../../scenes/interiorCornerGeometry";
 import obliqueGeometry from "../../scenes/obliqueTabletopGeometry";
 import shelfGeometry from "../../scenes/shelfSwingGeometry";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 import { toWorld } from "../../render/rttUtils";
 
 describe("scene complexity foundation", () => {
@@ -153,7 +154,7 @@ describe("scene complexity foundation", () => {
   });
 
   it("adds repeated shelf context while retaining every calibrated station", () => {
-    const group = createShelfSwingGroup();
+    const group = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     try {
       shelfGeometry.subjects.forEach((subject) => {
         expect(group.getObjectByName(`${subject.semanticName}-backdrop-panel`)).toBeInstanceOf(

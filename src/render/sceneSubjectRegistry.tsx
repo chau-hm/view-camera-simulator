@@ -8,28 +8,28 @@ import tableTiltGeometry from "../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../scenes/shelfSwingGeometry";
 import {
   ArchitectureRiseSubject,
-  createArchitectureRiseGroup,
-  disposeArchitectureRiseGroup,
-} from "./ArchitectureRiseSubjectFactory";
-import {
   ObliqueArchitectureSubject,
-  createObliqueArchitectureGroup,
-  disposeObliqueArchitectureGroup,
-} from "./ObliqueArchitectureSubjectFactory";
+  ShelfSwingSubject,
+  TableTiltSubject,
+} from "./SceneAssetSubjects";
+import {
+  ARCHITECTURE_RISE_ASSET_KEY,
+  OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  SHELF_SWING_ASSET_KEY,
+  TABLE_TILT_ASSET_KEY,
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
+} from "./assets/sceneAssetRegistry";
 import {
   FocusFundamentalsSubject,
   createFocusFundamentalsGroup,
 } from "./FocusFundamentalsSubjectFactory";
 import {
-  TableTiltSubject,
-  createTableTiltGroup,
-  disposeTableTiltGroup,
-} from "./TableTiltSubjectFactory";
-import {
-  ShelfSwingSubject,
-  createShelfSwingGroup,
-  disposeShelfSwingGroup,
-} from "./ShelfSwingSubjectFactory";
+  ARCHITECTURE_RISE_PRESENTATION,
+} from "../scenes/presentation/architectureRise";
+import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../scenes/presentation/obliqueArchitecture";
+import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
+import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import {
   MirrorShiftSubject,
   createMirrorShiftRttGroup,
@@ -364,8 +364,12 @@ export const sceneSubjectRegistry = {
   },
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,
-    createRttGroup: createArchitectureRiseGroup,
-    disposeRttGroup: disposeArchitectureRiseGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+        presentation: ARCHITECTURE_RISE_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group),
     rttLighting: {
       targetMm: architectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
@@ -384,8 +388,12 @@ export const sceneSubjectRegistry = {
   },
   "oblique-architecture": {
     SceneSubject: ObliqueArchitectureRegisteredSubject,
-    createRttGroup: createObliqueArchitectureGroup,
-    disposeRttGroup: disposeObliqueArchitectureGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(OBLIQUE_ARCHITECTURE_ASSET_KEY, {
+        presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(OBLIQUE_ARCHITECTURE_ASSET_KEY, group),
     rttLighting: {
       targetMm: obliqueArchitectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -394,8 +402,12 @@ export const sceneSubjectRegistry = {
   },
   "table-tilt": {
     SceneSubject: TableTiltSubject,
-    createRttGroup: createTableTiltGroup,
-    disposeRttGroup: disposeTableTiltGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, {
+        presentation: TABLE_TILT_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, group),
     rttLighting: {
       targetMm: tableTiltLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -404,8 +416,12 @@ export const sceneSubjectRegistry = {
   },
   "shelf-swing": {
     SceneSubject: ShelfSwingSubject,
-    createRttGroup: createShelfSwingGroup,
-    disposeRttGroup: disposeShelfSwingGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
+        presentation: SHELF_SWING_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, group),
     rttLighting: {
       targetMm: shelfSwingLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
