@@ -5,20 +5,32 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
 import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
 import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
 import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
 import * as tableTiltAsset from "../../render/TableTiltSubjectFactory";
+import * as architectureForegroundAsset from "../../render/ArchitectureForegroundSubjectFactory";
+import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory";
+import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
+  ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  INTERIOR_CORNER_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  OBLIQUE_TABLETOP_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   createRegisteredSceneAsset,
@@ -51,16 +63,35 @@ const countFactoryCalls = (spy: {
 
 const sceneDefinitions = [
   architectureRiseScene,
+  architectureForegroundScene,
+  interiorCornerScene,
   obliqueArchitectureScene,
+  obliqueTabletopScene,
   tableTiltScene,
   shelfSwingScene,
 ] as const;
 
 const semanticResults = () => ({
   scenes: sceneDefinitions,
-  tasks: ["rise-01", "oblique-swing-focus-01", "tilt-01", "swing-01"].map(
-    (taskId) => getTaskById(taskId),
-  ),
+  tasks: [
+    "rise-01",
+    "architecture-foreground-rise-01",
+    "architecture-foreground-tilt-focus-01",
+    "architecture-foreground-dof-01",
+    "architecture-foreground-compound-01",
+    "interior-corner-compose-01",
+    "interior-corner-swing-01",
+    "interior-corner-refine-01",
+    "interior-corner-aperture-01",
+    "oblique-swing-focus-01",
+    "oblique-tabletop-focus-01",
+    "oblique-tabletop-tilt-01",
+    "oblique-tabletop-swing-01",
+    "oblique-tabletop-refine-01",
+    "oblique-tabletop-aperture-01",
+    "tilt-01",
+    "swing-01",
+  ].map((taskId) => getTaskById(taskId)),
   optics: sceneDefinitions.map((scene) => {
     const optics = deriveOpticsState(
       {
@@ -78,7 +109,10 @@ const semanticResults = () => ({
   }),
   presentations: [
     ARCHITECTURE_RISE_PRESENTATION,
+    ARCHITECTURE_FOREGROUND_PRESENTATION,
+    INTERIOR_CORNER_PRESENTATION,
     OBLIQUE_ARCHITECTURE_PRESENTATION,
+    OBLIQUE_TABLETOP_PRESENTATION,
     TABLE_TILT_PRESENTATION,
     SHELF_SWING_PRESENTATION,
   ],
@@ -224,6 +258,18 @@ describe("static teaching scene asset migrations", () => {
       shelfSwingAsset,
       "createShelfSwingGroup",
     );
+    const architectureForegroundFactorySpy = vi.spyOn(
+      architectureForegroundAsset,
+      "createArchitectureForegroundGroup",
+    );
+    const interiorCornerFactorySpy = vi.spyOn(
+      interiorCornerAsset,
+      "createInteriorCornerGroup",
+    );
+    const obliqueTabletopFactorySpy = vi.spyOn(
+      obliqueTabletopAsset,
+      "createObliqueTabletopGroup",
+    );
 
     exerciseReplacement(
       ARCHITECTURE_RISE_ASSET_KEY,
@@ -253,16 +299,43 @@ describe("static teaching scene asset migrations", () => {
       "shelf-swing-subject",
       "shelf-swing",
     );
+    exerciseReplacement(
+      ARCHITECTURE_FOREGROUND_ASSET_KEY,
+      { presentation: ARCHITECTURE_FOREGROUND_PRESENTATION },
+      countFactoryCalls(architectureForegroundFactorySpy),
+      "architecture-foreground-subject",
+      "architecture-foreground",
+    );
+    exerciseReplacement(
+      INTERIOR_CORNER_ASSET_KEY,
+      { presentation: INTERIOR_CORNER_PRESENTATION },
+      countFactoryCalls(interiorCornerFactorySpy),
+      "interior-corner-subject",
+      "interior-corner",
+    );
+    exerciseReplacement(
+      OBLIQUE_TABLETOP_ASSET_KEY,
+      { presentation: OBLIQUE_TABLETOP_PRESENTATION },
+      countFactoryCalls(obliqueTabletopFactorySpy),
+      "oblique-tabletop-subject",
+      "oblique-tabletop",
+    );
   });
 
   it("keeps scene definitions and renderer-neutral presentations outside Three.js and asset implementation modules", () => {
     const paths = [
       "src/scenes/definitions/architecture-rise.ts",
+      "src/scenes/definitions/architecture-foreground.ts",
+      "src/scenes/definitions/interior-corner.ts",
       "src/scenes/definitions/oblique-architecture.ts",
+      "src/scenes/definitions/oblique-tabletop.ts",
       "src/scenes/definitions/table-tilt.ts",
       "src/scenes/definitions/shelf-swing.ts",
       "src/scenes/presentation/architectureRise.ts",
+      "src/scenes/presentation/architectureForeground.ts",
+      "src/scenes/presentation/interiorCorner.ts",
       "src/scenes/presentation/obliqueArchitecture.ts",
+      "src/scenes/presentation/obliqueTabletop.ts",
       "src/scenes/presentation/tableTilt.ts",
       "src/scenes/presentation/shelfSwing.ts",
     ];

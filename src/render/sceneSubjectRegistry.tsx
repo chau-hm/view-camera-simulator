@@ -9,11 +9,17 @@ import shelfSwingGeometry from "../scenes/shelfSwingGeometry";
 import {
   ArchitectureRiseSubject,
   ObliqueArchitectureSubject,
+  ArchitectureForegroundSubject,
+  InteriorCornerSubject,
+  ObliqueTabletopSubject,
   ShelfSwingSubject,
   TableTiltSubject,
 } from "./SceneAssetSubjects";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
+  ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  INTERIOR_CORNER_ASSET_KEY,
+  OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -30,6 +36,9 @@ import {
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../scenes/presentation/obliqueArchitecture";
 import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import {
   MirrorShiftSubject,
   createMirrorShiftRttGroup,
@@ -60,24 +69,9 @@ import architectureForegroundGeometry from "../scenes/architectureForegroundGeom
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
 import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
 import {
-  ArchitectureForegroundSubject,
-  createArchitectureForegroundGroup,
-  disposeArchitectureForegroundGroup,
-} from "./ArchitectureForegroundSubjectFactory";
-import {
   LessonZeroGroundGlassSubject,
   createLessonZeroGroundGlassGroup,
 } from "./LessonZeroGroundGlassSubjectFactory";
-import {
-  ObliqueTabletopSubject,
-  createObliqueTabletopGroup,
-  disposeObliqueTabletopGroup,
-} from "./ObliqueTabletopSubjectFactory";
-import {
-  InteriorCornerSubject,
-  createInteriorCornerGroup,
-  disposeInteriorCornerGroup,
-} from "./InteriorCornerSubjectFactory";
 import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectCenterMm,
@@ -378,8 +372,12 @@ export const sceneSubjectRegistry = {
   },
   "architecture-foreground": {
     SceneSubject: ArchitectureForegroundRegisteredSubject,
-    createRttGroup: createArchitectureForegroundGroup,
-    disposeRttGroup: disposeArchitectureForegroundGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, {
+        presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, group),
     rttLighting: {
       targetMm: architectureForegroundLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -430,8 +428,12 @@ export const sceneSubjectRegistry = {
   },
   "oblique-tabletop": {
     SceneSubject: ObliqueTabletopSubject,
-    createRttGroup: createObliqueTabletopGroup,
-    disposeRttGroup: disposeObliqueTabletopGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, {
+        presentation: OBLIQUE_TABLETOP_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, group),
     rttLighting: {
       targetMm: obliqueTabletopLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -447,8 +449,12 @@ export const sceneSubjectRegistry = {
   },
   "interior-corner": {
     SceneSubject: InteriorCornerSubject,
-    createRttGroup: createInteriorCornerGroup,
-    disposeRttGroup: disposeInteriorCornerGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
+        presentation: INTERIOR_CORNER_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, group),
     rttLighting: {
       targetMm: interiorCornerLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
