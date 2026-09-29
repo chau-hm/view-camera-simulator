@@ -9,6 +9,7 @@ import {
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import geometry from "../../scenes/interiorCornerGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 
 const neutralCamera = {
   ...DEFAULT_CAMERA_STATE,
@@ -96,7 +97,9 @@ describe("Interior Corner scene foundation", () => {
   });
 
   it("builds one shared room subject with stable wall anchors and explicit disposal", () => {
-    const group = createInteriorCornerGroup();
+    const group = createInteriorCornerGroup({
+      presentation: INTERIOR_CORNER_PRESENTATION,
+    });
 
     expect(group.name).toBe("interior-corner-subject");
     expect(group.getObjectByName("interior-corner-floor")).toBeInstanceOf(THREE.Mesh);

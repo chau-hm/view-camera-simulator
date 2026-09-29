@@ -1,7 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry from "../scenes/interiorCornerGeometry";
+import type { InteriorCornerPresentation } from "../scenes/presentation/interiorCorner";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -23,6 +21,11 @@ type InteriorCornerMaterials = {
 
 const createStandardMaterial = (color: string, roughness = 0.88) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
+
+type InteriorCornerGeometry = InteriorCornerPresentation["geometry"];
+export type InteriorCornerAssetRequest = Readonly<{
+  presentation: InteriorCornerPresentation;
+}>;
 
 const addBox = ({
   root,
@@ -48,8 +51,9 @@ const addBox = ({
 };
 
 const addSideArtwork = (
+  geometry: InteriorCornerGeometry,
   root: THREE.Object3D,
-  detail: (typeof geometry.wallDetails)[number],
+  detail: InteriorCornerGeometry["wallDetails"][number],
   materials: InteriorCornerMaterials,
 ) => {
   const group = new THREE.Group();
@@ -117,6 +121,7 @@ const addSideArtwork = (
 };
 
 const addBackArtwork = (
+  geometry: InteriorCornerGeometry,
   root: THREE.Object3D,
   materials: InteriorCornerMaterials,
 ) => {
@@ -177,6 +182,7 @@ const addBackArtwork = (
 };
 
 const addSideWallMoulding = (
+  geometry: InteriorCornerGeometry,
   root: THREE.Object3D,
   materials: InteriorCornerMaterials,
 ) => {
@@ -219,7 +225,7 @@ const addSideWallMoulding = (
   });
 };
 
-const addFocusProbes = (root: THREE.Object3D) => {
+const addFocusProbes = (geometry: InteriorCornerGeometry, root: THREE.Object3D) => {
   geometry.focusTargets.forEach((target) => {
     const probe = new THREE.Object3D();
     probe.name = `interior-corner-focus-${target.id}`;
@@ -234,7 +240,10 @@ const addFocusProbes = (root: THREE.Object3D) => {
   });
 };
 
-const addInteriorLocalLight = (root: THREE.Group): void => {
+const addInteriorLocalLight = (
+  geometry: InteriorCornerGeometry,
+  root: THREE.Group,
+): void => {
   // Keep the practical light in the shared subject group so viewport and RTT
   // receive the same restrained interior contribution.
   const light = new THREE.PointLight("#fff1d6", 5, 7.5, 2);
@@ -248,6 +257,7 @@ const addInteriorLocalLight = (root: THREE.Group): void => {
 };
 
 const addInteriorFurnitureStructure = (
+  geometry: InteriorCornerGeometry,
   root: THREE.Group,
   materials: InteriorCornerMaterials,
 ): void => {
@@ -326,7 +336,10 @@ const addInteriorFurnitureStructure = (
   root.add(structure);
 };
 
-export const createInteriorCornerGroup = (): THREE.Group => {
+export const createInteriorCornerGroup = (
+  request: InteriorCornerAssetRequest,
+): THREE.Group => {
+  const { geometry } = request.presentation;
   const root = new THREE.Group();
   root.name = "interior-corner-subject";
 
@@ -430,9 +443,11 @@ export const createInteriorCornerGroup = (): THREE.Group => {
     material: materials.trim,
   });
 
-  addSideWallMoulding(root, materials);
-  geometry.wallDetails.forEach((detail) => addSideArtwork(root, detail, materials));
-  addBackArtwork(root, materials);
+  addSideWallMoulding(geometry, root, materials);
+  geometry.wallDetails.forEach((detail) =>
+    addSideArtwork(geometry, root, detail, materials),
+  );
+  addBackArtwork(geometry, root, materials);
 
   addBox({
     root,
@@ -486,26 +501,12 @@ export const createInteriorCornerGroup = (): THREE.Group => {
     material: materials.artworkAccent,
   });
 
-  addInteriorFurnitureStructure(root, materials);
-  addInteriorLocalLight(root);
-  addFocusProbes(root);
+  addInteriorFurnitureStructure(geometry, root, materials);
+  addInteriorLocalLight(geometry, root);
+  addFocusProbes(geometry, root);
   return root;
 };
 
 export const disposeInteriorCornerGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
-};
-
-/** React Three Fiber boundary backed by the same group factory used by RTT. */
-export const InteriorCornerSubject: React.FC = () => {
-  const group = useMemo(() => createInteriorCornerGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeInteriorCornerGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
 };

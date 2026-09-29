@@ -33,8 +33,14 @@ import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFact
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
 import * as tableTiltAsset from "../../render/TableTiltSubjectFactory";
 import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
+import * as architectureForegroundAsset from "../../render/ArchitectureForegroundSubjectFactory";
+import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory";
+import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
 import {
+  ARCHITECTURE_FOREGROUND_ASSET_KEY,
   ARCHITECTURE_RISE_ASSET_KEY,
+  INTERIOR_CORNER_ASSET_KEY,
+  OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
@@ -44,9 +50,15 @@ import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/archit
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
 import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
+import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 
 afterEach(() => {
   cleanup();
@@ -190,6 +202,33 @@ describe("scene subject registry", () => {
         presentation: SHELF_SWING_PRESENTATION,
         factory: vi.spyOn(shelfSwingAsset, "createShelfSwingGroup"),
         disposer: vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup"),
+      },
+      {
+        scene: architectureForegroundScene,
+        assetKey: ARCHITECTURE_FOREGROUND_ASSET_KEY,
+        presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+        factory: vi.spyOn(
+          architectureForegroundAsset,
+          "createArchitectureForegroundGroup",
+        ),
+        disposer: vi.spyOn(
+          architectureForegroundAsset,
+          "disposeArchitectureForegroundGroup",
+        ),
+      },
+      {
+        scene: interiorCornerScene,
+        assetKey: INTERIOR_CORNER_ASSET_KEY,
+        presentation: INTERIOR_CORNER_PRESENTATION,
+        factory: vi.spyOn(interiorCornerAsset, "createInteriorCornerGroup"),
+        disposer: vi.spyOn(interiorCornerAsset, "disposeInteriorCornerGroup"),
+      },
+      {
+        scene: obliqueTabletopScene,
+        assetKey: OBLIQUE_TABLETOP_ASSET_KEY,
+        presentation: OBLIQUE_TABLETOP_PRESENTATION,
+        factory: vi.spyOn(obliqueTabletopAsset, "createObliqueTabletopGroup"),
+        disposer: vi.spyOn(obliqueTabletopAsset, "disposeObliqueTabletopGroup"),
       },
     ];
 

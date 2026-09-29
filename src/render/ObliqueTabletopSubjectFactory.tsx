@@ -1,10 +1,9 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry, {
-  type ObliqueTabletopBoardMarker,
-  type ObliqueTabletopSubjectSample,
+import type {
+  ObliqueTabletopBoardMarker,
+  ObliqueTabletopSubjectSample,
 } from "../scenes/obliqueTabletopGeometry";
+import type { ObliqueTabletopPresentation } from "../scenes/presentation/obliqueTabletop";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -16,7 +15,15 @@ const standardMaterial = (color: string, roughness = 0.84) =>
 
 const basicMaterial = (color: string) => new THREE.MeshBasicMaterial({ color });
 
-const setSubjectBoardTransform = (boardAssembly: THREE.Group): void => {
+type ObliqueTabletopGeometry = ObliqueTabletopPresentation["geometry"];
+export type ObliqueTabletopAssetRequest = Readonly<{
+  presentation: ObliqueTabletopPresentation;
+}>;
+
+const setSubjectBoardTransform = (
+  geometry: ObliqueTabletopGeometry,
+  boardAssembly: THREE.Group,
+): void => {
   const basis = geometry.subjectBoardTransformBasis;
   boardAssembly.matrixAutoUpdate = false;
   boardAssembly.matrix.makeBasis(
@@ -35,7 +42,10 @@ const setSubjectBoardTransform = (boardAssembly: THREE.Group): void => {
   boardAssembly.matrixWorldNeedsUpdate = true;
 };
 
-const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
+const addTabletopSurfaceGuides = (
+  geometry: ObliqueTabletopGeometry,
+  tabletopAssembly: THREE.Group,
+): void => {
   const guideMaterial = basicMaterial(geometry.tabletop.edgeColor);
   const guideHeight = 3;
   const guideGap = 2;
@@ -84,7 +94,10 @@ const addTabletopSurfaceGuides = (tabletopAssembly: THREE.Group): void => {
   }
 };
 
-const addTabletopContext = (tabletopAssembly: THREE.Group): void => {
+const addTabletopContext = (
+  geometry: ObliqueTabletopGeometry,
+  tabletopAssembly: THREE.Group,
+): void => {
   const context = new THREE.Group();
   context.name = "oblique-tabletop-context-props";
 
@@ -161,7 +174,10 @@ const addTabletopContext = (tabletopAssembly: THREE.Group): void => {
   tabletopAssembly.add(context);
 };
 
-const addBoardPlanSurface = (boardAssembly: THREE.Group): void => {
+const addBoardPlanSurface = (
+  geometry: ObliqueTabletopGeometry,
+  boardAssembly: THREE.Group,
+): void => {
   const surfaceMaterial = createFocusFriendlyMaterial({
     pattern: "subtle-checker",
     primaryColor: geometry.subjectBoard.color,
@@ -254,7 +270,10 @@ const addBoardPlanSurface = (boardAssembly: THREE.Group): void => {
   });
 };
 
-const addAnalyticalSurfaceSamples = (boardAssembly: THREE.Group): void => {
+const addAnalyticalSurfaceSamples = (
+  geometry: ObliqueTabletopGeometry,
+  boardAssembly: THREE.Group,
+): void => {
   geometry.subjectBoardAnalyticalSurfaceSamples.forEach((sample) => {
     const sampleNode = new THREE.Object3D();
     sampleNode.name = `oblique-tabletop-board-surface-sample-${sample.id}`;
@@ -273,6 +292,7 @@ const addAnalyticalSurfaceSamples = (boardAssembly: THREE.Group): void => {
 };
 
 const addBoardFocusDetail = (
+  geometry: ObliqueTabletopGeometry,
   boardAssembly: THREE.Group,
   sample: ObliqueTabletopSubjectSample,
 ): void => {
@@ -331,6 +351,7 @@ const addBoardFocusDetail = (
 };
 
 const addMarker = (
+  geometry: ObliqueTabletopGeometry,
   boardAssembly: THREE.Group,
   marker: ObliqueTabletopBoardMarker,
 ): void => {
@@ -448,7 +469,10 @@ const addMarker = (
 };
 
 /** Create the canonical Oblique Tabletop subject for R3F and Ground Glass RTT. */
-export function createObliqueTabletopGroup(): THREE.Group {
+export function createObliqueTabletopGroup(
+  request: ObliqueTabletopAssetRequest,
+): THREE.Group {
+  const { geometry } = request.presentation;
   const root = new THREE.Group();
   root.name = "oblique-tabletop-subject";
 
@@ -486,13 +510,13 @@ export function createObliqueTabletopGroup(): THREE.Group {
   );
   tabletopMesh.name = "oblique-tabletop-tabletop";
   tabletopAssembly.add(tabletopMesh);
-  addTabletopSurfaceGuides(tabletopAssembly);
-  addTabletopContext(tabletopAssembly);
+  addTabletopSurfaceGuides(geometry, tabletopAssembly);
+  addTabletopContext(geometry, tabletopAssembly);
   root.add(tabletopAssembly);
 
   const boardAssembly = new THREE.Group();
   boardAssembly.name = "oblique-tabletop-subject-board-assembly";
-  setSubjectBoardTransform(boardAssembly);
+  setSubjectBoardTransform(geometry, boardAssembly);
   const boardMesh = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(geometry.subjectBoard.width),
@@ -505,13 +529,13 @@ export function createObliqueTabletopGroup(): THREE.Group {
   boardAssembly.add(boardMesh);
   // The same physical upper board face is used by the observer and the
   // photographic camera, Ground Glass RTT, focus probes, and plan details.
-  addBoardPlanSurface(boardAssembly);
-  addAnalyticalSurfaceSamples(boardAssembly);
+  addBoardPlanSurface(geometry, boardAssembly);
+  addAnalyticalSurfaceSamples(geometry, boardAssembly);
   geometry.subjectBoardVisibleFocusSamples.forEach((sample) =>
-    addBoardFocusDetail(boardAssembly, sample),
+    addBoardFocusDetail(geometry, boardAssembly, sample),
   );
   geometry.boardMarkers.forEach((marker) =>
-    addMarker(boardAssembly, marker),
+    addMarker(geometry, boardAssembly, marker),
   );
   root.add(boardAssembly);
 
@@ -557,17 +581,3 @@ export function createObliqueTabletopGroup(): THREE.Group {
 export function disposeObliqueTabletopGroup(group: THREE.Group): void {
   disposeTeachingSubjectResources(group);
 }
-
-/** React Three Fiber boundary backed by the same group factory used by RTT. */
-export const ObliqueTabletopSubject: React.FC = () => {
-  const group = useMemo(() => createObliqueTabletopGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeObliqueTabletopGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
-};

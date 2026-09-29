@@ -6,8 +6,14 @@ import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/archit
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
 import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
+  ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  INTERIOR_CORNER_ASSET_KEY,
+  OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -38,6 +44,15 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
     presentation: SHELF_SWING_PRESENTATION,
   });
+  createRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, {
+    presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+  });
+  createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
+    presentation: INTERIOR_CORNER_PRESENTATION,
+  });
+  createRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, {
+    presentation: OBLIQUE_TABLETOP_PRESENTATION,
+  });
 
   // The Architecture Rise slot rejects the Table Tilt request.
   createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
@@ -58,6 +73,21 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
     // @ts-expect-error The key selects ShelfSwingAssetRequest.
     presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+  });
+  // The Architecture Foreground slot rejects an Interior Corner request.
+  createRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, {
+    // @ts-expect-error The key selects ArchitectureForegroundAssetRequest.
+    presentation: INTERIOR_CORNER_PRESENTATION,
+  });
+  // The Interior Corner slot rejects an Oblique Tabletop request.
+  createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
+    // @ts-expect-error The key selects InteriorCornerAssetRequest.
+    presentation: OBLIQUE_TABLETOP_PRESENTATION,
+  });
+  // The Oblique Tabletop slot rejects an Architecture Foreground request.
+  createRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, {
+    // @ts-expect-error The key selects ObliqueTabletopAssetRequest.
+    presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
   });
 };
 void assertSceneAssetRequestKeyPairings;
@@ -91,6 +121,9 @@ describe("scene asset registry", () => {
         OBLIQUE_ARCHITECTURE_ASSET_KEY,
         TABLE_TILT_ASSET_KEY,
         SHELF_SWING_ASSET_KEY,
+        ARCHITECTURE_FOREGROUND_ASSET_KEY,
+        INTERIOR_CORNER_ASSET_KEY,
+        OBLIQUE_TABLETOP_ASSET_KEY,
       ]);
       expect(presentationAssetKey).toBe(CAMERA_MOVEMENT_LATTICE_ASSET_KEY);
       expect(Object.isFrozen(sceneAssetRegistry)).toBe(true);
@@ -167,5 +200,16 @@ describe("scene asset registry", () => {
     expect(() =>
       resolveSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, emptyRegistry),
     ).toThrowError('Scene asset "architecture-rise-subject" is not registered');
+    expect(() =>
+      resolveSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, emptyRegistry),
+    ).toThrowError(
+      'Scene asset "architecture-foreground-subject" is not registered',
+    );
+    expect(() =>
+      resolveSceneAsset(INTERIOR_CORNER_ASSET_KEY, emptyRegistry),
+    ).toThrowError('Scene asset "interior-corner-subject" is not registered');
+    expect(() =>
+      resolveSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, emptyRegistry),
+    ).toThrowError('Scene asset "oblique-tabletop-subject" is not registered');
   });
 });
