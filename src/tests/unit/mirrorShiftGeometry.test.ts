@@ -16,6 +16,12 @@ import {
   disposeMirrorShiftGroup,
   updateMirrorShiftCameraReflection,
 } from "../../render/MirrorShiftSubjectFactory";
+import {
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
+  MIRROR_SHIFT_ASSET_KEY,
+} from "../../render/assets/sceneAssetRegistry";
+import { MIRROR_SHIFT_PRESENTATION } from "../../scenes/presentation/mirrorShift";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import { configureTeachingShadowParticipation } from "../../render/TeachingLighting";
@@ -342,13 +348,20 @@ describe("Mirror Shift planar reflection geometry", () => {
   });
 
   it("derives the reflected camera proxy from translated real anchors and mutates it in place", () => {
-    const group = createMirrorShiftRttGroup();
+    const group = createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
+      presentation: MIRROR_SHIFT_PRESENTATION,
+      representation: "rtt",
+    });
     try {
       const reflectedProps = group.getObjectByName("mirror-shift-reflected-props")!;
       const staticProp = group.getObjectByName("mirror-shift-reflected-tall-marker") as THREE.Mesh;
       const staticGeometry = staticProp.geometry;
       const staticMaterial = staticProp.material;
       const staticPropPosition = staticProp.position.clone();
+      const realProp = group.getObjectByName("mirror-shift-real-tall-marker") as THREE.Mesh;
+      const realPropGeometry = realProp.geometry;
+      const realPropMaterial = realProp.material;
+      const realPropPosition = realProp.position.clone();
       const cameraGroup = group.getObjectByName("mirror-shift-camera-reflection")!;
       const frontStandard = group.getObjectByName(
         "mirror-shift-camera-reflection-front-standard",
@@ -368,8 +381,21 @@ describe("Mirror Shift planar reflection geometry", () => {
       const bellows = group.getObjectByName(
         "mirror-shift-camera-reflection-bellows",
       )!;
+      const tripodHead = group.getObjectByName(
+        "mirror-shift-camera-reflection-tripod-head",
+      )!;
+      const leftLeg = group.getObjectByName(
+        "mirror-shift-camera-reflection-left-leg",
+      ) as THREE.Mesh;
+      const rightLeg = group.getObjectByName(
+        "mirror-shift-camera-reflection-right-leg",
+      ) as THREE.Mesh;
       const cameraGroupGeometry = (frontStandard as THREE.Mesh).geometry;
       const lensGeometry = (lens as THREE.Mesh).geometry;
+      const neutralAnchors = resolveMirrorShiftCameraAnchors(
+        { x: 0, y: 0, z: 0 },
+        0,
+      ).reflected;
 
       expect(
         updateMirrorShiftCameraReflection(group, { x: 1800, y: 0, z: 0 }, -50),
@@ -413,13 +439,67 @@ describe("Mirror Shift planar reflection geometry", () => {
         ),
         10,
       );
+      const tripodHeadWorld = new THREE.Vector3();
+      tripodHead.getWorldPosition(tripodHeadWorld);
+      expect(tripodHeadWorld.x).toBeCloseTo(
+        toWorldMm(translatedAnchors.reflected.tripodHead.x),
+        10,
+      );
+      expect(tripodHeadWorld.z).toBeCloseTo(
+        toWorldMm(translatedAnchors.reflected.tripodHead.z),
+        10,
+      );
+      expect(tripodHeadWorld.x).not.toBeCloseTo(
+        toWorldMm(neutralAnchors.tripodHead.x),
+        10,
+      );
+
+      const leftLegWorld = new THREE.Vector3();
+      leftLeg.getWorldPosition(leftLegWorld);
+      expect(leftLegWorld.x).toBeCloseTo(
+        toWorldMm(
+          (translatedAnchors.reflected.tripodHead.x +
+            translatedAnchors.reflected.leftTripodFoot.x) /
+            2,
+        ),
+        10,
+      );
+      expect(leftLegWorld.z).toBeCloseTo(
+        toWorldMm(
+          (translatedAnchors.reflected.tripodHead.z +
+            translatedAnchors.reflected.leftTripodFoot.z) /
+            2,
+        ),
+        10,
+      );
+      const rightLegWorld = new THREE.Vector3();
+      rightLeg.getWorldPosition(rightLegWorld);
+      expect(rightLegWorld.x).toBeCloseTo(
+        toWorldMm(
+          (translatedAnchors.reflected.tripodHead.x +
+            translatedAnchors.reflected.rightTripodFoot.x) /
+            2,
+        ),
+        10,
+      );
+      expect(rightLegWorld.z).toBeCloseTo(
+        toWorldMm(
+          (translatedAnchors.reflected.tripodHead.z +
+            translatedAnchors.reflected.rightTripodFoot.z) /
+            2,
+        ),
+        10,
+      );
       expect(cameraGroup).toBe(group.getObjectByName("mirror-shift-camera-reflection"));
       expect(reflectedProps).toBe(group.getObjectByName("mirror-shift-reflected-props"));
       expect(staticProp.geometry).toBe(staticGeometry);
       expect(staticProp.material).toBe(staticMaterial);
+      expect(staticProp.position).toEqual(staticPropPosition);
+      expect(realProp.geometry).toBe(realPropGeometry);
+      expect(realProp.material).toBe(realPropMaterial);
+      expect(realProp.position).toEqual(realPropPosition);
       expect((frontStandard as THREE.Mesh).geometry).toBe(cameraGroupGeometry);
       expect((lens as THREE.Mesh).geometry).toBe(lensGeometry);
-      expect(staticProp.position).toEqual(staticPropPosition);
       expect(cameraGroup.userData.reflectedRigOriginWorld).toEqual({
         x: 1800,
         y: 0,
@@ -427,7 +507,21 @@ describe("Mirror Shift planar reflection geometry", () => {
       });
       expect(cameraGroup.userData.reflectedFrontShiftMm).toBe(-50);
     } finally {
-      disposeMirrorShiftGroup(group);
+      disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, group);
+    }
+  });
+
+  it("does not expose the RTT camera-proxy updater for a registered viewport representation", () => {
+    const group = createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
+      presentation: MIRROR_SHIFT_PRESENTATION,
+      representation: "viewport",
+    });
+    try {
+      expect(
+        updateMirrorShiftCameraReflection(group, { x: 1800, y: 0, z: 0 }, -50),
+      ).toBe(false);
+    } finally {
+      disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, group);
     }
   });
 

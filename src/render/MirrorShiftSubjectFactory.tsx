@@ -1,12 +1,13 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import {
-  mirrorShiftGeometry,
   reflectPointAcrossMirrorPlane,
   resolveMirrorShiftCameraAnchors,
   type MirrorShiftProp,
 } from "../scenes/mirrorShiftGeometry";
+import {
+  MIRROR_SHIFT_PRESENTATION,
+  type MirrorShiftPresentation,
+} from "../scenes/presentation/mirrorShift";
 import type { Vec3 } from "../types/optics";
 import { toWorld } from "./rttUtils";
 import {
@@ -118,11 +119,19 @@ const updateBeamTransform = (
   mesh.scale.set(1, 1, baseLength > 1e-9 ? length / baseLength : 1);
 };
 
+type MirrorShiftGeometry = MirrorShiftPresentation["geometry"];
+
+export type MirrorShiftAssetRequest = Readonly<{
+  presentation: MirrorShiftPresentation;
+  representation: "viewport" | "rtt";
+}>;
+
 const updateCameraReflectionProxy = (
   cameraGroup: THREE.Group,
   anchors: ReturnType<typeof resolveMirrorShiftCameraAnchors>["reflected"],
+  geometry: MirrorShiftGeometry,
 ): void => {
-  const { camera } = mirrorShiftGeometry;
+  const { camera } = geometry;
   const frontStandard = cameraGroup.getObjectByName(
     "mirror-shift-camera-reflection-front-standard",
   );
@@ -166,22 +175,22 @@ const updateCameraReflectionProxy = (
   }
 };
 
-const addWallAndFloor = (root: THREE.Group): void => {
+const addWallAndFloor = (root: THREE.Group, geometry: MirrorShiftGeometry): void => {
   const wallMaterial = material("#cbd5e1", { roughness: 0.92 });
   const wallDepthMm = 260;
-  const wallZ = mirrorShiftGeometry.mirror.plane.point.z + 140;
+  const wallZ = geometry.mirror.plane.point.z + 140;
   const sideOffsetX =
-    mirrorShiftGeometry.mirror.widthMm / 2 +
-    mirrorShiftGeometry.mirror.frameMm +
-    mirrorShiftGeometry.wall.sidePanelWidthMm / 2;
+    geometry.mirror.widthMm / 2 +
+    geometry.mirror.frameMm +
+    geometry.wall.sidePanelWidthMm / 2;
 
   addBox(
     root,
     "mirror-shift-wall-left",
-    { x: -sideOffsetX, y: mirrorShiftGeometry.wall.centerY, z: wallZ },
+    { x: -sideOffsetX, y: geometry.wall.centerY, z: wallZ },
     {
-      x: mirrorShiftGeometry.wall.sidePanelWidthMm,
-      y: mirrorShiftGeometry.wall.heightMm,
+      x: geometry.wall.sidePanelWidthMm,
+      y: geometry.wall.heightMm,
       z: wallDepthMm,
     },
     wallMaterial,
@@ -189,10 +198,10 @@ const addWallAndFloor = (root: THREE.Group): void => {
   addBox(
     root,
     "mirror-shift-wall-right",
-    { x: sideOffsetX, y: mirrorShiftGeometry.wall.centerY, z: wallZ },
+    { x: sideOffsetX, y: geometry.wall.centerY, z: wallZ },
     {
-      x: mirrorShiftGeometry.wall.sidePanelWidthMm,
-      y: mirrorShiftGeometry.wall.heightMm,
+      x: geometry.wall.sidePanelWidthMm,
+      y: geometry.wall.heightMm,
       z: wallDepthMm,
     },
     wallMaterial,
@@ -202,12 +211,12 @@ const addWallAndFloor = (root: THREE.Group): void => {
     "mirror-shift-wall-top",
     {
       x: 0,
-      y: mirrorShiftGeometry.wall.topPanelCenterY,
+      y: geometry.wall.topPanelCenterY,
       z: wallZ,
     },
     {
-      x: mirrorShiftGeometry.wall.widthMm,
-      y: mirrorShiftGeometry.wall.topPanelHeightMm,
+      x: geometry.wall.widthMm,
+      y: geometry.wall.topPanelHeightMm,
       z: wallDepthMm,
     },
     wallMaterial,
@@ -217,12 +226,12 @@ const addWallAndFloor = (root: THREE.Group): void => {
     "mirror-shift-wall-bottom",
     {
       x: 0,
-      y: (mirrorShiftGeometry.floor.y + mirrorShiftGeometry.mirror.innerBounds.min.y) / 2,
+      y: (geometry.floor.y + geometry.mirror.innerBounds.min.y) / 2,
       z: wallZ,
     },
     {
-      x: mirrorShiftGeometry.wall.widthMm,
-      y: mirrorShiftGeometry.mirror.innerBounds.min.y - mirrorShiftGeometry.floor.y,
+      x: geometry.wall.widthMm,
+      y: geometry.mirror.innerBounds.min.y - geometry.floor.y,
       z: wallDepthMm,
     },
     wallMaterial,
@@ -231,8 +240,8 @@ const addWallAndFloor = (root: THREE.Group): void => {
   const floorMaterial = material("#e2e8f0", { roughness: 0.95, metalness: 0 });
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(
-      toWorld(mirrorShiftGeometry.floor.widthMm),
-      toWorld(mirrorShiftGeometry.floor.depthMm),
+      toWorld(geometry.floor.widthMm),
+      toWorld(geometry.floor.depthMm),
     ),
     floorMaterial,
   );
@@ -240,25 +249,25 @@ const addWallAndFloor = (root: THREE.Group): void => {
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(
     0,
-    toWorld(mirrorShiftGeometry.floor.y),
-    toWorld(mirrorShiftGeometry.floor.centerZ),
+    toWorld(geometry.floor.y),
+    toWorld(geometry.floor.centerZ),
   );
   root.add(floor);
 };
 
-const addReflectedFloor = (root: THREE.Group): void => {
+const addReflectedFloor = (root: THREE.Group, geometry: MirrorShiftGeometry): void => {
   // The RTT reflection needs its own receiver on the virtual side of the mirror;
   // the transparent aperture intentionally remains outside shadow participation.
   const floorMaterial = material("#e2e8f0", { roughness: 0.95, metalness: 0 });
   const reflectedFloorCenter = reflectPointAcrossMirrorPlane({
     x: 0,
-    y: mirrorShiftGeometry.floor.y,
-    z: mirrorShiftGeometry.floor.centerZ,
-  });
+    y: geometry.floor.y,
+    z: geometry.floor.centerZ,
+  }, geometry.mirror.plane);
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(
-      toWorld(mirrorShiftGeometry.floor.widthMm),
-      toWorld(mirrorShiftGeometry.floor.depthMm),
+      toWorld(geometry.floor.widthMm),
+      toWorld(geometry.floor.depthMm),
     ),
     floorMaterial,
   );
@@ -272,8 +281,8 @@ const addReflectedFloor = (root: THREE.Group): void => {
   root.add(floor);
 };
 
-const addMirrorAperture = (root: THREE.Group): void => {
-  const { mirror } = mirrorShiftGeometry;
+const addMirrorAperture = (root: THREE.Group, geometry: MirrorShiftGeometry): void => {
+  const { mirror } = geometry;
   const surface = new THREE.Mesh(
     new THREE.PlaneGeometry(toWorld(mirror.widthMm), toWorld(mirror.heightMm)),
     new THREE.MeshBasicMaterial({
@@ -334,6 +343,7 @@ const addProp = (
   parent: THREE.Object3D,
   prop: MirrorShiftProp,
   namePrefix: "real" | "reflected",
+  geometry: MirrorShiftGeometry,
   sourceProp: MirrorShiftProp = prop,
 ): void => {
   const propMaterial =
@@ -368,7 +378,7 @@ const addProp = (
     };
     const detailPosition =
       namePrefix === "reflected"
-        ? reflectPointAcrossMirrorPlane(realDetailPosition)
+        ? reflectPointAcrossMirrorPlane(realDetailPosition, geometry.mirror.plane)
         : realDetailPosition;
     addBox(
       parent,
@@ -380,18 +390,12 @@ const addProp = (
   }
 };
 
-const mirrorShiftContextProp = {
-  position: {
-    x: 0,
-    y: mirrorShiftGeometry.floor.y + 260,
-    z: 1700,
-  },
-  dimensions: { x: 1500, y: 520, z: 480 },
-} as const;
+const mirrorShiftContextPropDimensions = { x: 1500, y: 520, z: 480 } as const;
 
 const addMirrorShiftContextProp = (
   parent: THREE.Object3D,
   namePrefix: "real" | "reflected",
+  geometry: MirrorShiftGeometry,
 ): void => {
   const contextMaterial = createFocusFriendlyMaterial({
     pattern: "bands",
@@ -401,43 +405,48 @@ const addMirrorShiftContextProp = (
     roughness: 0.84,
   });
   const topMaterial = material("#e2e8f0", { roughness: 0.72 });
-  const sourcePosition = mirrorShiftContextProp.position;
+  const sourcePosition = {
+    x: 0,
+    y: geometry.floor.y + 260,
+    z: 1700,
+  };
   const position =
     namePrefix === "reflected"
-      ? reflectPointAcrossMirrorPlane(sourcePosition)
+      ? reflectPointAcrossMirrorPlane(sourcePosition, geometry.mirror.plane)
       : sourcePosition;
   addBox(
     parent,
     `mirror-shift-${namePrefix}-context-plinth`,
     position,
-    mirrorShiftContextProp.dimensions,
+    mirrorShiftContextPropDimensions,
     contextMaterial,
   );
 
   const sourceTopPosition = {
     x: sourcePosition.x,
-    y: sourcePosition.y + mirrorShiftContextProp.dimensions.y / 2 + 24,
+    y: sourcePosition.y + mirrorShiftContextPropDimensions.y / 2 + 24,
     z: sourcePosition.z,
   };
   const topPosition =
     namePrefix === "reflected"
-      ? reflectPointAcrossMirrorPlane(sourceTopPosition)
+      ? reflectPointAcrossMirrorPlane(sourceTopPosition, geometry.mirror.plane)
       : sourceTopPosition;
   addBox(
     parent,
     `mirror-shift-${namePrefix}-context-plinth-top`,
     topPosition,
-    { x: mirrorShiftContextProp.dimensions.x + 60, y: 48, z: mirrorShiftContextProp.dimensions.z + 40 },
+    { x: mirrorShiftContextPropDimensions.x + 60, y: 48, z: mirrorShiftContextPropDimensions.z + 40 },
     topMaterial,
   );
 };
 
 const addCameraReflection = (
   root: THREE.Group,
+  geometry: MirrorShiftGeometry,
   anchors: ReturnType<typeof resolveMirrorShiftCameraAnchors>["reflected"] =
-    mirrorShiftGeometry.camera.reflectedAnchors,
+    geometry.camera.reflectedAnchors,
 ): void => {
-  const { camera } = mirrorShiftGeometry;
+  const { camera } = geometry;
   const cameraGroup = new THREE.Group();
   cameraGroup.name = "mirror-shift-camera-reflection";
   cameraGroup.userData = { reflectionOf: "neutral-view-camera" };
@@ -538,7 +547,7 @@ const addCameraReflection = (
     camera.tripod.legWidthMm,
     tripodMaterial,
   );
-  updateCameraReflectionProxy(cameraGroup, anchors);
+  updateCameraReflectionProxy(cameraGroup, anchors, geometry);
   root.add(cameraGroup);
 };
 
@@ -559,38 +568,59 @@ export type MirrorShiftGroupOptions = {
 export const createMirrorShiftGroup = ({
   includeVirtualReflection = true,
 }: MirrorShiftGroupOptions = {}): THREE.Group => {
+  return createMirrorShiftGroupForPresentation(
+    MIRROR_SHIFT_PRESENTATION,
+    includeVirtualReflection,
+  );
+};
+
+const createMirrorShiftGroupForPresentation = (
+  presentation: MirrorShiftPresentation,
+  includeVirtualReflection: boolean,
+): THREE.Group => {
+  const geometry = presentation.geometry;
   const root = new THREE.Group();
   root.name = "mirror-shift-subject";
 
-  addWallAndFloor(root);
-  addMirrorAperture(root);
+  addWallAndFloor(root, geometry);
+  addMirrorAperture(root, geometry);
 
   const realGroup = new THREE.Group();
   realGroup.name = "mirror-shift-real-props";
-  mirrorShiftGeometry.props.forEach((prop) => addProp(realGroup, prop, "real"));
-  addMirrorShiftContextProp(realGroup, "real");
+  geometry.props.forEach((prop) => addProp(realGroup, prop, "real", geometry));
+  addMirrorShiftContextProp(realGroup, "real", geometry);
   root.add(realGroup);
 
   if (includeVirtualReflection) {
     const reflectedGroup = new THREE.Group();
     reflectedGroup.name = "mirror-shift-reflected-props";
     reflectedGroup.userData = { representation: "planar-mirror-reflection" };
-    addReflectedFloor(reflectedGroup);
-    mirrorShiftGeometry.props.forEach((sourceProp, index) =>
+    addReflectedFloor(reflectedGroup, geometry);
+    geometry.props.forEach((sourceProp, index) =>
       addProp(
         reflectedGroup,
-        mirrorShiftGeometry.reflectedProps[index],
+        geometry.reflectedProps[index],
         "reflected",
+        geometry,
         sourceProp,
       ),
     );
-    addMirrorShiftContextProp(reflectedGroup, "reflected");
-    addCameraReflection(reflectedGroup);
+    addMirrorShiftContextProp(reflectedGroup, "reflected", geometry);
+    addCameraReflection(reflectedGroup, geometry);
     root.add(reflectedGroup);
   }
 
   return root;
 };
+
+/** Construct one viewport or RTT representation through the shared asset slot. */
+export const createMirrorShiftAssetGroup = (
+  request: MirrorShiftAssetRequest,
+): THREE.Group =>
+  createMirrorShiftGroupForPresentation(
+    request.presentation,
+    request.representation === "rtt",
+  );
 
 export const createMirrorShiftViewportGroup = (): THREE.Group =>
   createMirrorShiftGroup({ includeVirtualReflection: false });
@@ -610,7 +640,11 @@ export const updateMirrorShiftCameraReflection = (
     rigOriginWorld,
     frontShiftMm,
   ).reflected;
-  updateCameraReflectionProxy(cameraGroup, anchors);
+  updateCameraReflectionProxy(
+    cameraGroup,
+    anchors,
+    MIRROR_SHIFT_PRESENTATION.geometry,
+  );
   cameraGroup.userData.reflectedRigOriginWorld = { ...rigOriginWorld };
   cameraGroup.userData.reflectedFrontShiftMm = Number.isFinite(frontShiftMm)
     ? frontShiftMm
@@ -620,18 +654,4 @@ export const updateMirrorShiftCameraReflection = (
 
 export const disposeMirrorShiftGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
-};
-
-/** React Three Fiber boundary for the physical viewport representation. */
-export const MirrorShiftSubject: React.FC = () => {
-  const group = useMemo(() => createMirrorShiftViewportGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeMirrorShiftGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
 };

@@ -96,6 +96,17 @@ HMR-specific cache teardown is implemented. This is a development-time
 limitation of the module-lifetime choice, not a reason to add per-instance
 reference counting to normal scene switching.
 
+### Mirror Shift reflection asset
+
+Mirror Shift is an instance-owned asset with one registered implementation and
+two typed representations: `viewport` and `rtt`. Both receive the same
+renderer-neutral `MirrorShiftPresentation` and use the same registered factory
+and paired disposer. Each call creates its own object graph and render resources;
+the RTT-only reflected props and camera proxy are representation-specific. The
+scene-level RTT profile continues to update that proxy using canonical optics
+state through the Mirror Shift-specific updater. This update policy does not
+change the asset's instance-owned resource lifetime.
+
 ## Canonical state remains upstream
 
 Focus targets, target positions, optical focus, teaching cues, and task

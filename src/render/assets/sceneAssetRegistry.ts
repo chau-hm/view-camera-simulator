@@ -19,6 +19,8 @@ import type { FocusFundamentalsAssetRequest } from "../FocusFundamentalsSubjectF
 import * as focusFundamentalsAsset from "../FocusFundamentalsSubjectFactory";
 import type { ViewCameraAnatomyAssetRequest } from "../LessonZeroGroundGlassSubjectFactory";
 import * as viewCameraAnatomyAsset from "../LessonZeroGroundGlassSubjectFactory";
+import type { MirrorShiftAssetRequest } from "../MirrorShiftSubjectFactory";
+import * as mirrorShiftAsset from "../MirrorShiftSubjectFactory";
 
 /** Stable asset slot owned by the scene asset registry layer. */
 export const CAMERA_MOVEMENT_LATTICE_ASSET_KEY =
@@ -33,6 +35,7 @@ export const INTERIOR_CORNER_ASSET_KEY = "interior-corner-subject" as const;
 export const OBLIQUE_TABLETOP_ASSET_KEY = "oblique-tabletop-subject" as const;
 export const FOCUS_FUNDAMENTALS_ASSET_KEY = "focus-fundamentals-subject" as const;
 export const VIEW_CAMERA_ANATOMY_ASSET_KEY = "view-camera-anatomy-subject" as const;
+export const MIRROR_SHIFT_ASSET_KEY = "mirror-shift-subject" as const;
 
 /** Registry-owned set of visual asset slots; scene IDs remain separate. */
 export type SceneAssetKey =
@@ -45,7 +48,8 @@ export type SceneAssetKey =
   | typeof INTERIOR_CORNER_ASSET_KEY
   | typeof OBLIQUE_TABLETOP_ASSET_KEY
   | typeof FOCUS_FUNDAMENTALS_ASSET_KEY
-  | typeof VIEW_CAMERA_ANATOMY_ASSET_KEY;
+  | typeof VIEW_CAMERA_ANATOMY_ASSET_KEY
+  | typeof MIRROR_SHIFT_ASSET_KEY;
 
 export type CameraMovementLatticeAssetFactory = (
   options: CameraMovementsGroupOptions,
@@ -62,6 +66,7 @@ export type SceneAssetRequestMap = {
   [OBLIQUE_TABLETOP_ASSET_KEY]: ObliqueTabletopAssetRequest;
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: FocusFundamentalsAssetRequest;
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: ViewCameraAnatomyAssetRequest;
+  [MIRROR_SHIFT_ASSET_KEY]: MirrorShiftAssetRequest;
 };
 
 export type SceneAssetResourceLifetimeByKey = {
@@ -75,6 +80,7 @@ export type SceneAssetResourceLifetimeByKey = {
   [OBLIQUE_TABLETOP_ASSET_KEY]: "instance-owned";
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: "module-shared";
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: "module-shared";
+  [MIRROR_SHIFT_ASSET_KEY]: "instance-owned";
 };
 
 export type SceneAssetKeyWithLifetime<
@@ -137,6 +143,7 @@ export const INTERIOR_CORNER_IMPLEMENTATION_ID = "threejs-interior-corner";
 export const OBLIQUE_TABLETOP_IMPLEMENTATION_ID = "threejs-oblique-tabletop";
 export const FOCUS_FUNDAMENTALS_IMPLEMENTATION_ID = "threejs-focus-fundamentals";
 export const VIEW_CAMERA_ANATOMY_IMPLEMENTATION_ID = "threejs-view-camera-anatomy";
+export const MIRROR_SHIFT_IMPLEMENTATION_ID = "threejs-mirror-shift";
 
 const cameraMovementLatticeRegistration: SceneAssetRegistration<typeof CAMERA_MOVEMENT_LATTICE_ASSET_KEY> =
   Object.freeze({
@@ -224,6 +231,14 @@ const viewCameraAnatomyRegistration: SceneAssetRegistration<typeof VIEW_CAMERA_A
       viewCameraAnatomyAsset.createLessonZeroGroundGlassGroup(request),
   });
 
+const mirrorShiftRegistration: SceneAssetRegistration<typeof MIRROR_SHIFT_ASSET_KEY> =
+  Object.freeze({
+    assetKey: MIRROR_SHIFT_ASSET_KEY,
+    implementationId: MIRROR_SHIFT_IMPLEMENTATION_ID,
+    create: (request) => mirrorShiftAsset.createMirrorShiftAssetGroup(request),
+    dispose: (asset) => mirrorShiftAsset.disposeMirrorShiftGroup(asset),
+  });
+
 /** Immutable production mapping from each registered scene asset slot. */
 export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [CAMERA_MOVEMENT_LATTICE_ASSET_KEY]: cameraMovementLatticeRegistration,
@@ -236,6 +251,7 @@ export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [OBLIQUE_TABLETOP_ASSET_KEY]: obliqueTabletopRegistration,
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: focusFundamentalsRegistration,
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: viewCameraAnatomyRegistration,
+  [MIRROR_SHIFT_ASSET_KEY]: mirrorShiftRegistration,
 });
 
 /**
@@ -265,7 +281,8 @@ export function resolveSceneAsset(
     assetKey !== INTERIOR_CORNER_ASSET_KEY &&
     assetKey !== OBLIQUE_TABLETOP_ASSET_KEY &&
     assetKey !== FOCUS_FUNDAMENTALS_ASSET_KEY &&
-    assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY
+    assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY &&
+    assetKey !== MIRROR_SHIFT_ASSET_KEY
   ) {
     throw new Error('Unknown scene asset "' + assetKey + '"');
   }

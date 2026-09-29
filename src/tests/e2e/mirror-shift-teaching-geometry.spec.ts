@@ -73,6 +73,12 @@ test("Mirror Shift top-view geometry follows canonical A/B/C state relationships
     "data-camera-film-center-world",
     "2000.000000,0.000000,-122.448980",
   );
+  await scene.locator("canvas").screenshot({
+    path: testInfo.outputPath("mirror-shift-nonneutral-viewport.png"),
+  });
+  await rtt.locator("canvas").screenshot({
+    path: testInfo.outputPath("mirror-shift-nonneutral-ground-glass.png"),
+  });
   await page.getByRole("button", { name: "Reset movements" }).click();
   await expect(position).toHaveValue("0");
   await expect(frontShift).toHaveValue("0");
