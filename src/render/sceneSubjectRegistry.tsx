@@ -117,10 +117,9 @@ export type SceneSubjectRttLighting = {
   fillOffsetWorld: Vec3;
 };
 
-export type SceneSubjectRegistration = {
+type SceneSubjectRegistrationBase = {
   SceneSubject: ComponentType<RegisteredSceneSubjectProps>;
   createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
-  disposeRttGroup?: (group: THREE.Group) => void;
   /** Optional subject bounds used for RTT clipping, independent of inspection bounds. */
   rttBounds?: Bounds3;
   /** Optional lighting for the physical inspection subject when RTT is virtualized. */
@@ -141,6 +140,23 @@ export type SceneSubjectRegistration = {
     bounds: CameraMovementLatticePresentation["subjectBoundsWorldMm"];
   };
 };
+
+/**
+ * A module-shared subject returns a fresh Object3D graph that borrows cached
+ * render resources. Its per-instance RTT group is removed on unmount, while
+ * the module-owned geometry/material/texture resources stay alive.
+ */
+export type SceneSubjectRegistration = SceneSubjectRegistrationBase &
+  (
+    | {
+        renderResourceLifetime: "module-shared";
+        disposeRttGroup?: never;
+      }
+    | {
+        renderResourceLifetime?: never;
+        disposeRttGroup: (group: THREE.Group) => void;
+      }
+  );
 
 export type SceneSubjectRttOptions = {
   presentationRegion?: CameraMovementPresentationRegion;
@@ -287,6 +303,7 @@ export const sceneSubjectRegistry = {
   "view-camera-anatomy": {
     SceneSubject: LessonZeroGroundGlassSubject,
     createRttGroup: createLessonZeroGroundGlassGroup,
+    renderResourceLifetime: "module-shared",
     rttBounds: lessonZeroGroundGlassSubjectBoundsMm,
     rttLighting: {
       targetMm: lessonZeroGroundGlassSubjectCenterMm,
@@ -350,6 +367,7 @@ export const sceneSubjectRegistry = {
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,
     createRttGroup: createFocusFundamentalsGroup,
+    renderResourceLifetime: "module-shared",
     rttLighting: {
       targetMm: focusFundamentalsObjectCenterMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },

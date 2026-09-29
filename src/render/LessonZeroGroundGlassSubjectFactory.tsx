@@ -7,6 +7,9 @@ import {
 } from "../scenes/lessonZeroGroundGlassSubject";
 import { toWorld } from "./rttUtils";
 
+// Every factory call creates fresh Groups/Meshes and borrows this module-owned
+// geometry plus the role materials below. These resources live for the module/
+// application lifetime; no individual interactive or RTT group may dispose them.
 const UNIT_BOX_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
 
 const materialByRole = new Map<string, THREE.MeshStandardMaterial>();
@@ -75,5 +78,6 @@ export function createLessonZeroGroundGlassGroup(): THREE.Group {
 /** The same subject factory is used by the interactive scene and Ground Glass RTT. */
 export const LessonZeroGroundGlassSubject: React.FC = () => {
   const group = useMemo(() => createLessonZeroGroundGlassGroup(), []);
+  // R3F removes this per-instance graph but must not dispose its borrowed cache.
   return <primitive object={group} dispose={null} />;
 };

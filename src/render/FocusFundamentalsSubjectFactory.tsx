@@ -524,10 +524,14 @@ export function createFocusFundamentalsGroup(): THREE.Group {
 }
 
 /**
- * The interactive R3F scene mounts the same factory output as RTT.  Shared
- * resources are module-owned, so disable R3F auto-disposal for this primitive.
+ * Interactive R3F and RTT groups use the same factory. Each call creates a
+ * fresh Object3D graph, but geometry, materials, and marker DataTextures are
+ * borrowed from this module's cache and live for the module/application
+ * lifetime. Never dispose those shared resources with one mounted group.
  */
 export const FocusFundamentalsSubject: React.FC = () => {
   const group = useMemo(() => createFocusFundamentalsGroup(), []);
+  // The factory owns the shared render-resource cache; R3F owns only removal of
+  // this per-instance Object3D graph on unmount.
   return <primitive object={group} dispose={null} />;
 };
