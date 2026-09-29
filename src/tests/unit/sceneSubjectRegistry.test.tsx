@@ -44,6 +44,8 @@ import {
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
   resolveSceneAsset,
 } from "../../render/assets/sceneAssetRegistry";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
@@ -527,10 +529,23 @@ describe("scene subject registry", () => {
     },
   );
 
-  it.each(["focus-fundamentals-two-targets"])(
-    "does not generically dispose shared factory resources for %s",
-    (sceneId) => {
-      expect(getSceneSubjectRegistration(sceneId)?.disposeRttGroup).toBeUndefined();
+  it.each([
+    ["focus-fundamentals-two-targets", FOCUS_FUNDAMENTALS_ASSET_KEY],
+    ["view-camera-anatomy", VIEW_CAMERA_ANATOMY_ASSET_KEY],
+  ] as const)(
+    "%s delegates cleanup to its module-shared asset policy",
+    (sceneId, assetKey) => {
+      const registration = getSceneSubjectRegistration(sceneId);
+      expect(registration?.disposeRttGroup).toBeDefined();
+      expect(resolveSceneAsset(assetKey).renderResourceLifetime).toBe(
+        "module-shared",
+      );
+
+      const group = createRegisteredRttSubject(sceneId);
+      if (!group) throw new Error(`Expected RTT group for ${sceneId}`);
+      const spies = collectDisposableSpies(group);
+      disposeRegisteredRttSubject(sceneId, group);
+      spies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
     },
   );
 

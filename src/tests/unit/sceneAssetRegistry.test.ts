@@ -9,11 +9,15 @@ import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -24,6 +28,7 @@ import {
   sceneAssetRegistry,
   type SceneAssetKey,
   type SceneAssetRegistry,
+  type SceneAssetRegistration,
 } from "../../render/assets/sceneAssetRegistry";
 import { cameraMovementsGroupOptionsFromPresentation } from "../../render/assets/CameraMovementLatticeAsset";
 import {
@@ -52,6 +57,12 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   });
   createRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, {
     presentation: OBLIQUE_TABLETOP_PRESENTATION,
+  });
+  createRegisteredSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, {
+    presentation: FOCUS_FUNDAMENTALS_PRESENTATION,
+  });
+  createRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, {
+    presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
   });
 
   // The Architecture Rise slot rejects the Table Tilt request.
@@ -89,6 +100,53 @@ const assertSceneAssetRequestKeyPairings = (): void => {
     // @ts-expect-error The key selects ObliqueTabletopAssetRequest.
     presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
   });
+  // Each shared subject slot accepts only its own renderer-neutral request.
+  createRegisteredSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, {
+    // @ts-expect-error Focus Fundamentals rejects the View Camera Anatomy request.
+    presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
+  });
+  createRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, {
+    // @ts-expect-error View Camera Anatomy rejects the Focus Fundamentals request.
+    presentation: FOCUS_FUNDAMENTALS_PRESENTATION,
+  });
+
+  const sharedRegistration: SceneAssetRegistration<typeof FOCUS_FUNDAMENTALS_ASSET_KEY> = {
+    assetKey: FOCUS_FUNDAMENTALS_ASSET_KEY,
+    implementationId: "type-test-focus-shared",
+    renderResourceLifetime: "module-shared",
+    create: () => new THREE.Group(),
+  };
+  const instanceOwnedRegistration: SceneAssetRegistration<typeof ARCHITECTURE_RISE_ASSET_KEY> = {
+    assetKey: ARCHITECTURE_RISE_ASSET_KEY,
+    implementationId: "type-test-rise-owned",
+    create: () => new THREE.Group(),
+    dispose: () => undefined,
+  };
+  const sharedWithDisposer: SceneAssetRegistration<typeof FOCUS_FUNDAMENTALS_ASSET_KEY> = {
+    assetKey: FOCUS_FUNDAMENTALS_ASSET_KEY,
+    implementationId: "type-test-invalid-shared-disposer",
+    renderResourceLifetime: "module-shared",
+    create: () => new THREE.Group(),
+    // @ts-expect-error Module-shared registrations cannot dispose borrowed resources.
+    dispose: () => undefined,
+  };
+  // @ts-expect-error Omitting a disposer does not imply module-shared lifetime.
+  const sharedWithoutPolicy: SceneAssetRegistration<typeof FOCUS_FUNDAMENTALS_ASSET_KEY> = {
+    assetKey: FOCUS_FUNDAMENTALS_ASSET_KEY,
+    implementationId: "type-test-invalid-missing-policy",
+    create: () => new THREE.Group(),
+  };
+  // @ts-expect-error Instance-owned registrations require their paired disposer.
+  const ownedWithoutDisposer: SceneAssetRegistration<typeof ARCHITECTURE_RISE_ASSET_KEY> = {
+    assetKey: ARCHITECTURE_RISE_ASSET_KEY,
+    implementationId: "type-test-invalid-missing-disposer",
+    create: () => new THREE.Group(),
+  };
+  void sharedRegistration;
+  void instanceOwnedRegistration;
+  void sharedWithDisposer;
+  void sharedWithoutPolicy;
+  void ownedWithoutDisposer;
 };
 void assertSceneAssetRequestKeyPairings;
 
@@ -124,6 +182,8 @@ describe("scene asset registry", () => {
         ARCHITECTURE_FOREGROUND_ASSET_KEY,
         INTERIOR_CORNER_ASSET_KEY,
         OBLIQUE_TABLETOP_ASSET_KEY,
+        FOCUS_FUNDAMENTALS_ASSET_KEY,
+        VIEW_CAMERA_ANATOMY_ASSET_KEY,
       ]);
       expect(presentationAssetKey).toBe(CAMERA_MOVEMENT_LATTICE_ASSET_KEY);
       expect(Object.isFrozen(sceneAssetRegistry)).toBe(true);
@@ -211,5 +271,15 @@ describe("scene asset registry", () => {
     expect(() =>
       resolveSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, emptyRegistry),
     ).toThrowError('Scene asset "oblique-tabletop-subject" is not registered');
+    expect(() =>
+      resolveSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, emptyRegistry),
+    ).toThrowError(
+      'Scene asset "focus-fundamentals-subject" is not registered',
+    );
+    expect(() =>
+      resolveSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, emptyRegistry),
+    ).toThrowError(
+      'Scene asset "view-camera-anatomy-subject" is not registered',
+    );
   });
 });

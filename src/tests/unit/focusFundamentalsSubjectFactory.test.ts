@@ -19,11 +19,13 @@ import {
   focusFundamentalsParallaxPointerColor,
 } from "../../scenes/focusFundamentalsParallax";
 import { toWorld } from "../../render/rttUtils";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
 
 describe("Focus Fundamentals shared subject factory", () => {
   it("creates one canonical object with both focus details and a floor", () => {
-    const group = createFocusFundamentalsGroup();
-    const secondGroup = createFocusFundamentalsGroup();
+    const request = { presentation: FOCUS_FUNDAMENTALS_PRESENTATION };
+    const group = createFocusFundamentalsGroup(request);
+    const secondGroup = createFocusFundamentalsGroup(request);
     group.updateMatrixWorld(true);
     secondGroup.updateMatrixWorld(true);
 

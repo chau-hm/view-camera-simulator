@@ -10,26 +10,26 @@ import {
   ArchitectureRiseSubject,
   ObliqueArchitectureSubject,
   ArchitectureForegroundSubject,
+  FocusFundamentalsSubject,
   InteriorCornerSubject,
   ObliqueTabletopSubject,
   ShelfSwingSubject,
   TableTiltSubject,
+  ViewCameraAnatomySubject,
 } from "./SceneAssetSubjects";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
 } from "./assets/sceneAssetRegistry";
-import {
-  FocusFundamentalsSubject,
-  createFocusFundamentalsGroup,
-} from "./FocusFundamentalsSubjectFactory";
 import {
   ARCHITECTURE_RISE_PRESENTATION,
 } from "../scenes/presentation/architectureRise";
@@ -39,6 +39,8 @@ import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
 import {
   MirrorShiftSubject,
   createMirrorShiftRttGroup,
@@ -63,19 +65,10 @@ import {
   type CameraMovementPresentationRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
-import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
 import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
-import {
-  LessonZeroGroundGlassSubject,
-  createLessonZeroGroundGlassGroup,
-} from "./LessonZeroGroundGlassSubjectFactory";
-import {
-  lessonZeroGroundGlassSubjectBoundsMm,
-  lessonZeroGroundGlassSubjectCenterMm,
-} from "../scenes/lessonZeroGroundGlassSubject";
 import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
 import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "./MacroSpecimenSubjectFactory";
 import { MACRO_SPECIMEN, macroSpecimenBoundsMm } from "../scenes/macroSpecimenGeometry";
@@ -141,22 +134,10 @@ type SceneSubjectRegistrationBase = {
   };
 };
 
-/**
- * A module-shared subject returns a fresh Object3D graph that borrows cached
- * render resources. Its per-instance RTT group is removed on unmount, while
- * the module-owned geometry/material/texture resources stay alive.
- */
-export type SceneSubjectRegistration = SceneSubjectRegistrationBase &
-  (
-    | {
-        renderResourceLifetime: "module-shared";
-        disposeRttGroup?: never;
-      }
-    | {
-        renderResourceLifetime?: never;
-        disposeRttGroup: (group: THREE.Group) => void;
-      }
-  );
+/** Scene-level integration delegates asset cleanup to the asset registry. */
+export type SceneSubjectRegistration = SceneSubjectRegistrationBase & {
+  disposeRttGroup?: (group: THREE.Group) => void;
+};
 
 export type SceneSubjectRttOptions = {
   presentationRegion?: CameraMovementPresentationRegion;
@@ -301,12 +282,16 @@ export const sceneSubjectRegistry = {
     },
   },
   "view-camera-anatomy": {
-    SceneSubject: LessonZeroGroundGlassSubject,
-    createRttGroup: createLessonZeroGroundGlassGroup,
-    renderResourceLifetime: "module-shared",
-    rttBounds: lessonZeroGroundGlassSubjectBoundsMm,
+    SceneSubject: ViewCameraAnatomySubject,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, {
+        presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, group),
+    rttBounds: VIEW_CAMERA_ANATOMY_PRESENTATION.geometry.bounds,
     rttLighting: {
-      targetMm: lessonZeroGroundGlassSubjectCenterMm,
+      targetMm: VIEW_CAMERA_ANATOMY_PRESENTATION.centerMm,
       keyOffsetWorld: { x: -1.8, y: 2.5, z: -2.2 },
       fillOffsetWorld: { x: 1.8, y: 1.25, z: -2.4 },
     },
@@ -366,10 +351,14 @@ export const sceneSubjectRegistry = {
   },
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,
-    createRttGroup: createFocusFundamentalsGroup,
-    renderResourceLifetime: "module-shared",
+    createRttGroup: () =>
+      createRegisteredSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, {
+        presentation: FOCUS_FUNDAMENTALS_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, group),
     rttLighting: {
-      targetMm: focusFundamentalsObjectCenterMm,
+      targetMm: FOCUS_FUNDAMENTALS_PRESENTATION.geometry.objectCenterMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
       fillOffsetWorld: { x: 2, y: 1.5, z: -2.5 },
     },
