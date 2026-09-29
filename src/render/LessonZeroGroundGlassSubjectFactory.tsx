@@ -1,11 +1,10 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { useMemo } from "react";
 import * as THREE from "three";
-import {
-  lessonZeroGroundGlassSubjectGeometry,
-  type LessonZeroGroundGlassSubjectBox,
-} from "../scenes/lessonZeroGroundGlassSubject";
+import type { ViewCameraAnatomyPresentation } from "../scenes/presentation/viewCameraAnatomy";
 import { toWorld } from "./rttUtils";
+
+export type ViewCameraAnatomyAssetRequest = Readonly<{
+  presentation: ViewCameraAnatomyPresentation;
+}>;
 
 // Every factory call creates fresh Groups/Meshes and borrows this module-owned
 // geometry plus the role materials below. These resources live for the module/
@@ -14,7 +13,9 @@ const UNIT_BOX_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
 
 const materialByRole = new Map<string, THREE.MeshStandardMaterial>();
 
-const roleForBox = (box: LessonZeroGroundGlassSubjectBox): string => {
+const roleForBox = (
+  box: ViewCameraAnatomyPresentation["geometry"]["boxes"][number],
+): string => {
   if (box.id === "target-board" || box.id === "target-stand" || box.id === "target-base") {
     return "structure";
   }
@@ -48,15 +49,18 @@ const materialForRole = (role: string): THREE.MeshStandardMaterial => {
   return material;
 };
 
-export function createLessonZeroGroundGlassGroup(): THREE.Group {
+export function createLessonZeroGroundGlassGroup(
+  request: ViewCameraAnatomyAssetRequest,
+): THREE.Group {
+  const { presentation } = request;
   const group = new THREE.Group();
   group.name = "view-camera-anatomy-subject";
   group.userData = {
     subjectId: "view-camera-anatomy",
-    focusDepthMm: lessonZeroGroundGlassSubjectGeometry.focusDepthMm,
+    focusDepthMm: presentation.geometry.focusDepthMm,
   };
 
-  lessonZeroGroundGlassSubjectGeometry.boxes.forEach((box) => {
+  presentation.geometry.boxes.forEach((box) => {
     const mesh = new THREE.Mesh(UNIT_BOX_GEOMETRY, materialForRole(roleForBox(box)));
     mesh.name = `view-camera-anatomy-${box.id}`;
     mesh.position.set(
@@ -67,17 +71,10 @@ export function createLessonZeroGroundGlassGroup(): THREE.Group {
     mesh.scale.set(toWorld(box.size.x), toWorld(box.size.y), toWorld(box.size.z));
     mesh.userData = {
       subjectPartId: box.id,
-      focusDepthMm: lessonZeroGroundGlassSubjectGeometry.focusDepthMm,
+      focusDepthMm: presentation.geometry.focusDepthMm,
     };
     group.add(mesh);
   });
 
   return group;
 }
-
-/** The same subject factory is used by the interactive scene and Ground Glass RTT. */
-export const LessonZeroGroundGlassSubject: React.FC = () => {
-  const group = useMemo(() => createLessonZeroGroundGlassGroup(), []);
-  // R3F removes this per-instance graph but must not dispose its borrowed cache.
-  return <primitive object={group} dispose={null} />;
-};

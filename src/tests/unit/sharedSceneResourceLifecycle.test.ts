@@ -9,12 +9,17 @@ import type { SceneDefinition } from "../../types/scene";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import {
   FocusFundamentalsSubject,
-  createFocusFundamentalsGroup,
-} from "../../render/FocusFundamentalsSubjectFactory";
+  ViewCameraAnatomySubject,
+} from "../../render/SceneAssetSubjects";
 import {
-  LessonZeroGroundGlassSubject,
-  createLessonZeroGroundGlassGroup,
-} from "../../render/LessonZeroGroundGlassSubjectFactory";
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
+  resolveSceneAsset,
+  type ModuleSharedSceneAssetKey,
+  type SceneAssetRequestMap,
+} from "../../render/assets/sceneAssetRegistry";
 import {
   getGroundGlassSceneProfile,
 } from "../../render/groundGlassSceneProfiles";
@@ -31,6 +36,8 @@ import {
 } from "../../scenes/focusFundamentalsTargets";
 import { lessonZeroGroundGlassSubjectGeometry } from "../../scenes/lessonZeroGroundGlassSubject";
 import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import {
   deriveFocusFundamentalsReferenceOptics,
   resolveFocusFundamentalsTeachingCue,
@@ -40,8 +47,10 @@ afterEach(() => vi.restoreAllMocks());
 
 type SharedResourceCandidate = {
   scene: SceneDefinition;
-  subject: typeof FocusFundamentalsSubject | typeof LessonZeroGroundGlassSubject;
-  createGroup: () => THREE.Group;
+  subject: typeof FocusFundamentalsSubject | typeof ViewCameraAnatomySubject;
+  assetKey: ModuleSharedSceneAssetKey;
+  registryKeyName: string;
+  request: SceneAssetRequestMap[ModuleSharedSceneAssetKey];
   factoryPath: string;
   factoryName: string;
   expectedResourceCounts: {
@@ -55,15 +64,19 @@ const sharedResourceCandidates: readonly SharedResourceCandidate[] = [
   {
     scene: focusFundamentalsTwoTargets,
     subject: FocusFundamentalsSubject,
-    createGroup: createFocusFundamentalsGroup,
+    assetKey: FOCUS_FUNDAMENTALS_ASSET_KEY,
+    registryKeyName: "FOCUS_FUNDAMENTALS_ASSET_KEY",
+    request: { presentation: FOCUS_FUNDAMENTALS_PRESENTATION },
     factoryPath: "src/render/FocusFundamentalsSubjectFactory.tsx",
     factoryName: "createFocusFundamentalsGroup",
     expectedResourceCounts: { geometries: 11, materials: 7, textures: 2 },
   },
   {
     scene: viewCameraAnatomyScene,
-    subject: LessonZeroGroundGlassSubject,
-    createGroup: createLessonZeroGroundGlassGroup,
+    subject: ViewCameraAnatomySubject,
+    assetKey: VIEW_CAMERA_ANATOMY_ASSET_KEY,
+    registryKeyName: "VIEW_CAMERA_ANATOMY_ASSET_KEY",
+    request: { presentation: VIEW_CAMERA_ANATOMY_PRESENTATION },
     factoryPath: "src/render/LessonZeroGroundGlassSubjectFactory.tsx",
     factoryName: "createLessonZeroGroundGlassGroup",
     expectedResourceCounts: { geometries: 1, materials: 5, textures: 0 },
@@ -185,6 +198,22 @@ const createGroundGlassContext = (scene: SceneDefinition) => ({
   presentationRegion: "whole" as const,
 });
 
+const assertSceneSubjectCleanupTypes = (): void => {
+  const validCleanup: SceneSubjectRegistration = {
+    SceneSubject: FocusFundamentalsSubject,
+    createRttGroup: () => new THREE.Group(),
+    disposeRttGroup: () => undefined,
+  };
+  // @ts-expect-error Scene subject registrations require explicit RTT cleanup.
+  const missingCleanup: SceneSubjectRegistration = {
+    SceneSubject: FocusFundamentalsSubject,
+    createRttGroup: () => new THREE.Group(),
+  };
+  void validCleanup;
+  void missingCleanup;
+};
+void assertSceneSubjectCleanupTypes;
+
 describe("module-shared scene subject resource lifecycle", () => {
   for (const candidate of sharedResourceCandidates) {
     it(`${candidate.scene.id} shares render resources safely across consumers and remounts`, () => {
@@ -192,12 +221,19 @@ describe("module-shared scene subject resource lifecycle", () => {
       const registration = getSceneSubjectRegistration(candidate.scene.id);
       expect(registration?.SceneSubject).toBe(candidate.subject);
       expect(getRegisteredSceneSubject(candidate.scene.id)).toBe(candidate.subject);
-      expect(registration?.renderResourceLifetime).toBe("module-shared");
-      expect(registration?.disposeRttGroup).toBeUndefined();
+      expect(registration?.disposeRttGroup).toBeDefined();
+      const assetRegistration = resolveSceneAsset(candidate.assetKey);
+      expect(assetRegistration.renderResourceLifetime).toBe("module-shared");
 
       const interactiveScene = new THREE.Scene();
       const rttScene = new THREE.Scene();
-      const interactiveGroup = candidate.createGroup();
+      const interactiveGroup = createRegisteredSceneAsset(
+        candidate.assetKey,
+        candidate.request,
+      );
+      expect(interactiveGroup.userData.assetImplementationId).toBe(
+        assetRegistration.implementationId,
+      );
       interactiveScene.add(interactiveGroup);
       const interactiveResources = collectSubjectObjectsAndResources(interactiveGroup);
 
@@ -220,6 +256,9 @@ describe("module-shared scene subject resource lifecycle", () => {
       profile.configureRttShadowParticipation(mountedRtt.group);
 
       expect(rttScene.children).toContain(mountedRtt.group);
+      expect(mountedRtt.group.userData.assetImplementationId).toBe(
+        assetRegistration.implementationId,
+      );
       expect(mountedRtt.group).not.toBe(interactiveGroup);
       const rttResources = collectSubjectObjectsAndResources(mountedRtt.group);
       expect(rttResources.meshes.size).toBeGreaterThan(0);
@@ -250,13 +289,17 @@ describe("module-shared scene subject resource lifecycle", () => {
       // Simulate removal of the interactive Object3D graph while RTT still borrows
       // the same module resources. R3F uses dispose={null} for these primitives.
       interactiveScene.remove(interactiveGroup);
+      disposeRegisteredSceneAsset(candidate.assetKey, interactiveGroup);
       expect(rttScene.children).toContain(remountedRtt.group);
       disposalSpies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
 
       remountedRtt.dispose();
       expect(rttScene.children).not.toContain(remountedRtt.group);
 
-      const afterRemount = candidate.createGroup();
+      const afterRemount = createRegisteredSceneAsset(
+        candidate.assetKey,
+        candidate.request,
+      );
       const afterRemountResources = collectSubjectObjectsAndResources(afterRemount);
       expectSameIdentitySet(interactiveResources.geometries, afterRemountResources.geometries);
       expectSameIdentitySet(interactiveResources.materials, afterRemountResources.materials);
@@ -266,29 +309,29 @@ describe("module-shared scene subject resource lifecycle", () => {
     });
 
     it(`${candidate.scene.id} keeps R3F automatic disposal disabled for borrowed resources`, () => {
-      const source = readFileSync(resolve(process.cwd(), candidate.factoryPath), "utf8");
-      expect(source).toContain(`useMemo(() => ${candidate.factoryName}(), []);`);
+      const source = readFileSync(
+        resolve(process.cwd(), "src/render/SceneAssetSubjects.tsx"),
+        "utf8",
+      );
+      const registrySource = readFileSync(
+        resolve(process.cwd(), "src/render/assets/sceneAssetRegistry.ts"),
+        "utf8",
+      );
       expect(source).toContain("<primitive object={group} dispose={null} />");
+      expect(source).toContain("createRegisteredSceneAsset");
+      expect(source).toContain("disposeRegisteredSceneAsset");
+      expect(registrySource).toContain(candidate.factoryName);
+      const sceneRegistrySource = readFileSync(
+        resolve(process.cwd(), "src/render/sceneSubjectRegistry.tsx"),
+        "utf8",
+      );
+      expect(sceneRegistrySource).toContain("createRegisteredSceneAsset");
+      expect(sceneRegistrySource).toContain(candidate.registryKeyName);
+      const factorySource = readFileSync(
+        resolve(process.cwd(), candidate.factoryPath),
+        "utf8",
+      );
+      expect(factorySource).not.toContain("disposeTeachingSubjectResources");
     });
   }
 });
-
-// Compile-only regressions: a missing disposer must carry explicit module
-// lifetime metadata, and module-shared resources cannot have per-group disposal.
-const assertSharedLifecycleTypes = (): void => {
-  // @ts-expect-error Module-shared resources require an explicit lifetime policy.
-  const missingPolicy: SceneSubjectRegistration = {
-    SceneSubject: FocusFundamentalsSubject,
-    createRttGroup: createFocusFundamentalsGroup,
-  };
-  // @ts-expect-error Module-shared resources must not be disposed with one RTT group.
-  const sharedWithInstanceDisposer: SceneSubjectRegistration = {
-    SceneSubject: FocusFundamentalsSubject,
-    createRttGroup: createFocusFundamentalsGroup,
-    renderResourceLifetime: "module-shared",
-    disposeRttGroup: () => undefined,
-  };
-  void missingPolicy;
-  void sharedWithInstanceDisposer;
-};
-void assertSharedLifecycleTypes;

@@ -1,8 +1,8 @@
 # Scene asset resource lifecycle
 
-This note records the two resource ownership models currently used by scene
-subjects. It does not introduce a resource manager or migrate the shared-cache
-scenes into `sceneAssetRegistry`.
+This note records the two resource ownership models represented by the typed
+scene asset registry. It does not introduce a resource manager or reference
+counting.
 
 ## Lifecycle classes
 
@@ -10,25 +10,32 @@ scenes into `sceneAssetRegistry`.
 
 The SA1–SA3B registrations create a subject group whose render resources are
 owned by that registered instance. The registered disposer releases its owned
-geometry, materials, and textures. R3F primitives use `dispose={null}` so the
-registered lifecycle remains the single disposal authority.
+geometry, materials, and textures. These registrations retain the existing
+implicit instance-owned policy and require a disposer in the type contract. R3F
+primitives use `dispose={null}` so the registered lifecycle remains the single
+disposal authority.
 
 ### Module-shared scene subjects
 
-Focus Fundamentals and View Camera Anatomy create a fresh `THREE.Group` and
-fresh child `THREE.Mesh` objects for each consumer. Those objects borrow a
-bounded set of immutable geometry, material, and (for Focus Fundamentals)
-texture resources cached by their factory module. The resources live for the
-module/application lifetime. Removing one consumer's object graph does not
-release the borrowed resources.
+Focus Fundamentals (`focus-fundamentals-subject` →
+`threejs-focus-fundamentals`) and View Camera Anatomy
+(`view-camera-anatomy-subject` → `threejs-view-camera-anatomy`) create a fresh
+`THREE.Group` and fresh child `THREE.Mesh` objects for each consumer. Those
+objects borrow a bounded set of immutable geometry, material, and (for Focus
+Fundamentals) texture resources cached by their factory module. The resources
+live for the module/application lifetime. Removing one consumer's object graph
+does not release the borrowed resources.
 
-`SceneSubjectRegistration.renderResourceLifetime: "module-shared"` makes this
-policy explicit for the existing scene-subject path. The registration type
-requires that a module-shared entry omit `disposeRttGroup`; registrations with
-an RTT disposer continue to use their paired disposer. RTT cleanup removes the
-group from its scene and calls the optional registered disposer. For these two
-entries there is no resource disposer to call. Their interactive primitives
-also specify `dispose={null}`.
+`SceneAssetRegistration.renderResourceLifetime: "module-shared"` is the single
+authority for this policy. The typed registration requires an explicit shared
+lifetime and forbids a per-instance disposer. Instance-owned registrations
+continue to require their paired disposer; omitting a disposer never implies a
+shared lifetime. `disposeRegisteredSceneAsset()` resolves the explicit slot and
+registry, then leaves shared GPU resources alive. The consumer removes or
+discards its Object3D graph. For these shared slots, `SceneSubjectRegistry`
+contains scene-level RTT integration and delegates cleanup to the asset
+registry; it no longer duplicates lifetime metadata. Interactive primitives
+use `dispose={null}`.
 
 ## Resource inventory
 
@@ -57,9 +64,14 @@ geometry modules contain renderer-neutral data and are not Three.js resources.
 
 ## Consumers, remounts, and concurrency
 
-The interactive components and the RTT scene-subject registrations call the
-same factory for each scene. The interactive component passes its fresh group
-to `<primitive object={group} dispose={null} />`. RTT `MountedGroundGlassSceneSubject.dispose()` removes its fresh group from the RTT scene and then calls `disposeRegisteredRttSubject()`; the module-shared registration intentionally has no per-group disposer.
+The interactive components and RTT scene-subject registrations both create
+through the same typed asset slot and registered factory. The interactive
+component passes its fresh group to
+`<primitive object={group} dispose={null} />`. RTT
+`MountedGroundGlassSceneSubject.dispose()` removes its fresh group from the RTT
+scene and then calls `disposeRegisteredRttSubject()`, which delegates to
+`disposeRegisteredSceneAsset()`. The module-shared policy intentionally has no
+per-group GPU disposer.
 
 Therefore an interactive group and an RTT group have distinct Object3D
 identities while referring to the same geometry/material/texture identities.
@@ -95,11 +107,10 @@ names or `userData` as teaching, task, or optics authority.
 
 ## Migration decision
 
-Neither scene is migrated into `sceneAssetRegistry` in SA4A. The current
-scene-subject path is already safe for these module-lifetime caches; this round
-adds explicit lifecycle metadata, source ownership comments, and regressions
-for shared identity, RTT cleanup/remount, and canonical independence. Moving
-both scenes into typed asset slots would also require new presentation/request
-contracts and is better handled as **SA4B — Shared Teaching Scene Asset
-Migration**, carrying the same explicit module-shared policy into the typed
-asset-registration contract when those real assets are migrated.
+Both scenes are migrated into typed asset slots in SA4B. Their factories now
+receive renderer-neutral `FocusFundamentalsPresentation` and
+`ViewCameraAnatomyPresentation` requests. Tests prove that the interactive and
+RTT Object3D graphs are distinct, their cached resource identities are shared,
+registry cleanup does not dispose borrowed resources, remounts reuse the cache,
+and substitute implementations leave canonical scene/task/optics/presentation
+state unchanged.

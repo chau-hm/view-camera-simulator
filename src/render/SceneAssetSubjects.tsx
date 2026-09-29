@@ -7,6 +7,8 @@ import {
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
 } from "./assets/sceneAssetRegistry";
@@ -21,6 +23,8 @@ import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
 
 type RegisteredAssetProps<K extends SceneAssetKey> = {
   assetKey: K;
@@ -60,6 +64,12 @@ const interiorCornerRequest = Object.freeze({
 });
 const obliqueTabletopRequest = Object.freeze({
   presentation: OBLIQUE_TABLETOP_PRESENTATION,
+});
+const focusFundamentalsRequest = Object.freeze({
+  presentation: FOCUS_FUNDAMENTALS_PRESENTATION,
+});
+const viewCameraAnatomyRequest = Object.freeze({
+  presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
 });
 
 /** Interactive scene consumers share the exact registered factories used by RTT. */
@@ -103,5 +113,19 @@ export const ObliqueTabletopSubject = () => (
   <RegisteredSceneAsset
     assetKey={OBLIQUE_TABLETOP_ASSET_KEY}
     request={obliqueTabletopRequest}
+  />
+);
+
+export const FocusFundamentalsSubject = () => (
+  <RegisteredSceneAsset
+    assetKey={FOCUS_FUNDAMENTALS_ASSET_KEY}
+    request={focusFundamentalsRequest}
+  />
+);
+
+export const ViewCameraAnatomySubject = () => (
+  <RegisteredSceneAsset
+    assetKey={VIEW_CAMERA_ANATOMY_ASSET_KEY}
+    request={viewCameraAnatomyRequest}
   />
 );

@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
-import { getTaskById } from "../../core/tasks/taskRegistry";
+import { taskRegistry } from "../../core/tasks/taskRegistry";
+import { publicSceneCatalog } from "../../app/publicScenes";
+import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
@@ -18,6 +21,8 @@ import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
 import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
@@ -25,19 +30,24 @@ import * as tableTiltAsset from "../../render/TableTiltSubjectFactory";
 import * as architectureForegroundAsset from "../../render/ArchitectureForegroundSubjectFactory";
 import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory";
 import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
+import * as focusFundamentalsAsset from "../../render/FocusFundamentalsSubjectFactory";
+import * as viewCameraAnatomyAsset from "../../render/LessonZeroGroundGlassSubjectFactory";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
   resolveSceneAsset,
   sceneAssetRegistry,
-  type SceneAssetKey,
+  type InstanceOwnedSceneAssetKey,
+  type ModuleSharedSceneAssetKey,
   type SceneAssetRegistration,
   type SceneAssetRegistry,
   type SceneAssetRequestMap,
@@ -69,29 +79,16 @@ const sceneDefinitions = [
   obliqueTabletopScene,
   tableTiltScene,
   shelfSwingScene,
+  focusFundamentalsTwoTargets,
+  viewCameraAnatomyScene,
 ] as const;
 
 const semanticResults = () => ({
   scenes: sceneDefinitions,
-  tasks: [
-    "rise-01",
-    "architecture-foreground-rise-01",
-    "architecture-foreground-tilt-focus-01",
-    "architecture-foreground-dof-01",
-    "architecture-foreground-compound-01",
-    "interior-corner-compose-01",
-    "interior-corner-swing-01",
-    "interior-corner-refine-01",
-    "interior-corner-aperture-01",
-    "oblique-swing-focus-01",
-    "oblique-tabletop-focus-01",
-    "oblique-tabletop-tilt-01",
-    "oblique-tabletop-swing-01",
-    "oblique-tabletop-refine-01",
-    "oblique-tabletop-aperture-01",
-    "tilt-01",
-    "swing-01",
-  ].map((taskId) => getTaskById(taskId)),
+  tasks: Object.values(taskRegistry).filter((task) =>
+    sceneDefinitions.some((scene) => scene.id === task.sceneId),
+  ),
+  anatomyLesson: publicSceneCatalog.find(({ id }) => id === viewCameraAnatomyScene.id)?.lesson,
   optics: sceneDefinitions.map((scene) => {
     const optics = deriveOpticsState(
       {
@@ -115,6 +112,8 @@ const semanticResults = () => ({
     OBLIQUE_TABLETOP_PRESENTATION,
     TABLE_TILT_PRESENTATION,
     SHELF_SWING_PRESENTATION,
+    FOCUS_FUNDAMENTALS_PRESENTATION,
+    VIEW_CAMERA_ANATOMY_PRESENTATION,
   ],
 });
 
@@ -184,9 +183,9 @@ const collectDisposableSpies = (
   ...[...resources.materials].map((resource) => vi.spyOn(resource, "dispose")),
 ];
 
-const expectSa3bProductionResourcesDisposedOnce = <K extends SceneAssetKey>(
-  assetKey: K,
-  request: SceneAssetRequestMap[K],
+const expectSa3bProductionResourcesDisposedOnce = (
+  assetKey: InstanceOwnedSceneAssetKey,
+  request: SceneAssetRequestMap[InstanceOwnedSceneAssetKey],
 ): void => {
   const group = createRegisteredSceneAsset(assetKey, request);
   const resources = collectDisposableResources(group);
@@ -214,9 +213,9 @@ const expectSa3bProductionResourcesDisposedOnce = <K extends SceneAssetKey>(
   }
 };
 
-const exerciseReplacement = <K extends SceneAssetKey>(
-  assetKey: K,
-  request: SceneAssetRequestMap[K],
+const exerciseReplacement = (
+  assetKey: InstanceOwnedSceneAssetKey,
+  request: SceneAssetRequestMap[InstanceOwnedSceneAssetKey],
   productionFactoryCalls: FactoryCallCounter,
   expectedGroupName: string,
   expectedSceneId: string,
@@ -249,13 +248,13 @@ const exerciseReplacement = <K extends SceneAssetKey>(
     substituteGroup.position.set(3, -2, 5);
     substituteGroup.add(new THREE.Object3D());
     const substituteFactory = vi.fn(
-      (receivedRequest: SceneAssetRequestMap[K]): THREE.Group => {
+      (receivedRequest: SceneAssetRequestMap[InstanceOwnedSceneAssetKey]): THREE.Group => {
         expect(receivedRequest).toBe(request);
         return substituteGroup!;
       },
     );
     const substituteDisposer = vi.fn((group: THREE.Group) => group.clear());
-    const substituteRegistration: SceneAssetRegistration<K> = Object.freeze({
+    const substituteRegistration: SceneAssetRegistration<InstanceOwnedSceneAssetKey> = Object.freeze({
       assetKey,
       implementationId: `test-substitute-${expectedSceneId}`,
       create: substituteFactory,
@@ -310,6 +309,92 @@ const exerciseReplacement = <K extends SceneAssetKey>(
         substituteRegistryForCleanup,
       );
     }
+  }
+};
+
+const exerciseSharedReplacement = (
+  assetKey: ModuleSharedSceneAssetKey,
+  request: SceneAssetRequestMap[ModuleSharedSceneAssetKey],
+  productionFactoryCalls: FactoryCallCounter,
+  expectedGroupName: string,
+  expectedSceneId: string,
+): void => {
+  const productionRegistration = resolveSceneAsset(assetKey);
+  expect(productionRegistration.renderResourceLifetime).toBe("module-shared");
+  expect(assetKey).not.toBe(expectedSceneId);
+  const resultsBefore = semanticResults();
+  const productionGroup = createRegisteredSceneAsset(assetKey, request);
+  const productionResourceDisposals = collectDisposableSpies(
+    collectDisposableResources(productionGroup),
+  );
+
+  try {
+    expect(productionFactoryCalls.calls()).toBe(1);
+    expect(productionFactoryCalls.firstRequest()).toBe(request);
+    expect(productionGroup.name).toBe(expectedGroupName);
+    expect(productionGroup.userData.assetImplementationId).toBe(
+      productionRegistration.implementationId,
+    );
+    productionResourceDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+    disposeRegisteredSceneAsset(assetKey, productionGroup);
+    productionResourceDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+
+    productionFactoryCalls.clear();
+    const substituteGroup = new THREE.Group();
+    substituteGroup.name = `substitute:${expectedSceneId}`;
+    substituteGroup.position.set(3, -2, 5);
+    substituteGroup.add(new THREE.Object3D());
+    const substituteFactory = vi.fn(
+      (receivedRequest: SceneAssetRequestMap[ModuleSharedSceneAssetKey]): THREE.Group => {
+        expect(receivedRequest).toBe(request);
+        return substituteGroup;
+      },
+    );
+    const substituteRegistration: SceneAssetRegistration<ModuleSharedSceneAssetKey> = Object.freeze({
+      assetKey,
+      implementationId: `test-substitute-${expectedSceneId}`,
+      renderResourceLifetime: "module-shared",
+      create: substituteFactory,
+    });
+    const substituteRegistry: SceneAssetRegistry = Object.freeze({
+      [assetKey]: substituteRegistration,
+    });
+    const mountedScene = new THREE.Scene();
+    const createdSubstitute = createRegisteredSceneAsset(
+      assetKey,
+      request,
+      substituteRegistry,
+    );
+    mountedScene.add(createdSubstitute);
+
+    expect(substituteFactory).toHaveBeenCalledTimes(1);
+    expect(substituteFactory.mock.calls[0]?.[0]).toBe(request);
+    expect(createdSubstitute).toBe(substituteGroup);
+    expect(createdSubstitute.parent).toBe(mountedScene);
+    expect(createdSubstitute.position.toArray()).toEqual([3, -2, 5]);
+    expect(createdSubstitute.children).toHaveLength(1);
+    expect(createdSubstitute.userData.assetImplementationId).toBe(
+      substituteRegistration.implementationId,
+    );
+    expect(productionFactoryCalls.calls()).toBe(0);
+
+    const resultsAfter = semanticResults();
+    expect(resultsAfter).toEqual(resultsBefore);
+    expect(
+      resultsAfter.scenes.find((scene) => scene.id === expectedSceneId)?.focusTargets,
+    ).toEqual(
+      resultsBefore.scenes.find((scene) => scene.id === expectedSceneId)?.focusTargets,
+    );
+    expect(sceneAssetRegistry[assetKey]).toBe(productionRegistration);
+    expect(resolveSceneAsset(assetKey)).toBe(productionRegistration);
+
+    mountedScene.remove(createdSubstitute);
+    disposeRegisteredSceneAsset(assetKey, createdSubstitute, substituteRegistry);
+    expect(createdSubstitute.parent).toBeNull();
+    expect(productionResourceDisposals.every((spy) => !spy.mock.calls.length)).toBe(true);
+  } finally {
+    disposeRegisteredSceneAsset(assetKey, productionGroup);
+    productionResourceDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
   }
 };
 
@@ -396,6 +481,14 @@ describe("static teaching scene asset migrations", () => {
       obliqueTabletopAsset,
       "createObliqueTabletopGroup",
     );
+    const focusFundamentalsFactorySpy = vi.spyOn(
+      focusFundamentalsAsset,
+      "createFocusFundamentalsGroup",
+    );
+    const viewCameraAnatomyFactorySpy = vi.spyOn(
+      viewCameraAnatomyAsset,
+      "createLessonZeroGroundGlassGroup",
+    );
 
     exerciseReplacement(
       ARCHITECTURE_RISE_ASSET_KEY,
@@ -446,6 +539,20 @@ describe("static teaching scene asset migrations", () => {
       "oblique-tabletop-subject",
       "oblique-tabletop",
     );
+    exerciseSharedReplacement(
+      FOCUS_FUNDAMENTALS_ASSET_KEY,
+      { presentation: FOCUS_FUNDAMENTALS_PRESENTATION },
+      countFactoryCalls(focusFundamentalsFactorySpy),
+      "focus-fundamentals-subject",
+      "focus-fundamentals-two-targets",
+    );
+    exerciseSharedReplacement(
+      VIEW_CAMERA_ANATOMY_ASSET_KEY,
+      { presentation: VIEW_CAMERA_ANATOMY_PRESENTATION },
+      countFactoryCalls(viewCameraAnatomyFactorySpy),
+      "view-camera-anatomy-subject",
+      "view-camera-anatomy",
+    );
   });
 
   it("keeps scene definitions and renderer-neutral presentations outside Three.js and asset implementation modules", () => {
@@ -464,6 +571,10 @@ describe("static teaching scene asset migrations", () => {
       "src/scenes/presentation/obliqueTabletop.ts",
       "src/scenes/presentation/tableTilt.ts",
       "src/scenes/presentation/shelfSwing.ts",
+      "src/scenes/definitions/focus-fundamentals-two-targets.ts",
+      "src/scenes/definitions/view-camera-anatomy.ts",
+      "src/scenes/presentation/focusFundamentals.ts",
+      "src/scenes/presentation/viewCameraAnatomy.ts",
     ];
 
     paths.forEach((path) => {
