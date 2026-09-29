@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import type { ComponentType } from "react";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ShelfSwingSubject } from "../../render/SceneAssetSubjects";
+import { MirrorShiftSubject, ShelfSwingSubject } from "../../render/SceneAssetSubjects";
 import {
   ArchitectureRiseRegisteredSubject,
   createRegisteredRttSubject,
@@ -36,6 +36,7 @@ import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
 import * as architectureForegroundAsset from "../../render/ArchitectureForegroundSubjectFactory";
 import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory";
 import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
+import * as mirrorShiftAsset from "../../render/MirrorShiftSubjectFactory";
 import {
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   ARCHITECTURE_RISE_ASSET_KEY,
@@ -46,6 +47,7 @@ import {
   SHELF_SWING_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
   resolveSceneAsset,
 } from "../../render/assets/sceneAssetRegistry";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
@@ -258,16 +260,43 @@ describe("scene subject registry", () => {
     });
   });
 
-  it("resolves Mirror Shift to the shared static reflection subject and RTT factory", () => {
+  it("routes Mirror Shift interactive and RTT consumers through the same registered factory", () => {
     const registration = getSceneSubjectRegistration("mirror-shift");
     expect(registration).toBeDefined();
-    expect(getRegisteredSceneSubject("mirror-shift")).toBe(registration?.SceneSubject);
+    expect(getRegisteredSceneSubject("mirror-shift")).toBe(MirrorShiftSubject);
+    const factory = vi.spyOn(mirrorShiftAsset, "createMirrorShiftAssetGroup");
+    const disposer = vi.spyOn(mirrorShiftAsset, "disposeMirrorShiftGroup");
+    const view = render(<MirrorShiftSubject />);
 
     const group = createRegisteredRttSubject("mirror-shift");
+    const viewportGroup = factory.mock.results[0]?.value as THREE.Group;
+    const rttGroup = factory.mock.results[1]?.value as THREE.Group;
+    const assetRegistration = resolveSceneAsset(MIRROR_SHIFT_ASSET_KEY);
+
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory.mock.calls[0]?.[0]).toMatchObject({ representation: "viewport" });
+    expect(factory.mock.calls[1]?.[0]).toMatchObject({ representation: "rtt" });
+    expect(viewportGroup).toBeInstanceOf(THREE.Group);
+    expect(rttGroup).toBe(group);
+    expect(viewportGroup).not.toBe(rttGroup);
+    expect(viewportGroup.userData.assetImplementationId).toBe(
+      assetRegistration.implementationId,
+    );
+    expect(rttGroup.userData.assetImplementationId).toBe(
+      assetRegistration.implementationId,
+    );
+    expect(factory.mock.calls[0]?.[0]?.presentation).toBe(
+      factory.mock.calls[1]?.[0]?.presentation,
+    );
     expect(group?.name).toBe("mirror-shift-subject");
     expect(group?.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
     expect(group?.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
     disposeRegisteredRttSubject("mirror-shift", group!);
+    expect(disposer).toHaveBeenCalledTimes(1);
+    expect(disposer.mock.calls[0]?.[0]).toBe(rttGroup);
+    view.unmount();
+    expect(disposer).toHaveBeenCalledTimes(2);
+    expect(disposer.mock.calls[1]?.[0]).toBe(viewportGroup);
   });
 
   it("resolves Interior Corner to one shared static subject for 3D and RTT", () => {

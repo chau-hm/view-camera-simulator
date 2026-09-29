@@ -13,6 +13,7 @@ import {
   FocusFundamentalsSubject,
   InteriorCornerSubject,
   ObliqueTabletopSubject,
+  MirrorShiftSubject,
   ShelfSwingSubject,
   TableTiltSubject,
   ViewCameraAnatomySubject,
@@ -24,11 +25,13 @@ import {
   OBLIQUE_TABLETOP_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
+  type SceneAssetRequestMap,
 } from "./assets/sceneAssetRegistry";
 import {
   ARCHITECTURE_RISE_PRESENTATION,
@@ -41,11 +44,7 @@ import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCor
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
-import {
-  MirrorShiftSubject,
-  createMirrorShiftRttGroup,
-  disposeMirrorShiftGroup,
-} from "./MirrorShiftSubjectFactory";
+import { MIRROR_SHIFT_PRESENTATION } from "../scenes/presentation/mirrorShift";
 import { CameraMovementsSubject } from "./CameraMovementsSubjectFactory";
 import {
   createCameraMovementLatticeAsset,
@@ -235,6 +234,13 @@ const {
   viewport: mirrorShiftViewportLighting,
   rtt: mirrorShiftRttLighting,
 } = resolveMirrorShiftLighting();
+
+const mirrorShiftRttAssetRequest: SceneAssetRequestMap[
+  typeof MIRROR_SHIFT_ASSET_KEY
+] = Object.freeze({
+  presentation: MIRROR_SHIFT_PRESENTATION,
+  representation: "rtt",
+});
 
 export const sceneSubjectRegistry = {
   "macro-bellows-extension": {
@@ -449,8 +455,13 @@ export const sceneSubjectRegistry = {
   },
   "mirror-shift": {
     SceneSubject: MirrorShiftSubject,
-    createRttGroup: createMirrorShiftRttGroup,
-    disposeRttGroup: disposeMirrorShiftGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MIRROR_SHIFT_ASSET_KEY,
+        mirrorShiftRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, group),
     viewportLighting: mirrorShiftViewportLighting,
     rttLighting: mirrorShiftRttLighting,
   },

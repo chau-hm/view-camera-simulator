@@ -11,6 +11,7 @@ import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interior
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
+import { MIRROR_SHIFT_PRESENTATION } from "../../scenes/presentation/mirrorShift";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
@@ -18,6 +19,7 @@ import {
   OBLIQUE_TABLETOP_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -64,6 +66,14 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   createRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, {
     presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
   });
+  createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
+    presentation: MIRROR_SHIFT_PRESENTATION,
+    representation: "viewport",
+  });
+  createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
+    presentation: MIRROR_SHIFT_PRESENTATION,
+    representation: "rtt",
+  });
 
   // The Architecture Rise slot rejects the Table Tilt request.
   createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
@@ -109,6 +119,17 @@ const assertSceneAssetRequestKeyPairings = (): void => {
     // @ts-expect-error View Camera Anatomy rejects the Focus Fundamentals request.
     presentation: FOCUS_FUNDAMENTALS_PRESENTATION,
   });
+  // Mirror Shift rejects unrelated scene presentation data.
+  createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
+    // @ts-expect-error Mirror Shift requests require MirrorShiftPresentation.
+    presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
+    representation: "rtt",
+  });
+  createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
+    presentation: MIRROR_SHIFT_PRESENTATION,
+    // @ts-expect-error The request is explicitly one of the two supported representations.
+    representation: "interactive",
+  });
 
   const sharedRegistration: SceneAssetRegistration<typeof FOCUS_FUNDAMENTALS_ASSET_KEY> = {
     assetKey: FOCUS_FUNDAMENTALS_ASSET_KEY,
@@ -119,6 +140,12 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   const instanceOwnedRegistration: SceneAssetRegistration<typeof ARCHITECTURE_RISE_ASSET_KEY> = {
     assetKey: ARCHITECTURE_RISE_ASSET_KEY,
     implementationId: "type-test-rise-owned",
+    create: () => new THREE.Group(),
+    dispose: () => undefined,
+  };
+  const mirrorShiftOwnedRegistration: SceneAssetRegistration<typeof MIRROR_SHIFT_ASSET_KEY> = {
+    assetKey: MIRROR_SHIFT_ASSET_KEY,
+    implementationId: "type-test-mirror-shift-owned",
     create: () => new THREE.Group(),
     dispose: () => undefined,
   };
@@ -142,11 +169,19 @@ const assertSceneAssetRequestKeyPairings = (): void => {
     implementationId: "type-test-invalid-missing-disposer",
     create: () => new THREE.Group(),
   };
+  // @ts-expect-error Mirror Shift is instance-owned and requires its paired disposer.
+  const mirrorShiftWithoutDisposer: SceneAssetRegistration<typeof MIRROR_SHIFT_ASSET_KEY> = {
+    assetKey: MIRROR_SHIFT_ASSET_KEY,
+    implementationId: "type-test-invalid-mirror-shift-missing-disposer",
+    create: () => new THREE.Group(),
+  };
   void sharedRegistration;
   void instanceOwnedRegistration;
+  void mirrorShiftOwnedRegistration;
   void sharedWithDisposer;
   void sharedWithoutPolicy;
   void ownedWithoutDisposer;
+  void mirrorShiftWithoutDisposer;
 };
 void assertSceneAssetRequestKeyPairings;
 
@@ -184,6 +219,7 @@ describe("scene asset registry", () => {
         OBLIQUE_TABLETOP_ASSET_KEY,
         FOCUS_FUNDAMENTALS_ASSET_KEY,
         VIEW_CAMERA_ANATOMY_ASSET_KEY,
+        MIRROR_SHIFT_ASSET_KEY,
       ]);
       expect(presentationAssetKey).toBe(CAMERA_MOVEMENT_LATTICE_ASSET_KEY);
       expect(Object.isFrozen(sceneAssetRegistry)).toBe(true);

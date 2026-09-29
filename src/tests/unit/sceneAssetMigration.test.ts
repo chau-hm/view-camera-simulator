@@ -7,6 +7,7 @@ import { taskRegistry } from "../../core/tasks/taskRegistry";
 import { publicSceneCatalog } from "../../app/publicScenes";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
+import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
@@ -23,6 +24,7 @@ import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interior
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
+import { MIRROR_SHIFT_PRESENTATION } from "../../scenes/presentation/mirrorShift";
 import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
 import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
@@ -32,6 +34,13 @@ import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory"
 import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
 import * as focusFundamentalsAsset from "../../render/FocusFundamentalsSubjectFactory";
 import * as viewCameraAnatomyAsset from "../../render/LessonZeroGroundGlassSubjectFactory";
+import * as mirrorShiftAsset from "../../render/MirrorShiftSubjectFactory";
+import {
+  mirrorShiftGeometry,
+  resolveMirrorShiftCameraAnchors,
+} from "../../scenes/mirrorShiftGeometry";
+import { resolveMirrorShiftTeachingState } from "../../scenes/mirrorShiftCalibration";
+import { resolveMirrorShiftLighting } from "../../render/mirrorShiftLighting";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
@@ -40,6 +49,7 @@ import {
   OBLIQUE_TABLETOP_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   createRegisteredSceneAsset,
@@ -81,6 +91,7 @@ const sceneDefinitions = [
   shelfSwingScene,
   focusFundamentalsTwoTargets,
   viewCameraAnatomyScene,
+  mirrorShiftScene,
 ] as const;
 
 const semanticResults = () => ({
@@ -114,7 +125,40 @@ const semanticResults = () => ({
     SHELF_SWING_PRESENTATION,
     FOCUS_FUNDAMENTALS_PRESENTATION,
     VIEW_CAMERA_ANATOMY_PRESENTATION,
+    MIRROR_SHIFT_PRESENTATION,
   ],
+  mirrorShift: (() => {
+    const optics = deriveOpticsState(
+      {
+        ...DEFAULT_CAMERA_STATE,
+        ...mirrorShiftScene.cameraPreset,
+        activeSceneId: mirrorShiftScene.id,
+        mirrorShiftLessonState: { rigLateralMm: 1800 },
+        frontShiftMm: -50,
+      },
+      mirrorShiftScene,
+    );
+    return {
+      mirrorPlane: mirrorShiftGeometry.mirror.plane,
+      realProps: mirrorShiftGeometry.props,
+      reflectedProps: mirrorShiftGeometry.reflectedProps,
+      cameraAnchors: resolveMirrorShiftCameraAnchors(
+        { x: 1800, y: 0, z: 0 },
+        -50,
+      ),
+      taskStages: {
+        cameraMoved: resolveMirrorShiftTeachingState("camera-moved"),
+        framingRestored: resolveMirrorShiftTeachingState("framing-restored"),
+      },
+      optics: {
+        rigOriginWorld: optics.cameraRigTransform.rigOriginWorld,
+        lensCenterWorld: optics.lensCenterWorld,
+        filmCenterWorld: optics.filmCenterWorld,
+        focusPlane: optics.focusPlane,
+      },
+      lighting: resolveMirrorShiftLighting(),
+    };
+  })(),
 });
 
 type TeachingMaterialTextureSlot =
@@ -412,6 +456,98 @@ describe("static teaching scene asset migrations", () => {
     });
   });
 
+  it("creates viewport and RTT representations through one instance-owned registered implementation", () => {
+    const registration = resolveSceneAsset(MIRROR_SHIFT_ASSET_KEY);
+    const viewportRequest: SceneAssetRequestMap[typeof MIRROR_SHIFT_ASSET_KEY] = {
+      presentation: MIRROR_SHIFT_PRESENTATION,
+      representation: "viewport",
+    };
+    const rttRequest: SceneAssetRequestMap[typeof MIRROR_SHIFT_ASSET_KEY] = {
+      presentation: MIRROR_SHIFT_PRESENTATION,
+      representation: "rtt",
+    };
+    const factorySpy = vi.spyOn(mirrorShiftAsset, "createMirrorShiftAssetGroup");
+    const viewport = createRegisteredSceneAsset(
+      MIRROR_SHIFT_ASSET_KEY,
+      viewportRequest,
+    );
+    const rtt = createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, rttRequest);
+    const viewportResources = collectDisposableResources(viewport);
+    const rttResources = collectDisposableResources(rtt);
+    const viewportDisposals = collectDisposableSpies(viewportResources);
+    const rttDisposals = collectDisposableSpies(rttResources);
+    const viewportProp = viewport.getObjectByName("mirror-shift-real-tall-marker");
+    const reflectedProp = rtt.getObjectByName("mirror-shift-reflected-tall-marker");
+    const reflectedPropGeometry = (reflectedProp as THREE.Mesh).geometry;
+    const mountedScene = new THREE.Scene();
+    let viewportDisposed = false;
+    let rttDisposed = false;
+
+    try {
+      expect(registration.implementationId).toBe("threejs-mirror-shift");
+      expect(registration.renderResourceLifetime ?? "instance-owned").toBe(
+        "instance-owned",
+      );
+      expect(registration.dispose).toBeTypeOf("function");
+      expect(MIRROR_SHIFT_ASSET_KEY).not.toBe(mirrorShiftScene.id);
+      expect(viewport).not.toBe(rtt);
+      expect(viewport.userData.assetImplementationId).toBe(
+        registration.implementationId,
+      );
+      expect(rtt.userData.assetImplementationId).toBe(registration.implementationId);
+      expect(factorySpy).toHaveBeenNthCalledWith(1, viewportRequest);
+      expect(factorySpy).toHaveBeenNthCalledWith(2, rttRequest);
+
+      expect(viewport.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(
+        THREE.Mesh,
+      );
+      expect(viewportProp).toBeInstanceOf(THREE.Mesh);
+      expect(viewport.getObjectByName("mirror-shift-reflected-props")).toBeUndefined();
+      expect(viewport.getObjectByName("mirror-shift-reflected-floor")).toBeUndefined();
+      expect(viewport.getObjectByName("mirror-shift-camera-reflection")).toBeUndefined();
+      expect(rtt.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(
+        THREE.Mesh,
+      );
+      expect(reflectedProp).toBeInstanceOf(THREE.Mesh);
+      expect(rtt.getObjectByName("mirror-shift-reflected-floor")).toBeInstanceOf(
+        THREE.Mesh,
+      );
+      expect(rtt.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(
+        THREE.Group,
+      );
+
+      expect(viewportResources.geometries.size).toBeGreaterThan(0);
+      expect(viewportResources.materials.size).toBeGreaterThan(0);
+      expect(viewportResources.textures.size).toBeGreaterThan(0);
+      expect(rttResources.geometries.size).toBeGreaterThan(0);
+      expect(rttResources.materials.size).toBeGreaterThan(0);
+      expect(rttResources.textures.size).toBeGreaterThan(0);
+      expect([...viewportResources.geometries].some((value) => rttResources.geometries.has(value))).toBe(false);
+      expect([...viewportResources.materials].some((value) => rttResources.materials.has(value))).toBe(false);
+      expect([...viewportResources.textures].some((value) => rttResources.textures.has(value))).toBe(false);
+
+      mountedScene.add(viewport, rtt);
+      mountedScene.remove(viewport);
+      disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, viewport);
+      viewportDisposed = true;
+      viewportDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+      rttDisposals.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+      expect(rtt.parent).toBe(mountedScene);
+      expect((reflectedProp as THREE.Mesh).geometry).toBe(reflectedPropGeometry);
+      expect(rttResources.geometries.has(reflectedPropGeometry)).toBe(true);
+      expect(rttDisposals.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+
+      mountedScene.remove(rtt);
+      disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, rtt);
+      rttDisposed = true;
+      rttDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    } finally {
+      if (!viewportDisposed) disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, viewport);
+      if (!rttDisposed) disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, rtt);
+      vi.restoreAllMocks();
+    }
+  });
+
   it("keeps the Interior Corner practical light in its subject object graph", () => {
     const group = createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
       presentation: INTERIOR_CORNER_PRESENTATION,
@@ -489,6 +625,10 @@ describe("static teaching scene asset migrations", () => {
       viewCameraAnatomyAsset,
       "createLessonZeroGroundGlassGroup",
     );
+    const mirrorShiftFactorySpy = vi.spyOn(
+      mirrorShiftAsset,
+      "createMirrorShiftAssetGroup",
+    );
 
     exerciseReplacement(
       ARCHITECTURE_RISE_ASSET_KEY,
@@ -553,6 +693,16 @@ describe("static teaching scene asset migrations", () => {
       "view-camera-anatomy-subject",
       "view-camera-anatomy",
     );
+    exerciseReplacement(
+      MIRROR_SHIFT_ASSET_KEY,
+      {
+        presentation: MIRROR_SHIFT_PRESENTATION,
+        representation: "rtt",
+      },
+      countFactoryCalls(mirrorShiftFactorySpy),
+      "mirror-shift-subject",
+      "mirror-shift",
+    );
   });
 
   it("keeps scene definitions and renderer-neutral presentations outside Three.js and asset implementation modules", () => {
@@ -575,6 +725,8 @@ describe("static teaching scene asset migrations", () => {
       "src/scenes/definitions/view-camera-anatomy.ts",
       "src/scenes/presentation/focusFundamentals.ts",
       "src/scenes/presentation/viewCameraAnatomy.ts",
+      "src/scenes/definitions/mirror-shift.ts",
+      "src/scenes/presentation/mirrorShift.ts",
     ];
 
     paths.forEach((path) => {

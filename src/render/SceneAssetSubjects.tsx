@@ -9,6 +9,7 @@ import {
   TABLE_TILT_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
 } from "./assets/sceneAssetRegistry";
@@ -25,6 +26,7 @@ import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCor
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
+import { MIRROR_SHIFT_PRESENTATION } from "../scenes/presentation/mirrorShift";
 
 type RegisteredAssetProps<K extends SceneAssetKey> = {
   assetKey: K;
@@ -70,6 +72,12 @@ const focusFundamentalsRequest = Object.freeze({
 });
 const viewCameraAnatomyRequest = Object.freeze({
   presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
+});
+const mirrorShiftViewportRequest: SceneAssetRequestMap[
+  typeof MIRROR_SHIFT_ASSET_KEY
+] = Object.freeze({
+  presentation: MIRROR_SHIFT_PRESENTATION,
+  representation: "viewport",
 });
 
 /** Interactive scene consumers share the exact registered factories used by RTT. */
@@ -127,5 +135,12 @@ export const ViewCameraAnatomySubject = () => (
   <RegisteredSceneAsset
     assetKey={VIEW_CAMERA_ANATOMY_ASSET_KEY}
     request={viewCameraAnatomyRequest}
+  />
+);
+
+export const MirrorShiftSubject = () => (
+  <RegisteredSceneAsset
+    assetKey={MIRROR_SHIFT_ASSET_KEY}
+    request={mirrorShiftViewportRequest}
   />
 );
