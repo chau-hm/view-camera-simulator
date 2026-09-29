@@ -136,7 +136,7 @@ type SceneSubjectRegistrationBase = {
 
 /** Scene-level integration delegates asset cleanup to the asset registry. */
 export type SceneSubjectRegistration = SceneSubjectRegistrationBase & {
-  disposeRttGroup?: (group: THREE.Group) => void;
+  disposeRttGroup: (group: THREE.Group) => void;
 };
 
 export type SceneSubjectRttOptions = {
@@ -488,5 +488,5 @@ export const disposeRegisteredRttSubject = (
   sceneId: string,
   group: THREE.Group,
 ): void => {
-  getSceneSubjectRegistration(sceneId)?.disposeRttGroup?.(group);
+  getSceneSubjectRegistration(sceneId)?.disposeRttGroup(group);
 };

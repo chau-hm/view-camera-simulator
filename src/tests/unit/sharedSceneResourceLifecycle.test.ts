@@ -26,6 +26,7 @@ import {
 import {
   getRegisteredSceneSubject,
   getSceneSubjectRegistration,
+  type SceneSubjectRegistration,
 } from "../../render/sceneSubjectRegistry";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
@@ -196,6 +197,22 @@ const createGroundGlassContext = (scene: SceneDefinition) => ({
   cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
   presentationRegion: "whole" as const,
 });
+
+const assertSceneSubjectCleanupTypes = (): void => {
+  const validCleanup: SceneSubjectRegistration = {
+    SceneSubject: FocusFundamentalsSubject,
+    createRttGroup: () => new THREE.Group(),
+    disposeRttGroup: () => undefined,
+  };
+  // @ts-expect-error Scene subject registrations require explicit RTT cleanup.
+  const missingCleanup: SceneSubjectRegistration = {
+    SceneSubject: FocusFundamentalsSubject,
+    createRttGroup: () => new THREE.Group(),
+  };
+  void validCleanup;
+  void missingCleanup;
+};
+void assertSceneSubjectCleanupTypes;
 
 describe("module-shared scene subject resource lifecycle", () => {
   for (const candidate of sharedResourceCandidates) {
