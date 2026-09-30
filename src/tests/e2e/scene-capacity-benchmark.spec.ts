@@ -11,6 +11,7 @@ import type {
   SceneCapacitySnapshot,
   SceneGraphCapacityMetrics,
 } from "../../render/sceneCapacityProfiling";
+import type { VisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
 import {
   classifyGraphicsBackend,
   type GraphicsBackendQualification,
@@ -84,6 +85,7 @@ type BenchmarkEnvironment = {
   userAgent: string;
   devicePixelRatio: number;
   webgl: { vendor: string | null; renderer: string | null };
+  visualPipeline: VisualPipelineCapabilities;
   profilingBackend: string | null;
   timingUnit: string | null;
   hardwareQualification: GraphicsBackendQualification & { required: boolean };
@@ -412,6 +414,18 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
   if (!profilingSnapshot) {
     throw new Error("Scene capacity benchmark could not read profiling metadata after the simulator canvas mounted");
   }
+  const visualPipeline = capacitySnapshot?.visualPipeline;
+  if (!visualPipeline) {
+    throw new Error("Scene capacity benchmark could not read the mounted renderer capability contract");
+  }
+  if (visualPipeline.activeRendererBackend !== "webgl") {
+    throw new Error(
+      `Scene capacity benchmark requires the current WebGL application backend; detected ${visualPipeline.activeRendererBackend}`,
+    );
+  }
+  if (visualPipeline.webgpuApplicationBackend.status !== "inactive") {
+    throw new Error("Scene capacity benchmark observed an unsupported active WebGPU application backend");
+  }
   const browserInfo = await page.evaluate(() => {
     const canvas = document.querySelector("canvas");
     const context = (
@@ -444,6 +458,7 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
     timestamp: new Date().toISOString(),
     viewport: { width: 1440, height: 1000 },
     browserName,
+    visualPipeline,
     profilingBackend: profilingSnapshot.profilingBackend,
     timingUnit: profilingSnapshot.timingUnit,
     hardwareQualification: {
@@ -497,6 +512,7 @@ const markdownSummary = (
     : environment.profilingBackend === "cpu-fallback"
       ? "unavailable — CPU fallback"
       : "unavailable";
+  const visualPipeline = environment.visualPipeline;
   return [
     "# Scene capacity benchmark",
     "",
@@ -506,11 +522,21 @@ const markdownSummary = (
     `Viewport: ${environment.viewport.width}×${environment.viewport.height}, DPR ${environment.devicePixelRatio}`,
     `WebGL vendor: ${environment.webgl.vendor ?? "unavailable"}`,
     `WebGL renderer: ${environment.webgl.renderer ?? "unavailable"}`,
+    `Ground Glass renderer backend: ${visualPipeline.activeRendererBackend}`,
+    `Ground Glass color render target: ${visualPipeline.colorRenderTarget.status}`,
+    `Shadow-map path: ${visualPipeline.shadowMaps.status} (${visualPipeline.shadowMaps.type})`,
+    `WebGPU application backend: ${visualPipeline.webgpuApplicationBackend.status}`,
     `Hardware renderer requirement: ${environment.hardwareQualification.required ? "required" : "not requested"}`,
     `Hardware renderer: ${hardwareRendererSummary}`,
     `GPU timer queries: ${gpuTimingSummary}`,
     `Profiling backend: ${environment.profilingBackend ?? "unavailable"}`,
     `Timing unit: ${environment.timingUnit ?? "unavailable"}`,
+    "",
+    "## Visual pipeline capability contract",
+    "",
+    "```json",
+    JSON.stringify(visualPipeline, null, 2),
+    "```",
     "",
     `Each record contains at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} fresh post-state samples after contentfulness and mode activation. Processed, Focus Loupe, and Raw RTT records use isolated state setup. WebGL metadata is collected after the first simulator canvas mounts.`,
     "Timings are same-session observations. GPU-query values are GPU milliseconds; CPU fallback values are CPU-submit milliseconds. Frame cadence is observed R3F frame cadence, not pure GPU execution time.",

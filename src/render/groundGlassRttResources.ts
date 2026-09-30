@@ -3,6 +3,7 @@ import {
   createGroundGlassCocTarget,
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
+import type { RendererCapabilities } from "./backend/rendererCapabilities";
 
 type GroundGlassRttRenderer = Pick<
   THREE.WebGLRenderer,
@@ -22,6 +23,7 @@ export type GroundGlassRttResources = {
   coc: {
     classificationTarget: THREE.WebGLRenderTarget;
     storageFormat: GroundGlassCocStorageFormat;
+    rendererCapabilities: RendererCapabilities;
   };
   gather: {
     farTarget: THREE.WebGLRenderTarget;
@@ -131,6 +133,7 @@ export const createGroundGlassRttResources = (input: {
       coc: {
         classificationTarget: coc.target,
         storageFormat: coc.storageFormat,
+        rendererCapabilities: coc.rendererCapabilities,
       },
       gather: { farTarget, nearTarget },
       composite: { outputTarget },
