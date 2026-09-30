@@ -86,6 +86,19 @@ describe("visual pipeline capability contract", () => {
     });
   });
 
+  it("reports the active Three.js tone-mapping mode instead of a generic configured flag", () => {
+    expect(
+      resolveVisualPipelineCapabilities(
+        renderer({ toneMapping: THREE.ACESFilmicToneMapping }),
+      )?.toneMappingExposure,
+    ).toMatchObject({
+      active: true,
+      toneMapping: "aces-filmic",
+      exposure: 1,
+      outputColorSpace: THREE.SRGBColorSpace,
+    });
+  });
+
   it("rejects unknown renderers and a WebGPU marker without an active WebGPU backend", () => {
     expect(
       resolveVisualPipelineCapabilities({ isWebGLRenderer: false }),

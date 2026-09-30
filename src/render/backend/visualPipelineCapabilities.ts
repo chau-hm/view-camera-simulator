@@ -33,7 +33,16 @@ export type VisualPipelineCapabilities = Readonly<{
     status: "available";
     backend: "webgl";
     active: boolean;
-    toneMapping: "none" | "configured" | "unknown";
+    toneMapping:
+      | "none"
+      | "linear"
+      | "reinhard"
+      | "cineon"
+      | "aces-filmic"
+      | "agx"
+      | "neutral"
+      | "custom"
+      | "unknown";
     exposure: number | null;
     outputColorSpace: string | null;
   }>;
@@ -71,6 +80,21 @@ const resolveShadowMapType = (
   return "unknown";
 };
 
+const resolveToneMapping = (
+  toneMapping: number | undefined,
+): VisualPipelineCapabilities["toneMappingExposure"]["toneMapping"] => {
+  if (toneMapping === undefined) return "unknown";
+  if (toneMapping === THREE.NoToneMapping) return "none";
+  if (toneMapping === THREE.LinearToneMapping) return "linear";
+  if (toneMapping === THREE.ReinhardToneMapping) return "reinhard";
+  if (toneMapping === THREE.CineonToneMapping) return "cineon";
+  if (toneMapping === THREE.ACESFilmicToneMapping) return "aces-filmic";
+  if (toneMapping === THREE.AgXToneMapping) return "agx";
+  if (toneMapping === THREE.NeutralToneMapping) return "neutral";
+  if (toneMapping === THREE.CustomToneMapping) return "custom";
+  return "unknown";
+};
+
 /**
  * Describes the renderer that is actually mounted and the visual paths in use
  * around it. The optional target result must come from the existing Ground
@@ -91,11 +115,7 @@ export const resolveVisualPipelineCapabilities = (
     : colorTargetCapabilities.colorRenderTargetRenderable
       ? "available"
       : "unavailable";
-  const toneMapping = typeof settings.toneMapping === "number"
-    ? settings.toneMapping === THREE.NoToneMapping
-      ? "none"
-      : "configured"
-    : "unknown";
+  const toneMapping = resolveToneMapping(settings.toneMapping);
 
   return {
     activeRendererBackend: backend,
@@ -124,7 +144,7 @@ export const resolveVisualPipelineCapabilities = (
     toneMappingExposure: {
       status: "available",
       backend,
-      active: toneMapping === "configured",
+      active: toneMapping !== "none" && toneMapping !== "unknown",
       toneMapping,
       exposure: Number.isFinite(settings.toneMappingExposure)
         ? settings.toneMappingExposure ?? null

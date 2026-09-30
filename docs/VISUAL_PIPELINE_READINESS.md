@@ -20,7 +20,7 @@ targets, the existing Ground Glass framebuffer probe.
 | Shadow maps | Active | Both R3F canvases enable shadows. `TeachingLighting` owns the PCF directional shadow settings and scene caster/receiver policy. |
 | Lit / PBR materials | Available on the current renderer; current scene assets use `MeshStandardMaterial` | Existing materials and lighting already exercise the lit path. `MeshPhysicalMaterial` remains a possible scene-asset choice. |
 | Environment lighting | Available, not active | The current renderer can support this presentation path; there is no shared environment-lighting setup today. |
-| Tone mapping / exposure | Available; current values are reported from the mounted renderer | Canvas configuration does not override tone mapping or output color space. The runtime report records the actual tone-mapping mode, exposure, and output color space. |
+| Tone mapping / exposure | ACES Filmic is active through the React Three Fiber default; exposure is 1 and output color space is sRGB | Canvas configuration does not override these values. The runtime report records the exact mode, exposure, and output color space from the mounted renderer. |
 | Global post-processing | Inactive | There is no application-wide post-processing stack. |
 | Ground Glass RTT / DOF | RTT active; custom DOF available on the processed path, both WebGL-coupled | Ground Glass owns a custom GLSL multipass path over its WebGL render-target bundle. |
 | WebGPU / TSL application backend | Inactive | Three.js containing a WebGPU renderer is not application support. `RendererBackend` remains WebGL-only. |
