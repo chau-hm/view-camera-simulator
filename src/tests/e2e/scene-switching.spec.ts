@@ -2,36 +2,44 @@ import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Page } from "@playwright/test";
 
 type SceneVisit = {
-  heading: string;
   sceneId: string;
 };
 
 const visits: SceneVisit[] = [
-  { heading: "Focus Fundamentals — Two Targets", sceneId: "focus-fundamentals-two-targets" },
-  { heading: "Architecture Rise", sceneId: "architecture-rise" },
-  { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
-  { heading: "Table Tilt", sceneId: "table-tilt" },
-  { heading: "Shelf Swing", sceneId: "shelf-swing" },
-  { heading: "Oblique Architecture", sceneId: "oblique-architecture" },
-  { heading: "Oblique Tabletop", sceneId: "oblique-tabletop" },
-  { heading: "Mirror Shift", sceneId: "mirror-shift" },
-  { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
-  { heading: "Architecture Rise", sceneId: "architecture-rise" },
+  { sceneId: "architecture-rise" },
+  { sceneId: "focus-fundamentals-two-targets" },
+  { sceneId: "mirror-shift" },
+  { sceneId: "macro-bellows-extension" },
+  { sceneId: "understanding-camera-movements" },
+  { sceneId: "view-camera-anatomy" },
+  { sceneId: "table-tilt" },
+  { sceneId: "macro-depth-of-field" },
+  { sceneId: "architecture-foreground" },
+  { sceneId: "interior-corner" },
+  { sceneId: "macro-oblique-plane" },
+  { sceneId: "oblique-architecture" },
+  { sceneId: "macro-compound-movements" },
+  { sceneId: "shelf-swing" },
+  { sceneId: "oblique-tabletop" },
 ];
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
 const openPublicScene = async (page: Page, visit: SceneVisit) => {
-  const card = page
-    .getByRole("article")
-    .filter({ has: page.getByRole("heading", { name: visit.heading }) });
-  await card.getByRole("link", { name: "Open Scene" }).click();
-  await expect(page).toHaveURL(new RegExp(`/simulator/free/${visit.sceneId}$`));
+  const route = visit.sceneId === "view-camera-anatomy"
+    ? `/simulator/free/${visit.sceneId}?lesson=1`
+    : `/simulator/free/${visit.sceneId}`;
+  const link = page.locator(`a[href="${route}"]`);
+  await expect(link).toHaveCount(1);
+  await link.click();
+  await expect(page).toHaveURL(
+    new RegExp(`/simulator/free/${visit.sceneId}(?:\\?.*)?$`),
+  );
 };
 
 test("public SPA scene switching keeps one current scene and its RTT renderer channels without reloads", async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(480_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));

@@ -1,4 +1,5 @@
 import { act, cleanup, render } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import {
@@ -633,6 +634,39 @@ describe("Camera Movements subject factory", () => {
     first.unmount();
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     consoleError.mockRestore();
+  });
+
+  it("pairs Strict Mode dynamic asset creation with one registered disposer", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+    fiberTestState.scene = new THREE.Scene();
+    const factory = vi.spyOn(cameraMovementLatticeAsset, "createCameraMovementsGroup");
+    const disposer = vi.spyOn(cameraMovementLatticeAsset, "disposeCameraMovementsGroup");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const view = render(
+      <StrictMode>
+        <CameraMovementsSubject />
+      </StrictMode>,
+    );
+    consoleError.mockRestore();
+
+    const createdGroups = factory.mock.results
+      .filter((result) => result.type === "return")
+      .map((result) => result.value as THREE.Group);
+    expect(createdGroups.length).toBeGreaterThan(1);
+
+    view.unmount();
+
+    const disposedGroups = disposer.mock.calls.map(([group]) => group);
+    expect(disposedGroups).toHaveLength(createdGroups.length);
+    createdGroups.forEach((group) => {
+      expect(disposedGroups.filter((disposedGroup) => disposedGroup === group)).toHaveLength(1);
+      expect(group.userData.resourcesDisposed).toBe(true);
+    });
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
   });
 
   it("renders the subject component without errors", () => {

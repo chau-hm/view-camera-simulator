@@ -1,8 +1,10 @@
 import { cleanup, render } from "@testing-library/react";
+import { StrictMode } from "react";
 import type { ComponentType } from "react";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  ArchitectureRiseSubject,
   MirrorShiftSubject,
   ShelfSwingSubject,
 } from "../../render/SceneAssetSubjects";
@@ -15,13 +17,19 @@ import {
   sceneSubjectRegistry,
 } from "../../render/sceneSubjectRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { getAvailablePublicSceneEntries } from "../../app/publicScenes";
+import {
+  getAvailablePublicSceneEntries,
+  publicSceneIds,
+  type PublicSceneId,
+} from "../../app/publicScenes";
+import { scenePublication } from "../../config/scenePublication";
+import { getAllScenes } from "../../scenes/definitions";
 import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/assets/CameraMovementLatticeAsset";
-import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
+import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
 import {
   mirrorShiftGeometry,
   reflectPointAcrossMirrorPlane,
@@ -41,6 +49,7 @@ import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory"
 import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
 import * as mirrorShiftAsset from "../../render/MirrorShiftSubjectFactory";
 import {
+  CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   ARCHITECTURE_RISE_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
@@ -56,6 +65,8 @@ import {
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
   resolveSceneAsset,
+  sceneAssetRegistry,
+  type SceneAssetKey,
 } from "../../render/assets/sceneAssetRegistry";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
@@ -82,6 +93,24 @@ import * as macroBellowsExtensionAsset from "../../render/MacroSpecimenSubjectFa
 import * as macroDepthOfFieldAsset from "../../render/MacroDepthOfFieldSubjectFactory";
 import * as macroObliquePlaneAsset from "../../render/MacroObliquePlaneSubjectFactory";
 import * as macroCompoundMovementsAsset from "../../render/MacroCompoundMovementsSubjectFactory";
+
+const publicSceneAssetSlots = {
+  "view-camera-anatomy": VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  "understanding-camera-movements": CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+  "focus-fundamentals-two-targets": FOCUS_FUNDAMENTALS_ASSET_KEY,
+  "architecture-rise": ARCHITECTURE_RISE_ASSET_KEY,
+  "table-tilt": TABLE_TILT_ASSET_KEY,
+  "shelf-swing": SHELF_SWING_ASSET_KEY,
+  "oblique-tabletop": OBLIQUE_TABLETOP_ASSET_KEY,
+  "mirror-shift": MIRROR_SHIFT_ASSET_KEY,
+  "oblique-architecture": OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  "architecture-foreground": ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  "interior-corner": INTERIOR_CORNER_ASSET_KEY,
+  "macro-bellows-extension": MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  "macro-depth-of-field": MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  "macro-oblique-plane": MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  "macro-compound-movements": MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+} as const satisfies Record<PublicSceneId, SceneAssetKey>;
 
 afterEach(() => {
   cleanup();
@@ -121,6 +150,46 @@ const boardFootprintsSeparated = (first: BoardFootprint, second: BoardFootprint)
   Math.abs(first.center.z - second.center.z) >= (first.depth + second.depth) / 2;
 
 describe("scene subject registry", () => {
+  it("keeps public scenes, RTT subjects, and typed asset slots complete and aligned", () => {
+    const publicIds = [...publicSceneIds].sort();
+    const publishedIds = Object.entries(scenePublication)
+      .filter(([, published]) => published)
+      .map(([sceneId]) => sceneId)
+      .sort();
+    const availableIds = getAvailablePublicSceneEntries()
+      .map(({ meta }) => meta.id)
+      .sort();
+    const definedSceneIds = new Set(getAllScenes().map(({ id }) => id));
+
+    expect(publishedIds).toEqual(publicIds);
+    expect(availableIds).toEqual(publicIds);
+    expect([...RTT_SCENES].sort()).toEqual(publicIds);
+    expect(Object.keys(sceneSubjectRegistry).sort()).toEqual(publicIds);
+    expect(Object.keys(publicSceneAssetSlots).sort()).toEqual(publicIds);
+    expect(Object.values(publicSceneAssetSlots).sort()).toEqual(
+      Object.keys(sceneAssetRegistry).sort(),
+    );
+    publicIds.forEach((sceneId) => expect(definedSceneIds.has(sceneId)).toBe(true));
+
+    const implementationIds: string[] = [];
+    for (const sceneId of publicSceneIds) {
+      const assetKey = publicSceneAssetSlots[sceneId];
+      const registration = resolveSceneAsset(assetKey);
+      implementationIds.push(registration.implementationId);
+
+      const group = createRegisteredRttSubject(sceneId);
+      try {
+        expect(group, `public scene ${sceneId} must construct an RTT group`).not.toBeNull();
+        expect(group?.userData.assetImplementationId).toBe(
+          registration.implementationId,
+        );
+      } finally {
+        if (group) disposeRegisteredRttSubject(sceneId, group);
+      }
+    }
+    expect(new Set(implementationIds).size).toBe(publicSceneIds.length);
+  });
+
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
       "macro-bellows-extension",
@@ -146,6 +215,31 @@ describe("scene subject registry", () => {
     expect(getSceneSubjectRegistration("not-a-scene")).toBeUndefined();
     expect(getRegisteredSceneSubject("not-a-scene")).toBeUndefined();
     expect(createRegisteredRttSubject("not-a-scene")).toBeNull();
+  });
+
+  it("pairs every Strict Mode interactive asset creation with one registered disposer", () => {
+    const factory = vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup");
+    const disposer = vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const view = render(
+      <StrictMode>
+        <ArchitectureRiseSubject />
+      </StrictMode>,
+    );
+    consoleError.mockRestore();
+
+    const createdGroups = factory.mock.results
+      .filter((result) => result.type === "return")
+      .map((result) => result.value as THREE.Group);
+    expect(createdGroups.length).toBeGreaterThan(1);
+
+    view.unmount();
+
+    const disposedGroups = disposer.mock.calls.map(([group]) => group);
+    expect(disposedGroups).toHaveLength(createdGroups.length);
+    createdGroups.forEach((group) => {
+      expect(disposedGroups.filter((disposedGroup) => disposedGroup === group)).toHaveLength(1);
+    });
   });
 
   it("registers the Lesson 0 subject with canonical RTT bounds", () => {

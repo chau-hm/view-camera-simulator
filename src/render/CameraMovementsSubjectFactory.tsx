@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { useRefreshTeachingShadowParticipation } from "./TeachingLighting";
 import { resolveCameraMovementLatticePresentation } from "../scenes/presentation/understandingCameraMovements";
 import type {
   CameraMovementPresentationRegion,
@@ -136,15 +137,23 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   const presentation = resolveCameraMovementLatticePresentation(
     effectiveCalibration,
   );
-  const group = useMemo(
-    () =>
-      createCameraMovementLatticeAsset(
-        cameraMovementsGroupOptionsFromPresentation(presentation),
-      ),
-    [presentation],
-  );
+  const [group, setGroup] = useState<THREE.Group | null>(null);
+  const refreshShadowParticipation = useRefreshTeachingShadowParticipation();
+
+  useLayoutEffect(() => {
+    const nextGroup = createCameraMovementLatticeAsset(
+      cameraMovementsGroupOptionsFromPresentation(presentation),
+    );
+    setGroup(nextGroup);
+    return () => disposeCameraMovementLatticeAsset(nextGroup);
+  }, [presentation]);
+
+  useLayoutEffect(() => {
+    if (group) refreshShadowParticipation();
+  }, [group, refreshShadowParticipation]);
 
   useEffect(() => {
+    if (!group) return;
     applyCameraMovementsGroupStyle(
       group,
       presentation.presentation,
@@ -154,15 +163,15 @@ export const CameraMovementsSubject: React.FC<CameraMovementsSubjectProps> = ({
   }, [group, presentation, presentationTargetRegion]);
 
   useEffect(() => {
+    if (!group) return;
     const runtimeInfo =
       publishAttachedInteractiveLatticeRuntime(group, r3fScene);
     onGroupChangeRef.current?.(group);
     return () => {
-      disposeCameraMovementLatticeAsset(group);
       clearInteractiveLatticeRuntime(runtimeInfo);
       onGroupChangeRef.current?.(null);
     };
   }, [group, r3fScene]);
 
-  return <primitive object={group} dispose={null} />;
+  return group ? <primitive object={group} dispose={null} /> : null;
 };
