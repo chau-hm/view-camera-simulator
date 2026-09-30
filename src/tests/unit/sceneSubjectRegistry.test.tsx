@@ -2,7 +2,10 @@ import { cleanup, render } from "@testing-library/react";
 import type { ComponentType } from "react";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MirrorShiftSubject, ShelfSwingSubject } from "../../render/SceneAssetSubjects";
+import {
+  MirrorShiftSubject,
+  ShelfSwingSubject,
+} from "../../render/SceneAssetSubjects";
 import {
   ArchitectureRiseRegisteredSubject,
   createRegisteredRttSubject,
@@ -48,6 +51,10 @@ import {
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
   MIRROR_SHIFT_ASSET_KEY,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
   resolveSceneAsset,
 } from "../../render/assets/sceneAssetRegistry";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
@@ -57,12 +64,24 @@ import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation/macroCompoundMovements";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
+import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
+import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
+import { macroObliquePlaneScene } from "../../scenes/definitions/macro-oblique-plane";
+import { macroCompoundMovementsScene } from "../../scenes/definitions/macro-compound-movements";
+import * as macroBellowsExtensionAsset from "../../render/MacroSpecimenSubjectFactory";
+import * as macroDepthOfFieldAsset from "../../render/MacroDepthOfFieldSubjectFactory";
+import * as macroObliquePlaneAsset from "../../render/MacroObliquePlaneSubjectFactory";
+import * as macroCompoundMovementsAsset from "../../render/MacroCompoundMovementsSubjectFactory";
 
 afterEach(() => {
   cleanup();
@@ -234,6 +253,34 @@ describe("scene subject registry", () => {
         factory: vi.spyOn(obliqueTabletopAsset, "createObliqueTabletopGroup"),
         disposer: vi.spyOn(obliqueTabletopAsset, "disposeObliqueTabletopGroup"),
       },
+      {
+        scene: macroBellowsExtensionScene,
+        assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+        presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION,
+        factory: vi.spyOn(macroBellowsExtensionAsset, "createMacroSpecimenGroup"),
+        disposer: vi.spyOn(macroBellowsExtensionAsset, "disposeMacroSpecimenGroup"),
+      },
+      {
+        scene: macroDepthOfFieldScene,
+        assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+        presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION,
+        factory: vi.spyOn(macroDepthOfFieldAsset, "createMacroDepthOfFieldGroup"),
+        disposer: vi.spyOn(macroDepthOfFieldAsset, "disposeMacroDepthOfFieldGroup"),
+      },
+      {
+        scene: macroObliquePlaneScene,
+        assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
+        presentation: MACRO_OBLIQUE_PLANE_PRESENTATION,
+        factory: vi.spyOn(macroObliquePlaneAsset, "createMacroObliquePlaneGroup"),
+        disposer: vi.spyOn(macroObliquePlaneAsset, "disposeMacroObliquePlaneGroup"),
+      },
+      {
+        scene: macroCompoundMovementsScene,
+        assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+        presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
+        factory: vi.spyOn(macroCompoundMovementsAsset, "createMacroCompoundMovementsGroup"),
+        disposer: vi.spyOn(macroCompoundMovementsAsset, "disposeMacroCompoundMovementsGroup"),
+      },
     ];
 
     candidates.forEach(({ scene, assetKey, presentation, factory, disposer }) => {
@@ -246,9 +293,15 @@ describe("scene subject registry", () => {
       const rttGroup = createRegisteredRttSubject(scene.id);
 
       expect(rttGroup).toBeInstanceOf(THREE.Group);
+      const interactiveGroup = factory.mock.results[0]?.value as THREE.Group;
+      expect(interactiveGroup).toBeInstanceOf(THREE.Group);
+      expect(interactiveGroup).not.toBe(rttGroup);
       expect(factory).toHaveBeenCalledTimes(2);
       expect(factory.mock.calls[0]?.[0]?.presentation).toBe(presentation);
       expect(factory.mock.calls[1]?.[0]?.presentation).toBe(presentation);
+      expect(interactiveGroup.userData.assetImplementationId).toBe(
+        resolveSceneAsset(assetKey).implementationId,
+      );
       expect(rttGroup?.userData.assetImplementationId).toBe(
         resolveSceneAsset(assetKey).implementationId,
       );
