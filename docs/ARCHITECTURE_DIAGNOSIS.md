@@ -2,9 +2,11 @@
 
 > **Audit status:** Completed focused post-#204 delta refresh. The initial diagnosis remains traceable to its original snapshot; affected conclusions below now describe refreshed `main`.
 
+> **Scene-asset status refresh (SA7):** The diagnosis below began before the SA1–SA6A migrations. Section 14, S1, and the ownership summaries now reflect the final source audit against the post-#220 base `dadd3d77177866bbe342473acd8148d0daf4711d`: all 15 cataloged/implemented public scenes have typed asset slots, and interactive/RTT consumers resolve the same registered factory. All 15 are enabled in the current SA7 snapshot; `scenePublication` remains an independent kill switch, not an architecture-completeness requirement. Renderer-backend and lighting/material findings remain separate and unchanged.
+
 ## 1. Scope and repository snapshot
 
-This is a read-only architecture audit initially pinned after PR #202, followed by a focused delta review of PR #204. It examines scene ownership, camera assembly, canonical optics, lens coverage, Ground Glass, coordinate conversions, global overlays, renderer boundaries, tests, WebGPU readiness, and readiness for more detailed lighting and materials. No runtime or test files were changed for this audit or refresh.
+This document records a read-only architecture audit initially pinned after PR #202, followed by a focused delta review of PR #204. Its scope includes scene ownership, camera assembly, canonical optics, lens coverage, Ground Glass, coordinate conversions, global overlays, renderer boundaries, tests, WebGPU readiness, and readiness for more detailed lighting and materials. Later architecture migrations are recorded as source-status updates below; this document's original diagnosis did not change runtime or test files.
 
 | Item | Value |
 |---|---|
@@ -34,16 +36,16 @@ Neither correction required rewriting canonical optics or the camera assembly bo
 | Question | Diagnosis |
 |---|---|
 | **Camera** | **Mostly self-contained with defined exceptions.** The simulator owns a shared rig-placement root and local camera-part hierarchy; current and ghost cameras use the same renderer. The calibrated camera-movement rail and anatomy presentation are deliberate inputs. |
-| **Scenes** | Scene definition, publication, tasks, subject registration, and renderer policy are distinct systems. The boundary is healthy, with scene-ID dispatch spread across a few domain and presentation modules. Registered subjects are executable renderer code, so the contract prevents direct access to canonical camera state by convention rather than type isolation. |
+| **Scenes** | Scene definition, publication, tasks, scene-level RTT integration, and typed asset slots are distinct systems. All 15 cataloged/implemented public scenes map to registered assets, with interactive and RTT consumers resolving the same factory; all 15 happen to be published in the current SA7 snapshot. Scene-ID dispatch remains spread across domain and renderer modules; executable subjects still rely on API boundaries and review to stay out of canonical camera authority. |
 | **Optics** | One canonical `deriveOpticsState` path supplies the important physical planes, coverage, focus metrics, and camera geometry. React and renderer code adapt that state. Scene-specific physical strategies are intentional; a cache key omission around Mirror Shift lesson state is a latent exception. |
 | **Ground Glass** | `deriveOpticsState()` supplies canonical lens/film/aperture geometry and physical focus state. The active RTT reconstructs per-pixel world position and derives signed CoC / local-affine footprint from those inputs, then maps millimetres through sampled-film dimensions into source pixels before gather/composite. There is no normal-view teaching gain. Crop, gather cap, quality, storage, and Raw/Upright presentation remain renderer concerns; the active path is Three.js/WebGL-coupled, and a renderer DOF hint still enters optics diagnostics. |
 | **Coordinates** | The highest-risk coordinate chain is world millimetres → rear-standard film basis → RTT source UV → WebGL texture sampling → Raw/Upright display transform → CSS top-origin interactions. The conversions are mostly explicit and tested. Misleading `*World` field names inside rig-local camera geometry are a smaller naming hazard. |
 | **Global features** | Shared coverage and focus features are derived from canonical state; visibility is controlled separately. The four published lens choices have finite explicit catalog profiles, and Mirror Shift 120 mm now demonstrates finite coverage through the shared canonical pipeline without a scene-specific override. |
-| **Renderer** | The highest migration risk is Ground Glass: an inner R3F Canvas owns a direct WebGL render-target and custom GLSL multipass pipeline, with no backend selection seam. Observer and Ground Glass also construct separate subject representations. |
+| **Renderer** | The highest migration risk is Ground Glass: an inner R3F Canvas owns a direct WebGL render-target and custom GLSL multipass pipeline, with no backend selection seam. Observer and Ground Glass construct separate Object3D graphs but use the same registered asset implementation; Camera Movement and Mirror Shift retain scene-specific runtime adapters. |
 | **WebGPU** | Ground Glass remains the highest backend-specific risk. Complete a focused DOF/Focus Physics Convergence diagnosis before backend work can freeze historical scene-specific semantics into multiple backends; then define and test pass/resource and physical film/UV contracts. No broad canonical optics rewrite is indicated. |
 | **Realistic visuals** | Wait to increase scene detail until the R3F/RTT subject parity, lighting placement, and material ownership are deliberate. Current simple educational visuals do not justify a wholesale scene or camera rewrite. |
 
-The refreshed diagnosis retains **1 Must-fix-before-WebGPU finding, 2 Should-fix-before-realistic-expansion findings, and 4 small cleanup findings**. The resolved blur and lens-catalog issues are not architecture findings.
+The original #204 refresh recorded **1 Must-fix-before-WebGPU finding, 2 Should-fix-before-realistic-expansion findings, and 4 small cleanup findings**. S1 is now resolved by SA1–SA6A and the SA7 completeness audit; current scene-asset status is **1 remaining Must-fix-before-WebGPU finding, 1 Should-fix-before-realistic-expansion finding, and 4 small cleanup findings**. The resolved blur and lens-catalog issues are not architecture findings.
 
 ## 4. Current ownership map
 
@@ -52,7 +54,7 @@ The refreshed diagnosis retains **1 Must-fix-before-WebGPU finding, 2 Should-fix
 | Scene identity, copy, bounds, focus/composition targets, preset | `SceneDefinition` in `src/types/scene.ts`; concrete values in `src/scenes/definitions/*.ts` | Declarative | Yes, through targets, presets, bounds, and finite-focus strategy | Yes, framing and subject adaptation | Healthy contract; some later dispatch still keys on scene ID |
 | Public availability, route mode, task/lesson metadata | `src/app/publicScenes.ts`, `src/config/scenePublication.ts`, task registry and `src/app/guidedLesson.ts` | Declarative plus route/evaluation code | Task initial camera state can affect derived optics | Controls, navigation, evaluation | Separate registration gates; new scene must be added consistently |
 | Movement/focus/lens/rig capabilities and control policy | Optional fields on `SceneDefinition` | Declarative, consumed by store/UI/core | Yes for enabled physical movement/focus geometry; focal length changes lens profile | Yes for control availability/locks | Movement capability also carries UI presentation (`hideUnavailableControls`, `selectionMode`) |
-| Subject geometry | `sceneSubjectRegistry` in `src/render/sceneSubjectRegistry.tsx` | Executable React subject and imperative RTT factory | No direct canonical-optics mutation in the current contract | Yes, observer and Ground Glass subject graphs | Separate executable representations can drift |
+| Subject geometry and asset construction | `sceneSubjectRegistry` for scene integration; `sceneAssetRegistry` for typed asset slot, implementation, and lifecycle | Renderer-neutral presentations feed registered React/R3F and imperative RTT consumers | No direct canonical-optics mutation in the current contract | Yes, separate observer and Ground Glass Object3D graphs | Asset factory/lifecycle parity is explicit; scene-specific integration still spans subject/profile modules |
 | Scene-specific RTT framing, lights, shadows, bounds | `sceneSubjectRegistry` plus `groundGlassSceneProfiles.ts` | Executable renderer configuration | No direct optical formula authority | Yes | Explicit but distributed across two renderer maps |
 | Camera physical state | `CameraState` and store/actions | State | Yes; input to canonical derivation | Yes, through derived state | Custom lesson state and presentation flags share the broad state container |
 | Camera geometry and optical quantities | `deriveOpticsState` and helpers in `src/core/optics` | Deterministic domain calculation | Authoritative | Indirectly, through consumers | Healthy central authority; special-case branches and one latent selector-key gap |
@@ -62,7 +64,7 @@ The refreshed diagnosis retains **1 Must-fix-before-WebGPU finding, 2 Should-fix
 | Ground Glass pixel pipeline and display interactions | `GroundGlassRTT`, shaders, `GroundGlassStage` | Executable renderer and UI | Does not update canonical physical optics | Yes | Direct physical mm-to-sampled-film-pixel mapping is explicit; pass/resource ownership remains tightly coupled to WebGL |
 | Optical overlay visibility | `appStore.ui.showOpticalGeometry`, task initial state, overlay props | UI state | No | Yes | Generally distinct from capability; lesson can hide presentation |
 | Diagnostics | canonical `DerivedOpticsState.diagnostics`, RTT runtime info, `?rttDiagnostics=1` | Domain and renderer telemetry | Some are diagnostic summaries only | Yes | RTT telemetry is useful; one renderer-selected DOF hint crosses into optics diagnostics |
-| Asset metadata | `SceneDefinition.assets` and preload helpers | Declarative metadata | No | Intended to; current `SceneAssetMesh` returns `null` | Names overstate current executable asset boundary; registered subjects draw current geometry |
+| Asset metadata | `SceneDefinition.assets` and preload helpers | Declarative metadata | No | Intended to; current `SceneAssetMesh` returns `null` | This preload metadata is separate from the executable typed scene asset boundary; registered subjects construct current visible geometry |
 
 ### What a scene can and cannot do
 
@@ -72,7 +74,7 @@ The refreshed diagnosis retains **1 Must-fix-before-WebGPU finding, 2 Should-fix
 4. **Presentation-only inputs** include observer `cameraPlacement`/`cameraInspectionPlacement`, geometry-view profile, overlay toggles, subject/light placement, and camera anatomy presentation overrides. They do not change the physical camera/film state.
 5. A scene cannot directly position camera subparts through its subject registration: the current registered subject API receives scene and subject options, not `CameraState` or `DerivedOpticsState`. However, this is a convention enforced by API shape, not a sandbox around executable React/Three code.
 6. No current scene subject changes Ground Glass physical semantics. Scene settings can select a Ground Glass DOF presentation/model hint, clipping/framing, lighting, shadow participation, and subject; canonical physical coverage still comes from `DerivedOpticsState`.
-7. Missing scene configuration does not set canonical coverage geometry or silently turn off an overlay. It can affect control defaults or cause registration/RTT omissions. `sceneSubjectRegistry.test.tsx` requires every available public scene to have an RTT scene entry, React subject, and RTT factory, reducing that omission risk.
+7. Missing scene configuration does not set canonical coverage geometry or silently turn off an overlay. It can affect control defaults or cause registration/RTT omissions. The scene-subject completeness regression cross-checks implementation sets (cataloged public scenes, definitions, RTT IDs, subject registrations, and the public scene-to-asset-slot map); publication is validated separately as a configurable subset. The test then creates each RTT asset through its registered implementation.
 
 The boundary is therefore **strong enough to prevent the common accidental coupling** (a scene cannot adjust the camera assembly through current public scene APIs), but not enough to make scene additions a single-file operation. A new public scene is intentionally registered in multiple maps and validated across them.
 
@@ -282,7 +284,7 @@ The RTT path directly creates `THREE.WebGLRenderTarget` and `THREE.ShaderMateria
 
 `GroundGlassRTT` explicitly allocates/disposes its render targets, shader materials, geometry and profiler; registered scene profiles mount/dispose scene RTT groups. That ownership should be preserved. Resource/resize generation and RTT runtime info make failures observable. The format selector can be forced through encoded-byte behavior in unit tests, which is valuable for exercising fallback.
 
-`GroundGlassRenderer` still contains a non-RTT pipeline/postprocess route, while all 15 currently public scenes are in `RTT_SCENES`. Treat that alternate route as a compatibility/fallback implementation until its actual reachability is established; it is a second place to check for projection and DOF drift if it remains supported.
+`GroundGlassRenderer` still contains a non-RTT pipeline/postprocess route, while all 15 currently cataloged/implemented public scenes are in `RTT_SCENES`. Publication state is independent of this implementation coverage. Treat that alternate route as a compatibility/fallback implementation until its actual reachability is established; it is a second place to check for projection and DOF drift if it remains supported.
 
 The active RTT camera is configured from the physical film corners and lens center. `DerivedOpticsState` also contains an off-axis projection matrix consumed by the older pipeline. This is a renderer adaptation duplication, not evidence of conflicting optics today. Audit it only if the older path is retained or a visible mismatch appears.
 
@@ -327,9 +329,9 @@ Current scene subjects have no route to mutate shared camera parts. No scene can
 
 ## 14. Scene subject and asset boundary
 
-`sceneSubjectRegistry.tsx` maps each scene ID to both a React `SceneSubject` and imperative `createRttGroup`, optionally with RTT disposer/bounds, lighting, reference-camera policy, and lattice metadata. `groundGlassSceneProfiles.ts` adds subject mounting, per-scene RTT options, shadow participation, and render-bound resolution. Sharing registry identity/options is useful, but the observer and RTT do not share one object graph; they often use parallel subject factories or common lower-level geometry/resources. Focus Fundamentals and selected macro/camera-movement scenes have specific shared-resource/auto-dispose handling.
+`sceneSubjectRegistry.tsx` maps each scene ID to its React `SceneSubject`, RTT factory adapter, and required RTT cleanup callback, plus scene-level bounds, lighting, reference-camera policy, or lattice metadata where needed. `sceneAssetRegistry.ts` owns each typed asset slot, implementation, create function, and resource-lifetime policy. `groundGlassSceneProfiles.ts` adds subject mounting, per-scene RTT options, shadow participation, and render-bound resolution. All 15 cataloged/implemented public scenes map to a registered asset implementation; all 15 are currently published in the SA7 snapshot, but publication may change independently. Static interactive and RTT consumers call the same registered factory and own separate Object3D graphs.
 
-That is an intentional renderer adapter split today because the observer is R3F-managed and the RTT subject is mounted imperatively into an offscreen Three.js scene. It carries parity and disposal complexity, but the registry makes ownership explicit, and the test suite checks exact registry keys, public-scene completeness, geometry placement, and disposer behavior. Do not try to make both views share one Three object instance across separate scenes.
+That separate-graph model is intentional because the observer is R3F-managed and the RTT subject is mounted imperatively into an offscreen Three.js scene. Asset factory parity and disposal policy are explicit and tested. Camera Movement retains its dynamic calibration/lesson runtime and RTT mount/update lifecycle; Mirror Shift retains its registered viewport/RTT representations and scene-specific reflection updater. These are scene integration behaviors, not alternate asset-factory paths. Do not make both views share one Three object instance across separate scenes.
 
 `SceneDefinition.assets` exposes model/helper asset source and loading metadata, but current `SceneAssetMesh` returns `null` for listed IDs. Current visible environment geometry is provided by procedural registered subjects. Thus assets are currently preload/failure/compatibility metadata rather than the authoritative geometry source. This is a naming and ownership clarity issue before a future asset-heavy scene, not a current runtime defect.
 
@@ -339,7 +341,7 @@ The observer view uses shared `TeachingLighting` and a global placement resolver
 
 Materials are partly centralized in `TeachingMaterials.ts`/`TeachingTextures.ts`, but procedural subject modules still select their own materials and textures. Camera parts define camera-specific materials inside `ConceptualViewCamera.tsx`; macro materials and subject-local construction are distributed. This is adequate for the current simple teaching look, but ownership does not yet provide a complete scene look/material package or strict viewport/RTT parity.
 
-**Readiness:** Lighting is clear enough for the current illustrative scenes, not yet clean enough for a broad realism pass. More shadows/textures/material variants now would multiply differences between the observer and RTT representations. Before expanding visual complexity, define a small per-scene look contract and make the registered subject/lighting/material ownership and disposal behavior explicit across both render paths. This should not block the WebGPU migration itself and need not add photorealism.
+**Readiness:** Lighting is clear enough for the current illustrative scenes, not yet clean enough for a broad realism pass. More shadows/textures/material variants now would multiply differences between observer and RTT integration. Asset-factory parity and resource ownership are explicit; scene lighting placement, shadows, and material choices still span subject/profile modules. Define a small per-scene look contract before visual expansion. This should not block the WebGPU migration itself and need not add photorealism.
 
 ## 16. 2D Geometry and UI/readout boundaries
 
@@ -446,8 +448,8 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 | Ground Glass presentation pipeline | Needs boundary cleanup | No global teaching multiplier remains; crop, quality, byte storage, gather caps and display transforms remain renderer-owned, and Shelf Swing's model hint still crosses into diagnostics |
 | Coordinate transforms | Healthy with exceptions | Helpers and asymmetric tests exist; several conversions cross core/Three/WebGL/CSS and legacy local fields are mislabeled |
 | Global optical overlays | Healthy | Consume canonical state; visibility policy remains distinct |
-| Scene subject registration | Needs boundary cleanup | Explicit registration and disposer/test contracts, but parallel React/imperative subject graphs can drift |
-| Asset boundary | Healthy with exceptions | Typed metadata/preload contract, but current `SceneAssetMesh` does not draw the listed assets |
+| Scene subject registration | Healthy with distributed integration policy | Required subject cleanup and a completeness contract; separate React/RTT Object3D graphs use the same registered asset factory |
+| Asset boundary | Healthy | Typed asset slots, request/factory relationships, lifecycle classes, and immutable implementations cover all 15 cataloged/implemented public scenes; all 15 are currently published in the SA7 snapshot. `SceneDefinition.assets` remains preload metadata |
 | Lighting ownership | Needs boundary cleanup | Shared teaching recipe plus separate viewport/RTT placement and shadow policy maps |
 | Material ownership | Needs boundary cleanup | Shared teaching material helpers coexist with scene and camera-local material definitions |
 | 2D Geometry | Healthy with exceptions | Projects canonical planes/targets; per-scene presentation windows are ID-keyed |
@@ -463,13 +465,16 @@ The stronger patterns to preserve for WebGPU are: asymmetric coordinate samples,
 
 ### Should fix before realistic lighting/material expansion
 
-**S1 — Make observer/RTT subject parity and resource ownership explicit before adding complex scene geometry.** The registry pairs `SceneSubject` with a separate `createRttGroup` and optional disposer. This is a reasonable current adapter, but each richer mesh/material/texture/shadow behavior creates two implementations to keep visually aligned. Strengthen the contract or parity checks while retaining separate object graphs.
+**S1 — RESOLVED by SA1–SA6A and the SA7 completeness audit.** Every published scene maps to a typed asset registration; interactive and RTT consumers resolve the same registered factory, while each consumer owns a separate Object3D graph. `SceneSubjectRegistration` requires scene-level RTT cleanup and delegates GPU-resource lifecycle to the asset registration. Camera Movement and Mirror Shift keep their explicit scene-specific runtime adapters. Retain this boundary while preparing any future visual expansion.
 
 **S2 — Consolidate scene look ownership across viewport and RTT before adding richer lighting/materials.** The teaching light recipe is shared, but scene target/offsets and shadow participation are separately resolved, and subject modules own many materials. Without a small deliberate look contract, later realism will amplify scene and backend-specific drift.
 
 ### Follow-up diagnosis before renderer migration
 
-Complete the **DOF / Focus Physics Convergence Diagnosis** described in §18 after this audit refresh. It should classify the Table Tilt, Shelf Swing, Architecture Rise, Focus Fundamentals, and CPU diagnostic paths before recommending only the cleanup justified by evidence. This is a diagnosis first, not a request to remove scene-specific behavior.
+The **DOF / Focus Physics Convergence Diagnosis** is recorded in
+`docs/DOF_FOCUS_PHYSICS_CONVERGENCE.md`. It remains a separate source diagnosis;
+any optics/configuration work it recommends must be reviewed independently and
+is not part of the scene-asset architecture completion.
 
 ### Small cleanup / maintainability
 
@@ -616,7 +621,7 @@ The sequence is #204 merged → #203 final refresh → DOF / Focus Physics Conve
 | Ground Glass | Canonical lens/film/aperture/focus inputs feed RTT per-pixel physical CoC/footprint evaluation, followed by sampled-film mapping and the current WebGL/GLSL multipass | Physical mm-to-pixel contract plus backend-owned pass/resource implementation | No backend seam; CPU diagnostic path retains historical model selection; Shelf Swing hint leaks into diagnostics | Convergence diagnosis, then contract, before Ground Glass migration |
 | Coordinate transforms | Explicit helpers across mm, rig-local, film UV, Three meters, WebGL and CSS | Named conversion boundaries with asymmetric conformance tests | Cross-module chain and legacy `*World` names | Before alternate Ground Glass backend |
 | Global overlays | Shared derived geometry and separate visibility | Global feature consumes canonical capability/state; lesson owns visibility | No material gap; published finite lens capability now reaches Mirror Shift through shared state | Healthy |
-| Subject registration | Paired React subject/imperative RTT factory and disposer | Explicit per-view adapter/parity and ownership | Two graphs can drift | Before major scene complexity |
+| Subject registration | Required React subject/RTT cleanup integration plus 15 typed asset registrations | Shared registered factory/lifecycle with separate consumer-owned graphs | Scene-level bounds, lighting, and specialized runtime policies remain distributed | Keep current parity regression; revisit integration only when concrete drift appears |
 | Lighting | Shared recipe; distinct viewport/RTT placements and shadows | Scene look ownership with explicit renderer placements | Split policy and overrides | Before realistic expansion |
 | Materials | Shared teaching helpers plus local subject/camera materials | Deliberate shared/per-scene ownership across views | Incomplete look package/parity | Before realistic expansion |
 | 2D Geometry | Canonical optics projected by separate diagram adapter | Adapter-only geometry and presentation profile | Scene ID-keyed window/presentation choices | Healthy with cleanup opportunity |

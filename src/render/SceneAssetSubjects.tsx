@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+import { useLayoutEffect, useState } from "react";
+import type * as THREE from "three";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
@@ -21,6 +22,7 @@ import type {
   SceneAssetKey,
   SceneAssetRequestMap,
 } from "./assets/sceneAssetRegistry";
+import { useRefreshTeachingShadowParticipation } from "./TeachingLighting";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../scenes/presentation/architectureRise";
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../scenes/presentation/obliqueArchitecture";
 import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
@@ -45,17 +47,20 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
   assetKey,
   request,
 }: RegisteredAssetProps<K>) => {
-  const group = useMemo(
-    () => createRegisteredSceneAsset(assetKey, request),
-    [assetKey, request],
-  );
+  const [group, setGroup] = useState<THREE.Group | null>(null);
+  const refreshShadowParticipation = useRefreshTeachingShadowParticipation();
 
-  useEffect(
-    () => () => disposeRegisteredSceneAsset(assetKey, group),
-    [assetKey, group],
-  );
+  useLayoutEffect(() => {
+    const nextGroup = createRegisteredSceneAsset(assetKey, request);
+    setGroup(nextGroup);
+    return () => disposeRegisteredSceneAsset(assetKey, nextGroup);
+  }, [assetKey, request]);
 
-  return <primitive object={group} dispose={null} />;
+  useLayoutEffect(() => {
+    if (group) refreshShadowParticipation();
+  }, [group, refreshShadowParticipation]);
+
+  return group ? <primitive object={group} dispose={null} /> : null;
 };
 
 const architectureRiseRequest = Object.freeze({

@@ -23,6 +23,42 @@ creates fresh per-instance geometry, materials, and teaching textures. Their
 registered disposers continue to use the existing teaching-subject resource
 cleanup contract.
 
+### Complete public-scene asset coverage
+
+The SA7 final source audit on post-SA6A base
+`dadd3d77177866bbe342473acd8148d0daf4711d` found one registered asset slot
+for each of the 15 cataloged/implemented public scenes. At the SA7 audit
+snapshot, all 15 are enabled by `scenePublication`; publication remains an
+independent kill switch and is not an architecture-completeness requirement.
+Scene IDs remain separate from asset keys. Interactive static subjects and RTT
+subjects resolve the same registered factory; the two specialized runtime
+adapters are called out below.
+
+| Scene ID | Asset slot | Implementation ID | Presentation contract | Resource lifetime | Special runtime integration |
+|---|---|---|---|---|---|
+| `view-camera-anatomy` | `view-camera-anatomy-subject` | `threejs-view-camera-anatomy` | `ViewCameraAnatomyPresentation` | Module-shared | Lesson 0 scene integration |
+| `understanding-camera-movements` | `camera-movement-lattice` | `threejs-camera-movement-lattice` | `CameraMovementLatticePresentation` | Instance-owned | Dynamic calibration/lesson presentation and RTT mount/update lifecycle |
+| `focus-fundamentals-two-targets` | `focus-fundamentals-subject` | `threejs-focus-fundamentals` | `FocusFundamentalsPresentation` | Module-shared | Selectable-focus lesson state remains upstream |
+| `architecture-rise` | `architecture-rise-subject` | `threejs-architecture-rise` | `ArchitectureRisePresentation` | Instance-owned | Canonical focus markers remain scene integration |
+| `table-tilt` | `table-tilt-subject` | `threejs-table-tilt` | `TableTiltPresentation` | Instance-owned | None |
+| `shelf-swing` | `shelf-swing-subject` | `threejs-shelf-swing` | `ShelfSwingPresentation` | Instance-owned | None |
+| `oblique-tabletop` | `oblique-tabletop-subject` | `threejs-oblique-tabletop` | `ObliqueTabletopPresentation` | Instance-owned | Canonical board/focus calibration remains upstream |
+| `mirror-shift` | `mirror-shift-subject` | `threejs-mirror-shift` | `MirrorShiftPresentation` | Instance-owned | RTT representation plus Mirror Shift-specific reflection updater |
+| `oblique-architecture` | `oblique-architecture-subject` | `threejs-oblique-architecture` | `ObliqueArchitecturePresentation` | Instance-owned | None |
+| `architecture-foreground` | `architecture-foreground-subject` | `threejs-architecture-foreground` | `ArchitectureForegroundPresentation` | Instance-owned | None |
+| `interior-corner` | `interior-corner-subject` | `threejs-interior-corner` | `InteriorCornerPresentation` | Instance-owned | Subject-local PointLight remains part of its Object3D graph |
+| `macro-bellows-extension` | `macro-bellows-extension-subject` | `threejs-macro-bellows-extension` | `MacroBellowsExtensionPresentation` | Instance-owned | None |
+| `macro-depth-of-field` | `macro-depth-of-field-subject` | `threejs-macro-depth-of-field` | `MacroDepthOfFieldPresentation` | Instance-owned | None |
+| `macro-oblique-plane` | `macro-oblique-plane-subject` | `threejs-macro-oblique-plane` | `MacroObliquePlanePresentation` | Instance-owned | None |
+| `macro-compound-movements` | `macro-compound-movements-subject` | `threejs-macro-compound-movements` | `MacroCompoundMovementsPresentation` | Instance-owned | None |
+
+The registry has 13 instance-owned registrations and 2 module-shared
+registrations. The completeness regression compares implementation sets:
+cataloged public scene IDs, scene definitions, RTT IDs, subject registrations,
+and asset slots. It separately checks that published entries are a configurable
+subset. The test then creates each implemented RTT subject and verifies its
+diagnostic implementation ID matches the mapped registration.
+
 ### Module-shared scene subjects
 
 Focus Fundamentals (`focus-fundamentals-subject` →
@@ -81,6 +117,18 @@ scene and then calls `disposeRegisteredRttSubject()`, which delegates to
 `disposeRegisteredSceneAsset()`. The module-shared policy intentionally has no
 per-group GPU disposer.
 
+Static interactive subjects create registered groups from a layout effect,
+with that effect's cleanup disposing the exact created instance through its
+registered slot. Camera Movement uses the same effect-owned pairing in its
+scene-specific dynamic adapter. Asset construction therefore does not happen
+inside a render-time memo calculation that React Strict Mode could replay
+without a matching cleanup.
+
+The scene's shadow-participation wrapper refreshes its existing traversal after
+these effect-owned graphs attach. This preserves the established shadow flags
+and refreshes optional capacity metrics without moving lighting policy into an
+asset registration.
+
 Therefore an interactive group and an RTT group have distinct Object3D
 identities while referring to the same geometry/material/texture identities.
 Cleaning up either group cannot dispose resources still borrowed by the other.
@@ -124,12 +172,30 @@ resolver. The factories only consume those values to set render-object
 transforms. No production code outside these factories reads their object
 names or `userData` as teaching, task, or optics authority.
 
-## Migration decision
+## Migration outcome
 
-Both scenes are migrated into typed asset slots in SA4B. Their factories now
-receive renderer-neutral `FocusFundamentalsPresentation` and
+Both scenes were migrated into typed asset slots in SA4B and remain in the
+production registry. Their factories receive renderer-neutral
+`FocusFundamentalsPresentation` and
 `ViewCameraAnatomyPresentation` requests. Tests prove that the interactive and
 RTT Object3D graphs are distinct, their cached resource identities are shared,
 registry cleanup does not dispose borrowed resources, remounts reuse the cache,
 and substitute implementations leave canonical scene/task/optics/presentation
 state unchanged.
+
+## Pattern for future scenes
+
+For a new static teaching subject, keep the existing path explicit:
+
+```text
+canonical scene geometry
+→ renderer-neutral presentation
+→ typed asset request and registry registration
+→ registered interactive subject and RTT creation
+→ explicit instance-owned or module-shared cleanup
+```
+
+If a future scene needs dynamic renderer behavior, keep that adapter local to
+the scene until multiple scenes establish the same abstraction need. Runtime
+updates remain separate from the asset registry's create/dispose and resource
+lifetime contract.
