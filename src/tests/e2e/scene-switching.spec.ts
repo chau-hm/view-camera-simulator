@@ -3,38 +3,54 @@ import { expect, test, type ElementHandle, type Page } from "@playwright/test";
 
 type SceneVisit = {
   sceneId: string;
+  href: string;
+  linkIndex: number;
 };
-
-const visits: SceneVisit[] = [
-  { sceneId: "architecture-rise" },
-  { sceneId: "focus-fundamentals-two-targets" },
-  { sceneId: "mirror-shift" },
-  { sceneId: "macro-bellows-extension" },
-  { sceneId: "understanding-camera-movements" },
-  { sceneId: "view-camera-anatomy" },
-  { sceneId: "table-tilt" },
-  { sceneId: "macro-depth-of-field" },
-  { sceneId: "architecture-foreground" },
-  { sceneId: "interior-corner" },
-  { sceneId: "macro-oblique-plane" },
-  { sceneId: "oblique-architecture" },
-  { sceneId: "macro-compound-movements" },
-  { sceneId: "shelf-swing" },
-  { sceneId: "oblique-tabletop" },
-];
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
+const discoverPublicSceneVisits = async (page: Page): Promise<SceneVisit[]> => {
+  const hrefs = await page
+    .locator("article.scene-feature-card a.btn--primary")
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+
+  expect(hrefs.length, "the public scene listing should expose at least one scene").toBeGreaterThan(0);
+
+  const visits = hrefs.map((href, linkIndex) => {
+    expect(href, `public scene link ${linkIndex} must have an href`).toBeTruthy();
+    if (!href) throw new Error(`Public scene link ${linkIndex} has no href`);
+
+    const route = new URL(href, page.url());
+    const match = route.pathname.match(/^\/simulator\/free\/([^/]+)$/);
+    expect(match, `unexpected public scene route: ${href}`).not.toBeNull();
+    if (!match) throw new Error(`Unexpected public scene route: ${href}`);
+
+    return {
+      sceneId: decodeURIComponent(match[1]),
+      href,
+      linkIndex,
+    };
+  });
+
+  const sceneIds = visits.map(({ sceneId }) => sceneId);
+  expect(new Set(sceneIds).size, "public scene links must have unique scene IDs").toBe(
+    sceneIds.length,
+  );
+
+  return visits;
+};
+
 const openPublicScene = async (page: Page, visit: SceneVisit) => {
-  const route = visit.sceneId === "view-camera-anatomy"
-    ? `/simulator/free/${visit.sceneId}?lesson=1`
-    : `/simulator/free/${visit.sceneId}`;
-  const link = page.locator(`a[href="${route}"]`);
+  const link = page.locator("article.scene-feature-card a.btn--primary").nth(visit.linkIndex);
   await expect(link).toHaveCount(1);
+  await expect(link).toHaveAttribute("href", visit.href);
   await link.click();
+  const expectedRoute = new URL(visit.href, page.url());
   await expect(page).toHaveURL(
-    new RegExp(`/simulator/free/${visit.sceneId}(?:\\?.*)?$`),
+    (actualRoute) =>
+      actualRoute.pathname === expectedRoute.pathname &&
+      actualRoute.search === expectedRoute.search,
   );
 };
 
@@ -55,6 +71,8 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       `${Date.now()}-${Math.random()}`;
   });
   await page.goto("/scenes");
+  const visits = await discoverPublicSceneVisits(page);
+  const discoveredSceneIds = visits.map(({ sceneId }) => sceneId);
   const documentToken = await page.evaluate(
     () => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken,
   );
@@ -65,8 +83,11 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   let previousSanityState: string | null = null;
   let previousSceneId: string | null = null;
   const seenRttOwnerIds = new Set<string>();
+  const visitedSceneIds = new Set<string>();
 
   for (const visit of visits) {
+    expect(visitedSceneIds.has(visit.sceneId), `scene ${visit.sceneId} should be visited once`).toBe(false);
+    visitedSceneIds.add(visit.sceneId);
     await openPublicScene(page, visit);
     await expect
       .poll(() => page.evaluate(() => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken))
@@ -137,6 +158,7 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     }
   }
 
+  expect([...visitedSceneIds].sort()).toEqual([...discoveredSceneIds].sort());
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });

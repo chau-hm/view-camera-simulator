@@ -19,6 +19,8 @@ import {
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import {
   getAvailablePublicSceneEntries,
+  getPublishedPublicSceneEntries,
+  getPublicSceneEntries,
   publicSceneIds,
   type PublicSceneId,
 } from "../../app/publicScenes";
@@ -152,17 +154,20 @@ const boardFootprintsSeparated = (first: BoardFootprint, second: BoardFootprint)
 describe("scene subject registry", () => {
   it("keeps public scenes, RTT subjects, and typed asset slots complete and aligned", () => {
     const publicIds = [...publicSceneIds].sort();
-    const publishedIds = Object.entries(scenePublication)
-      .filter(([, published]) => published)
-      .map(([sceneId]) => sceneId)
+    const publishedIds = getPublishedPublicSceneEntries()
+      .map(({ meta }) => meta.id)
+      .sort();
+    const publicEntryIds = getPublicSceneEntries()
+      .map(({ meta }) => meta.id)
       .sort();
     const availableIds = getAvailablePublicSceneEntries()
       .map(({ meta }) => meta.id)
       .sort();
     const definedSceneIds = new Set(getAllScenes().map(({ id }) => id));
 
-    expect(publishedIds).toEqual(publicIds);
-    expect(availableIds).toEqual(publicIds);
+    expect(publishedIds.every((sceneId) => publicIds.includes(sceneId))).toBe(true);
+    expect(publicEntryIds.every((sceneId) => publishedIds.includes(sceneId))).toBe(true);
+    expect(availableIds.every((sceneId) => publicEntryIds.includes(sceneId))).toBe(true);
     expect([...RTT_SCENES].sort()).toEqual(publicIds);
     expect(Object.keys(sceneSubjectRegistry).sort()).toEqual(publicIds);
     expect(Object.keys(publicSceneAssetSlots).sort()).toEqual(publicIds);
@@ -188,6 +193,36 @@ describe("scene subject registry", () => {
       }
     }
     expect(new Set(implementationIds).size).toBe(publicSceneIds.length);
+  });
+
+  it("keeps implementation architecture when a published scene is hidden", () => {
+    const hiddenSceneId: PublicSceneId = "macro-compound-movements";
+    const isolatedPublication = {
+      ...scenePublication,
+      [hiddenSceneId]: false,
+    };
+    const publishedIds = getPublishedPublicSceneEntries(isolatedPublication).map(
+      ({ meta }) => meta.id,
+    );
+    const publicEntryIds = getPublicSceneEntries(isolatedPublication).map(
+      ({ meta }) => meta.id,
+    );
+    const availableIds = getAvailablePublicSceneEntries(isolatedPublication).map(
+      ({ meta }) => meta.id,
+    );
+
+    expect(publishedIds).toHaveLength(publicSceneIds.length - 1);
+    expect(publishedIds).not.toContain(hiddenSceneId);
+    expect(publicEntryIds).not.toContain(hiddenSceneId);
+    expect(availableIds).not.toContain(hiddenSceneId);
+
+    expect(publicSceneIds).toContain(hiddenSceneId);
+    expect(publicSceneAssetSlots[hiddenSceneId]).toBe(
+      MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+    );
+    expect(RTT_SCENES).toContain(hiddenSceneId);
+    expect(sceneSubjectRegistry[hiddenSceneId]).toBeDefined();
+    expect(resolveSceneAsset(publicSceneAssetSlots[hiddenSceneId])).toBeDefined();
   });
 
   it("registers every canonical rendered scene and rejects unknown IDs", () => {

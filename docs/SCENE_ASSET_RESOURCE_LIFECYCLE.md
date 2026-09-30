@@ -27,10 +27,12 @@ cleanup contract.
 
 The SA7 final source audit on post-SA6A base
 `dadd3d77177866bbe342473acd8148d0daf4711d` found one registered asset slot
-for each of the 15 published scenes. Scene IDs
-remain separate from asset keys. Interactive static subjects and RTT subjects
-resolve the same registered factory; the two specialized runtime adapters are
-called out below.
+for each of the 15 cataloged/implemented public scenes. At the SA7 audit
+snapshot, all 15 are enabled by `scenePublication`; publication remains an
+independent kill switch and is not an architecture-completeness requirement.
+Scene IDs remain separate from asset keys. Interactive static subjects and RTT
+subjects resolve the same registered factory; the two specialized runtime
+adapters are called out below.
 
 | Scene ID | Asset slot | Implementation ID | Presentation contract | Resource lifetime | Special runtime integration |
 |---|---|---|---|---|---|
@@ -51,10 +53,11 @@ called out below.
 | `macro-compound-movements` | `macro-compound-movements-subject` | `threejs-macro-compound-movements` | `MacroCompoundMovementsPresentation` | Instance-owned | None |
 
 The registry has 13 instance-owned registrations and 2 module-shared
-registrations. The completeness regression compares the public, published,
-scene-definition, RTT, subject-registration, and asset-slot sets, then creates
-each RTT subject and verifies its diagnostic implementation ID matches the
-mapped registration.
+registrations. The completeness regression compares implementation sets:
+cataloged public scene IDs, scene definitions, RTT IDs, subject registrations,
+and asset slots. It separately checks that published entries are a configurable
+subset. The test then creates each implemented RTT subject and verifies its
+diagnostic implementation ID matches the mapped registration.
 
 ### Module-shared scene subjects
 
