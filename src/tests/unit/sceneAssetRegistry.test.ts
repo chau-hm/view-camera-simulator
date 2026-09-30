@@ -12,6 +12,10 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/oblique
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import { MIRROR_SHIFT_PRESENTATION } from "../../scenes/presentation/mirrorShift";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation/macroCompoundMovements";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
@@ -25,6 +29,10 @@ import {
   TABLE_TILT_ASSET_KEY,
   CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
   CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
   createRegisteredSceneAsset,
   resolveSceneAsset,
   sceneAssetRegistry,
@@ -73,6 +81,18 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   createRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, {
     presentation: MIRROR_SHIFT_PRESENTATION,
     representation: "rtt",
+  });
+  createRegisteredSceneAsset(MACRO_BELLOWS_EXTENSION_ASSET_KEY, {
+    presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION,
+  });
+  createRegisteredSceneAsset(MACRO_DEPTH_OF_FIELD_ASSET_KEY, {
+    presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION,
+  });
+  createRegisteredSceneAsset(MACRO_OBLIQUE_PLANE_ASSET_KEY, {
+    presentation: MACRO_OBLIQUE_PLANE_PRESENTATION,
+  });
+  createRegisteredSceneAsset(MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, {
+    presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
   });
 
   // The Architecture Rise slot rejects the Table Tilt request.
@@ -130,6 +150,22 @@ const assertSceneAssetRequestKeyPairings = (): void => {
     // @ts-expect-error The request is explicitly one of the two supported representations.
     representation: "interactive",
   });
+  createRegisteredSceneAsset(MACRO_BELLOWS_EXTENSION_ASSET_KEY, {
+    // @ts-expect-error Bellows Extension rejects the Macro DOF presentation.
+    presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION,
+  });
+  createRegisteredSceneAsset(MACRO_DEPTH_OF_FIELD_ASSET_KEY, {
+    // @ts-expect-error Macro DOF rejects the Compound Movements presentation.
+    presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
+  });
+  createRegisteredSceneAsset(MACRO_OBLIQUE_PLANE_ASSET_KEY, {
+    // @ts-expect-error Oblique Plane rejects the Bellows Extension presentation.
+    presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION,
+  });
+  createRegisteredSceneAsset(MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, {
+    // @ts-expect-error Compound Movements rejects the Oblique Plane presentation.
+    presentation: MACRO_OBLIQUE_PLANE_PRESENTATION,
+  });
 
   const sharedRegistration: SceneAssetRegistration<typeof FOCUS_FUNDAMENTALS_ASSET_KEY> = {
     assetKey: FOCUS_FUNDAMENTALS_ASSET_KEY,
@@ -175,6 +211,55 @@ const assertSceneAssetRequestKeyPairings = (): void => {
     implementationId: "type-test-invalid-mirror-shift-missing-disposer",
     create: () => new THREE.Group(),
   };
+  const macroBellowsOwned: SceneAssetRegistration<typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY> = {
+    assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+    implementationId: "type-test-macro-bellows-owned",
+    create: () => new THREE.Group(),
+    dispose: () => undefined,
+  };
+  const macroDepthOfFieldOwned: SceneAssetRegistration<typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY> = {
+    assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+    implementationId: "type-test-macro-dof-owned",
+    create: () => new THREE.Group(),
+    dispose: () => undefined,
+  };
+  const macroObliquePlaneOwned: SceneAssetRegistration<typeof MACRO_OBLIQUE_PLANE_ASSET_KEY> = {
+    assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
+    implementationId: "type-test-macro-oblique-owned",
+    create: () => new THREE.Group(),
+    dispose: () => undefined,
+  };
+  const macroCompoundMovementsOwned: SceneAssetRegistration<typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY> = {
+    assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+    implementationId: "type-test-macro-compound-owned",
+    create: () => new THREE.Group(),
+    dispose: () => undefined,
+  };
+  // Each Macro key is instance-owned, so none can omit its paired disposer.
+  // @ts-expect-error Macro Bellows Extension requires its paired disposer.
+  const macroBellowsWithoutDisposer: SceneAssetRegistration<typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY> = {
+    assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+    implementationId: "type-test-invalid-macro-bellows-missing-disposer",
+    create: () => new THREE.Group(),
+  };
+  // @ts-expect-error Macro DOF requires its paired disposer.
+  const macroDepthOfFieldWithoutDisposer: SceneAssetRegistration<typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY> = {
+    assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+    implementationId: "type-test-invalid-macro-dof-missing-disposer",
+    create: () => new THREE.Group(),
+  };
+  // @ts-expect-error Macro Oblique Plane requires its paired disposer.
+  const macroObliquePlaneWithoutDisposer: SceneAssetRegistration<typeof MACRO_OBLIQUE_PLANE_ASSET_KEY> = {
+    assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
+    implementationId: "type-test-invalid-macro-oblique-missing-disposer",
+    create: () => new THREE.Group(),
+  };
+  // @ts-expect-error Macro Compound Movements requires its paired disposer.
+  const macroCompoundMovementsWithoutDisposer: SceneAssetRegistration<typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY> = {
+    assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+    implementationId: "type-test-invalid-macro-compound-missing-disposer",
+    create: () => new THREE.Group(),
+  };
   void sharedRegistration;
   void instanceOwnedRegistration;
   void mirrorShiftOwnedRegistration;
@@ -182,6 +267,14 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   void sharedWithoutPolicy;
   void ownedWithoutDisposer;
   void mirrorShiftWithoutDisposer;
+  void macroBellowsOwned;
+  void macroDepthOfFieldOwned;
+  void macroObliquePlaneOwned;
+  void macroCompoundMovementsOwned;
+  void macroBellowsWithoutDisposer;
+  void macroDepthOfFieldWithoutDisposer;
+  void macroObliquePlaneWithoutDisposer;
+  void macroCompoundMovementsWithoutDisposer;
 };
 void assertSceneAssetRequestKeyPairings;
 
@@ -220,6 +313,10 @@ describe("scene asset registry", () => {
         FOCUS_FUNDAMENTALS_ASSET_KEY,
         VIEW_CAMERA_ANATOMY_ASSET_KEY,
         MIRROR_SHIFT_ASSET_KEY,
+        MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+        MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+        MACRO_OBLIQUE_PLANE_ASSET_KEY,
+        MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
       ]);
       expect(presentationAssetKey).toBe(CAMERA_MOVEMENT_LATTICE_ASSET_KEY);
       expect(Object.isFrozen(sceneAssetRegistry)).toBe(true);

@@ -14,6 +14,10 @@ import {
   InteriorCornerSubject,
   ObliqueTabletopSubject,
   MirrorShiftSubject,
+  MacroSpecimenSubject,
+  MacroDepthOfFieldSubject,
+  MacroObliquePlaneSubject,
+  MacroCompoundMovementsSubject,
   ShelfSwingSubject,
   TableTiltSubject,
   ViewCameraAnatomySubject,
@@ -26,6 +30,10 @@ import {
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
   MIRROR_SHIFT_ASSET_KEY,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -45,6 +53,10 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTab
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
 import { MIRROR_SHIFT_PRESENTATION } from "../scenes/presentation/mirrorShift";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../scenes/presentation/macroCompoundMovements";
 import { CameraMovementsSubject } from "./CameraMovementsSubjectFactory";
 import {
   createCameraMovementLatticeAsset,
@@ -69,35 +81,6 @@ import architectureForegroundGeometry from "../scenes/architectureForegroundGeom
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
 import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
 import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
-import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "./MacroSpecimenSubjectFactory";
-import { MACRO_SPECIMEN, macroSpecimenBoundsMm } from "../scenes/macroSpecimenGeometry";
-import {
-  MacroDepthOfFieldSubject,
-  createMacroDepthOfFieldGroup,
-  disposeMacroDepthOfFieldGroup,
-} from "./MacroDepthOfFieldSubjectFactory";
-import {
-  MACRO_DEPTH_SPECIMEN_CENTER_MM,
-  macroDepthOfFieldSubjectBoundsMm,
-} from "../scenes/macroDepthOfFieldGeometry";
-import {
-  MacroObliquePlaneSubject,
-  createMacroObliquePlaneGroup,
-  disposeMacroObliquePlaneGroup,
-} from "./MacroObliquePlaneSubjectFactory";
-import {
-  MACRO_OBLIQUE_PLATE_CENTER_MM,
-  macroObliquePlaneSubjectBoundsMm,
-} from "../scenes/macroObliquePlaneGeometry";
-import {
-  MacroCompoundMovementsSubject,
-  createMacroCompoundMovementsGroup,
-  disposeMacroCompoundMovementsGroup,
-} from "./MacroCompoundMovementsSubjectFactory";
-import {
-  macroCompoundMovementsLightingTargetMm,
-  macroCompoundMovementsSubjectBoundsMm,
-} from "../scenes/macroCompoundMovementsGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -235,6 +218,19 @@ const {
   rtt: mirrorShiftRttLighting,
 } = resolveMirrorShiftLighting();
 
+const macroBellowsExtensionRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+const macroDepthOfFieldRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION });
+const macroObliquePlaneRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_OBLIQUE_PLANE_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_OBLIQUE_PLANE_PRESENTATION });
+const macroCompoundMovementsRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION });
+
 const mirrorShiftRttAssetRequest: SceneAssetRequestMap[
   typeof MIRROR_SHIFT_ASSET_KEY
 ] = Object.freeze({
@@ -245,44 +241,64 @@ const mirrorShiftRttAssetRequest: SceneAssetRequestMap[
 export const sceneSubjectRegistry = {
   "macro-bellows-extension": {
     SceneSubject: MacroSpecimenSubject,
-    createRttGroup: createMacroSpecimenGroup,
-    disposeRttGroup: disposeMacroSpecimenGroup,
-    rttBounds: macroSpecimenBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+        macroBellowsExtensionRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_BELLOWS_EXTENSION_ASSET_KEY, group),
+    rttBounds: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.macroSpecimenBoundsMm,
     rttLighting: {
-      targetMm: MACRO_SPECIMEN.faceCenterMm,
+      targetMm: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.MACRO_SPECIMEN.faceCenterMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "macro-depth-of-field": {
     SceneSubject: MacroDepthOfFieldSubject,
-    createRttGroup: createMacroDepthOfFieldGroup,
-    disposeRttGroup: disposeMacroDepthOfFieldGroup,
-    rttBounds: macroDepthOfFieldSubjectBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+        macroDepthOfFieldRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_DEPTH_OF_FIELD_ASSET_KEY, group),
+    rttBounds: MACRO_DEPTH_OF_FIELD_PRESENTATION.geometry.macroDepthOfFieldSubjectBoundsMm,
     rttLighting: {
-      targetMm: MACRO_DEPTH_SPECIMEN_CENTER_MM,
+      targetMm: MACRO_DEPTH_OF_FIELD_PRESENTATION.geometry.MACRO_DEPTH_SPECIMEN_CENTER_MM,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "macro-oblique-plane": {
     SceneSubject: MacroObliquePlaneSubject,
-    createRttGroup: createMacroObliquePlaneGroup,
-    disposeRttGroup: disposeMacroObliquePlaneGroup,
-    rttBounds: macroObliquePlaneSubjectBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_OBLIQUE_PLANE_ASSET_KEY,
+        macroObliquePlaneRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_OBLIQUE_PLANE_ASSET_KEY, group),
+    rttBounds: MACRO_OBLIQUE_PLANE_PRESENTATION.geometry.macroObliquePlaneSubjectBoundsMm,
     rttLighting: {
-      targetMm: MACRO_OBLIQUE_PLATE_CENTER_MM,
+      targetMm: MACRO_OBLIQUE_PLANE_PRESENTATION.geometry.MACRO_OBLIQUE_PLATE_CENTER_MM,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "macro-compound-movements": {
     SceneSubject: MacroCompoundMovementsSubject,
-    createRttGroup: createMacroCompoundMovementsGroup,
-    disposeRttGroup: disposeMacroCompoundMovementsGroup,
-    rttBounds: macroCompoundMovementsSubjectBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+        macroCompoundMovementsRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, group),
+    rttBounds: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsSubjectBoundsMm,
     rttLighting: {
-      targetMm: macroCompoundMovementsLightingTargetMm,
+      targetMm: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },

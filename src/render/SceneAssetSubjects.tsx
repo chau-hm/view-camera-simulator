@@ -10,6 +10,10 @@ import {
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
   MIRROR_SHIFT_ASSET_KEY,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
 } from "./assets/sceneAssetRegistry";
@@ -27,6 +31,10 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTab
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
 import { MIRROR_SHIFT_PRESENTATION } from "../scenes/presentation/mirrorShift";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../scenes/presentation/macroCompoundMovements";
 
 type RegisteredAssetProps<K extends SceneAssetKey> = {
   assetKey: K;
@@ -73,6 +81,18 @@ const focusFundamentalsRequest = Object.freeze({
 const viewCameraAnatomyRequest = Object.freeze({
   presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
 });
+const macroBellowsExtensionRequest: SceneAssetRequestMap[
+  typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+const macroDepthOfFieldRequest: SceneAssetRequestMap[
+  typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION });
+const macroObliquePlaneRequest: SceneAssetRequestMap[
+  typeof MACRO_OBLIQUE_PLANE_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_OBLIQUE_PLANE_PRESENTATION });
+const macroCompoundMovementsRequest: SceneAssetRequestMap[
+  typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION });
 const mirrorShiftViewportRequest: SceneAssetRequestMap[
   typeof MIRROR_SHIFT_ASSET_KEY
 ] = Object.freeze({
@@ -135,6 +155,34 @@ export const ViewCameraAnatomySubject = () => (
   <RegisteredSceneAsset
     assetKey={VIEW_CAMERA_ANATOMY_ASSET_KEY}
     request={viewCameraAnatomyRequest}
+  />
+);
+
+export const MacroSpecimenSubject = () => (
+  <RegisteredSceneAsset
+    assetKey={MACRO_BELLOWS_EXTENSION_ASSET_KEY}
+    request={macroBellowsExtensionRequest}
+  />
+);
+
+export const MacroDepthOfFieldSubject = () => (
+  <RegisteredSceneAsset
+    assetKey={MACRO_DEPTH_OF_FIELD_ASSET_KEY}
+    request={macroDepthOfFieldRequest}
+  />
+);
+
+export const MacroObliquePlaneSubject = () => (
+  <RegisteredSceneAsset
+    assetKey={MACRO_OBLIQUE_PLANE_ASSET_KEY}
+    request={macroObliquePlaneRequest}
+  />
+);
+
+export const MacroCompoundMovementsSubject = () => (
+  <RegisteredSceneAsset
+    assetKey={MACRO_COMPOUND_MOVEMENTS_ASSET_KEY}
+    request={macroCompoundMovementsRequest}
   />
 );
 

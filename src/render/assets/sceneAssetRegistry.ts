@@ -21,6 +21,14 @@ import type { ViewCameraAnatomyAssetRequest } from "../LessonZeroGroundGlassSubj
 import * as viewCameraAnatomyAsset from "../LessonZeroGroundGlassSubjectFactory";
 import type { MirrorShiftAssetRequest } from "../MirrorShiftSubjectFactory";
 import * as mirrorShiftAsset from "../MirrorShiftSubjectFactory";
+import type { MacroBellowsExtensionAssetRequest } from "../MacroSpecimenSubjectFactory";
+import * as macroBellowsExtensionAsset from "../MacroSpecimenSubjectFactory";
+import type { MacroDepthOfFieldAssetRequest } from "../MacroDepthOfFieldSubjectFactory";
+import * as macroDepthOfFieldAsset from "../MacroDepthOfFieldSubjectFactory";
+import type { MacroObliquePlaneAssetRequest } from "../MacroObliquePlaneSubjectFactory";
+import * as macroObliquePlaneAsset from "../MacroObliquePlaneSubjectFactory";
+import type { MacroCompoundMovementsAssetRequest } from "../MacroCompoundMovementsSubjectFactory";
+import * as macroCompoundMovementsAsset from "../MacroCompoundMovementsSubjectFactory";
 
 /** Stable asset slot owned by the scene asset registry layer. */
 export const CAMERA_MOVEMENT_LATTICE_ASSET_KEY =
@@ -36,6 +44,10 @@ export const OBLIQUE_TABLETOP_ASSET_KEY = "oblique-tabletop-subject" as const;
 export const FOCUS_FUNDAMENTALS_ASSET_KEY = "focus-fundamentals-subject" as const;
 export const VIEW_CAMERA_ANATOMY_ASSET_KEY = "view-camera-anatomy-subject" as const;
 export const MIRROR_SHIFT_ASSET_KEY = "mirror-shift-subject" as const;
+export const MACRO_BELLOWS_EXTENSION_ASSET_KEY = "macro-bellows-extension-subject" as const;
+export const MACRO_DEPTH_OF_FIELD_ASSET_KEY = "macro-depth-of-field-subject" as const;
+export const MACRO_OBLIQUE_PLANE_ASSET_KEY = "macro-oblique-plane-subject" as const;
+export const MACRO_COMPOUND_MOVEMENTS_ASSET_KEY = "macro-compound-movements-subject" as const;
 
 /** Registry-owned set of visual asset slots; scene IDs remain separate. */
 export type SceneAssetKey =
@@ -49,7 +61,11 @@ export type SceneAssetKey =
   | typeof OBLIQUE_TABLETOP_ASSET_KEY
   | typeof FOCUS_FUNDAMENTALS_ASSET_KEY
   | typeof VIEW_CAMERA_ANATOMY_ASSET_KEY
-  | typeof MIRROR_SHIFT_ASSET_KEY;
+  | typeof MIRROR_SHIFT_ASSET_KEY
+  | typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY
+  | typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY
+  | typeof MACRO_OBLIQUE_PLANE_ASSET_KEY
+  | typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY;
 
 export type CameraMovementLatticeAssetFactory = (
   options: CameraMovementsGroupOptions,
@@ -67,6 +83,10 @@ export type SceneAssetRequestMap = {
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: FocusFundamentalsAssetRequest;
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: ViewCameraAnatomyAssetRequest;
   [MIRROR_SHIFT_ASSET_KEY]: MirrorShiftAssetRequest;
+  [MACRO_BELLOWS_EXTENSION_ASSET_KEY]: MacroBellowsExtensionAssetRequest;
+  [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: MacroDepthOfFieldAssetRequest;
+  [MACRO_OBLIQUE_PLANE_ASSET_KEY]: MacroObliquePlaneAssetRequest;
+  [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: MacroCompoundMovementsAssetRequest;
 };
 
 export type SceneAssetResourceLifetimeByKey = {
@@ -81,6 +101,10 @@ export type SceneAssetResourceLifetimeByKey = {
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: "module-shared";
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: "module-shared";
   [MIRROR_SHIFT_ASSET_KEY]: "instance-owned";
+  [MACRO_BELLOWS_EXTENSION_ASSET_KEY]: "instance-owned";
+  [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: "instance-owned";
+  [MACRO_OBLIQUE_PLANE_ASSET_KEY]: "instance-owned";
+  [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: "instance-owned";
 };
 
 export type SceneAssetKeyWithLifetime<
@@ -144,6 +168,10 @@ export const OBLIQUE_TABLETOP_IMPLEMENTATION_ID = "threejs-oblique-tabletop";
 export const FOCUS_FUNDAMENTALS_IMPLEMENTATION_ID = "threejs-focus-fundamentals";
 export const VIEW_CAMERA_ANATOMY_IMPLEMENTATION_ID = "threejs-view-camera-anatomy";
 export const MIRROR_SHIFT_IMPLEMENTATION_ID = "threejs-mirror-shift";
+export const MACRO_BELLOWS_EXTENSION_IMPLEMENTATION_ID = "threejs-macro-bellows-extension";
+export const MACRO_DEPTH_OF_FIELD_IMPLEMENTATION_ID = "threejs-macro-depth-of-field";
+export const MACRO_OBLIQUE_PLANE_IMPLEMENTATION_ID = "threejs-macro-oblique-plane";
+export const MACRO_COMPOUND_MOVEMENTS_IMPLEMENTATION_ID = "threejs-macro-compound-movements";
 
 const cameraMovementLatticeRegistration: SceneAssetRegistration<typeof CAMERA_MOVEMENT_LATTICE_ASSET_KEY> =
   Object.freeze({
@@ -239,6 +267,38 @@ const mirrorShiftRegistration: SceneAssetRegistration<typeof MIRROR_SHIFT_ASSET_
     dispose: (asset) => mirrorShiftAsset.disposeMirrorShiftGroup(asset),
   });
 
+const macroBellowsExtensionRegistration: SceneAssetRegistration<typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY> =
+  Object.freeze({
+    assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+    implementationId: MACRO_BELLOWS_EXTENSION_IMPLEMENTATION_ID,
+    create: (request) => macroBellowsExtensionAsset.createMacroSpecimenGroup(request),
+    dispose: (asset) => macroBellowsExtensionAsset.disposeMacroSpecimenGroup(asset),
+  });
+
+const macroDepthOfFieldRegistration: SceneAssetRegistration<typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY> =
+  Object.freeze({
+    assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+    implementationId: MACRO_DEPTH_OF_FIELD_IMPLEMENTATION_ID,
+    create: (request) => macroDepthOfFieldAsset.createMacroDepthOfFieldGroup(request),
+    dispose: (asset) => macroDepthOfFieldAsset.disposeMacroDepthOfFieldGroup(asset),
+  });
+
+const macroObliquePlaneRegistration: SceneAssetRegistration<typeof MACRO_OBLIQUE_PLANE_ASSET_KEY> =
+  Object.freeze({
+    assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
+    implementationId: MACRO_OBLIQUE_PLANE_IMPLEMENTATION_ID,
+    create: (request) => macroObliquePlaneAsset.createMacroObliquePlaneGroup(request),
+    dispose: (asset) => macroObliquePlaneAsset.disposeMacroObliquePlaneGroup(asset),
+  });
+
+const macroCompoundMovementsRegistration: SceneAssetRegistration<typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY> =
+  Object.freeze({
+    assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+    implementationId: MACRO_COMPOUND_MOVEMENTS_IMPLEMENTATION_ID,
+    create: (request) => macroCompoundMovementsAsset.createMacroCompoundMovementsGroup(request),
+    dispose: (asset) => macroCompoundMovementsAsset.disposeMacroCompoundMovementsGroup(asset),
+  });
+
 /** Immutable production mapping from each registered scene asset slot. */
 export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [CAMERA_MOVEMENT_LATTICE_ASSET_KEY]: cameraMovementLatticeRegistration,
@@ -252,6 +312,10 @@ export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: focusFundamentalsRegistration,
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: viewCameraAnatomyRegistration,
   [MIRROR_SHIFT_ASSET_KEY]: mirrorShiftRegistration,
+  [MACRO_BELLOWS_EXTENSION_ASSET_KEY]: macroBellowsExtensionRegistration,
+  [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: macroDepthOfFieldRegistration,
+  [MACRO_OBLIQUE_PLANE_ASSET_KEY]: macroObliquePlaneRegistration,
+  [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: macroCompoundMovementsRegistration,
 });
 
 /**
@@ -282,7 +346,11 @@ export function resolveSceneAsset(
     assetKey !== OBLIQUE_TABLETOP_ASSET_KEY &&
     assetKey !== FOCUS_FUNDAMENTALS_ASSET_KEY &&
     assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY &&
-    assetKey !== MIRROR_SHIFT_ASSET_KEY
+    assetKey !== MIRROR_SHIFT_ASSET_KEY &&
+    assetKey !== MACRO_BELLOWS_EXTENSION_ASSET_KEY &&
+    assetKey !== MACRO_DEPTH_OF_FIELD_ASSET_KEY &&
+    assetKey !== MACRO_OBLIQUE_PLANE_ASSET_KEY &&
+    assetKey !== MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
   ) {
     throw new Error('Unknown scene asset "' + assetKey + '"');
   }

@@ -1,25 +1,16 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { toWorld } from "./rttUtils";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { createMacroMaterial } from "./MacroSubjectMaterials";
-import {
-  MACRO_OBLIQUE_PLANE_SURFACE_CENTER_Z_MM,
-  MACRO_OBLIQUE_PLANE_SURFACE_ANGLE_RAD,
-  MACRO_OBLIQUE_PLATE_CENTER_MM,
-  MACRO_OBLIQUE_PLATE_DIMENSIONS_MM,
-} from "../scenes/macroObliquePlaneGeometry";
+import type { MacroObliquePlanePresentation } from "../scenes/presentation/macroObliquePlane";
 
-const plateLocalZ = -MACRO_OBLIQUE_PLATE_DIMENSIONS_MM.thickness / 2;
 const pcbFiberglassThicknessMm = 2.8;
 const pcbFiberglassFrontOffsetMm = 0.2;
-const pcbFiberglassCenterZ =
-  plateLocalZ + pcbFiberglassFrontOffsetMm + pcbFiberglassThicknessMm / 2;
-const pcbReliefCenterZ = plateLocalZ - 0.06;
 const pcbReliefDepth = 0.08;
 const pcbSilkscreenStrokeMm = 0.55;
 const pcbTraceStrokeMm = 0.8;
+
+type MacroObliquePlaneRenderOffsets = Readonly<{ pcbReliefCenterZ: number }>;
 
 type Segment = readonly [number, number, number, number];
 type GlyphStringOptions = {
@@ -98,6 +89,7 @@ function addTraceSegment(
   start: readonly [number, number],
   end: readonly [number, number],
   widthMm: number,
+  offsets: MacroObliquePlaneRenderOffsets,
 ): THREE.Mesh {
   const dx = end[0] - start[0];
   const dy = end[1] - start[1];
@@ -110,7 +102,7 @@ function addTraceSegment(
     (start[1] + end[1]) / 2,
     lengthMm,
     widthMm,
-    pcbReliefCenterZ,
+    offsets.pcbReliefCenterZ,
     Math.atan2(dy, dx),
   );
 }
@@ -123,13 +115,14 @@ function addSilkscreenRectangle(
   yMm: number,
   widthMm: number,
   heightMm: number,
+  offsets: MacroObliquePlaneRenderOffsets,
 ): void {
   const halfWidth = widthMm / 2;
   const halfHeight = heightMm / 2;
-  addLine(parent, `${name}-top`, material, xMm, yMm + halfHeight, widthMm, pcbSilkscreenStrokeMm, pcbReliefCenterZ);
-  addLine(parent, `${name}-bottom`, material, xMm, yMm - halfHeight, widthMm, pcbSilkscreenStrokeMm, pcbReliefCenterZ);
-  addLine(parent, `${name}-left`, material, xMm - halfWidth, yMm, heightMm, pcbSilkscreenStrokeMm, pcbReliefCenterZ, Math.PI / 2);
-  addLine(parent, `${name}-right`, material, xMm + halfWidth, yMm, heightMm, pcbSilkscreenStrokeMm, pcbReliefCenterZ, Math.PI / 2);
+  addLine(parent, `${name}-top`, material, xMm, yMm + halfHeight, widthMm, pcbSilkscreenStrokeMm, offsets.pcbReliefCenterZ);
+  addLine(parent, `${name}-bottom`, material, xMm, yMm - halfHeight, widthMm, pcbSilkscreenStrokeMm, offsets.pcbReliefCenterZ);
+  addLine(parent, `${name}-left`, material, xMm - halfWidth, yMm, heightMm, pcbSilkscreenStrokeMm, offsets.pcbReliefCenterZ, Math.PI / 2);
+  addLine(parent, `${name}-right`, material, xMm + halfWidth, yMm, heightMm, pcbSilkscreenStrokeMm, offsets.pcbReliefCenterZ, Math.PI / 2);
 }
 
 function addGlyph(
@@ -139,6 +132,7 @@ function addGlyph(
   glyph: string,
   xMm: number,
   yMm: number,
+  offsets: MacroObliquePlaneRenderOffsets,
   widthMm = 4,
   heightMm = 5,
 ): void {
@@ -152,6 +146,7 @@ function addGlyph(
       [xMm + x1 * widthMm, yMm + y1 * heightMm],
       [xMm + x2 * widthMm, yMm + y2 * heightMm],
       pcbSilkscreenStrokeMm,
+      offsets,
     );
   }
 }
@@ -163,6 +158,7 @@ function addGlyphString(
   text: string,
   xMm: number,
   yMm: number,
+  offsets: MacroObliquePlaneRenderOffsets,
   {
     glyphWidthMm = 4,
     glyphHeightMm = 5,
@@ -178,6 +174,7 @@ function addGlyphString(
       glyph,
       xMm + index * (glyphWidthMm + spacingMm),
       yMm,
+      offsets,
       glyphWidthMm,
       glyphHeightMm,
     );
@@ -192,8 +189,9 @@ function addPad(
   name: string,
   xMm: number,
   yMm: number,
+  offsets: MacroObliquePlaneRenderOffsets,
 ): void {
-  addMesh(parent, name, geometry, material, xMm, yMm, pcbReliefCenterZ);
+  addMesh(parent, name, geometry, material, xMm, yMm, offsets.pcbReliefCenterZ);
 }
 
 function addVia(
@@ -203,12 +201,30 @@ function addVia(
   name: string,
   xMm: number,
   yMm: number,
+  offsets: MacroObliquePlaneRenderOffsets,
 ): void {
-  addMesh(parent, name, geometry, material, xMm, yMm, pcbReliefCenterZ, Math.PI / 2);
+  addMesh(parent, name, geometry, material, xMm, yMm, offsets.pcbReliefCenterZ, Math.PI / 2);
 }
 
-/** A shared, asymmetric, planar PCB subject for viewport and RTT. */
-export function createMacroObliquePlaneGroup(): THREE.Group {
+export type MacroObliquePlaneAssetRequest = Readonly<{
+  presentation: MacroObliquePlanePresentation;
+}>;
+
+/** An asymmetric, planar PCB asset rendered in the viewport and RTT. */
+export function createMacroObliquePlaneGroup({
+  presentation,
+}: MacroObliquePlaneAssetRequest): THREE.Group {
+  const {
+    MACRO_OBLIQUE_PLANE_SURFACE_CENTER_Z_MM,
+    MACRO_OBLIQUE_PLANE_SURFACE_ANGLE_RAD,
+    MACRO_OBLIQUE_PLATE_CENTER_MM,
+    MACRO_OBLIQUE_PLATE_DIMENSIONS_MM,
+  } = presentation.geometry;
+  const plateLocalZ = -MACRO_OBLIQUE_PLATE_DIMENSIONS_MM.thickness / 2;
+  const pcbFiberglassCenterZ =
+    plateLocalZ + pcbFiberglassFrontOffsetMm + pcbFiberglassThicknessMm / 2;
+  const pcbReliefCenterZ = plateLocalZ - 0.06;
+  const renderOffsets: MacroObliquePlaneRenderOffsets = { pcbReliefCenterZ };
   const root = new THREE.Group();
   root.name = "macro-oblique-plane-subject";
   root.position.set(
@@ -328,11 +344,11 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
     addMesh(boardGroup, "macro-oblique-pcb-rear-post", postGeometry, fiberglassMaterial, xMm, yMm, 3.2);
   }
 
-  addSilkscreenRectangle(silkscreenGroup, "macro-oblique-pcb-board-outline", silkscreenMaterial, 0, 0, 106, 106);
+  addSilkscreenRectangle(silkscreenGroup, "macro-oblique-pcb-board-outline", silkscreenMaterial, 0, 0, 106, 106, renderOffsets);
   const mountingHoleGeometry = new THREE.CylinderGeometry(toWorld(2.8), toWorld(2.8), toWorld(0.12), 24);
   mountingHoleGeometry.rotateX(Math.PI / 2);
   for (const [xMm, yMm] of [[-49, -49], [49, -49], [-49, 49], [49, 49]] as const) {
-    addVia(viaGroup, mountingHoleGeometry, viaMaterial, "macro-oblique-pcb-mounting-hole", xMm, yMm);
+    addVia(viaGroup, mountingHoleGeometry, viaMaterial, "macro-oblique-pcb-mounting-hole", xMm, yMm, renderOffsets);
   }
 
   const padGeometry = new THREE.BoxGeometry(toWorld(3.6), toWorld(2.2), toWorld(0.1));
@@ -341,16 +357,16 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
   viaGeometry.rotateX(Math.PI / 2);
 
   // Near zone: an asymmetric connector and test-pad bank.
-  addSilkscreenRectangle(nearZone, "macro-oblique-pcb-j1-footprint", silkscreenMaterial, 0, -52.8, 68, 8);
-  addGlyphString(nearZone, "macro-oblique-pcb-j1-label", silkscreenMaterial, "J1", -41, -42);
-  addGlyphString(nearZone, "macro-oblique-pcb-tp1-label", silkscreenMaterial, "TP1", -16, -42);
+  addSilkscreenRectangle(nearZone, "macro-oblique-pcb-j1-footprint", silkscreenMaterial, 0, -52.8, 68, 8, renderOffsets);
+  addGlyphString(nearZone, "macro-oblique-pcb-j1-label", silkscreenMaterial, "J1", -41, -42, renderOffsets);
+  addGlyphString(nearZone, "macro-oblique-pcb-tp1-label", silkscreenMaterial, "TP1", -16, -42, renderOffsets);
   for (const xMm of [-28, -21, -14, -7, 0, 7, 14, 21, 28]) {
-    addPad(padGroup, padGeometry, goldMaterial, "macro-oblique-pcb-connector-pad", xMm, -51);
-    addPad(padGroup, padGeometry, copperMaterial, "macro-oblique-pcb-connector-pad", xMm, -55);
+    addPad(padGroup, padGeometry, goldMaterial, "macro-oblique-pcb-connector-pad", xMm, -51, renderOffsets);
+    addPad(padGroup, padGeometry, copperMaterial, "macro-oblique-pcb-connector-pad", xMm, -55, renderOffsets);
   }
-  addTraceSegment(traceGroup, "macro-oblique-pcb-near-bus", copperMaterial, [-40, -37], [40, -37], 1.05);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-near-bus", copperMaterial, [-40, -37], [40, -37], 1.05, renderOffsets);
   for (const xMm of [-37, -29, -21, -13, -5, 5, 13, 21, 29, 37]) {
-    addVia(viaGroup, viaGeometry, viaMaterial, "macro-oblique-pcb-near-via", xMm, -31);
+    addVia(viaGroup, viaGeometry, viaMaterial, "macro-oblique-pcb-near-via", xMm, -31, renderOffsets);
   }
 
   // Middle zone: a high-contrast U1 footprint and a dense, still-planar pad field.
@@ -363,45 +379,45 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
     0,
     pcbReliefCenterZ,
   );
-  addSilkscreenRectangle(middleZone, "macro-oblique-pcb-u1-outline", silkscreenMaterial, 18, 0, 31, 29);
-  addGlyphString(middleZone, "macro-oblique-pcb-u1-label", silkscreenMaterial, "U1", 7, -17);
+  addSilkscreenRectangle(middleZone, "macro-oblique-pcb-u1-outline", silkscreenMaterial, 18, 0, 31, 29, renderOffsets);
+  addGlyphString(middleZone, "macro-oblique-pcb-u1-label", silkscreenMaterial, "U1", 7, -17, renderOffsets);
   for (const xMm of [3, 33]) {
     for (const yMm of [-11, -8, -5, 5, 8, 11]) {
-      addPad(padGroup, padGeometry, copperMaterial, "macro-oblique-pcb-u1-pad", xMm, yMm);
+      addPad(padGroup, padGeometry, copperMaterial, "macro-oblique-pcb-u1-pad", xMm, yMm, renderOffsets);
     }
   }
   for (const xMm of [11, 17, 23]) {
     for (const yMm of [-9, -5, 5, 9]) {
-      addPad(padGroup, smallPadGeometry, goldMaterial, "macro-oblique-pcb-u1-bga-pad", xMm, yMm);
+      addPad(padGroup, smallPadGeometry, goldMaterial, "macro-oblique-pcb-u1-bga-pad", xMm, yMm, renderOffsets);
     }
   }
-  addTraceSegment(traceGroup, "macro-oblique-pcb-middle-bus-left", copperMaterial, [-27, 15], [4, 15], pcbTraceStrokeMm);
-  addTraceSegment(traceGroup, "macro-oblique-pcb-middle-bus-right", copperMaterial, [32, -15], [48, -15], pcbTraceStrokeMm);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-middle-bus-left", copperMaterial, [-27, 15], [4, 15], pcbTraceStrokeMm, renderOffsets);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-middle-bus-right", copperMaterial, [32, -15], [48, -15], pcbTraceStrokeMm, renderOffsets);
 
   // Far zone: a fan-out field and deliberately different silkscreen landmarks.
-  addSilkscreenRectangle(farZone, "macro-oblique-pcb-far-footprint", silkscreenMaterial, -22, 36, 22, 12);
-  addGlyphString(farZone, "macro-oblique-pcb-tp1-far-label", silkscreenMaterial, "TP1", -45, 32);
-  addGlyphString(farZone, "macro-oblique-pcb-far-marker", silkscreenMaterial, "F", 42, 44);
+  addSilkscreenRectangle(farZone, "macro-oblique-pcb-far-footprint", silkscreenMaterial, -22, 36, 22, 12, renderOffsets);
+  addGlyphString(farZone, "macro-oblique-pcb-tp1-far-label", silkscreenMaterial, "TP1", -45, 32, renderOffsets);
+  addGlyphString(farZone, "macro-oblique-pcb-far-marker", silkscreenMaterial, "F", 42, 44, renderOffsets);
   for (const xMm of [-30, -24, -18, -12]) {
-    addPad(padGroup, smallPadGeometry, goldMaterial, "macro-oblique-pcb-far-pad", xMm, 35);
-    addPad(padGroup, smallPadGeometry, copperMaterial, "macro-oblique-pcb-far-pad", xMm, 41);
+    addPad(padGroup, smallPadGeometry, goldMaterial, "macro-oblique-pcb-far-pad", xMm, 35, renderOffsets);
+    addPad(padGroup, smallPadGeometry, copperMaterial, "macro-oblique-pcb-far-pad", xMm, 41, renderOffsets);
   }
   for (const [index, xMm] of [8, 14, 20, 26, 32].entries()) {
-    addTraceSegment(traceGroup, `macro-oblique-pcb-fanout-${index}`, goldMaterial, [xMm, 20], [xMm + 5, 39], 0.82);
-    addTraceSegment(traceGroup, `macro-oblique-pcb-fanout-fine-${index}`, copperMaterial, [xMm + 1.6, 20], [xMm + 5.6, 39], 0.52);
+    addTraceSegment(traceGroup, `macro-oblique-pcb-fanout-${index}`, goldMaterial, [xMm, 20], [xMm + 5, 39], 0.82, renderOffsets);
+    addTraceSegment(traceGroup, `macro-oblique-pcb-fanout-fine-${index}`, copperMaterial, [xMm + 1.6, 20], [xMm + 5.6, 39], 0.52, renderOffsets);
   }
   for (const [xMm, yMm] of [[-40, 28], [-33, 28], [38, 31], [45, 31], [-42, 39], [45, 39]] as const) {
-    addVia(viaGroup, viaGeometry, viaMaterial, "macro-oblique-pcb-far-via", xMm, yMm);
+    addVia(viaGroup, viaGeometry, viaMaterial, "macro-oblique-pcb-far-via", xMm, yMm, renderOffsets);
   }
 
   // Board-wide routing and asymmetric reference marks keep orientation readable.
-  addTraceSegment(traceGroup, "macro-oblique-pcb-left-bus", copperMaterial, [-46, -25], [-46, 22], 1.1);
-  addTraceSegment(traceGroup, "macro-oblique-pcb-right-bus", goldMaterial, [46, -28], [46, 22], 0.8);
-  addTraceSegment(traceGroup, "macro-oblique-pcb-upper-bus", copperMaterial, [-40, 24], [-4, 24], 0.82);
-  addTraceSegment(traceGroup, "macro-oblique-pcb-lower-bus", copperMaterial, [4, -24], [40, -24], 0.82);
-  addSilkscreenRectangle(silkscreenGroup, "macro-oblique-pcb-corner-marker", silkscreenMaterial, -45, 45, 7, 7);
-  addGlyph(silkscreenGroup, "macro-oblique-pcb-north-marker", silkscreenMaterial, "N", -50, 20);
-  addGlyph(silkscreenGroup, "macro-oblique-pcb-middle-marker", silkscreenMaterial, "M", 34, -38);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-left-bus", copperMaterial, [-46, -25], [-46, 22], 1.1, renderOffsets);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-right-bus", goldMaterial, [46, -28], [46, 22], 0.8, renderOffsets);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-upper-bus", copperMaterial, [-40, 24], [-4, 24], 0.82, renderOffsets);
+  addTraceSegment(traceGroup, "macro-oblique-pcb-lower-bus", copperMaterial, [4, -24], [40, -24], 0.82, renderOffsets);
+  addSilkscreenRectangle(silkscreenGroup, "macro-oblique-pcb-corner-marker", silkscreenMaterial, -45, 45, 7, 7, renderOffsets);
+  addGlyph(silkscreenGroup, "macro-oblique-pcb-north-marker", silkscreenMaterial, "N", -50, 20, renderOffsets);
+  addGlyph(silkscreenGroup, "macro-oblique-pcb-middle-marker", silkscreenMaterial, "M", 34, -38, renderOffsets);
   for (const yMm of [-29, -23, 22, 28]) {
     addLine(silkscreenGroup, "macro-oblique-pcb-scale-mark", silkscreenMaterial, -4, yMm, 18, 0.3, pcbReliefCenterZ);
   }
@@ -412,9 +428,3 @@ export function createMacroObliquePlaneGroup(): THREE.Group {
 export const disposeMacroObliquePlaneGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
 };
-
-export function MacroObliquePlaneSubject() {
-  const group = useMemo(createMacroObliquePlaneGroup, []);
-  useEffect(() => () => disposeMacroObliquePlaneGroup(group), [group]);
-  return <primitive object={group} dispose={null} />;
-}

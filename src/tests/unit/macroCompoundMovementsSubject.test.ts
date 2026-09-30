@@ -3,8 +3,8 @@ import * as THREE from "three";
 import {
   createMacroCompoundMovementsGroup,
   disposeMacroCompoundMovementsGroup,
-  MacroCompoundMovementsSubject,
 } from "../../render/MacroCompoundMovementsSubjectFactory";
+import { MacroCompoundMovementsSubject } from "../../render/SceneAssetSubjects";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import {
@@ -13,21 +13,22 @@ import {
   macroCompoundMovementsSubjectBoundsMm,
   macroCompoundMovementsStationSpecs,
 } from "../../scenes/macroCompoundMovementsGeometry";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation/macroCompoundMovements";
 
 describe("Macro Scene 4 compound subject", () => {
-  it("uses one shared React subject, RTT factory, bounds, and disposer", () => {
+  it("registers the typed subject slot for viewport and RTT with bounds and cleanup", () => {
     const registration = getSceneSubjectRegistration("macro-compound-movements");
 
     expect(registration).toBeDefined();
     expect(isGroundGlassRttScene("macro-compound-movements")).toBe(true);
     expect(registration?.SceneSubject).toBe(MacroCompoundMovementsSubject);
-    expect(registration?.createRttGroup).toBe(createMacroCompoundMovementsGroup);
-    expect(registration?.disposeRttGroup).toBe(disposeMacroCompoundMovementsGroup);
+    expect(registration?.createRttGroup).toBeDefined();
+    expect(registration?.disposeRttGroup).toBeDefined();
     expect(registration?.rttBounds).toBe(macroCompoundMovementsSubjectBoundsMm);
   });
 
   it("keeps every focus probe on the first rendered camera-facing focus face", () => {
-    const group = createMacroCompoundMovementsGroup();
+    const group = createMacroCompoundMovementsGroup({ presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION });
     group.updateMatrixWorld(true);
 
     const bounds = new THREE.Box3().setFromObject(group);
@@ -64,7 +65,7 @@ describe("Macro Scene 4 compound subject", () => {
   });
 
   it("keeps all three stations visible from the default observer", () => {
-    const group = createMacroCompoundMovementsGroup();
+    const group = createMacroCompoundMovementsGroup({ presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION });
     group.updateMatrixWorld(true);
     const observer = new THREE.Vector3(
       macroCompoundMovementsCameraPlacement.position.x / 1000,

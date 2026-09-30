@@ -15,6 +15,10 @@ import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-archi
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
+import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
+import { macroObliquePlaneScene } from "../../scenes/definitions/macro-oblique-plane";
+import { macroCompoundMovementsScene } from "../../scenes/definitions/macro-compound-movements";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
 import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
@@ -25,6 +29,10 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/oblique
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import { MIRROR_SHIFT_PRESENTATION } from "../../scenes/presentation/mirrorShift";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation/macroCompoundMovements";
 import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
 import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
@@ -35,6 +43,14 @@ import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactor
 import * as focusFundamentalsAsset from "../../render/FocusFundamentalsSubjectFactory";
 import * as viewCameraAnatomyAsset from "../../render/LessonZeroGroundGlassSubjectFactory";
 import * as mirrorShiftAsset from "../../render/MirrorShiftSubjectFactory";
+import * as macroBellowsExtensionAsset from "../../render/MacroSpecimenSubjectFactory";
+import * as macroDepthOfFieldAsset from "../../render/MacroDepthOfFieldSubjectFactory";
+import * as macroObliquePlaneAsset from "../../render/MacroObliquePlaneSubjectFactory";
+import * as macroCompoundMovementsAsset from "../../render/MacroCompoundMovementsSubjectFactory";
+import * as macroSpecimenGeometry from "../../scenes/macroSpecimenGeometry";
+import * as macroDepthOfFieldGeometry from "../../scenes/macroDepthOfFieldGeometry";
+import * as macroObliquePlaneGeometry from "../../scenes/macroObliquePlaneGeometry";
+import * as macroCompoundMovementsGeometry from "../../scenes/macroCompoundMovementsGeometry";
 import {
   mirrorShiftGeometry,
   resolveMirrorShiftCameraAnchors,
@@ -50,6 +66,10 @@ import {
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
   MIRROR_SHIFT_ASSET_KEY,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
   createRegisteredSceneAsset,
@@ -92,6 +112,10 @@ const sceneDefinitions = [
   focusFundamentalsTwoTargets,
   viewCameraAnatomyScene,
   mirrorShiftScene,
+  macroBellowsExtensionScene,
+  macroDepthOfFieldScene,
+  macroObliquePlaneScene,
+  macroCompoundMovementsScene,
 ] as const;
 
 const semanticResults = () => ({
@@ -126,7 +150,48 @@ const semanticResults = () => ({
     FOCUS_FUNDAMENTALS_PRESENTATION,
     VIEW_CAMERA_ANATOMY_PRESENTATION,
     MIRROR_SHIFT_PRESENTATION,
+    MACRO_BELLOWS_EXTENSION_PRESENTATION,
+    MACRO_DEPTH_OF_FIELD_PRESENTATION,
+    MACRO_OBLIQUE_PLANE_PRESENTATION,
+    MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
   ],
+  macroCanonicalGeometry: {
+    specimen: macroSpecimenGeometry,
+    depthOfField: macroDepthOfFieldGeometry,
+    obliquePlane: macroObliquePlaneGeometry,
+    compoundMovements: macroCompoundMovementsGeometry,
+  },
+  macroCalibrationOptics: {
+    obliquePlane: (() => {
+      const scene = macroObliquePlaneScene;
+      const optics = deriveOpticsState(
+        {
+          ...DEFAULT_CAMERA_STATE,
+          ...scene.cameraPreset,
+          activeSceneId: scene.id,
+          focusDistanceMm: 390,
+          frontTiltDeg: 6.3,
+        },
+        scene,
+      );
+      return { focusPlane: optics.focusPlane, lensCenterWorld: optics.lensCenterWorld };
+    })(),
+    compoundMovements: (() => {
+      const scene = macroCompoundMovementsScene;
+      const optics = deriveOpticsState(
+        {
+          ...DEFAULT_CAMERA_STATE,
+          ...scene.cameraPreset,
+          activeSceneId: scene.id,
+          focusDistanceMm: 490,
+          frontTiltDeg: 3.4,
+          frontSwingDeg: -2.8,
+        },
+        scene,
+      );
+      return { focusPlane: optics.focusPlane, lensCenterWorld: optics.lensCenterWorld };
+    })(),
+  },
   mirrorShift: (() => {
     const optics = deriveOpticsState(
       {
@@ -227,7 +292,7 @@ const collectDisposableSpies = (
   ...[...resources.materials].map((resource) => vi.spyOn(resource, "dispose")),
 ];
 
-const expectSa3bProductionResourcesDisposedOnce = (
+const expectInstanceOwnedResourcesDisposedOnce = (
   assetKey: InstanceOwnedSceneAssetKey,
   request: SceneAssetRequestMap[InstanceOwnedSceneAssetKey],
 ): void => {
@@ -241,7 +306,9 @@ const expectSa3bProductionResourcesDisposedOnce = (
     expect(resources.textures.size).toBeGreaterThan(0);
     // These subjects intentionally reuse per-instance resources across meshes.
     // The production disposer must deduplicate each resource during one traversal.
-    expect(resources.geometryReferences.length).toBeGreaterThan(
+    // Some factories reuse geometries within one subject and some intentionally
+    // allocate each mesh geometry separately; every unique geometry is checked.
+    expect(resources.geometryReferences.length).toBeGreaterThanOrEqual(
       resources.geometries.size,
     );
     expect(resources.materialReferences.length).toBeGreaterThan(
@@ -254,6 +321,48 @@ const expectSa3bProductionResourcesDisposedOnce = (
     disposalSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   } finally {
     if (!disposalStarted) disposeRegisteredSceneAsset(assetKey, group);
+  }
+};
+
+const expectAssetInstancesOwnDisjointResources = (
+  assetKey: InstanceOwnedSceneAssetKey,
+  request: SceneAssetRequestMap[InstanceOwnedSceneAssetKey],
+): void => {
+  const first = createRegisteredSceneAsset(assetKey, request);
+  const second = createRegisteredSceneAsset(assetKey, request);
+  const firstResources = collectDisposableResources(first);
+  const secondResources = collectDisposableResources(second);
+  const firstDisposalSpies = collectDisposableSpies(firstResources);
+  const secondDisposalSpies = collectDisposableSpies(secondResources);
+  const expectDisjoint = <T,>(left: Set<T>, right: Set<T>): void => {
+    expect([...left].filter((resource) => right.has(resource))).toEqual([]);
+  };
+  let firstDisposed = false;
+  let secondDisposed = false;
+
+  try {
+    expect(first).not.toBe(second);
+    expectDisjoint(firstResources.geometries, secondResources.geometries);
+    expectDisjoint(firstResources.materials, secondResources.materials);
+    expectDisjoint(firstResources.textures, secondResources.textures);
+
+    disposeRegisteredSceneAsset(assetKey, first);
+    firstDisposed = true;
+    firstDisposalSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    secondDisposalSpies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+    expect(second.children.length).toBeGreaterThan(0);
+    second.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      expect(object.geometry).toBeDefined();
+      expect(object.material).toBeDefined();
+    });
+
+    disposeRegisteredSceneAsset(assetKey, second);
+    secondDisposed = true;
+    secondDisposalSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  } finally {
+    if (!firstDisposed) disposeRegisteredSceneAsset(assetKey, first);
+    if (!secondDisposed) disposeRegisteredSceneAsset(assetKey, second);
   }
 };
 
@@ -443,15 +552,29 @@ const exerciseSharedReplacement = (
 };
 
 describe("static teaching scene asset migrations", () => {
+  it("disposes each Macro asset instance without sharing or invalidating another instance", () => {
+    const macroAssets = [
+      [MACRO_BELLOWS_EXTENSION_ASSET_KEY, { presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION }],
+      [MACRO_DEPTH_OF_FIELD_ASSET_KEY, { presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION }],
+      [MACRO_OBLIQUE_PLANE_ASSET_KEY, { presentation: MACRO_OBLIQUE_PLANE_PRESENTATION }],
+      [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, { presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION }],
+    ] as const;
+
+    macroAssets.forEach(([assetKey, request]) => {
+      expectInstanceOwnedResourcesDisposedOnce(assetKey, request);
+      expectAssetInstancesOwnDisjointResources(assetKey, request);
+    });
+  });
+
   it("disposes SA3B per-instance resources once through the production registry", () => {
-    expectSa3bProductionResourcesDisposedOnce(
+    expectInstanceOwnedResourcesDisposedOnce(
       ARCHITECTURE_FOREGROUND_ASSET_KEY,
       { presentation: ARCHITECTURE_FOREGROUND_PRESENTATION },
     );
-    expectSa3bProductionResourcesDisposedOnce(INTERIOR_CORNER_ASSET_KEY, {
+    expectInstanceOwnedResourcesDisposedOnce(INTERIOR_CORNER_ASSET_KEY, {
       presentation: INTERIOR_CORNER_PRESENTATION,
     });
-    expectSa3bProductionResourcesDisposedOnce(OBLIQUE_TABLETOP_ASSET_KEY, {
+    expectInstanceOwnedResourcesDisposedOnce(OBLIQUE_TABLETOP_ASSET_KEY, {
       presentation: OBLIQUE_TABLETOP_PRESENTATION,
     });
   });
@@ -629,6 +752,22 @@ describe("static teaching scene asset migrations", () => {
       mirrorShiftAsset,
       "createMirrorShiftAssetGroup",
     );
+    const macroBellowsExtensionFactorySpy = vi.spyOn(
+      macroBellowsExtensionAsset,
+      "createMacroSpecimenGroup",
+    );
+    const macroDepthOfFieldFactorySpy = vi.spyOn(
+      macroDepthOfFieldAsset,
+      "createMacroDepthOfFieldGroup",
+    );
+    const macroObliquePlaneFactorySpy = vi.spyOn(
+      macroObliquePlaneAsset,
+      "createMacroObliquePlaneGroup",
+    );
+    const macroCompoundMovementsFactorySpy = vi.spyOn(
+      macroCompoundMovementsAsset,
+      "createMacroCompoundMovementsGroup",
+    );
 
     exerciseReplacement(
       ARCHITECTURE_RISE_ASSET_KEY,
@@ -694,6 +833,34 @@ describe("static teaching scene asset migrations", () => {
       "view-camera-anatomy",
     );
     exerciseReplacement(
+      MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+      { presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION },
+      countFactoryCalls(macroBellowsExtensionFactorySpy),
+      "macro-bellows-extension-subject",
+      "macro-bellows-extension",
+    );
+    exerciseReplacement(
+      MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+      { presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION },
+      countFactoryCalls(macroDepthOfFieldFactorySpy),
+      "macro-depth-of-field-subject",
+      "macro-depth-of-field",
+    );
+    exerciseReplacement(
+      MACRO_OBLIQUE_PLANE_ASSET_KEY,
+      { presentation: MACRO_OBLIQUE_PLANE_PRESENTATION },
+      countFactoryCalls(macroObliquePlaneFactorySpy),
+      "macro-oblique-plane-subject",
+      "macro-oblique-plane",
+    );
+    exerciseReplacement(
+      MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+      { presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION },
+      countFactoryCalls(macroCompoundMovementsFactorySpy),
+      "macro-compound-movements-subject",
+      "macro-compound-movements",
+    );
+    exerciseReplacement(
       MIRROR_SHIFT_ASSET_KEY,
       {
         presentation: MIRROR_SHIFT_PRESENTATION,
@@ -727,6 +894,14 @@ describe("static teaching scene asset migrations", () => {
       "src/scenes/presentation/viewCameraAnatomy.ts",
       "src/scenes/definitions/mirror-shift.ts",
       "src/scenes/presentation/mirrorShift.ts",
+      "src/scenes/definitions/macro-bellows-extension.ts",
+      "src/scenes/definitions/macro-depth-of-field.ts",
+      "src/scenes/definitions/macro-oblique-plane.ts",
+      "src/scenes/definitions/macro-compound-movements.ts",
+      "src/scenes/presentation/macroBellowsExtension.ts",
+      "src/scenes/presentation/macroDepthOfField.ts",
+      "src/scenes/presentation/macroObliquePlane.ts",
+      "src/scenes/presentation/macroCompoundMovements.ts",
     ];
 
     paths.forEach((path) => {

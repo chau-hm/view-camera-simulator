@@ -8,12 +8,20 @@ counting.
 
 ### Instance-owned registered assets
 
-The SA1–SA3B registrations create a subject group whose render resources are
-owned by that registered instance. The registered disposer releases its owned
-geometry, materials, and textures. These registrations retain the existing
-implicit instance-owned policy and require a disposer in the type contract. R3F
-primitives use `dispose={null}` so the registered lifecycle remains the single
-disposal authority.
+The instance-owned registrations from SA1–SA3B and SA4B, the Mirror Shift
+asset from SA5A, and the four Macro subjects from SA6A create subject groups
+whose render resources are owned by each registered instance. The registered
+disposer releases its owned geometry, materials, and textures. These
+registrations retain the implicit instance-owned policy and require a disposer
+in the type contract. R3F primitives use `dispose={null}` so the registered
+lifecycle remains the single disposal authority.
+
+SA6A adds four independently typed Macro asset slots: Macro Bellows Extension,
+Macro Depth of Field, Macro Oblique Plane, and Macro Compound Movements. Each
+request carries its renderer-neutral scene presentation, and each factory call
+creates fresh per-instance geometry, materials, and teaching textures. Their
+registered disposers continue to use the existing teaching-subject resource
+cleanup contract.
 
 ### Module-shared scene subjects
 
