@@ -11,23 +11,24 @@ import { understandingCameraMovementsScene } from "../../scenes/definitions/unde
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
 import * as THREE from "three";
 import { getGroundGlassClipRangeWorld } from "../../render/groundGlassRttScenes";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import {
-  applyGroundGlassDofUniformState,
-  createGroundGlassDofUniformState,
-} from "../../render/createGroundGlassDofUniformState";
+  bindGroundGlassDofStateToCocMaterial,
+  bindGroundGlassDofStateToGatherMaterial,
+} from "../../render/groundGlassShaderBindings";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { resolveGroundGlassImageDistanceMm } from "../../render/groundGlassRttScenes";
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   createCameraMovementsGroup,
   disposeCameraMovementsGroup,
-} from "../../render/CameraMovementsSubjectFactory";
+} from "../../render/assets/CameraMovementLatticeAsset";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
   updateCameraMovementRttSubjectTarget,
 } from "../../render/cameraMovementRttSubjectLifecycle";
-import { CAMERA_MOVEMENT_BASELINE_RENDER_MODEL } from "../../render/cameraMovementLatticeRenderModel";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 
@@ -86,29 +87,52 @@ describe("RTT scene registration", () => {
 });
 
 describe("Camera Movements RTT focal uniforms", () => {
-  const createUniformMaterial = () =>
-    new THREE.ShaderMaterial({
-      uniforms: {
-        dofMode: { value: 0 },
-        lensCenterWorld: { value: new THREE.Vector3() },
-        focusPlanePoint: { value: new THREE.Vector3() },
-        focusPlaneNormal: { value: new THREE.Vector3() },
-        nearPlanePoint: { value: new THREE.Vector3() },
-        nearPlaneNormal: { value: new THREE.Vector3() },
-        farPlanePoint: { value: new THREE.Vector3() },
-        farPlaneNormal: { value: new THREE.Vector3() },
-        hasFiniteFar: { value: 0 },
-        inverseProjectionMatrix: { value: new THREE.Matrix4() },
-        cameraMatrixWorld: { value: new THREE.Matrix4() },
-        maximumBlurRadiusPx: { value: 0 },
-        focalLengthMm: { value: 0 },
-        filmWidthMm: { value: 0 },
-        fNumber: { value: 0 },
-        imageDistanceMm: { value: 0 },
-        renderWidth: { value: 0 },
-        renderHeight: { value: 0 },
-      },
-    });
+  const createDofStateUniforms = () => ({
+    dofMode: { value: 0 },
+    lensCenterWorld: { value: new THREE.Vector3() },
+    lensPlaneNormal: { value: new THREE.Vector3() },
+    lensPlaneBasisX: { value: new THREE.Vector3() },
+    lensPlaneBasisY: { value: new THREE.Vector3() },
+    filmPlanePoint: { value: new THREE.Vector3() },
+    filmPlaneNormal: { value: new THREE.Vector3() },
+    filmPlaneBasisX: { value: new THREE.Vector3() },
+    filmPlaneBasisY: { value: new THREE.Vector3() },
+    focusPlanePoint: { value: new THREE.Vector3() },
+    focusPlaneNormal: { value: new THREE.Vector3() },
+    nearPlanePoint: { value: new THREE.Vector3() },
+    nearPlaneNormal: { value: new THREE.Vector3() },
+    farPlanePoint: { value: new THREE.Vector3() },
+    farPlaneNormal: { value: new THREE.Vector3() },
+    hasFiniteFar: { value: 0 },
+    inverseProjectionMatrix: { value: new THREE.Matrix4() },
+    cameraMatrixWorld: { value: new THREE.Matrix4() },
+    maximumCoCRadiusPx: { value: 0 },
+    focalLengthMm: { value: 0 },
+    sampledFilmWidthMm: { value: 0 },
+    sampledFilmHeightMm: { value: 0 },
+    fNumber: { value: 0 },
+    imageDistanceMm: { value: 0 },
+    renderWidth: { value: 0 },
+    renderHeight: { value: 0 },
+    circleOfConfusionMm: { value: 0 },
+  });
+
+  const createCocMaterial = () => new THREE.ShaderMaterial({
+    uniforms: {
+      tDepth: { value: null },
+      ...createDofStateUniforms(),
+    },
+  });
+
+  const createGatherMaterial = () => new THREE.ShaderMaterial({
+    uniforms: {
+      tColor: { value: null },
+      tDepth: { value: null },
+      tCoC: { value: null },
+      gatherLayer: { value: 0 },
+      ...createDofStateUniforms(),
+    },
+  });
 
   it.each([90, 105, 120, 150])(
     "applies supplied %imm focal and finite-focus image distance to both shader passes",
@@ -128,7 +152,7 @@ describe("Camera Movements RTT focal uniforms", () => {
         optics.lensCenterWorld,
       );
       expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
-      const state = createGroundGlassDofUniformState(
+      const state = createGroundGlassDofRenderState(
         optics,
         camera,
         focalLengthMm,
@@ -140,29 +164,29 @@ describe("Camera Movements RTT focal uniforms", () => {
         400,
         24,
       );
-      const horizontal = createUniformMaterial();
-      const vertical = createUniformMaterial();
-      applyGroundGlassDofUniformState(horizontal, state);
-      applyGroundGlassDofUniformState(vertical, state);
+      const cocMaterial = createCocMaterial();
+      const gatherMaterial = createGatherMaterial();
+      bindGroundGlassDofStateToCocMaterial(cocMaterial, state);
+      bindGroundGlassDofStateToGatherMaterial(gatherMaterial, state);
 
       const expectedImageDistanceMm =
         (focalLengthMm * focusDistanceMm) /
         (focusDistanceMm - focalLengthMm);
-      expect(state.focalLengthMm).toBe(focalLengthMm);
-      expect(state.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
-      expect(state.imageDistanceMm).not.toBe(focalLengthMm);
-      expect(horizontal.uniforms.focalLengthMm.value).toBe(focalLengthMm);
-      expect(vertical.uniforms.focalLengthMm.value).toBe(focalLengthMm);
-      expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(
+      expect(state.optics.focalLengthMm).toBe(focalLengthMm);
+      expect(state.optics.imageDistanceMm).toBeCloseTo(expectedImageDistanceMm, 8);
+      expect(state.optics.imageDistanceMm).not.toBe(focalLengthMm);
+      expect(cocMaterial.uniforms.focalLengthMm.value).toBe(focalLengthMm);
+      expect(gatherMaterial.uniforms.focalLengthMm.value).toBe(focalLengthMm);
+      expect(cocMaterial.uniforms.imageDistanceMm.value).toBeCloseTo(
         expectedImageDistanceMm,
         8,
       );
-      expect(vertical.uniforms.imageDistanceMm.value).toBeCloseTo(
+      expect(gatherMaterial.uniforms.imageDistanceMm.value).toBeCloseTo(
         expectedImageDistanceMm,
         8,
       );
-      horizontal.dispose();
-      vertical.dispose();
+      cocMaterial.dispose();
+      gatherMaterial.dispose();
     },
   );
 
@@ -179,7 +203,7 @@ describe("Camera Movements RTT focal uniforms", () => {
       optics.lensCenterWorld,
     );
     expect(configureGroundGlassCamera(camera, optics, clip.near, clip.far).ok).toBe(true);
-    const state = createGroundGlassDofUniformState(
+    const state = createGroundGlassDofRenderState(
       optics,
       camera,
       cameraState.focalLengthMm,
@@ -191,20 +215,20 @@ describe("Camera Movements RTT focal uniforms", () => {
       400,
       24,
     );
-    const horizontal = createUniformMaterial();
-    const vertical = createUniformMaterial();
-    applyGroundGlassDofUniformState(horizontal, state);
-    applyGroundGlassDofUniformState(vertical, state);
+    const cocMaterial = createCocMaterial();
+    const gatherMaterial = createGatherMaterial();
+    bindGroundGlassDofStateToCocMaterial(cocMaterial, state);
+    bindGroundGlassDofStateToGatherMaterial(gatherMaterial, state);
 
-    expect(horizontal.uniforms.focalLengthMm.value).toBe(90);
-    expect(vertical.uniforms.focalLengthMm.value).toBe(90);
-    expect(horizontal.uniforms.imageDistanceMm.value).toBeCloseTo(94.2408377, 8);
-    expect(vertical.uniforms.imageDistanceMm.value).toBeCloseTo(94.2408377, 8);
-    expect(horizontal.uniforms.imageDistanceMm.value).not.toBe(
-      horizontal.uniforms.focalLengthMm.value,
+    expect(cocMaterial.uniforms.focalLengthMm.value).toBe(90);
+    expect(gatherMaterial.uniforms.focalLengthMm.value).toBe(90);
+    expect(cocMaterial.uniforms.imageDistanceMm.value).toBeCloseTo(94.2408377, 8);
+    expect(gatherMaterial.uniforms.imageDistanceMm.value).toBeCloseTo(94.2408377, 8);
+    expect(cocMaterial.uniforms.imageDistanceMm.value).not.toBe(
+      cocMaterial.uniforms.focalLengthMm.value,
     );
-    horizontal.dispose();
-    vertical.dispose();
+    cocMaterial.dispose();
+    gatherMaterial.dispose();
   });
 
   it("keeps RTT image distance invariant under rigid camera body pitch", () => {
@@ -234,7 +258,7 @@ describe("Camera Movements RTT focal uniforms", () => {
     const scene = new THREE.Scene();
     const mounted = mountCameraMovementRttSubject(
       scene,
-      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+      CAMERA_MOVEMENT_BASELINE_PRESENTATION,
       "middle",
     );
     const group = mounted.group;
@@ -262,16 +286,16 @@ describe("Camera Movements RTT focal uniforms", () => {
       vi.spyOn(material, "dispose"),
     );
     const expectedColourByTargetRegion = {
-      upper: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.upperRegionColour,
-      middle: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.middleRegionColour,
-      lower: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.lowerRegionColour,
-      neutral: CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation.inactiveColour,
+      upper: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.upperRegionColour,
+      middle: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.middleRegionColour,
+      lower: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.lowerRegionColour,
+      neutral: CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation.inactiveColour,
     } as const;
 
     (["whole", "upper", "lower", "middle"] as const).forEach((presentationRegion) => {
       updateCameraMovementRttSubjectTarget(
         mounted,
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION,
         presentationRegion,
       );
       expect(group.userData.presentationRegion).toBe(presentationRegion);

@@ -13,6 +13,7 @@ import {
 } from "../../scenes/lessonZeroGroundGlassSubject";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 
 describe("Lesson 0 Ground Glass subject", () => {
   it("derives the subject plane from the canonical finite-focus solution", () => {
@@ -50,7 +51,9 @@ describe("Lesson 0 Ground Glass subject", () => {
   });
 
   it("uses the shared subject factory for meaningful RTT geometry", () => {
-    const group = createLessonZeroGroundGlassGroup();
+    const group = createLessonZeroGroundGlassGroup({
+      presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
+    });
     expect(group.name).toBe("view-camera-anatomy-subject");
     expect(group.children).toHaveLength(lessonZeroGroundGlassSubjectGeometry.boxes.length);
     expect(group.getObjectByName("view-camera-anatomy-target-cross-horizontal")).toBeInstanceOf(THREE.Mesh);

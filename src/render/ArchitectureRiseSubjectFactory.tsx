@@ -1,13 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry, {
-  architectureRiseSideWindowBays,
-  architectureRiseWindowBays,
-  getArchitectureRisePrimaryFacadePlacement,
-  referenceObjects,
-} from "../scenes/architectureRiseGeometry";
-import type { ReferenceObjectDef } from "../scenes/architectureRiseGeometry";
+import type { ArchitectureRisePresentation } from "../scenes/presentation/architectureRise";
 import {
   createFocusFriendlyMaterial,
   disposeTeachingSubjectResources,
@@ -39,7 +31,9 @@ const standard = (
 ): THREE.MeshStandardMaterial =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness });
 
-const createResources = (): ArchitectureRiseResources => ({
+const createResources = (
+  geometry: ArchitectureRisePresentation["geometry"],
+): ArchitectureRiseResources => ({
   box: new THREE.BoxGeometry(1, 1, 1),
   ground: new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
   building: standard("#8798a6", 0.92, 0.04),
@@ -89,7 +83,8 @@ const addBox = ({ name, size, position, material, parent }: BoxSpec): THREE.Mesh
 const addWindowBay = (
   root: THREE.Group,
   resources: ArchitectureRiseResources,
-  bay: (typeof architectureRiseWindowBays)[number],
+  geometry: ArchitectureRisePresentation["geometry"],
+  bay: ArchitectureRisePresentation["geometry"]["architectureRiseWindowBays"][number],
 ): void => {
   const windowGroup = new THREE.Group();
   windowGroup.name = `architecture-rise-facade-window-bay-${bay.id}`;
@@ -140,7 +135,8 @@ const addWindowBay = (
 const addSideWindowBay = (
   root: THREE.Group,
   resources: ArchitectureRiseResources,
-  bay: (typeof architectureRiseSideWindowBays)[number],
+  geometry: ArchitectureRisePresentation["geometry"],
+  bay: ArchitectureRisePresentation["geometry"]["architectureRiseSideWindowBays"][number],
 ): void => {
   const group = new THREE.Group();
   group.name = `architecture-rise-side-return-window-bay-${bay.id}`;
@@ -180,7 +176,11 @@ const addSideWindowBay = (
   });
 };
 
-const addFacadeFineDetail = (root: THREE.Group, resources: ArchitectureRiseResources): void => {
+const addFacadeFineDetail = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+  geometry: ArchitectureRisePresentation["geometry"],
+): void => {
   const detailGroup = new THREE.Group();
   detailGroup.name = "architecture-rise-facade-fine-detail";
   detailGroup.userData.resources = resources;
@@ -202,7 +202,11 @@ const addFacadeFineDetail = (root: THREE.Group, resources: ArchitectureRiseResou
   root.add(detailGroup);
 };
 
-const addFocusChart = (root: THREE.Group, resources: ArchitectureRiseResources): void => {
+const addFocusChart = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+  geometry: ArchitectureRisePresentation["geometry"],
+): void => {
   const focusGroup = new THREE.Group();
   focusGroup.name = "architecture-rise-focus-chart";
   focusGroup.userData.resources = resources;
@@ -231,6 +235,7 @@ const addFocusChart = (root: THREE.Group, resources: ArchitectureRiseResources):
 const addArchitectureContext = (
   root: THREE.Group,
   resources: ArchitectureRiseResources,
+  geometry: ArchitectureRisePresentation["geometry"],
 ): void => {
   const context = new THREE.Group();
   context.name = "architecture-rise-context-structure";
@@ -245,7 +250,9 @@ const addArchitectureContext = (
     parent: context,
   });
   sideMass.castShadow = true;
-  architectureRiseSideWindowBays.forEach((bay) => addSideWindowBay(context, resources, bay));
+  geometry.architectureRiseSideWindowBays.forEach((bay) =>
+    addSideWindowBay(context, resources, geometry, bay),
+  );
 
   [0, 1, 2, 3].forEach((index) => {
     addBox({
@@ -309,7 +316,11 @@ const addArchitectureContext = (
   });
 };
 
-const addStreetContext = (root: THREE.Group, resources: ArchitectureRiseResources): void => {
+const addStreetContext = (
+  root: THREE.Group,
+  resources: ArchitectureRiseResources,
+  geometry: ArchitectureRisePresentation["geometry"],
+): void => {
   const street = new THREE.Group();
   street.name = "architecture-rise-street-context";
   street.userData.resources = resources;
@@ -372,8 +383,10 @@ const addStreetContext = (root: THREE.Group, resources: ArchitectureRiseResource
 const addReferenceObjects = (
   root: THREE.Group,
   resources: ArchitectureRiseResources,
+  geometry: ArchitectureRisePresentation["geometry"],
+  referenceObjects: ArchitectureRisePresentation["referenceObjects"],
 ): void => {
-  referenceObjects.forEach((def: ReferenceObjectDef) => {
+  referenceObjects.forEach((def) => {
     const group = new THREE.Group();
     group.name = `architecture-rise-reference-${def.id}`;
     group.userData.resources = resources;
@@ -432,12 +445,20 @@ const addReferenceObjects = (
   });
 };
 
-export function createArchitectureRiseGroup(): THREE.Group {
-  const resources = createResources();
+export type ArchitectureRiseAssetRequest = Readonly<{
+  presentation: ArchitectureRisePresentation;
+}>;
+
+export function createArchitectureRiseGroup(
+  request: ArchitectureRiseAssetRequest,
+): THREE.Group {
+  const { presentation } = request;
+  const { geometry } = presentation;
+  const resources = createResources(geometry);
   const root = new THREE.Group();
   root.name = "architecture-rise-subject";
   root.userData.resources = resources;
-  const primaryFacadePlacement = getArchitectureRisePrimaryFacadePlacement();
+  const primaryFacadePlacement = geometry.getArchitectureRisePrimaryFacadePlacement();
 
   addBox({
     name: "architecture-rise-building-mass",
@@ -516,36 +537,24 @@ export function createArchitectureRiseGroup(): THREE.Group {
     });
   }
 
-  architectureRiseWindowBays.forEach((bay) => addWindowBay(root, resources, bay));
-  addFocusChart(root, resources);
-  addFacadeFineDetail(root, resources);
-  addArchitectureContext(root, resources);
-  addStreetContext(root, resources);
+  geometry.architectureRiseWindowBays.forEach((bay) =>
+    addWindowBay(root, resources, geometry, bay),
+  );
+  addFocusChart(root, resources, geometry);
+  addFacadeFineDetail(root, resources, geometry);
+  addArchitectureContext(root, resources, geometry);
+  addStreetContext(root, resources, geometry);
 
   const ground = new THREE.Mesh(resources.ground, resources.groundMaterial);
   ground.name = "architecture-rise-ground";
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   root.add(ground);
-  addReferenceObjects(root, resources);
+  addReferenceObjects(root, resources, geometry, presentation.referenceObjects);
 
   return root;
 }
 
 export const disposeArchitectureRiseGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
-};
-
-/** Viewport and RTT intentionally render the same owned subject graph. */
-export const ArchitectureRiseSubject: React.FC = () => {
-  const group = useMemo(() => createArchitectureRiseGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeArchitectureRiseGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
 };

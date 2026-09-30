@@ -1,23 +1,28 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { toWorld } from "./rttUtils";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { createMacroMaterial } from "./MacroSubjectMaterials";
-import {
-  MACRO_SPECIMEN,
-  MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM,
-  MACRO_SPECIMEN_FACE_INSET_FRONT_OFFSET_MM,
-  MACRO_SPECIMEN_FACE_INSET_RADIUS_MM,
-  MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM,
-  MACRO_SPECIMEN_FACE_PLATE_OUTER_RADIUS_MM,
-  MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM,
-  MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM,
-  MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM,
-} from "../scenes/macroSpecimenGeometry";
+import type { MacroBellowsExtensionPresentation } from "../scenes/presentation/macroBellowsExtension";
+
+export type MacroBellowsExtensionAssetRequest = Readonly<{
+  presentation: MacroBellowsExtensionPresentation;
+}>;
 
 /** An invented specimen medallion, with all visible detail in physical geometry. */
-export function createMacroSpecimenGroup(): THREE.Group {
+export function createMacroSpecimenGroup({
+  presentation,
+}: MacroBellowsExtensionAssetRequest): THREE.Group {
+  const {
+    MACRO_SPECIMEN,
+    MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM,
+    MACRO_SPECIMEN_FACE_INSET_FRONT_OFFSET_MM,
+    MACRO_SPECIMEN_FACE_INSET_RADIUS_MM,
+    MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM,
+    MACRO_SPECIMEN_FACE_PLATE_OUTER_RADIUS_MM,
+    MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM,
+    MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM,
+    MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM,
+  } = presentation.geometry;
   const root = new THREE.Group();
   root.name = "macro-bellows-extension-subject";
   root.position.set(...[
@@ -261,9 +266,3 @@ export function createMacroSpecimenGroup(): THREE.Group {
 export const disposeMacroSpecimenGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
 };
-
-export function MacroSpecimenSubject() {
-  const group = useMemo(createMacroSpecimenGroup, []);
-  useEffect(() => () => disposeMacroSpecimenGroup(group), [group]);
-  return <primitive object={group} dispose={null} />;
-}

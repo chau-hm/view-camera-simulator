@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { pointToPlaneDistance } from "../../core/math/plane";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { createGroundGlassDofUniformState } from "../../render/createGroundGlassDofUniformState";
+import { createGroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import { sampleGroundGlassBlurAtWorldPoint } from "../../render/groundGlassBlur";
 import { projectSceneFocusTargetsToGroundGlass } from "../../render/groundGlassTargetProjection";
 import {
@@ -129,7 +129,7 @@ describe("Shelf Swing optics calibration", () => {
     expect(configured.ok).toBe(true);
 
     const visual = getGroundGlassDofVisualSettings(shelfSwingScene.id);
-    const uniforms = createGroundGlassDofUniformState(
+    const uniforms = createGroundGlassDofRenderState(
       optics,
       camera,
       CAMERA_CONSTANTS.focalLengthMm,
@@ -141,15 +141,15 @@ describe("Shelf Swing optics calibration", () => {
       400,
       visual.maximumBlurRadiusPx,
     );
-    expect(uniforms.mode).toBe(1);
+    expect(uniforms.model).toBe("derived-planes");
     expect(
       [
-        ...uniforms.focusPlanePoint,
-        ...uniforms.focusPlaneNormal,
-        ...(uniforms.nearPlanePoint ?? []),
-        ...(uniforms.farPlanePoint ?? []),
-        ...uniforms.inverseProjectionMatrix,
-        ...uniforms.cameraMatrixWorld,
+        ...Object.values(uniforms.focus.plane?.pointWorldM ?? {}),
+        ...Object.values(uniforms.focus.plane?.normal ?? {}),
+        ...Object.values(uniforms.focus.nearPlane?.pointWorldM ?? {}),
+        ...Object.values(uniforms.focus.farPlane?.pointWorldM ?? {}),
+        ...uniforms.camera.inverseProjectionMatrixElements,
+        ...uniforms.camera.worldMatrixElements,
       ].every(Number.isFinite),
     ).toBe(true);
   });

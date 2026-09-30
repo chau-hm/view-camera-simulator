@@ -52,7 +52,7 @@ import {
   projectSceneFocusTargetsToGroundGlass,
   resolveGroundGlassPreviewMode,
 } from "../../render/groundGlassTargetProjection";
-import { resolveCameraMovementLatticeRenderModel } from "../../render/cameraMovementLatticeRenderModel";
+import { resolveCameraMovementLatticePresentation } from "../../scenes/presentation/understandingCameraMovements";
 import { calculateCameraMovementProjectionDiagnostics } from "../../scenes/cameraMovementProjectionDiagnostics";
 import { resolveCameraMovementLessonPresentationTargetRegion } from "../../scenes/cameraMovementLessonState";
 import { evaluateInteriorCornerRiseComposition } from "../../scenes/interiorCornerRiseComposition";
@@ -415,16 +415,16 @@ export const SimulatorWorkspace = ({
     ) {
       return undefined;
     }
-    const renderModel = resolveCameraMovementLatticeRenderModel(
+    const presentation = resolveCameraMovementLatticePresentation(
       effectiveCameraMovementCalibration,
     );
     return calculateCameraMovementProjectionDiagnostics({
       effectiveCalibration: effectiveCameraMovementCalibration,
-      lattice: renderModel.lattice,
+      lattice: presentation.lattice,
       calibrationIdentity: {
         sessionActive: calibrationSession.active,
         revision: calibrationSession.revision,
-        geometryId: renderModel.geometryId,
+        geometryId: presentation.geometryId,
       },
       currentAnchor: camera.viewpointAnchor,
       targetRegion,

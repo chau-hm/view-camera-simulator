@@ -1,36 +1,16 @@
-/* eslint-disable react-refresh/only-export-components */
 import * as THREE from "three";
-import React, { useMemo } from "react";
+import type { FocusFundamentalsPresentation } from "../scenes/presentation/focusFundamentals";
 import { toWorld } from "./rttUtils";
-import {
-  focusFundamentalsBackdropColor,
-  focusFundamentalsBackdropHorizontalMarginMm,
-  focusFundamentalsBackdropRearMarginMm,
-  focusFundamentalsBackdropVerticalMarginMm,
-  focusFundamentalsFloorYmm,
-  focusFundamentalsFocusDetails,
-  focusFundamentalsFrameGeometry,
-  focusFundamentalsMarkerSizeMm,
-  focusFundamentalsObjectCenterMm,
-  focusFundamentalsObjectRotationYRad,
-  getFocusFundamentalsDetailMarkerLocalPosition,
-  getFocusFundamentalsDetailMarkerRotationY,
-} from "../scenes/focusFundamentalsTargets";
-import {
-  focusFundamentalsParallaxBracketBarWidthMm,
-  focusFundamentalsConnectedSubjectBoundsMm,
-  focusFundamentalsParallaxFeatureShapes,
-  focusFundamentalsParallaxFeatureRotationYRad,
-  focusFundamentalsParallaxFeatures,
-  focusFundamentalsParallaxPointerColor,
-  focusFundamentalsParallaxSupportWidthMm,
-} from "../scenes/focusFundamentalsParallax";
 
 const FLOOR_COLOR = new THREE.Color("#9aa6b5");
 const OBJECT_COLOR = new THREE.Color("#64748b");
 const MARKER_COLORS = ["#ef4444", "#f59e0b"] as const;
 const FLOOR_WIDTH_MM = 5000;
 const FLOOR_DEPTH_MM = 5000;
+
+export type FocusFundamentalsAssetRequest = Readonly<{
+  presentation: FocusFundamentalsPresentation;
+}>;
 
 type FrameGeometrySet = {
   frontVertical: THREE.BoxGeometry;
@@ -58,6 +38,7 @@ let floorGeometry: THREE.PlaneGeometry | null = null;
 let floorMaterial: THREE.MeshStandardMaterial | null = null;
 let backdropGeometry: THREE.PlaneGeometry | null = null;
 let backdropMaterial: THREE.MeshBasicMaterial | null = null;
+let cachedPresentation: FocusFundamentalsPresentation | null = null;
 
 const makeFocusDetailTexture = (accent: string): THREE.DataTexture => {
   const width = 64;
@@ -95,9 +76,15 @@ const makeFocusDetailTexture = (accent: string): THREE.DataTexture => {
   return texture;
 };
 
-function ensureSharedResources() {
+function ensureSharedResources(presentation: FocusFundamentalsPresentation) {
+  if (cachedPresentation && cachedPresentation !== presentation) {
+    throw new Error(
+      "Focus Fundamentals module-shared resources require the canonical presentation instance",
+    );
+  }
+  cachedPresentation ??= presentation;
   if (!frameGeometries) {
-    const { front, back, depthMm, memberWidthMm } = focusFundamentalsFrameGeometry;
+    const { front, back, depthMm, memberWidthMm } = presentation.geometry.frame;
     frameGeometries = {
       frontVertical: new THREE.BoxGeometry(
         toWorld(memberWidthMm),
@@ -131,20 +118,20 @@ function ensureSharedResources() {
     });
   }
   if (!parallaxGeometries) {
-    const gateShape = focusFundamentalsParallaxFeatureShapes["near-alignment-gate"];
-    const pointerShape = focusFundamentalsParallaxFeatureShapes["far-alignment-pointer"];
+    const gateShape = presentation.geometry.parallax.featureShapes["near-alignment-gate"];
+    const pointerShape = presentation.geometry.parallax.featureShapes["far-alignment-pointer"];
     const totalBracketWidthMm =
       gateShape.rightEdgeXMm - gateShape.leftEdgeXMm +
-      focusFundamentalsParallaxBracketBarWidthMm * 2;
+      presentation.geometry.parallax.bracketBarWidthMm * 2;
     parallaxGeometries = {
       bracketVertical: new THREE.BoxGeometry(
-        toWorld(focusFundamentalsParallaxBracketBarWidthMm),
+        toWorld(presentation.geometry.parallax.bracketBarWidthMm),
         toWorld(gateShape.heightMm),
         toWorld(gateShape.depthMm),
       ),
       bracketHorizontal: new THREE.BoxGeometry(
         toWorld(totalBracketWidthMm),
-        toWorld(focusFundamentalsParallaxBracketBarWidthMm),
+        toWorld(presentation.geometry.parallax.bracketBarWidthMm),
         toWorld(gateShape.depthMm),
       ),
       pointer: new THREE.BoxGeometry(
@@ -162,14 +149,14 @@ function ensureSharedResources() {
   }
   if (!parallaxPointerMaterial) {
     parallaxPointerMaterial = new THREE.MeshBasicMaterial({
-      color: focusFundamentalsParallaxPointerColor,
+      color: presentation.geometry.parallax.pointerColor,
       side: THREE.DoubleSide,
     });
   }
   if (!markerGeometry) {
     markerGeometry = new THREE.BoxGeometry(
-      toWorld(focusFundamentalsMarkerSizeMm.width),
-      toWorld(focusFundamentalsMarkerSizeMm.height),
+      toWorld(presentation.geometry.markerSizeMm.width),
+      toWorld(presentation.geometry.markerSizeMm.height),
       toWorld(4),
     );
   }
@@ -203,19 +190,19 @@ function ensureSharedResources() {
   }
   if (!backdropGeometry) {
     const subjectWidthMm =
-      focusFundamentalsConnectedSubjectBoundsMm.max.x -
-      focusFundamentalsConnectedSubjectBoundsMm.min.x;
+      presentation.geometry.connectedSubjectBoundsMm.max.x -
+      presentation.geometry.connectedSubjectBoundsMm.min.x;
     const subjectHeightMm =
-      focusFundamentalsConnectedSubjectBoundsMm.max.y -
-      focusFundamentalsConnectedSubjectBoundsMm.min.y;
+      presentation.geometry.connectedSubjectBoundsMm.max.y -
+      presentation.geometry.connectedSubjectBoundsMm.min.y;
     backdropGeometry = new THREE.PlaneGeometry(
-      toWorld(subjectWidthMm + focusFundamentalsBackdropHorizontalMarginMm * 2),
-      toWorld(subjectHeightMm + focusFundamentalsBackdropVerticalMarginMm * 2),
+      toWorld(subjectWidthMm + presentation.geometry.backdrop.horizontalMarginMm * 2),
+      toWorld(subjectHeightMm + presentation.geometry.backdrop.verticalMarginMm * 2),
     );
   }
   if (!backdropMaterial) {
     backdropMaterial = new THREE.MeshBasicMaterial({
-      color: focusFundamentalsBackdropColor,
+      color: presentation.geometry.backdrop.color,
       side: THREE.DoubleSide,
     });
   }
@@ -223,18 +210,18 @@ function ensureSharedResources() {
 
 function addFocusDetailMarker(
   objectGroup: THREE.Group,
-  detail: (typeof focusFundamentalsFocusDetails)[number],
+  detail: FocusFundamentalsPresentation["geometry"]["focusDetails"][number],
   index: number,
 ) {
   const marker = new THREE.Mesh(markerGeometry!, markerMaterials![index]);
   marker.name = `${detail.id}-marker`;
-  const markerPosition = getFocusFundamentalsDetailMarkerLocalPosition(detail);
+  const markerPosition = detail.markerLocalPositionMm;
   marker.position.set(
     toWorld(markerPosition.x),
     toWorld(markerPosition.y),
     toWorld(markerPosition.z),
   );
-  marker.rotation.y = getFocusFundamentalsDetailMarkerRotationY(detail);
+  marker.rotation.y = detail.markerRotationYRad;
   marker.userData = {
     focusTargetId: detail.id,
     focusDetailWorldMm: detail.worldPositionMm,
@@ -271,8 +258,9 @@ const addFrame = (
   frame: FrameDefinition,
   verticalGeometry: THREE.BoxGeometry,
   horizontalGeometry: THREE.BoxGeometry,
+  memberWidthMm: number,
 ) => {
-  const halfMember = focusFundamentalsFrameGeometry.memberWidthMm / 2;
+  const halfMember = memberWidthMm / 2;
   const halfWidth = frame.widthMm / 2;
   const halfHeight = frame.heightMm / 2;
   const x = halfWidth - halfMember;
@@ -309,7 +297,7 @@ const addDepthConnector = (
   name: string,
   startMm: { x: number; y: number; z: number },
   endMm: { x: number; y: number; z: number },
-  widthMm: number = focusFundamentalsFrameGeometry.memberWidthMm,
+  widthMm: number,
 ) => {
   const start = new THREE.Vector3(
     toWorld(startMm.x),
@@ -339,7 +327,8 @@ const addDepthConnector = (
 
 const addParallaxAlignmentFeature = (
   featureGroup: THREE.Group,
-  feature: (typeof focusFundamentalsParallaxFeatures)[number],
+  feature: FocusFundamentalsPresentation["geometry"]["parallax"]["features"][number],
+  presentation: FocusFundamentalsPresentation,
 ) => {
   featureGroup.position.set(
     toWorld(feature.localPositionMm.x),
@@ -348,7 +337,7 @@ const addParallaxAlignmentFeature = (
   );
   // The parent subject is yawed for depth readability. Counter-rotate this
   // small sight assembly so its bracket/pointer remains legible to the camera.
-  featureGroup.rotation.y = focusFundamentalsParallaxFeatureRotationYRad;
+  featureGroup.rotation.y = presentation.geometry.parallax.featureRotationYRad;
   featureGroup.userData = {
     parallaxFeatureId: feature.id,
     parallaxFeatureDepthMm: feature.depthMm,
@@ -356,9 +345,9 @@ const addParallaxAlignmentFeature = (
   };
 
   if (feature.id === "near-alignment-gate") {
-    const gateShape = focusFundamentalsParallaxFeatureShapes[feature.id];
+    const gateShape = presentation.geometry.parallax.featureShapes[feature.id];
     const halfGap = (gateShape.rightEdgeXMm - gateShape.leftEdgeXMm) / 2;
-    const halfBar = focusFundamentalsParallaxBracketBarWidthMm / 2;
+    const halfBar = presentation.geometry.parallax.bracketBarWidthMm / 2;
     const verticalOffset = halfGap + halfBar;
     const verticalY = 0;
     const topY = gateShape.heightMm / 2 - halfBar;
@@ -393,31 +382,37 @@ const addParallaxAlignmentFeature = (
   featureGroup.add(pointer);
 };
 
-const addParallaxAlignmentFeatures = (objectGroup: THREE.Group) => {
+const addParallaxAlignmentFeatures = (
+  objectGroup: THREE.Group,
+  presentation: FocusFundamentalsPresentation,
+) => {
   const supports = new THREE.Group();
   supports.name = "focus-fundamentals-parallax-supports";
   const features = new THREE.Group();
   features.name = "focus-fundamentals-parallax-features";
 
-  for (const feature of focusFundamentalsParallaxFeatures) {
+  for (const feature of presentation.geometry.parallax.features) {
     addDepthConnector(
       supports,
       `focus-fundamentals-${feature.id}-support`,
       feature.supportAnchorLocalPositionMm,
       feature.localPositionMm,
-      focusFundamentalsParallaxSupportWidthMm,
+      presentation.geometry.parallax.supportWidthMm,
     );
     const featureGroup = new THREE.Group();
     featureGroup.name = `focus-fundamentals-${feature.id}`;
-    addParallaxAlignmentFeature(featureGroup, feature);
+    addParallaxAlignmentFeature(featureGroup, feature, presentation);
     features.add(featureGroup);
   }
 
   objectGroup.add(supports, features);
 };
 
-const addDepthConnectors = (connectorGroup: THREE.Group) => {
-  const { front, back, depthMm, memberWidthMm } = focusFundamentalsFrameGeometry;
+const addDepthConnectors = (
+  connectorGroup: THREE.Group,
+  presentation: FocusFundamentalsPresentation,
+) => {
+  const { front, back, depthMm, memberWidthMm } = presentation.geometry.frame;
   const halfFrontWidth = front.widthMm / 2 - memberWidthMm / 2;
   const halfFrontHeight = front.heightMm / 2 - memberWidthMm / 2;
   const halfBackWidth = back.widthMm / 2 - memberWidthMm / 2;
@@ -445,12 +440,16 @@ const addDepthConnectors = (connectorGroup: THREE.Group) => {
         y: ySign * halfBackHeight,
         z: backFrontSurfaceZ,
       },
+      memberWidthMm,
     );
   }
 };
 
-export function createFocusFundamentalsGroup(): THREE.Group {
-  ensureSharedResources();
+export function createFocusFundamentalsGroup(
+  request: FocusFundamentalsAssetRequest,
+): THREE.Group {
+  const { presentation } = request;
+  ensureSharedResources(presentation);
 
   const group = new THREE.Group();
   group.name = "focus-fundamentals-subject";
@@ -458,11 +457,11 @@ export function createFocusFundamentalsGroup(): THREE.Group {
   const objectGroup = new THREE.Group();
   objectGroup.name = "focus-fundamentals-object";
   objectGroup.position.set(
-    toWorld(focusFundamentalsObjectCenterMm.x),
-    toWorld(focusFundamentalsObjectCenterMm.y),
-    toWorld(focusFundamentalsObjectCenterMm.z),
+    toWorld(presentation.geometry.objectCenterMm.x),
+    toWorld(presentation.geometry.objectCenterMm.y),
+    toWorld(presentation.geometry.objectCenterMm.z),
   );
-  objectGroup.rotation.y = focusFundamentalsObjectRotationYRad;
+  objectGroup.rotation.y = presentation.geometry.objectRotationYRad;
 
   const body = new THREE.Group();
   body.name = "focus-fundamentals-object-body";
@@ -471,45 +470,47 @@ export function createFocusFundamentalsGroup(): THREE.Group {
   addFrame(
     frontFrame,
     "front",
-    focusFundamentalsFrameGeometry.front,
+    presentation.geometry.frame.front,
     frameGeometries!.frontVertical,
     frameGeometries!.frontHorizontal,
+    presentation.geometry.frame.memberWidthMm,
   );
   const backFrame = new THREE.Group();
   backFrame.name = "focus-fundamentals-back-frame";
   addFrame(
     backFrame,
     "back",
-    focusFundamentalsFrameGeometry.back,
+    presentation.geometry.frame.back,
     frameGeometries!.backVertical,
     frameGeometries!.backHorizontal,
+    presentation.geometry.frame.memberWidthMm,
   );
   const depthConnectors = new THREE.Group();
   depthConnectors.name = "focus-fundamentals-depth-connectors";
-  addDepthConnectors(depthConnectors);
+  addDepthConnectors(depthConnectors, presentation);
   body.add(frontFrame, backFrame, depthConnectors);
   objectGroup.add(body);
-  focusFundamentalsFocusDetails.forEach((detail, index) =>
+  presentation.geometry.focusDetails.forEach((detail, index) =>
     addFocusDetailMarker(objectGroup, detail, index),
   );
-  addParallaxAlignmentFeatures(objectGroup);
+  addParallaxAlignmentFeatures(objectGroup, presentation);
 
   const backdrop = new THREE.Mesh(backdropGeometry!, backdropMaterial!);
   backdrop.name = "focus-fundamentals-backdrop";
   backdrop.position.set(
     toWorld(
-      (focusFundamentalsConnectedSubjectBoundsMm.min.x +
-        focusFundamentalsConnectedSubjectBoundsMm.max.x) /
+      (presentation.geometry.connectedSubjectBoundsMm.min.x +
+        presentation.geometry.connectedSubjectBoundsMm.max.x) /
         2,
     ),
     toWorld(
-      (focusFundamentalsConnectedSubjectBoundsMm.min.y +
-        focusFundamentalsConnectedSubjectBoundsMm.max.y) /
+      (presentation.geometry.connectedSubjectBoundsMm.min.y +
+        presentation.geometry.connectedSubjectBoundsMm.max.y) /
         2,
     ),
     toWorld(
-      focusFundamentalsConnectedSubjectBoundsMm.max.z +
-        focusFundamentalsBackdropRearMarginMm,
+      presentation.geometry.connectedSubjectBoundsMm.max.z +
+        presentation.geometry.backdrop.rearMarginMm,
     ),
   );
   group.add(backdrop, objectGroup);
@@ -517,17 +518,8 @@ export function createFocusFundamentalsGroup(): THREE.Group {
   const floor = new THREE.Mesh(floorGeometry!, floorMaterial!);
   floor.name = "focus-fundamentals-floor";
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = toWorld(focusFundamentalsFloorYmm);
+  floor.position.y = toWorld(presentation.geometry.floorYmm);
   group.add(floor);
 
   return group;
 }
-
-/**
- * The interactive R3F scene mounts the same factory output as RTT.  Shared
- * resources are module-owned, so disable R3F auto-disposal for this primitive.
- */
-export const FocusFundamentalsSubject: React.FC = () => {
-  const group = useMemo(() => createFocusFundamentalsGroup(), []);
-  return <primitive object={group} dispose={null} />;
-};

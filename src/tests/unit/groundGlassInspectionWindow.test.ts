@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
-import { resolveGroundGlassCoverageUniformState } from "../../render/groundGlassCoverage";
+import { resolveGroundGlassCoverageRenderState } from "../../render/groundGlassCoverage";
 import { configureGroundGlassCamera } from "../../render/configureGroundGlassCamera";
-import { resolveGroundGlassNaturalIlluminationUniformState } from "../../render/groundGlassNaturalIllumination";
+import { resolveGroundGlassNaturalIlluminationRenderState } from "../../render/groundGlassNaturalIllumination";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../render/groundGlassFilmPlaneProjection";
 import {
   applyGroundGlassRttDisplayTransform,
@@ -264,7 +264,7 @@ describe("Ground Glass physical inspection window", () => {
       expect(filmWindow.centerXMm).toBeCloseTo(targetFilmX, 6);
       expect(filmWindow.centerYMm).toBeCloseTo(targetFilmY, 6);
 
-      const coverage = resolveGroundGlassCoverageUniformState({
+      const coverage = resolveGroundGlassCoverageRenderState({
         state: optics.groundGlassCoverage,
         rawDebug: false,
         filmWidthMm: 127,
@@ -273,7 +273,7 @@ describe("Ground Glass physical inspection window", () => {
         renderWidthPx: 800,
         renderHeightPx: 600,
       });
-      const naturalIllumination = resolveGroundGlassNaturalIlluminationUniformState({
+      const naturalIllumination = resolveGroundGlassNaturalIlluminationRenderState({
         state: optics.groundGlassNaturalIllumination,
         rawDebug: false,
         filmWidthMm: 127,
@@ -282,8 +282,8 @@ describe("Ground Glass physical inspection window", () => {
       });
       expect(coverage.filmWindow.centerXMm).toBeCloseTo(targetFilmX, 6);
       expect(coverage.filmWindow.centerYMm).toBeCloseTo(targetFilmY, 6);
-      expect(naturalIllumination.filmWindowCenterXMm).toBeCloseTo(targetFilmX, 6);
-      expect(naturalIllumination.filmWindowCenterYMm).toBeCloseTo(targetFilmY, 6);
+      expect(naturalIllumination.filmWindow.centerXMm).toBeCloseTo(targetFilmX, 6);
+      expect(naturalIllumination.filmWindow.centerYMm).toBeCloseTo(targetFilmY, 6);
       physicalWindows.set(previewMode, filmWindow);
     }
 

@@ -1,33 +1,38 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { toWorld } from "./rttUtils";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { createMacroMaterial } from "./MacroSubjectMaterials";
-import {
-  MACRO_DEPTH_BASE_CENTER_MM,
-  MACRO_DEPTH_BASE_DIMENSIONS_MM,
-  MACRO_DEPTH_BRIDGE_CENTER_MM,
-  MACRO_DEPTH_BRIDGE_DIMENSIONS_MM,
-  MACRO_DEPTH_FRONT_LIP_CENTER_MM,
-  MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM,
-  MACRO_DEPTH_FOCUS_ZONE_SPECS,
-  MACRO_DEPTH_SPECIMEN_CENTER_MM,
-  MACRO_DEPTH_STATION_BODY_CENTER_OFFSET_MM,
-  MACRO_DEPTH_STATION_BODY_DEPTH_MM,
-  MACRO_DEPTH_STATION_BODY_RADIUS_MM,
-  MACRO_DEPTH_STATION_SUPPORT_DIMENSIONS_MM,
-  MACRO_DEPTH_STATION_SUPPORT_OVERLAP_MM,
-  MACRO_DEPTH_STATION_FACE_RADIUS_MM,
-  MACRO_DEPTH_STATION_FACE_THICKNESS_MM,
-  MACRO_DEPTH_STATION_INNER_RING_RADIUS_MM,
-  MACRO_DEPTH_STATION_INNER_RING_TUBE_MM,
-  MACRO_DEPTH_STATION_OUTER_RING_RADIUS_MM,
-  MACRO_DEPTH_STATION_OUTER_RING_TUBE_MM,
-} from "../scenes/macroDepthOfFieldGeometry";
+import type { MacroDepthOfFieldPresentation } from "../scenes/presentation/macroDepthOfField";
+
+export type MacroDepthOfFieldAssetRequest = Readonly<{
+  presentation: MacroDepthOfFieldPresentation;
+}>;
 
 /** A single connected fictional precision inspection mechanism. */
-export function createMacroDepthOfFieldGroup(): THREE.Group {
+export function createMacroDepthOfFieldGroup({
+  presentation,
+}: MacroDepthOfFieldAssetRequest): THREE.Group {
+  const {
+    MACRO_DEPTH_BASE_CENTER_MM,
+    MACRO_DEPTH_BASE_DIMENSIONS_MM,
+    MACRO_DEPTH_BRIDGE_CENTER_MM,
+    MACRO_DEPTH_BRIDGE_DIMENSIONS_MM,
+    MACRO_DEPTH_FRONT_LIP_CENTER_MM,
+    MACRO_DEPTH_FRONT_LIP_DIMENSIONS_MM,
+    MACRO_DEPTH_FOCUS_ZONE_SPECS,
+    MACRO_DEPTH_SPECIMEN_CENTER_MM,
+    MACRO_DEPTH_STATION_BODY_CENTER_OFFSET_MM,
+    MACRO_DEPTH_STATION_BODY_DEPTH_MM,
+    MACRO_DEPTH_STATION_BODY_RADIUS_MM,
+    MACRO_DEPTH_STATION_SUPPORT_DIMENSIONS_MM,
+    MACRO_DEPTH_STATION_SUPPORT_OVERLAP_MM,
+    MACRO_DEPTH_STATION_FACE_RADIUS_MM,
+    MACRO_DEPTH_STATION_FACE_THICKNESS_MM,
+    MACRO_DEPTH_STATION_INNER_RING_RADIUS_MM,
+    MACRO_DEPTH_STATION_INNER_RING_TUBE_MM,
+    MACRO_DEPTH_STATION_OUTER_RING_RADIUS_MM,
+    MACRO_DEPTH_STATION_OUTER_RING_TUBE_MM,
+  } = presentation.geometry;
   const root = new THREE.Group();
   root.name = "macro-depth-of-field-subject";
   root.position.set(
@@ -422,9 +427,3 @@ export function createMacroDepthOfFieldGroup(): THREE.Group {
 export const disposeMacroDepthOfFieldGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
 };
-
-export function MacroDepthOfFieldSubject() {
-  const group = useMemo(createMacroDepthOfFieldGroup, []);
-  useEffect(() => () => disposeMacroDepthOfFieldGroup(group), [group]);
-  return <primitive object={group} dispose={null} />;
-}

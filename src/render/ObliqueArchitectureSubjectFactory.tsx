@@ -1,7 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry from "../scenes/obliqueArchitectureGeometry";
+import type { ObliqueArchitecturePresentation } from "../scenes/presentation/obliqueArchitecture";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -86,7 +84,10 @@ const addFacadeWindow = ({
   root.add(windowGroup);
 };
 
-const addFocusProbe = (root: THREE.Group, target: (typeof geometry.focusTargets)[number]) => {
+const addFocusProbe = (
+  root: THREE.Group,
+  target: ObliqueArchitecturePresentation["geometry"]["focusTargets"][number],
+) => {
   const probe = new THREE.Object3D();
   probe.name = `oblique-architecture-focus-${target.id}`;
   probe.position.set(
@@ -103,6 +104,7 @@ const addFocusProbe = (root: THREE.Group, target: (typeof geometry.focusTargets)
 
 const addObliqueArchitectureContext = (
   root: THREE.Group,
+  geometry: ObliqueArchitecturePresentation["geometry"],
   trimMaterial: THREE.Material,
   groundMaterial: THREE.Material,
   sideMaterial: THREE.Material,
@@ -201,7 +203,14 @@ const addObliqueArchitectureContext = (
   root.add(context);
 };
 
-export const createObliqueArchitectureGroup = (): THREE.Group => {
+export type ObliqueArchitectureAssetRequest = Readonly<{
+  presentation: ObliqueArchitecturePresentation;
+}>;
+
+export const createObliqueArchitectureGroup = (
+  request: ObliqueArchitectureAssetRequest,
+): THREE.Group => {
+  const { geometry } = request.presentation;
   const root = new THREE.Group();
   root.name = "oblique-architecture-subject";
 
@@ -324,7 +333,7 @@ export const createObliqueArchitectureGroup = (): THREE.Group => {
     });
   });
 
-  addObliqueArchitectureContext(root, frameMaterial, groundMaterial, sideFacadeMaterial);
+  addObliqueArchitectureContext(root, geometry, frameMaterial, groundMaterial, sideFacadeMaterial);
 
   const roofLine = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -361,18 +370,4 @@ export const createObliqueArchitectureGroup = (): THREE.Group => {
 
 export const disposeObliqueArchitectureGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
-};
-
-/** React Three Fiber boundary backed by the same group factory used by RTT. */
-export const ObliqueArchitectureSubject: React.FC = () => {
-  const group = useMemo(() => createObliqueArchitectureGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeObliqueArchitectureGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
 };

@@ -1,7 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry from "../scenes/architectureForegroundGeometry";
+import type { ArchitectureForegroundPresentation } from "../scenes/presentation/architectureForeground";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -11,8 +9,14 @@ import {
 const createStandardMaterial = (color: string, roughness = 0.9) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
 
+type ArchitectureForegroundGeometry = ArchitectureForegroundPresentation["geometry"];
+export type ArchitectureForegroundAssetRequest = Readonly<{
+  presentation: ArchitectureForegroundPresentation;
+}>;
+
 const addWindow = ({
   root,
+  geometry,
   window,
   panelGeometry,
   frameGeometry,
@@ -21,7 +25,8 @@ const addWindow = ({
   frameMaterial,
 }: {
   root: THREE.Group;
-  window: ReturnType<typeof geometry.getWindows>[number];
+  geometry: ArchitectureForegroundGeometry;
+  window: ReturnType<ArchitectureForegroundGeometry["getWindows"]>[number];
   panelGeometry: THREE.BoxGeometry;
   frameGeometry: THREE.BoxGeometry;
   recessGeometry: THREE.BoxGeometry;
@@ -115,6 +120,7 @@ const addForecourtStructure = (
   root: THREE.Group,
   groundMaterial: THREE.Material,
   trimMaterial: THREE.Material,
+  geometry: ArchitectureForegroundGeometry,
 ): void => {
   const group = new THREE.Group();
   group.name = "architecture-foreground-forecourt-structure";
@@ -146,12 +152,12 @@ const addForecourtStructure = (
   root.add(group);
 };
 
-const addPaving = (root: THREE.Group) => {
+const addPaving = (root: THREE.Group, geometry: ArchitectureForegroundGeometry) => {
   const seamMaterial = createStandardMaterial("#64748b", 0.98);
   const seamHeight = 10;
   const seamPositions = geometry.getPavingSeamPositions();
   const longitudinalGeometry = new THREE.BoxGeometry(
-    toWorld(groundWidth()),
+    toWorld(groundWidth(geometry)),
     toWorld(seamHeight),
     toWorld(geometry.ground.seamWidthMm),
   );
@@ -176,9 +182,12 @@ const addPaving = (root: THREE.Group) => {
   });
 };
 
-const groundWidth = () => geometry.ground.width;
+const groundWidth = (geometry: ArchitectureForegroundGeometry) => geometry.ground.width;
 
-export const createArchitectureForegroundGroup = (): THREE.Group => {
+export const createArchitectureForegroundGroup = (
+  request: ArchitectureForegroundAssetRequest,
+): THREE.Group => {
+  const { geometry } = request.presentation;
   const root = new THREE.Group();
   root.name = "architecture-foreground-subject";
 
@@ -239,7 +248,7 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
   parapet.name = "architecture-foreground-roof-parapet";
   parapet.position.set(
     toWorld(geometry.building.center.x),
-    toWorld(facadeTopY()),
+    toWorld(facadeTopY(geometry)),
     toWorld(geometry.building.center.z),
   );
   root.add(parapet);
@@ -307,6 +316,7 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
   geometry.getWindows().forEach((window) => {
     addWindow({
       root,
+      geometry,
       window,
       panelGeometry: windowGeometry,
       frameGeometry,
@@ -324,29 +334,15 @@ export const createArchitectureForegroundGroup = (): THREE.Group => {
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   root.add(ground);
-  addPaving(root);
-  addForecourtStructure(root, groundMaterial, forecourtTrimMaterial);
+  addPaving(root, geometry);
+  addForecourtStructure(root, groundMaterial, forecourtTrimMaterial, geometry);
 
   return root;
 };
 
-const facadeTopY = () =>
+const facadeTopY = (geometry: ArchitectureForegroundGeometry) =>
   geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
 
 export const disposeArchitectureForegroundGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
-};
-
-/** React Three Fiber boundary backed by the same group factory used by RTT. */
-export const ArchitectureForegroundSubject: React.FC = () => {
-  const group = useMemo(() => createArchitectureForegroundGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeArchitectureForegroundGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
 };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculateGroundGlassCoverageGain } from "../../core/optics/groundGlassCoverage";
-import { resolveGroundGlassCoverageUniformState } from "../../render/groundGlassCoverage";
-import { resolveGroundGlassNaturalIlluminationUniformState } from "../../render/groundGlassNaturalIllumination";
+import { resolveGroundGlassCoverageRenderState } from "../../render/groundGlassCoverage";
+import { resolveGroundGlassNaturalIlluminationRenderState } from "../../render/groundGlassNaturalIllumination";
 import { FULL_GROUND_GLASS_INSPECTION_WINDOW } from "../../render/groundGlassInspectionWindow";
 import {
   applyGroundGlassRttDisplayTransform,
@@ -32,7 +32,7 @@ const croppedWindow = {
 
 describe("Ground Glass finite-coverage render contract", () => {
   it("shares the canonical physical film crop with natural illumination", () => {
-    const coverage = resolveGroundGlassCoverageUniformState({
+    const coverage = resolveGroundGlassCoverageRenderState({
       state,
       rawDebug: false,
       filmWidthMm: 127,
@@ -41,7 +41,7 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderWidthPx: 800,
       renderHeightPx: 600,
     });
-    const natural = resolveGroundGlassNaturalIlluminationUniformState({
+    const natural = resolveGroundGlassNaturalIlluminationRenderState({
       state: {
         kind: "parallel-cos4",
         imageDistanceMm: 150,
@@ -54,20 +54,23 @@ describe("Ground Glass finite-coverage render contract", () => {
       inspectionWindow: croppedWindow,
     });
 
-    expect(coverage.enabled).toBe(true);
+    expect(coverage.active).toBe(true);
+    expect(coverage.geometry).toEqual({
+      kind: "parallel-circle",
+      radiusMm: 35,
+      opticalAxisOffsetXMm: 18,
+      opticalAxisOffsetYMm: 20,
+    });
     expect(coverage.filmWindow.centerXMm).toBeCloseTo(47.625, 12);
     expect(coverage.filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
     expect(coverage.filmWindow.widthMm).toBeCloseTo(31.75, 12);
     expect(coverage.filmWindow.heightMm).toBeCloseTo(25.4, 12);
-    expect(coverage.filmWindow.centerXMm).toBe(natural.filmWindowCenterXMm);
-    expect(coverage.filmWindow.centerYMm).toBe(natural.filmWindowCenterYMm);
-    expect(coverage.filmWindow.widthMm).toBe(natural.filmWindowWidthMm);
-    expect(coverage.filmWindow.heightMm).toBe(natural.filmWindowHeightMm);
+    expect(coverage.filmWindow).toEqual(natural.filmWindow);
     expect(coverage.edgeFeatherMm).toBeCloseTo(Math.max(31.75 / 800, 25.4 / 600), 12);
   });
 
   it("keeps the finite mask disabled for Raw RTT Debug and neutral states", () => {
-    const debug = resolveGroundGlassCoverageUniformState({
+    const debug = resolveGroundGlassCoverageRenderState({
       state,
       rawDebug: true,
       filmWidthMm: 127,
@@ -76,7 +79,7 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderWidthPx: 800,
       renderHeightPx: 600,
     });
-    const nonParallel = resolveGroundGlassCoverageUniformState({
+    const nonParallel = resolveGroundGlassCoverageRenderState({
       state: { kind: "neutral", reason: "invalid-geometry" },
       rawDebug: false,
       filmWidthMm: 127,
@@ -86,15 +89,20 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderHeightPx: 600,
     });
 
-    expect(debug.enabled).toBe(false);
+    expect(debug.active).toBe(false);
     expect(debug.kind).toBe("parallel-circle");
-    expect(debug.imageCircleRadiusMm).toBe(0);
-    expect(nonParallel.enabled).toBe(false);
+    expect(debug.geometry).toEqual({
+      kind: "parallel-circle",
+      radiusMm: 35,
+      opticalAxisOffsetXMm: 18,
+      opticalAxisOffsetYMm: 20,
+    });
+    expect(nonParallel.active).toBe(false);
     expect(nonParallel.kind).toBe("neutral");
   });
 
   it("packs the conic unchanged, retains the physical crop, and bypasses it in Raw RTT Debug", () => {
-    const adapted = resolveGroundGlassCoverageUniformState({
+    const adapted = resolveGroundGlassCoverageRenderState({
       state: asymmetricConic,
       rawDebug: false,
       filmWidthMm: 127,
@@ -103,16 +111,13 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderWidthPx: 800,
       renderHeightPx: 600,
     });
-    expect(adapted.enabled).toBe(true);
-    expect(adapted.mode).toBe(2);
-    expect(adapted.conicQuadratic).toEqual([1, 0, 1]);
-    expect(adapted.conicLinear).toEqual([0, -40, -825]);
-    expect(adapted.conicAxial).toEqual([0, 0, 150]);
+    expect(adapted.active).toBe(true);
+    expect(adapted.geometry).toEqual({ kind: "nonparallel-conic", quadratic: asymmetricConic.quadratic, axial: asymmetricConic.axial });
     expect(adapted.filmWindow.centerXMm).toBeCloseTo(47.625, 12);
     expect(adapted.filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
     expect(adapted.edgeFeatherMm).toBeCloseTo(Math.max(31.75 / 800, 25.4 / 600), 12);
 
-    const debug = resolveGroundGlassCoverageUniformState({
+    const debug = resolveGroundGlassCoverageRenderState({
       state: asymmetricConic,
       rawDebug: true,
       filmWidthMm: 127,
@@ -122,9 +127,8 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderHeightPx: 600,
     });
     expect(debug.kind).toBe("nonparallel-conic");
-    expect(debug.enabled).toBe(false);
-    expect(debug.mode).toBe(0);
-    expect(debug.conicQuadratic).toEqual([0, 0, 0]);
+    expect(debug.active).toBe(false);
+    expect(debug.geometry).toEqual({ kind: "nonparallel-conic", quadratic: asymmetricConic.quadratic, axial: asymmetricConic.axial });
   });
 
   it("fails neutral for non-finite conic coefficients", () => {
@@ -132,7 +136,7 @@ describe("Ground Glass finite-coverage render contract", () => {
       ...asymmetricConic,
       quadratic: { ...asymmetricConic.quadratic, a: Number.NaN },
     };
-    const adapted = resolveGroundGlassCoverageUniformState({
+    const adapted = resolveGroundGlassCoverageRenderState({
       state: invalid,
       rawDebug: false,
       filmWidthMm: 127,
@@ -142,13 +146,13 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderHeightPx: 600,
     });
     expect(adapted.kind).toBe("nonparallel-conic");
-    expect(adapted.enabled).toBe(false);
-    expect(adapted.mode).toBe(0);
+    expect(adapted.active).toBe(false);
+    expect(adapted.geometry).toBeNull();
     expect(calculateGroundGlassCoverageGain(invalid, 0, 0)).toBe(1);
   });
 
   it("keeps conic coefficients fixed while an off-centre inspection crop moves the viewed window", () => {
-    const centered = resolveGroundGlassCoverageUniformState({
+    const centered = resolveGroundGlassCoverageRenderState({
       state: asymmetricConic,
       rawDebug: false,
       filmWidthMm: 127,
@@ -157,7 +161,7 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderWidthPx: 800,
       renderHeightPx: 600,
     });
-    const inspected = resolveGroundGlassCoverageUniformState({
+    const inspected = resolveGroundGlassCoverageRenderState({
       state: asymmetricConic,
       rawDebug: false,
       filmWidthMm: 127,
@@ -167,9 +171,7 @@ describe("Ground Glass finite-coverage render contract", () => {
       renderHeightPx: 600,
     });
 
-    expect(inspected.conicQuadratic).toEqual(centered.conicQuadratic);
-    expect(inspected.conicLinear).toEqual(centered.conicLinear);
-    expect(inspected.conicAxial).toEqual(centered.conicAxial);
+    expect(inspected.geometry).toEqual(centered.geometry);
     expect(inspected.filmWindow.centerXMm).not.toBe(centered.filmWindow.centerXMm);
     expect(inspected.filmWindow.centerYMm).not.toBe(centered.filmWindow.centerYMm);
   });

@@ -17,9 +17,9 @@ import {
   updateTeachingLightingRig,
 } from "./TeachingLighting";
 import {
-  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-  resolveCameraMovementLatticeRenderModel,
-} from "./cameraMovementLatticeRenderModel";
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+  resolveCameraMovementLatticePresentation,
+} from "../scenes/presentation/understandingCameraMovements";
 import {
   getGroundGlassSceneProfile,
   type GroundGlassSceneProfileContext,
@@ -30,11 +30,14 @@ import {
   configureGroundGlassCamera,
   readGroundGlassCameraPose,
 } from "./configureGroundGlassCamera";
+import { createGroundGlassDofRenderState } from "./groundGlassDofRenderState";
 import {
-  applyGroundGlassDofUniformState,
-  createGroundGlassDofUniformState,
+  bindGroundGlassDofStateToCocMaterial,
+  bindGroundGlassDofStateToGatherMaterial,
+  bindGroundGlassPhysicalStateToComposite,
   synchronizeGroundGlassDofClipRange,
-} from "./createGroundGlassDofUniformState";
+} from "./groundGlassShaderBindings";
+import type { GroundGlassPhysicalRenderState } from "./groundGlassPhysicalRenderState";
 import {
   groundGlassApertureGatherFragmentShader,
   groundGlassCompositeFragmentShader,
@@ -57,9 +60,12 @@ import {
 import { analyzeGroundGlassRenderSanity } from "./groundGlassRenderSanity";
 import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
-import { resizeGroundGlassRttResources } from "./groundGlassRttResources";
 import {
-  createGroundGlassCocTarget,
+  createGroundGlassRttResources,
+  resizeGroundGlassRttResources,
+  type GroundGlassRttResources,
+} from "./groundGlassRttResources";
+import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
@@ -68,15 +74,15 @@ import {
   resolveSampledFilmDimensionsMm,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
-import { resolveGroundGlassNaturalIlluminationUniformState } from "./groundGlassNaturalIllumination";
-import { resolveGroundGlassCoverageUniformState } from "./groundGlassCoverage";
+import { resolveGroundGlassNaturalIlluminationRenderState } from "./groundGlassNaturalIllumination";
+import { resolveGroundGlassCoverageRenderState } from "./groundGlassCoverage";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
   GroundGlassProfiler,
   isGroundGlassProfilingEnabled,
   type GroundGlassProfilingConfiguration,
-  type GroundGlassProfilingPass,
 } from "./groundGlassProfiling";
+import type { GroundGlassPassId } from "./groundGlassPassGraph";
 import {
   collectSceneGraphCapacity,
   isSceneCapacityProfilingEnabled,
@@ -140,9 +146,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const { gl } = useThree();
   const presentationRegion = explicitPresentationRegion ?? "middle";
   presentationRegionRef.current = presentationRegion;
-  const cameraMovementRenderModel = effectiveCameraMovementCalibration
-    ? resolveCameraMovementLatticeRenderModel(effectiveCameraMovementCalibration)
-    : CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+  const cameraMovementPresentation = effectiveCameraMovementCalibration
+    ? resolveCameraMovementLatticePresentation(effectiveCameraMovementCalibration)
+    : CAMERA_MOVEMENT_BASELINE_PRESENTATION;
   const resolvedSceneId = sceneDefinition.id;
   const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
@@ -158,13 +164,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     postSceneGather: THREE.Scene;
     postSceneComposite: THREE.Scene;
     orthoCam: THREE.OrthographicCamera;
-    cocRT: THREE.WebGLRenderTarget;
+    targets: GroundGlassRttResources;
     cocStorageFormat: GroundGlassCocStorageFormat;
-    gatherRT: THREE.WebGLRenderTarget;
-    nearGatherRT: THREE.WebGLRenderTarget;
-    finalRT: THREE.WebGLRenderTarget;
-    rawDiagnosticRT: THREE.WebGLRenderTarget;
-    finalDiagnosticRT: THREE.WebGLRenderTarget;
     displayScene: THREE.Scene;
     copyMaterial: THREE.ShaderMaterial;
   };
@@ -235,29 +236,16 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     });
     dimsRef.current = dims;
 
-    // create main render target at the resolved internal size
-    const rt = new THREE.WebGLRenderTarget(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx);
-    // attach a depth texture so we can do depth-aware DOF
-    // DepthTexture constructor typing varies across three.js versions; access via unknown and a conservative factory
-    type UnknownCtor = new (...args: unknown[]) => unknown;
-    const DepthTextureCtor = (THREE as unknown as { DepthTexture?: UnknownCtor }).DepthTexture;
-    const depthTex = DepthTextureCtor ? new DepthTextureCtor(dimsRef.current.internalWidthPx, dimsRef.current.internalHeightPx) : undefined;
-    if (depthTex) {
-      (depthTex as unknown as { type?: number }).type = (THREE as unknown as { UnsignedShortType?: number }).UnsignedShortType ?? (THREE as unknown as { UnsignedIntType?: number }).UnsignedIntType;
-      (rt as unknown as { depthTexture?: unknown }).depthTexture = depthTex as unknown;
-      rt.depthBuffer = true;
-    } else {
-      // depth texture not available in this three.js build — still proceed without it
-      rt.depthBuffer = true;
-    }
-    // Do not set texture encoding here — some three.js builds do not export sRGBEncoding
-    // and static bundlers warn. Rely on default texture encoding for safety.
+    // Create the concrete targets for the current semantic Ground Glass resource roles.
+    const rttResources = createGroundGlassRttResources({
+      renderer: gl as unknown as WebGLRenderer,
+      widthPx: dimsRef.current.internalWidthPx,
+      heightPx: dimsRef.current.internalHeightPx,
+      gatherScale: initialQualitySettings.gatherScale,
+    });
+    const rt = rttResources.scene.colorDepthTarget;
+    const fallbackDepth = rttResources.scene.depthFallback;
     renderTarget.current = rt;
-
-    // create a tiny 1x1 depth fallback texture used when the renderer/build does not supply a depthTexture
-    const depthFallbackData = new Uint8Array([255, 255, 255, 255]);
-    const fallbackDepth = new THREE.DataTexture(depthFallbackData, 1, 1, THREE.RGBAFormat);
-    fallbackDepth.needsUpdate = true;
     fallbackDepthRef.current = fallbackDepth;
 
     // increment resource generation — used for diagnostics to detect recreations
@@ -282,19 +270,17 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     // scene.add(...) will be done after subject group setup where appropriate.
     
 
-    // Create the explicit physical DOF pipeline:
-    // scene color/depth -> full-resolution signed CoC -> near/far gathers -> composite.
+    // The resource bundle names the implemented stages: full-resolution CoC,
+    // independent far/near gathers, and the owned composite output.
     const postSceneCoc = new THREE.Scene();
     const postSceneGather = new THREE.Scene();
     const postSceneComposite = new THREE.Scene();
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const cocStorage = createGroundGlassCocTarget(
-      gl as unknown as WebGLRenderer,
-      dimsRef.current.internalWidthPx,
-      dimsRef.current.internalHeightPx,
-    );
-    const cocRT = cocStorage.target;
-    cocRT.depthBuffer = false;
+    const cocRT = rttResources.coc.classificationTarget;
+    const gatherRT = rttResources.gather.farTarget;
+    const nearGatherRT = rttResources.gather.nearTarget;
+    const finalRT = rttResources.composite.outputTarget;
+    const cocStorageFormat = rttResources.coc.storageFormat;
     const initialSampledFilmDimensions = resolveSampledFilmDimensionsMm({
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
@@ -306,37 +292,6 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       renderWidthPx: dimsRef.current.internalWidthPx,
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
-    const gatherRT = new THREE.WebGLRenderTarget(
-      Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
-      Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
-      {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        depthBuffer: false,
-        stencilBuffer: false,
-      },
-    );
-    gatherRT.depthBuffer = false;
-    const nearGatherRT = new THREE.WebGLRenderTarget(
-      Math.max(1, Math.floor(dimsRef.current.internalWidthPx * initialQualitySettings.gatherScale)),
-      Math.max(1, Math.floor(dimsRef.current.internalHeightPx * initialQualitySettings.gatherScale)),
-      {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        depthBuffer: false,
-        stencilBuffer: false,
-      },
-    );
-    nearGatherRT.depthBuffer = false;
-    const finalRT = new THREE.WebGLRenderTarget(
-      dimsRef.current.internalWidthPx,
-      dimsRef.current.internalHeightPx,
-    );
-    finalRT.depthBuffer = false;
-    const rawDiagnosticRT = new THREE.WebGLRenderTarget(32, 32);
-    rawDiagnosticRT.depthBuffer = false;
-    const finalDiagnosticRT = new THREE.WebGLRenderTarget(32, 32);
-    finalDiagnosticRT.depthBuffer = false;
     const displayScene = new THREE.Scene();
 
 
@@ -383,7 +338,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         sampledFilmWidthMm: { value: initialSampledFilmDimensions.widthMm },
         sampledFilmHeightMm: { value: initialSampledFilmDimensions.heightMm },
         sampleCount: { value: initialQualitySettings.sampleCount },
-        cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
+        cocStorageEncoded: { value: cocStorageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
         footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
       },
@@ -427,7 +382,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         sampledFilmWidthMm: { value: initialSampledFilmDimensions.widthMm },
         sampledFilmHeightMm: { value: initialSampledFilmDimensions.heightMm },
         sampleCount: { value: initialQualitySettings.sampleCount },
-        cocStorageEncoded: { value: cocStorage.storageFormat === "encoded-byte" ? 1.0 : 0.0 },
+        cocStorageEncoded: { value: cocStorageFormat === "encoded-byte" ? 1.0 : 0.0 },
         cocStorageMaxMm: { value: initialCocStorageMaxMm },
         footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
         gatherLayer: { value: 0.0 },
@@ -488,13 +443,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       postSceneGather,
       postSceneComposite,
       orthoCam,
-      cocRT,
-      cocStorageFormat: cocStorage.storageFormat,
-      gatherRT,
-      nearGatherRT,
-      finalRT,
-      rawDiagnosticRT,
-      finalDiagnosticRT,
+      targets: rttResources,
+      cocStorageFormat,
       displayScene,
       copyMaterial,
     };
@@ -570,7 +520,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           groundGlassPhysicalBoundaryRadiusPx:
             (ACCEPTABLE_COC_DIAMETER_MM * dims.logicalWidthPx) /
             initialSampledFilmDimensions.widthMm / 2,
-          cocStorageFormat: cocStorage.storageFormat,
+          cocStorageFormat,
           cocAvailable: true,
           cocTargetWidthPx: cocW,
           cocTargetHeightPx: cocH,
@@ -612,19 +562,9 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         if (groundGlassProfilerRef.current === profiler) {
           groundGlassProfilerRef.current = null;
         }
-        // dispose main color target
-        try { rt.dispose(); } catch (err) { void err; }
+        // The target bundle owns the source, pass, diagnostic, and fallback-depth targets.
+        rttResources.dispose();
         if (renderTarget.current === rt) renderTarget.current = null;
-        // dispose physical CoC and aperture-gather targets
-        try { cocRT.dispose(); } catch (err) { void err; }
-        try { gatherRT.dispose(); } catch (err) { void err; }
-        try { nearGatherRT.dispose(); } catch (err) { void err; }
-        try { finalRT.dispose(); } catch (err) { void err; }
-        try { rawDiagnosticRT.dispose(); } catch (err) { void err; }
-        try { finalDiagnosticRT.dispose(); } catch (err) { void err; }
-
-        // dispose fallback depth
-        try { fallbackDepth.dispose(); } catch (err) { void err; }
         if (fallbackDepthRef.current === fallbackDepth) fallbackDepthRef.current = null;
 
         // remove and dispose post resources
@@ -683,7 +623,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
       presentationRegion: presentationRegionRef.current,
     };
     const lighting = sceneProfile.resolveRttLighting(profileContext);
@@ -753,7 +693,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       }
     };
   }, [
-    cameraMovementRenderModel,
+    cameraMovementPresentation,
     sceneDefinition,
     sceneProfile,
     readRuntimeInfo,
@@ -769,7 +709,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
     const profileUpdateContext: GroundGlassSceneProfileUpdateContext = {
       scene: sceneDefinition,
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
       presentationRegion,
       opticsState,
     };
@@ -788,7 +728,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       latticePresentationRegion: presentationRegion,
     });
   }, [
-    cameraMovementRenderModel,
+    cameraMovementPresentation,
     opticsState,
     presentationRegion,
     readRuntimeInfo,
@@ -845,15 +785,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     gatherMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
     resizeGroundGlassRttResources(
+      post.targets,
       {
-        renderTarget: rt,
-        cocTarget: post.cocRT,
-        gatherTarget: post.gatherRT,
-        nearGatherTarget: post.nearGatherRT,
-        finalTarget: post.finalRT,
-        cocMaterial,
-        gatherMaterial,
-        compositeMaterial,
+        coc: cocMaterial,
+        gather: gatherMaterial,
+        composite: compositeMaterial,
       },
       dims.internalWidthPx,
       dims.internalHeightPx,
@@ -888,8 +824,8 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       colorTargetHeightPx: rt.height,
       depthTargetWidthPx: depthImage?.width ?? rt.width,
       depthTargetHeightPx: depthImage?.height ?? rt.height,
-      blurTargetWidthPx: post.gatherRT.width,
-      blurTargetHeightPx: post.gatherRT.height,
+      blurTargetWidthPx: post.targets.gather.farTarget.width,
+      blurTargetHeightPx: post.targets.gather.farTarget.height,
       dofTechnique: "physical-coc-near-far-oriented-gather",
       footprintRepresentation: "local-affine-ellipse",
       gatherScale: qualitySettings.gatherScale,
@@ -903,16 +839,16 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         sampledFilmDimensions.widthMm / 2,
       cocStorageFormat: post.cocStorageFormat,
       cocAvailable: true,
-      cocTargetWidthPx: post.cocRT.width,
-      cocTargetHeightPx: post.cocRT.height,
-      gatherTargetWidthPx: post.gatherRT.width,
-      gatherTargetHeightPx: post.gatherRT.height,
-      farGatherTargetWidthPx: post.gatherRT.width,
-      farGatherTargetHeightPx: post.gatherRT.height,
-      nearGatherTargetWidthPx: post.nearGatherRT.width,
-      nearGatherTargetHeightPx: post.nearGatherRT.height,
-      finalTargetWidthPx: post.finalRT.width,
-      finalTargetHeightPx: post.finalRT.height,
+      cocTargetWidthPx: post.targets.coc.classificationTarget.width,
+      cocTargetHeightPx: post.targets.coc.classificationTarget.height,
+      gatherTargetWidthPx: post.targets.gather.farTarget.width,
+      gatherTargetHeightPx: post.targets.gather.farTarget.height,
+      farGatherTargetWidthPx: post.targets.gather.farTarget.width,
+      farGatherTargetHeightPx: post.targets.gather.farTarget.height,
+      nearGatherTargetWidthPx: post.targets.gather.nearTarget.width,
+      nearGatherTargetHeightPx: post.targets.gather.nearTarget.height,
+      finalTargetWidthPx: post.targets.composite.outputTarget.width,
+      finalTargetHeightPx: post.targets.composite.outputTarget.height,
       horizontalShaderRenderWidthPx: cocMaterial.uniforms.renderWidth.value as number,
       horizontalShaderRenderHeightPx: cocMaterial.uniforms.renderHeight.value as number,
       verticalShaderRenderWidthPx: gatherMaterial.uniforms.renderWidth.value as number,
@@ -946,14 +882,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
     });
-    const naturalIlluminationUniformState = resolveGroundGlassNaturalIlluminationUniformState({
+    const naturalIlluminationRenderState = resolveGroundGlassNaturalIlluminationRenderState({
       state: opticsState.groundGlassNaturalIllumination,
       rawDebug,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
     });
-    const coverageUniformState = resolveGroundGlassCoverageUniformState({
+    const coverageRenderState = resolveGroundGlassCoverageRenderState({
       state: opticsState.groundGlassCoverage,
       rawDebug,
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
@@ -967,7 +903,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     // Three.js camera forward vector can drive the final pitch-safe range.
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
-      cameraMovementRenderModel,
+      cameraMovementPresentation,
       presentationRegion,
     };
     const effectiveBounds = sceneProfile.resolveRenderBounds(profileContext);
@@ -1121,11 +1057,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           dimsRef.current.internalHeightPx,
         ],
         gatherResolution: [
-          post?.gatherRT.width ?? Math.max(
+          post?.targets.gather.farTarget.width ?? Math.max(
             1,
             Math.floor(dimsRef.current.internalWidthPx * currentQualitySettings.gatherScale),
           ),
-          post?.gatherRT.height ?? Math.max(
+          post?.targets.gather.farTarget.height ?? Math.max(
             1,
             Math.floor(dimsRef.current.internalHeightPx * currentQualitySettings.gatherScale),
           ),
@@ -1151,7 +1087,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       );
     }
     const measurePass = profilingActive
-      ? (pass: GroundGlassProfilingPass, renderPass: () => void): void => {
+      ? (pass: GroundGlassPassId, renderPass: () => void): void => {
           const scope = profiler.beginPass(pass);
           try {
             renderPass();
@@ -1159,11 +1095,13 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             scope.end();
           }
         }
-      : (_pass: GroundGlassProfilingPass, renderPass: () => void): void => {
+      : (_pass: GroundGlassPassId, renderPass: () => void): void => {
           renderPass();
         };
 
-    // 1) render scene to color+depth renderTarget
+    // Semantic pass order: source scene, CoC classification, far gather,
+    // near gather, composite. Raw RTT Debug intentionally skips the middle
+    // three stages; optional diagnostic readback follows the composite.
     const prev = gl.getRenderTarget();
     measurePass("sceneRender", () => {
       gl.setRenderTarget(renderTarget.current);
@@ -1179,15 +1117,18 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         postSceneGather,
         postSceneComposite,
         orthoCam,
-        cocRT,
-        gatherRT,
-        nearGatherRT,
-        finalRT,
-        rawDiagnosticRT,
-        finalDiagnosticRT,
         displayScene,
         copyMaterial,
       } = post;
+      const {
+        coc: { classificationTarget: cocRT },
+        gather: { farTarget: gatherRT, nearTarget: nearGatherRT },
+        composite: { outputTarget: finalRT },
+        diagnostics: {
+          rawSceneTarget: rawDiagnosticRT,
+          compositeOutputTarget: finalDiagnosticRT,
+        },
+      } = post.targets;
       // prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback
       const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? fallbackDepthRef.current ?? null;
       // A missing depth texture is surfaced through diagnostics. Keep the DOF
@@ -1221,14 +1162,14 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
       // Prepare typed optical state once and apply it to both CoC and gather.
       let uniformPreparationError: string | null = null;
-      let preparedDofState: ReturnType<typeof createGroundGlassDofUniformState> | null = null;
+      let preparedDofState: ReturnType<typeof createGroundGlassDofRenderState> | null = null;
       // Keep the composite at a neutral gain until a valid physical DOF state
       // has been prepared. This is the safe fallback for malformed optics;
       // Raw RTT Debug deliberately remains an unmodified render diagnostic.
       let groundGlassIlluminanceGain = 1.0;
       try {
         const displayOpticsState = resolveGroundGlassDisplayOpticsState(resolvedSceneId, opticsState);
-        preparedDofState = createGroundGlassDofUniformState(
+        preparedDofState = createGroundGlassDofRenderState(
           displayOpticsState,
           cam,
           focalLengthMm,
@@ -1251,15 +1192,22 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             // film plane, but it is not trustworthy physical focus data.
             imageDistanceMm: opticsState.diagnostics.fallbackApplied
               ? null
-              : preparedDofState.imageDistanceMm,
+              : preparedDofState.optics.imageDistanceMm,
           });
         }
       } catch (err) {
         uniformPreparationError = err instanceof Error ? err.message : String(err);
       }
 
+      const physicalRenderState: GroundGlassPhysicalRenderState = {
+        dof: preparedDofState,
+        coverage: coverageRenderState,
+        naturalIllumination: naturalIlluminationRenderState,
+        relativeIlluminanceGain: groundGlassIlluminanceGain,
+      };
+
       if (preparedDofState) {
-        applyGroundGlassDofUniformState(cocMaterial, preparedDofState);
+        bindGroundGlassDofStateToCocMaterial(cocMaterial, preparedDofState);
         reportedUniformPreparationErrorRef.current = null;
       } else {
         // Keep the last valid shader state. Do not conceal configuration errors
@@ -1289,7 +1237,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         gatherMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
         gatherMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
         if (preparedDofState) {
-          applyGroundGlassDofUniformState(gatherMaterial, preparedDofState);
+          bindGroundGlassDofStateToGatherMaterial(gatherMaterial, preparedDofState);
         } else {
           if (uniformPreparationError && reportedUniformPreparationErrorRef.current !== uniformPreparationError) {
             console.warn("GroundGlass DOF uniform preparation failed:", uniformPreparationError);
@@ -1326,43 +1274,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       compositeMaterial.uniforms.flipDisplayY.value = displayTransform.flipDisplayY ? 1.0 : 0.0;
       compositeMaterial.uniforms.renderWidth.value = dimsRef.current.internalWidthPx;
       compositeMaterial.uniforms.renderHeight.value = dimsRef.current.internalHeightPx;
-      compositeMaterial.uniforms.groundGlassIlluminanceGain.value = groundGlassIlluminanceGain;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationEnabled.value =
-        naturalIlluminationUniformState.enabled ? 1.0 : 0.0;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value =
-        naturalIlluminationUniformState.imageDistanceMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetXMm.value =
-        naturalIlluminationUniformState.opticalAxisOffsetXMm;
-      compositeMaterial.uniforms.groundGlassNaturalIlluminationOffsetYMm.value =
-        naturalIlluminationUniformState.opticalAxisOffsetYMm;
-      compositeMaterial.uniforms.groundGlassCoverageEnabled.value =
-        coverageUniformState.enabled ? 1.0 : 0.0;
-      compositeMaterial.uniforms.groundGlassCoverageMode.value = coverageUniformState.mode;
-      compositeMaterial.uniforms.groundGlassCoverageRadiusMm.value =
-        coverageUniformState.imageCircleRadiusMm;
-      compositeMaterial.uniforms.groundGlassCoverageOffsetXMm.value =
-        coverageUniformState.opticalAxisOffsetXMm;
-      compositeMaterial.uniforms.groundGlassCoverageOffsetYMm.value =
-        coverageUniformState.opticalAxisOffsetYMm;
-      compositeMaterial.uniforms.groundGlassCoverageConicQuadratic.value.set(
-        ...coverageUniformState.conicQuadratic,
-      );
-      compositeMaterial.uniforms.groundGlassCoverageConicLinear.value.set(
-        ...coverageUniformState.conicLinear,
-      );
-      compositeMaterial.uniforms.groundGlassCoverageConicAxial.value.set(
-        ...coverageUniformState.conicAxial,
-      );
-      compositeMaterial.uniforms.groundGlassCoverageEdgeFeatherMm.value =
-        coverageUniformState.edgeFeatherMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowCenterXMm.value =
-        coverageUniformState.filmWindow.centerXMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowCenterYMm.value =
-        coverageUniformState.filmWindow.centerYMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowWidthMm.value =
-        coverageUniformState.filmWindow.widthMm;
-      compositeMaterial.uniforms.groundGlassFilmWindowHeightMm.value =
-        coverageUniformState.filmWindow.heightMm;
+      bindGroundGlassPhysicalStateToComposite(compositeMaterial, physicalRenderState);
       const currentIlluminanceInfo = readRuntimeInfo();
       const coverageConicQuadratic = opticsState.groundGlassCoverage.kind === "nonparallel-conic"
         ? [
@@ -1386,7 +1298,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         (
           currentIlluminanceInfo.groundGlassIlluminanceGain !== groundGlassIlluminanceGain ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationEnabled !==
-            naturalIlluminationUniformState.enabled ||
+            naturalIlluminationRenderState.enabled ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationKind !==
             opticsState.groundGlassNaturalIllumination.kind ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationImageDistanceMm !==
@@ -1402,11 +1314,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
               : undefined)
           || currentIlluminanceInfo.groundGlassCoverageEnabled !==
-            coverageUniformState.enabled
+            coverageRenderState.active
           || currentIlluminanceInfo.groundGlassCoverageKind !==
             opticsState.groundGlassCoverage.kind
           || currentIlluminanceInfo.groundGlassPhysicalBoundaryRadiusPx !==
-            (preparedDofState?.visibleBoundaryBlurRadiusPx ??
+            (preparedDofState?.physicalCoC.visibleBoundaryRadiusPx ??
               (ACCEPTABLE_COC_DIAMETER_MM * dimsRef.current.logicalWidthPx) /
                 sampledFilmDimensions.widthMm / 2)
           || currentIlluminanceInfo.groundGlassCoverageRadiusMm !==
@@ -1430,7 +1342,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         setRuntimeInfo({
           ...currentIlluminanceInfo,
           groundGlassIlluminanceGain,
-          groundGlassNaturalIlluminationEnabled: naturalIlluminationUniformState.enabled,
+          groundGlassNaturalIlluminationEnabled: naturalIlluminationRenderState.enabled,
           groundGlassNaturalIlluminationKind:
             opticsState.groundGlassNaturalIllumination.kind,
           groundGlassNaturalIlluminationImageDistanceMm:
@@ -1445,10 +1357,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
             opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
               : undefined,
-          groundGlassCoverageEnabled: coverageUniformState.enabled,
+          groundGlassCoverageEnabled: coverageRenderState.active,
           groundGlassCoverageKind: opticsState.groundGlassCoverage.kind,
           groundGlassPhysicalBoundaryRadiusPx:
-            preparedDofState?.visibleBoundaryBlurRadiusPx ??
+            preparedDofState?.physicalCoC.visibleBoundaryRadiusPx ??
             (ACCEPTABLE_COC_DIAMETER_MM * dimsRef.current.logicalWidthPx) /
               sampledFilmDimensions.widthMm / 2,
           groundGlassCoverageRadiusMm:
@@ -1530,12 +1442,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
               cameraForwardWorld: configuredPose.forwardWorld,
               depthTextureAvailable: !isFallbackDepth,
               dofMode:
-                preparedDofState?.mode === 1
+                preparedDofState?.model === "derived-planes"
                   ? "derived-planes"
                   : opticsState.diagnostics.groundGlassDofModel ?? "parallel-thin-lens",
               uniformsFinite: Boolean(preparedDofState),
               uniformPreparationError,
-              focalLengthMm: preparedDofState?.focalLengthMm,
+              focalLengthMm: preparedDofState?.optics.focalLengthMm,
               rawColorVariance: rawSanity.luminanceVariance,
               rawNonBackgroundPixelCount: rawSanity.nonBackgroundPixelCount,
               rawContentful: rawSanity.contentful,

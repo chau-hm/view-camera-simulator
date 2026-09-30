@@ -1,19 +1,21 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "../../render/MacroSpecimenSubjectFactory";
+import { createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "../../render/MacroSpecimenSubjectFactory";
+import { MacroSpecimenSubject } from "../../render/SceneAssetSubjects";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import { macroSpecimenBoundsMm, macroBellowsExtensionFocusTargets } from "../../scenes/macroSpecimenGeometry";
 import { resolveGenericConceptualSupportRail } from "../../render/ConceptualViewCamera";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
 
 describe("macro specimen physical renderer contract", () => {
-  it("uses the same physical subject factory in viewport and RTT", () => {
+  it("routes viewport and RTT through the registered physical subject slot", () => {
     const registration = getSceneSubjectRegistration("macro-bellows-extension")!;
     expect(isGroundGlassRttScene("macro-bellows-extension")).toBe(true);
     expect(registration.SceneSubject).toBe(MacroSpecimenSubject);
-    expect(registration.createRttGroup).toBe(createMacroSpecimenGroup);
-    expect(registration.disposeRttGroup).toBe(disposeMacroSpecimenGroup);
-    const group = registration.createRttGroup();
+    expect(registration.createRttGroup).toBeDefined();
+    expect(registration.disposeRttGroup).toBeDefined();
+    const group = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
     const bounds = new THREE.Box3().setFromObject(group);
     expect(bounds.min.x).toBeCloseTo(-0.045, 6);
     expect(bounds.max.x).toBeCloseTo(0.045, 6);

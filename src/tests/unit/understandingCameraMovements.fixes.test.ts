@@ -4,7 +4,7 @@ import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { getSceneById } from "../../scenes/definitions";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
-import { createCameraMovementsGroup, disposeCameraMovementsGroup } from "../../render/CameraMovementsSubjectFactory";
+import { createCameraMovementsGroup, disposeCameraMovementsGroup } from "../../render/assets/CameraMovementLatticeAsset";
 
 function initScene() {
   useAppStore.getState().initializeSimulatorRoute({

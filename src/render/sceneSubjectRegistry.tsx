@@ -8,108 +8,79 @@ import tableTiltGeometry from "../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../scenes/shelfSwingGeometry";
 import {
   ArchitectureRiseSubject,
-  createArchitectureRiseGroup,
-  disposeArchitectureRiseGroup,
-} from "./ArchitectureRiseSubjectFactory";
-import {
   ObliqueArchitectureSubject,
-  createObliqueArchitectureGroup,
-  disposeObliqueArchitectureGroup,
-} from "./ObliqueArchitectureSubjectFactory";
-import {
+  ArchitectureForegroundSubject,
   FocusFundamentalsSubject,
-  createFocusFundamentalsGroup,
-} from "./FocusFundamentalsSubjectFactory";
-import {
-  TableTiltSubject,
-  createTableTiltGroup,
-  disposeTableTiltGroup,
-} from "./TableTiltSubjectFactory";
-import {
-  ShelfSwingSubject,
-  createShelfSwingGroup,
-  disposeShelfSwingGroup,
-} from "./ShelfSwingSubjectFactory";
-import {
+  InteriorCornerSubject,
+  ObliqueTabletopSubject,
   MirrorShiftSubject,
-  createMirrorShiftRttGroup,
-  disposeMirrorShiftGroup,
-} from "./MirrorShiftSubjectFactory";
+  MacroSpecimenSubject,
+  MacroDepthOfFieldSubject,
+  MacroObliquePlaneSubject,
+  MacroCompoundMovementsSubject,
+  ShelfSwingSubject,
+  TableTiltSubject,
+  ViewCameraAnatomySubject,
+} from "./SceneAssetSubjects";
+import {
+  ARCHITECTURE_RISE_ASSET_KEY,
+  ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  INTERIOR_CORNER_ASSET_KEY,
+  OBLIQUE_TABLETOP_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  SHELF_SWING_ASSET_KEY,
+  TABLE_TILT_ASSET_KEY,
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
+  type SceneAssetRequestMap,
+} from "./assets/sceneAssetRegistry";
+import {
+  ARCHITECTURE_RISE_PRESENTATION,
+} from "../scenes/presentation/architectureRise";
+import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../scenes/presentation/obliqueArchitecture";
+import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
+import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
+import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
+import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
+import { MIRROR_SHIFT_PRESENTATION } from "../scenes/presentation/mirrorShift";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../scenes/presentation/macroCompoundMovements";
+import { CameraMovementsSubject } from "./CameraMovementsSubjectFactory";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "./cameraMovementLatticeAssetConsumer";
 import {
   CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
-  CameraMovementsSubject,
-  cameraMovementsGroupOptionsFromRenderModel,
-  createCameraMovementsGroup,
-  disposeCameraMovementsGroup,
-} from "./CameraMovementsSubjectFactory";
+  cameraMovementsGroupOptionsFromPresentation,
+} from "./assets/CameraMovementLatticeAsset";
 import {
-  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-  type CameraMovementLatticeRenderModel,
-} from "./cameraMovementLatticeRenderModel";
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+  type CameraMovementLatticePresentation,
+} from "../scenes/presentation/understandingCameraMovements";
 import { toWorld } from "./rttUtils";
 import {
   CAMERA_MOVEMENT_SCENE_CALIBRATION,
   type CameraMovementPresentationRegion,
 } from "../scenes/cameraMovementSceneCalibration";
 import { CAMERA_MOVEMENT_LATTICE } from "../scenes/cameraMovementLatticeGeometry";
-import { focusFundamentalsObjectCenterMm } from "../scenes/focusFundamentalsTargets";
 import obliqueArchitectureGeometry from "../scenes/obliqueArchitectureGeometry";
 import architectureForegroundGeometry from "../scenes/architectureForegroundGeometry";
 import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
 import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
-import {
-  ArchitectureForegroundSubject,
-  createArchitectureForegroundGroup,
-  disposeArchitectureForegroundGroup,
-} from "./ArchitectureForegroundSubjectFactory";
-import {
-  LessonZeroGroundGlassSubject,
-  createLessonZeroGroundGlassGroup,
-} from "./LessonZeroGroundGlassSubjectFactory";
-import {
-  ObliqueTabletopSubject,
-  createObliqueTabletopGroup,
-  disposeObliqueTabletopGroup,
-} from "./ObliqueTabletopSubjectFactory";
-import {
-  InteriorCornerSubject,
-  createInteriorCornerGroup,
-  disposeInteriorCornerGroup,
-} from "./InteriorCornerSubjectFactory";
-import {
-  lessonZeroGroundGlassSubjectBoundsMm,
-  lessonZeroGroundGlassSubjectCenterMm,
-} from "../scenes/lessonZeroGroundGlassSubject";
 import { resolveMirrorShiftLighting } from "./mirrorShiftLighting";
-import { MacroSpecimenSubject, createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "./MacroSpecimenSubjectFactory";
-import { MACRO_SPECIMEN, macroSpecimenBoundsMm } from "../scenes/macroSpecimenGeometry";
-import {
-  MacroDepthOfFieldSubject,
-  createMacroDepthOfFieldGroup,
-  disposeMacroDepthOfFieldGroup,
-} from "./MacroDepthOfFieldSubjectFactory";
-import {
-  MACRO_DEPTH_SPECIMEN_CENTER_MM,
-  macroDepthOfFieldSubjectBoundsMm,
-} from "../scenes/macroDepthOfFieldGeometry";
-import {
-  MacroObliquePlaneSubject,
-  createMacroObliquePlaneGroup,
-  disposeMacroObliquePlaneGroup,
-} from "./MacroObliquePlaneSubjectFactory";
-import {
-  MACRO_OBLIQUE_PLATE_CENTER_MM,
-  macroObliquePlaneSubjectBoundsMm,
-} from "../scenes/macroObliquePlaneGeometry";
-import {
-  MacroCompoundMovementsSubject,
-  createMacroCompoundMovementsGroup,
-  disposeMacroCompoundMovementsGroup,
-} from "./MacroCompoundMovementsSubjectFactory";
-import {
-  macroCompoundMovementsLightingTargetMm,
-  macroCompoundMovementsSubjectBoundsMm,
-} from "../scenes/macroCompoundMovementsGeometry";
 
 export type RegisteredSceneSubjectProps = {
   scene: SceneDefinition;
@@ -121,10 +92,9 @@ export type SceneSubjectRttLighting = {
   fillOffsetWorld: Vec3;
 };
 
-export type SceneSubjectRegistration = {
+type SceneSubjectRegistrationBase = {
   SceneSubject: ComponentType<RegisteredSceneSubjectProps>;
   createRttGroup: (options?: SceneSubjectRttOptions) => THREE.Group;
-  disposeRttGroup?: (group: THREE.Group) => void;
   /** Optional subject bounds used for RTT clipping, independent of inspection bounds. */
   rttBounds?: Bounds3;
   /** Optional lighting for the physical inspection subject when RTT is virtualized. */
@@ -142,13 +112,18 @@ export type SceneSubjectRegistration = {
     geometryKey: string;
     presentationKey: string;
     edgeCount: number;
-    bounds: CameraMovementLatticeRenderModel["subjectBounds"];
+    bounds: CameraMovementLatticePresentation["subjectBoundsWorldMm"];
   };
+};
+
+/** Scene-level integration delegates asset cleanup to the asset registry. */
+export type SceneSubjectRegistration = SceneSubjectRegistrationBase & {
+  disposeRttGroup: (group: THREE.Group) => void;
 };
 
 export type SceneSubjectRttOptions = {
   presentationRegion?: CameraMovementPresentationRegion;
-  cameraMovementRenderModel?: CameraMovementLatticeRenderModel;
+  cameraMovementPresentation?: CameraMovementLatticePresentation;
 };
 
 export const ArchitectureRiseRegisteredSubject = ({
@@ -212,7 +187,7 @@ const tableTiltLightingTargetMm = {
 } as const;
 
 const cameraMovementsLightingTargetMm = {
-  ...CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.lightingTargetMm,
+  ...CAMERA_MOVEMENT_BASELINE_PRESENTATION.lightingTargetWorldMm,
 } as const;
 
 const shelfSwingLightingTargetMm = {
@@ -243,57 +218,102 @@ const {
   rtt: mirrorShiftRttLighting,
 } = resolveMirrorShiftLighting();
 
+const macroBellowsExtensionRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+const macroDepthOfFieldRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION });
+const macroObliquePlaneRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_OBLIQUE_PLANE_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_OBLIQUE_PLANE_PRESENTATION });
+const macroCompoundMovementsRttAssetRequest: SceneAssetRequestMap[
+  typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+] = Object.freeze({ presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION });
+
+const mirrorShiftRttAssetRequest: SceneAssetRequestMap[
+  typeof MIRROR_SHIFT_ASSET_KEY
+] = Object.freeze({
+  presentation: MIRROR_SHIFT_PRESENTATION,
+  representation: "rtt",
+});
+
 export const sceneSubjectRegistry = {
   "macro-bellows-extension": {
     SceneSubject: MacroSpecimenSubject,
-    createRttGroup: createMacroSpecimenGroup,
-    disposeRttGroup: disposeMacroSpecimenGroup,
-    rttBounds: macroSpecimenBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+        macroBellowsExtensionRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_BELLOWS_EXTENSION_ASSET_KEY, group),
+    rttBounds: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.macroSpecimenBoundsMm,
     rttLighting: {
-      targetMm: MACRO_SPECIMEN.faceCenterMm,
+      targetMm: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.MACRO_SPECIMEN.faceCenterMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "macro-depth-of-field": {
     SceneSubject: MacroDepthOfFieldSubject,
-    createRttGroup: createMacroDepthOfFieldGroup,
-    disposeRttGroup: disposeMacroDepthOfFieldGroup,
-    rttBounds: macroDepthOfFieldSubjectBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+        macroDepthOfFieldRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_DEPTH_OF_FIELD_ASSET_KEY, group),
+    rttBounds: MACRO_DEPTH_OF_FIELD_PRESENTATION.geometry.macroDepthOfFieldSubjectBoundsMm,
     rttLighting: {
-      targetMm: MACRO_DEPTH_SPECIMEN_CENTER_MM,
+      targetMm: MACRO_DEPTH_OF_FIELD_PRESENTATION.geometry.MACRO_DEPTH_SPECIMEN_CENTER_MM,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "macro-oblique-plane": {
     SceneSubject: MacroObliquePlaneSubject,
-    createRttGroup: createMacroObliquePlaneGroup,
-    disposeRttGroup: disposeMacroObliquePlaneGroup,
-    rttBounds: macroObliquePlaneSubjectBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_OBLIQUE_PLANE_ASSET_KEY,
+        macroObliquePlaneRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_OBLIQUE_PLANE_ASSET_KEY, group),
+    rttBounds: MACRO_OBLIQUE_PLANE_PRESENTATION.geometry.macroObliquePlaneSubjectBoundsMm,
     rttLighting: {
-      targetMm: MACRO_OBLIQUE_PLATE_CENTER_MM,
+      targetMm: MACRO_OBLIQUE_PLANE_PRESENTATION.geometry.MACRO_OBLIQUE_PLATE_CENTER_MM,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "macro-compound-movements": {
     SceneSubject: MacroCompoundMovementsSubject,
-    createRttGroup: createMacroCompoundMovementsGroup,
-    disposeRttGroup: disposeMacroCompoundMovementsGroup,
-    rttBounds: macroCompoundMovementsSubjectBoundsMm,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+        macroCompoundMovementsRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, group),
+    rttBounds: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsSubjectBoundsMm,
     rttLighting: {
-      targetMm: macroCompoundMovementsLightingTargetMm,
+      targetMm: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
       fillOffsetWorld: { x: 2.5, y: 1.5, z: -1.5 },
     },
   },
   "view-camera-anatomy": {
-    SceneSubject: LessonZeroGroundGlassSubject,
-    createRttGroup: createLessonZeroGroundGlassGroup,
-    rttBounds: lessonZeroGroundGlassSubjectBoundsMm,
+    SceneSubject: ViewCameraAnatomySubject,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, {
+        presentation: VIEW_CAMERA_ANATOMY_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, group),
+    rttBounds: VIEW_CAMERA_ANATOMY_PRESENTATION.geometry.bounds,
     rttLighting: {
-      targetMm: lessonZeroGroundGlassSubjectCenterMm,
+      targetMm: VIEW_CAMERA_ANATOMY_PRESENTATION.centerMm,
       keyOffsetWorld: { x: -1.8, y: 2.5, z: -2.2 },
       fillOffsetWorld: { x: 1.8, y: 1.25, z: -2.4 },
     },
@@ -301,38 +321,38 @@ export const sceneSubjectRegistry = {
   "understanding-camera-movements": {
     SceneSubject: CameraMovementsSubject,
     createRttGroup: (options) => {
-      const model =
-        options?.cameraMovementRenderModel ??
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
-      return createCameraMovementsGroup(
-        cameraMovementsGroupOptionsFromRenderModel(
-          model,
+      const presentation =
+        options?.cameraMovementPresentation ??
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION;
+      return createCameraMovementLatticeAsset(
+        cameraMovementsGroupOptionsFromPresentation(
+          presentation,
           options?.presentationRegion,
         ),
       );
     },
-    disposeRttGroup: disposeCameraMovementsGroup,
+    disposeRttGroup: disposeCameraMovementLatticeAsset,
     showReferenceCamera:
       CAMERA_MOVEMENT_SCENE_CALIBRATION.presentation.showReferenceCamera,
     resolveShowReferenceCamera: (options) =>
       (
-        options?.cameraMovementRenderModel ??
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL
+        options?.cameraMovementPresentation ??
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION
       ).showReferenceCamera,
     canonicalLattice: {
       geometryId: CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
       edgeCount: CAMERA_MOVEMENT_LATTICE.edges.length,
     },
     resolveCanonicalLattice: (options) => {
-      const model =
-        options?.cameraMovementRenderModel ??
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL;
+      const presentation =
+        options?.cameraMovementPresentation ??
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION;
       return {
-        geometryId: model.geometryId,
-        geometryKey: model.geometryKey,
-        presentationKey: model.presentationKey,
-        edgeCount: model.lattice.edges.length,
-        bounds: model.subjectBounds,
+        geometryId: presentation.geometryId,
+        geometryKey: presentation.geometryKey,
+        presentationKey: presentation.presentationKey,
+        edgeCount: presentation.lattice.edges.length,
+        bounds: presentation.subjectBoundsWorldMm,
       };
     },
     rttLighting: {
@@ -343,9 +363,9 @@ export const sceneSubjectRegistry = {
     resolveRttLighting: (options) => ({
       targetMm: {
         ...(
-          options?.cameraMovementRenderModel ??
-          CAMERA_MOVEMENT_BASELINE_RENDER_MODEL
-        ).lightingTargetMm,
+          options?.cameraMovementPresentation ??
+          CAMERA_MOVEMENT_BASELINE_PRESENTATION
+        ).lightingTargetWorldMm,
       },
       keyOffsetWorld: { x: -2, y: 2.5, z: -2 },
       fillOffsetWorld: { x: 1.5, y: 1, z: -2.5 },
@@ -353,17 +373,26 @@ export const sceneSubjectRegistry = {
   },
   "focus-fundamentals-two-targets": {
     SceneSubject: FocusFundamentalsSubject,
-    createRttGroup: createFocusFundamentalsGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, {
+        presentation: FOCUS_FUNDAMENTALS_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(FOCUS_FUNDAMENTALS_ASSET_KEY, group),
     rttLighting: {
-      targetMm: focusFundamentalsObjectCenterMm,
+      targetMm: FOCUS_FUNDAMENTALS_PRESENTATION.geometry.objectCenterMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
       fillOffsetWorld: { x: 2, y: 1.5, z: -2.5 },
     },
   },
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,
-    createRttGroup: createArchitectureRiseGroup,
-    disposeRttGroup: disposeArchitectureRiseGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+        presentation: ARCHITECTURE_RISE_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group),
     rttLighting: {
       targetMm: architectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
@@ -372,8 +401,12 @@ export const sceneSubjectRegistry = {
   },
   "architecture-foreground": {
     SceneSubject: ArchitectureForegroundRegisteredSubject,
-    createRttGroup: createArchitectureForegroundGroup,
-    disposeRttGroup: disposeArchitectureForegroundGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, {
+        presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, group),
     rttLighting: {
       targetMm: architectureForegroundLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -382,8 +415,12 @@ export const sceneSubjectRegistry = {
   },
   "oblique-architecture": {
     SceneSubject: ObliqueArchitectureRegisteredSubject,
-    createRttGroup: createObliqueArchitectureGroup,
-    disposeRttGroup: disposeObliqueArchitectureGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(OBLIQUE_ARCHITECTURE_ASSET_KEY, {
+        presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(OBLIQUE_ARCHITECTURE_ASSET_KEY, group),
     rttLighting: {
       targetMm: obliqueArchitectureLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -392,8 +429,12 @@ export const sceneSubjectRegistry = {
   },
   "table-tilt": {
     SceneSubject: TableTiltSubject,
-    createRttGroup: createTableTiltGroup,
-    disposeRttGroup: disposeTableTiltGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, {
+        presentation: TABLE_TILT_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, group),
     rttLighting: {
       targetMm: tableTiltLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -402,8 +443,12 @@ export const sceneSubjectRegistry = {
   },
   "shelf-swing": {
     SceneSubject: ShelfSwingSubject,
-    createRttGroup: createShelfSwingGroup,
-    disposeRttGroup: disposeShelfSwingGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
+        presentation: SHELF_SWING_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, group),
     rttLighting: {
       targetMm: shelfSwingLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -412,8 +457,12 @@ export const sceneSubjectRegistry = {
   },
   "oblique-tabletop": {
     SceneSubject: ObliqueTabletopSubject,
-    createRttGroup: createObliqueTabletopGroup,
-    disposeRttGroup: disposeObliqueTabletopGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, {
+        presentation: OBLIQUE_TABLETOP_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(OBLIQUE_TABLETOP_ASSET_KEY, group),
     rttLighting: {
       targetMm: obliqueTabletopLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -422,15 +471,24 @@ export const sceneSubjectRegistry = {
   },
   "mirror-shift": {
     SceneSubject: MirrorShiftSubject,
-    createRttGroup: createMirrorShiftRttGroup,
-    disposeRttGroup: disposeMirrorShiftGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(
+        MIRROR_SHIFT_ASSET_KEY,
+        mirrorShiftRttAssetRequest,
+      ),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(MIRROR_SHIFT_ASSET_KEY, group),
     viewportLighting: mirrorShiftViewportLighting,
     rttLighting: mirrorShiftRttLighting,
   },
   "interior-corner": {
     SceneSubject: InteriorCornerSubject,
-    createRttGroup: createInteriorCornerGroup,
-    disposeRttGroup: disposeInteriorCornerGroup,
+    createRttGroup: () =>
+      createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
+        presentation: INTERIOR_CORNER_PRESENTATION,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, group),
     rttLighting: {
       targetMm: interiorCornerLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
@@ -457,5 +515,5 @@ export const disposeRegisteredRttSubject = (
   sceneId: string,
   group: THREE.Group,
 ): void => {
-  getSceneSubjectRegistration(sceneId)?.disposeRttGroup?.(group);
+  getSceneSubjectRegistration(sceneId)?.disposeRttGroup(group);
 };

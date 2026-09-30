@@ -3,8 +3,8 @@ import * as THREE from "three";
 import {
   createMacroDepthOfFieldGroup,
   disposeMacroDepthOfFieldGroup,
-  MacroDepthOfFieldSubject,
 } from "../../render/MacroDepthOfFieldSubjectFactory";
+import { MacroDepthOfFieldSubject } from "../../render/SceneAssetSubjects";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
 import {
@@ -13,21 +13,22 @@ import {
   macroDepthOfFieldSubjectBoundsMm,
 } from "../../scenes/macroDepthOfFieldGeometry";
 import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../../scenes/presentation/macroDepthOfField";
 
 describe("Macro Scene 2 physical renderer contract", () => {
-  it("uses one shared React subject, RTT factory, bounds, and disposer", () => {
+  it("registers the typed subject slot for viewport and RTT with bounds and cleanup", () => {
     const registration = getSceneSubjectRegistration("macro-depth-of-field");
 
     expect(registration).toBeDefined();
     expect(isGroundGlassRttScene("macro-depth-of-field")).toBe(true);
     expect(registration?.SceneSubject).toBe(MacroDepthOfFieldSubject);
-    expect(registration?.createRttGroup).toBe(createMacroDepthOfFieldGroup);
-    expect(registration?.disposeRttGroup).toBe(disposeMacroDepthOfFieldGroup);
+    expect(registration?.createRttGroup).toBeDefined();
+    expect(registration?.disposeRttGroup).toBeDefined();
     expect(registration?.rttBounds).toBe(macroDepthOfFieldSubjectBoundsMm);
   });
 
   it("renders a connected three-dimensional specimen with valid physical focus surfaces", () => {
-    const group = createMacroDepthOfFieldGroup();
+    const group = createMacroDepthOfFieldGroup({ presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION });
     group.updateMatrixWorld(true);
 
     const bounds = new THREE.Box3().setFromObject(group);
@@ -124,7 +125,7 @@ describe("Macro Scene 2 physical renderer contract", () => {
   });
 
   it("shows each lens-facing detail surface from the default Scene observer", () => {
-    const group = createMacroDepthOfFieldGroup();
+    const group = createMacroDepthOfFieldGroup({ presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION });
     group.updateMatrixWorld(true);
     const observer = new THREE.Vector3(
       macroDepthOfFieldCameraPlacement.position.x / 1000,

@@ -1,28 +1,40 @@
-import type { Bounds3, Vec3 } from "../types/optics";
+import type { Bounds3, Vec3 } from "../../types/optics";
 import {
   generateCameraMovementLattice,
   type CanonicalCameraMovementLattice,
-} from "../scenes/cameraMovementLatticeGeometry";
+} from "../cameraMovementLatticeGeometry";
 import {
   CAMERA_MOVEMENT_CALIBRATION_BASELINE,
   resolveEffectiveCameraMovementCalibration,
   type EffectiveCameraMovementCalibration,
-} from "../scenes/cameraMovementEffectiveCalibration";
-import type { CameraMovementPresentationCalibration } from "../scenes/cameraMovementSceneCalibration";
+} from "../cameraMovementEffectiveCalibration";
+import type { CameraMovementPresentationCalibration } from "../cameraMovementSceneCalibration";
 
-export type CameraMovementLatticeRenderModel = Readonly<{
+/**
+ * Plain application data for presenting the canonical movement lattice.
+ * Coordinates and dimensions are canonical world-space millimetres: +X is
+ * camera-right, +Y is up, and +Z runs from the lens toward the subject.
+ * This module deliberately contains no renderer or asset implementation.
+ */
+export type CameraMovementLatticePresentation = Readonly<{
+  sceneId: "understanding-camera-movements";
+  object: Readonly<{
+    id: "camera-movement-lattice";
+    role: "camera-movement-target-lattice";
+  }>;
   lattice: CanonicalCameraMovementLattice;
   presentation: CameraMovementPresentationCalibration;
   geometryKey: string;
   presentationKey: string;
   geometryId: string;
-  subjectBounds: Bounds3;
-  grid: Readonly<{
-    center: Vec3;
+  subjectBoundsWorldMm: Bounds3;
+  referenceGrid: Readonly<{
+    centerWorldMm: Vec3;
     halfExtentMm: number;
     cellSizeMm: number;
   }>;
-  lightingTargetMm: Vec3;
+  /** Current teaching-light aim point; light behavior remains renderer-owned. */
+  lightingTargetWorldMm: Vec3;
   showReferenceCamera: boolean;
 }>;
 
@@ -58,10 +70,7 @@ const latticeIdentityPayload = (
     targetLevelByRegion: lattice.targetLevelByRegion,
   });
 
-/**
- * Deterministic identity for physical lattice geometry. Presentation, optics,
- * rig placement, and the selected target are deliberately excluded.
- */
+/** Deterministic identity for physical lattice geometry, excluding styling. */
 export const createCameraMovementLatticeGeometryId = (
   lattice: CanonicalCameraMovementLattice,
 ): string =>
@@ -71,14 +80,14 @@ type CachedGeometry = Readonly<{
   geometryKey: string;
   lattice: CanonicalCameraMovementLattice;
   geometryId: string;
-  subjectBounds: Bounds3;
-  grid: CameraMovementLatticeRenderModel["grid"];
+  subjectBoundsWorldMm: Bounds3;
+  referenceGrid: CameraMovementLatticePresentation["referenceGrid"];
 }>;
 
 const geometryCache = new Map<string, CachedGeometry>();
-const renderModelCache = new Map<string, CameraMovementLatticeRenderModel>();
+const presentationCache = new Map<string, CameraMovementLatticePresentation>();
 const GEOMETRY_CACHE_LIMIT = 8;
-const RENDER_MODEL_CACHE_LIMIT = 8;
+const PRESENTATION_CACHE_LIMIT = 8;
 
 const resolveGeometry = (
   calibration: EffectiveCameraMovementCalibration,
@@ -97,9 +106,9 @@ const resolveGeometry = (
     geometryKey: calibration.subjectGeometryKey,
     lattice,
     geometryId: createCameraMovementLatticeGeometryId(lattice),
-    subjectBounds: lattice.bounds,
-    grid: {
-      center: {
+    subjectBoundsWorldMm: lattice.bounds,
+    referenceGrid: {
+      centerWorldMm: {
         x: calibration.subject.originWorld.x,
         y: lattice.bounds.min.y - calibration.subject.cubeSizeMm / 2,
         z: calibration.subject.originWorld.z,
@@ -119,45 +128,47 @@ const resolveGeometry = (
 };
 
 /**
- * Resolve one renderer-facing bundle from the canonical effective calibration.
- *
- * Physical lattices are kept in a small bounded cache by scoped geometry key
- * so the interactive scene and Ground Glass consume the same immutable
- * lattice object. GPU groups and their resources remain independently owned.
+ * Derive the scene-specific presentation contract from canonical calibration.
+ * Interactive rendering and Ground Glass share this same immutable-by-contract
+ * data; neither asset implementation can redefine its targets or dimensions.
  */
-export const resolveCameraMovementLatticeRenderModel = (
+export const resolveCameraMovementLatticePresentation = (
   calibration: EffectiveCameraMovementCalibration,
-): CameraMovementLatticeRenderModel => {
-  const cacheKey =
-    `${calibration.subjectGeometryKey}|${calibration.presentationKey}`;
-  const cached = renderModelCache.get(cacheKey);
+): CameraMovementLatticePresentation => {
+  const cacheKey = `${calibration.subjectGeometryKey}|${calibration.presentationKey}`;
+  const cached = presentationCache.get(cacheKey);
   if (cached) {
-    renderModelCache.delete(cacheKey);
-    renderModelCache.set(cacheKey, cached);
+    presentationCache.delete(cacheKey);
+    presentationCache.set(cacheKey, cached);
     return cached;
   }
   const geometry = resolveGeometry(calibration);
-  const renderModel: CameraMovementLatticeRenderModel = {
+  const contract: CameraMovementLatticePresentation = {
+    sceneId: "understanding-camera-movements",
+    object: {
+      id: "camera-movement-lattice",
+      role: "camera-movement-target-lattice",
+    },
     ...geometry,
     presentation: calibration.presentation,
     presentationKey: calibration.presentationKey,
-    lightingTargetMm: {
+    lightingTargetWorldMm: {
       x: calibration.subject.originWorld.x,
       y: calibration.subject.originWorld.y,
       z: calibration.subject.originWorld.z,
     },
     showReferenceCamera: calibration.presentation.showReferenceCamera,
   };
-  renderModelCache.set(cacheKey, renderModel);
-  if (renderModelCache.size > RENDER_MODEL_CACHE_LIMIT) {
-    const oldestKey = renderModelCache.keys().next().value;
-    if (typeof oldestKey === "string") renderModelCache.delete(oldestKey);
+  presentationCache.set(cacheKey, contract);
+  if (presentationCache.size > PRESENTATION_CACHE_LIMIT) {
+    const oldestKey = presentationCache.keys().next().value;
+    if (typeof oldestKey === "string") presentationCache.delete(oldestKey);
   }
-  return renderModel;
+  return contract;
 };
 
-export const CAMERA_MOVEMENT_BASELINE_RENDER_MODEL =
-  resolveCameraMovementLatticeRenderModel(
+export const CAMERA_MOVEMENT_BASELINE_PRESENTATION =
+  resolveCameraMovementLatticePresentation(
     resolveEffectiveCameraMovementCalibration(
       CAMERA_MOVEMENT_CALIBRATION_BASELINE,
     ),

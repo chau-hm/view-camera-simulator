@@ -2,35 +2,60 @@ import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Page } from "@playwright/test";
 
 type SceneVisit = {
-  heading: string;
   sceneId: string;
+  href: string;
+  linkIndex: number;
 };
-
-const visits: SceneVisit[] = [
-  { heading: "Focus Fundamentals — Two Targets", sceneId: "focus-fundamentals-two-targets" },
-  { heading: "Architecture Rise", sceneId: "architecture-rise" },
-  { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
-  { heading: "Table Tilt", sceneId: "table-tilt" },
-  { heading: "Shelf Swing", sceneId: "shelf-swing" },
-  { heading: "Oblique Tabletop", sceneId: "oblique-tabletop" },
-  { heading: "Mirror Shift", sceneId: "mirror-shift" },
-  { heading: "Understanding Camera Movements", sceneId: "understanding-camera-movements" },
-  { heading: "Architecture Rise", sceneId: "architecture-rise" },
-];
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
   /GL Driver Message .*GPU stall due to ReadPixels/.test(message);
 
+const discoverPublicSceneVisits = async (page: Page): Promise<SceneVisit[]> => {
+  const hrefs = await page
+    .locator("article.scene-feature-card a.btn--primary")
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+
+  expect(hrefs.length, "the public scene listing should expose at least one scene").toBeGreaterThan(0);
+
+  const visits = hrefs.map((href, linkIndex) => {
+    expect(href, `public scene link ${linkIndex} must have an href`).toBeTruthy();
+    if (!href) throw new Error(`Public scene link ${linkIndex} has no href`);
+
+    const route = new URL(href, page.url());
+    const match = route.pathname.match(/^\/simulator\/free\/([^/]+)$/);
+    expect(match, `unexpected public scene route: ${href}`).not.toBeNull();
+    if (!match) throw new Error(`Unexpected public scene route: ${href}`);
+
+    return {
+      sceneId: decodeURIComponent(match[1]),
+      href,
+      linkIndex,
+    };
+  });
+
+  const sceneIds = visits.map(({ sceneId }) => sceneId);
+  expect(new Set(sceneIds).size, "public scene links must have unique scene IDs").toBe(
+    sceneIds.length,
+  );
+
+  return visits;
+};
+
 const openPublicScene = async (page: Page, visit: SceneVisit) => {
-  const card = page
-    .getByRole("article")
-    .filter({ has: page.getByRole("heading", { name: visit.heading }) });
-  await card.getByRole("link", { name: "Open Scene" }).click();
-  await expect(page).toHaveURL(new RegExp(`/simulator/free/${visit.sceneId}$`));
+  const link = page.locator("article.scene-feature-card a.btn--primary").nth(visit.linkIndex);
+  await expect(link).toHaveCount(1);
+  await expect(link).toHaveAttribute("href", visit.href);
+  await link.click();
+  const expectedRoute = new URL(visit.href, page.url());
+  await expect(page).toHaveURL(
+    (actualRoute) =>
+      actualRoute.pathname === expectedRoute.pathname &&
+      actualRoute.search === expectedRoute.search,
+  );
 };
 
 test("public SPA scene switching keeps one current scene and its RTT renderer channels without reloads", async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(480_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -46,6 +71,8 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       `${Date.now()}-${Math.random()}`;
   });
   await page.goto("/scenes");
+  const visits = await discoverPublicSceneVisits(page);
+  const discoveredSceneIds = visits.map(({ sceneId }) => sceneId);
   const documentToken = await page.evaluate(
     () => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken,
   );
@@ -55,8 +82,12 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   let previousGroundGlasses: ElementHandle<Node>[] = [];
   let previousSanityState: string | null = null;
   let previousSceneId: string | null = null;
+  const seenRttOwnerIds = new Set<string>();
+  const visitedSceneIds = new Set<string>();
 
   for (const visit of visits) {
+    expect(visitedSceneIds.has(visit.sceneId), `scene ${visit.sceneId} should be visited once`).toBe(false);
+    visitedSceneIds.add(visit.sceneId);
     await openPublicScene(page, visit);
     await expect
       .poll(() => page.evaluate(() => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken))
@@ -89,6 +120,12 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       await expect(pane).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
       await expect(pane).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
     }
+    await expect(groundGlass).toHaveAttribute("data-rtt-owner-id", /^ground-glass-rtt-owner-/, { timeout: 60_000 });
+    await expect(groundGlass).toHaveAttribute("data-rtt-resource-generation", /^[1-9]\d*$/, { timeout: 60_000 });
+    const rttOwnerId = await groundGlass.getAttribute("data-rtt-owner-id");
+    expect(rttOwnerId).toBeTruthy();
+    expect(seenRttOwnerIds.has(rttOwnerId!)).toBe(false);
+    seenRttOwnerIds.add(rttOwnerId!);
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");
     expect(sanityState).toBeTruthy();
     if (previousSceneId && previousSceneId !== visit.sceneId) {
@@ -121,6 +158,7 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     }
   }
 
+  expect([...visitedSceneIds].sort()).toEqual([...discoveredSceneIds].sort());
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });

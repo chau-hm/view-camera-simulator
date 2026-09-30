@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateGroundGlassNaturalIlluminationGain } from "../../core/optics/groundGlassNaturalIllumination";
-import { resolveGroundGlassNaturalIlluminationUniformState } from "../../render/groundGlassNaturalIllumination";
+import { resolveGroundGlassNaturalIlluminationRenderState } from "../../render/groundGlassNaturalIllumination";
 import { FULL_GROUND_GLASS_INSPECTION_WINDOW } from "../../render/groundGlassInspectionWindow";
 import {
   applyGroundGlassRttDisplayTransform,
@@ -26,7 +26,7 @@ const croppedWindow = {
 
 describe("Ground Glass natural-illumination render contract", () => {
   it("passes the physical crop origin instead of recentering a loupe window", () => {
-    const uniforms = resolveGroundGlassNaturalIlluminationUniformState({
+    const uniforms = resolveGroundGlassNaturalIlluminationRenderState({
       state,
       rawDebug: false,
       filmWidthMm: 127,
@@ -35,23 +35,22 @@ describe("Ground Glass natural-illumination render contract", () => {
     });
 
     expect(uniforms.enabled).toBe(true);
-    expect(uniforms.filmWindowCenterXMm).toBeCloseTo(47.625, 12);
-    expect(uniforms.filmWindowCenterYMm).toBeCloseTo(-38.1, 12);
-    expect(uniforms.filmWindowWidthMm).toBeCloseTo(31.75, 12);
-    expect(uniforms.filmWindowHeightMm).toBeCloseTo(25.4, 12);
-    expect(uniforms.opticalAxisOffsetXMm).toBe(18);
-    expect(uniforms.opticalAxisOffsetYMm).toBe(20);
+    expect(uniforms.filmWindow.centerXMm).toBeCloseTo(47.625, 12);
+    expect(uniforms.filmWindow.centerYMm).toBeCloseTo(-38.1, 12);
+    expect(uniforms.filmWindow.widthMm).toBeCloseTo(31.75, 12);
+    expect(uniforms.filmWindow.heightMm).toBeCloseTo(25.4, 12);
+    expect(uniforms.geometry).toEqual(state);
   });
 
   it("keeps normal raw/upright physical state enabled but bypasses it for Raw RTT Debug", () => {
-    const normal = resolveGroundGlassNaturalIlluminationUniformState({
+    const normal = resolveGroundGlassNaturalIlluminationRenderState({
       state,
       rawDebug: false,
       filmWidthMm: 127,
       filmHeightMm: 101.6,
       inspectionWindow: FULL_GROUND_GLASS_INSPECTION_WINDOW,
     });
-    const debug = resolveGroundGlassNaturalIlluminationUniformState({
+    const debug = resolveGroundGlassNaturalIlluminationRenderState({
       state,
       rawDebug: true,
       filmWidthMm: 127,
@@ -60,15 +59,13 @@ describe("Ground Glass natural-illumination render contract", () => {
     });
 
     expect(normal.enabled).toBe(true);
-    expect(normal.imageDistanceMm).toBe(150);
+    expect(normal.geometry).toEqual(state);
     expect(debug.enabled).toBe(false);
-    expect(debug.imageDistanceMm).toBe(0);
-    expect(debug.opticalAxisOffsetXMm).toBe(0);
-    expect(debug.opticalAxisOffsetYMm).toBe(0);
+    expect(debug.geometry).toEqual(state);
   });
 
   it("keeps non-parallel optics neutral in the render adapter", () => {
-    const uniforms = resolveGroundGlassNaturalIlluminationUniformState({
+    const uniforms = resolveGroundGlassNaturalIlluminationRenderState({
       state: { kind: "neutral", reason: "non-parallel-lens-film" },
       rawDebug: false,
       filmWidthMm: 127,
@@ -77,7 +74,7 @@ describe("Ground Glass natural-illumination render contract", () => {
     });
 
     expect(uniforms.enabled).toBe(false);
-    expect(uniforms.imageDistanceMm).toBe(0);
+    expect(uniforms.geometry).toEqual({ kind: "neutral", reason: "non-parallel-lens-film" });
   });
 
   it("keeps an asymmetric rise centre aligned across source, Raw, and Upright contracts", () => {

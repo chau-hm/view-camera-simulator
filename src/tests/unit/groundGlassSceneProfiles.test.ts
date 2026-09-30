@@ -2,9 +2,9 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
-  CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-  type CameraMovementLatticeRenderModel,
-} from "../../render/cameraMovementLatticeRenderModel";
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+  type CameraMovementLatticePresentation,
+} from "../../scenes/presentation/understandingCameraMovements";
 import {
   getGroundGlassSceneProfile,
   type GroundGlassSceneProfileContext,
@@ -19,13 +19,13 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const contextFor = (
   scene: GroundGlassSceneProfileContext["scene"],
-  cameraMovementRenderModel: CameraMovementLatticeRenderModel =
-    CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+  cameraMovementPresentation: CameraMovementLatticePresentation =
+    CAMERA_MOVEMENT_BASELINE_PRESENTATION,
   presentationRegion: GroundGlassSceneProfileContext["presentationRegion"] =
     "middle",
 ): GroundGlassSceneProfileContext => ({
   scene,
-  cameraMovementRenderModel,
+  cameraMovementPresentation,
   presentationRegion,
 });
 
@@ -78,7 +78,7 @@ describe("Ground Glass scene profiles", () => {
     const mounted = profile.mountSubject(rttScene, context);
 
     expect(profile.resolveRenderBounds(context)).toBe(
-      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.subjectBounds,
+      CAMERA_MOVEMENT_BASELINE_PRESENTATION.subjectBoundsWorldMm,
     );
     expect(profile.resolveRenderBounds(context)).not.toBe(scene.bounds);
     expect(mounted?.runtimeInfo?.mounted).toBe(true);

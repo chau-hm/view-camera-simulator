@@ -1,7 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import geometry, { type ShelfSwingSubjectDefinition } from "../scenes/shelfSwingGeometry";
+import type { ShelfSwingSubjectDefinition } from "../scenes/shelfSwingGeometry";
+import type { ShelfSwingPresentation } from "../scenes/presentation/shelfSwing";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -125,12 +124,13 @@ const addComparisonMotif = (
 const addStationContext = (
   station: THREE.Group,
   subject: ShelfSwingSubjectDefinition,
+  presentation: ShelfSwingPresentation,
   frameMaterial: THREE.Material,
 ): void => {
   const context = new THREE.Group();
   context.name = `${subject.semanticName}-context-structure`;
 
-  const { frameThickness, shelfThickness } = geometry.detailGeometry;
+  const { frameThickness, shelfThickness } = presentation.geometry.detailGeometry;
   const backdrop = new THREE.Mesh(
     new THREE.BoxGeometry(
       toWorld(subject.dimensions.width - frameThickness * 2),
@@ -188,7 +188,10 @@ const addStationContext = (
   station.add(context);
 };
 
-const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
+const createStation = (
+  subject: ShelfSwingSubjectDefinition,
+  presentation: ShelfSwingPresentation,
+): THREE.Group => {
   const station = new THREE.Group();
   station.name = subject.semanticName;
   station.position.set(
@@ -203,7 +206,7 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
   };
 
   const { frameThickness, backingThickness, chartBackingGap, shelfThickness } =
-    geometry.detailGeometry;
+    presentation.geometry.detailGeometry;
   const chart = subject.focusChart;
   const frameMaterial = standardMaterial(subject.materialHints.primary, 0.82);
   const backingMaterial = createFocusFriendlyMaterial({
@@ -263,7 +266,7 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
     station.add(shelf);
   }
 
-  addStationContext(station, subject, frameMaterial);
+  addStationContext(station, subject, presentation, frameMaterial);
 
   subject.displayObjects.forEach((definition) => {
     const objectGeometry =
@@ -340,8 +343,16 @@ const createStation = (subject: ShelfSwingSubjectDefinition): THREE.Group => {
   return station;
 };
 
-/** Create the canonical Shelf Swing subject for future R3F and RTT reuse. */
-export function createShelfSwingGroup(): THREE.Group {
+export type ShelfSwingAssetRequest = Readonly<{
+  presentation: ShelfSwingPresentation;
+}>;
+
+/** Create the canonical Shelf Swing subject for interactive and RTT use. */
+export function createShelfSwingGroup(
+  request: ShelfSwingAssetRequest,
+): THREE.Group {
+  const { presentation } = request;
+  const { geometry } = presentation;
   const root = new THREE.Group();
   root.name = "shelf-swing-subject";
 
@@ -358,24 +369,12 @@ export function createShelfSwingGroup(): THREE.Group {
   );
   root.add(floorMesh);
 
-  geometry.subjects.forEach((subject) => root.add(createStation(subject)));
+  geometry.subjects.forEach((subject) =>
+    root.add(createStation(subject, presentation)),
+  );
   return root;
 }
 
 export function disposeShelfSwingGroup(group: THREE.Group): void {
   disposeTeachingSubjectResources(group);
 }
-
-/** React Three Fiber boundary backed by the exact same group factory as future RTT. */
-export const ShelfSwingSubject: React.FC = () => {
-  const group = useMemo(() => createShelfSwingGroup(), []);
-
-  useEffect(
-    () => () => {
-      disposeShelfSwingGroup(group);
-    },
-    [group],
-  );
-
-  return <primitive object={group} dispose={null} />;
-};

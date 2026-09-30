@@ -1,21 +1,20 @@
-/* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { createMacroMaterial } from "./MacroSubjectMaterials";
 import { toWorld } from "./rttUtils";
-import {
-  macroCompoundMovementsFocusFaceTransforms,
-  macroCompoundMovementsStationSpecs,
-  type MacroCompoundStationSpec,
-} from "../scenes/macroCompoundMovementsGeometry";
+import type { MacroCompoundMovementsPresentation } from "../scenes/presentation/macroCompoundMovements";
+
+type MacroCompoundStationSpec = MacroCompoundMovementsPresentation["geometry"]["macroCompoundMovementsStationSpecs"][number];
 
 const localVector = (value: { x: number; y: number; z: number }): THREE.Vector3 =>
   new THREE.Vector3(value.x, value.y, value.z);
 
-const createStationTransform = (station: MacroCompoundStationSpec): THREE.Group => {
+const createStationTransform = (
+  station: MacroCompoundStationSpec,
+  focusFaceTransforms: MacroCompoundMovementsPresentation["geometry"]["macroCompoundMovementsFocusFaceTransforms"],
+): THREE.Group => {
   const group = new THREE.Group();
-  const transform = macroCompoundMovementsFocusFaceTransforms.find(
+  const transform = focusFaceTransforms.find(
     (candidate) => candidate.targetId === station.targetId,
   );
   if (!transform) throw new Error(`Missing compound focus face for ${station.targetId}`);
@@ -354,8 +353,18 @@ const addFarRightFineArray = (
   );
 };
 
-/** Shared precision-station subject used by the 3D observer and Ground Glass RTT. */
-export function createMacroCompoundMovementsGroup(): THREE.Group {
+/** Precision-station asset rendered in the 3D observer and Ground Glass RTT. */
+export type MacroCompoundMovementsAssetRequest = Readonly<{
+  presentation: MacroCompoundMovementsPresentation;
+}>;
+
+export function createMacroCompoundMovementsGroup({
+  presentation,
+}: MacroCompoundMovementsAssetRequest): THREE.Group {
+  const {
+    macroCompoundMovementsFocusFaceTransforms,
+    macroCompoundMovementsStationSpecs,
+  } = presentation.geometry;
   const root = new THREE.Group();
   root.name = "macro-compound-movements-subject";
 
@@ -432,7 +441,10 @@ export function createMacroCompoundMovementsGroup(): THREE.Group {
   );
 
   for (const station of macroCompoundMovementsStationSpecs) {
-    const stationGroup = createStationTransform(station);
+    const stationGroup = createStationTransform(
+      station,
+      macroCompoundMovementsFocusFaceTransforms,
+    );
     root.add(stationGroup);
     const stationFaceMaterial = station.kind === "gear-scale" ? machined : ivory;
     addStationBackplate(stationGroup, station, stationFaceMaterial);
@@ -467,9 +479,3 @@ export function createMacroCompoundMovementsGroup(): THREE.Group {
 export const disposeMacroCompoundMovementsGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
 };
-
-export function MacroCompoundMovementsSubject() {
-  const group = useMemo(createMacroCompoundMovementsGroup, []);
-  useEffect(() => () => disposeMacroCompoundMovementsGroup(group), [group]);
-  return <primitive object={group} dispose={null} />;
-}

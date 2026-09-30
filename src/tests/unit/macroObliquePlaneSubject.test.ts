@@ -14,22 +14,23 @@ import {
 } from "../../scenes/macroObliquePlaneGeometry";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
-import { MacroObliquePlaneSubject } from "../../render/MacroObliquePlaneSubjectFactory";
+import { MacroObliquePlaneSubject } from "../../render/SceneAssetSubjects";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../../scenes/presentation/macroObliquePlane";
 
 describe("Macro Scene 3 planar PCB subject contract", () => {
-  it("registers one shared viewport/RTT subject with bounds and disposal", () => {
+  it("registers the typed viewport/RTT subject with bounds and cleanup", () => {
     const registration = getSceneSubjectRegistration("macro-oblique-plane");
 
     expect(registration).toBeDefined();
     expect(isGroundGlassRttScene("macro-oblique-plane")).toBe(true);
     expect(registration?.SceneSubject).toBe(MacroObliquePlaneSubject);
-    expect(registration?.createRttGroup).toBe(createMacroObliquePlaneGroup);
-    expect(registration?.disposeRttGroup).toBe(disposeMacroObliquePlaneGroup);
+    expect(registration?.createRttGroup).toBeDefined();
+    expect(registration?.disposeRttGroup).toBeDefined();
     expect(registration?.rttBounds).toBe(macroObliquePlaneSubjectBoundsMm);
   });
 
   it("renders a genuinely oblique planar surface and keeps every focus sample on it", () => {
-    const group = createMacroObliquePlaneGroup();
+    const group = createMacroObliquePlaneGroup({ presentation: MACRO_OBLIQUE_PLANE_PRESENTATION });
     group.updateMatrixWorld(true);
 
     const plateAssembly = group.getObjectByName("macro-oblique-plane-plate-assembly");
@@ -90,7 +91,7 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
   });
 
   it("contains asymmetric PCB layers with distinct visual material roles", () => {
-    const group = createMacroObliquePlaneGroup();
+    const group = createMacroObliquePlaneGroup({ presentation: MACRO_OBLIQUE_PLANE_PRESENTATION });
     group.updateMatrixWorld(true);
 
     for (const name of [
@@ -140,7 +141,7 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
   });
 
   it("shows each semantic detail region from the default Scene observer", () => {
-    const group = createMacroObliquePlaneGroup();
+    const group = createMacroObliquePlaneGroup({ presentation: MACRO_OBLIQUE_PLANE_PRESENTATION });
     group.updateMatrixWorld(true);
     const observer = new THREE.Vector3(
       macroObliquePlaneCameraPlacement.position.x / 1000,

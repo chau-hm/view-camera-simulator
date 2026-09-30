@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from "react";
 import * as THREE from "three";
 import type { SceneSubjectRttLighting } from "./sceneSubjectRegistry";
 import { vecToWorld } from "./rttUtils";
@@ -63,6 +71,12 @@ const SHADOW_HELPER_NAME =
   /(?:line|guide|overlay|axis|crosshair|scheimpflug|lattice|construction|ray|frustum|measurement|legend|diagnostic|dof)/i;
 const SHADOW_RECEIVER_NAME =
   /(?:ground|floor|tabletop|wall|backdrop|rug|surface|room|roof|plinth)/i;
+const TeachingShadowParticipationRefreshContext = createContext<(() => void) | null>(null);
+const NOOP = (): void => undefined;
+
+/** Reapplies scene shadow policy after an effect-owned subject graph mounts. */
+export const useRefreshTeachingShadowParticipation = (): (() => void) =>
+  useContext(TeachingShadowParticipationRefreshContext) ?? NOOP;
 
 const isLitMaterial = (material: THREE.Material): boolean =>
   material instanceof THREE.MeshStandardMaterial ||
@@ -247,8 +261,7 @@ export const TeachingShadowParticipation = ({
   onCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 }) => {
   const subjectRootRef = useRef<THREE.Group>(null);
-
-  useLayoutEffect(() => {
+  const refreshSubjectGraph = useCallback(() => {
     const subjectRoot = subjectRootRef.current;
     if (!subjectRoot) return;
     configureTeachingShadowParticipation(subjectRoot);
@@ -257,12 +270,18 @@ export const TeachingShadowParticipation = ({
         ? collectSceneGraphCapacity(subjectRoot)
         : null,
     );
+  }, [onCapacityChange]);
+
+  useLayoutEffect(() => {
+    refreshSubjectGraph();
     return () => onCapacityChange?.(null);
-  }, [onCapacityChange, subjectKey]);
+  }, [onCapacityChange, refreshSubjectGraph, subjectKey]);
 
   return (
-    <group ref={subjectRootRef} name="teaching-shadow-subject">
-      {children}
-    </group>
+    <TeachingShadowParticipationRefreshContext.Provider value={refreshSubjectGraph}>
+      <group ref={subjectRootRef} name="teaching-shadow-subject">
+        {children}
+      </group>
+    </TeachingShadowParticipationRefreshContext.Provider>
   );
 };

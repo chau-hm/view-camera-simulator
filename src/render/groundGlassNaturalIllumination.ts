@@ -1,49 +1,37 @@
 import type { GroundGlassNaturalIlluminationState } from "../types/optics";
 import type { GroundGlassInspectionWindow } from "./groundGlassInspectionWindow";
 import {
-  resolveGroundGlassFilmWindowUniformState,
-  type GroundGlassFilmWindowUniformState,
+  resolveGroundGlassFilmWindow,
+  type GroundGlassFilmWindow,
 } from "./groundGlassFilmWindow";
 
-export type GroundGlassNaturalIlluminationUniformState = Readonly<{
+export type GroundGlassNaturalIlluminationRenderState = Readonly<{
   enabled: boolean;
-  imageDistanceMm: number;
-  opticalAxisOffsetXMm: number;
-  opticalAxisOffsetYMm: number;
-  filmWindowCenterXMm: GroundGlassFilmWindowUniformState["centerXMm"];
-  filmWindowCenterYMm: GroundGlassFilmWindowUniformState["centerYMm"];
-  filmWindowWidthMm: GroundGlassFilmWindowUniformState["widthMm"];
-  filmWindowHeightMm: GroundGlassFilmWindowUniformState["heightMm"];
+  geometry: GroundGlassNaturalIlluminationState | null;
+  filmWindow: GroundGlassFilmWindow;
 }>;
 
 /**
- * Adapt canonical physical illumination state and the existing RTT crop to
- * the small uniform contract consumed by the composite shader.
+ * Derive the physical illumination semantics consumed by the current final
+ * composite. Raw RTT Debug disables the effect while retaining the canonical
+ * geometry in the snapshot for diagnostics and other renderer bindings.
  */
-export const resolveGroundGlassNaturalIlluminationUniformState = (input: {
+export const resolveGroundGlassNaturalIlluminationRenderState = (input: {
   state: GroundGlassNaturalIlluminationState;
   rawDebug: boolean;
   filmWidthMm: number;
   filmHeightMm: number;
   /** Top-origin RTT-source crop, converted to canonical physical film mm here. */
   inspectionWindow: GroundGlassInspectionWindow;
-}): GroundGlassNaturalIlluminationUniformState => {
-  const filmWindow = resolveGroundGlassFilmWindowUniformState({
+}): GroundGlassNaturalIlluminationRenderState => {
+  const filmWindow = resolveGroundGlassFilmWindow({
     filmWidthMm: input.filmWidthMm,
     filmHeightMm: input.filmHeightMm,
     inspectionWindow: input.inspectionWindow,
   });
-  const parallelState = input.state.kind === "parallel-cos4" ? input.state : null;
-  const enabled = !input.rawDebug && parallelState !== null;
-
   return {
-    enabled,
-    imageDistanceMm: enabled ? parallelState.imageDistanceMm : 0,
-    opticalAxisOffsetXMm: enabled ? parallelState.opticalAxisOffsetXMm : 0,
-    opticalAxisOffsetYMm: enabled ? parallelState.opticalAxisOffsetYMm : 0,
-    filmWindowCenterXMm: filmWindow.centerXMm,
-    filmWindowCenterYMm: filmWindow.centerYMm,
-    filmWindowWidthMm: filmWindow.widthMm,
-    filmWindowHeightMm: filmWindow.heightMm,
+    enabled: !input.rawDebug && input.state.kind === "parallel-cos4",
+    geometry: input.state,
+    filmWindow,
   };
 };

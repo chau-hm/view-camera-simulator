@@ -1,7 +1,13 @@
 import { cleanup, render } from "@testing-library/react";
+import { StrictMode } from "react";
+import type { ComponentType } from "react";
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ShelfSwingSubject } from "../../render/ShelfSwingSubjectFactory";
+import {
+  ArchitectureRiseSubject,
+  MirrorShiftSubject,
+  ShelfSwingSubject,
+} from "../../render/SceneAssetSubjects";
 import {
   ArchitectureRiseRegisteredSubject,
   createRegisteredRttSubject,
@@ -11,13 +17,21 @@ import {
   sceneSubjectRegistry,
 } from "../../render/sceneSubjectRegistry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { getAvailablePublicSceneEntries } from "../../app/publicScenes";
+import {
+  getAvailablePublicSceneEntries,
+  getPublishedPublicSceneEntries,
+  getPublicSceneEntries,
+  publicSceneIds,
+  type PublicSceneId,
+} from "../../app/publicScenes";
+import { scenePublication } from "../../config/scenePublication";
+import { getAllScenes } from "../../scenes/definitions";
 import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
-import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/CameraMovementsSubjectFactory";
-import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
+import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/assets/CameraMovementLatticeAsset";
+import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
 import {
   mirrorShiftGeometry,
   reflectPointAcrossMirrorPlane,
@@ -28,8 +42,82 @@ import {
 } from "../../scenes/lessonZeroGroundGlassSubject";
 import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
 import { WORLD_SCALE } from "../../render/rttUtils";
+import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
+import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
+import * as tableTiltAsset from "../../render/TableTiltSubjectFactory";
+import * as shelfSwingAsset from "../../render/ShelfSwingSubjectFactory";
+import * as architectureForegroundAsset from "../../render/ArchitectureForegroundSubjectFactory";
+import * as interiorCornerAsset from "../../render/InteriorCornerSubjectFactory";
+import * as obliqueTabletopAsset from "../../render/ObliqueTabletopSubjectFactory";
+import * as mirrorShiftAsset from "../../render/MirrorShiftSubjectFactory";
+import {
+  CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+  ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  ARCHITECTURE_RISE_ASSET_KEY,
+  INTERIOR_CORNER_ASSET_KEY,
+  OBLIQUE_TABLETOP_ASSET_KEY,
+  OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  TABLE_TILT_ASSET_KEY,
+  SHELF_SWING_ASSET_KEY,
+  FOCUS_FUNDAMENTALS_ASSET_KEY,
+  VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  MIRROR_SHIFT_ASSET_KEY,
+  MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  resolveSceneAsset,
+  sceneAssetRegistry,
+  type SceneAssetKey,
+} from "../../render/assets/sceneAssetRegistry";
+import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
+import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
+import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../../scenes/presentation/macroDepthOfField";
+import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../../scenes/presentation/macroObliquePlane";
+import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation/macroCompoundMovements";
+import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
+import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
+import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
+import { macroDepthOfFieldScene } from "../../scenes/definitions/macro-depth-of-field";
+import { macroObliquePlaneScene } from "../../scenes/definitions/macro-oblique-plane";
+import { macroCompoundMovementsScene } from "../../scenes/definitions/macro-compound-movements";
+import * as macroBellowsExtensionAsset from "../../render/MacroSpecimenSubjectFactory";
+import * as macroDepthOfFieldAsset from "../../render/MacroDepthOfFieldSubjectFactory";
+import * as macroObliquePlaneAsset from "../../render/MacroObliquePlaneSubjectFactory";
+import * as macroCompoundMovementsAsset from "../../render/MacroCompoundMovementsSubjectFactory";
 
-afterEach(cleanup);
+const publicSceneAssetSlots = {
+  "view-camera-anatomy": VIEW_CAMERA_ANATOMY_ASSET_KEY,
+  "understanding-camera-movements": CAMERA_MOVEMENT_LATTICE_ASSET_KEY,
+  "focus-fundamentals-two-targets": FOCUS_FUNDAMENTALS_ASSET_KEY,
+  "architecture-rise": ARCHITECTURE_RISE_ASSET_KEY,
+  "table-tilt": TABLE_TILT_ASSET_KEY,
+  "shelf-swing": SHELF_SWING_ASSET_KEY,
+  "oblique-tabletop": OBLIQUE_TABLETOP_ASSET_KEY,
+  "mirror-shift": MIRROR_SHIFT_ASSET_KEY,
+  "oblique-architecture": OBLIQUE_ARCHITECTURE_ASSET_KEY,
+  "architecture-foreground": ARCHITECTURE_FOREGROUND_ASSET_KEY,
+  "interior-corner": INTERIOR_CORNER_ASSET_KEY,
+  "macro-bellows-extension": MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+  "macro-depth-of-field": MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+  "macro-oblique-plane": MACRO_OBLIQUE_PLANE_ASSET_KEY,
+  "macro-compound-movements": MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+} as const satisfies Record<PublicSceneId, SceneAssetKey>;
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const collectDisposableSpies = (group: THREE.Group) => {
   const geometries = new Set<THREE.BufferGeometry>();
@@ -64,6 +152,79 @@ const boardFootprintsSeparated = (first: BoardFootprint, second: BoardFootprint)
   Math.abs(first.center.z - second.center.z) >= (first.depth + second.depth) / 2;
 
 describe("scene subject registry", () => {
+  it("keeps public scenes, RTT subjects, and typed asset slots complete and aligned", () => {
+    const publicIds = [...publicSceneIds].sort();
+    const publishedIds = getPublishedPublicSceneEntries()
+      .map(({ meta }) => meta.id)
+      .sort();
+    const publicEntryIds = getPublicSceneEntries()
+      .map(({ meta }) => meta.id)
+      .sort();
+    const availableIds = getAvailablePublicSceneEntries()
+      .map(({ meta }) => meta.id)
+      .sort();
+    const definedSceneIds = new Set(getAllScenes().map(({ id }) => id));
+
+    expect(publishedIds.every((sceneId) => publicIds.includes(sceneId))).toBe(true);
+    expect(publicEntryIds.every((sceneId) => publishedIds.includes(sceneId))).toBe(true);
+    expect(availableIds.every((sceneId) => publicEntryIds.includes(sceneId))).toBe(true);
+    expect([...RTT_SCENES].sort()).toEqual(publicIds);
+    expect(Object.keys(sceneSubjectRegistry).sort()).toEqual(publicIds);
+    expect(Object.keys(publicSceneAssetSlots).sort()).toEqual(publicIds);
+    expect(Object.values(publicSceneAssetSlots).sort()).toEqual(
+      Object.keys(sceneAssetRegistry).sort(),
+    );
+    publicIds.forEach((sceneId) => expect(definedSceneIds.has(sceneId)).toBe(true));
+
+    const implementationIds: string[] = [];
+    for (const sceneId of publicSceneIds) {
+      const assetKey = publicSceneAssetSlots[sceneId];
+      const registration = resolveSceneAsset(assetKey);
+      implementationIds.push(registration.implementationId);
+
+      const group = createRegisteredRttSubject(sceneId);
+      try {
+        expect(group, `public scene ${sceneId} must construct an RTT group`).not.toBeNull();
+        expect(group?.userData.assetImplementationId).toBe(
+          registration.implementationId,
+        );
+      } finally {
+        if (group) disposeRegisteredRttSubject(sceneId, group);
+      }
+    }
+    expect(new Set(implementationIds).size).toBe(publicSceneIds.length);
+  });
+
+  it("keeps implementation architecture when a published scene is hidden", () => {
+    const hiddenSceneId: PublicSceneId = "macro-compound-movements";
+    const isolatedPublication = {
+      ...scenePublication,
+      [hiddenSceneId]: false,
+    };
+    const publishedIds = getPublishedPublicSceneEntries(isolatedPublication).map(
+      ({ meta }) => meta.id,
+    );
+    const publicEntryIds = getPublicSceneEntries(isolatedPublication).map(
+      ({ meta }) => meta.id,
+    );
+    const availableIds = getAvailablePublicSceneEntries(isolatedPublication).map(
+      ({ meta }) => meta.id,
+    );
+
+    expect(publishedIds).toHaveLength(publicSceneIds.length - 1);
+    expect(publishedIds).not.toContain(hiddenSceneId);
+    expect(publicEntryIds).not.toContain(hiddenSceneId);
+    expect(availableIds).not.toContain(hiddenSceneId);
+
+    expect(publicSceneIds).toContain(hiddenSceneId);
+    expect(publicSceneAssetSlots[hiddenSceneId]).toBe(
+      MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+    );
+    expect(RTT_SCENES).toContain(hiddenSceneId);
+    expect(sceneSubjectRegistry[hiddenSceneId]).toBeDefined();
+    expect(resolveSceneAsset(publicSceneAssetSlots[hiddenSceneId])).toBeDefined();
+  });
+
   it("registers every canonical rendered scene and rejects unknown IDs", () => {
     expect(Object.keys(sceneSubjectRegistry)).toEqual([
       "macro-bellows-extension",
@@ -89,6 +250,31 @@ describe("scene subject registry", () => {
     expect(getSceneSubjectRegistration("not-a-scene")).toBeUndefined();
     expect(getRegisteredSceneSubject("not-a-scene")).toBeUndefined();
     expect(createRegisteredRttSubject("not-a-scene")).toBeNull();
+  });
+
+  it("pairs every Strict Mode interactive asset creation with one registered disposer", () => {
+    const factory = vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup");
+    const disposer = vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const view = render(
+      <StrictMode>
+        <ArchitectureRiseSubject />
+      </StrictMode>,
+    );
+    consoleError.mockRestore();
+
+    const createdGroups = factory.mock.results
+      .filter((result) => result.type === "return")
+      .map((result) => result.value as THREE.Group);
+    expect(createdGroups.length).toBeGreaterThan(1);
+
+    view.unmount();
+
+    const disposedGroups = disposer.mock.calls.map(([group]) => group);
+    expect(disposedGroups).toHaveLength(createdGroups.length);
+    createdGroups.forEach((group) => {
+      expect(disposedGroups.filter((disposedGroup) => disposedGroup === group)).toHaveLength(1);
+    });
   });
 
   it("registers the Lesson 0 subject with canonical RTT bounds", () => {
@@ -139,16 +325,160 @@ describe("scene subject registry", () => {
     disposeRegisteredRttSubject("shelf-swing", group!);
   });
 
-  it("resolves Mirror Shift to the shared static reflection subject and RTT factory", () => {
+  it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
+    const candidates = [
+      {
+        scene: architectureRiseScene,
+        assetKey: ARCHITECTURE_RISE_ASSET_KEY,
+        presentation: ARCHITECTURE_RISE_PRESENTATION,
+        factory: vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup"),
+        disposer: vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup"),
+      },
+      {
+        scene: obliqueArchitectureScene,
+        assetKey: OBLIQUE_ARCHITECTURE_ASSET_KEY,
+        presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+        factory: vi.spyOn(obliqueArchitectureAsset, "createObliqueArchitectureGroup"),
+        disposer: vi.spyOn(obliqueArchitectureAsset, "disposeObliqueArchitectureGroup"),
+      },
+      {
+        scene: tableTiltScene,
+        assetKey: TABLE_TILT_ASSET_KEY,
+        presentation: TABLE_TILT_PRESENTATION,
+        factory: vi.spyOn(tableTiltAsset, "createTableTiltGroup"),
+        disposer: vi.spyOn(tableTiltAsset, "disposeTableTiltGroup"),
+      },
+      {
+        scene: shelfSwingScene,
+        assetKey: SHELF_SWING_ASSET_KEY,
+        presentation: SHELF_SWING_PRESENTATION,
+        factory: vi.spyOn(shelfSwingAsset, "createShelfSwingGroup"),
+        disposer: vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup"),
+      },
+      {
+        scene: architectureForegroundScene,
+        assetKey: ARCHITECTURE_FOREGROUND_ASSET_KEY,
+        presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+        factory: vi.spyOn(
+          architectureForegroundAsset,
+          "createArchitectureForegroundGroup",
+        ),
+        disposer: vi.spyOn(
+          architectureForegroundAsset,
+          "disposeArchitectureForegroundGroup",
+        ),
+      },
+      {
+        scene: interiorCornerScene,
+        assetKey: INTERIOR_CORNER_ASSET_KEY,
+        presentation: INTERIOR_CORNER_PRESENTATION,
+        factory: vi.spyOn(interiorCornerAsset, "createInteriorCornerGroup"),
+        disposer: vi.spyOn(interiorCornerAsset, "disposeInteriorCornerGroup"),
+      },
+      {
+        scene: obliqueTabletopScene,
+        assetKey: OBLIQUE_TABLETOP_ASSET_KEY,
+        presentation: OBLIQUE_TABLETOP_PRESENTATION,
+        factory: vi.spyOn(obliqueTabletopAsset, "createObliqueTabletopGroup"),
+        disposer: vi.spyOn(obliqueTabletopAsset, "disposeObliqueTabletopGroup"),
+      },
+      {
+        scene: macroBellowsExtensionScene,
+        assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+        presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION,
+        factory: vi.spyOn(macroBellowsExtensionAsset, "createMacroSpecimenGroup"),
+        disposer: vi.spyOn(macroBellowsExtensionAsset, "disposeMacroSpecimenGroup"),
+      },
+      {
+        scene: macroDepthOfFieldScene,
+        assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+        presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION,
+        factory: vi.spyOn(macroDepthOfFieldAsset, "createMacroDepthOfFieldGroup"),
+        disposer: vi.spyOn(macroDepthOfFieldAsset, "disposeMacroDepthOfFieldGroup"),
+      },
+      {
+        scene: macroObliquePlaneScene,
+        assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
+        presentation: MACRO_OBLIQUE_PLANE_PRESENTATION,
+        factory: vi.spyOn(macroObliquePlaneAsset, "createMacroObliquePlaneGroup"),
+        disposer: vi.spyOn(macroObliquePlaneAsset, "disposeMacroObliquePlaneGroup"),
+      },
+      {
+        scene: macroCompoundMovementsScene,
+        assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+        presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
+        factory: vi.spyOn(macroCompoundMovementsAsset, "createMacroCompoundMovementsGroup"),
+        disposer: vi.spyOn(macroCompoundMovementsAsset, "disposeMacroCompoundMovementsGroup"),
+      },
+    ];
+
+    candidates.forEach(({ scene, assetKey, presentation, factory, disposer }) => {
+      const subject = getRegisteredSceneSubject(scene.id);
+      expect(subject).toBeDefined();
+      const Subject = subject as ComponentType<{ scene: typeof scene }>;
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const view = render(<Subject scene={scene} />);
+      consoleError.mockRestore();
+      const rttGroup = createRegisteredRttSubject(scene.id);
+
+      expect(rttGroup).toBeInstanceOf(THREE.Group);
+      const interactiveGroup = factory.mock.results[0]?.value as THREE.Group;
+      expect(interactiveGroup).toBeInstanceOf(THREE.Group);
+      expect(interactiveGroup).not.toBe(rttGroup);
+      expect(factory).toHaveBeenCalledTimes(2);
+      expect(factory.mock.calls[0]?.[0]?.presentation).toBe(presentation);
+      expect(factory.mock.calls[1]?.[0]?.presentation).toBe(presentation);
+      expect(interactiveGroup.userData.assetImplementationId).toBe(
+        resolveSceneAsset(assetKey).implementationId,
+      );
+      expect(rttGroup?.userData.assetImplementationId).toBe(
+        resolveSceneAsset(assetKey).implementationId,
+      );
+
+      disposeRegisteredRttSubject(scene.id, rttGroup!);
+      view.unmount();
+      expect(disposer).toHaveBeenCalledTimes(2);
+      expect(disposer.mock.calls[0]?.[0]).toBe(rttGroup);
+    });
+  });
+
+  it("routes Mirror Shift interactive and RTT consumers through the same registered factory", () => {
     const registration = getSceneSubjectRegistration("mirror-shift");
     expect(registration).toBeDefined();
-    expect(getRegisteredSceneSubject("mirror-shift")).toBe(registration?.SceneSubject);
+    expect(getRegisteredSceneSubject("mirror-shift")).toBe(MirrorShiftSubject);
+    const factory = vi.spyOn(mirrorShiftAsset, "createMirrorShiftAssetGroup");
+    const disposer = vi.spyOn(mirrorShiftAsset, "disposeMirrorShiftGroup");
+    const view = render(<MirrorShiftSubject />);
 
     const group = createRegisteredRttSubject("mirror-shift");
+    const viewportGroup = factory.mock.results[0]?.value as THREE.Group;
+    const rttGroup = factory.mock.results[1]?.value as THREE.Group;
+    const assetRegistration = resolveSceneAsset(MIRROR_SHIFT_ASSET_KEY);
+
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory.mock.calls[0]?.[0]).toMatchObject({ representation: "viewport" });
+    expect(factory.mock.calls[1]?.[0]).toMatchObject({ representation: "rtt" });
+    expect(viewportGroup).toBeInstanceOf(THREE.Group);
+    expect(rttGroup).toBe(group);
+    expect(viewportGroup).not.toBe(rttGroup);
+    expect(viewportGroup.userData.assetImplementationId).toBe(
+      assetRegistration.implementationId,
+    );
+    expect(rttGroup.userData.assetImplementationId).toBe(
+      assetRegistration.implementationId,
+    );
+    expect(factory.mock.calls[0]?.[0]?.presentation).toBe(
+      factory.mock.calls[1]?.[0]?.presentation,
+    );
     expect(group?.name).toBe("mirror-shift-subject");
     expect(group?.getObjectByName("mirror-shift-mirror-surface")).toBeInstanceOf(THREE.Mesh);
     expect(group?.getObjectByName("mirror-shift-camera-reflection")).toBeInstanceOf(THREE.Group);
     disposeRegisteredRttSubject("mirror-shift", group!);
+    expect(disposer).toHaveBeenCalledTimes(1);
+    expect(disposer.mock.calls[0]?.[0]).toBe(rttGroup);
+    view.unmount();
+    expect(disposer).toHaveBeenCalledTimes(2);
+    expect(disposer.mock.calls[1]?.[0]).toBe(viewportGroup);
   });
 
   it("resolves Interior Corner to one shared static subject for 3D and RTT", () => {
@@ -410,10 +740,23 @@ describe("scene subject registry", () => {
     },
   );
 
-  it.each(["focus-fundamentals-two-targets"])(
-    "does not generically dispose shared factory resources for %s",
-    (sceneId) => {
-      expect(getSceneSubjectRegistration(sceneId)?.disposeRttGroup).toBeUndefined();
+  it.each([
+    ["focus-fundamentals-two-targets", FOCUS_FUNDAMENTALS_ASSET_KEY],
+    ["view-camera-anatomy", VIEW_CAMERA_ANATOMY_ASSET_KEY],
+  ] as const)(
+    "%s delegates cleanup to its module-shared asset policy",
+    (sceneId, assetKey) => {
+      const registration = getSceneSubjectRegistration(sceneId);
+      expect(registration?.disposeRttGroup).toBeDefined();
+      expect(resolveSceneAsset(assetKey).renderResourceLifetime).toBe(
+        "module-shared",
+      );
+
+      const group = createRegisteredRttSubject(sceneId);
+      if (!group) throw new Error(`Expected RTT group for ${sceneId}`);
+      const spies = collectDisposableSpies(group);
+      disposeRegisteredRttSubject(sceneId, group);
+      spies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
     },
   );
 

@@ -20,11 +20,17 @@ import architectureGeometry from "../../scenes/architectureForegroundGeometry";
 import interiorGeometry from "../../scenes/interiorCornerGeometry";
 import obliqueGeometry from "../../scenes/obliqueTabletopGeometry";
 import shelfGeometry from "../../scenes/shelfSwingGeometry";
+import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
+import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/architectureForeground";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/obliqueTabletop";
 import { toWorld } from "../../render/rttUtils";
 
 describe("scene complexity foundation", () => {
   it("adds architectural depth while retaining the registered subject anchors", () => {
-    const group = createArchitectureForegroundGroup();
+    const group = createArchitectureForegroundGroup({
+      presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+    });
     try {
       expect(group.getObjectByName("architecture-foreground-window-1-1-recess")).toBeInstanceOf(
         THREE.Group,
@@ -77,7 +83,9 @@ describe("scene complexity foundation", () => {
   });
 
   it("adds physical interior furniture structure without changing focus probes", () => {
-    const group = createInteriorCornerGroup();
+    const group = createInteriorCornerGroup({
+      presentation: INTERIOR_CORNER_PRESENTATION,
+    });
     try {
       expect(group.getObjectByName("interior-corner-furniture-structure")).toBeInstanceOf(
         THREE.Group,
@@ -124,7 +132,9 @@ describe("scene complexity foundation", () => {
   });
 
   it("adds near, middle, and far tabletop context around the canonical board", () => {
-    const group = createObliqueTabletopGroup();
+    const group = createObliqueTabletopGroup({
+      presentation: OBLIQUE_TABLETOP_PRESENTATION,
+    });
     try {
       expect(group.getObjectByName("oblique-tabletop-context-props")).toBeInstanceOf(THREE.Group);
       expect(group.getObjectByName("oblique-tabletop-context-near-prop")).toBeInstanceOf(
@@ -153,7 +163,7 @@ describe("scene complexity foundation", () => {
   });
 
   it("adds repeated shelf context while retaining every calibrated station", () => {
-    const group = createShelfSwingGroup();
+    const group = createShelfSwingGroup({ presentation: SHELF_SWING_PRESENTATION });
     try {
       shelfGeometry.subjects.forEach((subject) => {
         expect(group.getObjectByName(`${subject.semanticName}-backdrop-panel`)).toBeInstanceOf(

@@ -1,22 +1,35 @@
 import { act, cleanup, render } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import {
-  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
   CameraMovementsSubject,
   clearInteractiveLatticeRuntime,
-  createCameraMovementsGroup,
-  disposeCameraMovementsGroup,
-  applyCameraMovementsGroupStyle,
   publishAttachedInteractiveLatticeRuntime,
   updateAttachedInteractiveLatticeRuntime,
 } from "../../render/CameraMovementsSubjectFactory";
+import * as cameraMovementLatticeAsset from "../../render/assets/CameraMovementLatticeAsset";
+import {
+  CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID,
+  cameraMovementsGroupOptionsFromPresentation,
+  createCameraMovementsGroup,
+  disposeCameraMovementsGroup,
+  applyCameraMovementsGroupStyle,
+} from "../../render/assets/CameraMovementLatticeAsset";
+import {
+  createCameraMovementLatticeAsset,
+  disposeCameraMovementLatticeAsset,
+} from "../../render/cameraMovementLatticeAssetConsumer";
+import {
+  CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
+  resolveSceneAsset,
+} from "../../render/assets/sceneAssetRegistry";
 import {
   mountCameraMovementRttSubject,
   unmountCameraMovementRttSubject,
   updateCameraMovementRttSubjectTarget,
 } from "../../render/cameraMovementRttSubjectLifecycle";
-import { CAMERA_MOVEMENT_BASELINE_RENDER_MODEL } from "../../render/cameraMovementLatticeRenderModel";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 import { CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES } from "../../scenes/cameraMovementPublicTeaching";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
@@ -264,6 +277,9 @@ describe("Camera Movements subject factory", () => {
       );
     };
     const first = mountedGroups[0];
+    expect(first.userData.assetImplementationId).toBe(
+      CAMERA_MOVEMENT_LATTICE_IMPLEMENTATION_ID,
+    );
     assertCanonicalGroup(first, "upper");
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     const firstGeometry = (first.children[0] as THREE.Mesh).geometry;
@@ -305,19 +321,43 @@ describe("Camera Movements subject factory", () => {
   it("keeps both subjects stable across the complete public teaching transition sequence", () => {
     useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
     const scene = new THREE.Scene();
-    const interactive = createCameraMovementsGroup("middle");
+    const presentation = CAMERA_MOVEMENT_BASELINE_PRESENTATION;
+    const registration = resolveSceneAsset(presentation.object.id);
+    const productionFactorySpy = vi.spyOn(
+      cameraMovementLatticeAsset,
+      "createCameraMovementsGroup",
+    );
+    const interactive = createCameraMovementLatticeAsset(
+      cameraMovementsGroupOptionsFromPresentation(presentation, "middle"),
+    );
     scene.add(interactive);
     const initialInteractive = publishAttachedInteractiveLatticeRuntime(
       interactive,
       scene,
     );
     expect(initialInteractive).not.toBeNull();
-
-    const rtt = mountCameraMovementRttSubject(
-      scene,
-      CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
-      "middle",
+    expect(interactive.userData.assetImplementationId).toBe(
+      registration.implementationId,
     );
+    expect(productionFactorySpy).toHaveBeenCalledTimes(1);
+
+    const rtt = mountCameraMovementRttSubject(scene, presentation, "middle");
+    expect(rtt.group.userData.assetImplementationId).toBe(
+      registration.implementationId,
+    );
+    expect(productionFactorySpy).toHaveBeenCalledTimes(2);
+    const interactiveFactoryOptions = productionFactorySpy.mock.calls[0]?.[0];
+    const rttFactoryOptions = productionFactorySpy.mock.calls[1]?.[0];
+    if (
+      !interactiveFactoryOptions ||
+      typeof interactiveFactoryOptions !== "object" ||
+      !rttFactoryOptions ||
+      typeof rttFactoryOptions !== "object"
+    ) {
+      throw new Error("Both consumers must deliver camera-movement options");
+    }
+    expect(interactiveFactoryOptions.presentation).toBe(presentation);
+    expect(rttFactoryOptions.presentation).toBe(presentation);
     const initialGeometryId = interactive.userData.canonicalGeometryId;
     const initialEdgeCount = interactive.userData.canonicalEdgeCount;
     const initialResourceKey = interactive.userData.resourceKey;
@@ -384,13 +424,13 @@ describe("Camera Movements subject factory", () => {
       const presentationRegion = CAMERA_MOVEMENT_PUBLIC_TEACHING_CASES[caseId].presentationTargetRegion;
       applyCameraMovementsGroupStyle(
         interactive,
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL.presentation,
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION.presentation,
         presentationRegion,
       );
       updateAttachedInteractiveLatticeRuntime(interactive, presentationRegion);
       updateCameraMovementRttSubjectTarget(
         rtt,
-        CAMERA_MOVEMENT_BASELINE_RENDER_MODEL,
+        CAMERA_MOVEMENT_BASELINE_PRESENTATION,
         presentationRegion,
       );
 
@@ -440,7 +480,7 @@ describe("Camera Movements subject factory", () => {
     unmountCameraMovementRttSubject(rtt);
     scene.remove(interactive);
     clearInteractiveLatticeRuntime(initialInteractive);
-    disposeCameraMovementsGroup(interactive);
+    disposeCameraMovementLatticeAsset(interactive);
     geometryDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     materialDisposals.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
@@ -594,6 +634,39 @@ describe("Camera Movements subject factory", () => {
     first.unmount();
     expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
     consoleError.mockRestore();
+  });
+
+  it("pairs Strict Mode dynamic asset creation with one registered disposer", () => {
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: understandingCameraMovementsScene.id,
+    });
+    useAppStore.getState().setInteractiveLatticeRuntimeInfo(null);
+    fiberTestState.scene = new THREE.Scene();
+    const factory = vi.spyOn(cameraMovementLatticeAsset, "createCameraMovementsGroup");
+    const disposer = vi.spyOn(cameraMovementLatticeAsset, "disposeCameraMovementsGroup");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const view = render(
+      <StrictMode>
+        <CameraMovementsSubject />
+      </StrictMode>,
+    );
+    consoleError.mockRestore();
+
+    const createdGroups = factory.mock.results
+      .filter((result) => result.type === "return")
+      .map((result) => result.value as THREE.Group);
+    expect(createdGroups.length).toBeGreaterThan(1);
+
+    view.unmount();
+
+    const disposedGroups = disposer.mock.calls.map(([group]) => group);
+    expect(disposedGroups).toHaveLength(createdGroups.length);
+    createdGroups.forEach((group) => {
+      expect(disposedGroups.filter((disposedGroup) => disposedGroup === group)).toHaveLength(1);
+      expect(group.userData.resourcesDisposed).toBe(true);
+    });
+    expect(useAppStore.getState().interactiveLatticeRuntimeInfo).toBeNull();
   });
 
   it("renders the subject component without errors", () => {
