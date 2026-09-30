@@ -292,9 +292,14 @@ const collectDisposableSpies = (
   ...[...resources.materials].map((resource) => vi.spyOn(resource, "dispose")),
 ];
 
+type InstanceOwnedDisposalExpectation = Readonly<{
+  expectGeometryReuse?: boolean;
+}>;
+
 const expectInstanceOwnedResourcesDisposedOnce = (
   assetKey: InstanceOwnedSceneAssetKey,
   request: SceneAssetRequestMap[InstanceOwnedSceneAssetKey],
+  expectation: InstanceOwnedDisposalExpectation = {},
 ): void => {
   const group = createRegisteredSceneAsset(assetKey, request);
   const resources = collectDisposableResources(group);
@@ -304,13 +309,18 @@ const expectInstanceOwnedResourcesDisposedOnce = (
     expect(resources.geometries.size).toBeGreaterThan(0);
     expect(resources.materials.size).toBeGreaterThan(0);
     expect(resources.textures.size).toBeGreaterThan(0);
-    // These subjects intentionally reuse per-instance resources across meshes.
-    // The production disposer must deduplicate each resource during one traversal.
-    // Some factories reuse geometries within one subject and some intentionally
-    // allocate each mesh geometry separately; every unique geometry is checked.
-    expect(resources.geometryReferences.length).toBeGreaterThanOrEqual(
-      resources.geometries.size,
-    );
+    // SA3B subjects intentionally reuse geometry across meshes, so this strict
+    // inequality proves disposal deduplication is exercised. Other assets may
+    // allocate one geometry per mesh, so they use the general count invariant.
+    if (expectation.expectGeometryReuse) {
+      expect(resources.geometryReferences.length).toBeGreaterThan(
+        resources.geometries.size,
+      );
+    } else {
+      expect(resources.geometryReferences.length).toBeGreaterThanOrEqual(
+        resources.geometries.size,
+      );
+    }
     expect(resources.materialReferences.length).toBeGreaterThan(
       resources.materials.size,
     );
@@ -570,13 +580,18 @@ describe("static teaching scene asset migrations", () => {
     expectInstanceOwnedResourcesDisposedOnce(
       ARCHITECTURE_FOREGROUND_ASSET_KEY,
       { presentation: ARCHITECTURE_FOREGROUND_PRESENTATION },
+      { expectGeometryReuse: true },
     );
-    expectInstanceOwnedResourcesDisposedOnce(INTERIOR_CORNER_ASSET_KEY, {
-      presentation: INTERIOR_CORNER_PRESENTATION,
-    });
-    expectInstanceOwnedResourcesDisposedOnce(OBLIQUE_TABLETOP_ASSET_KEY, {
-      presentation: OBLIQUE_TABLETOP_PRESENTATION,
-    });
+    expectInstanceOwnedResourcesDisposedOnce(
+      INTERIOR_CORNER_ASSET_KEY,
+      { presentation: INTERIOR_CORNER_PRESENTATION },
+      { expectGeometryReuse: true },
+    );
+    expectInstanceOwnedResourcesDisposedOnce(
+      OBLIQUE_TABLETOP_ASSET_KEY,
+      { presentation: OBLIQUE_TABLETOP_PRESENTATION },
+      { expectGeometryReuse: true },
+    );
   });
 
   it("creates viewport and RTT representations through one instance-owned registered implementation", () => {
