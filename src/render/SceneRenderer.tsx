@@ -51,6 +51,7 @@ import {
   type ConceptualCameraPresentation,
 } from "./ConceptualViewCamera";
 import {
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
   resolveCameraMovementLatticePresentation,
   type CameraMovementLatticePresentation,
 } from "../scenes/presentation/understandingCameraMovements";
@@ -61,11 +62,11 @@ import {
   resolveFocusFundamentalsTeachingCue,
 } from "../scenes/focusFundamentalsPresentation";
 import {
-  TEACHING_LIGHTING_CONFIG,
-  resolveTeachingLightingPlacement,
-  TeachingLighting,
+  PresentationLighting,
   TeachingShadowParticipation,
 } from "./TeachingLighting";
+import { resolveScenePresentationLighting } from "./presentationLighting";
+import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 
 type SceneRendererProps = {
@@ -936,20 +937,21 @@ const SceneContent = ({
     scene,
     cameraMovementPresentation,
   );
-  const teachingLightingPlacement = useMemo(() => {
-    const lighting =
-      registration?.viewportLighting ??
-      registration?.resolveRttLighting?.({
-        cameraMovementPresentation,
+  const presentationLighting = useMemo(
+    () =>
+      resolveScenePresentationLighting(scene.id, {
+        surface: "observer",
+        cameraMovementPresentation:
+          cameraMovementPresentation ?? CAMERA_MOVEMENT_BASELINE_PRESENTATION,
         presentationRegion: "middle",
-      }) ?? registration?.rttLighting;
-    return resolveTeachingLightingPlacement(lighting);
-  }, [cameraMovementPresentation, registration]);
+      }),
+    [cameraMovementPresentation, scene.id],
+  );
 
   return (
     <>
     <color attach="background" args={["#f8fafc"]} />
-    <TeachingLighting placement={teachingLightingPlacement} />
+    <PresentationLighting lighting={presentationLighting} />
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -1373,7 +1375,7 @@ export const SceneRenderer = ({
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
         gl={{ antialias: qualityConfig.antialias }}
-        shadows={{ type: TEACHING_LIGHTING_CONFIG.shadowMapType }}
+        shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}

@@ -84,7 +84,7 @@ The observer is the sole optimization target. Ground Glass Raw and Ground Glass 
 
 ## Lighting and performance boundaries
 
-Current `TeachingLighting` is fixed for capture and belongs to the shared lighting implementation. Do not change lights, direction/intensity, shadow-map policy, tone mapping, renderer exposure, environment lighting, or the lighting architecture during this pilot. Do not reshape scene geometry to compensate for current lighting.
+PR C establishes two illumination categories: physical/in-world sources owned by the represented scene (including Interior Corner's registered practical light), and the shared `teaching-default` presentation-assist rig. The rig recipe, scene placement resolver, and current light sources are fixed for this pilot. Dream Loop may not arbitrarily modify either physical/in-world or presentation-assist lighting unless a later PR explicitly grants that permission. A target screenshot does not define lighting physics or teaching semantics. Do not change light direction/intensity, shadow-map policy, tone mapping, renderer exposure, environment lighting, or lighting architecture, and do not reshape scene geometry to compensate for the current lighting.
 
 Later visual-enrichment work should compare before/after with the existing `npm run benchmark:scene-capacity` and, where useful, `npm run benchmark:scene-capacity:hardware` infrastructure. Treat mesh/object/geometry/material/texture/triangle counts, effective instanced triangles, available renderer resource counts, Ground Glass RTT timing, and frame cadence as decision evidence. Do not invent FPS or capacity pass/fail thresholds, and do not run the full scene-capacity matrix for every ordinary visual iteration.
 

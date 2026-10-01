@@ -56,7 +56,7 @@ import {
   resolveMirrorShiftCameraAnchors,
 } from "../../scenes/mirrorShiftGeometry";
 import { resolveMirrorShiftTeachingState } from "../../scenes/mirrorShiftCalibration";
-import { resolveMirrorShiftLighting } from "../../render/mirrorShiftLighting";
+import { resolveMirrorShiftPresentationLighting } from "../../render/mirrorShiftLighting";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
@@ -221,7 +221,7 @@ const semanticResults = () => ({
         filmCenterWorld: optics.filmCenterWorld,
         focusPlane: optics.focusPlane,
       },
-      lighting: resolveMirrorShiftLighting(),
+      lighting: resolveMirrorShiftPresentationLighting(),
     };
   })(),
 });

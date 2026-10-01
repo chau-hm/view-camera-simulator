@@ -9,63 +9,16 @@ import {
   type ReactNode,
 } from "react";
 import * as THREE from "three";
-import type { SceneSubjectRttLighting } from "./sceneSubjectRegistry";
-import { vecToWorld } from "./rttUtils";
+import {
+  DEFAULT_PRESENTATION_LIGHTING,
+  type PresentationLightingProfile,
+  type ResolvedPresentationLighting,
+} from "./presentationLightingContract";
 import {
   collectSceneGraphCapacity,
   isSceneCapacityProfilingEnabled,
   type SceneGraphCapacityMetrics,
 } from "./sceneCapacityProfiling";
-
-export const TEACHING_LIGHTING_CONFIG = {
-  shadowMapType: THREE.PCFShadowMap,
-  fill: {
-    skyColor: "#ffffff",
-    groundColor: "#64748b",
-    intensity: 0.55,
-  },
-  key: {
-    color: "#ffffff",
-    intensity: 1.15,
-    shadowMapSize: 1024,
-    shadowBias: -0.0002,
-    shadowNormalBias: 0.015,
-    shadowCamera: {
-      left: -8,
-      right: 8,
-      top: 8,
-      bottom: -8,
-      near: 0.1,
-      far: 32,
-    },
-  },
-  defaultKeyOffsetWorld: [-2.5, 3.5, -2.5] as const,
-} as const;
-
-export type TeachingLightingPlacement = Readonly<{
-  targetWorld: readonly [number, number, number];
-  keyOffsetWorld: readonly [number, number, number];
-}>;
-
-export const DEFAULT_TEACHING_LIGHTING_PLACEMENT: TeachingLightingPlacement = {
-  targetWorld: [0, 0, 0],
-  keyOffsetWorld: TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld,
-};
-
-export const resolveTeachingLightingPlacement = (
-  lighting?: SceneSubjectRttLighting,
-): TeachingLightingPlacement => ({
-  targetWorld: lighting
-    ? vecToWorld(lighting.targetMm)
-    : DEFAULT_TEACHING_LIGHTING_PLACEMENT.targetWorld,
-  keyOffsetWorld: lighting
-    ? [lighting.keyOffsetWorld.x, lighting.keyOffsetWorld.y, lighting.keyOffsetWorld.z] as [
-        number,
-        number,
-        number,
-      ]
-    : TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld,
-});
 
 const SHADOW_HELPER_NAME =
   /(?:line|guide|overlay|axis|crosshair|scheimpflug|lattice|construction|ray|frustum|measurement|legend|diagnostic|dof)/i;
@@ -124,9 +77,12 @@ export const configureTeachingShadowParticipation = (
   return { casterCount, receiverCount };
 };
 
-const configureDirectionalShadow = (light: THREE.DirectionalLight): void => {
-  const { key } = TEACHING_LIGHTING_CONFIG;
-  light.castShadow = true;
+const configureDirectionalShadow = (
+  light: THREE.DirectionalLight,
+  profile: PresentationLightingProfile,
+): void => {
+  const { key } = profile;
+  light.castShadow = key.castsShadow;
   light.shadow.mapSize.set(key.shadowMapSize, key.shadowMapSize);
   light.shadow.bias = key.shadowBias;
   light.shadow.normalBias = key.shadowNormalBias;
@@ -139,18 +95,31 @@ const configureDirectionalShadow = (light: THREE.DirectionalLight): void => {
   light.shadow.camera.updateProjectionMatrix();
 };
 
-export type TeachingLightingRig = Readonly<{
+export type PresentationLightingRig = Readonly<{
   fillLight: THREE.HemisphereLight;
   keyLight: THREE.DirectionalLight;
   target: THREE.Object3D;
 }>;
 
-export const updateTeachingLightingRig = (
-  rig: TeachingLightingRig,
-  placement: TeachingLightingPlacement,
+export const applyPresentationLightingProfile = (
+  rig: Pick<PresentationLightingRig, "fillLight" | "keyLight">,
+  profile: PresentationLightingProfile,
 ): void => {
-  const [targetX, targetY, targetZ] = placement.targetWorld;
-  const [offsetX, offsetY, offsetZ] = placement.keyOffsetWorld;
+  rig.fillLight.color.set(profile.fill.skyColor);
+  rig.fillLight.groundColor.set(profile.fill.groundColor);
+  rig.fillLight.intensity = profile.fill.intensity;
+  rig.keyLight.color.set(profile.key.color);
+  rig.keyLight.intensity = profile.key.intensity;
+  configureDirectionalShadow(rig.keyLight, profile);
+};
+
+export const updatePresentationLightingRig = (
+  rig: PresentationLightingRig,
+  lighting: ResolvedPresentationLighting,
+): void => {
+  applyPresentationLightingProfile(rig, lighting.profile);
+  const [targetX, targetY, targetZ] = lighting.placement.targetWorld;
+  const [offsetX, offsetY, offsetZ] = lighting.placement.keyOffsetWorld;
   rig.target.position.set(targetX, targetY, targetZ);
   rig.keyLight.position.set(targetX + offsetX, targetY + offsetY, targetZ + offsetZ);
   rig.keyLight.target = rig.target;
@@ -158,20 +127,21 @@ export const updateTeachingLightingRig = (
   rig.keyLight.updateMatrixWorld();
 };
 
-export const createTeachingLightingRig = (
+export const createPresentationLightingRig = (
   scene: THREE.Scene,
-  placement: TeachingLightingPlacement = DEFAULT_TEACHING_LIGHTING_PLACEMENT,
-): TeachingLightingRig => {
+  lighting: ResolvedPresentationLighting = DEFAULT_PRESENTATION_LIGHTING,
+): PresentationLightingRig => {
+  const { profile } = lighting;
   const fillLight = new THREE.HemisphereLight(
-    TEACHING_LIGHTING_CONFIG.fill.skyColor,
-    TEACHING_LIGHTING_CONFIG.fill.groundColor,
-    TEACHING_LIGHTING_CONFIG.fill.intensity,
+    profile.fill.skyColor,
+    profile.fill.groundColor,
+    profile.fill.intensity,
   );
   fillLight.name = "teaching-lighting-fill";
 
   const keyLight = new THREE.DirectionalLight(
-    TEACHING_LIGHTING_CONFIG.key.color,
-    TEACHING_LIGHTING_CONFIG.key.intensity,
+    profile.key.color,
+    profile.key.intensity,
   );
   keyLight.name = "teaching-lighting-key";
 
@@ -179,29 +149,33 @@ export const createTeachingLightingRig = (
   target.name = "teaching-lighting-target";
   keyLight.target = target;
 
-  configureDirectionalShadow(keyLight);
   scene.add(fillLight, target, keyLight);
 
   const rig = { fillLight, keyLight, target };
-  updateTeachingLightingRig(rig, placement);
+  updatePresentationLightingRig(rig, lighting);
   return rig;
 };
 
-export const disposeTeachingLightingRig = (scene: THREE.Scene, rig: TeachingLightingRig): void => {
+export const disposePresentationLightingRig = (
+  scene: THREE.Scene,
+  rig: PresentationLightingRig,
+): void => {
   scene.remove(rig.fillLight, rig.keyLight, rig.target);
   rig.keyLight.dispose();
 };
 
-export const TeachingLighting = ({
-  placement = DEFAULT_TEACHING_LIGHTING_PLACEMENT,
+export const PresentationLighting = ({
+  lighting = DEFAULT_PRESENTATION_LIGHTING,
 }: {
-  placement?: TeachingLightingPlacement;
+  lighting?: ResolvedPresentationLighting;
 }) => {
+  const { profile, placement } = lighting;
   const target = useMemo(() => {
     const object = new THREE.Object3D();
     object.name = "teaching-lighting-target";
     return object;
   }, []);
+  const fillLightRef = useRef<THREE.HemisphereLight>(null);
   const keyLightRef = useRef<THREE.DirectionalLight>(null);
   const targetX = placement.targetWorld[0];
   const targetY = placement.targetWorld[1];
@@ -221,29 +195,33 @@ export const TeachingLighting = ({
   useLayoutEffect(() => {
     target.position.set(targetX, targetY, targetZ);
     target.updateMatrixWorld();
+    const fillLight = fillLightRef.current;
     const keyLight = keyLightRef.current;
-    if (!keyLight) return;
+    if (!fillLight || !keyLight) return;
     keyLight.target = target;
-    configureDirectionalShadow(keyLight);
+    applyPresentationLightingProfile({ fillLight, keyLight }, profile);
+    keyLight.position.set(...keyPosition);
     keyLight.updateMatrixWorld();
-  }, [offsetX, offsetY, offsetZ, targetX, targetY, targetZ, target]);
+  }, [keyPosition, profile, target, targetX, targetY, targetZ]);
 
   return (
     <>
       <hemisphereLight
+        ref={fillLightRef}
         name="teaching-lighting-fill"
         args={[
-          TEACHING_LIGHTING_CONFIG.fill.skyColor,
-          TEACHING_LIGHTING_CONFIG.fill.groundColor,
-          TEACHING_LIGHTING_CONFIG.fill.intensity,
+          profile.fill.skyColor,
+          profile.fill.groundColor,
+          profile.fill.intensity,
         ]}
       />
       <directionalLight
         ref={keyLightRef}
         name="teaching-lighting-key"
+        color={profile.key.color}
         position={keyPosition}
-        intensity={TEACHING_LIGHTING_CONFIG.key.intensity}
-        castShadow
+        intensity={profile.key.intensity}
+        castShadow={profile.key.castsShadow}
         target={target}
       />
       <primitive object={target} dispose={null} />
