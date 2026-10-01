@@ -8,6 +8,7 @@ import type { GroundGlassVisualPipelineCapabilities } from "./backend/visualPipe
 export type SceneGraphCapacityMetrics = Readonly<{
   objectCount: number;
   meshCount: number;
+  renderableMeshCount: number;
   instancedMeshCount: number;
   lightCount: number;
   lineCount: number;
@@ -18,6 +19,7 @@ export type SceneGraphCapacityMetrics = Readonly<{
   triangleCount: number;
   instancedTriangleCount: number;
   effectiveTriangleCount: number;
+  renderableEffectiveTriangleCount: number;
 }>;
 
 export type SceneCapacityRendererResources = Readonly<{
@@ -60,6 +62,61 @@ const finiteNonNegative = (value: unknown): value is number =>
 const triangleCountForGeometry = (geometry: THREE.BufferGeometry): number => {
   const count = geometry.index?.count ?? geometry.attributes.position?.count ?? 0;
   return Number.isFinite(count) && count > 0 ? Math.floor(count / 3) : 0;
+};
+
+const trianglesInRenderableRange = (
+  geometry: THREE.BufferGeometry,
+  rangeStart: number,
+  rangeCount: number,
+): number => {
+  const elementCount = geometry.index?.count ?? geometry.attributes.position?.count ?? 0;
+  if (!Number.isFinite(elementCount) || elementCount < 3) return 0;
+
+  const requestedDrawStart = geometry.drawRange.start;
+  const drawStart = Number.isFinite(requestedDrawStart)
+    ? Math.max(0, requestedDrawStart)
+    : elementCount;
+  const requestedDrawCount = geometry.drawRange.count;
+  const drawEnd = requestedDrawCount === Infinity
+    ? elementCount
+    : Number.isFinite(requestedDrawCount)
+      ? Math.min(elementCount, drawStart + Math.max(0, requestedDrawCount))
+      : drawStart;
+  const segmentStart = Number.isFinite(rangeStart) ? Math.max(0, rangeStart) : elementCount;
+  const segmentEnd = rangeCount === Infinity
+    ? elementCount
+    : Number.isFinite(rangeCount)
+      ? Math.min(elementCount, segmentStart + Math.max(0, rangeCount))
+      : segmentStart;
+  const visibleStart = Math.max(drawStart, segmentStart);
+  const visibleEnd = Math.min(drawEnd, segmentEnd);
+  return Math.floor(Math.max(0, visibleEnd - visibleStart) / 3);
+};
+
+const materialCanRender = (material: THREE.Material | undefined): boolean =>
+  material instanceof THREE.Material && material.visible &&
+  Number.isFinite(material.opacity) && material.opacity > 0;
+
+const renderableTriangleCountForMesh = (mesh: THREE.Mesh): number => {
+  if (!(mesh.geometry instanceof THREE.BufferGeometry)) return 0;
+  const geometry = mesh.geometry;
+  const materials = mesh.material;
+
+  if (Array.isArray(materials)) {
+    return geometry.groups.reduce((triangleCount, group) => {
+      const materialIndex = group.materialIndex ?? 0;
+      if (!materialCanRender(materials[materialIndex])) return triangleCount;
+      return triangleCount + trianglesInRenderableRange(
+        geometry,
+        group.start,
+        group.count,
+      );
+    }, 0);
+  }
+
+  return materialCanRender(materials)
+    ? trianglesInRenderableRange(geometry, 0, Infinity)
+    : 0;
 };
 
 const collectTextures = (
@@ -109,12 +166,14 @@ export const collectSceneGraphCapacity = (
   const textures = new Set<THREE.Texture>();
   let objectCount = 0;
   let meshCount = 0;
+  let renderableMeshCount = 0;
   let instancedMeshCount = 0;
   let lightCount = 0;
   let lineCount = 0;
   let pointsCount = 0;
   let triangleCount = 0;
   let instancedTriangleCount = 0;
+  let renderableEffectiveTriangleCount = 0;
 
   root.traverse((object) => {
     objectCount += 1;
@@ -147,9 +206,23 @@ export const collectSceneGraphCapacity = (
     }
   });
 
+  // traverseVisible respects visibility on the subject root and every parent
+  // below it, so hidden descendants cannot qualify as capture-ready content.
+  root.traverseVisible((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const renderableTriangles = renderableTriangleCountForMesh(object);
+    const instanceCount = object instanceof THREE.InstancedMesh
+      ? Math.max(0, object.count)
+      : 1;
+    if (renderableTriangles === 0 || instanceCount === 0) return;
+    renderableMeshCount += 1;
+    renderableEffectiveTriangleCount += renderableTriangles * instanceCount;
+  });
+
   return {
     objectCount,
     meshCount,
+    renderableMeshCount,
     instancedMeshCount,
     lightCount,
     lineCount,
@@ -160,6 +233,7 @@ export const collectSceneGraphCapacity = (
     triangleCount,
     instancedTriangleCount,
     effectiveTriangleCount: triangleCount + instancedTriangleCount,
+    renderableEffectiveTriangleCount,
   };
 };
 

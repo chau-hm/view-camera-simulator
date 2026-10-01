@@ -143,6 +143,7 @@ describe("scene capacity diagnostic snapshot", () => {
   const capacity: SceneGraphCapacityMetrics = {
     objectCount: 4,
     meshCount: 2,
+    renderableMeshCount: 2,
     instancedMeshCount: 0,
     lightCount: 0,
     lineCount: 0,
@@ -153,6 +154,7 @@ describe("scene capacity diagnostic snapshot", () => {
     triangleCount: 24,
     instancedTriangleCount: 0,
     effectiveTriangleCount: 24,
+    renderableEffectiveTriangleCount: 24,
   };
 
   it("keeps scene-capacity diagnostics absent when the switch is disabled", () => {

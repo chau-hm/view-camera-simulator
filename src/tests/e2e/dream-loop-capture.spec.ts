@@ -3,6 +3,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
 import { expect, test } from "@playwright/test";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import type { SceneCapacitySnapshot } from "../../render/sceneCapacityProfiling";
+import { isDreamLoopSubjectCaptureReady } from "../helpers/dreamLoopCaptureReadiness";
 
 type DreamLoopManifest = {
   pilotId: string;
@@ -48,9 +50,10 @@ test("Dream Loop pilot captures the ready Architecture Rise observer canvas", as
   expect(outputRelative.startsWith(".dream-loop" + sep)).toBe(true);
   await mkdir(dirname(outputPath as string), { recursive: true });
 
-  await page.goto(manifest.optimizationSurface.route);
+  const captureUrl = manifest.optimizationSurface.route + "?sceneCapacityProfiling=1";
+  await page.goto(captureUrl);
   expect(new URL(page.url()).pathname).toBe(manifest.optimizationSurface.route);
-  expect(new URL(page.url()).search).toBe("");
+  expect(new URL(page.url()).searchParams.get("sceneCapacityProfiling")).toBe("1");
   await expect(page).toHaveTitle(/.+/);
 
   const scene = page.locator(manifest.optimizationSurface.sceneSelector);
@@ -98,6 +101,40 @@ test("Dream Loop pilot captures the ready Architecture Rise observer canvas", as
   const canvas = scene.locator(manifest.optimizationSurface.canvasSelector);
   await expect(canvas).toHaveCount(1);
   await expect(canvas).toBeVisible();
+
+  const capacitySnapshotElement = page.getByTestId("scene-capacity-snapshot");
+  await expect(capacitySnapshotElement).toHaveCount(1);
+  const readCapacitySnapshot = async (): Promise<SceneCapacitySnapshot | null> => {
+    const text = await capacitySnapshotElement.textContent();
+    if (!text || text.trim() === "null") return null;
+    try {
+      return JSON.parse(text) as SceneCapacitySnapshot;
+    } catch {
+      return null;
+    }
+  };
+  await expect.poll(
+    async () => isDreamLoopSubjectCaptureReady(
+      await readCapacitySnapshot(),
+      manifest.sceneId,
+    ),
+    {
+      timeout: 20_000,
+      message: "Expected renderable viewport subject metrics from the mounted Architecture Rise registered-subject root",
+    },
+  ).toBe(true);
+  const subjectSnapshot = await readCapacitySnapshot();
+  if (!isDreamLoopSubjectCaptureReady(subjectSnapshot, manifest.sceneId)) {
+    throw new Error(
+      "The mounted Architecture Rise subject did not provide renderable capacity evidence: " +
+        JSON.stringify(subjectSnapshot),
+    );
+  }
+  const viewportSubject = subjectSnapshot.viewportSubject;
+  const subjectSnapshotIsInsideCanvas = await capacitySnapshotElement.evaluate((element) =>
+    element.closest("canvas") !== null,
+  );
+  expect(subjectSnapshotIsInsideCanvas).toBe(false);
 
   const hiddenOverlayControls = await canvas.evaluate((canvasElement) => {
     const canvasBounds = canvasElement.getBoundingClientRect();
@@ -191,6 +228,8 @@ test("Dream Loop pilot captures the ready Architecture Rise observer canvas", as
       nonDominantSampleFraction,
     };
   }, imageDataUrl);
+  // Pixel diversity is a secondary blank/flat-canvas sanity check. Subject
+  // readiness was established independently from the mounted subject root.
   expect(contentEvidence).toMatchObject({ ready: true });
 
   const viewport = await page.evaluate(() => ({
@@ -216,9 +255,19 @@ test("Dream Loop pilot captures the ready Architecture Rise observer canvas", as
         route: manifest.optimizationSurface.route,
         viewport,
         renderQuality: manifest.capture.renderQuality,
+        subject: {
+          sceneId: subjectSnapshot.sceneId,
+          mounted: true,
+          evidenceSource: "sceneCapacitySnapshot.viewportSubject from TeachingShadowParticipation subject root",
+          objectCount: viewportSubject.objectCount,
+          meshCount: viewportSubject.meshCount,
+          renderableMeshCount: viewportSubject.renderableMeshCount,
+          effectiveTriangleCount: viewportSubject.effectiveTriangleCount,
+          renderableEffectiveTriangleCount: viewportSubject.renderableEffectiveTriangleCount,
+        },
         canvas: contentEvidence,
         hiddenOverlayControls,
-        captureBoundary: "registered observer scene canvas",
+        captureBoundary: "registered observer scene canvas only; diagnostic UI excluded",
       },
       null,
       2,
