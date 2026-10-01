@@ -6,6 +6,10 @@ import {
   createInteriorCornerGroup,
   disposeInteriorCornerGroup,
 } from "../../render/InteriorCornerSubjectFactory";
+import {
+  createRegisteredRttSubject,
+  disposeRegisteredRttSubject,
+} from "../../render/sceneSubjectRegistry";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import geometry from "../../scenes/interiorCornerGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -110,7 +114,15 @@ describe("Interior Corner scene foundation", () => {
     expect(group.getObjectByName("interior-corner-side-cornice")).toBeInstanceOf(THREE.Mesh);
     expect(group.getObjectByName("interior-corner-rear-wall-artwork")).toBeInstanceOf(THREE.Group);
     expect(group.getObjectByName("interior-corner-local-light")).toBeInstanceOf(THREE.PointLight);
-    expect((group.getObjectByName("interior-corner-local-light") as THREE.PointLight).intensity).toBe(5);
+    const practicalLights: THREE.PointLight[] = [];
+    group.traverse((object) => {
+      if (object instanceof THREE.PointLight) practicalLights.push(object);
+    });
+    expect(practicalLights).toHaveLength(1);
+    expect(practicalLights[0].color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+    expect(practicalLights[0].intensity).toBe(5);
+    expect(practicalLights[0].distance).toBe(7.5);
+    expect(practicalLights[0].decay).toBe(2);
 
     geometry.focusTargets.forEach((target) => {
       const probe = group.getObjectByName(`interior-corner-focus-${target.id}`);
@@ -122,5 +134,25 @@ describe("Interior Corner scene foundation", () => {
     const spies = collectDisposableSpies(group);
     disposeInteriorCornerGroup(group);
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it("keeps the single scene-owned practical light in the registered Ground Glass subject", () => {
+    const group = createRegisteredRttSubject("interior-corner");
+    if (!group) throw new Error("Expected the registered Interior Corner subject");
+
+    try {
+      const practicalLights: THREE.PointLight[] = [];
+      group.traverse((object) => {
+        if (object instanceof THREE.PointLight) practicalLights.push(object);
+      });
+      expect(practicalLights).toHaveLength(1);
+      expect(practicalLights[0].name).toBe("interior-corner-local-light");
+      expect(practicalLights[0].color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+      expect(practicalLights[0].intensity).toBe(5);
+      expect(practicalLights[0].distance).toBe(7.5);
+      expect(practicalLights[0].decay).toBe(2);
+    } finally {
+      disposeRegisteredRttSubject("interior-corner", group);
+    }
   });
 });

@@ -30,6 +30,7 @@ import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/assets/CameraMovementLatticeAsset";
 import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
 import {
@@ -40,7 +41,18 @@ import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
-import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
+import {
+  resolvePresentationLightingPlacement,
+  resolveScenePresentationLighting,
+} from "../../render/presentationLighting";
+import {
+  createPresentationLightingRig,
+  disposePresentationLightingRig,
+} from "../../render/TeachingLighting";
+import {
+  DEFAULT_PRESENTATION_LIGHTING_PLACEMENT,
+  TEACHING_PRESENTATION_LIGHTING_PROFILE,
+} from "../../render/presentationLightingContract";
 import { WORLD_SCALE } from "../../render/rttUtils";
 import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
@@ -66,6 +78,8 @@ import {
   MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
   resolveSceneAsset,
   sceneAssetRegistry,
   type SceneAssetKey,
@@ -505,6 +519,80 @@ describe("scene subject registry", () => {
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   });
 
+  it("composes exactly one asset-owned Interior Corner practical with the shared rig on both surfaces", () => {
+    const observerScene = new THREE.Scene();
+    const groundGlassScene = new THREE.Scene();
+    const observerSubject = createRegisteredSceneAsset(
+      INTERIOR_CORNER_ASSET_KEY,
+      { presentation: INTERIOR_CORNER_PRESENTATION },
+    );
+    const groundGlassSubject = createRegisteredRttSubject("interior-corner");
+    if (!groundGlassSubject) throw new Error("Expected the registered Ground Glass subject");
+
+    const lightingContext = {
+      cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+      presentationRegion: "middle" as const,
+    };
+    const observerRig = createPresentationLightingRig(
+      observerScene,
+      resolveScenePresentationLighting("interior-corner", {
+        ...lightingContext,
+        surface: "observer",
+      }),
+    );
+    const groundGlassRig = createPresentationLightingRig(
+      groundGlassScene,
+      resolveScenePresentationLighting("interior-corner", {
+        ...lightingContext,
+        surface: "ground-glass",
+      }),
+    );
+    observerScene.add(observerSubject);
+    groundGlassScene.add(groundGlassSubject);
+
+    const collectLights = (scene: THREE.Scene) => {
+      const lights: THREE.Light[] = [];
+      scene.traverse((object) => {
+        if (object instanceof THREE.Light) lights.push(object);
+      });
+      return lights;
+    };
+
+    try {
+      expect(observerSubject.userData.assetImplementationId).toBe(
+        groundGlassSubject.userData.assetImplementationId,
+      );
+      for (const [scene, rig] of [
+        [observerScene, observerRig],
+        [groundGlassScene, groundGlassRig],
+      ] as const) {
+        const lights = collectLights(scene);
+        const practicalLights = lights.filter(
+          (light): light is THREE.PointLight => light instanceof THREE.PointLight,
+        );
+        const shadowCastingLights = lights.filter((light) => light.castShadow);
+
+        expect(lights).toHaveLength(3);
+        expect(lights).toContain(rig.fillLight);
+        expect(lights).toContain(rig.keyLight);
+        expect(practicalLights).toHaveLength(1);
+        expect(practicalLights[0].name).toBe("interior-corner-local-light");
+        expect(practicalLights[0].color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+        expect(practicalLights[0].intensity).toBe(5);
+        expect(practicalLights[0].distance).toBe(7.5);
+        expect(practicalLights[0].decay).toBe(2);
+        expect(shadowCastingLights).toEqual([rig.keyLight]);
+      }
+    } finally {
+      observerScene.remove(observerSubject);
+      groundGlassScene.remove(groundGlassSubject);
+      disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, observerSubject);
+      disposeRegisteredRttSubject("interior-corner", groundGlassSubject);
+      disposePresentationLightingRig(observerScene, observerRig);
+      disposePresentationLightingRig(groundGlassScene, groundGlassRig);
+    }
+  });
+
   it("resolves Oblique Architecture to one shared static subject for 3D and RTT", () => {
     const registration = getSceneSubjectRegistration("oblique-architecture");
     expect(registration).toBeDefined();
@@ -774,39 +862,88 @@ describe("scene subject registry", () => {
     });
   });
 
-  it("derives Shelf Swing RTT lighting from the middle canonical focus chart", () => {
-    const lighting = getSceneSubjectRegistration("shelf-swing")?.rttLighting;
+  it.each([
+    "architecture-rise",
+    "table-tilt",
+    "interior-corner",
+    "macro-depth-of-field",
+  ] as const)(
+    "%s uses one presentation placement and recipe on Observer and Ground Glass",
+    (sceneId) => {
+      const intent = getSceneSubjectRegistration(sceneId)?.presentationLighting;
+      if (!intent) throw new Error("Expected presentation lighting for " + sceneId);
+      const context = {
+        cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+        presentationRegion: "middle" as const,
+      };
+      const observer = resolveScenePresentationLighting(sceneId, {
+        ...context,
+        surface: "observer",
+      });
+      const groundGlass = resolveScenePresentationLighting(sceneId, {
+        ...context,
+        surface: "ground-glass",
+      });
+      const expectedPlacement = resolvePresentationLightingPlacement(intent);
+
+      expect(observer.profile).toBe(TEACHING_PRESENTATION_LIGHTING_PROFILE);
+      expect(groundGlass.profile).toBe(TEACHING_PRESENTATION_LIGHTING_PROFILE);
+      expect(observer.placement).toEqual(expectedPlacement);
+      expect(groundGlass.placement).toEqual(expectedPlacement);
+    },
+  );
+
+  it("derives Shelf Swing presentation placement from the middle canonical focus chart", () => {
+    const lighting = getSceneSubjectRegistration("shelf-swing")?.presentationLighting;
     expect(lighting?.targetMm).toEqual(geometry.middleSubject.focusDetailProbeWorld);
     expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
-    expect(lighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: -1.5 });
   });
 
-  it("derives Mirror Shift observer and RTT lights from mirrored world positions", () => {
-    const registration = getSceneSubjectRegistration("mirror-shift");
-    const observerLighting = registration?.viewportLighting;
-    const rttLighting = registration?.rttLighting;
+  it("keeps Mirror Shift observer and Ground Glass key placements on their respective sides", () => {
+    const context = {
+      cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+      presentationRegion: "middle" as const,
+    };
+    const observer = resolveScenePresentationLighting("mirror-shift", {
+      ...context,
+      surface: "observer",
+    });
+    const groundGlass = resolveScenePresentationLighting("mirror-shift", {
+      ...context,
+      surface: "ground-glass",
+    });
     const realTargetMm = {
       x: mirrorShiftGeometry.mirror.center.x,
       y: mirrorShiftGeometry.mirror.center.y,
       z: mirrorShiftGeometry.floor.centerZ,
     };
     const realKeyPositionMm = {
-      x: realTargetMm.x + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[0] / WORLD_SCALE,
-      y: realTargetMm.y + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[1] / WORLD_SCALE,
-      z: realTargetMm.z + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[2] / WORLD_SCALE,
+      x: realTargetMm.x + DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[0] / WORLD_SCALE,
+      y: realTargetMm.y + DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[1] / WORLD_SCALE,
+      z: realTargetMm.z + DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[2] / WORLD_SCALE,
     };
     const reflectedTargetMm = reflectPointAcrossMirrorPlane(realTargetMm);
     const reflectedKeyPositionMm = reflectPointAcrossMirrorPlane(realKeyPositionMm);
 
-    expect(observerLighting?.targetMm).toEqual(realTargetMm);
-    expect(observerLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
-
-    expect(rttLighting?.targetMm).toEqual(reflectedTargetMm);
-    expect(rttLighting?.keyOffsetWorld).toEqual({
-      x: (reflectedKeyPositionMm.x - reflectedTargetMm.x) * WORLD_SCALE,
-      y: (reflectedKeyPositionMm.y - reflectedTargetMm.y) * WORLD_SCALE,
-      z: (reflectedKeyPositionMm.z - reflectedTargetMm.z) * WORLD_SCALE,
-    });
-    expect(rttLighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: 1.5 });
+    expect(observer.profile).toBe(groundGlass.profile);
+    expect(observer.placement).not.toEqual(groundGlass.placement);
+    expect(observer.placement.targetWorld).toEqual([
+      realTargetMm.x * WORLD_SCALE,
+      realTargetMm.y * WORLD_SCALE,
+      realTargetMm.z * WORLD_SCALE,
+    ]);
+    expect(observer.placement.keyOffsetWorld).toEqual(
+      DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld,
+    );
+    expect(groundGlass.placement.targetWorld).toEqual([
+      reflectedTargetMm.x * WORLD_SCALE,
+      reflectedTargetMm.y * WORLD_SCALE,
+      reflectedTargetMm.z * WORLD_SCALE,
+    ]);
+    expect(groundGlass.placement.keyOffsetWorld).toEqual([
+      (reflectedKeyPositionMm.x - reflectedTargetMm.x) * WORLD_SCALE,
+      (reflectedKeyPositionMm.y - reflectedTargetMm.y) * WORLD_SCALE,
+      (reflectedKeyPositionMm.z - reflectedTargetMm.z) * WORLD_SCALE,
+    ]);
   });
 });

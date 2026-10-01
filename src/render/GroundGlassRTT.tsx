@@ -9,13 +9,13 @@ const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
 import { vecToWorld } from "./rttUtils";
 import {
-  createTeachingLightingRig,
-  disposeTeachingLightingRig,
-  resolveTeachingLightingPlacement,
-  TEACHING_LIGHTING_CONFIG,
-  type TeachingLightingRig,
-  updateTeachingLightingRig,
+  createPresentationLightingRig,
+  disposePresentationLightingRig,
+  type PresentationLightingRig,
+  updatePresentationLightingRig,
 } from "./TeachingLighting";
+import { resolveScenePresentationLighting } from "./presentationLighting";
+import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
 import {
   CAMERA_MOVEMENT_BASELINE_PRESENTATION,
   resolveCameraMovementLatticePresentation,
@@ -176,7 +176,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const resourceGenerationRef = React.useRef<number>(0);
   const focalLengthMmRef = React.useRef(focalLengthMm);
   focalLengthMmRef.current = focalLengthMm;
-  const lightingRigRef = React.useRef<TeachingLightingRig | null>(null);
+  const lightingRigRef = React.useRef<PresentationLightingRig | null>(null);
   const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality });
   const inspectionWindowRef = React.useRef<GroundGlassInspectionWindow>(
@@ -562,7 +562,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     // Shared teaching lighting keeps the viewport and RTT on the same
     // restrained hemisphere/key-light baseline. Scene registrations may
     // resolve distinct real/virtual placements around their scene target.
-    lightingRigRef.current = createTeachingLightingRig(scene);
+    lightingRigRef.current = createPresentationLightingRig(scene);
 
     return () => {
       try {
@@ -602,7 +602,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
 
         const lightingRig = lightingRigRef.current;
         if (lightingRig) {
-          disposeTeachingLightingRig(scene, lightingRig);
+          disposePresentationLightingRig(scene, lightingRig);
           lightingRigRef.current = null;
         }
         if (offscreenScene.current === scene) offscreenScene.current = null;
@@ -634,12 +634,15 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       cameraMovementPresentation,
       presentationRegion: presentationRegionRef.current,
     };
-    const lighting = sceneProfile.resolveRttLighting(profileContext);
     const lightingRig = lightingRigRef.current;
-    if (lighting && lightingRig) {
-      updateTeachingLightingRig(
+    if (lightingRig) {
+      updatePresentationLightingRig(
         lightingRig,
-        resolveTeachingLightingPlacement(lighting),
+        resolveScenePresentationLighting(sceneDefinition.id, {
+          surface: "ground-glass",
+          cameraMovementPresentation,
+          presentationRegion: profileContext.presentationRegion,
+        }),
       );
     }
 
@@ -1510,7 +1513,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         style={{ width: "100%", height: "100%" }}
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
-        shadows={{ type: TEACHING_LIGHTING_CONFIG.shadowMapType }}
+        shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
         <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} channel={channel} inspectionWindow={inspectionWindow} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
       </Canvas>

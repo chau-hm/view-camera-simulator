@@ -3,8 +3,8 @@ import {
   mirrorShiftGeometry,
   reflectPointAcrossMirrorPlane,
 } from "../scenes/mirrorShiftGeometry";
-import { TEACHING_LIGHTING_CONFIG } from "./TeachingLighting";
-import type { SceneSubjectRttLighting } from "./sceneSubjectRegistry";
+import { DEFAULT_PRESENTATION_LIGHTING_PLACEMENT } from "./presentationLightingContract";
+import type { ScenePresentationLightingIntent } from "./presentationLighting";
 import { WORLD_SCALE } from "./rttUtils";
 
 const mirrorShiftRealLightingTargetMm: Vec3 = {
@@ -14,15 +14,9 @@ const mirrorShiftRealLightingTargetMm: Vec3 = {
 };
 
 const mirrorShiftRealKeyOffsetWorld = {
-  x: TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[0],
-  y: TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[1],
-  z: TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[2],
-} as const;
-
-const mirrorShiftRealFillOffsetWorld = {
-  x: 2.5,
-  y: 1.5,
-  z: -1.5,
+  x: DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[0],
+  y: DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[1],
+  z: DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[2],
 } as const;
 
 const addWorldOffsetToMm = (
@@ -41,23 +35,18 @@ const subtractMm = (first: Vec3, second: Vec3) => ({
 });
 
 /**
- * Resolve the two lighting placements needed by the Mirror Shift split:
- * the inspection subject remains on the real side, while the RTT subject is
- * a virtual mirror-side copy. Reflect the real light positions first, then
- * express the result using the existing target-relative lighting contract.
+ * Resolve presentation key placements for the real inspection subject and
+ * reflected Ground Glass subject. Hemisphere fill is unpositioned, so only the
+ * directional key is reflected here.
  */
-export const resolveMirrorShiftLighting = (): Readonly<{
-  viewport: SceneSubjectRttLighting;
-  rtt: SceneSubjectRttLighting;
+export const resolveMirrorShiftPresentationLighting = (): Readonly<{
+  observer: ScenePresentationLightingIntent;
+  groundGlass: ScenePresentationLightingIntent;
 }> => {
   const realTargetMm = mirrorShiftRealLightingTargetMm;
   const realKeyPositionMm = addWorldOffsetToMm(
     realTargetMm,
     mirrorShiftRealKeyOffsetWorld,
-  );
-  const realFillPositionMm = addWorldOffsetToMm(
-    realTargetMm,
-    mirrorShiftRealFillOffsetWorld,
   );
   const mirrorPlane = mirrorShiftGeometry.mirror.plane;
   const reflectedTargetMm = reflectPointAcrossMirrorPlane(realTargetMm, mirrorPlane);
@@ -65,21 +54,15 @@ export const resolveMirrorShiftLighting = (): Readonly<{
     realKeyPositionMm,
     mirrorPlane,
   );
-  const reflectedFillPositionMm = reflectPointAcrossMirrorPlane(
-    realFillPositionMm,
-    mirrorPlane,
-  );
 
   return {
-    viewport: {
+    observer: {
       targetMm: { ...realTargetMm },
       keyOffsetWorld: { ...mirrorShiftRealKeyOffsetWorld },
-      fillOffsetWorld: { ...mirrorShiftRealFillOffsetWorld },
     },
-    rtt: {
+    groundGlass: {
       targetMm: reflectedTargetMm,
       keyOffsetWorld: subtractMm(reflectedKeyPositionMm, reflectedTargetMm),
-      fillOffsetWorld: subtractMm(reflectedFillPositionMm, reflectedTargetMm),
     },
   };
 };

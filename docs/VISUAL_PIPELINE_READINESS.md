@@ -39,8 +39,10 @@ Ground Glass runtime report:
 - The renderer can support environment lighting, but the application has no
   shared environment-lighting setup today.
 - There is no application-wide post-processing stack today.
-- `TeachingLighting` provides the shared teaching-light and shadow policy; its
-  current setup is described below.
+- `presentationLightingContract.ts` defines the single active teaching-light
+  recipe used by both the Observer React rig and the Ground Glass imperative rig.
+- `resolveScenePresentationLighting()` resolves registered placement intent for
+  the requested surface; it does not select or create scene-owned lights.
 
 The two Canvas surfaces may migrate independently in a future architecture. A
 Ground Glass report must not be used to infer the observer renderer or an
@@ -88,17 +90,69 @@ limits, image-circle physics, task thresholds, scene identity, Ground Glass
 orientation, and route/catalog/task publication. Visual-quality tools may
 propose asset appearance; they do not gain authority over simulation state.
 
-## Lighting ownership
+## Scene illumination ownership
 
-[`TeachingLighting.tsx`](../src/render/TeachingLighting.tsx) owns the current
-shared hemisphere/key rig, directional shadow configuration, and shadow
-participation rules. Scene registrations currently provide placement intent
-where the viewport and RTT need different targets. Preserve that implementation
-and behavior in this phase. Future lighting work should attach a lighting
-intent/profile at the scene or presentation boundary and resolve it through a
-shared lighting implementation; scene assets should not grow independent full
-lighting rigs. Existing scene-local lights remain explicit subject content,
-not substitutes for the shared teaching rig.
+Scene illumination is compositional. Physical/in-world sources and
+presentation/teaching assist can be present at the same time:
+
+```text
+Scene illumination
+├── physical / in-world
+│   ├── natural (future: sun, sky, moon)
+│   └── artificial / practical (current: Interior Corner PointLight)
+└── presentation / teaching assist (current: shared fill + key rig)
+```
+
+The source audit found one current in-world artificial source:
+`interior-corner-local-light`, a `THREE.PointLight` created and disposed with
+the registered Interior Corner asset. The observer and Ground Glass consumers
+mount that same registered implementation. There is no natural-light system
+today. The shared teaching HemisphereLight and DirectionalLight are
+presentation assist, not a complete definition of scene illumination. These
+source categories are not exclusive modes: future sun/sky/moon and practical
+sources must be able to compose together without being collapsed into one
+visual preset.
+
+[`presentationLightingContract.ts`](../src/render/presentationLightingContract.ts)
+owns the one active `teaching-default` presentation recipe. Its profile is
+separate from placement; `PRESENTATION_SHADOW_MAP_TYPE` is a renderer-wide
+policy constant, not per-scene illumination state.
+[`presentationLighting.ts`](../src/render/presentationLighting.ts) resolves
+renderer-neutral scene placement intent for either the Observer or Ground
+Glass surface. Both the React rig and imperative Ground Glass rig consume the
+same profile; imperative updates reapply the full profile as well as
+placement.
+
+Scene-subject registrations currently carry teaching-assist placement intent,
+but they are not the permanent authority for all world illumination. Camera
+Movements derives its key target from its presentation model for both
+surfaces. Mirror Shift keeps separate real Observer and reflected Ground
+Glass key placement. The hemisphere fill has no position, so unused per-scene
+fill offsets are not part of the contract. `TeachingLighting.tsx` applies the
+shared teaching shadow-participation rules, while Mirror Shift retains its
+explicit Ground Glass shadow override.
+
+Interior Corner's warm PointLight remains asset-owned and is not promoted into
+the shared presentation recipe or recreated by the presentation rig. Tests
+compose each registered subject with the shared rig on both surfaces and
+assert one practical light and one shadow-casting teaching key. Scene assets
+should not grow independent complete presentation rigs.
+
+Future physical exposure remains downstream:
+
+```text
+physical / in-world illumination
+→ scene radiance
+→ optical image
+→ future metering
+→ aperture / shutter / ISO / film response
+```
+
+Presentation-assist participation in metering or exposure must be an explicit
+future decision; this architecture does not implement an exposure model.
+Natural and artificial physical sources may add together. This PR adds no
+source category implementation, light, environment, photometric unit, or
+lighting retuning.
 
 ## Ground Glass migration seam
 

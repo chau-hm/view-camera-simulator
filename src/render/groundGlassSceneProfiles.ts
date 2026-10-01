@@ -16,7 +16,6 @@ import {
   createRegisteredRttSubject,
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
-  type SceneSubjectRttLighting,
   type SceneSubjectRttOptions,
 } from "./sceneSubjectRegistry";
 import { configureTeachingShadowParticipation } from "./TeachingLighting";
@@ -42,9 +41,6 @@ export type MountedGroundGlassSceneSubject = Readonly<{
 }>;
 
 export type GroundGlassSceneProfile = Readonly<{
-  resolveRttLighting: (
-    context: GroundGlassSceneProfileContext,
-  ) => SceneSubjectRttLighting | undefined;
   configureRttShadowParticipation: (group: THREE.Group) => void;
   mountSubject: (
     scene: THREE.Scene,
@@ -65,14 +61,6 @@ type GroundGlassSceneProfileDefinition = Readonly<{
   configureRttShadowParticipation?: (group: THREE.Group) => void;
   resolveRenderBounds?: (context: GroundGlassSceneProfileContext) => Bounds3;
 }>;
-
-const resolveRegisteredRttLighting = (
-  context: GroundGlassSceneProfileContext,
-  options: SceneSubjectRttOptions | undefined,
-): SceneSubjectRttLighting | undefined => {
-  const registration = getSceneSubjectRegistration(context.scene.id);
-  return registration?.resolveRttLighting?.(options) ?? registration?.rttLighting;
-};
 
 const mountRegisteredSubject = (
   scene: THREE.Scene,
@@ -95,11 +83,6 @@ const mountRegisteredSubject = (
 const createProfile = (
   definition: GroundGlassSceneProfileDefinition = {},
 ): GroundGlassSceneProfile => ({
-  resolveRttLighting: (context) =>
-    resolveRegisteredRttLighting(
-      context,
-      definition.resolveSubjectOptions?.(context),
-    ),
   configureRttShadowParticipation: (group) => {
     configureTeachingShadowParticipation(group);
     definition.configureRttShadowParticipation?.(group);
