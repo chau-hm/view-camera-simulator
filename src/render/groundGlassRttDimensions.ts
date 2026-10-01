@@ -6,6 +6,7 @@ import type {
   GroundGlassProfilingSnapshot,
 } from "./groundGlassProfiling";
 import type { SceneCapacityRuntimeDetails } from "./sceneCapacityProfiling";
+import type { GroundGlassVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -109,6 +110,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   profilingBackend?: GroundGlassProfilingBackend;
   profilingSnapshot?: GroundGlassProfilingSnapshot;
   sceneCapacity?: SceneCapacityRuntimeDetails;
+  /** Opt-in report from the mounted RTT renderer and existing target probe. */
+  visualPipelineCapabilities?: GroundGlassVisualPipelineCapabilities | null;
   /** Values actually consumed by the current owned RTT subject/shader graph. */
   focalLengthMm?: number;
   latticeEdgeCount?: number;

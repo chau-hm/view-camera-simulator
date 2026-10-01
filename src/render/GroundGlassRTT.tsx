@@ -69,6 +69,7 @@ import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
+import { resolveGroundGlassVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
 import {
   FULL_GROUND_GLASS_INSPECTION_WINDOW,
   resolveSampledFilmDimensionsMm,
@@ -243,6 +244,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       heightPx: dimsRef.current.internalHeightPx,
       gatherScale: initialQualitySettings.gatherScale,
     });
+    const visualPipelineCapabilities = sceneCapacityProfilingEnabled
+      ? resolveGroundGlassVisualPipelineCapabilities(
+          gl,
+          rttResources.coc.rendererCapabilities,
+        )
+      : undefined;
     const rt = rttResources.scene.colorDepthTarget;
     const fallbackDepth = rttResources.scene.depthFallback;
     renderTarget.current = rt;
@@ -547,6 +554,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           sampledFilmHeightMm: initialSampledFilmDimensions.heightMm,
           profilingEnabled,
           profilingBackend: profiler.backend,
+          visualPipelineCapabilities,
         });
       }
     } catch (err) { void err; }

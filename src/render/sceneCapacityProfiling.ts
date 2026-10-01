@@ -3,6 +3,7 @@ import type {
   GroundGlassProfilingSnapshot,
   GroundGlassProfilingTimingStats,
 } from "./groundGlassProfiling";
+import type { GroundGlassVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
 
 export type SceneGraphCapacityMetrics = Readonly<{
   objectCount: number;
@@ -41,6 +42,7 @@ export type SceneCapacitySnapshot = Readonly<{
   viewportSubject: SceneGraphCapacityMetrics | null;
   rttSubject: SceneGraphCapacityMetrics | null;
   rendererResources: SceneCapacityRendererResources | null;
+  visualPipeline: GroundGlassVisualPipelineCapabilities | null;
   frameCadence: SceneCapacityFrameCadence;
   groundGlass: GroundGlassProfilingSnapshot | null;
 }>;
@@ -199,18 +201,21 @@ export const createSceneCapacitySnapshot = ({
   viewportSubject = null,
   rttSubject = null,
   rendererResources = null,
+  visualPipeline = null,
   groundGlass = null,
 }: {
   sceneId: string | null;
   viewportSubject?: SceneGraphCapacityMetrics | null;
   rttSubject?: SceneGraphCapacityMetrics | null;
   rendererResources?: SceneCapacityRendererResources | null;
+  visualPipeline?: GroundGlassVisualPipelineCapabilities | null;
   groundGlass?: GroundGlassProfilingSnapshot | null;
 }): SceneCapacitySnapshot => ({
   sceneId,
   viewportSubject,
   rttSubject,
   rendererResources,
+  visualPipeline,
   frameCadence: resolveSceneCapacityFrameCadence(groundGlass),
   groundGlass,
 });
