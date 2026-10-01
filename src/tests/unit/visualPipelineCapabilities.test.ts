@@ -1,12 +1,12 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import type { RendererCapabilities } from "../../render/backend/rendererCapabilities";
-import { resolveVisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
+import { resolveGroundGlassVisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
 
 const renderer = (overrides: Record<string, unknown> = {}) => ({
   isWebGLRenderer: true,
   shadowMap: { enabled: true, type: THREE.PCFShadowMap },
-  toneMapping: THREE.NoToneMapping,
+  toneMapping: THREE.ACESFilmicToneMapping,
   toneMappingExposure: 1,
   outputColorSpace: THREE.SRGBColorSpace,
   ...overrides,
@@ -17,97 +17,96 @@ const renderTargetCapability: RendererCapabilities = {
   colorRenderTargetRenderable: true,
 };
 
-describe("visual pipeline capability contract", () => {
-  it("describes the mounted WebGL pipeline and preserves inactive future paths", () => {
-    const capabilities = resolveVisualPipelineCapabilities(
+describe("Ground Glass visual pipeline capability contract", () => {
+  it("scopes renderer observations to the mounted Ground Glass surface", () => {
+    const capabilities = resolveGroundGlassVisualPipelineCapabilities(
       renderer(),
       renderTargetCapability,
     );
 
     expect(capabilities).toMatchObject({
-      activeRendererBackend: "webgl",
-      colorRenderTarget: {
-        status: "available",
-        backend: "webgl",
-        evidence: "ground-glass-framebuffer-probe",
+      renderer: {
+        surface: "ground-glass",
+        activeBackend: "webgl",
+        colorRenderTarget: {
+          status: "available",
+          backend: "webgl",
+          evidence: "ground-glass-framebuffer-probe",
+        },
+        shadowMaps: { status: "active", type: "pcf" },
+        toneMapping: {
+          active: true,
+          mode: "aces-filmic",
+          exposure: 1,
+          outputColorSpace: THREE.SRGBColorSpace,
+        },
       },
-      shadowMaps: { status: "active", backend: "webgl", type: "pcf" },
-      litPbrMaterials: {
-        status: "available",
-        backend: "webgl",
-        currentAssetsUseMeshStandardMaterial: true,
+      groundGlassPipeline: {
+        rtt: {
+          status: "active",
+          implementation: "webgl-render-target-bundle",
+          backendCoupling: "webgl",
+        },
+        dof: {
+          status: "available",
+          activeOnProcessedPath: true,
+          implementation: "custom-glsl-multipass",
+          backendCoupling: "webgl",
+        },
       },
-      environmentLighting: { status: "available", backend: "webgl", active: false },
-      toneMappingExposure: {
-        status: "available",
-        backend: "webgl",
-        active: false,
-        toneMapping: "none",
-        exposure: 1,
-        outputColorSpace: THREE.SRGBColorSpace,
-      },
-      globalPostProcessing: { status: "inactive" },
-      groundGlassRtt: {
-        status: "active",
-        implementation: "webgl-render-target-bundle",
-        backendCoupling: "webgl",
-      },
-      groundGlassDof: {
-        status: "available",
-        activeOnProcessedPath: true,
-        implementation: "custom-glsl-multipass",
-        backendCoupling: "webgl",
-      },
-      webgpuApplicationBackend: { status: "inactive" },
     });
+
+    // This report observes only Ground Glass. Other application surfaces and
+    // presentation architecture are intentionally absent from its runtime data.
+    expect(capabilities).not.toHaveProperty("webgpuApplicationBackend");
+    expect(capabilities).not.toHaveProperty("globalPostProcessing");
+    expect(capabilities).not.toHaveProperty("litPbrMaterials");
+    expect(capabilities).not.toHaveProperty("environmentLighting");
   });
 
-  it("does not claim a render target is available without matching probe evidence", () => {
-    expect(resolveVisualPipelineCapabilities(renderer())?.colorRenderTarget).toEqual({
+  it("reports the mounted renderer's disabled shadow state and actual map type", () => {
+    expect(
+      resolveGroundGlassVisualPipelineCapabilities(
+        renderer({ shadowMap: { enabled: false, type: THREE.VSMShadowMap } }),
+      )?.renderer.shadowMaps,
+    ).toEqual({ status: "disabled", type: "vsm" });
+  });
+
+  it("keeps framebuffer target evidence fail-closed and surface-matched", () => {
+    expect(
+      resolveGroundGlassVisualPipelineCapabilities(renderer())?.renderer.colorRenderTarget,
+    ).toEqual({
       status: "unverified",
       backend: "webgl",
       evidence: "not-probed",
     });
     expect(
-      resolveVisualPipelineCapabilities(renderer(), {
+      resolveGroundGlassVisualPipelineCapabilities(renderer(), {
         backend: "webgl",
         colorRenderTargetRenderable: false,
-      }),
-    ).toMatchObject({
-      colorRenderTarget: { status: "unavailable" },
-    });
+      })?.renderer.colorRenderTarget.status,
+    ).toBe("unavailable");
     expect(
-      resolveVisualPipelineCapabilities(
+      resolveGroundGlassVisualPipelineCapabilities(
         renderer(),
         { backend: "webgpu", colorRenderTargetRenderable: true } as unknown as RendererCapabilities,
-      ),
-    ).toMatchObject({
-      colorRenderTarget: { status: "unverified", evidence: "not-probed" },
+      )?.renderer.colorRenderTarget,
+    ).toEqual({
+      status: "unverified",
+      backend: "webgl",
+      evidence: "not-probed",
     });
   });
 
-  it("reports the active Three.js tone-mapping mode instead of a generic configured flag", () => {
+  it("rejects unknown renderers and a WebGPU marker without an active Ground Glass backend", () => {
     expect(
-      resolveVisualPipelineCapabilities(
-        renderer({ toneMapping: THREE.ACESFilmicToneMapping }),
-      )?.toneMappingExposure,
-    ).toMatchObject({
-      active: true,
-      toneMapping: "aces-filmic",
-      exposure: 1,
-      outputColorSpace: THREE.SRGBColorSpace,
-    });
-  });
-
-  it("rejects unknown renderers and a WebGPU marker without an active WebGPU backend", () => {
-    expect(
-      resolveVisualPipelineCapabilities({ isWebGLRenderer: false }),
+      resolveGroundGlassVisualPipelineCapabilities({ isWebGLRenderer: false }),
     ).toBeNull();
     expect(
-      resolveVisualPipelineCapabilities({ isWebGPURenderer: true }),
+      resolveGroundGlassVisualPipelineCapabilities({ isWebGPURenderer: true }),
     ).toBeNull();
     expect(
-      resolveVisualPipelineCapabilities({
+      resolveGroundGlassVisualPipelineCapabilities({
         isWebGLRenderer: false,
         isWebGPURenderer: true,
       }),

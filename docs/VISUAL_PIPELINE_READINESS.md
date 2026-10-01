@@ -4,32 +4,48 @@ This decision record describes the rendering boundary at the post-SA7 baseline
 `232de05d40579d4a64592e5481bc40edf3b95fd7`. It prepares the renderer and
 evidence path for scene-quality work; it does not change scene appearance.
 
-## Current capability boundary
-
-The application runs Three.js r186 through React Three Fiber. The production
-backend contract remains `"webgl"`. Browser WebGL availability is only a
-precondition for mounting the current renderer; it does not identify the
-renderer instance or prove that an application feature works. The opt-in
-capability report is built from the mounted renderer and, for color render
-targets, the existing Ground Glass framebuffer probe.
-
-| Area | Current status | Evidence / boundary |
-| --- | --- | --- |
-| Active renderer | WebGL | `resolveRendererBackend` accepts the actual WebGL renderer marker. A WebGPU marker alone is rejected. |
-| Color render target | Available when the selected Ground Glass target probe succeeds | `resolveRendererCapabilities` binds the candidate, checks framebuffer completeness, restores the previous target, and fails closed. An unprobed target is reported as unverified. |
-| Shadow maps | Active | Both R3F canvases enable shadows. `TeachingLighting` owns the PCF directional shadow settings and scene caster/receiver policy. |
-| Lit / PBR materials | Available on the current renderer; current scene assets use `MeshStandardMaterial` | Existing materials and lighting already exercise the lit path. `MeshPhysicalMaterial` remains a possible scene-asset choice. |
-| Environment lighting | Available, not active | The current renderer can support this presentation path; there is no shared environment-lighting setup today. |
-| Tone mapping / exposure | ACES Filmic is active through the React Three Fiber default; exposure is 1 and output color space is sRGB | Canvas configuration does not override these values. The runtime report records the exact mode, exposure, and output color space from the mounted renderer. |
-| Global post-processing | Inactive | There is no application-wide post-processing stack. |
-| Ground Glass RTT / DOF | RTT active; custom DOF available on the processed path, both WebGL-coupled | Ground Glass owns a custom GLSL multipass path over its WebGL render-target bundle. |
-| WebGPU / TSL application backend | Inactive | Three.js containing a WebGPU renderer is not application support. `RendererBackend` remains WebGL-only. |
+## Runtime Ground Glass renderer evidence
 
 The development-only report is included in the existing
 `?sceneCapacityProfiling=1` snapshot and scene-capacity benchmark output. It is
-created from a renderer instance, never from `detectAvailableWebGLBackend()`.
-The color-target status carries the existing probe result; reporting creates no
-additional renderer, target, framebuffer, or context.
+resolved from the mounted renderer supplied by `GroundGlassRTT`, never from
+`detectAvailableWebGLBackend()`. Its `renderer` object describes only that
+Ground Glass render surface:
+
+| Evidence | Source / boundary |
+| --- | --- |
+| Backend identity | `resolveRendererBackend` checks the actual mounted Three.js renderer marker. A WebGPU marker alone is rejected. |
+| Color render target | The existing Ground Glass candidate probe binds the target, checks framebuffer completeness, restores the previous target, and fails closed. Missing or mismatched probe evidence is `unverified`. |
+| Shadow-map state and type | Read from this renderer's `shadowMap` settings. This says nothing about another Canvas. |
+| Tone mapping, exposure, output color space | Read from this renderer's live Three.js settings. |
+
+The report's `groundGlassPipeline` object records implementation facts rather
+than renderer observations: the RTT uses a WebGL render-target bundle and the
+processed path uses custom GLSL multipass DOF. Neither object describes the
+observer viewport or declares application-wide capabilities. Reporting creates
+no additional renderer, target, framebuffer, or context.
+
+## Current application architecture baseline
+
+These declarations come from the current repository structure, not the mounted
+Ground Glass runtime report:
+
+- The observer `SceneRenderer` Canvas and Ground Glass Canvas currently use the
+  WebGL rendering path. `RendererBackend` recognizes only WebGL today.
+- There is no application-wide WebGPU integration. Three.js containing a
+  `WebGPURenderer` does not make it an active application backend.
+- Current scene asset factories use `MeshStandardMaterial` on lit surfaces;
+  `MeshPhysicalMaterial` remains a possible asset-level choice.
+- The renderer can support environment lighting, but the application has no
+  shared environment-lighting setup today.
+- There is no application-wide post-processing stack today.
+- `TeachingLighting` provides the shared teaching-light and shadow policy; its
+  current setup is described below.
+
+The two Canvas surfaces may migrate independently in a future architecture. A
+Ground Glass report must not be used to infer the observer renderer or an
+application-wide backend state. Revisit this source-derived baseline when the
+renderer architecture changes; do not serialize it as runtime capability data.
 
 ## Ownership boundary for visual changes
 
@@ -126,8 +142,13 @@ for before/after runs. Record the commit and renderer environment. Compare:
   CPU-submit timing backend;
 - active frame-cadence p50/p95, treating it as observed R3F cadence rather than
   pure GPU time;
-- the active application renderer, probed color-target status, shadow path,
-  tone mapping/output color space, and inactive WebGPU status.
+- the mounted Ground Glass backend, probed color-target status, shadow path,
+  tone mapping/exposure/output color space, and Ground Glass RTT/DOF
+  implementation facts.
+
+The structured report separates live `renderer` observations from
+`groundGlassPipeline` implementation facts. The application architecture
+baseline above is documentation only and is not inferred from either object.
 
 The benchmark already collects fresh timing windows for processed, Raw RTT,
 and selected Focus Loupe modes. CPU-submit timings are not directly comparable

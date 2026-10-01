@@ -69,7 +69,7 @@ import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
-import { resolveVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
+import { resolveGroundGlassVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
 import {
   FULL_GROUND_GLASS_INSPECTION_WINDOW,
   resolveSampledFilmDimensionsMm,
@@ -245,7 +245,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       gatherScale: initialQualitySettings.gatherScale,
     });
     const visualPipelineCapabilities = sceneCapacityProfilingEnabled
-      ? resolveVisualPipelineCapabilities(
+      ? resolveGroundGlassVisualPipelineCapabilities(
           gl,
           rttResources.coc.rendererCapabilities,
         )

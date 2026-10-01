@@ -5,7 +5,7 @@ import { OpticalDebugPanel } from "../../components/simulator/OpticalDebugPanel"
 import type { GroundGlassProfilingSnapshot } from "../../render/groundGlassProfiling";
 import type { GroundGlassRttRuntimeInfo } from "../../render/groundGlassRttDimensions";
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
-import { resolveVisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
+import { resolveGroundGlassVisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -31,7 +31,7 @@ const makeSnapshot = (marker: string): GroundGlassProfilingSnapshot => ({
 const renderPanel = (
   snapshot: GroundGlassProfilingSnapshot | null,
   viewportSubjectCapacity?: SceneGraphCapacityMetrics | null,
-  visualPipelineCapabilities?: ReturnType<typeof resolveVisualPipelineCapabilities>,
+  visualPipelineCapabilities?: ReturnType<typeof resolveGroundGlassVisualPipelineCapabilities>,
 ) => {
   const camera = {
     ...DEFAULT_CAMERA_STATE,
@@ -161,9 +161,9 @@ describe("scene capacity diagnostic snapshot", () => {
     expect(screen.queryByTestId("scene-capacity-snapshot")).toBeNull();
   });
 
-  it("publishes viewport, RTT, cadence, Ground Glass, and renderer capabilities when enabled", () => {
+  it("publishes viewport, RTT, cadence, and scoped Ground Glass renderer evidence when enabled", () => {
     window.history.replaceState({}, "", "/?sceneCapacityProfiling=1");
-    const visualPipelineCapabilities = resolveVisualPipelineCapabilities(
+    const visualPipelineCapabilities = resolveGroundGlassVisualPipelineCapabilities(
       {
         isWebGLRenderer: true,
         shadowMap: { enabled: true, type: THREE.PCFShadowMap },
@@ -181,15 +181,22 @@ describe("scene capacity diagnostic snapshot", () => {
       sceneId: string;
       viewportSubject: SceneGraphCapacityMetrics;
       rttSubject: SceneGraphCapacityMetrics | null;
-      visualPipeline: { activeRendererBackend: string; webgpuApplicationBackend: { status: string } };
+      visualPipeline: {
+        renderer: { surface: string; activeBackend: string };
+        groundGlassPipeline: { rtt: { backendCoupling: string } };
+      };
       frameCadence: { count: number };
       groundGlass: { marker: string };
     };
     expect(snapshot.sceneId).toBe(architectureRiseScene.id);
     expect(snapshot.viewportSubject.effectiveTriangleCount).toBe(24);
     expect(snapshot.rttSubject).toBeNull();
-    expect(snapshot.visualPipeline.activeRendererBackend).toBe("webgl");
-    expect(snapshot.visualPipeline.webgpuApplicationBackend.status).toBe("inactive");
+    expect(snapshot.visualPipeline.renderer).toMatchObject({
+      surface: "ground-glass",
+      activeBackend: "webgl",
+    });
+    expect(snapshot.visualPipeline.groundGlassPipeline.rtt.backendCoupling).toBe("webgl");
+    expect(snapshot.visualPipeline).not.toHaveProperty("webgpuApplicationBackend");
     expect(snapshot.frameCadence.count).toBe(1);
     expect(snapshot.groundGlass.marker).toBe("enabled");
   });

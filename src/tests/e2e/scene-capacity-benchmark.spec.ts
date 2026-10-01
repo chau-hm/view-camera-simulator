@@ -11,7 +11,7 @@ import type {
   SceneCapacitySnapshot,
   SceneGraphCapacityMetrics,
 } from "../../render/sceneCapacityProfiling";
-import type { VisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
+import type { GroundGlassVisualPipelineCapabilities } from "../../render/backend/visualPipelineCapabilities";
 import {
   classifyGraphicsBackend,
   type GraphicsBackendQualification,
@@ -84,8 +84,8 @@ type BenchmarkEnvironment = {
   browserName: string;
   userAgent: string;
   devicePixelRatio: number;
-  webgl: { vendor: string | null; renderer: string | null };
-  visualPipeline: VisualPipelineCapabilities;
+  canvasWebgl: { vendor: string | null; renderer: string | null };
+  visualPipeline: GroundGlassVisualPipelineCapabilities;
   profilingBackend: string | null;
   timingUnit: string | null;
   hardwareQualification: GraphicsBackendQualification & { required: boolean };
@@ -416,15 +416,15 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
   }
   const visualPipeline = capacitySnapshot?.visualPipeline;
   if (!visualPipeline) {
-    throw new Error("Scene capacity benchmark could not read the mounted renderer capability contract");
+    throw new Error("Scene capacity benchmark could not read the Ground Glass renderer report");
   }
-  if (visualPipeline.activeRendererBackend !== "webgl") {
+  if (visualPipeline.renderer.surface !== "ground-glass") {
+    throw new Error("Scene capacity benchmark requires runtime evidence from the Ground Glass renderer");
+  }
+  if (visualPipeline.renderer.activeBackend !== "webgl") {
     throw new Error(
-      `Scene capacity benchmark requires the current WebGL application backend; detected ${visualPipeline.activeRendererBackend}`,
+      `Scene capacity benchmark requires the current Ground Glass WebGL backend; detected ${visualPipeline.renderer.activeBackend}`,
     );
-  }
-  if (visualPipeline.webgpuApplicationBackend.status !== "inactive") {
-    throw new Error("Scene capacity benchmark observed an unsupported active WebGPU application backend");
   }
   const browserInfo = await page.evaluate(() => {
     const canvas = document.querySelector("canvas");
@@ -445,11 +445,11 @@ const readEnvironment = async (page: Page, browserName: string): Promise<Benchma
     return {
       userAgent: navigator.userAgent,
       devicePixelRatio: window.devicePixelRatio,
-      webgl: { vendor, renderer },
+      canvasWebgl: { vendor, renderer },
     };
   });
   const hardwareQualification = classifyGraphicsBackend({
-    renderer: browserInfo.webgl.renderer,
+    renderer: browserInfo.canvasWebgl.renderer,
     profilingBackend: profilingSnapshot.profilingBackend,
     timingUnit: profilingSnapshot.timingUnit,
   });
@@ -520,25 +520,35 @@ const markdownSummary = (
     `Timestamp: ${environment.timestamp}`,
     `Browser: ${environment.browserName}`,
     `Viewport: ${environment.viewport.width}×${environment.viewport.height}, DPR ${environment.devicePixelRatio}`,
-    `WebGL vendor: ${environment.webgl.vendor ?? "unavailable"}`,
-    `WebGL renderer: ${environment.webgl.renderer ?? "unavailable"}`,
-    `Ground Glass renderer backend: ${visualPipeline.activeRendererBackend}`,
-    `Ground Glass color render target: ${visualPipeline.colorRenderTarget.status}`,
-    `Shadow-map path: ${visualPipeline.shadowMaps.status} (${visualPipeline.shadowMaps.type})`,
-    `WebGPU application backend: ${visualPipeline.webgpuApplicationBackend.status}`,
+    `First canvas WebGL vendor: ${environment.canvasWebgl.vendor ?? "unavailable"}`,
+    `First canvas WebGL renderer: ${environment.canvasWebgl.renderer ?? "unavailable"}`,
+    "",
+    "## Ground Glass renderer runtime evidence",
+    "",
+    `Ground Glass renderer backend: ${visualPipeline.renderer.activeBackend}`,
+    `Ground Glass color target: ${visualPipeline.renderer.colorRenderTarget.status}`,
+    `Ground Glass shadow map: ${visualPipeline.renderer.shadowMaps.status} (${visualPipeline.renderer.shadowMaps.type})`,
+    `Ground Glass tone mapping: ${visualPipeline.renderer.toneMapping.mode}`,
+    `Ground Glass tone-mapping exposure: ${visualPipeline.renderer.toneMapping.exposure ?? "unavailable"}`,
+    `Ground Glass output color space: ${visualPipeline.renderer.toneMapping.outputColorSpace ?? "unavailable"}`,
+    "",
+    "## Ground Glass pipeline implementation facts",
+    "",
+    `RTT: ${visualPipeline.groundGlassPipeline.rtt.implementation} (${visualPipeline.groundGlassPipeline.rtt.backendCoupling}-coupled)`,
+    `DOF: ${visualPipeline.groundGlassPipeline.dof.implementation} (${visualPipeline.groundGlassPipeline.dof.backendCoupling}-coupled; processed path active)`,
     `Hardware renderer requirement: ${environment.hardwareQualification.required ? "required" : "not requested"}`,
     `Hardware renderer: ${hardwareRendererSummary}`,
     `GPU timer queries: ${gpuTimingSummary}`,
     `Profiling backend: ${environment.profilingBackend ?? "unavailable"}`,
     `Timing unit: ${environment.timingUnit ?? "unavailable"}`,
     "",
-    "## Visual pipeline capability contract",
+    "## Structured Ground Glass renderer and pipeline report",
     "",
     "```json",
     JSON.stringify(visualPipeline, null, 2),
     "```",
     "",
-    `Each record contains at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} fresh post-state samples after contentfulness and mode activation. Processed, Focus Loupe, and Raw RTT records use isolated state setup. WebGL metadata is collected after the first simulator canvas mounts.`,
+    `Each record contains at least ${GROUND_GLASS_PROFILING_WINDOW_SIZE} fresh post-state samples after contentfulness and mode activation. Processed, Focus Loupe, and Raw RTT records use isolated state setup. First-canvas WebGL metadata is an environment diagnostic; the capability report's renderer fields come from the mounted Ground Glass renderer.`,
     "Timings are same-session observations. GPU-query values are GPU milliseconds; CPU fallback values are CPU-submit milliseconds. Frame cadence is observed R3F frame cadence, not pure GPU execution time.",
     "",
     "| Scene | Mode | Fresh samples | Viewport meshes | RTT meshes | RTT effective triangles | Frame p95 ms | Scene render p95 ms | Ground Glass p95 ms | Physical DOF p95 ms | Backend |",
@@ -593,7 +603,7 @@ test.describe("scene capacity benchmark", () => {
           !environment.current.hardwareQualification.hardwareRendererQualified
         ) {
           await writeBenchmarkOutput(environment.current, records);
-          const renderer = environment.current.webgl.renderer ?? "unavailable";
+          const renderer = environment.current.canvasWebgl.renderer ?? "unavailable";
           throw new Error(
             `Hardware scene-capacity benchmark requires a qualified renderer; detected ${renderer}. ` +
             "Use stable Google Chrome with hardware acceleration enabled and rerun.",
