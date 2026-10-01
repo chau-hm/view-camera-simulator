@@ -82,17 +82,35 @@ const configureDirectionalShadow = (
   profile: PresentationLightingProfile,
 ): void => {
   const { key } = profile;
+  const shadow = light.shadow;
+  const requestedMapSize = key.shadowMapSize;
+  const mapSizeChanged =
+    shadow.mapSize.x !== requestedMapSize ||
+    shadow.mapSize.y !== requestedMapSize;
+
   light.castShadow = key.castsShadow;
-  light.shadow.mapSize.set(key.shadowMapSize, key.shadowMapSize);
-  light.shadow.bias = key.shadowBias;
-  light.shadow.normalBias = key.shadowNormalBias;
-  light.shadow.camera.left = key.shadowCamera.left;
-  light.shadow.camera.right = key.shadowCamera.right;
-  light.shadow.camera.top = key.shadowCamera.top;
-  light.shadow.camera.bottom = key.shadowCamera.bottom;
-  light.shadow.camera.near = key.shadowCamera.near;
-  light.shadow.camera.far = key.shadowCamera.far;
-  light.shadow.camera.updateProjectionMatrix();
+  if (mapSizeChanged) shadow.mapSize.set(requestedMapSize, requestedMapSize);
+
+  // LightShadow.mapSize configures the next map, but does not resize a target
+  // that the renderer has already created. Keep that target aligned with the
+  // applied profile through Three.js' public RenderTarget lifecycle.
+  const shadowMap = shadow.map;
+  if (
+    shadowMap &&
+    (shadowMap.width !== requestedMapSize || shadowMap.height !== requestedMapSize)
+  ) {
+    shadowMap.setSize(requestedMapSize, requestedMapSize);
+  }
+
+  shadow.bias = key.shadowBias;
+  shadow.normalBias = key.shadowNormalBias;
+  shadow.camera.left = key.shadowCamera.left;
+  shadow.camera.right = key.shadowCamera.right;
+  shadow.camera.top = key.shadowCamera.top;
+  shadow.camera.bottom = key.shadowCamera.bottom;
+  shadow.camera.near = key.shadowCamera.near;
+  shadow.camera.far = key.shadowCamera.far;
+  shadow.camera.updateProjectionMatrix();
 };
 
 export type PresentationLightingRig = Readonly<{

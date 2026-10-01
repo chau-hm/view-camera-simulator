@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   applyPresentationLightingProfile,
   configureTeachingShadowParticipation,
@@ -129,18 +129,38 @@ describe("shared presentation lighting", () => {
         },
       },
     } satisfies PresentationLightingProfile;
-    updatePresentationLightingRig(rig, {
-      profile: updatedProfile,
-      placement: {
-        targetWorld: [0, 0, 0],
-        keyOffsetWorld: [2, 3, 4],
-      },
-    });
+    const existingShadowTarget = new THREE.WebGLRenderTarget(1024, 1024);
+    const existingShadowTargetDispose = vi.spyOn(existingShadowTarget, "dispose");
+    const originalShadow = rig.keyLight.shadow;
+    rig.keyLight.shadow.map = existingShadowTarget;
 
-    expectLightsToMatchProfile(rig.fillLight, rig.keyLight, updatedProfile);
-    expect(rig.keyLight.position.toArray()).toEqual([2, 3, 4]);
+    try {
+      expect(existingShadowTarget.width).toBe(1024);
+      expect(existingShadowTarget.height).toBe(1024);
 
-    disposePresentationLightingRig(scene, rig);
+      updatePresentationLightingRig(rig, {
+        profile: updatedProfile,
+        placement: {
+          targetWorld: [0, 0, 0],
+          keyOffsetWorld: [2, 3, 4],
+        },
+      });
+
+      expectLightsToMatchProfile(rig.fillLight, rig.keyLight, updatedProfile);
+      expect(rig.keyLight.shadow).toBe(originalShadow);
+      expect(rig.keyLight.shadow.map).toBe(existingShadowTarget);
+      expect(existingShadowTarget.width).toBe(512);
+      expect(existingShadowTarget.height).toBe(512);
+      expect(existingShadowTargetDispose).toHaveBeenCalledTimes(1);
+      expect(rig.target.position.toArray()).toEqual([0, 0, 0]);
+      expect(rig.keyLight.position.toArray()).toEqual([2, 3, 4]);
+    } finally {
+      // This target is a test fixture, not a resource owned by the lighting rig.
+      rig.keyLight.shadow.map = null;
+      disposePresentationLightingRig(scene, rig);
+      existingShadowTarget.dispose();
+    }
+
     expect(scene.getObjectByName("teaching-lighting-key")).toBeUndefined();
     expect(scene.getObjectByName("teaching-lighting-fill")).toBeUndefined();
     expect(scene.getObjectByName("teaching-lighting-target")).toBeUndefined();
