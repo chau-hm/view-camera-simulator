@@ -27,6 +27,7 @@ pnpm-debug.log*
 # Test artifacts
 playwright-report/
 test-results/
+.dream-loop/
 
 # Editor/OS files
 .DS_Store
