@@ -35,11 +35,13 @@ describe("scene capacity collector", () => {
     const metrics = collectSceneGraphCapacity(root);
 
     expect(metrics.meshCount).toBe(2);
+    expect(metrics.renderableMeshCount).toBe(2);
     expect(metrics.uniqueGeometryCount).toBe(1);
     expect(metrics.uniqueMaterialCount).toBe(1);
     expect(metrics.uniqueTextureCount).toBe(1);
     expect(metrics.triangleCount).toBe(4);
     expect(metrics.effectiveTriangleCount).toBe(4);
+    expect(metrics.renderableEffectiveTriangleCount).toBe(4);
 
     geometry.dispose();
     material.dispose();
@@ -89,6 +91,8 @@ describe("scene capacity collector", () => {
     expect(metrics.triangleCount).toBe(0);
     expect(metrics.instancedTriangleCount).toBe(10);
     expect(metrics.effectiveTriangleCount).toBe(10);
+    expect(metrics.renderableMeshCount).toBe(1);
+    expect(metrics.renderableEffectiveTriangleCount).toBe(10);
 
     geometry.dispose();
     material.dispose();
@@ -106,6 +110,35 @@ describe("scene capacity collector", () => {
     expect(metrics.meshCount).toBe(1);
     expect(metrics.triangleCount).toBe(0);
     expect(metrics.effectiveTriangleCount).toBe(0);
+  });
+
+  it("excludes hidden ancestors, invisible materials, and empty draw ranges from renderable metrics", () => {
+    const geometry = makeIndexedQuad();
+    const visibleMaterial = new THREE.MeshBasicMaterial();
+    const invisibleMaterial = new THREE.MeshBasicMaterial({ visible: false });
+    const root = new THREE.Group();
+    const hiddenParent = new THREE.Group();
+    hiddenParent.visible = false;
+    hiddenParent.add(new THREE.Mesh(geometry, visibleMaterial));
+    root.add(
+      hiddenParent,
+      new THREE.Mesh(geometry, invisibleMaterial),
+    );
+    const emptyRangeGeometry = makeIndexedQuad();
+    emptyRangeGeometry.setDrawRange(0, 0);
+    root.add(new THREE.Mesh(emptyRangeGeometry, visibleMaterial));
+
+    const metrics = collectSceneGraphCapacity(root);
+
+    expect(metrics.meshCount).toBe(3);
+    expect(metrics.effectiveTriangleCount).toBe(6);
+    expect(metrics.renderableMeshCount).toBe(0);
+    expect(metrics.renderableEffectiveTriangleCount).toBe(0);
+
+    geometry.dispose();
+    emptyRangeGeometry.dispose();
+    visibleMaterial.dispose();
+    invisibleMaterial.dispose();
   });
 
   it("reads renderer resource counts without presenting them as byte memory", () => {
