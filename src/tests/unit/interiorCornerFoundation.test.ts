@@ -12,6 +12,7 @@ import {
 } from "../../render/sceneSubjectRegistry";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import geometry from "../../scenes/interiorCornerGeometry";
+import { toWorld } from "../../render/rttUtils";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 
@@ -36,6 +37,19 @@ const collectDisposableSpies = (group: THREE.Group) => {
     ...[...geometries].map((resource) => vi.spyOn(resource, "dispose")),
     ...[...materials].map((resource) => vi.spyOn(resource, "dispose")),
   ];
+};
+
+const expectInteriorCornerPracticalLight = (light: THREE.PointLight) => {
+  expect(light.name).toBe("interior-corner-local-light");
+  expect(light.color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+  expect(light.intensity).toBe(5);
+  expect(light.distance).toBe(7.5);
+  expect(light.decay).toBe(2);
+  expect(light.position.toArray()).toEqual([
+    toWorld(420),
+    toWorld(geometry.room.floorY + 1310),
+    toWorld(8300),
+  ]);
 };
 
 describe("Interior Corner scene foundation", () => {
@@ -119,10 +133,7 @@ describe("Interior Corner scene foundation", () => {
       if (object instanceof THREE.PointLight) practicalLights.push(object);
     });
     expect(practicalLights).toHaveLength(1);
-    expect(practicalLights[0].color.equals(new THREE.Color("#fff1d6"))).toBe(true);
-    expect(practicalLights[0].intensity).toBe(5);
-    expect(practicalLights[0].distance).toBe(7.5);
-    expect(practicalLights[0].decay).toBe(2);
+    expectInteriorCornerPracticalLight(practicalLights[0]);
 
     geometry.focusTargets.forEach((target) => {
       const probe = group.getObjectByName(`interior-corner-focus-${target.id}`);
@@ -146,11 +157,7 @@ describe("Interior Corner scene foundation", () => {
         if (object instanceof THREE.PointLight) practicalLights.push(object);
       });
       expect(practicalLights).toHaveLength(1);
-      expect(practicalLights[0].name).toBe("interior-corner-local-light");
-      expect(practicalLights[0].color.equals(new THREE.Color("#fff1d6"))).toBe(true);
-      expect(practicalLights[0].intensity).toBe(5);
-      expect(practicalLights[0].distance).toBe(7.5);
-      expect(practicalLights[0].decay).toBe(2);
+      expectInteriorCornerPracticalLight(practicalLights[0]);
     } finally {
       disposeRegisteredRttSubject("interior-corner", group);
     }
