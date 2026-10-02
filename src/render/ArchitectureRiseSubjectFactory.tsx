@@ -36,20 +36,20 @@ const createResources = (
 ): ArchitectureRiseResources => ({
   box: new THREE.BoxGeometry(1, 1, 1),
   ground: new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
-  building: standard("#8798a6", 0.92, 0.04),
+  building: standard("#b8b5a9", 0.94),
   facade: createFocusFriendlyMaterial({
     pattern: "fine-grid",
-    primaryColor: "#b7c3c9",
-    secondaryColor: "#a7b4bd",
-    repeat: [7, 8],
+    primaryColor: "#e4e0d3",
+    secondaryColor: "#d1ccbf",
+    repeat: [5, 10],
     roughness: 0.9,
   }),
-  roof: standard("#c7d1d7", 0.78),
-  trim: standard("#e1e8eb", 0.72),
-  glass: standard("#294b5d", 0.34, 0.12),
+  roof: standard("#b6b3a8", 0.92),
+  trim: standard("#eee9dc", 0.88),
+  glass: standard("#34464c", 0.43, 0.08),
   recess: standard("#203847", 0.68),
-  pavement: standard("#697b86", 0.97),
-  groundMaterial: standard("#d2dce1", 0.99),
+  pavement: standard("#878a85", 0.98),
+  groundMaterial: standard("#c4c4bb", 0.99),
   reference: standard("#8799a5", 0.94),
   referenceLight: standard("#edf2f3", 0.97),
   focusDark: new THREE.MeshBasicMaterial({ color: "#172331" }),
@@ -82,6 +82,7 @@ const addBox = ({ name, size, position, material, parent }: BoxSpec): THREE.Mesh
 
 const addWindowBay = (
   root: THREE.Group,
+  sillDetail: THREE.Group,
   resources: ArchitectureRiseResources,
   geometry: ArchitectureRisePresentation["geometry"],
   bay: ArchitectureRisePresentation["geometry"]["architectureRiseWindowBays"][number],
@@ -130,10 +131,21 @@ const addWindowBay = (
       parent: windowGroup,
     });
   });
+
+  // Shallow stone sills give the openings a construction detail without
+  // changing the canonical glazing, frame, or facade placements.
+  addBox({
+    name: `${windowGroup.name}-stone-sill`,
+    size: [bay.width + 88, 28, 48],
+    position: [bay.x, bay.y - bay.height / 2 - frame - 14, front - 76],
+    material: resources.trim,
+    parent: sillDetail,
+  });
 };
 
 const addSideWindowBay = (
   root: THREE.Group,
+  sillDetail: THREE.Group,
   resources: ArchitectureRiseResources,
   geometry: ArchitectureRisePresentation["geometry"],
   bay: ArchitectureRisePresentation["geometry"]["architectureRiseSideWindowBays"][number],
@@ -173,6 +185,13 @@ const addSideWindowBay = (
       material: resources.trim,
       parent: group,
     });
+  });
+  addBox({
+    name: `${group.name}-stone-sill`,
+    size: [42, 24, bay.width + 72],
+    position: [sideX - 54, bay.y - bay.height / 2 - frame - 12, sideZ],
+    material: resources.trim,
+    parent: sillDetail,
   });
 };
 
@@ -242,6 +261,11 @@ const addArchitectureContext = (
   context.userData.resources = resources;
   root.add(context);
 
+  const sideWindowSillDetail = new THREE.Group();
+  sideWindowSillDetail.name = "architecture-rise-side-window-sill-detail";
+  sideWindowSillDetail.userData.resources = resources;
+  context.add(sideWindowSillDetail);
+
   const sideMass = addBox({
     name: "architecture-rise-side-return",
     size: [520, 3000, 760],
@@ -251,7 +275,7 @@ const addArchitectureContext = (
   });
   sideMass.castShadow = true;
   geometry.architectureRiseSideWindowBays.forEach((bay) =>
-    addSideWindowBay(context, resources, geometry, bay),
+    addSideWindowBay(context, sideWindowSillDetail, resources, geometry, bay),
   );
 
   [0, 1, 2, 3].forEach((index) => {
@@ -537,8 +561,12 @@ export function createArchitectureRiseGroup(
     });
   }
 
+  const frontWindowSillDetail = new THREE.Group();
+  frontWindowSillDetail.name = "architecture-rise-front-window-sill-detail";
+  frontWindowSillDetail.userData.resources = resources;
+  root.add(frontWindowSillDetail);
   geometry.architectureRiseWindowBays.forEach((bay) =>
-    addWindowBay(root, resources, geometry, bay),
+    addWindowBay(root, frontWindowSillDetail, resources, geometry, bay),
   );
   addFocusChart(root, resources, geometry);
   addFacadeFineDetail(root, resources, geometry);
