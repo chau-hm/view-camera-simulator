@@ -43,6 +43,7 @@
     "viewport": { "width": 1440, "height": 1000 },
     "deviceScaleFactor": 1,
     "renderQuality": "standard",
-    "outputPath": ".dream-loop/architecture-rise/observer-baseline.png"
+    "outputPath": ".dream-loop/architecture-rise/observer-clean.png",
+    "teachingOutputPath": ".dream-loop/architecture-rise/observer-teaching.png"
   }
 }

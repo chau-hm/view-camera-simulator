@@ -21,7 +21,7 @@ Treat current lighting, tone mapping, exposure, shadow policy, and renderer as f
 
 ## Required iteration checks
 
-1. Capture the real observer canvas with `npm run dream-loop:capture -- --pilot architecture-rise`; the capture must prove renderable metrics from the mounted registered subject, not merely scene registration or canvas color variation. Use the accepted baseline to create a locked target under ignored `.dream-loop/`.
+1. Capture the real Observer pair with `npm run dream-loop:capture -- --pilot architecture-rise`. Use the clean Observer image, whose overlays were switched off through the public UI, as the only optimization target. Keep the teaching Observer with its normal overlays for regression. Both captures must prove renderable metrics from the mounted registered subject, not merely scene registration or canvas color variation, and must record identical non-overlay state. Use the accepted clean baseline to create a locked target under ignored `.dream-loop/`.
 2. Work only within the selected manifest's allowlist. Run `npm run dream-loop:guard -- --pilot architecture-rise --base <clean-iteration-baseline>` immediately after each worker pass. A failure is a stop-and-report result; never restore forbidden edits automatically.
 3. Run focused semantic and registered-asset regression tests, recapture the observer, and review critic feedback only for visual-only changes.
 4. Ground Glass Raw and Upright are regression views, never separate visual targets. Reject critic suggestions that change protected semantics.
