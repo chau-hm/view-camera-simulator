@@ -2,7 +2,12 @@ import * as THREE from "three";
 
 const SURFACE_TEXTURE_SIZE = 128;
 
-export type ProceduralSurfacePattern = "limestone" | "cut-stone" | "concrete";
+export type ProceduralSurfacePattern =
+  | "limestone"
+  | "cut-stone"
+  | "concrete"
+  | "plaster"
+  | "wood";
 
 export type ProceduralSurfaceMaterialOptions = Readonly<{
   color: THREE.ColorRepresentation;
@@ -86,6 +91,39 @@ export const createProceduralSurfaceMaterial = ({
   const isLimestone = pattern === "limestone";
 
   const surfaceSample = (x: number, y: number) => {
+    if (pattern === "plaster") {
+      const broadNoise = tileableNoise(x, y, 16, 71) - 0.5;
+      const fineNoise = tileableNoise(x, y, 4, 73) - 0.5;
+      const trowel =
+        Math.sin(twoPi * (x + 2 * y) / SURFACE_TEXTURE_SIZE + 0.5) * 0.35 +
+        Math.sin(twoPi * (4 * x + 5 * y) / SURFACE_TEXTURE_SIZE + 1.8) * 0.15;
+      return {
+        joint: false,
+        blockTint: 0,
+        relief: trowel * 0.012 + broadNoise * 0.024 + fineNoise * 0.018,
+        variation: trowel * 1.8 + broadNoise * 4.2 + fineNoise * 2.4,
+      };
+    }
+
+    if (pattern === "wood") {
+      const broadNoise = tileableNoise(x, y, 16, 83) - 0.5;
+      const fineNoise = tileableNoise(x, y, 4, 97) - 0.5;
+      const grain = Math.sin(
+        twoPi * (
+          3 * y +
+          0.45 * Math.sin(twoPi * 2 * x / SURFACE_TEXTURE_SIZE + 0.4) +
+          0.2 * Math.sin(twoPi * 6 * x / SURFACE_TEXTURE_SIZE + 1.4)
+        ) / SURFACE_TEXTURE_SIZE,
+      );
+      const fiber = Math.sin(twoPi * 21 * y / SURFACE_TEXTURE_SIZE + broadNoise * 0.45);
+      return {
+        joint: false,
+        blockTint: 0,
+        relief: grain * 0.027 + broadNoise * 0.025 + fiber * 0.003,
+        variation: grain * 6 + broadNoise * 4 + fineNoise * 2 + fiber * 1.4,
+      };
+    }
+
     const wave =
       Math.sin(twoPi * (2 * x + 3 * y) / SURFACE_TEXTURE_SIZE + 0.8) * 0.42 +
       Math.sin(twoPi * (5 * x - y) / SURFACE_TEXTURE_SIZE + 2.1) * 0.27 +
@@ -134,7 +172,11 @@ export const createProceduralSurfaceMaterial = ({
       albedo[offset + 2] = clampByte(channels[2]);
       albedo[offset + 3] = 255;
 
-      const roughnessValue = pattern === "cut-stone" ? 224 : pattern === "concrete" ? 236 : 239;
+      const roughnessValue =
+        pattern === "cut-stone" ? 224 :
+          pattern === "concrete" ? 236 :
+            pattern === "plaster" ? 244 :
+              pattern === "wood" ? 211 : 239;
       roughnessMap[offset] = clampByte(roughnessValue + variation * 1.3 + (joint ? 8 : 0));
       roughnessMap[offset + 1] = roughnessMap[offset];
       roughnessMap[offset + 2] = roughnessMap[offset];
