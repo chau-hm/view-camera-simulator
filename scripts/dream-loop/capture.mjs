@@ -42,26 +42,27 @@ if (
   manifest.pilotId !== pilotId ||
   manifest.optimizationSurface?.id !== "observer-scene-viewport" ||
   typeof manifest.capture?.outputPath !== "string" ||
-  !manifest.capture.outputPath.startsWith(".dream-loop/")
+  !manifest.capture.outputPath.startsWith(".dream-loop/") ||
+  typeof manifest.capture?.teachingOutputPath !== "string" ||
+  !manifest.capture.teachingOutputPath.startsWith(".dream-loop/") ||
+  manifest.capture.outputPath === manifest.capture.teachingOutputPath
 ) {
-  console.error("Pilot manifest does not declare a safe observer capture target: " + pilotId);
-  process.exit(2);
+console.error("Pilot manifest does not declare distinct clean and teaching observer capture targets: " + pilotId);
+process.exit(2);
 }
 
 const repositoryRoot = gitText(["rev-parse", "--show-toplevel"], process.cwd());
-const outputPath = resolve(repositoryRoot, manifest.capture.outputPath);
-const outputRelative = relative(repositoryRoot, outputPath);
-if (
-  isAbsolute(outputRelative) ||
-  outputRelative === ".." ||
-  outputRelative.startsWith(".." + sep) ||
-  !outputRelative.startsWith(".dream-loop" + sep)
-) {
-  console.error("Pilot capture output must remain inside the repository.");
+const cleanOutputPath = resolveDreamLoopOutput(manifest.capture.outputPath);
+const teachingOutputPath = resolveDreamLoopOutput(manifest.capture.teachingOutputPath);
+if (!cleanOutputPath || !teachingOutputPath || cleanOutputPath === teachingOutputPath) {
+  console.error("Pilot capture outputs must be distinct paths inside the repository's .dream-loop directory.");
   process.exit(2);
 }
 
-await mkdir(dirname(outputPath), { recursive: true });
+await Promise.all([
+  mkdir(dirname(cleanOutputPath), { recursive: true }),
+  mkdir(dirname(teachingOutputPath), { recursive: true }),
+]);
 const playwrightCli = resolve(repositoryRoot, "node_modules/playwright/cli.js");
 try {
   await access(playwrightCli);
@@ -87,7 +88,8 @@ const child = spawn(
       ...process.env,
       DREAM_LOOP_CAPTURE: "1",
       DREAM_LOOP_CAPTURE_MANIFEST: manifestPath,
-      DREAM_LOOP_CAPTURE_OUTPUT: outputPath,
+      DREAM_LOOP_CAPTURE_OUTPUT: cleanOutputPath,
+      DREAM_LOOP_CAPTURE_TEACHING_OUTPUT: teachingOutputPath,
       VITE_BASE_PATH: "/",
     },
   },
@@ -108,4 +110,18 @@ child.on("exit", (code, signal) => {
 
 function gitText(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+}
+
+function resolveDreamLoopOutput(outputPath) {
+  const absolutePath = resolve(repositoryRoot, outputPath);
+  const outputRelative = relative(repositoryRoot, absolutePath);
+  if (
+    isAbsolute(outputRelative) ||
+    outputRelative === ".." ||
+    outputRelative.startsWith(".." + sep) ||
+    !outputRelative.startsWith(".dream-loop" + sep)
+  ) {
+    return null;
+  }
+  return absolutePath;
 }
