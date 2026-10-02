@@ -19,6 +19,14 @@ const materialOptions = {
   normalStrength: 0.3,
 } as const;
 
+const surfacePatterns = [
+  "limestone",
+  "cut-stone",
+  "concrete",
+  "plaster",
+  "wood",
+] as const satisfies readonly ProceduralSurfacePattern[];
+
 const disposeMaterial = (material: THREE.MeshStandardMaterial): void => {
   const root = new THREE.Group();
   root.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material));
@@ -36,9 +44,10 @@ const mapBytes = (material: THREE.MeshStandardMaterial): Uint8Array[] => {
 };
 
 describe("procedural surface materials", () => {
-  it("generates identical albedo, roughness, and normal bytes for identical options", () => {
-    const first = createProceduralSurfaceMaterial(materialOptions);
-    const second = createProceduralSurfaceMaterial(materialOptions);
+  it.each(surfacePatterns)("generates deterministic map bytes for the %s pattern", (pattern) => {
+    const options = { ...materialOptions, pattern };
+    const first = createProceduralSurfaceMaterial(options);
+    const second = createProceduralSurfaceMaterial(options);
 
     try {
       mapBytes(first).forEach((bytes, index) => {
@@ -88,8 +97,7 @@ describe("procedural surface materials", () => {
   });
 
   it("keeps each supported surface pattern structurally distinct", () => {
-    const patterns: ProceduralSurfacePattern[] = ["limestone", "cut-stone", "concrete"];
-    const materials = patterns.map((pattern) =>
+    const materials = surfacePatterns.map((pattern) =>
       createProceduralSurfaceMaterial({ ...materialOptions, pattern }),
     );
 
@@ -97,7 +105,7 @@ describe("procedural surface materials", () => {
       const signatures = materials.map((material) =>
         mapBytes(material).map((bytes) => Array.from(bytes).join(",")).join("|"),
       );
-      expect(new Set(signatures).size).toBe(3);
+      expect(new Set(signatures).size).toBe(surfacePatterns.length);
     } finally {
       materials.forEach(disposeMaterial);
     }
