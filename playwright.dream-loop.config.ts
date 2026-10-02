@@ -1,20 +1,28 @@
 import { defineConfig, devices } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
 const dreamLoopPort = 4176;
-const manifestPath =
-  process.env.DREAM_LOOP_CAPTURE_MANIFEST ??
-  fileURLToPath(new URL("./scripts/dream-loop/pilots/architecture-rise.json", import.meta.url));
+const manifestPath = process.env.DREAM_LOOP_CAPTURE_MANIFEST;
+if (!manifestPath) {
+  throw new Error("The Dream Loop capture runner must select a pilot manifest.");
+}
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
   pilotId: string;
+  sceneId: string;
+  assetKey: string;
+  optimizationSurface: { id: string };
   capture: {
     viewport: { width: number; height: number };
     deviceScaleFactor: number;
   };
 };
-if (manifest.pilotId !== "architecture-rise") {
-  throw new Error("The Dream Loop browser config only supports the Architecture Rise pilot.");
+if (
+  !manifest.pilotId ||
+  !manifest.sceneId ||
+  !manifest.assetKey ||
+  manifest.optimizationSurface?.id !== "observer-scene-viewport"
+) {
+  throw new Error("The selected Dream Loop pilot manifest is incomplete.");
 }
 
 export default defineConfig({

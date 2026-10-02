@@ -17,14 +17,14 @@ The target image is a visual optimization reference. It may guide material appea
 
 Do not alter canonical camera state, lens or film geometry, focus geometry or targets, composition targets, movement signs or limits, scene calibration, task thresholds or definitions, scene identity, route/catalog publication, image-circle physics, Ground Glass Raw/Upright semantics or film mapping, renderer selection, or `TeachingLighting` architecture to match a target.
 
-Treat current lighting, tone mapping, exposure, shadow policy, and renderer as fixed capture conditions. Do not change geometry to compensate for lighting. Keep Architecture Rise in the existing `sceneAssetRegistry` path, preserve its instance-owned resource lifecycle, and share the registered implementation across observer and RTT consumers.
+Treat current lighting, tone mapping, exposure, shadow policy, and renderer as fixed capture conditions. Do not change geometry to compensate for lighting. Keep the selected pilot in its existing `sceneAssetRegistry` path, preserve its resource lifecycle, and share the registered implementation across observer and RTT consumers.
 
 ## Required iteration checks
 
-1. Capture the real Observer pair with `npm run dream-loop:capture -- --pilot architecture-rise`. Use the clean Observer image, whose overlays were switched off through the public UI, as the only optimization target. Keep the teaching Observer with its normal overlays for regression. Both captures must prove renderable metrics from the mounted registered subject, not merely scene registration or canvas color variation, and must record identical non-overlay state. Use the accepted clean baseline to create a locked target under ignored `.dream-loop/`.
-2. Work only within the selected manifest's allowlist. Run `npm run dream-loop:guard -- --pilot architecture-rise --base <clean-iteration-baseline>` immediately after each worker pass. A failure is a stop-and-report result; never restore forbidden edits automatically.
+1. Capture the selected manifest's Observer pair with `npm run dream-loop:capture -- --pilot <pilot-id>`. Use the clean Observer image, whose overlays were switched off through the public UI, as the only optimization target. Keep the teaching Observer with its normal overlays for regression. Both captures must prove renderable metrics from the mounted registered subject, not merely scene registration or canvas color variation, and must record identical non-overlay state. Use the clean baseline to create a locked target under ignored `.dream-loop/<pilot-id>/`.
+2. Work only within the selected manifest's allowlist. Run `npm run dream-loop:guard -- --pilot <pilot-id> --base <worker-baseline-sha>` immediately after each worker pass. A failure is a stop-and-report result; never restore forbidden edits automatically.
 3. Run focused semantic and registered-asset regression tests, recapture the observer, and review critic feedback only for visual-only changes.
 4. Ground Glass Raw and Upright are regression views, never separate visual targets. Reject critic suggestions that change protected semantics.
 5. Stop after three visual implementation/critique rounds and request human review.
 
-Do not use this skill to run an actual production visual redesign before the shared lighting-profile architecture is established and the user authorizes the pilot.
+Do not start a visual iteration until the shared lighting-profile architecture is established and the user authorizes the selected pilot. Preserve the pilot's declared material-only or broader appearance scope. Never let a target override simulation semantics, registered asset ownership, or fixed lighting.

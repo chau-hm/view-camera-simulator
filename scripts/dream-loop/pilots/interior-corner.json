@@ -1,0 +1,54 @@
+{
+  "pilotId": "interior-corner",
+  "sceneId": "interior-corner",
+  "assetKey": "interior-corner-subject",
+  "implementationPath": "src/render/InteriorCornerSubjectFactory.tsx",
+  "optimizationSurface": {
+    "id": "observer-scene-viewport",
+    "route": "/simulator/free/interior-corner",
+    "sceneSelector": "[data-testid=\"scene-canvas\"]",
+    "canvasSelector": "canvas"
+  },
+  "writeScope": {
+    "allowedPaths": [
+      "src/render/InteriorCornerSubjectFactory.tsx",
+      ".dream-loop/**"
+    ],
+    "protectedPaths": [
+      "src/core/**",
+      "src/app/**",
+      "src/components/**",
+      "src/state/**",
+      "src/scenes/**",
+      "public/**",
+      "src/render/backend/**",
+      "src/render/GroundGlassRTT.tsx",
+      "src/render/groundGlass*",
+      "src/render/GroundGlass*",
+      "src/render/TeachingLighting.tsx",
+      "src/render/presentationLighting.ts",
+      "src/render/presentationLightingContract.ts",
+      "src/render/ProceduralSurfaceMaterials.ts",
+      "src/render/TeachingMaterials.ts",
+      "src/render/TeachingTextures.ts",
+      "src/render/MacroSubjectMaterials.ts",
+      "src/render/assets/sceneAssetRegistry.ts",
+      "src/render/sceneSubjectRegistry.tsx",
+      "src/render/SceneRenderer.tsx"
+    ]
+  },
+  "verificationViews": [
+    { "id": "observer", "role": "optimization-target" },
+    { "id": "observer-teaching", "role": "regression-only" },
+    { "id": "ground-glass-processed", "role": "regression-only" },
+    { "id": "ground-glass-raw", "role": "regression-only" },
+    { "id": "ground-glass-upright", "role": "regression-only" }
+  ],
+  "capture": {
+    "viewport": { "width": 1440, "height": 1000 },
+    "deviceScaleFactor": 1,
+    "renderQuality": "standard",
+    "outputPath": ".dream-loop/interior-corner/observer-clean.png",
+    "teachingOutputPath": ".dream-loop/interior-corner/observer-teaching.png"
+  }
+}

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const pilotsDirectory = new URL("./pilots/", import.meta.url);
-const usage = "Usage: npm run dream-loop:guard -- --pilot architecture-rise --base <iteration-baseline-commit>";
+const usage = "Usage: npm run dream-loop:guard -- --pilot <pilot-id> --base <iteration-baseline-commit>";
 
 const parseArgs = (args) => {
   const options = {};

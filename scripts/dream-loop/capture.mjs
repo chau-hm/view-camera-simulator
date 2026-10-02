@@ -4,7 +4,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const usage = "Usage: npm run dream-loop:capture -- --pilot architecture-rise";
+const usage = "Usage: npm run dream-loop:capture -- --pilot <pilot-id>";
 
 const parsePilot = (args) => {
   if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) return null;
@@ -40,7 +40,12 @@ try {
 
 if (
   manifest.pilotId !== pilotId ||
+  typeof manifest.sceneId !== "string" ||
+  typeof manifest.assetKey !== "string" ||
   manifest.optimizationSurface?.id !== "observer-scene-viewport" ||
+  typeof manifest.optimizationSurface?.route !== "string" ||
+  typeof manifest.optimizationSurface?.sceneSelector !== "string" ||
+  typeof manifest.optimizationSurface?.canvasSelector !== "string" ||
   typeof manifest.capture?.outputPath !== "string" ||
   !manifest.capture.outputPath.startsWith(".dream-loop/") ||
   typeof manifest.capture?.teachingOutputPath !== "string" ||

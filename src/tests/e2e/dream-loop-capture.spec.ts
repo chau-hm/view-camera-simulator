@@ -2,9 +2,22 @@ import { Buffer } from "node:buffer";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
 import { expect, test } from "@playwright/test";
-import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { getSceneById } from "../../scenes/definitions";
 import type { SceneCapacitySnapshot } from "../../render/sceneCapacityProfiling";
+import type { CameraMovementField } from "../../types/scene";
 import { isDreamLoopSubjectCaptureReady } from "../helpers/dreamLoopCaptureReadiness";
+
+const defaultPublicMovementFields: readonly CameraMovementField[] = [
+  "frontRiseMm",
+  "frontTiltDeg",
+  "frontSwingDeg",
+];
+
+const publicMovementLabels: Partial<Record<CameraMovementField, string>> = {
+  frontRiseMm: "Rise",
+  frontTiltDeg: "Tilt",
+  frontSwingDeg: "Swing",
+};
 
 type DreamLoopManifest = {
   pilotId: string;
@@ -25,7 +38,7 @@ type DreamLoopManifest = {
   };
 };
 
-test("Dream Loop pilot captures teaching and clean Architecture Rise observer views", async ({ page }) => {
+test("Dream Loop pilot captures teaching and clean observer views", async ({ page }) => {
   test.skip(process.env.DREAM_LOOP_CAPTURE !== "1", "Run through dream-loop:capture.");
 
   const manifestPath = process.env.DREAM_LOOP_CAPTURE_MANIFEST;
@@ -38,12 +51,13 @@ test("Dream Loop pilot captures teaching and clean Architecture Rise observer vi
   const manifest = JSON.parse(
     await readFile(manifestPath as string, "utf8"),
   ) as DreamLoopManifest;
-  expect(manifest).toMatchObject({
-    pilotId: "architecture-rise",
-    sceneId: "architecture-rise",
-    assetKey: "architecture-rise-subject",
-    optimizationSurface: { id: "observer-scene-viewport" },
-  });
+  const sceneDefinition = getSceneById(manifest.sceneId);
+  expect(sceneDefinition, "pilot scene resolves from the canonical scene registry").toBeDefined();
+  if (!sceneDefinition) throw new Error("Unknown Dream Loop scene: " + manifest.sceneId);
+  expect(sceneDefinition.id).toBe(manifest.sceneId);
+  expect(manifest.pilotId).toMatch(/^[a-z0-9-]+$/);
+  expect(manifest.assetKey).toMatch(/^[a-z0-9-]+$/);
+  expect(manifest.optimizationSurface.id).toBe("observer-scene-viewport");
   expect(manifest.capture.viewport.width).toBeGreaterThan(0);
   expect(manifest.capture.viewport.height).toBeGreaterThan(0);
   expect(manifest.capture.deviceScaleFactor).toBeGreaterThan(0);
@@ -82,23 +96,41 @@ test("Dream Loop pilot captures teaching and clean Architecture Rise observer vi
   }));
   const focus = page.getByRole("slider", { name: "Focus distance" });
   const focusMinimum = await focus.getAttribute("min");
+  const focusMaximum = await focus.getAttribute("max");
   expect(focusMinimum).not.toBeNull();
+  expect(focusMaximum).not.toBeNull();
   await page.getByRole("button", { name: "Reset movements", exact: true }).click();
   await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
   await expect(scene).toHaveAttribute("data-view-focus", "scene");
-  await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue(
-    String(architectureRiseScene.cameraPreset.frontRiseMm),
+  const movementFields =
+    sceneDefinition.movementCapabilities?.available ?? defaultPublicMovementFields;
+  expect(movementFields.length).toBeGreaterThan(0);
+  for (const field of movementFields) {
+    const label = publicMovementLabels[field];
+    if (!label) {
+      throw new Error("Dream Loop capture has no public slider mapping for movement: " + field);
+    }
+    const control = page.getByRole("slider", { name: label, exact: true });
+    await expect(control, "scene-declared movement control is rendered: " + field).toBeVisible();
+    await expect(control).toHaveValue(String(sceneDefinition.cameraPreset[field] ?? 0));
+  }
+  const focusMinValue = Number(focusMinimum);
+  const focusMaxValue = Number(focusMaximum);
+  expect(Number.isFinite(focusMinValue)).toBe(true);
+  expect(Number.isFinite(focusMaxValue)).toBe(true);
+  const resetUsesScenePreset = Boolean(sceneDefinition.movementCapabilities) ||
+    sceneDefinition.cameraControlPolicy?.movement === "fixed";
+  const focusResetValue = resetUsesScenePreset
+    ? sceneDefinition.cameraPreset.focusDistanceMm
+    : focusMinValue;
+  const expectedFocus = Math.max(
+    focusMinValue,
+    Math.min(focusMaxValue, focusResetValue),
   );
-  await expect(page.getByRole("slider", { name: "Tilt" })).toHaveValue(
-    String(architectureRiseScene.cameraPreset.frontTiltDeg),
-  );
-  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue(
-    String(architectureRiseScene.cameraPreset.frontSwingDeg),
-  );
-  await expect(focus).toHaveValue(focusMinimum as string);
+  await expect(focus).toHaveValue(String(expectedFocus));
   await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute(
     "data-selected-aperture",
-    String(architectureRiseScene.cameraPreset.aperture),
+    String(sceneDefinition.cameraPreset.aperture),
   );
   await expect(scene).toHaveAttribute(
     "data-observer-camera-position",
@@ -131,13 +163,13 @@ test("Dream Loop pilot captures teaching and clean Architecture Rise observer vi
     ),
     {
       timeout: 20_000,
-      message: "Expected renderable viewport subject metrics from the mounted Architecture Rise registered-subject root",
+      message: "Expected renderable viewport subject metrics from the selected mounted registered-subject root",
     },
   ).toBe(true);
   const subjectSnapshot = await readCapacitySnapshot();
   if (!isDreamLoopSubjectCaptureReady(subjectSnapshot, manifest.sceneId)) {
     throw new Error(
-      "The mounted Architecture Rise subject did not provide renderable capacity evidence: " +
+      "The mounted " + manifest.sceneId + " subject did not provide renderable capacity evidence: " +
         JSON.stringify(subjectSnapshot),
     );
   }
@@ -164,9 +196,20 @@ test("Dream Loop pilot captures teaching and clean Architecture Rise observer vi
     viewFocus: await scene.getAttribute("data-view-focus"),
     cameraPosition: await scene.getAttribute("data-observer-camera-position"),
     orbitTarget: await scene.getAttribute("data-orbit-target"),
-    rise: await page.getByRole("slider", { name: "Rise" }).inputValue(),
-    tilt: await page.getByRole("slider", { name: "Tilt" }).inputValue(),
-    swing: await page.getByRole("slider", { name: "Swing" }).inputValue(),
+    movements: Object.fromEntries(
+      await Promise.all(
+        movementFields.map(async (field) => {
+          const label = publicMovementLabels[field];
+          if (!label) {
+            throw new Error("Dream Loop capture has no public slider mapping for movement: " + field);
+          }
+          return [
+            field,
+            await page.getByRole("slider", { name: label, exact: true }).inputValue(),
+          ];
+        }),
+      ),
+    ),
     focus: await focus.inputValue(),
     aperture: await page.getByRole("radiogroup", { name: "Aperture" })
       .getAttribute("data-selected-aperture"),
