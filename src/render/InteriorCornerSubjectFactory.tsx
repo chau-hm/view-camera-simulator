@@ -5,6 +5,7 @@ import {
   createFocusFriendlyMaterial,
   disposeTeachingSubjectResources,
 } from "./TeachingMaterials";
+import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 
 type InteriorCornerMaterials = {
   wall: THREE.Material;
@@ -344,33 +345,57 @@ export const createInteriorCornerGroup = (
   root.name = "interior-corner-subject";
 
   const materials: InteriorCornerMaterials = {
-    wall: createFocusFriendlyMaterial({
-      pattern: "fine-grid",
-      primaryColor: "#d8d2c5",
-      secondaryColor: "#cfc7b8",
-      repeat: [4, 6],
+    wall: createProceduralSurfaceMaterial({
+      color: "#d8d2c5",
+      pattern: "plaster",
+      repeat: [3, 5],
       roughness: 0.96,
+      normalStrength: 0.18,
     }),
-    ceiling: createStandardMaterial("#e8e3d9", 0.98),
-    floor: createStandardMaterial("#8e7963", 0.94),
-    trim: createStandardMaterial("#f0ece3", 0.84),
-    wood: createFocusFriendlyMaterial({
-      pattern: "linear-grain",
-      primaryColor: "#594c40",
-      secondaryColor: "#765f4d",
-      repeat: [2, 10],
-      roughness: 0.76,
+    ceiling: createProceduralSurfaceMaterial({
+      color: "#e8e3d9",
+      pattern: "plaster",
+      repeat: [2, 3],
+      roughness: 0.98,
+      normalStrength: 0.1,
+    }),
+    floor: createProceduralSurfaceMaterial({
+      color: "#8e7963",
+      pattern: "wood",
+      repeat: [0.8, 1.7],
+      roughness: 0.985,
+      normalStrength: 0.035,
+    }),
+    trim: createProceduralSurfaceMaterial({
+      color: "#f0ece3",
+      pattern: "plaster",
+      repeat: [2, 4],
+      roughness: 0.84,
+      normalStrength: 0.1,
+    }),
+    wood: createProceduralSurfaceMaterial({
+      color: "#665244",
+      pattern: "wood",
+      repeat: [1.8, 7],
+      roughness: 0.8,
+      normalStrength: 0.18,
     }),
     artwork: createStandardMaterial("#66808a", 0.72),
     artworkAccent: createStandardMaterial("#c48b62", 0.7),
     fabric: createFocusFriendlyMaterial({
       pattern: "subtle-checker",
       primaryColor: "#6d7b78",
-      secondaryColor: "#788782",
+      secondaryColor: "#707d79",
       repeat: [8, 8],
-      roughness: 0.98,
+      roughness: 0.99,
     }),
-    rug: createStandardMaterial("#b7a995", 1),
+    rug: createFocusFriendlyMaterial({
+      pattern: "subtle-checker",
+      primaryColor: "#b7a995",
+      secondaryColor: "#9c8d79",
+      repeat: [10, 10],
+      roughness: 1,
+    }),
     metal: createStandardMaterial("#7f8b88", 0.42),
   };
 
