@@ -30,8 +30,19 @@ export type WorldIlluminationSource =
   | WorldIlluminationPointSource
   | WorldIlluminationDirectionalSource;
 
+export type WorldProceduralSkyGroundEnvironment = Readonly<{
+  id: string;
+  kind: "procedural-sky-ground";
+  zenithColor: string;
+  skyHorizonColor: string;
+  groundHorizonColor: string;
+  nadirColor: string;
+  intensity: number;
+}>;
+
 export type ResolvedWorldIllumination = Readonly<{
   sources: readonly WorldIlluminationSource[];
+  environment?: WorldProceduralSkyGroundEnvironment;
 }>;
 
 export const EMPTY_WORLD_ILLUMINATION: ResolvedWorldIllumination = Object.freeze({
