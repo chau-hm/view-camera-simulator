@@ -58,7 +58,10 @@ describe("Observer world illumination component", () => {
     expect(directionalChildren).toHaveLength(2);
     const targetElement = directionalChildren[0];
     const lightElement = directionalChildren[1];
-    if (!React.isValidElement(targetElement) || !React.isValidElement(lightElement)) {
+    if (
+      !React.isValidElement<{ object: THREE.Object3D; position: [number, number, number] }>(targetElement) ||
+      !React.isValidElement(lightElement)
+    ) {
       throw new Error("Expected an explicit target object and directional light");
     }
 
@@ -88,7 +91,7 @@ describe("Observer world illumination component", () => {
     const rerenderedTargetElement = React.Children.toArray(
       rerenderedTree.props.children,
     )[0];
-    if (!React.isValidElement(rerenderedTargetElement)) {
+    if (!React.isValidElement<{ object: THREE.Object3D }>(rerenderedTargetElement)) {
       throw new Error("Expected the stable directional target primitive");
     }
     expect(rerenderedTargetElement.props.object).toBe(targetObject);
