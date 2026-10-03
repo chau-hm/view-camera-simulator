@@ -1,12 +1,8 @@
-import { useMemo } from "react";
 import { resolveSceneWorldIllumination } from "../scenes/illumination/sceneWorldIllumination";
 import { worldIlluminationPointToWorld } from "./worldIlluminationContract";
 
 export const WorldIllumination = ({ sceneId }: { sceneId: string }) => {
-  const illumination = useMemo(
-    () => resolveSceneWorldIllumination(sceneId),
-    [sceneId],
-  );
+  const illumination = resolveSceneWorldIllumination(sceneId);
 
   return (
     <>
