@@ -9,6 +9,7 @@ import {
   worldIlluminationDirectionalToWorld,
   worldIlluminationPointToWorld,
 } from "./worldIlluminationContract";
+import { WorldEnvironment } from "./WorldEnvironment";
 
 const assertNever = (source: never): never => {
   throw new Error(`Unsupported world illumination source: ${String(source)}`);
@@ -76,6 +77,12 @@ export const WorldIllumination = ({ sceneId }: { sceneId: string }) => {
   return (
     <>
       {illumination.sources.map(worldIlluminationElement)}
+      {illumination.environment ? (
+        <WorldEnvironment
+          key={illumination.environment.id}
+          environment={illumination.environment}
+        />
+      ) : null}
     </>
   );
 };

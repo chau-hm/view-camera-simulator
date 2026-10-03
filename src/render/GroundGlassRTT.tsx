@@ -81,6 +81,11 @@ import {
   disposeWorldIlluminationRig,
   type WorldIlluminationRig,
 } from "./worldIlluminationRig";
+import {
+  createWorldEnvironmentRig,
+  disposeWorldEnvironmentRig,
+  type WorldEnvironmentRig,
+} from "./worldEnvironmentRig";
 import { resolveSceneWorldIllumination } from "../scenes/illumination/sceneWorldIllumination";
 import { resolveGroundGlassCoverageRenderState } from "./groundGlassCoverage";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
@@ -184,6 +189,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   focalLengthMmRef.current = focalLengthMm;
   const lightingRigRef = React.useRef<PresentationLightingRig | null>(null);
   const worldIlluminationRigRef = React.useRef<WorldIlluminationRig | null>(null);
+  const worldEnvironmentRigRef = React.useRef<WorldEnvironmentRig | null>(null);
   const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality });
   const inspectionWindowRef = React.useRef<GroundGlassInspectionWindow>(
@@ -569,11 +575,19 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     // Shared teaching lighting keeps the viewport and RTT on the same
     // restrained hemisphere/key-light baseline. Scene registrations may
     // resolve distinct real/virtual placements around their scene target.
+    const worldIllumination = resolveSceneWorldIllumination(resolvedSceneId);
     lightingRigRef.current = createPresentationLightingRig(scene);
     worldIlluminationRigRef.current = createWorldIlluminationRig(
       scene,
-      resolveSceneWorldIllumination(resolvedSceneId),
+      worldIllumination,
     );
+    worldEnvironmentRigRef.current = worldIllumination.environment
+      ? createWorldEnvironmentRig(
+          scene,
+          gl as unknown as WebGLRenderer,
+          worldIllumination.environment,
+        )
+      : null;
 
     return () => {
       try {
@@ -620,6 +634,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         if (worldIlluminationRig) {
           disposeWorldIlluminationRig(scene, worldIlluminationRig);
           worldIlluminationRigRef.current = null;
+        }
+        const worldEnvironmentRig = worldEnvironmentRigRef.current;
+        if (worldEnvironmentRig) {
+          disposeWorldEnvironmentRig(scene, worldEnvironmentRig);
+          worldEnvironmentRigRef.current = null;
         }
         if (offscreenScene.current === scene) offscreenScene.current = null;
         if (groundGlassCamera.current === camera) groundGlassCamera.current = null;

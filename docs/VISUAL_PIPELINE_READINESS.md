@@ -2,7 +2,9 @@
 
 This decision record describes the rendering boundary at the post-SA7 baseline
 `232de05d40579d4a64592e5481bc40edf3b95fd7`. It prepares the renderer and
-evidence path for scene-quality work; it does not change scene appearance.
+evidence path for scene-quality work. PR J later added one opt-in procedural
+environment contribution to Architecture Rise; it did not change canonical
+simulation or teaching state.
 
 ## Runtime Ground Glass renderer evidence
 
@@ -36,8 +38,9 @@ Ground Glass runtime report:
   `WebGPURenderer` does not make it an active application backend.
 - Current scene asset factories use `MeshStandardMaterial` on lit surfaces;
   `MeshPhysicalMaterial` remains a possible asset-level choice.
-- The renderer can support environment lighting, but the application has no
-  shared environment-lighting setup today.
+- Architecture Rise opts into one procedural sky/ground environment recipe.
+  Observer and Ground Glass create separate renderer-owned PMREM resources;
+  the application still has no global environment or visible sky system.
 - There is no application-wide post-processing stack today.
 - `presentationLightingContract.ts` defines the single active teaching-light
   recipe used by both the Observer React rig and the Ground Glass imperative rig.
@@ -111,9 +114,11 @@ geometry. Observer and Ground Glass each instantiate their own renderer light
 objects from the same renderer-neutral source list. The registered subjects
 contain neither source. The shared teaching HemisphereLight and DirectionalLight
 remain presentation assist, separate from represented-world illumination.
-Other production scenes still resolve no world sources. Source categories are
-compositional, but no production scene currently mixes them; a mixed natural +
-artificial source list is covered only by a synthetic rig test.
+The optional procedural environment is a separate contract field, not a light
+source: Architecture Rise alone opts in; Interior Corner and other production
+scenes remain environment-free. Source categories are compositional, but no
+production scene currently mixes natural and artificial sources; that mixture
+is covered only by a synthetic rig test.
 
 [`presentationLightingContract.ts`](../src/render/presentationLightingContract.ts)
 owns the one active `teaching-default` presentation recipe. Its profile is
@@ -157,11 +162,24 @@ future decision; this architecture does not implement an exposure model.
 Natural and artificial physical sources may add together. The Architecture
 Rise directional source is fixed in scene coordinates, uses the canonical
 facade as its target, and does not cast shadows; natural-source shadowing has
-not been validated. PR I adds no sky, moon, HDRI/environment, photometric unit,
-or exposure model. Its restrained source is separate from the unchanged
+not been validated. PR J adds a deterministic 128×64 sRGB procedural source,
+converted by Three.js r186 `PMREMGenerator` to a linear-sRGB CubeUV environment
+for `scene.environment`; it does not assign `scene.background` or render a
+visible sky. The same recipe creates one independent PMREM target per renderer,
+and the adapters dispose their source and generator after conversion, then
+restore prior scene environment state and dispose the owned target at cleanup.
+The environment is an uncalibrated low-frequency reflection/illumination
+context: it makes no photometric claim and is not a substitute for the unchanged
 `teaching-default` presentation profile. The existing Ground Glass
 `resolveGroundGlassNaturalIlluminationRenderState` describes optical relative
 illumination/falloff, not scene-world natural light.
+
+At normal Observer scale, the Architecture Rise glazing remained dark after two
+bounded recipe passes; the environment lifted broad opaque surfaces more than it
+improved useful glass reflections. Processed Ground Glass showed the same broad
+lift. This does not establish a texture-file requirement. Interior Corner has
+no environment and its clean, teaching, Processed, Raw, Upright, and raw-RTT
+control captures remained byte-identical.
 
 ## Ground Glass migration seam
 
@@ -220,11 +238,13 @@ adds no arbitrary FPS or scene-complexity pass/fail threshold.
 
 ## Current rendering boundary
 
-The current WebGL renderer supports the validated procedural-material and
-world-illumination work. PR I established a fixed natural DirectionalLight path
-for Architecture Rise, but did not validate natural world shadows,
-sky/environment illumination or reflections, physical exposure or metering, or
-WebGPU-specific rendering.
+The current WebGL renderer supports the validated procedural-material,
+world-light, and procedural environment contribution. PR I established a
+fixed natural DirectionalLight path for Architecture Rise; PR J added a
+low-frequency reflection/illumination environment without a visible sky. The
+pilot did not validate natural world shadows, calibrated environment values,
+physical exposure or metering, or WebGPU-specific rendering. At normal scale,
+the tested environment did not materially resolve the dark glazing.
 
 Select further work from observed visual and teaching limitations rather than
 following a mandatory renderer-migration sequence. WebGPU remains conditional on

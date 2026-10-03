@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import React from "react";
 import { act, cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { resolveGroundGlassRelativeIlluminance } from "../../core/optics/groundGlassIlluminance";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
@@ -36,6 +36,7 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -89,6 +90,24 @@ vi.mock("@react-three/fiber", () => ({
   },
   useThree: () => ({ gl: fiberTestState.gl }),
 }));
+
+const createTestPmremTarget = () => {
+  const target = new THREE.WebGLRenderTarget(336, 128, {
+    format: THREE.RGBAFormat,
+    type: THREE.HalfFloatType,
+    colorSpace: THREE.LinearSRGBColorSpace,
+    depthBuffer: false,
+  });
+  target.texture.mapping = THREE.CubeUVReflectionMapping;
+  return target;
+};
+
+beforeEach(() => {
+  // GroundGlassRTT uses a deliberately lightweight fake WebGL renderer here.
+  // PMREM conversion itself is covered by the environment rig tests/browser capture.
+  vi.spyOn(THREE.PMREMGenerator.prototype, "fromEquirectangular")
+    .mockImplementation(createTestPmremTarget);
+});
 
 vi.mock("../../render/groundGlassPipeline", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../render/groundGlassPipeline")>();
@@ -194,6 +213,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         candidate.getObjectByName("interior-corner-subject") !== undefined,
     );
     if (!sourceScene) throw new Error("Expected the mounted Ground Glass source scene");
+    expect(sourceScene.environment).toBeNull();
     const subject = sourceScene.getObjectByName("interior-corner-subject");
     if (!subject) throw new Error("Expected the registered Interior Corner subject");
     const pointLights: THREE.PointLight[] = [];
@@ -250,6 +270,11 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         candidate.getObjectByName("architecture-rise-subject") !== undefined,
     );
     if (!sourceScene) throw new Error("Expected the mounted Ground Glass source scene");
+    expect(sourceScene.environment).toBeInstanceOf(THREE.Texture);
+    expect(sourceScene.environmentIntensity).toBe(
+      resolveSceneWorldIllumination(scene.id).environment?.intensity,
+    );
+    expect((sourceScene.background as THREE.Color).equals(new THREE.Color("#dfe5ec"))).toBe(true);
     const subject = sourceScene.getObjectByName("architecture-rise-subject");
     if (!subject) throw new Error("Expected the registered Architecture Rise subject");
 

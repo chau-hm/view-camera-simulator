@@ -84,6 +84,27 @@ describe("world illumination contract", () => {
     });
   });
 
+  it("resolves one immutable procedural environment only for Architecture Rise", () => {
+    const architecture = resolveSceneWorldIllumination("architecture-rise");
+    expect(architecture.environment).toEqual({
+      id: "architecture-rise-procedural-daylight-environment",
+      kind: "procedural-sky-ground",
+      zenithColor: "#f2f2ee",
+      skyHorizonColor: "#737d80",
+      groundHorizonColor: "#686b65",
+      nadirColor: "#3f4540",
+      intensity: 0.95,
+    });
+    expect(Object.isFrozen(architecture)).toBe(true);
+    expect(Object.isFrozen(architecture.sources)).toBe(true);
+    expect(Object.isFrozen(architecture.environment)).toBe(true);
+
+    expect(resolveSceneWorldIllumination("interior-corner").environment).toBeUndefined();
+    expect(resolveSceneWorldIllumination("table-tilt").environment).toBeUndefined();
+    expect(resolveSceneWorldIllumination("interior-corner").sources).toHaveLength(1);
+    expect(resolveSceneWorldIllumination("table-tilt")).toBe(EMPTY_WORLD_ILLUMINATION);
+  });
+
   it.each([
     "table-tilt",
     "macro-bellows-extension",

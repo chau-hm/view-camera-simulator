@@ -9,6 +9,7 @@ import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interior
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import { worldIlluminationDirectionalToWorld } from "../../render/worldIlluminationContract";
+import { WorldEnvironment } from "../../render/WorldEnvironment";
 
 describe("Observer world illumination component", () => {
   it("emits the resolved Interior Corner source as an R3F point light", () => {
@@ -39,8 +40,10 @@ describe("Observer world illumination component", () => {
   it("emits the resolved Architecture Rise source as an R3F directional light", () => {
     const tree = WorldIllumination({ sceneId: "architecture-rise" });
     const children = React.Children.toArray(tree.props.children);
-    expect(children).toHaveLength(1);
-    const componentElement = children[0];
+    expect(children).toHaveLength(2);
+    const componentElement = children.find(
+      (child) => React.isValidElement(child) && child.type === DirectionalWorldIllumination,
+    );
     if (
       !React.isValidElement(componentElement) ||
       componentElement.type !== DirectionalWorldIllumination
@@ -95,6 +98,17 @@ describe("Observer world illumination component", () => {
       throw new Error("Expected the stable directional target primitive");
     }
     expect(rerenderedTargetElement.props.object).toBe(targetObject);
+
+    const environmentElement = children.find(
+      (child) => React.isValidElement(child) && child.type === WorldEnvironment,
+    );
+    expect(React.isValidElement(environmentElement)).toBe(true);
+    if (!React.isValidElement(environmentElement)) {
+      throw new Error("Expected the renderer-owned environment adapter");
+    }
+    expect(environmentElement.props.environment).toBe(
+      resolveSceneWorldIllumination("architecture-rise").environment,
+    );
   });
 
   it("emits no world light for a scene without world sources", () => {

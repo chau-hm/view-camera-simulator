@@ -48,8 +48,19 @@ const architectureRiseDaylightSource = Object.freeze({
   castsShadow: false,
 });
 
+const architectureRiseEnvironment = Object.freeze({
+  id: "architecture-rise-procedural-daylight-environment",
+  kind: "procedural-sky-ground" as const,
+  zenithColor: "#f2f2ee",
+  skyHorizonColor: "#737d80",
+  groundHorizonColor: "#686b65",
+  nadirColor: "#3f4540",
+  intensity: 0.95,
+});
+
 const ARCHITECTURE_RISE_WORLD_ILLUMINATION: ResolvedWorldIllumination = Object.freeze({
   sources: Object.freeze([architectureRiseDaylightSource]),
+  environment: architectureRiseEnvironment,
 });
 
 export const resolveSceneWorldIllumination = (
