@@ -50,6 +50,11 @@ import {
   disposePresentationLightingRig,
 } from "../../render/TeachingLighting";
 import {
+  createWorldIlluminationRig,
+  disposeWorldIlluminationRig,
+} from "../../render/worldIlluminationRig";
+import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
+import {
   DEFAULT_PRESENTATION_LIGHTING_PLACEMENT,
   TEACHING_PRESENTATION_LIGHTING_PROFILE,
 } from "../../render/presentationLightingContract";
@@ -519,7 +524,7 @@ describe("scene subject registry", () => {
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
   });
 
-  it("composes exactly one asset-owned Interior Corner practical with the shared rig on both surfaces", () => {
+  it("composes one world-owned Interior Corner practical with the shared presentation rig on both surfaces", () => {
     const observerScene = new THREE.Scene();
     const groundGlassScene = new THREE.Scene();
     const observerSubject = createRegisteredSceneAsset(
@@ -547,6 +552,14 @@ describe("scene subject registry", () => {
         surface: "ground-glass",
       }),
     );
+    const observerWorldRig = createWorldIlluminationRig(
+      observerScene,
+      resolveSceneWorldIllumination("interior-corner"),
+    );
+    const groundGlassWorldRig = createWorldIlluminationRig(
+      groundGlassScene,
+      resolveSceneWorldIllumination("interior-corner"),
+    );
     observerScene.add(observerSubject);
     groundGlassScene.add(groundGlassSubject);
 
@@ -562,6 +575,8 @@ describe("scene subject registry", () => {
       expect(observerSubject.userData.assetImplementationId).toBe(
         groundGlassSubject.userData.assetImplementationId,
       );
+      expect(observerSubject.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
+      expect(groundGlassSubject.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
       for (const [scene, rig] of [
         [observerScene, observerRig],
         [groundGlassScene, groundGlassRig],
@@ -581,6 +596,11 @@ describe("scene subject registry", () => {
         expect(practicalLights[0].intensity).toBe(5);
         expect(practicalLights[0].distance).toBe(7.5);
         expect(practicalLights[0].decay).toBe(2);
+        expect(practicalLights[0].position.toArray()).toEqual([
+          0.42,
+          (INTERIOR_CORNER_PRESENTATION.geometry.room.floorY + 1310) / 1000,
+          8.3,
+        ]);
         expect(shadowCastingLights).toEqual([rig.keyLight]);
       }
     } finally {
@@ -590,6 +610,8 @@ describe("scene subject registry", () => {
       disposeRegisteredRttSubject("interior-corner", groundGlassSubject);
       disposePresentationLightingRig(observerScene, observerRig);
       disposePresentationLightingRig(groundGlassScene, groundGlassRig);
+      disposeWorldIlluminationRig(observerScene, observerWorldRig);
+      disposeWorldIlluminationRig(groundGlassScene, groundGlassWorldRig);
     }
   });
 

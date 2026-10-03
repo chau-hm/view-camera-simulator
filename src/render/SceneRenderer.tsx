@@ -67,6 +67,7 @@ import {
 } from "./TeachingLighting";
 import { resolveScenePresentationLighting } from "./presentationLighting";
 import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
+import { WorldIllumination } from "./WorldIllumination";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 
 type SceneRendererProps = {
@@ -952,6 +953,7 @@ const SceneContent = ({
     <>
     <color attach="background" args={["#f8fafc"]} />
     <PresentationLighting lighting={presentationLighting} />
+    <WorldIllumination sceneId={scene.id} />
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly

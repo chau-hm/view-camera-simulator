@@ -76,6 +76,12 @@ import {
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
 import { resolveGroundGlassNaturalIlluminationRenderState } from "./groundGlassNaturalIllumination";
+import {
+  createWorldIlluminationRig,
+  disposeWorldIlluminationRig,
+  type WorldIlluminationRig,
+} from "./worldIlluminationRig";
+import { resolveSceneWorldIllumination } from "../scenes/illumination/sceneWorldIllumination";
 import { resolveGroundGlassCoverageRenderState } from "./groundGlassCoverage";
 import { resolveGroundGlassRttDisplayTransform } from "./groundGlassRttOrientation";
 import {
@@ -177,6 +183,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const focalLengthMmRef = React.useRef(focalLengthMm);
   focalLengthMmRef.current = focalLengthMm;
   const lightingRigRef = React.useRef<PresentationLightingRig | null>(null);
+  const worldIlluminationRigRef = React.useRef<WorldIlluminationRig | null>(null);
   const mountedSceneSubjectRef = useRef<MountedGroundGlassSceneSubject | null>(null);
   const sizeInputsRef = React.useRef({ widthPx, heightPx, renderQuality });
   const inspectionWindowRef = React.useRef<GroundGlassInspectionWindow>(
@@ -563,6 +570,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     // restrained hemisphere/key-light baseline. Scene registrations may
     // resolve distinct real/virtual placements around their scene target.
     lightingRigRef.current = createPresentationLightingRig(scene);
+    worldIlluminationRigRef.current = createWorldIlluminationRig(
+      scene,
+      resolveSceneWorldIllumination(resolvedSceneId),
+    );
 
     return () => {
       try {
@@ -604,6 +615,11 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         if (lightingRig) {
           disposePresentationLightingRig(scene, lightingRig);
           lightingRigRef.current = null;
+        }
+        const worldIlluminationRig = worldIlluminationRigRef.current;
+        if (worldIlluminationRig) {
+          disposeWorldIlluminationRig(scene, worldIlluminationRig);
+          worldIlluminationRigRef.current = null;
         }
         if (offscreenScene.current === scene) offscreenScene.current = null;
         if (groundGlassCamera.current === camera) groundGlassCamera.current = null;
