@@ -224,6 +224,62 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("mounts the resolved Architecture Rise daylight outside the registered RTT subject", () => {
+    const scene = architectureRiseScene;
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...scene.cameraPreset,
+      activeSceneId: scene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, scene),
+        focalLengthMm: camera.focalLengthMm,
+        scene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const sourceScene = fiberTestState.renderedScenes.find(
+      (candidate): candidate is THREE.Scene =>
+        candidate instanceof THREE.Scene &&
+        candidate.getObjectByName("architecture-rise-subject") !== undefined,
+    );
+    if (!sourceScene) throw new Error("Expected the mounted Ground Glass source scene");
+    const subject = sourceScene.getObjectByName("architecture-rise-subject");
+    if (!subject) throw new Error("Expected the registered Architecture Rise subject");
+
+    const naturalLights: THREE.DirectionalLight[] = [];
+    sourceScene.traverse((object) => {
+      if (
+        object instanceof THREE.DirectionalLight &&
+        object.name === "architecture-rise-daylight"
+      ) {
+        naturalLights.push(object);
+      }
+    });
+
+    expect(subject.getObjectsByProperty("type", "DirectionalLight")).toHaveLength(0);
+    expect(naturalLights).toHaveLength(1);
+    const daylight = naturalLights[0];
+    expect(daylight.parent).toBe(sourceScene);
+    expect(daylight.target.parent).toBe(sourceScene);
+    expect(daylight.color.equals(new THREE.Color("#fff8ee"))).toBe(true);
+    expect(daylight.intensity).toBe(0.8);
+    expect(daylight.castShadow).toBe(false);
+    const dispose = vi.spyOn(daylight, "dispose");
+
+    view.unmount();
+
+    expect(daylight.parent).toBeNull();
+    expect(daylight.target.parent).toBeNull();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("passes Architecture Rise physical CoC inputs without a display blur gain", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,

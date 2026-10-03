@@ -703,6 +703,23 @@ describe("static teaching scene asset migrations", () => {
     }
   });
 
+  it("keeps the Architecture Rise subject free of world directional lights", () => {
+    const group = createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+    });
+    let disposalStarted = false;
+
+    try {
+      expect(group.getObjectsByProperty("type", "DirectionalLight")).toHaveLength(0);
+      disposalStarted = true;
+      disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group);
+    } finally {
+      if (!disposalStarted) {
+        disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group);
+      }
+    }
+  });
+
   it("routes production and displaced substitute implementations through the same typed registry seam", () => {
     const architectureRiseFactorySpy = vi.spyOn(
       architectureRiseAsset,

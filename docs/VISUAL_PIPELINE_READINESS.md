@@ -98,21 +98,22 @@ presentation/teaching assist can be present at the same time:
 ```text
 Scene illumination
 ├── physical / in-world
-│   ├── natural (future: sun, sky, moon)
-│   └── artificial / practical (current: resolved Interior Corner PointLight)
+│   ├── natural (current: Architecture Rise DirectionalLight)
+│   └── artificial / practical (current: Interior Corner PointLight)
 └── presentation / teaching assist (current: shared fill + key rig)
 ```
 
-The source audit found one current in-world artificial source:
-`interior-corner-local-light`. `sceneWorldIllumination.ts` resolves its
-renderer-neutral definition; the Observer and Ground Glass consumers each
-create and own a PointLight from that definition. The registered Interior
-Corner asset contains geometry and materials only. There is no natural-light
-source today. The shared teaching HemisphereLight and DirectionalLight are
-presentation assist, not a complete definition of scene illumination. These
-source categories are not exclusive modes: future natural and practical
-sources must be able to compose together without being collapsed into one
-visual preset.
+The current world-source resolver has two scene-owned definitions:
+`architecture-rise-daylight` is one natural DirectionalLight aimed at the
+canonical Architecture Rise facade anchor, and `interior-corner-local-light`
+is one artificial PointLight positioned from Interior Corner presentation
+geometry. Observer and Ground Glass each instantiate their own renderer light
+objects from the same renderer-neutral source list. The registered subjects
+contain neither source. The shared teaching HemisphereLight and DirectionalLight
+remain presentation assist, separate from represented-world illumination.
+Other production scenes still resolve no world sources. Source categories are
+compositional, but no production scene currently mixes them; a mixed natural +
+artificial source list is covered only by a synthetic rig test.
 
 [`presentationLightingContract.ts`](../src/render/presentationLightingContract.ts)
 owns the one active `teaching-default` presentation recipe. Its profile is
@@ -153,9 +154,14 @@ physical / in-world illumination
 
 Presentation-assist participation in metering or exposure must be an explicit
 future decision; this architecture does not implement an exposure model.
-Natural and artificial physical sources may add together. This PR adds no
-source category implementation, light, environment, photometric unit, or
-lighting retuning.
+Natural and artificial physical sources may add together. The Architecture
+Rise directional source is fixed in scene coordinates, uses the canonical
+facade as its target, and does not cast shadows; natural-source shadowing has
+not been validated. PR I adds no sky, moon, HDRI/environment, photometric unit,
+or exposure model. Its restrained source is separate from the unchanged
+`teaching-default` presentation profile. The existing Ground Glass
+`resolveGroundGlassNaturalIlluminationRenderState` describes optical relative
+illumination/falloff, not scene-world natural light.
 
 ## Ground Glass migration seam
 
@@ -212,9 +218,14 @@ and selected Focus Loupe modes. CPU-submit timings are not directly comparable
 to GPU timings. Use the report as same-session decision evidence; this boundary
 adds no arbitrary FPS or scene-complexity pass/fail threshold.
 
-## Next PR boundary
+## Current rendering boundary
 
-The next work may proceed to **Dream Loop Integration Guardrails / pilot
-preparation** on the current WebGL renderer. A WebGPU migration is not a
-prerequisite for the near-term material, texture, lighting, shadow, and
-non-semantic asset work described here.
+The current WebGL renderer supports the validated procedural-material and
+world-illumination work. PR I established a fixed natural DirectionalLight path
+for Architecture Rise, but did not validate natural world shadows,
+sky/environment illumination or reflections, physical exposure or metering, or
+WebGPU-specific rendering.
+
+Select further work from observed visual and teaching limitations rather than
+following a mandatory renderer-migration sequence. WebGPU remains conditional on
+a demonstrated backend-specific requirement.

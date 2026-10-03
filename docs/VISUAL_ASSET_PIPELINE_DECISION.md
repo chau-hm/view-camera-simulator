@@ -2,7 +2,7 @@
 
 ## Status
 
-**Current decision for the visual-quality phase; proposed for acceptance in PR G.**
+**Current decision for the visual-quality phase; accepted after PR G and checked against the PR I lighting pilot.**
 
 Date: 2026-10-03
 Evidence base: `main @ 3a485d86b7de95f302c66fd79e6c82053bc1de7c`
@@ -20,7 +20,7 @@ The pilots established that deterministic `DataTexture` maps can improve materia
 
 The result also exposed limits. Glazing stayed dark and relatively flat without environment reflections, and the final scene was less dimensionally expressive than the generated target. The target's stronger warmth and brightness were not authority to retune lighting. The pilot report also records that tiny geometry additions by themselves did not guarantee a worthwhile visual return; geometry added in the earlier pilot branch was not part of the three material rounds.
 
-The glazing uses a dark scalar `MeshStandardMaterial`; it does not use an authored raster surface map. A brighter or more detailed texture could change its surface color, but it cannot supply a missing reflected environment. The evidence points first to a lighting/material interaction and does not isolate how much each factor contributes. It is not evidence that a texture file is required.
+The glazing uses a dark scalar `MeshStandardMaterial`; it does not use an authored raster surface map. A brighter or more detailed texture could change its surface color, but it cannot supply a missing reflected environment. PR I later added a restrained fixed directional world source: the existing facade materials gain modest direct-light modeling, while the glazing remains dark and relatively flat. This shows that lighting contributes to facade response, but does not isolate the glass limitation or establish a raster-texture benefit. It is not evidence that a texture file is required.
 
 ## Evidence from Interior Corner
 
@@ -156,12 +156,21 @@ Reopen the GLTF/GLB decision only when all of these are true:
 3. The imported model is only a presentation asset; camera, focus, task, movement, composition, image-circle, and optical authority stay in canonical modules.
 4. Asset identity, axes, units, pivots, bounds, and allowed render features have executable validation, and load readiness, decode/parse cost, texture/material/geometry counts, failure handling, cancellation, and disposal are measured.
 
-Neither trigger is met by the two accepted pilots today. Resolve the known glass/lighting ambiguity with the planned illumination work before using external materials to compensate for the fixed light environment.
+Neither trigger is met by the two accepted pilots today. PR I tested direct directional illumination: facade response improved, while the glazing remained dark and relatively flat. Environment/reflection illumination has not been validated, so this does not establish a material-source requirement. If the glass limitation becomes a teaching or visual priority, assess the missing environment/reflection response before using external materials to compensate for it.
 
 ## Explicit non-decisions
 
 This decision does not select a raster format, add an asset manifest/registry, add a loader/cache, choose a hosting/CDN strategy, or authorize Dream Loop to create external asset files. It does not merge teaching, procedural surface, and macro material responsibilities. It does not change geometry, materials, lighting, renderer behavior, Ground Glass, optics, task semantics, or scene publication.
 
-## Next PR
+## Current status / follow-up boundary
 
-Proceed to **PR H — Physical / World Illumination Foundation**. Preserve the current accepted visual state as its baseline and assess the glazing/material response under the deliberate lighting model. Revisit local raster surfaces only if the material-source trigger remains after that lighting work. Models remain a separate, later decision gated by an actual geometry bottleneck.
+PR H established the physical/world illumination foundation. PR I tested one
+restrained natural directional source on Architecture Rise. It improved direct
+facade/material modeling, while the glazing remained dark and relatively flat:
+directional illumination alone does not provide an environment-reflection
+source.
+
+This result does not meet the documented trigger for a general raster-texture
+or GLTF/model pipeline. Procedural materials remain the current default. Revisit
+either external asset class only when its specific evidence triggers above are
+met; do not treat the pilot sequence as a required roadmap.

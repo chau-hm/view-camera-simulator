@@ -15,7 +15,20 @@ export type WorldIlluminationPointSource = Readonly<{
   castsShadow: boolean;
 }>;
 
-export type WorldIlluminationSource = WorldIlluminationPointSource;
+export type WorldIlluminationDirectionalSource = Readonly<{
+  id: string;
+  category: WorldIlluminationCategory;
+  kind: "directional";
+  color: string;
+  intensity: number;
+  positionMm: Readonly<Vec3>;
+  targetMm: Readonly<Vec3>;
+  castsShadow: boolean;
+}>;
+
+export type WorldIlluminationSource =
+  | WorldIlluminationPointSource
+  | WorldIlluminationDirectionalSource;
 
 export type ResolvedWorldIllumination = Readonly<{
   sources: readonly WorldIlluminationSource[];
@@ -36,6 +49,24 @@ export const worldIlluminationPointToWorld = (
     toWorld(source.positionMm.x),
     toWorld(source.positionMm.y),
     toWorld(source.positionMm.z),
+  ] as [number, number, number],
+  castShadow: source.castsShadow,
+});
+
+export const worldIlluminationDirectionalToWorld = (
+  source: WorldIlluminationDirectionalSource,
+) => ({
+  color: source.color,
+  intensity: source.intensity,
+  position: [
+    toWorld(source.positionMm.x),
+    toWorld(source.positionMm.y),
+    toWorld(source.positionMm.z),
+  ] as [number, number, number],
+  target: [
+    toWorld(source.targetMm.x),
+    toWorld(source.targetMm.y),
+    toWorld(source.targetMm.z),
   ] as [number, number, number],
   castShadow: source.castsShadow,
 });
