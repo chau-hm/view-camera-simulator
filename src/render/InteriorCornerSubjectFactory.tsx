@@ -241,22 +241,6 @@ const addFocusProbes = (geometry: InteriorCornerGeometry, root: THREE.Object3D) 
   });
 };
 
-const addInteriorLocalLight = (
-  geometry: InteriorCornerGeometry,
-  root: THREE.Group,
-): void => {
-  // Keep the practical light in the shared subject group so viewport and RTT
-  // receive the same restrained interior contribution.
-  const light = new THREE.PointLight("#fff1d6", 5, 7.5, 2);
-  light.name = "interior-corner-local-light";
-  light.position.set(
-    toWorld(420),
-    toWorld(geometry.room.floorY + 1310),
-    toWorld(8300),
-  );
-  root.add(light);
-};
-
 const addInteriorFurnitureStructure = (
   geometry: InteriorCornerGeometry,
   root: THREE.Group,
@@ -527,7 +511,6 @@ export const createInteriorCornerGroup = (
   });
 
   addInteriorFurnitureStructure(geometry, root, materials);
-  addInteriorLocalLight(geometry, root);
   addFocusProbes(geometry, root);
   return root;
 };

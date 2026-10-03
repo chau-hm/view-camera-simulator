@@ -33,7 +33,9 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -166,6 +168,62 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("mounts the resolved Interior Corner practical in the RTT scene outside the subject", () => {
+    const scene = interiorCornerScene;
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...scene.cameraPreset,
+      activeSceneId: scene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, scene),
+        focalLengthMm: camera.focalLengthMm,
+        scene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const sourceScene = fiberTestState.renderedScenes.find(
+      (candidate): candidate is THREE.Scene =>
+        candidate instanceof THREE.Scene &&
+        candidate.getObjectByName("interior-corner-subject") !== undefined,
+    );
+    if (!sourceScene) throw new Error("Expected the mounted Ground Glass source scene");
+    const subject = sourceScene.getObjectByName("interior-corner-subject");
+    if (!subject) throw new Error("Expected the registered Interior Corner subject");
+    const pointLights: THREE.PointLight[] = [];
+    sourceScene.traverse((object) => {
+      if (object instanceof THREE.PointLight) pointLights.push(object);
+    });
+
+    expect(subject.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
+    expect(pointLights).toHaveLength(1);
+    const practical = pointLights[0];
+    expect(practical.parent).toBe(sourceScene);
+    expect(practical.name).toBe("interior-corner-local-light");
+    expect(practical.color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+    expect(practical.intensity).toBe(5);
+    expect(practical.distance).toBe(7.5);
+    expect(practical.decay).toBe(2);
+    expect(practical.position.toArray()).toEqual([
+      0.42,
+      (INTERIOR_CORNER_PRESENTATION.geometry.room.floorY + 1310) / 1000,
+      8.3,
+    ]);
+    expect(practical.castShadow).toBe(false);
+    const dispose = vi.spyOn(practical, "dispose");
+
+    view.unmount();
+
+    expect(practical.parent).toBeNull();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("passes Architecture Rise physical CoC inputs without a display blur gain", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,

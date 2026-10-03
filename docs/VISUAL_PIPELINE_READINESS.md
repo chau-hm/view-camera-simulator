@@ -99,17 +99,18 @@ presentation/teaching assist can be present at the same time:
 Scene illumination
 ├── physical / in-world
 │   ├── natural (future: sun, sky, moon)
-│   └── artificial / practical (current: Interior Corner PointLight)
+│   └── artificial / practical (current: resolved Interior Corner PointLight)
 └── presentation / teaching assist (current: shared fill + key rig)
 ```
 
 The source audit found one current in-world artificial source:
-`interior-corner-local-light`, a `THREE.PointLight` created and disposed with
-the registered Interior Corner asset. The observer and Ground Glass consumers
-mount that same registered implementation. There is no natural-light system
-today. The shared teaching HemisphereLight and DirectionalLight are
+`interior-corner-local-light`. `sceneWorldIllumination.ts` resolves its
+renderer-neutral definition; the Observer and Ground Glass consumers each
+create and own a PointLight from that definition. The registered Interior
+Corner asset contains geometry and materials only. There is no natural-light
+source today. The shared teaching HemisphereLight and DirectionalLight are
 presentation assist, not a complete definition of scene illumination. These
-source categories are not exclusive modes: future sun/sky/moon and practical
+source categories are not exclusive modes: future natural and practical
 sources must be able to compose together without being collapsed into one
 visual preset.
 
@@ -132,11 +133,13 @@ fill offsets are not part of the contract. `TeachingLighting.tsx` applies the
 shared teaching shadow-participation rules, while Mirror Shift retains its
 explicit Ground Glass shadow override.
 
-Interior Corner's warm PointLight remains asset-owned and is not promoted into
-the shared presentation recipe or recreated by the presentation rig. Tests
-compose each registered subject with the shared rig on both surfaces and
-assert one practical light and one shadow-casting teaching key. Scene assets
-should not grow independent complete presentation rigs.
+Interior Corner's warm PointLight is resolved as artificial world illumination
+from renderer-neutral presentation geometry. The Observer `WorldIllumination`
+consumer and imperative Ground Glass world-illumination rig both use that same
+source list; the registered subject contains no PointLight and its capacity
+object count may therefore drop. The source has no exposure authority and is
+not part of the presentation lighting profile. Scene assets should not grow
+independent complete presentation rigs.
 
 Future physical exposure remains downstream:
 
