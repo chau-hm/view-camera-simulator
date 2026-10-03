@@ -175,6 +175,37 @@ describe("renderer-owned world environment resources", () => {
     replacement.dispose();
   });
 
+  it("preserves replacement environment state when its intensity matches the rig", () => {
+    const scene = new THREE.Scene();
+    const previousEnvironment = new THREE.DataTexture();
+    scene.environment = previousEnvironment;
+    scene.environmentIntensity = 0.35;
+
+    const target = createProcessedTarget();
+    const targetDispose = vi.spyOn(target, "dispose");
+    vi.spyOn(THREE.PMREMGenerator.prototype, "fromEquirectangular").mockReturnValue(target);
+    const rig = createWorldEnvironmentRig(
+      scene,
+      {} as THREE.WebGLRenderer,
+      environment,
+    );
+    const replacement = new THREE.DataTexture();
+    scene.environment = replacement;
+    scene.environmentIntensity = rig.appliedIntensity;
+
+    disposeWorldEnvironmentRig(scene, rig);
+    expect(scene.environment).toBe(replacement);
+    expect(scene.environmentIntensity).toBe(rig.appliedIntensity);
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+
+    disposeWorldEnvironmentRig(scene, rig);
+    expect(scene.environment).toBe(replacement);
+    expect(scene.environmentIntensity).toBe(rig.appliedIntensity);
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    previousEnvironment.dispose();
+    replacement.dispose();
+  });
+
   it("preserves an environment intensity changed by another owner", () => {
     const scene = new THREE.Scene();
     const target = createProcessedTarget();

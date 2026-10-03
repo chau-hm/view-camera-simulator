@@ -60,9 +60,9 @@ export const disposeWorldEnvironmentRig = (
 
   if (scene.environment === rig.environmentTexture) {
     scene.environment = rig.previousEnvironment;
-  }
-  if (scene.environmentIntensity === rig.appliedIntensity) {
-    scene.environmentIntensity = rig.previousEnvironmentIntensity;
+    if (scene.environmentIntensity === rig.appliedIntensity) {
+      scene.environmentIntensity = rig.previousEnvironmentIntensity;
+    }
   }
 
   rig.renderTarget.dispose();
