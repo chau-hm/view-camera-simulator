@@ -8,7 +8,10 @@ import {
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
-import { worldIlluminationDirectionalToWorld } from "../../render/worldIlluminationContract";
+import {
+  worldIlluminationDirectionalToWorld,
+  type WorldProceduralSkyGroundEnvironment,
+} from "../../render/worldIlluminationContract";
 import { WorldEnvironment } from "../../render/WorldEnvironment";
 
 describe("Observer world illumination component", () => {
@@ -102,8 +105,11 @@ describe("Observer world illumination component", () => {
     const environmentElement = children.find(
       (child) => React.isValidElement(child) && child.type === WorldEnvironment,
     );
-    expect(React.isValidElement(environmentElement)).toBe(true);
-    if (!React.isValidElement(environmentElement)) {
+    if (
+      !React.isValidElement<{
+        environment: WorldProceduralSkyGroundEnvironment;
+      }>(environmentElement)
+    ) {
       throw new Error("Expected the renderer-owned environment adapter");
     }
     expect(environmentElement.props.environment).toBe(
