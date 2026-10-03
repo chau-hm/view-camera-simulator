@@ -162,6 +162,15 @@ Neither trigger is met by the two accepted pilots today. Resolve the known glass
 
 This decision does not select a raster format, add an asset manifest/registry, add a loader/cache, choose a hosting/CDN strategy, or authorize Dream Loop to create external asset files. It does not merge teaching, procedural surface, and macro material responsibilities. It does not change geometry, materials, lighting, renderer behavior, Ground Glass, optics, task semantics, or scene publication.
 
-## Next PR
+## Current status / follow-up boundary
 
-Proceed to **PR H — Physical / World Illumination Foundation**. Preserve the current accepted visual state as its baseline and assess the glazing/material response under the deliberate lighting model. Revisit local raster surfaces only if the material-source trigger remains after that lighting work. Models remain a separate, later decision gated by an actual geometry bottleneck.
+PR H established the physical/world illumination foundation. PR I tested one
+restrained natural directional source on Architecture Rise. It improved direct
+facade/material modeling, while the glazing remained dark and relatively flat:
+directional illumination alone does not provide an environment-reflection
+source.
+
+This result does not meet the documented trigger for a general raster-texture
+or GLTF/model pipeline. Procedural materials remain the current default. Revisit
+either external asset class only when its specific evidence triggers above are
+met; do not treat the pilot sequence as a required roadmap.

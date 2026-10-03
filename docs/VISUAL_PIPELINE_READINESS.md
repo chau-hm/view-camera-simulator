@@ -218,9 +218,14 @@ and selected Focus Loupe modes. CPU-submit timings are not directly comparable
 to GPU timings. Use the report as same-session decision evidence; this boundary
 adds no arbitrary FPS or scene-complexity pass/fail threshold.
 
-## Next PR boundary
+## Current rendering boundary
 
-The next work may proceed to **Dream Loop Integration Guardrails / pilot
-preparation** on the current WebGL renderer. A WebGPU migration is not a
-prerequisite for the near-term material, texture, lighting, shadow, and
-non-semantic asset work described here.
+The current WebGL renderer supports the validated procedural-material and
+world-illumination work. PR I established a fixed natural DirectionalLight path
+for Architecture Rise, but did not validate natural world shadows,
+sky/environment illumination or reflections, physical exposure or metering, or
+WebGPU-specific rendering.
+
+Select further work from observed visual and teaching limitations rather than
+following a mandatory renderer-migration sequence. WebGPU remains conditional on
+a demonstrated backend-specific requirement.
