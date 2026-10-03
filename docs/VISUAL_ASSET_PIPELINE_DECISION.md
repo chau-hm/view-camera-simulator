@@ -156,7 +156,7 @@ Reopen the GLTF/GLB decision only when all of these are true:
 3. The imported model is only a presentation asset; camera, focus, task, movement, composition, image-circle, and optical authority stay in canonical modules.
 4. Asset identity, axes, units, pivots, bounds, and allowed render features have executable validation, and load readiness, decode/parse cost, texture/material/geometry counts, failure handling, cancellation, and disposal are measured.
 
-Neither trigger is met by the two accepted pilots today. Resolve the known glass/lighting ambiguity with the planned illumination work before using external materials to compensate for the fixed light environment.
+Neither trigger is met by the two accepted pilots today. PR I tested direct directional illumination: facade response improved, while the glazing remained dark and relatively flat. Environment/reflection illumination has not been validated, so this does not establish a material-source requirement. If the glass limitation becomes a teaching or visual priority, assess the missing environment/reflection response before using external materials to compensate for it.
 
 ## Explicit non-decisions
 
