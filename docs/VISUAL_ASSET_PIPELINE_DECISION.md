@@ -2,7 +2,7 @@
 
 ## Status
 
-**Current decision for the visual-quality phase; proposed for acceptance in PR G.**
+**Current decision for the visual-quality phase; accepted after PR G and checked against the PR I lighting pilot.**
 
 Date: 2026-10-03
 Evidence base: `main @ 3a485d86b7de95f302c66fd79e6c82053bc1de7c`
@@ -20,7 +20,7 @@ The pilots established that deterministic `DataTexture` maps can improve materia
 
 The result also exposed limits. Glazing stayed dark and relatively flat without environment reflections, and the final scene was less dimensionally expressive than the generated target. The target's stronger warmth and brightness were not authority to retune lighting. The pilot report also records that tiny geometry additions by themselves did not guarantee a worthwhile visual return; geometry added in the earlier pilot branch was not part of the three material rounds.
 
-The glazing uses a dark scalar `MeshStandardMaterial`; it does not use an authored raster surface map. A brighter or more detailed texture could change its surface color, but it cannot supply a missing reflected environment. The evidence points first to a lighting/material interaction and does not isolate how much each factor contributes. It is not evidence that a texture file is required.
+The glazing uses a dark scalar `MeshStandardMaterial`; it does not use an authored raster surface map. A brighter or more detailed texture could change its surface color, but it cannot supply a missing reflected environment. PR I later added a restrained fixed directional world source: the existing facade materials gain modest direct-light modeling, while the glazing remains dark and relatively flat. This shows that lighting contributes to facade response, but does not isolate the glass limitation or establish a raster-texture benefit. It is not evidence that a texture file is required.
 
 ## Evidence from Interior Corner
 
