@@ -29,6 +29,8 @@ import type { MacroObliquePlaneAssetRequest } from "../MacroObliquePlaneSubjectF
 import * as macroObliquePlaneAsset from "../MacroObliquePlaneSubjectFactory";
 import type { MacroCompoundMovementsAssetRequest } from "../MacroCompoundMovementsSubjectFactory";
 import * as macroCompoundMovementsAsset from "../MacroCompoundMovementsSubjectFactory";
+import type { FringeClubAssetRequest } from "./FringeClubRuntimeAsset";
+import * as fringeClubRuntimeAsset from "./FringeClubRuntimeAsset";
 
 /** Stable asset slot owned by the scene asset registry layer. */
 export const CAMERA_MOVEMENT_LATTICE_ASSET_KEY =
@@ -48,6 +50,8 @@ export const MACRO_BELLOWS_EXTENSION_ASSET_KEY = "macro-bellows-extension-subjec
 export const MACRO_DEPTH_OF_FIELD_ASSET_KEY = "macro-depth-of-field-subject" as const;
 export const MACRO_OBLIQUE_PLANE_ASSET_KEY = "macro-oblique-plane-subject" as const;
 export const MACRO_COMPOUND_MOVEMENTS_ASSET_KEY = "macro-compound-movements-subject" as const;
+/** Dormant development fixture slot; this is not a public scene identity. */
+export const FRINGE_CLUB_RUNTIME_ASSET_KEY = "fringe-club-runtime-subject" as const;
 
 /** Registry-owned set of visual asset slots; scene IDs remain separate. */
 export type SceneAssetKey =
@@ -65,7 +69,8 @@ export type SceneAssetKey =
   | typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY
   | typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY
   | typeof MACRO_OBLIQUE_PLANE_ASSET_KEY
-  | typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY;
+  | typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+  | typeof FRINGE_CLUB_RUNTIME_ASSET_KEY;
 
 export type CameraMovementLatticeAssetFactory = (
   options: CameraMovementsGroupOptions,
@@ -87,6 +92,7 @@ export type SceneAssetRequestMap = {
   [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: MacroDepthOfFieldAssetRequest;
   [MACRO_OBLIQUE_PLANE_ASSET_KEY]: MacroObliquePlaneAssetRequest;
   [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: MacroCompoundMovementsAssetRequest;
+  [FRINGE_CLUB_RUNTIME_ASSET_KEY]: FringeClubAssetRequest;
 };
 
 export type SceneAssetResourceLifetimeByKey = {
@@ -105,6 +111,7 @@ export type SceneAssetResourceLifetimeByKey = {
   [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: "instance-owned";
   [MACRO_OBLIQUE_PLANE_ASSET_KEY]: "instance-owned";
   [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: "instance-owned";
+  [FRINGE_CLUB_RUNTIME_ASSET_KEY]: "instance-owned";
 };
 
 export type SceneAssetKeyWithLifetime<
@@ -172,6 +179,7 @@ export const MACRO_BELLOWS_EXTENSION_IMPLEMENTATION_ID = "threejs-macro-bellows-
 export const MACRO_DEPTH_OF_FIELD_IMPLEMENTATION_ID = "threejs-macro-depth-of-field";
 export const MACRO_OBLIQUE_PLANE_IMPLEMENTATION_ID = "threejs-macro-oblique-plane";
 export const MACRO_COMPOUND_MOVEMENTS_IMPLEMENTATION_ID = "threejs-macro-compound-movements";
+export const FRINGE_CLUB_RUNTIME_IMPLEMENTATION_ID = "threejs-fringe-club-runtime";
 
 const cameraMovementLatticeRegistration: SceneAssetRegistration<typeof CAMERA_MOVEMENT_LATTICE_ASSET_KEY> =
   Object.freeze({
@@ -299,6 +307,17 @@ const macroCompoundMovementsRegistration: SceneAssetRegistration<typeof MACRO_CO
     dispose: (asset) => macroCompoundMovementsAsset.disposeMacroCompoundMovementsGroup(asset),
   });
 
+const fringeClubRuntimeRegistration: SceneAssetRegistration<typeof FRINGE_CLUB_RUNTIME_ASSET_KEY> =
+  Object.freeze({
+    assetKey: FRINGE_CLUB_RUNTIME_ASSET_KEY,
+    implementationId: FRINGE_CLUB_RUNTIME_IMPLEMENTATION_ID,
+    renderResourceLifetime: "instance-owned",
+    create: (request) =>
+      fringeClubRuntimeAsset.createFringeClubRegisteredGroup(request),
+    dispose: (asset) =>
+      fringeClubRuntimeAsset.disposeFringeClubRegisteredGroup(asset),
+  });
+
 /** Immutable production mapping from each registered scene asset slot. */
 export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [CAMERA_MOVEMENT_LATTICE_ASSET_KEY]: cameraMovementLatticeRegistration,
@@ -316,6 +335,7 @@ export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: macroDepthOfFieldRegistration,
   [MACRO_OBLIQUE_PLANE_ASSET_KEY]: macroObliquePlaneRegistration,
   [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: macroCompoundMovementsRegistration,
+  [FRINGE_CLUB_RUNTIME_ASSET_KEY]: fringeClubRuntimeRegistration,
 });
 
 /**
@@ -350,7 +370,8 @@ export function resolveSceneAsset(
     assetKey !== MACRO_BELLOWS_EXTENSION_ASSET_KEY &&
     assetKey !== MACRO_DEPTH_OF_FIELD_ASSET_KEY &&
     assetKey !== MACRO_OBLIQUE_PLANE_ASSET_KEY &&
-    assetKey !== MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+    assetKey !== MACRO_COMPOUND_MOVEMENTS_ASSET_KEY &&
+    assetKey !== FRINGE_CLUB_RUNTIME_ASSET_KEY
   ) {
     throw new Error('Unknown scene asset "' + assetKey + '"');
   }

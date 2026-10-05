@@ -33,6 +33,7 @@ import {
   MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  FRINGE_CLUB_RUNTIME_ASSET_KEY,
   createRegisteredSceneAsset,
   resolveSceneAsset,
   sceneAssetRegistry,
@@ -317,6 +318,7 @@ describe("scene asset registry", () => {
         MACRO_DEPTH_OF_FIELD_ASSET_KEY,
         MACRO_OBLIQUE_PLANE_ASSET_KEY,
         MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+        FRINGE_CLUB_RUNTIME_ASSET_KEY,
       ]);
       expect(presentationAssetKey).toBe(CAMERA_MOVEMENT_LATTICE_ASSET_KEY);
       expect(Object.isFrozen(sceneAssetRegistry)).toBe(true);
