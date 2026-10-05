@@ -174,12 +174,21 @@ context: it makes no photometric claim and is not a substitute for the unchanged
 `resolveGroundGlassNaturalIlluminationRenderState` describes optical relative
 illumination/falloff, not scene-world natural light.
 
-At normal Observer scale, the Architecture Rise glazing remained dark after two
-bounded recipe passes; the environment lifted broad opaque surfaces more than it
-improved useful glass reflections. Processed Ground Glass showed the same broad
-lift. This does not establish a texture-file requirement. Interior Corner has
-no environment and its clean, teaching, Processed, Raw, Upright, and raw-RTT
-control captures remained byte-identical.
+PR K tested the glass response under the fixed PR I daylight and PR J environment.
+Candidate A used an opaque dielectric `MeshStandardMaterial` with color
+`#182d37`, roughness `0.1`, and metalness `0`. Because A remained insufficient,
+Candidate B used an opaque `MeshPhysicalMaterial` with the same color, roughness
+`0.07`, metalness `0`, IOR `1.5`, and transmission `0`. Neither produced meaningful
+glazing response at normal Observer scale: front glazing remained similarly flat
+and the front/side orientation difference did not become useful. Processed Ground
+Glass showed no visible benefit. Raw and Upright retained their orientation
+behavior, teaching overlays remained legible, and Interior Corner control captures
+remained byte-identical. Classification: **MATERIAL RESPONSE — negligible**. Both
+candidates preserved subject and renderer resource counts; the same-session
+Candidate B profile reported 0.8/0.9 ms Ground Glass CPU-submit p50/p95 versus
+baseline 0.7/0.8 ms, with GPU timing unavailable. Frame cadence came from a
+CPU-fallback backend and is not evidence of GPU cost. This result does not
+establish a texture-file requirement.
 
 ## Ground Glass migration seam
 
@@ -242,9 +251,11 @@ The current WebGL renderer supports the validated procedural-material,
 world-light, and procedural environment contribution. PR I established a
 fixed natural DirectionalLight path for Architecture Rise; PR J added a
 low-frequency reflection/illumination environment without a visible sky. The
-pilot did not validate natural world shadows, calibrated environment values,
-physical exposure or metering, or WebGPU-specific rendering. At normal scale,
-the tested environment did not materially resolve the dark glazing.
+pilots did not validate natural world shadows, calibrated environment values,
+physical exposure or metering, or WebGPU-specific rendering. PR K found that the
+bounded standard and physical material candidates did not materially resolve the
+dark glazing at normal scale; its best candidate is classified **MATERIAL
+RESPONSE — negligible**.
 
 Select further work from observed visual and teaching limitations rather than
 following a mandatory renderer-migration sequence. WebGPU remains conditional on
