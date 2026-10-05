@@ -2,11 +2,11 @@
 
 ## Status
 
-**Current decision for the visual-quality phase; accepted after PR G and rechecked against the PR I and PR J illumination pilots.**
+**Current decision for the visual-quality phase; accepted after PR G and rechecked against the PR I, PR J, and PR K illumination/material pilots.**
 
-Date: 2026-10-03
+Date: 2026-10-05
 Initial evidence base: `main @ 3a485d86b7de95f302c66fd79e6c82053bc1de7c`
-Latest environment-pilot base: `main @ a30119885bfddb3c6b20739695c7463fd2d67516`
+Latest illumination-pilot base: `main @ b3c418cad7cd474c60fd244db0f987e799a943bf`
 Scope: registered scene appearance assets after the Architecture Rise and Interior Corner pilots.
 
 ## Context
@@ -23,7 +23,9 @@ The result also exposed limits. Glazing stayed dark and relatively flat without 
 
 The glazing uses a dark scalar `MeshStandardMaterial`; it does not use an authored raster surface map. A brighter or more detailed texture could change its surface color, but it cannot supply a missing reflected environment. PR I added a restrained fixed directional world source: the existing facade materials gained direct-light modeling, while the glazing remained dark and relatively flat.
 
-PR J then held the glazing material, geometry, directional daylight, presentation lighting, camera, and visible background constant while adding a deterministic 128×64 procedural sky/ground environment to `scene.environment`. Two recipe-only passes added a low-frequency lift to opaque surfaces, but front glazing remained dark at normal Observer framing and the side-versus-front response was not clearly useful. Processed Ground Glass showed the same broad lift rather than a distinct reflective improvement. The result is classified as **negligible for glazing response**. The environment is now tested, but this does not prove that raster maps or imported models are needed; it leaves the scalar glass material and its interaction with the current renderer as the more direct question for any later glass-specific experiment.
+PR J held the glazing material, geometry, directional daylight, presentation lighting, camera, and visible background constant while adding a deterministic 128×64 procedural sky/ground environment to `scene.environment`. PR K then changed only the shared Architecture Rise glazing material. Candidate A used `MeshStandardMaterial(color: #182d37, roughness: 0.1, metalness: 0)`; after A remained insufficient, Candidate B used opaque `MeshPhysicalMaterial(color: #182d37, roughness: 0.07, metalness: 0, ior: 1.5, transmission: 0, thickness: 0, specularIntensity: 1)`. The r186 thickness and specular values are the built-in defaults; this was an opaque response probe, not a calibrated glass model. At ordinary 514×411 Observer framing, neither candidate made the glazing read more clearly or produced a useful front-versus-side response. Candidate B changed only about 0.76% of clean-frame pixels, with a mean channel delta of 0.0054/255 confined to the glazing patch; the effect was not perceptible at presentation scale. Processed Ground Glass also showed no visible benefit (mean channel delta 0.0030/255; about 0.13% of pixels changed). Teaching overlays remained legible, Raw/Upright orientation behavior remained correct, and Interior Corner control captures were byte-identical. The production recipe was restored to baseline `MeshStandardMaterial(color: #182d37, roughness: 0.24, metalness: 0.08)`. Result: **MATERIAL RESPONSE — negligible**. The remaining absence of recognizable local scene reflections is a reflection-technique boundary, not evidence for raster textures or imported models.
+
+Separate same-session standard-quality baseline/A and baseline/B profiles returned identical resource counts for all three configurations: Observer subject 327 meshes, 3 unique geometries, 15 unique materials, 12 unique textures, and 4,382 effective triangles; Ground Glass subject 326 meshes, 2 unique geometries, 14 unique materials, 12 unique textures, and 3,902 effective triangles; Ground Glass renderer memory 3 geometries and 24 textures. Ground Glass CPU-submit p50/p95 was 0.6/0.8 ms for the baseline and 0.7/0.9 ms for A, then 0.7/0.8 ms for the baseline and 0.8/0.9 ms for B. Physical DOF CPU-submit p95 was 0.1 ms at the B-run baseline and 0.2 ms for B. The baseline/B Chromium profile used a 1440×1000 viewport, standard quality, a 658×527 internal RTT target, and 60 samples. GPU queries were unavailable. Frame cadence p50/p95 was 222.7/251.3 ms at baseline and 238.2/277.4 ms for B on the CPU-fallback backend; this software-renderer timing is not evidence of GPU shader cost. The scalar material change added no scene geometry, textures, or render targets.
 
 ## Evidence from Interior Corner
 
@@ -115,7 +117,7 @@ Most importantly, imported geometry must remain presentation-only. Canonical sce
 
 | Demonstrated observation | Primary class | What the evidence supports |
 | --- | --- | --- |
-| Architecture Rise glazing remains dark at normal scale after the PR J procedural environment; opaque surfaces lift more than glass response. | **MATERIAL RESPONSE** (current scalar material remains untested) | PR I tested direct light and PR J tested low-frequency environment/reflection. Neither produced a useful glass response at normal Observer scale. This points to a bounded glass-material experiment if the issue remains a priority; it does not establish a benefit from raster textures. |
+| Architecture Rise glazing remains dark at normal scale after PR I daylight, PR J environment, and the two bounded PR K material candidates. | **MATERIAL RESPONSE — negligible** | Standard dielectric and opaque physical-material candidates did not produce meaningful Observer or Processed Ground Glass improvement. Keep the production baseline; the missing local scene reflections are potentially a reflection-technique question. This does not establish a raster-texture or imported-model need. |
 | Some Interior Corner floor grain shows repeated straight streaks. | **MATERIAL SOURCE** | The procedural wood pattern has directional periodic structure; this is the clearest demonstrated source-specific limitation. Its effect was accepted at normal scale, and no raster control was tested. |
 | Wall/console grain and chair weave stay subtle. | **TEACHING PRESENTATION** | The final recipes deliberately keep those contrasts restrained. No evidence says stronger or photographic detail would improve the teaching view. |
 | Extra tiny geometry did not automatically improve visual quality. | **GEOMETRY** (not a current bottleneck) | More polygons are not a proxy for a better image. The pilots do not establish that existing geometry needs replacement by a model. |
@@ -176,7 +178,7 @@ Reopen the GLTF/GLB decision only when all of these are true:
 3. The imported model is only a presentation asset; camera, focus, task, movement, composition, image-circle, and optical authority stay in canonical modules.
 4. Asset identity, axes, units, pivots, bounds, and allowed render features have executable validation, and load readiness, decode/parse cost, texture/material/geometry counts, failure handling, cancellation, and disposal are measured.
 
-Neither external-asset trigger is met. PR I tested direct directional illumination and PR J tested a procedural environment/reflection contribution. Architecture Rise's façade modeling improved, but the glazing remained dark and the environment mostly lifted broad surfaces. If the glass limitation becomes a teaching priority, isolate the scalar material response before considering any external material source.
+Neither external-asset trigger is met. PR I tested direct directional illumination, PR J tested a procedural environment/reflection contribution, and PR K tested two bounded built-in PBR material responses. Architecture Rise's façade modeling improved, but the glazing remained dark and no candidate produced useful normal-scale reflection response. A local-reflection need belongs to a separate reflection-technique decision, not an external material source. Any future scene reflection must enter scene radiance before the optical/DOF processing so it remains represented in Ground Glass.
 
 ## Explicit non-decisions
 
@@ -187,11 +189,15 @@ This decision does not select a raster format, add an asset manifest/registry, a
 PR H established the world-source foundation, PR I tested fixed directional
 daylight, and PR J tested a renderer-owned procedural sky/ground environment.
 The environment added broad material integration but did not make glazing
-usefully reflective at normal scale. It neither validates natural shadows nor
-creates a visible sky.
+usefully reflective at normal scale. PR K then tested a restrained dielectric
+standard material and an opaque physical material under that fixed environment;
+neither produced a meaningful normal-scale response, so production retains the
+baseline scalar recipe. The result does not validate natural shadows or create a
+visible sky.
 
 Procedural surface materials remain the default. Local raster maps and
 GLTF/GLB assets stay deferred until their separate documented evidence triggers
-are met. If the glass limitation remains important, the evidence points first
-to a bounded glass-material experiment under fixed illumination and environment
-conditions, not to an external asset pipeline.
+are met. The remaining local-reflection gap may justify a future reflection-
+technique decision if it becomes a teaching need; no reflection technique is
+selected here. Any such radiance must enter scene radiance before Ground Glass
+optical/DOF processing.
