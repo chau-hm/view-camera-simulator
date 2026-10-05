@@ -15,6 +15,7 @@ import {
   MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  FRINGE_CLUB_RUNTIME_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
 } from "./assets/sceneAssetRegistry";
@@ -195,5 +196,17 @@ export const MirrorShiftSubject = () => (
   <RegisteredSceneAsset
     assetKey={MIRROR_SHIFT_ASSET_KEY}
     request={mirrorShiftViewportRequest}
+  />
+);
+
+/** Development fixture consumer; deliberately absent from sceneSubjectRegistry. */
+export const FringeClubRuntimeSubject = ({
+  request,
+}: {
+  request: SceneAssetRequestMap[typeof FRINGE_CLUB_RUNTIME_ASSET_KEY];
+}) => (
+  <RegisteredSceneAsset
+    assetKey={FRINGE_CLUB_RUNTIME_ASSET_KEY}
+    request={request}
   />
 );

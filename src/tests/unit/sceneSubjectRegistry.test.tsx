@@ -83,6 +83,7 @@ import {
   MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  FRINGE_CLUB_RUNTIME_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
   resolveSceneAsset,
@@ -190,9 +191,23 @@ describe("scene subject registry", () => {
     expect([...RTT_SCENES].sort()).toEqual(publicIds);
     expect(Object.keys(sceneSubjectRegistry).sort()).toEqual(publicIds);
     expect(Object.keys(publicSceneAssetSlots).sort()).toEqual(publicIds);
-    expect(Object.values(publicSceneAssetSlots).sort()).toEqual(
-      Object.keys(sceneAssetRegistry).sort(),
+    const publicAssetKeys = Object.values(publicSceneAssetSlots).sort();
+    const unboundAssetKeys = Object.keys(sceneAssetRegistry)
+      .filter(
+        (assetKey) =>
+          !Object.values(publicSceneAssetSlots).some(
+            (publicAssetKey) => publicAssetKey === assetKey,
+          ),
+      )
+      .sort();
+    expect(publicAssetKeys).toEqual(
+      Object.keys(sceneAssetRegistry)
+        .filter((assetKey) => assetKey !== FRINGE_CLUB_RUNTIME_ASSET_KEY)
+        .sort(),
     );
+    expect(unboundAssetKeys).toEqual([FRINGE_CLUB_RUNTIME_ASSET_KEY]);
+    expect(publicIds).not.toContain(FRINGE_CLUB_RUNTIME_ASSET_KEY);
+    expect(getSceneSubjectRegistration(FRINGE_CLUB_RUNTIME_ASSET_KEY)).toBeUndefined();
     publicIds.forEach((sceneId) => expect(definedSceneIds.has(sceneId)).toBe(true));
 
     const implementationIds: string[] = [];
