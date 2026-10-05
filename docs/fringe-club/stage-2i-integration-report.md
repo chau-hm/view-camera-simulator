@@ -139,7 +139,7 @@ Stage 2I browser did not directly measure GPU memory.
 
 Validation completed:
 
-- `npm test`: 231 files / 2,179 tests passed.
+- `npm test`: 232 files / 2,180 tests passed on the latest-base feature branch.
 - `npm run lint`, `npm run typecheck`, and `npm run check:css`: passed.
 - `npm run build` with `VITE_BASE_PATH=/view-camera-simulator/`: passed.
 - Focused Fringe Playwright suite: both SPA/lifecycle and delayed-fetch
@@ -150,7 +150,7 @@ Validation completed:
   normal Architecture Rise and Ground Glass worked with zero Fringe requests.
 - `git diff --check`: passed before publication.
 
-`npm run ci:local:e2e` passed its CSS, lint, typecheck, 2,179 unit/integration
+`npm run ci:local:e2e` passed its CSS, lint, typecheck, 2,180 unit/integration
 tests, and production build stages, then stopped on the first E2E file,
 `architecture-foreground-compound.spec.ts`. That existing test expects the
 “Complete the Photograph” heading while the current page snapshot shows the
