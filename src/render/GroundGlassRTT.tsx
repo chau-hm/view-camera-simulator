@@ -22,6 +22,7 @@ import {
 } from "../scenes/presentation/understandingCameraMovements";
 import {
   getGroundGlassSceneProfile,
+  type GroundGlassSceneProfile,
   type GroundGlassSceneProfileContext,
   type GroundGlassSceneProfileUpdateContext,
   type MountedGroundGlassSceneSubject,
@@ -130,6 +131,8 @@ export type GroundGlassRTTProps = {
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   /** Application-owned diagnostics adapter. */
   onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
+  /** Development fixture subject profile; ignored by production builds. */
+  developmentSceneProfileOverride?: GroundGlassSceneProfile;
 };
 
 const tupleMatches = (
@@ -138,7 +141,23 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", channel = "default", inspectionWindow: explicitInspectionWindow, presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
+function OffscreenRenderer({
+  opticsState,
+  focalLengthMm,
+  scene: sceneDefinition,
+  widthPx,
+  heightPx,
+  aperture = 11.0,
+  previewMode = "raw",
+  rawDebug = false,
+  renderQuality = "standard",
+  channel = "default",
+  inspectionWindow: explicitInspectionWindow,
+  presentationRegion: explicitPresentationRegion,
+  effectiveCameraMovementCalibration,
+  onRuntimeInfoChange,
+  developmentSceneProfileOverride,
+}: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -162,7 +181,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     ? resolveCameraMovementLatticePresentation(effectiveCameraMovementCalibration)
     : CAMERA_MOVEMENT_BASELINE_PRESENTATION;
   const resolvedSceneId = sceneDefinition.id;
-  const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
+  const sceneProfile =
+    import.meta.env.DEV && developmentSceneProfileOverride
+      ? developmentSceneProfileOverride
+      : getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
   const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
@@ -1535,7 +1557,23 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, channel = "default", inspectionWindow, presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
+  opticsState,
+  focalLengthMm,
+  scene,
+  widthPx,
+  heightPx,
+  aperture,
+  previewMode,
+  rawDebug,
+  renderQuality,
+  channel = "default",
+  inspectionWindow,
+  presentationRegion,
+  effectiveCameraMovementCalibration,
+  onRuntimeInfoChange,
+  developmentSceneProfileOverride,
+}) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1550,7 +1588,23 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         orthographic={false}
         shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} channel={channel} inspectionWindow={inspectionWindow} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
+        <OffscreenRenderer
+          opticsState={opticsState}
+          focalLengthMm={focalLengthMm}
+          scene={scene}
+          widthPx={widthPx}
+          heightPx={heightPx}
+          aperture={aperture}
+          previewMode={previewMode}
+          rawDebug={rawDebug}
+          renderQuality={renderQuality}
+          channel={channel}
+          inspectionWindow={inspectionWindow}
+          presentationRegion={presentationRegion}
+          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+          onRuntimeInfoChange={onRuntimeInfoChange}
+          developmentSceneProfileOverride={developmentSceneProfileOverride}
+        />
       </Canvas>
     </div>
   );

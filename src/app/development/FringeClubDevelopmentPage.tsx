@@ -3,6 +3,18 @@ import type { ChangeEvent } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
+import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
+import { GroundGlassRTT } from "../../render/GroundGlassRTT";
+import type {
+  GroundGlassRttRuntimeInfo,
+  GroundGlassRttRuntimeInfoChangeHandler,
+} from "../../render/groundGlassRttDimensions";
+import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import {
+  createFringeClubGroundGlassDevelopmentProfile,
+  type FringeClubGroundGlassSubjectIdentity,
+} from "./fringeClubGroundGlassProfile";
 import { AppShell } from "../../components/layout/AppShell";
 import { FringeClubRuntimeSubject } from "../../render/SceneAssetSubjects";
 import {
@@ -196,11 +208,13 @@ const AssetSession = ({
   showA,
   showB,
   onLoadState,
+  onSourceOwnerChanged,
 }: {
   loader: FringeClubSourceAssetLoader;
   showA: boolean;
   showB: boolean;
   onLoadState: (generation: number, state: LoadState, error?: string) => void;
+  onSourceOwnerChanged: (owner: FringeClubSourceOwnerLease | null) => void;
 }) => {
   const { gl } = useThree();
   const [owner, setOwner] = useState<FringeClubSourceOwnerLease | null>(null);
@@ -227,6 +241,7 @@ const AssetSession = ({
           return;
         }
         ownerRef.current = readyOwner;
+        onSourceOwnerChanged(readyOwner);
         setOwner(readyOwner);
         settled = true;
         onLoadState(handle.generation, "ready");
@@ -249,12 +264,13 @@ const AssetSession = ({
       const currentOwner = ownerRef.current;
       ownerRef.current = null;
       currentOwner?.release();
+      onSourceOwnerChanged(null);
       if (wasCurrent && !settled) {
         settled = true;
         onLoadState(handle.generation, "cancelled");
       }
     };
-  }, [gl, loader, onLoadState]);
+  }, [gl, loader, onLoadState, onSourceOwnerChanged]);
 
   if (!owner) return null;
   return (
@@ -273,13 +289,24 @@ const useAuditSnapshot = (audit: FringeClubRuntimeAudit) => {
 
 const renderQuality = getRenderQualitySettings("standard");
 
-export const FringeClubDevelopmentPage = () => {
+export const FringeClubDevelopmentPage = ({
+  enableGroundGlass = false,
+}: {
+  enableGroundGlass?: boolean;
+}) => {
   const audit = useMemo(() => new FringeClubRuntimeAudit(), []);
   const loader = useMemo(() => new FringeClubSourceAssetLoader(audit), [audit]);
   const auditSnapshot = useAuditSnapshot(audit);
   const [sessionActive, setSessionActive] = useState(false);
+  const [sourceOwner, setSourceOwner] = useState<FringeClubSourceOwnerLease | null>(null);
   const [showA, setShowA] = useState(true);
   const [showB, setShowB] = useState(false);
+  const [showGroundGlassSubject, setShowGroundGlassSubject] =
+    useState(enableGroundGlass);
+  const [groundGlassInfo, setGroundGlassInfo] =
+    useState<GroundGlassRttRuntimeInfo | null>(null);
+  const [groundGlassSubjectIdentity, setGroundGlassSubjectIdentity] =
+    useState<FringeClubGroundGlassSubjectIdentity | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rendererSnapshot, setRendererSnapshot] =
@@ -290,6 +317,51 @@ export const FringeClubDevelopmentPage = () => {
   const rendererBaselineCandidate = useRef<RendererSnapshot | null>(null);
   const rendererBaselineStableSamples = useRef(0);
   const latestGeneration = useRef(0);
+  const referenceCamera = useMemo(
+    () => ({
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    }),
+    [],
+  );
+  const referenceOptics = useMemo(
+    () => deriveOpticsState(referenceCamera, architectureRiseScene),
+    [referenceCamera],
+  );
+  const handleSourceOwnerChanged = useCallback(
+    (nextOwner: FringeClubSourceOwnerLease | null) => setSourceOwner(nextOwner),
+    [],
+  );
+  const handleGroundGlassInfoChange =
+    useCallback<GroundGlassRttRuntimeInfoChangeHandler>((_channel, info) => {
+      setGroundGlassInfo(info);
+    }, []);
+  const handleGroundGlassSubjectIdentityChange = useCallback(
+    (identity: FringeClubGroundGlassSubjectIdentity | null) => {
+      setGroundGlassSubjectIdentity(identity);
+    },
+    [],
+  );
+  useEffect(() => {
+    setShowGroundGlassSubject(enableGroundGlass);
+  }, [enableGroundGlass]);
+
+  const groundGlassProfile = useMemo(
+    () =>
+      sourceOwner
+        ? createFringeClubGroundGlassDevelopmentProfile({
+            sourceOwner,
+            mountSubject: showGroundGlassSubject,
+            onSubjectIdentityChange: handleGroundGlassSubjectIdentityChange,
+          })
+        : undefined,
+    [
+      handleGroundGlassSubjectIdentityChange,
+      showGroundGlassSubject,
+      sourceOwner,
+    ],
+  );
 
   const captureRendererSnapshot = useCallback((snapshot: RendererSnapshot) => {
     setRendererSnapshot(snapshot);
@@ -331,22 +403,37 @@ export const FringeClubDevelopmentPage = () => {
     if (loadState === "loading") setLoadState("cancelled");
     else setLoadState("idle");
     setLoadError(null);
+    setSourceOwner(null);
+    setGroundGlassInfo(null);
+    setGroundGlassSubjectIdentity(null);
     setSessionActive(false);
   };
 
   const handleLoadSource = () => {
     setShowA(true);
     setShowB(false);
+    setShowGroundGlassSubject(enableGroundGlass);
     setLoadError(null);
+    setGroundGlassInfo(null);
+    setGroundGlassSubjectIdentity(null);
     setSessionActive(true);
   };
 
   return (
-    <AppShell title="Fringe Club runtime integration — development only" fullBleed>
+    <AppShell
+      title={
+        enableGroundGlass
+          ? "Fringe Club Observer + Ground Glass RTT — development only"
+          : "Fringe Club runtime integration — development only"
+      }
+      fullBleed
+    >
       <div style={{ padding: "1rem", overflow: "auto" }}>
         <p role="note">
           <strong>NOT A PUBLIC SCENE.</strong> Do not use this fixture as a lesson
-          or catalog entry. It validates the Stage 2H visual asset lifecycle only.
+          or catalog entry. {enableGroundGlass
+            ? "This fixture checks one loaded SourceAsset across the Observer and the real Ground Glass RTT pass graph."
+            : "This fixture validates the Stage 2H Observer asset lifecycle only."}
         </p>
         <p>
           GLB: <code data-testid="fringe-asset-url">{FRINGE_CLUB_ASSET_URL}</code>
@@ -387,6 +474,18 @@ export const FringeClubDevelopmentPage = () => {
                 />{" "}
                 Instance B
               </label>
+              {enableGroundGlass ? (
+                <label>
+                  <input
+                    type="checkbox"
+                    aria-label="Mount Ground Glass RTT instance"
+                    checked={showGroundGlassSubject}
+                    onChange={setInstanceChecked(setShowGroundGlassSubject)}
+                    disabled={loadState !== "ready"}
+                  />{" "}
+                  Ground Glass RTT instance
+                </label>
+              ) : null}
             </>
           ) : null}
           <Link to="/scenes">Exit development fixture</Link>
@@ -462,34 +561,101 @@ export const FringeClubDevelopmentPage = () => {
         </div>
 
         <div
-          data-testid="fringe-app-canvas"
-          style={{ height: "min(68vh, 720px)", minHeight: 360, border: "1px solid #cbd5e1" }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: enableGroundGlass
+              ? "repeat(auto-fit, minmax(min(100%, 34rem), 1fr))"
+              : "minmax(0, 1fr)",
+            gap: "1rem",
+          }}
         >
-          <Canvas
-            dpr={renderQuality.dpr}
-            camera={{ position: [30, 24, 30], fov: 45, near: 0.01, far: 1000 }}
-            gl={{ antialias: renderQuality.antialias }}
-            shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
+          <div
+            data-testid="fringe-app-canvas"
+            style={{ height: "min(68vh, 720px)", minHeight: 360, border: "1px solid #cbd5e1" }}
           >
-            <color attach="background" args={["#f8fafc"]} />
-            <PresentationLighting lighting={DEFAULT_PRESENTATION_LIGHTING} />
-            <RendererMetricsProbe onSnapshot={captureRendererSnapshot} />
-            {sessionActive ? (
-              <AssetSession
-                key={String(sessionActive)}
-                loader={loader}
-                showA={showA}
-                showB={showB}
-                onLoadState={updateLoadState}
-              />
-            ) : null}
-          </Canvas>
+            <Canvas
+              dpr={renderQuality.dpr}
+              camera={{ position: [30, 24, 30], fov: 45, near: 0.01, far: 1000 }}
+              gl={{ antialias: renderQuality.antialias }}
+              shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
+            >
+              <color attach="background" args={["#f8fafc"]} />
+              <PresentationLighting lighting={DEFAULT_PRESENTATION_LIGHTING} />
+              <RendererMetricsProbe onSnapshot={captureRendererSnapshot} />
+              {sessionActive ? (
+                <AssetSession
+                  key={String(sessionActive)}
+                  loader={loader}
+                  showA={showA}
+                  showB={showB}
+                  onLoadState={updateLoadState}
+                  onSourceOwnerChanged={handleSourceOwnerChanged}
+                />
+              ) : null}
+            </Canvas>
+          </div>
+          {enableGroundGlass ? (
+            <section aria-labelledby="fringe-ground-glass-heading">
+              <h2 id="fringe-ground-glass-heading">Ground Glass RTT — Architecture Rise reference</h2>
+              <p>
+                Read-only reference optics come from the existing Architecture Rise scene definition and camera preset.
+                The registered Fringe instance is positioned for this fixture; no scene calibration or simulator state changes.
+              </p>
+              <div
+                data-testid="fringe-rtt-metrics"
+                data-source-id={sourceOwner?.sourceId ?? ""}
+                data-subject-source-id={groundGlassSubjectIdentity?.sourceId ?? ""}
+                data-subject-instance-id={groundGlassSubjectIdentity?.instanceId ?? ""}
+                data-subject-root-id={groundGlassSubjectIdentity?.rootId ?? ""}
+                data-instance-leases={auditSnapshot.activeInstanceLeases}
+                data-active-sources={auditSnapshot.activeSources}
+                data-rtt-camera-ok={groundGlassInfo?.cameraConfigurationOk === undefined ? "" : String(groundGlassInfo.cameraConfigurationOk)}
+                data-rtt-raw-contentful={groundGlassInfo?.rawContentful === undefined ? "" : String(groundGlassInfo.rawContentful)}
+                data-rtt-final-contentful={groundGlassInfo?.finalContentful === undefined ? "" : String(groundGlassInfo.finalContentful)}
+                data-rtt-render-sanity-error={groundGlassInfo?.renderSanityError ?? ""}
+                data-rtt-subject-meshes={groundGlassInfo?.sceneCapacity?.rttSubject?.meshCount ?? ""}
+                data-rtt-subject-triangles={groundGlassInfo?.sceneCapacity?.rttSubject?.triangleCount ?? ""}
+                data-rtt-renderer-geometries={groundGlassInfo?.sceneCapacity?.rendererResources?.geometries ?? ""}
+                data-rtt-renderer-textures={groundGlassInfo?.sceneCapacity?.rendererResources?.textures ?? ""}
+              >
+                {groundGlassInfo ? (
+                  <p>
+                    RTT camera {groundGlassInfo.cameraConfigurationOk ? "ready" : "not ready"}; raw contentful {String(groundGlassInfo.rawContentful ?? false)};
+                    final contentful {String(groundGlassInfo.finalContentful ?? false)}; subject meshes {groundGlassInfo.sceneCapacity?.rttSubject?.meshCount ?? "profiling off"};
+                    RTT renderer geometries {groundGlassInfo.sceneCapacity?.rendererResources?.geometries ?? "profiling off"},
+                    textures {groundGlassInfo.sceneCapacity?.rendererResources?.textures ?? "profiling off"}.
+                  </p>
+                ) : (
+                  <p>Waiting for the Ground Glass RTT renderer diagnostics…</p>
+                )}
+              </div>
+              <div
+                data-testid="fringe-ground-glass-canvas"
+                style={{ height: "min(68vh, 720px)", minHeight: 360, border: "1px solid #cbd5e1" }}
+              >
+                {sourceOwner && sessionActive && groundGlassProfile ? (
+                  <GroundGlassRTT
+                    opticsState={referenceOptics}
+                    focalLengthMm={referenceCamera.focalLengthMm}
+                    scene={architectureRiseScene}
+                    widthPx={500}
+                    heightPx={400}
+                    aperture={referenceCamera.aperture}
+                    previewMode="raw"
+                    renderQuality="standard"
+                    channel="default"
+                    developmentSceneProfileOverride={groundGlassProfile}
+                    onRuntimeInfoChange={handleGroundGlassInfoChange}
+                  />
+                ) : null}
+              </div>
+            </section>
+          ) : null}
         </div>
         <p>
-          This development fixture uses the application’s R3F Canvas settings,
-          teaching-lighting/shadow policy, typed scene-asset registry, and
-          registered disposer. Its preview camera is presentation-only; no
-          canonical simulator or Ground Glass state is mounted.
+          {enableGroundGlass
+            ? "The Ground Glass panel mounts the actual GroundGlassRTT component, including its owned render targets, camera, shader passes, diagnostics, and cleanup. Its development scene profile only substitutes the registered Fringe subject."
+            : "This development fixture uses the application's R3F Canvas settings, teaching-lighting/shadow policy, typed scene-asset registry, and registered disposer. Its preview camera is presentation-only; no canonical simulator or Ground Glass state is mounted."}
         </p>
       </div>
     </AppShell>
