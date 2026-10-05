@@ -190,6 +190,14 @@ baseline 0.7/0.8 ms, with GPU timing unavailable. Frame cadence came from a
 CPU-fallback backend and is not evidence of GPU cost. This result does not
 establish a texture-file requirement.
 
+PR L then audited local reflections as a separate rendering capability. It
+recorded the Observer/RTT paths and deferred technique selection because the
+current Ground Glass color/depth pair cannot give direct pane radiance and the
+reflected virtual image independent focus depths. See the
+[local-reflection decision](LOCAL_REFLECTION_TECHNIQUE_DECISION.md) for the
+candidate analysis and follow-up boundary. No rendering prototype or
+production reflection behavior was retained.
+
 ## Ground Glass migration seam
 
 Ground Glass is the renderer migration boundary that needs the most work before
