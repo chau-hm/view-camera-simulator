@@ -158,4 +158,4 @@ Recommended next PR: return to a bounded reflection-technique comparison and con
 
 ## Scope confirmation
 
-Production behavior is unchanged: glass material, daylight, environment, presentation lighting, geometry, optics, image-circle behavior, task thresholds, exposure, natural shadows, external assets, and WebGPU/TSL. No screenshots, rendering prototypes, or new production abstractions are retained.
+Production behavior is unchanged: glass material, daylight, environment, presentation lighting, geometry, optics, image-circle behavior, task thresholds, exposure, natural shadows, external assets, and WebGPU/TSL. No screenshots or reflection prototypes are retained. PR M intentionally retains the renderer-local `GroundGlassRadianceContribution` contract and apparent-world-position CoC shader/binding seam as durable architecture output, exercised by tests and the synthetic proof; these seams are not connected to the production Ground Glass executor. No production reflection technique or production multi-contribution executor is enabled or retained.
