@@ -10,6 +10,7 @@ import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
   type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
+import type { GroundGlassSceneProfile } from "../../render/groundGlassSceneProfiles";
 import { synchronizeGroundGlassDofClipRange } from "../../render/groundGlassShaderBindings";
 import {
   decodeGroundGlassSignedCoC,
@@ -187,6 +188,53 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("uses and disposes the development-only scene profile through the RTT lifecycle", () => {
+    const subject = new THREE.Group();
+    subject.name = "development-profile-test-subject";
+    const disposeSubject = vi.fn(() => subject.removeFromParent());
+    const mountSubject = vi.fn((scene: THREE.Scene) => {
+      scene.add(subject);
+      return { group: subject, dispose: disposeSubject };
+    });
+    const developmentProfile: GroundGlassSceneProfile = {
+      configureRttShadowParticipation: vi.fn(),
+      mountSubject,
+      resolveRenderBounds: vi.fn(() => architectureRiseScene.bounds),
+    };
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureRiseScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        developmentSceneProfileOverride: developmentProfile,
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const sourceScene = fiberTestState.renderedScenes.find(
+      (candidate): candidate is THREE.Scene =>
+        candidate instanceof THREE.Scene &&
+        candidate.getObjectByName(subject.name) === subject,
+    );
+    expect(mountSubject).toHaveBeenCalledTimes(1);
+    expect(developmentProfile.configureRttShadowParticipation).toHaveBeenCalledWith(subject);
+    expect(sourceScene).toBe(subject.parent);
+
+    view.unmount();
+
+    expect(disposeSubject).toHaveBeenCalledTimes(1);
+    expect(subject.parent).toBeNull();
+  });
+
   it("mounts the resolved Interior Corner practical in the RTT scene outside the subject", () => {
     const scene = interiorCornerScene;
     const camera = {

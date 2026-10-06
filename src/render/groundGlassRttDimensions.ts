@@ -99,6 +99,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   finalNonBackgroundPixelCount?: number;
   finalContentful?: boolean;
   renderSanitySampleCount?: number;
+  /** Scene-profile/subject generation whose pixels produced this observation. */
+  renderSanitySubjectGeneration?: number;
   renderSanityStateKey?: string;
   renderSanityError?: string | null;
   inspectionWindowActive?: boolean;

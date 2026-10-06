@@ -292,3 +292,138 @@ test("navigation away aborts a delayed development load without a stale mount", 
   expect(errors.consoleProblems).toEqual([]);
   await expect(page.getByTestId("fringe-app-canvas")).toHaveCount(0);
 });
+
+test("Ground Glass RTT renders an independent instance from the Observer's SourceAsset lease", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = installBrowserErrorCapture(page);
+  const glbRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes(GLB_NAME)) glbRequests.push(request.url());
+  });
+
+  await page.goto("/simulator/free/architecture-rise");
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveCount(1);
+  expect(glbRequests).toEqual([]);
+
+  await page.goto("/__dev/fringe-club-rtt?sceneCapacityProfiling=1&rttDiagnostics=1");
+  await expect(page.getByText("NOT A PUBLIC SCENE.")).toBeVisible();
+  await expect(page.getByTestId("fringe-renderer-metrics")).toHaveAttribute(
+    "data-baseline-geometries",
+    /^\d+$/,
+  );
+
+  const observerMetrics = page.getByTestId("fringe-renderer-metrics");
+  const rttMetrics = page.getByTestId("fringe-rtt-metrics");
+  await page.getByRole("button", { name: "Load source asset" }).click();
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
+    "data-state",
+    "ready",
+    { timeout: 60_000 },
+  );
+
+  await expect(observerMetrics).toHaveAttribute("data-source-assets", "1");
+  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "2");
+  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", /^[^\s]+$/);
+  const sourceId = await rttMetrics.getAttribute("data-source-id");
+  expect(sourceId).toMatch(/^fringe-club-source-/);
+  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
+  await expect(rttMetrics).toHaveAttribute("data-subject-instance-id", "ground-glass-rtt");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-camera-ok", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-generation", /^\d+$/);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-subject-meshes", /^[1-9]\d*$/);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-geometries", /^\d+$/);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-textures", /^\d+$/);
+  const initialRttRoot = await rttMetrics.getAttribute("data-subject-root-id");
+  const initialRenderSanityGeneration = Number(
+    await rttMetrics.getAttribute("data-rtt-render-sanity-generation"),
+  );
+  const initialRenderSanityState = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
+  const initialRttCapacity = await rttMetrics.evaluate((element) => ({
+    meshes: Number(element.getAttribute("data-rtt-subject-meshes")),
+    triangles: Number(element.getAttribute("data-rtt-subject-triangles")),
+    geometries: Number(element.getAttribute("data-rtt-renderer-geometries")),
+    textures: Number(element.getAttribute("data-rtt-renderer-textures")),
+  }));
+  expect(initialRttRoot).not.toBe("");
+  expect(initialRenderSanityGeneration).toBeGreaterThan(0);
+  expect(initialRenderSanityState).toMatch(/\|subject-generation:\d+$/);
+  expect(initialRttCapacity.meshes).toBeGreaterThan(0);
+  expect(initialRttCapacity.triangles).toBeGreaterThan(0);
+
+  await page.getByRole("checkbox", { name: "Mount instance A" }).uncheck();
+  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "1");
+  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", initialRttRoot!);
+  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await page.getByRole("checkbox", { name: "Mount Ground Glass RTT instance" }).uncheck();
+  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "0");
+  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
+  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-generation", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-subject-meshes", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-state", "");
+  await expect(rttMetrics).toHaveAttribute("data-active-sources", "1");
+  await expect(observerMetrics).toHaveAttribute("data-owner-leases", "1");
+
+  await page.getByRole("checkbox", { name: "Mount Ground Glass RTT instance" }).check();
+  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "1");
+  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
+  await expect
+    .poll(async () => Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation")))
+    .toBeGreaterThan(initialRenderSanityGeneration);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-state", /\|subject-generation:\d+$/);
+  const remountedRoot = await rttMetrics.getAttribute("data-subject-root-id");
+  const remountedRenderSanityState = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
+  expect(remountedRoot).not.toBe("");
+  expect(remountedRoot).not.toBe(initialRttRoot);
+  expect(remountedRenderSanityState).not.toBe(initialRenderSanityState);
+
+  await page.getByRole("button", { name: "Release source asset" }).click();
+  await expect(observerMetrics).toHaveAttribute("data-source-assets", "0");
+  await expect(observerMetrics).toHaveAttribute("data-owner-leases", "0");
+  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "0");
+  await expect(observerMetrics).toHaveAttribute("data-source-geometries", "0");
+  await expect(observerMetrics).toHaveAttribute("data-source-materials", "0");
+  await expect(observerMetrics).toHaveAttribute("data-source-textures", "0");
+  await expect(observerMetrics).toHaveAttribute("data-image-backings", "0");
+  await expect(observerMetrics).toHaveAttribute("data-instance-materials", "0");
+  await expect(rttMetrics).toHaveAttribute("data-source-id", "");
+  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
+
+  // React's development effect replay may request once for the cancelled first
+  // generation and once for the active generation; loading stays activation-gated.
+  expect(glbRequests.length).toBeGreaterThan(0);
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleProblems).toEqual([]);
+  await test.info().attach("fringe-club-stage-2j-rtt-browser-measurements.json", {
+    body: Buffer.from(
+      JSON.stringify(
+        {
+          browserVersion: page.context().browser()?.version() ?? "unknown",
+          userAgent: await page.evaluate(() => navigator.userAgent),
+          devicePixelRatio: await page.evaluate(() => window.devicePixelRatio),
+          viewport: await page.evaluate(() => ({
+            width: window.innerWidth,
+            height: window.innerHeight,
+          })),
+          sourceId,
+          initialRttRoot,
+          remountedRoot,
+          initialRttCapacity,
+          observerRenderer: await readMetrics(page),
+          glbRequests,
+        },
+        null,
+        2,
+      ),
+    ),
+    contentType: "application/json",
+  });
+});
