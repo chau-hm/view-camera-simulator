@@ -21,14 +21,26 @@ if (import.meta.env.DEV) {
       default: module.FringeClubDevelopmentPage,
     })),
   );
-  routes.splice(routes.length - 1, 0, {
-    path: "/__dev/fringe-club",
-    element: (
-      <Suspense fallback={<p>Loading development fixture…</p>}>
-        <DevelopmentFringeClubPage />
-      </Suspense>
-    ),
-  });
+  routes.splice(
+    routes.length - 1,
+    0,
+    {
+      path: "/__dev/fringe-club",
+      element: (
+        <Suspense fallback={<p>Loading development fixture…</p>}>
+          <DevelopmentFringeClubPage />
+        </Suspense>
+      ),
+    },
+    {
+      path: "/__dev/fringe-club-rtt",
+      element: (
+        <Suspense fallback={<p>Loading development fixture…</p>}>
+          <DevelopmentFringeClubPage enableGroundGlass />
+        </Suspense>
+      ),
+    },
+  );
 }
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "");

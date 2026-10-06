@@ -22,6 +22,7 @@ import {
 } from "../scenes/presentation/understandingCameraMovements";
 import {
   getGroundGlassSceneProfile,
+  type GroundGlassSceneProfile,
   type GroundGlassSceneProfileContext,
   type GroundGlassSceneProfileUpdateContext,
   type MountedGroundGlassSceneSubject,
@@ -130,6 +131,8 @@ export type GroundGlassRTTProps = {
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   /** Application-owned diagnostics adapter. */
   onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
+  /** Development fixture subject profile; ignored by production builds. */
+  developmentSceneProfileOverride?: GroundGlassSceneProfile;
 };
 
 const tupleMatches = (
@@ -138,7 +141,23 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
-function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition, widthPx, heightPx, aperture = 11.0, previewMode = 'raw', rawDebug = false, renderQuality = "standard", channel = "default", inspectionWindow: explicitInspectionWindow, presentationRegion: explicitPresentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange, }: GroundGlassRTTProps) {
+function OffscreenRenderer({
+  opticsState,
+  focalLengthMm,
+  scene: sceneDefinition,
+  widthPx,
+  heightPx,
+  aperture = 11.0,
+  previewMode = "raw",
+  rawDebug = false,
+  renderQuality = "standard",
+  channel = "default",
+  inspectionWindow: explicitInspectionWindow,
+  presentationRegion: explicitPresentationRegion,
+  effectiveCameraMovementCalibration,
+  onRuntimeInfoChange,
+  developmentSceneProfileOverride,
+}: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -147,6 +166,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
   const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
   const lastRenderSanityStateKeyRef = React.useRef<string | null>(null);
+  const sceneSubjectGenerationRef = React.useRef(0);
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
@@ -162,7 +182,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     ? resolveCameraMovementLatticePresentation(effectiveCameraMovementCalibration)
     : CAMERA_MOVEMENT_BASELINE_PRESENTATION;
   const resolvedSceneId = sceneDefinition.id;
-  const sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
+  const sceneProfile =
+    import.meta.env.DEV && developmentSceneProfileOverride
+      ? developmentSceneProfileOverride
+      : getGroundGlassSceneProfile(sceneDefinition);
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
   const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
@@ -209,6 +232,39 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       runtimeInfoChangeRef.current?.(channel, enriched, runtimeOwnerId);
     },
     [channel, runtimeOwnerId],
+  );
+  const clearSubjectScopedDiagnostics = React.useCallback(
+    (clearLatticeRuntimeInfo = false) => {
+      const currentInfo = readRuntimeInfo();
+      if (!currentInfo) return;
+
+      setRuntimeInfo({
+        ...currentInfo,
+        rawColorVariance: undefined,
+        rawNonBackgroundPixelCount: undefined,
+        rawContentful: undefined,
+        finalColorVariance: undefined,
+        finalNonBackgroundPixelCount: undefined,
+        finalContentful: undefined,
+        renderSanitySampleCount: undefined,
+        renderSanitySubjectGeneration: undefined,
+        renderSanityStateKey: undefined,
+        renderSanityError: undefined,
+        sceneCapacity: undefined,
+        ...(clearLatticeRuntimeInfo
+          ? {
+              latticeEdgeCount: undefined,
+              latticeGeometryId: undefined,
+              latticeGeometryKey: undefined,
+              latticePresentationKey: undefined,
+              latticeResourceKey: undefined,
+              latticePresentationRegion: undefined,
+              latticeSubjectGeneration: undefined,
+            }
+          : {}),
+      });
+    },
+    [readRuntimeInfo, setRuntimeInfo],
   );
 
   // clear RTT runtime diagnostics when this renderer unmounts or is recreated
@@ -664,6 +720,10 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     const scene = offscreenScene.current;
     if (!scene) return;
 
+    sceneSubjectGenerationRef.current += 1;
+    lastRenderSanityStateKeyRef.current = null;
+    clearSubjectScopedDiagnostics();
+
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
       cameraMovementPresentation,
@@ -682,7 +742,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     }
 
     const mounted = sceneProfile.mountSubject(scene, profileContext);
-    if (!mounted) return;
+    if (!mounted) {
+      return () => {
+        lastRenderSanityStateKeyRef.current = null;
+        clearSubjectScopedDiagnostics();
+      };
+    }
     sceneProfile.configureRttShadowParticipation(mounted.group);
     mountedSceneSubjectRef.current = mounted;
 
@@ -721,22 +786,12 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
       }
       mounted.dispose();
       const latestInfo = readRuntimeInfo();
-      if (
+      const clearLatticeRuntimeInfo = Boolean(
         runtimeInfo &&
-        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
-      ) {
-        setRuntimeInfo({
-          ...latestInfo,
-          latticeEdgeCount: undefined,
-          latticeGeometryId: undefined,
-          latticeGeometryKey: undefined,
-          latticePresentationKey: undefined,
-          latticeResourceKey: undefined,
-          latticePresentationRegion: undefined,
-          latticeSubjectGeneration: undefined,
-          sceneCapacity: undefined,
-        });
-      }
+        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation,
+      );
+      lastRenderSanityStateKeyRef.current = null;
+      clearSubjectScopedDiagnostics(clearLatticeRuntimeInfo);
     };
   }, [
     cameraMovementPresentation,
@@ -745,6 +800,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
     readRuntimeInfo,
     sceneCapacityProfilingEnabled,
     setRuntimeInfo,
+    clearSubjectScopedDiagnostics,
     gl,
   ]);
 
@@ -1436,7 +1492,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         gl.render(postSceneComposite, orthoCam);
       });
 
-      const sanityStateKey = createGroundGlassRenderSanityStateKey({
+      const renderSanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
         sceneId: resolvedSceneId,
         previewMode,
@@ -1448,12 +1504,17 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
         configuredCameraPose: configuredPose,
         inspectionWindow,
       });
+      const sanityStateKey = `${renderSanityStateKey}|subject-generation:${sceneSubjectGenerationRef.current}`;
 
       const renderSanityEnabled =
         import.meta.env.DEV &&
         typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get("rttDiagnostics") === "1";
-      if (renderSanityEnabled && lastRenderSanityStateKeyRef.current !== sanityStateKey) {
+      if (
+        renderSanityEnabled &&
+        mountedSceneSubjectRef.current !== null &&
+        lastRenderSanityStateKeyRef.current !== sanityStateKey
+      ) {
         const rawPixels = new Uint8Array(32 * 32 * 4);
         const finalPixels = new Uint8Array(32 * 32 * 4);
         lastRenderSanityStateKeyRef.current = sanityStateKey;
@@ -1501,6 +1562,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
               finalNonBackgroundPixelCount: finalSanity.nonBackgroundPixelCount,
               finalContentful: finalSanity.contentful,
               renderSanitySampleCount: rawSanity.sampleCount,
+              renderSanitySubjectGeneration: sceneSubjectGenerationRef.current,
               renderSanityStateKey: sanityStateKey,
               renderSanityError: null,
             });
@@ -1510,6 +1572,7 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
           if (currentInfo) {
             setRuntimeInfo({
               ...currentInfo,
+              renderSanitySubjectGeneration: sceneSubjectGenerationRef.current,
               renderSanityStateKey: sanityStateKey,
               renderSanityError: error instanceof Error ? error.message : String(error),
             });
@@ -1535,7 +1598,23 @@ function OffscreenRenderer({ opticsState, focalLengthMm, scene: sceneDefinition,
   return null;
 }
 
-export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, focalLengthMm, scene, widthPx, heightPx, aperture, previewMode, rawDebug, renderQuality, channel = "default", inspectionWindow, presentationRegion, effectiveCameraMovementCalibration, onRuntimeInfoChange }) => {
+export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
+  opticsState,
+  focalLengthMm,
+  scene,
+  widthPx,
+  heightPx,
+  aperture,
+  previewMode,
+  rawDebug,
+  renderQuality,
+  channel = "default",
+  inspectionWindow,
+  presentationRegion,
+  effectiveCameraMovementCalibration,
+  onRuntimeInfoChange,
+  developmentSceneProfileOverride,
+}) => {
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1550,7 +1629,23 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({ opticsState, foc
         orthographic={false}
         shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
-        <OffscreenRenderer opticsState={opticsState} focalLengthMm={focalLengthMm} scene={scene} widthPx={widthPx} heightPx={heightPx} aperture={aperture} previewMode={previewMode} rawDebug={rawDebug} renderQuality={renderQuality} channel={channel} inspectionWindow={inspectionWindow} presentationRegion={presentationRegion} effectiveCameraMovementCalibration={effectiveCameraMovementCalibration} onRuntimeInfoChange={onRuntimeInfoChange} />
+        <OffscreenRenderer
+          opticsState={opticsState}
+          focalLengthMm={focalLengthMm}
+          scene={scene}
+          widthPx={widthPx}
+          heightPx={heightPx}
+          aperture={aperture}
+          previewMode={previewMode}
+          rawDebug={rawDebug}
+          renderQuality={renderQuality}
+          channel={channel}
+          inspectionWindow={inspectionWindow}
+          presentationRegion={presentationRegion}
+          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+          onRuntimeInfoChange={onRuntimeInfoChange}
+          developmentSceneProfileOverride={developmentSceneProfileOverride}
+        />
       </Canvas>
     </div>
   );
