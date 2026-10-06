@@ -117,6 +117,25 @@ profile, canonical optics/state, Stage 2F material authority, Stage 2G UV/bake
 authority, or Stage 2H runtime asset was changed. There is no weathering,
 texture rebake, KTX2 work, FCC content, or production scene activation.
 
+## PR #235 review-fix follow-up
+
+The subject/profile lifecycle now invalidates render-sanity and scene-capacity
+diagnostics on every profile transition, including a profile with no mounted
+subject or lattice runtime metadata. Render-sanity cache keys and sampled values
+carry the active subject generation, and sampling is skipped while there is no
+mounted RTT subject.
+
+The development fixture's browser regression verifies that raw/final
+contentfulness, sample generation, and subject-capacity counts clear when the
+RTT subject is turned off. Turning it back on produces a new root ID, a higher
+sample generation, and a different sanity key before the new contentful values
+are accepted.
+
+For the review-fix head, focused GroundGlassRTT and Fringe profile tests passed
+(32 tests), the targeted RTT remount Playwright test passed (1/1), and typecheck,
+lint, CSS structure check, and production build passed. The targeted browser run
+used a Vite server on an isolated port so it loaded this feature worktree.
+
 ## Scope boundary
 
 This validates shared-source ownership and rendering through the current

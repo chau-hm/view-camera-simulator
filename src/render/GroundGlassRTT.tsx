@@ -166,6 +166,7 @@ function OffscreenRenderer({
   const reportedUniformPreparationErrorRef = React.useRef<string | null>(null);
   const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
   const lastRenderSanityStateKeyRef = React.useRef<string | null>(null);
+  const sceneSubjectGenerationRef = React.useRef(0);
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
@@ -231,6 +232,39 @@ function OffscreenRenderer({
       runtimeInfoChangeRef.current?.(channel, enriched, runtimeOwnerId);
     },
     [channel, runtimeOwnerId],
+  );
+  const clearSubjectScopedDiagnostics = React.useCallback(
+    (clearLatticeRuntimeInfo = false) => {
+      const currentInfo = readRuntimeInfo();
+      if (!currentInfo) return;
+
+      setRuntimeInfo({
+        ...currentInfo,
+        rawColorVariance: undefined,
+        rawNonBackgroundPixelCount: undefined,
+        rawContentful: undefined,
+        finalColorVariance: undefined,
+        finalNonBackgroundPixelCount: undefined,
+        finalContentful: undefined,
+        renderSanitySampleCount: undefined,
+        renderSanitySubjectGeneration: undefined,
+        renderSanityStateKey: undefined,
+        renderSanityError: undefined,
+        sceneCapacity: undefined,
+        ...(clearLatticeRuntimeInfo
+          ? {
+              latticeEdgeCount: undefined,
+              latticeGeometryId: undefined,
+              latticeGeometryKey: undefined,
+              latticePresentationKey: undefined,
+              latticeResourceKey: undefined,
+              latticePresentationRegion: undefined,
+              latticeSubjectGeneration: undefined,
+            }
+          : {}),
+      });
+    },
+    [readRuntimeInfo, setRuntimeInfo],
   );
 
   // clear RTT runtime diagnostics when this renderer unmounts or is recreated
@@ -686,6 +720,10 @@ function OffscreenRenderer({
     const scene = offscreenScene.current;
     if (!scene) return;
 
+    sceneSubjectGenerationRef.current += 1;
+    lastRenderSanityStateKeyRef.current = null;
+    clearSubjectScopedDiagnostics();
+
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
       cameraMovementPresentation,
@@ -704,7 +742,12 @@ function OffscreenRenderer({
     }
 
     const mounted = sceneProfile.mountSubject(scene, profileContext);
-    if (!mounted) return;
+    if (!mounted) {
+      return () => {
+        lastRenderSanityStateKeyRef.current = null;
+        clearSubjectScopedDiagnostics();
+      };
+    }
     sceneProfile.configureRttShadowParticipation(mounted.group);
     mountedSceneSubjectRef.current = mounted;
 
@@ -743,22 +786,12 @@ function OffscreenRenderer({
       }
       mounted.dispose();
       const latestInfo = readRuntimeInfo();
-      if (
+      const clearLatticeRuntimeInfo = Boolean(
         runtimeInfo &&
-        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation
-      ) {
-        setRuntimeInfo({
-          ...latestInfo,
-          latticeEdgeCount: undefined,
-          latticeGeometryId: undefined,
-          latticeGeometryKey: undefined,
-          latticePresentationKey: undefined,
-          latticeResourceKey: undefined,
-          latticePresentationRegion: undefined,
-          latticeSubjectGeneration: undefined,
-          sceneCapacity: undefined,
-        });
-      }
+        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation,
+      );
+      lastRenderSanityStateKeyRef.current = null;
+      clearSubjectScopedDiagnostics(clearLatticeRuntimeInfo);
     };
   }, [
     cameraMovementPresentation,
@@ -767,6 +800,7 @@ function OffscreenRenderer({
     readRuntimeInfo,
     sceneCapacityProfilingEnabled,
     setRuntimeInfo,
+    clearSubjectScopedDiagnostics,
     gl,
   ]);
 
@@ -1458,7 +1492,7 @@ function OffscreenRenderer({
         gl.render(postSceneComposite, orthoCam);
       });
 
-      const sanityStateKey = createGroundGlassRenderSanityStateKey({
+      const renderSanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
         sceneId: resolvedSceneId,
         previewMode,
@@ -1470,12 +1504,17 @@ function OffscreenRenderer({
         configuredCameraPose: configuredPose,
         inspectionWindow,
       });
+      const sanityStateKey = `${renderSanityStateKey}|subject-generation:${sceneSubjectGenerationRef.current}`;
 
       const renderSanityEnabled =
         import.meta.env.DEV &&
         typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get("rttDiagnostics") === "1";
-      if (renderSanityEnabled && lastRenderSanityStateKeyRef.current !== sanityStateKey) {
+      if (
+        renderSanityEnabled &&
+        mountedSceneSubjectRef.current !== null &&
+        lastRenderSanityStateKeyRef.current !== sanityStateKey
+      ) {
         const rawPixels = new Uint8Array(32 * 32 * 4);
         const finalPixels = new Uint8Array(32 * 32 * 4);
         lastRenderSanityStateKeyRef.current = sanityStateKey;
@@ -1523,6 +1562,7 @@ function OffscreenRenderer({
               finalNonBackgroundPixelCount: finalSanity.nonBackgroundPixelCount,
               finalContentful: finalSanity.contentful,
               renderSanitySampleCount: rawSanity.sampleCount,
+              renderSanitySubjectGeneration: sceneSubjectGenerationRef.current,
               renderSanityStateKey: sanityStateKey,
               renderSanityError: null,
             });
@@ -1532,6 +1572,7 @@ function OffscreenRenderer({
           if (currentInfo) {
             setRuntimeInfo({
               ...currentInfo,
+              renderSanitySubjectGeneration: sceneSubjectGenerationRef.current,
               renderSanityStateKey: sanityStateKey,
               renderSanityError: error instanceof Error ? error.message : String(error),
             });

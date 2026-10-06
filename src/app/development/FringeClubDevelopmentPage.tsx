@@ -612,6 +612,8 @@ export const FringeClubDevelopmentPage = ({
                 data-rtt-camera-ok={groundGlassInfo?.cameraConfigurationOk === undefined ? "" : String(groundGlassInfo.cameraConfigurationOk)}
                 data-rtt-raw-contentful={groundGlassInfo?.rawContentful === undefined ? "" : String(groundGlassInfo.rawContentful)}
                 data-rtt-final-contentful={groundGlassInfo?.finalContentful === undefined ? "" : String(groundGlassInfo.finalContentful)}
+                data-rtt-render-sanity-generation={groundGlassInfo?.renderSanitySubjectGeneration ?? ""}
+                data-rtt-render-sanity-state={groundGlassInfo?.renderSanityStateKey ?? ""}
                 data-rtt-render-sanity-error={groundGlassInfo?.renderSanityError ?? ""}
                 data-rtt-subject-meshes={groundGlassInfo?.sceneCapacity?.rttSubject?.meshCount ?? ""}
                 data-rtt-subject-triangles={groundGlassInfo?.sceneCapacity?.rttSubject?.triangleCount ?? ""}

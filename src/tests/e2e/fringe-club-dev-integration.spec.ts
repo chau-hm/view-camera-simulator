@@ -331,10 +331,15 @@ test("Ground Glass RTT renders an independent instance from the Observer's Sourc
   await expect(rttMetrics).toHaveAttribute("data-rtt-camera-ok", "true");
   await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "true");
   await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-generation", /^\d+$/);
   await expect(rttMetrics).toHaveAttribute("data-rtt-subject-meshes", /^[1-9]\d*$/);
   await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-geometries", /^\d+$/);
   await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-textures", /^\d+$/);
   const initialRttRoot = await rttMetrics.getAttribute("data-subject-root-id");
+  const initialRenderSanityGeneration = Number(
+    await rttMetrics.getAttribute("data-rtt-render-sanity-generation"),
+  );
+  const initialRenderSanityState = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
   const initialRttCapacity = await rttMetrics.evaluate((element) => ({
     meshes: Number(element.getAttribute("data-rtt-subject-meshes")),
     triangles: Number(element.getAttribute("data-rtt-subject-triangles")),
@@ -342,6 +347,8 @@ test("Ground Glass RTT renders an independent instance from the Observer's Sourc
     textures: Number(element.getAttribute("data-rtt-renderer-textures")),
   }));
   expect(initialRttRoot).not.toBe("");
+  expect(initialRenderSanityGeneration).toBeGreaterThan(0);
+  expect(initialRenderSanityState).toMatch(/\|subject-generation:\d+$/);
   expect(initialRttCapacity.meshes).toBeGreaterThan(0);
   expect(initialRttCapacity.triangles).toBeGreaterThan(0);
 
@@ -355,16 +362,28 @@ test("Ground Glass RTT renders an independent instance from the Observer's Sourc
   await expect(observerMetrics).toHaveAttribute("data-instance-leases", "0");
   await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
   await expect(rttMetrics).toHaveAttribute("data-subject-source-id", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-generation", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-subject-meshes", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-state", "");
   await expect(rttMetrics).toHaveAttribute("data-active-sources", "1");
   await expect(observerMetrics).toHaveAttribute("data-owner-leases", "1");
 
   await page.getByRole("checkbox", { name: "Mount Ground Glass RTT instance" }).check();
   await expect(observerMetrics).toHaveAttribute("data-instance-leases", "1");
   await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
+  await expect
+    .poll(async () => Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation")))
+    .toBeGreaterThan(initialRenderSanityGeneration);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "true");
   await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-state", /\|subject-generation:\d+$/);
   const remountedRoot = await rttMetrics.getAttribute("data-subject-root-id");
+  const remountedRenderSanityState = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
   expect(remountedRoot).not.toBe("");
   expect(remountedRoot).not.toBe(initialRttRoot);
+  expect(remountedRenderSanityState).not.toBe(initialRenderSanityState);
 
   await page.getByRole("button", { name: "Release source asset" }).click();
   await expect(observerMetrics).toHaveAttribute("data-source-assets", "0");
