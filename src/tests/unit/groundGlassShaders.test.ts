@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import { groundGlassSharedGlsl, groundGlassUniformDecls } from "../../render/groundGlassDofShaders";
 import {
   groundGlassApertureGatherFragmentShader,
+  groundGlassApparentWorldPositionCocFragmentShader,
   groundGlassCompositeFragmentShader,
   groundGlassPhysicalCocFragmentShader,
   groundGlassVertexShader,
@@ -114,6 +115,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassVertexShader && groundGlassVertexShader.length).toBeGreaterThan(0);
     for (const shader of [
       groundGlassPhysicalCocFragmentShader,
+      groundGlassApparentWorldPositionCocFragmentShader,
       groundGlassApertureGatherFragmentShader,
       groundGlassCompositeFragmentShader,
     ]) {
@@ -133,6 +135,19 @@ describe("GroundGlass DOF shader source", () => {
       "encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm)",
     );
     expect(countDeclarationOccurrences(extractMainBody(groundGlassPhysicalCocFragmentShader), "depth")).toBe(1);
+  });
+
+  test("contribution CoC stage reads apparent positions and calls the shared physical footprint kernel", () => {
+    const main = extractMainBody(groundGlassApparentWorldPositionCocFragmentShader);
+
+    expect(groundGlassApparentWorldPositionCocFragmentShader).toContain(
+      "uniform sampler2D tApparentWorldPosition",
+    );
+    expect(main).toContain("texture2D(tApparentWorldPosition, vUv)");
+    expect(main).toContain("apparentPosition.a < 0.5");
+    expect(main).toContain("calculatePhysicalBlurFootprintFromWorldPosition(apparentPosition.xyz)");
+    expect(main).not.toContain("calculateSignedPhysicalCoCDiameterMmFromDepth");
+    expect(main).toContain("encodeGroundGlassFootprintOrientation");
   });
 
   test("aperture stage uses an oriented footprint gather with a sharp early-out", () => {

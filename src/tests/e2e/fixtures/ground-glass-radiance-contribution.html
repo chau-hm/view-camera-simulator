@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ground Glass contribution focus proof</title>
+    <style>
+      :root { color-scheme: light dark; font: 14px system-ui, sans-serif; }
+      body { margin: 20px; background: #181a1c; color: #f4f5f6; }
+      h1 { margin: 0 0 8px; font-size: 20px; }
+      p { max-width: 800px; color: #c2c7cb; }
+      .controls { display: flex; gap: 8px; margin: 18px 0; }
+      button { padding: 8px 12px; color: inherit; background: #343a40; border: 1px solid #697078; border-radius: 4px; cursor: pointer; }
+      button[aria-pressed="true"] { background: #285b66; border-color: #72c6d5; }
+      .panels { display: grid; grid-template-columns: repeat(3, minmax(160px, 320px)); gap: 14px; }
+      figure { margin: 0; }
+      figcaption { margin-bottom: 6px; color: #e5e7e9; }
+      .proof-image { display: block; width: 100%; image-rendering: pixelated; border: 1px solid #646b71; background: #08090a; }
+      pre { min-height: 72px; padding: 10px; background: #222629; overflow: auto; }
+      #gpu-source { display: none; }
+    </style>
+  </head>
+  <body data-proof-ready="false">
+    <h1>Ground Glass independent focus contribution proof</h1>
+    <p>Each linear-radiance pattern has its own apparent world-position field. The renderer computes physical CoC and uses the existing aperture gather before adding the focused contributions.</p>
+    <div class="controls" role="group" aria-label="Focus case">
+      <button type="button" data-case="A" aria-pressed="true">Case A — pane sharp</button>
+      <button type="button" data-case="B" aria-pressed="false">Case B — secondary sharp</button>
+      <button type="button" data-case="C" aria-pressed="false">Case C — equal focus</button>
+    </div>
+    <section class="panels" aria-label="Processed contribution outputs">
+      <figure><figcaption>Direct contribution after focus</figcaption><canvas class="proof-image" id="direct-output" width="128" height="128"></canvas></figure>
+      <figure><figcaption>Secondary contribution after focus</figcaption><canvas class="proof-image" id="secondary-output" width="128" height="128"></canvas></figure>
+      <figure><figcaption>Radiometric sum after shared film composite</figcaption><canvas class="proof-image" id="combined-output" width="128" height="128"></canvas></figure>
+    </section>
+    <pre id="measurements" aria-live="polite">Waiting for WebGL proof…</pre>
+    <canvas id="gpu-source" width="128" height="128"></canvas>
+    <script type="module" src="/src/tests/e2e/fixtures/ground-glass-radiance-contribution-harness.ts"></script>
+  </body>
+</html>

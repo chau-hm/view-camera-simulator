@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { GroundGlassDofRenderState } from "./groundGlassDofRenderState";
 import type { GroundGlassPhysicalRenderState } from "./groundGlassPhysicalRenderState";
 
-type GroundGlassDofShaderStage = "CoC" | "gather";
+type GroundGlassDofShaderStage = "CoC" | "apparent-position CoC" | "gather";
 
 const dofStateUniformNames = [
   "dofMode",
@@ -38,6 +38,7 @@ const stageUniformNames: Record<GroundGlassDofShaderStage, readonly string[]> = 
   // Stage textures and gatherLayer are routed by the RTT executor; validate
   // their current GLSL declarations here without taking over their values.
   CoC: ["tDepth"],
+  "apparent-position CoC": ["tApparentWorldPosition"],
   gather: ["tColor", "tDepth", "tCoC", "gatherLayer"],
 };
 
@@ -158,6 +159,16 @@ export const bindGroundGlassDofStateToCocMaterial = (
   material: THREE.ShaderMaterial,
   state: GroundGlassDofRenderState,
 ): void => bindGroundGlassDofState(material, state, "CoC");
+
+/** Bind the same physical state to a per-contribution apparent-position CoC stage. */
+export const bindGroundGlassDofStateToApparentWorldPositionCocMaterial = (
+  material: THREE.ShaderMaterial,
+  state: GroundGlassDofRenderState,
+  apparentWorldPosition: THREE.Texture,
+): void => {
+  bindGroundGlassDofState(material, state, "apparent-position CoC");
+  material.uniforms.tApparentWorldPosition.value = apparentWorldPosition;
+};
 
 /** Apply semantic DOF state to the current GLSL gather material contract. */
 export const bindGroundGlassDofStateToGatherMaterial = (

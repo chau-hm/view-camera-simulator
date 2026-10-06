@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { GroundGlassDofRenderState } from "../../render/groundGlassDofRenderState";
 import type { GroundGlassPhysicalRenderState } from "../../render/groundGlassPhysicalRenderState";
 import {
+  bindGroundGlassDofStateToApparentWorldPositionCocMaterial,
   bindGroundGlassDofStateToCocMaterial,
   bindGroundGlassDofStateToGatherMaterial,
   bindGroundGlassPhysicalStateToComposite,
@@ -150,6 +151,33 @@ describe("Ground Glass semantic state and current GLSL binding", () => {
     material.dispose();
   });
 
+  it("binds apparent world positions to an independent contribution CoC stage", () => {
+    const material = createCocMaterial();
+    delete material.uniforms.tDepth;
+    const apparentWorldPosition = new THREE.DataTexture(
+      new Float32Array([0, 0, 1, 1]),
+      1,
+      1,
+      THREE.RGBAFormat,
+      THREE.FloatType,
+    );
+
+    material.uniforms.tApparentWorldPosition = { value: null };
+    bindGroundGlassDofStateToApparentWorldPositionCocMaterial(
+      material,
+      dofState,
+      apparentWorldPosition,
+    );
+
+    expect(material.uniforms.tApparentWorldPosition.value).toBe(apparentWorldPosition);
+    expect(material.uniforms.lensCenterWorld.value.toArray()).toEqual([0.01, -0.02, 0.03]);
+    expect(material.uniforms.focalLengthMm.value).toBe(90);
+    expect(material.uniforms).not.toHaveProperty("tDepth");
+
+    material.dispose();
+    apparentWorldPosition.dispose();
+  });
+
   it("binds the semantic snapshot to the gather material with its distinct pass inputs", () => {
     const material = createGatherMaterial();
     expect(material.uniforms).toHaveProperty("tColor");
@@ -183,6 +211,19 @@ describe("Ground Glass semantic state and current GLSL binding", () => {
 
     expect(() => bindGroundGlassDofStateToCocMaterial(material, dofState)).toThrow(
       'Ground Glass CoC shader is missing required uniform "tDepth"',
+    );
+    material.dispose();
+  });
+
+  it("fails when the apparent-world-position input is absent", () => {
+    const material = createCocMaterial();
+
+    expect(() => bindGroundGlassDofStateToApparentWorldPositionCocMaterial(
+      material,
+      dofState,
+      new THREE.Texture(),
+    )).toThrow(
+      'Ground Glass apparent-position CoC shader is missing required uniform "tApparentWorldPosition"',
     );
     material.dispose();
   });

@@ -190,13 +190,16 @@ baseline 0.7/0.8 ms, with GPU timing unavailable. Frame cadence came from a
 CPU-fallback backend and is not evidence of GPU cost. This result does not
 establish a texture-file requirement.
 
-PR L then audited local reflections as a separate rendering capability. It
-recorded the Observer/RTT paths and deferred technique selection because the
-current Ground Glass color/depth pair cannot give direct pane radiance and the
-reflected virtual image independent focus depths. See the
+PR L then audited local reflections as a separate rendering capability. PR M
+defines and synthetically validates a renderer-local apparent-world-position
+contribution contract through the existing Ground Glass physical footprint
+kernel and aperture gather. The ordinary RTT remains on its existing single
+color/depth path; no real reflection source or candidate technique was
+implemented, and candidate selection remains deferred. See the
 [local-reflection decision](LOCAL_REFLECTION_TECHNIQUE_DECISION.md) for the
-candidate analysis and follow-up boundary. No rendering prototype or
-production reflection behavior was retained.
+CPU/browser proof, software-renderer limitations, candidate analysis, and
+follow-up boundary. The test fixture does not enter public navigation or the
+production bundle.
 
 ## Ground Glass migration seam
 
