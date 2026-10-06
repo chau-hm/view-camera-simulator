@@ -31,6 +31,11 @@ const MAXIMUM_GATHER_RADIUS_PX = 16;
 const SAMPLE_COUNT = 64;
 const CAMERA_NEAR_M = 0.01;
 const CAMERA_FAR_M = 5;
+const RADIOMETRIC_PROBE_X = WIDTH >> 1;
+const RADIOMETRIC_PROBE_Y = HEIGHT >> 1;
+const RADIOMETRIC_PROBE_HALF_EXTENT = 5;
+const RADIOMETRIC_PROBE_VALUE = 0.75;
+const RADIOMETRIC_PROBE_TOLERANCE = 1e-4;
 
 type FocusCaseId = "A" | "B" | "C";
 
@@ -55,19 +60,32 @@ type ContributionMeasurement = {
   centerSignedCoCDiameterMm: number;
   centerMajorRadiusMm: number;
   changedPixelsFromEqualFocusReference: number;
-  hash: string;
+  displayHash: string;
 };
 
 type FocusCaseMeasurement = {
   focusDistanceMm: number;
   direct: ContributionMeasurement;
   secondary: ContributionMeasurement;
-  combinedHash: string;
-  singleContributionHash?: string;
-  combinedVsRadiometricSumMaxByteDelta?: number;
+  combinedDisplayHash: string;
+  singleContributionDisplayHash?: string;
   singleContributionPassCount?: number;
   contributionPassCount: number;
   cpuSubmitMs: number;
+};
+
+type RadiometricProbeMeasurement = {
+  xPx: number;
+  yPx: number;
+  channel: "R";
+  directFocusedValue: number;
+  secondaryFocusedValue: number;
+  expectedLinearSum: number;
+  measuredCombinedLinearValue: number;
+  combinedValueExceedsOne: boolean;
+  tolerance: number;
+  finalDisplayRedByte: number;
+  legacyRgba8AccumulatorRedByte: number;
 };
 
 type FocusCaseImages = {
@@ -80,31 +98,114 @@ declare global {
   interface Window {
     __groundGlassContributionProof?: {
       backend: string;
+      floatingRadianceCapability: FloatingRadianceCapability;
       resourceSummary: {
         targetCount: number;
-        targetDimensions: readonly [number, number];
-        targetFormat: string;
+        cocTargets: { count: number; dimensions: readonly [number, number]; format: string; type: string };
+        contributionRadianceTargets: {
+          farCount: number;
+          nearCount: number;
+          focusedCount: number;
+          dimensions: readonly [number, number];
+          format: string;
+          type: string;
+          filter: string;
+        };
+        combinedRadianceTarget: { dimensions: readonly [number, number]; format: string; type: string };
+        finalDisplayTarget: { dimensions: readonly [number, number]; format: string; type: string };
+        legacyByteAccumulatorControl: { dimensions: readonly [number, number]; format: string; type: string };
+        radianceInputTextures: { count: number; dimensions: readonly [number, number]; format: string; type: string };
+        apparentPositionTextures: { count: number; dimensions: readonly [number, number]; format: string; type: string };
+        visibilityDepthInput: { dimensions: readonly [number, number]; format: string; type: string };
+        nominalTargetTexelBytes: number;
+        nominalInputTexelBytes: number;
         fullResolutionPassesPerTwoContributionFrame: number;
         rendererTextureCount: number;
       };
       cases: Record<FocusCaseId, FocusCaseMeasurement>;
+      radiometricProbe: RadiometricProbeMeasurement;
       showCase: (id: FocusCaseId) => void;
     };
   }
 }
 
-const makeTarget = (): THREE.WebGLRenderTarget => {
-  const target = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
+const makeTarget = (
+  width: number,
+  height: number,
+  type: THREE.TextureDataType,
+  filter: THREE.MagnificationTextureFilter,
+): THREE.WebGLRenderTarget => {
+  const target = new THREE.WebGLRenderTarget(width, height, {
     format: THREE.RGBAFormat,
-    type: THREE.UnsignedByteType,
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
+    type,
+    minFilter: filter,
+    magFilter: filter,
     depthBuffer: false,
     stencilBuffer: false,
   });
   target.texture.colorSpace = THREE.NoColorSpace;
   target.texture.generateMipmaps = false;
   return target;
+};
+
+const makeCocTarget = (): THREE.WebGLRenderTarget =>
+  makeTarget(WIDTH, HEIGHT, THREE.UnsignedByteType, THREE.LinearFilter);
+
+const makeRadianceTarget = (width = WIDTH, height = HEIGHT): THREE.WebGLRenderTarget =>
+  makeTarget(width, height, THREE.FloatType, THREE.NearestFilter);
+
+const makeDisplayTarget = (): THREE.WebGLRenderTarget =>
+  makeTarget(WIDTH, HEIGHT, THREE.UnsignedByteType, THREE.LinearFilter);
+
+const makeLegacyByteAccumulatorControl = (): THREE.WebGLRenderTarget =>
+  makeTarget(1, 1, THREE.UnsignedByteType, THREE.NearestFilter);
+
+type FloatingRadianceCapability = {
+  webgl2: boolean;
+  extensionName: string;
+  extensionSupported: boolean;
+  framebufferComplete: boolean;
+  framebufferStatus: string;
+  readbackArrayType: "Float32Array";
+};
+
+const verifyFloatRadianceTargetCapability = (
+  renderer: THREE.WebGLRenderer,
+): FloatingRadianceCapability => {
+  const gl = renderer.getContext();
+  const extensionName = "EXT_color_buffer_float";
+  const extensionSupported = Boolean(gl.getExtension(extensionName));
+  if (!renderer.capabilities.isWebGL2 || !extensionSupported) {
+    throw new Error(
+      `Float32 radiance targets require WebGL2 and ${extensionName}; ` +
+      `webgl2=${renderer.capabilities.isWebGL2}, extension=${extensionSupported}`,
+    );
+  }
+
+  const probeTarget = makeRadianceTarget(2, 2);
+  let framebufferStatus = "not-checked";
+  try {
+    renderer.setRenderTarget(probeTarget);
+    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    framebufferStatus = `0x${status.toString(16)}`;
+    const framebufferComplete = status === gl.FRAMEBUFFER_COMPLETE;
+    if (!framebufferComplete) {
+      throw new Error(
+        `Float32 radiance framebuffer is incomplete: ${framebufferStatus}`,
+      );
+    }
+    return {
+      webgl2: renderer.capabilities.isWebGL2,
+      extensionName,
+      extensionSupported,
+      framebufferComplete,
+      framebufferStatus,
+      readbackArrayType: "Float32Array",
+    };
+  } finally {
+    renderer.setRenderTarget(null);
+    probeTarget.dispose();
+  }
 };
 
 const makeDataTexture = (
@@ -124,22 +225,40 @@ const makeDataTexture = (
 };
 
 const makePattern = (kind: "direct" | "secondary"): THREE.DataTexture => {
-  const data = new Uint8Array(WIDTH * HEIGHT * 4);
+  const data = new Float32Array(WIDTH * HEIGHT * 4);
   for (let y = 0; y < HEIGHT; y += 1) {
     for (let x = 0; x < WIDTH; x += 1) {
       const checker = (Math.floor(x / 4) + Math.floor(y / 4)) % 2 === 0;
       const diagonal = ((x + 2 * y) % 12) < 6;
-      const level = (kind === "direct" ? checker : diagonal) ? 210 : 18;
+      const level = (kind === "direct" ? checker ? 0.82 : 0.08 : diagonal ? 0.68 : 0.06);
       const offset = (y * WIDTH + x) * 4;
       if (kind === "direct") data[offset] = level;
       else {
         data[offset + 1] = level;
         data[offset + 2] = level;
       }
-      data[offset + 3] = 255;
+      data[offset + 3] = 1;
     }
   }
-  return makeDataTexture(data, WIDTH, HEIGHT, THREE.UnsignedByteType);
+  for (
+    let y = RADIOMETRIC_PROBE_Y - RADIOMETRIC_PROBE_HALF_EXTENT;
+    y < RADIOMETRIC_PROBE_Y + RADIOMETRIC_PROBE_HALF_EXTENT;
+    y += 1
+  ) {
+    for (
+      let x = RADIOMETRIC_PROBE_X - RADIOMETRIC_PROBE_HALF_EXTENT;
+      x < RADIOMETRIC_PROBE_X + RADIOMETRIC_PROBE_HALF_EXTENT;
+      x += 1
+    ) {
+      const offset = (y * WIDTH + x) * 4;
+      data[offset] = RADIOMETRIC_PROBE_VALUE;
+      if (kind === "secondary") {
+        data[offset + 1] = 0;
+        data[offset + 2] = 0;
+      }
+    }
+  }
+  return makeDataTexture(data, WIDTH, HEIGHT, THREE.FloatType);
 };
 
 const makeApparentWorldPositionMap = (
@@ -340,7 +459,7 @@ const createCompositeMaterial = (): THREE.ShaderMaterial => new THREE.ShaderMate
   toneMapped: false,
 });
 
-const readPixels = (
+const readBytePixels = (
   renderer: THREE.WebGLRenderer,
   target: THREE.WebGLRenderTarget,
 ): Uint8Array => {
@@ -349,7 +468,42 @@ const readPixels = (
   return pixels;
 };
 
-const hashPixels = (pixels: Uint8Array): string => {
+const readFloatRadiancePixels = (
+  renderer: THREE.WebGLRenderer,
+  target: THREE.WebGLRenderTarget,
+): Float32Array => {
+  const pixels = new Float32Array(WIDTH * HEIGHT * 4);
+  renderer.readRenderTargetPixels(target, 0, 0, WIDTH, HEIGHT, pixels);
+  return pixels;
+};
+
+const toDisplayBytes = (pixels: Float32Array): Uint8Array => {
+  const display = new Uint8Array(pixels.length);
+  for (let index = 0; index < pixels.length; index += 1) {
+    display[index] = Math.round(THREE.MathUtils.clamp(pixels[index], 0, 1) * 255);
+  }
+  return display;
+};
+
+const readFloatRadianceAt = (
+  pixels: Float32Array,
+  x: number,
+  y: number,
+  channel: number,
+): number => pixels[(y * WIDTH + x) * 4 + channel];
+
+const readRedByteAt = (
+  renderer: THREE.WebGLRenderer,
+  target: THREE.WebGLRenderTarget,
+  x: number,
+  y: number,
+): number => {
+  const pixel = new Uint8Array(4);
+  renderer.readRenderTargetPixels(target, x, y, 1, 1, pixel);
+  return pixel[0];
+};
+
+const hashDisplayPixels = (pixels: Uint8Array): string => {
   let hash = 0x811c9dc5;
   for (const byte of pixels) {
     hash ^= byte;
@@ -358,7 +512,7 @@ const hashPixels = (pixels: Uint8Array): string => {
   return hash.toString(16).padStart(8, "0");
 };
 
-const countChangedPixels = (pixels: Uint8Array, reference: Uint8Array): number => {
+const countDisplayPixelsChanged = (pixels: Uint8Array, reference: Uint8Array): number => {
   let changed = 0;
   for (let index = 0; index < pixels.length; index += 4) {
     if (
@@ -433,10 +587,10 @@ const createLayer = (
     cocMaterial,
     gatherMaterial,
     resolveMaterial,
-    cocTarget: makeTarget(),
-    farTarget: makeTarget(),
-    nearTarget: makeTarget(),
-    focusedTarget: makeTarget(),
+    cocTarget: makeCocTarget(),
+    farTarget: makeRadianceTarget(),
+    nearTarget: makeRadianceTarget(),
+    focusedTarget: makeRadianceTarget(),
   };
 };
 
@@ -469,6 +623,7 @@ renderer.setPixelRatio(1);
 renderer.setSize(WIDTH, HEIGHT, false);
 renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.NoToneMapping;
+const floatingRadianceCapability = verifyFloatRadianceTargetCapability(renderer);
 
 const nominalImageDistance = imageDistanceForObject(1000);
 const fieldOfView = (2 * Math.atan(FILM_WIDTH_MM / (2 * nominalImageDistance)) * 180) / Math.PI;
@@ -492,8 +647,9 @@ const layers = [
   createLayer(sharedVisibilityDepth),
   createLayer(sharedVisibilityDepth),
 ];
-const combinedTarget = makeTarget();
-const finalTarget = makeTarget();
+const combinedTarget = makeRadianceTarget();
+const finalTarget = makeDisplayTarget();
+const legacyByteAccumulatorControl = makeLegacyByteAccumulatorControl();
 const radianceCombineMaterial = createRadianceCombineMaterial();
 const compositeMaterial = createCompositeMaterial();
 const quadGeometry = new THREE.PlaneGeometry(2, 2);
@@ -522,7 +678,7 @@ const decodeCenterFootprint = (
   rendererInstance: THREE.WebGLRenderer,
   target: THREE.WebGLRenderTarget,
 ) => {
-  const pixels = readPixels(rendererInstance, target);
+  const pixels = readBytePixels(rendererInstance, target);
   const centerOffset = ((HEIGHT >> 1) * WIDTH + (WIDTH >> 1)) * 4;
   return {
     signedCoCDiameterMm: decodeGroundGlassSignedCoCByte(
@@ -540,7 +696,8 @@ const decodeCenterFootprint = (
 
 type RenderedContribution = {
   measurement: ContributionMeasurement;
-  pixels: Uint8Array;
+  displayPixels: Uint8Array;
+  radiancePixels: Float32Array;
 };
 
 const runCase = (
@@ -550,7 +707,8 @@ const runCase = (
   focusDistanceMm: number;
   direct: RenderedContribution;
   secondary: RenderedContribution | null;
-  combinedPixels: Uint8Array;
+  combinedDisplayPixels: Uint8Array;
+  combinedRadiancePixels: Float32Array | null;
   contributionPassCount: number;
   cpuSubmitMs: number;
 } => {
@@ -606,24 +764,27 @@ const runCase = (
     cpuSubmitMs += drawToTarget(layer.focusedTarget, layer.resolveMaterial);
 
     const center = decodeCenterFootprint(renderer, layer.cocTarget);
-    const pixels = readPixels(renderer, layer.focusedTarget);
+    const radiancePixels = readFloatRadiancePixels(renderer, layer.focusedTarget);
+    const displayPixels = toDisplayBytes(radiancePixels);
     const metric = {
       id: input.id,
       centerSignedCoCDiameterMm: center.signedCoCDiameterMm,
       centerMajorRadiusMm: center.majorRadiusMm,
       changedPixelsFromEqualFocusReference: 0,
-      hash: hashPixels(pixels),
+      displayHash: hashDisplayPixels(displayPixels),
     };
-    layerResults.push({ measurement: metric, pixels });
+    layerResults.push({ measurement: metric, displayPixels, radiancePixels });
   });
 
   const direct = layerResults[0];
   const secondary = layerResults[1] ?? null;
   let radianceInput: THREE.Texture = layers[0].focusedTarget.texture;
+  let combinedRadiancePixels: Float32Array | null = null;
   if (secondary) {
     radianceCombineMaterial.uniforms.tFirst.value = layers[0].focusedTarget.texture;
     radianceCombineMaterial.uniforms.tSecond.value = layers[1].focusedTarget.texture;
     cpuSubmitMs += drawToTarget(combinedTarget, radianceCombineMaterial);
+    combinedRadiancePixels = readFloatRadiancePixels(renderer, combinedTarget);
     radianceInput = combinedTarget.texture;
   }
 
@@ -636,7 +797,8 @@ const runCase = (
     focusDistanceMm,
     direct,
     secondary,
-    combinedPixels: readPixels(renderer, finalTarget),
+    combinedDisplayPixels: readBytePixels(renderer, finalTarget),
+    combinedRadiancePixels,
     contributionPassCount: inputs.contributions.length * 4 +
       (secondary ? 1 : 0) + 1,
     cpuSubmitMs,
@@ -654,7 +816,7 @@ const dispose = (): void => {
     layer.nearTarget.dispose();
     layer.focusedTarget.dispose();
   });
-  [combinedTarget, finalTarget].forEach((target) => target.dispose());
+  [combinedTarget, finalTarget, legacyByteAccumulatorControl].forEach((target) => target.dispose());
   [radianceCombineMaterial, compositeMaterial].forEach((material) => material.dispose());
   quadGeometry.dispose();
   sourceInputs.forEach((texture) => texture.dispose());
@@ -670,32 +832,76 @@ try {
   if (!resultA.secondary || !resultB.secondary || !resultC.secondary) {
     throw new Error("The synthetic secondary contribution was not retained");
   }
-  resultA.direct.measurement.changedPixelsFromEqualFocusReference = countChangedPixels(
-    resultA.direct.pixels,
-    resultC.direct.pixels,
+  resultA.direct.measurement.changedPixelsFromEqualFocusReference = countDisplayPixelsChanged(
+    resultA.direct.displayPixels,
+    resultC.direct.displayPixels,
   );
-  resultA.secondary.measurement.changedPixelsFromEqualFocusReference = countChangedPixels(
-    resultA.secondary.pixels,
-    resultC.secondary.pixels,
+  resultA.secondary.measurement.changedPixelsFromEqualFocusReference = countDisplayPixelsChanged(
+    resultA.secondary.displayPixels,
+    resultC.secondary.displayPixels,
   );
-  resultB.direct.measurement.changedPixelsFromEqualFocusReference = countChangedPixels(
-    resultB.direct.pixels,
-    resultC.direct.pixels,
+  resultB.direct.measurement.changedPixelsFromEqualFocusReference = countDisplayPixelsChanged(
+    resultB.direct.displayPixels,
+    resultC.direct.displayPixels,
   );
-  resultB.secondary.measurement.changedPixelsFromEqualFocusReference = countChangedPixels(
-    resultB.secondary.pixels,
-    resultC.secondary.pixels,
+  resultB.secondary.measurement.changedPixelsFromEqualFocusReference = countDisplayPixelsChanged(
+    resultB.secondary.displayPixels,
+    resultC.secondary.displayPixels,
   );
 
-  const sumDelta = (expectedFirst: Uint8Array, expectedSecond: Uint8Array, actual: Uint8Array) => {
-    let maximum = 0;
-    for (let index = 0; index < actual.length; index += 4) {
-      for (let channel = 0; channel < 3; channel += 1) {
-        const expected = Math.min(255, expectedFirst[index + channel] + expectedSecond[index + channel]);
-        maximum = Math.max(maximum, Math.abs(expected - actual[index + channel]));
-      }
-    }
-    return maximum;
+  const resultCCombinedRadiance = resultC.combinedRadiancePixels;
+  if (!resultCCombinedRadiance) {
+    throw new Error("Case C did not produce a floating-point combined-radiance target");
+  }
+  const probeOffset = (RADIOMETRIC_PROBE_Y * WIDTH + RADIOMETRIC_PROBE_X) * 4;
+  const directFocusedValue = readFloatRadianceAt(
+    resultC.direct.radiancePixels,
+    RADIOMETRIC_PROBE_X,
+    RADIOMETRIC_PROBE_Y,
+    0,
+  );
+  const secondaryFocusedValue = readFloatRadianceAt(
+    resultC.secondary.radiancePixels,
+    RADIOMETRIC_PROBE_X,
+    RADIOMETRIC_PROBE_Y,
+    0,
+  );
+  const expectedLinearSum = directFocusedValue + secondaryFocusedValue;
+  const measuredCombinedLinearValue = resultCCombinedRadiance[probeOffset];
+  if (
+    Math.abs(directFocusedValue - RADIOMETRIC_PROBE_VALUE) > RADIOMETRIC_PROBE_TOLERANCE ||
+    Math.abs(secondaryFocusedValue - RADIOMETRIC_PROBE_VALUE) > RADIOMETRIC_PROBE_TOLERANCE ||
+    Math.abs(measuredCombinedLinearValue - expectedLinearSum) > RADIOMETRIC_PROBE_TOLERANCE ||
+    measuredCombinedLinearValue <= 1
+  ) {
+    throw new Error(
+      `Unclamped Case C radiance proof failed: direct=${directFocusedValue}, ` +
+      `secondary=${secondaryFocusedValue}, sum=${expectedLinearSum}, ` +
+      `combined=${measuredCombinedLinearValue}`,
+    );
+  }
+
+  radianceCombineMaterial.uniforms.tFirst.value = layers[0].focusedTarget.texture;
+  radianceCombineMaterial.uniforms.tSecond.value = layers[1].focusedTarget.texture;
+  drawToTarget(legacyByteAccumulatorControl, radianceCombineMaterial);
+  const legacyRgba8AccumulatorRedByte = readRedByteAt(
+    renderer,
+    legacyByteAccumulatorControl,
+    0,
+    0,
+  );
+  const radiometricProbe: RadiometricProbeMeasurement = {
+    xPx: RADIOMETRIC_PROBE_X,
+    yPx: RADIOMETRIC_PROBE_Y,
+    channel: "R",
+    directFocusedValue,
+    secondaryFocusedValue,
+    expectedLinearSum,
+    measuredCombinedLinearValue,
+    combinedValueExceedsOne: measuredCombinedLinearValue > 1,
+    tolerance: RADIOMETRIC_PROBE_TOLERANCE,
+    finalDisplayRedByte: resultC.combinedDisplayPixels[probeOffset],
+    legacyRgba8AccumulatorRedByte,
   };
 
   const measurements: Record<FocusCaseId, FocusCaseMeasurement> = {
@@ -703,7 +909,7 @@ try {
       focusDistanceMm: resultA.focusDistanceMm,
       direct: resultA.direct.measurement,
       secondary: resultA.secondary.measurement,
-      combinedHash: hashPixels(resultA.combinedPixels),
+      combinedDisplayHash: hashDisplayPixels(resultA.combinedDisplayPixels),
       contributionPassCount: resultA.contributionPassCount,
       cpuSubmitMs: resultA.cpuSubmitMs,
     },
@@ -711,7 +917,7 @@ try {
       focusDistanceMm: resultB.focusDistanceMm,
       direct: resultB.direct.measurement,
       secondary: resultB.secondary.measurement,
-      combinedHash: hashPixels(resultB.combinedPixels),
+      combinedDisplayHash: hashDisplayPixels(resultB.combinedDisplayPixels),
       contributionPassCount: resultB.contributionPassCount,
       cpuSubmitMs: resultB.cpuSubmitMs,
     },
@@ -719,33 +925,28 @@ try {
       focusDistanceMm: resultC.focusDistanceMm,
       direct: resultC.direct.measurement,
       secondary: resultC.secondary.measurement,
-      combinedHash: hashPixels(resultC.combinedPixels),
-      singleContributionHash: hashPixels(caseCSingle.direct.pixels),
+      combinedDisplayHash: hashDisplayPixels(resultC.combinedDisplayPixels),
+      singleContributionDisplayHash: caseCSingle.direct.measurement.displayHash,
       singleContributionPassCount: caseCSingle.contributionPassCount,
-      combinedVsRadiometricSumMaxByteDelta: sumDelta(
-        resultC.direct.pixels,
-        resultC.secondary.pixels,
-        resultC.combinedPixels,
-      ),
       contributionPassCount: resultC.contributionPassCount,
       cpuSubmitMs: resultC.cpuSubmitMs,
     },
   };
 
   caseImages.A = {
-    direct: resultA.direct.pixels,
-    secondary: resultA.secondary.pixels,
-    combined: resultA.combinedPixels,
+    direct: resultA.direct.displayPixels,
+    secondary: resultA.secondary.displayPixels,
+    combined: resultA.combinedDisplayPixels,
   };
   caseImages.B = {
-    direct: resultB.direct.pixels,
-    secondary: resultB.secondary.pixels,
-    combined: resultB.combinedPixels,
+    direct: resultB.direct.displayPixels,
+    secondary: resultB.secondary.displayPixels,
+    combined: resultB.combinedDisplayPixels,
   };
   caseImages.C = {
-    direct: resultC.direct.pixels,
-    secondary: resultC.secondary.pixels,
-    combined: resultC.combinedPixels,
+    direct: resultC.direct.displayPixels,
+    secondary: resultC.secondary.displayPixels,
+    combined: resultC.combinedDisplayPixels,
   };
 
   const debugInfo = renderer.getContext().getExtension("WEBGL_debug_renderer_info") as {
@@ -755,16 +956,78 @@ try {
     ? String(renderer.getContext().getParameter(debugInfo.UNMASKED_RENDERER_WEBGL))
     : String(renderer.getContext().getParameter(renderer.getContext().RENDERER));
 
+  const rgba8FullResolutionBytes = WIDTH * HEIGHT * 4;
+  const rgba32fFullResolutionBytes = WIDTH * HEIGHT * 16;
+  const nominalTargetTexelBytes =
+    2 * rgba8FullResolutionBytes +
+    6 * rgba32fFullResolutionBytes +
+    rgba32fFullResolutionBytes +
+    rgba8FullResolutionBytes +
+    4;
+  const nominalInputTexelBytes =
+    2 * rgba32fFullResolutionBytes +
+    2 * rgba32fFullResolutionBytes +
+    4;
+
   window.__groundGlassContributionProof = {
     backend,
+    floatingRadianceCapability,
     resourceSummary: {
-      targetCount: 10,
-      targetDimensions: [WIDTH, HEIGHT],
-      targetFormat: "RGBA8",
+      targetCount: 11,
+      cocTargets: {
+        count: 2,
+        dimensions: [WIDTH, HEIGHT],
+        format: "RGBAFormat",
+        type: "UnsignedByteType",
+      },
+      contributionRadianceTargets: {
+        farCount: 2,
+        nearCount: 2,
+        focusedCount: 2,
+        dimensions: [WIDTH, HEIGHT],
+        format: "RGBAFormat",
+        type: "FloatType",
+        filter: "NearestFilter",
+      },
+      combinedRadianceTarget: {
+        dimensions: [WIDTH, HEIGHT],
+        format: "RGBAFormat",
+        type: "FloatType",
+      },
+      finalDisplayTarget: {
+        dimensions: [WIDTH, HEIGHT],
+        format: "RGBAFormat",
+        type: "UnsignedByteType",
+      },
+      legacyByteAccumulatorControl: {
+        dimensions: [1, 1],
+        format: "RGBAFormat",
+        type: "UnsignedByteType",
+      },
+      radianceInputTextures: {
+        count: 2,
+        dimensions: [WIDTH, HEIGHT],
+        format: "RGBAFormat",
+        type: "FloatType",
+      },
+      apparentPositionTextures: {
+        count: 2,
+        dimensions: [WIDTH, HEIGHT],
+        format: "RGBAFormat",
+        type: "FloatType",
+      },
+      visibilityDepthInput: {
+        dimensions: [1, 1],
+        format: "RGBAFormat",
+        type: "UnsignedByteType",
+      },
+      nominalTargetTexelBytes,
+      nominalInputTexelBytes,
       fullResolutionPassesPerTwoContributionFrame: resultA.contributionPassCount,
       rendererTextureCount: renderer.info.memory.textures,
     },
     cases: measurements,
+    radiometricProbe,
     showCase: (id) => displayCase(id, measurements[id], caseImages[id]),
   };
 

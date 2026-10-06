@@ -22,7 +22,7 @@
   </head>
   <body data-proof-ready="false">
     <h1>Ground Glass independent focus contribution proof</h1>
-    <p>Each linear-radiance pattern has its own apparent world-position field. The renderer computes physical CoC and uses the existing aperture gather before adding the focused contributions.</p>
+    <p>Each Float32 linear-radiance pattern has its own apparent world-position field. The renderer computes physical CoC and uses the existing aperture gather before adding the focused contributions. Case C also measures an overlapping red probe (0.75 + 0.75) in the floating-point target before display; displayed canvases are clipped separately.</p>
     <div class="controls" role="group" aria-label="Focus case">
       <button type="button" data-case="A" aria-pressed="true">Case A — pane sharp</button>
       <button type="button" data-case="B" aria-pressed="false">Case B — secondary sharp</button>
@@ -31,7 +31,7 @@
     <section class="panels" aria-label="Processed contribution outputs">
       <figure><figcaption>Direct contribution after focus</figcaption><canvas class="proof-image" id="direct-output" width="128" height="128"></canvas></figure>
       <figure><figcaption>Secondary contribution after focus</figcaption><canvas class="proof-image" id="secondary-output" width="128" height="128"></canvas></figure>
-      <figure><figcaption>Radiometric sum after shared film composite</figcaption><canvas class="proof-image" id="combined-output" width="128" height="128"></canvas></figure>
+      <figure><figcaption>Shared film/display output (8-bit; clipped)</figcaption><canvas class="proof-image" id="combined-output" width="128" height="128"></canvas></figure>
     </section>
     <pre id="measurements" aria-live="polite">Waiting for WebGL proof…</pre>
     <canvas id="gpu-source" width="128" height="128"></canvas>
