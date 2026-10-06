@@ -45,6 +45,45 @@ void main(){
 `;
 
 /**
+ * Contribution-local physical CoC from an explicit apparent-world-position
+ * field. This reuses the same physical footprint kernel as the opaque depth
+ * path; it does not ask a contribution producer to encode an arbitrary CoC or
+ * to rasterize a depth texture. RGBA position values use renderer-world metres
+ * and alpha below 0.5 marks an invalid sample. Contribution producers must
+ * also zero their preweighted RGB radiance at invalid position samples.
+ */
+export const groundGlassApparentWorldPositionCocFragmentShader = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tApparentWorldPosition;
+${sharedIntro}
+
+void main(){
+  vec4 apparentPosition = texture2D(tApparentWorldPosition, vUv);
+  if(apparentPosition.a < 0.5 || !isFiniteVec3(apparentPosition.xyz)){
+    gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(0.0), 0.0, 0.0, 0.0);
+    return;
+  }
+  GroundGlassPhysicalBlurFootprint footprint =
+    calculatePhysicalBlurFootprintFromWorldPosition(apparentPosition.xyz);
+  if(footprint.valid < 0.5){
+    gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(0.0), 0.0, 0.0, 0.0);
+    return;
+  }
+  vec2 encodedFootprintAxes = encodeGroundGlassFootprintAxesMm(
+    footprint.majorRadiusMm,
+    footprint.minorRadiusMm
+  );
+  gl_FragColor = vec4(
+    encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm),
+    encodedFootprintAxes.x,
+    encodedFootprintAxes.y,
+    encodeGroundGlassFootprintOrientation(footprint.orientationRad)
+  );
+}
+`;
+
+/**
  * Local-affine oriented aperture gather. CoC and footprint data are generated
  * independently at full resolution; this pass may render to a scaled target
  * for quality tiers. This is intentionally a single-view color/depth
