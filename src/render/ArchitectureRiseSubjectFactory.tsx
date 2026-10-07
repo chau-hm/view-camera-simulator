@@ -422,6 +422,64 @@ const addStreetContext = (
     material: resources.pavement,
     parent: street,
   });
+
+  const sign = geometry.streetContext.streetSign;
+  const streetSign = new THREE.Group();
+  streetSign.name = "architecture-rise-street-sign";
+  streetSign.userData.resources = resources;
+  street.add(streetSign);
+
+  const groundTopY = geometry.ground.y + 80;
+  const panelBottomY = sign.panelCenterY - sign.panelHeight / 2;
+  const postHeight = panelBottomY - groundTopY + 60;
+  addBox({
+    name: "architecture-rise-street-sign-post",
+    size: [sign.postWidth, postHeight, sign.postWidth],
+    position: [sign.x, groundTopY + postHeight / 2, sign.z],
+    material: resources.reference,
+    parent: streetSign,
+  });
+  addBox({
+    name: "architecture-rise-street-sign-panel",
+    size: [sign.panelWidth, sign.panelHeight, sign.panelDepth],
+    position: [sign.x, sign.panelCenterY, sign.z],
+    material: resources.reference,
+    parent: streetSign,
+  });
+
+  const signFaces = [
+    {
+      side: "front",
+      centerZ: sign.z - (sign.panelDepth + sign.faceDepth) / 2 - 2,
+      inscriptionOffset: -1,
+    },
+    {
+      side: "back",
+      centerZ: sign.z + (sign.panelDepth + sign.faceDepth) / 2 + 2,
+      inscriptionOffset: 1,
+    },
+  ] as const;
+  signFaces.forEach(({ side, centerZ, inscriptionOffset }) => {
+    addBox({
+      name: `architecture-rise-street-sign-face-${side}`,
+      size: [sign.faceWidth, sign.faceHeight, sign.faceDepth],
+      position: [sign.x, sign.panelCenterY, centerZ],
+      material: resources.referenceLight,
+      parent: streetSign,
+    });
+    sign.inscriptionWidths.forEach((width, index) => {
+      const stripeDepth = 6;
+      const stripeCenterZ = centerZ +
+        inscriptionOffset * (sign.faceDepth / 2 + 3 + stripeDepth / 2);
+      addBox({
+        name: `architecture-rise-street-sign-inscription-${side}-${index + 1}`,
+        size: [width, 20, stripeDepth],
+        position: [sign.x, sign.panelCenterY + 70 - index * 48, stripeCenterZ],
+        material: resources.recess,
+        parent: streetSign,
+      });
+    });
+  });
 };
 
 const addReferenceObjects = (
