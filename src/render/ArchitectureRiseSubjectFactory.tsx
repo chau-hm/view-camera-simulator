@@ -429,13 +429,13 @@ const addStreetContext = (
   streetSign.userData.resources = resources;
   street.add(streetSign);
 
-  const groundTopY = geometry.ground.y + 80;
+  const supportSurfaceY = geometry.ground.y;
   const panelBottomY = sign.panelCenterY - sign.panelHeight / 2;
-  const postHeight = panelBottomY - groundTopY + 60;
+  const postHeight = panelBottomY - supportSurfaceY + 60;
   addBox({
     name: "architecture-rise-street-sign-post",
     size: [sign.postWidth, postHeight, sign.postWidth],
-    position: [sign.x, groundTopY + postHeight / 2, sign.z],
+    position: [sign.x, supportSurfaceY + postHeight / 2, sign.z],
     material: resources.reference,
     parent: streetSign,
   });

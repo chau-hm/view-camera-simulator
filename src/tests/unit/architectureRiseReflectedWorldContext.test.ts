@@ -17,7 +17,12 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import type { CameraState } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
-import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import {
+  CAMERA_CONSTANTS,
+  CAMERA_CONTROL_STEPS,
+  DEFAULT_CAMERA_STATE,
+} from "../../utils/constants";
+import { roundToStep } from "../../utils/roundToStep";
 
 type PaneSample = {
   pane: string;
@@ -246,6 +251,17 @@ describe("Architecture Rise reflected-world context", () => {
       expect(signMeshes.some((mesh) => mesh.material === resources.referenceLight)).toBe(true);
       expect(signMeshes.some((mesh) => mesh.material === resources.recess)).toBe(true);
 
+      const signPost = sign?.getObjectByName("architecture-rise-street-sign-post");
+      expect(signPost).toBeInstanceOf(THREE.Mesh);
+      if (!(signPost instanceof THREE.Mesh)) throw new Error("Expected the street sign post mesh");
+      const postBounds = new THREE.Box3().setFromObject(signPost);
+      expect(postBounds.min.y).toBeCloseTo(toWorld(architectureRiseGeometry.ground.y), 10);
+      console.log(JSON.stringify({
+        supportSurfaceYmm: architectureRiseGeometry.ground.y,
+        postBottomYmm: postBounds.min.y * 1000,
+        postTopYmm: postBounds.max.y * 1000,
+      }));
+
       const bounds = new THREE.Box3().setFromObject(sign!);
       expect(bounds.min.x).toBeGreaterThanOrEqual(toWorld(architectureRiseGeometry.sceneBounds.min.x));
       expect(bounds.max.x).toBeLessThanOrEqual(toWorld(architectureRiseGeometry.sceneBounds.max.x));
@@ -264,7 +280,7 @@ describe("Architecture Rise reflected-world context", () => {
     }
   });
 
-  it("provides a clear physical front-pane reflection sample with an in-range virtual focus point", () => {
+  it("provides a clear front-pane sample with an in-range optical-axis focus point", () => {
     const paneFocusMm = architectureRiseScene.cameraPreset.focusDistanceMm ?? 8890;
     const { camera, optics: paneFocusedOptics, config } = configuredGroundGlassCamera(paneFocusMm);
     expect(config.ok).toBe(true);
@@ -338,11 +354,33 @@ describe("Architecture Rise reflected-world context", () => {
       const realQ = knownHit.point.clone();
       const signedPaneDistance = realQ.clone().sub(knownSample.point).dot(knownSample.normal);
       const virtualQ = realQ.clone().addScaledVector(knownSample.normal, -2 * signedPaneDistance);
-      const virtualDistanceMm = virtualQ.distanceTo(camera.position) * 1000;
+      const lensCenterWorld = new THREE.Vector3(
+        toWorld(paneFocusedOptics.opticalAxis.origin.x),
+        toWorld(paneFocusedOptics.opticalAxis.origin.y),
+        toWorld(paneFocusedOptics.opticalAxis.origin.z),
+      );
+      expect(lensCenterWorld.distanceTo(camera.position)).toBeCloseTo(0, 12);
+      const toVirtualQ = virtualQ.clone().sub(lensCenterWorld);
+      const virtualGeometricRangeMm = toVirtualQ.length() * 1000;
+      const opticalAxisDirection = new THREE.Vector3(
+        paneFocusedOptics.opticalAxis.direction.x,
+        paneFocusedOptics.opticalAxis.direction.y,
+        paneFocusedOptics.opticalAxis.direction.z,
+      );
+      expect(opticalAxisDirection.length()).toBeCloseTo(1, 12);
+      const cameraForward = new THREE.Vector3(...config.pose.forwardWorld).normalize();
+      expect(opticalAxisDirection.dot(cameraForward)).toBeCloseTo(1, 12);
+      const virtualFocusAxisDistanceMm = toVirtualQ.dot(opticalAxisDirection) * 1000;
+      const qvFocusMm = roundToStep(
+        virtualFocusAxisDistanceMm,
+        CAMERA_CONTROL_STEPS.focusDistanceMm,
+      );
       expect([realQ.x, realQ.y, realQ.z, virtualQ.x, virtualQ.y, virtualQ.z].every(Number.isFinite)).toBe(true);
-      expect(virtualDistanceMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
-      expect(virtualDistanceMm).toBeLessThanOrEqual(publicFocusRangeMm.max - 750);
-      expect(virtualQ.z * 1000).toBeLessThanOrEqual(publicFocusRangeMm.max - 900);
+      expect(virtualGeometricRangeMm).toBeGreaterThan(virtualFocusAxisDistanceMm);
+      expect(virtualFocusAxisDistanceMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
+      expect(virtualFocusAxisDistanceMm).toBeLessThanOrEqual(publicFocusRangeMm.max - 1000);
+      expect(virtualFocusAxisDistanceMm).toBeCloseTo(11807, 6);
+      expect(qvFocusMm).toBe(11810);
 
       const windowAssemblies: THREE.Mesh[] = [];
       group.traverse((object) => {
@@ -386,7 +424,6 @@ describe("Architecture Rise reflected-world context", () => {
       expect(screenOverlapFraction(signBounds, chartBounds)).toBe(0);
       expect(screenOverlapFraction(signBounds, facadeBounds)).toBe(0);
 
-      const qvFocusMm = Math.round((virtualQ.z * 1000) / 10) * 10;
       expect(qvFocusMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
       expect(qvFocusMm).toBeLessThanOrEqual(publicFocusRangeMm.max);
       const reflectedFocusedOptics = deriveOpticsState(cameraStateAtFocus(qvFocusMm), architectureRiseScene);
@@ -412,12 +449,22 @@ describe("Architecture Rise reflected-world context", () => {
         hitObject: knownHit.object.name,
         Q: realQ.toArray(),
         QVirtual: virtualQ.toArray(),
-        virtualDistanceMm,
+        virtualGeometricRangeMm,
+        virtualFocusAxisDistanceMm,
+        reflectedFocusControlMm: qvFocusMm,
         focusRangeMm: publicFocusRangeMm,
-        focusMarginMm: publicFocusRangeMm.max - virtualDistanceMm,
+        focusDomainMarginMm: publicFocusRangeMm.max - virtualFocusAxisDistanceMm,
+        roundedControlMarginMm: publicFocusRangeMm.max - qvFocusMm,
         paneFocusedCoCMm: qvAtPaneFocus.signedCoCDiameterMm,
-        reflectedFocusedDistanceMm: qvFocusMm,
+        paneFocusedFootprintRadiiMm: {
+          major: qvAtPaneFocus.majorRadiusMm,
+          minor: qvAtPaneFocus.minorRadiusMm,
+        },
         reflectedFocusedCoCMm: qvAtReflectedFocus.signedCoCDiameterMm,
+        reflectedFocusedFootprintRadiiMm: {
+          major: qvAtReflectedFocus.majorRadiusMm,
+          minor: qvAtReflectedFocus.minorRadiusMm,
+        },
         observerFocusChartOverlap: screenOverlapFraction(signBounds, chartBounds),
         observerFacadeOverlap: screenOverlapFraction(signBounds, facadeBounds),
       }, null, 2));
