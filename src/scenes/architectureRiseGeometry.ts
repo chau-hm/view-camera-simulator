@@ -152,6 +152,19 @@ export const streetContext = {
   curbCenterZ: 1900,
   foregroundPlanterX: 1450,
   foregroundPlanterZ: 2800,
+  streetSign: {
+    x: -1500,
+    z: 5800,
+    panelCenterY: 1500,
+    panelWidth: 600,
+    panelHeight: 500,
+    panelDepth: 90,
+    postWidth: 70,
+    faceWidth: 520,
+    faceHeight: 420,
+    faceDepth: 18,
+    inscriptionWidths: [320, 250],
+  },
 } as const;
 
 // recompute scene bounds to include reference objects extents and ensure no geometry falls outside
