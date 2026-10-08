@@ -83,21 +83,45 @@ test("Architecture Rise local Probe is compared with the planar Ground Glass ref
   }
   expect(proof.sample.paneMaskActive).toBe(true);
   expect(proof.sample.probeRadiance.some((value) => value > 0)).toBe(true);
-  expect(proof.sample.qErrorDecompositionM.probeCpuToProbeGpu).toBeLessThan(0.02);
-  expect(proof.sample.qErrorDecompositionM.probeCpuToProbeGpuVirtual).toBeLessThan(0.02);
+  const namedPlanarToProbeQErrorM = proof.sample.qErrorDecompositionM.planarToProbeCpu;
+  const namedPlanarToProbeQVirtualErrorM = proof.sample.qErrorDecompositionM.planarToProbeCpuVirtual;
+  const namedProbeCpuToGpuQErrorM = proof.sample.qErrorDecompositionM.probeCpuToProbeGpu;
+  const namedProbeCpuToGpuQVirtualErrorM = proof.sample.qErrorDecompositionM.probeCpuToProbeGpuVirtual;
+  expect(namedPlanarToProbeQErrorM, "the single-Probe named Q should remain materially displaced from Planar")
+    .toBeGreaterThan(0.2);
+  expect(namedPlanarToProbeQErrorM, "the Probe should still resolve the intended nearby sign sample")
+    .toBeLessThan(0.5);
+  expect(namedPlanarToProbeQVirtualErrorM, "the single-Probe named Q_virtual should remain materially displaced from Planar")
+    .toBeGreaterThan(0.2);
+  expect(namedPlanarToProbeQVirtualErrorM, "the Probe virtual point should remain within the intended sign region")
+    .toBeLessThan(0.5);
+  expect(namedProbeCpuToGpuQErrorM, "cube reconstruction should remain close to its CPU ray")
+    .toBeLessThan(0.02);
+  expect(namedProbeCpuToGpuQVirtualErrorM, "cube virtual-position reconstruction should remain close to its CPU ray")
+    .toBeLessThan(0.02);
+  expect(namedProbeCpuToGpuQErrorM, "cube reconstruction error should remain much smaller than single-Probe geometry error")
+    .toBeLessThan(namedPlanarToProbeQErrorM * 0.1);
+  expect(namedProbeCpuToGpuQVirtualErrorM, "cube virtual-position error should remain much smaller than single-Probe geometry error")
+    .toBeLessThan(namedPlanarToProbeQVirtualErrorM * 0.1);
   for (let component = 0; component < 3; component += 1) {
     expect(proof.sample.planarQ[component]).toBeCloseTo(planarProof.sample.cpuQ[component], 6);
     expect(proof.sample.planarQVirtual[component]).toBeCloseTo(planarProof.sample.cpuQVirtual[component], 6);
   }
-  expect(proof.sample.qErrorDecompositionM.planarToProbeCpu).toBeGreaterThan(0);
-  expect(proof.sample.qErrorDecompositionM.planarToProbeCpuVirtual).toBeGreaterThan(0);
-  expect(proof.sample.focusAxis.probeGpuMm).toBeGreaterThan(0);
-  expect(proof.sample.focusAxis.roundedProbeFocusMm).toBeGreaterThanOrEqual(1_000);
-  expect(proof.sample.angularParallaxDeg).toBeGreaterThanOrEqual(0);
-  expect(proof.sample.projectedVirtualImageDisplacementPx).toBeGreaterThanOrEqual(0);
+  expect(proof.sample.focusAxis.absoluteProbeErrorMm, "Probe focus-axis distance should stay close to the Planar datum")
+    .toBeLessThan(5);
+  expect(proof.sample.focusAxis.roundedProbeFocusMm).toBe(11_810);
+  expect(proof.sample.focusAxis.roundedControlOffsetMm).toBe(0);
+  expect(proof.resources.resolution).toEqual([768, 614]);
+  expect(proof.sample.angularParallaxDeg, "the fixed Probe should retain meaningful angular parallax")
+    .toBeGreaterThan(3);
+  expect(proof.sample.angularParallaxDeg).toBeLessThan(10);
+  expect(proof.sample.projectedVirtualImageDisplacementPx, "the fixed 768×614 fixture should retain visible spatial displacement")
+    .toBeGreaterThan(10);
+  expect(proof.sample.projectedVirtualImageDisplacementPx).toBeLessThan(50);
 
   expect(proof.originStudy.candidateCount).toBeGreaterThan(0);
-  expect(proof.originStudy.planarSignFaceSampleCount).toBeGreaterThan(0);
+  expect(proof.originStudy.allPaneSampleCount).toBe(256);
+  expect(proof.originStudy.planarSignFaceSampleCount).toBe(12);
   expect(proof.originStudy.selected.probeSameSignFaceHitCount).toBeGreaterThanOrEqual(10);
   expect(proof.originStudy.selected.probeSameSignFaceHitCount)
     .toBe(proof.originStudy.planarSignFaceSampleCount);
@@ -105,7 +129,18 @@ test("Architecture Rise local Probe is compared with the planar Ground Glass ref
   expect(proof.originStudy.selected.noHitCount).toBe(0);
   expect(proof.originStudy.selected.maximumAdjacent2x2SignCluster).toBeGreaterThanOrEqual(3);
   expect(proof.originStudy.selected.sameSignFaceCoverage).toBe(1);
+  expect(proof.originStudy.selected.p95QVirtualErrorM).not.toBeNull();
+  const regionalP95QVirtualErrorM = proof.originStudy.selected.p95QVirtualErrorM;
+  if (regionalP95QVirtualErrorM === null) {
+    throw new Error("The selected Probe origin must publish a regional p95 Q_virtual error");
+  }
+  expect(regionalP95QVirtualErrorM, "regional Probe-to-Planar Q_virtual error should remain decision-significant")
+    .toBeGreaterThan(0.2);
+  expect(regionalP95QVirtualErrorM, "regional Probe-to-Planar error should remain bounded to this sign region")
+    .toBeLessThan(0.6);
   expect(proof.originStudy.historical.origin).toEqual([1.45, 8.8, 8.55]);
+  expect(proof.originStudy.historical.probeSameSignFaceHitCount)
+    .toBeLessThan(proof.originStudy.selected.probeSameSignFaceHitCount);
   expect(proof.originStudy.rankedCandidates[0].origin).toEqual(proof.originStudy.selected.origin);
   expect(proof.sample.probeOrigin).toEqual(proof.probeCapture.origin);
 
@@ -140,10 +175,20 @@ test("Architecture Rise local Probe is compared with the planar Ground Glass ref
       );
     }
   }
+  const planarPaneSharpness = planarProof.cases.paneFocus.reflectedSignSharpness.edgeGradientEnergy;
+  const planarReflectionSharpness = planarProof.cases.reflectionFocus.reflectedSignSharpness.edgeGradientEnergy;
+  const probePaneSharpness = paneFocus.reflectedSignSharpness.edgeGradientEnergy;
+  const probeReflectionSharpness = reflectionFocus.reflectedSignSharpness.edgeGradientEnergy;
   expect(paneFocus.reflectedSignSharpness.sampleCount).toBeGreaterThan(0);
   expect(reflectionFocus.reflectedSignSharpness.sampleCount).toBeGreaterThan(0);
   expect(planarProof.cases.paneFocus.reflectedSignSharpness.sampleCount).toBeGreaterThan(0);
   expect(planarProof.cases.reflectionFocus.reflectedSignSharpness.sampleCount).toBeGreaterThan(0);
+  expect(planarReflectionSharpness, "Planar remains a positive control for the reflected-focus detail increase")
+    .toBeGreaterThan(planarPaneSharpness * 1.1);
+  expect(probeReflectionSharpness, "the current single Probe should retain materially less reflected-focus detail than Planar")
+    .toBeLessThan(planarReflectionSharpness * 0.1);
+  expect(probeReflectionSharpness, "the Probe should not reproduce the Planar focus-state detail increase")
+    .toBeLessThanOrEqual(probePaneSharpness);
   expect(proof.sharedFilmEffects.sharedCompositePasses).toBe(2);
   expect(proof.resources.invalidPositionRadianceViolations).toBe(0);
 
