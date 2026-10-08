@@ -257,6 +257,8 @@ At one iteration, the CPU region p95 `Q_virtual` error falls by `96.7%` from the
 
 The corrected full-screen Probe GPU path uses the production Ground Glass camera and the same `Q_virtual` CoC/gather/resolve path as PR P and PR Q. The CPU and GPU correction-region rows use the exact `(0.3, 0.3)` geometry sample; the full-screen GPU row uses the pane source pixel selected from the rendered position target.
 
+For a corrected fixture invocation, the top-level named CPU fields come from the CPU study row matching the requested correction count, and the full-screen GPU fields use that same count. With no correction query, both remain at the PR Q zero-iteration baseline. At one iteration, the exact `(0.3, 0.3)` CPU-to-region-GPU `Q` error is `0.001115 m`; the top-level one-step CPU-to-full-screen-GPU `Q` and `Q_virtual` errors are each `0.006973 m`. The latter comparison includes full-screen pane-source pixel selection, while the region diagnostic uses the exact geometry sample.
+
 | Quantity | Planar reference | PR Q uncorrected Probe GPU | PR R one-step ideal CPU | PR R one-step full-screen Probe GPU |
 | --- | ---: | ---: | ---: | ---: |
 | `Q` (m) | `(-1.523311, 1.354945, 5.865000)` | `(-1.415949, 1.626701, 5.864392)` | `(-1.521698, 1.359011, 5.865000)` | `(-1.527284, 1.354891, 5.865665)` |
@@ -271,7 +273,7 @@ The corrected full-screen Probe GPU path uses the production Ground Glass camera
 
 The one-step corrected GPU's exact 12-point diagnostic region retains 12/12 target-face directions, with zero wrong-object or no-hit samples. Median/p95 Planar `Q_virtual` error is `0.004457 / 0.010773 m`; median/p95 CPU-ideal-to-GPU reconstruction error is `0.001031 / 0.009517 m`. Regional median/p95 angular parallax is `0.02696° / 0.20494°`, and focus-axis error is `1.011 / 9.456 mm`. Its GPU sample at the exact named point is `0.001115 m` from the CPU ideal; the full-screen source-pixel result is `0.004028 m` from Planar.
 
-The CPU study's two-iteration p95 error is lower, but it does not justify doubling GPU samples for this candidate. A measured two-step GPU comparison reduced region p95 from `0.010773 m` to `0.009449 m` (about `12%`) while the named full-screen Planar error rose from `0.004028 m` to `0.007116 m`. The one-step count is the smallest bounded update that captures most of the measurable GPU improvement.
+The CPU study's two-iteration p95 error is lower, but it does not justify doubling GPU samples for this candidate. An **exploratory measured comparison, not regression-protected decision authority**, found that a two-step GPU run reduced region p95 from `0.010773 m` to `0.009449 m` (about `12%`) while the named full-screen Planar error rose from `0.004028 m` to `0.007116 m`. The one-step count is the smallest bounded update that captures most of the measurable GPU improvement in the current measurements.
 
 ### Focus and detail
 

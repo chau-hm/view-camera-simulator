@@ -148,8 +148,11 @@ test("validates the one-step distance-cube correction against frozen Planar and 
   const gpuCorrectionStudy = proof.distanceCubeGpuCorrectionStudy;
   if (!cpuCorrectionStudy || !gpuCorrectionStudy) throw new Error("The corrected CPU/GPU studies are absent");
   const correctedCpu = cpuCorrectionStudy.iterations.find(({ iterations }) => iterations === 1);
+  const baselineCpu = cpuCorrectionStudy.iterations.find(({ iterations }) => iterations === 0);
   const correctedGpu = gpuCorrectionStudy;
-  if (!correctedCpu || !correctedGpu) throw new Error("The one-step CPU/GPU correction evidence is incomplete");
+  if (!baselineCpu || !correctedCpu || !correctedGpu) {
+    throw new Error("The CPU/GPU correction evidence is incomplete");
+  }
   await page.getByRole("button", { name: /Reflection focus/ }).click();
   await page.screenshot({ path: test.info().outputPath("probe-corrected-reflection-focus.png"), fullPage: true });
 
@@ -161,6 +164,14 @@ test("validates the one-step distance-cube correction against frozen Planar and 
   if (!correctedGpuNamed) throw new Error("Corrected GPU region omitted the named (0.3, 0.3) pane sample");
 
   expect(proof.sample.probeOrigin).toEqual(uncorrectedProbe.sample.probeOrigin);
+  expect(baselineCpu.namedSample.q).not.toBeNull();
+  expect(baselineCpu.namedSample.qVirtual).not.toBeNull();
+  expect(uncorrectedProbe.sample.probeCpuQ[0]).toBeCloseTo(baselineCpu.namedSample.q![0], 8);
+  expect(uncorrectedProbe.sample.probeCpuQ[1]).toBeCloseTo(baselineCpu.namedSample.q![1], 8);
+  expect(uncorrectedProbe.sample.probeCpuQ[2]).toBeCloseTo(baselineCpu.namedSample.q![2], 8);
+  expect(uncorrectedProbe.sample.probeCpuQVirtual[0]).toBeCloseTo(baselineCpu.namedSample.qVirtual![0], 8);
+  expect(uncorrectedProbe.sample.probeCpuQVirtual[1]).toBeCloseTo(baselineCpu.namedSample.qVirtual![1], 8);
+  expect(uncorrectedProbe.sample.probeCpuQVirtual[2]).toBeCloseTo(baselineCpu.namedSample.qVirtual![2], 8);
   expect(cpuCorrectionStudy.iterations.map(({ iterations }) => iterations)).toEqual([0, 1, 2, 4, 8]);
   expect(correctedCpu.sameTargetFaceHitCount).toBe(12);
   expect(correctedCpu.wrongObjectCount).toBe(0);
@@ -175,6 +186,31 @@ test("validates the one-step distance-cube correction against frozen Planar and 
   expect(correctedCpu.namedSample.projectedVirtualImageDisplacementPx!).toBeLessThan(baselineProjectedDisplacementPx * 0.1);
   expect(correctedCpu.namedSample.focusAxisErrorMm!).toBeLessThan(1);
   expect(correctedCpu.namedSample.roundedFocusControlMm).toBe(11_810);
+  expect(correctedCpu.namedSample.q).not.toBeNull();
+  expect(correctedCpu.namedSample.qVirtual).not.toBeNull();
+  expect(correctedCpu.namedSample.angularParallaxDeg).not.toBeNull();
+  expect(correctedCpu.namedSample.focusAxisDistanceMm).not.toBeNull();
+  expect(correctedCpu.namedSample.qErrorM).not.toBeNull();
+  expect(correctedCpu.namedSample.qVirtualErrorM).not.toBeNull();
+  expect(proof.sample.probeCpuQ[0]).toBeCloseTo(correctedCpu.namedSample.q![0], 8);
+  expect(proof.sample.probeCpuQ[1]).toBeCloseTo(correctedCpu.namedSample.q![1], 8);
+  expect(proof.sample.probeCpuQ[2]).toBeCloseTo(correctedCpu.namedSample.q![2], 8);
+  expect(proof.sample.probeCpuQVirtual[0]).toBeCloseTo(correctedCpu.namedSample.qVirtual![0], 8);
+  expect(proof.sample.probeCpuQVirtual[1]).toBeCloseTo(correctedCpu.namedSample.qVirtual![1], 8);
+  expect(proof.sample.probeCpuQVirtual[2]).toBeCloseTo(correctedCpu.namedSample.qVirtual![2], 8);
+  expect(proof.sample.focusAxis.probeCpuMm).toBeCloseTo(correctedCpu.namedSample.focusAxisDistanceMm!, 8);
+  expect(proof.sample.angularParallaxDeg).toBeCloseTo(correctedCpu.namedSample.angularParallaxDeg!, 8);
+  expect(proof.sample.qErrorDecompositionM.planarToProbeCpu).toBeCloseTo(correctedCpu.namedSample.qErrorM!, 8);
+  expect(proof.sample.qErrorDecompositionM.planarToProbeCpuVirtual)
+    .toBeCloseTo(correctedCpu.namedSample.qVirtualErrorM!, 8);
+  const correctedCpuNamedSample = correctedCpu.samples.find((sample) =>
+    sample.pane === proof.sample.pane &&
+    sample.u === proof.sample.uv.u &&
+    sample.v === proof.sample.uv.v,
+  );
+  if (!correctedCpuNamedSample) throw new Error("The one-step CPU study omitted the top-level named pane sample");
+  expect(correctedCpuNamedSample.hitObject).toBe("architecture-rise-street-sign-face-back");
+  expect(proof.sample.probeCpuHitObject).toBe(correctedCpuNamedSample.hitObject);
 
   expect(correctedGpu.iterations).toBe(1);
   expect(correctedGpu.sampleCount).toBe(12);
@@ -194,6 +230,8 @@ test("validates the one-step distance-cube correction against frozen Planar and 
   expect(correctedGpuNamed.qErrorM!).toBeLessThan(baselineNamedError * 0.05);
   expect(correctedGpuNamed.qVirtualErrorM!).toBeLessThan(baselineNamedError * 0.05);
   expect(correctedGpuNamed.cpuToGpuQErrorM!).toBeLessThan(0.02);
+  expect(proof.sample.qErrorDecompositionM.probeCpuToProbeGpu).toBeLessThan(0.02);
+  expect(proof.sample.qErrorDecompositionM.probeCpuToProbeGpuVirtual).toBeLessThan(0.02);
   expect(proof.sample.qErrorDecompositionM.probeGpuToPlanar).toBeLessThan(baselineNamedError * 0.05);
   expect(proof.sample.qErrorDecompositionM.probeGpuToPlanarVirtual).toBeLessThan(baselineNamedError * 0.05);
   expect(proof.sample.projectedVirtualImageDisplacementPx).toBeLessThan(baselineProjectedDisplacementPx * 0.1);

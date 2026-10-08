@@ -2717,6 +2717,7 @@ const runProbeFocusReference = (): ProbeProof => {
   let proof: ProbeProof | null = null;
   let distanceCubeCpuCorrectionStudy: DistanceCubeCpuCorrectionStudy | undefined;
   let distanceCubeGpuCorrectionStudy: DistanceCubeGpuCorrectionStudy | undefined;
+  let correctionSamples: PaneReflectionSample[] | undefined;
   let textureCountBeforeDispose = 0;
   let rendererDisposeCalled = false;
   let proofFailed = false;
@@ -3224,13 +3225,58 @@ const runProbeFocusReference = (): ProbeProof => {
     const paneFocusCaptured = capturedCases.paneFocus;
     const reflectionFocusCaptured = capturedCases.reflectionFocus;
     if (!paneFocusCaptured || !reflectionFocusCaptured) throw new Error("A required focus case is missing");
-    const namedProbeRay = new THREE.Raycaster(probeOrigin, canonicalSample.reflectedDirection);
-    namedProbeRay.near = 0;
-    namedProbeRay.far = PROBE_FAR;
-    const namedProbeHit = namedProbeRay.intersectObjects(probeSceneMeshes, false)[0];
-    if (!namedProbeHit) throw new Error("The selected local Probe has no radial-distance hit at the named pane sample");
-    const probeCpuQ = namedProbeHit.point.clone();
-    const probeCpuQVirtual = reflectPointAcrossPlane(probeCpuQ, canonicalSample.plane);
+    if (distanceCpuStudyRequested) {
+      correctionSamples = collectPlanarSignSamples(subject, initialLensOrigin).samples;
+      distanceCubeCpuCorrectionStudy = studyDistanceCubeCpuCorrection(
+        probeOrigin,
+        correctionSamples,
+        probeSceneMeshes,
+        initialLensOrigin,
+        opticalAxis,
+        selectedCamera,
+      );
+    }
+    const activeCpuCorrectionIteration = distanceCubeCpuCorrectionStudy?.iterations.find(
+      (iteration) => iteration.iterations === correctionIterations,
+    );
+    if (distanceCpuStudyRequested && !activeCpuCorrectionIteration) {
+      throw new Error(`The selected correction count ${correctionIterations} has no CPU reference`);
+    }
+    const activeCpuNamedSample = activeCpuCorrectionIteration?.namedSample;
+    let probeCpuQ: THREE.Vector3;
+    let probeCpuQVirtual: THREE.Vector3;
+    let probeCpuHitObject: string;
+    let angularParallaxDeg: number;
+    if (activeCpuNamedSample) {
+      const namedCpuHit = activeCpuCorrectionIteration?.samples.find((sample) =>
+        sample.pane === TARGET_PANE_NAME &&
+        Math.abs(sample.u - PANE_U) < 1e-9 &&
+        Math.abs(sample.v - PANE_V) < 1e-9,
+      );
+      if (!activeCpuNamedSample.q || !activeCpuNamedSample.qVirtual || !namedCpuHit?.hitObject) {
+        throw new Error(`The CPU correction study has no valid named hit at iteration ${correctionIterations}`);
+      }
+      probeCpuQ = new THREE.Vector3(...activeCpuNamedSample.q);
+      probeCpuQVirtual = new THREE.Vector3(...activeCpuNamedSample.qVirtual);
+      probeCpuHitObject = namedCpuHit.hitObject;
+      if (activeCpuNamedSample.angularParallaxDeg === null) {
+        throw new Error(`The CPU correction study has no named angular parallax at iteration ${correctionIterations}`);
+      }
+      angularParallaxDeg = activeCpuNamedSample.angularParallaxDeg;
+    } else {
+      const namedProbeRay = new THREE.Raycaster(probeOrigin, canonicalSample.reflectedDirection);
+      namedProbeRay.near = 0;
+      namedProbeRay.far = PROBE_FAR;
+      const namedProbeHit = namedProbeRay.intersectObjects(probeSceneMeshes, false)[0];
+      if (!namedProbeHit) throw new Error("The selected local Probe has no radial-distance hit at the named pane sample");
+      probeCpuQ = namedProbeHit.point.clone();
+      probeCpuQVirtual = reflectPointAcrossPlane(probeCpuQ, canonicalSample.plane);
+      probeCpuHitObject = namedProbeHit.object.name;
+      const paneToProbeDirection = probeCpuQ.clone().sub(canonicalSample.panePoint).normalize();
+      angularParallaxDeg = THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(
+        paneToProbeDirection.dot(canonicalSample.reflectedDirection), -1, 1,
+      )));
+    }
     const planarFocusAxisDistanceMm = canonicalSample.virtualPoint.clone()
       .sub(initialLensOrigin)
       .dot(opticalAxis) * 1000;
@@ -3276,10 +3322,6 @@ const runProbeFocusReference = (): ProbeProof => {
         `Direct/Planar reference ray safety regression: direct=${directPaneFirstHit}, reflected=${paneToQFirstHit}`,
       );
     }
-    const paneToProbeDirection = probeCpuQ.clone().sub(canonicalSample.panePoint).normalize();
-    const angularParallaxDeg = THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(
-      paneToProbeDirection.dot(canonicalSample.reflectedDirection), -1, 1,
-    )));
     const planarProjection = projectToUv(selectedCamera, canonicalSample.virtualPoint);
     const probeProjection = projectToUv(selectedCamera, selectedGpuQv);
     const projectedVirtualImageDisplacementPx = Math.hypot(
@@ -3329,35 +3371,21 @@ const runProbeFocusReference = (): ProbeProof => {
       colorSpace: colorSpaceName(target.texture.colorSpace),
       filter: formatName(target.texture.magFilter),
     });
-    if (distanceCpuStudyRequested) {
-      const correctionSamples = collectPlanarSignSamples(subject, initialLensOrigin).samples;
-      distanceCubeCpuCorrectionStudy = studyDistanceCubeCpuCorrection(
+    if (distanceCubeCpuCorrectionStudy && correctionSamples && correctionIterations > 0) {
+      if (!activeCpuCorrectionIteration) throw new Error("The selected GPU correction count has no CPU reference");
+      distanceCubeGpuCorrectionStudy = runProbeCorrectionRegionGpuStudy({
+        renderer,
+        bundle,
+        fullscreen,
+        samples: correctionSamples,
+        cpuReference: activeCpuCorrectionIteration,
+        sceneMeshes: probeSceneMeshes,
         probeOrigin,
-        correctionSamples,
-        probeSceneMeshes,
-        initialLensOrigin,
+        lensOrigin: initialLensOrigin,
         opticalAxis,
-        selectedCamera,
-      );
-      if (correctionIterations > 0) {
-        const cpuReference = distanceCubeCpuCorrectionStudy.iterations.find(
-          (iteration) => iteration.iterations === correctionIterations,
-        );
-        if (!cpuReference) throw new Error("The selected GPU correction count has no CPU reference");
-        distanceCubeGpuCorrectionStudy = runProbeCorrectionRegionGpuStudy({
-          renderer,
-          bundle,
-          fullscreen,
-          samples: correctionSamples,
-          cpuReference,
-          sceneMeshes: probeSceneMeshes,
-          probeOrigin,
-          lensOrigin: initialLensOrigin,
-          opticalAxis,
-          probeDistanceCube: probeDistanceCubeTarget,
-          iterations: correctionIterations,
-        });
-      }
+        probeDistanceCube: probeDistanceCubeTarget,
+        iterations: correctionIterations,
+      });
     }
     nominalPayload = bundle.targets.reduce(
       (sum, target) => sum + target.width * target.height * bytesPerTexel(target.texture.type) *
@@ -3381,7 +3409,7 @@ const runProbeFocusReference = (): ProbeProof => {
         probeGpuQ: pointToTuple(selectedGpuQ),
         probeCpuQVirtual: pointToTuple(probeCpuQVirtual),
         probeGpuQVirtual: pointToTuple(selectedGpuQv),
-        probeCpuHitObject: namedProbeHit.object.name,
+        probeCpuHitObject,
         probeGpuQInsideSignFace: gpuQInsideSignFace,
         sourcePixel: {
           x: selectedPanePixel.x,
