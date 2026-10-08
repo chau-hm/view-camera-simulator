@@ -196,10 +196,13 @@ contribution contract through the existing Ground Glass physical footprint
 kernel and aperture gather. PR O establishes a real Architecture Rise
 reflected-world street-sign sample. PR P exercises real planar reflected
 radiance and its derived `Q_virtual` through the PR M contract in a standalone
-development/E2E fixture. The ordinary RTT remains on its existing single
-color/depth path; PR P does not add a production reflection source or select a
-candidate technique. The ideal planar reference does not model rough-glass
-angular distribution or prove performance. See the
+development/E2E fixture. PR Q validates a single local Probe's `Q_probe` /
+`Q_virtual_probe` focus path against that planar reference, and finds the
+single-probe approximation limited by parallax and weak sign-detail retention.
+The ordinary RTT remains on its existing single color/depth path; neither PR
+adds a production reflection source or selects a candidate technique. The
+ideal planar reference does not model rough-glass angular distribution, and the
+Probe fixture does not prove production performance. See the
 [local-reflection decision](LOCAL_REFLECTION_TECHNIQUE_DECISION.md) for the
 CPU/browser proof, software-renderer limitations, candidate analysis, and
 follow-up boundary. These test fixtures do not enter public navigation or the
