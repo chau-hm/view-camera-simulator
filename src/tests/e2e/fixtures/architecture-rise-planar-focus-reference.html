@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Architecture Rise planar focus reference</title>
+    <style>
+      :root { color-scheme: light dark; font: 14px system-ui, sans-serif; }
+      body { margin: 20px; background: #181a1c; color: #f4f5f6; }
+      h1 { margin: 0 0 8px; font-size: 20px; }
+      p { max-width: 980px; color: #c2c7cb; line-height: 1.45; }
+      .controls { display: flex; gap: 8px; margin: 18px 0; }
+      button { padding: 8px 12px; color: inherit; background: #343a40; border: 1px solid #697078; border-radius: 4px; cursor: pointer; }
+      button[aria-pressed="true"] { background: #285b66; border-color: #72c6d5; }
+      .panels { display: grid; grid-template-columns: repeat(3, minmax(180px, 360px)); gap: 14px; }
+      figure { margin: 0; }
+      figcaption { margin-bottom: 6px; color: #e5e7e9; }
+      .proof-image { display: block; width: 100%; image-rendering: pixelated; border: 1px solid #646b71; background: #08090a; }
+      pre { max-height: 380px; padding: 10px; background: #222629; overflow: auto; white-space: pre-wrap; }
+      #gpu-source { display: none; }
+    </style>
+  </head>
+  <body data-proof-ready="false">
+    <h1>Architecture Rise planar reflected-focus reference</h1>
+    <p>This development fixture renders the real Architecture Rise subject through the production Ground Glass camera, captures a geometrically reflected planar view and matching world positions, maps both into the real target pane pixels, and resolves the reflected contribution with PR M's physical apparent-position CoC and aperture gather. It does not change the production renderer.</p>
+    <div class="controls" role="group" aria-label="Ground Glass focus state">
+      <button type="button" data-case="paneFocus" aria-pressed="true">Pane focus — 8,890 mm</button>
+      <button type="button" data-case="reflectionFocus" aria-pressed="false">Reflection focus — derived control</button>
+    </div>
+    <section class="panels" aria-label="Planar reflection diagnostics">
+      <figure><figcaption>Planar reflection before focus</figcaption><canvas class="proof-image" id="reflection-source"></canvas></figure>
+      <figure><figcaption>Planar contribution after physical focus</figcaption><canvas class="proof-image" id="reflection-focused"></canvas></figure>
+      <figure><figcaption>Focused direct + planar radiance, shared film composite</figcaption><canvas class="proof-image" id="combined-output"></canvas></figure>
+    </section>
+    <pre id="measurements" aria-live="polite">Waiting for WebGL planar reference…</pre>
+    <canvas id="gpu-source"></canvas>
+    <script type="module" src="/src/tests/e2e/fixtures/architecture-rise-planar-focus-reference-harness.ts"></script>
+  </body>
+</html>
