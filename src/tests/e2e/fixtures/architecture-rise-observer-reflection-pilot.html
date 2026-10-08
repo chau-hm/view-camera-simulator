@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Architecture Rise Observer reflection pilot</title>
+    <style>
+      :root { color-scheme: light dark; font: 14px system-ui, sans-serif; }
+      body { margin: 20px; background: #181a1c; color: #f4f5f6; }
+      h1 { margin: 0 0 8px; font-size: 20px; }
+      p { max-width: 820px; color: #c2c7cb; line-height: 1.45; }
+      .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+      button { padding: 7px 10px; color: inherit; background: #343a40; border: 1px solid #697078; border-radius: 4px; cursor: pointer; }
+      button[aria-pressed="true"] { background: #285b66; border-color: #72c6d5; }
+      #observer-canvas { display: block; width: 514px; height: 411px; image-rendering: pixelated; border: 1px solid #646b71; background: #f8fafc; }
+      pre { max-width: 980px; max-height: 400px; padding: 10px; background: #222629; overflow: auto; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body data-proof-ready="false">
+    <h1>Architecture Rise corrected Probe Observer-scale pilot</h1>
+    <p>Development-only comparison at the production Observer camera and lighting scale. The existing MeshStandardMaterial response remains active; the local corrected Probe contribution is added before output conversion on front façade glazing only.</p>
+    <div class="controls" role="group" aria-label="Observer camera view">
+      <button type="button" data-view="default" aria-pressed="true">Default Observer</button>
+      <button type="button" data-view="alternate" aria-pressed="false">Alternate Observer</button>
+    </div>
+    <div class="controls" role="group" aria-label="Reflection comparison mode">
+      <button type="button" data-mode="baseline" aria-pressed="true">Baseline</button>
+      <button type="button" data-mode="uncorrected-probe" aria-pressed="false">Uncorrected Probe</button>
+      <button type="button" data-mode="corrected-probe" aria-pressed="false">Corrected Probe</button>
+    </div>
+    <canvas id="observer-canvas" width="514" height="411" aria-label="Architecture Rise Observer-scale rendering"></canvas>
+    <pre id="measurements" aria-live="polite">Waiting for Observer reflection measurements…</pre>
+    <script type="module" src="/src/tests/e2e/fixtures/architecture-rise-observer-reflection-pilot.ts"></script>
+  </body>
+</html>
