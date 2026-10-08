@@ -193,6 +193,125 @@ type ProbeOriginMetrics = {
   maximumAdjacent2x2SignCluster: number;
 };
 
+type DistanceCubeCpuIterationMetrics = {
+  iterations: number;
+  sampleCount: number;
+  sameTargetFaceHitCount: number;
+  wrongObjectCount: number;
+  noHitCount: number;
+  sameTargetFaceCoverage: number;
+  medianQErrorM: number | null;
+  p95QErrorM: number | null;
+  medianQVirtualErrorM: number | null;
+  p95QVirtualErrorM: number | null;
+  medianAngularParallaxDeg: number | null;
+  p95AngularParallaxDeg: number | null;
+  medianFocusAxisErrorMm: number | null;
+  p95FocusAxisErrorMm: number | null;
+  medianFinalDirectionChangeDeg: number | null;
+  p95FinalDirectionChangeDeg: number | null;
+  invalidDuringIterationCount: number;
+  oscillatingSampleCount: number;
+  notStabilizedAfterFinalIterationCount: number;
+  samples: readonly DistanceCubeCpuSampleResult[];
+  namedSample: {
+    pane: string;
+    uv: { u: number; v: number };
+    q: PointTuple | null;
+    qVirtual: PointTuple | null;
+    qErrorM: number | null;
+    qVirtualErrorM: number | null;
+    angularParallaxDeg: number | null;
+    projectedVirtualImageDisplacementPx: number | null;
+    focusAxisDistanceMm: number | null;
+    focusAxisErrorMm: number | null;
+    roundedFocusControlMm: number | null;
+  };
+};
+
+type DistanceCubeCpuSampleResult = {
+  pane: string;
+  row: number;
+  column: number;
+  u: number;
+  v: number;
+  panePoint: PointTuple;
+  paneNormal: PointTuple;
+  planarQ: PointTuple;
+  planarQVirtual: PointTuple;
+  q: PointTuple | null;
+  qVirtual: PointTuple | null;
+  hitObject: string | null;
+  qErrorM: number | null;
+  qVirtualErrorM: number | null;
+  angularParallaxDeg: number | null;
+  focusAxisErrorMm: number | null;
+  finalDirectionChangeDeg: number | null;
+  invalidDuringIteration: boolean;
+  oscillated: boolean;
+};
+
+type DistanceCubeGpuSampleResult = {
+  pane: string;
+  row: number;
+  column: number;
+  u: number;
+  v: number;
+  q: PointTuple | null;
+  qVirtual: PointTuple | null;
+  hitObject: string | null;
+  qErrorM: number | null;
+  qVirtualErrorM: number | null;
+  cpuToGpuQErrorM: number | null;
+  cpuToGpuQVirtualErrorM: number | null;
+  angularParallaxDeg: number | null;
+  focusAxisErrorMm: number | null;
+};
+
+type DistanceCubeGpuCorrectionStudy = {
+  iterations: number;
+  sampleCount: number;
+  sameTargetFaceHitCount: number;
+  wrongObjectCount: number;
+  noHitCount: number;
+  sameTargetFaceCoverage: number;
+  medianQErrorM: number | null;
+  p95QErrorM: number | null;
+  medianQVirtualErrorM: number | null;
+  p95QVirtualErrorM: number | null;
+  medianAngularParallaxDeg: number | null;
+  p95AngularParallaxDeg: number | null;
+  medianFocusAxisErrorMm: number | null;
+  p95FocusAxisErrorMm: number | null;
+  medianCpuToGpuQErrorM: number | null;
+  p95CpuToGpuQErrorM: number | null;
+  medianCpuToGpuQVirtualErrorM: number | null;
+  p95CpuToGpuQVirtualErrorM: number | null;
+  samples: readonly DistanceCubeGpuSampleResult[];
+  extraDistanceCubeSamplesPerOutputPixel: number;
+  extraDistanceCubeSamplesPerPanePixelAcrossBothMappingOutputsPerFocusCase: number;
+  extraColorCubeSamplesPerPanePixelPerFocusCase: number;
+  additionalCandidateFullscreenPasses: number;
+  regionDiagnosticFullscreenPasses: number;
+  regionDiagnosticFramebufferStatus: string;
+  regionDiagnosticReadbackArrayType: "Float32Array";
+  regionDiagnosticResources: {
+    panePositionTexture: { dimensions: readonly [number, number]; format: string; type: string; filter: string };
+    paneNormalTexture: { dimensions: readonly [number, number]; format: string; type: string; filter: string };
+    correctedPointTarget: { dimensions: readonly [number, number]; format: string; type: string; filter: string };
+    shaderMaterialCount: number;
+  };
+};
+
+type DistanceCubeCpuCorrectionStudy = {
+  method: "ideal infinite-resolution radial-distance raycasts";
+  probeOrigin: PointTuple;
+  physicalRayProjectionOnly: true;
+  comparisonAuthority: "Planar Q/Q_virtual used only after final Probe ray hit";
+  directionStabilityThresholdDeg: number;
+  iterations: readonly DistanceCubeCpuIterationMetrics[];
+};
+
 type ProbeProof = {
   baseSha: string;
   backend: BackendCapability;
@@ -245,6 +364,8 @@ type ProbeProof = {
     selected: ProbeOriginMetrics;
     rankedCandidates: readonly ProbeOriginMetrics[];
   };
+  distanceCubeCpuCorrectionStudy?: DistanceCubeCpuCorrectionStudy;
+  distanceCubeGpuCorrectionStudy?: DistanceCubeGpuCorrectionStudy;
   groundGlassCamera: {
     pose: ReturnType<typeof readGroundGlassCameraPose>;
     lensCenterWorldM: PointTuple;
@@ -1186,6 +1307,23 @@ const makeDataTexture = (
   return texture;
 };
 
+const makeFloatDataTexture = (
+  bundle: OwnedBundle,
+  data: Float32Array,
+  width: number,
+  height: number,
+): THREE.DataTexture => {
+  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat, THREE.FloatType);
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.minFilter = THREE.NearestFilter;
+  texture.magFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  texture.unpackAlignment = 1;
+  texture.needsUpdate = true;
+  bundle.textures.push(texture);
+  return texture;
+};
+
 const makeDofUniforms = (): Record<string, THREE.IUniform> => ({
   near: { value: 0.01 },
   far: { value: 100 },
@@ -1259,6 +1397,38 @@ const makePositionCaptureMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial 
 const makePaneMaskPositionMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial =>
   makePositionCaptureMaterial(bundle);
 
+const PROBE_DISTANCE_CUBE_CORRECTION_GLSL = `
+  bool resolveProbePoint(
+    samplerCube tProbeDistance,
+    vec3 panePosition,
+    vec3 paneNormal,
+    vec3 physicalReflectedDirection,
+    vec3 probeOrigin,
+    int correctionIterations,
+    out vec3 correctedDirection,
+    out vec3 correctedPoint
+  ){
+    vec3 direction = normalize(physicalReflectedDirection);
+    for(int iteration = 0; iteration < 8; iteration++){
+      if(iteration >= correctionIterations) break;
+      vec4 distanceSample = textureCube(tProbeDistance, direction);
+      if(distanceSample.a < 0.5 || distanceSample.r <= 0.0) return false;
+      vec3 sampledPoint = probeOrigin + direction * distanceSample.r;
+      float rayDistance = dot(sampledPoint - panePosition, physicalReflectedDirection);
+      vec3 pointOnPhysicalRay = panePosition + physicalReflectedDirection * max(rayDistance, 0.0001);
+      vec3 originToProjectedPoint = pointOnPhysicalRay - probeOrigin;
+      float directionLengthSquared = dot(originToProjectedPoint, originToProjectedPoint);
+      if(directionLengthSquared <= 0.00000001) return false;
+      direction = originToProjectedPoint * inversesqrt(directionLengthSquared);
+    }
+    vec4 finalDistanceSample = textureCube(tProbeDistance, direction);
+    if(finalDistanceSample.a < 0.5 || finalDistanceSample.r <= 0.0) return false;
+    correctedDirection = direction;
+    correctedPoint = probeOrigin + direction * finalDistanceSample.r;
+    return true;
+  }
+`;
+
 const makeProbeMappingMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => {
   const material = new THREE.ShaderMaterial({
     vertexShader: groundGlassVertexShader,
@@ -1272,21 +1442,32 @@ const makeProbeMappingMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => 
       uniform vec3 paneNormalWorld;
       uniform vec3 probeOriginWorld;
       uniform float reflectionWeight;
+      uniform int correctionIterations;
       uniform float outputApparentPosition;
+      ${PROBE_DISTANCE_CUBE_CORRECTION_GLSL}
       void main(){
         vec4 pane = texture2D(tPanePosition, vUv);
         if(pane.a < 0.5){ gl_FragColor = vec4(0.0); return; }
         vec3 paneNormal = normalize(paneNormalWorld);
         vec3 incident = normalize(pane.xyz - lensCenterWorld);
         vec3 reflectedDirection = normalize(reflect(incident, paneNormal));
-        vec4 distanceSample = textureCube(tProbeDistance, reflectedDirection);
-        if(distanceSample.a < 0.5 || distanceSample.r <= 0.0){ gl_FragColor = vec4(0.0); return; }
-        vec3 probePoint = probeOriginWorld + reflectedDirection * distanceSample.r;
+        vec3 correctedDirection;
+        vec3 probePoint;
+        if(!resolveProbePoint(
+          tProbeDistance,
+          pane.xyz,
+          paneNormal,
+          reflectedDirection,
+          probeOriginWorld,
+          correctionIterations,
+          correctedDirection,
+          probePoint
+        )){ gl_FragColor = vec4(0.0); return; }
         vec3 virtualPoint = probePoint - 2.0 * paneNormal * dot(probePoint - pane.xyz, paneNormal);
         if(outputApparentPosition > 0.5){
           gl_FragColor = vec4(virtualPoint, 1.0);
         } else {
-          vec4 radianceSample = textureCube(tProbeRadiance, reflectedDirection);
+          vec4 radianceSample = textureCube(tProbeRadiance, correctedDirection);
           if(radianceSample.a < 0.5){ gl_FragColor = vec4(0.0); return; }
           gl_FragColor = vec4(radianceSample.rgb * reflectionWeight, 1.0);
         }
@@ -1300,7 +1481,59 @@ const makeProbeMappingMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => 
       paneNormalWorld: { value: new THREE.Vector3(0, 0, -1) },
       probeOriginWorld: { value: new THREE.Vector3() },
       reflectionWeight: { value: REFLECTION_WEIGHT },
+      correctionIterations: { value: 0 },
       outputApparentPosition: { value: 0 },
+    },
+    depthTest: false,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  bundle.materials.push(material);
+  return material;
+};
+
+const makeProbeCorrectionRegionDiagnosticMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => {
+  const material = new THREE.ShaderMaterial({
+    vertexShader: groundGlassVertexShader,
+    fragmentShader: `
+      precision highp float;
+      varying vec2 vUv;
+      uniform sampler2D tPanePosition;
+      uniform sampler2D tPaneNormal;
+      uniform samplerCube tProbeDistance;
+      uniform vec3 lensCenterWorld;
+      uniform vec3 probeOriginWorld;
+      uniform int correctionIterations;
+      ${PROBE_DISTANCE_CUBE_CORRECTION_GLSL}
+      void main(){
+        vec4 pane = texture2D(tPanePosition, vUv);
+        vec4 normalSample = texture2D(tPaneNormal, vUv);
+        if(pane.a < 0.5 || normalSample.a < 0.5){ gl_FragColor = vec4(0.0); return; }
+        vec3 paneNormal = normalize(normalSample.xyz);
+        vec3 incident = normalize(pane.xyz - lensCenterWorld);
+        vec3 physicalReflectedDirection = normalize(reflect(incident, paneNormal));
+        vec3 correctedDirection;
+        vec3 correctedPoint;
+        if(!resolveProbePoint(
+          tProbeDistance,
+          pane.xyz,
+          paneNormal,
+          physicalReflectedDirection,
+          probeOriginWorld,
+          correctionIterations,
+          correctedDirection,
+          correctedPoint
+        )){ gl_FragColor = vec4(0.0); return; }
+        gl_FragColor = vec4(correctedPoint, 1.0);
+      }
+    `,
+    uniforms: {
+      tPanePosition: { value: null },
+      tPaneNormal: { value: null },
+      tProbeDistance: { value: null },
+      lensCenterWorld: { value: new THREE.Vector3() },
+      probeOriginWorld: { value: new THREE.Vector3() },
+      correctionIterations: { value: 0 },
     },
     depthTest: false,
     depthWrite: false,
@@ -1574,6 +1807,228 @@ const readFloatPixels = (
   return pixels;
 };
 
+const runProbeCorrectionRegionGpuStudy = (input: {
+  renderer: THREE.WebGLRenderer;
+  bundle: OwnedBundle;
+  fullscreen: ReturnType<typeof makeFullscreenScene>;
+  samples: readonly PaneReflectionSample[];
+  cpuReference: DistanceCubeCpuIterationMetrics;
+  sceneMeshes: THREE.Mesh[];
+  probeOrigin: THREE.Vector3;
+  lensOrigin: THREE.Vector3;
+  opticalAxis: THREE.Vector3;
+  probeDistanceCube: THREE.WebGLCubeRenderTarget;
+  iterations: number;
+}): DistanceCubeGpuCorrectionStudy => {
+  const {
+    renderer,
+    bundle,
+    fullscreen,
+    samples,
+    cpuReference,
+    sceneMeshes,
+    probeOrigin,
+    lensOrigin,
+    opticalAxis,
+    probeDistanceCube,
+    iterations,
+  } = input;
+  const positions = new Float32Array(samples.length * 4);
+  const normals = new Float32Array(samples.length * 4);
+  samples.forEach((sample, index) => {
+    const offset = index * 4;
+    positions.set([...pointToTuple(sample.panePoint), 1], offset);
+    normals.set([...pointToTuple(sample.normal), 1], offset);
+  });
+  const positionTexture = makeFloatDataTexture(bundle, positions, samples.length, 1);
+  const normalTexture = makeFloatDataTexture(bundle, normals, samples.length, 1);
+  const target = makeTarget(bundle, samples.length, 1, {
+    type: THREE.FloatType,
+    filter: THREE.NearestFilter,
+  });
+  const material = makeProbeCorrectionRegionDiagnosticMaterial(bundle);
+  material.uniforms.tPanePosition.value = positionTexture;
+  material.uniforms.tPaneNormal.value = normalTexture;
+  material.uniforms.tProbeDistance.value = probeDistanceCube.texture;
+  (material.uniforms.lensCenterWorld.value as THREE.Vector3).copy(lensOrigin);
+  (material.uniforms.probeOriginWorld.value as THREE.Vector3).copy(probeOrigin);
+  material.uniforms.correctionIterations.value = iterations;
+  const previousTarget = renderer.getRenderTarget();
+  let framebufferStatus = "not-checked";
+  try {
+    renderer.setRenderTarget(target);
+    framebufferStatus = `0x${renderer.getContext().checkFramebufferStatus(renderer.getContext().FRAMEBUFFER).toString(16)}`;
+  } finally {
+    renderer.setRenderTarget(previousTarget);
+  }
+  if (framebufferStatus !== "0x8cd5") {
+    throw new Error(`The Float32 correction-region target is not framebuffer-complete (${framebufferStatus})`);
+  }
+  drawFullscreen(renderer, target, material, fullscreen);
+  const pixels = readFloatPixels(renderer, target);
+  if (pixels.length !== samples.length * 4) throw new Error("Correction-region Float32 readback has an unexpected size");
+
+  const cpuByIndex = cpuReference.samples;
+  const raycaster = new THREE.Raycaster();
+  const qErrors: number[] = [];
+  const qVirtualErrors: number[] = [];
+  const angularErrors: number[] = [];
+  const focusAxisErrors: number[] = [];
+  const cpuToGpuQErrors: number[] = [];
+  const cpuToGpuQVirtualErrors: number[] = [];
+  let sameTargetFaceHitCount = 0;
+  let wrongObjectCount = 0;
+  let noHitCount = 0;
+
+  const gpuSamples: DistanceCubeGpuSampleResult[] = samples.map((sample, index) => {
+    const offset = index * 4;
+    const pixel = [pixels[offset], pixels[offset + 1], pixels[offset + 2], pixels[offset + 3]];
+    const cpuSample = cpuByIndex[index];
+    if (!cpuSample) throw new Error(`CPU correction reference omitted region sample ${index}`);
+    if (pixel[3] < 0.5 || !pixel.slice(0, 3).every(Number.isFinite)) {
+      noHitCount += 1;
+      return {
+        pane: sample.paneName,
+        row: sample.row,
+        column: sample.column,
+        u: sample.u,
+        v: sample.v,
+        q: null,
+        qVirtual: null,
+        hitObject: null,
+        qErrorM: null,
+        qVirtualErrorM: null,
+        cpuToGpuQErrorM: null,
+        cpuToGpuQVirtualErrorM: null,
+        angularParallaxDeg: null,
+        focusAxisErrorMm: null,
+      };
+    }
+
+    const q = new THREE.Vector3(pixel[0], pixel[1], pixel[2]);
+    const panePoint = sample.panePoint;
+    const paneNormal = sample.normal;
+    const qVirtual = q.clone().addScaledVector(
+      paneNormal,
+      -2 * q.clone().sub(panePoint).dot(paneNormal),
+    );
+    const probeDirection = q.clone().sub(probeOrigin);
+    if (probeDirection.lengthSq() <= 1e-12) {
+      noHitCount += 1;
+      return {
+        pane: sample.paneName,
+        row: sample.row,
+        column: sample.column,
+        u: sample.u,
+        v: sample.v,
+        q: pointToTuple(q),
+        qVirtual: pointToTuple(qVirtual),
+        hitObject: null,
+        qErrorM: null,
+        qVirtualErrorM: null,
+        cpuToGpuQErrorM: null,
+        cpuToGpuQVirtualErrorM: null,
+        angularParallaxDeg: null,
+        focusAxisErrorMm: null,
+      };
+    }
+    raycaster.set(probeOrigin, probeDirection.normalize());
+    raycaster.near = 0;
+    raycaster.far = PROBE_FAR;
+    const hit = raycaster.intersectObjects(sceneMeshes, false)[0];
+    if (!hit) noHitCount += 1;
+    else if (hit.object.name === TARGET_FACE_NAME) sameTargetFaceHitCount += 1;
+    else wrongObjectCount += 1;
+
+    const qErrorM = q.distanceTo(sample.planarQ);
+    const qVirtualErrorM = qVirtual.distanceTo(sample.planarQVirtual);
+    const angularParallaxDeg = directionAngleDegrees(
+      q.clone().sub(panePoint).normalize(),
+      sample.reflectedDirection,
+    );
+    const focusAxisDistanceMm = qVirtual.clone().sub(lensOrigin).dot(opticalAxis) * 1000;
+    const planarFocusAxisDistanceMm = sample.planarQVirtual.clone().sub(lensOrigin).dot(opticalAxis) * 1000;
+    const focusAxisErrorMm = Math.abs(focusAxisDistanceMm - planarFocusAxisDistanceMm);
+    const cpuToGpuQErrorM = cpuSample.q ? q.distanceTo(new THREE.Vector3(...cpuSample.q)) : null;
+    const cpuToGpuQVirtualErrorM = cpuSample.qVirtual
+      ? qVirtual.distanceTo(new THREE.Vector3(...cpuSample.qVirtual))
+      : null;
+    qErrors.push(qErrorM);
+    qVirtualErrors.push(qVirtualErrorM);
+    angularErrors.push(angularParallaxDeg);
+    focusAxisErrors.push(focusAxisErrorMm);
+    if (cpuToGpuQErrorM !== null) cpuToGpuQErrors.push(cpuToGpuQErrorM);
+    if (cpuToGpuQVirtualErrorM !== null) cpuToGpuQVirtualErrors.push(cpuToGpuQVirtualErrorM);
+
+    return {
+      pane: sample.paneName,
+      row: sample.row,
+      column: sample.column,
+      u: sample.u,
+      v: sample.v,
+      q: pointToTuple(q),
+      qVirtual: pointToTuple(qVirtual),
+      hitObject: hit?.object.name ?? null,
+      qErrorM,
+      qVirtualErrorM,
+      cpuToGpuQErrorM,
+      cpuToGpuQVirtualErrorM,
+      angularParallaxDeg,
+      focusAxisErrorMm,
+    };
+  });
+
+  return {
+    iterations,
+    sampleCount: samples.length,
+    sameTargetFaceHitCount,
+    wrongObjectCount,
+    noHitCount,
+    sameTargetFaceCoverage: samples.length > 0 ? sameTargetFaceHitCount / samples.length : 0,
+    medianQErrorM: percentile(qErrors, 0.5),
+    p95QErrorM: percentile(qErrors, 0.95),
+    medianQVirtualErrorM: percentile(qVirtualErrors, 0.5),
+    p95QVirtualErrorM: percentile(qVirtualErrors, 0.95),
+    medianAngularParallaxDeg: percentile(angularErrors, 0.5),
+    p95AngularParallaxDeg: percentile(angularErrors, 0.95),
+    medianFocusAxisErrorMm: percentile(focusAxisErrors, 0.5),
+    p95FocusAxisErrorMm: percentile(focusAxisErrors, 0.95),
+    medianCpuToGpuQErrorM: percentile(cpuToGpuQErrors, 0.5),
+    p95CpuToGpuQErrorM: percentile(cpuToGpuQErrors, 0.95),
+    medianCpuToGpuQVirtualErrorM: percentile(cpuToGpuQVirtualErrors, 0.5),
+    p95CpuToGpuQVirtualErrorM: percentile(cpuToGpuQVirtualErrors, 0.95),
+    samples: gpuSamples,
+    extraDistanceCubeSamplesPerOutputPixel: iterations,
+    extraDistanceCubeSamplesPerPanePixelAcrossBothMappingOutputsPerFocusCase: iterations * 2,
+    extraColorCubeSamplesPerPanePixelPerFocusCase: 0,
+    additionalCandidateFullscreenPasses: 0,
+    regionDiagnosticFullscreenPasses: 1,
+    regionDiagnosticFramebufferStatus: framebufferStatus,
+    regionDiagnosticReadbackArrayType: "Float32Array",
+    regionDiagnosticResources: {
+      panePositionTexture: {
+        dimensions: [positionTexture.image.width, positionTexture.image.height],
+        format: formatName(positionTexture.format),
+        type: formatName(positionTexture.type),
+        filter: formatName(positionTexture.magFilter),
+      },
+      paneNormalTexture: {
+        dimensions: [normalTexture.image.width, normalTexture.image.height],
+        format: formatName(normalTexture.format),
+        type: formatName(normalTexture.type),
+        filter: formatName(normalTexture.magFilter),
+      },
+      correctedPointTarget: {
+        dimensions: [target.width, target.height],
+        format: formatName(target.texture.format),
+        type: formatName(target.texture.type),
+        filter: formatName(target.texture.magFilter),
+      },
+      shaderMaterialCount: 1,
+    },
+  };
+};
+
 const readBytePixels = (
   renderer: THREE.WebGLRenderer,
   target: THREE.WebGLRenderTarget,
@@ -1714,6 +2169,259 @@ const projectToUv = (
     x: projected.x * 0.5 + 0.5,
     y: projected.y * 0.5 + 0.5,
     z: projected.z,
+  };
+};
+
+const DISTANCE_CUBE_CPU_ITERATIONS = [0, 1, 2, 4, 8] as const;
+const DISTANCE_CUBE_DIRECTION_STABILITY_THRESHOLD_DEG = 0.01;
+const DISTANCE_CUBE_RAY_EPSILON_M = 1e-4;
+
+const directionAngleDegrees = (a: THREE.Vector3, b: THREE.Vector3): number =>
+  THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)));
+
+/**
+ * CPU ideal study for the existing one-origin radial-distance representation.
+ * Each distance lookup is a raycast from the fixed Probe origin. The Planar
+ * points are read only after the final Probe hit, for error measurement.
+ */
+const studyDistanceCubeCpuCorrection = (
+  probeOrigin: THREE.Vector3,
+  samples: readonly PaneReflectionSample[],
+  sceneMeshes: THREE.Mesh[],
+  lensOrigin: THREE.Vector3,
+  opticalAxis: THREE.Vector3,
+  comparisonCamera: THREE.Camera,
+): DistanceCubeCpuCorrectionStudy => {
+  const iterationMetrics = DISTANCE_CUBE_CPU_ITERATIONS.map((iterations): DistanceCubeCpuIterationMetrics => {
+    const qErrors: number[] = [];
+    const qVirtualErrors: number[] = [];
+    const angularErrors: number[] = [];
+    const focusAxisErrors: number[] = [];
+    const finalDirectionChanges: number[] = [];
+    const sampleResults: DistanceCubeCpuSampleResult[] = [];
+    let sameTargetFaceHitCount = 0;
+    let wrongObjectCount = 0;
+    let noHitCount = 0;
+    let invalidDuringIterationCount = 0;
+    let oscillatingSampleCount = 0;
+    let notStabilizedAfterFinalIterationCount = 0;
+    let namedSample: DistanceCubeCpuIterationMetrics["namedSample"] | null = null;
+
+    for (const sample of samples) {
+      let direction = sample.reflectedDirection.clone().normalize();
+      const directionHistory = [direction.clone()];
+      let lastDirectionChangeDeg: number | null = null;
+      let becameInvalidDuringIteration = false;
+      let oscillated = false;
+      let invalid = false;
+
+      // d_0 is the uncorrected PR Q direction. Each following radial sample
+      // is raycast from O; only its projection scalar is evaluated from P.
+      for (let iteration = 0; iteration < iterations; iteration += 1) {
+        const distanceRay = new THREE.Raycaster(probeOrigin, direction);
+        distanceRay.near = 0;
+        distanceRay.far = PROBE_FAR;
+        const distanceHit = distanceRay.intersectObjects(sceneMeshes, false)[0];
+        if (!distanceHit) {
+          invalid = true;
+          becameInvalidDuringIteration = true;
+          break;
+        }
+
+        const projectedDistance = distanceHit.point.clone()
+          .sub(sample.panePoint)
+          .dot(sample.reflectedDirection);
+        const pointOnPhysicalRay = sample.panePoint.clone().addScaledVector(
+          sample.reflectedDirection,
+          Math.max(projectedDistance, DISTANCE_CUBE_RAY_EPSILON_M),
+        );
+        const nextDirection = pointOnPhysicalRay.sub(probeOrigin);
+        if (!Number.isFinite(nextDirection.lengthSq()) || nextDirection.lengthSq() <= 1e-12) {
+          invalid = true;
+          becameInvalidDuringIteration = true;
+          break;
+        }
+        nextDirection.normalize();
+        lastDirectionChangeDeg = directionAngleDegrees(direction, nextDirection);
+
+        if (directionHistory.length >= 2) {
+          const twoStepsBack = directionHistory[directionHistory.length - 2];
+          const returnsToPreviousDirection = directionAngleDegrees(twoStepsBack, nextDirection) <=
+            DISTANCE_CUBE_DIRECTION_STABILITY_THRESHOLD_DEG;
+          const stepRemainsMaterial = lastDirectionChangeDeg > DISTANCE_CUBE_DIRECTION_STABILITY_THRESHOLD_DEG;
+          if (returnsToPreviousDirection && stepRemainsMaterial) oscillated = true;
+        }
+
+        direction = nextDirection;
+        directionHistory.push(direction.clone());
+      }
+
+      let finalHit: THREE.Intersection<THREE.Object3D> | undefined;
+      if (!invalid) {
+        const finalRay = new THREE.Raycaster(probeOrigin, direction);
+        finalRay.near = 0;
+        finalRay.far = PROBE_FAR;
+        finalHit = finalRay.intersectObjects(sceneMeshes, false)[0];
+      }
+      if (becameInvalidDuringIteration) invalidDuringIterationCount += 1;
+      if (oscillated) oscillatingSampleCount += 1;
+      if (iterations > 0 && lastDirectionChangeDeg !== null) {
+        finalDirectionChanges.push(lastDirectionChangeDeg);
+        if (lastDirectionChangeDeg > DISTANCE_CUBE_DIRECTION_STABILITY_THRESHOLD_DEG) {
+          notStabilizedAfterFinalIterationCount += 1;
+        }
+      }
+
+      if (!finalHit) {
+        noHitCount += 1;
+        sampleResults.push({
+          pane: sample.paneName,
+          row: sample.row,
+          column: sample.column,
+          u: sample.u,
+          v: sample.v,
+          panePoint: pointToTuple(sample.panePoint),
+          paneNormal: pointToTuple(sample.normal),
+          planarQ: pointToTuple(sample.planarQ),
+          planarQVirtual: pointToTuple(sample.planarQVirtual),
+          q: null,
+          qVirtual: null,
+          hitObject: null,
+          qErrorM: null,
+          qVirtualErrorM: null,
+          angularParallaxDeg: null,
+          focusAxisErrorMm: null,
+          finalDirectionChangeDeg: lastDirectionChangeDeg,
+          invalidDuringIteration: becameInvalidDuringIteration,
+          oscillated,
+        });
+        if (
+          sample.paneName === TARGET_PANE_NAME &&
+          Math.abs(sample.u - PANE_U) < 1e-9 &&
+          Math.abs(sample.v - PANE_V) < 1e-9
+        ) {
+          namedSample = {
+            pane: sample.paneName,
+            uv: { u: sample.u, v: sample.v },
+            q: null,
+            qVirtual: null,
+            qErrorM: null,
+            qVirtualErrorM: null,
+            angularParallaxDeg: null,
+            projectedVirtualImageDisplacementPx: null,
+            focusAxisDistanceMm: null,
+            focusAxisErrorMm: null,
+            roundedFocusControlMm: null,
+          };
+        }
+        continue;
+      }
+
+      const q = finalHit.point.clone();
+      const qVirtual = q.clone().addScaledVector(
+        sample.normal,
+        -2 * sample.plane.distanceToPoint(q),
+      );
+      const qErrorM = q.distanceTo(sample.planarQ);
+      const qVirtualErrorM = qVirtual.distanceTo(sample.planarQVirtual);
+      const angularParallaxDeg = directionAngleDegrees(
+        q.clone().sub(sample.panePoint).normalize(),
+        sample.reflectedDirection,
+      );
+      const focusAxisDistanceMm = qVirtual.clone().sub(lensOrigin).dot(opticalAxis) * 1000;
+      const planarFocusAxisDistanceMm = sample.planarQVirtual.clone().sub(lensOrigin).dot(opticalAxis) * 1000;
+      const focusAxisErrorMm = Math.abs(focusAxisDistanceMm - planarFocusAxisDistanceMm);
+      qErrors.push(qErrorM);
+      qVirtualErrors.push(qVirtualErrorM);
+      angularErrors.push(angularParallaxDeg);
+      focusAxisErrors.push(focusAxisErrorMm);
+      sampleResults.push({
+        pane: sample.paneName,
+        row: sample.row,
+        column: sample.column,
+        u: sample.u,
+        v: sample.v,
+        panePoint: pointToTuple(sample.panePoint),
+        paneNormal: pointToTuple(sample.normal),
+        planarQ: pointToTuple(sample.planarQ),
+        planarQVirtual: pointToTuple(sample.planarQVirtual),
+        q: pointToTuple(q),
+        qVirtual: pointToTuple(qVirtual),
+        hitObject: finalHit.object.name,
+        qErrorM,
+        qVirtualErrorM,
+        angularParallaxDeg,
+        focusAxisErrorMm,
+        finalDirectionChangeDeg: lastDirectionChangeDeg,
+        invalidDuringIteration: becameInvalidDuringIteration,
+        oscillated,
+      });
+
+      if (finalHit.object.name === TARGET_FACE_NAME) sameTargetFaceHitCount += 1;
+      else wrongObjectCount += 1;
+
+      if (
+        sample.paneName === TARGET_PANE_NAME &&
+        Math.abs(sample.u - PANE_U) < 1e-9 &&
+        Math.abs(sample.v - PANE_V) < 1e-9
+      ) {
+        const planarUv = projectToUv(comparisonCamera, sample.planarQVirtual);
+        const correctedUv = projectToUv(comparisonCamera, qVirtual);
+        namedSample = {
+          pane: sample.paneName,
+          uv: { u: sample.u, v: sample.v },
+          q: pointToTuple(q),
+          qVirtual: pointToTuple(qVirtual),
+          qErrorM,
+          qVirtualErrorM,
+          angularParallaxDeg,
+          projectedVirtualImageDisplacementPx: Math.hypot(
+            (correctedUv.x - planarUv.x) * WIDTH,
+            (correctedUv.y - planarUv.y) * HEIGHT,
+          ),
+          focusAxisDistanceMm,
+          focusAxisErrorMm: Math.abs(focusAxisDistanceMm - planarFocusAxisDistanceMm),
+          roundedFocusControlMm: roundToStep(
+            focusAxisDistanceMm,
+            CAMERA_CONTROL_STEPS.focusDistanceMm,
+          ),
+        };
+      }
+    }
+
+    if (!namedSample) throw new Error(`Distance-cube CPU study lost the named ${PANE_U}/${PANE_V} pane sample`);
+    return {
+      iterations,
+      sampleCount: samples.length,
+      sameTargetFaceHitCount,
+      wrongObjectCount,
+      noHitCount,
+      sameTargetFaceCoverage: samples.length > 0 ? sameTargetFaceHitCount / samples.length : 0,
+      medianQErrorM: percentile(qErrors, 0.5),
+      p95QErrorM: percentile(qErrors, 0.95),
+      medianQVirtualErrorM: percentile(qVirtualErrors, 0.5),
+      p95QVirtualErrorM: percentile(qVirtualErrors, 0.95),
+      medianAngularParallaxDeg: percentile(angularErrors, 0.5),
+      p95AngularParallaxDeg: percentile(angularErrors, 0.95),
+      medianFocusAxisErrorMm: percentile(focusAxisErrors, 0.5),
+      p95FocusAxisErrorMm: percentile(focusAxisErrors, 0.95),
+      medianFinalDirectionChangeDeg: percentile(finalDirectionChanges, 0.5),
+      p95FinalDirectionChangeDeg: percentile(finalDirectionChanges, 0.95),
+      invalidDuringIterationCount,
+      oscillatingSampleCount,
+      notStabilizedAfterFinalIterationCount,
+      samples: sampleResults,
+      namedSample,
+    };
+  });
+
+  return {
+    method: "ideal infinite-resolution radial-distance raycasts",
+    probeOrigin: pointToTuple(probeOrigin),
+    physicalRayProjectionOnly: true,
+    comparisonAuthority: "Planar Q/Q_virtual used only after final Probe ray hit",
+    directionStabilityThresholdDeg: DISTANCE_CUBE_DIRECTION_STABILITY_THRESHOLD_DEG,
+    iterations: iterationMetrics,
   };
 };
 
@@ -1987,6 +2695,13 @@ type CapturedCase = {
 };
 
 const runProbeFocusReference = (): ProbeProof => {
+  const query = new URLSearchParams(window.location.search);
+  const correctionParameter = query.get("parallaxCorrectionIterations");
+  const correctionIterations = correctionParameter === null ? 0 : Number(correctionParameter);
+  if (!DISTANCE_CUBE_CPU_ITERATIONS.includes(correctionIterations as (typeof DISTANCE_CUBE_CPU_ITERATIONS)[number])) {
+    throw new Error(`Unsupported distance-cube correction iteration count: ${correctionParameter}`);
+  }
+  const distanceCpuStudyRequested = query.get("cpuCorrectionStudy") === "1" || correctionParameter !== null;
   const canvas = document.getElementById("gpu-source") as HTMLCanvasElement | null;
   if (!canvas) throw new Error("Probe reference WebGL canvas is missing");
   const renderer = new THREE.WebGLRenderer({
@@ -2000,6 +2715,9 @@ const runProbeFocusReference = (): ProbeProof => {
   const rendererState = captureRendererState(renderer);
   const bundle = makeOwnedBundle();
   let proof: ProbeProof | null = null;
+  let distanceCubeCpuCorrectionStudy: DistanceCubeCpuCorrectionStudy | undefined;
+  let distanceCubeGpuCorrectionStudy: DistanceCubeGpuCorrectionStudy | undefined;
+  let correctionSamples: PaneReflectionSample[] | undefined;
   let textureCountBeforeDispose = 0;
   let rendererDisposeCalled = false;
   let proofFailed = false;
@@ -2193,6 +2911,7 @@ const runProbeFocusReference = (): ProbeProof => {
       (probeMappingMaterial.uniforms.paneNormalWorld.value as THREE.Vector3).copy(sample.normal);
       (probeMappingMaterial.uniforms.probeOriginWorld.value as THREE.Vector3).copy(probeOrigin);
       probeMappingMaterial.uniforms.reflectionWeight.value = REFLECTION_WEIGHT;
+      probeMappingMaterial.uniforms.correctionIterations.value = correctionIterations;
       probeMappingMaterial.uniforms.outputApparentPosition.value = 0;
       drawFullscreen(renderer, resolvedRadianceTarget, probeMappingMaterial, fullscreen);
       probeMappingMaterial.uniforms.outputApparentPosition.value = 1;
@@ -2506,13 +3225,58 @@ const runProbeFocusReference = (): ProbeProof => {
     const paneFocusCaptured = capturedCases.paneFocus;
     const reflectionFocusCaptured = capturedCases.reflectionFocus;
     if (!paneFocusCaptured || !reflectionFocusCaptured) throw new Error("A required focus case is missing");
-    const namedProbeRay = new THREE.Raycaster(probeOrigin, canonicalSample.reflectedDirection);
-    namedProbeRay.near = 0;
-    namedProbeRay.far = PROBE_FAR;
-    const namedProbeHit = namedProbeRay.intersectObjects(probeSceneMeshes, false)[0];
-    if (!namedProbeHit) throw new Error("The selected local Probe has no radial-distance hit at the named pane sample");
-    const probeCpuQ = namedProbeHit.point.clone();
-    const probeCpuQVirtual = reflectPointAcrossPlane(probeCpuQ, canonicalSample.plane);
+    if (distanceCpuStudyRequested) {
+      correctionSamples = collectPlanarSignSamples(subject, initialLensOrigin).samples;
+      distanceCubeCpuCorrectionStudy = studyDistanceCubeCpuCorrection(
+        probeOrigin,
+        correctionSamples,
+        probeSceneMeshes,
+        initialLensOrigin,
+        opticalAxis,
+        selectedCamera,
+      );
+    }
+    const activeCpuCorrectionIteration = distanceCubeCpuCorrectionStudy?.iterations.find(
+      (iteration) => iteration.iterations === correctionIterations,
+    );
+    if (distanceCpuStudyRequested && !activeCpuCorrectionIteration) {
+      throw new Error(`The selected correction count ${correctionIterations} has no CPU reference`);
+    }
+    const activeCpuNamedSample = activeCpuCorrectionIteration?.namedSample;
+    let probeCpuQ: THREE.Vector3;
+    let probeCpuQVirtual: THREE.Vector3;
+    let probeCpuHitObject: string;
+    let angularParallaxDeg: number;
+    if (activeCpuNamedSample) {
+      const namedCpuHit = activeCpuCorrectionIteration?.samples.find((sample) =>
+        sample.pane === TARGET_PANE_NAME &&
+        Math.abs(sample.u - PANE_U) < 1e-9 &&
+        Math.abs(sample.v - PANE_V) < 1e-9,
+      );
+      if (!activeCpuNamedSample.q || !activeCpuNamedSample.qVirtual || !namedCpuHit?.hitObject) {
+        throw new Error(`The CPU correction study has no valid named hit at iteration ${correctionIterations}`);
+      }
+      probeCpuQ = new THREE.Vector3(...activeCpuNamedSample.q);
+      probeCpuQVirtual = new THREE.Vector3(...activeCpuNamedSample.qVirtual);
+      probeCpuHitObject = namedCpuHit.hitObject;
+      if (activeCpuNamedSample.angularParallaxDeg === null) {
+        throw new Error(`The CPU correction study has no named angular parallax at iteration ${correctionIterations}`);
+      }
+      angularParallaxDeg = activeCpuNamedSample.angularParallaxDeg;
+    } else {
+      const namedProbeRay = new THREE.Raycaster(probeOrigin, canonicalSample.reflectedDirection);
+      namedProbeRay.near = 0;
+      namedProbeRay.far = PROBE_FAR;
+      const namedProbeHit = namedProbeRay.intersectObjects(probeSceneMeshes, false)[0];
+      if (!namedProbeHit) throw new Error("The selected local Probe has no radial-distance hit at the named pane sample");
+      probeCpuQ = namedProbeHit.point.clone();
+      probeCpuQVirtual = reflectPointAcrossPlane(probeCpuQ, canonicalSample.plane);
+      probeCpuHitObject = namedProbeHit.object.name;
+      const paneToProbeDirection = probeCpuQ.clone().sub(canonicalSample.panePoint).normalize();
+      angularParallaxDeg = THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(
+        paneToProbeDirection.dot(canonicalSample.reflectedDirection), -1, 1,
+      )));
+    }
     const planarFocusAxisDistanceMm = canonicalSample.virtualPoint.clone()
       .sub(initialLensOrigin)
       .dot(opticalAxis) * 1000;
@@ -2558,10 +3322,6 @@ const runProbeFocusReference = (): ProbeProof => {
         `Direct/Planar reference ray safety regression: direct=${directPaneFirstHit}, reflected=${paneToQFirstHit}`,
       );
     }
-    const paneToProbeDirection = probeCpuQ.clone().sub(canonicalSample.panePoint).normalize();
-    const angularParallaxDeg = THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(
-      paneToProbeDirection.dot(canonicalSample.reflectedDirection), -1, 1,
-    )));
     const planarProjection = projectToUv(selectedCamera, canonicalSample.virtualPoint);
     const probeProjection = projectToUv(selectedCamera, selectedGpuQv);
     const projectedVirtualImageDisplacementPx = Math.hypot(
@@ -2596,7 +3356,7 @@ const runProbeFocusReference = (): ProbeProof => {
         ? null
         : paneFocusSetup.optics.diagnostics.imageDistanceMm ?? null,
     });
-    const nominalPayload = bundle.targets.reduce(
+    let nominalPayload = bundle.targets.reduce(
       (sum, target) => sum + target.width * target.height * bytesPerTexel(target.texture.type) *
         (target instanceof THREE.WebGLCubeRenderTarget ? 6 : 1),
       0,
@@ -2611,6 +3371,27 @@ const runProbeFocusReference = (): ProbeProof => {
       colorSpace: colorSpaceName(target.texture.colorSpace),
       filter: formatName(target.texture.magFilter),
     });
+    if (distanceCubeCpuCorrectionStudy && correctionSamples && correctionIterations > 0) {
+      if (!activeCpuCorrectionIteration) throw new Error("The selected GPU correction count has no CPU reference");
+      distanceCubeGpuCorrectionStudy = runProbeCorrectionRegionGpuStudy({
+        renderer,
+        bundle,
+        fullscreen,
+        samples: correctionSamples,
+        cpuReference: activeCpuCorrectionIteration,
+        sceneMeshes: probeSceneMeshes,
+        probeOrigin,
+        lensOrigin: initialLensOrigin,
+        opticalAxis,
+        probeDistanceCube: probeDistanceCubeTarget,
+        iterations: correctionIterations,
+      });
+    }
+    nominalPayload = bundle.targets.reduce(
+      (sum, target) => sum + target.width * target.height * bytesPerTexel(target.texture.type) *
+        (target instanceof THREE.WebGLCubeRenderTarget ? 6 : 1),
+      0,
+    );
 
     proof = {
       baseSha: BASE_SHA,
@@ -2628,7 +3409,7 @@ const runProbeFocusReference = (): ProbeProof => {
         probeGpuQ: pointToTuple(selectedGpuQ),
         probeCpuQVirtual: pointToTuple(probeCpuQVirtual),
         probeGpuQVirtual: pointToTuple(selectedGpuQv),
-        probeCpuHitObject: namedProbeHit.object.name,
+        probeCpuHitObject,
         probeGpuQInsideSignFace: gpuQInsideSignFace,
         sourcePixel: {
           x: selectedPanePixel.x,
@@ -2658,6 +3439,8 @@ const runProbeFocusReference = (): ProbeProof => {
         projectedVirtualImageDisplacementPx,
       },
       originStudy,
+      ...(distanceCubeCpuCorrectionStudy ? { distanceCubeCpuCorrectionStudy } : {}),
+      ...(distanceCubeGpuCorrectionStudy ? { distanceCubeGpuCorrectionStudy } : {}),
       groundGlassCamera: {
         pose: readGroundGlassCameraPose(selectedCamera),
         lensCenterWorldM: vecToWorld(paneFocusSetup.optics.lensCenterWorld),
