@@ -115,6 +115,24 @@ type CoCMeasurement = {
   absoluteCpuDifferenceMm: number;
 };
 
+type ResourceDisposalCounts = {
+  owned: number;
+  disposed: number;
+  duplicateDisposeEvents: number;
+};
+
+type ResourceLifecycleCounts = {
+  renderTargets: ResourceDisposalCounts;
+  textures: ResourceDisposalCounts;
+  materials: ResourceDisposalCounts;
+  geometries: ResourceDisposalCounts;
+  customDisposers: { registered: number; invoked: number };
+};
+
+type ResourceLifecycleEvidence = ResourceLifecycleCounts & {
+  rendererDisposeCalled: boolean;
+};
+
 type BackendCapability = {
   renderer: string;
   webgl2: boolean;
@@ -235,17 +253,17 @@ type PlanarProof = {
       sharedCompositePasses: number;
     };
     rendererTextureCountBeforeDispose: number;
-    productionExtraTargets: number;
-    productionExtraPasses: number;
     invalidPositionRadianceViolations: number;
-    disposed: boolean;
+    lifecycle: ResourceLifecycleEvidence;
   };
   production: {
     passOrder: readonly string[];
-    observerReflectionAdded: boolean;
+  };
+  fixtureConfiguration: {
     reflectionWeight: number;
-    captureClippedToCameraSideOfPane: boolean;
-    targetGlazingExcluded: boolean;
+  };
+  planarCapture: {
+    cameraSideClippingPassed: boolean;
   };
 };
 
@@ -261,26 +279,102 @@ type OwnedBundle = {
   materials: THREE.Material[];
   geometries: THREE.BufferGeometry[];
   disposers: Array<() => void>;
+  lifecycle: ResourceLifecycleCounts;
+  trackResource: (
+    resource: THREE.WebGLRenderTarget | THREE.Texture | THREE.Material | THREE.BufferGeometry,
+    category: "renderTargets" | "textures" | "materials" | "geometries",
+  ) => void;
   dispose: () => void;
 };
 
 const makeOwnedBundle = (): OwnedBundle => {
+  const lifecycle: ResourceLifecycleCounts = {
+    renderTargets: { owned: 0, disposed: 0, duplicateDisposeEvents: 0 },
+    textures: { owned: 0, disposed: 0, duplicateDisposeEvents: 0 },
+    materials: { owned: 0, disposed: 0, duplicateDisposeEvents: 0 },
+    geometries: { owned: 0, disposed: 0, duplicateDisposeEvents: 0 },
+    customDisposers: { registered: 0, invoked: 0 },
+  };
+  const trackedResources = new WeakSet<object>();
   const bundle: OwnedBundle = {
     targets: [],
     textures: [],
     materials: [],
     geometries: [],
     disposers: [],
+    lifecycle,
+    trackResource: (resource, category) => {
+      if (trackedResources.has(resource)) return;
+      trackedResources.add(resource);
+      const counts = lifecycle[category];
+      counts.owned += 1;
+      let disposeEvents = 0;
+      const eventSource = resource as unknown as {
+        addEventListener: (type: "dispose", listener: () => void) => void;
+      };
+      eventSource.addEventListener("dispose", () => {
+        disposeEvents += 1;
+        counts.disposed += 1;
+        if (disposeEvents > 1) counts.duplicateDisposeEvents += 1;
+      });
+    },
     dispose: () => {
-      bundle.disposers.forEach((dispose) => dispose());
-      bundle.materials.forEach((resource) => resource.dispose());
-      bundle.targets.forEach((resource) => resource.dispose());
-      bundle.textures.forEach((resource) => resource.dispose());
-      bundle.geometries.forEach((resource) => resource.dispose());
+      const errors: unknown[] = [];
+      const attemptAll = <T>(resources: readonly T[], dispose: (resource: T) => void): void => {
+        resources.forEach((resource) => {
+          try {
+            dispose(resource);
+          } catch (error) {
+            errors.push(error);
+          }
+        });
+      };
+      bundle.materials.forEach((resource) => bundle.trackResource(resource, "materials"));
+      bundle.targets.forEach((resource) => bundle.trackResource(resource, "renderTargets"));
+      bundle.textures.forEach((resource) => bundle.trackResource(resource, "textures"));
+      bundle.geometries.forEach((resource) => bundle.trackResource(resource, "geometries"));
+      lifecycle.customDisposers.registered = bundle.disposers.length;
+      attemptAll(bundle.disposers, (dispose) => {
+        lifecycle.customDisposers.invoked += 1;
+        dispose();
+      });
+      attemptAll(bundle.materials, (resource) => resource.dispose());
+      attemptAll(bundle.targets, (resource) => resource.dispose());
+      attemptAll(bundle.textures, (resource) => resource.dispose());
+      attemptAll(bundle.geometries, (resource) => resource.dispose());
+      if (errors.length > 0) {
+        throw new AggregateError(errors, "One or more Planar fixture resources failed to dispose");
+      }
     },
   };
   return bundle;
 };
+
+const registerOwnedTarget = (
+  bundle: OwnedBundle,
+  target: THREE.WebGLRenderTarget,
+  disposeWithBundle = true,
+): THREE.WebGLRenderTarget => {
+  if (disposeWithBundle) bundle.targets.push(target);
+  bundle.trackResource(target, "renderTargets");
+  return target;
+};
+
+const registerOwnedMaterials = (bundle: OwnedBundle, ...materials: THREE.Material[]): void => {
+  materials.forEach((resource) => {
+    bundle.materials.push(resource);
+    bundle.trackResource(resource, "materials");
+  });
+};
+
+const lifecycleEvidence = (bundle: OwnedBundle, rendererDisposeCalled: boolean): ResourceLifecycleEvidence => ({
+  renderTargets: { ...bundle.lifecycle.renderTargets },
+  textures: { ...bundle.lifecycle.textures },
+  materials: { ...bundle.lifecycle.materials },
+  geometries: { ...bundle.lifecycle.geometries },
+  customDisposers: { ...bundle.lifecycle.customDisposers },
+  rendererDisposeCalled,
+});
 
 const makeTarget = (
   bundle: OwnedBundle,
@@ -302,8 +396,7 @@ const makeTarget = (
   });
   target.texture.colorSpace = THREE.NoColorSpace;
   target.texture.generateMipmaps = false;
-  bundle.targets.push(target);
-  return target;
+  return registerOwnedTarget(bundle, target);
 };
 
 const verifyFloatTargetCapability = (
@@ -323,6 +416,7 @@ const verifyFloatTargetCapability = (
     );
   }
 
+  const statusTarget = renderer.getRenderTarget();
   const target = new THREE.WebGLRenderTarget(2, 2, {
     format: THREE.RGBAFormat,
     type: THREE.FloatType,
@@ -331,10 +425,14 @@ const verifyFloatTargetCapability = (
     depthBuffer: false,
     stencilBuffer: false,
   });
+  registerOwnedTarget(bundle, target, false);
   target.texture.colorSpace = THREE.NoColorSpace;
   target.texture.generateMipmaps = false;
-  const statusTarget = renderer.getRenderTarget();
   let framebufferStatus = "not-checked";
+  let capability: BackendCapability | null = null;
+  let proofFailed = false;
+  let proofError: unknown;
+  const cleanupErrors: unknown[] = [];
   try {
     renderer.setRenderTarget(target);
     const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
@@ -349,7 +447,7 @@ const verifyFloatTargetCapability = (
       depthWrite: false,
       toneMapped: false,
     });
-    bundle.materials.push(material);
+    registerOwnedMaterials(bundle, material);
     quad.material = material;
     renderer.setClearColor(0x000000, 0);
     renderer.clear(true, true, true);
@@ -361,7 +459,7 @@ const verifyFloatTargetCapability = (
       throw new Error(`Float32 readback did not preserve 1.25 (read ${floatProbeValue})`);
     }
     const floatLinearFilteringSupported = Boolean(gl.getExtension("OES_texture_float_linear"));
-    return {
+    capability = {
       renderer: renderer.info.programs ? "Three.js WebGLRenderer" : "Three.js WebGLRenderer",
       webgl2: renderer.capabilities.isWebGL2,
       webglVersion: String(gl.getParameter(gl.VERSION)),
@@ -375,10 +473,27 @@ const verifyFloatTargetCapability = (
       floatLinearFilteringSupported,
       radianceFilter: floatLinearFilteringSupported ? "LinearFilter" : "NearestFilter",
     };
+  } catch (error) {
+    proofFailed = true;
+    proofError = error;
   } finally {
-    renderer.setRenderTarget(statusTarget);
-    target.dispose();
+    try {
+      renderer.setRenderTarget(statusTarget);
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+    try {
+      target.dispose();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
   }
+  if (proofFailed || cleanupErrors.length > 0) {
+    const errors = proofFailed ? [proofError, ...cleanupErrors] : cleanupErrors;
+    throw new AggregateError(errors, "Float32 capability check or target cleanup failed");
+  }
+  if (!capability) throw new Error("Float32 capability check produced no evidence");
+  return capability;
 };
 
 const pointToTuple = (point: { x: number; y: number; z: number }): PointTuple => [point.x, point.y, point.z];
@@ -1416,7 +1531,6 @@ type CapturedCase = {
   reflectionUv: { x: number; y: number; z: number };
   reflectionPixel: { x: number; yBottom: number };
   planarHitObject: string;
-  targetGlazingExcluded: boolean;
   panePositionPixels: Float32Array;
   directPositionPixels: Float32Array;
   reflectionPositionPixels: Float32Array;
@@ -1443,7 +1557,10 @@ const runPlanarFocusReference = (): PlanarProof => {
   const bundle = makeOwnedBundle();
   let proof: PlanarProof | null = null;
   let textureCountBeforeDispose = 0;
-  let disposed = false;
+  let rendererDisposeCalled = false;
+  let proofFailed = false;
+  let proofError: unknown;
+  const cleanupErrors: unknown[] = [];
 
   try {
     renderer.toneMapping = THREE.NoToneMapping;
@@ -1590,11 +1707,9 @@ const runPlanarFocusReference = (): PlanarProof => {
       const panePixel = selectPanePixel(camera, sample.panePoint, panePositionPixels, directPositionPixels);
 
       const previousPaneVisibility = pane.visible;
-      let glazingExcluded = false;
       let clippingPlaneSideViolations = 0;
       try {
         pane.visible = false;
-        glazingExcluded = !pane.visible;
         renderColorCapture(renderer, scene, reflectionCamera, planarRadianceTarget, cameraSideClipPlane);
         renderPositionCapture(
           renderer,
@@ -1608,7 +1723,6 @@ const runPlanarFocusReference = (): PlanarProof => {
         pane.visible = previousPaneVisibility;
         renderer.clippingPlanes = [];
       }
-      if (!glazingExcluded) throw new Error("Target glazing was not excluded from the planar scene capture");
 
       const reflectionPositionPixels = readFloatPixels(renderer, planarWorldPositionTarget);
       for (let offset = 0; offset < reflectionPositionPixels.length; offset += 4) {
@@ -1692,7 +1806,6 @@ const runPlanarFocusReference = (): PlanarProof => {
         reflectionUv: reflectionSample.uv,
         reflectionPixel: reflectionSample.pixel,
         planarHitObject: reflectionSample.objectName,
-        targetGlazingExcluded: glazingExcluded,
         panePositionPixels,
         directPositionPixels,
         reflectionPositionPixels,
@@ -1731,7 +1844,6 @@ const runPlanarFocusReference = (): PlanarProof => {
     let selectedCamera: THREE.PerspectiveCamera | null = null;
     let selectedReflectionCamera: THREE.PerspectiveCamera | null = null;
     let selectedClippingPassed = false;
-    let selectedTargetGlazingExcluded = false;
     let selectedReflectionFirstHit = "<no-hit>";
 
     for (const [caseId, focusDistanceMm] of focusCaseInputs) {
@@ -1985,7 +2097,6 @@ const runPlanarFocusReference = (): PlanarProof => {
         selectedReflectionUv = captured.reflectionUv;
         selectedReflectionPixel = captured.reflectionPixel;
         selectedClippingPassed = captured.clippingPlaneSideViolations === 0;
-        selectedTargetGlazingExcluded = captured.targetGlazingExcluded;
         selectedReflectionFirstHit = captured.planarHitObject;
       }
     }
@@ -2269,33 +2380,44 @@ const runPlanarFocusReference = (): PlanarProof => {
           sharedCompositePasses: totalCompositePasses,
         },
         rendererTextureCountBeforeDispose: renderer.info.memory.textures,
-        productionExtraTargets: 0,
-        productionExtraPasses: 0,
         invalidPositionRadianceViolations: 0,
-        disposed: false,
+        lifecycle: lifecycleEvidence(bundle, false),
       },
       production: {
         passOrder: GROUND_GLASS_PASS_ORDER,
-        observerReflectionAdded: false,
+      },
+      fixtureConfiguration: {
         reflectionWeight: REFLECTION_WEIGHT,
-        captureClippedToCameraSideOfPane: selectedClippingPassed,
-        targetGlazingExcluded: selectedTargetGlazingExcluded,
+      },
+      planarCapture: {
+        cameraSideClippingPassed: selectedClippingPassed,
       },
     };
     textureCountBeforeDispose = renderer.info.memory.textures;
+  } catch (error) {
+    proofFailed = true;
+    proofError = error;
   } finally {
-    try {
-      restoreRendererState(renderer, rendererState);
-    } finally {
-      bundle.dispose();
-      renderer.dispose();
-      disposed = true;
-    }
+    const attemptCleanup = (operation: () => void): void => {
+      try {
+        operation();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    };
+    attemptCleanup(() => restoreRendererState(renderer, rendererState));
+    attemptCleanup(() => bundle.dispose());
+    rendererDisposeCalled = true;
+    attemptCleanup(() => renderer.dispose());
   }
 
+  if (proofFailed || cleanupErrors.length > 0) {
+    const errors = proofFailed ? [proofError, ...cleanupErrors] : cleanupErrors;
+    throw new AggregateError(errors, "Planar focus proof or owned-resource teardown failed");
+  }
   if (!proof) throw new Error("Planar focus reference produced no evidence");
   proof.resources.rendererTextureCountBeforeDispose = textureCountBeforeDispose;
-  proof.resources.disposed = disposed;
+  proof.resources.lifecycle = lifecycleEvidence(bundle, rendererDisposeCalled);
   return proof;
 };
 

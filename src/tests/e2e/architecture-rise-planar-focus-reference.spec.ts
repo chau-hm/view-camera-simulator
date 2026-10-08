@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { GROUND_GLASS_PASS_ORDER } from "../../render/groundGlassPassGraph";
 
 type CoCMeasurement = {
   signedCoCDiameterMm: number;
@@ -192,26 +193,36 @@ test("Architecture Rise planar reflection follows independent Ground Glass focus
     linearRadianceSums: 2,
     sharedCompositePasses: 2,
   });
-  expect(proof.resources.productionExtraTargets).toBe(0);
-  expect(proof.resources.productionExtraPasses).toBe(0);
-  expect(proof.production.passOrder).toEqual([
+  expect(GROUND_GLASS_PASS_ORDER).toEqual([
     "sceneRender",
     "cocFootprint",
     "farGather",
     "nearGather",
     "composite",
   ]);
-  expect(proof.production.observerReflectionAdded).toBe(false);
-  expect(proof.production.reflectionWeight).toBe(0.18);
-  expect(proof.production.captureClippedToCameraSideOfPane).toBe(true);
-  expect(proof.production.targetGlazingExcluded).toBe(true);
+  expect(proof.production.passOrder).toEqual(GROUND_GLASS_PASS_ORDER);
+  expect(proof.fixtureConfiguration.reflectionWeight).toBe(0.18);
+  expect(proof.planarCapture.cameraSideClippingPassed).toBe(true);
   expect(proof.directViewSafety).toMatchObject({
     paneFirstHit: proof.sample.pane,
     directRayHitsStreetSign: false,
     paneToQFirstHit: proof.sample.reflectionObject,
     paneToQPathClear: true,
   });
-  expect(proof.resources.disposed).toBe(true);
+  const lifecycle = proof.resources.lifecycle;
+  for (const resource of [
+    lifecycle.renderTargets,
+    lifecycle.textures,
+    lifecycle.materials,
+    lifecycle.geometries,
+  ]) {
+    expect(resource.owned).toBeGreaterThan(0);
+    expect(resource.disposed).toBe(resource.owned);
+    expect(resource.duplicateDisposeEvents).toBe(0);
+  }
+  expect(lifecycle.customDisposers.registered).toBeGreaterThan(0);
+  expect(lifecycle.customDisposers.invoked).toBe(lifecycle.customDisposers.registered);
+  expect(lifecycle.rendererDisposeCalled).toBe(true);
 
   console.info("Architecture Rise planar focus GPU proof:", JSON.stringify(proof));
   await page.screenshot({ path: test.info().outputPath("pane-focus.png"), fullPage: true });
