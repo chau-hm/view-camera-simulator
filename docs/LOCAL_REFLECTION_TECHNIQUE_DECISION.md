@@ -22,7 +22,7 @@ If a local reflection technique is selected in future, Observer is an appearance
 
 ### Ground Glass source and DOF
 
-[`GroundGlassRTT.tsx`](../src/render/GroundGlassRTT.tsx) renders the registered Architecture Rise subject into a separate color/depth target owned by [`groundGlassRttResources.ts`](../src/render/groundGlassRttResources.ts). At the standard-quality baseline that target was 658×527; a depth texture was available. The implemented pass order in [`groundGlassPassGraph.ts`](../src/render/groundGlassPassGraph.ts) is:
+[`GroundGlassRTT.tsx`](../src/render/GroundGlassRTT.tsx) renders the registered Architecture Rise subject into a separate color/depth target owned by [`groundGlassRttResources.ts`](../src/render/groundGlassRttResources.ts). At the standard-quality baseline that target was 658×527; a depth texture was available. The semantic/profiling/test pass-order contract declared in [`groundGlassPassGraph.ts`](../src/render/groundGlassPassGraph.ts) lists:
 
 ```text
 sceneRender → cocFootprint → farGather → nearGather → composite
@@ -503,11 +503,13 @@ represented world
             └── Ground Glass → current direct-radiance physical-DOF path
 ```
 
-Neither consumer receives a local reflected-world render. Ground Glass still executes the imported `GROUND_GLASS_PASS_ORDER`:
+Neither consumer receives a local reflected-world render. On the normal processed path, production `GroundGlassRTT` currently invokes the same five stages, in the same order, as the `GROUND_GLASS_PASS_ORDER` semantic contract:
 
 ```text
 sceneRender → cocFootprint → farGather → nearGather → composite
 ```
+
+The executor spells out these calls manually; the constant is a semantic/profiling/test contract and does not drive or enforce runtime ordering, so the two could drift. This PR does not change that architectural risk. Raw RTT Debug likewise runs `sceneRender → composite`, matching `GROUND_GLASS_RAW_DEBUG_PASS_ORDER`.
 
 The current production `GroundGlassRTT` receives direct scene radiance and applies physical CoC / aperture-gather processing. `GroundGlassRadianceContribution`, the apparent-world-position CoC shader, and its binding helper remain renderer-source contracts exercised by the development fixtures; they are not connected to a production reflected-radiance producer or multi-contribution executor.
 
