@@ -354,8 +354,15 @@ update from its existing radial-distance cube materially reduces parallax and
 restores reflected detail in a fixed development fixture. PR S tested that
 frozen candidate at normal Observer scale and rejected it: the alternate view
 produced no local Probe response, while the default view retained substantial
-false-positive and wrong-surface mappings. Production RTT remains
-single-contribution, and no reflection technique is selected or integrated.
+false-positive and wrong-surface mappings. PR T then evaluated up to three
+fixed corrected Probes with a CPU-only, truth-free runtime selector. Two
+Probes substantially improved the optimized views but retained 42.19%
+same-object coverage and 23.44% wrong-object mappings on the held-out orbit; a
+third Probe added only three training hits and removed three false negatives.
+Outcome B closes local Probe planning for the current Architecture Rise
+production path unless new evidence or requirements justify reopening it.
+Production RTT remains single-contribution, and no reflection technique is
+selected or integrated.
 
 ## 16. 2D Geometry and UI/readout boundaries
 

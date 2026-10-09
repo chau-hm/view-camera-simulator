@@ -204,10 +204,15 @@ existing radial-distance cube; it materially reduces error across the fixed
 reference. PR S then tested that frozen corrected Probe at normal Observer
 scale and rejected this candidate: it produced no local response from the
 alternate view and retained substantial false-positive and wrong-surface
-mapping in the default view. No production reflection technique is selected
-or integrated, and the ordinary RTT remains on its existing single
-color/depth path. The ideal planar reference does not model rough-glass angular
-distribution, and these Probe fixtures do not prove production performance.
+mapping in the default view. PR T's CPU-only bounded multi-Probe study found
+that two fixed Probes improve optimized Views A/B but leave material error on
+the held-out orbit; a third adds only a small training improvement. Outcome B
+closes local Probe planning for the current Architecture Rise production path
+unless new evidence or requirements justify reopening it. No production
+reflection technique is selected or integrated, and the ordinary RTT remains
+on its existing single color/depth path. The ideal planar reference does not
+model rough-glass angular distribution, and these Probe fixtures do not prove
+production performance.
 For a future Ground Glass path, accepted reflected radiance must pass through
 Ground Glass before optical/DOF processing; Observer appearance integration has
 no physical focus path. See the
