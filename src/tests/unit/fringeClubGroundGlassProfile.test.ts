@@ -83,6 +83,17 @@ describe("Fringe Club Ground Glass development profile", () => {
       mountSubject: true,
       onSubjectIdentityChange: (identity) => identities.push(identity),
     });
+    expect(profile.renderSanityIdentity).toBe("stage2h|probe:default");
+    const shiftedProfile = createFringeClubGroundGlassDevelopmentProfile({
+      sourceOwner: owner,
+      alignmentTargetMeters: [0.04, 0, 0],
+      probeId: "join-probe",
+      probeMotionId: "right",
+      mountSubject: false,
+    });
+    expect(shiftedProfile.renderSanityIdentity).toBe(
+      "stage2h|probe:join-probe|motion:right",
+    );
     const rttScene = new THREE.Scene();
     const mounted = profile.mountSubject(rttScene, profileContext);
     if (!mounted) throw new Error("Expected the RTT subject to mount");

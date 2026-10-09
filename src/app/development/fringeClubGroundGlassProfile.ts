@@ -8,6 +8,7 @@ import {
 import {
   type FringeClubAssetRequest,
   type FringeClubSourceOwnerLease,
+  type FringeClubVector3,
 } from "../../render/assets/FringeClubRuntimeAsset";
 import {
   getGroundGlassSceneProfile,
@@ -18,6 +19,9 @@ const MILLIMETRES_PER_METRE = 1000;
 const RTT_INSTANCE_ID = "ground-glass-rtt";
 
 export type FringeClubGroundGlassSubjectIdentity = Readonly<{
+  candidateId: FringeClubSourceOwnerLease["candidateId"];
+  probeId: string;
+  motionId: string;
   sourceId: string;
   instanceId: string;
   rootId: string;
@@ -25,6 +29,9 @@ export type FringeClubGroundGlassSubjectIdentity = Readonly<{
 
 export type FringeClubGroundGlassProfileOptions = Readonly<{
   sourceOwner: FringeClubSourceOwnerLease;
+  alignmentTargetMeters?: FringeClubVector3;
+  probeId?: string;
+  probeMotionId?: string;
   mountSubject: boolean;
   onSubjectIdentityChange?: (
     identity: FringeClubGroundGlassSubjectIdentity | null,
@@ -33,18 +40,22 @@ export type FringeClubGroundGlassProfileOptions = Readonly<{
 
 const resolveFringePositionMeters = (
   sourceOwner: FringeClubSourceOwnerLease,
+  alignmentTargetMeters?: FringeClubVector3,
 ): readonly [number, number, number] => {
   const target = architectureRiseScene.focusTargets[0]?.worldPosition;
   if (!target) {
     throw new Error("Architecture Rise must provide the RTT fixture focus target");
   }
 
-  const [centerX, centerY] = sourceOwner.boundsMeters.center;
-  const [, , nearZ] = sourceOwner.boundsMeters.min;
+  const localTarget = alignmentTargetMeters ?? [
+    sourceOwner.boundsMeters.center[0],
+    sourceOwner.boundsMeters.center[1],
+    sourceOwner.boundsMeters.min[2],
+  ];
   return Object.freeze([
-    target.x / MILLIMETRES_PER_METRE - centerX,
-    target.y / MILLIMETRES_PER_METRE - centerY,
-    target.z / MILLIMETRES_PER_METRE - nearZ,
+    target.x / MILLIMETRES_PER_METRE - localTarget[0],
+    target.y / MILLIMETRES_PER_METRE - localTarget[1],
+    target.z / MILLIMETRES_PER_METRE - localTarget[2],
   ]);
 };
 
@@ -84,11 +95,14 @@ const unionBounds = (left: Bounds3, right: Bounds3): Bounds3 => ({
  */
 export const createFringeClubGroundGlassDevelopmentProfile = ({
   sourceOwner,
+  alignmentTargetMeters,
+  probeId = "default",
+  probeMotionId = "center",
   mountSubject,
   onSubjectIdentityChange,
 }: FringeClubGroundGlassProfileOptions): GroundGlassSceneProfile => {
   const baseProfile = getGroundGlassSceneProfile(architectureRiseScene);
-  const positionMeters = resolveFringePositionMeters(sourceOwner);
+  const positionMeters = resolveFringePositionMeters(sourceOwner, alignmentTargetMeters);
   const request: FringeClubAssetRequest = Object.freeze({
     sourceOwner,
     instanceId: RTT_INSTANCE_ID,
@@ -98,6 +112,11 @@ export const createFringeClubGroundGlassDevelopmentProfile = ({
 
   return Object.freeze({
     ...baseProfile,
+    renderSanityIdentity:
+      sourceOwner.candidateId +
+      "|probe:" +
+      probeId +
+      (probeMotionId === "center" ? "" : "|motion:" + probeMotionId),
     mountSubject: (scene) => {
       if (!mountSubject) return null;
 
@@ -108,6 +127,9 @@ export const createFringeClubGroundGlassDevelopmentProfile = ({
       scene.add(group);
       onSubjectIdentityChange?.(
         Object.freeze({
+          candidateId: sourceOwner.candidateId,
+          probeId,
+          motionId: probeMotionId,
           sourceId: sourceOwner.sourceId,
           instanceId: RTT_INSTANCE_ID,
           rootId: group.uuid,

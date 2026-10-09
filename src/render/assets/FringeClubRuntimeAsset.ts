@@ -2,9 +2,25 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { publicAssetUrl } from "../../utils/publicAssetUrl";
 
-export const FRINGE_CLUB_ASSET_URL = publicAssetUrl(
-  "assets/generated/fringe-club/stage-2h/preferred-runtime-candidate.glb",
-);
+export type FringeRuntimeCandidate = "stage2h" | "stage2n-a";
+
+export const DEFAULT_FRINGE_RUNTIME_CANDIDATE: FringeRuntimeCandidate = "stage2h";
+export const FRINGE_CLUB_CANDIDATE_ASSET_URLS: Readonly<
+  Record<FringeRuntimeCandidate, string>
+> = Object.freeze({
+  stage2h: publicAssetUrl(
+    "assets/generated/fringe-club/stage-2h/preferred-runtime-candidate.glb",
+  ),
+  "stage2n-a": publicAssetUrl(
+    "assets/generated/fringe-club/development/stage-2n-a-candidate.glb",
+  ),
+});
+export const getFringeClubCandidateAssetUrl = (
+  candidateId: FringeRuntimeCandidate,
+): string => FRINGE_CLUB_CANDIDATE_ASSET_URLS[candidateId];
+/** Backwards-compatible Stage 2H authority URL. */
+export const FRINGE_CLUB_ASSET_URL =
+  FRINGE_CLUB_CANDIDATE_ASSET_URLS[DEFAULT_FRINGE_RUNTIME_CANDIDATE];
 export const FRINGE_CLUB_RUNTIME_SUBJECT_NAME = "fringe-club-runtime-subject";
 export const FRINGE_CLUB_REQUESTED_ANISOTROPY = 4;
 
@@ -41,7 +57,11 @@ export type FringeClubRuntimeAuditSnapshot = Readonly<{
   finalSourceReleases: number;
   lastAppliedAnisotropy: number | null;
   lastLoadDurationMs: number | null;
+  lastFetchDurationMs: number | null;
+  lastParseDurationMs: number | null;
   loadDurationsMs: readonly number[];
+  fetchDurationsMs: readonly number[];
+  parseDurationsMs: readonly number[];
 }>;
 
 type MutableAuditSnapshot = {
@@ -69,15 +89,60 @@ export class FringeClubRuntimeAudit {
     finalSourceReleases: 0,
     lastAppliedAnisotropy: null,
     lastLoadDurationMs: null,
+    lastFetchDurationMs: null,
+    lastParseDurationMs: null,
     loadDurationsMs: [],
+    fetchDurationsMs: [],
+    parseDurationsMs: [],
   };
 
   private readonly listeners = new Set<() => void>();
 
+  private readonly candidateStates: Record<FringeRuntimeCandidate, MutableAuditSnapshot> = {
+    stage2h: this.createEmptySnapshot(),
+    "stage2n-a": this.createEmptySnapshot(),
+  };
+
+  private createEmptySnapshot(): MutableAuditSnapshot {
+    return {
+      requestsStarted: 0,
+      completedLoads: 0,
+      cancelledLoads: 0,
+      failedLoads: 0,
+      staleResultsDisposed: 0,
+      activeSources: 0,
+      activeOwnerLeases: 0,
+      activeInstanceLeases: 0,
+      liveSourceGeometries: 0,
+      liveSourceMaterialTemplates: 0,
+      liveSourceTextures: 0,
+      liveImageBackings: 0,
+      liveInstanceMaterials: 0,
+      finalSourceReleases: 0,
+      lastAppliedAnisotropy: null,
+      lastLoadDurationMs: null,
+      lastFetchDurationMs: null,
+      lastParseDurationMs: null,
+      loadDurationsMs: [],
+      fetchDurationsMs: [],
+      parseDurationsMs: [],
+    };
+  }
+
   snapshot(): FringeClubRuntimeAuditSnapshot {
+    return this.freezeSnapshot(this.state);
+  }
+
+  snapshotForCandidate(candidateId: FringeRuntimeCandidate): FringeClubRuntimeAuditSnapshot {
+    return this.freezeSnapshot(this.candidateStates[candidateId]);
+  }
+
+  private freezeSnapshot(state: MutableAuditSnapshot): FringeClubRuntimeAuditSnapshot {
     return Object.freeze({
-      ...this.state,
-      loadDurationsMs: Object.freeze([...this.state.loadDurationsMs]),
+      ...state,
+      loadDurationsMs: Object.freeze([...state.loadDurationsMs]),
+      fetchDurationsMs: Object.freeze([...state.fetchDurationsMs]),
+      parseDurationsMs: Object.freeze([...state.parseDurationsMs]),
     });
   }
 
@@ -86,44 +151,56 @@ export class FringeClubRuntimeAudit {
     return () => this.listeners.delete(listener);
   }
 
-  requestStarted(): void {
-    this.update((state) => {
+  requestStarted(candidateId: FringeRuntimeCandidate): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.requestsStarted += 1;
     });
   }
 
-  requestCompleted(durationMs: number): void {
-    this.update((state) => {
+  requestCompleted(
+    candidateId: FringeRuntimeCandidate,
+    totalDurationMs: number,
+    fetchDurationMs: number,
+    parseDurationMs: number,
+  ): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.completedLoads += 1;
-      state.lastLoadDurationMs = durationMs;
-      state.loadDurationsMs.push(durationMs);
+      state.lastLoadDurationMs = totalDurationMs;
+      state.lastFetchDurationMs = fetchDurationMs;
+      state.lastParseDurationMs = parseDurationMs;
+      state.loadDurationsMs.push(totalDurationMs);
+      state.fetchDurationsMs.push(fetchDurationMs);
+      state.parseDurationsMs.push(parseDurationMs);
       if (state.loadDurationsMs.length > 8) state.loadDurationsMs.shift();
+      if (state.fetchDurationsMs.length > 8) state.fetchDurationsMs.shift();
+      if (state.parseDurationsMs.length > 8) state.parseDurationsMs.shift();
     });
   }
 
-  requestCancelled(): void {
-    this.update((state) => {
+  requestCancelled(candidateId: FringeRuntimeCandidate): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.cancelledLoads += 1;
     });
   }
 
-  requestFailed(): void {
-    this.update((state) => {
+  requestFailed(candidateId: FringeRuntimeCandidate): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.failedLoads += 1;
     });
   }
 
-  staleResultDisposed(): void {
-    this.update((state) => {
+  staleResultDisposed(candidateId: FringeRuntimeCandidate): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.staleResultsDisposed += 1;
     });
   }
 
   sourceCreated(
+    candidateId: FringeRuntimeCandidate,
     resources: FringeClubResourceCounts,
     appliedAnisotropy: number,
   ): void {
-    this.update((state) => {
+    this.updateForCandidate(candidateId, (state) => {
       state.activeSources += 1;
       state.activeOwnerLeases += 1;
       state.liveSourceGeometries += resources.geometries;
@@ -134,28 +211,31 @@ export class FringeClubRuntimeAudit {
     });
   }
 
-  ownerLeaseReleased(): void {
-    this.update((state) => {
+  ownerLeaseReleased(candidateId: FringeRuntimeCandidate): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.activeOwnerLeases -= 1;
     });
   }
 
-  instanceLeaseCreated(materials: number): void {
-    this.update((state) => {
+  instanceLeaseCreated(candidateId: FringeRuntimeCandidate, materials: number): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.activeInstanceLeases += 1;
       state.liveInstanceMaterials += materials;
     });
   }
 
-  instanceLeaseReleased(materials: number): void {
-    this.update((state) => {
+  instanceLeaseReleased(candidateId: FringeRuntimeCandidate, materials: number): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.activeInstanceLeases -= 1;
       state.liveInstanceMaterials -= materials;
     });
   }
 
-  sourceFinallyReleased(resources: FringeClubResourceCounts): void {
-    this.update((state) => {
+  sourceFinallyReleased(
+    candidateId: FringeRuntimeCandidate,
+    resources: FringeClubResourceCounts,
+  ): void {
+    this.updateForCandidate(candidateId, (state) => {
       state.activeSources -= 1;
       state.liveSourceGeometries -= resources.geometries;
       state.liveSourceMaterialTemplates -= resources.materialTemplates;
@@ -165,8 +245,12 @@ export class FringeClubRuntimeAudit {
     });
   }
 
-  private update(change: (state: MutableAuditSnapshot) => void): void {
+  private updateForCandidate(
+    candidateId: FringeRuntimeCandidate,
+    change: (state: MutableAuditSnapshot) => void,
+  ): void {
     change(this.state);
+    change(this.candidateStates[candidateId]);
     for (const listener of this.listeners) listener();
   }
 }
@@ -186,6 +270,7 @@ export type FringeClubSourceOwnerLease = Readonly<{
   boundsMeters: FringeClubBoundsMeters;
   appliedAnisotropy: number;
   resourceCounts: FringeClubResourceCounts;
+  readonly candidateId: FringeRuntimeCandidate;
   acquireInstance: (
     instanceId: string,
     transform?: FringeClubInstanceTransform,
@@ -362,19 +447,22 @@ class FringeClubSourceAsset {
   private readonly resources: SourceResources;
   private readonly defaultScene: THREE.Group;
   private readonly audit: FringeClubRuntimeAudit;
+  readonly candidateId: FringeRuntimeCandidate;
 
   constructor(
     defaultScene: THREE.Group,
     resources: SourceResources,
     audit: FringeClubRuntimeAudit,
+    candidateId: FringeRuntimeCandidate,
     appliedAnisotropy: number,
   ) {
     this.defaultScene = defaultScene;
     this.audit = audit;
     this.resources = resources;
+    this.candidateId = candidateId;
     this.boundsMeters = resources.boundsMeters;
     this.resourceCounts = countResources(resources);
-    audit.sourceCreated(this.resourceCounts, appliedAnisotropy);
+    audit.sourceCreated(candidateId, this.resourceCounts, appliedAnisotropy);
   }
 
   acquireInstance(
@@ -404,6 +492,7 @@ class FringeClubSourceAsset {
           ? object.material.map(cloneMaterial)
           : cloneMaterial(object.material);
         object.userData.fringeClubSourceId = this.sourceId;
+        object.userData.fringeClubCandidateId = this.candidateId;
         object.userData.fringeClubInstanceId = instanceId;
       });
     } catch (error) {
@@ -418,12 +507,13 @@ class FringeClubSourceAsset {
     root.rotation.set(...(transform.rotationRadians ?? [0, 0, 0]));
     root.scale.setScalar(1);
     root.userData.fringeClubSourceId = this.sourceId;
+    root.userData.fringeClubCandidateId = this.candidateId;
     root.userData.fringeClubInstanceId = instanceId;
     root.userData.fringeClubResourceAuthority = "visual-subject-only";
     root.add(model);
 
     this.sourceLeaseCount += 1;
-    this.audit.instanceLeaseCreated(clonedMaterials.size);
+    this.audit.instanceLeaseCreated(this.candidateId, clonedMaterials.size);
     let released = false;
     const lease: InternalInstanceLease = {
       release: () => {
@@ -432,7 +522,7 @@ class FringeClubSourceAsset {
         root.removeFromParent();
         root.clear();
         clonedMaterials.forEach((material) => material.dispose());
-        this.audit.instanceLeaseReleased(clonedMaterials.size);
+        this.audit.instanceLeaseReleased(this.candidateId, clonedMaterials.size);
         this.releaseSourceLease();
       },
     };
@@ -443,7 +533,7 @@ class FringeClubSourceAsset {
   releaseOwner(): void {
     if (this.ownerReleased) return;
     this.ownerReleased = true;
-    this.audit.ownerLeaseReleased();
+    this.audit.ownerLeaseReleased(this.candidateId);
     this.releaseSourceLease();
   }
 
@@ -452,7 +542,7 @@ class FringeClubSourceAsset {
     if (this.sourceLeaseCount !== 0 || this.disposed) return;
     this.disposed = true;
     disposeSourceResources(this.resources);
-    this.audit.sourceFinallyReleased(this.resourceCounts);
+    this.audit.sourceFinallyReleased(this.candidateId, this.resourceCounts);
   }
 }
 
@@ -460,6 +550,7 @@ const createSourceOwnerLease = (
   gltf: GLTF,
   rendererMaxAnisotropy: number,
   audit: FringeClubRuntimeAudit,
+  candidateId: FringeRuntimeCandidate,
 ): FringeClubSourceOwnerLease => {
   const resources = collectSourceResources(gltf);
   let appliedAnisotropy: number;
@@ -477,6 +568,7 @@ const createSourceOwnerLease = (
     gltf.scene,
     resources,
     audit,
+    candidateId,
     appliedAnisotropy,
   );
   let released = false;
@@ -485,6 +577,7 @@ const createSourceOwnerLease = (
     boundsMeters: source.boundsMeters,
     appliedAnisotropy,
     resourceCounts: source.resourceCounts,
+    candidateId,
     acquireInstance: (instanceId, transform) => {
       if (released) {
         throw new Error("Fringe Club SourceAsset owner lease is no longer active");
@@ -550,52 +643,69 @@ export class FringeClubSourceAssetLoader {
     this.now = dependencies.now ?? (() => performance.now());
   }
 
-  start(rendererMaxAnisotropy: number): FringeClubLoadHandle {
+  start(
+    rendererMaxAnisotropy: number,
+    candidateId: FringeRuntimeCandidate = DEFAULT_FRINGE_RUNTIME_CANDIDATE,
+  ): FringeClubLoadHandle {
     this.activeController?.abort();
     const generation = ++this.generation;
     const controller = new AbortController();
     this.activeController = controller;
     const startedAt = this.now();
+    let fetchDurationMs = 0;
+    let parseDurationMs = 0;
     let settled = false;
-    this.audit.requestStarted();
+    this.audit.requestStarted(candidateId);
 
     const finishCancelled = (): void => {
       if (settled) return;
       settled = true;
-      this.audit.requestCancelled();
+      this.audit.requestCancelled(candidateId);
     };
 
     const ready = (async (): Promise<FringeClubSourceOwnerLease | null> => {
       try {
-        const response = await this.fetchAsset(FRINGE_CLUB_ASSET_URL, {
-          signal: controller.signal,
-        });
+        const response = await this.fetchAsset(
+          getFringeClubCandidateAssetUrl(candidateId),
+          { signal: controller.signal },
+        );
         if (!response.ok) {
           throw new Error(
             `Fringe Club GLB request failed (${response.status} ${response.statusText})`,
           );
         }
         const bytes = await response.arrayBuffer();
+        const fetchedAt = this.now();
+        fetchDurationMs = Math.max(0, fetchedAt - startedAt);
         if (controller.signal.aborted || generation !== this.generation) {
           finishCancelled();
           return null;
         }
 
+        const parseStartedAt = this.now();
         const gltf = await this.parseGlb(bytes, "");
+        const parsedAt = this.now();
+        parseDurationMs = Math.max(0, parsedAt - parseStartedAt);
         const sourceOwner = createSourceOwnerLease(
           gltf,
           rendererMaxAnisotropy,
           this.audit,
+          candidateId,
         );
         if (controller.signal.aborted || generation !== this.generation) {
           sourceOwner.release();
-          this.audit.staleResultDisposed();
+          this.audit.staleResultDisposed(candidateId);
           finishCancelled();
           return null;
         }
 
         settled = true;
-        this.audit.requestCompleted(Math.max(0, this.now() - startedAt));
+        this.audit.requestCompleted(
+          candidateId,
+          Math.max(0, this.now() - startedAt),
+          fetchDurationMs,
+          parseDurationMs,
+        );
         return sourceOwner;
       } catch (error) {
         if (controller.signal.aborted || generation !== this.generation) {
@@ -603,7 +713,7 @@ export class FringeClubSourceAssetLoader {
           return null;
         }
         settled = true;
-        this.audit.requestFailed();
+        this.audit.requestFailed(candidateId);
         throw error;
       } finally {
         if (this.activeController === controller) this.activeController = null;
