@@ -1,6 +1,9 @@
+Warning: truncated output (original token count: 24030)
+Total output lines: 556
+
 # Local Reflection Technique Decision
 
-**Decision:** no production local-reflection technique is selected. PR M validates the renderer-side synthetic contract for independently focusing overlapping Ground Glass radiance contributions before combination. PR N rendered planar, SSR, and local CubeCamera candidates against Architecture Rise, then removed the prototype code. PR O establishes a real in-range street-sign sample. PR P validates that sample through a development-only planar radiance and `Q_virtual` reference using the PR M contribution contract. PR Q validates the uncorrected single-Probe focus path and records its parallax/detail limits. PR R finds that one bounded update from the existing radial-distance cube materially corrects those errors in the tested Architecture Rise region. PR S rejects the frozen corrected single-Probe candidate for Observer use. PR T exhaustively evaluates 79 pairs and all 3,081 unique triples from the bounded valid-origin set: the best triple is the same origin set as the earlier greedy extension, but its global training gain remains below the fixed complexity gate, and holdout coverage remains poor. Local Probe planning is closed for the current Architecture Rise production path unless new evidence or requirements justify reopening it. No production technique is selected. The ordinary production RTT retains its unchanged one-source path. Observer needs local-reflection radiance/color integration, but has no physical focus pass and does not require reflected virtual depth for focus.
+**Decision:** **CURRENT LOCAL REFLECTION DEFERRED — PRODUCTION BASELINE RETAINED.** For Architecture Rise, Observer keeps its current material, environment, world-illumination, and presentation-lighting response; no local reflected-world renderer is active. Ground Glass keeps its direct scene-radiance / physical-DOF path with no local reflected-radiance source. PR M's independent reflected-radiance / apparent-position contract and PR P's ideal Planar optical reference remain durable but inactive evidence. PR T closes Probe planning for the current path. No technique merits production integration under the current requirements; the research record and reopening conditions are summarized in [PR U](#pr-u--current-local-reflection-production-decision).
 
 **Confidence:** high that Ground Glass needs independent reflected-focus semantics and that the named Architecture Rise planar reference maps real reflected radiance and `Q_virtual` through the contribution focus path; low about which production reflection technique will give the best normal-scale image or performance. The validated planar reference is an ideal front-pane optical comparison, not a rough-glass or production reflection implementation.
 
@@ -18,7 +21,7 @@ The current production recipe remains `MeshStandardMaterial(color: #182d37, roug
 
 [`SceneRenderer.tsx`](../src/render/SceneRenderer.tsx) mounts an R3F `<Canvas>` and renders its scene directly. There is no retained Observer color/depth buffer or post-processing chain that a screen-space reflection pass could use. A screen-space technique would add its own scene capture, depth/normal inputs, resolve, and renderer-owned resources; SSR may use ordinary scene depth to reconstruct visible surfaces and ray-march. A CubeCamera or planar camera could render from the existing scene, but each needs its own targets on this renderer.
 
-Observer is an appearance/rendering consumer: it needs local reflection radiance/color and the resources required by the selected technique. Because it has no physical CoC/DOF path, Observer does not need a separate reflected virtual-depth representation for focus. Any depth used by SSR is an algorithm input, not Ground Glass reflected-focus data.
+If a local reflection technique is selected in future, Observer is an appearance/rendering consumer and would need reflected radiance/color integration plus that technique’s required resources. Because it has no physical CoC/DOF path, Observer does not need a separate reflected virtual-depth representation for focus. Any depth used by SSR is an algorithm input, not Ground Glass reflected-focus data.
 
 ### Ground Glass source and DOF
 
@@ -32,7 +35,7 @@ The safe color insertion point is after `sceneRender` and before `cocFootprint`,
 
 The CoC shader samples the single source depth texture, reconstructs one world point for each source pixel, and classifies that point against the physical focus state. There is no retained normal buffer; SSR would need to reconstruct normals or add one. The existing source depth may also be an SSR reconstruction/ray-marching input; that is distinct from reflected virtual-image focus semantics.
 
-This is a Ground Glass limitation. Both renderer paths need reflected radiance/color, but only Ground Glass carries that radiance through physical focus processing. A glazing pixel can combine direct pane radiance at the pane depth with reflected radiance whose apparent virtual image may have different focus semantics. Assigning the pane depth to the blended color makes the reflection follow the pane's focus and blur; replacing it with reflected depth would give the pane's own radiance the wrong focus. Ground Glass therefore needs direct-pane and reflected contributions to retain independent focus semantics through CoC classification and aperture gather. Separate radiance/depth contributions or an equivalent optical representation could provide that. Observer does not require this focus representation unless it later gains a physical focus pass.
+This is a Ground Glass limitation. A future local-reflection integration would need radiance/color in both renderer paths, but only Ground Glass carries that contribution through physical focus processing. A glazing pixel can combine direct pane radiance at the pane depth with reflected radiance whose apparent virtual image may have different focus semantics. Assigning the pane depth to the blended color makes the reflection follow the pane's focus and blur; replacing it with reflected depth would give the pane's own radiance the wrong focus. Ground Glass therefore needs direct-pane and reflected contributions to retain independent focus semantics through CoC classification and aperture gather. Separate radiance/depth contributions or an equivalent optical representation could provide that. Observer does not require this focus representation unless it later gains a physical focus pass.
 
 ### Existing reflection-related code
 
@@ -263,64 +266,7 @@ For a corrected fixture invocation, the top-level named CPU fields come from the
 | --- | ---: | ---: | ---: | ---: |
 | `Q` (m) | `(-1.523311, 1.354945, 5.865000)` | `(-1.415949, 1.626701, 5.864392)` | `(-1.521698, 1.359011, 5.865000)` | `(-1.527284, 1.354891, 5.865665)` |
 | `Q` error vs Planar | `0 m` | `0.292196 m` | `0.004374 m` | `0.004028 m` |
-| `Q_virtual` (m) | `(-1.523311, 1.354945, 11.807000)` | `(-1.415949, 1.626701, 11.807608)` | `(-1.521698, 1.359011, 11.807000)` | `(-1.527284, 1.354891, 11.806335)` |
-| `Q_virtual` error vs Planar | `0 m` | `0.292196 m` | `0.004374 m` | `0.004028 m` |
-| Named angular parallax | `0°` | `5.505°` | `0.0830°` | `0.0806°` |
-| Virtual-image displacement | `0 px` | `22.817 px` | `0.342 px` | `0.317 px` |
-| Optical-axis focus distance | `11,807 mm` | `11,807.608 mm` | `11,807.000 mm` | `11,806.335 mm` |
-| Focus-axis error vs Planar | `0 mm` | `0.608 mm` | `<0.000001 mm` | `0.665 mm` |
-| Rounded public focus | `11,810 mm` | `11,810 mm` | `11,810 mm` | `11,810 mm` |
-
-The one-step corrected GPU's exact 12-point diagnostic region retains 12/12 target-face directions, with zero wrong-object or no-hit samples. Median/p95 Planar `Q_virtual` error is `0.004457 / 0.010773 m`; median/p95 CPU-ideal-to-GPU reconstruction error is `0.001031 / 0.009517 m`. Regional median/p95 angular parallax is `0.02696° / 0.20494°`, and focus-axis error is `1.011 / 9.456 mm`. Its GPU sample at the exact named point is `0.001115 m` from the CPU ideal; the full-screen source-pixel result is `0.004028 m` from Planar.
-
-The CPU study's two-iteration p95 error is lower, but it does not justify doubling GPU samples for this candidate. An **exploratory measured comparison, not regression-protected decision authority**, found that a two-step GPU run reduced region p95 from `0.010773 m` to `0.009449 m` (about `12%`) while the named full-screen Planar error rose from `0.004028 m` to `0.007116 m`. The one-step count is the smallest bounded update that captures most of the measurable GPU improvement in the current measurements.
-
-### Focus and detail
-
-The fixed focus states remain `8,890 mm` and `11,810 mm`. Corrected GPU reflected CoC is `+0.057800 mm` at pane focus and `−0.0000252 mm` at reflection focus; both remain inside the existing half-float storage tolerance and within `0.002 mm` of the Planar GPU result. The focus axis rounds to `11,810 mm`.
-
-| Reflected-sign edge-gradient energy | Pane focus | Reflection focus | Reflection / pane |
-| --- | ---: | ---: | ---: |
-| Planar | `0.000107956` | `0.000131275` | `1.216×` |
-| PR Q uncorrected Probe | `2.06773e−7` | `1.17965e−13` | near zero |
-| PR R one-step corrected Probe GPU | `0.000114086` | `0.000137465` | `1.205×` |
-
-The corrected reflection-focus edge energy is about `1.05×` Planar and vastly above the uncorrected Probe result. The fixture saves normal-scale Planar, uncorrected Probe, and corrected Probe reflection-focus screenshots in ignored Playwright output. Radiance is sampled from the same corrected cube direction; this local RGB measurement is diagnostic and does not replace the spatial/detail evidence.
-
-### Cost, resources, and limits
-
-One iteration adds one radial-distance cube sample per fragment in each existing mapping resolve. The radiance and apparent-position outputs together therefore add two distance-cube samples per source pane pixel per focus state. It adds no color-cube sample, no candidate fullscreen pass, no scene capture, and no recapture for focus changes. The existing capture remains six color plus six distance cube faces: 12 scene renders total.
-
-The candidate capture resources remain one 128² RGBA16F color cube and one 128² RGBA16F radial-distance cube, both linear `NoColorSpace` and nearest sampled, for `1,572,864 bytes` (`1.50 MiB`) nominal texel payload. The WebGL2 `EXT_color_buffer_float` path, half-float cube framebuffer checks, and nearest-filter support are unchanged. The separate E2E region diagnostic adds one 12×1 Float32 point target, two 12×1 Float32 input textures, one shader material, and one diagnostic pass; its target payload is 192 bytes and it is not part of the candidate mapping path. Its framebuffer was complete (`0x8cd5`) and read back through `Float32Array`.
-
-Corrected-fixture disposal events reconcile: 21/21 owned render targets, 3/3 direct textures, 17/17 materials, 1/1 geometry, and 4/4 custom disposers; there were no duplicate disposal events, and renderer teardown was invoked. These and the small region target are development-fixture evidence. Chromium/SwiftShader timing is not hardware GPU performance evidence; candidate performance remains **unmeasured**.
-
-**Outcome at the PR R stage: DISTANCE-CUBE PARALLAX CORRECTION PROMISING.** In this tested 12-sample region, one fixed Probe and one radial-distance update materially reduce parallax while preserving same-face coverage, focus-axis control, the PR M focus path, and sign detail. This did not select Probe for production. PR S subsequently tested the frozen candidate at normal Observer scale and rejected it; see the next section. The study covers a fixed scene and strict sign-face region, uses a 128² nearest-sampled cube, and does not model current roughness near `0.24` as a distribution of reflection directions. The correction shader does not consume Planar points, sign bounds, or target-specific data. No production renderer, scene, optics, or public behavior changed; hardware timing and broader scene coverage remain unmeasured.
-
-## PR S — corrected Probe Observer-scale appearance pilot
-
-**Base:** `main @ 30098d044ff5fd8b2a14693c6d310980c5459455` (PR #241 merge). The standalone development/E2E fixture uses the current Architecture Rise Observer subject, Observer lighting/shadow/environment authorities, the front façade glazing, and the frozen PR R candidate. It does not use Ground Glass lens/CoC/gather behavior or derive `Q_virtual`; the radial-distance cube supplies Probe parallax correction only.
-
-The candidate remains fixed at Probe origin `(-1.2725, 1.5000, 6.9720) m`, 128×128×6 RGBA16F `HalfFloatType` color and radial-distance cubes, `NoColorSpace`, nearest sampling, one bounded correction update, and reflection weight `0.18`. The original glass remains `MeshStandardMaterial(#182d37, roughness 0.24, metalness 0.08)`; its environment response is preserved while the local linear Probe radiance is added before output conversion. The shader gate checks the actual object-space `-Z` face of the front glazing only. No candidate parameter was adjusted from the captures.
-
-The normal-scale decision surface is 514×411. View A uses the production Architecture Rise camera placement: position `(6.5, 3, -6.5) m`, target `(0, 0.9, 5.6) m`. View B uses the fixed comparison orbit: position `(11.037666, 3, 0.323947) m`, same target. Both use FOV 45°, near 0.01 m, far 200 m. The 4×4-per-pane sample domain includes only projected front-face `-Z` glazing samples reached by the direct camera ray.
-
-### Observer geometry
-
-Each visible-pane sample was compared with the real scene reflected ray, with glazing excluded from self-hit tests. Physical no-hit samples remain in the denominator. The table reports candidate hit counts as same-object / wrong-object / candidate-no-hit; false positives are valid local Probe hits where the physical ray has no local hit, and false negatives are Probe no-hits where the physical ray does hit.
-
-| View | Visible panes samples | Physical hit / no-hit | Uncorrected CPU: same / wrong / no-hit; FP / FN | Corrected CPU: same / wrong / no-hit; FP / FN | Corrected GPU: same / wrong / no-hit; FP / FN |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Default | 238 / 256 | 54 / 184 | 2 / 44 / 52; 140 / 8 | 22 / 24 / 146; 46 / 8 | 22 / 24 / 146; 46 / 8 |
-| Alternate | 171 / 256 | 29 / 142 | 0 / 0 / 171; 0 / 29 | 0 / 0 / 171; 0 / 29 | 0 / 0 / 171; 0 / 29 |
-
-| View A geometry error against physical hits | Median / p95 Q error | Median / p95 angular error |
-| --- | ---: | ---: |
-| Uncorrected Probe CPU | 5.609 / 8.235 m | 29.872° / 34.700° |
-| One-step corrected Probe CPU | 4.812 / 7.196 m | 14.046° / 18.125° |
-| One-step corrected Probe GPU | 4.817 / 7.206 m | 14.171° / 18.016° |
-
-For View A, corrected GPU-to-CPU Q reconstruction error is 0.010589 m median / 0.111673 m p95, so the GPU follows the corrected CPU candidate. However, only 22 of 54 physical local hits land on the same object, 24 hit a different object, and 46 of 184 physical no-hit samples produce a false local reflection (25%). The alternate view is a stronger failure: it has 29 physical local hits, but all 171 visible samples lack an initial distance-cube sample, leaving 29/29 false negatives and no local Probe output. This is not a Ground Glass focus failure; it is Observer view coverage/mapping.
+| `Q_virtual` (m) | `(-1.523311, 1.354945, 11.807000)` | `(-1.415949, 1.626701, 11.807608)` | `(-1.521698, 1.359011, 11.807000)` | `(-1.527284, 1.…2030 tokens truncated…all 171 visible samples lack an initial distance-cube sample, leaving 29/29 false negatives and no local Probe output. This is not a Ground Glass focus failure; it is Observer view coverage/mapping.
 
 ### Normal-scale appearance at 514×411
 
@@ -470,12 +416,87 @@ Each two-contribution frame executes ten full-resolution passes (two CoC, four g
 
 The ordinary `GroundGlassRTT`, `groundGlassRttResources`, and `groundGlassPassGraph` were not changed by PR M: public scenes keep the existing five-stage normal path, and Raw RTT Debug keeps `sceneRender → composite`. This source-scope and imported pass-contract evidence does not claim a measured production target/pass count. Raw/Upright, image circle, natural illumination, relative illuminance, Focus Loupe, Architecture Rise, and Interior Corner continue through their existing production implementation. The synthetic proof does not validate rough reflected radiance: with current glass roughness near `0.24`, real reflected energy may need a distribution of apparent focus positions rather than one point per sample.
 
-## Decision and follow-up boundary
+## PR T decision and follow-up at that stage
 
-**No production local-reflection technique is selected.** PR L established the local-geometry appearance gap. PR M validates the Ground Glass focus contract with synthetic radiance. PR N's candidate captures remain historical appearance-only evidence at the fixed 0.18 diagnostic weight; SSR remains technically inconclusive with no validated hit. PR O established a real `Q` and in-range `Q_virtual`; PR P validates one ideal planar radiance sample through the PR M focus path. PR Q validates the uncorrected single-Probe focus path and records its parallax/detail limitation. PR R shows that one update from the existing radial-distance cube materially reduces those errors in the fixed Ground Glass fixture. PR S rejects the frozen corrected single Probe at normal Observer scale. PR T finds that a two-Probe CPU selector substantially improves optimized A+B views but leaves only 42.19% same-object coverage and 23.44% wrong-object mappings on holdout C; the third Probe adds only three training hits and removes three false negatives. The local Probe family is closed for the current Architecture Rise production path unless new evidence or requirements justify reopening it. This does not select Probe, Planar, or another technique for production. Observer still needs reflection color/radiance integration and technique-appropriate resources, while Ground Glass also requires a separate reflected-focus representation or equivalent optical contract.
+At PR T’s completion, no production local-reflection technique had been selected. PR L established the local-geometry appearance gap. PR M validates the Ground Glass focus contract with synthetic radiance. PR N's candidate captures remain historical appearance-only evidence at the fixed 0.18 diagnostic weight; SSR remains technically inconclusive with no validated hit. PR O established a real `Q` and in-range `Q_virtual`; PR P validates one ideal planar radiance sample through the PR M focus path. PR Q validates the uncorrected single-Probe focus path and records its parallax/detail limitation. PR R shows that one update from the existing radial-distance cube materially reduces those errors in the fixed Ground Glass fixture. PR S rejects the frozen corrected single Probe at normal Observer scale. PR T finds that a two-Probe CPU selector substantially improves optimized A+B views but leaves only 42.19% same-object coverage and 23.44% wrong-object mappings on holdout C; the third Probe adds only three training hits and removes three false negatives. The local Probe family is closed for the current Architecture Rise production path unless new evidence or requirements justify reopening it. This does not select Probe, Planar, or another technique for production. If local reflected geometry is justified again, Observer will need the selected technique’s radiance/color integration and Ground Glass will additionally need independent reflected-focus semantics or an equivalent optical representation.
 
-Recommended follow-up: close Probe planning for the current Architecture Rise production path and resume the technique decision between the retained Planar reference, another separately scoped candidate, or no local Observer reflection. Reopen Probe research only with new evidence or requirements. The CPU feasibility study does not validate a GPU selector, appearance, lifecycle, broader scene coverage, rough-reflection distribution, or hardware performance. Do not claim physically correct rough-reflection focus until the selected optical representation is rendered and verified. Current evidence still does not justify exactly two depth textures, buffers, or CoC values.
+Historical PR T follow-up (superseded by PR U below): close Probe planning for the current Architecture Rise production path and resume the technique decision between the retained Planar reference, another separately scoped candidate, or no local Observer reflection. Reopen Probe research only with new evidence or requirements. The CPU feasibility study does not validate a GPU selector, appearance, lifecycle, broader scene coverage, rough-reflection distribution, or hardware performance. Do not claim physically correct rough-reflection focus until the selected optical representation is rendered and verified. Current evidence still does not justify exactly two depth textures, buffers, or CoC values.
 
 ## Scope confirmation
 
 PR O adds one presentation-only street sign; the building, canonical focus target, public focus range, task thresholds, glass material, daylight, environment, presentation lighting, optics, image-circle behavior, exposure, natural-shadow policy, external assets, and WebGPU/TSL remain unchanged. PR N's temporary renderer prototype was removed. PR P, PR Q, PR R, PR S, and PR T add only standalone development/E2E fixtures and tests plus decision evidence; their capture artifacts remain ignored Playwright outputs and are not part of the production build. PR T is a CPU-only geometry feasibility study and does not add GPU Probe resources. PR M intentionally retains the renderer-local `GroundGlassRadianceContribution` contract and apparent-world-position CoC shader/binding seam as durable architecture output, exercised by tests and the synthetic proof; these seams are not connected to the production Ground Glass executor. No production reflection technique or production multi-contribution executor is enabled or retained.
+
+## PR U — current local-reflection production decision
+
+**Classification: CURRENT LOCAL REFLECTION DEFERRED — PRODUCTION BASELINE RETAINED.** This closes the current Architecture Rise local-reflection research program after PRs L–T. It does not claim that local reflections are impossible, that Planar is invalid, or that every Probe or SSR design fails. It means the tested candidates do not justify production integration for the current Architecture Rise requirements and roadmap.
+
+### Production boundary verified on current main
+
+The audit used `origin/main` at `3440ca0f00dc8ea141224be851f17887f89e3ee3`; PR #243 (`74a0ca4e29f372bf198e12799e180291cca447ba`) is an ancestor. PR #244 adds development-only Fringe Club comparison and RTT diagnostics. Its `GroundGlassRTT` changes do not add a reflection producer or alter the production semantic pass graph.
+
+The production source audit found no active local `CubeCamera` / `WebGLCubeRenderTarget` / `CubeRenderTarget`, Planar `Reflector`, `SSRPass`, `MeshReflectorMaterial`, reflection camera/probe, or local-reflection public feature toggle. Architecture Rise retains its current glazing material and low-frequency `scene.environment` PMREM, represented-world illumination, and presentation lighting. The environment is not a capture of nearby Architecture Rise geometry.
+
+Current Architecture Rise production flow:
+
+```text
+represented world
+    ├── production materials
+    ├── world illumination
+    ├── procedural environment where enabled
+    ├── presentation lighting
+    ├── Observer → current material / environment response
+    └── camera / lens / film optical path
+            └── Ground Glass → current direct-radiance physical-DOF path
+```
+
+Neither consumer receives a local reflected-world render. Ground Glass still executes the imported `GROUND_GLASS_PASS_ORDER`:
+
+```text
+sceneRender → cocFootprint → farGather → nearGather → composite
+```
+
+The current production `GroundGlassRTT` receives direct scene radiance and applies physical CoC / aperture-gather processing. `GroundGlassRadianceContribution`, the apparent-world-position CoC shader, and its binding helper remain renderer-source contracts exercised by the development fixtures; they are not connected to a production reflected-radiance producer or multi-contribution executor.
+
+| Candidate | Observer | Ground Glass | Current decision |
+| --- | --- | --- | --- |
+| Environment / material response | Active current material and environment response | Existing direct scene-radiance / physical-DOF path under current materials and illumination | **Keep as current production baseline** |
+| Planar | No production reflection camera | PR P validates an ideal bounded radiance / `Q_virtual` sample through the PR M focus contract | **Deferred; retain as a scene-bounded future candidate** |
+| SSR | No production SSR pass | No reliable correct-direction reflected contribution was validated | **Not selected** |
+| Probe / CubeCamera | No production local Probe | PR Q/R validate bounded focus and correction fixtures; PR S/T show current Architecture Rise spatial/coverage limits | **Planning closed for the current Architecture Rise path** |
+
+### Durable but inactive Ground Glass seam
+
+If a future technique supplies local reflected radiance to Ground Glass, each direct or reflected contribution must preserve its own apparent-position focus semantics through physical CoC and aperture gathering, or use an optically equivalent representation. The focused contributions must accumulate as unclamped linear radiance before one shared film/display composite:
+
+```text
+future reflected linear radiance + independent apparent position
+    → physical CoC
+    → aperture gather
+    → focused reflected contribution
+    → unclamped linear-radiance accumulation
+    → shared film/display composite
+```
+
+This is the retained PR M architecture contract, not an active production feature. PR P remains an ideal optical reference and is not an enabled renderer. Current glazing roughness is approximately `0.24`; a real rough-glass reflection may need a distribution of apparent directions/focus semantics. The existing evidence does not establish physically exact rough-reflection focus.
+
+### Research and roadmap state
+
+**Current local-reflection program state: closed / deferred for the Architecture Rise production roadmap.** No automatic next local-reflection implementation PR is scheduled. There will be no fourth Probe study, another origin/resolution/iteration tuning round, a retry of the same SSR architecture, or a generic Planar implementation solely because the ideal reference is technically valid. PR M–T fixtures and PR O's ordinary scene context remain useful development evidence; their presence does not activate a production feature, and the reflected-world geometry is not rolled back by this decision.
+
+Local reflection is not a prerequisite for broader visual-quality or renderer work. Materials, textures, scene geometry, world lighting, environment, shadows, backend modernization, and future exposure work can proceed when independently justified. This PR does not select the next roadmap item. A future WebGPU/TSL backend may create different reflection capabilities or requirements; WebGPU does not automatically solve local reflections.
+
+Reopen this decision only when a material change provides a concrete reason:
+
+1. **Product / teaching need:** a lesson needs recognizable nearby reflected geometry that current material/environment response cannot provide; a general wish to make glass look nicer is not enough.
+2. **Renderer architecture:** a materially different backend or hybrid reflection representation supplies a new capability and credible path through the required consumer. A backend name alone is not evidence.
+3. **Scene class:** a future scene has a dominant planar reflective surface whose nearby reflected content has clear teaching value and can be served by a bounded scene-specific renderer.
+4. **Technical evidence:** a candidate demonstrates normal-scale value and coherent multi-view mapping, controls wrong-object mappings / false positives / false negatives, supports Ground Glass independent focus where needed, and has acceptable resource and lifecycle complexity.
+5. **Performance budget:** decision-grade hardware measurements show that a previously impractical higher-quality technique now fits the product budget; SwiftShader timing alone is not enough.
+
+Technique-specific guardrails remain:
+
+- **Planar:** reopen only for a dominant planar surface and a bounded, requirement-driven scene pilot; do not jump to a generic global renderer.
+- **Probe:** reopen only with a materially different local-volume representation, scene constraints that naturally bound validity, or mapping approach that changes the spatial approximation problem. Do not reopen by adding Probes, increasing resolution/iterations, fitting more views, or tuning against holdouts.
+- **SSR:** reopen only after a materially different renderer/hit representation addresses the prior correct-direction failure; do not repeat the same bounded WebGL experiment.
+
+The historical PR L–T measurements and conclusions remain as recorded above. PR R remains “distance-cube parallax correction promising” for its bounded fixture; PR P remains an ideal Planar reference; neither is promoted or rewritten as a production selection by PR U.

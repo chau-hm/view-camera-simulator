@@ -226,6 +226,39 @@ CPU/browser proof, software-renderer limitations, candidate analysis, and
 follow-up boundary. These test fixtures do not enter public navigation or the
 production bundle.
 
+## Local reflection and the broader visual roadmap
+
+PR U closes the current Architecture Rise local-reflection research sequence
+with the production baseline retained. Observer keeps current material plus
+environment response and existing world/presentation lighting; Ground Glass
+keeps its direct scene-radiance and physical-DOF path. No local reflected-world
+renderer is active. PR M's independent reflected-radiance / apparent-position
+contract and PR P's ideal Planar reference remain inactive architecture and
+development evidence.
+
+Local reflection is a deferred side capability, not a prerequisite for
+continuing visual-quality or renderer work. Materials, textures, richer scene
+geometry, world lighting, environment, shadows, backend modernization, and
+future exposure work can be evaluated independently. This decision does not
+select which item comes next or prescribe a fixed PR sequence:
+
+```text
+shared scene assets
+    ├── materials / textures
+    ├── world lighting / environment / shadows
+    ├── renderer architecture / backend modernization
+    └── future visual effects when independently justified
+
+local reflected-world rendering: deferred side capability
+```
+
+A future WebGPU/TSL architecture could change the reflection options, but it
+does not automatically solve local reflections. Reopen the decision only for a
+new teaching requirement, a materially different renderer capability, a scene
+class that justifies a bounded reflector, technical evidence across views and
+focus behavior, or decision-grade hardware performance evidence. PR M–T fixtures
+remain useful research artifacts but do not enable production reflection.
+
 ## Ground Glass migration seam
 
 Ground Glass is the renderer migration boundary that needs the most work before
