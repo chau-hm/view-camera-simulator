@@ -63,6 +63,13 @@ describe("groundGlassRenderSanityKey", () => {
     expect(makeKey(o1)).toBe(makeKey(o2));
   });
 
+  it("candidate identity prevents cross-candidate render-sanity reuse", () => {
+    const optics = buildOptics();
+    expect(makeKey(optics, { subjectIdentity: "stage2h" })).not.toBe(
+      makeKey(optics, { subjectIdentity: "stage2n-a" }),
+    );
+  });
+
   it("Front Rise changes the key", () => {
     const zero = buildOptics();
     const moved = buildOptics({ frontRiseMm: 20 });
@@ -223,7 +230,7 @@ describe("groundGlassRenderSanityKey", () => {
       // Each part may be a single value or contain : and , delimiters
       const tokens = part.split(/[:,]/);
       for (const token of tokens) {
-        if (token === "null" || token === "no-scene" || token === "empty" || token === "understanding-camera-movements") continue;
+        if (token === "null" || token === "no-scene" || token === "no-subject-identity" || token === "empty" || token === "understanding-camera-movements") continue;
         if (
           token === "raw" ||
           token === "0" ||

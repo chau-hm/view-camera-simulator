@@ -108,6 +108,8 @@ import type {
 } from "./groundGlassRttDimensions";
 import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 
+let latestGroundGlassSubjectGeneration = 0;
+
 export type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
@@ -189,6 +191,22 @@ function OffscreenRenderer({
   const { maximumBlurRadiusPx } = getGroundGlassDofVisualSettings(resolvedSceneId);
   const profilingEnabled = isGroundGlassProfilingEnabled();
   const sceneCapacityProfilingEnabled = isSceneCapacityProfilingEnabled();
+  const rttRendererMetricsEnabled =
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("rttDiagnostics") === "1";
+  const lastRendererStatsSampleAtRef = useRef(-Infinity);
+
+  useEffect(() => {
+    if (!rttRendererMetricsEnabled) return;
+    const renderer = gl as WebGLRenderer;
+    const previousAutoReset = renderer.info.autoReset;
+    renderer.info.autoReset = false;
+    return () => {
+      renderer.info.autoReset = previousAutoReset;
+      renderer.info.reset();
+    };
+  }, [gl, rttRendererMetricsEnabled]);
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1 }));
@@ -249,7 +267,9 @@ function OffscreenRenderer({
         renderSanitySampleCount: undefined,
         renderSanitySubjectGeneration: undefined,
         renderSanityStateKey: undefined,
+        renderSanitySubjectIdentity: undefined,
         renderSanityError: undefined,
+        rendererStats: undefined,
         sceneCapacity: undefined,
         ...(clearLatticeRuntimeInfo
           ? {
@@ -720,7 +740,7 @@ function OffscreenRenderer({
     const scene = offscreenScene.current;
     if (!scene) return;
 
-    sceneSubjectGenerationRef.current += 1;
+    sceneSubjectGenerationRef.current = ++latestGroundGlassSubjectGeneration;
     lastRenderSanityStateKeyRef.current = null;
     clearSubjectScopedDiagnostics();
 
@@ -753,6 +773,12 @@ function OffscreenRenderer({
 
     const runtimeInfo = mounted.runtimeInfo;
     const currentInfo = readRuntimeInfo();
+    if (currentInfo) {
+      setRuntimeInfo({
+        ...currentInfo,
+        renderSanitySubjectIdentity: sceneProfile.renderSanityIdentity,
+      });
+    }
     if (runtimeInfo && currentInfo) {
       setRuntimeInfo({
         ...currentInfo,
@@ -975,6 +1001,8 @@ function OffscreenRenderer({
 
   useFrame((_state, frameDelta) => {
     if (!renderTarget.current || !offscreenScene.current) return;
+    const renderer = gl as WebGLRenderer;
+    if (rttRendererMetricsEnabled) renderer.info.reset();
     const imgDist = resolveGroundGlassImageDistanceMm(opticsState);
     const cam = groundGlassCamera.current;
     if (!cam) return;
@@ -1496,6 +1524,7 @@ function OffscreenRenderer({
         resourceGeneration: resourceGenerationRef.current,
         sceneId: resolvedSceneId,
         previewMode,
+        subjectIdentity: sceneProfile.renderSanityIdentity,
         rawDebug: rawDebug,
         aperture: aperture,
         internalWidthPx: dimsRef.current.internalWidthPx,
@@ -1564,6 +1593,7 @@ function OffscreenRenderer({
               renderSanitySampleCount: rawSanity.sampleCount,
               renderSanitySubjectGeneration: sceneSubjectGenerationRef.current,
               renderSanityStateKey: sanityStateKey,
+              renderSanitySubjectIdentity: sceneProfile.renderSanityIdentity,
               renderSanityError: null,
             });
           }
@@ -1574,6 +1604,7 @@ function OffscreenRenderer({
               ...currentInfo,
               renderSanitySubjectGeneration: sceneSubjectGenerationRef.current,
               renderSanityStateKey: sanityStateKey,
+              renderSanitySubjectIdentity: sceneProfile.renderSanityIdentity,
               renderSanityError: error instanceof Error ? error.message : String(error),
             });
           }
@@ -1589,6 +1620,28 @@ function OffscreenRenderer({
       gl.render(displayScene, orthoCam);
     } else {
       gl.setRenderTarget(null);
+    }
+
+    if (
+      rttRendererMetricsEnabled &&
+      _state.clock.elapsedTime - lastRendererStatsSampleAtRef.current >= 0.35
+    ) {
+      lastRendererStatsSampleAtRef.current = _state.clock.elapsedTime;
+      const currentInfo = readRuntimeInfo();
+      if (currentInfo) {
+        setRuntimeInfo({
+          ...currentInfo,
+          rendererStats: {
+            calls: renderer.info.render.calls,
+            triangles: renderer.info.render.triangles,
+            points: renderer.info.render.points,
+            lines: renderer.info.render.lines,
+            geometries: renderer.info.memory.geometries,
+            textures: renderer.info.memory.textures,
+            sampledAtMs: performance.now(),
+          },
+        });
+      }
     }
 
     if (profilingActive) profiler.endFrame();

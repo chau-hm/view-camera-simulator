@@ -24,6 +24,7 @@ export type RenderSanityKeyInputs = {
   resourceGeneration: number;
   sceneId?: string;
   previewMode?: string;
+  subjectIdentity?: string;
   rawDebug: boolean;
   /** Deprecated presentation input; loupe state does not alter source output. */
   zoomEnabled?: boolean;
@@ -52,7 +53,7 @@ export type RenderSanityKeyInputs = {
 export function createGroundGlassRenderSanityStateKey(
   inputs: RenderSanityKeyInputs,
 ): string {
-  const { resourceGeneration, sceneId, previewMode, rawDebug, aperture,
+  const { resourceGeneration, sceneId, previewMode, subjectIdentity, rawDebug, aperture,
     internalWidthPx, internalHeightPx,
     opticsState: o, configuredCameraPose,
     inspectionWindow = FULL_GROUND_GLASS_INSPECTION_WINDOW } = inputs;
@@ -61,6 +62,7 @@ export function createGroundGlassRenderSanityStateKey(
     String(resourceGeneration),
     sceneId ?? "no-scene",
     previewMode ?? "raw",
+    subjectIdentity ?? "no-subject-identity",
     rawDebug ? "1" : "0",
     inspectionWindow.active ? "1" : "0",
     finiteOrNull(inspectionWindow.centerU),

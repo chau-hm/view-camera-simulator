@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import * as THREE from "three";
 import type { GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { describe, expect, it, vi } from "vitest";
@@ -9,9 +11,13 @@ import {
   resolveSceneAsset,
 } from "../../render/assets/sceneAssetRegistry";
 import {
+  DEFAULT_FRINGE_RUNTIME_CANDIDATE,
+  FRINGE_CLUB_ASSET_URL,
+  FRINGE_CLUB_CANDIDATE_ASSET_URLS,
   FringeClubRuntimeAudit,
   FringeClubSourceAssetLoader,
   disposeFringeClubRegisteredGroup,
+  getFringeClubCandidateAssetUrl,
 } from "../../render/assets/FringeClubRuntimeAsset";
 
 const makeGltf = () => {
@@ -41,18 +47,73 @@ const waitForParse = async (parseGlb: ReturnType<typeof vi.fn>) => {
 };
 
 describe("Fringe Club runtime asset", () => {
+
+  it("preserves the exact self-contained Stage 2N-A candidate bytes and provenance", () => {
+    const assetPath =
+      "public/assets/generated/fringe-club/development/stage-2n-a-candidate.glb";
+    const manifestPath =
+      "public/assets/generated/fringe-club/development/stage-2n-a-candidate.manifest.json";
+    const bytes = readFileSync(assetPath);
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+      candidateId: string;
+      status: string;
+      sha256: string;
+      units: string;
+      up: string;
+      rootTransform: string;
+    };
+    expect(createHash("sha256").update(bytes).digest("hex")).toBe(
+      "7a505f6c2d25ecb93943a6770356cdaffa529c3b86324a4da9ee819984eb9301",
+    );
+    expect(manifest).toMatchObject({
+      candidateId: "stage2n-a",
+      status: "CANDIDATE_RUNTIME_AUTHORITY",
+      sha256: "7a505f6c2d25ecb93943a6770356cdaffa529c3b86324a4da9ee819984eb9301",
+      units: "metres",
+      up: "+Y",
+      rootTransform: "identity",
+      selfContained: true,
+      embeddedCameras: 0,
+      embeddedLights: 0,
+    });
+
+    expect(bytes.toString("ascii", 0, 4)).toBe("glTF");
+    const jsonLength = bytes.readUInt32LE(12);
+    const gltf = JSON.parse(bytes.toString("utf8", 20, 20 + jsonLength).trim()) as {
+      buffers?: Array<{ uri?: string }>;
+      images?: Array<{ uri?: string }>;
+      cameras?: unknown[];
+      nodes?: Array<{ extensions?: Record<string, unknown> }>;
+    };
+    expect(gltf.buffers?.every((buffer) => buffer.uri === undefined)).toBe(true);
+    expect(gltf.images?.every((image) => image.uri === undefined)).toBe(true);
+    expect(gltf.cameras ?? []).toHaveLength(0);
+    expect(gltf.nodes?.some((node) => "KHR_lights_punctual" in (node.extensions ?? {}))).toBe(false);
+  });
+
   it("bridges an asynchronously loaded SourceAsset into the synchronous registered factory", async () => {
     const asset = makeGltf();
     const audit = new FringeClubRuntimeAudit();
     const loader = new FringeClubSourceAssetLoader(audit, {
       fetchAsset: vi.fn(async () => okResponse()),
       parseGlb: vi.fn(async () => asset.gltf),
-      now: vi.fn().mockReturnValueOnce(10).mockReturnValueOnce(17),
+      now: vi.fn()
+        .mockReturnValueOnce(10)
+        .mockReturnValueOnce(13)
+        .mockReturnValueOnce(15)
+        .mockReturnValueOnce(17)
+        .mockReturnValueOnce(18),
     });
 
     const registration = resolveSceneAsset(FRINGE_CLUB_RUNTIME_ASSET_KEY);
     expect(registration.implementationId).toBe(FRINGE_CLUB_RUNTIME_IMPLEMENTATION_ID);
     expect(registration.renderResourceLifetime).toBe("instance-owned");
+
+    expect(DEFAULT_FRINGE_RUNTIME_CANDIDATE).toBe("stage2h");
+    expect(FRINGE_CLUB_CANDIDATE_ASSET_URLS.stage2h).toBe(FRINGE_CLUB_ASSET_URL);
+    expect(getFringeClubCandidateAssetUrl("stage2n-a")).toContain(
+      "assets/generated/fringe-club/development/stage-2n-a-candidate.glb",
+    );
 
     const handle = loader.start(2);
     const sourceOwner = await handle.ready;
@@ -66,8 +127,13 @@ describe("Fringe Club runtime asset", () => {
       activeSources: 1,
       activeOwnerLeases: 1,
       activeInstanceLeases: 0,
-      lastLoadDurationMs: 7,
+      lastLoadDurationMs: 8,
+      lastFetchDurationMs: 3,
+      lastParseDurationMs: 2,
     });
+    expect(sourceOwner.candidateId).toBe("stage2h");
+    expect(audit.snapshotForCandidate("stage2h").completedLoads).toBe(1);
+    expect(audit.snapshotForCandidate("stage2n-a").completedLoads).toBe(0);
 
     const root = createRegisteredSceneAsset(FRINGE_CLUB_RUNTIME_ASSET_KEY, {
       sourceOwner,
@@ -252,6 +318,84 @@ describe("Fringe Club runtime asset", () => {
     expect(currentGeometryDispose).not.toHaveBeenCalled();
     currentOwner.release();
     expect(currentGeometryDispose).toHaveBeenCalledTimes(1);
+  });
+
+
+  it("loads each typed candidate through its own URL and candidate-scoped lifecycle", async () => {
+    const hAsset = makeGltf();
+    const nAsset = makeGltf();
+    const parsed = [hAsset.gltf, nAsset.gltf];
+    const fetchAsset = vi.fn<typeof fetch>(async () => okResponse());
+    const parseGlb = vi.fn(async () => parsed.shift()!);
+    const audit = new FringeClubRuntimeAudit();
+    const loader = new FringeClubSourceAssetLoader(audit, { fetchAsset, parseGlb });
+
+    const hOwner = await loader.start(8, "stage2h").ready;
+    if (!hOwner) throw new Error("Expected Stage 2H source owner");
+    expect(hOwner.candidateId).toBe("stage2h");
+    expect(hOwner.sourceId).not.toBe("");
+    hOwner.release();
+
+    const nOwner = await loader.start(8, "stage2n-a").ready;
+    if (!nOwner) throw new Error("Expected Stage 2N-A source owner");
+    expect(nOwner.candidateId).toBe("stage2n-a");
+    expect(nOwner.sourceId).not.toBe(hOwner.sourceId);
+    expect(fetchAsset.mock.calls.map(([url]) => url)).toEqual([
+      FRINGE_CLUB_CANDIDATE_ASSET_URLS.stage2h,
+      FRINGE_CLUB_CANDIDATE_ASSET_URLS["stage2n-a"],
+    ]);
+    expect(audit.snapshotForCandidate("stage2h")).toMatchObject({
+      completedLoads: 1,
+      activeSources: 0,
+      finalSourceReleases: 1,
+    });
+    expect(audit.snapshotForCandidate("stage2n-a")).toMatchObject({
+      completedLoads: 1,
+      activeSources: 1,
+      activeOwnerLeases: 1,
+    });
+    nOwner.release();
+  });
+
+  it("disposes a stale Stage 2H parse when Stage 2N-A becomes the selected generation", async () => {
+    const staleAsset = makeGltf();
+    const currentAsset = makeGltf();
+    const staleGeometryDispose = vi.spyOn(staleAsset.geometry, "dispose");
+    let resolveStale!: (gltf: GLTF) => void;
+    const parseGlb = vi
+      .fn<(bytes: ArrayBuffer, path: string) => Promise<GLTF>>()
+      .mockImplementationOnce(
+        () => new Promise((resolve) => { resolveStale = resolve; }),
+      )
+      .mockImplementationOnce(async () => currentAsset.gltf);
+    const audit = new FringeClubRuntimeAudit();
+    const loader = new FringeClubSourceAssetLoader(audit, {
+      fetchAsset: vi.fn(async () => okResponse()),
+      parseGlb,
+    });
+
+    const hRequest = loader.start(8, "stage2h");
+    await waitForParse(parseGlb);
+    const nRequest = loader.start(8, "stage2n-a");
+    for (let attempt = 0; attempt < 10 && parseGlb.mock.calls.length < 2; attempt += 1) {
+      await Promise.resolve();
+    }
+    expect(parseGlb).toHaveBeenCalledTimes(2);
+    resolveStale(staleAsset.gltf);
+    await expect(hRequest.ready).resolves.toBeNull();
+    expect(staleGeometryDispose).toHaveBeenCalledTimes(1);
+    const nOwner = await nRequest.ready;
+    expect(nOwner?.candidateId).toBe("stage2n-a");
+    expect(nRequest.isCurrent()).toBe(true);
+    expect(audit.snapshotForCandidate("stage2h")).toMatchObject({
+      staleResultsDisposed: 1,
+      activeSources: 0,
+    });
+    expect(audit.snapshotForCandidate("stage2n-a")).toMatchObject({
+      staleResultsDisposed: 0,
+      activeSources: 1,
+    });
+    nOwner?.release();
   });
 
   it("cleans up failed HTTP loads without publishing a source", async () => {

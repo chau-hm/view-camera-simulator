@@ -1,18 +1,44 @@
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 
-const GLB_NAME = "preferred-runtime-candidate.glb";
+const H_GLB_NAME = "preferred-runtime-candidate.glb";
+const N_GLB_NAME = "stage-2n-a-candidate.glb";
+const PROBE_IDS = [
+  "wyndham-rect-pair",
+  "wyndham-segmental",
+  "wyndham-transom",
+  "wyndham-vent-louver",
+  "wyndham-frieze",
+  "lower-albert-timber",
+  "lower-albert-louver-light",
+  "lower-albert-louver-dark",
+  "entrance-timber-pair",
+  "entrance-paired-entry",
+  "join-wy-window-frame",
+] as const;
 
-type RendererMetrics = {
+const JOIN_MOTION_PROBES = [
+  { probeId: "join-wy-window-frame", label: "Wyndham window/frame" },
+  { probeId: "join-la-louver-frame", label: "Lower Albert louver/frame" },
+  { probeId: "join-entrance-frame-glass", label: "Entrance frame/glass" },
+  { probeId: "join-wy-sill-frame", label: "Wyndham sill/frame" },
+] as const;
+
+const MOTION_IDS = ["center", "left", "right", "near", "far"] as const;
+
+type ObserverMetrics = {
   geometries: number;
   textures: number;
   calls: number;
   triangles: number;
+  points: number;
+  lines: number;
   fringeMeshes: number;
-  instanceAMeshes: number;
-  instanceBMeshes: number;
-  instanceARootId: string;
-  instanceBRootId: string;
+  candidateId: string;
+  rootId: string;
+  sampledAtMs: number;
   sourceAssets: number;
   ownerLeases: number;
   instanceLeases: number;
@@ -24,13 +50,36 @@ type RendererMetrics = {
   maxAnisotropy: number;
   appliedAnisotropy: number;
   loadMs: number;
+  fetchMs: number;
+  parseMs: number;
   webglVersion: string;
   threeVersion: string;
   rendererVendor: string;
   rendererDevice: string;
 };
 
-const readMetrics = async (page: Page): Promise<RendererMetrics> =>
+type GroundGlassMetrics = {
+  candidateIdentity: string;
+  sourceId: string;
+  candidateId: string;
+  probeId: string;
+  motionId: string;
+  rootId: string;
+  cameraOk: boolean;
+  rawContentful: boolean;
+  finalContentful: boolean;
+  generation: number;
+  sanityKey: string;
+  calls: number;
+  triangles: number;
+  points: number;
+  lines: number;
+  geometries: number;
+  textures: number;
+  sampledAtMs: number;
+};
+
+const readObserverMetrics = async (page: Page): Promise<ObserverMetrics> =>
   page.getByTestId("fringe-renderer-metrics").evaluate((element) => {
     const value = (key: string): number => Number(element.getAttribute(key) ?? NaN);
     return {
@@ -38,11 +87,12 @@ const readMetrics = async (page: Page): Promise<RendererMetrics> =>
       textures: value("data-textures"),
       calls: value("data-calls"),
       triangles: value("data-triangles"),
+      points: value("data-points"),
+      lines: value("data-lines"),
       fringeMeshes: value("data-fringe-meshes"),
-      instanceAMeshes: value("data-instance-a-meshes"),
-      instanceBMeshes: value("data-instance-b-meshes"),
-      instanceARootId: element.getAttribute("data-instance-a-root-id") ?? "",
-      instanceBRootId: element.getAttribute("data-instance-b-root-id") ?? "",
+      candidateId: element.getAttribute("data-observer-candidate-id") ?? "",
+      rootId: element.getAttribute("data-observer-root-id") ?? "",
+      sampledAtMs: value("data-observer-sampled-at-ms"),
       sourceAssets: value("data-source-assets"),
       ownerLeases: value("data-owner-leases"),
       instanceLeases: value("data-instance-leases"),
@@ -54,10 +104,37 @@ const readMetrics = async (page: Page): Promise<RendererMetrics> =>
       maxAnisotropy: value("data-anisotropy-max"),
       appliedAnisotropy: value("data-applied-anisotropy"),
       loadMs: value("data-load-ms"),
+      fetchMs: value("data-fetch-ms"),
+      parseMs: value("data-parse-ms"),
       webglVersion: element.getAttribute("data-webgl-version") ?? "",
       threeVersion: element.getAttribute("data-three-version") ?? "",
       rendererVendor: element.getAttribute("data-renderer-vendor") ?? "",
       rendererDevice: element.getAttribute("data-renderer-device") ?? "",
+    };
+  });
+
+const readGroundGlassMetrics = async (page: Page): Promise<GroundGlassMetrics> =>
+  page.getByTestId("fringe-rtt-metrics").evaluate((element) => {
+    const value = (key: string): number => Number(element.getAttribute(key) ?? NaN);
+    return {
+      candidateIdentity: element.getAttribute("data-rtt-render-sanity-identity") ?? "",
+      sourceId: element.getAttribute("data-subject-source-id") ?? "",
+      candidateId: element.getAttribute("data-subject-candidate-id") ?? "",
+      probeId: element.getAttribute("data-subject-probe-id") ?? "",
+      motionId: element.getAttribute("data-subject-motion-id") ?? "",
+      rootId: element.getAttribute("data-subject-root-id") ?? "",
+      cameraOk: element.getAttribute("data-rtt-camera-ok") === "true",
+      rawContentful: element.getAttribute("data-rtt-raw-contentful") === "true",
+      finalContentful: element.getAttribute("data-rtt-final-contentful") === "true",
+      generation: value("data-rtt-render-sanity-generation"),
+      sanityKey: element.getAttribute("data-rtt-render-sanity-state") ?? "",
+      calls: value("data-rtt-calls"),
+      triangles: value("data-rtt-triangles"),
+      points: value("data-rtt-points"),
+      lines: value("data-rtt-lines"),
+      geometries: value("data-rtt-renderer-geometries"),
+      textures: value("data-rtt-renderer-textures"),
+      sampledAtMs: value("data-rtt-sampled-at-ms"),
     };
   });
 
@@ -75,16 +152,150 @@ const installBrowserErrorCapture = (page: Page) => {
   return { pageErrors, consoleProblems };
 };
 
-test("development Fringe fixture renders, isolates leases, and recovers app resources through SPA navigation", async ({ page }) => {
+const waitForGroundGlass = async (
+  page: Page,
+  candidate: "stage2h" | "stage2n-a",
+  probeId: string,
+  motionId: string = "center",
+) => {
+  const identity =
+    candidate +
+    "|probe:" +
+    probeId +
+    (motionId === "center" ? "" : "|motion:" + motionId);
+  await expect(page.getByTestId("fringe-rtt-metrics")).toHaveAttribute(
+    "data-rtt-render-sanity-identity",
+    identity,
+    { timeout: 60_000 },
+  );
+  await expect(page.getByTestId("fringe-rtt-metrics")).toHaveAttribute(
+    "data-rtt-camera-ok",
+    "true",
+    { timeout: 60_000 },
+  );
+  await expect(page.getByTestId("fringe-rtt-metrics")).toHaveAttribute(
+    "data-rtt-raw-contentful",
+    "true",
+    { timeout: 60_000 },
+  );
+  await expect(page.getByTestId("fringe-rtt-metrics")).toHaveAttribute(
+    "data-rtt-final-contentful",
+    "true",
+    { timeout: 60_000 },
+  );
+  await expect(page.getByTestId("fringe-rtt-metrics")).toHaveAttribute(
+    "data-rtt-calls",
+    /^\d+$/,
+    { timeout: 60_000 },
+  );
+  await expect(page.getByTestId("fringe-rtt-metrics")).toHaveAttribute(
+    "data-rtt-triangles",
+    /^[1-9]\d*$/,
+    { timeout: 60_000 },
+  );
+};
+
+const composeSideBySidePanel = async (
+  page: Page,
+  title: string,
+  observerH: Buffer,
+  groundGlassH: Buffer,
+  observerN: Buffer,
+  groundGlassN: Buffer,
+): Promise<Buffer> => {
+  const panelPage = await page.context().newPage();
+  const image = (label: string, value: Buffer) =>
+    "<figure><figcaption>" + label + "</figcaption><img src=\"data:image/png;base64," + value.toString("base64") + "\"></figure>";
+  await panelPage.setContent(
+    "<!doctype html><html><head><meta charset=\"utf-8\"><style>"
+      + "body{font:14px system-ui;margin:12px;color:#111}h1{font-size:18px;margin:0 0 12px}"
+      + ".grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}figure{margin:0;border:1px solid #aaa;padding:6px}"
+      + "figcaption{font-weight:600;margin-bottom:5px}img{display:block;width:100%;height:auto}"
+      + "</style></head><body><h1>" + title + "</h1><div class=\"grid\">"
+      + image("Stage 2H — Observer", observerH)
+      + image("Stage 2H — Ground Glass RTT", groundGlassH)
+      + image("Stage 2N-A — Observer", observerN)
+      + image("Stage 2N-A — Ground Glass RTT", groundGlassN)
+      + "</div></body></html>",
+  );
+  const output = await panelPage.screenshot({ fullPage: true });
+  await panelPage.close();
+  return output;
+};
+
+const composeMotionPanel = async (
+  page: Page,
+  title: string,
+  captures: Array<{ motionId: string; observer: Buffer; groundGlass: Buffer }>,
+): Promise<Buffer> => {
+  const panelPage = await page.context().newPage();
+  const imageData = await panelPage.evaluate(async ({ panelTitle, panelCaptures }) => {
+    const decodeImage = (dataUrl: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Could not decode a captured motion frame"));
+      image.src = dataUrl;
+    });
+    const images = await Promise.all(panelCaptures.map(async (capture) => ({
+      motionId: capture.motionId,
+      observer: await decodeImage(capture.observer),
+      groundGlass: await decodeImage(capture.groundGlass),
+    })));
+    const cellWidth = 580;
+    const imageHeight = Math.round(cellWidth * images[0].observer.height / images[0].observer.width);
+    const rowHeight = imageHeight + 38;
+    const canvas = document.createElement("canvas");
+    canvas.width = cellWidth * 2 + 40;
+    canvas.height = 56 + rowHeight * images.length;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not create the motion contact sheet");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#111";
+    context.font = "bold 18px system-ui";
+    context.fillText(panelTitle, 12, 28);
+    const labels: Record<string, string> = {
+      center: "Center",
+      left: "Slight left (40 mm)",
+      right: "Slight right (40 mm)",
+      near: "Slight near (40 mm)",
+      far: "Slight far (40 mm)",
+    };
+    images.forEach((capture, index) => {
+      const y = 46 + index * rowHeight;
+      context.font = "600 13px system-ui";
+      context.fillStyle = "#111";
+      context.fillText(labels[capture.motionId] + " — Stage 2N-A Observer", 12, y + 13);
+      context.fillText(labels[capture.motionId] + " — Ground Glass RTT", cellWidth + 28, y + 13);
+      context.drawImage(capture.observer, 12, y + 18, cellWidth, imageHeight);
+      context.drawImage(capture.groundGlass, cellWidth + 28, y + 18, cellWidth, imageHeight);
+    });
+    return canvas.toDataURL("image/png");
+  }, {
+    panelTitle: title,
+    panelCaptures: captures.map(({ motionId, observer, groundGlass }) => ({
+      motionId,
+      observer: "data:image/png;base64," + observer.toString("base64"),
+      groundGlass: "data:image/png;base64," + groundGlass.toString("base64"),
+    })),
+  });
+  const output = Buffer.from(imageData.slice(imageData.indexOf(",") + 1), "base64");
+  await panelPage.close();
+  return output;
+};
+
+test("development Fringe fixture keeps Stage 2H default, activation-gated, and releases its source through SPA navigation", async ({ page }) => {
   test.setTimeout(180_000);
   const errors = installBrowserErrorCapture(page);
-  const glbRequests: string[] = [];
+  const candidateRequests: string[] = [];
   page.on("request", (request) => {
-    if (request.url().includes(GLB_NAME)) glbRequests.push(request.url());
+    if (request.url().includes(H_GLB_NAME) || request.url().includes(N_GLB_NAME)) {
+      candidateRequests.push(request.url());
+    }
   });
   await page.addInitScript(() => {
-    (window as Window & { __fringeStage2iDocument?: string }).__fringeStage2iDocument =
-      `${Date.now()}-${Math.random()}`;
+    (window as Window & { __fringeStage2nDocument?: string }).__fringeStage2nDocument =
+      String(Date.now()) + "-" + String(Math.random());
   });
 
   await page.goto("/simulator/free/architecture-rise");
@@ -93,12 +304,16 @@ test("development Fringe fixture renders, isolates leases, and recovers app reso
     "architecture-rise",
   );
   await expect(page.getByTestId("ground-glass-rtt")).toHaveCount(1);
-  expect(glbRequests).toEqual([]);
+  expect(candidateRequests).toEqual([]);
 
   await page.goto("/__dev/fringe-club");
   await expect(page.getByText("NOT A PUBLIC SCENE.")).toBeVisible();
+  await expect(page.getByTestId("fringe-candidate-select")).toHaveValue("stage2h");
+  await expect(page.getByTestId("fringe-asset-url")).toContainText(
+    "stage-2h/preferred-runtime-candidate.glb",
+  );
   const documentToken = await page.evaluate(
-    () => (window as Window & { __fringeStage2iDocument?: string }).__fringeStage2iDocument,
+    () => (window as Window & { __fringeStage2nDocument?: string }).__fringeStage2nDocument,
   );
   const metrics = page.getByTestId("fringe-renderer-metrics");
   await expect(metrics).toHaveAttribute("data-baseline-geometries", /^\d+$/);
@@ -107,68 +322,28 @@ test("development Fringe fixture renders, isolates leases, and recovers app reso
     geometries: Number(element.getAttribute("data-baseline-geometries")),
     textures: Number(element.getAttribute("data-baseline-textures")),
   }));
-  const baselineRenderer = await readMetrics(page);
-  const measurements: Record<string, unknown> = {
-    environment: await page.evaluate(() => ({
-      userAgent: navigator.userAgent,
-      devicePixelRatio: window.devicePixelRatio,
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-    })),
-    browserVersion: page.context().browser()?.version() ?? "unknown",
-    baseline,
-    baselineRenderer,
-  };
 
-  await page.getByRole("button", { name: "Load source asset" }).click();
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
   await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
     "data-state",
     "ready",
     { timeout: 60_000 },
   );
   await expect(metrics).toHaveAttribute("data-instance-leases", "1");
-  await expect(metrics).toHaveAttribute("data-instance-a-meshes", /^[1-9]\d*$/);
+  await expect(metrics).toHaveAttribute("data-observer-candidate-id", "stage2h");
   await expect(metrics).toHaveAttribute("data-fringe-meshes", /^[1-9]\d*$/);
   await expect(metrics).toHaveAttribute("data-triangles", /^[1-9]\d*$/);
-  const one = await readMetrics(page);
-  measurements.oneInstance = one;
-  expect(one.sourceAssets).toBe(1);
-  expect(one.ownerLeases).toBe(1);
-  expect(one.sourceGeometries).toBeGreaterThan(0);
-  expect(one.sourceMaterials).toBeGreaterThan(0);
-  expect(one.instanceMaterials).toBe(one.sourceMaterials);
-  expect(one.sourceTextures).toBe(7);
-  expect(one.imageBackings).toBe(7);
-  expect(one.geometries).toBeGreaterThan(baseline.geometries);
-  expect(one.textures).toBeGreaterThan(baseline.textures);
-
-  await page.getByRole("checkbox", { name: "Mount instance B" }).check();
-  await expect(metrics).toHaveAttribute("data-instance-leases", "2");
-  await expect(metrics).toHaveAttribute("data-instance-b-meshes", /^[1-9]\d*$/);
-  await expect
-    .poll(async () => (await readMetrics(page)).triangles)
-    .toBeGreaterThan(one.triangles);
-  const two = await readMetrics(page);
-  measurements.twoInstances = two;
-  expect(two.instanceARootId).not.toBe("");
-  expect(two.instanceBRootId).not.toBe("");
-  expect(two.instanceARootId).not.toBe(two.instanceBRootId);
-  expect(two.sourceGeometries).toBe(one.sourceGeometries);
-  expect(two.sourceTextures).toBe(one.sourceTextures);
-  expect(two.instanceMaterials).toBe(one.instanceMaterials * 2);
-  expect(two.geometries).toBe(one.geometries);
-  expect(two.textures).toBe(one.textures);
-
-  await page.getByRole("checkbox", { name: "Mount instance A" }).uncheck();
-  await expect(metrics).toHaveAttribute("data-instance-leases", "1");
-  await expect(metrics).toHaveAttribute("data-instance-a-meshes", "0");
-  await expect(metrics).toHaveAttribute("data-instance-b-meshes", /^[1-9]\d*$/);
-  const onlyB = await readMetrics(page);
-  measurements.onlyInstanceB = onlyB;
-  expect(onlyB.geometries).toBe(one.geometries);
-  expect(onlyB.textures).toBe(one.textures);
-  expect(onlyB.instanceMaterials).toBe(one.instanceMaterials);
-  expect(onlyB.instanceARootId).toBe("");
-  expect(onlyB.instanceBRootId).toBe(two.instanceBRootId);
+  const loaded = await readObserverMetrics(page);
+  expect(loaded.sourceAssets).toBe(1);
+  expect(loaded.ownerLeases).toBe(1);
+  expect(loaded.instanceLeases).toBe(1);
+  expect(loaded.sourceGeometries).toBeGreaterThan(0);
+  expect(loaded.sourceMaterials).toBeGreaterThan(0);
+  expect(loaded.instanceMaterials).toBe(loaded.sourceMaterials);
+  expect(loaded.geometries).toBeGreaterThan(baseline.geometries);
+  expect(loaded.textures).toBeGreaterThan(baseline.textures);
+  expect(Number.isFinite(loaded.fetchMs)).toBe(true);
+  expect(Number.isFinite(loaded.parseMs)).toBe(true);
 
   await page.getByRole("button", { name: "Release source asset" }).click();
   await expect(metrics).toHaveAttribute("data-source-assets", "0");
@@ -178,83 +353,586 @@ test("development Fringe fixture renders, isolates leases, and recovers app reso
   await expect(metrics).toHaveAttribute("data-source-materials", "0");
   await expect(metrics).toHaveAttribute("data-source-textures", "0");
   await expect(metrics).toHaveAttribute("data-image-backings", "0");
-  await expect(metrics).toHaveAttribute("data-instance-materials", "0");
-  await expect
-    .poll(async () => (await readMetrics(page)).geometries)
-    .toBe(baseline.geometries);
-  await expect
-    .poll(async () => {
-      const { calls, triangles } = await readMetrics(page);
-      return { calls, triangles };
-    })
-    .toEqual({ calls: baselineRenderer.calls, triangles: baselineRenderer.triangles });
-  const afterFirstRelease = await readMetrics(page);
-  measurements.afterFirstRelease = afterFirstRelease;
-  expect(afterFirstRelease.textures).toBeGreaterThanOrEqual(baseline.textures);
-  const finalReleases = Number(await metrics.getAttribute("data-final-source-releases"));
-  expect(finalReleases).toBe(1);
-  const firstLoadMs = Number(await metrics.getAttribute("data-load-ms"));
+  await expect.poll(async () => (await readObserverMetrics(page)).geometries).toBe(baseline.geometries);
+  const firstRelease = await readObserverMetrics(page);
+  expect(firstRelease.instanceMaterials).toBe(0);
 
-  await page.getByRole("button", { name: "Load source asset" }).click();
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
   await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
     "data-state",
     "ready",
     { timeout: 60_000 },
   );
-  const repeatedLoadMs = Number(await metrics.getAttribute("data-load-ms"));
-  expect(Number.isFinite(firstLoadMs)).toBe(true);
-  expect(Number.isFinite(repeatedLoadMs)).toBe(true);
   await page.getByRole("button", { name: "Release source asset" }).click();
   await expect(metrics).toHaveAttribute("data-source-assets", "0");
   await expect(metrics).toHaveAttribute("data-instance-leases", "0");
-  await expect
-    .poll(async () => (await readMetrics(page)).geometries)
-    .toBe(baseline.geometries);
-  await expect
-    .poll(async () => {
-      const { calls, triangles } = await readMetrics(page);
-      return { calls, triangles };
-    })
-    .toEqual({ calls: baselineRenderer.calls, triangles: baselineRenderer.triangles });
-  const afterRepeatedRelease = await readMetrics(page);
-  measurements.afterRepeatedRelease = afterRepeatedRelease;
-  expect(afterRepeatedRelease.textures).toBe(afterFirstRelease.textures);
-  expect(afterRepeatedRelease.geometries).toBe(afterFirstRelease.geometries);
-  measurements.loadTimesMs = { first: firstLoadMs, repeated: repeatedLoadMs };
+  await expect.poll(async () => (await readObserverMetrics(page)).geometries).toBe(baseline.geometries);
 
   await page.getByRole("link", { name: "Exit development fixture" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
   await expect
-    .poll(() => page.evaluate(() => (window as Window & { __fringeStage2iDocument?: string }).__fringeStage2iDocument))
+    .poll(() => page.evaluate(() => (window as Window & { __fringeStage2nDocument?: string }).__fringeStage2nDocument))
     .toBe(documentToken);
-  expect(glbRequests.length).toBeGreaterThanOrEqual(2);
+  expect(candidateRequests.some((url) => url.includes(H_GLB_NAME))).toBe(true);
+  expect(candidateRequests.some((url) => url.includes(N_GLB_NAME))).toBe(false);
   expect(errors.pageErrors).toEqual([]);
   expect(errors.consoleProblems).toEqual([]);
+});
 
-  await test.info().attach("fringe-club-stage-2i-browser-measurements.json", {
-    body: Buffer.from(JSON.stringify(measurements, null, 2)),
-    contentType: "application/json",
+test("Stage 2H and Stage 2N-A render through all VCS modes and candidate/probe diagnostics remain current", async ({ page }) => {
+  test.setTimeout(1_200_000);
+  const errors = installBrowserErrorCapture(page);
+  const candidateRequests: string[] = [];
+  const evidenceDirectory = process.env.VCS_FRINGE_STAGE2NB_EVIDENCE_DIR;
+  if (evidenceDirectory) mkdirSync(evidenceDirectory, { recursive: true });
+  page.on("request", (request) => {
+    if (request.url().includes(H_GLB_NAME) || request.url().includes(N_GLB_NAME)) {
+      candidateRequests.push(request.url());
+    }
   });
 
-  await page.goBack();
-  await expect(page).toHaveURL(/\/__dev\/fringe-club$/);
-  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
-    "data-state",
-    "idle",
-  );
-  await page.getByRole("button", { name: "Load source asset" }).click();
+  await page.goto("/__dev/fringe-club-rtt?sceneCapacityProfiling=1&rttDiagnostics=1");
+  const candidateSelect = page.getByTestId("fringe-candidate-select");
+  const modeSelect = page.getByTestId("fringe-renderer-mode-select");
+  const probeSelect = page.getByTestId("fringe-probe-select");
+  const rendererMetrics = page.getByTestId("fringe-renderer-metrics");
+  const rttMetrics = page.getByTestId("fringe-rtt-metrics");
+  await expect(candidateSelect).toHaveValue("stage2h");
+  await expect(modeSelect).toHaveValue("both");
+  await expect(rendererMetrics).toHaveAttribute("data-baseline-geometries", /^\d+$/);
+  const initialHLoadStartedAt = Date.now();
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
   await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
     "data-state",
     "ready",
-    { timeout: 60_000 },
+    { timeout: 90_000 },
   );
+  await waitForGroundGlass(page, "stage2h", PROBE_IDS[0]);
+  const firstHObserverAndRttContentMs = Date.now() - initialHLoadStartedAt;
+  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "stage2h");
+  await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "2");
+  const hSourceId = await rttMetrics.getAttribute("data-source-id");
+  const hObserverRootId = await rendererMetrics.getAttribute("data-observer-root-id");
+  const hRttRootId = await rttMetrics.getAttribute("data-subject-root-id");
+  expect(hSourceId).toMatch(/^fringe-club-source-/);
+  expect(hObserverRootId).not.toBe(hRttRootId);
+  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", hSourceId!);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-geometries", /^\d+$/);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-textures", /^\d+$/);
+
+  const measurements: Record<string, unknown> = {
+    environment: await page.evaluate(() => ({
+      userAgent: navigator.userAgent,
+      devicePixelRatio: window.devicePixelRatio,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    })),
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    fixedProbeOptics: await page.locator("body").innerText().then((text) =>
+      text.split("Fixed Ground Glass reference:")[1]?.split("\n")[0] ?? "not found",
+    ),
+    sixModes: {},
+    firstAttach: { stage2hObserverAndRttContentMs: firstHObserverAndRttContentMs },
+    candidateSwitches: [] as unknown[],
+    probeIdentity: [] as unknown[],
+    textureCountIsNotMemory: true,
+  };
+  const modeEvidence = async (candidate: "stage2h" | "stage2n-a", mode: string) => {
+    if (mode !== "ground-glass") {
+      const priorObserverSample = await rendererMetrics.getAttribute("data-observer-sampled-at-ms");
+      await expect
+        .poll(() => rendererMetrics.getAttribute("data-observer-sampled-at-ms"), { timeout: 15_000 })
+        .not.toBe(priorObserverSample);
+    }
+    if (mode !== "observer") {
+      const priorRttSample = await rttMetrics.getAttribute("data-rtt-sampled-at-ms");
+      await expect
+        .poll(() => rttMetrics.getAttribute("data-rtt-sampled-at-ms"), { timeout: 15_000 })
+        .not.toBe(priorRttSample);
+    }
+    const observer = await readObserverMetrics(page);
+    const groundGlass = await readGroundGlassMetrics(page);
+    return {
+      candidate,
+      mode,
+      warmSteadyStateSample: true,
+      sampledAtMs: { observer: observer.sampledAtMs, groundGlass: groundGlass.sampledAtMs },
+      observer,
+      groundGlass,
+    };
+  };
+  const setMode = async (mode: "observer" | "ground-glass" | "both") => {
+    await modeSelect.selectOption(mode);
+    if (mode === "observer") {
+      await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-identity", "");
+      await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "1");
+    } else if (mode === "ground-glass") {
+      await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "");
+      await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "1");
+      await waitForGroundGlass(page, await candidateSelect.inputValue() as "stage2h" | "stage2n-a", await probeSelect.inputValue());
+    } else {
+      await waitForGroundGlass(page, await candidateSelect.inputValue() as "stage2h" | "stage2n-a", await probeSelect.inputValue());
+      await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", await candidateSelect.inputValue());
+      await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "2");
+    }
+  };
+  const captureCandidateProbeSet = async (
+    candidate: "stage2h" | "stage2n-a",
+    panels: Record<string, Record<string, Record<string, Buffer>>>,
+  ) => {
+    for (const probeId of PROBE_IDS) {
+      await probeSelect.selectOption(probeId);
+      await waitForGroundGlass(page, candidate, probeId);
+      await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", candidate);
+      const observer = await readObserverMetrics(page);
+      const groundGlass = await readGroundGlassMetrics(page);
+      expect(observer.rootId).not.toBe("");
+      expect(groundGlass.rootId).not.toBe("");
+      expect(groundGlass.candidateId).toBe(candidate);
+      expect(groundGlass.probeId).toBe(probeId);
+      expect(groundGlass.motionId).toBe("center");
+      (measurements.probeIdentity as unknown[]).push({
+        candidate,
+        probeId,
+        motionId: groundGlass.motionId,
+        observerRootId: observer.rootId,
+        groundGlassRootId: groundGlass.rootId,
+        renderSanityGeneration: groundGlass.generation,
+        renderSanityKey: groundGlass.sanityKey,
+        observer,
+        groundGlass,
+      });
+      const observerCapture = await page.getByTestId("fringe-app-canvas").screenshot();
+      const groundGlassCapture = await page.getByTestId("fringe-ground-glass-canvas").screenshot();
+      if (evidenceDirectory) {
+        const probeEvidenceDirectory = resolve(evidenceDirectory, candidate, probeId);
+        mkdirSync(probeEvidenceDirectory, { recursive: true });
+        writeFileSync(resolve(probeEvidenceDirectory, "observer.png"), observerCapture);
+        writeFileSync(resolve(probeEvidenceDirectory, "ground-glass.png"), groundGlassCapture);
+      }
+      panels[candidate] ??= {};
+      panels[candidate][probeId] = {
+        observer: observerCapture,
+        groundGlass: groundGlassCapture,
+      };
+    }
+  };
+
+  const imagePanels: Record<string, Record<string, Record<string, Buffer>>> = {};
+  await captureCandidateProbeSet("stage2h", imagePanels);
+  (measurements.sixModes as Record<string, unknown>)["stage2h-both"] =
+    await modeEvidence("stage2h", "both");
+
+  await setMode("observer");
+  (measurements.sixModes as Record<string, unknown>)["stage2h-observer"] =
+    await modeEvidence("stage2h", "observer");
+  await setMode("ground-glass");
+  (measurements.sixModes as Record<string, unknown>)["stage2h-ground-glass"] =
+    await modeEvidence("stage2h", "ground-glass");
+  await setMode("both");
+
+  const switchCandidate = async (candidate: "stage2h" | "stage2n-a") => {
+    const switchStartedAt = Date.now();
+    const priorSourceId = await rttMetrics.getAttribute("data-source-id");
+    const priorObserverRootId = await rendererMetrics.getAttribute("data-observer-root-id");
+    await candidateSelect.selectOption(candidate);
+    await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-identity", "");
+    await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
+      "data-state",
+      "ready",
+      { timeout: 90_000 },
+    );
+    await waitForGroundGlass(page, candidate, await probeSelect.inputValue());
+    await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", candidate);
+    await expect(rendererMetrics).toHaveAttribute("data-source-assets", "1");
+    await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "2");
+    const nextSourceId = await rttMetrics.getAttribute("data-source-id");
+    const nextObserverRootId = await rendererMetrics.getAttribute("data-observer-root-id");
+    expect(nextSourceId).not.toBe(priorSourceId);
+    expect(nextObserverRootId).not.toBe(priorObserverRootId);
+    (measurements.candidateSwitches as unknown[]).push({
+      candidate,
+      selectionToContentReadyMs: Date.now() - switchStartedAt,
+      previousSourceId: priorSourceId,
+      sourceId: nextSourceId,
+      previousObserverRootId: priorObserverRootId,
+      observerRootId: nextObserverRootId,
+      groundGlass: await readGroundGlassMetrics(page),
+      lifecycle: await readObserverMetrics(page),
+    });
+  };
+
+  await switchCandidate("stage2n-a");
+  const nSourceId = await rttMetrics.getAttribute("data-source-id");
+  const nObserverRootId = await rendererMetrics.getAttribute("data-observer-root-id");
+  await captureCandidateProbeSet("stage2n-a", imagePanels);
+  (measurements.sixModes as Record<string, unknown>)["stage2n-a-both"] =
+    await modeEvidence("stage2n-a", "both");
+
+  await setMode("observer");
+  (measurements.sixModes as Record<string, unknown>)["stage2n-a-observer"] =
+    await modeEvidence("stage2n-a", "observer");
+  await setMode("ground-glass");
+  (measurements.sixModes as Record<string, unknown>)["stage2n-a-ground-glass"] =
+    await modeEvidence("stage2n-a", "ground-glass");
+  await setMode("both");
+  await expect(rttMetrics).toHaveAttribute("data-source-id", nSourceId!);
+  await expect(rendererMetrics).toHaveAttribute("data-observer-root-id", /^[^\s]+$/);
+  const remountedNObserverRootId = await rendererMetrics.getAttribute("data-observer-root-id");
+  expect(remountedNObserverRootId).not.toBe(nObserverRootId);
+  expect(remountedNObserverRootId).not.toBe("");
+
+  const priorNGeneration = Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation"));
+  const priorNKey = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
+  await setMode("observer");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-identity", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "");
+  await setMode("both");
+  await expect
+    .poll(async () => Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation")))
+    .toBeGreaterThan(priorNGeneration);
+  expect(await rttMetrics.getAttribute("data-rtt-render-sanity-state")).not.toBe(priorNKey);
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await switchCandidate("stage2h");
+  await switchCandidate("stage2n-a");
+  await expect(rendererMetrics).toHaveAttribute("data-selected-candidate-geometries", /^[1-9]\d*$/);
+  await expect(rendererMetrics).toHaveAttribute("data-final-source-releases", /^[1-9]\d*$/);
   await page.getByRole("button", { name: "Release source asset" }).click();
-  await expect(page.getByTestId("fringe-renderer-metrics")).toHaveAttribute(
-    "data-source-assets",
-    "0",
+  await expect(rendererMetrics).toHaveAttribute("data-source-assets", "0");
+  await expect(rendererMetrics).toHaveAttribute("data-owner-leases", "0");
+  await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "0");
+  await expect(rendererMetrics).toHaveAttribute("data-source-geometries", "0");
+  await expect(rendererMetrics).toHaveAttribute("data-source-textures", "0");
+  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
+
+  for (const probeId of PROBE_IDS) {
+    const captures = imagePanels["stage2h"][probeId];
+    const candidateCaptures = imagePanels["stage2n-a"][probeId];
+    const panel = await composeSideBySidePanel(
+      page,
+      "DEVELOPMENT_PROBE_ONLY — " + probeId,
+      captures.observer,
+      captures.groundGlass,
+      candidateCaptures.observer,
+      candidateCaptures.groundGlass,
+    );
+    const panelName = "fringe-club-" + probeId + "-stage-2h-vs-stage-2n-a.png";
+    await test.info().attach(panelName, {
+      body: panel,
+      contentType: "image/png",
+    });
+    if (evidenceDirectory) writeFileSync(resolve(evidenceDirectory, panelName), panel);
+  }
+  if (evidenceDirectory) {
+    rmSync(resolve(evidenceDirectory, "stage2h"), { recursive: true, force: true });
+    rmSync(resolve(evidenceDirectory, "stage2n-a"), { recursive: true, force: true });
+  }
+  const measurementsJson = Buffer.from(JSON.stringify(measurements, null, 2));
+  await test.info().attach("fringe-club-stage-2n-b-runtime-measurements.json", {
+    body: measurementsJson,
+    contentType: "application/json",
+  });
+  if (evidenceDirectory) {
+    writeFileSync(
+      resolve(evidenceDirectory, "fringe-club-stage-2n-b-runtime-measurements.json"),
+      measurementsJson,
+    );
+  }
+  expect(candidateRequests.some((url) => url.includes(H_GLB_NAME))).toBe(true);
+  expect(candidateRequests.some((url) => url.includes(N_GLB_NAME))).toBe(true);
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleProblems).toEqual([]);
+});
+
+test("Stage 2N-A Observer and RTT instances survive independent sibling removal", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = installBrowserErrorCapture(page);
+  await page.goto("/__dev/fringe-club-rtt?rttDiagnostics=1");
+
+  const candidateSelect = page.getByTestId("fringe-candidate-select");
+  const modeSelect = page.getByTestId("fringe-renderer-mode-select");
+  const rendererMetrics = page.getByTestId("fringe-renderer-metrics");
+  const rttMetrics = page.getByTestId("fringe-rtt-metrics");
+  await expect(candidateSelect).toHaveValue("stage2h");
+  await expect(modeSelect).toHaveValue("both");
+  await expect(rendererMetrics).toHaveAttribute("data-baseline-geometries", /^\d+$/);
+  await expect(rendererMetrics).toHaveAttribute("data-baseline-textures", /^\d+$/);
+  const baseline = await rendererMetrics.evaluate((element) => ({
+    geometries: Number(element.getAttribute("data-baseline-geometries")),
+    textures: Number(element.getAttribute("data-baseline-textures")),
+  }));
+
+  await candidateSelect.selectOption("stage2n-a");
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute("data-state", "ready");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  const initialObserver = await readObserverMetrics(page);
+  const initialRtt = await readGroundGlassMetrics(page);
+  expect(initialObserver.candidateId).toBe("stage2n-a");
+  expect(initialObserver.sourceAssets).toBe(1);
+  expect(initialObserver.ownerLeases).toBe(1);
+  expect(initialObserver.instanceLeases).toBe(2);
+  expect(initialObserver.rootId).not.toBe(initialRtt.rootId);
+  expect(initialRtt.sourceId).not.toBe("");
+  expect(initialRtt.finalContentful).toBe(true);
+
+  // Removing Observer leaves the already-mounted RTT instance on the same source/root.
+  await modeSelect.selectOption("ground-glass");
+  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "");
+  await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "1");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  const rttAfterObserverRemoval = await readGroundGlassMetrics(page);
+  expect(rttAfterObserverRemoval.sourceId).toBe(initialRtt.sourceId);
+  expect(rttAfterObserverRemoval.rootId).toBe(initialRtt.rootId);
+  expect(rttAfterObserverRemoval.finalContentful).toBe(true);
+
+  await modeSelect.selectOption("both");
+  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "stage2n-a");
+  await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "2");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  const remountedObserver = await readObserverMetrics(page);
+  expect(remountedObserver.rootId).not.toBe(initialObserver.rootId);
+  expect(remountedObserver.sourceAssets).toBe(1);
+  expect(remountedObserver.ownerLeases).toBe(1);
+
+  // Removing RTT leaves Observer rendering; re-enabling RTT creates a fresh root/generation.
+  const observerSampleBeforeRttRemoval = remountedObserver.sampledAtMs;
+  const generationBeforeRttRemoval = (await readGroundGlassMetrics(page)).generation;
+  await modeSelect.selectOption("observer");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-identity", "");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "");
+  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
+  await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "1");
+  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "stage2n-a");
+  await expect
+    .poll(async () => (await readObserverMetrics(page)).sampledAtMs)
+    .not.toBe(observerSampleBeforeRttRemoval);
+
+  await modeSelect.selectOption("both");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  const observerAfterRttRemoval = await readObserverMetrics(page);
+  const remountedRtt = await readGroundGlassMetrics(page);
+  expect(observerAfterRttRemoval.rootId).toBe(remountedObserver.rootId);
+  expect(observerAfterRttRemoval.candidateId).toBe("stage2n-a");
+  expect(remountedRtt.sourceId).toBe(initialRtt.sourceId);
+  expect(remountedRtt.rootId).not.toBe(initialRtt.rootId);
+  expect(remountedRtt.generation).toBeGreaterThan(generationBeforeRttRemoval);
+  expect(remountedRtt.finalContentful).toBe(true);
+
+  const releaseCandidate = async () => {
+    await page.getByRole("button", { name: "Release source asset" }).click();
+    await expect(rendererMetrics).toHaveAttribute("data-source-assets", "0");
+    await expect(rendererMetrics).toHaveAttribute("data-owner-leases", "0");
+    await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "0");
+    await expect(rendererMetrics).toHaveAttribute("data-source-geometries", "0");
+    await expect(rendererMetrics).toHaveAttribute("data-source-textures", "0");
+    await expect(rendererMetrics).toHaveAttribute("data-image-backings", "0");
+    await expect.poll(async () => (await readObserverMetrics(page)).geometries).toBe(baseline.geometries);
+  };
+
+  await releaseCandidate();
+  const settledRendererTextureCount = (await readObserverMetrics(page)).textures;
+  expect(settledRendererTextureCount).toBeGreaterThanOrEqual(baseline.textures);
+
+  // A repeated load/release cycle must reuse any stable renderer-owned transmission cache.
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute("data-state", "ready");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  const secondCycle = await readGroundGlassMetrics(page);
+  expect(secondCycle.sourceId).not.toBe(initialRtt.sourceId);
+  expect(secondCycle.rootId).not.toBe(initialRtt.rootId);
+  await releaseCandidate();
+  await expect
+    .poll(async () => (await readObserverMetrics(page)).textures)
+    .toBe(settledRendererTextureCount);
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleProblems).toEqual([]);
+});
+
+test("Stage 2N-A join probes retain fresh RTT identity through bounded motion", async ({ page }) => {
+  test.setTimeout(1_200_000);
+  const errors = installBrowserErrorCapture(page);
+  const evidenceDirectory = process.env.VCS_FRINGE_STAGE2NB_EVIDENCE_DIR;
+  if (evidenceDirectory) mkdirSync(evidenceDirectory, { recursive: true });
+  const candidateSelect = page.getByTestId("fringe-candidate-select");
+  const probeSelect = page.getByTestId("fringe-probe-select");
+  const motionSelect = page.getByTestId("fringe-probe-motion-select");
+  const rendererMetrics = page.getByTestId("fringe-renderer-metrics");
+  const rttMetrics = page.getByTestId("fringe-rtt-metrics");
+  const measurements: Record<string, unknown> = {
+    candidate: "stage2n-a",
+    environment: await page.evaluate(() => ({
+      userAgent: navigator.userAgent,
+      devicePixelRatio: window.devicePixelRatio,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    })),
+    motions: [],
+  };
+
+  await page.goto("/__dev/fringe-club-rtt?sceneCapacityProfiling=1&rttDiagnostics=1");
+  await expect(rendererMetrics).toHaveAttribute("data-baseline-geometries", /^\d+$/);
+  await candidateSelect.selectOption("stage2n-a");
+  await probeSelect.selectOption(JOIN_MOTION_PROBES[0].probeId);
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
+    "data-state",
+    "ready",
+    { timeout: 90_000 },
   );
-  await page.getByRole("link", { name: "Exit development fixture" }).click();
-  await expect(page).toHaveURL(/\/scenes$/);
+  await waitForGroundGlass(page, "stage2n-a", JOIN_MOTION_PROBES[0].probeId, "center");
+
+  for (const [probeIndex, joinProbe] of JOIN_MOTION_PROBES.entries()) {
+    if (probeIndex > 0) {
+      const priorKey = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
+      const priorGeneration = Number(
+        await rttMetrics.getAttribute("data-rtt-render-sanity-generation"),
+      );
+      const priorRootId = await rttMetrics.getAttribute("data-subject-root-id");
+      await probeSelect.selectOption(joinProbe.probeId);
+      await waitForGroundGlass(page, "stage2n-a", joinProbe.probeId, "center");
+      await expect(rttMetrics).toHaveAttribute("data-subject-motion-id", "center");
+      expect(await rttMetrics.getAttribute("data-rtt-render-sanity-state")).not.toBe(priorKey);
+      expect(Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation")))
+        .toBeGreaterThan(priorGeneration);
+      expect(await rttMetrics.getAttribute("data-subject-root-id")).not.toBe(priorRootId);
+    }
+
+    const captures: Array<{ motionId: string; observer: Buffer; groundGlass: Buffer }> = [];
+    const recordMotion = async (motionId: string) => {
+      await waitForGroundGlass(page, "stage2n-a", joinProbe.probeId, motionId);
+      await expect(rttMetrics).toHaveAttribute("data-subject-motion-id", motionId);
+      const observer = await readObserverMetrics(page);
+      const groundGlass = await readGroundGlassMetrics(page);
+      expect(observer.candidateId).toBe("stage2n-a");
+      expect(groundGlass.candidateId).toBe("stage2n-a");
+      expect(groundGlass.probeId).toBe(joinProbe.probeId);
+      expect(groundGlass.motionId).toBe(motionId);
+      expect(groundGlass.rootId).not.toBe("");
+      const observerCapture = await page.getByTestId("fringe-app-canvas").screenshot();
+      const groundGlassCapture = await page.getByTestId("fringe-ground-glass-canvas").screenshot();
+      captures.push({ motionId, observer: observerCapture, groundGlass: groundGlassCapture });
+      (measurements.motions as unknown[]).push({
+        probeId: joinProbe.probeId,
+        motionId,
+        observer,
+        groundGlass,
+      });
+    };
+
+    await recordMotion("center");
+    for (const motionId of MOTION_IDS.slice(1)) {
+      const priorKey = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
+      const priorGeneration = Number(
+        await rttMetrics.getAttribute("data-rtt-render-sanity-generation"),
+      );
+      const priorRootId = await rttMetrics.getAttribute("data-subject-root-id");
+      await motionSelect.selectOption(motionId);
+      await waitForGroundGlass(page, "stage2n-a", joinProbe.probeId, motionId);
+      expect(await rttMetrics.getAttribute("data-rtt-render-sanity-state")).not.toBe(priorKey);
+      expect(Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation")))
+        .toBeGreaterThan(priorGeneration);
+      expect(await rttMetrics.getAttribute("data-subject-root-id")).not.toBe(priorRootId);
+      await recordMotion(motionId);
+    }
+
+    const panel = await composeMotionPanel(
+      page,
+      "DEVELOPMENT_PROBE_ONLY — join motion — " + joinProbe.label,
+      captures,
+    );
+    const panelName = "fringe-club-" + joinProbe.probeId + "-motion-stage-2n-a.png";
+    await test.info().attach(panelName, { body: panel, contentType: "image/png" });
+    if (evidenceDirectory) writeFileSync(resolve(evidenceDirectory, panelName), panel);
+  }
+
+  const measurementsJson = Buffer.from(JSON.stringify(measurements, null, 2));
+  await test.info().attach("fringe-club-stage-2n-b-motion-measurements.json", {
+    body: measurementsJson,
+    contentType: "application/json",
+  });
+  if (evidenceDirectory) {
+    writeFileSync(
+      resolve(evidenceDirectory, "fringe-club-stage-2n-b-motion-measurements.json"),
+      measurementsJson,
+    );
+  }
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleProblems).toEqual([]);
+});
+
+test("rapid H/N-A selection aborts delayed stale fetches and only the final candidate attaches", async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = installBrowserErrorCapture(page);
+  const candidateSelect = page.getByTestId("fringe-candidate-select");
+  const rttMetrics = page.getByTestId("fringe-rtt-metrics");
+  const rendererMetrics = page.getByTestId("fringe-renderer-metrics");
+  const delayed = new Set<string>();
+  const releases: Record<string, Array<() => void>> = {
+    stage2h: [],
+    "stage2n-a": [],
+  };
+  const interceptWaiters: Record<string, Array<() => void>> = {
+    stage2h: [],
+    "stage2n-a": [],
+  };
+  await page.route(/(?:preferred-runtime-candidate|stage-2n-a-candidate)\.glb$/, async (route) => {
+    const candidate = route.request().url().includes(N_GLB_NAME) ? "stage2n-a" : "stage2h";
+    if (!delayed.has(candidate)) {
+      await route.continue();
+      return;
+    }
+    interceptWaiters[candidate].shift()?.();
+    await new Promise<void>((resolve) => releases[candidate].push(resolve));
+    try {
+      await route.continue();
+    } catch {
+      // The selected candidate change should abort this stale request.
+    }
+  });
+  const waitForIntercept = (candidate: string) =>
+    new Promise<void>((resolve) => interceptWaiters[candidate].push(resolve));
+  const release = (candidate: string) => {
+    delayed.delete(candidate);
+    releases[candidate].splice(0).forEach((resolve) => resolve());
+  };
+
+  await page.goto("/__dev/fringe-club-rtt?rttDiagnostics=1");
+  await expect(rendererMetrics).toHaveAttribute("data-baseline-geometries", /^\d+$/);
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute("data-state", "ready");
+  await waitForGroundGlass(page, "stage2h", PROBE_IDS[0]);
+
+  delayed.add("stage2n-a");
+  const nRequest = waitForIntercept("stage2n-a");
+  await candidateSelect.selectOption("stage2n-a");
+  await nRequest;
+  delayed.add("stage2h");
+  const hRequest = waitForIntercept("stage2h");
+  await candidateSelect.selectOption("stage2h");
+  await hRequest;
+  release("stage2h");
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute("data-state", "ready");
+  await waitForGroundGlass(page, "stage2h", PROBE_IDS[0]);
+  release("stage2n-a");
+  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "stage2h");
+  await expect(rttMetrics).toHaveAttribute("data-subject-candidate-id", "stage2h");
+
+  await candidateSelect.selectOption("stage2n-a");
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute("data-state", "ready");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  delayed.add("stage2h");
+  const secondHRequest = waitForIntercept("stage2h");
+  await candidateSelect.selectOption("stage2h");
+  await secondHRequest;
+  await candidateSelect.selectOption("stage2n-a");
+  release("stage2h");
+  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute("data-state", "ready");
+  await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "stage2n-a");
+  await expect(rendererMetrics).toHaveAttribute("data-source-assets", "1");
+  await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "2");
+  await expect(rttMetrics).toHaveAttribute("data-subject-candidate-id", "stage2n-a");
+  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
   expect(errors.pageErrors).toEqual([]);
   expect(errors.consoleProblems).toEqual([]);
 });
@@ -265,14 +943,14 @@ test("navigation away aborts a delayed development load without a stale mount", 
   let intercepted = 0;
   const routeWaiters: Array<() => void> = [];
   const releaseWaiters: Array<() => void> = [];
-  await page.route(`**/${GLB_NAME}`, async (route) => {
+  await page.route("**/preferred-runtime-candidate.glb", async (route) => {
     intercepted += 1;
     routeWaiters.shift()?.();
     await new Promise<void>((resolve) => releaseWaiters.push(resolve));
     try {
       await route.continue();
     } catch {
-      // Navigation may already have aborted the request, which is the case under test.
+      // SPA navigation may already have aborted the candidate request.
     }
   });
 
@@ -282,7 +960,7 @@ test("navigation away aborts a delayed development load without a stale mount", 
     /^\d+$/,
   );
   const requestStarted = new Promise<void>((resolve) => routeWaiters.push(resolve));
-  await page.getByRole("button", { name: "Load source asset" }).click();
+  await page.getByRole("button", { name: "Load selected candidate" }).click();
   await requestStarted;
   await page.getByRole("link", { name: "Exit development fixture" }).click();
   await expect(page).toHaveURL(/\/scenes$/);
@@ -291,139 +969,4 @@ test("navigation away aborts a delayed development load without a stale mount", 
   expect(errors.pageErrors).toEqual([]);
   expect(errors.consoleProblems).toEqual([]);
   await expect(page.getByTestId("fringe-app-canvas")).toHaveCount(0);
-});
-
-test("Ground Glass RTT renders an independent instance from the Observer's SourceAsset lease", async ({ page }) => {
-  test.setTimeout(180_000);
-  const errors = installBrowserErrorCapture(page);
-  const glbRequests: string[] = [];
-  page.on("request", (request) => {
-    if (request.url().includes(GLB_NAME)) glbRequests.push(request.url());
-  });
-
-  await page.goto("/simulator/free/architecture-rise");
-  await expect(page.getByTestId("ground-glass-rtt")).toHaveCount(1);
-  expect(glbRequests).toEqual([]);
-
-  await page.goto("/__dev/fringe-club-rtt?sceneCapacityProfiling=1&rttDiagnostics=1");
-  await expect(page.getByText("NOT A PUBLIC SCENE.")).toBeVisible();
-  await expect(page.getByTestId("fringe-renderer-metrics")).toHaveAttribute(
-    "data-baseline-geometries",
-    /^\d+$/,
-  );
-
-  const observerMetrics = page.getByTestId("fringe-renderer-metrics");
-  const rttMetrics = page.getByTestId("fringe-rtt-metrics");
-  await page.getByRole("button", { name: "Load source asset" }).click();
-  await expect(page.getByTestId("fringe-load-state")).toHaveAttribute(
-    "data-state",
-    "ready",
-    { timeout: 60_000 },
-  );
-
-  await expect(observerMetrics).toHaveAttribute("data-source-assets", "1");
-  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "2");
-  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", /^[^\s]+$/);
-  const sourceId = await rttMetrics.getAttribute("data-source-id");
-  expect(sourceId).toMatch(/^fringe-club-source-/);
-  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
-  await expect(rttMetrics).toHaveAttribute("data-subject-instance-id", "ground-glass-rtt");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-camera-ok", "true");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "true");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-generation", /^\d+$/);
-  await expect(rttMetrics).toHaveAttribute("data-rtt-subject-meshes", /^[1-9]\d*$/);
-  await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-geometries", /^\d+$/);
-  await expect(rttMetrics).toHaveAttribute("data-rtt-renderer-textures", /^\d+$/);
-  const initialRttRoot = await rttMetrics.getAttribute("data-subject-root-id");
-  const initialRenderSanityGeneration = Number(
-    await rttMetrics.getAttribute("data-rtt-render-sanity-generation"),
-  );
-  const initialRenderSanityState = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
-  const initialRttCapacity = await rttMetrics.evaluate((element) => ({
-    meshes: Number(element.getAttribute("data-rtt-subject-meshes")),
-    triangles: Number(element.getAttribute("data-rtt-subject-triangles")),
-    geometries: Number(element.getAttribute("data-rtt-renderer-geometries")),
-    textures: Number(element.getAttribute("data-rtt-renderer-textures")),
-  }));
-  expect(initialRttRoot).not.toBe("");
-  expect(initialRenderSanityGeneration).toBeGreaterThan(0);
-  expect(initialRenderSanityState).toMatch(/\|subject-generation:\d+$/);
-  expect(initialRttCapacity.meshes).toBeGreaterThan(0);
-  expect(initialRttCapacity.triangles).toBeGreaterThan(0);
-
-  await page.getByRole("checkbox", { name: "Mount instance A" }).uncheck();
-  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "1");
-  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", initialRttRoot!);
-  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
-  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
-
-  await page.getByRole("checkbox", { name: "Mount Ground Glass RTT instance" }).uncheck();
-  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "0");
-  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
-  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", "");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-generation", "");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-subject-meshes", "");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-state", "");
-  await expect(rttMetrics).toHaveAttribute("data-active-sources", "1");
-  await expect(observerMetrics).toHaveAttribute("data-owner-leases", "1");
-
-  await page.getByRole("checkbox", { name: "Mount Ground Glass RTT instance" }).check();
-  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "1");
-  await expect(rttMetrics).toHaveAttribute("data-subject-source-id", sourceId!);
-  await expect
-    .poll(async () => Number(await rttMetrics.getAttribute("data-rtt-render-sanity-generation")))
-    .toBeGreaterThan(initialRenderSanityGeneration);
-  await expect(rttMetrics).toHaveAttribute("data-rtt-raw-contentful", "true");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-final-contentful", "true");
-  await expect(rttMetrics).toHaveAttribute("data-rtt-render-sanity-state", /\|subject-generation:\d+$/);
-  const remountedRoot = await rttMetrics.getAttribute("data-subject-root-id");
-  const remountedRenderSanityState = await rttMetrics.getAttribute("data-rtt-render-sanity-state");
-  expect(remountedRoot).not.toBe("");
-  expect(remountedRoot).not.toBe(initialRttRoot);
-  expect(remountedRenderSanityState).not.toBe(initialRenderSanityState);
-
-  await page.getByRole("button", { name: "Release source asset" }).click();
-  await expect(observerMetrics).toHaveAttribute("data-source-assets", "0");
-  await expect(observerMetrics).toHaveAttribute("data-owner-leases", "0");
-  await expect(observerMetrics).toHaveAttribute("data-instance-leases", "0");
-  await expect(observerMetrics).toHaveAttribute("data-source-geometries", "0");
-  await expect(observerMetrics).toHaveAttribute("data-source-materials", "0");
-  await expect(observerMetrics).toHaveAttribute("data-source-textures", "0");
-  await expect(observerMetrics).toHaveAttribute("data-image-backings", "0");
-  await expect(observerMetrics).toHaveAttribute("data-instance-materials", "0");
-  await expect(rttMetrics).toHaveAttribute("data-source-id", "");
-  await expect(rttMetrics).toHaveAttribute("data-subject-root-id", "");
-
-  // React's development effect replay may request once for the cancelled first
-  // generation and once for the active generation; loading stays activation-gated.
-  expect(glbRequests.length).toBeGreaterThan(0);
-  expect(errors.pageErrors).toEqual([]);
-  expect(errors.consoleProblems).toEqual([]);
-  await test.info().attach("fringe-club-stage-2j-rtt-browser-measurements.json", {
-    body: Buffer.from(
-      JSON.stringify(
-        {
-          browserVersion: page.context().browser()?.version() ?? "unknown",
-          userAgent: await page.evaluate(() => navigator.userAgent),
-          devicePixelRatio: await page.evaluate(() => window.devicePixelRatio),
-          viewport: await page.evaluate(() => ({
-            width: window.innerWidth,
-            height: window.innerHeight,
-          })),
-          sourceId,
-          initialRttRoot,
-          remountedRoot,
-          initialRttCapacity,
-          observerRenderer: await readMetrics(page),
-          glbRequests,
-        },
-        null,
-        2,
-      ),
-    ),
-    contentType: "application/json",
-  });
 });

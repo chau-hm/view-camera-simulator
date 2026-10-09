@@ -41,6 +41,8 @@ export type MountedGroundGlassSceneSubject = Readonly<{
 }>;
 
 export type GroundGlassSceneProfile = Readonly<{
+  /** Optional subject identity included in development render-sanity diagnostics. */
+  renderSanityIdentity?: string;
   configureRttShadowParticipation: (group: THREE.Group) => void;
   mountSubject: (
     scene: THREE.Scene,

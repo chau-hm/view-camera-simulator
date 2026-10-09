@@ -102,7 +102,17 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   /** Scene-profile/subject generation whose pixels produced this observation. */
   renderSanitySubjectGeneration?: number;
   renderSanityStateKey?: string;
+  renderSanitySubjectIdentity?: string;
   renderSanityError?: string | null;
+  rendererStats?: Readonly<{
+    calls: number;
+    triangles: number;
+    points: number;
+    lines: number;
+    geometries: number;
+    textures: number;
+    sampledAtMs: number;
+  }>;
   inspectionWindowActive?: boolean;
   inspectionCenterU?: number;
   inspectionCenterV?: number;
