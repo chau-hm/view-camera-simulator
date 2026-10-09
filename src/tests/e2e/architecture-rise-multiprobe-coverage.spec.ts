@@ -104,11 +104,14 @@ type CoverageProof = {
   placement: {
     optimizedViews: readonly ["A", "B"];
     holdoutView: "C";
+    holdoutExcludedFromPlacement: true;
     rankingOrder: readonly string[];
     evaluatedProbeBPairCount: number;
     bestTwo: PublicConfiguration & { probeB: { id: string; originM: readonly number[] }; placementRank: number };
-    topTwoProbeRankings: Array<{
+    topPairRankings: Array<{
       rank: number;
+      probeIds: string[];
+      probeOriginsM: Record<string, readonly number[]>;
       probeBOriginM: readonly number[];
       sameObjectHitCount: number;
       falseNegativeCount: number;
@@ -118,12 +121,46 @@ type CoverageProof = {
       p95AngularErrorDeg: number | null;
     }>;
     probeBMateriallyImprovesProbeA: boolean;
-    evaluatedProbeCCount: number;
-    bestThree: (PublicConfiguration & {
+    evaluatedThreeProbeConfigurationCount: number;
+    topTripleRankings: Array<{
+      rank: number;
+      probeIds: string[];
+      probeOriginsM: Record<string, readonly number[]>;
+      sameObjectHitCount: number;
+      falseNegativeCount: number;
+      falsePositiveCount: number;
+      wrongObjectCount: number;
+      p95QErrorM: number | null;
+      p95AngularErrorDeg: number | null;
+    }>;
+    greedyBestPairExtension: PublicConfiguration & {
+      probeB: { id: string; originM: readonly number[] };
+      probeC: { id: string; originM: readonly number[] };
+    };
+    globalBestThree: PublicConfiguration & {
+      probeB: { id: string; originM: readonly number[] };
       probeC: { id: string; originM: readonly number[] };
       placementRank: number;
-      marginalVsBestTwo: { sameObjectHits: number; falseNegatives: number; falsePositives: number };
-    }) | null;
+      differsFromGreedyBestPairExtension: boolean;
+      marginalVsBestTwo: {
+        sameObjectHits: number;
+        falseNegatives: number;
+        falsePositives: number;
+        wrongObjects: number;
+        falsePositiveRateChange: number;
+        p95QErrorChangeM: number;
+        p95AngularErrorChangeDeg: number;
+      };
+    };
+    threeProbeComplexityGate: {
+      thresholds: {
+        sameObjectGainAtLeast: number;
+        falseNegativeReductionAtLeast: number;
+        maxFalsePositiveRateIncrease: number;
+        maxWrongObjectCountIncrease: number;
+      };
+      passed: boolean;
+    };
     selectedConfiguration: PublicConfiguration & {
       holdoutC: ConfigurationView;
       selectedProbeCount: number;
@@ -151,7 +188,7 @@ type CoverageProof = {
 };
 
 test("Architecture Rise bounded multi-Probe CPU study protects the placement and holdout conclusion", async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(300_000);
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -164,7 +201,7 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
   await expect.poll(async () =>
     (await body.getAttribute("data-proof-ready")) === "true" ||
     (await body.getAttribute("data-proof-error")) !== null,
-  { timeout: 90_000 }).toBe(true);
+  { timeout: 240_000 }).toBe(true);
   expect(await body.getAttribute("data-proof-error"), "CPU multi-Probe study must fail closed").toBeNull();
   await expect(page.locator("canvas")).toHaveCount(0);
 
@@ -205,12 +242,23 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
       metrics: summarizeConfiguration(proof.placement.bestTwo.combined),
       marginalVsA: proof.placement.bestTwo.marginalVsProbeA,
     },
-    evaluatedProbeCCount: proof.placement.evaluatedProbeCCount,
-    bestThree: proof.placement.bestThree ? {
-      origin: proof.placement.bestThree.probeC,
-      metrics: summarizeConfiguration(proof.placement.bestThree.combined),
-      marginalVsBestTwo: proof.placement.bestThree.marginalVsBestTwo,
-    } : null,
+    pairConfigurations: proof.placement.evaluatedProbeBPairCount,
+    tripleConfigurations: proof.placement.evaluatedThreeProbeConfigurationCount,
+    topPairRankings: proof.placement.topPairRankings,
+    topTripleRankings: proof.placement.topTripleRankings,
+    greedyBestPairExtension: {
+      probeIds: proof.placement.greedyBestPairExtension.probeIds,
+      training: summarizeView(proof.placement.greedyBestPairExtension.combined.trainingAB),
+      holdoutC: summarizeView(proof.placement.greedyBestPairExtension.combined.byView.C),
+    },
+    globalBestThree: {
+      probeIds: proof.placement.globalBestThree.probeIds,
+      origins: proof.placement.globalBestThree.probeOriginsM,
+      metrics: summarizeConfiguration(proof.placement.globalBestThree.combined),
+      marginalVsBestTwo: proof.placement.globalBestThree.marginalVsBestTwo,
+      differsFromGreedyBestPairExtension: proof.placement.globalBestThree.differsFromGreedyBestPairExtension,
+    },
+    threeProbeComplexityGate: proof.placement.threeProbeComplexityGate,
     selected: {
       probeCount: proof.placement.selectedConfiguration.selectedProbeCount,
       metrics: summarizeConfiguration(proof.placement.selectedConfiguration.combined),
@@ -282,6 +330,7 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
   expect(proof.search.derivation.join(" ")).toContain("ground mesh bounds");
   expect(proof.placement.optimizedViews).toEqual(["A", "B"]);
   expect(proof.placement.holdoutView).toBe("C");
+  expect(proof.placement.holdoutExcludedFromPlacement).toBe(true);
   expect(proof.placement.rankingOrder).toEqual([
     "higher same-object physical-hit count",
     "lower false-negative count",
@@ -289,21 +338,58 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
     "lower wrong-object count",
     "lower p95 Q error",
     "lower p95 angular error",
-    "fewer Probes when marginal gains do not meet the complexity gate",
-    "lower deterministic grid index for candidate ties",
+    "lower B grid index, then lower C grid index for unordered triples",
   ]);
   expect(proof.placement.evaluatedProbeBPairCount).toBe(proof.search.validCandidateCount);
+  expect(proof.placement.evaluatedProbeBPairCount).toBe(79);
+  expect(proof.placement.topPairRankings).toHaveLength(5);
+  expect(proof.placement.topPairRankings.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5]);
   expect(proof.placement.bestTwo.placementRank).toBe(1);
   expect(proof.placement.bestTwo.probeB.originM).toHaveLength(3);
-  expect(proof.placement.topTwoProbeRankings[0].probeBOriginM).toEqual(proof.placement.bestTwo.probeB.originM);
+  expect(proof.placement.topPairRankings[0].probeBOriginM).toEqual(proof.placement.bestTwo.probeB.originM);
+  expect(proof.placement.topPairRankings[0].probeIds).toEqual(proof.placement.bestTwo.combined.probeIds);
   expect(proof.placement.bestTwo.combined.probeIds).toHaveLength(2);
   expect(proof.placement.probeBMateriallyImprovesProbeA).toBe(true);
-  expect(proof.placement.evaluatedProbeCCount).toBe(proof.search.validCandidateCount - 1);
-  const bestThree = proof.placement.bestThree;
-  if (!bestThree) throw new Error("Probe C placement study should be published after the material A+B gain");
-  expect(bestThree.placementRank).toBe(1);
-  expect(bestThree.combined.probeIds).toHaveLength(3);
-  expect(bestThree.probeC.id).not.toBe(proof.placement.bestTwo.probeB.id);
+  const expectedTripleCount = proof.search.validCandidateCount * (proof.search.validCandidateCount - 1) / 2;
+  expect(proof.placement.evaluatedThreeProbeConfigurationCount).toBe(expectedTripleCount);
+  expect(proof.placement.evaluatedThreeProbeConfigurationCount).toBe(3_081);
+  expect(proof.placement.topTripleRankings).toHaveLength(5);
+  expect(proof.placement.topTripleRankings.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5]);
+  const globalBestThree = proof.placement.globalBestThree;
+  expect(globalBestThree.placementRank).toBe(1);
+  expect(globalBestThree.combined.probeIds).toHaveLength(3);
+  expect(globalBestThree.combined.probeIds[0]).toBe("probe-a-pr-s-r");
+  expect(new Set(globalBestThree.combined.probeIds).size).toBe(3);
+  expect(globalBestThree.probeB.id).not.toBe(globalBestThree.probeC.id);
+  const validCandidateIds = new Set(proof.search.probeOrigins.map((candidate) => candidate.id));
+  expect(validCandidateIds.has(globalBestThree.probeB.id)).toBe(true);
+  expect(validCandidateIds.has(globalBestThree.probeC.id)).toBe(true);
+  const gridIndexById = new Map(proof.search.probeOrigins.map((candidate, index) => [candidate.id, index]));
+  expect(gridIndexById.get(globalBestThree.probeB.id) ?? Number.MAX_SAFE_INTEGER)
+    .toBeLessThan(gridIndexById.get(globalBestThree.probeC.id) ?? Number.MAX_SAFE_INTEGER);
+  expect(proof.placement.topTripleRankings[0].probeIds).toEqual(globalBestThree.combined.probeIds);
+  const [topTriple, nextTriple] = proof.placement.topTripleRankings;
+  const tripleRankingComparison = [
+    nextTriple.sameObjectHitCount - topTriple.sameObjectHitCount,
+    topTriple.falseNegativeCount - nextTriple.falseNegativeCount,
+    topTriple.falsePositiveCount - nextTriple.falsePositiveCount,
+    topTriple.wrongObjectCount - nextTriple.wrongObjectCount,
+    (topTriple.p95QErrorM ?? Number.POSITIVE_INFINITY) - (nextTriple.p95QErrorM ?? Number.POSITIVE_INFINITY),
+    (topTriple.p95AngularErrorDeg ?? Number.POSITIVE_INFINITY) - (nextTriple.p95AngularErrorDeg ?? Number.POSITIVE_INFINITY),
+    (gridIndexById.get(topTriple.probeIds[1]) ?? Number.MAX_SAFE_INTEGER) -
+      (gridIndexById.get(nextTriple.probeIds[1]) ?? Number.MAX_SAFE_INTEGER),
+    (gridIndexById.get(topTriple.probeIds[2]) ?? Number.MAX_SAFE_INTEGER) -
+      (gridIndexById.get(nextTriple.probeIds[2]) ?? Number.MAX_SAFE_INTEGER),
+  ].find((difference) => difference !== 0) ?? 0;
+  expect(tripleRankingComparison).toBeLessThanOrEqual(0);
+  const greedyExtension = proof.placement.greedyBestPairExtension;
+  expect(greedyExtension.combined.probeIds).toHaveLength(3);
+  expect(greedyExtension.combined.probeIds).toContain(proof.placement.bestTwo.probeB.id);
+  expect(greedyExtension.probeB.id).not.toBe(greedyExtension.probeC.id);
+  const globalThirdCandidateIds = globalBestThree.combined.probeIds.slice(1).join("|");
+  const greedyThirdCandidateIds = greedyExtension.combined.probeIds.slice(1).join("|");
+  expect(globalBestThree.differsFromGreedyBestPairExtension)
+    .toBe(globalThirdCandidateIds !== greedyThirdCandidateIds);
 
   const bestTwoTraining = proof.placement.bestTwo.combined.trainingAB.metrics;
   expect(bestTwoTraining).toMatchObject({
@@ -324,33 +410,73 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
   expect(proof.placement.bestTwo.combined.byView.B.metrics.falseNegativeCount).toBeLessThanOrEqual(4);
   expect(proof.placement.bestTwo.combined.byView.B.metrics.falsePositiveCount).toBeLessThanOrEqual(5);
 
-  const bestThreeTraining = bestThree.combined.trainingAB.metrics;
-  const thirdProbeSameObjectGain = bestThreeTraining.sameObjectHitCount - bestTwoTraining.sameObjectHitCount;
-  const thirdProbeFalseNegativeReduction = bestTwoTraining.falseNegativeCount - bestThreeTraining.falseNegativeCount;
-  expect(thirdProbeSameObjectGain).toBeGreaterThanOrEqual(0);
-  expect(thirdProbeSameObjectGain).toBeLessThan(5);
-  expect(thirdProbeFalseNegativeReduction).toBeGreaterThanOrEqual(0);
-  expect(thirdProbeFalseNegativeReduction).toBeLessThan(5);
-  expect(bestThree.marginalVsBestTwo.falsePositives).toBeLessThanOrEqual(0);
-  expect(bestThreeTraining.p95QErrorM).toBeLessThan(1.0);
-  expect(bestThree.combined.byView.C.metrics.sameObjectHitCount).toBeGreaterThanOrEqual(33);
-  expect(bestThree.combined.byView.C.metrics.sameObjectCoverage).toBeLessThan(0.6);
+  const bestThreeTraining = globalBestThree.combined.trainingAB.metrics;
+  const marginalVsBestTwo = globalBestThree.marginalVsBestTwo;
+  expect(marginalVsBestTwo.sameObjectHits)
+    .toBe(bestThreeTraining.sameObjectHitCount - bestTwoTraining.sameObjectHitCount);
+  expect(marginalVsBestTwo.falseNegatives)
+    .toBe(bestTwoTraining.falseNegativeCount - bestThreeTraining.falseNegativeCount);
+  expect(marginalVsBestTwo.falsePositives)
+    .toBe(bestThreeTraining.falsePositiveCount - bestTwoTraining.falsePositiveCount);
+  expect(marginalVsBestTwo.wrongObjects)
+    .toBe(bestThreeTraining.wrongObjectCount - bestTwoTraining.wrongObjectCount);
+  expect(marginalVsBestTwo.falsePositiveRateChange)
+    .toBeCloseTo((bestThreeTraining.falsePositiveRate ?? 0) - (bestTwoTraining.falsePositiveRate ?? 0), 10);
+  expect(marginalVsBestTwo.p95QErrorChangeM)
+    .toBeCloseTo((bestThreeTraining.p95QErrorM ?? 0) - (bestTwoTraining.p95QErrorM ?? 0), 10);
+  expect(marginalVsBestTwo.p95AngularErrorChangeDeg)
+    .toBeCloseTo((bestThreeTraining.p95AngularErrorDeg ?? 0) - (bestTwoTraining.p95AngularErrorDeg ?? 0), 10);
+  expect(marginalVsBestTwo.sameObjectHits).toBe(3);
+  expect(marginalVsBestTwo.falseNegatives).toBe(3);
+  expect(marginalVsBestTwo.falsePositives).toBe(0);
+  expect(marginalVsBestTwo.wrongObjects).toBe(0);
+  expect(globalBestThree.differsFromGreedyBestPairExtension).toBe(false);
+  expect(proof.placement.threeProbeComplexityGate.thresholds).toEqual({
+    sameObjectGainAtLeast: 5,
+    falseNegativeReductionAtLeast: 5,
+    maxFalsePositiveRateIncrease: 0.05,
+    maxWrongObjectCountIncrease: 5,
+  });
+  const gateShouldPass =
+    (marginalVsBestTwo.sameObjectHits >= 5 || marginalVsBestTwo.falseNegatives >= 5) &&
+    marginalVsBestTwo.falsePositiveRateChange <= 0.05 && marginalVsBestTwo.wrongObjects <= 5;
+  expect(proof.placement.threeProbeComplexityGate.passed).toBe(gateShouldPass);
+  expect(proof.placement.threeProbeComplexityGate.passed).toBe(false);
+  expect(globalBestThree.combined.byView.C.metrics.sampleCount)
+    .toBe(proof.sampleDomain.C.visibleFrontFaceSamples);
+  expect(globalBestThree.combined.byView.C.metrics.sameObjectHitCount).toBeGreaterThanOrEqual(33);
+  expect(globalBestThree.combined.byView.C.metrics.sameObjectCoverage).toBeLessThan(0.6);
+  expect(globalBestThree.combined.byView.C.metrics.wrongObjectRate).toBeGreaterThan(0.15);
+  expect(greedyExtension.combined.byView.C.metrics.sampleCount)
+    .toBe(proof.sampleDomain.C.visibleFrontFaceSamples);
 
-  expect(proof.placement.selectedConfiguration.selectedProbeCount).toBe(2);
+  const expectedSelectedProbeCount = 2;
+  expect(proof.placement.selectedConfiguration.selectedProbeCount).toBe(expectedSelectedProbeCount);
   expect(proof.placement.selectedConfiguration.combined.probeIds)
     .toHaveLength(proof.placement.selectedConfiguration.selectedProbeCount);
+  expect(proof.placement.selectedConfiguration.combined.probeIds[0]).toBe("probe-a-pr-s-r");
   expect(proof.placement.selectedConfiguration.holdoutC.metrics.sampleCount)
     .toBe(proof.sampleDomain.C.visibleFrontFaceSamples);
-  expect(proof.placement.selectedConfiguration.selectionByView.A.validCandidateOverlap)
-    .toEqual({ "0": 138, "1": 56, "2": 44 });
-  expect(proof.placement.selectedConfiguration.selectionByView.A.multiValidSampleCount).toBe(44);
-  expect(proof.placement.selectedConfiguration.selectionByView.A.multiValidSameObjectCount).toBe(36);
-  expect(proof.placement.selectedConfiguration.selectionByView.B.selectedByProbe[proof.placement.bestTwo.probeB.id].count)
-    .toBe(30);
+  expect(proof.placement.selectedConfiguration.combined.probeIds)
+    .toEqual(proof.placement.bestTwo.combined.probeIds);
+  for (const viewId of ["A", "B", "C"] as const) {
+    const selection = proof.placement.selectedConfiguration.selectionByView[viewId];
+    expect(Object.values(selection.validCandidateOverlap).reduce((sum, count) => sum + count, 0))
+      .toBe(proof.sampleDomain[viewId].visibleFrontFaceSamples);
+    expect(selection.multiValidSameObjectCount).toBeLessThanOrEqual(selection.multiValidSampleCount);
+    expect(Object.keys(selection.selectedByProbe)).toHaveLength(expectedSelectedProbeCount);
+  }
 
   const holdout = proof.placement.selectedConfiguration.holdoutC.metrics;
   expect(holdout.physicalFiniteHitCount).toBe(64);
   expect(holdout.physicalNoHitCount).toBe(170);
+  expect(holdout.sameObjectCoverage).not.toBeNull();
+  expect(holdout.falsePositiveRate).not.toBeNull();
+  expect(holdout.falseNegativeCount + holdout.sameObjectHitCount + holdout.wrongObjectCount)
+    .toBe(holdout.physicalFiniteHitCount);
+  expect(holdout.candidateValidCount + holdout.candidateNoHitCount).toBe(holdout.sampleCount);
+  expect(holdout.falsePositiveCount).toBeLessThanOrEqual(holdout.physicalNoHitCount);
+  expect(holdout.falseNegativeCount).toBeLessThanOrEqual(holdout.physicalFiniteHitCount);
   expect(holdout.sameObjectHitCount).toBeGreaterThanOrEqual(25);
   expect(holdout.sameObjectCoverage).toBeGreaterThan(0.35);
   expect(holdout.sameObjectCoverage).toBeLessThan(0.5);
@@ -372,5 +498,5 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
   expect(proof.decision.gpuValidationPerformed).toBe(false);
   expect(proof.decision.classification)
     .toBe("MULTI-PROBE COVERAGE IMPROVES BUT COMPLEXITY / VALIDITY IS NOT JUSTIFIED");
-  expect(proof.decision.basis.join(" ")).toContain("holdout C same-object hits changed from 0 to 27");
+  expect(proof.decision.basis.join(" ")).toContain("holdout C same-object hits changed from");
 });

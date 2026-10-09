@@ -45,7 +45,7 @@ type ObserverPaneSample = {
   physicalHitObject: string | null;
 };
 
-type ProbeCandidateHit = RuntimeProbeCandidate & {
+type ProbeCandidateHit = Omit<RuntimeProbeCandidate, "probeIndex"> & {
   hitObject: string;
   direction: THREE.Vector3;
   runtimeResidualM: number;
@@ -120,16 +120,22 @@ type ConfigurationEvaluation = {
   trainingAB: ConfigurationView;
 };
 
+type TrainingEvaluation = {
+  probeIds: string[];
+  byView: Record<"A" | "B", ConfigurationView>;
+  trainingAB: ConfigurationView;
+};
+
 type PairRank = {
   candidate: OriginCandidate;
-  evaluation: ConfigurationEvaluation;
-  dataByView: Record<"A" | "B", ViewData>;
+  evaluation: TrainingEvaluation;
+  dataByViewAB: Record<"A" | "B", ViewData>;
 };
 
 type TripleRank = {
-  candidate: OriginCandidate;
-  evaluation: ConfigurationEvaluation;
-  dataByView: Record<"A" | "B", ViewData>;
+  probeB: OriginCandidate;
+  probeC: OriginCandidate;
+  trainingMetrics: GeometryMetrics;
 };
 
 type PublicConfiguration = {
@@ -190,11 +196,14 @@ type CoverageProof = {
   placement: {
     optimizedViews: readonly ["A", "B"];
     holdoutView: "C";
+    holdoutExcludedFromPlacement: true;
     rankingOrder: readonly string[];
     evaluatedProbeBPairCount: number;
     bestTwo: PublicConfiguration & { probeB: { id: string; originM: Vec3Tuple }; placementRank: number };
-    topTwoProbeRankings: Array<{
+    topPairRankings: Array<{
       rank: number;
+      probeIds: string[];
+      probeOriginsM: Record<string, Vec3Tuple>;
       probeBOriginM: Vec3Tuple;
       sameObjectHitCount: number;
       falseNegativeCount: number;
@@ -204,12 +213,46 @@ type CoverageProof = {
       p95AngularErrorDeg: number | null;
     }>;
     probeBMateriallyImprovesProbeA: boolean;
-    evaluatedProbeCCount: number;
-    bestThree: (PublicConfiguration & {
+    evaluatedThreeProbeConfigurationCount: number;
+    topTripleRankings: Array<{
+      rank: number;
+      probeIds: string[];
+      probeOriginsM: Record<string, Vec3Tuple>;
+      sameObjectHitCount: number;
+      falseNegativeCount: number;
+      falsePositiveCount: number;
+      wrongObjectCount: number;
+      p95QErrorM: number | null;
+      p95AngularErrorDeg: number | null;
+    }>;
+    greedyBestPairExtension: (PublicConfiguration & {
+      probeB: { id: string; originM: Vec3Tuple };
+      probeC: { id: string; originM: Vec3Tuple };
+    }) | null;
+    globalBestThree: (PublicConfiguration & {
+      probeB: { id: string; originM: Vec3Tuple };
       probeC: { id: string; originM: Vec3Tuple };
       placementRank: number;
-      marginalVsBestTwo: { sameObjectHits: number; falseNegatives: number; falsePositives: number };
+      differsFromGreedyBestPairExtension: boolean;
+      marginalVsBestTwo: {
+        sameObjectHits: number;
+        falseNegatives: number;
+        falsePositives: number;
+        wrongObjects: number;
+        falsePositiveRateChange: number;
+        p95QErrorChangeM: number;
+        p95AngularErrorChangeDeg: number;
+      };
     }) | null;
+    threeProbeComplexityGate: {
+      thresholds: {
+        sameObjectGainAtLeast: 5;
+        falseNegativeReductionAtLeast: 5;
+        maxFalsePositiveRateIncrease: 0.05;
+        maxWrongObjectCountIncrease: 5;
+      };
+      passed: boolean;
+    };
     selectedConfiguration: PublicConfiguration & {
       holdoutC: ConfigurationView;
       selectedProbeCount: number;
@@ -379,7 +422,6 @@ const traceOneStepProbe = (
   origin: THREE.Vector3,
   samples: readonly ObserverPaneSample[],
   reflectionMeshes: THREE.Mesh[],
-  probeIndex: number,
 ): Array<ProbeCandidateHit | null> => samples.map((sample) => {
   const initialDirection = sample.reflectedDirection.clone().normalize();
   const initialHit = probeRayHit(origin, initialDirection, reflectionMeshes);
@@ -404,7 +446,6 @@ const traceOneStepProbe = (
   if (!Number.isFinite(runtimeResidualM) || !Number.isFinite(q.lengthSq())) return null;
 
   return {
-    probeIndex,
     q,
     hitObject: finalHit.object.name,
     direction: q.clone().sub(origin).normalize(),
@@ -542,6 +583,23 @@ const summarizeConfiguration = (
   };
 };
 
+const summarizeMetricsOnly = (
+  viewData: ViewData,
+  probeIds: readonly string[],
+): GeometryMetrics => {
+  const selected: Array<ProbeCandidateHit | null> = [];
+  for (let sampleIndex = 0; sampleIndex < viewData.samples.length; sampleIndex += 1) {
+    const candidates = probeIds.map((probeId, probeIndex) => {
+      const result = viewData.candidatesByProbeId.get(probeId)?.[sampleIndex] ?? null;
+      return result ? { probeIndex, q: result.q } satisfies RuntimeProbeCandidate : null;
+    });
+    const sample = viewData.samples[sampleIndex];
+    const winner = selectRuntimeProbeByPaneRay(sample.panePoint, sample.reflectedDirection, candidates);
+    selected.push(winner ? viewData.candidatesByProbeId.get(probeIds[winner.probeIndex])?.[sampleIndex] ?? null : null);
+  }
+  return measureGeometry(viewData.samples, selected);
+};
+
 const mergeViewData = (views: readonly ViewData[], id: ViewId): ViewData => {
   const probeIds = [...new Set(views.flatMap((view) => [...view.candidatesByProbeId.keys()]))];
   return {
@@ -563,6 +621,18 @@ const evaluateConfiguration = (
     A: summarizeConfiguration(viewData.A, probeIds),
     B: summarizeConfiguration(viewData.B, probeIds),
     C: summarizeConfiguration(viewData.C, probeIds),
+  },
+  trainingAB: summarizeConfiguration(mergeViewData([viewData.A, viewData.B], "A"), probeIds),
+});
+
+const evaluateTrainingConfiguration = (
+  viewData: Record<"A" | "B", ViewData>,
+  probeIds: readonly string[],
+): TrainingEvaluation => ({
+  probeIds: [...probeIds],
+  byView: {
+    A: summarizeConfiguration(viewData.A, probeIds),
+    B: summarizeConfiguration(viewData.B, probeIds),
   },
   trainingAB: summarizeConfiguration(mergeViewData([viewData.A, viewData.B], "A"), probeIds),
 });
@@ -706,8 +776,8 @@ const comparePairRanks = (left: PairRank, right: PairRank): number => {
 };
 
 const compareTripleRanks = (left: TripleRank, right: TripleRank): number => {
-  const a = left.evaluation.trainingAB.metrics;
-  const b = right.evaluation.trainingAB.metrics;
+  const a = left.trainingMetrics;
+  const b = right.trainingMetrics;
   const fields: Array<readonly [number, number]> = [
     [b.sameObjectHitCount, a.sameObjectHitCount],
     [a.falseNegativeCount, b.falseNegativeCount],
@@ -715,7 +785,8 @@ const compareTripleRanks = (left: TripleRank, right: TripleRank): number => {
     [a.wrongObjectCount, b.wrongObjectCount],
     [requiredNumber(a.p95QErrorM, "Probe-triplet p95 Q error"), requiredNumber(b.p95QErrorM, "Probe-triplet p95 Q error")],
     [requiredNumber(a.p95AngularErrorDeg, "Probe-triplet p95 angular error"), requiredNumber(b.p95AngularErrorDeg, "Probe-triplet p95 angular error")],
-    [left.candidate.gridIndex, right.candidate.gridIndex],
+    [left.probeB.gridIndex, right.probeB.gridIndex],
+    [left.probeC.gridIndex, right.probeC.gridIndex],
   ];
   for (const [leftValue, rightValue] of fields) {
     if (leftValue !== rightValue) return leftValue - rightValue;
@@ -786,7 +857,6 @@ const runStudy = (): CoverageProof => {
         PROBE_A_ORIGIN,
         viewSamples[viewId],
         reflectionMeshes,
-        0,
       )]]),
     };
   }
@@ -803,24 +873,55 @@ const runStudy = (): CoverageProof => {
     throw new Error("PR S CPU Probe A baseline did not reproduce; bounded placement scoring stopped before multi-Probe conclusions");
   }
 
-  const pairRanks: PairRank[] = [];
-  for (const candidate of grid.candidates) {
-    const pairData = {} as Record<"A" | "B", ViewData>;
+  const validCandidates = [...grid.candidates].sort((left, right) => left.gridIndex - right.gridIndex);
+  const candidateById = new Map(validCandidates.map((candidate) => [candidate.id, candidate]));
+  const candidateTracesById = new Map<string, Record<"A" | "B", Array<ProbeCandidateHit | null>>>();
+  for (const candidate of validCandidates) {
+    candidateTracesById.set(candidate.id, {
+      A: traceOneStepProbe(candidate.origin, probeAData.A.samples, reflectionMeshes),
+      B: traceOneStepProbe(candidate.origin, probeAData.B.samples, reflectionMeshes),
+    });
+  }
+  const candidateTrainingTracesById = new Map([...candidateTracesById].map(([candidateId, traces]) => [
+    candidateId,
+    [...traces.A, ...traces.B],
+  ]));
+
+  const trainingViewsForProbeIds = (probeIds: readonly string[]): Record<"A" | "B", ViewData> => {
+    if (probeIds[0] !== PROBE_A_ID) throw new Error("Every bounded configuration must keep Probe A at runtime index 0");
+    const result = {} as Record<"A" | "B", ViewData>;
     for (const viewId of ["A", "B"] as const) {
-      const bResults = traceOneStepProbe(candidate.origin, probeAData[viewId].samples, reflectionMeshes, 1);
-      pairData[viewId] = addProbeResults(probeAData[viewId], candidate.id, bResults);
+      let viewData = probeAData[viewId];
+      for (const probeId of probeIds.slice(1)) {
+        const candidateTrace = candidateTracesById.get(probeId)?.[viewId];
+        if (!candidateTrace) throw new Error(`Missing precomputed ${viewId} trace for ${probeId}`);
+        viewData = addProbeResults(viewData, probeId, candidateTrace);
+      }
+      result[viewId] = viewData;
     }
-    const trainData = mergeViewData([pairData.A, pairData.B], "A");
-    const pairEvaluation = {
-      probeIds: [PROBE_A_ID, candidate.id],
-      byView: {
-        A: summarizeConfiguration(pairData.A, [PROBE_A_ID, candidate.id]),
-        B: summarizeConfiguration(pairData.B, [PROBE_A_ID, candidate.id]),
-        C: probeAOnly.byView.C,
-      },
-      trainingAB: summarizeConfiguration(trainData, [PROBE_A_ID, candidate.id]),
-    } satisfies ConfigurationEvaluation;
-    pairRanks.push({ candidate, evaluation: pairEvaluation, dataByView: pairData });
+    return result;
+  };
+  const baseTrainingData = mergeViewData([probeAData.A, probeAData.B], "A");
+  const mergedTrainingDataForProbeIds = (probeIds: readonly string[]): ViewData => {
+    if (probeIds[0] !== PROBE_A_ID) throw new Error("Every training configuration must keep Probe A at runtime index 0");
+    let viewData = baseTrainingData;
+    for (const probeId of probeIds.slice(1)) {
+      const candidateTrace = candidateTrainingTracesById.get(probeId);
+      if (!candidateTrace) throw new Error(`Missing precomputed merged training trace for ${probeId}`);
+      viewData = addProbeResults(viewData, probeId, candidateTrace);
+    }
+    return viewData;
+  };
+
+  const pairRanks: PairRank[] = [];
+  for (const candidate of validCandidates) {
+    const probeIds = [PROBE_A_ID, candidate.id];
+    const dataByViewAB = trainingViewsForProbeIds(probeIds);
+    pairRanks.push({
+      candidate,
+      evaluation: evaluateTrainingConfiguration(dataByViewAB, probeIds),
+      dataByViewAB,
+    });
   }
   if (pairRanks.length === 0) throw new Error("Geometry-derived grid yielded no valid Probe B origin");
   pairRanks.sort(comparePairRanks);
@@ -833,105 +934,103 @@ const runStudy = (): CoverageProof => {
     bestTwoTraining.falsePositiveRate !== null && baseTrainingMetrics.falsePositiveRate !== null &&
     bestTwoTraining.falsePositiveRate <= baseTrainingMetrics.falsePositiveRate + 0.1;
 
+  const pairwiseCombinationCount = validCandidates.length * (validCandidates.length - 1) / 2;
+  const topTripleRanks: TripleRank[] = [];
   let bestThree: TripleRank | null = null;
-  let evaluatedProbeCCount = 0;
-  if (probeBMateriallyImprovesProbeA) {
-    const selectedBDataForC = {} as Record<ViewId, ViewData>;
-    selectedBDataForC.A = bestTwo.dataByView.A;
-    selectedBDataForC.B = bestTwo.dataByView.B;
-    for (const viewId of ["A", "B", "C"] as const) {
-      if (viewId === "C") {
-        selectedBDataForC.C = addProbeResults(
-          probeAData.C,
-          bestTwo.candidate.id,
-          traceOneStepProbe(bestTwo.candidate.origin, probeAData.C.samples, reflectionMeshes, 1),
-        );
-      }
-    }
-    for (const candidate of grid.candidates) {
-      if (
-        candidate.id === bestTwo.candidate.id ||
-        candidate.origin.distanceTo(PROBE_A_ORIGIN) < DUPLICATE_ORIGIN_TOLERANCE_M ||
-        candidate.origin.distanceTo(bestTwo.candidate.origin) < DUPLICATE_ORIGIN_TOLERANCE_M
-      ) continue;
-      evaluatedProbeCCount += 1;
-      const tripleData = {} as Record<"A" | "B", ViewData>;
-      for (const viewId of ["A", "B"] as const) {
-        tripleData[viewId] = addProbeResults(
-          selectedBDataForC[viewId],
-          candidate.id,
-          traceOneStepProbe(candidate.origin, selectedBDataForC[viewId].samples, reflectionMeshes, 2),
-        );
-      }
-      const training = mergeViewData([tripleData.A, tripleData.B], "A");
-      const evaluation = {
-        probeIds: [PROBE_A_ID, bestTwo.candidate.id, candidate.id],
-        byView: {
-          A: summarizeConfiguration(tripleData.A, [PROBE_A_ID, bestTwo.candidate.id, candidate.id]),
-          B: summarizeConfiguration(tripleData.B, [PROBE_A_ID, bestTwo.candidate.id, candidate.id]),
-          C: probeAOnly.byView.C,
-        },
-        trainingAB: summarizeConfiguration(training, [PROBE_A_ID, bestTwo.candidate.id, candidate.id]),
-      } satisfies ConfigurationEvaluation;
-      const baseForTriple = {
-        A: tripleData.A,
-        B: tripleData.B,
-      };
-      const tripleRank = { candidate, evaluation, dataByView: baseForTriple } satisfies TripleRank;
+  let greedyBestPairExtension: TripleRank | null = null;
+  let evaluatedThreeProbeConfigurationCount = 0;
+  for (let bIndex = 0; bIndex < validCandidates.length; bIndex += 1) {
+    const probeB = validCandidates[bIndex];
+    for (let cIndex = bIndex + 1; cIndex < validCandidates.length; cIndex += 1) {
+      const probeC = validCandidates[cIndex];
+      if (probeB.id === probeC.id) throw new Error("Unordered triple search produced a repeated candidate");
+      const probeIds = [PROBE_A_ID, probeB.id, probeC.id];
+      const tripleRank = {
+        probeB,
+        probeC,
+        trainingMetrics: summarizeMetricsOnly(mergedTrainingDataForProbeIds(probeIds), probeIds),
+      } satisfies TripleRank;
+      evaluatedThreeProbeConfigurationCount += 1;
       if (bestThree === null || compareTripleRanks(tripleRank, bestThree) < 0) bestThree = tripleRank;
+      if (probeB.id === bestTwo.candidate.id || probeC.id === bestTwo.candidate.id) {
+        if (
+          greedyBestPairExtension === null ||
+          compareTripleRanks(tripleRank, greedyBestPairExtension) < 0
+        ) greedyBestPairExtension = tripleRank;
+      }
+      topTripleRanks.push(tripleRank);
+      topTripleRanks.sort(compareTripleRanks);
+      if (topTripleRanks.length > 5) topTripleRanks.length = 5;
     }
   }
+  if (evaluatedThreeProbeConfigurationCount !== pairwiseCombinationCount) {
+    throw new Error(`Expected ${pairwiseCombinationCount} unique unordered triples, evaluated ${evaluatedThreeProbeConfigurationCount}`);
+  }
+  if (!bestThree || !greedyBestPairExtension || topTripleRanks.length !== 5) {
+    throw new Error("Exhaustive bounded three-Probe search did not produce the expected rankings");
+  }
 
-  const bestThreeTraining = bestThree?.evaluation.trainingAB.metrics ?? null;
   const bestTwoForComparison = bestTwo.evaluation.trainingAB.metrics;
-  const bestThreeMarginal = bestThreeTraining ? {
+  const bestThreeTraining = bestThree.trainingMetrics;
+  const threeProbeMarginal = {
     sameObjectHits: bestThreeTraining.sameObjectHitCount - bestTwoForComparison.sameObjectHitCount,
     falseNegatives: bestTwoForComparison.falseNegativeCount - bestThreeTraining.falseNegativeCount,
     falsePositives: bestThreeTraining.falsePositiveCount - bestTwoForComparison.falsePositiveCount,
-  } : null;
-  const threeProbeBenefitIsMaterial = bestThreeMarginal !== null &&
-    (bestThreeMarginal.sameObjectHits >= 5 || bestThreeMarginal.falseNegatives >= 5) &&
-    bestThreeTraining !== null && bestTwoForComparison.falsePositiveRate !== null && bestThreeTraining.falsePositiveRate !== null &&
-    bestThreeTraining.falsePositiveRate <= bestTwoForComparison.falsePositiveRate + 0.05 &&
-    bestThreeTraining.wrongObjectCount <= bestTwoForComparison.wrongObjectCount + 5;
-  const selectedProbeIds = threeProbeBenefitIsMaterial && bestThree
-    ? [PROBE_A_ID, bestTwo.candidate.id, bestThree.candidate.id]
+    wrongObjects: bestThreeTraining.wrongObjectCount - bestTwoForComparison.wrongObjectCount,
+    falsePositiveRateChange: requiredNumber(bestThreeTraining.falsePositiveRate, "Global triple false-positive rate") -
+      requiredNumber(bestTwoForComparison.falsePositiveRate, "Global pair false-positive rate"),
+    p95QErrorChangeM: requiredNumber(bestThreeTraining.p95QErrorM, "Global triple p95 Q error") -
+      requiredNumber(bestTwoForComparison.p95QErrorM, "Global pair p95 Q error"),
+    p95AngularErrorChangeDeg: requiredNumber(bestThreeTraining.p95AngularErrorDeg, "Global triple p95 angular error") -
+      requiredNumber(bestTwoForComparison.p95AngularErrorDeg, "Global pair p95 angular error"),
+  };
+  const threeProbeBenefitIsMaterial =
+    (threeProbeMarginal.sameObjectHits >= 5 || threeProbeMarginal.falseNegatives >= 5) &&
+    threeProbeMarginal.falsePositiveRateChange <= 0.05 &&
+    threeProbeMarginal.wrongObjects <= 5;
+  const selectedProbeIds = threeProbeBenefitIsMaterial
+    ? [PROBE_A_ID, bestThree.probeB.id, bestThree.probeC.id]
     : [PROBE_A_ID, bestTwo.candidate.id];
 
-  const bestTwoDataByView = {} as Record<ViewId, ViewData>;
-  for (const viewId of ["A", "B"] as const) bestTwoDataByView[viewId] = bestTwo.dataByView[viewId];
-  bestTwoDataByView.C = addProbeResults(
-    probeAData.C,
-    bestTwo.candidate.id,
-    traceOneStepProbe(bestTwo.candidate.origin, probeAData.C.samples, reflectionMeshes, 1),
-  );
-
-  let bestThreeDataByView: Record<ViewId, ViewData> | null = null;
-  if (bestThree) {
-    bestThreeDataByView = {
-      A: bestThree.dataByView.A,
-      B: bestThree.dataByView.B,
-      C: addProbeResults(
-        bestTwoDataByView.C,
-        bestThree.candidate.id,
-        traceOneStepProbe(bestThree.candidate.origin, probeAData.C.samples, reflectionMeshes, 2),
-      ),
-    };
-  }
-  const selectedDataByView = selectedProbeIds.length === 3 && bestThreeDataByView
-    ? bestThreeDataByView
-    : bestTwoDataByView;
+  // All View C traces are created only after the A+B rankings and the fixed complexity gate are complete.
+  const holdoutTraceByCandidateId = new Map<string, Array<ProbeCandidateHit | null>>();
+  const holdoutDataForProbeIds = (probeIds: readonly string[]): ViewData => {
+    if (probeIds[0] !== PROBE_A_ID) throw new Error("Holdout configurations must keep Probe A at runtime index 0");
+    let viewData = probeAData.C;
+    for (const probeId of probeIds.slice(1)) {
+      let trace = holdoutTraceByCandidateId.get(probeId);
+      if (!trace) {
+        const candidate = candidateById.get(probeId);
+        if (!candidate) throw new Error(`No grid origin exists for holdout Probe ${probeId}`);
+        trace = traceOneStepProbe(candidate.origin, probeAData.C.samples, reflectionMeshes);
+        holdoutTraceByCandidateId.set(probeId, trace);
+      }
+      viewData = addProbeResults(viewData, probeId, trace);
+    }
+    return viewData;
+  };
+  const configurationData = (
+    probeIds: readonly string[],
+    trainingData: Record<"A" | "B", ViewData>,
+  ): Record<ViewId, ViewData> => ({
+    A: trainingData.A,
+    B: trainingData.B,
+    C: holdoutDataForProbeIds(probeIds),
+  });
+  const bestTwoIds = [PROBE_A_ID, bestTwo.candidate.id];
+  const bestThreeIds = [PROBE_A_ID, bestThree.probeB.id, bestThree.probeC.id];
+  const greedyExtensionIds = [PROBE_A_ID, greedyBestPairExtension.probeB.id, greedyBestPairExtension.probeC.id];
+  const bestTwoDataByView = configurationData(bestTwoIds, bestTwo.dataByViewAB);
+  const bestThreeDataByView = configurationData(bestThreeIds, trainingViewsForProbeIds(bestThreeIds));
+  const greedyExtensionDataByView = configurationData(greedyExtensionIds, trainingViewsForProbeIds(greedyExtensionIds));
 
   const origins = new Map<string, THREE.Vector3>([[PROBE_A_ID, PROBE_A_ORIGIN]]);
-  origins.set(bestTwo.candidate.id, bestTwo.candidate.origin);
-  if (bestThree) origins.set(bestThree.candidate.id, bestThree.candidate.origin);
-
-  const bestTwoPublic = publicConfiguration([PROBE_A_ID, bestTwo.candidate.id], origins, bestTwoDataByView);
-  const bestThreePublic = bestThree && bestThreeDataByView
-    ? publicConfiguration([PROBE_A_ID, bestTwo.candidate.id, bestThree.candidate.id], origins, bestThreeDataByView)
-    : null;
-  const selectedPublic = selectedProbeIds.length === 3 && bestThreePublic ? bestThreePublic : bestTwoPublic;
-  const selectedEvaluation = evaluateConfiguration(selectedDataByView, selectedProbeIds);
+  for (const candidate of validCandidates) origins.set(candidate.id, candidate.origin);
+  const bestTwoPublic = publicConfiguration(bestTwoIds, origins, bestTwoDataByView);
+  const bestThreePublic = publicConfiguration(bestThreeIds, origins, bestThreeDataByView);
+  const greedyExtensionPublic = publicConfiguration(greedyExtensionIds, origins, greedyExtensionDataByView);
+  const selectedPublic = threeProbeBenefitIsMaterial ? bestThreePublic : bestTwoPublic;
+  const selectedEvaluation = selectedPublic.combined;
   const holdoutC = selectedEvaluation.byView.C;
   const aTrain = probeAOnly.trainingAB.metrics;
   const selectedTrain = selectedEvaluation.trainingAB.metrics;
@@ -965,10 +1064,18 @@ const runStudy = (): CoverageProof => {
     return [probeId, tuple(origin)] as const;
   }));
   const selectedHoldout = selectedEvaluation.byView.C;
-  const pairRankingOutput = pairRanks.slice(0, 10).map((rank, index) => {
+  const originsForIds = (probeIds: readonly string[]): Record<string, Vec3Tuple> => Object.fromEntries(probeIds.map((probeId) => {
+    const origin = origins.get(probeId);
+    if (!origin) throw new Error(`No frozen origin was recorded for ranked Probe ${probeId}`);
+    return [probeId, tuple(origin)];
+  }));
+  const pairRankingOutput = pairRanks.slice(0, 5).map((rank, index) => {
     const metrics = rank.evaluation.trainingAB.metrics;
+    const probeIds = [PROBE_A_ID, rank.candidate.id];
     return {
       rank: index + 1,
+      probeIds,
+      probeOriginsM: originsForIds(probeIds),
       probeBOriginM: tuple(rank.candidate.origin),
       sameObjectHitCount: metrics.sameObjectHitCount,
       falseNegativeCount: metrics.falseNegativeCount,
@@ -978,6 +1085,31 @@ const runStudy = (): CoverageProof => {
       p95AngularErrorDeg: metrics.p95AngularErrorDeg,
     };
   });
+  const tripleRankingOutput = topTripleRanks.map((rank, index) => {
+    const metrics = rank.trainingMetrics;
+    const probeIds = [PROBE_A_ID, rank.probeB.id, rank.probeC.id];
+    return {
+      rank: index + 1,
+      probeIds,
+      probeOriginsM: originsForIds(probeIds),
+      sameObjectHitCount: metrics.sameObjectHitCount,
+      falseNegativeCount: metrics.falseNegativeCount,
+      falsePositiveCount: metrics.falsePositiveCount,
+      wrongObjectCount: metrics.wrongObjectCount,
+      p95QErrorM: metrics.p95QErrorM,
+      p95AngularErrorDeg: metrics.p95AngularErrorDeg,
+    };
+  });
+  const bestThreeCandidateIds = [bestThree.probeB.id, bestThree.probeC.id].sort((left, right) =>
+    (candidateById.get(left)?.gridIndex ?? Number.MAX_SAFE_INTEGER) -
+    (candidateById.get(right)?.gridIndex ?? Number.MAX_SAFE_INTEGER),
+  );
+  const greedyExtensionCandidateIds = [greedyBestPairExtension.probeB.id, greedyBestPairExtension.probeC.id].sort((left, right) =>
+    (candidateById.get(left)?.gridIndex ?? Number.MAX_SAFE_INTEGER) -
+    (candidateById.get(right)?.gridIndex ?? Number.MAX_SAFE_INTEGER),
+  );
+  const globalTripleDiffersFromGreedyExtension =
+    bestThreeCandidateIds.join("|") !== greedyExtensionCandidateIds.join("|");
 
   const viewProof = {} as CoverageProof["views"];
   const sampleDomain = {} as CoverageProof["sampleDomain"];
@@ -1062,6 +1194,7 @@ const runStudy = (): CoverageProof => {
     placement: {
       optimizedViews: ["A", "B"],
       holdoutView: "C",
+      holdoutExcludedFromPlacement: true,
       rankingOrder: [
         "higher same-object physical-hit count",
         "lower false-negative count",
@@ -1069,8 +1202,7 @@ const runStudy = (): CoverageProof => {
         "lower wrong-object count",
         "lower p95 Q error",
         "lower p95 angular error",
-        "fewer Probes when marginal gains do not meet the complexity gate",
-        "lower deterministic grid index for candidate ties",
+        "lower B grid index, then lower C grid index for unordered triples",
       ],
       evaluatedProbeBPairCount: pairRanks.length,
       bestTwo: {
@@ -1078,17 +1210,38 @@ const runStudy = (): CoverageProof => {
         probeB: { id: bestTwo.candidate.id, originM: tuple(bestTwo.candidate.origin) },
         placementRank: 1,
       },
-      topTwoProbeRankings: pairRankingOutput,
+      topPairRankings: pairRankingOutput,
       probeBMateriallyImprovesProbeA,
-      evaluatedProbeCCount,
-      bestThree: bestThree && bestThreePublic && bestThreeMarginal
-        ? {
-          ...bestThreePublic,
-          probeC: { id: bestThree.candidate.id, originM: tuple(bestThree.candidate.origin) },
-          placementRank: 1,
-          marginalVsBestTwo: bestThreeMarginal,
-        }
-        : null,
+      evaluatedThreeProbeConfigurationCount,
+      topTripleRankings: tripleRankingOutput,
+      greedyBestPairExtension: {
+        ...greedyExtensionPublic,
+        probeB: {
+          id: greedyBestPairExtension.probeB.id,
+          originM: tuple(greedyBestPairExtension.probeB.origin),
+        },
+        probeC: {
+          id: greedyBestPairExtension.probeC.id,
+          originM: tuple(greedyBestPairExtension.probeC.origin),
+        },
+      },
+      globalBestThree: {
+        ...bestThreePublic,
+        probeB: { id: bestThree.probeB.id, originM: tuple(bestThree.probeB.origin) },
+        probeC: { id: bestThree.probeC.id, originM: tuple(bestThree.probeC.origin) },
+        placementRank: 1,
+        differsFromGreedyBestPairExtension: globalTripleDiffersFromGreedyExtension,
+        marginalVsBestTwo: threeProbeMarginal,
+      },
+      threeProbeComplexityGate: {
+        thresholds: {
+          sameObjectGainAtLeast: 5,
+          falseNegativeReductionAtLeast: 5,
+          maxFalsePositiveRateIncrease: 0.05,
+          maxWrongObjectCountIncrease: 5,
+        },
+        passed: threeProbeBenefitIsMaterial,
+      },
       selectedConfiguration: {
         ...selectedPublic,
         holdoutC: selectedHoldout,
