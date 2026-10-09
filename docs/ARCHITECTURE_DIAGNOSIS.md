@@ -358,9 +358,15 @@ false-positive and wrong-surface mappings. PR T then evaluated up to three
 fixed corrected Probes with a CPU-only, truth-free runtime selector. Two
 Probes substantially improved the optimized views but retained 42.19%
 same-object coverage and 23.44% wrong-object mappings on the held-out orbit; a
-third Probe added only three training hits and removed three false negatives.
-Outcome B closes local Probe planning for the current Architecture Rise
-production path unless new evidence or requirements justify reopening it.
+The follow-up exhaustively scored all 79 valid two-Probe pairings and all
+3,081 unique triples with Probe A fixed, while keeping View C out of placement
+selection. The global best triple was the same origin set found by the earlier
+greedy extension; against the global best pair it added only three training
+same-object hits and removed three false negatives, below the fixed complexity
+gate. The triple still had 54.69% same-object coverage and 20.31% wrong-object
+mappings on holdout C. Outcome B closes local Probe planning for the current
+Architecture Rise production path unless new evidence or requirements justify
+reopening it.
 Production RTT remains single-contribution, and no reflection technique is
 selected or integrated.
 
