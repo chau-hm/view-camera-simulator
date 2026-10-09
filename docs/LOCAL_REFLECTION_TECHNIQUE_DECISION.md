@@ -324,7 +324,7 @@ For View A, corrected GPU-to-CPU Q reconstruction error is 0.010589 m median / 0
 
 ### Normal-scale appearance at 514×411
 
-Image deltas are normalized mean absolute RGB channel differences over `[0,1]`; changed-pixel fractions count any channel difference. The front-glazing mask comes from the actual glazing geometry, and the outside metric excludes a small antialiasing expansion around that mask.
+Image deltas are normalized mean absolute RGB display-channel differences over `[0,1]`. A changed pixel is one where the maximum absolute difference across its Uint8 RGB channels is strictly greater than 2 display-byte levels (`>2/255` in normalized display-domain values); this threshold defines the full-frame, front-glazing, and outside-mask changed-pixel fractions. The front-glazing mask comes from the actual glazing geometry, and the outside metric excludes a small antialiasing expansion around that mask.
 
 | View | Comparison | Full-frame mean delta | Changed frame pixels | Glazing mean / p95 delta | Changed glazing pixels | Outside expanded glazing mean delta |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
