@@ -201,12 +201,16 @@ development/E2E fixture. PR Q validates the uncorrected single local Probe's
 records its parallax/detail limitation. PR R tests one bounded update using the
 existing radial-distance cube; it materially reduces error across the fixed
 12-sample sign-face region and restores reflected detail toward the Planar
-reference. That makes a corrected single Probe promising for a separately
-scoped, normal-scale Observer appearance pilot, but does not select or
-integrate a production reflection technique. The ordinary RTT remains on its
-existing single color/depth path. The ideal planar reference does not model
-rough-glass angular distribution, and neither Probe fixture proves production
-performance. See the
+reference. PR S then tested that frozen corrected Probe at normal Observer
+scale and rejected this candidate: it produced no local response from the
+alternate view and retained substantial false-positive and wrong-surface
+mapping in the default view. No production reflection technique is selected
+or integrated, and the ordinary RTT remains on its existing single
+color/depth path. The ideal planar reference does not model rough-glass angular
+distribution, and these Probe fixtures do not prove production performance.
+For a future Ground Glass path, accepted reflected radiance must pass through
+Ground Glass before optical/DOF processing; Observer appearance integration has
+no physical focus path. See the
 [local-reflection decision](LOCAL_REFLECTION_TECHNIQUE_DECISION.md) for the
 CPU/browser proof, software-renderer limitations, candidate analysis, and
 follow-up boundary. These test fixtures do not enter public navigation or the

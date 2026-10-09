@@ -35,6 +35,10 @@ import {
 import { resolveGroundGlassCoverageRenderState } from "../../../render/groundGlassCoverage";
 import { resolveGroundGlassNaturalIlluminationRenderState } from "../../../render/groundGlassNaturalIllumination";
 import {
+  correctProbeDirectionFromRadialHit,
+  PROBE_DISTANCE_CUBE_CORRECTION_GLSL,
+} from "./probe-distance-cube-correction";
+import {
   configureGroundGlassCamera,
   readGroundGlassCameraPose,
 } from "../../../render/configureGroundGlassCamera";
@@ -1397,38 +1401,6 @@ const makePositionCaptureMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial 
 const makePaneMaskPositionMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial =>
   makePositionCaptureMaterial(bundle);
 
-const PROBE_DISTANCE_CUBE_CORRECTION_GLSL = `
-  bool resolveProbePoint(
-    samplerCube tProbeDistance,
-    vec3 panePosition,
-    vec3 paneNormal,
-    vec3 physicalReflectedDirection,
-    vec3 probeOrigin,
-    int correctionIterations,
-    out vec3 correctedDirection,
-    out vec3 correctedPoint
-  ){
-    vec3 direction = normalize(physicalReflectedDirection);
-    for(int iteration = 0; iteration < 8; iteration++){
-      if(iteration >= correctionIterations) break;
-      vec4 distanceSample = textureCube(tProbeDistance, direction);
-      if(distanceSample.a < 0.5 || distanceSample.r <= 0.0) return false;
-      vec3 sampledPoint = probeOrigin + direction * distanceSample.r;
-      float rayDistance = dot(sampledPoint - panePosition, physicalReflectedDirection);
-      vec3 pointOnPhysicalRay = panePosition + physicalReflectedDirection * max(rayDistance, 0.0001);
-      vec3 originToProjectedPoint = pointOnPhysicalRay - probeOrigin;
-      float directionLengthSquared = dot(originToProjectedPoint, originToProjectedPoint);
-      if(directionLengthSquared <= 0.00000001) return false;
-      direction = originToProjectedPoint * inversesqrt(directionLengthSquared);
-    }
-    vec4 finalDistanceSample = textureCube(tProbeDistance, direction);
-    if(finalDistanceSample.a < 0.5 || finalDistanceSample.r <= 0.0) return false;
-    correctedDirection = direction;
-    correctedPoint = probeOrigin + direction * finalDistanceSample.r;
-    return true;
-  }
-`;
-
 const makeProbeMappingMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => {
   const material = new THREE.ShaderMaterial({
     vertexShader: groundGlassVertexShader,
@@ -2174,7 +2146,6 @@ const projectToUv = (
 
 const DISTANCE_CUBE_CPU_ITERATIONS = [0, 1, 2, 4, 8] as const;
 const DISTANCE_CUBE_DIRECTION_STABILITY_THRESHOLD_DEG = 0.01;
-const DISTANCE_CUBE_RAY_EPSILON_M = 1e-4;
 
 const directionAngleDegrees = (a: THREE.Vector3, b: THREE.Vector3): number =>
   THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)));
@@ -2228,20 +2199,17 @@ const studyDistanceCubeCpuCorrection = (
           break;
         }
 
-        const projectedDistance = distanceHit.point.clone()
-          .sub(sample.panePoint)
-          .dot(sample.reflectedDirection);
-        const pointOnPhysicalRay = sample.panePoint.clone().addScaledVector(
+        const nextDirection = correctProbeDirectionFromRadialHit(
+          probeOrigin,
+          sample.panePoint,
           sample.reflectedDirection,
-          Math.max(projectedDistance, DISTANCE_CUBE_RAY_EPSILON_M),
+          distanceHit.point,
         );
-        const nextDirection = pointOnPhysicalRay.sub(probeOrigin);
-        if (!Number.isFinite(nextDirection.lengthSq()) || nextDirection.lengthSq() <= 1e-12) {
+        if (!nextDirection) {
           invalid = true;
           becameInvalidDuringIteration = true;
           break;
         }
-        nextDirection.normalize();
         lastDirectionChangeDeg = directionAngleDegrees(direction, nextDirection);
 
         if (directionHistory.length >= 2) {

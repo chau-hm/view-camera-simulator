@@ -351,9 +351,11 @@ Material generation is partially shared across distinct needs. `TeachingTextures
 
 PR R adds feasibility evidence after that uncorrected Probe result: one bounded
 update from its existing radial-distance cube materially reduces parallax and
-restores reflected detail in a fixed development fixture. This supports only a
-separately scoped Observer appearance pilot; production RTT remains
-single-contribution and no reflection technique is selected or integrated.
+restores reflected detail in a fixed development fixture. PR S tested that
+frozen candidate at normal Observer scale and rejected it: the alternate view
+produced no local Probe response, while the default view retained substantial
+false-positive and wrong-surface mappings. Production RTT remains
+single-contribution, and no reflection technique is selected or integrated.
 
 ## 16. 2D Geometry and UI/readout boundaries
 
