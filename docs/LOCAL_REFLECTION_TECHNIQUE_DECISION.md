@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 24030)
-Total output lines: 556
-
 # Local Reflection Technique Decision
 
 **Decision:** **CURRENT LOCAL REFLECTION DEFERRED — PRODUCTION BASELINE RETAINED.** For Architecture Rise, Observer keeps its current material, environment, world-illumination, and presentation-lighting response; no local reflected-world renderer is active. Ground Glass keeps its direct scene-radiance / physical-DOF path with no local reflected-radiance source. PR M's independent reflected-radiance / apparent-position contract and PR P's ideal Planar optical reference remain durable but inactive evidence. PR T closes Probe planning for the current path. No technique merits production integration under the current requirements; the research record and reopening conditions are summarized in [PR U](#pr-u--current-local-reflection-production-decision).
@@ -266,7 +263,64 @@ For a corrected fixture invocation, the top-level named CPU fields come from the
 | --- | ---: | ---: | ---: | ---: |
 | `Q` (m) | `(-1.523311, 1.354945, 5.865000)` | `(-1.415949, 1.626701, 5.864392)` | `(-1.521698, 1.359011, 5.865000)` | `(-1.527284, 1.354891, 5.865665)` |
 | `Q` error vs Planar | `0 m` | `0.292196 m` | `0.004374 m` | `0.004028 m` |
-| `Q_virtual` (m) | `(-1.523311, 1.354945, 11.807000)` | `(-1.415949, 1.626701, 11.807608)` | `(-1.521698, 1.359011, 11.807000)` | `(-1.527284, 1.…2030 tokens truncated…all 171 visible samples lack an initial distance-cube sample, leaving 29/29 false negatives and no local Probe output. This is not a Ground Glass focus failure; it is Observer view coverage/mapping.
+| `Q_virtual` (m) | `(-1.523311, 1.354945, 11.807000)` | `(-1.415949, 1.626701, 11.807608)` | `(-1.521698, 1.359011, 11.807000)` | `(-1.527284, 1.354891, 11.806335)` |
+| `Q_virtual` error vs Planar | `0 m` | `0.292196 m` | `0.004374 m` | `0.004028 m` |
+| Named angular parallax | `0°` | `5.505°` | `0.0830°` | `0.0806°` |
+| Virtual-image displacement | `0 px` | `22.817 px` | `0.342 px` | `0.317 px` |
+| Optical-axis focus distance | `11,807 mm` | `11,807.608 mm` | `11,807.000 mm` | `11,806.335 mm` |
+| Focus-axis error vs Planar | `0 mm` | `0.608 mm` | `<0.000001 mm` | `0.665 mm` |
+| Rounded public focus | `11,810 mm` | `11,810 mm` | `11,810 mm` | `11,810 mm` |
+
+The one-step corrected GPU's exact 12-point diagnostic region retains 12/12 target-face directions, with zero wrong-object or no-hit samples. Median/p95 Planar `Q_virtual` error is `0.004457 / 0.010773 m`; median/p95 CPU-ideal-to-GPU reconstruction error is `0.001031 / 0.009517 m`. Regional median/p95 angular parallax is `0.02696° / 0.20494°`, and focus-axis error is `1.011 / 9.456 mm`. Its GPU sample at the exact named point is `0.001115 m` from the CPU ideal; the full-screen source-pixel result is `0.004028 m` from Planar.
+
+The CPU study's two-iteration p95 error is lower, but it does not justify doubling GPU samples for this candidate. An **exploratory measured comparison, not regression-protected decision authority**, found that a two-step GPU run reduced region p95 from `0.010773 m` to `0.009449 m` (about `12%`) while the named full-screen Planar error rose from `0.004028 m` to `0.007116 m`. The one-step count is the smallest bounded update that captures most of the measurable GPU improvement in the current measurements.
+
+### Focus and detail
+
+The fixed focus states remain `8,890 mm` and `11,810 mm`. Corrected GPU reflected CoC is `+0.057800 mm` at pane focus and `−0.0000252 mm` at reflection focus; both remain inside the existing half-float storage tolerance and within `0.002 mm` of the Planar GPU result. The focus axis rounds to `11,810 mm`.
+
+| Reflected-sign edge-gradient energy | Pane focus | Reflection focus | Reflection / pane |
+| --- | ---: | ---: | ---: |
+| Planar | `0.000107956` | `0.000131275` | `1.216×` |
+| PR Q uncorrected Probe | `2.06773e−7` | `1.17965e−13` | near zero |
+| PR R one-step corrected Probe GPU | `0.000114086` | `0.000137465` | `1.205×` |
+
+The corrected reflection-focus edge energy is about `1.05×` Planar and vastly above the uncorrected Probe result. The fixture saves normal-scale Planar, uncorrected Probe, and corrected Probe reflection-focus screenshots in ignored Playwright output. Radiance is sampled from the same corrected cube direction; this local RGB measurement is diagnostic and does not replace the spatial/detail evidence.
+
+### Cost, resources, and limits
+
+One iteration adds one radial-distance cube sample per fragment in each existing mapping resolve. The radiance and apparent-position outputs together therefore add two distance-cube samples per source pane pixel per focus state. It adds no color-cube sample, no candidate fullscreen pass, no scene capture, and no recapture for focus changes. The existing capture remains six color plus six distance cube faces: 12 scene renders total.
+
+The candidate capture resources remain one 128² RGBA16F color cube and one 128² RGBA16F radial-distance cube, both linear `NoColorSpace` and nearest sampled, for `1,572,864 bytes` (`1.50 MiB`) nominal texel payload. The WebGL2 `EXT_color_buffer_float` path, half-float cube framebuffer checks, and nearest-filter support are unchanged. The separate E2E region diagnostic adds one 12×1 Float32 point target, two 12×1 Float32 input textures, one shader material, and one diagnostic pass; its target payload is 192 bytes and it is not part of the candidate mapping path. Its framebuffer was complete (`0x8cd5`) and read back through `Float32Array`.
+
+Corrected-fixture disposal events reconcile: 21/21 owned render targets, 3/3 direct textures, 17/17 materials, 1/1 geometry, and 4/4 custom disposers; there were no duplicate disposal events, and renderer teardown was invoked. These and the small region target are development-fixture evidence. Chromium/SwiftShader timing is not hardware GPU performance evidence; candidate performance remains **unmeasured**.
+
+**Outcome at the PR R stage: DISTANCE-CUBE PARALLAX CORRECTION PROMISING.** In this tested 12-sample region, one fixed Probe and one radial-distance update materially reduce parallax while preserving same-face coverage, focus-axis control, the PR M focus path, and sign detail. This did not select Probe for production. PR S subsequently tested the frozen candidate at normal Observer scale and rejected it; see the next section. The study covers a fixed scene and strict sign-face region, uses a 128² nearest-sampled cube, and does not model current roughness near `0.24` as a distribution of reflection directions. The correction shader does not consume Planar points, sign bounds, or target-specific data. No production renderer, scene, optics, or public behavior changed; hardware timing and broader scene coverage remain unmeasured.
+
+## PR S — corrected Probe Observer-scale appearance pilot
+
+**Base:** `main @ 30098d044ff5fd8b2a14693c6d310980c5459455` (PR #241 merge). The standalone development/E2E fixture uses the current Architecture Rise Observer subject, Observer lighting/shadow/environment authorities, the front façade glazing, and the frozen PR R candidate. It does not use Ground Glass lens/CoC/gather behavior or derive `Q_virtual`; the radial-distance cube supplies Probe parallax correction only.
+
+The candidate remains fixed at Probe origin `(-1.2725, 1.5000, 6.9720) m`, 128×128×6 RGBA16F `HalfFloatType` color and radial-distance cubes, `NoColorSpace`, nearest sampling, one bounded correction update, and reflection weight `0.18`. The original glass remains `MeshStandardMaterial(#182d37, roughness 0.24, metalness 0.08)`; its environment response is preserved while the local linear Probe radiance is added before output conversion. The shader gate checks the actual object-space `-Z` face of the front glazing only. No candidate parameter was adjusted from the captures.
+
+The normal-scale decision surface is 514×411. View A uses the production Architecture Rise camera placement: position `(6.5, 3, -6.5) m`, target `(0, 0.9, 5.6) m`. View B uses the fixed comparison orbit: position `(11.037666, 3, 0.323947) m`, same target. Both use FOV 45°, near 0.01 m, far 200 m. The 4×4-per-pane sample domain includes only projected front-face `-Z` glazing samples reached by the direct camera ray.
+
+### Observer geometry
+
+Each visible-pane sample was compared with the real scene reflected ray, with glazing excluded from self-hit tests. Physical no-hit samples remain in the denominator. The table reports candidate hit counts as same-object / wrong-object / candidate-no-hit; false positives are valid local Probe hits where the physical ray has no local hit, and false negatives are Probe no-hits where the physical ray does hit.
+
+| View | Visible panes samples | Physical hit / no-hit | Uncorrected CPU: same / wrong / no-hit; FP / FN | Corrected CPU: same / wrong / no-hit; FP / FN | Corrected GPU: same / wrong / no-hit; FP / FN |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Default | 238 / 256 | 54 / 184 | 2 / 44 / 52; 140 / 8 | 22 / 24 / 146; 46 / 8 | 22 / 24 / 146; 46 / 8 |
+| Alternate | 171 / 256 | 29 / 142 | 0 / 0 / 171; 0 / 29 | 0 / 0 / 171; 0 / 29 | 0 / 0 / 171; 0 / 29 |
+
+| View A geometry error against physical hits | Median / p95 Q error | Median / p95 angular error |
+| --- | ---: | ---: |
+| Uncorrected Probe CPU | 5.609 / 8.235 m | 29.872° / 34.700° |
+| One-step corrected Probe CPU | 4.812 / 7.196 m | 14.046° / 18.125° |
+| One-step corrected Probe GPU | 4.817 / 7.206 m | 14.171° / 18.016° |
+
+For View A, corrected GPU-to-CPU Q reconstruction error is 0.010589 m median / 0.111673 m p95, so the GPU follows the corrected CPU candidate. However, only 22 of 54 physical local hits land on the same object, 24 hit a different object, and 46 of 184 physical no-hit samples produce a false local reflection (25%). The alternate view is a stronger failure: it has 29 physical local hits, but all 171 visible samples lack an initial distance-cube sample, leaving 29/29 false negatives and no local Probe output. This is not a Ground Glass focus failure; it is Observer view coverage/mapping.
 
 ### Normal-scale appearance at 514×411
 
