@@ -357,8 +357,8 @@ produced no local Probe response, while the default view retained substantial
 false-positive and wrong-surface mappings. PR T then evaluated up to three
 fixed corrected Probes with a CPU-only, truth-free runtime selector. Two
 Probes substantially improved the optimized views but retained 42.19%
-same-object coverage and 23.44% wrong-object mappings on the held-out orbit; a
-The follow-up exhaustively scored all 79 valid two-Probe pairings and all
+same-object coverage and 23.44% wrong-object mappings on the held-out orbit. The
+exhaustive follow-up scored all 79 valid two-Probe pairings and all
 3,081 unique triples with Probe A fixed, while keeping View C out of placement
 selection. The global best triple was the same origin set found by the earlier
 greedy extension; against the global best pair it added only three training
@@ -369,6 +369,14 @@ Architecture Rise production path unless new evidence or requirements justify
 reopening it.
 Production RTT remains single-contribution, and no reflection technique is
 selected or integrated.
+
+PR U closes the current Architecture Rise local-reflection study with the
+production baseline retained: Observer continues using current material and
+environment response, while Ground Glass keeps its direct scene-radiance /
+physical-DOF path. PR M's independent reflected-radiance / apparent-position
+contract remains a durable but inactive seam; PR P remains an ideal Planar
+reference, and Probe planning is closed for this path. Local reflection is not
+a prerequisite for the broader visual-quality or renderer roadmap.
 
 ## 16. 2D Geometry and UI/readout boundaries
 
