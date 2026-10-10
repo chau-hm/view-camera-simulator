@@ -113,6 +113,15 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await page.goto("/simulator/free/architecture-rise");
   const sceneCanvas = page.getByTestId("scene-canvas");
   await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-surface", "observer");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-status", "active");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-backend", "webgl");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-shadow-map-status", "active");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-shadow-map-type", "pcf");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping-active", /^(true|false)$/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping", /.+/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping-exposure", /^\d+(?:\.\d+)?$/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-output-color-space", /.+/);
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "scene");
   await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
   const scenePreset = await readViewState(sceneCanvas);

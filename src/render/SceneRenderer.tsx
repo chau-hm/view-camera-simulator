@@ -69,8 +69,17 @@ import { resolveScenePresentationLighting } from "./presentationLighting";
 import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
 import { WorldIllumination } from "./WorldIllumination";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
+import {
+  resolveObserverCanvasInitialization,
+  type SelectedObserverBackend,
+} from "./backend/observerBackend";
+import {
+  resolveObserverVisualPipelineCapabilities,
+  type ObserverVisualPipelineCapabilities,
+} from "./backend/observerVisualPipelineCapabilities";
 
 type SceneRendererProps = {
+  selectedBackend: SelectedObserverBackend["backend"];
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
   attempt: number;
@@ -91,6 +100,29 @@ type SceneRendererProps = {
   /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
   cameraPresentation?: ConceptualCameraPresentation;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
+};
+
+type ObserverRendererCapabilityReporterProps = {
+  onCapabilitiesChange: (
+    capabilities: ObserverVisualPipelineCapabilities | null,
+  ) => void;
+};
+
+const ObserverRendererCapabilityReporter = ({
+  onCapabilitiesChange,
+}: ObserverRendererCapabilityReporterProps) => {
+  const { gl } = useThree();
+  const capabilities = useMemo(
+    () => resolveObserverVisualPipelineCapabilities(gl),
+    [gl],
+  );
+
+  useEffect(() => {
+    onCapabilitiesChange(capabilities);
+    return () => onCapabilitiesChange(null);
+  }, [capabilities, onCapabilitiesChange]);
+
+  return null;
 };
 
 export const shouldRenderReferenceCamera = (
@@ -1059,6 +1091,7 @@ const OriginalGhostCamera = ({
 };
 
 export const SceneRenderer = ({
+  selectedBackend,
   scene,
   opticsState,
   attempt,
@@ -1090,7 +1123,17 @@ export const SceneRenderer = ({
   );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
+  const [mountedObserverCapabilities, setMountedObserverCapabilities] =
+    useState<ObserverVisualPipelineCapabilities | null>(null);
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+  const observerCanvasInitialization = useMemo(
+    () =>
+      resolveObserverCanvasInitialization(
+        selectedBackend,
+        qualityConfig.antialias,
+      ),
+    [qualityConfig.antialias, selectedBackend],
+  );
   const cameraMovementPresentation = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
   );
@@ -1204,6 +1247,40 @@ export const SceneRenderer = ({
     <div
       ref={containerRef}
       data-testid="scene-canvas"
+      data-observer-renderer-surface="observer"
+      data-observer-renderer-status={mountedObserverCapabilities?.status ?? "pending"}
+      data-observer-renderer-backend={mountedObserverCapabilities?.activeBackend ?? undefined}
+      data-observer-shadow-map-status={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.shadowMaps.status
+          : undefined
+      }
+      data-observer-shadow-map-type={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.shadowMaps.type
+          : undefined
+      }
+      data-observer-tone-mapping-active={
+        mountedObserverCapabilities?.status === "active"
+          ? String(mountedObserverCapabilities.toneMapping.active)
+          : undefined
+      }
+      data-observer-tone-mapping={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.toneMapping.mode
+          : undefined
+      }
+      data-observer-tone-mapping-exposure={
+        mountedObserverCapabilities?.status === "active" &&
+        mountedObserverCapabilities.toneMapping.exposure !== null
+          ? serializeFiniteRenderNumber(mountedObserverCapabilities.toneMapping.exposure)
+          : undefined
+      }
+      data-observer-output-color-space={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.toneMapping.outputColorSpace ?? undefined
+          : undefined
+      }
       data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
       data-lattice-edge-count={
         scene.id === "understanding-camera-movements"
@@ -1376,9 +1453,12 @@ export const SceneRenderer = ({
         style={{ width: "100%", height: "100%" }}
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
-        gl={{ antialias: qualityConfig.antialias }}
+        {...observerCanvasInitialization.canvasProps}
         shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
+        <ObserverRendererCapabilityReporter
+          onCapabilitiesChange={setMountedObserverCapabilities}
+        />
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} lensCoverageGeometry={renderedLensCoverageGeometry} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
