@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { detectAvailableWebGLBackend } from "../../render/backend/rendererBackend";
-import { selectObserverBackend } from "../../render/backend/observerBackend";
+import {
+  resolveObserverRendererInitializationFailure,
+  selectObserverBackend,
+  type ObserverBackendSelection,
+} from "../../render/backend/observerBackend";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -107,10 +111,71 @@ export const SceneViewport = ({
       }),
     [activeFocalLengthMm, cameraInspectionTarget, opticsState, scene],
   );
-  const backendSelection = useMemo(() => {
-    const availableBackend = detectAvailableWebGLBackend();
-    return selectObserverBackend({ webglAvailable: availableBackend === "webgl" });
-  }, []);
+  const webglAvailable = useMemo(
+    () => detectAvailableWebGLBackend() === "webgl",
+    [],
+  );
+  const requestedRendererParam = typeof window === "undefined"
+    ? null
+    : new URLSearchParams(window.location.search).get("observerRenderer");
+  const requestedBackendSelection = useMemo(
+    () =>
+      selectObserverBackend({
+        webglAvailable,
+        requestedRendererParam,
+        sceneId: scene.id,
+        developmentPilotEnabled: import.meta.env.DEV,
+      }),
+    [requestedRendererParam, scene.id, webglAvailable],
+  );
+  const [rendererSelectionOverride, setRendererSelectionOverride] = useState<{
+    sceneId: string;
+    requestedRendererParam: string | null;
+    selection: ObserverBackendSelection;
+  } | null>(null);
+  const backendSelection =
+    rendererSelectionOverride?.sceneId === scene.id &&
+    rendererSelectionOverride.requestedRendererParam === requestedRendererParam
+      ? rendererSelectionOverride.selection
+      : requestedBackendSelection;
+  const [rendererMountKey, setRendererMountKey] = useState(0);
+  const [rendererFailure, setRendererFailure] = useState<{
+    sceneId: string;
+    stage: "initialization";
+  } | null>(null);
+  const webgpuInitializationFailureRef = useRef(false);
+  const webgpuApiPresent =
+    typeof navigator !== "undefined" && "gpu" in navigator;
+  const onWebGpuInitializationFailure = useCallback(() => {
+    webgpuInitializationFailureRef.current = true;
+    setRendererFailure({ sceneId: scene.id, stage: "initialization" });
+  }, [scene.id]);
+  const onObserverCanvasError = useCallback(
+    () => {
+      const failedDuringWebGpuInitialization = webgpuInitializationFailureRef.current;
+      webgpuInitializationFailureRef.current = false;
+
+      if (failedDuringWebGpuInitialization && backendSelection.status === "selected") {
+        const nextSelection = resolveObserverRendererInitializationFailure(backendSelection);
+        setRendererSelectionOverride({
+          sceneId: scene.id,
+          requestedRendererParam,
+          selection: nextSelection,
+        });
+        if (nextSelection.status === "selected") {
+          setRendererMountKey((value) => value + 1);
+          return;
+        }
+        return;
+      }
+
+      setAssetError({
+        title: t(simulatorMessageKeys.viewport.sceneLoadFailed),
+        message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
+      });
+    },
+    [backendSelection, requestedRendererParam, scene.id, t],
+  );
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -238,7 +303,14 @@ export const SceneViewport = ({
         <div className={`scene-viewport-stage${expanded ? " scene-viewport-stage--expanded" : ""}`}>
           <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
-            selectedBackend={backendSelection.backend}
+            backendSelection={backendSelection}
+            rendererMountKey={rendererMountKey}
+            webgpuApiPresent={webgpuApiPresent}
+            rendererFailureStage={
+              rendererFailure?.sceneId === scene.id ? rendererFailure.stage : null
+            }
+            onWebGpuInitializationFailure={onWebGpuInitializationFailure}
+            onObserverCanvasError={onObserverCanvasError}
             scene={scene}
             opticsState={opticsState}
             attempt={attempt}

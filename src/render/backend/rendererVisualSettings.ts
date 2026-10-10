@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import type { WebGLRenderer } from "three";
 import {
   resolveRendererBackend,
   type RendererBackend,
@@ -23,8 +22,7 @@ export type RendererToneMappingMode =
   | "custom"
   | "unknown";
 
-export type MountedRendererVisualSettings = Readonly<{
-  activeBackend: RendererBackend;
+export type RendererVisualSettingsSnapshot = Readonly<{
   shadowMaps: Readonly<{
     status: "active" | "disabled";
     type: RendererShadowMapType;
@@ -37,10 +35,16 @@ export type MountedRendererVisualSettings = Readonly<{
   }>;
 }>;
 
-type RendererVisualSettings = Pick<
-  WebGLRenderer,
-  "shadowMap" | "toneMapping" | "toneMappingExposure" | "outputColorSpace"
->;
+export type MountedRendererVisualSettings = RendererVisualSettingsSnapshot & Readonly<{
+  activeBackend: RendererBackend;
+}>;
+
+type RendererVisualSettingsSource = {
+  shadowMap?: { enabled?: boolean; type?: number };
+  toneMapping?: number;
+  toneMappingExposure?: number;
+  outputColorSpace?: string;
+};
 
 const resolveShadowMapType = (type: number | undefined): RendererShadowMapType => {
   if (type === THREE.BasicShadowMap) return "basic";
@@ -65,18 +69,16 @@ const resolveToneMapping = (
   return "unknown";
 };
 
-/** Reads display/shadow settings from a mounted WebGL renderer without probing resources. */
-export const resolveMountedRendererVisualSettings = (
+/** Reads only common display/shadow settings; callers must establish renderer identity. */
+export const resolveRendererVisualSettings = (
   renderer: unknown,
-): MountedRendererVisualSettings | null => {
-  const activeBackend = resolveRendererBackend(renderer);
-  if (activeBackend !== "webgl") return null;
+): RendererVisualSettingsSnapshot | null => {
+  if (typeof renderer !== "object" || renderer === null) return null;
 
-  const settings = renderer as Partial<RendererVisualSettings>;
+  const settings = renderer as Partial<RendererVisualSettingsSource>;
   const toneMapping = resolveToneMapping(settings.toneMapping);
 
   return {
-    activeBackend,
     shadowMaps: {
       status: settings.shadowMap?.enabled === true ? "active" : "disabled",
       type: resolveShadowMapType(settings.shadowMap?.type),
@@ -92,4 +94,15 @@ export const resolveMountedRendererVisualSettings = (
         : null,
     },
   };
+};
+
+/** Reads the mounted WebGL renderer settings used by the production Ground Glass path. */
+export const resolveMountedRendererVisualSettings = (
+  renderer: unknown,
+): MountedRendererVisualSettings | null => {
+  const activeBackend = resolveRendererBackend(renderer);
+  if (activeBackend !== "webgl") return null;
+
+  const visualSettings = resolveRendererVisualSettings(renderer);
+  return visualSettings ? { activeBackend, ...visualSettings } : null;
 };

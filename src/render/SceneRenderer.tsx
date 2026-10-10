@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { add, scale } from "../core/math/vec";
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import type { ErrorInfo, RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
@@ -73,13 +73,19 @@ import {
   resolveObserverCanvasInitialization,
   type SelectedObserverBackend,
 } from "./backend/observerBackend";
+import { ObserverCanvasErrorBoundary } from "./backend/ObserverCanvasErrorBoundary";
 import {
   resolveObserverVisualPipelineCapabilities,
   type ObserverVisualPipelineCapabilities,
 } from "./backend/observerVisualPipelineCapabilities";
 
 type SceneRendererProps = {
-  selectedBackend: SelectedObserverBackend["backend"];
+  backendSelection: SelectedObserverBackend;
+  rendererMountKey: number;
+  webgpuApiPresent: boolean;
+  rendererFailureStage: "initialization" | null;
+  onWebGpuInitializationFailure: () => void;
+  onObserverCanvasError: (error: Error, info: ErrorInfo) => void;
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
   attempt: number;
@@ -1091,7 +1097,12 @@ const OriginalGhostCamera = ({
 };
 
 export const SceneRenderer = ({
-  selectedBackend,
+  backendSelection,
+  rendererMountKey,
+  webgpuApiPresent,
+  rendererFailureStage,
+  onWebGpuInitializationFailure,
+  onObserverCanvasError,
   scene,
   opticsState,
   attempt,
@@ -1129,10 +1140,11 @@ export const SceneRenderer = ({
   const observerCanvasInitialization = useMemo(
     () =>
       resolveObserverCanvasInitialization(
-        selectedBackend,
+        backendSelection,
         qualityConfig.antialias,
+        onWebGpuInitializationFailure,
       ),
-    [qualityConfig.antialias, selectedBackend],
+    [backendSelection, onWebGpuInitializationFailure, qualityConfig.antialias],
   );
   const cameraMovementPresentation = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
@@ -1249,7 +1261,13 @@ export const SceneRenderer = ({
       data-testid="scene-canvas"
       data-observer-renderer-surface="observer"
       data-observer-renderer-status={mountedObserverCapabilities?.status ?? "pending"}
-      data-observer-renderer-backend={mountedObserverCapabilities?.activeBackend ?? undefined}
+      data-observer-renderer-request={backendSelection.requestedRenderer}
+      data-observer-renderer-attempt={backendSelection.rendererAttempt}
+      data-observer-renderer-family={mountedObserverCapabilities?.rendererFamily}
+      data-observer-execution-backend={mountedObserverCapabilities?.executionBackend}
+      data-observer-application-fallback={backendSelection.applicationFallback}
+      data-observer-webgpu-api-present={String(webgpuApiPresent)}
+      data-observer-renderer-failure-stage={rendererFailureStage ?? undefined}
       data-observer-shadow-map-status={
         mountedObserverCapabilities?.status === "active"
           ? mountedObserverCapabilities.shadowMaps.status
@@ -1449,6 +1467,10 @@ export const SceneRenderer = ({
       data-observer-camera-position={observerViewState.position.map((value) => value.toFixed(6)).join(",")}
       style={wrapperStyle}
     >
+      <ObserverCanvasErrorBoundary
+        key={`${scene.id}:${rendererMountKey}`}
+        onError={onObserverCanvasError}
+      >
       <Canvas
         style={{ width: "100%", height: "100%" }}
         dpr={qualityConfig.dpr}
@@ -1492,6 +1514,7 @@ export const SceneRenderer = ({
           onViewStateChange={setObserverViewState}
         />
       </Canvas>
+      </ObserverCanvasErrorBoundary>
 
       {/* Legends overlay stuck to elements */}
       {showLegends && Object.entries(legendPositions).filter(([k]) => visibleLegendKeys.includes(k)).map(([key, pos]) =>
