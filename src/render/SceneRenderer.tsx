@@ -78,12 +78,16 @@ import {
   resolveObserverVisualPipelineCapabilities,
   type ObserverVisualPipelineCapabilities,
 } from "./backend/observerVisualPipelineCapabilities";
+import type { ObserverWebGpuAdapterAvailability } from "./backend/observerWebGpuDiagnostic";
 
 type SceneRendererProps = {
   backendSelection: SelectedObserverBackend;
   rendererMountKey: number;
   webgpuApiPresent: boolean;
+  webgpuAdapterAvailability: ObserverWebGpuAdapterAvailability;
+  webgpuInitializationAttempts: number;
   rendererFailureStage: "initialization" | null;
+  onWebGpuInitializationAttempt: () => void;
   onWebGpuInitializationFailure: () => void;
   onObserverCanvasError: (error: Error, info: ErrorInfo) => void;
   scene: SceneDefinition;
@@ -1100,7 +1104,10 @@ export const SceneRenderer = ({
   backendSelection,
   rendererMountKey,
   webgpuApiPresent,
+  webgpuAdapterAvailability,
+  webgpuInitializationAttempts,
   rendererFailureStage,
+  onWebGpuInitializationAttempt,
   onWebGpuInitializationFailure,
   onObserverCanvasError,
   scene,
@@ -1143,8 +1150,14 @@ export const SceneRenderer = ({
         backendSelection,
         qualityConfig.antialias,
         onWebGpuInitializationFailure,
+        onWebGpuInitializationAttempt,
       ),
-    [backendSelection, onWebGpuInitializationFailure, qualityConfig.antialias],
+    [
+      backendSelection,
+      onWebGpuInitializationAttempt,
+      onWebGpuInitializationFailure,
+      qualityConfig.antialias,
+    ],
   );
   const cameraMovementPresentation = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
@@ -1267,6 +1280,17 @@ export const SceneRenderer = ({
       data-observer-execution-backend={mountedObserverCapabilities?.executionBackend}
       data-observer-application-fallback={backendSelection.applicationFallback}
       data-observer-webgpu-api-present={String(webgpuApiPresent)}
+      data-observer-adapter-availability={webgpuAdapterAvailability}
+      data-observer-webgpu-initialization-attempts={
+        backendSelection.requestedRenderer === "webgpu-pilot"
+          ? String(webgpuInitializationAttempts)
+          : undefined
+      }
+      data-observer-hardware-acceleration={
+        backendSelection.requestedRenderer === "webgpu-pilot"
+          ? "unconfirmed"
+          : undefined
+      }
       data-observer-renderer-failure-stage={rendererFailureStage ?? undefined}
       data-observer-shadow-map-status={
         mountedObserverCapabilities?.status === "active"

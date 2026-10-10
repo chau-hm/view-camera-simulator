@@ -5,6 +5,10 @@ import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCa
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { detectAvailableWebGLBackend } from "../../render/backend/rendererBackend";
 import {
+  getObserverWebGpuAdapterAvailability,
+  type ObserverWebGpuAdapterAvailability,
+} from "../../render/backend/observerWebGpuDiagnostic";
+import {
   resolveObserverRendererInitializationFailure,
   selectObserverBackend,
   type ObserverBackendSelection,
@@ -138,6 +142,16 @@ export const SceneViewport = ({
     rendererSelectionOverride.requestedRendererParam === requestedRendererParam
       ? rendererSelectionOverride.selection
       : requestedBackendSelection;
+  const [webgpuAdapterAvailability, setWebgpuAdapterAvailability] =
+    useState<ObserverWebGpuAdapterAvailability>("not-requested");
+  const [webgpuInitializationAttemptsByScene, setWebgpuInitializationAttemptsByScene] = useState({
+    sceneId: scene.id,
+    count: 0,
+  });
+  const webgpuInitializationAttempts =
+    webgpuInitializationAttemptsByScene.sceneId === scene.id
+      ? webgpuInitializationAttemptsByScene.count
+      : 0;
   const [rendererMountKey, setRendererMountKey] = useState(0);
   const [rendererFailure, setRendererFailure] = useState<{
     sceneId: string;
@@ -145,10 +159,42 @@ export const SceneViewport = ({
   } | null>(null);
   const webgpuInitializationFailureRef = useRef(false);
   const webgpuApiPresent =
-    typeof navigator !== "undefined" && "gpu" in navigator;
+    typeof navigator !== "undefined" &&
+    typeof (navigator as Navigator & { gpu?: unknown }).gpu !== "undefined";
+  const developmentWebGpuPilotRequested =
+    import.meta.env.DEV && backendSelection.requestedRenderer === "webgpu-pilot";
+
+  useEffect(() => {
+    if (!developmentWebGpuPilotRequested) {
+      setWebgpuAdapterAvailability("not-requested");
+      return;
+    }
+
+    let active = true;
+    setWebgpuAdapterAvailability("pending");
+    void getObserverWebGpuAdapterAvailability().then(
+      (availability) => {
+        if (active) setWebgpuAdapterAvailability(availability);
+      },
+      () => {
+        if (active) setWebgpuAdapterAvailability("request-rejected");
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [developmentWebGpuPilotRequested, scene.id]);
+
   const onWebGpuInitializationFailure = useCallback(() => {
     webgpuInitializationFailureRef.current = true;
     setRendererFailure({ sceneId: scene.id, stage: "initialization" });
+  }, [scene.id]);
+  const onWebGpuInitializationAttempt = useCallback(() => {
+    setWebgpuInitializationAttemptsByScene((current) => ({
+      sceneId: scene.id,
+      count: current.sceneId === scene.id ? current.count + 1 : 1,
+    }));
   }, [scene.id]);
   const onObserverCanvasError = useCallback(
     () => {
@@ -306,9 +352,12 @@ export const SceneViewport = ({
             backendSelection={backendSelection}
             rendererMountKey={rendererMountKey}
             webgpuApiPresent={webgpuApiPresent}
+            webgpuAdapterAvailability={webgpuAdapterAvailability}
+            webgpuInitializationAttempts={webgpuInitializationAttempts}
             rendererFailureStage={
               rendererFailure?.sceneId === scene.id ? rendererFailure.stage : null
             }
+            onWebGpuInitializationAttempt={onWebGpuInitializationAttempt}
             onWebGpuInitializationFailure={onWebGpuInitializationFailure}
             onObserverCanvasError={onObserverCanvasError}
             scene={scene}

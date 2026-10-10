@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
+
 export default defineConfig({
   testDir: "./src/tests/e2e",
   timeout: 30_000,
@@ -21,9 +23,21 @@ export default defineConfig({
   },
 
   projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
+    nativeWebGpuRequired
+      ? {
+          name: "chrome-native-webgpu",
+          use: {
+            ...devices["Desktop Chrome"],
+            channel: "chrome",
+            headless: false,
+            launchOptions: {
+              ignoreDefaultArgs: ["--no-sandbox", "--enable-unsafe-swiftshader"],
+            },
+          },
+        }
+      : {
+          name: "chromium",
+          use: { ...devices["Desktop Chrome"] },
+        },
   ],
 });

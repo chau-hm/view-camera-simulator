@@ -199,6 +199,7 @@ export const resolveObserverCanvasInitialization = (
   selection: SelectedObserverBackend,
   antialias: boolean,
   onWebGpuInitializationFailure: () => void,
+  onWebGpuInitializationAttempt: () => void = () => undefined,
 ): ObserverCanvasInitialization => {
   if (selection.rendererAttempt === "webgl") {
     return {
@@ -207,8 +208,9 @@ export const resolveObserverCanvasInitialization = (
     };
   }
 
-  const createWebGpuRenderer: GLProps = async (defaults) =>
-    initializeObserverWebGpuRenderer(
+  const createWebGpuRenderer: GLProps = async (defaults) => {
+    onWebGpuInitializationAttempt();
+    return initializeObserverWebGpuRenderer(
       async () => {
         const { WebGPURenderer } = await import("three/webgpu");
         return new WebGPURenderer({
@@ -223,6 +225,7 @@ export const resolveObserverCanvasInitialization = (
       },
       onWebGpuInitializationFailure,
     );
+  };
 
   return {
     rendererAttempt: "webgpu",
