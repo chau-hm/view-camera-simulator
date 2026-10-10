@@ -4,6 +4,7 @@ import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { detectAvailableWebGLBackend } from "../../render/backend/rendererBackend";
+import { selectObserverBackend } from "../../render/backend/observerBackend";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -106,7 +107,10 @@ export const SceneViewport = ({
       }),
     [activeFocalLengthMm, cameraInspectionTarget, opticsState, scene],
   );
-  const availableWebGLBackend = useMemo(() => detectAvailableWebGLBackend(), []);
+  const backendSelection = useMemo(() => {
+    const availableBackend = detectAvailableWebGLBackend();
+    return selectObserverBackend({ webglAvailable: availableBackend === "webgl" });
+  }, []);
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -162,7 +166,7 @@ export const SceneViewport = ({
     return () => window.cancelAnimationFrame(frame);
   }, [expanded, restoreFocusOnCollapse]);
 
-  if (availableWebGLBackend === null) {
+  if (backendSelection.status === "unavailable") {
     return (
       <section>
         <h2>{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
@@ -234,6 +238,7 @@ export const SceneViewport = ({
         <div className={`scene-viewport-stage${expanded ? " scene-viewport-stage--expanded" : ""}`}>
           <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
+            selectedBackend={backendSelection.backend}
             scene={scene}
             opticsState={opticsState}
             attempt={attempt}

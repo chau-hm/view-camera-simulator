@@ -6,6 +6,37 @@ evidence path for scene-quality work. PR J later added one opt-in procedural
 environment contribution to Architecture Rise; it did not change canonical
 simulation or teaching state.
 
+## Observer renderer/backend boundary (PR V)
+
+Before PR V, `SceneViewport` gated the Observer on browser WebGL availability
+and `SceneRenderer` supplied WebGL options directly to the R3F Canvas. The
+boundary now separates browser availability, pure selection policy, Canvas
+initialization, and evidence from the mounted renderer:
+
+```text
+browser WebGL availability
+        ↓
+selectObserverBackend (WebGL only)
+        ↓
+resolveObserverCanvasInitialization
+        ↓
+SceneRenderer R3F Canvas
+        ↓
+useThree().gl
+        ↓
+Observer mounted-capability report
+```
+
+The policy selects WebGL only when the browser availability check succeeds; it
+creates no context or renderer. The initialization seam preserves the existing
+Canvas configuration. `ObserverRendererCapabilityReporter` resolves identity
+and display settings from the actual mounted `useThree().gl` renderer. Browser
+availability and a selected backend are not evidence of mounted identity.
+
+Only WebGL is implemented. There is no WebGPU renderer or automatic backend
+fallback. Ground Glass remains WebGL-only and its RTT implementation is outside
+this Observer boundary.
+
 ## Runtime Ground Glass renderer evidence
 
 The development-only report is included in the existing
