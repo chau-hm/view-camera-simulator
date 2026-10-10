@@ -42,6 +42,10 @@ export default defineConfig({
           if (id.includes("stats-gl")) {
             return "stats-gl";
           }
+          // Keep the opt-in Observer WebGPU pilot out of the default WebGL bundle.
+          if (id.endsWith("/three/build/three.webgpu.js")) {
+            return "three-webgpu";
+          }
           if (id.includes("/three/") || id.endsWith("/three/build/three.module.js")) {
             return "three";
           }

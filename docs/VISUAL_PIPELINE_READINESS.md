@@ -37,6 +37,45 @@ Only WebGL is implemented. There is no WebGPU renderer or automatic backend
 fallback. Ground Glass remains WebGL-only and its RTT implementation is outside
 this Observer boundary.
 
+## Development-only Observer WebGPU coexistence pilot (PR W)
+
+PR V's WebGL-only statement records the boundary at that time. PR W adds an
+opt-in development/test pilot through the existing Observer selection and
+initialization seam. The normal public Observer still requests the existing
+`WebGLRenderer`; `?observerRenderer=webgpu` is honored only in development and
+only for `view-camera-anatomy`. No public backend setting or production
+WebGPU-selection policy is added.
+
+The pilot dynamically imports Three r186's `three/webgpu` entry point and awaits
+`WebGPURenderer.init()` in the R3F async factory. Mounted evidence is read from
+the actual `useThree().gl` renderer and separates the request, renderer family,
+execution backend, and application fallback. `isWebGPURenderer` identifies the
+renderer family; the initialized public coordinate-system signal distinguishes
+native WebGPU execution from Three's internal WebGL2 fallback. The tested
+Chromium run reported the `navigator.gpu` API hint as present, but Three.js
+could not initialize native WebGPU and selected its WebGL2 backend. Mounted
+evidence was `webgpu-renderer` / `webgl2-fallback`, with no application
+fallback. Native WebGPU is not proven. An initialization failure can trigger
+one application remount through the existing WebGL path; a successful internal
+fallback is not treated as an application failure.
+
+The production build emits the `three/webgpu` entry as a separate lazy
+`three-webgpu` chunk. The browser regression checks that the default WebGL page
+does not request it and the explicit pilot does.
+
+The mounted Observer report showed active PCF shadows, ACES Filmic tone mapping,
+exposure `1.000000`, and `srgb` output color space. The View Camera Anatomy
+pilot remained visible and interactive. A same-viewport screenshot comparison
+kept the subject framing and geometry, while the pilot background appeared
+slightly grayer than the near-white WebGL baseline; this renderer difference
+was recorded without visual tuning. The page also kept the existing Ground
+Glass RTT on WebGL, with the existing diagnostic reporting a contentful final
+target. Ground Glass source, pass graph, shaders, and resource ownership are
+unchanged. Architecture Rise's procedural environment/PMREM path remains
+WebGL-specific and is not included in the pilot. This evidence validates only
+bounded Observer renderer coexistence; it does not claim an application-wide
+WebGPU migration or fallback.
+
 ## Runtime Ground Glass renderer evidence
 
 The development-only report is included in the existing

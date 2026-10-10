@@ -115,7 +115,11 @@ test("View Focus preserves independent Scene and Camera views and resets the act
   await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
   await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-surface", "observer");
   await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-status", "active");
-  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-backend", "webgl");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-request", "webgl");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-webgpu-api-present", /^(true|false)$/);
   await expect(sceneCanvas).toHaveAttribute("data-observer-shadow-map-status", "active");
   await expect(sceneCanvas).toHaveAttribute("data-observer-shadow-map-type", "pcf");
   await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping-active", /^(true|false)$/);
