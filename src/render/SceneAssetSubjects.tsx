@@ -58,6 +58,52 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
   }, [assetKey, request]);
 
   useLayoutEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY ||
+      !group ||
+      group.name !== "view-camera-anatomy-subject"
+    ) {
+      return;
+    }
+
+    const container = document.querySelector<HTMLElement>(
+      '[data-testid="scene-canvas"]',
+    );
+    const originalVisibility = group.visible;
+    const setVisibility = (event: Event) => {
+      const visible = (event as CustomEvent<unknown>).detail;
+      if (typeof visible === "boolean") {
+        group.visible = visible;
+        container?.setAttribute(
+          "data-observer-test-anatomy-subject-visible",
+          String(group.visible),
+        );
+      }
+    };
+
+    window.addEventListener(
+      "vcs:observer-verification:anatomy-visibility",
+      setVisibility,
+    );
+    container?.setAttribute("data-observer-test-anatomy-visibility-hook", "ready");
+    container?.setAttribute(
+      "data-observer-test-anatomy-subject-visible",
+      String(originalVisibility),
+    );
+
+    return () => {
+      group.visible = originalVisibility;
+      window.removeEventListener(
+        "vcs:observer-verification:anatomy-visibility",
+        setVisibility,
+      );
+      container?.removeAttribute("data-observer-test-anatomy-visibility-hook");
+      container?.removeAttribute("data-observer-test-anatomy-subject-visible");
+    };
+  }, [assetKey, group]);
+
+  useLayoutEffect(() => {
     if (group) refreshShadowParticipation();
   }, [group, refreshShadowParticipation]);
 

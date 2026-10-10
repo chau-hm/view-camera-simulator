@@ -183,6 +183,9 @@ const captureObserverView = (
   target: controls.target.toArray() as [number, number, number],
 });
 
+const OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT =
+  "vcs:observer-verification:anatomy-view";
+
 const targetsMatch = (
   a: [number, number, number],
   b: [number, number, number],
@@ -233,6 +236,30 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
     controls.addEventListener("end", publish);
     return () => controls.removeEventListener("end", publish);
   }, [camera, controls, onViewStateChange]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || sceneId !== "view-camera-anatomy") return;
+
+    const applyVerificationView = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as {
+        position?: unknown;
+        target?: unknown;
+      };
+      const isVector = (value: unknown): value is [number, number, number] =>
+        Array.isArray(value) && value.length === 3 &&
+        value.every((component) => typeof component === "number" && Number.isFinite(component));
+      if (!isVector(candidate.position) || !isVector(candidate.target)) return;
+
+      applyObserverCameraReset(camera, controls, candidate.position, candidate.target);
+      onViewStateChange(captureObserverView(camera, controls));
+    };
+
+    window.addEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+    return () =>
+      window.removeEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+  }, [camera, controls, onViewStateChange, sceneId]);
 
   useLayoutEffect(() => {
     const applyView = (view: ObserverViewState) => {
