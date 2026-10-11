@@ -1020,9 +1020,49 @@ const OpticalGeometryOverlays = ({
 };
 
 /** Test-only observation and fault-injection seam bound to the real Observer scene. */
+// Keep a valid neutral map attached: Three r186 can retain a WebGPU texture node
+// for a null map and fail during the next render instead of producing a control image.
+const createNeutralVerificationTexture = (
+  source: THREE.Texture,
+  rgba: readonly [number, number, number, number],
+): THREE.DataTexture => {
+  const texture = new THREE.DataTexture(
+    new Uint8Array(rgba),
+    1,
+    1,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
+  texture.mapping = source.mapping;
+  texture.channel = source.channel;
+  texture.colorSpace = source.colorSpace;
+  texture.wrapS = source.wrapS;
+  texture.wrapT = source.wrapT;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.flipY = source.flipY;
+  texture.offset.copy(source.offset);
+  texture.repeat.copy(source.repeat);
+  texture.center.copy(source.center);
+  texture.rotation = source.rotation;
+  texture.matrixAutoUpdate = source.matrixAutoUpdate;
+  texture.needsUpdate = true;
+  return texture;
+};
+
 const ArchitectureRiseVerificationProbe = () => {
   const { gl, scene, invalidate } = useThree();
   const inventoryReported = useRef(false);
+  const verificationContainerRef = useRef<HTMLElement | null>(null);
+  const facadeMaterialEvidenceRef = useRef<Readonly<{
+    mesh: THREE.Mesh;
+    material: THREE.MeshStandardMaterial;
+    colorMap: THREE.Texture;
+    normalMap: THREE.Texture;
+    neutralColorMap: THREE.DataTexture;
+    neutralNormalMap: THREE.DataTexture;
+  }> | null>(null);
 
   useLayoutEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -1045,26 +1085,39 @@ const ArchitectureRiseVerificationProbe = () => {
       container.setAttribute("data-observer-test-key-shadow-enabled", String(presentationKey.castShadow));
     }
 
-    let savedEnvironment: typeof scene.environment = null;
-    let savedEnvironmentIntensity = scene.environmentIntensity;
-    let environmentDisabled = false;
+    verificationContainerRef.current = container;
     const lightStates = new Map<string, { intensity: number }>();
 
-    const setEnvironmentEnabled = (event: Event) => {
-      const enabled = (event as CustomEvent<unknown>).detail;
-      if (typeof enabled !== "boolean") return;
-      if (!enabled && scene.environment) {
-        savedEnvironment = scene.environment;
-        savedEnvironmentIntensity = scene.environmentIntensity;
-        scene.environment = null;
-        scene.environmentIntensity = 0;
-        environmentDisabled = true;
-      } else if (enabled && environmentDisabled) {
-        scene.environment = savedEnvironment;
-        scene.environmentIntensity = savedEnvironmentIntensity;
-        environmentDisabled = false;
+    const setFacadeMaterialMap = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { kind?: unknown; enabled?: unknown };
+      if (
+        (candidate.kind !== "colorMap" && candidate.kind !== "normalMap") ||
+        typeof candidate.enabled !== "boolean"
+      ) return;
+      const evidence = facadeMaterialEvidenceRef.current;
+      if (
+        !evidence ||
+        scene.getObjectByName("architecture-rise-primary-facade") !== evidence.mesh ||
+        evidence.mesh.material !== evidence.material
+      ) return;
+      if (candidate.kind === "colorMap") {
+        evidence.material.map = candidate.enabled
+          ? evidence.colorMap
+          : evidence.neutralColorMap;
+      } else {
+        evidence.material.normalMap = candidate.enabled
+          ? evidence.normalMap
+          : evidence.neutralNormalMap;
       }
-      container.setAttribute("data-observer-test-environment-enabled", String(enabled));
+      evidence.material.needsUpdate = true;
+      container.setAttribute(
+        candidate.kind === "colorMap"
+          ? "data-observer-test-facade-color-map-enabled"
+          : "data-observer-test-facade-normal-map-enabled",
+        String(candidate.enabled),
+      );
       invalidate();
     };
     const setLightState = (event: Event) => {
@@ -1093,16 +1146,25 @@ const ArchitectureRiseVerificationProbe = () => {
       invalidate();
     };
 
-    container.addEventListener("vcs:observer-verification:architecture-rise-environment", setEnvironmentEnabled);
+    container.addEventListener("vcs:observer-verification:architecture-rise-material-map", setFacadeMaterialMap);
     container.addEventListener("vcs:observer-verification:architecture-rise-light", setLightState);
     container.setAttribute("data-observer-test-architecture-rise-probe", "ready");
-    container.setAttribute("data-observer-test-environment-enabled", String(Boolean(scene.environment)));
 
     return () => {
-      if (environmentDisabled) {
-        scene.environment = savedEnvironment;
-        scene.environmentIntensity = savedEnvironmentIntensity;
+      const evidence = facadeMaterialEvidenceRef.current;
+      if (
+        evidence &&
+        scene.getObjectByName("architecture-rise-primary-facade") === evidence.mesh &&
+        evidence.mesh.material === evidence.material
+      ) {
+        evidence.material.map = evidence.colorMap;
+        evidence.material.normalMap = evidence.normalMap;
+        evidence.material.needsUpdate = true;
       }
+      facadeMaterialEvidenceRef.current?.neutralColorMap.dispose();
+      facadeMaterialEvidenceRef.current?.neutralNormalMap.dispose();
+      facadeMaterialEvidenceRef.current = null;
+      verificationContainerRef.current = null;
       for (const [name, state] of lightStates) {
         const light = scene.getObjectByName(name) as THREE.Light | null;
         if (light) {
@@ -1112,10 +1174,12 @@ const ArchitectureRiseVerificationProbe = () => {
       if (presentationKey && originalPresentationKeyCastsShadow !== null) {
         presentationKey.castShadow = originalPresentationKeyCastsShadow;
       }
-      container.removeEventListener("vcs:observer-verification:architecture-rise-environment", setEnvironmentEnabled);
+      container.removeEventListener("vcs:observer-verification:architecture-rise-material-map", setFacadeMaterialMap);
       container.removeEventListener("vcs:observer-verification:architecture-rise-light", setLightState);
       container.removeAttribute("data-observer-test-architecture-rise-probe");
-      container.removeAttribute("data-observer-test-environment-enabled");
+      container.removeAttribute("data-observer-test-facade-material-control");
+      container.removeAttribute("data-observer-test-facade-color-map-enabled");
+      container.removeAttribute("data-observer-test-facade-normal-map-enabled");
       container.removeAttribute("data-observer-test-presentation-key-enabled");
       container.removeAttribute("data-observer-test-daylight-enabled");
       container.removeAttribute("data-observer-test-key-shadow-enabled");
@@ -1123,6 +1187,34 @@ const ArchitectureRiseVerificationProbe = () => {
   }, [gl.domElement, invalidate, scene]);
 
   useFrame(() => {
+    if (!facadeMaterialEvidenceRef.current) {
+      const facade = scene.getObjectByName("architecture-rise-primary-facade");
+      if (facade instanceof THREE.Mesh && facade.material instanceof THREE.MeshStandardMaterial) {
+        const { map, normalMap } = facade.material;
+        if (map && normalMap) {
+          facadeMaterialEvidenceRef.current = {
+            mesh: facade,
+            material: facade.material,
+            colorMap: map,
+            normalMap,
+            neutralColorMap: createNeutralVerificationTexture(map, [255, 255, 255, 255]),
+            neutralNormalMap: createNeutralVerificationTexture(normalMap, [128, 128, 255, 255]),
+          };
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-material-control",
+            "ready",
+          );
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-color-map-enabled",
+            "true",
+          );
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-normal-map-enabled",
+            "true",
+          );
+        }
+      }
+    }
     if (inventoryReported.current) return;
     const subject = scene.getObjectByName("architecture-rise-subject");
     if (
@@ -1207,6 +1299,10 @@ const ArchitectureRiseVerificationProbe = () => {
           };
           return {
             type: material.type,
+            uuid: material.uuid,
+            mapUuid: candidate.map?.uuid ?? null,
+            normalMapUuid: candidate.normalMap?.uuid ?? null,
+            roughnessMapUuid: candidate.roughnessMap?.uuid ?? null,
             color: candidate.color ? `#${candidate.color.getHexString()}` : null,
             roughness: candidate.roughness ?? null,
             metalness: candidate.metalness ?? null,
@@ -1321,8 +1417,9 @@ const SceneContent = ({
       mountGeneration={rendererMountGeneration}
       createRealizationToken={createEnvironmentRealizationToken}
       onEnvironmentStatusChange={onEnvironmentStatusChange}
+      architectureRiseVerificationHarness={architectureRiseVerificationHarness}
     />
-    {architectureRiseVerificationHarness && scene.id === "architecture-rise"
+    {import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
       ? <ArchitectureRiseVerificationProbe />
       : null}
     <SceneAssets assets={scene.assets} />

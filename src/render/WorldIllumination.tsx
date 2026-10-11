@@ -80,6 +80,7 @@ export const WorldIllumination = ({
   mountGeneration,
   createRealizationToken,
   onEnvironmentStatusChange,
+  architectureRiseVerificationHarness = false,
 }: {
   sceneId: string;
   mountGeneration: number;
@@ -91,6 +92,7 @@ export const WorldIllumination = ({
     realization: ObserverWorldEnvironmentRealizationToken | null,
     status: ObserverWorldEnvironmentStatus,
   ) => void;
+  architectureRiseVerificationHarness?: boolean;
 }) => {
   const illumination = resolveSceneWorldIllumination(sceneId);
   const environment = illumination.environment;
@@ -105,6 +107,7 @@ export const WorldIllumination = ({
           mountGeneration={mountGeneration}
           createRealizationToken={createRealizationToken}
           onStatusChange={onEnvironmentStatusChange}
+          architectureRiseVerificationHarness={architectureRiseVerificationHarness}
         />
       ) : null}
     </>

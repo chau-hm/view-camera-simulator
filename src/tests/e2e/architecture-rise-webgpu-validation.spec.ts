@@ -10,6 +10,7 @@ const FIXTURE_PATH = "/src/tests/e2e/fixtures/architecture-rise-webgpu-validatio
 const SUBJECT_EVENT = "vcs:observer-verification:architecture-rise-subject";
 const ENVIRONMENT_EVENT = "vcs:observer-verification:architecture-rise-environment";
 const LIGHT_EVENT = "vcs:observer-verification:architecture-rise-light";
+const FACADE_MATERIAL_EVENT = "vcs:observer-verification:architecture-rise-material-map";
 const VIEW_EVENT = "vcs:observer-verification:architecture-rise-view";
 
 type PixelRegion = Readonly<{ left: number; top: number; right: number; bottom: number }>;
@@ -21,6 +22,10 @@ type FeatureInventory = Readonly<{
   bounds: WorldBounds;
   materials: Array<Readonly<{
     type: string;
+    uuid: string;
+    mapUuid: string | null;
+    normalMapUuid: string | null;
+    roughnessMapUuid: string | null;
     color: string | null;
     roughness: number | null;
     metalness: number | null;
@@ -158,6 +163,7 @@ type RegionPixels = Readonly<{
   comparisonMeanRgb: readonly [number, number, number] | null;
   comparisonMeanLuminance: number | null;
   changedPixels: number;
+  changedPixelThreshold: number;
   changedFraction: number;
   meanAbsoluteRgbDelta: number;
   redLikePixels: number;
@@ -168,8 +174,9 @@ const analyzeImageRegions = async (
   first: Buffer,
   second: Buffer | null,
   regions: Record<string, PixelRegion>,
+  changedPixelThreshold = 12,
 ): Promise<{ width: number; height: number; regions: Record<string, RegionPixels> }> =>
-  page.evaluate(async ({ firstBase64, secondBase64, regions: namedRegions }) => {
+  page.evaluate(async ({ firstBase64, secondBase64, regions: namedRegions, changedPixelThreshold: pixelThreshold }) => {
     const decode = async (base64: string) => {
       const image = new Image();
       image.src = `data:image/png;base64,${base64}`;
@@ -237,7 +244,7 @@ const analyzeImageRegions = async (
               Math.abs(g - comparisonG) +
               Math.abs(b - comparisonB)
             ) / 3;
-            if (delta >= 12) changedPixels += 1;
+            if (delta >= pixelThreshold) changedPixels += 1;
           }
           count += 1;
         }
@@ -254,6 +261,7 @@ const analyzeImageRegions = async (
           : null,
         comparisonMeanLuminance: count && secondImage ? comparisonLuminance / count : null,
         changedPixels,
+        changedPixelThreshold: pixelThreshold,
         changedFraction: count ? changedPixels / count : 0,
         meanAbsoluteRgbDelta: count ? deltaTotal / count : 0,
         redLikePixels,
@@ -264,6 +272,7 @@ const analyzeImageRegions = async (
     firstBase64: first.toString("base64"),
     secondBase64: second?.toString("base64") ?? null,
     regions,
+    changedPixelThreshold,
   });
 
 const waitForPublicArchitectureRise = async (page: Page) => {
@@ -290,8 +299,12 @@ const waitForVerificationScene = async (page: Page, search = "?rttDiagnostics=1"
   await expect(observer).toHaveAttribute("data-observer-renderer-family", /^(webgl-renderer|webgpu-renderer)$/, { timeout: 90_000 });
   await expect(observer).toHaveAttribute("data-observer-execution-backend", /^(webgl2|webgpu|webgl2-fallback|unknown)$/);
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-test-environment-control", "ready", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-test-environment-enabled", "true");
+  await expect(observer).toHaveAttribute("data-observer-test-environment-assigned", "true");
   await expect(observer).toHaveAttribute("data-observer-adapter-availability", /^(available|unavailable|api-absent|request-rejected|timed-out)$/ , { timeout: 30_000 });
   await expect(observer).toHaveAttribute("data-observer-test-architecture-rise-probe", "ready");
+  await expect(observer).toHaveAttribute("data-observer-test-facade-material-control", "ready", { timeout: 90_000 });
   await expect(observer).toHaveAttribute("data-observer-test-key-shadow-enabled", /^(true|false)$/);
   await expect(observer).toHaveAttribute("data-observer-test-architecture-rise-visibility-hook", "ready");
   await expect(observer).toHaveAttribute("data-observer-test-architecture-rise-subject-mounted", "true", { timeout: 90_000 });
@@ -304,6 +317,16 @@ const dispatchBoolean = async (observer: Locator, eventName: string, detail: boo
   await observer.evaluate((element, payload) => {
     element.dispatchEvent(new CustomEvent(payload.eventName, { detail: payload.detail }));
   }, { eventName, detail });
+};
+
+const dispatchFacadeMaterialMap = async (
+  observer: Locator,
+  kind: "colorMap" | "normalMap",
+  enabled: boolean,
+) => {
+  await observer.evaluate((element, payload) => {
+    element.dispatchEvent(new CustomEvent(payload.eventName, { detail: payload.detail }));
+  }, { eventName: FACADE_MATERIAL_EVENT, detail: { kind, enabled } });
 };
 
 const dispatchLight = async (observer: Locator, eventName: string, detail: { name: string; enabled: boolean }) => {
@@ -372,7 +395,8 @@ test("public Architecture Rise keeps WebGL and the public WebGPU request denied"
 });
 
 test("full Architecture Rise scene has measurable subject, material, environment, lighting, interaction and lifecycle evidence", async ({ page, browser }, testInfo) => {
-  test.setTimeout(600_000);
+  // The real-framebuffer negative controls compile and render several material variants.
+  test.setTimeout(900_000);
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -557,25 +581,192 @@ test("full Architecture Rise scene has measurable subject, material, environment
     vectorsMatch(initialView.target, currentAfterSubjectCapture.target);
   expect(subjectCaptureViewStable).toBe(true);
 
-  // Environment negative control changes only the real Observer scene.environment assignment.
-  const glazingRegion = closeFeatureRegions.frontGlazing;
-  if (!glazingRegion) throw new Error("Front glazing ROI is not in the close-up camera view");
-  const environmentOn = await captureCanvas(observer, testInfo, "architecture-rise-environment-active.png");
-  await dispatchBoolean(observer, ENVIRONMENT_EVENT, false);
-  await expect(observer).toHaveAttribute("data-observer-test-environment-enabled", "false");
-  const environmentOff = await captureCanvas(observer, testInfo, "architecture-rise-environment-disabled-negative-control.png");
-  await dispatchBoolean(observer, ENVIRONMENT_EVENT, true);
-  await expect(observer).toHaveAttribute("data-observer-test-environment-enabled", "true");
-  await expect(observer).toHaveAttribute("data-observer-environment-status", "active");
-  const environmentDiff = await analyzeImageRegions(page, environmentOn, environmentOff, { frontGlazing: glazingRegion });
-  expect(environmentDiff.regions.frontGlazing.changedPixels).toBeGreaterThan(100);
-  expect(environmentDiff.regions.frontGlazing.meanAbsoluteRgbDelta).toBeGreaterThan(2);
-  const environmentRestored = await captureCanvas(observer, testInfo, "architecture-rise-environment-restored.png");
-  const environmentRestoreDiff = await analyzeImageRegions(page, environmentOn, environmentRestored, { frontGlazing: glazingRegion });
+  // The material controls change only the maps on the actual registered front façade mesh.
+  const facadeFeatureBounds = initialInventory.features.facade?.bounds;
+  if (!facadeFeatureBounds) throw new Error("The registered façade mesh bounds are unavailable");
+  expect(facadeMaterial?.type).toBe("MeshStandardMaterial");
+  expect(facadeMaterial?.mapUuid).toBeTruthy();
+  expect(facadeMaterial?.normalMapUuid).toBeTruthy();
+  const facadeCenterX = (facadeFeatureBounds.min[0] + facadeFeatureBounds.max[0]) / 2;
+  const facadeHeight = facadeFeatureBounds.max[1] - facadeFeatureBounds.min[1];
+  const facadeMaterialBounds: WorldBounds = {
+    min: [
+      Math.max(facadeFeatureBounds.min[0], facadeCenterX - 0.22),
+      facadeFeatureBounds.min[1] + facadeHeight * 0.62,
+      facadeFeatureBounds.max[2],
+    ],
+    max: [
+      Math.min(facadeFeatureBounds.max[0], facadeCenterX + 0.22),
+      facadeFeatureBounds.min[1] + facadeHeight * 0.68,
+      facadeFeatureBounds.max[2],
+    ],
+  };
+  const facadeMaterialRegion = projectBounds(
+    facadeMaterialBounds,
+    dimensions.width,
+    dimensions.height,
+    initialView,
+  );
+  if (!facadeMaterialRegion) throw new Error("The projected interior façade material ROI is unavailable");
+  const facadeMaterialEvidence: Record<string, Readonly<{
+    enabledVsDisabled: RegionPixels;
+    restored: RegionPixels;
+    materialUuid: string | null | undefined;
+    textureUuid: string | null | undefined;
+  }>> = {};
+  const materialBackend = await observer.getAttribute("data-observer-execution-backend");
+  const materialFamily = await observer.getAttribute("data-observer-renderer-family");
+  const materialGeneration = await observer.getAttribute("data-observer-renderer-generation");
+  for (const kind of ["colorMap", "normalMap"] as const) {
+    const enabled = await captureCanvas(observer, testInfo, `architecture-rise-facade-${kind}-enabled.png`);
+    let disabled: Buffer | null = null;
+    let restored: Buffer | null = null;
+    try {
+      await dispatchFacadeMaterialMap(observer, kind, false);
+      const stateAttribute = kind === "colorMap"
+        ? "data-observer-test-facade-color-map-enabled"
+        : "data-observer-test-facade-normal-map-enabled";
+      await expect(observer).toHaveAttribute(stateAttribute, "false");
+      await waitForFrames(page, 4);
+      disabled = await captureCanvas(
+        observer,
+        testInfo,
+        `architecture-rise-facade-${kind}-disabled-negative-control.png`,
+      );
+    } finally {
+      await dispatchFacadeMaterialMap(observer, kind, true);
+      const stateAttribute = kind === "colorMap"
+        ? "data-observer-test-facade-color-map-enabled"
+        : "data-observer-test-facade-normal-map-enabled";
+      await expect(observer).toHaveAttribute(stateAttribute, "true");
+      await waitForFrames(page, 4);
+      restored = await captureCanvas(
+        observer,
+        testInfo,
+        `architecture-rise-facade-${kind}-restored.png`,
+      );
+    }
+    if (!disabled || !restored) throw new Error(`${kind} negative-control captures did not complete`);
+    const changedPixelThreshold = kind === "normalMap" ? 1 : 12;
+    const difference = await analyzeImageRegions(
+      page,
+      enabled,
+      disabled,
+      { facadeMaterial: facadeMaterialRegion },
+      changedPixelThreshold,
+    );
+    const restoration = await analyzeImageRegions(page, enabled, restored, { facadeMaterial: facadeMaterialRegion });
+    const measuredDifference = difference.regions.facadeMaterial;
+    const measuredRestoration = restoration.regions.facadeMaterial;
+    expect(measuredDifference.pixels, `${kind} ROI must include the projected façade surface`).toBeGreaterThan(80);
+    expect(measuredDifference.meanLuminance, `${kind} ROI must contain visible surface pixels`).toBeGreaterThan(20);
+    expect(measuredDifference.changedPixels, `${kind} must change actual façade framebuffer pixels`).toBeGreaterThan(
+      kind === "normalMap" ? 100 : 20,
+    );
+    expect(measuredDifference.changedFraction, `${kind} contribution must be spatially meaningful`).toBeGreaterThan(
+      kind === "normalMap" ? 0.1 : 0.02,
+    );
+    expect(measuredDifference.meanAbsoluteRgbDelta, `${kind} must make a measurable material contribution`).toBeGreaterThan(
+      kind === "normalMap" ? 0.1 : 0.5,
+    );
+    expect(measuredRestoration.changedPixels, `${kind} restoration must return to its enabled image`).toBeLessThan(8);
+    expect(measuredRestoration.meanAbsoluteRgbDelta).toBeLessThan(0.25);
+    facadeMaterialEvidence[kind] = {
+      enabledVsDisabled: measuredDifference,
+      restored: measuredRestoration,
+      materialUuid: facadeMaterial?.uuid,
+      textureUuid: kind === "colorMap" ? facadeMaterial?.mapUuid : facadeMaterial?.normalMapUuid,
+    };
+  }
+  expect(await observer.getAttribute("data-observer-execution-backend")).toBe(materialBackend);
+  expect(await observer.getAttribute("data-observer-renderer-family")).toBe(materialFamily);
+  expect(await observer.getAttribute("data-observer-renderer-generation")).toBe(materialGeneration);
+  const materialView = await readView(observer);
+  expect(vectorsMatch(initialView.position, materialView.position)).toBe(true);
+  expect(vectorsMatch(initialView.target, materialView.target)).toBe(true);
+
+  // Matched glazing captures keep renderer, lighting, shadow state, and material fixed at both views.
+  const glazingBounds = initialInventory.features.frontGlazing?.bounds;
+  if (!glazingBounds) throw new Error("Front glazing bounds are unavailable");
+  const environmentOwnerIntensity = await observer.getAttribute("data-observer-test-environment-intensity");
+  if (!environmentOwnerIntensity) throw new Error("Owner environment intensity evidence is unavailable");
+  const captureEnvironmentResponse = async (
+    position: readonly [number, number, number],
+    label: string,
+  ) => {
+    await applyVerificationView(page, observer, position, closeTarget);
+    const view = await readView(observer);
+    const dimensionsForView = await analyzeImageRegions(page, visibleSubject, null, {
+      frame: { left: 0, top: 0, right: 1440, bottom: 1000 },
+    });
+    const region = projectBounds(glazingBounds, dimensionsForView.width, dimensionsForView.height, view);
+    if (!region) throw new Error(`${label} front glazing ROI is outside the Observer frame`);
+    const family = await observer.getAttribute("data-observer-renderer-family");
+    const backend = await observer.getAttribute("data-observer-execution-backend");
+    const generation = await observer.getAttribute("data-observer-renderer-generation");
+    const on = await captureCanvas(observer, testInfo, `architecture-rise-glazing-${label}-environment-on.png`);
+    await dispatchBoolean(observer, ENVIRONMENT_EVENT, false);
+    await expect(observer).toHaveAttribute("data-observer-test-environment-enabled", "false");
+    await expect(observer).toHaveAttribute("data-observer-test-environment-assigned", "true");
+    await expect(observer).toHaveAttribute("data-observer-test-environment-intensity", "0");
+    await waitForFrames(page, 4);
+    const off = await captureCanvas(observer, testInfo, `architecture-rise-glazing-${label}-environment-off-negative-control.png`);
+    await dispatchBoolean(observer, ENVIRONMENT_EVENT, true);
+    await expect(observer).toHaveAttribute("data-observer-test-environment-enabled", "true");
+    await expect(observer).toHaveAttribute("data-observer-test-environment-assigned", "true");
+    await expect(observer).toHaveAttribute("data-observer-test-environment-intensity", environmentOwnerIntensity);
+    await expect(observer).toHaveAttribute("data-observer-environment-status", "active");
+    await waitForFrames(page, 4);
+    const restored = await captureCanvas(observer, testInfo, `architecture-rise-glazing-${label}-environment-restored.png`);
+    const onPixels = await analyzeImageRegions(page, on, null, { frontGlazing: region });
+    const diff = await analyzeImageRegions(page, on, off, { frontGlazing: region });
+    const restoreDiff = await analyzeImageRegions(page, on, restored, { frontGlazing: region });
+    const visible = onPixels.regions.frontGlazing;
+    const contribution = diff.regions.frontGlazing;
+    const restoration = restoreDiff.regions.frontGlazing;
+    expect(visible.pixels, `${label} glazing ROI must be valid`).toBeGreaterThan(80);
+    expect(visible.meanLuminance, `${label} glazing must contribute visible framebuffer pixels`).toBeGreaterThan(20);
+    expect(contribution.changedPixels, `${label} environment must affect glazing pixels`).toBeGreaterThan(100);
+    expect(contribution.meanAbsoluteRgbDelta, `${label} environment contribution must be measurable`).toBeGreaterThan(2);
+    expect(restoration.changedPixels, `${label} environment restoration must reproduce the enabled image`).toBeLessThan(8);
+    expect(restoration.meanAbsoluteRgbDelta).toBeLessThan(0.25);
+    expect(await observer.getAttribute("data-observer-renderer-family")).toBe(family);
+    expect(await observer.getAttribute("data-observer-execution-backend")).toBe(backend);
+    expect(await observer.getAttribute("data-observer-renderer-generation")).toBe(generation);
+    const responseRgb = visible.meanRgb.map((channel, index) =>
+      (channel - (contribution.comparisonMeanRgb?.[index] ?? channel)) / 255,
+    );
+    return {
+      view,
+      roi: region,
+      family,
+      backend,
+      generation,
+      visible,
+      enabledVsDisabled: contribution,
+      restoration,
+      normalizedResponse: responseRgb,
+      normalizedMeanAbsoluteRgbDelta: contribution.meanAbsoluteRgbDelta / 255,
+    };
+  };
+  const environmentViewA = await captureEnvironmentResponse(closePosition, "view-a");
+  const opposingViewPosition = [-4.8, 2.7, 4.2] as const;
+  const environmentViewB = await captureEnvironmentResponse(opposingViewPosition, "view-b");
+  expect(environmentViewA.backend).toBe(environmentViewB.backend);
+  expect(environmentViewA.family).toBe(environmentViewB.family);
+  expect(environmentViewA.generation).toBe(environmentViewB.generation);
+  const normalizedResponseDifference = Math.sqrt(
+    environmentViewA.normalizedResponse.reduce((sum, response, index) =>
+      sum + (response - (environmentViewB.normalizedResponse[index] ?? response)) ** 2,
+    0,
+    ) / 3,
+  );
+  const viewAngleDependenceStatus = normalizedResponseDifference > 0.005
+    ? "verified"
+    : "not-isolated";
+  await applyVerificationView(page, observer, closePosition, closeTarget);
   const environmentReenabled = await observer.getAttribute("data-observer-test-environment-enabled");
   expect(environmentReenabled).toBe("true");
-  expect(environmentRestoreDiff.regions.frontGlazing.changedPixels).toBeLessThan(8);
-  expect(environmentRestoreDiff.regions.frontGlazing.meanAbsoluteRgbDelta).toBeLessThan(0.25);
   await expect(observer).toHaveAttribute("data-observer-renderer-generation", initialRendererGeneration ?? "");
 
   // Light negative controls independently alter the actual configured Three.js lights.
@@ -650,19 +841,6 @@ test("full Architecture Rise scene has measurable subject, material, environment
   };
   expect(shadowDiff.regions.subject.changedPixels).toBeGreaterThan(100);
   expect(shadowDiff.regions.ground.changedPixels).toBeGreaterThan(100);
-
-  // Matched, view-dependent glazing captures demonstrate that the scene response changes with camera direction.
-  const opposingViewPosition = [-4.8, 2.7, 4.2] as const;
-  await applyVerificationView(page, observer, opposingViewPosition, closeTarget);
-  const opposingView = await readView(observer);
-  const opposingViewImage = await captureCanvas(observer, testInfo, "architecture-rise-glazing-opposing-view.png");
-  const opposingGlazingRegion = initialInventory.features.frontGlazing
-    ? projectBounds(initialInventory.features.frontGlazing.bounds, dimensions.width, dimensions.height, opposingView)
-    : null;
-  const viewDependentGlazing = opposingGlazingRegion
-    ? await analyzeImageRegions(page, opposingViewImage, null, { frontGlazing: opposingGlazingRegion })
-    : null;
-  const initialGlazingPixels = await analyzeImageRegions(page, environmentOn, null, { frontGlazing: glazingRegion });
 
   // Public controls update canonical state and Ground Glass without remounting the Observer.
   await applyVerificationView(page, observer, closePosition, closeTarget);
@@ -771,6 +949,11 @@ test("full Architecture Rise scene has measurable subject, material, environment
   await mkdir(dirname(groundGlassOutputPath), { recursive: true });
   await writeFile(groundGlassOutputPath, groundGlassScreenshot);
   await testInfo.attach("architecture-rise-ground-glass-and-observer.png", { body: groundGlassScreenshot, contentType: "image/png" });
+  const environmentIntensityBeforeNavigation = await observer.getAttribute("data-observer-test-environment-intensity");
+  await dispatchBoolean(observer, ENVIRONMENT_EVENT, false);
+  await expect(observer).toHaveAttribute("data-observer-test-environment-enabled", "false");
+  await expect(observer).toHaveAttribute("data-observer-test-environment-assigned", "true");
+  await expect(observer).toHaveAttribute("data-observer-test-environment-intensity", "0");
   const originalObserverGeneration = await observer.getAttribute("data-observer-renderer-generation");
   await observer.evaluate((element) => {
     (window as Window & { __architectureRiseObserverBeforeSpaNavigation?: Element })
@@ -782,6 +965,10 @@ test("full Architecture Rise scene has measurable subject, material, environment
   await expect(navigationSceneObserver).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy", { timeout: 90_000 });
   await expect(navigationSceneObserver).toHaveAttribute("data-observer-renderer-family", "webgl-renderer", { timeout: 90_000 });
   await expect(navigationSceneObserver).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(navigationSceneObserver).not.toHaveAttribute("data-observer-verification-scene");
+  await expect(navigationSceneObserver).not.toHaveAttribute("data-observer-test-environment-control");
+  await expect(navigationSceneObserver).not.toHaveAttribute("data-observer-test-facade-material-control");
+  await expect(navigationSceneObserver).not.toHaveAttribute("data-observer-test-architecture-rise-probe");
   await expect(page.getByTestId("ground-glass-rtt").first()).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
   const anatomyNavigationEvidence = {
     sceneSubjectId: await navigationSceneObserver.getAttribute("data-scene-subject-id"),
@@ -801,6 +988,10 @@ test("full Architecture Rise scene has measurable subject, material, environment
   await expect(returnedObserver).toHaveAttribute("data-observer-application-fallback", applicationFallback ?? "none");
   await expect(returnedObserver).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
   await expect(returnedObserver).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+  await expect(returnedObserver).toHaveAttribute("data-observer-test-environment-control", "ready", { timeout: 90_000 });
+  await expect(returnedObserver).toHaveAttribute("data-observer-test-environment-enabled", "true");
+  await expect(returnedObserver).toHaveAttribute("data-observer-test-environment-assigned", "true");
+  await expect(returnedObserver).toHaveAttribute("data-observer-test-environment-intensity", environmentIntensityBeforeNavigation ?? "");
   await expect(returnedObserver).toHaveAttribute("data-observer-test-architecture-rise-subject-mounted", "true", { timeout: 90_000 });
   await expect(page.getByTestId("ground-glass-rtt").first()).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
   const observerCanvasReplaced = await returnedObserver.evaluate((element) =>
@@ -818,6 +1009,10 @@ test("full Architecture Rise scene has measurable subject, material, environment
     returnedExecutionBackend: await returnedObserver.getAttribute("data-observer-execution-backend"),
     returnedApplicationFallback: await returnedObserver.getAttribute("data-observer-application-fallback"),
     returnedInitializationAttempts: Number(await returnedObserver.getAttribute("data-observer-webgpu-initialization-attempts")),
+    environmentDisabledAtUnmount: true,
+    previousEnvironmentStillAssignedWhileSuppressed: true,
+    freshEnvironmentActiveOnReturn: await returnedObserver.getAttribute("data-observer-test-environment-enabled") === "true",
+    returnedEnvironmentIntensity: await returnedObserver.getAttribute("data-observer-test-environment-intensity"),
     returnedGeneration: await returnedObserver.getAttribute("data-observer-renderer-generation"),
     previousGeneration: originalObserverGeneration,
     observerCanvasReplaced,
@@ -879,11 +1074,27 @@ test("full Architecture Rise scene has measurable subject, material, environment
       cameraPoseStableDuringDifferential: subjectCaptureViewStable,
       rendererStableDuringDifferential: rendererStableDuringSubjectDifferential,
     },
+    facadeMaterialMapNegativeControls: {
+      targetObject: "architecture-rise-primary-facade",
+      roiWorldBounds: facadeMaterialBounds,
+      roiPixels: facadeMaterialRegion,
+      mapEvidence: facadeMaterialEvidence,
+      actualFramebufferCapture: true,
+      observerViewStable: true,
+      mountedRendererStable: true,
+    },
     environmentNegativeControl: {
-      activeVsDisabledFrontGlazing: environmentDiff.regions.frontGlazing,
-      restored: environmentRestoreDiff.regions.frontGlazing,
-      renderingStayedContentful: initialFrame.regions.wholeFrame.pixels > 0,
+      method: "owner-managed intensity suppression; PMREM target remains assigned",
       environmentReenabled,
+      viewA: environmentViewA,
+      viewB: environmentViewB,
+      environmentContributionAtBothViews: true,
+      renderingStayedContentful: initialFrame.regions.wholeFrame.pixels > 0,
+      viewAngleDependenceStatus,
+      normalizedResponseDifference,
+      ownerSuppressionKeptTargetAssigned: true,
+      disabledAtUnmount: spaNavigationEvidence.environmentDisabledAtUnmount,
+      freshEnvironmentActiveOnReturn: spaNavigationEvidence.freshEnvironmentActiveOnReturn,
     },
     lighting: {
       presentationKey: lightEvidence["teaching-lighting-key"],
@@ -893,11 +1104,13 @@ test("full Architecture Rise scene has measurable subject, material, environment
       },
     },
     glazing: {
-      originalView: initialGlazingPixels.regions.frontGlazing,
-      opposingView: viewDependentGlazing?.regions.frontGlazing ?? null,
-      viewDependentMeanLuminanceDelta: viewDependentGlazing
-        ? Math.abs(initialGlazingPixels.regions.frontGlazing.meanLuminance - viewDependentGlazing.regions.frontGlazing.meanLuminance)
-        : null,
+      matchedViews: [environmentViewA, environmentViewB],
+      normalizedResponseDifference,
+      strictViewAngleDependence: viewAngleDependenceStatus,
+      presentationLightingAndShadowConfigurationMatched: true,
+      mountedRendererStableAcrossViews: environmentViewA.generation === environmentViewB.generation &&
+        environmentViewA.family === environmentViewB.family &&
+        environmentViewA.backend === environmentViewB.backend,
     },
     webglVsVerificationDefault: {
       dimensions: { width: backendComparison.width, height: backendComparison.height },
@@ -954,6 +1167,10 @@ test("full Architecture Rise scene has measurable subject, material, environment
     expect(initializationAttempts).toBe(1);
     expect(await observer.getAttribute("data-observer-environment-status")).toBe("active");
     expect(subjectDifferential.regions.subject.changedPixels).toBeGreaterThan(500);
+    expect(facadeMaterialEvidence.colorMap.enabledVsDisabled.changedPixels).toBeGreaterThan(20);
+    expect(facadeMaterialEvidence.normalMap.enabledVsDisabled.changedPixels).toBeGreaterThan(20);
+    expect(environmentViewA.enabledVsDisabled.changedPixels).toBeGreaterThan(100);
+    expect(environmentViewB.enabledVsDisabled.changedPixels).toBeGreaterThan(100);
     expect(spaNavigationEvidence.returnedApplicationFallback).toBe("none");
   }
 });

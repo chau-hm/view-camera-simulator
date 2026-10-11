@@ -1188,3 +1188,63 @@ guided-task route or its panel. The final focused Architecture Rise E2E passed
 2/2 in both browser modes. The existing Anatomy pilot passed 5/5 in ordinary
 Chromium and 4 passed / 1 expected application-fallback skip in native-required
 Chrome. The local full workflow remains incomplete beyond its first E2E file.
+
+### PR #251 Review-Fix Round 1 — material and glazing evidence
+
+This follow-up strengthens the scene evidence with negative controls on the
+actual registered `architecture-rise-primary-facade` mesh and its existing
+`MeshStandardMaterial`. The test swaps only the color or normal map for a
+neutral 1×1 texture, captures the same projected facade ROI, restores the
+original map, and confirms the restored pixels match. A neutral texture is
+used instead of a null map because Three.js r186's WebGPU material path can
+retain a texture node and fail when that map is removed.
+
+| Backend | Color map disabled | Normal map disabled | Restored image |
+| --- | --- | --- | --- |
+| Chromium 149, `webgpu-renderer / webgl2-fallback` | 819/992 pixels changed (12-level channel threshold; mean delta 20.25/255) | 355/992 changed (1-level threshold; mean delta 0.237/255) | 0 changed pixels for both maps |
+| Chrome 155, `webgpu-renderer / webgpu` | 800/992 pixels changed (12-level channel threshold; mean delta 20.09/255) | 345/992 changed (1-level threshold; mean delta 0.218/255) | 0 changed pixels for both maps |
+
+The normal-map negative control uses an explicit one-level channel threshold
+because its real contribution is subtle; it must still change more than 100
+pixels and 10% of the ROI and exceed a 0.1/255 mean RGB delta. The test reads
+the material and map UUIDs from the mounted facade, keeps the camera and
+renderer generation stable, and checks actual framebuffer pixels. Registry or
+material metadata alone cannot satisfy this assertion.
+
+The glazing check captures environment-on, suppressed, and restored images at
+two fixed camera positions. Suppression uses the live environment rig's owned
+intensity value of zero while keeping the PMREM texture assigned; the
+suppressed image changes 657/920 front-glazing pixels at view A (22.03/255
+mean delta) and 968/1,392 at view B (15.05/255). Both restored ROIs return to
+zero changed pixels. The normalized response differs by 0.0298 between views,
+so this run reports view-angle dependence as verified. Renderer family,
+execution backend, mount generation, glazing material, lighting, and shadow
+configuration stay fixed across each comparison.
+
+The environment control now belongs to the component that owns and disposes
+the PMREM rig. Suppression changes only that live rig's intensity; disposal
+restores the prior environment and intensity if the rig still owns the scene,
+then releases its target. Focused lifecycle tests cover suppression, owner
+replacement, cleanup while suppressed, and one-time disposal. The development
+control remains restricted to the exact E2E fixture and is removed on cleanup.
+The probe mount also has a direct compile-time development guard; a production
+build scan found no fixture path, material-control event, or facade-control
+attribute markers in the emitted JavaScript.
+
+The updated Chromium 149 fallback E2E completed 2/2 tests. Its full scene test
+took 10.2 minutes and reported API present / adapter unavailable,
+`webgpu-renderer / webgl2-fallback`, no application fallback, one factory
+attempt, contentful Ground Glass, and no page or console errors. The
+native-required run completed 2/2 tests in headed Chrome 155.0.8059.39 on
+macOS Darwin 27.0.0 arm64. It reported API present / adapter available,
+`webgpu-renderer / webgpu`, no application fallback or initialization failure,
+one factory attempt, contentful Ground Glass, and no page or console errors.
+The A→B→A route return created a new renderer generation and one new attempt in
+both runs. Hardware acceleration remains unconfirmed; the evidence proves the
+native WebGPU API execution path, not the adapter's hardware/software backing.
+
+**Review-fix decision: NATIVE WEBGPU VERIFIED — GO.** The added material and
+glazing negative controls passed on the actual native WebGPU backend as well
+as the ordinary fallback baseline. This remains evidence for the isolated
+Architecture Rise fixture only; public Architecture Rise eligibility and the
+production WebGL default are unchanged.

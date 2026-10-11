@@ -15,6 +15,8 @@ export type WorldEnvironmentRig<
   readonly previousEnvironment: THREE.Texture | null;
   readonly previousEnvironmentIntensity: number;
   readonly appliedIntensity: number;
+  readonly suppressedEnvironmentIntensity: number;
+  suppressed: boolean;
   disposed: boolean;
 };
 
@@ -37,6 +39,8 @@ export const createWorldEnvironmentRigFromTarget = <
     previousEnvironment,
     previousEnvironmentIntensity,
     appliedIntensity: environment.intensity,
+    suppressedEnvironmentIntensity: 0,
+    suppressed: false,
     disposed: false,
   };
 };
@@ -85,6 +89,28 @@ export const createWorldEnvironmentRig = (
   return createWorldEnvironmentRigFromTarget(scene, renderTarget, environment);
 };
 
+/** Changes only the intensity owned by this live rig, without detaching its texture. */
+export const setWorldEnvironmentRigSuppressed = (
+  scene: THREE.Scene,
+  rig: WorldEnvironmentRig,
+  suppressed: boolean,
+): boolean => {
+  if (rig.disposed || scene.environment !== rig.environmentTexture) return false;
+  if (suppressed === rig.suppressed) return true;
+
+  if (suppressed) {
+    if (scene.environmentIntensity !== rig.appliedIntensity) return false;
+    scene.environmentIntensity = rig.suppressedEnvironmentIntensity;
+    rig.suppressed = true;
+    return true;
+  }
+
+  if (scene.environmentIntensity !== rig.suppressedEnvironmentIntensity) return false;
+  scene.environmentIntensity = rig.appliedIntensity;
+  rig.suppressed = false;
+  return true;
+};
+
 /** Restores only scene state still owned by this rig and releases its PMREM target. */
 export const disposeWorldEnvironmentRig = (
   scene: THREE.Scene,
@@ -95,10 +121,12 @@ export const disposeWorldEnvironmentRig = (
 
   if (scene.environment === rig.environmentTexture) {
     scene.environment = rig.previousEnvironment;
-    if (scene.environmentIntensity === rig.appliedIntensity) {
+    if (scene.environmentIntensity === rig.appliedIntensity ||
+      (rig.suppressed && scene.environmentIntensity === rig.suppressedEnvironmentIntensity)) {
       scene.environmentIntensity = rig.previousEnvironmentIntensity;
     }
   }
+  rig.suppressed = false;
 
   rig.renderTarget.dispose();
 };

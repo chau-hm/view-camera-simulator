@@ -36,6 +36,8 @@ const makeRig = (): WorldEnvironmentRig => {
     previousEnvironment: null,
     previousEnvironmentIntensity: 1,
     appliedIntensity: 0.5,
+    suppressedEnvironmentIntensity: 0,
+    suppressed: false,
     disposed: false,
   };
 };
@@ -45,9 +47,14 @@ const disposeRigMock = () => vi.mocked(worldEnvironmentRig.disposeWorldEnvironme
 
 describe("Observer world environment realization lifecycle", () => {
   const scene = new THREE.Scene();
-  const renderer = {};
+  const verificationContainer = document.createElement("div");
+  verificationContainer.setAttribute("data-observer-verification-scene", "architecture-rise");
+  const canvas = document.createElement("canvas");
+  verificationContainer.append(canvas);
+  const renderer = { domElement: canvas };
 
   beforeEach(() => {
+    verificationContainer.replaceChildren(canvas);
     vi.mocked(useThree).mockReturnValue({ gl: renderer, scene } as never);
     vi.spyOn(observerEnvironmentRig, "createObserverWorldEnvironmentRig");
     vi.spyOn(worldEnvironmentRig, "disposeWorldEnvironmentRig")
@@ -95,12 +102,14 @@ describe("Observer world environment realization lifecycle", () => {
       realization: ObserverWorldEnvironmentRealizationToken,
       status: ObserverWorldEnvironmentStatus,
     ) => void,
+    architectureRiseVerificationHarness = false,
   ) => render(
     <WorldEnvironment
       environment={environment}
       mountGeneration={generation}
       createRealizationToken={createRealizationToken}
       onStatusChange={onStatusChange}
+      architectureRiseVerificationHarness={architectureRiseVerificationHarness}
     />,
   );
 
@@ -257,6 +266,56 @@ describe("Observer world environment realization lifecycle", () => {
     ]);
     expect(disposeRigMock()).toHaveBeenCalledWith(scene, rigA);
     act(() => view.unmount());
+  });
+
+  it("keeps suppression inside the owner and disposes safely when unmounted while disabled", () => {
+    window.history.replaceState({}, "", "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html");
+    const rig = makeRig();
+    scene.environment = null;
+    scene.environmentIntensity = 1;
+    createRigMock().mockImplementation(() => {
+      scene.environment = rig.environmentTexture;
+      scene.environmentIntensity = rig.appliedIntensity;
+      return rig;
+    });
+    const harness = createStatusHarness(21);
+    const view = renderEnvironment(
+      baseEnvironment,
+      21,
+      harness.createRealizationToken,
+      harness.onStatusChange,
+      true,
+    );
+    expect(verificationContainer).toHaveAttribute("data-observer-test-environment-control", "ready");
+    expect(verificationContainer).toHaveAttribute("data-observer-test-environment-enabled", "true");
+    expect(verificationContainer).toHaveAttribute("data-observer-test-environment-assigned", "true");
+
+    act(() => {
+      verificationContainer.dispatchEvent(new CustomEvent(
+        "vcs:observer-verification:architecture-rise-environment",
+        { detail: false },
+      ));
+    });
+    expect(scene.environment).toBe(rig.environmentTexture);
+    expect(scene.environmentIntensity).toBe(0);
+    expect(verificationContainer).toHaveAttribute("data-observer-test-environment-enabled", "false");
+    expect(verificationContainer).toHaveAttribute("data-observer-test-environment-assigned", "true");
+
+    // Restore the real disposer so this integration test observes the same owner teardown path.
+    disposeRigMock().mockRestore();
+    act(() => view.unmount());
+    expect(scene.environment).toBeNull();
+    expect(scene.environmentIntensity).toBe(1);
+    expect(rig.renderTarget.dispose).toHaveBeenCalledTimes(1);
+    expect(verificationContainer).not.toHaveAttribute("data-observer-test-environment-control");
+
+    verificationContainer.dispatchEvent(new CustomEvent(
+      "vcs:observer-verification:architecture-rise-environment",
+      { detail: true },
+    ));
+    expect(scene.environment).toBeNull();
+    expect(scene.environmentIntensity).toBe(1);
+    window.history.replaceState({}, "", "/");
   });
 
   it("does not recreate PMREM when the host rerenders with unchanged realization inputs", () => {
