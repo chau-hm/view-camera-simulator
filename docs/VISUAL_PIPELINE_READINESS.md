@@ -76,6 +76,177 @@ WebGL-specific and is not included in the pilot. This evidence validates only
 bounded Observer renderer coexistence; it does not claim an application-wide
 WebGPU migration or fallback.
 
+## Native Observer WebGPU verification (PR A)
+
+PR #247's original Playwright Chromium result remains the historical baseline:
+`navigator.gpu` was present and the mounted renderer reported
+`webgpu-renderer` / `webgl2-fallback`. That proved Three.js renderer coexistence,
+not native WebGPU execution.
+
+This verification round adds a one-shot, development-only adapter probe for the
+explicit Anatomy pilot. It calls the browser's public
+`navigator.gpu.requestAdapter()` with a five-second bound, records only whether
+the API is absent, an adapter is available/unavailable, the request rejects, or
+the probe times out, and never requests a `GPUDevice`. The probe runs only when
+the development pilot is requested, is cached for the page, and ignores late
+results after the requesting component unmounts. Adapter evidence is kept
+separate from the actual mounted renderer classification.
+
+The pinned Three.js version is r186 (`three` 0.186.0). The runtime classifier
+uses the renderer identity and public `Renderer.coordinateSystem`: the r186
+`WebGPURenderer` constructor sets `isWebGPURenderer`; the common `Renderer`
+documents `coordinateSystem` as the selected backend's coordinate system; and
+the WebGPU and WebGL fallback backends return their respective public Three.js
+coordinate-system constants. In the same pinned source, `WebGPURenderer`
+provides a WebGL fallback and `Renderer.init()` catches a backend initialization
+failure before initializing that fallback. This explains why `init()` can
+resolve while the mounted execution backend is WebGL2. The diagnostic does not
+inspect private backend or device fields.
+
+### Runtime evidence
+
+Both environments ran on macOS Darwin 27.0.0, arm64, with Three.js r186. The
+headless Chromium row uses the repository's existing Playwright launch defaults
+(including Playwright's `--no-sandbox` and `--enable-unsafe-swiftshader` flags); it
+is a regression baseline only. Native-required mode launches installed stable
+Google Chrome in headed mode and removes those two Playwright defaults. It adds
+no WebGPU or GPU-selection flags. The launch command was inspected with
+`DEBUG=pw:browser`.
+
+| Evidence | Playwright Chromium baseline | Native-required Google Chrome |
+| --- | --- | --- |
+| Browser | Chromium 149.0.7827.55, headless | Chrome 155.0.8059.39, headed |
+| Browser WebGPU API | Present | Present |
+| Adapter probe | Unavailable (`requestAdapter()` returned `null`) | Available |
+| Mounted renderer family | `webgpu-renderer` | `webgpu-renderer` |
+| Execution backend | `webgl2-fallback` | `webgpu` |
+| Application fallback | `none` | `none` |
+| Initialization failure | `false` | `false` |
+| WebGPU renderer factory attempts | 1 | 1 |
+| Observer readiness | Ready: camera subject visible, focus selection and orbit interaction worked, reset restored the view | Ready: same checks passed |
+| Ground Glass readiness | Contentful | Contentful |
+| Hardware acceleration | Unconfirmed | Unconfirmed |
+
+The automated baseline reproduces PR #247's internal fallback. Its independent
+no-options adapter probe returned `null`. Three r186 requests an adapter with
+its own power-preference and compatibility options; its public renderer API
+does not expose the internal initialization error, so the probe cannot prove
+that Three's separate request failed at the adapter step rather than later
+during device or backend setup. The mounted report does prove that Three's
+WebGL2 fallback became active. In the native-required Chrome run, the actual
+mounted renderer reported `webgpu-renderer` / `webgpu`, with no fallback or
+initialization failure. The original PR A screenshots and color-bucket check
+proved that the Observer canvas was contentful, but did not distinguish pixels
+from the Anatomy subject from the conceptual camera, overlays, or background.
+That limitation was corrected in review fix round 1 below. The earlier native
+screenshot is historical evidence only; the subject-specific differential is
+the current readiness gate.
+
+`system_profiler` reported an Apple M4 Pro GPU with Metal support. That is
+supporting host information, not evidence that this Chrome session's WebGPU
+adapter used hardware acceleration. No browser-specific GPU-process report was
+used to make that association, so acceleration remains **unconfirmed**. During
+the combined run Chrome logged shared-image mailbox errors after the default
+WebGL test closed; an isolated native-only run emitted none. Both runs had no
+page errors, and the native pilot rendered and interacted successfully. The
+mailbox messages are recorded as browser/test-process diagnostics, not as a
+WebGPU initialization failure.
+
+### Reproduction and decision
+
+From the repository root, run the ordinary automated regression:
+
+```bash
+npm run test:e2e -- --project=chromium src/tests/e2e/observer-webgpu-pilot.spec.ts
+```
+
+On a WebGPU-capable desktop with Google Chrome installed and a headed session,
+run the native-required verification:
+
+```bash
+OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- src/tests/e2e/observer-webgpu-pilot.spec.ts
+```
+
+The native-required mode fails if the browser API/adapter is unavailable, the
+mounted renderer is not `webgpu-renderer` / `webgpu`, an application fallback or
+initialization failure occurs, more than one WebGPU renderer factory attempt is
+recorded, Observer pixels or interactions are not ready, or Ground Glass is not
+contentful. It attaches a machine-readable `OBSERVER_RUNTIME_EVIDENCE` result
+and Observer/full-page screenshots. Normal CI remains backend-independent and
+does not require hardware.
+
+**PR A initial decision (superseded by review fix round 1): NATIVE WEBGPU
+VERIFIED — GO.** The real stable Chrome run satisfied the mounted-backend,
+no-fallback, generic canvas-readiness, interaction, Ground Glass, and
+reproducibility checks. Hardware acceleration remained unconfirmed. The P1
+finding showed that the generic canvas check did not prove the Anatomy subject
+itself rendered.
+
+### Review fix round 1 — Anatomy subject-rendered evidence
+
+The P1 review finding identified that the registry's
+`data-scene-subject-id` and the general color-bucket screenshot did not prove
+that the Anatomy subject contributed pixels. The pilot now captures the same
+mounted Observer framebuffer with the registered
+`view-camera-anatomy-subject` group visible and hidden. It projects the existing
+Anatomy presentation bounds through the captured Observer camera to define a
+subject region of interest. The E2E requires a meaningful visible/hidden pixel
+difference, at least 128 changed pixels inside that projected region, at least
+60% of all changed pixels inside it, a still-contentful hidden frame, stable
+camera/backend state, and restoration to the original image within 0.5% of
+pixels. The comparison does not alter subject materials, lighting, exposure,
+Ground Glass, or canonical simulation state. A development-only event seam
+targets only the registered Anatomy group and is removed with the subject's
+React lifecycle; another development-only event sets deterministic test
+framing. Both are unavailable in production builds.
+
+The comparison runs in ordinary WebGL regression and the development pilot,
+including native-required Chrome. Test evidence attaches before-hide,
+subject-hidden, and restored screenshots alongside the pixel measurements.
+Renderer identity, execution backend, application fallback, initialization
+attempt count, and camera position/target are checked for stability across the
+captures. The generic canvas screenshot remains supplementary evidence.
+
+| Subject-render evidence | Chromium baseline | Native-required Chrome | Native negative control |
+| --- | --- | --- | --- |
+| Mounted backend | `webgpu-renderer` / `webgl2-fallback` in pilot | `webgpu-renderer` / `webgpu` | `webgpu-renderer` / `webgpu` |
+| Browser API / adapter | Present / unavailable | Present / available | Present / available |
+| Application fallback / init attempts | `none` / 1 | `none` / 1 | `none` / 1 |
+| Anatomy subject visible-vs-hidden | 20,849 changed pixels; all inside projected region | 20,866 changed pixels; all inside projected region | 0 changed pixels in projected region |
+| Hidden Observer remains contentful | Yes | Yes | Yes |
+| Restore result | Exact initial image | Exact initial image | Subject becomes visible again; 20,866 changed pixels from hidden frame |
+| Subject readiness | Verified | Verified | **Missing; native-required test fails** |
+
+The negative control used the same actual WebGPU renderer and real registered
+subject visibility event to hide the Anatomy group before capture. The Observer
+background remained contentful, controls still worked, and Ground Glass remained
+contentful; the test failed specifically at `Anatomy subject must contribute
+projected pixels` because the visible/hidden evidence was missing. The normal
+subject-visible native run passed the same assertion. Thus registry identity,
+unrelated geometry, and background pixels cannot satisfy subject readiness.
+
+The run used macOS Darwin 27.0.0 arm64, Chrome 155.0.8059.39 (headed), and Three
+r186. The native adapter was available and the mounted execution backend was
+WebGPU. Browser/system evidence did not associate the adapter with hardware
+acceleration, so that remains **unconfirmed**. The software-backed Chromium
+baseline continued to exercise WebGL2 fallback and passed the same subject
+differential. No cross-renderer pixel identity is required.
+
+**Review-fix decision: NATIVE WEBGPU VERIFIED — GO.** The native result now
+includes actual Anatomy subject pixels and a real-render negative control that
+fails when those pixels are absent. This supports consideration of PR B's
+multi-backend Observer architecture; every additional scene still needs its own
+subject, interaction, rendering-feature, and fallback evidence. Production
+rollout and Ground Glass migration remain separate decisions.
+
+Before enabling WebGPU for another scene, define that scene's backend-neutral
+contract and supported rendering features, preserve the normal WebGL default,
+and add a native-required run that checks that scene's real subject, controls,
+lighting/environment behavior, and fallback boundary. Scenes using additional
+renderer-specific paths need their own compatibility evidence. Ground Glass
+remains on its unchanged WebGL RTT and requires a separate migration design and
+validation.
+
 ## Runtime Ground Glass renderer evidence
 
 The development-only report is included in the existing

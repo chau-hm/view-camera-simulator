@@ -78,12 +78,16 @@ import {
   resolveObserverVisualPipelineCapabilities,
   type ObserverVisualPipelineCapabilities,
 } from "./backend/observerVisualPipelineCapabilities";
+import type { ObserverWebGpuAdapterAvailability } from "./backend/observerWebGpuDiagnostic";
 
 type SceneRendererProps = {
   backendSelection: SelectedObserverBackend;
   rendererMountKey: number;
   webgpuApiPresent: boolean;
+  webgpuAdapterAvailability: ObserverWebGpuAdapterAvailability;
+  webgpuInitializationAttempts: number;
   rendererFailureStage: "initialization" | null;
+  onWebGpuInitializationAttempt: () => void;
   onWebGpuInitializationFailure: () => void;
   onObserverCanvasError: (error: Error, info: ErrorInfo) => void;
   scene: SceneDefinition;
@@ -179,6 +183,9 @@ const captureObserverView = (
   target: controls.target.toArray() as [number, number, number],
 });
 
+const OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT =
+  "vcs:observer-verification:anatomy-view";
+
 const targetsMatch = (
   a: [number, number, number],
   b: [number, number, number],
@@ -229,6 +236,30 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
     controls.addEventListener("end", publish);
     return () => controls.removeEventListener("end", publish);
   }, [camera, controls, onViewStateChange]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || sceneId !== "view-camera-anatomy") return;
+
+    const applyVerificationView = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as {
+        position?: unknown;
+        target?: unknown;
+      };
+      const isVector = (value: unknown): value is [number, number, number] =>
+        Array.isArray(value) && value.length === 3 &&
+        value.every((component) => typeof component === "number" && Number.isFinite(component));
+      if (!isVector(candidate.position) || !isVector(candidate.target)) return;
+
+      applyObserverCameraReset(camera, controls, candidate.position, candidate.target);
+      onViewStateChange(captureObserverView(camera, controls));
+    };
+
+    window.addEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+    return () =>
+      window.removeEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+  }, [camera, controls, onViewStateChange, sceneId]);
 
   useLayoutEffect(() => {
     const applyView = (view: ObserverViewState) => {
@@ -1100,7 +1131,10 @@ export const SceneRenderer = ({
   backendSelection,
   rendererMountKey,
   webgpuApiPresent,
+  webgpuAdapterAvailability,
+  webgpuInitializationAttempts,
   rendererFailureStage,
+  onWebGpuInitializationAttempt,
   onWebGpuInitializationFailure,
   onObserverCanvasError,
   scene,
@@ -1143,8 +1177,14 @@ export const SceneRenderer = ({
         backendSelection,
         qualityConfig.antialias,
         onWebGpuInitializationFailure,
+        onWebGpuInitializationAttempt,
       ),
-    [backendSelection, onWebGpuInitializationFailure, qualityConfig.antialias],
+    [
+      backendSelection,
+      onWebGpuInitializationAttempt,
+      onWebGpuInitializationFailure,
+      qualityConfig.antialias,
+    ],
   );
   const cameraMovementPresentation = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
@@ -1267,6 +1307,17 @@ export const SceneRenderer = ({
       data-observer-execution-backend={mountedObserverCapabilities?.executionBackend}
       data-observer-application-fallback={backendSelection.applicationFallback}
       data-observer-webgpu-api-present={String(webgpuApiPresent)}
+      data-observer-adapter-availability={webgpuAdapterAvailability}
+      data-observer-webgpu-initialization-attempts={
+        backendSelection.requestedRenderer === "webgpu-pilot"
+          ? String(webgpuInitializationAttempts)
+          : undefined
+      }
+      data-observer-hardware-acceleration={
+        backendSelection.requestedRenderer === "webgpu-pilot"
+          ? "unconfirmed"
+          : undefined
+      }
       data-observer-renderer-failure-stage={rendererFailureStage ?? undefined}
       data-observer-shadow-map-status={
         mountedObserverCapabilities?.status === "active"
