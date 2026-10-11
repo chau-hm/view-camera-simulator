@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState } from "react";
+import { useThree } from "@react-three/fiber";
 import type * as THREE from "three";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
@@ -58,16 +59,27 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
   }, [assetKey, request]);
 
   useLayoutEffect(() => {
-    if (
-      !import.meta.env.DEV ||
-      assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY ||
-      !group ||
-      group.name !== "view-camera-anatomy-subject"
-    ) {
-      return;
-    }
+    if (group) refreshShadowParticipation();
+  }, [group, refreshShadowParticipation]);
 
-    const container = document.querySelector<HTMLElement>(
+  return group ? (
+    <>
+      <primitive object={group} dispose={null} />
+      {import.meta.env.DEV && assetKey === VIEW_CAMERA_ANATOMY_ASSET_KEY
+        ? <AnatomyVisibilityVerificationHook group={group} />
+        : null}
+    </>
+  ) : null;
+};
+
+/** Development-only subject visibility seam used by the PR #248 framebuffer negative control. */
+const AnatomyVisibilityVerificationHook = ({ group }: { group: THREE.Group }) => {
+  const { gl } = useThree();
+
+  useLayoutEffect(() => {
+    if (group.name !== "view-camera-anatomy-subject") return;
+
+    const container = gl.domElement.closest<HTMLElement>(
       '[data-testid="scene-canvas"]',
     );
     const originalVisibility = group.visible;
@@ -82,7 +94,7 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
       }
     };
 
-    window.addEventListener(
+    container?.addEventListener(
       "vcs:observer-verification:anatomy-visibility",
       setVisibility,
     );
@@ -94,20 +106,16 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
 
     return () => {
       group.visible = originalVisibility;
-      window.removeEventListener(
+      container?.removeEventListener(
         "vcs:observer-verification:anatomy-visibility",
         setVisibility,
       );
       container?.removeAttribute("data-observer-test-anatomy-visibility-hook");
       container?.removeAttribute("data-observer-test-anatomy-subject-visible");
     };
-  }, [assetKey, group]);
+  }, [gl.domElement, group]);
 
-  useLayoutEffect(() => {
-    if (group) refreshShadowParticipation();
-  }, [group, refreshShadowParticipation]);
-
-  return group ? <primitive object={group} dispose={null} /> : null;
+  return null;
 };
 
 const architectureRiseRequest = Object.freeze({

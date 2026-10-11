@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
@@ -9,10 +9,11 @@ import {
   type ObserverWebGpuAdapterAvailability,
 } from "../../render/backend/observerWebGpuDiagnostic";
 import {
-  resolveObserverRendererInitializationFailure,
   selectObserverBackend,
   type ObserverBackendSelection,
 } from "../../render/backend/observerBackend";
+import { resolveObserverSceneCompatibility } from "../../render/backend/observerSceneCompatibility";
+import { useObserverRendererLifecycle } from "./useObserverRendererLifecycle";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -122,15 +123,19 @@ export const SceneViewport = ({
   const requestedRendererParam = typeof window === "undefined"
     ? null
     : new URLSearchParams(window.location.search).get("observerRenderer");
+  const sceneCompatibility = useMemo(
+    () => resolveObserverSceneCompatibility(scene.id),
+    [scene.id],
+  );
   const requestedBackendSelection = useMemo(
     () =>
       selectObserverBackend({
         webglAvailable,
         requestedRendererParam,
-        sceneId: scene.id,
+        sceneCompatibility,
         developmentPilotEnabled: import.meta.env.DEV,
       }),
-    [requestedRendererParam, scene.id, webglAvailable],
+    [requestedRendererParam, sceneCompatibility, webglAvailable],
   );
   const [rendererSelectionOverride, setRendererSelectionOverride] = useState<{
     sceneId: string;
@@ -142,86 +147,94 @@ export const SceneViewport = ({
     rendererSelectionOverride.requestedRendererParam === requestedRendererParam
       ? rendererSelectionOverride.selection
       : requestedBackendSelection;
-  const [webgpuAdapterAvailability, setWebgpuAdapterAvailability] =
-    useState<ObserverWebGpuAdapterAvailability>("not-requested");
-  const [webgpuInitializationAttemptsByScene, setWebgpuInitializationAttemptsByScene] = useState({
-    sceneId: scene.id,
-    count: 0,
-  });
-  const webgpuInitializationAttempts =
-    webgpuInitializationAttemptsByScene.sceneId === scene.id
-      ? webgpuInitializationAttemptsByScene.count
-      : 0;
   const [rendererMountKey, setRendererMountKey] = useState(0);
-  const [rendererFailure, setRendererFailure] = useState<{
-    sceneId: string;
-    stage: "initialization";
-  } | null>(null);
-  const webgpuInitializationFailureRef = useRef(false);
+  const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}`;
+  const previousRequestIdentityRef = useRef(requestIdentity);
+  useLayoutEffect(() => {
+    if (previousRequestIdentityRef.current === requestIdentity) return;
+    previousRequestIdentityRef.current = requestIdentity;
+    setRendererSelectionOverride((current) =>
+      current && `${current.sceneId}:${current.requestedRendererParam ?? "default"}` !== requestIdentity
+        ? null
+        : current,
+    );
+  }, [requestIdentity]);
   const webgpuApiPresent =
     typeof navigator !== "undefined" &&
     typeof (navigator as Navigator & { gpu?: unknown }).gpu !== "undefined";
   const developmentWebGpuPilotRequested =
-    import.meta.env.DEV && backendSelection.requestedRenderer === "webgpu-pilot";
+    import.meta.env.DEV &&
+    backendSelection.requestedRenderer === "webgpu-pilot" &&
+    backendSelection.selectionReason === "webgpu-pilot-approved";
+  const adapterProbeIdentity = requestIdentity;
+  const [adapterAvailabilityState, setAdapterAvailabilityState] = useState<{
+    identity: string;
+    availability: ObserverWebGpuAdapterAvailability;
+  }>({ identity: "", availability: "not-requested" });
+  const webgpuAdapterAvailability = developmentWebGpuPilotRequested
+    ? adapterAvailabilityState.identity === adapterProbeIdentity
+      ? adapterAvailabilityState.availability
+      : "pending"
+    : "not-requested";
 
   useEffect(() => {
     if (!developmentWebGpuPilotRequested) {
-      setWebgpuAdapterAvailability("not-requested");
       return;
     }
 
     let active = true;
-    setWebgpuAdapterAvailability("pending");
+    setAdapterAvailabilityState({
+      identity: adapterProbeIdentity,
+      availability: "pending",
+    });
     void getObserverWebGpuAdapterAvailability().then(
       (availability) => {
-        if (active) setWebgpuAdapterAvailability(availability);
+        if (active) {
+          setAdapterAvailabilityState({ identity: adapterProbeIdentity, availability });
+        }
       },
       () => {
-        if (active) setWebgpuAdapterAvailability("request-rejected");
+        if (active) {
+          setAdapterAvailabilityState({
+            identity: adapterProbeIdentity,
+            availability: "request-rejected",
+          });
+        }
       },
     );
 
     return () => {
       active = false;
     };
-  }, [developmentWebGpuPilotRequested, scene.id]);
+  }, [adapterProbeIdentity, developmentWebGpuPilotRequested]);
 
-  const onWebGpuInitializationFailure = useCallback(() => {
-    webgpuInitializationFailureRef.current = true;
-    setRendererFailure({ sceneId: scene.id, stage: "initialization" });
-  }, [scene.id]);
-  const onWebGpuInitializationAttempt = useCallback(() => {
-    setWebgpuInitializationAttemptsByScene((current) => ({
-      sceneId: scene.id,
-      count: current.sceneId === scene.id ? current.count + 1 : 1,
-    }));
-  }, [scene.id]);
-  const onObserverCanvasError = useCallback(
-    () => {
-      const failedDuringWebGpuInitialization = webgpuInitializationFailureRef.current;
-      webgpuInitializationFailureRef.current = false;
-
-      if (failedDuringWebGpuInitialization && backendSelection.status === "selected") {
-        const nextSelection = resolveObserverRendererInitializationFailure(backendSelection);
-        setRendererSelectionOverride({
-          sceneId: scene.id,
-          requestedRendererParam,
-          selection: nextSelection,
-        });
-        if (nextSelection.status === "selected") {
-          setRendererMountKey((value) => value + 1);
-          return;
-        }
-        return;
-      }
-
-      setAssetError({
-        title: t(simulatorMessageKeys.viewport.sceneLoadFailed),
-        message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
+  const onApplicationFallback = useCallback(
+    (selection: ObserverBackendSelection) => {
+      setRendererSelectionOverride({
+        sceneId: scene.id,
+        requestedRendererParam,
+        selection,
       });
     },
-    [backendSelection, requestedRendererParam, scene.id, t],
+    [requestedRendererParam, scene.id],
   );
+  const onFallbackRemount = useCallback(() => {
+    setRendererMountKey((value) => value + 1);
+  }, []);
+  const onCanvasFailure = useCallback(() => {
+    setAssetError({
+      title: t(simulatorMessageKeys.viewport.sceneLoadFailed),
+      message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
+    });
+  }, [scene.id, t]);
+  const rendererLifecycle = useObserverRendererLifecycle({
+    requestIdentity,
+    backendSelection,
+    rendererMountKey,
+    onApplicationFallback,
+    onFallbackRemount,
+    onCanvasFailure,
+  });
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -350,16 +363,17 @@ export const SceneViewport = ({
           <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
             backendSelection={backendSelection}
-            rendererMountKey={rendererMountKey}
+            sceneCompatibility={sceneCompatibility}
+            rendererMountGeneration={rendererLifecycle.mountGeneration}
+            observerCapabilities={rendererLifecycle.observerCapabilities}
+            onObserverCapabilitiesChange={rendererLifecycle.onObserverCapabilitiesChange}
             webgpuApiPresent={webgpuApiPresent}
             webgpuAdapterAvailability={webgpuAdapterAvailability}
-            webgpuInitializationAttempts={webgpuInitializationAttempts}
-            rendererFailureStage={
-              rendererFailure?.sceneId === scene.id ? rendererFailure.stage : null
-            }
-            onWebGpuInitializationAttempt={onWebGpuInitializationAttempt}
-            onWebGpuInitializationFailure={onWebGpuInitializationFailure}
-            onObserverCanvasError={onObserverCanvasError}
+            webgpuInitializationAttempts={rendererLifecycle.initializationAttempts}
+            rendererFailureStage={rendererLifecycle.rendererFailureStage}
+            onWebGpuInitializationAttempt={rendererLifecycle.onWebGpuInitializationAttempt}
+            onWebGpuInitializationFailure={rendererLifecycle.onWebGpuInitializationFailure}
+            onObserverCanvasError={rendererLifecycle.onObserverCanvasError}
             scene={scene}
             opticsState={opticsState}
             attempt={attempt}

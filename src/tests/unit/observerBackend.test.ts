@@ -1,17 +1,20 @@
 import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 import {
-  initializeObserverWebGpuRenderer,
-  resolveObserverCanvasInitialization,
   resolveObserverRendererInitializationFailure,
-  resolveObserverRendererRuntime,
   selectObserverBackend,
 } from "../../render/backend/observerBackend";
+import {
+  initializeObserverWebGpuRenderer,
+  resolveObserverCanvasInitialization,
+} from "../../render/backend/observerRendererInitialization";
+import { resolveObserverSceneCompatibility } from "../../render/backend/observerSceneCompatibility";
+import { resolveObserverRendererRuntime } from "../../render/backend/observerVisualPipelineCapabilities";
 
 const selectionInput = {
   webglAvailable: true,
   requestedRendererParam: null as string | null,
-  sceneId: "view-camera-anatomy",
+  sceneCompatibility: resolveObserverSceneCompatibility("view-camera-anatomy"),
   developmentPilotEnabled: true,
 };
 
@@ -23,6 +26,7 @@ describe("Observer renderer selection policy", () => {
       rendererAttempt: "webgl",
       applicationFallback: "none",
       webglAvailable: true,
+      selectionReason: "default-webgl-request",
     });
   });
 
@@ -42,9 +46,13 @@ describe("Observer renderer selection policy", () => {
       selectObserverBackend({
         ...selectionInput,
         requestedRendererParam: "webgpu",
-        sceneId: "architecture-rise",
+        sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
       }),
-    ).toMatchObject({ requestedRenderer: "webgl", rendererAttempt: "webgl" });
+    ).toMatchObject({
+      requestedRenderer: "webgpu-pilot",
+      rendererAttempt: "webgl",
+      selectionReason: "scene-has-known-webgpu-constraint",
+    });
   });
 
   it("ignores the pilot query when the development gate is disabled", () => {
@@ -54,13 +62,64 @@ describe("Observer renderer selection policy", () => {
         requestedRendererParam: "webgpu",
         developmentPilotEnabled: false,
       }),
-    ).toMatchObject({ requestedRenderer: "webgl", rendererAttempt: "webgl" });
+    ).toMatchObject({
+      requestedRenderer: "webgpu-pilot",
+      rendererAttempt: "webgl",
+      selectionReason: "development-gate-disabled",
+    });
+  });
+
+  it("fails closed for an unreviewed scene and preserves the requested pilot in diagnostics", () => {
+    expect(
+      selectObserverBackend({
+        ...selectionInput,
+        requestedRendererParam: "webgpu",
+        sceneCompatibility: resolveObserverSceneCompatibility("future-scene"),
+      }),
+    ).toMatchObject({
+      status: "selected",
+      requestedRenderer: "webgpu-pilot",
+      rendererAttempt: "webgl",
+      selectionReason: "scene-requirements-not-declared",
+    });
+  });
+
+  it("rejects unknown renderer requests to the WebGL path", () => {
+    expect(
+      selectObserverBackend({ ...selectionInput, requestedRendererParam: "vulkan" }),
+    ).toMatchObject({
+      status: "selected",
+      requestedRenderer: "unknown",
+      rendererAttempt: "webgl",
+      selectionReason: "unrecognized-renderer-request",
+    });
+  });
+
+  it("does not enable a newly declared but unverified rendering requirement", () => {
+    const anatomy = selectionInput.sceneCompatibility;
+    const incompleteReview = {
+      ...anatomy,
+      requirements: [...(anatomy.requirements ?? []), "procedural-world-environment"] as const,
+    };
+    expect(
+      selectObserverBackend({
+        ...selectionInput,
+        requestedRendererParam: "webgpu",
+        sceneCompatibility: incompleteReview,
+      }),
+    ).toMatchObject({
+      rendererAttempt: "webgl",
+      selectionReason: "scene-requirement-unverified",
+    });
   });
 
   it("preserves the existing unavailable state when WebGL is absent", () => {
     expect(
       selectObserverBackend({ ...selectionInput, webglAvailable: false }),
-    ).toMatchObject({ status: "unavailable", reason: "no-supported-backend" });
+    ).toMatchObject({
+      status: "unavailable",
+      failureReason: "no-supported-backend",
+    });
   });
 
   it("allows the bounded WebGPU attempt without treating the API hint as proof", () => {
