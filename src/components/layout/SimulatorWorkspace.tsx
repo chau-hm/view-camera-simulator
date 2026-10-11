@@ -81,6 +81,8 @@ type SimulatorWorkspaceProps = {
   guidedLessonEnabled?: boolean;
   anatomyLessonEnabled?: boolean;
   calibrationEnabled?: boolean;
+  /** Only used by the isolated development E2E verification fixture. */
+  developmentArchitectureRiseWebGpuVerification?: boolean;
   simulateAssetFailure: boolean;
 };
 
@@ -93,6 +95,7 @@ export const SimulatorWorkspace = ({
   guidedLessonEnabled = false,
   anatomyLessonEnabled = false,
   calibrationEnabled = false,
+  developmentArchitectureRiseWebGpuVerification = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
   const { t } = useTranslation();
@@ -730,6 +733,9 @@ export const SimulatorWorkspace = ({
               <SceneViewport
                 overlayMenuResetGeneration={overlayMenuResetGeneration}
                 scene={safeScene}
+                developmentArchitectureRiseWebGpuVerification={
+                  developmentArchitectureRiseWebGpuVerification
+                }
                 opticsState={opticsState}
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}

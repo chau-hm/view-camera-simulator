@@ -10,7 +10,9 @@ import {
 } from "../../render/proceduralWorldEnvironment";
 import {
   createWorldEnvironmentRig,
+  createWorldEnvironmentRigFromTarget,
   disposeWorldEnvironmentRig,
+  setWorldEnvironmentRigSuppressed,
   type OwnedWorldEnvironmentTarget,
 } from "../../render/worldEnvironmentRig";
 import {
@@ -129,6 +131,52 @@ describe("renderer-owned world environment resources", () => {
     expect(scene.background).toBe(background);
     expect(targetDispose).toHaveBeenCalledTimes(1);
     previousEnvironment.dispose();
+  });
+
+  it("suppresses a live owner rig without detaching its target and restores it on disposal", () => {
+    const scene = new THREE.Scene();
+    const previousEnvironment = new THREE.DataTexture();
+    scene.environment = previousEnvironment;
+    scene.environmentIntensity = 0.37;
+    const target = createProcessedTarget();
+    const targetDispose = vi.spyOn(target, "dispose");
+    const rig = createWorldEnvironmentRigFromTarget(scene, target, environment);
+
+    expect(setWorldEnvironmentRigSuppressed(scene, rig, true)).toBe(true);
+    expect(scene.environment).toBe(rig.environmentTexture);
+    expect(scene.environmentIntensity).toBe(0);
+    expect(rig.suppressed).toBe(true);
+
+    disposeWorldEnvironmentRig(scene, rig);
+    expect(scene.environment).toBe(previousEnvironment);
+    expect(scene.environmentIntensity).toBe(0.37);
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    expect(setWorldEnvironmentRigSuppressed(scene, rig, false)).toBe(false);
+    expect(scene.environment).toBe(previousEnvironment);
+    disposeWorldEnvironmentRig(scene, rig);
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    previousEnvironment.dispose();
+  });
+
+  it("does not mutate a replacement environment when a suppressed rig is disposed", () => {
+    const scene = new THREE.Scene();
+    const target = createProcessedTarget();
+    const targetDispose = vi.spyOn(target, "dispose");
+    const rig = createWorldEnvironmentRigFromTarget(scene, target, environment);
+    expect(setWorldEnvironmentRigSuppressed(scene, rig, true)).toBe(true);
+
+    const replacement = new THREE.DataTexture();
+    scene.environment = replacement;
+    scene.environmentIntensity = 0.61;
+    disposeWorldEnvironmentRig(scene, rig);
+
+    expect(scene.environment).toBe(replacement);
+    expect(scene.environmentIntensity).toBe(0.61);
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    expect(setWorldEnvironmentRigSuppressed(scene, rig, false)).toBe(false);
+    expect(scene.environment).toBe(replacement);
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    replacement.dispose();
   });
 
   it("creates distinct processed GPU targets for separate renderer surfaces", () => {

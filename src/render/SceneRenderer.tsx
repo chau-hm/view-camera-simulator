@@ -6,6 +6,7 @@ import { add, scale } from "../core/math/vec";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ErrorInfo, RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
+import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
 import type { ApertureValue, CameraState } from "../types/camera";
@@ -122,6 +123,7 @@ type SceneRendererProps = {
   containerStyle?: React.CSSProperties;
   /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
   cameraPresentation?: ConceptualCameraPresentation;
+  architectureRiseVerificationHarness?: boolean;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
 };
 
@@ -201,6 +203,8 @@ const captureObserverView = (
 
 const OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT =
   "vcs:observer-verification:anatomy-view";
+const OBSERVER_ARCHITECTURE_RISE_VERIFICATION_VIEW_EVENT =
+  "vcs:observer-verification:architecture-rise-view";
 
 const targetsMatch = (
   a: [number, number, number],
@@ -279,6 +283,36 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
     container.addEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
     return () =>
       container.removeEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+  }, [camera, controls, gl.domElement, onViewStateChange, sceneId]);
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      sceneId !== "architecture-rise" ||
+      typeof window === "undefined" ||
+      !(
+        window.location.pathname === "/simulator/free/architecture-rise" ||
+        window.location.pathname === "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html"
+      )
+    ) return;
+    const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
+    if (!container) return;
+    const applyVerificationView = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { position?: unknown; target?: unknown };
+      const isVector = (value: unknown): value is [number, number, number] =>
+        Array.isArray(value) && value.length === 3 &&
+        value.every((component) => typeof component === "number" && Number.isFinite(component));
+      if (!isVector(candidate.position) || !isVector(candidate.target)) return;
+      applyObserverCameraReset(camera, controls, candidate.position, candidate.target);
+      onViewStateChange(captureObserverView(camera, controls));
+    };
+    container.addEventListener(OBSERVER_ARCHITECTURE_RISE_VERIFICATION_VIEW_EVENT, applyVerificationView);
+    return () => container.removeEventListener(
+      OBSERVER_ARCHITECTURE_RISE_VERIFICATION_VIEW_EVENT,
+      applyVerificationView,
+    );
   }, [camera, controls, gl.domElement, onViewStateChange, sceneId]);
 
   useLayoutEffect(() => {
@@ -985,6 +1019,328 @@ const OpticalGeometryOverlays = ({
   );
 };
 
+/** Test-only observation and fault-injection seam bound to the real Observer scene. */
+// Keep a valid neutral map attached: Three r186 can retain a WebGPU texture node
+// for a null map and fail during the next render instead of producing a control image.
+const createNeutralVerificationTexture = (
+  source: THREE.Texture,
+  rgba: readonly [number, number, number, number],
+): THREE.DataTexture => {
+  const texture = new THREE.DataTexture(
+    new Uint8Array(rgba),
+    1,
+    1,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
+  texture.mapping = source.mapping;
+  texture.channel = source.channel;
+  texture.colorSpace = source.colorSpace;
+  texture.wrapS = source.wrapS;
+  texture.wrapT = source.wrapT;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.flipY = source.flipY;
+  texture.offset.copy(source.offset);
+  texture.repeat.copy(source.repeat);
+  texture.center.copy(source.center);
+  texture.rotation = source.rotation;
+  texture.matrixAutoUpdate = source.matrixAutoUpdate;
+  texture.needsUpdate = true;
+  return texture;
+};
+
+const ArchitectureRiseVerificationProbe = () => {
+  const { gl, scene, invalidate } = useThree();
+  const inventoryReported = useRef(false);
+  const verificationContainerRef = useRef<HTMLElement | null>(null);
+  const facadeMaterialEvidenceRef = useRef<Readonly<{
+    mesh: THREE.Mesh;
+    material: THREE.MeshStandardMaterial;
+    colorMap: THREE.Texture;
+    normalMap: THREE.Texture;
+    neutralColorMap: THREE.DataTexture;
+    neutralNormalMap: THREE.DataTexture;
+  }> | null>(null);
+
+  useLayoutEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-observer-verification-scene="architecture-rise"]',
+    );
+    if (!container) return;
+
+    // Shadow comparison uses a second verification mount so Three.js sees
+    // the alternate light configuration before it builds WebGPU shadow nodes.
+    const disablePresentationShadows =
+      window.location.pathname === "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html" &&
+      new URLSearchParams(window.location.search).get("shadowMode") === "disabled";
+    const presentationKey = scene.getObjectByName("teaching-lighting-key") as THREE.Light | null;
+    const originalPresentationKeyCastsShadow = presentationKey?.castShadow ?? null;
+    if (disablePresentationShadows && presentationKey) {
+      presentationKey.castShadow = false;
+      container.setAttribute("data-observer-test-key-shadow-enabled", "false");
+    } else if (presentationKey) {
+      container.setAttribute("data-observer-test-key-shadow-enabled", String(presentationKey.castShadow));
+    }
+
+    verificationContainerRef.current = container;
+    const lightStates = new Map<string, { intensity: number }>();
+
+    const setFacadeMaterialMap = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { kind?: unknown; enabled?: unknown };
+      if (
+        (candidate.kind !== "colorMap" && candidate.kind !== "normalMap") ||
+        typeof candidate.enabled !== "boolean"
+      ) return;
+      const evidence = facadeMaterialEvidenceRef.current;
+      if (
+        !evidence ||
+        scene.getObjectByName("architecture-rise-primary-facade") !== evidence.mesh ||
+        evidence.mesh.material !== evidence.material
+      ) return;
+      if (candidate.kind === "colorMap") {
+        evidence.material.map = candidate.enabled
+          ? evidence.colorMap
+          : evidence.neutralColorMap;
+      } else {
+        evidence.material.normalMap = candidate.enabled
+          ? evidence.normalMap
+          : evidence.neutralNormalMap;
+      }
+      evidence.material.needsUpdate = true;
+      container.setAttribute(
+        candidate.kind === "colorMap"
+          ? "data-observer-test-facade-color-map-enabled"
+          : "data-observer-test-facade-normal-map-enabled",
+        String(candidate.enabled),
+      );
+      invalidate();
+    };
+    const setLightState = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { name?: unknown; enabled?: unknown };
+      if (
+        (candidate.name !== "teaching-lighting-key" &&
+          candidate.name !== "architecture-rise-daylight") ||
+        typeof candidate.enabled !== "boolean"
+      ) return;
+      const light = scene.getObjectByName(candidate.name) as THREE.Light | null;
+      if (!light) return;
+      if (!lightStates.has(candidate.name)) {
+        lightStates.set(candidate.name, { intensity: light.intensity });
+      }
+      const original = lightStates.get(candidate.name);
+      if (!original) return;
+      light.intensity = candidate.enabled ? original.intensity : 0;
+      container.setAttribute(
+        candidate.name === "teaching-lighting-key"
+          ? "data-observer-test-presentation-key-enabled"
+          : "data-observer-test-daylight-enabled",
+        String(candidate.enabled),
+      );
+      invalidate();
+    };
+
+    container.addEventListener("vcs:observer-verification:architecture-rise-material-map", setFacadeMaterialMap);
+    container.addEventListener("vcs:observer-verification:architecture-rise-light", setLightState);
+    container.setAttribute("data-observer-test-architecture-rise-probe", "ready");
+
+    return () => {
+      const evidence = facadeMaterialEvidenceRef.current;
+      if (
+        evidence &&
+        scene.getObjectByName("architecture-rise-primary-facade") === evidence.mesh &&
+        evidence.mesh.material === evidence.material
+      ) {
+        evidence.material.map = evidence.colorMap;
+        evidence.material.normalMap = evidence.normalMap;
+        evidence.material.needsUpdate = true;
+      }
+      facadeMaterialEvidenceRef.current?.neutralColorMap.dispose();
+      facadeMaterialEvidenceRef.current?.neutralNormalMap.dispose();
+      facadeMaterialEvidenceRef.current = null;
+      verificationContainerRef.current = null;
+      for (const [name, state] of lightStates) {
+        const light = scene.getObjectByName(name) as THREE.Light | null;
+        if (light) {
+          light.intensity = state.intensity;
+        }
+      }
+      if (presentationKey && originalPresentationKeyCastsShadow !== null) {
+        presentationKey.castShadow = originalPresentationKeyCastsShadow;
+      }
+      container.removeEventListener("vcs:observer-verification:architecture-rise-material-map", setFacadeMaterialMap);
+      container.removeEventListener("vcs:observer-verification:architecture-rise-light", setLightState);
+      container.removeAttribute("data-observer-test-architecture-rise-probe");
+      container.removeAttribute("data-observer-test-facade-material-control");
+      container.removeAttribute("data-observer-test-facade-color-map-enabled");
+      container.removeAttribute("data-observer-test-facade-normal-map-enabled");
+      container.removeAttribute("data-observer-test-presentation-key-enabled");
+      container.removeAttribute("data-observer-test-daylight-enabled");
+      container.removeAttribute("data-observer-test-key-shadow-enabled");
+    };
+  }, [gl.domElement, invalidate, scene]);
+
+  useFrame(() => {
+    if (!facadeMaterialEvidenceRef.current) {
+      const facade = scene.getObjectByName("architecture-rise-primary-facade");
+      if (facade instanceof THREE.Mesh && facade.material instanceof THREE.MeshStandardMaterial) {
+        const { map, normalMap } = facade.material;
+        if (map && normalMap) {
+          facadeMaterialEvidenceRef.current = {
+            mesh: facade,
+            material: facade.material,
+            colorMap: map,
+            normalMap,
+            neutralColorMap: createNeutralVerificationTexture(map, [255, 255, 255, 255]),
+            neutralNormalMap: createNeutralVerificationTexture(normalMap, [128, 128, 255, 255]),
+          };
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-material-control",
+            "ready",
+          );
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-color-map-enabled",
+            "true",
+          );
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-normal-map-enabled",
+            "true",
+          );
+        }
+      }
+    }
+    if (inventoryReported.current) return;
+    const subject = scene.getObjectByName("architecture-rise-subject");
+    if (
+      !subject ||
+      !scene.environment ||
+      !scene.getObjectByName("architecture-rise-daylight") ||
+      !scene.getObjectByName("teaching-lighting-key")
+    ) return;
+    const meshNames = new Set<string>();
+    const materialTypes = new Set<string>();
+    let meshCount = 0;
+    let mappedMaterialCount = 0;
+    let normalMappedMaterialCount = 0;
+    subject.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      meshCount += 1;
+      if (object.name) meshNames.add(object.name);
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        materialTypes.add(material.type);
+        const mapped = material as THREE.Material & {
+          map?: THREE.Texture | null;
+          normalMap?: THREE.Texture | null;
+          roughnessMap?: THREE.Texture | null;
+        };
+        if (mapped.map || mapped.normalMap || mapped.roughnessMap) mappedMaterialCount += 1;
+        if (mapped.normalMap) normalMappedMaterialCount += 1;
+      }
+    });
+    const expectedMeshes = [
+      "architecture-rise-primary-facade",
+      "architecture-rise-roof-parapet",
+      "architecture-rise-side-return",
+      "architecture-rise-ground",
+      "architecture-rise-facade-window-bay-bay-1-1-glazing",
+      "architecture-rise-side-return-window-bay-side-1-glazing",
+    ];
+    const featureObjects = {
+      facade: "architecture-rise-primary-facade",
+      roofParapet: "architecture-rise-roof-parapet",
+      frontGlazing: "architecture-rise-facade-window-bay-bay-1-1-glazing",
+      sideGlazing: "architecture-rise-side-return-window-bay-side-1-glazing",
+      sideReturn: "architecture-rise-side-return",
+      ground: "architecture-rise-ground",
+      sidewalk: "architecture-rise-sidewalk-slab",
+      focusChart: "architecture-rise-focus-chart",
+      streetSign: "architecture-rise-street-sign",
+    } as const;
+    const featureEvidence = Object.fromEntries(Object.entries(featureObjects).map(([key, name]) => {
+      const object = scene.getObjectByName(name);
+      if (!object) return [key, null];
+      const bounds = new THREE.Box3().setFromObject(object);
+      const materialMeshes: THREE.Mesh[] = [];
+      object.traverse((candidate) => {
+        if (candidate instanceof THREE.Mesh) materialMeshes.push(candidate);
+      });
+      const materials = materialMeshes.flatMap((mesh) =>
+        Array.isArray(mesh.material) ? mesh.material : [mesh.material],
+      );
+      const textureInfo = (texture: THREE.Texture | null | undefined) => {
+        if (!texture) return null;
+        const image = texture.image as { width?: number; height?: number } | undefined;
+        return {
+          colorSpace: texture.colorSpace,
+          width: image?.width ?? null,
+          height: image?.height ?? null,
+          repeat: texture.repeat.toArray(),
+        };
+      };
+      return [key, {
+        objectName: object.name,
+        meshCount: materialMeshes.length,
+        bounds: { min: bounds.min.toArray(), max: bounds.max.toArray() },
+        materials: materials.map((material) => {
+          const candidate = material as THREE.Material & {
+            color?: THREE.Color;
+            roughness?: number;
+            metalness?: number;
+            map?: THREE.Texture | null;
+            normalMap?: THREE.Texture | null;
+            roughnessMap?: THREE.Texture | null;
+          };
+          return {
+            type: material.type,
+            uuid: material.uuid,
+            mapUuid: candidate.map?.uuid ?? null,
+            normalMapUuid: candidate.normalMap?.uuid ?? null,
+            roughnessMapUuid: candidate.roughnessMap?.uuid ?? null,
+            color: candidate.color ? `#${candidate.color.getHexString()}` : null,
+            roughness: candidate.roughness ?? null,
+            metalness: candidate.metalness ?? null,
+            map: textureInfo(candidate.map),
+            normalMap: textureInfo(candidate.normalMap),
+            roughnessMap: textureInfo(candidate.roughnessMap),
+          };
+        }),
+      }];
+    }));
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-observer-verification-scene="architecture-rise"]',
+    );
+    container?.setAttribute("data-observer-test-architecture-rise-inventory", JSON.stringify({
+      rootName: subject.name,
+      meshCount,
+      subjectBounds: (() => {
+        const bounds = new THREE.Box3().setFromObject(subject);
+        return { min: bounds.min.toArray(), max: bounds.max.toArray() };
+      })(),
+      materialTypes: [...materialTypes].sort(),
+      mappedMaterialCount,
+      normalMappedMaterialCount,
+      expectedMeshes: Object.fromEntries(expectedMeshes.map((name) => [name, meshNames.has(name)])),
+      features: featureEvidence,
+      environmentTextureAssigned: scene.environment !== null,
+      daylightLightPresent: scene.getObjectByName("architecture-rise-daylight") !== undefined,
+      daylightCastsShadow: scene.getObjectByName("architecture-rise-daylight")?.castShadow ?? null,
+      presentationKeyPresent: scene.getObjectByName("teaching-lighting-key") !== undefined,
+      presentationKeyCastsShadow: scene.getObjectByName("teaching-lighting-key")?.castShadow ?? null,
+    }));
+    container?.setAttribute("data-observer-test-architecture-rise-subject-mounted", "true");
+    inventoryReported.current = true;
+  });
+
+  return null;
+};
+
 const SceneContent = ({
   scene,
   cameraMovementPresentation,
@@ -1002,6 +1358,7 @@ const SceneContent = ({
   rendererMountGeneration,
   createEnvironmentRealizationToken,
   onEnvironmentStatusChange,
+  architectureRiseVerificationHarness,
 }: {
   scene: SceneDefinition;
   cameraMovementPresentation?: CameraMovementLatticePresentation;
@@ -1025,6 +1382,7 @@ const SceneContent = ({
     realization: ObserverWorldEnvironmentRealizationToken | null,
     status: ObserverWorldEnvironmentStatus,
   ) => void;
+  architectureRiseVerificationHarness: boolean;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -1059,7 +1417,11 @@ const SceneContent = ({
       mountGeneration={rendererMountGeneration}
       createRealizationToken={createEnvironmentRealizationToken}
       onEnvironmentStatusChange={onEnvironmentStatusChange}
+      architectureRiseVerificationHarness={architectureRiseVerificationHarness}
     />
+    {import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
+      ? <ArchitectureRiseVerificationProbe />
+      : null}
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -1194,8 +1556,12 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
   cameraPresentation,
+  architectureRiseVerificationHarness = false,
   onSubjectCapacityChange,
 }: SceneRendererProps) => {
+  const includeWebGpuRuntimeDiagnostics =
+    backendSelection.requestedRenderer === "webgpu-pilot" ||
+    (import.meta.env.DEV && backendSelection.requestedRenderer === "webgpu-verification");
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const activeAperture = useAppStore((state) => state.camera.aperture);
@@ -1394,6 +1760,11 @@ export const SceneRenderer = ({
       ref={containerRef}
       data-testid="scene-canvas"
       data-observer-renderer-surface="observer"
+      data-observer-verification-scene={
+        import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
+          ? "architecture-rise"
+          : undefined
+      }
       data-observer-renderer-generation={
         import.meta.env.DEV ? String(rendererMountGeneration) : undefined
       }
@@ -1418,12 +1789,12 @@ export const SceneRenderer = ({
       data-observer-webgpu-api-present={String(webgpuApiPresent)}
       data-observer-adapter-availability={webgpuAdapterAvailability}
       data-observer-webgpu-initialization-attempts={
-        backendSelection.requestedRenderer === "webgpu-pilot"
+        includeWebGpuRuntimeDiagnostics
           ? String(webgpuInitializationAttempts)
           : undefined
       }
       data-observer-hardware-acceleration={
-        backendSelection.requestedRenderer === "webgpu-pilot"
+        includeWebGpuRuntimeDiagnostics
           ? "unconfirmed"
           : undefined
       }
@@ -1667,6 +2038,9 @@ export const SceneRenderer = ({
           rendererMountGeneration={rendererMountGeneration}
           createEnvironmentRealizationToken={createEnvironmentRealizationToken}
           onEnvironmentStatusChange={onEnvironmentStatusChange}
+          architectureRiseVerificationHarness={
+            import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
+          }
         />
         <OrbitControls
           ref={controlsRef}

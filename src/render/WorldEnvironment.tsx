@@ -9,13 +9,18 @@ import type {
   ObserverWorldEnvironmentRealizationToken,
   ObserverWorldEnvironmentStatus,
 } from "./observerWorldEnvironmentStatus";
-import { disposeWorldEnvironmentRig, type WorldEnvironmentRig } from "./worldEnvironmentRig";
+import {
+  disposeWorldEnvironmentRig,
+  setWorldEnvironmentRigSuppressed,
+  type WorldEnvironmentRig,
+} from "./worldEnvironmentRig";
 
 export const WorldEnvironment = ({
   environment,
   mountGeneration,
   createRealizationToken,
   onStatusChange,
+  architectureRiseVerificationHarness = false,
 }: {
   environment: WorldProceduralSkyGroundEnvironment;
   mountGeneration: number;
@@ -27,12 +32,23 @@ export const WorldEnvironment = ({
     realization: ObserverWorldEnvironmentRealizationToken,
     status: ObserverWorldEnvironmentStatus,
   ) => void;
+  architectureRiseVerificationHarness?: boolean;
 }) => {
   const { gl, scene } = useThree();
 
   useLayoutEffect(() => {
     let current = true;
     let rig: WorldEnvironmentRig | null = null;
+    let requestedEnvironmentEnabled = true;
+    const verificationContainer =
+      import.meta.env.DEV &&
+      architectureRiseVerificationHarness &&
+      typeof window !== "undefined" &&
+      window.location.pathname === "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html"
+        ? gl.domElement.closest<HTMLElement>(
+            '[data-observer-verification-scene="architecture-rise"]',
+          )
+        : null;
     const realization = createRealizationToken(mountGeneration);
     const isCurrent = () => current;
     const reportFailure = (error: unknown) => {
@@ -45,6 +61,46 @@ export const WorldEnvironment = ({
     };
     onStatusChange?.(mountGeneration, realization, "pending");
 
+    const syncVerificationEvidence = () => {
+      if (!verificationContainer || !rig) return;
+      verificationContainer.setAttribute("data-observer-test-environment-control", "ready");
+      verificationContainer.setAttribute(
+        "data-observer-test-environment-enabled",
+        String(!rig.suppressed && scene.environment === rig.environmentTexture),
+      );
+      verificationContainer.setAttribute(
+        "data-observer-test-environment-assigned",
+        String(scene.environment === rig.environmentTexture),
+      );
+      verificationContainer.setAttribute(
+        "data-observer-test-environment-intensity",
+        String(scene.environmentIntensity),
+      );
+    };
+    const setEnvironmentEnabled = (event: Event) => {
+      const enabled = (event as CustomEvent<unknown>).detail;
+      if (typeof enabled !== "boolean") return;
+      requestedEnvironmentEnabled = enabled;
+      if (rig) setWorldEnvironmentRigSuppressed(scene, rig, !enabled);
+      syncVerificationEvidence();
+    };
+    if (verificationContainer) {
+      verificationContainer.addEventListener(
+        "vcs:observer-verification:architecture-rise-environment",
+        setEnvironmentEnabled,
+      );
+    }
+
+    const acceptRig = (createdRig: WorldEnvironmentRig | null) => {
+      if (!createdRig) return;
+      rig = createdRig;
+      if (!requestedEnvironmentEnabled) {
+        setWorldEnvironmentRigSuppressed(scene, createdRig, true);
+      }
+      syncVerificationEvidence();
+      onStatusChange?.(mountGeneration, realization, "active");
+    };
+
     try {
       const result = createObserverWorldEnvironmentRig(scene, gl, environment, isCurrent);
       if (result instanceof Promise) {
@@ -54,14 +110,11 @@ export const WorldEnvironment = ({
               if (createdRig) disposeWorldEnvironmentRig(scene, createdRig);
               return;
             }
-            if (!createdRig) return;
-            rig = createdRig;
-            onStatusChange?.(mountGeneration, realization, "active");
+            acceptRig(createdRig);
           })
           .catch(reportFailure);
-      } else if (result) {
-        rig = result;
-        onStatusChange?.(mountGeneration, realization, "active");
+      } else {
+        acceptRig(result);
       }
     } catch (error) {
       reportFailure(error);
@@ -69,9 +122,27 @@ export const WorldEnvironment = ({
 
     return () => {
       current = false;
+      if (verificationContainer) {
+        verificationContainer.removeEventListener(
+          "vcs:observer-verification:architecture-rise-environment",
+          setEnvironmentEnabled,
+        );
+        verificationContainer.removeAttribute("data-observer-test-environment-control");
+        verificationContainer.removeAttribute("data-observer-test-environment-enabled");
+        verificationContainer.removeAttribute("data-observer-test-environment-assigned");
+        verificationContainer.removeAttribute("data-observer-test-environment-intensity");
+      }
       if (rig) disposeWorldEnvironmentRig(scene, rig);
     };
-  }, [createRealizationToken, environment, gl, mountGeneration, onStatusChange, scene]);
+  }, [
+    architectureRiseVerificationHarness,
+    createRealizationToken,
+    environment,
+    gl,
+    mountGeneration,
+    onStatusChange,
+    scene,
+  ]);
 
   return null;
 };

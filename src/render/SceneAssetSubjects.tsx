@@ -68,8 +68,56 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
       {import.meta.env.DEV && assetKey === VIEW_CAMERA_ANATOMY_ASSET_KEY
         ? <AnatomyVisibilityVerificationHook group={group} />
         : null}
+      {import.meta.env.DEV && assetKey === ARCHITECTURE_RISE_ASSET_KEY
+        ? <ArchitectureRiseVisibilityVerificationHook group={group} />
+        : null}
     </>
   ) : null;
+};
+
+/** Test-only control for the actual registered Architecture Rise asset root. */
+const ArchitectureRiseVisibilityVerificationHook = ({ group }: { group: THREE.Group }) => {
+  useLayoutEffect(() => {
+    if (group.name !== "architecture-rise-subject") return;
+    if (typeof document === "undefined") return;
+    const container = document.querySelector<HTMLElement>(
+      '[data-testid="scene-canvas"][data-observer-verification-scene="architecture-rise"]',
+    );
+    if (!container) return;
+
+    const originalVisibility = group.visible;
+    const setVisibility = (event: Event) => {
+      const visible = (event as CustomEvent<unknown>).detail;
+      if (typeof visible !== "boolean") return;
+      group.visible = visible;
+      container.setAttribute(
+        "data-observer-test-architecture-rise-subject-visible",
+        String(visible),
+      );
+    };
+
+    container.addEventListener(
+      "vcs:observer-verification:architecture-rise-subject",
+      setVisibility,
+    );
+    container.setAttribute("data-observer-test-architecture-rise-visibility-hook", "ready");
+    container.setAttribute(
+      "data-observer-test-architecture-rise-subject-visible",
+      String(originalVisibility),
+    );
+
+    return () => {
+      group.visible = originalVisibility;
+      container.removeEventListener(
+        "vcs:observer-verification:architecture-rise-subject",
+        setVisibility,
+      );
+      container.removeAttribute("data-observer-test-architecture-rise-visibility-hook");
+      container.removeAttribute("data-observer-test-architecture-rise-subject-visible");
+    };
+  }, [group]);
+
+  return null;
 };
 
 /** Development-only subject visibility seam used by the PR #248 framebuffer negative control. */

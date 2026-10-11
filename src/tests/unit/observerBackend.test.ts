@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 import {
   resolveObserverRendererInitializationFailure,
+  selectArchitectureRiseWebGpuVerificationBackend,
   selectObserverBackend,
 } from "../../render/backend/observerBackend";
 import {
@@ -52,6 +53,40 @@ describe("Observer renderer selection policy", () => {
       requestedRenderer: "webgpu-pilot",
       rendererAttempt: "webgl",
       selectionReason: "scene-compatibility-not-evaluated",
+    });
+  });
+
+  it("keeps Architecture Rise publicly denied while exposing only the explicit verification selection", () => {
+    const publicSelection = selectObserverBackend({
+      ...selectionInput,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
+    });
+    expect(publicSelection).toMatchObject({
+      requestedRenderer: "webgpu-pilot",
+      rendererAttempt: "webgl",
+      selectionReason: "scene-compatibility-not-evaluated",
+    });
+
+    expect(selectArchitectureRiseWebGpuVerificationBackend(true)).toMatchObject({
+      status: "selected",
+      requestedRenderer: "webgpu-verification",
+      rendererAttempt: "webgpu",
+      applicationFallback: "none",
+      selectionReason: "test-only-architecture-rise-verification",
+    });
+  });
+
+  it("preserves one-shot application fallback for a current verification attempt", () => {
+    const selection = selectArchitectureRiseWebGpuVerificationBackend(true);
+    expect(selection.status).toBe("selected");
+    if (selection.status !== "selected") return;
+    expect(resolveObserverRendererInitializationFailure(selection)).toMatchObject({
+      status: "selected",
+      requestedRenderer: "webgpu-verification",
+      rendererAttempt: "webgl",
+      applicationFallback: "app-webgl",
+      selectionReason: "test-only-architecture-rise-verification",
     });
   });
 

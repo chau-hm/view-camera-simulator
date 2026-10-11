@@ -9,6 +9,7 @@ import {
   type ObserverWebGpuAdapterAvailability,
 } from "../../render/backend/observerWebGpuDiagnostic";
 import {
+  selectArchitectureRiseWebGpuVerificationBackend,
   selectObserverBackend,
   type ObserverBackendSelection,
 } from "../../render/backend/observerBackend";
@@ -33,6 +34,7 @@ import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfil
 
 type SceneViewportProps = {
   scene: SceneDefinition;
+  developmentArchitectureRiseWebGpuVerification?: boolean;
   opticsState: DerivedOpticsState;
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
@@ -64,6 +66,7 @@ return "high";
 
 export const SceneViewport = ({
   scene,
+  developmentArchitectureRiseWebGpuVerification = false,
   opticsState,
   renderQuality,
   setRenderQuality,
@@ -123,6 +126,13 @@ export const SceneViewport = ({
   const requestedRendererParam = typeof window === "undefined"
     ? null
     : new URLSearchParams(window.location.search).get("observerRenderer");
+  const architectureRiseVerificationHarness =
+    import.meta.env.DEV &&
+    developmentArchitectureRiseWebGpuVerification &&
+    scene.id === "architecture-rise" &&
+    typeof window !== "undefined" &&
+    window.location.pathname ===
+      "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html";
   const sceneCompatibility = useMemo(
     () => resolveObserverSceneCompatibility(scene.id),
     [scene.id],
@@ -137,24 +147,24 @@ export const SceneViewport = ({
       }),
     [requestedRendererParam, sceneCompatibility, webglAvailable],
   );
+  const selectionForRequest = architectureRiseVerificationHarness
+    ? selectArchitectureRiseWebGpuVerificationBackend(webglAvailable)
+    : requestedBackendSelection;
   const [rendererSelectionOverride, setRendererSelectionOverride] = useState<{
-    sceneId: string;
-    requestedRendererParam: string | null;
+    requestIdentity: string;
     selection: ObserverBackendSelection;
   } | null>(null);
-  const backendSelection =
-    rendererSelectionOverride?.sceneId === scene.id &&
-    rendererSelectionOverride.requestedRendererParam === requestedRendererParam
-      ? rendererSelectionOverride.selection
-      : requestedBackendSelection;
   const [rendererMountKey, setRendererMountKey] = useState(0);
-  const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}`;
+  const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}:${architectureRiseVerificationHarness ? "architecture-rise-verification" : "public"}`;
+  const backendSelection = rendererSelectionOverride?.requestIdentity === requestIdentity
+    ? rendererSelectionOverride.selection
+    : selectionForRequest;
   const previousRequestIdentityRef = useRef(requestIdentity);
   useLayoutEffect(() => {
     if (previousRequestIdentityRef.current === requestIdentity) return;
     previousRequestIdentityRef.current = requestIdentity;
     setRendererSelectionOverride((current) =>
-      current && `${current.sceneId}:${current.requestedRendererParam ?? "default"}` !== requestIdentity
+      current && current.requestIdentity !== requestIdentity
         ? null
         : current,
     );
@@ -162,23 +172,27 @@ export const SceneViewport = ({
   const webgpuApiPresent =
     typeof navigator !== "undefined" &&
     typeof (navigator as Navigator & { gpu?: unknown }).gpu !== "undefined";
-  const developmentWebGpuPilotRequested =
-    import.meta.env.DEV &&
-    backendSelection.requestedRenderer === "webgpu-pilot" &&
-    backendSelection.selectionReason === "webgpu-pilot-approved";
+  const developmentWebGpuAttemptRequested =
+    import.meta.env.DEV && (
+      (backendSelection.requestedRenderer === "webgpu-pilot" &&
+        backendSelection.selectionReason === "webgpu-pilot-approved") ||
+      (architectureRiseVerificationHarness &&
+        backendSelection.requestedRenderer === "webgpu-verification" &&
+        backendSelection.selectionReason === "test-only-architecture-rise-verification")
+    );
   const adapterProbeIdentity = requestIdentity;
   const [adapterAvailabilityState, setAdapterAvailabilityState] = useState<{
     identity: string;
     availability: ObserverWebGpuAdapterAvailability;
   }>({ identity: "", availability: "not-requested" });
-  const webgpuAdapterAvailability = developmentWebGpuPilotRequested
+  const webgpuAdapterAvailability = developmentWebGpuAttemptRequested
     ? adapterAvailabilityState.identity === adapterProbeIdentity
       ? adapterAvailabilityState.availability
       : "pending"
     : "not-requested";
 
   useEffect(() => {
-    if (!developmentWebGpuPilotRequested) {
+    if (!developmentWebGpuAttemptRequested) {
       return;
     }
 
@@ -206,17 +220,16 @@ export const SceneViewport = ({
     return () => {
       active = false;
     };
-  }, [adapterProbeIdentity, developmentWebGpuPilotRequested]);
+  }, [adapterProbeIdentity, developmentWebGpuAttemptRequested]);
 
   const onApplicationFallback = useCallback(
     (selection: ObserverBackendSelection) => {
       setRendererSelectionOverride({
-        sceneId: scene.id,
-        requestedRendererParam,
+        requestIdentity,
         selection,
       });
     },
-    [requestedRendererParam, scene.id],
+    [requestIdentity],
   );
   const onFallbackRemount = useCallback(() => {
     setRendererMountKey((value) => value + 1);
@@ -363,6 +376,7 @@ export const SceneViewport = ({
           <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
             backendSelection={backendSelection}
+            architectureRiseVerificationHarness={architectureRiseVerificationHarness}
             sceneCompatibility={sceneCompatibility}
             rendererMountGeneration={rendererLifecycle.mountGeneration}
             observerCapabilities={rendererLifecycle.observerCapabilities}
