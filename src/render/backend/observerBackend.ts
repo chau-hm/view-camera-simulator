@@ -1,12 +1,13 @@
 import type { ObserverSceneCompatibility } from "./observerSceneCompatibility";
 
-export type ObserverRendererRequest = "webgl" | "webgpu-pilot" | "unknown";
+export type ObserverRendererRequest = "webgl" | "webgpu-pilot" | "webgpu-verification" | "unknown";
 export type ObserverRendererAttempt = "webgl" | "webgpu";
 export type ObserverApplicationFallback = "none" | "app-webgl";
 
 export type ObserverBackendSelectionReason =
   | "default-webgl-request"
   | "webgpu-pilot-approved"
+  | "test-only-architecture-rise-verification"
   | "development-gate-disabled"
   | "scene-compatibility-not-evaluated"
   | "scene-requirements-not-declared"
@@ -129,12 +130,29 @@ export const selectObserverBackend = (
   };
 };
 
+/**
+ * Explicit selection for the isolated Architecture Rise verification fixture.
+ * The public scene policy above never calls this helper; the dev-only fixture
+ * is the sole caller and keeps the scene compatibility registry fail-closed.
+ */
+export const selectArchitectureRiseWebGpuVerificationBackend = (
+  webglAvailable: boolean,
+): ObserverBackendSelection => ({
+  status: "selected",
+  requestedRenderer: "webgpu-verification",
+  rendererAttempt: "webgpu",
+  applicationFallback: "none",
+  webglAvailable,
+  selectionReason: "test-only-architecture-rise-verification",
+});
+
 /** Resolves the single allowed application-level fallback after a WebGPU attempt fails. */
 export const resolveObserverRendererInitializationFailure = (
   selection: SelectedObserverBackend,
 ): ObserverBackendSelection => {
   if (
-    selection.requestedRenderer === "webgpu-pilot" &&
+    (selection.requestedRenderer === "webgpu-pilot" ||
+      (import.meta.env.DEV && selection.requestedRenderer === "webgpu-verification")) &&
     selection.rendererAttempt === "webgpu" &&
     selection.applicationFallback === "none"
   ) {

@@ -986,3 +986,205 @@ separately in both ordinary Chromium and native-required Chrome.
 The final hosted Actions result for the review-fix head is recorded in the PR
 handoff; the review-fix changes do not alter production WebGL selection,
 Architecture Rise eligibility, or Ground Glass rendering.
+
+## PR D — Architecture Rise Native WebGPU Scene Validation
+
+PR #250 verified that the Architecture Rise procedural environment could be
+realized with native WebGPU in an isolated reflective-material fixture. That
+did not verify the registered Architecture Rise building, its complete asset
+inventory, lighting, shadows, controls, or Ground Glass coexistence. This round
+renders the normal `SceneRenderer` and real `architecture-rise-subject` through
+a development-only test fixture. The fixture is restricted to the exact
+Playwright HTML entry and `import.meta.env.DEV`; it does not add a route or
+query-based compatibility bypass. `selectObserverBackend()` and the
+compatibility registry are unchanged: the public Architecture Rise route
+continues to use WebGL, `webgpu.status` remains `not-evaluated`, and the scene
+remains `not-eligible` for the development pilot.
+
+The verification uses the actual `SceneDefinition`, registered asset factory,
+presentation and world lighting, procedural `WorldEnvironment`, Observer
+Canvas, and existing Ground Glass WebGL RTT. The test hook targets only the
+registered subject and reports runtime mesh/material/texture data from the
+mounted scene. Environment and light negative controls modify the actual
+mounted scene and restore their values. The shadow comparison uses a second
+test-only mount with presentation-key shadows disabled before its first frame;
+changing `castShadow` after Three r186 creates a native WebGPU shadow node can
+produce a null `depthTexture`, so the test does not mutate that live state. The
+comparison uses the same actual WebGPU renderer family/backend, camera pose,
+environment, and scene. Its alternate light configuration is restored by the
+verification component cleanup. A production build contains none of the
+verification fixture path, request identity, selection reason, or shadow-mode
+query strings; the existing lazy `three-webgpu` chunk remains for the Anatomy
+pilot.
+
+### Runtime and mounted-backend evidence
+
+The native-required command ran headed installed Google Chrome 155.0.8059.39
+on macOS Darwin 27.0.0 arm64 with Three.js r186, viewport 1440×1000, and device
+pixel ratio 1. The native-mode Playwright context uses Chrome's own user agent
+instead of the Desktop Chrome device preset. It adds no WebGPU/software-renderer
+flags and removes Playwright's `--no-sandbox` and
+`--enable-unsafe-swiftshader` defaults. A browser WebGPU adapter was available.
+
+| Evidence | Public WebGL route | Ordinary Chromium verification | Native-required Chrome verification |
+| --- | --- | --- | --- |
+| Browser API / adapter | API present; not requested | API present / unavailable | API present / available |
+| Mounted renderer family | `webgl-renderer` | `webgpu-renderer` | `webgpu-renderer` |
+| Execution backend | `webgl2` | `webgl2-fallback` | `webgpu` |
+| Application fallback / failure | `none` / none | `none` / none | `none` / none |
+| Renderer factory attempts for active mount | 0 WebGPU | 1 | 1 |
+| Environment | Active | Active | Active |
+| Architecture Rise public eligibility | `not-eligible` | `not-eligible` | `not-eligible` |
+| Ground Glass RTT | Contentful | Contentful | Contentful |
+| Page/console errors | None | None | None |
+| Hardware acceleration | Unconfirmed | Unconfirmed | Unconfirmed |
+
+The ordinary Chromium run is a fallback regression, not native WebGPU
+evidence. Only native-required mode requires the mounted `webgpu-renderer` /
+`webgpu` pair and rejects fallback. The native run recorded one renderer
+initialization for each active verification mount, no initialization failure,
+no application fallback, and generation `0` for the current host attempt.
+The shadow negative-control mount also initialized once and retained the same
+mounted family and execution backend. The native report records the actual
+mounted renderer, not a backend selection prediction. No claim is made about
+whether Chrome used a hardware or software adapter.
+
+### Scene and visual compatibility results
+
+The actual registered subject is `architecture-rise-subject` with 334 meshes.
+The measured inventory includes `MeshStandardMaterial` and
+`MeshBasicMaterial`; facade and sidewalk materials carried 128×128 sRGB color
+maps plus 128×128 normal and roughness maps. The front glazing retained the
+scene's `#182d37`, roughness `0.24`, metalness `0.08` material. The scene
+contained the named facade, roof parapet, front and side glazing, side return,
+ground, sidewalk, focus chart, and street sign.
+
+The mounted subject visibility negative control changed 124,282 of 211,254
+pixels in the projected scene region. Named feature regions changed for the
+facade, roof, glazing, side return, sidewalk, ground, and focus chart. The
+focus chart retained red pixels in its projected region. Hiding the subject
+left a measured upper-right background patch unchanged (0 of 2,304 pixels),
+Ground Glass stayed contentful, the camera pose and mounted renderer remained
+stable, and restoring the subject returned the Observer image exactly to the
+pre-hide capture. The E2E attaches the WebGL close view, native close view,
+subject-hidden negative control, restored frame, and full Observer/Ground Glass
+screenshots along with the JSON report.
+
+The WebGL and native WebGPU close captures use the same camera position
+`(4.8, 2.7, 4.2)`, target `(0, 1.25, 9.3)`, viewport, device-pixel ratio,
+simulation state, tone mapping, exposure, and output color space. A bounded
+mean absolute RGB delta under 50/255 was required for each representative
+region; measured deltas were:
+
+| Region | Mean absolute RGB delta (0–255) | Visual observation |
+| --- | ---: | --- |
+| Facade | 21.35 | Full facade and texture detail remain visible; WebGPU is lighter and greener/cooler |
+| Roof/parapet | 20.60 | Roof silhouette and trim remain visible |
+| Front glazing | 19.60 | Window geometry and environment response remain visible |
+| Side glazing | 21.44 | Side-return windows remain visible |
+| Side return | 23.54 | Side surface and edges remain visible |
+| Ground | 19.82 | Ground plane and depth ordering remain visible |
+| Sidewalk | 8.73 | Slab remains visible with the closest mean color match |
+| Focus chart | 29.29 | Checker detail and red crosshair pixels remain visible |
+
+The default framing comparison reported 15.04 mean absolute RGB delta. The
+visual review found a modest cooler/greener and brighter shift on some lit
+facade and ground regions. No subject, glazing, texture, or reference geometry
+was missing, and no black, white, magenta, or transparency defect was observed
+in the building materials. The captures do not require pixel-identical GPU
+output, and no material or lighting values were retuned.
+
+Environment disabled versus enabled changed 657 of 920 front-glazing pixels
+(mean RGB delta 22.03); restoring the environment returned that ROI exactly.
+The test requires over 100 changed glazing pixels and mean delta above 2/255;
+it also requires restoration below 8 changed pixels and 0.25/255 mean delta.
+The opposing camera view changed mean glazing luminance by 3.02. Independent
+negative controls for the presentation key and Architecture Rise daylight
+changed 32,624 and 28,059 pixels respectively in the projected facade region,
+with mean deltas 7.78/255 and 7.39/255. Each control must change more than
+1,000 facade pixels with mean delta above 1/255, then restore below 8 changed
+pixels and 0.25/255 mean delta. These image assertions gate the reported PASS;
+the test-hook attributes only confirm which real Three.js object was toggled.
+The actual configuration has active `pcf` shadow maps, a presentation key with
+`castShadow=true`, and Architecture Rise daylight with `castShadow=false`.
+With the presentation key disabled before the negative-control mount's first
+frame, 10,179 subject pixels and 8,889 ground pixels changed. This confirms an
+observable shadow contribution without attributing shadows to the daylight
+source. The scene reported ACES Filmic tone mapping, exposure 1.0, and `srgb`
+output.
+
+### Controls, coexistence, and lifecycle
+
+The run began at 8,890 mm focus (public range 3,090–13,000 mm), f/11, and zero
+rise, tilt, and swing. Public controls then reached 13,000 mm, f/5.6, 22 mm
+rise, 0.4° tilt, and −1.1° swing. Scene/Camera focus, orbit, zoom, and reset
+worked without changing the renderer generation. The real Ground Glass frame
+changed in 206,230 of 211,768 pixels after the combined focus, aperture, rise,
+tilt, and swing changes, while remaining contentful. Ground Glass stayed on
+its existing independent WebGL RTT. Raw and Upright Assist were both
+contentful; their captures differed in 77,315 pixels, and the run restored
+Raw mode. The existing physical optics, Ground Glass render targets, GLSL
+passes, and orientation code were not changed.
+
+The verification did not add renderer or PMREM ownership. It observed the
+existing native environment as `active`, exercised environment removal/restored
+appearance, and checked renderer-generation stability through subject,
+environment, light, focus, movement, orbit, zoom, and reset controls. A
+client-side BrowserRouter round trip navigated from the verification mount to
+public View Camera Anatomy and back without a document reload. The Anatomy
+route mounted its default `webgl-renderer / webgl2` with contentful Ground
+Glass; returning created a replacement Architecture Rise Observer canvas,
+initialized it once, retained the expected native WebGPU or ordinary
+`webgl2-fallback` backend, and kept Ground Glass contentful. This round trip
+does not hold a renderer or PMREM promise pending across navigation; the stale
+callback guards remain covered by the PR #249 lifecycle regression work.
+The machine report captures initial-mount environment and subject-differential
+renderer stability before navigation; return-mount identity and readiness are
+reported separately under `spaSceneNavigation`.
+Resource allocation counts and zero-leak behavior were not measured. Existing
+PR #250 environment lifecycle tests remain the evidence for stale realization
+rejection and target disposal; they do not claim a GPU leak count for this
+complete-scene run.
+
+### Readiness matrix and decision
+
+| Category | Result | Evidence / limitation |
+| --- | --- | --- |
+| Native mounted execution and public-policy isolation | **PASS** | Headed Chrome mounted `webgpu-renderer` / `webgpu`; public route stayed WebGL and denied the request |
+| Registered subject and architectural geometry | **PASS** | 334-mesh actual subject, localized visible/hidden/restored framebuffer differential |
+| Standard/Basic materials and procedural map assignment | **PASS** | Actual mounted material profiles and mapped feature-region screenshots |
+| Facade, roof, frames, side return, ground, sidewalk, signs, focus chart | **PASS** | Named projected regions, subject pixels, matched close-view comparison, crosshair pixels |
+| Glazing and environment contribution | **PASS** | Actual environment negative control and view-dependent captures; directional luminance change is subtle |
+| Presentation/daylight lighting | **PASS** | Independent actual-light negative controls; daylight correctly does not cast shadows |
+| Presentation shadow behavior | **PASS** | Active PCF configuration and measurable same-backend shadow negative control |
+| Background/framing and renderer display settings | **PASS** | Matched camera, ACES Filmic, exposure 1.0, `srgb` |
+| Rise, focus, aperture, tilt, swing, Scene/Camera, orbit, zoom, reset | **PASS** | Public values changed; combined control changes altered 206,230 Ground Glass pixels without an Observer remount |
+| SPA A→B→A scene navigation | **PASS** | BrowserRouter moved from the verification mount to Anatomy and back; renderer identity reinitialized once and Ground Glass stayed contentful |
+| Ground Glass coexistence and Raw/Upright modes | **PASS** | Existing WebGL RTT stayed contentful; control and orientation captures changed distinct pixels |
+| GPU resource leak count / hardware acceleration | **NOT VERIFIED** | No GPU leak counter or Chrome-adapter acceleration association was collected |
+| Other OS/browser/driver combinations | **NOT VERIFIED** | Native scene evidence is from one macOS Chrome environment |
+
+**PR D decision: READY FOR PR E.** The complete registered scene rendered and
+interacted under the actual native WebGPU backend with no unresolved critical
+compatibility defect. The result supports a separate PR E review to enable
+Architecture Rise as a development-only pilot. It does not authorize
+production WebGPU selection, other scene eligibility, or Ground Glass
+migration. Hardware acceleration remains unconfirmed, cross-platform support
+remains unverified, and production WebGL stays the default.
+
+Final repository validation passed `npm run check:css`, `npm run lint`,
+`npm run typecheck`, all 243 unit/integration files (2,260 tests), and
+`npm run build`. The ordinary Chromium Architecture Rise verification passed
+both tests through the expected `webgl2-fallback`; headed Chrome native-required
+verification passed both tests through actual `webgpu` execution. The full
+`npm run ci:local:e2e` workflow completed those checks and then stopped at its
+first E2E file, `architecture-foreground-compound.spec.ts`, because the test
+could not find the “Complete the Photograph” heading. No later full-suite E2E
+files were reached. The same assertion was previously reproduced on the
+pre-PR-D base snapshot documented above; that prior base comparison is the
+evidence that this is a baseline issue, and this round did not rerun a separate
+clean checkout of commit `9802df4`. The PR D changes do not touch the
+guided-task route or its panel. The final focused Architecture Rise E2E passed
+2/2 in both browser modes. The existing Anatomy pilot passed 5/5 in ordinary
+Chromium and 4 passed / 1 expected application-fallback skip in native-required
+Chrome. The local full workflow remains incomplete beyond its first E2E file.

@@ -27,7 +27,6 @@ export default defineConfig({
       ? {
           name: "chrome-native-webgpu",
           use: {
-            ...devices["Desktop Chrome"],
             channel: "chrome",
             headless: false,
             launchOptions: {
