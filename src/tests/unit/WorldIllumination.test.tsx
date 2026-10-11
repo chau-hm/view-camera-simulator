@@ -1,6 +1,6 @@
 import React from "react";
 import * as THREE from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DirectionalWorldIllumination,
   WorldIllumination,
@@ -16,7 +16,14 @@ import { WorldEnvironment } from "../../render/WorldEnvironment";
 
 describe("Observer world illumination component", () => {
   it("emits the resolved Interior Corner source as an R3F point light", () => {
-    const tree = WorldIllumination({ sceneId: "interior-corner" });
+    const tree = WorldIllumination({
+      sceneId: "interior-corner",
+      mountGeneration: 3,
+      createRealizationToken: (rendererGeneration) => ({
+        rendererGeneration,
+        attempt: 1,
+      }),
+    });
     const children = React.Children.toArray(tree.props.children);
     expect(children).toHaveLength(1);
     const pointLight = children[0];
@@ -41,7 +48,17 @@ describe("Observer world illumination component", () => {
   });
 
   it("emits the resolved Architecture Rise source as an R3F directional light", () => {
-    const tree = WorldIllumination({ sceneId: "architecture-rise" });
+    const createRealizationToken = vi.fn((rendererGeneration: number) => ({
+      rendererGeneration,
+      attempt: 7,
+    }));
+    const onEnvironmentStatusChange = vi.fn();
+    const tree = WorldIllumination({
+      sceneId: "architecture-rise",
+      mountGeneration: 12,
+      createRealizationToken,
+      onEnvironmentStatusChange,
+    });
     const children = React.Children.toArray(tree.props.children);
     expect(children).toHaveLength(2);
     const componentElement = children.find(
@@ -108,6 +125,9 @@ describe("Observer world illumination component", () => {
     if (
       !React.isValidElement<{
         environment: WorldProceduralSkyGroundEnvironment;
+        mountGeneration: number;
+        createRealizationToken: typeof createRealizationToken;
+        onStatusChange: typeof onEnvironmentStatusChange;
       }>(environmentElement)
     ) {
       throw new Error("Expected the renderer-owned environment adapter");
@@ -115,10 +135,20 @@ describe("Observer world illumination component", () => {
     expect(environmentElement.props.environment).toBe(
       resolveSceneWorldIllumination("architecture-rise").environment,
     );
+    expect(environmentElement.props.mountGeneration).toBe(12);
+    expect(environmentElement.props.createRealizationToken).toBe(createRealizationToken);
+    expect(environmentElement.props.onStatusChange).toBe(onEnvironmentStatusChange);
   });
 
   it("emits no world light for a scene without world sources", () => {
-    const tree = WorldIllumination({ sceneId: "table-tilt" });
+    const tree = WorldIllumination({
+      sceneId: "table-tilt",
+      mountGeneration: 1,
+      createRealizationToken: (rendererGeneration) => ({
+        rendererGeneration,
+        attempt: 1,
+      }),
+    });
     expect(React.Children.toArray(tree.props.children)).toHaveLength(0);
   });
 });

@@ -59,9 +59,9 @@ export const observerSceneCompatibilityRegistry = Object.freeze({
       "procedural-world-environment",
     ] as const),
     webgpu: Object.freeze({ status: "not-evaluated" }),
-    knownBackendConstraints: Object.freeze([
-      "procedural-world-environment-uses-webgl-pmrem",
-    ] as const),
+    // The native WebGPU PMREM path is verified in the isolated PR C fixture.
+    // The complete Architecture Rise scene remains unevaluated and ineligible.
+    knownBackendConstraints: Object.freeze([]),
     developmentWebGpuPilot: "not-eligible",
   }),
 } satisfies Readonly<Record<string, ObserverSceneCompatibility>>);

@@ -11,7 +11,13 @@ import {
 import {
   createWorldEnvironmentRig,
   disposeWorldEnvironmentRig,
+  type OwnedWorldEnvironmentTarget,
 } from "../../render/worldEnvironmentRig";
+import {
+  createObserverWorldEnvironmentRig,
+  UnsupportedObserverEnvironmentRendererError,
+  type WebGpuPmremGeneratorFactory,
+} from "../../render/observerWorldEnvironmentRig";
 
 const environment = resolveSceneWorldIllumination("architecture-rise").environment;
 if (!environment) throw new Error("Expected the Architecture Rise environment recipe");
@@ -220,5 +226,254 @@ describe("renderer-owned world environment resources", () => {
     disposeWorldEnvironmentRig(scene, rig);
     expect(scene.environment).toBeNull();
     expect(scene.environmentIntensity).toBe(0.42);
+  });
+});
+
+describe("backend-aware Observer world environment realization", () => {
+  const webgpuRenderer = (coordinateSystem: number = THREE.WebGPUCoordinateSystem) => ({
+    isWebGPURenderer: true,
+    coordinateSystem,
+  });
+
+  const createWebGpuFactory = (
+    target: OwnedWorldEnvironmentTarget,
+    fromEquirectangular = vi.fn(() => target),
+    dispose = vi.fn(),
+  ): WebGpuPmremGeneratorFactory => vi.fn(() => ({
+    fromEquirectangular,
+    dispose,
+  }));
+
+  it("uses the common WebGPU PMREM for WebGPURenderer, including its WebGL2 fallback", async () => {
+    for (const coordinateSystem of [
+      THREE.WebGPUCoordinateSystem,
+      THREE.WebGLCoordinateSystem,
+    ]) {
+      const scene = new THREE.Scene();
+      const target = new THREE.WebGLRenderTarget(32, 32);
+      const targetDispose = vi.spyOn(target, "dispose");
+      const fromEquirectangular = vi.fn(() => target);
+      const generatorDispose = vi.fn();
+      const factory = createWebGpuFactory(
+        target,
+        fromEquirectangular,
+        generatorDispose,
+      );
+      const loadFactory = vi.fn(async () => factory);
+      const legacyConversion = vi.spyOn(
+        THREE.PMREMGenerator.prototype,
+        "fromEquirectangular",
+      );
+
+      const rig = await createObserverWorldEnvironmentRig(
+        scene,
+        webgpuRenderer(coordinateSystem),
+        environment,
+        () => true,
+        loadFactory,
+      );
+
+      expect(loadFactory).toHaveBeenCalledTimes(1);
+      expect(factory).toHaveBeenCalledTimes(1);
+      expect(fromEquirectangular).toHaveBeenCalledTimes(1);
+      expect(generatorDispose).toHaveBeenCalledTimes(1);
+      expect(legacyConversion).not.toHaveBeenCalled();
+      expect(rig?.renderTarget).toBe(target);
+      expect(scene.environment).toBe(target.texture);
+      expect(scene.environmentIntensity).toBe(environment.intensity);
+      expect(rig?.disposed).toBe(false);
+
+      if (!rig) throw new Error("Expected WebGPU environment rig");
+      disposeWorldEnvironmentRig(scene, rig);
+      expect(targetDispose).toHaveBeenCalledTimes(1);
+      expect(scene.environment).toBeNull();
+    }
+  });
+
+  it("keeps the WebGL PMREM implementation and does not load the WebGPU module", async () => {
+    const scene = new THREE.Scene();
+    const target = new THREE.WebGLRenderTarget(32, 32);
+    const fromEquirectangular = vi
+      .spyOn(THREE.PMREMGenerator.prototype, "fromEquirectangular")
+      .mockReturnValue(target);
+    const loadFactory = vi.fn(async () => {
+      throw new Error("WebGPU module must remain lazy for WebGL");
+    });
+
+    const rig = await createObserverWorldEnvironmentRig(
+      scene,
+      { isWebGLRenderer: true },
+      environment,
+      () => true,
+      loadFactory,
+    );
+
+    expect(loadFactory).not.toHaveBeenCalled();
+    expect(fromEquirectangular).toHaveBeenCalledTimes(1);
+    expect(rig?.renderTarget).toBe(target);
+    if (!rig) throw new Error("Expected WebGL environment rig");
+    disposeWorldEnvironmentRig(scene, rig);
+  });
+
+  it("rejects unknown renderer identities without assigning scene state", async () => {
+    const scene = new THREE.Scene();
+    const previousEnvironment = new THREE.DataTexture();
+    scene.environment = previousEnvironment;
+    const loadFactory = vi.fn(async () => createWebGpuFactory(new THREE.WebGLRenderTarget()));
+
+    expect(() => createObserverWorldEnvironmentRig(
+      scene,
+      {},
+      environment,
+      () => true,
+      loadFactory,
+    )).toThrow(UnsupportedObserverEnvironmentRendererError);
+
+    expect(scene.environment).toBe(previousEnvironment);
+    expect(loadFactory).not.toHaveBeenCalled();
+    previousEnvironment.dispose();
+  });
+
+  it("discards a late WebGPU module completion before allocating or assigning resources", async () => {
+    const scene = new THREE.Scene();
+    let finishLoading: (factory: WebGpuPmremGeneratorFactory) => void = () => undefined;
+    const factory = createWebGpuFactory(new THREE.WebGLRenderTarget(32, 32));
+    const loadFactory = () => new Promise<WebGpuPmremGeneratorFactory>((resolve) => {
+      finishLoading = resolve;
+    });
+    let current = true;
+
+    const pending = createObserverWorldEnvironmentRig(
+      scene,
+      webgpuRenderer(),
+      environment,
+      () => current,
+      loadFactory,
+    );
+    current = false;
+    finishLoading(factory);
+
+    await expect(pending).resolves.toBeNull();
+    expect(factory).not.toHaveBeenCalled();
+    expect(scene.environment).toBeNull();
+  });
+
+  it("disposes a PMREM target if its owning mount becomes stale before assignment", async () => {
+    const scene = new THREE.Scene();
+    const target = new THREE.WebGLRenderTarget(32, 32);
+    const targetDispose = vi.spyOn(target, "dispose");
+    let current = true;
+    const factory = createWebGpuFactory(
+      target,
+      vi.fn(() => {
+        current = false;
+        return target;
+      }),
+    );
+
+    await expect(createObserverWorldEnvironmentRig(
+      scene,
+      webgpuRenderer(),
+      environment,
+      () => current,
+      async () => factory,
+    )).resolves.toBeNull();
+
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    expect(scene.environment).toBeNull();
+  });
+
+  it("keeps WebGPU environment targets isolated between renderer owners", async () => {
+    const sceneA = new THREE.Scene();
+    const sceneB = new THREE.Scene();
+    const targetA = new THREE.WebGLRenderTarget(32, 32);
+    const targetB = new THREE.WebGLRenderTarget(32, 32);
+    const targets = [targetA, targetB];
+    const factory: WebGpuPmremGeneratorFactory = () => ({
+      fromEquirectangular: () => {
+        const target = targets.shift();
+        if (!target) throw new Error("Expected an independent target for each renderer");
+        return target;
+      },
+      dispose: vi.fn(),
+    });
+
+    const rigA = await createObserverWorldEnvironmentRig(
+      sceneA,
+      webgpuRenderer(),
+      environment,
+      () => true,
+      async () => factory,
+    );
+    const rigB = await createObserverWorldEnvironmentRig(
+      sceneB,
+      webgpuRenderer(),
+      environment,
+      () => true,
+      async () => factory,
+    );
+
+    expect(rigA?.renderTarget).toBe(targetA);
+    expect(rigB?.renderTarget).toBe(targetB);
+    expect(rigA?.renderTarget).not.toBe(rigB?.renderTarget);
+    if (!rigA || !rigB) throw new Error("Expected separate WebGPU environment rigs");
+    disposeWorldEnvironmentRig(sceneA, rigA);
+    expect(sceneA.environment).toBeNull();
+    expect(sceneB.environment).toBe(targetB.texture);
+    disposeWorldEnvironmentRig(sceneB, rigB);
+  });
+
+  it("disposes the source and generator after conversion failure without changing the scene", async () => {
+    const scene = new THREE.Scene();
+    const previousEnvironment = new THREE.DataTexture();
+    scene.environment = previousEnvironment;
+    let sourceDisposeCalls = 0;
+    const conversionError = new Error("PMREM conversion failed");
+    const factory: WebGpuPmremGeneratorFactory = vi.fn(() => ({
+      fromEquirectangular: (texture: THREE.Texture) => {
+        const dispose = texture.dispose.bind(texture);
+        vi.spyOn(texture, "dispose").mockImplementation(() => {
+          sourceDisposeCalls += 1;
+          dispose();
+        });
+        throw conversionError;
+      },
+      dispose: vi.fn(),
+    }));
+
+    await expect(createObserverWorldEnvironmentRig(
+      scene,
+      webgpuRenderer(),
+      environment,
+      () => true,
+      async () => factory,
+    )).rejects.toBe(conversionError);
+
+    expect(sourceDisposeCalls).toBe(1);
+    expect(factory).toHaveReturnedTimes(1);
+    expect(scene.environment).toBe(previousEnvironment);
+    previousEnvironment.dispose();
+  });
+
+  it("releases a generated target if generator cleanup fails before ownership transfers", async () => {
+    const scene = new THREE.Scene();
+    const target = new THREE.WebGLRenderTarget(32, 32);
+    const targetDispose = vi.spyOn(target, "dispose");
+    const factory = createWebGpuFactory(
+      target,
+      vi.fn(() => target),
+      vi.fn(() => { throw new Error("generator cleanup failed"); }),
+    );
+
+    await expect(createObserverWorldEnvironmentRig(
+      scene,
+      webgpuRenderer(),
+      environment,
+      () => true,
+      async () => factory,
+    )).rejects.toThrow("generator cleanup failed");
+
+    expect(targetDispose).toHaveBeenCalledTimes(1);
+    expect(scene.environment).toBeNull();
   });
 });

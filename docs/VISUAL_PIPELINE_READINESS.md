@@ -71,8 +71,10 @@ slightly grayer than the near-white WebGL baseline; this renderer difference
 was recorded without visual tuning. The page also kept the existing Ground
 Glass RTT on WebGL, with the existing diagnostic reporting a contentful final
 target. Ground Glass source, pass graph, shaders, and resource ownership are
-unchanged. Architecture Rise's procedural environment/PMREM path remains
-WebGL-specific and is not included in the pilot. This evidence validates only
+unchanged. At the time of PR W, Architecture Rise's procedural environment used
+the WebGL-specific PMREM path and was not included in the pilot. PR C later
+verified an Observer-specific native WebGPU PMREM path without validating or
+enabling the complete Architecture Rise scene. This evidence validates only
 bounded Observer renderer coexistence; it does not claim an application-wide
 WebGPU migration or fallback.
 
@@ -289,10 +291,10 @@ View Camera Anatomy is the only pilot-eligible scene, based on PR #248's native
 mounted-backend, subject-pixel, interaction, and coexistence evidence. That
 evidence covers the verified Anatomy requirements; it does not certify every
 material or pipeline feature in every scene. Architecture Rise declares its
-procedural environment requirement and the current
-`PMREMGenerator(WebGLRenderer)` constraint. It remains ineligible while that
-environment path is WebGL-specific. Unknown and unevaluated scenes remain
-WebGPU-ineligible without changing their normal WebGL path.
+procedural environment requirement. PR C verifies that environment's PMREM
+realization on native WebGPU in an isolated fixture, but the full Architecture
+Rise scene remains `not-evaluated` and ineligible. Unknown and unevaluated
+scenes remain WebGPU-ineligible without changing their normal WebGL path.
 
 `observerBackend.ts` owns deterministic selection policy. It separates the
 requested renderer, policy reason, and selected renderer attempt. The
@@ -763,11 +765,224 @@ world-light, and procedural environment contribution. PR I established a
 fixed natural DirectionalLight path for Architecture Rise; PR J added a
 low-frequency reflection/illumination environment without a visible sky. The
 pilots did not validate natural world shadows, calibrated environment values,
-physical exposure or metering, or WebGPU-specific rendering. PR K found that the
-bounded standard and physical material candidates did not materially resolve the
-dark glazing at normal scale; its best candidate is classified **MATERIAL
-RESPONSE — negligible**.
+or physical exposure or metering. PR C adds isolated native WebGPU evidence for
+the environment PMREM and an environment-dependent `MeshStandardMaterial`; it
+does not validate Architecture Rise as a complete WebGPU scene. PR K found that
+the bounded standard and physical material candidates did not materially
+resolve the dark glazing at normal scale; its best candidate is classified
+**MATERIAL RESPONSE — negligible**.
 
 Select further work from observed visual and teaching limitations rather than
 following a mandatory renderer-migration sequence. WebGPU remains conditional on
 a demonstrated backend-specific requirement.
+
+## Backend-aware Observer environment resources (PR C)
+
+PR C preserves the recipe and CPU-generated equirectangular source in
+[`worldIlluminationContract.ts`](../src/render/worldIlluminationContract.ts)
+and [`proceduralWorldEnvironment.ts`](../src/render/proceduralWorldEnvironment.ts).
+The 128×64 RGBA8 source remains sRGB encoded with the existing mapping,
+orientation, filters, wrap settings, and deterministic pixel hash. Resource
+realization now dispatches from the actual mounted `useThree().gl` identity:
+
+```text
+WorldProceduralSkyGroundEnvironment
+              ↓
+  existing sRGB DataTexture
+              ↓
+ actual renderer family from useThree().gl
+        ┌─────┴─────┐
+        ↓           ↓
+ WebGLRenderer   WebGPURenderer
+ three PMREM     three/webgpu PMREM
+        └─────┬─────┘
+              ↓
+ scene.environment and owned CubeUV target
+```
+
+Three r186's `three` entry exports the WebGL `PMREMGenerator` whose constructor
+requires `WebGLRenderer`. The `three/webgpu` entry exports the common renderer
+PMREM generator, which accepts the initialized common `Renderer`, converts an
+equirectangular `Texture` synchronously, and returns a common `RenderTarget`.
+Its `fromEquirectangular()` checks that the renderer backend has been
+initialized; the Observer's R3F Canvas is mounted only after the existing
+`WebGPURenderer.init()` resolves. The asynchronous helper on that class is
+deprecated in r186. The pinned source exports are
+[`Three.js`](https://github.com/mrdoob/three.js/blob/r186/src/Three.js),
+[`Three.WebGPU.js`](https://github.com/mrdoob/three.js/blob/r186/src/Three.WebGPU.js),
+and the [common PMREM implementation](https://github.com/mrdoob/three.js/blob/r186/src/renderers/common/extras/PMREMGenerator.js).
+
+`WorldEnvironment` is Observer-specific. A WebGL renderer continues through
+the existing synchronous `createWorldEnvironmentRig()` path. Any mounted
+WebGPURenderer uses the lazily imported `three/webgpu` PMREM, including when
+that WebGPURenderer reports its internal `webgl2-fallback` execution backend.
+Unknown renderer families fail closed. The normal public Observer does not
+load the WebGPU module. Ground Glass and the existing WebGL harnesses continue
+calling the legacy WebGL rig directly.
+
+The mounted component owns one source texture, PMREM generator temporaries, and
+the returned PMREM target. It disposes the source and generator after
+conversion, then assigns only the target texture to `scene.environment`. Its
+cleanup restores the previous environment/intensity only while the rig still
+owns the assignment, and disposes its target once. The WebGPU module import is
+the only asynchronous creation step. The active effect is checked after that
+import and again before scene assignment; a stale completion allocates no
+source, or disposes its generated target without installing it. Failures are
+reported as environment `failed`/`unsupported` in a development-only Observer
+attribute and do not masquerade as renderer fallback. No target is cached or
+shared between renderers. The visible scene background is unchanged.
+
+### Environment verification evidence
+
+The focused E2E uses the Architecture Rise recipe and actual mounted renderer
+in a small R3F test fixture. It renders a metallic `MeshStandardMaterial`
+sphere without direct lights, captures the real canvas with the environment
+active, unmounts the environment, and compares the same projected center ROI.
+This is a negative control for image-based lighting: the center ROI must change
+while the unchanged background corner pixels remain stable. It then remounts
+the resource, checks a new environment texture identity, and verifies the
+environment is removed on final unmount. It does not route the Architecture
+Rise public scene through WebGPU or change its registry eligibility.
+
+| Run | Browser/runtime | Mounted family / backend | Environment ROI mean RGB delta | Changed pixels | Background corner delta | Result |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| Chromium automated baseline | Playwright Chromium 149.0.7827.55, headless, macOS 27 arm64 | `webgpu-renderer` / `webgl2-fallback` | 80.21 / 255 | 100% | 0 / 255 | Environment contribution verified on fallback path; not native evidence |
+| Native-required run | Headed Google Chrome 155.0.8059.39, macOS 27.0.0 arm64 | `webgpu-renderer` / `webgpu` | 80.12 / 255 | 100% | 0 / 255 | Native environment contribution verified |
+
+Both runs kept the fixture background at `#f8fafc`, had no page errors or
+console errors, and created a different environment texture after remount.
+The latest native Chrome run came from the host's actual `darwin`/`arm64`
+runtime; the Playwright Desktop Chrome context supplies a Windows-style
+user-agent string. It reported API present, adapter available, and mounted
+`webgpu-renderer` / `webgpu`, with no application fallback and one WebGPU
+initialization attempt. The automated Chromium run reported its adapter
+unavailable. No device was created for the bounded diagnostic. Hardware
+acceleration remains **unconfirmed**; neither adapter availability nor renderer
+identity distinguishes a hardware-backed adapter from software rendering.
+
+The production Architecture Rise route was separately exercised on its normal
+WebGL path: its environment status became `active`, the mounted renderer was
+`webgl-renderer` / `webgl2`, the registered Ground Glass RTT remained
+contentful, and the route produced no page errors. The isolated environment
+fixture is the pixel-level environment contribution evidence; the production
+route run is the WebGL regression evidence.
+
+### Lighting and material compatibility inventory
+
+| Rendering feature | Existing WebGL behavior | WebGPU status in this round | Evidence | Remaining risk |
+| --- | --- | --- | --- | --- |
+| `MeshBasicMaterial` and line materials | Used by Observer overlays, guides, and scene accents | Implementation-compatible; bounded Anatomy output is visible | Existing native Anatomy pilot; source inventory | Not a per-scene visual audit |
+| `MeshStandardMaterial` | Used by scene subjects, including Architecture Rise | Environment-dependent reflection/lighting verified in the isolated native fixture | Native `webgpu-renderer` / `webgpu` on/off ROI comparison; production Architecture Rise WebGL route | Complete Architecture Rise scene and material parity are not verified |
+| `MeshPhysicalMaterial` | No current production Observer construction found; its name is only used by the shadow-participation classifier | Not tested / not currently applicable | Production source inventory | Revisit only if a scene begins using it |
+| Hemisphere and directional lighting | Presentation and scene illumination use built-in lights | Partially verified by the Anatomy pilot | Native Anatomy report and image | Cross-scene contribution and natural-shadow quality are unevaluated |
+| Shadow maps | Observer applies its current presentation shadow policy | Partially verified on Anatomy; environment fixture reports the mounted setting but has no shadow-casting object | Mounted capability evidence | Cross-scene map behavior and shadow visual quality remain unevaluated; WebGPU warns that `PCFSoftShadowMap` maps to `PCFShadowMap` |
+| Procedural environment / PMREM | Legacy WebGL PMREM and CubeUV target | Native path verified for environment-dependent `MeshStandardMaterial` in the fixture | Native environment on/off screenshot differential | Does not certify the complete Architecture Rise scene |
+| Custom GLSL / `ShaderMaterial` / `RawShaderMaterial` / `onBeforeCompile` | Ground Glass owns the production GLSL RTT passes; its shader and target code is unchanged | Not assumed compatible and not migrated | Production Observer source inventory; Ground Glass remains WebGL | Any future Observer GLSL use needs its own renderer audit or TSL work |
+| Tone mapping / exposure / output color space | Existing WebGL Observer reports actual renderer settings | Anatomy native pilot and fixture report ACES Filmic, exposure 1, `srgb` output | Mounted runtime evidence | Settings do not prove cross-scene appearance parity or exposure metering |
+
+The Observer source inventory found production `MeshBasicMaterial`,
+`LineBasicMaterial`, and `MeshStandardMaterial` use, but no production Observer
+`ShaderMaterial`, `RawShaderMaterial`, or `onBeforeCompile` path. Ground Glass
+uses `ShaderMaterial` GLSL independently. The Architecture Rise reflection
+research fixture contains custom shader hooks, but it is test-only and remains
+on WebGL. The fixture and Anatomy result do not establish that every Three.js
+built-in material or light is visually compatible across every scene.
+
+### Scene eligibility and follow-up
+
+The old active `procedural-world-environment-uses-webgl-pmrem` constraint is
+removed because the renderer-specific PMREM path is now exercised on native
+WebGPU. Architecture Rise still has `webgpu.status: not-evaluated`, no verified
+full-scene requirements, and `developmentWebGpuPilot: not-eligible`. Its
+selection reason is now `scene-compatibility-not-evaluated`. View Camera
+Anatomy remains the only development pilot; production remains WebGL.
+
+Before any later PR enables another WebGPU scene, it must verify that complete
+scene on a real native WebGPU backend: all registered subjects, built-in and
+custom materials, environment and lights, shadow behavior, background/framing,
+interactive controls, renderer display settings, and Ground Glass coexistence.
+That scene-level E2E must include a meaningful negative control for any new
+renderer-specific resource and must keep application fallback distinct from
+Three.js internal fallback. PR C does not authorize Architecture Rise or any
+other scene for WebGPU.
+
+### Local E2E validation boundary
+
+The PR C environment E2E passed on ordinary Chromium and native-required Chrome;
+the focused Observer suite reported seven passes and one failure in the existing
+application-fallback SPA navigation test. That failure was reproduced with the
+same assertion on the clean `origin/main` snapshot at `e3c2dfd`, so it is a
+baseline issue rather than a PR C regression. The repository's
+`npm run ci:local:e2e` workflow also passed CSS, lint, typecheck, all 2,252
+unit/integration tests, and the production build, then stopped on its first E2E
+file: `architecture-foreground-compound.spec.ts` could not find the
+“Complete the Photograph” heading. The captured page showed the guided route and
+Architecture + Foreground task loaded, while the Task and Feedback panel was
+collapsed behind its “Open Task and Feedback” button; the test expected panel
+content before opening it. The same focused command failed on the clean base
+with Playwright Chromium 149.0.7827.55 on macOS 27 arm64 and Node 24.19.0. The
+remaining files in the full E2E workflow were not reached.
+
+## PR #250 review-fix round 1 — typecheck and environment status ownership
+
+The reviewed PR head `8abbadb` failed hosted Actions run `38138212889` in
+`npm run typecheck` with three TS2345 errors in
+`WorldIllumination.test.tsx`: direct calls omitted the required renderer mount
+generation. This was a committed test-contract mismatch, not a TypeScript
+version difference; hosted Node was 24.21.0 and the local validation runtime is
+24.19.0. The exact reason the earlier local PASS did not catch those committed
+calls is not recoverable from the retained run artifacts. The corrected tree
+passes the repository's exact `npm run typecheck` command.
+
+Renderer generation alone did not distinguish multiple environment realizations
+inside the same Canvas. `SceneRenderer` now owns a monotonic attempt counter and
+tags each actual `WorldEnvironment` effect setup with a serializable
+`{ rendererGeneration, attempt }` token. Status reports are accepted only for
+the current renderer generation and current realization token. A newer pending
+attempt supersedes every older token, including a delayed pending report. The
+current scene recipe determines `not-configured`; `WorldEnvironment` cleanup
+continues to cancel async completion and dispose only its rig, without clearing
+a failure diagnostic or overwriting replacement status. The E2E fixture's
+toggle now changes only whether the environment is configured; its active and
+failed status comes from the mounted component lifecycle.
+
+The status tests cover late completion after removal, same-generation A-to-B
+replacement, renderer-generation change, failure followed by cleanup, stale
+active/failure/pending reports, and unchanged-input rerenders without PMREM
+recreation. `WorldIllumination` tests also assert recipe, mount-generation,
+token-factory, and callback forwarding.
+
+| Validation after review fix | Result |
+| --- | --- |
+| `npm run typecheck` | PASS on Node 24.19.0 |
+| Focused environment/illumination/PMREM unit tests | PASS — 24 tests |
+| `npm test` | PASS — 243 files, 2,258 tests |
+| `npm run lint` / `npm run check:css` | PASS |
+| `npm run build` | PASS; WebGPU remains a separate lazy chunk |
+| Ordinary Chromium Observer E2E files | PASS — 8 tests |
+| Native-required Chrome Observer E2E files | PASS — 7 tests, 1 expected skip for the deliberate app-fallback fault-injection case |
+
+The final native-required run used headed Google Chrome 155.0.8059.39 on
+macOS Darwin 27.0.0 arm64 with Three.js r186. It reported WebGPU API present,
+adapter available, mounted `webgpu-renderer` / `webgpu`, no application
+fallback, one initialization attempt, no initialization failure, Anatomy
+subject differential of 20,866 changed pixels entirely inside the projected
+subject region, interactive focus/orbit/reset, contentful Ground Glass, and no
+page errors. The environment fixture reported `active`, then
+`not-configured` after removal, and used a new target after remount. Hardware
+acceleration remains unconfirmed.
+
+The rerun of `npm run ci:local:e2e` passed CSS, lint, typecheck, all 2,258
+unit/integration tests, and build, then stopped at its first E2E file. The
+Architecture + Foreground test again could not find “Complete the Photograph”
+before opening the collapsed Task and Feedback panel. Its error context shows
+the correct guided route and lesson with the panel behind “Open Task and
+Feedback.” This is the same focused failure previously reproduced on the
+original base commit `e3c2dfd` with the same Node and Playwright Chromium
+environment; it remains a baseline validation issue. Later E2E files in the
+full workflow were not reached. The focused Observer E2E files did pass
+separately in both ordinary Chromium and native-required Chrome.
+
+The final hosted Actions result for the review-fix head is recorded in the PR
+handoff; the review-fix changes do not alter production WebGL selection,
+Architecture Rise eligibility, or Ground Glass rendering.

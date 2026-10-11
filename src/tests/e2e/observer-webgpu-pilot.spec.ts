@@ -1037,7 +1037,7 @@ test("application fallback remounts once and clears when the scene changes", asy
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute(
     "data-observer-selection-reason",
-    "scene-has-known-webgpu-constraint",
+    "scene-compatibility-not-evaluated",
   );
   await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
@@ -1085,7 +1085,7 @@ test("Architecture Rise refuses the Anatomy-only WebGPU pilot", async ({ page },
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute(
     "data-observer-selection-reason",
-    "scene-has-known-webgpu-constraint",
+    "scene-compatibility-not-evaluated",
   );
   await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
   await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
@@ -1096,7 +1096,7 @@ test("Architecture Rise refuses the Anatomy-only WebGPU pilot", async ({ page },
   await expect(observer).toHaveAttribute("data-observer-scene-requirements-status", "declared");
   await expect(observer).toHaveAttribute(
     "data-observer-scene-known-backend-constraints",
-    "procedural-world-environment-uses-webgl-pmrem",
+    "none",
   );
   await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
@@ -1182,7 +1182,7 @@ test("Observer backend state follows same-route scene changes without stale fall
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute(
     "data-observer-selection-reason",
-    "scene-has-known-webgpu-constraint",
+    "scene-compatibility-not-evaluated",
   );
   await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
