@@ -68,7 +68,12 @@ import {
 import { resolveScenePresentationLighting } from "./presentationLighting";
 import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
 import { WorldIllumination } from "./WorldIllumination";
-import type { ObserverWorldEnvironmentStatus } from "./observerWorldEnvironmentRig";
+import { resolveSceneWorldIllumination } from "../scenes/illumination/sceneWorldIllumination";
+import {
+  ObserverWorldEnvironmentStatusOwner,
+  type ObserverWorldEnvironmentRealizationToken,
+  type ObserverWorldEnvironmentStatus,
+} from "./observerWorldEnvironmentStatus";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 import {
   type SelectedObserverBackend,
@@ -995,6 +1000,7 @@ const SceneContent = ({
   cameraPresentation,
   onSubjectCapacityChange,
   rendererMountGeneration,
+  createEnvironmentRealizationToken,
   onEnvironmentStatusChange,
 }: {
   scene: SceneDefinition;
@@ -1011,8 +1017,12 @@ const SceneContent = ({
   cameraPresentation?: ConceptualCameraPresentation;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
   rendererMountGeneration: number;
+  createEnvironmentRealizationToken: (
+    generation: number,
+  ) => ObserverWorldEnvironmentRealizationToken;
   onEnvironmentStatusChange: (
     generation: number,
+    realization: ObserverWorldEnvironmentRealizationToken | null,
     status: ObserverWorldEnvironmentStatus,
   ) => void;
 }) => {
@@ -1047,6 +1057,7 @@ const SceneContent = ({
     <WorldIllumination
       sceneId={scene.id}
       mountGeneration={rendererMountGeneration}
+      createRealizationToken={createEnvironmentRealizationToken}
       onEnvironmentStatusChange={onEnvironmentStatusChange}
     />
     <SceneAssets assets={scene.assets} />
@@ -1197,22 +1208,42 @@ export const SceneRenderer = ({
   );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
+  const [worldEnvironmentStatusOwner] = useState(
+    () => new ObserverWorldEnvironmentStatusOwner(),
+  );
+  const currentRendererGenerationRef = useRef(rendererMountGeneration);
+  currentRendererGenerationRef.current = rendererMountGeneration;
+  const createEnvironmentRealizationToken = useCallback(
+    (generation: number) => worldEnvironmentStatusOwner.createRealizationToken(generation),
+    [worldEnvironmentStatusOwner],
+  );
   const [worldEnvironmentReport, setWorldEnvironmentReport] = useState<Readonly<{
     generation: number;
+    realization: ObserverWorldEnvironmentRealizationToken | null;
     status: ObserverWorldEnvironmentStatus;
   }> | null>(null);
   const onEnvironmentStatusChange = useCallback((
     generation: number,
+    realization: ObserverWorldEnvironmentRealizationToken | null,
     status: ObserverWorldEnvironmentStatus,
   ) => {
-    if (generation !== rendererMountGeneration) return;
-    setWorldEnvironmentReport({ generation, status });
-  }, [rendererMountGeneration]);
-  const worldEnvironmentStatus = worldEnvironmentReport?.generation === rendererMountGeneration
-    ? worldEnvironmentReport.status
-    : sceneCompatibility.requirements?.includes("procedural-world-environment")
-      ? "pending"
-      : "not-configured";
+    if (!worldEnvironmentStatusOwner.accepts(
+      currentRendererGenerationRef.current,
+      generation,
+      realization,
+      status,
+    )) return;
+    setWorldEnvironmentReport({ generation, realization, status });
+  }, [worldEnvironmentStatusOwner]);
+  const hasConfiguredEnvironment = Boolean(
+    resolveSceneWorldIllumination(scene.id).environment,
+  );
+  const worldEnvironmentStatus = !hasConfiguredEnvironment
+    ? "not-configured"
+    : worldEnvironmentReport?.generation === rendererMountGeneration &&
+        worldEnvironmentReport.realization?.rendererGeneration === rendererMountGeneration
+      ? worldEnvironmentReport.status
+      : "pending";
   const rendererMountIdentity = String(rendererMountGeneration);
   const mountedObserverCapabilities = observerCapabilities;
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
@@ -1634,6 +1665,7 @@ export const SceneRenderer = ({
           cameraPresentation={cameraPresentation}
           onSubjectCapacityChange={onSubjectCapacityChange}
           rendererMountGeneration={rendererMountGeneration}
+          createEnvironmentRealizationToken={createEnvironmentRealizationToken}
           onEnvironmentStatusChange={onEnvironmentStatusChange}
         />
         <OrbitControls

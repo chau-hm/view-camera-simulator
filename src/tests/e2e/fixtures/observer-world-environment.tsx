@@ -8,7 +8,11 @@ import {
   resolveObserverRendererRuntime,
   resolveObserverVisualPipelineCapabilities,
 } from "../../../render/backend/observerVisualPipelineCapabilities";
-import type { ObserverWorldEnvironmentStatus } from "../../../render/observerWorldEnvironmentRig";
+import {
+  ObserverWorldEnvironmentStatusOwner,
+  type ObserverWorldEnvironmentRealizationToken,
+  type ObserverWorldEnvironmentStatus,
+} from "../../../render/observerWorldEnvironmentStatus";
 import { WorldEnvironment } from "../../../render/WorldEnvironment";
 import { resolveSceneWorldIllumination } from "../../../scenes/illumination/sceneWorldIllumination";
 
@@ -48,6 +52,13 @@ const webGpuRendererFactory: GLProps = async (defaults) => {
 const ObserverEnvironmentEvidence = ({ enabled }: { enabled: boolean }) => {
   const { gl, scene } = useThree();
   const frameCount = React.useRef(0);
+  const [statusOwner] = useState(() => new ObserverWorldEnvironmentStatusOwner());
+  const [reportedStatus, setReportedStatus] = useState<ObserverWorldEnvironmentStatus | null>(null);
+  const createRealizationToken = useCallback(
+    (generation: number) => statusOwner.createRealizationToken(generation),
+    [statusOwner],
+  );
+  const environmentStatus = enabled ? reportedStatus ?? "pending" : "not-configured";
   const runtime = resolveObserverRendererRuntime(gl);
   const visualPipeline = resolveObserverVisualPipelineCapabilities(gl);
   const shadowMapStatus = visualPipeline.status === "active"
@@ -67,10 +78,17 @@ const ObserverEnvironmentEvidence = ({ enabled }: { enabled: boolean }) => {
     : null;
   const reportEnvironmentStatus = useCallback((
     generation: number,
+    realization: ObserverWorldEnvironmentRealizationToken,
     status: ObserverWorldEnvironmentStatus,
   ) => {
-    if (generation === 1) body.dataset.environmentStatus = status;
-  }, []);
+    if (statusOwner.accepts(1, generation, realization, status)) {
+      setReportedStatus(status);
+    }
+  }, [statusOwner]);
+
+  useEffect(() => {
+    body.dataset.environmentStatus = environmentStatus;
+  }, [environmentStatus]);
 
   useEffect(() => {
     body.dataset.rendererFamily = runtime.rendererFamily;
@@ -117,6 +135,7 @@ const ObserverEnvironmentEvidence = ({ enabled }: { enabled: boolean }) => {
         <WorldEnvironment
           environment={environment}
           mountGeneration={1}
+          createRealizationToken={createRealizationToken}
           onStatusChange={reportEnvironmentStatus}
         />
       ) : null}
@@ -134,9 +153,7 @@ const App = () => {
   const usesWebGpuRenderer = requestedRenderer === "webgpu";
 
   const toggleEnvironment = () => {
-    const nextEnabled = !environmentEnabled;
-    setEnvironmentEnabled(nextEnabled);
-    body.dataset.environmentStatus = nextEnabled ? "pending" : "not-configured";
+    setEnvironmentEnabled((enabled) => !enabled);
   };
 
   return (

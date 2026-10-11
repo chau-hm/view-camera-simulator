@@ -922,3 +922,67 @@ collapsed behind its “Open Task and Feedback” button; the test expected pane
 content before opening it. The same focused command failed on the clean base
 with Playwright Chromium 149.0.7827.55 on macOS 27 arm64 and Node 24.19.0. The
 remaining files in the full E2E workflow were not reached.
+
+## PR #250 review-fix round 1 — typecheck and environment status ownership
+
+The reviewed PR head `8abbadb` failed hosted Actions run `38138212889` in
+`npm run typecheck` with three TS2345 errors in
+`WorldIllumination.test.tsx`: direct calls omitted the required renderer mount
+generation. This was a committed test-contract mismatch, not a TypeScript
+version difference; hosted Node was 24.21.0 and the local validation runtime is
+24.19.0. The exact reason the earlier local PASS did not catch those committed
+calls is not recoverable from the retained run artifacts. The corrected tree
+passes the repository's exact `npm run typecheck` command.
+
+Renderer generation alone did not distinguish multiple environment realizations
+inside the same Canvas. `SceneRenderer` now owns a monotonic attempt counter and
+tags each actual `WorldEnvironment` effect setup with a serializable
+`{ rendererGeneration, attempt }` token. Status reports are accepted only for
+the current renderer generation and current realization token. A newer pending
+attempt supersedes every older token, including a delayed pending report. The
+current scene recipe determines `not-configured`; `WorldEnvironment` cleanup
+continues to cancel async completion and dispose only its rig, without clearing
+a failure diagnostic or overwriting replacement status. The E2E fixture's
+toggle now changes only whether the environment is configured; its active and
+failed status comes from the mounted component lifecycle.
+
+The status tests cover late completion after removal, same-generation A-to-B
+replacement, renderer-generation change, failure followed by cleanup, stale
+active/failure/pending reports, and unchanged-input rerenders without PMREM
+recreation. `WorldIllumination` tests also assert recipe, mount-generation,
+token-factory, and callback forwarding.
+
+| Validation after review fix | Result |
+| --- | --- |
+| `npm run typecheck` | PASS on Node 24.19.0 |
+| Focused environment/illumination/PMREM unit tests | PASS — 24 tests |
+| `npm test` | PASS — 243 files, 2,258 tests |
+| `npm run lint` / `npm run check:css` | PASS |
+| `npm run build` | PASS; WebGPU remains a separate lazy chunk |
+| Ordinary Chromium Observer E2E files | PASS — 8 tests |
+| Native-required Chrome Observer E2E files | PASS — 7 tests, 1 expected skip for the deliberate app-fallback fault-injection case |
+
+The final native-required run used headed Google Chrome 155.0.8059.39 on
+macOS Darwin 27.0.0 arm64 with Three.js r186. It reported WebGPU API present,
+adapter available, mounted `webgpu-renderer` / `webgpu`, no application
+fallback, one initialization attempt, no initialization failure, Anatomy
+subject differential of 20,866 changed pixels entirely inside the projected
+subject region, interactive focus/orbit/reset, contentful Ground Glass, and no
+page errors. The environment fixture reported `active`, then
+`not-configured` after removal, and used a new target after remount. Hardware
+acceleration remains unconfirmed.
+
+The rerun of `npm run ci:local:e2e` passed CSS, lint, typecheck, all 2,258
+unit/integration tests, and build, then stopped at its first E2E file. The
+Architecture + Foreground test again could not find “Complete the Photograph”
+before opening the collapsed Task and Feedback panel. Its error context shows
+the correct guided route and lesson with the panel behind “Open Task and
+Feedback.” This is the same focused failure previously reproduced on the
+original base commit `e3c2dfd` with the same Node and Playwright Chromium
+environment; it remains a baseline validation issue. Later E2E files in the
+full workflow were not reached. The focused Observer E2E files did pass
+separately in both ordinary Chromium and native-required Chrome.
+
+The final hosted Actions result for the review-fix head is recorded in the PR
+handoff; the review-fix changes do not alter production WebGL selection,
+Architecture Rise eligibility, or Ground Glass rendering.

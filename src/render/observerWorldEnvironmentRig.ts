@@ -9,13 +9,7 @@ import {
   type OwnedWorldEnvironmentTarget,
   type WorldEnvironmentRig,
 } from "./worldEnvironmentRig";
-
-export type ObserverWorldEnvironmentStatus =
-  | "not-configured"
-  | "pending"
-  | "active"
-  | "unsupported"
-  | "failed";
+export type { ObserverWorldEnvironmentStatus } from "./observerWorldEnvironmentStatus";
 
 type WebGpuPmremGenerator = Readonly<{
   fromEquirectangular: (texture: THREE.Texture) => OwnedWorldEnvironmentTarget;
