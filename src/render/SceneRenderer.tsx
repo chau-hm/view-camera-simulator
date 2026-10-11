@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { add, scale } from "../core/math/vec";
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ErrorInfo, RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -70,9 +70,10 @@ import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
 import { WorldIllumination } from "./WorldIllumination";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 import {
-  resolveObserverCanvasInitialization,
   type SelectedObserverBackend,
 } from "./backend/observerBackend";
+import { resolveObserverCanvasInitialization } from "./backend/observerRendererInitialization";
+import type { ObserverSceneCompatibility } from "./backend/observerSceneCompatibility";
 import { ObserverCanvasErrorBoundary } from "./backend/ObserverCanvasErrorBoundary";
 import {
   resolveObserverVisualPipelineCapabilities,
@@ -82,6 +83,7 @@ import type { ObserverWebGpuAdapterAvailability } from "./backend/observerWebGpu
 
 type SceneRendererProps = {
   backendSelection: SelectedObserverBackend;
+  sceneCompatibility: ObserverSceneCompatibility;
   rendererMountKey: number;
   webgpuApiPresent: boolean;
   webgpuAdapterAvailability: ObserverWebGpuAdapterAvailability;
@@ -113,12 +115,15 @@ type SceneRendererProps = {
 };
 
 type ObserverRendererCapabilityReporterProps = {
+  mountIdentity: string;
   onCapabilitiesChange: (
+    mountIdentity: string,
     capabilities: ObserverVisualPipelineCapabilities | null,
   ) => void;
 };
 
 const ObserverRendererCapabilityReporter = ({
+  mountIdentity,
   onCapabilitiesChange,
 }: ObserverRendererCapabilityReporterProps) => {
   const { gl } = useThree();
@@ -128,9 +133,9 @@ const ObserverRendererCapabilityReporter = ({
   );
 
   useEffect(() => {
-    onCapabilitiesChange(capabilities);
-    return () => onCapabilitiesChange(null);
-  }, [capabilities, onCapabilitiesChange]);
+    onCapabilitiesChange(mountIdentity, capabilities);
+    return () => onCapabilitiesChange(mountIdentity, null);
+  }, [capabilities, mountIdentity, onCapabilitiesChange]);
 
   return null;
 };
@@ -239,6 +244,10 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
 
   useEffect(() => {
     if (!import.meta.env.DEV || sceneId !== "view-camera-anatomy") return;
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-testid="scene-canvas"]',
+    );
+    if (!container) return;
 
     const applyVerificationView = (event: Event) => {
       const detail = (event as CustomEvent<unknown>).detail;
@@ -256,10 +265,10 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
       onViewStateChange(captureObserverView(camera, controls));
     };
 
-    window.addEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+    container.addEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
     return () =>
-      window.removeEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
-  }, [camera, controls, onViewStateChange, sceneId]);
+      container.removeEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+  }, [camera, controls, gl.domElement, onViewStateChange, sceneId]);
 
   useLayoutEffect(() => {
     const applyView = (view: ObserverViewState) => {
@@ -1129,6 +1138,7 @@ const OriginalGhostCamera = ({
 
 export const SceneRenderer = ({
   backendSelection,
+  sceneCompatibility,
   rendererMountKey,
   webgpuApiPresent,
   webgpuAdapterAvailability,
@@ -1168,8 +1178,30 @@ export const SceneRenderer = ({
   );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
-  const [mountedObserverCapabilities, setMountedObserverCapabilities] =
-    useState<ObserverVisualPipelineCapabilities | null>(null);
+  const rendererMountIdentity = `${scene.id}:${backendSelection.rendererAttempt}:${rendererMountKey}`;
+  const [reportedObserverCapabilities, setReportedObserverCapabilities] =
+    useState<Readonly<{
+      mountIdentity: string;
+      capabilities: ObserverVisualPipelineCapabilities;
+    }> | null>(null);
+  const mountedObserverCapabilities =
+    reportedObserverCapabilities?.mountIdentity === rendererMountIdentity
+      ? reportedObserverCapabilities.capabilities
+      : null;
+  const reportObserverCapabilities = useCallback(
+    (
+      mountIdentity: string,
+      capabilities: ObserverVisualPipelineCapabilities | null,
+    ) => {
+      setReportedObserverCapabilities((current) => {
+        if (capabilities === null) {
+          return current?.mountIdentity === mountIdentity ? null : current;
+        }
+        return { mountIdentity, capabilities };
+      });
+    },
+    [],
+  );
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
   const observerCanvasInitialization = useMemo(
     () =>
@@ -1200,8 +1232,26 @@ export const SceneRenderer = ({
     [cameraMovementPresentation, scene],
   );
   const observerCameraPosition = observerViews[viewFocus].position;
-  const [observerViewState, setObserverViewState] = useState<ObserverViewState>(
-    () => observerViews[viewFocus],
+  const [reportedObserverView, setReportedObserverView] = useState<Readonly<{
+    sceneId: string;
+    focus: SceneViewFocus;
+    view: ObserverViewState;
+  }>>(() => ({
+    sceneId: scene.id,
+    focus: viewFocus,
+    view: observerViews[viewFocus],
+  }));
+  const observerViewState =
+    reportedObserverView.sceneId === scene.id && reportedObserverView.focus === viewFocus
+      ? reportedObserverView.view
+      : observerViews[viewFocus];
+  const reportObserverView = useCallback(
+    (view: ObserverViewState) => setReportedObserverView({
+      sceneId: scene.id,
+      focus: viewFocus,
+      view,
+    }),
+    [scene.id, viewFocus],
   );
   const activeAssets = useMemo(
     () =>
@@ -1303,9 +1353,21 @@ export const SceneRenderer = ({
       data-observer-renderer-status={mountedObserverCapabilities?.status ?? "pending"}
       data-observer-renderer-request={backendSelection.requestedRenderer}
       data-observer-renderer-attempt={backendSelection.rendererAttempt}
+      data-observer-selection-reason={backendSelection.selectionReason}
       data-observer-renderer-family={mountedObserverCapabilities?.rendererFamily}
       data-observer-execution-backend={mountedObserverCapabilities?.executionBackend}
       data-observer-application-fallback={backendSelection.applicationFallback}
+      data-observer-webgpu-scene-compatibility={sceneCompatibility.webgpu.status}
+      data-observer-webgpu-pilot-eligibility={sceneCompatibility.developmentWebGpuPilot}
+      data-observer-scene-requirements-status={
+        sceneCompatibility.requirements === null ? "not-evaluated" : "declared"
+      }
+      data-observer-scene-rendering-requirements={
+        sceneCompatibility.requirements?.join(",")
+      }
+      data-observer-scene-known-backend-constraints={
+        sceneCompatibility.knownBackendConstraints.join(",") || "none"
+      }
       data-observer-webgpu-api-present={String(webgpuApiPresent)}
       data-observer-adapter-availability={webgpuAdapterAvailability}
       data-observer-webgpu-initialization-attempts={
@@ -1519,7 +1581,7 @@ export const SceneRenderer = ({
       style={wrapperStyle}
     >
       <ObserverCanvasErrorBoundary
-        key={`${scene.id}:${rendererMountKey}`}
+        key={rendererMountIdentity}
         onError={onObserverCanvasError}
       >
       <Canvas
@@ -1530,7 +1592,8 @@ export const SceneRenderer = ({
         shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
         <ObserverRendererCapabilityReporter
-          onCapabilitiesChange={setMountedObserverCapabilities}
+          mountIdentity={rendererMountIdentity}
+          onCapabilitiesChange={reportObserverCapabilities}
         />
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
@@ -1562,7 +1625,7 @@ export const SceneRenderer = ({
           sceneView={observerViews.scene}
           cameraView={observerViews.camera}
           viewResetNonce={viewResetNonce}
-          onViewStateChange={setObserverViewState}
+          onViewStateChange={reportObserverView}
         />
       </Canvas>
       </ObserverCanvasErrorBoundary>

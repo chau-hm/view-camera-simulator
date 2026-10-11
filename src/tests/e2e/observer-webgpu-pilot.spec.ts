@@ -7,7 +7,10 @@ import { toWorld } from "../../render/rttUtils";
 
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 
-const waitForMountedObserver = async (page: Page) => {
+const waitForMountedObserver = async (
+  page: Page,
+  sceneId = "view-camera-anatomy",
+) => {
   const observer = page.getByTestId("scene-canvas");
   await expect(observer.locator("canvas")).toHaveCount(1);
   await expect(observer).toHaveAttribute("data-observer-renderer-request", /^(webgl|webgpu-pilot)$/);
@@ -19,8 +22,15 @@ const waitForMountedObserver = async (page: Page) => {
     /^(webgl-renderer|webgpu-renderer)$/,
     { timeout: 60_000 },
   );
-  await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
+  await expect(observer).toHaveAttribute("data-scene-subject-id", sceneId);
   return observer;
+};
+
+const navigateWithinSimulator = async (page: Page, path: string) => {
+  await page.evaluate((nextPath) => {
+    window.history.pushState(window.history.state, "", nextPath);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+  }, path);
 };
 
 const readObserverAttributes = async (observer: Locator) => observer.evaluate((element) =>
@@ -164,11 +174,9 @@ const setAnatomySubjectVisible = async (
   observer: Locator,
   visible: boolean,
 ) => {
-  await page.evaluate(({ nextVisible, eventName }) => {
-    window.dispatchEvent(
-      new CustomEvent(eventName, {
-        detail: nextVisible,
-      }),
+  await observer.evaluate((element, { nextVisible, eventName }) => {
+    element.dispatchEvent(
+      new CustomEvent(eventName, { detail: nextVisible }),
     );
   }, { nextVisible: visible, eventName: ANATOMY_VISIBILITY_EVENT });
   await expect(observer).toHaveAttribute(
@@ -576,8 +584,8 @@ const setAnatomyVerificationView = async (
     position: [target[0] + 0.55, target[1] + 0.3, target[2] + 1.2] as [number, number, number],
   };
 
-  await page.evaluate(({ nextView, eventName }) => {
-    window.dispatchEvent(new CustomEvent(eventName, { detail: nextView }));
+  await observer.evaluate((element, { nextView, eventName }) => {
+    element.dispatchEvent(new CustomEvent(eventName, { detail: nextView }));
   }, { nextView: view, eventName: ANATOMY_VERIFICATION_VIEW_EVENT });
   await expect.poll(async () => {
     const current = await readObserverViewState(observer);
@@ -634,7 +642,7 @@ const attachRuntimeVerification = async (input: Readonly<{
     interactions.resetRestoredOrbitTarget;
 
   const report = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     environment: {
       operatingSystem: process.platform,
       osRelease: release(),
@@ -645,6 +653,18 @@ const attachRuntimeVerification = async (input: Readonly<{
       threeRevision: REVISION,
     },
     requestedRenderer: attributes["data-observer-renderer-request"] ?? "unknown",
+    selectionReason: attributes["data-observer-selection-reason"] ?? "unknown",
+    sceneCompatibility: {
+      status: attributes["data-observer-webgpu-scene-compatibility"] ?? "unknown",
+      developmentPilotEligibility:
+        attributes["data-observer-webgpu-pilot-eligibility"] ?? "unknown",
+      requirementsStatus:
+        attributes["data-observer-scene-requirements-status"] ?? "unknown",
+      renderingRequirements:
+        attributes["data-observer-scene-rendering-requirements"] ?? "unknown",
+      knownBackendConstraints:
+        attributes["data-observer-scene-known-backend-constraints"] ?? "unknown",
+    },
     browserWebGpuApi:
       attributes["data-observer-webgpu-api-present"] === "true" ? "present" :
       attributes["data-observer-webgpu-api-present"] === "false" ? "absent" : "unknown",
@@ -721,6 +741,9 @@ test("View Camera Anatomy keeps its default mounted Observer on WebGL", async ({
   await page.goto("/simulator/free/view-camera-anatomy?rttDiagnostics=1");
   const observer = await waitForMountedObserver(page);
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgl");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "default-webgl-request");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
   await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
@@ -799,6 +822,9 @@ test("development WebGPU pilot keeps View Camera Anatomy interactive beside WebG
   const observer = await waitForMountedObserver(page);
   await expect.poll(() => webgpuModuleRequests.length).toBeGreaterThan(0);
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
   await expect(observer).toHaveAttribute("data-observer-webgpu-api-present", /^(true|false)$/);
   await expect(observer).toHaveAttribute("data-observer-hardware-acceleration", "unconfirmed");
   await expect(observer).toHaveAttribute(
@@ -900,4 +926,281 @@ test("development WebGPU pilot keeps View Camera Anatomy interactive beside WebG
     expect(runtimeEvidence.groundGlassReadiness.status).toBe("contentful");
     expect(runtimeEvidence.initializationFailure).toBe(false);
   }
+});
+
+test("application fallback remounts once and clears when the scene changes", async ({ page, browser }, testInfo) => {
+  test.skip(
+    nativeWebGpuRequired,
+    "This fault-injection case verifies application fallback; the native-required pilot test separately requires native execution.",
+  );
+  test.setTimeout(180_000);
+  const pageErrors: string[] = [];
+  const webgpuModuleRequests: string[] = [];
+  const documentNavigations: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("request", (request) => {
+    if (/three[._/-]webgpu/i.test(request.url())) webgpuModuleRequests.push(request.url());
+    if (request.isNavigationRequest() && request.resourceType() === "document") {
+      documentNavigations.push(request.url());
+    }
+  });
+  await page.route(/three[._/-]webgpu/i, (route) => route.abort());
+
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&rttDiagnostics=1");
+  const observer = await waitForMountedObserver(page);
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl", {
+    timeout: 60_000,
+  });
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "app-webgl");
+  await expect(observer).toHaveAttribute("data-observer-renderer-failure-stage", "initialization");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  const initialEvidence = await attachMountedObserverEvidence(testInfo, observer);
+  const sceneSubjectId = await observer.getAttribute("data-scene-subject-id") ?? "unknown";
+
+  const groundGlass = page.getByTestId("ground-glass-rtt");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", {
+    timeout: 60_000,
+  });
+  const groundGlassContentful =
+    await groundGlass.getAttribute("data-rtt-final-contentful") === "true";
+  const canvas = observer.locator("canvas");
+  const canvasPixels = await attachScreenshots(
+    page,
+    testInfo,
+    canvas,
+    "test-results/observer-webgpu-app-fallback.png",
+    "test-results/observer-webgpu-app-fallback-page.png",
+  );
+  const interactions = await exerciseObserverControls(page, observer);
+  await selectAnatomySceneFocus(page, observer);
+  const sceneView = await setAnatomyVerificationView(page, observer);
+  const subjectRendering = await captureSubjectRenderingEvidence(page, observer, testInfo);
+  await restoreObserverSceneView(page, observer, sceneView);
+  const runtimeEvidence = await attachRuntimeVerification({
+    testInfo,
+    browser,
+    attributes: initialEvidence,
+    sceneSubjectId,
+    groundGlassContentful,
+    canvasPixels,
+    subjectRendering,
+    interactions,
+    pageErrors,
+  });
+
+  expect(webgpuModuleRequests).toHaveLength(1);
+  expect(canvasPixels.contentful).toBe(true);
+  expect(subjectRendering.status).toBe("verified");
+  expect(runtimeEvidence.observerReadiness.status).toBe("ready");
+  expect(interactions).toEqual({
+    cameraFocusSelected: true,
+    orbitInteractionWorked: true,
+    resetRestoredCameraPosition: true,
+    resetRestoredOrbitTarget: true,
+  });
+  expect(pageErrors).toEqual([]);
+
+  await navigateWithinSimulator(
+    page,
+    "/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1",
+  );
+  await waitForMountedObserver(page, "architecture-rise");
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(observer).toHaveAttribute(
+    "data-observer-selection-reason",
+    "scene-has-known-webgpu-constraint",
+  );
+  await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
+  await expect(observer).not.toHaveAttribute("data-observer-renderer-failure-stage");
+  expect(webgpuModuleRequests).toHaveLength(1);
+  expect(documentNavigations).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await testInfo.attach("observer-application-fallback-lifecycle.json", {
+    body: JSON.stringify({
+      initialFallback: {
+        request: initialEvidence["data-observer-renderer-request"],
+        rendererAttempt: initialEvidence["data-observer-renderer-attempt"],
+        rendererFamily: initialEvidence["data-observer-renderer-family"],
+        executionBackend: initialEvidence["data-observer-execution-backend"],
+        applicationFallback: initialEvidence["data-observer-application-fallback"],
+        failureStage: initialEvidence["data-observer-renderer-failure-stage"],
+        initializationAttempts: initialEvidence["data-observer-webgpu-initialization-attempts"],
+        subjectRendering,
+        interactions,
+        groundGlassContentful,
+      },
+      afterSceneChange: await readObserverAttributes(observer),
+      webgpuModuleRequests,
+      documentNavigations,
+      pageErrors,
+    }, null, 2),
+    contentType: "application/json",
+  });
+});
+
+test("Architecture Rise refuses the Anatomy-only WebGPU pilot", async ({ page }, testInfo) => {
+  const webgpuModuleRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/three[._/-]webgpu/i.test(request.url())) webgpuModuleRequests.push(request.url());
+  });
+
+  await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
+  const observer = await waitForMountedObserver(page, "architecture-rise");
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute(
+    "data-observer-selection-reason",
+    "scene-has-known-webgpu-constraint",
+  );
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "not-evaluated");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "not-eligible");
+  await expect(observer).toHaveAttribute("data-observer-scene-requirements-status", "declared");
+  await expect(observer).toHaveAttribute(
+    "data-observer-scene-known-backend-constraints",
+    "procedural-world-environment-uses-webgl-pmrem",
+  );
+  await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute(
+    "data-rtt-final-contentful",
+    "true",
+    { timeout: 60_000 },
+  );
+  expect(webgpuModuleRequests).toEqual([]);
+
+  const attributes = await attachMountedObserverEvidence(testInfo, observer);
+  await testInfo.attach("architecture-rise-backend-selection.json", {
+    body: JSON.stringify({
+      requestedRenderer: attributes["data-observer-renderer-request"],
+      selectionReason: attributes["data-observer-selection-reason"],
+      rendererAttempt: attributes["data-observer-renderer-attempt"],
+      mountedRendererFamily: attributes["data-observer-renderer-family"],
+      executionBackend: attributes["data-observer-execution-backend"],
+      adapterAvailability: attributes["data-observer-adapter-availability"],
+      webgpuModuleRequests,
+      groundGlassContentful: true,
+    }, null, 2),
+    contentType: "application/json",
+  });
+});
+
+test("Observer backend state follows same-route scene changes without stale fallback evidence", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  const pageErrors: string[] = [];
+  const webgpuModuleRequests: string[] = [];
+  const documentNavigations: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("request", (request) => {
+    if (/three[._/-]webgpu/i.test(request.url())) webgpuModuleRequests.push(request.url());
+    if (request.isNavigationRequest() && request.resourceType() === "document") {
+      documentNavigations.push(request.url());
+    }
+  });
+
+  await page.goto("/simulator/free/view-camera-anatomy?rttDiagnostics=1");
+  const observer = await waitForMountedObserver(page);
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  expect(webgpuModuleRequests).toEqual([]);
+
+  await navigateWithinSimulator(
+    page,
+    "/simulator/free/view-camera-anatomy?observerRenderer=webgpu&rttDiagnostics=1",
+  );
+  await expect.poll(() => webgpuModuleRequests.length, { timeout: 60_000 }).toBe(1);
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", {
+    timeout: 60_000,
+  });
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  const firstPilot = await readObserverAttributes(observer);
+  if (firstPilot["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(firstPilot["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
+    expect(firstPilot["data-observer-application-fallback"]).toBe("none");
+  } else {
+    expect(firstPilot["data-observer-renderer-family"]).toBe("webgl-renderer");
+    expect(firstPilot["data-observer-execution-backend"]).toBe("webgl2");
+    expect(firstPilot["data-observer-application-fallback"]).toBe("app-webgl");
+    expect(firstPilot["data-observer-renderer-failure-stage"]).toBe("initialization");
+  }
+
+  await navigateWithinSimulator(
+    page,
+    "/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1",
+  );
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise", {
+    timeout: 60_000,
+  });
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active");
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(observer).toHaveAttribute(
+    "data-observer-selection-reason",
+    "scene-has-known-webgpu-constraint",
+  );
+  await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
+  expect(webgpuModuleRequests).toHaveLength(1);
+  const architectureRiseRequest = await readObserverAttributes(observer);
+
+  await navigateWithinSimulator(
+    page,
+    "/simulator/free/view-camera-anatomy?observerRenderer=webgpu&rttDiagnostics=1",
+  );
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy", {
+    timeout: 60_000,
+  });
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  const secondPilot = await readObserverAttributes(observer);
+  expect(webgpuModuleRequests).toHaveLength(1);
+  expect(secondPilot["data-observer-renderer-family"]).toMatch(/^(webgl-renderer|webgpu-renderer)$/);
+  if (secondPilot["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(secondPilot["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
+    expect(secondPilot["data-observer-application-fallback"]).toBe("none");
+  } else {
+    expect(secondPilot["data-observer-execution-backend"]).toBe("webgl2");
+    expect(secondPilot["data-observer-application-fallback"]).toBe("app-webgl");
+    expect(secondPilot["data-observer-renderer-failure-stage"]).toBe("initialization");
+  }
+  if (nativeWebGpuRequired) {
+    expect(secondPilot["data-observer-webgpu-api-present"]).toBe("true");
+    expect(secondPilot["data-observer-adapter-availability"]).toBe("available");
+    expect(secondPilot["data-observer-renderer-family"]).toBe("webgpu-renderer");
+    expect(secondPilot["data-observer-execution-backend"]).toBe("webgpu");
+    expect(secondPilot["data-observer-application-fallback"]).toBe("none");
+  }
+
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute(
+    "data-rtt-final-contentful",
+    "true",
+    { timeout: 60_000 },
+  );
+  expect(documentNavigations).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
+  await testInfo.attach("observer-spa-backend-lifecycle.json", {
+    body: JSON.stringify({
+      documentNavigations,
+      webgpuModuleRequests,
+      anatomyPilotBeforeSceneChange: firstPilot,
+      architectureRiseRequest,
+      anatomyPilotAfterReturn: secondPilot,
+      groundGlassContentful: true,
+      pageErrors,
+    }, null, 2),
+    contentType: "application/json",
+  });
 });
