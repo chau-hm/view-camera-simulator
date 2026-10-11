@@ -1,35 +1,37 @@
-import * as THREE from "three";
-import type { CanvasProps, GLProps } from "@react-three/fiber";
+import type { ObserverSceneCompatibility } from "./observerSceneCompatibility";
 
-export type ObserverRendererRequest = "webgl" | "webgpu-pilot";
+export type ObserverRendererRequest = "webgl" | "webgpu-pilot" | "unknown";
 export type ObserverRendererAttempt = "webgl" | "webgpu";
-export type ObserverRendererFamily =
-  | "webgl-renderer"
-  | "webgpu-renderer"
-  | "unknown";
-export type ObserverExecutionBackend =
-  | "webgl2"
-  | "webgpu"
-  | "webgl2-fallback"
-  | "unknown";
 export type ObserverApplicationFallback = "none" | "app-webgl";
 
+export type ObserverBackendSelectionReason =
+  | "default-webgl-request"
+  | "webgpu-pilot-approved"
+  | "development-gate-disabled"
+  | "scene-compatibility-not-evaluated"
+  | "scene-requirements-not-declared"
+  | "scene-requirement-unverified"
+  | "scene-has-known-webgpu-constraint"
+  | "scene-not-pilot-enabled"
+  | "unrecognized-renderer-request";
+
+type ObserverBackendSelectionBase = Readonly<{
+  requestedRenderer: ObserverRendererRequest;
+  applicationFallback: ObserverApplicationFallback;
+  webglAvailable: boolean;
+  selectionReason: ObserverBackendSelectionReason;
+}>;
+
 export type ObserverBackendSelection =
-  | Readonly<{
+  | (ObserverBackendSelectionBase & Readonly<{
       status: "selected";
-      requestedRenderer: ObserverRendererRequest;
       rendererAttempt: ObserverRendererAttempt;
-      applicationFallback: ObserverApplicationFallback;
-      webglAvailable: boolean;
-    }>
-  | Readonly<{
+    }>)
+  | (ObserverBackendSelectionBase & Readonly<{
       status: "unavailable";
-      requestedRenderer: ObserverRendererRequest;
       rendererAttempt: null;
-      applicationFallback: ObserverApplicationFallback;
-      webglAvailable: boolean;
-      reason: "no-supported-backend" | "renderer-initialization-failed";
-    }>;
+      failureReason: "no-supported-backend" | "renderer-initialization-failed";
+    }>);
 
 export type SelectedObserverBackend = Extract<
   ObserverBackendSelection,
@@ -39,51 +41,95 @@ export type SelectedObserverBackend = Extract<
 export type ObserverBackendSelectionInput = Readonly<{
   webglAvailable: boolean;
   requestedRendererParam: string | null;
-  sceneId: string;
+  sceneCompatibility: ObserverSceneCompatibility;
   developmentPilotEnabled: boolean;
 }>;
 
-const WEBGPU_PILOT_SCENE_IDS = new Set(["view-camera-anatomy"]);
+const resolveRequestedRenderer = (
+  requestedRendererParam: string | null,
+): ObserverRendererRequest => {
+  if (requestedRendererParam === null || requestedRendererParam === "webgl") {
+    return "webgl";
+  }
+  if (requestedRendererParam === "webgpu") return "webgpu-pilot";
+  return "unknown";
+};
 
-/** Pure policy: browser hints select a bounded attempt, never prove mounted identity. */
+const resolveWebGpuPilotDenialReason = (
+  input: ObserverBackendSelectionInput,
+): ObserverBackendSelectionReason | null => {
+  if (!input.developmentPilotEnabled) return "development-gate-disabled";
+  if (input.sceneCompatibility.requirements === null) {
+    return "scene-requirements-not-declared";
+  }
+  if (input.sceneCompatibility.knownBackendConstraints.length > 0) {
+    return "scene-has-known-webgpu-constraint";
+  }
+  if (input.sceneCompatibility.webgpu.status !== "verified") {
+    return "scene-compatibility-not-evaluated";
+  }
+  const verifiedRequirements = input.sceneCompatibility.webgpu.verifiedRequirements;
+  if (
+    input.sceneCompatibility.requirements.some(
+      (requirement) => !verifiedRequirements.includes(requirement),
+    )
+  ) {
+    return "scene-requirement-unverified";
+  }
+  if (input.sceneCompatibility.developmentWebGpuPilot !== "eligible") {
+    return "scene-not-pilot-enabled";
+  }
+  return null;
+};
+
+/** Pure policy: declarations and rollout approval permit an attempt; runtime evidence remains separate. */
 export const selectObserverBackend = (
   input: ObserverBackendSelectionInput,
 ): ObserverBackendSelection => {
-  const pilotRequested =
-    input.requestedRendererParam === "webgpu" &&
-    input.developmentPilotEnabled &&
-    WEBGPU_PILOT_SCENE_IDS.has(input.sceneId);
+  const requestedRenderer = resolveRequestedRenderer(input.requestedRendererParam);
+  const selectionReason = requestedRenderer === "unknown"
+    ? "unrecognized-renderer-request"
+    : requestedRenderer === "webgpu-pilot"
+      ? resolveWebGpuPilotDenialReason(input) ?? "webgpu-pilot-approved"
+      : "default-webgl-request";
+  const pilotApproved =
+    requestedRenderer === "webgpu-pilot" &&
+    selectionReason === "webgpu-pilot-approved";
 
-  if (pilotRequested) {
+  if (pilotApproved) {
     return {
       status: "selected",
-      requestedRenderer: "webgpu-pilot",
+      requestedRenderer,
       rendererAttempt: "webgpu",
       applicationFallback: "none",
       webglAvailable: input.webglAvailable,
+      selectionReason,
     };
   }
 
   if (!input.webglAvailable) {
     return {
       status: "unavailable",
-      requestedRenderer: "webgl",
+      requestedRenderer,
       rendererAttempt: null,
       applicationFallback: "none",
       webglAvailable: false,
-      reason: "no-supported-backend",
+      selectionReason,
+      failureReason: "no-supported-backend",
     };
   }
 
   return {
     status: "selected",
-    requestedRenderer: "webgl",
+    requestedRenderer,
     rendererAttempt: "webgl",
     applicationFallback: "none",
     webglAvailable: true,
+    selectionReason,
   };
 };
 
+/** Resolves the single allowed application-level fallback after a WebGPU attempt fails. */
 export const resolveObserverRendererInitializationFailure = (
   selection: SelectedObserverBackend,
 ): ObserverBackendSelection => {
@@ -106,7 +152,8 @@ export const resolveObserverRendererInitializationFailure = (
       rendererAttempt: null,
       applicationFallback: "none",
       webglAvailable: false,
-      reason: "renderer-initialization-failed",
+      selectionReason: selection.selectionReason,
+      failureReason: "renderer-initialization-failed",
     };
   }
 
@@ -116,119 +163,7 @@ export const resolveObserverRendererInitializationFailure = (
     rendererAttempt: null,
     applicationFallback: selection.applicationFallback,
     webglAvailable: selection.webglAvailable,
-    reason: "renderer-initialization-failed",
-  };
-};
-
-export type ObserverRendererRuntime = Readonly<{
-  rendererFamily: ObserverRendererFamily;
-  executionBackend: ObserverExecutionBackend;
-}>;
-
-/** Classifies the actual initialized R3F renderer using public Three r186 evidence. */
-export const resolveObserverRendererRuntime = (
-  renderer: unknown,
-): ObserverRendererRuntime => {
-  if (typeof renderer !== "object" || renderer === null) {
-    return { rendererFamily: "unknown", executionBackend: "unknown" };
-  }
-
-  const candidate = renderer as {
-    isWebGLRenderer?: unknown;
-    isWebGPURenderer?: unknown;
-    coordinateSystem?: unknown;
-  };
-
-  if (candidate.isWebGPURenderer === true) {
-    if (candidate.coordinateSystem === THREE.WebGPUCoordinateSystem) {
-      return { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" };
-    }
-    if (candidate.coordinateSystem === THREE.WebGLCoordinateSystem) {
-      return {
-        rendererFamily: "webgpu-renderer",
-        executionBackend: "webgl2-fallback",
-      };
-    }
-    return { rendererFamily: "webgpu-renderer", executionBackend: "unknown" };
-  }
-
-  if (candidate.isWebGLRenderer === true) {
-    return { rendererFamily: "webgl-renderer", executionBackend: "webgl2" };
-  }
-
-  return { rendererFamily: "unknown", executionBackend: "unknown" };
-};
-
-type InitializableRenderer = Readonly<{
-  init: () => PromiseLike<unknown> | unknown;
-  dispose: () => PromiseLike<unknown> | unknown;
-}>;
-
-/** Initializes one factory-owned renderer and disposes a partial instance on failure. */
-export const initializeObserverWebGpuRenderer = async <
-  TRenderer extends InitializableRenderer,
->(
-  createRenderer: () => TRenderer | PromiseLike<TRenderer>,
-  onInitializationFailure: () => void,
-): Promise<TRenderer> => {
-  let renderer: TRenderer | null = null;
-  try {
-    renderer = await createRenderer();
-    await renderer.init();
-    return renderer;
-  } catch (error) {
-    if (renderer) {
-      try {
-        await renderer.dispose();
-      } catch {
-        // Preserve the initialization failure so the Observer host can fall back.
-      }
-    }
-    onInitializationFailure();
-    throw error;
-  }
-};
-
-export type ObserverCanvasInitialization = Readonly<{
-  rendererAttempt: ObserverRendererAttempt;
-  canvasProps: Pick<CanvasProps, "gl">;
-}>;
-
-/** R3F initialization seam; only the explicitly requested pilot loads three/webgpu. */
-export const resolveObserverCanvasInitialization = (
-  selection: SelectedObserverBackend,
-  antialias: boolean,
-  onWebGpuInitializationFailure: () => void,
-  onWebGpuInitializationAttempt: () => void = () => undefined,
-): ObserverCanvasInitialization => {
-  if (selection.rendererAttempt === "webgl") {
-    return {
-      rendererAttempt: "webgl",
-      canvasProps: { gl: { antialias } },
-    };
-  }
-
-  const createWebGpuRenderer: GLProps = async (defaults) => {
-    onWebGpuInitializationAttempt();
-    return initializeObserverWebGpuRenderer(
-      async () => {
-        const { WebGPURenderer } = await import("three/webgpu");
-        return new WebGPURenderer({
-          // Canvas currently mounts a DOM canvas; R3F's public factory type includes a local OffscreenCanvas shim.
-          canvas: defaults.canvas as HTMLCanvasElement,
-          alpha: defaults.alpha,
-          powerPreference: defaults.powerPreference === "low-power"
-            ? "low-power"
-            : "high-performance",
-          antialias,
-        });
-      },
-      onWebGpuInitializationFailure,
-    );
-  };
-
-  return {
-    rendererAttempt: "webgpu",
-    canvasProps: { gl: createWebGpuRenderer },
+    selectionReason: selection.selectionReason,
+    failureReason: "renderer-initialization-failed",
   };
 };

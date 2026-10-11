@@ -247,6 +247,207 @@ renderer-specific paths need their own compatibility evidence. Ground Glass
 remains on its unchanged WebGL RTT and requires a separate migration design and
 validation.
 
+## Multi-backend Observer architecture (PR B)
+
+PR B consolidates the existing pilot into four small boundaries. Compatibility
+declarations describe what has been reviewed; they are not runtime capability
+claims. Browser WebGPU API and adapter results remain diagnostic facts and do
+not grant scene eligibility.
+
+```mermaid
+flowchart LR
+  subgraph Observer[Observer surface]
+    request[Explicit request + development gate]
+    webglAvailability[WebGL availability]
+    compatibility[Observer scene compatibility registry]
+    policy[Pure renderer selection policy]
+    canvas[R3F Canvas initialization boundary]
+    init[WebGL factory or lazy WebGPU factory + one-shot app fallback]
+    mounted[Mounted useThree().gl runtime evidence]
+    visual[Observer visual settings report]
+    subject[Scene-specific rendered and interaction verification]
+    adapter[Bounded adapter diagnostic]
+    request --> policy
+    webglAvailability --> policy
+    compatibility --> policy
+    policy --> canvas --> init --> mounted
+    mounted --> visual
+    mounted --> subject
+    request -. pilot-only diagnostic .-> adapter
+  end
+
+  subgraph GroundGlass[Ground Glass surface — independent]
+    ggCanvas[Ground Glass Canvas]
+    ggRenderer[WebGLRenderer]
+    ggRtt[WebGL RTT + existing GLSL DOF passes]
+    ggCanvas --> ggRenderer --> ggRtt
+  end
+```
+
+`observerSceneCompatibility.ts` owns the typed, fail-closed scene declarations.
+View Camera Anatomy is the only pilot-eligible scene, based on PR #248's native
+mounted-backend, subject-pixel, interaction, and coexistence evidence. That
+evidence covers the verified Anatomy requirements; it does not certify every
+material or pipeline feature in every scene. Architecture Rise declares its
+procedural environment requirement and the current
+`PMREMGenerator(WebGLRenderer)` constraint. It remains ineligible while that
+environment path is WebGL-specific. Unknown and unevaluated scenes remain
+WebGPU-ineligible without changing their normal WebGL path.
+
+`observerBackend.ts` owns deterministic selection policy. It separates the
+requested renderer, policy reason, and selected renderer attempt. The
+development gate and declaration are required even when a browser exposes
+`navigator.gpu` or an adapter. The adapter probe remains a bounded development
+diagnostic; it creates no device and is not a selection input.
+
+`observerRendererInitialization.ts` owns the R3F Canvas factory seam. It keeps
+the WebGPU import lazy, awaits `WebGPURenderer.init()`, disposes a partial
+renderer after failed initialization, and reports the existing one-shot
+application fallback. R3F owns a successfully mounted renderer and its normal
+lifecycle. A WebGPURenderer whose public coordinate-system signal reports
+WebGL is recorded as Three.js internal `webgl2-fallback`; a failed WebGPU
+initialization followed by WebGLRenderer is recorded separately as
+`app-webgl`.
+
+`observerVisualPipelineCapabilities.ts` owns mounted runtime evidence, read
+from the actual `useThree().gl`. Selection, declared compatibility, browser
+availability, renderer family, and execution backend remain distinct.
+`useObserverRendererLifecycle.ts` owns a monotonic mount generation for each
+Observer host. Its descriptor includes the scene/request, selected renderer
+attempt, application-fallback state, and explicit mount key. A conditional
+render-phase state update advances the generation only when that descriptor
+changes, before descendant Canvas effects can start renderer initialization.
+Unrelated React rerenders do not advance it. Initialization-attempt,
+initialization-failure, Canvas-error, and mounted-capability callbacks carry
+the generation that created them; the host rejects callbacks after a newer
+generation becomes active or the host unmounts. Capability state is kept by
+the host and filtered to the current generation, so a stale report or cleanup
+cannot replace or clear newer mounted `useThree().gl` evidence. The application
+fallback changes the selection/mount descriptor and therefore receives a new
+generation while preserving the one-shot fallback. PR #248's development-only
+Anatomy test events remain attached to their own Observer wrapper and are
+removed with their scene subject or controls.
+
+The Ground Glass Canvas remains separately owned by its existing WebGL-only
+renderer and RTT code. It does not consume Observer compatibility or selection
+policy, and PR B changes none of its renderer, target, shader, orientation, or
+resource-ownership contracts.
+
+To evaluate another scene in a later PR, inspect its actual Observer rendering
+requirements and backend-specific implementations, resolve those gaps, add an
+explicit compatibility record, and only then grant development pilot
+eligibility. A native-required run must verify the actual mounted execution
+backend, the scene's rendered subject and interactions, its relevant lighting
+and environment behavior, Ground Glass coexistence, and fallback behavior.
+Cross-scene visual parity and hardware acceleration remain unverified; neither
+is inferred from renderer identity or a compatibility declaration.
+
+### PR B verification rerun
+
+The final PR B code was rechecked on macOS Darwin 27.0.0 arm64 with Three.js
+r186. Ordinary Playwright Chromium was version 149.0.7827.55; native-required
+mode used installed stable Chrome 155.0.8059.39 in headed mode and the existing
+launch configuration without forced WebGPU or software-renderer flags.
+
+| Run | Browser API / adapter | Mounted renderer / execution | Application fallback / attempts | Observer and Ground Glass evidence |
+| --- | --- | --- | --- | --- |
+| Ordinary Chromium WebGL baseline | Present / not requested | `webgl-renderer` / `webgl2` | `none` / 0 | Anatomy differential: 21,016 changed pixels, all inside its projected region; controls and Ground Glass passed |
+| Ordinary Chromium WebGPU pilot | Present / unavailable | `webgpu-renderer` / `webgl2-fallback` | `none` / 1 | Anatomy differential: 20,849 pixels, all inside its projected region; controls and Ground Glass passed |
+| Native-required Chrome | Present / available | `webgpu-renderer` / `webgpu` | `none` / 1 | Anatomy differential: 20,866 pixels, all inside its projected region; controls and Ground Glass passed |
+| Native subject-hidden negative control | Present / available | `webgpu-renderer` / `webgpu` | `none` / 1 | 0 changed pixels; hidden canvas stayed contentful, controls and Ground Glass passed; subject readiness failed as expected |
+| Fault-injected application fallback | Present / unavailable | `webgl-renderer` / `webgl2` | `app-webgl`, initialization failure / 1 | Anatomy differential: 21,016 pixels; controls and Ground Glass passed; later Architecture Rise navigation cleared fallback evidence |
+
+The regular Observer E2E also verified that an Architecture Rise request does
+not request the WebGPU module or adapter, and that Anatomy → Architecture Rise
+→ Anatomy client-side navigation remounts the selected renderer without stale
+capability or fallback state. The browser requested the lazy module chunk once;
+the later Anatomy mount reused the cached module and still recorded one fresh
+renderer initialization. The fault-injected fallback path used a real aborted
+lazy-module request and the mounted WebGL fallback, not mocked runtime output.
+
+All successful browser runs reported no page errors. Hardware acceleration
+remains **unconfirmed** in both browser environments; adapter availability and
+mounted WebGPU execution do not identify whether the browser used a hardware or
+software adapter. The deliberate hidden-subject test fails specifically at
+`Anatomy subject must contribute projected pixels`, while the background,
+controls, and Ground Glass remain available.
+
+Validation passed the CSS check, lint, typecheck, all 2,241 unit/integration
+tests, production build, the five-test targeted Chromium Observer suite, and
+the four applicable native-required Observer tests. Native-required mode
+explicitly skips only the fault-injected app-fallback case. The repository-wide
+`ci:local:e2e` run stopped at its first unrelated
+`architecture-foreground-compound.spec.ts` assertion: the task panel heading
+`Complete the Photograph` was absent from that page. The focused Observer E2E
+and native-required suite passed independently.
+
+### Review fix round 1 — mount-generation ABA guard and E2E baseline
+
+The original host guard compared a composite request string built from scene,
+renderer selection, and the fallback mount key. Anatomy → Architecture Rise →
+Anatomy could restore the first Anatomy string while its asynchronous
+initialization was still pending. The capability reporter used a similar
+scene/renderer/mount-key string, so a delayed report or cleanup could also
+match a later Anatomy mount. `useObserverRendererLifecycle.ts` now advances a
+host-owned integer generation on each committed attempt-descriptor transition.
+The generation survives same-host SPA navigation without reuse; unmounting
+invalidates the old host's active generation. This protects initialization
+attempt and failure callbacks, Canvas error-boundary callbacks, and capability
+reports/cleanup. Initialization counts and failure status are updated only
+while the generation remains active. A real current WebGPU failure still
+produces the existing one-shot WebGL application fallback, with a new
+generation and pending mounted evidence until the replacement renderer is
+reported.
+
+The new lifecycle test holds renderer A's initialization promise pending,
+transitions Anatomy A → Architecture Rise → Anatomy B, then delivers A's late
+attempt, failure, Canvas-error, capability-report, and cleanup callbacks. A's
+events do not change B's count, failure, fallback, or current capability
+report. B's own initialization failure still selects one `app-webgl` fallback.
+A separate deferred-success case verifies that A's late mounted report and
+cleanup cannot overwrite or clear B's `webgpu-renderer` / `webgpu` evidence.
+The browser lifecycle test also checks that generations advance over SPA scene
+changes and fallback, while camera controls, subject verification, and adapter
+diagnostics leave the generation unchanged.
+
+The PR B validation gap is classified as a **BASELINE FAILURE**, not a PR
+regression. The exact focused command failed at the same line-35 assertion on
+both PR HEAD and the original base `d868770dbf9092bc8bb63633edddb7290dae2f30`:
+
+```bash
+npm run test:e2e -- --project=chromium src/tests/e2e/architecture-foreground-compound.spec.ts
+```
+
+Both runs used Node 24.19.0, the same unchanged package lock/dependency tree,
+Playwright 1.61.1, and Playwright Chromium 149.0.7827.55 with the same local
+Vite server configuration. The URL was the requested guided route and the
+rendered scene/task identity was `architecture-foreground` /
+`architecture-foreground-compound-01`. The accessibility snapshot showed the
+Task and Feedback control in its closed state; the test asks for its inner
+`Complete the Photograph` heading before opening that panel. A focused
+diagnostic on both revisions confirmed that opening the existing panel reveals
+the expected heading and task copy. Neither run produced page errors; observed
+console warnings were the existing Three.Clock deprecation and WebGL
+ReadPixels-stall driver warnings. Screenshots of the closed-panel state were
+captured in each worktree's ignored Playwright `test-results` directory. The
+test was not changed in this renderer PR. The full local E2E workflow remains
+blocked at this pre-existing assertion; later repository E2E files are not
+claimed as passed.
+
+Post-fix validation passed the repository CSS check, full lint, typecheck,
+2,244 unit/integration tests, and production build. The complete ordinary
+Observer suite passed 5 tests; the final pilot and SPA-generation rerun passed
+2 tests. Native-required Chrome passed its 4 applicable Observer tests (the
+fault-injected application-fallback case is explicitly skipped in native mode).
+Its final evidence remained `webgpu-renderer` / `webgpu`, one initialization
+attempt, no application fallback, 20,866 Anatomy subject pixels entirely in
+the projected region, working interactions, and contentful Ground Glass.
+The final native subject-hidden negative control again failed at the intended
+subject-pixel assertion with 0 changed pixels while the hidden canvas remained
+contentful. Hardware acceleration remains unconfirmed. The full local E2E
+workflow reran after the fix and again stopped at the same proven baseline
+failure; no later repository E2E files were reached.
+
 ## Runtime Ground Glass renderer evidence
 
 The development-only report is included in the existing
