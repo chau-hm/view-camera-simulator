@@ -68,6 +68,7 @@ import {
 import { resolveScenePresentationLighting } from "./presentationLighting";
 import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
 import { WorldIllumination } from "./WorldIllumination";
+import type { ObserverWorldEnvironmentStatus } from "./observerWorldEnvironmentRig";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
 import {
   type SelectedObserverBackend,
@@ -993,6 +994,8 @@ const SceneContent = ({
   activeAperture,
   cameraPresentation,
   onSubjectCapacityChange,
+  rendererMountGeneration,
+  onEnvironmentStatusChange,
 }: {
   scene: SceneDefinition;
   cameraMovementPresentation?: CameraMovementLatticePresentation;
@@ -1007,6 +1010,11 @@ const SceneContent = ({
   activeAperture: ApertureValue;
   cameraPresentation?: ConceptualCameraPresentation;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
+  rendererMountGeneration: number;
+  onEnvironmentStatusChange: (
+    generation: number,
+    status: ObserverWorldEnvironmentStatus,
+  ) => void;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -1036,7 +1044,11 @@ const SceneContent = ({
     <>
     <color attach="background" args={["#f8fafc"]} />
     <PresentationLighting lighting={presentationLighting} />
-    <WorldIllumination sceneId={scene.id} />
+    <WorldIllumination
+      sceneId={scene.id}
+      mountGeneration={rendererMountGeneration}
+      onEnvironmentStatusChange={onEnvironmentStatusChange}
+    />
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -1185,6 +1197,22 @@ export const SceneRenderer = ({
   );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
+  const [worldEnvironmentReport, setWorldEnvironmentReport] = useState<Readonly<{
+    generation: number;
+    status: ObserverWorldEnvironmentStatus;
+  }> | null>(null);
+  const onEnvironmentStatusChange = useCallback((
+    generation: number,
+    status: ObserverWorldEnvironmentStatus,
+  ) => {
+    if (generation !== rendererMountGeneration) return;
+    setWorldEnvironmentReport({ generation, status });
+  }, [rendererMountGeneration]);
+  const worldEnvironmentStatus = worldEnvironmentReport?.generation === rendererMountGeneration
+    ? worldEnvironmentReport.status
+    : sceneCompatibility.requirements?.includes("procedural-world-environment")
+      ? "pending"
+      : "not-configured";
   const rendererMountIdentity = String(rendererMountGeneration);
   const mountedObserverCapabilities = observerCapabilities;
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
@@ -1369,6 +1397,9 @@ export const SceneRenderer = ({
           : undefined
       }
       data-observer-renderer-failure-stage={rendererFailureStage ?? undefined}
+      data-observer-environment-status={
+        import.meta.env.DEV ? worldEnvironmentStatus : undefined
+      }
       data-observer-shadow-map-status={
         mountedObserverCapabilities?.status === "active"
           ? mountedObserverCapabilities.shadowMaps.status
@@ -1602,6 +1633,8 @@ export const SceneRenderer = ({
           activeAperture={activeAperture}
           cameraPresentation={cameraPresentation}
           onSubjectCapacityChange={onSubjectCapacityChange}
+          rendererMountGeneration={rendererMountGeneration}
+          onEnvironmentStatusChange={onEnvironmentStatusChange}
         />
         <OrbitControls
           ref={controlsRef}

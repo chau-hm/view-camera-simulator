@@ -29,7 +29,7 @@ describe("Observer scene backend compatibility declarations", () => {
     expect(anatomy.webgpu.verifiedRequirements).toEqual(anatomy.requirements);
   });
 
-  it("records Architecture Rise's procedural environment as a known WebGL-specific constraint", () => {
+  it("records Architecture Rise's PMREM path as verified while keeping the full scene unevaluated", () => {
     expect(resolveObserverSceneCompatibility("architecture-rise")).toEqual({
       requirements: [
         "observer-scene-subject",
@@ -38,9 +38,7 @@ describe("Observer scene backend compatibility declarations", () => {
         "procedural-world-environment",
       ],
       webgpu: { status: "not-evaluated" },
-      knownBackendConstraints: [
-        "procedural-world-environment-uses-webgl-pmrem",
-      ],
+      knownBackendConstraints: [],
       developmentWebGpuPilot: "not-eligible",
     });
   });

@@ -51,7 +51,7 @@ describe("Observer renderer selection policy", () => {
     ).toMatchObject({
       requestedRenderer: "webgpu-pilot",
       rendererAttempt: "webgl",
-      selectionReason: "scene-has-known-webgpu-constraint",
+      selectionReason: "scene-compatibility-not-evaluated",
     });
   });
 

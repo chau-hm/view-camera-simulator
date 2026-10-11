@@ -10,6 +10,7 @@ import {
   worldIlluminationPointToWorld,
 } from "./worldIlluminationContract";
 import { WorldEnvironment } from "./WorldEnvironment";
+import type { ObserverWorldEnvironmentStatus } from "./observerWorldEnvironmentRig";
 
 const assertNever = (source: never): never => {
   throw new Error(`Unsupported world illumination source: ${String(source)}`);
@@ -71,7 +72,18 @@ const worldIlluminationElement = (source: WorldIlluminationSource) => {
   }
 };
 
-export const WorldIllumination = ({ sceneId }: { sceneId: string }) => {
+export const WorldIllumination = ({
+  sceneId,
+  mountGeneration,
+  onEnvironmentStatusChange,
+}: {
+  sceneId: string;
+  mountGeneration: number;
+  onEnvironmentStatusChange?: (
+    generation: number,
+    status: ObserverWorldEnvironmentStatus,
+  ) => void;
+}) => {
   const illumination = resolveSceneWorldIllumination(sceneId);
 
   return (
@@ -81,6 +93,8 @@ export const WorldIllumination = ({ sceneId }: { sceneId: string }) => {
         <WorldEnvironment
           key={illumination.environment.id}
           environment={illumination.environment}
+          mountGeneration={mountGeneration}
+          onStatusChange={onEnvironmentStatusChange}
         />
       ) : null}
     </>
