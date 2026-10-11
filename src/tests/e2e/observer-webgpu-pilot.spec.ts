@@ -13,6 +13,7 @@ const waitForMountedObserver = async (
 ) => {
   const observer = page.getByTestId("scene-canvas");
   await expect(observer.locator("canvas")).toHaveCount(1);
+  await expect(observer).toHaveAttribute("data-observer-renderer-generation", /^\d+$/);
   await expect(observer).toHaveAttribute("data-observer-renderer-request", /^(webgl|webgpu-pilot)$/);
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", {
     timeout: 60_000,
@@ -653,6 +654,9 @@ const attachRuntimeVerification = async (input: Readonly<{
       threeRevision: REVISION,
     },
     requestedRenderer: attributes["data-observer-renderer-request"] ?? "unknown",
+    rendererMountGeneration: Number(
+      attributes["data-observer-renderer-generation"] ?? "-1",
+    ),
     selectionReason: attributes["data-observer-selection-reason"] ?? "unknown",
     sceneCompatibility: {
       status: attributes["data-observer-webgpu-scene-compatibility"] ?? "unknown",
@@ -758,6 +762,7 @@ test("View Camera Anatomy keeps its default mounted Observer on WebGL", async ({
   await expect(observer).toHaveAttribute("data-observer-output-color-space", "srgb");
   await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
   const evidence = await attachMountedObserverEvidence(testInfo, observer);
+  const initialMountGeneration = Number(evidence["data-observer-renderer-generation"]);
   const sceneSubjectId = await observer.getAttribute("data-scene-subject-id") ?? "unknown";
   expect(webgpuModuleRequests).toEqual([]);
 
@@ -784,6 +789,9 @@ test("View Camera Anatomy keeps its default mounted Observer on WebGL", async ({
     testInfo,
   );
   await restoreObserverSceneView(page, observer, sceneView);
+  expect(
+    Number(await observer.getAttribute("data-observer-renderer-generation")),
+  ).toBe(initialMountGeneration);
   await attachRuntimeVerification({
     testInfo,
     browser,
@@ -820,6 +828,9 @@ test("development WebGPU pilot keeps View Camera Anatomy interactive beside WebG
 
   await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&rttDiagnostics=1");
   const observer = await waitForMountedObserver(page);
+  const generationWhenMounted = Number(
+    await observer.getAttribute("data-observer-renderer-generation"),
+  );
   await expect.poll(() => webgpuModuleRequests.length).toBeGreaterThan(0);
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
@@ -832,11 +843,17 @@ test("development WebGPU pilot keeps View Camera Anatomy interactive beside WebG
     /^(api-absent|available|unavailable|request-rejected|timed-out)$/,
     { timeout: 10_000 },
   );
+  expect(
+    Number(await observer.getAttribute("data-observer-renderer-generation")),
+  ).toBe(generationWhenMounted);
   await expect.poll(() =>
     observer.getAttribute("data-observer-webgpu-initialization-attempts"),
   ).toBe("1");
 
   const initialEvidence = await attachMountedObserverEvidence(testInfo, observer);
+  const initialMountGeneration = Number(
+    initialEvidence["data-observer-renderer-generation"],
+  );
   const sceneSubjectId = await observer.getAttribute("data-scene-subject-id") ?? "unknown";
   const family = initialEvidence["data-observer-renderer-family"];
   const executionBackend = initialEvidence["data-observer-execution-backend"];
@@ -889,6 +906,9 @@ test("development WebGPU pilot keeps View Camera Anatomy interactive beside WebG
     testInfo,
   );
   await restoreObserverSceneView(page, observer, sceneView);
+  expect(
+    Number(await observer.getAttribute("data-observer-renderer-generation")),
+  ).toBe(initialMountGeneration);
   const runtimeEvidence = await attachRuntimeVerification({
     testInfo,
     browser,
@@ -958,6 +978,9 @@ test("application fallback remounts once and clears when the scene changes", asy
   await expect(observer).toHaveAttribute("data-observer-renderer-failure-stage", "initialization");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
   const initialEvidence = await attachMountedObserverEvidence(testInfo, observer);
+  const initialMountGeneration = Number(
+    initialEvidence["data-observer-renderer-generation"],
+  );
   const sceneSubjectId = await observer.getAttribute("data-scene-subject-id") ?? "unknown";
 
   const groundGlass = page.getByTestId("ground-glass-rtt");
@@ -1023,6 +1046,10 @@ test("application fallback remounts once and clears when the scene changes", asy
   expect(documentNavigations).toHaveLength(1);
   expect(pageErrors).toEqual([]);
   await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+  const afterSceneChange = await readObserverAttributes(observer);
+  expect(Number(afterSceneChange["data-observer-renderer-generation"])).toBeGreaterThan(
+    initialMountGeneration,
+  );
 
   await testInfo.attach("observer-application-fallback-lifecycle.json", {
     body: JSON.stringify({
@@ -1038,7 +1065,7 @@ test("application fallback remounts once and clears when the scene changes", asy
         interactions,
         groundGlassContentful,
       },
-      afterSceneChange: await readObserverAttributes(observer),
+      afterSceneChange,
       webgpuModuleRequests,
       documentNavigations,
       pageErrors,
@@ -1112,6 +1139,9 @@ test("Observer backend state follows same-route scene changes without stale fall
   await page.goto("/simulator/free/view-camera-anatomy?rttDiagnostics=1");
   const observer = await waitForMountedObserver(page);
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  const defaultWebglGeneration = Number(
+    await observer.getAttribute("data-observer-renderer-generation"),
+  );
   expect(webgpuModuleRequests).toEqual([]);
 
   await navigateWithinSimulator(
@@ -1125,6 +1155,9 @@ test("Observer backend state follows same-route scene changes without stale fall
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
   const firstPilot = await readObserverAttributes(observer);
+  expect(Number(firstPilot["data-observer-renderer-generation"])).toBeGreaterThan(
+    defaultWebglGeneration,
+  );
   if (firstPilot["data-observer-renderer-family"] === "webgpu-renderer") {
     expect(firstPilot["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
     expect(firstPilot["data-observer-application-fallback"]).toBe("none");
@@ -1155,6 +1188,9 @@ test("Observer backend state follows same-route scene changes without stale fall
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
   expect(webgpuModuleRequests).toHaveLength(1);
   const architectureRiseRequest = await readObserverAttributes(observer);
+  expect(Number(architectureRiseRequest["data-observer-renderer-generation"])).toBeGreaterThan(
+    Number(firstPilot["data-observer-renderer-generation"]),
+  );
 
   await navigateWithinSimulator(
     page,
@@ -1166,6 +1202,9 @@ test("Observer backend state follows same-route scene changes without stale fall
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
   const secondPilot = await readObserverAttributes(observer);
+  expect(Number(secondPilot["data-observer-renderer-generation"])).toBeGreaterThan(
+    Number(architectureRiseRequest["data-observer-renderer-generation"]),
+  );
   expect(webgpuModuleRequests).toHaveLength(1);
   expect(secondPilot["data-observer-renderer-family"]).toMatch(/^(webgl-renderer|webgpu-renderer)$/);
   if (secondPilot["data-observer-renderer-family"] === "webgpu-renderer") {

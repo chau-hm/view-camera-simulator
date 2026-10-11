@@ -9,11 +9,11 @@ import {
   type ObserverWebGpuAdapterAvailability,
 } from "../../render/backend/observerWebGpuDiagnostic";
 import {
-  resolveObserverRendererInitializationFailure,
   selectObserverBackend,
   type ObserverBackendSelection,
 } from "../../render/backend/observerBackend";
 import { resolveObserverSceneCompatibility } from "../../render/backend/observerSceneCompatibility";
+import { useObserverRendererLifecycle } from "./useObserverRendererLifecycle";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
@@ -147,15 +147,6 @@ export const SceneViewport = ({
     rendererSelectionOverride.requestedRendererParam === requestedRendererParam
       ? rendererSelectionOverride.selection
       : requestedBackendSelection;
-  const [webgpuInitializationAttemptsByRequest, setWebgpuInitializationAttemptsByRequest] = useState({
-    requestIdentity: `${scene.id}:${requestedRendererParam ?? "default"}`,
-    count: 0,
-  });
-  const webgpuInitializationAttempts =
-    webgpuInitializationAttemptsByRequest.requestIdentity ===
-      `${scene.id}:${requestedRendererParam ?? "default"}`
-      ? webgpuInitializationAttemptsByRequest.count
-      : 0;
   const [rendererMountKey, setRendererMountKey] = useState(0);
   const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}`;
   const previousRequestIdentityRef = useRef(requestIdentity);
@@ -167,27 +158,7 @@ export const SceneViewport = ({
         ? null
         : current,
     );
-    setRendererFailure(null);
-    setWebgpuInitializationAttemptsByRequest({ requestIdentity, count: 0 });
   }, [requestIdentity]);
-  const rendererAttemptIdentity = [
-    requestIdentity,
-    backendSelection.status,
-    backendSelection.rendererAttempt ?? "none",
-    rendererMountKey,
-  ].join(":");
-  const activeRendererAttemptIdentityRef = useRef(rendererAttemptIdentity);
-  const failedWebGpuAttemptIdentityRef = useRef<string | null>(null);
-  useLayoutEffect(() => {
-    activeRendererAttemptIdentityRef.current = rendererAttemptIdentity;
-    if (failedWebGpuAttemptIdentityRef.current !== rendererAttemptIdentity) {
-      failedWebGpuAttemptIdentityRef.current = null;
-    }
-  }, [rendererAttemptIdentity]);
-  const [rendererFailure, setRendererFailure] = useState<{
-    requestIdentity: string;
-    stage: "initialization";
-  } | null>(null);
   const webgpuApiPresent =
     typeof navigator !== "undefined" &&
     typeof (navigator as Navigator & { gpu?: unknown }).gpu !== "undefined";
@@ -237,48 +208,33 @@ export const SceneViewport = ({
     };
   }, [adapterProbeIdentity, developmentWebGpuPilotRequested]);
 
-  const onWebGpuInitializationFailure = useCallback(() => {
-    if (activeRendererAttemptIdentityRef.current !== rendererAttemptIdentity) return;
-    failedWebGpuAttemptIdentityRef.current = rendererAttemptIdentity;
-    setRendererFailure({ requestIdentity, stage: "initialization" });
-  }, [rendererAttemptIdentity, requestIdentity]);
-  const onWebGpuInitializationAttempt = useCallback(() => {
-    if (activeRendererAttemptIdentityRef.current !== rendererAttemptIdentity) return;
-    setWebgpuInitializationAttemptsByRequest((current) => ({
-      requestIdentity,
-      count: current.requestIdentity === requestIdentity ? current.count + 1 : 1,
-    }));
-  }, [rendererAttemptIdentity, requestIdentity]);
-  const onObserverCanvasError = useCallback(
-    () => {
-      if (activeRendererAttemptIdentityRef.current !== rendererAttemptIdentity) return;
-      const failedDuringWebGpuInitialization =
-        failedWebGpuAttemptIdentityRef.current === rendererAttemptIdentity;
-      if (failedDuringWebGpuInitialization) {
-        failedWebGpuAttemptIdentityRef.current = null;
-      }
-
-      if (failedDuringWebGpuInitialization && backendSelection.status === "selected") {
-        const nextSelection = resolveObserverRendererInitializationFailure(backendSelection);
-        setRendererSelectionOverride({
-          sceneId: scene.id,
-          requestedRendererParam,
-          selection: nextSelection,
-        });
-        if (nextSelection.status === "selected") {
-          setRendererMountKey((value) => value + 1);
-          return;
-        }
-        return;
-      }
-
-      setAssetError({
-        title: t(simulatorMessageKeys.viewport.sceneLoadFailed),
-        message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
+  const onApplicationFallback = useCallback(
+    (selection: ObserverBackendSelection) => {
+      setRendererSelectionOverride({
+        sceneId: scene.id,
+        requestedRendererParam,
+        selection,
       });
     },
-    [backendSelection, rendererAttemptIdentity, requestedRendererParam, scene.id, t],
+    [requestedRendererParam, scene.id],
   );
+  const onFallbackRemount = useCallback(() => {
+    setRendererMountKey((value) => value + 1);
+  }, []);
+  const onCanvasFailure = useCallback(() => {
+    setAssetError({
+      title: t(simulatorMessageKeys.viewport.sceneLoadFailed),
+      message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
+    });
+  }, [scene.id, t]);
+  const rendererLifecycle = useObserverRendererLifecycle({
+    requestIdentity,
+    backendSelection,
+    rendererMountKey,
+    onApplicationFallback,
+    onFallbackRemount,
+    onCanvasFailure,
+  });
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -408,18 +364,16 @@ export const SceneViewport = ({
           <SceneRenderer
             backendSelection={backendSelection}
             sceneCompatibility={sceneCompatibility}
-            rendererMountKey={rendererMountKey}
+            rendererMountGeneration={rendererLifecycle.mountGeneration}
+            observerCapabilities={rendererLifecycle.observerCapabilities}
+            onObserverCapabilitiesChange={rendererLifecycle.onObserverCapabilitiesChange}
             webgpuApiPresent={webgpuApiPresent}
             webgpuAdapterAvailability={webgpuAdapterAvailability}
-            webgpuInitializationAttempts={webgpuInitializationAttempts}
-            rendererFailureStage={
-              rendererFailure?.requestIdentity === requestIdentity
-                ? rendererFailure.stage
-                : null
-            }
-            onWebGpuInitializationAttempt={onWebGpuInitializationAttempt}
-            onWebGpuInitializationFailure={onWebGpuInitializationFailure}
-            onObserverCanvasError={onObserverCanvasError}
+            webgpuInitializationAttempts={rendererLifecycle.initializationAttempts}
+            rendererFailureStage={rendererLifecycle.rendererFailureStage}
+            onWebGpuInitializationAttempt={rendererLifecycle.onWebGpuInitializationAttempt}
+            onWebGpuInitializationFailure={rendererLifecycle.onWebGpuInitializationFailure}
+            onObserverCanvasError={rendererLifecycle.onObserverCanvasError}
             scene={scene}
             opticsState={opticsState}
             attempt={attempt}
