@@ -61,23 +61,28 @@ infer these from JavaScript timers or incompatible renderer counters.
 
 ## PR F runtime result
 
+Final committed-run evidence: commit `8d96769994e36796a367fad6512b7950b79804aa`,
+generated at `2026-10-12T15:50:54.363Z`. The ignored machine-readable report,
+Markdown summary, and captures are in
+`test-results/observer-backend-comparison/2026-10-12T15-49-45.432Z-8d96769994e3/`.
+
 The completed native run used stable headed Chrome 155.0.8059.39 on macOS
 Darwin 27.0.0 arm64 with Three.js r186, a 1440 × 1000 viewport, and DPR 1.
 `navigator.gpu` was present and the bounded adapter probe reported available.
 All six WebGPU scene-trials mounted `webgpu-renderer / webgpu`, made one
 initialization attempt, and reported no application fallback; all six paired
 WebGL trials mounted `webgl-renderer / webgl2`. The three pairs for each scene
-were valid. Both recovery sequences completed as WebGL2 → native WebGPU →
-WebGL2 → native WebGPU with increasing mount generations. The Architecture
-Rise environment became active. Ground Glass remained on WebGL2, stayed
-contentful, and changed visibly when switching Raw Ground Glass / Upright
-Assist; restoring the original mode returned the image within the test's
-0.5% tolerance.
+were valid, with no page or console errors. Both recovery sequences completed
+as WebGL2 → native WebGPU → WebGL2 → native WebGPU with increasing mount
+generations. The Architecture Rise environment became active. Ground Glass
+remained on WebGL2, stayed contentful, and changed visibly when switching Raw
+Ground Glass / Upright Assist; restoring the original mode returned the image
+exactly to its initial capture in this run.
 
 | Scene | WebGL2 route-to-active-renderer | Native WebGPU route-to-active-renderer | Observed browser frame cadence | Visual comparison |
 | --- | ---: | ---: | --- | --- |
-| View Camera Anatomy | 879–1,254 ms (median 896 ms) | 1,482–1,574 ms (median 1,499 ms) | Median 16.7 ms; p95 16.9–17.7 ms across samples | Whole-canvas MAE about 22.1–23.1/255; registered target-board ROI about 14–16.2/255; around 89–90% of full-canvas pixels changed at the 16/255 threshold |
-| Architecture Rise | 948–982 ms (median 951 ms) | 1,512–1,604 ms (median 1,551 ms) | Median 16.7 ms; p95 16.9–17.7 ms across samples | Default view MAE about 13.76/255 with 57.08% changed pixels; close facade/glazing MAE about 20.48/255 with 90.66% changed pixels |
+| View Camera Anatomy | 827–1,328 ms (median 869 ms) | 1,520–1,617 ms (median 1,563 ms) | Median 16.7 ms; p95 18.0–18.5 ms across samples | Camera inspection: full-canvas MAE 22.10/255, 89.44% changed, camera-model ROI MAE 15.42. Registered target view: full-canvas MAE 21.34/255, 86.39% changed, target-board ROI MAE 14.06 |
+| Architecture Rise | 953–1,041 ms (median 1,041 ms) | 1,528–1,584 ms (median 1,573 ms) | Median 16.7 ms; p95 17.6–18.5 ms across samples | Default: full-canvas MAE 13.76/255, 57.08% changed, facade ROI MAE 22.76. Close facade: MAE 20.48/255, 90.66% changed, facade ROI MAE 21.83 |
 
 The wall times are paired navigation-to-active-renderer observations and do
 not isolate compilation or GPU startup. The similar frame cadence is bounded
