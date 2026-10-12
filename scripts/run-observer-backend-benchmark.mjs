@@ -9,7 +9,7 @@ const outputDirectory = join("test-results", "observer-backend-comparison", `${t
 const command = process.platform === "win32" ? "npx.cmd" : "npx";
 
 const initialReport = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   status: "starting",
   gitCommit: commitSha,
   generatedAt: new Date().toISOString(),
@@ -20,6 +20,8 @@ const initialReport = {
     pairedTrialsPerScene: 3,
     viewport: { width: 1440, height: 1000 },
     deviceScaleFactor: 1,
+    cadenceSampling: "rAF intervals wholly inside actual pointerdown/up gestures; inter-gesture cadence separate; idle intervals excluded",
+    groundGlassRestorationPixelThreshold: 1,
   },
   trials: [],
   limitations: ["GPU render time is not measured; observed browser frame cadence is not GPU execution time."],

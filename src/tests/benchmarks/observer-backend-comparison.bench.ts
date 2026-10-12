@@ -2,21 +2,30 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { arch, platform, release } from "node:os";
+import { performance } from "node:perf_hooks";
 import { PerspectiveCamera, REVISION, Vector3 } from "three";
 import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import architectureRiseGeometry, { architectureRiseWindowBays } from "../../scenes/architectureRiseGeometry";
 import { toWorld } from "../../render/rttUtils";
 import {
+  analyzeOrbitCadence,
+  calculateBenchmarkWallTimes,
   comparePixelRegions,
   decodePlaywrightPng,
+  deriveImageRestorationTolerance,
+  imageMatchesRestorationTolerance,
   observerBackendMismatches,
   serializeBenchmarkReport,
   summarizeFrameCadence,
   summarizePixelRegion,
   subjectRoiHasMeaningfulPixels,
   type ImageDifferenceSummary,
+  type BenchmarkTimingMarks,
+  type BenchmarkWallTimes,
   type PixelRegion,
+  type OrbitFrame,
+  type OrbitPointerEvent,
 } from "./observerBackendBenchmark";
 
 const benchmarkEnabled = process.env.OBSERVER_BACKEND_BENCHMARK === "1";
@@ -30,7 +39,6 @@ const closeArchitectureView = {
 };
 const architectureViewEvent = "vcs:observer-verification:architecture-rise-view";
 const anatomyViewEvent = "vcs:observer-verification:anatomy-view";
-const rAFMeasurementWindowMs = 2500;
 const orbitSequence = [
   { deltaX: 72, deltaY: -36, steps: 8 },
   { deltaX: -48, deltaY: 24, steps: 8 },
@@ -76,7 +84,7 @@ type BenchmarkTrial = {
   mountedBackend: string | null;
   valid: boolean;
   invalidReasons: string[];
-  navigationWallMs: { toDocumentReady: number | null; toActiveRenderer: number | null; toFirstContentfulObserverCapture: number | null };
+  timing: BenchmarkWallTimes;
   mountedObserver: Record<string, string>;
   adapter: { apiPresent: string | null; availability: string | null };
   browserGpuDiagnostics: BrowserGpuDiagnostics;
@@ -405,87 +413,159 @@ const prepareView = async (
   await expect(observer).toHaveAttribute("data-view-focus", desiredFocus);
 };
 
-const startCadenceCapture = async (page: Page) => page.evaluate((durationMs) => {
-  const capture = {
-    startedAt: performance.now(),
-    lastTimestamp: null as number | null,
-    intervals: [] as number[],
-    pointerEvents: [] as Array<{ type: string; time: number }>,
-    finished: false,
-  };
+const startCadenceCapture = async (page: Page): Promise<void> => page.evaluate(() => {
   const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="scene-canvas"] canvas');
-  if (!canvas) throw new Error("Observer canvas is missing before warm interaction capture");
-  const recordPointer = (event: Event) => capture.pointerEvents.push({ type: event.type, time: performance.now() });
-  for (const name of ["pointerdown", "pointermove", "pointerup"]) canvas.addEventListener(name, recordPointer);
-  const tick = (timestamp: number) => {
-    if (capture.lastTimestamp !== null) capture.intervals.push(timestamp - capture.lastTimestamp);
-    capture.lastTimestamp = timestamp;
-    if (timestamp - capture.startedAt >= durationMs) {
-      capture.finished = true;
-      for (const name of ["pointerdown", "pointermove", "pointerup"]) canvas.removeEventListener(name, recordPointer);
-      return;
-    }
-    requestAnimationFrame(tick);
+  if (!canvas) throw new Error("Observer canvas is missing before orbit cadence capture");
+  const capture = {
+    frames: [] as Array<{ timestampMs: number }>,
+    pointerEvents: [] as Array<{
+      type: "pointerdown" | "pointermove" | "pointerup" | "pointercancel";
+      timeMs: number;
+      pointerId: number;
+      gestureId: number;
+    }>,
+    activePointerId: null as number | null,
+    activeGestureId: null as number | null,
+    nextGestureId: 0,
+    animationFrameId: 0,
+    stopped: false,
+    timedOut: false,
+    watchdogTimeoutId: 0,
+    stop: null as (() => void) | null,
   };
-  (window as unknown as { __observerBackendBenchmarkCapture?: typeof capture }).__observerBackendBenchmarkCapture = capture;
-  requestAnimationFrame(tick);
-}, rAFMeasurementWindowMs);
+  const isFromCanvas = (event: PointerEvent) => event.target instanceof Node && canvas.contains(event.target);
+  const onPointerDown = (event: PointerEvent) => {
+    if (!isFromCanvas(event) || event.button !== 0 || capture.activePointerId !== null) return;
+    const gestureId = capture.nextGestureId + 1;
+    capture.nextGestureId = gestureId;
+    capture.activePointerId = event.pointerId;
+    capture.activeGestureId = gestureId;
+    capture.pointerEvents.push({
+      type: "pointerdown",
+      timeMs: event.timeStamp,
+      pointerId: event.pointerId,
+      gestureId,
+    });
+  };
+  const onPointerMove = (event: PointerEvent) => {
+    if (capture.activePointerId !== event.pointerId || capture.activeGestureId === null) return;
+    capture.pointerEvents.push({
+      type: "pointermove",
+      timeMs: event.timeStamp,
+      pointerId: event.pointerId,
+      gestureId: capture.activeGestureId,
+    });
+  };
+  const endPointer = (type: "pointerup" | "pointercancel", event: PointerEvent) => {
+    if (capture.activePointerId !== event.pointerId || capture.activeGestureId === null) return;
+    capture.pointerEvents.push({
+      type,
+      timeMs: event.timeStamp,
+      pointerId: event.pointerId,
+      gestureId: capture.activeGestureId,
+    });
+    capture.activePointerId = null;
+    capture.activeGestureId = null;
+  };
+  const onPointerUp = (event: PointerEvent) => endPointer("pointerup", event);
+  const onPointerCancel = (event: PointerEvent) => endPointer("pointercancel", event);
+  const tick = (timestampMs: number) => {
+    if (capture.stopped) return;
+    capture.frames.push({ timestampMs });
+    capture.animationFrameId = requestAnimationFrame(tick);
+  };
+  window.addEventListener("pointerdown", onPointerDown, true);
+  window.addEventListener("pointermove", onPointerMove, true);
+  window.addEventListener("pointerup", onPointerUp, true);
+  window.addEventListener("pointercancel", onPointerCancel, true);
+  capture.animationFrameId = requestAnimationFrame(tick);
+  capture.stop = () => {
+    if (capture.stopped) return;
+    capture.stopped = true;
+    window.clearTimeout(capture.watchdogTimeoutId);
+    cancelAnimationFrame(capture.animationFrameId);
+    window.removeEventListener("pointerdown", onPointerDown, true);
+    window.removeEventListener("pointermove", onPointerMove, true);
+    window.removeEventListener("pointerup", onPointerUp, true);
+    window.removeEventListener("pointercancel", onPointerCancel, true);
+  };
+  capture.watchdogTimeoutId = window.setTimeout(() => {
+    capture.timedOut = true;
+    capture.stop?.();
+  }, 60_000);
+  (window as unknown as { __observerBackendBenchmarkCapture?: typeof capture })
+    .__observerBackendBenchmarkCapture = capture;
+});
+
+const finishCadenceCapture = async (page: Page): Promise<{
+  frames: OrbitFrame[];
+  pointerEvents: OrbitPointerEvent[];
+  timedOut: boolean;
+}> =>
+  page.evaluate(() => {
+    const capture = (window as unknown as {
+      __observerBackendBenchmarkCapture?: {
+        frames: OrbitFrame[];
+        pointerEvents: OrbitPointerEvent[];
+        timedOut: boolean;
+        stop?: () => void;
+      };
+    }).__observerBackendBenchmarkCapture;
+    if (!capture) throw new Error("Observer orbit cadence capture was not installed");
+    capture.stop?.();
+    const snapshot = { frames: capture.frames, pointerEvents: capture.pointerEvents, timedOut: capture.timedOut };
+    delete (window as unknown as { __observerBackendBenchmarkCapture?: unknown }).__observerBackendBenchmarkCapture;
+    return snapshot;
+  });
 
 const runOrbitWorkload = async (
   page: Page,
   observer: Locator,
-): Promise<{ frameCadence: ReturnType<typeof summarizeFrameCadence>; pointerEvents: Array<{ type: string; time: number }>; gesturePoseChanges: number; durationMs: number }> => {
-  const start = Date.now();
+): Promise<{
+  cadence: ReturnType<typeof analyzeOrbitCadence>;
+  gesturePoseChanges: number;
+  frames: OrbitFrame[];
+  pointerEvents: OrbitPointerEvent[];
+  captureTimedOut: boolean;
+}> => {
   const canvas = observer.locator("canvas");
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error("Observer canvas has no visible browser bounds");
   const center = { x: bounds.x + bounds.width * 0.52, y: bounds.y + bounds.height * 0.52 };
   let gesturePoseChanges = 0;
   await startCadenceCapture(page);
-  for (const [gestureIndex, gesture] of orbitSequence.entries()) {
-    const before = await observer.getAttribute("data-observer-camera-position");
-    await page.mouse.move(center.x, center.y);
-    await page.mouse.down();
-    await waitForFrames(page, 1);
-    await page.mouse.move(center.x + gesture.deltaX, center.y + gesture.deltaY, { steps: gesture.steps });
-    await waitForFrames(page, 1);
-    await page.mouse.up();
-    try {
-      await expect.poll(async () => observer.getAttribute("data-observer-camera-position"), {
-        timeout: 10_000,
-      }).not.toBe(before);
-    } catch (error) {
-      const after = await observer.getAttribute("data-observer-camera-position");
-      throw new Error(
-        `orbit gesture ${gestureIndex + 1}/${orbitSequence.length} (${gesture.deltaX}, ${gesture.deltaY}) did not change camera position (${before} → ${after}): ${error instanceof Error ? error.message : String(error)}`,
-      );
+  let captured: { frames: OrbitFrame[]; pointerEvents: OrbitPointerEvent[]; timedOut: boolean } | null = null;
+  try {
+    for (const [gestureIndex, gesture] of orbitSequence.entries()) {
+      const before = await observer.getAttribute("data-observer-camera-position");
+      await page.mouse.move(center.x, center.y);
+      await page.mouse.down();
+      await waitForFrames(page, 1);
+      await page.mouse.move(center.x + gesture.deltaX, center.y + gesture.deltaY, { steps: gesture.steps });
+      await waitForFrames(page, 1);
+      await page.mouse.up();
+      try {
+        await expect.poll(async () => observer.getAttribute("data-observer-camera-position"), {
+          timeout: 10_000,
+        }).not.toBe(before);
+      } catch (error) {
+        const after = await observer.getAttribute("data-observer-camera-position");
+        throw new Error(
+          `orbit gesture ${gestureIndex + 1}/${orbitSequence.length} (${gesture.deltaX}, ${gesture.deltaY}) did not change camera position (${before} → ${after}): ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      gesturePoseChanges += 1;
     }
-    gesturePoseChanges += 1;
+  } finally {
+    captured = await finishCadenceCapture(page);
   }
-  await page.waitForFunction(() =>
-    (window as unknown as { __observerBackendBenchmarkCapture?: { finished?: boolean } })
-      .__observerBackendBenchmarkCapture?.finished === true,
-  { timeout: 10_000 });
-  const captured = await page.evaluate(() => {
-    const capture = (window as unknown as {
-      __observerBackendBenchmarkCapture?: {
-        intervals: number[];
-        pointerEvents: Array<{ type: string; time: number }>;
-      };
-    }).__observerBackendBenchmarkCapture;
-    return capture ?? null;
-  });
-  if (!captured) throw new Error("Observer frame-cadence capture produced no record");
-  const downTimes = captured.pointerEvents.filter((event) => event.type === "pointerdown").map((event) => event.time);
-  const upTimes = captured.pointerEvents.filter((event) => event.type === "pointerup").map((event) => event.time);
-  const durationMs = downTimes.length && upTimes.length
-    ? (upTimes.at(-1) ?? 0) - (downTimes[0] ?? 0)
-    : Date.now() - start;
+  if (!captured) throw new Error("Observer orbit cadence capture produced no record");
   return {
-    frameCadence: summarizeFrameCadence(captured.intervals),
+    cadence: analyzeOrbitCadence(captured.pointerEvents, captured.frames, orbitSequence.length),
+    frames: captured.frames,
     pointerEvents: captured.pointerEvents,
     gesturePoseChanges,
-    durationMs,
+    captureTimedOut: captured.timedOut,
   };
 };
 
@@ -519,6 +599,15 @@ const captureGroundGlass = async (page: Page) => {
 const verifyGroundGlassResponse = async (page: Page, observer: Locator) => {
   const generationBefore = await observer.getAttribute("data-observer-renderer-generation");
   const before = await captureGroundGlass(page);
+  const fullGroundGlassRegion = { left: 0, top: 0, right: before.width, bottom: before.height };
+  const repeatedBaseline = [await captureGroundGlass(page), await captureGroundGlass(page)];
+  const repeatedBaselineDifferences = repeatedBaseline.map((capture) => comparePixelRegions(
+    decodePlaywrightPng(before.screenshot),
+    decodePlaywrightPng(capture.screenshot),
+    fullGroundGlassRegion,
+    1,
+  ));
+  const restorationTolerance = deriveImageRestorationTolerance(repeatedBaselineDifferences);
   const rawMode = page.getByRole("radio", { name: "Raw Ground Glass", exact: true });
   const uprightMode = page.getByRole("radio", { name: "Upright Assist", exact: true });
   await expect(rawMode).toBeVisible();
@@ -548,7 +637,15 @@ const verifyGroundGlassResponse = async (page: Page, observer: Locator) => {
     beforePixels,
     restoredPixels,
     { left: 0, top: 0, right: before.width, bottom: before.height },
+    restorationTolerance.changedChannelThreshold,
   );
+  const restorationDifferenceAt16 = comparePixelRegions(
+    beforePixels,
+    restoredPixels,
+    { left: 0, top: 0, right: before.width, bottom: before.height },
+    16,
+  );
+  const restorationMatchesBaseline = imageMatchesRestorationTolerance(restorationDifference, restorationTolerance);
   await expect(observer).toHaveAttribute("data-observer-renderer-generation", generationBefore ?? "");
   return {
     backend: before.backend,
@@ -559,9 +656,24 @@ const verifyGroundGlassResponse = async (page: Page, observer: Locator) => {
       contentful: subjectRoiHasMeaningfulPixels(restored.content),
       ...restored.metrics,
       pixelSummary: restored.content,
-      changedPixelCountFromInitial: restorationDifference.changedPixelCount,
-      changedPixelFractionFromInitial: restorationDifference.changedPixelFraction,
+      changedPixelCountLowThreshold: restorationDifference.changedPixelCount,
+      changedPixelFractionLowThreshold: restorationDifference.changedPixelFraction,
+      changedPixelCount16Level: restorationDifferenceAt16.changedPixelCount,
+      changedPixelFraction16Level: restorationDifferenceAt16.changedPixelFraction,
+      meanAbsoluteRgbDifferenceFromInitial: restorationDifference.meanAbsoluteRgbDifference,
+      meanSignedLuminanceDifferenceFromInitial: restorationDifference.meanSignedLuminanceDifference,
+      restorationAccepted: restorationMatchesBaseline,
+      matchesRepeatedCaptureTolerance: restorationMatchesBaseline,
       backend: restored.backend,
+    },
+    restorationEvidence: {
+      comparison: "full Ground Glass canvas RGB pixels at a one-level channel threshold",
+      baselineCaptureCount: restorationTolerance.baselineCaptureCount,
+      repeatedCaptureDifferences: repeatedBaselineDifferences,
+      tolerance: restorationTolerance,
+      observedRestorationDifference: restorationDifference,
+      observedRestorationDifferenceAt16: restorationDifferenceAt16,
+      matchesRepeatedCaptureTolerance: restorationMatchesBaseline,
     },
     interaction: {
       control: "public Raw Ground Glass / Upright Assist radio group",
@@ -641,7 +753,14 @@ const runSingleTrial = async (
     mountedBackend: null,
     valid: false,
     invalidReasons: [],
-    navigationWallMs: { toDocumentReady: null, toActiveRenderer: null, toFirstContentfulObserverCapture: null },
+    timing: {
+      contextPageSetupWallMs: null,
+      navigationToDocumentReadyWallMs: null,
+      navigationToActiveRendererWallMs: null,
+      activeRendererToAdapterDiagnosticWallMs: null,
+      navigationToAdapterDiagnosticWallMs: null,
+      navigationToFirstVerifiedObserverCaptureWallMs: null,
+    },
     mountedObserver: {},
     adapter: { apiPresent: null, availability: null },
     browserGpuDiagnostics,
@@ -657,7 +776,14 @@ const runSingleTrial = async (
     webgpuModuleRequests: [],
   };
 
-  const startedAt = Date.now();
+  let timingMarks: BenchmarkTimingMarks = {
+    contextPageSetupStartedAtMs: performance.now(),
+    navigationStartedAtMs: null,
+    documentReadyAtMs: null,
+    rendererActiveAtMs: null,
+    adapterDiagnosticCompletedAtMs: null,
+    firstVerifiedObserverCaptureAtMs: null,
+  };
   const context = await browser.newContext({
     viewport,
     deviceScaleFactor,
@@ -676,34 +802,90 @@ const runSingleTrial = async (
       trial.webgpuModuleRequests.push(request.url());
     }
   });
-
   try {
     const rendererQuery = requestedBackend === "webgpu" ? "?observerRenderer=webgpu" : "";
+    timingMarks = { ...timingMarks, navigationStartedAtMs: performance.now() };
     await page.goto(
       `/simulator/free/${sceneId}${rendererQuery}`,
       { waitUntil: "domcontentloaded", timeout: 120_000 },
     );
-    trial.navigationWallMs.toDocumentReady = Date.now() - startedAt;
+    timingMarks = { ...timingMarks, documentReadyAtMs: performance.now() };
     const observer = observerLocator(page);
     await expect(observer.locator("canvas")).toHaveCount(1, { timeout: 90_000 });
     await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 120_000 });
     await expect(observer).toHaveAttribute("data-scene-subject-id", sceneId, { timeout: 90_000 });
+    await expect(observer).toHaveAttribute("data-observer-renderer-family", /^(webgl-renderer|webgpu-renderer)$/);
+    await expect(observer).toHaveAttribute("data-observer-execution-backend", /^(webgl2|webgpu|webgl2-fallback)$/);
+    await expect(observer).toHaveAttribute("data-observer-renderer-generation", /^\d+$/);
+    timingMarks = { ...timingMarks, rendererActiveAtMs: performance.now() };
+    const activeAttributes = await readObserverAttributes(observer);
+    trial.mountedBackend = runtimeBackend(activeAttributes);
+    let adapterObservationError: string | null = null;
+    let adapterObservationPromise: Promise<void> = Promise.resolve();
     if (requestedBackend === "webgpu") {
-      await expect(observer).toHaveAttribute(
+      adapterObservationPromise = expect(observer).toHaveAttribute(
         "data-observer-adapter-availability",
         /^(available|unavailable|api-absent|request-rejected|timed-out)$/,
         { timeout: 30_000 },
-      );
+      ).then(() => {
+        timingMarks = { ...timingMarks, adapterDiagnosticCompletedAtMs: performance.now() };
+      }).catch((error: unknown) => {
+        adapterObservationError = error instanceof Error ? error.message : String(error);
+      });
     }
-    trial.navigationWallMs.toActiveRenderer = Date.now() - startedAt;
+    console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: observed ${trial.mountedBackend ?? "unknown"}`);
+
+    await prepareView(page, observer, sceneId);
+    if (sceneId === "architecture-rise") {
+      await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+    }
+    trial.canonicalState = await readCanonicalState(page, observer);
+    const canvasData = await observer.locator("canvas").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        cssWidth: rect.width,
+        cssHeight: rect.height,
+        backingWidth: (element as HTMLCanvasElement).width,
+        backingHeight: (element as HTMLCanvasElement).height,
+        dpr: window.devicePixelRatio,
+      };
+    });
+    trial.canvas = canvasData;
+    const anatomyView = sceneId === "view-camera-anatomy";
+    const firstCapture = await captureObserverView(
+      page,
+      observer,
+      sceneId,
+      anatomyView ? "camera-inspection" : "default",
+      trialNumber,
+      requestedBackend,
+    );
+    trial.views.push(firstCapture);
+    const firstCaptureSubject = firstCapture.regions[firstCapture.subjectRegionName]?.screenshot ?? null;
+    if (subjectRoiHasMeaningfulPixels(firstCaptureSubject)) {
+      timingMarks = { ...timingMarks, firstVerifiedObserverCaptureAtMs: performance.now() };
+    } else {
+      trial.invalidReasons.push("first Observer screenshot did not contain meaningful pixels in the geometry-derived subject ROI");
+    }
+
+    if (requestedBackend === "webgpu") {
+      await adapterObservationPromise;
+      if (adapterObservationError) {
+        trial.invalidReasons.push(`adapter diagnostic did not reach a terminal state: ${adapterObservationError}`);
+      }
+    }
     const attributes = await readObserverAttributes(observer);
     trial.mountedObserver = attributes;
-    trial.mountedBackend = runtimeBackend(attributes);
+    const finalMountedBackend = runtimeBackend(attributes);
+    if (finalMountedBackend !== trial.mountedBackend) {
+      trial.invalidReasons.push(`mounted renderer identity changed after readiness was first observed (${trial.mountedBackend ?? "unknown"} → ${finalMountedBackend ?? "unknown"})`);
+    }
+    trial.mountedBackend = finalMountedBackend;
     trial.adapter = {
       apiPresent: attributes["data-observer-webgpu-api-present"] ?? null,
       availability: attributes["data-observer-adapter-availability"] ?? null,
     };
-    console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: active ${trial.mountedBackend ?? "unknown"} after ${trial.navigationWallMs.toActiveRenderer} ms`);
+    console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: adapter diagnostic ${attributes["data-observer-adapter-availability"] ?? "not-applicable"}`);
     const mismatches = observerBackendMismatches(
       attributes,
       requestedBackend === "webgpu" ? "native-webgpu" : "webgl",
@@ -722,36 +904,11 @@ const runSingleTrial = async (
     if (sceneId === "architecture-rise" && trial.environment.status !== "active") {
       trial.invalidReasons.push("Architecture Rise world environment was not active");
     }
-
     trial.sceneResources = {
       observerSubject: "not measured by this benchmark",
       groundGlassRenderer: "mounted canvas WebGL2 context inspected directly",
       interpretation: "No renderer-owned memory or VRAM metric is inferred.",
     };
-
-    await prepareView(page, observer, sceneId);
-    trial.canonicalState = await readCanonicalState(page, observer);
-    const canvasData = await observer.locator("canvas").evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      return {
-        cssWidth: rect.width,
-        cssHeight: rect.height,
-        backingWidth: (element as HTMLCanvasElement).width,
-        backingHeight: (element as HTMLCanvasElement).height,
-        dpr: window.devicePixelRatio,
-      };
-    });
-    trial.canvas = canvasData;
-    const anatomyView = sceneId === "view-camera-anatomy";
-    trial.views.push(await captureObserverView(
-      page,
-      observer,
-      sceneId,
-      anatomyView ? "camera-inspection" : "default",
-      trialNumber,
-      requestedBackend,
-    ));
-    trial.navigationWallMs.toFirstContentfulObserverCapture = Date.now() - startedAt;
     if (anatomyView) {
       const baselineView = await setAnatomyRegisteredSubjectView(observer);
       trial.views.push(await captureObserverView(
@@ -777,8 +934,9 @@ const runSingleTrial = async (
     console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: captured ${trial.views.length} Observer view(s)`);
 
     const interaction = await runOrbitWorkload(page, observer);
-    if (interaction.frameCadence.sampleCount < 30) {
-      trial.invalidReasons.push("fewer than 30 browser requestAnimationFrame intervals were sampled");
+    trial.invalidReasons.push(...interaction.cadence.invalidReasons);
+    if (interaction.captureTimedOut) {
+      trial.invalidReasons.push("orbit cadence capture exceeded its 60-second safety timeout");
     }
     if (interaction.gesturePoseChanges !== orbitSequence.length) {
       trial.invalidReasons.push("not every orbit gesture changed the mounted Observer camera pose");
@@ -787,20 +945,33 @@ const runSingleTrial = async (
       method: "real Playwright pointer drags through the mounted OrbitControls canvas",
       sequence: orbitSequence,
       gesturePoseChanges: interaction.gesturePoseChanges,
-      pointerEventCount: interaction.pointerEvents.length,
+      expectedGestureCount: orbitSequence.length,
+      observedGestureCount: interaction.cadence.observedGestureCount,
+      pointerEventCount: interaction.cadence.pointerEventCount,
       pointerEvents: interaction.pointerEvents,
-      pointerDownToLastUpMs: interaction.durationMs,
-      frameCadence: interaction.frameCadence,
-      frameCadenceLabel: "Observed browser requestAnimationFrame cadence during the pointer workload; not Three.js render or GPU time.",
+      requestAnimationFrameTimestampsMs: interaction.frames.map((frame) => frame.timestampMs),
+      timestampClock: "same page performance time origin for pointer events and requestAnimationFrame callbacks",
+      gestureCadence: interaction.cadence.gestures,
+      pointerDownToLastUpMs: interaction.cadence.workloadDurationMs,
+      totalActiveDragDurationMs: interaction.cadence.totalActiveDragDurationMs,
+      interGestureDurationMs: interaction.cadence.interGestureDurationMs,
+      activeGestureCadence: interaction.cadence.activeGestureCadence,
+      interGestureCadence: interaction.cadence.interGestureCadence,
+      excludedFrameIntervalCount: interaction.cadence.excludedFrameIntervalCount,
+      frameCadenceLabel: "Observed browser requestAnimationFrame intervals with both interval endpoints inside the same actual pointer-down/up OrbitControls gesture. Inter-gesture intervals are reported separately; pre/post workload idle intervals are excluded.",
     };
-    console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: orbit workload recorded ${interaction.frameCadence.sampleCount} rAF intervals`);
+    console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: orbit workload recorded ${interaction.cadence.activeGestureCadence.sampleCount} active-gesture and ${interaction.cadence.interGestureCadence.sampleCount} inter-gesture rAF intervals`);
     trial.groundGlass = await verifyGroundGlassResponse(page, observer);
     const groundGlassEvidence = trial.groundGlass as {
       interaction?: { changedPixelCount?: number };
       backend?: { isWebGL2?: boolean; version?: string | null };
       before?: { contentful?: boolean; backend?: { isWebGL2?: boolean } };
       after?: { contentful?: boolean; backend?: { isWebGL2?: boolean } };
-      restored?: { contentful?: boolean; changedPixelFractionFromInitial?: number; backend?: { isWebGL2?: boolean } };
+      restored?: {
+        contentful?: boolean;
+        matchesRepeatedCaptureTolerance?: boolean;
+        backend?: { isWebGL2?: boolean };
+      };
       observerRendererGenerationStable?: boolean;
       observerCanvasCount?: number;
     };
@@ -808,8 +979,8 @@ const runSingleTrial = async (
       trial.invalidReasons.push("Ground Glass screenshot did not show meaningful rendered content before and after preview-mode interaction");
     }
     if (!groundGlassEvidence.restored?.contentful ||
-      (groundGlassEvidence.restored.changedPixelFractionFromInitial ?? 1) > 0.005) {
-      trial.invalidReasons.push("Ground Glass preview mode did not restore its initial visible output");
+      groundGlassEvidence.restored.matchesRepeatedCaptureTolerance !== true) {
+      trial.invalidReasons.push("Ground Glass preview mode did not restore its initial output within measured repeated-capture variation at a one-level RGB threshold");
     }
     if (groundGlassEvidence.backend?.isWebGL2 !== true ||
       groundGlassEvidence.before?.backend?.isWebGL2 !== true ||
@@ -836,6 +1007,19 @@ const runSingleTrial = async (
   } catch (error) {
     trial.invalidReasons.push(error instanceof Error ? error.message : String(error));
   } finally {
+    trial.timing = calculateBenchmarkWallTimes(timingMarks);
+    const requiredTimingValues: Array<[string, number | null]> = [
+      ["context/page setup", trial.timing.contextPageSetupWallMs],
+      ["navigation to document ready", trial.timing.navigationToDocumentReadyWallMs],
+      ["navigation to observed active renderer", trial.timing.navigationToActiveRendererWallMs],
+      ["navigation to verified Observer capture", trial.timing.navigationToFirstVerifiedObserverCaptureWallMs],
+    ];
+    if (requestedBackend === "webgpu") {
+      requiredTimingValues.push(["navigation to adapter diagnostic", trial.timing.navigationToAdapterDiagnosticWallMs]);
+    }
+    for (const [label, durationMs] of requiredTimingValues) {
+      if (durationMs === null) trial.invalidReasons.push(`required ${label} timing boundary was unavailable`);
+    }
     if (trial.pageErrors.length > 0) {
       trial.invalidReasons.push(`unexpected page errors: ${trial.pageErrors.join(" | ")}`);
     }
@@ -1039,9 +1223,13 @@ type BenchmarkSummaryReport = Readonly<{
 
 const buildMarkdown = (report: BenchmarkSummaryReport): string => {
   const trialRows = report.trials.map((trial) => {
-    const cadence = trial.interaction as { frameCadence?: ReturnType<typeof summarizeFrameCadence> } | null;
-    const frame = cadence?.frameCadence;
-    return `| ${trial.sceneId} | ${trial.trialNumber} | ${trial.requestedBackend} | ${trial.mountedBackend ?? "unavailable"} | ${trial.valid ? "valid" : "invalid"} | ${trial.navigationWallMs.toActiveRenderer ?? "—"} | ${frame?.sampleCount ?? 0} | ${frame?.medianMs ?? "—"} | ${frame?.p95Ms ?? "—"} | ${frame?.p99Ms ?? "—"} |`;
+    const cadence = trial.interaction as {
+      activeGestureCadence?: ReturnType<typeof summarizeFrameCadence>;
+      interGestureCadence?: ReturnType<typeof summarizeFrameCadence>;
+    } | null;
+    const active = cadence?.activeGestureCadence;
+    const gaps = cadence?.interGestureCadence;
+    return `| ${trial.sceneId} | ${trial.trialNumber} | ${trial.requestedBackend} | ${trial.mountedBackend ?? "unavailable"} | ${trial.valid ? "valid" : "invalid"} | ${trial.timing.contextPageSetupWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToDocumentReadyWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToActiveRendererWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToAdapterDiagnosticWallMs?.toFixed(1) ?? "—"} | ${trial.timing.activeRendererToAdapterDiagnosticWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToFirstVerifiedObserverCaptureWallMs?.toFixed(1) ?? "—"} | ${active?.sampleCount ?? 0} / ${active?.medianMs?.toFixed(2) ?? "—"} | ${gaps?.sampleCount ?? 0} / ${gaps?.medianMs?.toFixed(2) ?? "—"} |`;
   });
   const visualRows = report.visualComparisons.map((comparison) => {
     const fullCanvas = comparison.regions.fullCanvas;
@@ -1070,11 +1258,11 @@ const buildMarkdown = (report: BenchmarkSummaryReport): string => {
     "",
     "## Observer trials",
     "",
-    "| Scene | Pair | Requested backend | Mounted family / execution | Validity | Navigation to active renderer (wall ms) | rAF samples | rAF median ms | rAF p95 ms | rAF p99 ms |",
-    "| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |",
+    "| Scene | Pair | Requested backend | Mounted family / execution | Validity | Context/page setup ms | Navigation to DOMContentLoaded ms | Navigation to observed active renderer ms | Navigation to adapter diagnostic ms | Active renderer to adapter diagnostic ms | Navigation to verified subject capture ms | Active gesture rAF samples / median ms | Inter-gesture rAF samples / median ms |",
+    "| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...trialRows,
     "",
-    "Navigation wall time covers the simulator route from `page.goto` start through the active mounted renderer. It includes browser/server scheduling, module loading, initialization, and scene realization; it is not a pure GPU startup measurement. rAF intervals are observed browser frame cadence during actual OrbitControls pointer drags, not Three.js render duration or GPU time.",
+    "Context/page setup is timed separately and ends before navigation begins. Navigation timing uses one monotonic Node `performance.now()` clock starting immediately before `page.goto`; observed renderer readiness requires the correct scene, active status, resolved renderer family/execution backend, and a current renderer generation. Adapter diagnostic completion is captured asynchronously from the active-renderer boundary, so its time does not delay renderer readiness or the first verified capture. The verified-capture value is recorded only after an actual Observer screenshot has meaningful pixels in its geometry-derived subject ROI; it is not labeled the first contentful frame. None of these wall times is GPU time.",
     "",
     "## Paired visual evidence",
     "",
@@ -1087,8 +1275,9 @@ const buildMarkdown = (report: BenchmarkSummaryReport): string => {
     "## Measurement interpretation",
     "",
     "- Observer GPU time: **not measured**; this PR does not add a GPU timestamp-query system.",
-    "- Observer frame cadence: browser `requestAnimationFrame` interval distribution during a fixed orbit workload; presentation cadence only.",
-    "- Interaction: fixed sequence of real pointer drags; reports pose changes and pointer timing, not input-to-present latency.",
+    "- Observer frame cadence: browser `requestAnimationFrame` intervals whose two endpoints both fall between pointerdown and pointerup for the same real OrbitControls gesture. Pre/post idle intervals are discarded; inter-gesture cadence is reported separately. This is presentation scheduling, not Three.js render duration or GPU time.",
+    "- Interaction: four real pointer drags with complete down/move/up evidence and camera-pose change checks; cadence intervals are not padded with idle samples. The report does not measure input-to-present latency.",
+    "- Ground Glass restoration: the full canvas is captured three times in the same mode before switching. At a one-level RGB channel threshold, the restored image must stay within the worst observed repeated-capture changed-pixel fraction, RGB MAE, and absolute signed-luminance difference. A separate 16-level comparison remains descriptive.",
     "- Resource observations: Observer mesh/resource counts, renderer-owned GPU memory, and VRAM are not measured.",
     "- Ground Glass: separately verifies its mounted WebGL2 canvas, contentfulness, and visible response to the Raw Ground Glass / Upright Assist control. Its timings are not aggregated with Observer results.",
     `- Paired comparison complete: ${report.comparisonComplete ? "yes" : "no"}. ${report.invalidPairs.length} incomplete pair(s) are listed in the JSON report and were not presented as a complete matrix.`,
@@ -1134,7 +1323,7 @@ test.describe("Observer backend comparison benchmark", () => {
       await mkdir(outputDirectory, { recursive: true });
       const completedNativeTrials = trials.filter((trial) => trial.requestedBackend === "webgpu");
       await writeFile(join(outputDirectory, "run.json"), serializeBenchmarkReport({
-        schemaVersion: 1,
+        schemaVersion: 2,
         status: "in-progress",
         gitCommit: commitSha,
         generatedAt: runStartedAt,
@@ -1215,7 +1404,7 @@ test.describe("Observer backend comparison benchmark", () => {
       ? "software-backed"
       : "unconfirmed";
     const report = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       status: complete ? "complete" : "completed-with-invalid-or-missing-evidence",
       gitCommit: commitSha,
       generatedAt: new Date().toISOString(),
@@ -1244,7 +1433,10 @@ test.describe("Observer backend comparison benchmark", () => {
         route: "/simulator/free/<scene>?observerRenderer=<backend>",
         executionOrder: trials.map(({ executionOrder: order, sceneId, trialNumber, requestedBackend }) => ({ order, sceneId, trialNumber, requestedBackend })),
         orbitSequence,
-        rAFMeasurementWindowMs,
+        cadenceSampling: "rAF intervals wholly inside actual pointerdown/up gestures; inter-gesture cadence separate; pre/post idle discarded",
+        minimumActiveGestureCadenceSamples: 8,
+        groundGlassRestorationPixelThreshold: 1,
+        groundGlassRepeatedCaptureCount: 3,
         pixelDifferenceThresholdPerRgbChannel: 16,
       },
       comparisonComplete: complete,
@@ -1263,12 +1455,12 @@ test.describe("Observer backend comparison benchmark", () => {
       },
       limitations: [
         "Observer GPU render time is not measured. Browser rAF cadence is not Three.js render duration or GPU execution time.",
-        "Cold navigation wall time excludes browser process launch but includes page load, module loading, renderer initialization, and scene realization.",
+        "Context/page setup is reported separately. Navigation wall time starts immediately before page.goto and includes browser/server scheduling, module loading, renderer initialization, and scene realization; it is not GPU time.",
         "Three paired trials per scene are descriptive evidence, not a stable performance ranking or general platform result.",
         "Hardware acceleration remains unconfirmed unless Chrome system diagnostics explicitly identify a software renderer; they do not prove which adapter WebGPU selected.",
         "Pixel differences are quantitative descriptions only. A human must decide whether they affect the scene's teaching purpose.",
         "Observer subject resource counts, renderer-owned GPU memory, and VRAM bytes are not measured.",
-        "Ground Glass backend evidence reads the already-mounted display canvas WebGL2 context and pairs it with contentful screenshot and public preview-mode response checks.",
+        "Ground Glass backend evidence reads the already-mounted display canvas WebGL2 context. Restoration tolerance is the worst observed full-canvas pixel delta across two same-mode repeat captures at a one-level RGB threshold; it is not a fixed percentage threshold.",
       ],
     };
     const json = serializeBenchmarkReport(report);

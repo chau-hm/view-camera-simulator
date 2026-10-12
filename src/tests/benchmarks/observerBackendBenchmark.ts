@@ -13,6 +13,55 @@ export type TimingSummary = Readonly<{
   intervalsOver50Ms: number;
 }>;
 
+export type BenchmarkTimingMarks = {
+  contextPageSetupStartedAtMs: number | null;
+  navigationStartedAtMs: number | null;
+  documentReadyAtMs: number | null;
+  rendererActiveAtMs: number | null;
+  adapterDiagnosticCompletedAtMs: number | null;
+  firstVerifiedObserverCaptureAtMs: number | null;
+};
+
+export type BenchmarkWallTimes = Readonly<{
+  contextPageSetupWallMs: number | null;
+  navigationToDocumentReadyWallMs: number | null;
+  navigationToActiveRendererWallMs: number | null;
+  activeRendererToAdapterDiagnosticWallMs: number | null;
+  navigationToAdapterDiagnosticWallMs: number | null;
+  navigationToFirstVerifiedObserverCaptureWallMs: number | null;
+}>;
+
+export type OrbitPointerEvent = Readonly<{
+  type: "pointerdown" | "pointermove" | "pointerup" | "pointercancel";
+  timeMs: number;
+  pointerId: number;
+  gestureId: number;
+}>;
+
+export type OrbitFrame = Readonly<{ timestampMs: number }>;
+
+export type OrbitGestureCadence = Readonly<{
+  gestureId: number;
+  pointerId: number;
+  durationMs: number;
+  pointerMoveCount: number;
+  frameCadence: TimingSummary;
+}>;
+
+export type OrbitCadenceAnalysis = Readonly<{
+  expectedGestureCount: number;
+  observedGestureCount: number;
+  pointerEventCount: number;
+  workloadDurationMs: number | null;
+  totalActiveDragDurationMs: number;
+  interGestureDurationMs: readonly number[];
+  gestures: readonly OrbitGestureCadence[];
+  activeGestureCadence: TimingSummary;
+  interGestureCadence: TimingSummary;
+  excludedFrameIntervalCount: number;
+  invalidReasons: readonly string[];
+}>;
+
 export type PixelRegion = Readonly<{
   left: number;
   top: number;
@@ -40,6 +89,14 @@ export type ImageDifferenceSummary = Readonly<{
   changedPixelCount: number;
   changedPixelFraction: number;
   meanSignedLuminanceDifference: number;
+}>;
+
+export type ImageRestorationTolerance = Readonly<{
+  changedChannelThreshold: 1;
+  baselineCaptureCount: number;
+  maximumChangedPixelFraction: number;
+  maximumMeanAbsoluteRgbDifference: number;
+  maximumAbsoluteMeanSignedLuminanceDifference: number;
 }>;
 
 export const subjectRoiHasMeaningfulPixels = (summary: PixelRegionSummary | null): boolean =>
@@ -136,6 +193,179 @@ export const summarizeFrameCadence = (
     p99Ms: sorted.length >= 100 ? percentile(sorted, 0.99) : null,
     maximumMs: sorted.at(-1) ?? null,
     intervalsOver50Ms: sorted.filter((value) => value > longIntervalThresholdMs).length,
+  };
+};
+
+const monotonicDurationMs = (startAtMs: number | null, endAtMs: number | null): number | null => {
+  if (startAtMs === null || endAtMs === null || !Number.isFinite(startAtMs) || !Number.isFinite(endAtMs)) return null;
+  const durationMs = endAtMs - startAtMs;
+  return durationMs > 0 ? durationMs : null;
+};
+
+export const calculateBenchmarkWallTimes = (marks: BenchmarkTimingMarks): BenchmarkWallTimes => ({
+  contextPageSetupWallMs: monotonicDurationMs(
+    marks.contextPageSetupStartedAtMs,
+    marks.navigationStartedAtMs,
+  ),
+  navigationToDocumentReadyWallMs: monotonicDurationMs(
+    marks.navigationStartedAtMs,
+    marks.documentReadyAtMs,
+  ),
+  navigationToActiveRendererWallMs: monotonicDurationMs(
+    marks.navigationStartedAtMs,
+    marks.rendererActiveAtMs,
+  ),
+  activeRendererToAdapterDiagnosticWallMs: monotonicDurationMs(
+    marks.rendererActiveAtMs,
+    marks.adapterDiagnosticCompletedAtMs,
+  ),
+  navigationToAdapterDiagnosticWallMs: monotonicDurationMs(
+    marks.navigationStartedAtMs,
+    marks.adapterDiagnosticCompletedAtMs,
+  ),
+  navigationToFirstVerifiedObserverCaptureWallMs: monotonicDurationMs(
+    marks.navigationStartedAtMs,
+    marks.firstVerifiedObserverCaptureAtMs,
+  ),
+});
+
+export const analyzeOrbitCadence = (
+  pointerEvents: readonly OrbitPointerEvent[],
+  frames: readonly OrbitFrame[],
+  expectedGestureCount: number,
+): OrbitCadenceAnalysis => {
+  const invalidReasons: string[] = [];
+  if (pointerEvents.some((event) => !Number.isFinite(event.timeMs))) {
+    invalidReasons.push("pointer event timestamp was not finite");
+  }
+  if (frames.some((frame) => !Number.isFinite(frame.timestampMs))) {
+    invalidReasons.push("requestAnimationFrame timestamp was not finite");
+  }
+  if (pointerEvents.some((event, index) => index > 0 && event.timeMs < (pointerEvents[index - 1]?.timeMs ?? Number.NEGATIVE_INFINITY))) {
+    invalidReasons.push("pointer event timestamps were not monotonic");
+  }
+  if (frames.some((frame, index) => index > 0 && frame.timestampMs <= (frames[index - 1]?.timestampMs ?? Number.NEGATIVE_INFINITY))) {
+    invalidReasons.push("requestAnimationFrame timestamps were not strictly monotonic");
+  }
+  const eventsByGesture = new Map<number, OrbitPointerEvent[]>();
+  for (const event of pointerEvents) {
+    const events = eventsByGesture.get(event.gestureId) ?? [];
+    events.push(event);
+    eventsByGesture.set(event.gestureId, events);
+  }
+
+  const gestureSpans: Array<{
+    gestureId: number;
+    pointerId: number;
+    downMs: number;
+    upMs: number;
+    pointerMoveCount: number;
+  }> = [];
+  const gestureIds = [...eventsByGesture.keys()].sort((a, b) => a - b);
+  if (gestureIds.length !== expectedGestureCount) {
+    invalidReasons.push(`expected ${expectedGestureCount} pointer gestures but observed ${gestureIds.length}`);
+  }
+
+  for (const gestureId of gestureIds) {
+    const events = (eventsByGesture.get(gestureId) ?? []).slice().sort((a, b) => a.timeMs - b.timeMs);
+    const downs = events.filter((event) => event.type === "pointerdown");
+    const ups = events.filter((event) => event.type === "pointerup");
+    const cancels = events.filter((event) => event.type === "pointercancel");
+    const moves = events.filter((event) => event.type === "pointermove");
+    const down = downs[0];
+    const up = ups[0];
+    if (downs.length !== 1 || ups.length !== 1 || cancels.length > 0 || !down || !up || up.timeMs <= down.timeMs) {
+      invalidReasons.push(`pointer gesture ${gestureId} did not have one complete down/up lifecycle`);
+      continue;
+    }
+    if (events.some((event) => event.pointerId !== down.pointerId)) {
+      invalidReasons.push(`pointer gesture ${gestureId} changed pointer identity`);
+      continue;
+    }
+    if (moves.length === 0) {
+      invalidReasons.push(`pointer gesture ${gestureId} had no pointer movement`);
+    }
+    gestureSpans.push({
+      gestureId,
+      pointerId: down.pointerId,
+      downMs: down.timeMs,
+      upMs: up.timeMs,
+      pointerMoveCount: moves.length,
+    });
+  }
+
+  const activeIntervals = new Map(gestureSpans.map((span) => [span.gestureId, [] as number[]]));
+  const interGestureIntervals: number[] = [];
+  let excludedFrameIntervalCount = 0;
+  for (let index = 1; index < frames.length; index += 1) {
+    const previous = frames[index - 1];
+    const current = frames[index];
+    if (!previous || !current || !Number.isFinite(previous.timestampMs) || !Number.isFinite(current.timestampMs)) {
+      excludedFrameIntervalCount += 1;
+      continue;
+    }
+    const intervalMs = current.timestampMs - previous.timestampMs;
+    if (intervalMs <= 0) {
+      excludedFrameIntervalCount += 1;
+      continue;
+    }
+    const activeSpan = gestureSpans.find((span) =>
+      previous.timestampMs >= span.downMs && current.timestampMs <= span.upMs,
+    );
+    if (activeSpan) {
+      activeIntervals.get(activeSpan.gestureId)?.push(intervalMs);
+      continue;
+    }
+    const interGestureGap = gestureSpans.some((span, spanIndex) => {
+      const next = gestureSpans[spanIndex + 1];
+      return next !== undefined && previous.timestampMs >= span.upMs && current.timestampMs <= next.downMs;
+    });
+    if (interGestureGap) {
+      interGestureIntervals.push(intervalMs);
+    } else {
+      excludedFrameIntervalCount += 1;
+    }
+  }
+
+  const gestures = gestureSpans.map((span) => ({
+    gestureId: span.gestureId,
+    pointerId: span.pointerId,
+    durationMs: span.upMs - span.downMs,
+    pointerMoveCount: span.pointerMoveCount,
+    frameCadence: summarizeFrameCadence(activeIntervals.get(span.gestureId) ?? []),
+  }));
+  if (gestures.some((gesture) => gesture.frameCadence.sampleCount === 0)) {
+    invalidReasons.push("one or more pointer gestures contained no complete requestAnimationFrame interval");
+  }
+  const activeFrameIntervals = gestures.flatMap((gesture) => activeIntervals.get(gesture.gestureId) ?? []);
+  if (activeFrameIntervals.length < 8) {
+    invalidReasons.push(`only ${activeFrameIntervals.length} requestAnimationFrame intervals fell fully inside active pointer gestures; at least 8 are required`);
+  }
+
+  const firstGesture = gestureSpans[0];
+  const lastGesture = gestureSpans.at(-1);
+  const interGestureDurationMs = gestureSpans.slice(0, -1).flatMap((span, index) => {
+    const next = gestureSpans[index + 1];
+    if (!next) return [];
+    const duration = next.downMs - span.upMs;
+    if (duration < 0) {
+      invalidReasons.push(`pointer gesture ${next.gestureId} overlapped the previous gesture`);
+      return [];
+    }
+    return [duration];
+  });
+  return {
+    expectedGestureCount,
+    observedGestureCount: gestureSpans.length,
+    pointerEventCount: pointerEvents.length,
+    workloadDurationMs: firstGesture && lastGesture ? lastGesture.upMs - firstGesture.downMs : null,
+    totalActiveDragDurationMs: gestureSpans.reduce((sum, span) => sum + span.upMs - span.downMs, 0),
+    interGestureDurationMs,
+    gestures,
+    activeGestureCadence: summarizeFrameCadence(activeFrameIntervals),
+    interGestureCadence: summarizeFrameCadence(interGestureIntervals),
+    excludedFrameIntervalCount,
+    invalidReasons,
   };
 };
 
@@ -292,6 +522,33 @@ export const comparePixelRegions = (
     meanSignedLuminanceDifference: pixelCount > 0 ? signedLuminanceDifferenceSum / pixelCount : 0,
   };
 };
+
+export const deriveImageRestorationTolerance = (
+  repeatedCaptureDifferences: readonly ImageDifferenceSummary[],
+): ImageRestorationTolerance => ({
+  changedChannelThreshold: 1,
+  baselineCaptureCount: repeatedCaptureDifferences.length + 1,
+  maximumChangedPixelFraction: repeatedCaptureDifferences.reduce(
+    (maximum, difference) => Math.max(maximum, difference.changedPixelFraction),
+    0,
+  ),
+  maximumMeanAbsoluteRgbDifference: repeatedCaptureDifferences.reduce(
+    (maximum, difference) => Math.max(maximum, difference.meanAbsoluteRgbDifference),
+    0,
+  ),
+  maximumAbsoluteMeanSignedLuminanceDifference: repeatedCaptureDifferences.reduce(
+    (maximum, difference) => Math.max(maximum, Math.abs(difference.meanSignedLuminanceDifference)),
+    0,
+  ),
+});
+
+export const imageMatchesRestorationTolerance = (
+  difference: ImageDifferenceSummary,
+  tolerance: ImageRestorationTolerance,
+): boolean =>
+  difference.changedPixelFraction <= tolerance.maximumChangedPixelFraction &&
+  difference.meanAbsoluteRgbDifference <= tolerance.maximumMeanAbsoluteRgbDifference &&
+  Math.abs(difference.meanSignedLuminanceDifference) <= tolerance.maximumAbsoluteMeanSignedLuminanceDifference;
 
 export const serializeBenchmarkReport = (report: unknown): string =>
   JSON.stringify(report, null, 2);
