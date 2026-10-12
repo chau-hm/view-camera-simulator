@@ -140,7 +140,8 @@ test("Architecture Rise keeps its normal WebGL environment and Ground Glass path
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
-  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "not-eligible");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
   await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   expect(pageErrors).toEqual([]);
 

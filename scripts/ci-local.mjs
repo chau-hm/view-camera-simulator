@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { readdir } from "node:fs/promises";
+import { isDevelopmentE2ESpec } from "./e2e-spec-policy.mjs";
 
 const includeE2E = process.argv.includes("--with-e2e");
 
@@ -14,7 +15,7 @@ const steps = [
 if (includeE2E) {
   const e2eDirectory = new URL("../src/tests/e2e/", import.meta.url);
   const e2eSpecs = (await readdir(e2eDirectory))
-    .filter((fileName) => fileName.endsWith(".spec.ts"))
+    .filter(isDevelopmentE2ESpec)
     .sort();
   e2eSpecs.forEach((fileName) => {
     steps.push({

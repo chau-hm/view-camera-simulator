@@ -31,43 +31,36 @@ describe("Observer renderer selection policy", () => {
     });
   });
 
-  it("allows the explicit development pilot only on View Camera Anatomy", () => {
-    expect(
-      selectObserverBackend({ ...selectionInput, requestedRendererParam: "webgpu" }),
-    ).toMatchObject({
-      status: "selected",
-      requestedRenderer: "webgpu-pilot",
-      rendererAttempt: "webgpu",
-      applicationFallback: "none",
-    });
+  it("keeps default requests on WebGL for both verified scenes", () => {
+    for (const sceneId of ["view-camera-anatomy", "architecture-rise"]) {
+      expect(selectObserverBackend({
+        ...selectionInput,
+        sceneCompatibility: resolveObserverSceneCompatibility(sceneId),
+      })).toMatchObject({
+        requestedRenderer: "webgl",
+        rendererAttempt: "webgl",
+        selectionReason: "default-webgl-request",
+      });
+    }
   });
 
-  it("ignores the pilot query for other scenes", () => {
-    expect(
-      selectObserverBackend({
+  it("approves explicit development WebGPU pilot requests only for the two verified eligible scenes", () => {
+    for (const sceneId of ["view-camera-anatomy", "architecture-rise"]) {
+      expect(selectObserverBackend({
         ...selectionInput,
         requestedRendererParam: "webgpu",
-        sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
-      }),
-    ).toMatchObject({
-      requestedRenderer: "webgpu-pilot",
-      rendererAttempt: "webgl",
-      selectionReason: "scene-compatibility-not-evaluated",
-    });
+        sceneCompatibility: resolveObserverSceneCompatibility(sceneId),
+      })).toMatchObject({
+        status: "selected",
+        requestedRenderer: "webgpu-pilot",
+        rendererAttempt: "webgpu",
+        applicationFallback: "none",
+        selectionReason: "webgpu-pilot-approved",
+      });
+    }
   });
 
-  it("keeps Architecture Rise publicly denied while exposing only the explicit verification selection", () => {
-    const publicSelection = selectObserverBackend({
-      ...selectionInput,
-      requestedRendererParam: "webgpu",
-      sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
-    });
-    expect(publicSelection).toMatchObject({
-      requestedRenderer: "webgpu-pilot",
-      rendererAttempt: "webgl",
-      selectionReason: "scene-compatibility-not-evaluated",
-    });
-
+  it("keeps Architecture Rise verification selection separate from its normal pilot request", () => {
     expect(selectArchitectureRiseWebGpuVerificationBackend(true)).toMatchObject({
       status: "selected",
       requestedRenderer: "webgpu-verification",
@@ -77,45 +70,74 @@ describe("Observer renderer selection policy", () => {
     });
   });
 
-  it("preserves one-shot application fallback for a current verification attempt", () => {
-    const selection = selectArchitectureRiseWebGpuVerificationBackend(true);
+  it("preserves one-shot application fallback for an Architecture Rise pilot attempt", () => {
+    const selection = selectObserverBackend({
+      ...selectionInput,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
+    });
     expect(selection.status).toBe("selected");
     if (selection.status !== "selected") return;
-    expect(resolveObserverRendererInitializationFailure(selection)).toMatchObject({
+    const fallback = resolveObserverRendererInitializationFailure(selection);
+    expect(fallback).toMatchObject({
       status: "selected",
-      requestedRenderer: "webgpu-verification",
+      requestedRenderer: "webgpu-pilot",
       rendererAttempt: "webgl",
       applicationFallback: "app-webgl",
-      selectionReason: "test-only-architecture-rise-verification",
+      selectionReason: "webgpu-pilot-approved",
+    });
+    if (fallback.status !== "selected") return;
+    expect(resolveObserverRendererInitializationFailure(fallback)).toMatchObject({
+      status: "unavailable",
+      failureReason: "renderer-initialization-failed",
+      applicationFallback: "app-webgl",
     });
   });
 
   it("ignores the pilot query when the development gate is disabled", () => {
-    expect(
-      selectObserverBackend({
+    for (const sceneId of ["view-camera-anatomy", "architecture-rise"]) {
+      expect(selectObserverBackend({
         ...selectionInput,
         requestedRendererParam: "webgpu",
         developmentPilotEnabled: false,
-      }),
-    ).toMatchObject({
-      requestedRenderer: "webgpu-pilot",
-      rendererAttempt: "webgl",
-      selectionReason: "development-gate-disabled",
-    });
+        sceneCompatibility: resolveObserverSceneCompatibility(sceneId),
+      })).toMatchObject({
+        requestedRenderer: "webgpu-pilot",
+        rendererAttempt: "webgl",
+        selectionReason: "development-gate-disabled",
+      });
+    }
   });
 
-  it("fails closed for an unreviewed scene and preserves the requested pilot in diagnostics", () => {
-    expect(
-      selectObserverBackend({
+  it("fails closed for an unknown scene and a registered unevaluated scene", () => {
+    for (const sceneId of ["future-scene", "table-tilt"]) {
+      expect(selectObserverBackend({
         ...selectionInput,
         requestedRendererParam: "webgpu",
-        sceneCompatibility: resolveObserverSceneCompatibility("future-scene"),
-      }),
-    ).toMatchObject({
-      status: "selected",
-      requestedRenderer: "webgpu-pilot",
+        sceneCompatibility: resolveObserverSceneCompatibility(sceneId),
+      })).toMatchObject({
+        status: "selected",
+        requestedRenderer: "webgpu-pilot",
+        rendererAttempt: "webgl",
+        selectionReason: "scene-requirements-not-declared",
+      });
+    }
+  });
+
+  it("does not attempt WebGPU for a scene whose declared rendering review is not evaluated", () => {
+    const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
+    const unevaluated = {
+      ...architectureRise,
+      webgpu: { status: "not-evaluated" } as const,
+      developmentWebGpuPilot: "not-eligible" as const,
+    };
+    expect(selectObserverBackend({
+      ...selectionInput,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: unevaluated,
+    })).toMatchObject({
       rendererAttempt: "webgl",
-      selectionReason: "scene-requirements-not-declared",
+      selectionReason: "scene-compatibility-not-evaluated",
     });
   });
 
@@ -131,10 +153,18 @@ describe("Observer renderer selection policy", () => {
   });
 
   it("does not enable a newly declared but unverified rendering requirement", () => {
-    const anatomy = selectionInput.sceneCompatibility;
+    const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
+    if (architectureRise.webgpu.status !== "verified") {
+      throw new Error("Architecture Rise verification evidence expected");
+    }
     const incompleteReview = {
-      ...anatomy,
-      requirements: [...(anatomy.requirements ?? []), "procedural-world-environment"] as const,
+      ...architectureRise,
+      webgpu: {
+        ...architectureRise.webgpu,
+        verifiedRequirements: architectureRise.webgpu.verifiedRequirements.filter(
+          (requirement) => requirement !== "procedural-world-environment",
+        ),
+      },
     };
     expect(
       selectObserverBackend({
@@ -145,6 +175,36 @@ describe("Observer renderer selection policy", () => {
     ).toMatchObject({
       rendererAttempt: "webgl",
       selectionReason: "scene-requirement-unverified",
+    });
+  });
+
+  it("keeps a scene ineligible when a known backend constraint is present", () => {
+    const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
+    const constrained = {
+      ...architectureRise,
+      knownBackendConstraints: ["procedural-world-environment-uses-webgl-pmrem"] as const,
+    };
+    expect(selectObserverBackend({
+      ...selectionInput,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: constrained,
+    })).toMatchObject({
+      rendererAttempt: "webgl",
+      selectionReason: "scene-has-known-webgpu-constraint",
+    });
+  });
+
+  it("keeps verified scenes denied when their pilot approval is revoked", () => {
+    const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
+    const revoked = { ...architectureRise, developmentWebGpuPilot: "not-eligible" as const };
+    expect(revoked.webgpu).toMatchObject({ status: "verified", evidence: "pr-251-native-architecture-rise-e2e" });
+    expect(selectObserverBackend({
+      ...selectionInput,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: revoked,
+    })).toMatchObject({
+      rendererAttempt: "webgl",
+      selectionReason: "scene-not-pilot-enabled",
     });
   });
 
@@ -165,6 +225,21 @@ describe("Observer renderer selection policy", () => {
         requestedRendererParam: "webgpu",
       }),
     ).toMatchObject({ status: "selected", rendererAttempt: "webgpu" });
+  });
+
+  it("reports failed Architecture Rise initialization as unavailable when WebGL is unavailable", () => {
+    const selection = selectObserverBackend({
+      ...selectionInput,
+      webglAvailable: false,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
+    });
+    expect(selection).toMatchObject({ status: "selected", rendererAttempt: "webgpu" });
+    if (selection.status !== "selected") return;
+    expect(resolveObserverRendererInitializationFailure(selection)).toMatchObject({
+      status: "unavailable",
+      failureReason: "renderer-initialization-failed",
+    });
   });
 });
 

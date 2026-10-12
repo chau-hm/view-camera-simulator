@@ -29,18 +29,35 @@ describe("Observer scene backend compatibility declarations", () => {
     expect(anatomy.webgpu.verifiedRequirements).toEqual(anatomy.requirements);
   });
 
-  it("records Architecture Rise's PMREM path as verified while keeping the full scene unevaluated", () => {
-    expect(resolveObserverSceneCompatibility("architecture-rise")).toEqual({
+  it("records Architecture Rise's full-scene native evidence and separate pilot approval", () => {
+    const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
+    expect(architectureRise).toEqual({
       requirements: [
         "observer-scene-subject",
         "presentation-lighting",
         "shadow-maps",
         "procedural-world-environment",
       ],
-      webgpu: { status: "not-evaluated" },
+      webgpu: {
+        status: "verified",
+        evidence: "pr-251-native-architecture-rise-e2e",
+        verifiedRequirements: [
+          "observer-scene-subject",
+          "presentation-lighting",
+          "shadow-maps",
+          "procedural-world-environment",
+        ],
+      },
       knownBackendConstraints: [],
-      developmentWebGpuPilot: "not-eligible",
+      developmentWebGpuPilot: "eligible",
     });
+    if (architectureRise.webgpu.status !== "verified" || architectureRise.requirements === null) {
+      throw new Error("Architecture Rise compatibility evidence expected");
+    }
+    expect(architectureRise.webgpu.verifiedRequirements).toEqual(architectureRise.requirements);
+    const anatomy = resolveObserverSceneCompatibility("view-camera-anatomy");
+    if (anatomy.webgpu.status !== "verified") throw new Error("Anatomy compatibility evidence expected");
+    expect(architectureRise.webgpu.evidence).not.toBe(anatomy.webgpu.evidence);
   });
 
   it("returns an explicit fail-closed declaration for an unreviewed scene", () => {
@@ -54,7 +71,7 @@ describe("Observer scene backend compatibility declarations", () => {
 
   it("does not let scene-registry membership grant pilot eligibility", () => {
     for (const sceneId of Object.keys(sceneRegistry)) {
-      if (sceneId === "view-camera-anatomy") continue;
+      if (sceneId === "view-camera-anatomy" || sceneId === "architecture-rise") continue;
       expect(resolveObserverSceneCompatibility(sceneId).developmentWebGpuPilot)
         .toBe("not-eligible");
     }
@@ -67,7 +84,10 @@ describe("Observer scene backend compatibility declarations", () => {
     });
     expect(runtime.rendererFamily).toBe("webgpu-renderer");
     const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
-    expect(architectureRise.webgpu.status).toBe("not-evaluated");
-    expect(architectureRise.developmentWebGpuPilot).toBe("not-eligible");
+    expect(architectureRise.webgpu.status).toBe("verified");
+    expect(architectureRise.developmentWebGpuPilot).toBe("eligible");
+    const tableTilt = resolveObserverSceneCompatibility("table-tilt");
+    expect(tableTilt.webgpu.status).toBe("not-evaluated");
+    expect(tableTilt.developmentWebGpuPilot).toBe("not-eligible");
   });
 });
