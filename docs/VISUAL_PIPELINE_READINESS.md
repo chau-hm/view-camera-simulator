@@ -1326,3 +1326,40 @@ incomplete after that first test; the rollout E2Es were run separately.
 Architecture Rise pilot.** Hardware acceleration remains unconfirmed, and
 this result does not enable production WebGPU, additional scenes, or Ground
 Glass migration.
+
+## PR F — Observer Backend Comparative Benchmark
+
+PR F adds an opt-in, dedicated Playwright benchmark for paired WebGL2 and
+native WebGPU Observer runs on View Camera Anatomy and Architecture Rise. It
+uses three paired trials per scene, alternating backend order, fixed 1440 ×
+1000 viewport and DPR 1, recorded canonical controls and camera pose, a real
+OrbitControls workload, scene-specific framebuffer regions, and bounded
+renderer-recovery sequences. The suite runs with
+`npm run benchmark:observer-backends`; it is excluded from default and
+production-preview E2E discovery. Method details and interpretation are in
+[`docs/benchmarks/OBSERVER_BACKEND_COMPARISON.md`](benchmarks/OBSERVER_BACKEND_COMPARISON.md).
+
+The completed run used headed Chrome 155.0.8059.39 on macOS Darwin 27.0.0
+arm64, Three.js r186. The WebGPU API and adapter were available. All six
+WebGPU scene-trials mounted `webgpu-renderer / webgpu` after exactly one
+initialization attempt and without application fallback; all paired WebGL
+trials mounted `webgl-renderer / webgl2`. Both scenes recovered through
+WebGL2 → native WebGPU → WebGL2 → native WebGPU transitions. Architecture
+Rise environment readiness passed. Ground Glass retained its existing
+WebGL2 context, contentful output, and Raw/Upright visual response.
+
+The run measured route-to-active-renderer wall time, browser rAF cadence, and
+pixel differences from actual Observer canvas captures. It did not measure
+GPU execution time, input-to-present latency, or VRAM. rAF median was 16.7 ms
+in each backend's samples, while WebGPU route-to-active-renderer time was
+higher in the measured pairs; these observations do not establish a renderer
+performance ranking. Captures show visible tone/background and Architecture
+Rise facade/glazing differences that need human teaching-use review. Chrome
+reported Metal and no software renderer was identified, but hardware-backed
+execution remains **unconfirmed**.
+
+**PR F decision: native WebGPU functional rendering verified for both tested
+development pilots; visual equivalence and performance remain inconclusive;
+hardware acceleration is unconfirmed.** Continue the development-only pilots
+(direction A). This benchmark does not authorize production rollout, further
+scene eligibility, or Ground Glass migration.
