@@ -61,10 +61,10 @@ infer these from JavaScript timers or incompatible renderer counters.
 
 ## PR F runtime result
 
-Final committed-run evidence: commit `8d96769994e36796a367fad6512b7950b79804aa`,
-generated at `2026-10-12T15:50:54.363Z`. The ignored machine-readable report,
+Final measured-run evidence: commit `a454fdf4ab3ea9ffd0f2437330f1c1f51532ee6c`,
+generated at `2026-10-12T15:53:34.582Z`. The ignored machine-readable report,
 Markdown summary, and captures are in
-`test-results/observer-backend-comparison/2026-10-12T15-49-45.432Z-8d96769994e3/`.
+`test-results/observer-backend-comparison/2026-10-12T15-52-26.407Z-a454fdf4ab3e/`.
 
 The completed native run used stable headed Chrome 155.0.8059.39 on macOS
 Darwin 27.0.0 arm64 with Three.js r186, a 1440 × 1000 viewport, and DPR 1.
@@ -81,8 +81,8 @@ exactly to its initial capture in this run.
 
 | Scene | WebGL2 route-to-active-renderer | Native WebGPU route-to-active-renderer | Observed browser frame cadence | Visual comparison |
 | --- | ---: | ---: | --- | --- |
-| View Camera Anatomy | 827–1,328 ms (median 869 ms) | 1,520–1,617 ms (median 1,563 ms) | Median 16.7 ms; p95 18.0–18.5 ms across samples | Camera inspection: full-canvas MAE 22.10/255, 89.44% changed, camera-model ROI MAE 15.42. Registered target view: full-canvas MAE 21.34/255, 86.39% changed, target-board ROI MAE 14.06 |
-| Architecture Rise | 953–1,041 ms (median 1,041 ms) | 1,528–1,584 ms (median 1,573 ms) | Median 16.7 ms; p95 17.6–18.5 ms across samples | Default: full-canvas MAE 13.76/255, 57.08% changed, facade ROI MAE 22.76. Close facade: MAE 20.48/255, 90.66% changed, facade ROI MAE 21.83 |
+| View Camera Anatomy | 854–1,215 ms (median 899 ms) | 1,470–1,576 ms (median 1,471 ms) | Median 16.7 ms; p95 18.0–18.3 ms across samples | Camera inspection: full-canvas MAE 22.10/255, 89.44% changed, camera-model ROI MAE 15.42. Registered target view: full-canvas MAE 21.34/255, 86.39% changed, target-board ROI MAE 14.06 |
+| Architecture Rise | 993–1,012 ms (median 996 ms) | 1,530–1,594 ms (median 1,563 ms) | Median 16.7 ms; p95 17.8–18.2 ms across samples | Default: full-canvas MAE 13.76/255, 57.08% changed, facade ROI MAE 22.76. Close facade: MAE 20.48/255, 90.66% changed, facade ROI MAE 21.83 |
 
 The wall times are paired navigation-to-active-renderer observations and do
 not isolate compilation or GPU startup. The similar frame cadence is bounded

@@ -1351,9 +1351,9 @@ WebGL2 context, contentful output, and Raw/Upright visual response.
 The run measured route-to-active-renderer wall time, browser rAF cadence, and
 pixel differences from actual Observer canvas captures. It did not measure
 GPU execution time, input-to-present latency, or VRAM. rAF median was 16.7 ms
-in each backend's samples and the p95 range was 17.6–18.5 ms. Median
-route-to-active-renderer time was 869 ms WebGL2 / 1,563 ms WebGPU for Anatomy
-and 1,041 ms / 1,573 ms for Architecture Rise. These are route-to-mounted
+in each backend's samples and the p95 range was 17.8–18.3 ms. Median
+route-to-active-renderer time was 899 ms WebGL2 / 1,471 ms WebGPU for Anatomy
+and 996 ms / 1,563 ms for Architecture Rise. These are route-to-mounted
 renderer wall times, not GPU timings, and do not establish a sustained render
 performance ranking. Anatomy camera-model and registered target-board ROIs
 had MAE 15.42 and 14.06/255; Architecture Rise facade ROIs had MAE
@@ -1362,8 +1362,8 @@ visible tone/background and facade/glazing differences that need human
 teaching-use review. Chrome reported Metal and no software renderer was
 identified, but hardware-backed execution remains **unconfirmed**. The final
 report and captures are ignored local artifacts at
-`test-results/observer-backend-comparison/2026-10-12T15-49-45.432Z-8d96769994e3/`
-for commit `8d96769994e36796a367fad6512b7950b79804aa`.
+`test-results/observer-backend-comparison/2026-10-12T15-52-26.407Z-a454fdf4ab3e/`
+for commit `a454fdf4ab3ea9ffd0f2437330f1c1f51532ee6c`.
 
 **PR F decision: native WebGPU functional rendering verified for both tested
 development pilots; visual equivalence and performance remain inconclusive;
