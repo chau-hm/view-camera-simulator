@@ -43,6 +43,31 @@ const readObserverAttributes = async (observer: Locator) => observer.evaluate((e
   ),
 );
 
+const expectNativeWebGpuMount = (attributes: Record<string, string>) => {
+  expect(attributes["data-observer-renderer-attempt"]).toBe("webgpu");
+  expect(attributes["data-observer-renderer-family"]).toBe("webgpu-renderer");
+  expect(attributes["data-observer-execution-backend"]).toBe("webgpu");
+  expect(attributes["data-observer-application-fallback"]).toBe("none");
+  expect(attributes["data-observer-renderer-failure-stage"]).toBeUndefined();
+  expect(attributes["data-observer-webgpu-initialization-attempts"]).toBe("1");
+};
+
+const expectResolvedWebGpuPilotOutcome = (attributes: Record<string, string>) => {
+  expect(attributes["data-observer-webgpu-initialization-attempts"]).toBe("1");
+  if (attributes["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(attributes["data-observer-renderer-attempt"]).toBe("webgpu");
+    expect(attributes["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
+    expect(attributes["data-observer-application-fallback"]).toBe("none");
+    expect(attributes["data-observer-renderer-failure-stage"]).toBeUndefined();
+  } else {
+    expect(attributes["data-observer-renderer-family"]).toBe("webgl-renderer");
+    expect(attributes["data-observer-renderer-attempt"]).toBe("webgl");
+    expect(attributes["data-observer-execution-backend"]).toBe("webgl2");
+    expect(attributes["data-observer-application-fallback"]).toBe("app-webgl");
+    expect(attributes["data-observer-renderer-failure-stage"]).toBe("initialization");
+  }
+};
+
 const attachMountedObserverEvidence = async (
   testInfo: TestInfo,
   observer: Locator,
@@ -1096,11 +1121,12 @@ test("Architecture Rise uses one application fallback after a controlled WebGPU 
   test.setTimeout(180_000);
   const pageErrors: string[] = [];
   const webgpuRequests: string[] = [];
+  const webgpuModuleRoute = /three[._/-]webgpu/i;
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("request", (request) => {
-    if (/three[._/-]webgpu/i.test(request.url())) webgpuRequests.push(request.url());
+    if (webgpuModuleRoute.test(request.url())) webgpuRequests.push(request.url());
   });
-  await page.route(/three[._/-]webgpu/i, (route) => route.abort());
+  await page.route(webgpuModuleRoute, (route) => route.abort());
   await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
 
   const observer = await waitForMountedObserver(page, "architecture-rise");
@@ -1117,6 +1143,15 @@ test("Architecture Rise uses one application fallback after a controlled WebGPU 
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
   const groundGlass = page.getByTestId("ground-glass-rtt").first();
   await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise");
+  const architectureCanvas = observer.locator("canvas");
+  const architectureScreenshot = await captureObserverCanvasScreenshot(page, architectureCanvas);
+  const architectureCanvasPixels = analyzeCanvasScreenshot(architectureScreenshot);
+  expect(architectureCanvasPixels.contentful).toBe(true);
+  await testInfo.attach("architecture-rise-app-fallback-observer.png", {
+    body: architectureScreenshot,
+    contentType: "image/png",
+  });
   expect(webgpuRequests).toHaveLength(1);
 
   const fallbackGeneration = await observer.getAttribute("data-observer-renderer-generation");
@@ -1139,6 +1174,44 @@ test("Architecture Rise uses one application fallback after a controlled WebGPU 
   await expect(observer).toHaveAttribute("data-observer-adapter-availability", "not-requested");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
   expect(pageErrors).toEqual([]);
+  const afterIneligibleScene = await readObserverAttributes(observer);
+  expect(Number(afterIneligibleScene["data-observer-renderer-generation"])).toBeGreaterThan(
+    Number(fallbackGeneration),
+  );
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await page.unroute(webgpuModuleRoute);
+  await navigateWithinSimulator(
+    page,
+    "/simulator/free/view-camera-anatomy?observerRenderer=webgpu&rttDiagnostics=1",
+  );
+  await waitForMountedObserver(page);
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  const recoveredEligibleScene = await readObserverAttributes(observer);
+  expect(Number(recoveredEligibleScene["data-observer-renderer-generation"])).toBeGreaterThan(
+    Number(afterIneligibleScene["data-observer-renderer-generation"]),
+  );
+  if (recoveredEligibleScene["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(recoveredEligibleScene["data-observer-renderer-attempt"]).toBe("webgpu");
+    expect(recoveredEligibleScene["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
+    expect(recoveredEligibleScene["data-observer-application-fallback"]).toBe("none");
+    expect(recoveredEligibleScene["data-observer-renderer-failure-stage"]).toBeUndefined();
+  } else {
+    expect(recoveredEligibleScene["data-observer-renderer-family"]).toBe("webgl-renderer");
+    expect(recoveredEligibleScene["data-observer-renderer-attempt"]).toBe("webgl");
+    expect(recoveredEligibleScene["data-observer-execution-backend"]).toBe("webgl2");
+    expect(recoveredEligibleScene["data-observer-application-fallback"]).toBe("app-webgl");
+    expect(recoveredEligibleScene["data-observer-renderer-failure-stage"]).toBe("initialization");
+  }
+  await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-final-contentful", "true", {
+    timeout: 60_000,
+  });
+  expect(webgpuRequests.length).toBeGreaterThanOrEqual(1);
+  expect(pageErrors).toEqual([]);
 
   await testInfo.attach("architecture-rise-application-fallback.json", {
     body: JSON.stringify({
@@ -1153,7 +1226,9 @@ test("Architecture Rise uses one application fallback after a controlled WebGPU 
       },
       webgpuRequests,
       groundGlassContentful: true,
-      afterIneligibleScene: await readObserverAttributes(observer),
+      architectureCanvasPixels,
+      afterIneligibleScene,
+      recoveredEligibleScene,
       pageErrors,
     }, null, 2),
     contentType: "application/json",
@@ -1240,19 +1315,17 @@ test("Observer backend state follows eligible and ineligible SPA scene/request t
   });
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await expect(observer).toHaveAttribute(
+    "data-observer-renderer-family",
+    /^(webgl-renderer|webgpu-renderer)$/,
+    { timeout: 60_000 },
+  );
   const firstPilot = await readObserverAttributes(observer);
+  expectResolvedWebGpuPilotOutcome(firstPilot);
   expect(Number(firstPilot["data-observer-renderer-generation"])).toBeGreaterThan(
     defaultWebglGeneration,
   );
-  if (firstPilot["data-observer-renderer-family"] === "webgpu-renderer") {
-    expect(firstPilot["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
-    expect(firstPilot["data-observer-application-fallback"]).toBe("none");
-  } else {
-    expect(firstPilot["data-observer-renderer-family"]).toBe("webgl-renderer");
-    expect(firstPilot["data-observer-execution-backend"]).toBe("webgl2");
-    expect(firstPilot["data-observer-application-fallback"]).toBe("app-webgl");
-    expect(firstPilot["data-observer-renderer-failure-stage"]).toBe("initialization");
-  }
+  if (nativeWebGpuRequired) expectNativeWebGpuMount(firstPilot);
 
   await navigateWithinSimulator(
     page,
@@ -1261,41 +1334,32 @@ test("Observer backend state follows eligible and ineligible SPA scene/request t
   await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise", {
     timeout: 60_000,
   });
-  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", {
-    timeout: 60_000,
-  });
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
-  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgpu");
-  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
-  await expect(observer).toHaveAttribute("data-observer-execution-backend", /^(webgpu|webgl2-fallback)$/);
-  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute(
     "data-observer-selection-reason",
     "webgpu-pilot-approved",
   );
   await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
   await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", {
+    timeout: 60_000,
+  });
   await expect(observer).toHaveAttribute("data-observer-adapter-availability", /^(available|unavailable|api-absent|request-rejected|timed-out)$/);
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await expect(observer).toHaveAttribute(
+    "data-observer-renderer-family",
+    /^(webgl-renderer|webgpu-renderer)$/,
+    { timeout: 60_000 },
+  );
   const architectureRiseRequest = await readObserverAttributes(observer);
-  if (architectureRiseRequest["data-observer-renderer-family"] === "webgpu-renderer") {
-    expect(architectureRiseRequest["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
-    expect(architectureRiseRequest["data-observer-application-fallback"]).toBe("none");
-  } else {
-    expect(architectureRiseRequest["data-observer-renderer-family"]).toBe("webgl-renderer");
-    expect(architectureRiseRequest["data-observer-execution-backend"]).toBe("webgl2");
-    expect(architectureRiseRequest["data-observer-application-fallback"]).toBe("app-webgl");
-    expect(architectureRiseRequest["data-observer-renderer-failure-stage"]).toBe("initialization");
-  }
+  expectResolvedWebGpuPilotOutcome(architectureRiseRequest);
   expect(Number(architectureRiseRequest["data-observer-renderer-generation"])).toBeGreaterThan(
     Number(firstPilot["data-observer-renderer-generation"]),
   );
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
   await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   if (nativeWebGpuRequired) {
-    expect(architectureRiseRequest["data-observer-renderer-family"]).toBe("webgpu-renderer");
-    expect(architectureRiseRequest["data-observer-execution-backend"]).toBe("webgpu");
-    expect(architectureRiseRequest["data-observer-application-fallback"]).toBe("none");
+    expectNativeWebGpuMount(architectureRiseRequest);
   }
 
   await navigateWithinSimulator(
@@ -1326,21 +1390,18 @@ test("Observer backend state follows eligible and ineligible SPA scene/request t
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute(
+    "data-observer-renderer-family",
+    /^(webgl-renderer|webgpu-renderer)$/,
+    { timeout: 60_000 },
+  );
   const returnedArchitectureRise = await readObserverAttributes(observer);
+  expectResolvedWebGpuPilotOutcome(returnedArchitectureRise);
   expect(Number(returnedArchitectureRise["data-observer-renderer-generation"])).toBeGreaterThan(
     Number(unevaluatedScene["data-observer-renderer-generation"]),
   );
-  if (returnedArchitectureRise["data-observer-renderer-family"] === "webgpu-renderer") {
-    expect(returnedArchitectureRise["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
-    expect(returnedArchitectureRise["data-observer-application-fallback"]).toBe("none");
-  } else {
-    expect(returnedArchitectureRise["data-observer-renderer-family"]).toBe("webgl-renderer");
-    expect(returnedArchitectureRise["data-observer-execution-backend"]).toBe("webgl2");
-    expect(returnedArchitectureRise["data-observer-application-fallback"]).toBe("app-webgl");
-    expect(returnedArchitectureRise["data-observer-renderer-failure-stage"]).toBe("initialization");
-  }
   if (nativeWebGpuRequired) {
-    expect(returnedArchitectureRise["data-observer-execution-backend"]).toBe("webgpu");
+    expectNativeWebGpuMount(returnedArchitectureRise);
   }
 
   await navigateWithinSimulator(
@@ -1367,21 +1428,22 @@ test("Observer backend state follows eligible and ineligible SPA scene/request t
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await expect.poll(
+    async () => Number(await observer.getAttribute("data-observer-renderer-generation")),
+    { timeout: 60_000 },
+  ).toBeGreaterThan(Number(explicitWebgl["data-observer-renderer-generation"]));
+  await expect(observer).toHaveAttribute(
+    "data-observer-renderer-family",
+    /^(webgl-renderer|webgpu-renderer)$/,
+    { timeout: 60_000 },
+  );
   const sameSceneWebgpu = await readObserverAttributes(observer);
+  expectResolvedWebGpuPilotOutcome(sameSceneWebgpu);
   expect(Number(sameSceneWebgpu["data-observer-renderer-generation"])).toBeGreaterThan(
     Number(explicitWebgl["data-observer-renderer-generation"]),
   );
-  if (sameSceneWebgpu["data-observer-renderer-family"] === "webgpu-renderer") {
-    expect(sameSceneWebgpu["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
-    expect(sameSceneWebgpu["data-observer-application-fallback"]).toBe("none");
-  } else {
-    expect(sameSceneWebgpu["data-observer-renderer-family"]).toBe("webgl-renderer");
-    expect(sameSceneWebgpu["data-observer-execution-backend"]).toBe("webgl2");
-    expect(sameSceneWebgpu["data-observer-application-fallback"]).toBe("app-webgl");
-    expect(sameSceneWebgpu["data-observer-renderer-failure-stage"]).toBe("initialization");
-  }
   if (nativeWebGpuRequired) {
-    expect(sameSceneWebgpu["data-observer-execution-backend"]).toBe("webgpu");
+    expectNativeWebGpuMount(sameSceneWebgpu);
   }
 
   await navigateWithinSimulator(
@@ -1393,26 +1455,21 @@ test("Observer backend state follows eligible and ineligible SPA scene/request t
   });
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await expect(observer).toHaveAttribute(
+    "data-observer-renderer-family",
+    /^(webgl-renderer|webgpu-renderer)$/,
+    { timeout: 60_000 },
+  );
   const secondPilot = await readObserverAttributes(observer);
+  expectResolvedWebGpuPilotOutcome(secondPilot);
   expect(Number(secondPilot["data-observer-renderer-generation"])).toBeGreaterThan(
     Number(sameSceneWebgpu["data-observer-renderer-generation"]),
   );
   expect(webgpuModuleRequests).toHaveLength(1);
-  expect(secondPilot["data-observer-renderer-family"]).toMatch(/^(webgl-renderer|webgpu-renderer)$/);
-  if (secondPilot["data-observer-renderer-family"] === "webgpu-renderer") {
-    expect(secondPilot["data-observer-execution-backend"]).toMatch(/^(webgpu|webgl2-fallback)$/);
-    expect(secondPilot["data-observer-application-fallback"]).toBe("none");
-  } else {
-    expect(secondPilot["data-observer-execution-backend"]).toBe("webgl2");
-    expect(secondPilot["data-observer-application-fallback"]).toBe("app-webgl");
-    expect(secondPilot["data-observer-renderer-failure-stage"]).toBe("initialization");
-  }
   if (nativeWebGpuRequired) {
     expect(secondPilot["data-observer-webgpu-api-present"]).toBe("true");
     expect(secondPilot["data-observer-adapter-availability"]).toBe("available");
-    expect(secondPilot["data-observer-renderer-family"]).toBe("webgpu-renderer");
-    expect(secondPilot["data-observer-execution-backend"]).toBe("webgpu");
-    expect(secondPilot["data-observer-application-fallback"]).toBe("none");
+    expectNativeWebGpuMount(secondPilot);
   }
 
   await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute(

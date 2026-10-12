@@ -1,9 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { productionPreviewSpecGlob } from "./scripts/e2e-spec-policy.mjs";
 
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 
 export default defineConfig({
   testDir: "./src/tests/e2e",
+  testIgnore: [productionPreviewSpecGlob],
   timeout: 30_000,
 
   use: {

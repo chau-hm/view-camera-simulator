@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { productionPreviewSpecGlob } from "./scripts/e2e-spec-policy.mjs";
 
 export default defineConfig({
   testDir: "./src/tests/e2e",
+  testMatch: [productionPreviewSpecGlob],
   timeout: 30_000,
   use: {
     baseURL: "http://127.0.0.1:4175",
