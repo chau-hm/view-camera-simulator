@@ -11,7 +11,7 @@ export type ObserverWebGpuCompatibility =
   | Readonly<{ status: "not-evaluated" }>
   | Readonly<{
       status: "verified";
-      evidence: "pr-248-native-observer-e2e";
+      evidence: "pr-248-native-observer-e2e" | "pr-251-native-architecture-rise-e2e";
       verifiedRequirements: readonly ObserverSceneRenderingRequirement[];
     }>;
 
@@ -58,11 +58,18 @@ export const observerSceneCompatibilityRegistry = Object.freeze({
       "shadow-maps",
       "procedural-world-environment",
     ] as const),
-    webgpu: Object.freeze({ status: "not-evaluated" }),
-    // The native WebGPU PMREM path is verified in the isolated PR C fixture.
-    // The complete Architecture Rise scene remains unevaluated and ineligible.
+    webgpu: Object.freeze({
+      status: "verified",
+      evidence: "pr-251-native-architecture-rise-e2e",
+      verifiedRequirements: Object.freeze([
+        "observer-scene-subject",
+        "presentation-lighting",
+        "shadow-maps",
+        "procedural-world-environment",
+      ] as const),
+    }),
     knownBackendConstraints: Object.freeze([]),
-    developmentWebGpuPilot: "not-eligible",
+    developmentWebGpuPilot: "eligible",
   }),
 } satisfies Readonly<Record<string, ObserverSceneCompatibility>>);
 

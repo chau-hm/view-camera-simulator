@@ -4,6 +4,8 @@ import { dirname } from "node:path";
 import { PerspectiveCamera, REVISION, Vector3 } from "three";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import architectureRiseGeometry from "../../scenes/architectureRiseGeometry";
+import { toWorld } from "../../render/rttUtils";
 
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html";
@@ -110,6 +112,16 @@ const attachJson = async (testInfo: TestInfo, name: string, value: unknown) => {
   });
 };
 
+const attachMountedObserverEvidence = async (testInfo: TestInfo, observer: Locator) => {
+  const attributes = await observer.evaluate((element) => Object.fromEntries(
+    Array.from(element.attributes)
+      .filter((attribute) => attribute.name.startsWith("data-observer-"))
+      .map((attribute) => [attribute.name, attribute.value]),
+  ));
+  await attachJson(testInfo, "architecture-rise-normal-route-mounted-observer.json", attributes);
+  return attributes;
+};
+
 const parseInventory = async (observer: Locator): Promise<SceneInventory> => {
   const serialized = await observer.getAttribute("data-observer-test-architecture-rise-inventory");
   if (!serialized) throw new Error("The mounted Architecture Rise scene inventory was not reported");
@@ -167,6 +179,7 @@ type RegionPixels = Readonly<{
   changedFraction: number;
   meanAbsoluteRgbDelta: number;
   redLikePixels: number;
+  distinctColorBuckets: number;
 }>;
 
 const analyzeImageRegions = async (
@@ -213,6 +226,7 @@ const analyzeImageRegions = async (
       let changedPixels = 0;
       let redLikePixels = 0;
       let deltaTotal = 0;
+      const colorBuckets = new Set<number>();
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
           const index = (y * firstImage.width + x) * 4;
@@ -221,6 +235,7 @@ const analyzeImageRegions = async (
           const b = firstImage.data[index + 2] ?? 0;
           const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
           if (r > 100 && r > g * 1.25 && r > b * 1.25) redLikePixels += 1;
+          colorBuckets.add(((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4));
           red += r;
           green += g;
           blue += b;
@@ -265,6 +280,7 @@ const analyzeImageRegions = async (
         changedFraction: count ? changedPixels / count : 0,
         meanAbsoluteRgbDelta: count ? deltaTotal / count : 0,
         redLikePixels,
+        distinctColorBuckets: colorBuckets.size,
       };
     }
     return { width: firstImage.width, height: firstImage.height, regions: results };
@@ -281,7 +297,8 @@ const waitForPublicArchitectureRise = async (page: Page) => {
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
-  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "not-eligible");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
   await expect(page.getByTestId("ground-glass-rtt").first()).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(observer.locator("canvas")).toHaveCount(1);
@@ -335,22 +352,68 @@ const dispatchLight = async (observer: Locator, eventName: string, detail: { nam
   }, { eventName, detail });
 };
 
-test("public Architecture Rise keeps WebGL and the public WebGPU request denied", async ({ page }, testInfo) => {
-  test.setTimeout(120_000);
-  const unexpectedErrors: string[] = [];
+test("normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot", async ({ page }, testInfo) => {
+  test.setTimeout(300_000);
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
   const webgpuRequests: string[] = [];
-  page.on("pageerror", (error) => unexpectedErrors.push(error.message));
+  const documentNavigations: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
   page.on("request", (request) => {
     if (/three[/_-]webgpu|\/webgpu\//i.test(request.url())) webgpuRequests.push(request.url());
+    if (request.isNavigationRequest() && request.resourceType() === "document") {
+      documentNavigations.push(request.url());
+    }
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
 
   const defaultObserver = await waitForPublicArchitectureRise(page);
-  const defaultCapture = await captureCanvas(defaultObserver, testInfo, "architecture-rise-public-webgl-default.png");
+  await expect(defaultObserver).toHaveAttribute("data-observer-renderer-request", "webgl");
+  await expect(defaultObserver).toHaveAttribute("data-observer-selection-reason", "default-webgl-request");
+  await expect(defaultObserver).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(defaultObserver).toHaveAttribute("data-observer-scene-rendering-requirements", "observer-scene-subject,presentation-lighting,shadow-maps,procedural-world-environment");
+  expect(webgpuRequests).toEqual([]);
+
+  const closePosition = [4.8, 2.7, 4.2] as const;
+  const closeTarget = [0, 1.25, 9.3] as const;
+  await applyVerificationView(page, defaultObserver, closePosition, closeTarget);
+  const defaultView = await readView(defaultObserver);
+  const defaultCapture = await captureCanvas(defaultObserver, testInfo, "architecture-rise-normal-route-webgl-default.png");
+  const defaultDimensions = await analyzeImageRegions(page, defaultCapture, null, {
+    wholeFrame: { left: 0, top: 0, right: 100_000, bottom: 100_000 },
+  });
+  const facadePlacement = architectureRiseGeometry.getArchitectureRisePrimaryFacadePlacement();
+  const facadeWorldBounds: WorldBounds = {
+    min: [
+      toWorld(-900),
+      toWorld(architectureRiseGeometry.facade.mainBodyBottomY + 2_400),
+      toWorld(facadePlacement.nearZ - 5),
+    ],
+    max: [
+      toWorld(900),
+      toWorld(architectureRiseGeometry.facade.mainBodyBottomY + 3_600),
+      toWorld(facadePlacement.farZ + 5),
+    ],
+  };
+  const defaultFacadeRegion = projectBounds(
+    facadeWorldBounds,
+    defaultDimensions.width,
+    defaultDimensions.height,
+    defaultView,
+  );
+  if (!defaultFacadeRegion) throw new Error("The Architecture Rise facade ROI is outside the default Observer image");
+  const defaultFacadePixels = await analyzeImageRegions(page, defaultCapture, null, {
+    facade: defaultFacadeRegion,
+  });
   const defaultEvidence = await defaultObserver.evaluate((element) => ({
     apiPresent: element.getAttribute("data-observer-webgpu-api-present"),
     family: element.getAttribute("data-observer-renderer-family"),
     backend: element.getAttribute("data-observer-execution-backend"),
+    compatibility: element.getAttribute("data-observer-webgpu-scene-compatibility"),
+    eligibility: element.getAttribute("data-observer-webgpu-pilot-eligibility"),
     toneMapping: element.getAttribute("data-observer-tone-mapping"),
     toneMappingExposure: element.getAttribute("data-observer-tone-mapping-exposure"),
     outputColorSpace: element.getAttribute("data-observer-output-color-space"),
@@ -358,40 +421,199 @@ test("public Architecture Rise keeps WebGL and the public WebGPU request denied"
     shadowType: element.getAttribute("data-observer-shadow-map-type"),
     environmentStatus: element.getAttribute("data-observer-environment-status"),
     generation: element.getAttribute("data-observer-renderer-generation"),
-    view: {
-      position: element.getAttribute("data-observer-camera-position"),
-      target: element.getAttribute("data-orbit-target"),
-    },
   }));
-  expect(defaultCapture.length).toBeGreaterThan(0);
+  expect(defaultEvidence.family).toBe("webgl-renderer");
+  expect(defaultEvidence.backend).toBe("webgl2");
   expect(defaultEvidence.toneMapping).toBeTruthy();
   expect(defaultEvidence.outputColorSpace).toBeTruthy();
+  expect(defaultFacadePixels.regions.facade.pixels).toBeGreaterThan(500);
+  expect(defaultFacadePixels.regions.facade.distinctColorBuckets).toBeGreaterThan(24);
+  expect(defaultFacadePixels.regions.facade.luminanceStdDev).toBeGreaterThan(6);
 
-  await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
-  const deniedObserver = page.getByTestId("scene-canvas");
-  await expect(deniedObserver).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
-  await expect(deniedObserver).toHaveAttribute("data-observer-renderer-family", "webgl-renderer", { timeout: 60_000 });
-  await expect(deniedObserver).toHaveAttribute("data-observer-execution-backend", "webgl2");
-  await expect(deniedObserver).toHaveAttribute("data-observer-selection-reason", "scene-compatibility-not-evaluated");
-  await expect(deniedObserver).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "not-eligible");
-  await expect(page.getByTestId("ground-glass-rtt").first()).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-  expect(webgpuRequests).toEqual([]);
-  expect(unexpectedErrors).toEqual([]);
-  await attachJson(testInfo, "architecture-rise-public-webgl-evidence.json", {
-    browserVersion: page.context().browser()?.version() ?? "unknown",
-    threeRevision: REVISION,
-    requestedRenderer: "default-webgl",
-    publicWebGpuRequest: {
-      family: await deniedObserver.getAttribute("data-observer-renderer-family"),
-      backend: await deniedObserver.getAttribute("data-observer-execution-backend"),
-      selectionReason: await deniedObserver.getAttribute("data-observer-selection-reason"),
-      pilotEligibility: await deniedObserver.getAttribute("data-observer-webgpu-pilot-eligibility"),
-      lazyWebGpuRequests: webgpuRequests.length,
-    },
-    default: defaultEvidence,
-    groundGlass: await page.getByTestId("ground-glass-rtt").first().getAttribute("data-rtt-final-contentful"),
-    pageErrors: unexpectedErrors,
+  await page.evaluate((nextPath) => {
+    window.history.pushState(window.history.state, "", nextPath);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+  }, "/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
+  const pilotObserver = page.getByTestId("scene-canvas");
+  await expect(pilotObserver).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+  await expect(pilotObserver).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(pilotObserver).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
+  await expect(pilotObserver).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(pilotObserver).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
+  await expect(pilotObserver).toHaveAttribute("data-observer-renderer-family", /^(webgl-renderer|webgpu-renderer)$/);
+  await expect(pilotObserver).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+  await expect(pilotObserver).toHaveAttribute("data-observer-adapter-availability", /^(available|unavailable|api-absent|request-rejected|timed-out)$/ , { timeout: 30_000 });
+  await expect(pilotObserver).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await expect(pilotObserver).toHaveAttribute("data-scene-subject-id", "architecture-rise");
+  const pilotGeneration = await pilotObserver.getAttribute("data-observer-renderer-generation");
+  expect(pilotGeneration).not.toBe(defaultEvidence.generation);
+  expect(webgpuRequests.length).toBeGreaterThan(0);
+  const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+
+  if (pilotObserver) await applyVerificationView(page, pilotObserver, closePosition, closeTarget);
+  const pilotView = await readView(pilotObserver);
+  expect(vectorsMatch(pilotView.position, defaultView.position)).toBe(true);
+  expect(vectorsMatch(pilotView.target, defaultView.target)).toBe(true);
+  const pilotCapture = await captureCanvas(pilotObserver, testInfo, "architecture-rise-normal-route-webgpu-pilot.png");
+  const pilotDimensions = await analyzeImageRegions(page, pilotCapture, null, {
+    wholeFrame: { left: 0, top: 0, right: 100_000, bottom: 100_000 },
   });
+  const pilotFacadeRegion = projectBounds(
+    facadeWorldBounds,
+    pilotDimensions.width,
+    pilotDimensions.height,
+    pilotView,
+  );
+  if (!pilotFacadeRegion) throw new Error("The Architecture Rise facade ROI is outside the pilot Observer image");
+  const pilotFacadePixels = await analyzeImageRegions(page, pilotCapture, null, {
+    facade: pilotFacadeRegion,
+  });
+  const matchedFacadeComparison = await analyzeImageRegions(page, defaultCapture, pilotCapture, {
+    facade: defaultFacadeRegion,
+  });
+  expect(pilotFacadePixels.regions.facade.pixels).toBeGreaterThan(500);
+  expect(pilotFacadePixels.regions.facade.distinctColorBuckets).toBeGreaterThan(24);
+  expect(pilotFacadePixels.regions.facade.luminanceStdDev).toBeGreaterThan(6);
+  expect(matchedFacadeComparison.regions.facade.changedPixels).toBeGreaterThan(100);
+
+  const mounted = await attachMountedObserverEvidence(testInfo, pilotObserver);
+  const family = mounted["data-observer-renderer-family"];
+  const backend = mounted["data-observer-execution-backend"];
+  const fallback = mounted["data-observer-application-fallback"];
+  const failureStage = mounted["data-observer-renderer-failure-stage"] ?? null;
+  if (nativeWebGpuRequired) {
+    expect(mounted["data-observer-webgpu-api-present"]).toBe("true");
+    expect(mounted["data-observer-adapter-availability"]).toBe("available");
+    expect(family).toBe("webgpu-renderer");
+    expect(backend).toBe("webgpu");
+    expect(fallback).toBe("none");
+    expect(failureStage).toBeNull();
+  } else if (family === "webgpu-renderer") {
+    expect(backend).toMatch(/^(webgpu|webgl2-fallback)$/);
+    expect(fallback).toBe("none");
+    expect(failureStage).toBeNull();
+  } else {
+    expect(family).toBe("webgl-renderer");
+    expect(backend).toBe("webgl2");
+    expect(fallback).toBe("app-webgl");
+    expect(failureStage).toBe("initialization");
+  }
+
+  const generationBeforeControls = await pilotObserver.getAttribute("data-observer-renderer-generation");
+  const groundGlassBeforeControls = await captureCanvas(
+    groundGlass,
+    testInfo,
+    "architecture-rise-normal-route-ground-glass-before-controls.png",
+  );
+  const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
+  await focus.focus();
+  await focus.press("End");
+  await expect(focus).toHaveValue("13000");
+  const aperture = page.getByRole("radiogroup", { name: "Aperture", exact: true });
+  await aperture.getByRole("radio", { name: "f/5.6" }).check();
+  await setStepRangeInput(page, "Rise", 22);
+  await setStepRangeInput(page, "Tilt", 0.4);
+  await setStepRangeInput(page, "Swing", -1.1);
+  await expect(page.getByRole("slider", { name: "Rise", exact: true })).toHaveValue("22");
+  await expect(page.getByRole("slider", { name: "Tilt", exact: true })).toHaveValue("0.4");
+  await expect(page.getByRole("slider", { name: "Swing", exact: true })).toHaveValue("-1.1");
+  const groundGlassAfterControls = await captureCanvas(
+    groundGlass,
+    testInfo,
+    "architecture-rise-normal-route-ground-glass-after-controls.png",
+  );
+  const groundGlassDimensions = await analyzeImageRegions(page, groundGlassBeforeControls, null, {
+    wholeFrame: { left: 0, top: 0, right: 100_000, bottom: 100_000 },
+  });
+  const groundGlassControlResponse = await analyzeImageRegions(
+    page,
+    groundGlassBeforeControls,
+    groundGlassAfterControls,
+    {
+      wholeFrame: {
+        left: 0,
+        top: 0,
+        right: groundGlassDimensions.width,
+        bottom: groundGlassDimensions.height,
+      },
+    },
+  );
+  expect(groundGlassControlResponse.regions.wholeFrame.changedPixels).toBeGreaterThan(100);
+
+  await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
+  const cameraBaseline = await readView(pilotObserver);
+  await page.getByRole("button", { name: "Camera", exact: true }).click();
+  await expect(pilotObserver).toHaveAttribute("data-view-focus", "camera");
+  await page.getByRole("button", { name: "Scene", exact: true }).click();
+  await expect(pilotObserver).toHaveAttribute("data-view-focus", "scene");
+  const canvasBounds = await pilotObserver.locator("canvas").boundingBox();
+  if (!canvasBounds) throw new Error("Architecture Rise Observer canvas is not visible for orbit input");
+  await page.mouse.move(canvasBounds.x + canvasBounds.width / 2, canvasBounds.y + canvasBounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(canvasBounds.x + canvasBounds.width / 2 + 55, canvasBounds.y + canvasBounds.height / 2 + 18, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => {
+    const current = await readView(pilotObserver);
+    return !vectorsMatch(current.position, cameraBaseline.position) || !vectorsMatch(current.target, cameraBaseline.target);
+  }).toBe(true);
+  await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
+  await expect.poll(async () => {
+    const current = await readView(pilotObserver);
+    return vectorsMatch(current.position, cameraBaseline.position) && vectorsMatch(current.target, cameraBaseline.target);
+  }).toBe(true);
+  await expect(pilotObserver).toHaveAttribute("data-observer-renderer-generation", generationBeforeControls ?? "");
+  await expect(pilotObserver).toHaveAttribute("data-observer-environment-status", "active");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  const finalCapture = await captureCanvas(pilotObserver, testInfo, "architecture-rise-normal-route-interactive-final.png");
+  await attachJson(testInfo, "architecture-rise-normal-route-pilot-runtime-evidence.json", {
+    browser: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${release()}`,
+    threeRevision: REVISION,
+    webgpuApiPresent: mounted["data-observer-webgpu-api-present"],
+    adapterAvailability: mounted["data-observer-adapter-availability"],
+    requestedRenderer: mounted["data-observer-renderer-request"],
+    selectionReason: mounted["data-observer-selection-reason"],
+    compatibility: mounted["data-observer-webgpu-scene-compatibility"],
+    verifiedRequirements: mounted["data-observer-scene-rendering-requirements"],
+    mountedRendererFamily: family,
+    executionBackend: backend,
+    applicationFallback: fallback,
+    initializationFailure: failureStage,
+    initializationAttempts: mounted["data-observer-webgpu-initialization-attempts"],
+    hardwareAcceleration: mounted["data-observer-hardware-acceleration"],
+    sceneSubjectId: await pilotObserver.getAttribute("data-scene-subject-id"),
+    observerEnvironment: await pilotObserver.getAttribute("data-observer-environment-status"),
+    subjectFramebufferEvidence: {
+      method: "canonical-primary-facade projected ROI from normal Observer framebuffer",
+      region: pilotFacadeRegion,
+      pixels: pilotFacadePixels.regions.facade,
+      webglToPilotDifference: matchedFacadeComparison.regions.facade,
+    },
+    interactions: {
+      focusDistanceMm: await focus.inputValue(),
+      aperture: await aperture.getAttribute("data-selected-aperture"),
+      riseMm: await page.getByRole("slider", { name: "Rise", exact: true }).inputValue(),
+      tiltDeg: await page.getByRole("slider", { name: "Tilt", exact: true }).inputValue(),
+      swingDeg: await page.getByRole("slider", { name: "Swing", exact: true }).inputValue(),
+      sceneCameraFocus: await pilotObserver.getAttribute("data-view-focus"),
+      reset3DView: true,
+      orbit: true,
+      generationStable: generationBeforeControls === await pilotObserver.getAttribute("data-observer-renderer-generation"),
+    },
+    groundGlassContentful: await groundGlass.getAttribute("data-rtt-final-contentful"),
+    groundGlassControlResponse: groundGlassControlResponse.regions.wholeFrame,
+    screenshots: ["architecture-rise-normal-route-webgl-default.png", "architecture-rise-normal-route-webgpu-pilot.png", "architecture-rise-normal-route-interactive-final.png"],
+    moduleRequests: webgpuRequests,
+    documentNavigations,
+    pageErrors,
+    consoleErrors,
+  });
+  expect(finalCapture.length).toBeGreaterThan(0);
+  expect(documentNavigations).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
 });
 
 test("full Architecture Rise scene has measurable subject, material, environment, lighting, interaction and lifecycle evidence", async ({ page, browser }, testInfo) => {
@@ -466,8 +688,8 @@ test("full Architecture Rise scene has measurable subject, material, environment
     roughness: 0.24,
     metalness: 0.08,
   });
-  expect(await observer.getAttribute("data-observer-webgpu-scene-compatibility")).toBe("not-evaluated");
-  expect(await observer.getAttribute("data-observer-webgpu-pilot-eligibility")).toBe("not-eligible");
+  expect(await observer.getAttribute("data-observer-webgpu-scene-compatibility")).toBe("verified");
+  expect(await observer.getAttribute("data-observer-webgpu-pilot-eligibility")).toBe("eligible");
 
   const rendererFamily = await observer.getAttribute("data-observer-renderer-family");
   const executionBackend = await observer.getAttribute("data-observer-execution-backend");

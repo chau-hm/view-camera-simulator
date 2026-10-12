@@ -1248,3 +1248,81 @@ glazing negative controls passed on the actual native WebGPU backend as well
 as the ordinary fallback baseline. This remains evidence for the isolated
 Architecture Rise fixture only; public Architecture Rise eligibility and the
 production WebGL default are unchanged.
+
+## PR E — Controlled Architecture Rise development WebGPU rollout
+
+PR #251's full-scene native verification is now represented by the distinct
+compatibility evidence identifier `pr-251-native-architecture-rise-e2e`.
+Architecture Rise declares all four verified requirements:
+`observer-scene-subject`, `presentation-lighting`, `shadow-maps`, and
+`procedural-world-environment`. Its development pilot eligibility is an
+independent, explicit registry decision. View Camera Anatomy retains its own
+`pr-248-native-observer-e2e` evidence and eligibility; unevaluated scenes
+remain denied.
+
+In development, the ordinary Architecture Rise route continues to select
+WebGL. The explicit request
+`/simulator/free/architecture-rise?observerRenderer=webgpu` is approved for the
+existing WebGPU Observer pipeline. In production builds, the development gate
+denies the same query and keeps the mounted renderer on WebGL. Eligibility is
+not an automatic renderer selection and is not evidence about the backend
+that actually mounted.
+
+The normal-route E2E reads capabilities from the mounted Observer and checks
+the registered Architecture Rise facade through a canonical-geometry-projected
+region of the real framebuffer. In the native run that 11,550-pixel region had
+153 distinct color buckets and luminance standard deviation 38.43. Compared
+with the same route's WebGL image, 11,059 pixels changed at a 12-level RGB
+threshold (mean absolute RGB delta 23.51/255). This subject-specific pixel
+evidence supplements registry identity and the separate PR #251 fixture's
+material, lighting, glazing, and shadow negative controls.
+
+| Environment | API / adapter | Mounted family / execution | Fallback / attempts | Observer and Ground Glass |
+| --- | --- | --- | --- | --- |
+| Headed Chrome 155.0.8059.39, macOS Darwin 27.0.0 arm64, Three.js r186 | Present / available | `webgpu-renderer / webgpu` | None / one | Projected facade ROI verified; focus, aperture, rise, tilt, swing, Scene/Camera focus, orbit, and reset passed; environment active; Ground Glass contentful and changed in 206,299 of 211,768 pixels after optical controls; no page or console errors |
+| Playwright Chromium 149.0.7827.55, macOS Darwin 27.0.0 arm64, Three.js r186 | Present / unavailable | `webgpu-renderer / webgl2-fallback` | None / one | Anatomy subject-visibility differential, interactions, and Ground Glass checks passed; this is not native WebGPU evidence |
+| Production preview, Playwright Chromium 149.0.7827.55, Three.js r186 | Adapter not requested | `webgl-renderer / webgl2` for both default and explicit WebGPU query | None / zero | No WebGPU module request or development-only test hooks; Observer and Ground Glass screenshots were contentful on both requests (449/205 color buckets respectively) |
+
+The native run reported hardware acceleration as **unconfirmed**. It proves
+execution through the WebGPU API, not whether the adapter is hardware or
+software backed. Native support on other browser, OS, and driver combinations
+and a zero-GPU-leak guarantee remain unverified. Other scenes remain
+unevaluated, production remains WebGL-only, Ground Glass remains its existing
+independent WebGL RTT, and pixel parity between backends is not claimed.
+
+To roll back only Architecture Rise pilot access, change its registry entry
+from `developmentWebGpuPilot: "eligible"` to
+`developmentWebGpuPilot: "not-eligible"`. Keep the native evidence and
+verified requirements intact. This denies new explicit development requests
+while preserving Anatomy eligibility, normal WebGL, production isolation, and
+Ground Glass behavior.
+
+### PR E validation and full-E2E boundary
+
+Focused backend selection tests passed (29 tests). Repository validation
+passed `npm run check:css`, `npm run lint`, `npm run typecheck`, `npm test`
+(243 files / 2,267 tests), and `npm run build`. The full Chromium Observer
+pilot E2E passed 6/6 tests, including default WebGL, internal WebGL2 fallback,
+one-shot application fallback, Table Tilt denial, and the SPA request/scene
+transitions. The Architecture Rise environment regression passed. The normal
+Architecture Rise route passed in ordinary Chromium with the expected
+`webgpu-renderer / webgl2-fallback`, and in native-required Chrome with
+`webgpu-renderer / webgpu`. The preserved PR #251 full-scene fixture also
+passed in native-required Chrome. The production-preview smoke passed with
+pixel-analyzed Observer and Ground Glass captures for both default and
+explicit-WebGPU-query routes.
+
+`npm run ci:local:e2e` passed its CSS, lint, typecheck, unit/integration, and
+build stages, then stopped at its first E2E file,
+`architecture-foreground-compound.spec.ts`. The failing assertion expected
+the `Complete the Photograph` heading at
+`/simulator/guided/architecture-foreground/architecture-foreground-compound-01?rttDiagnostics=1`;
+the heading was absent. This matches the same failure signature and earlier
+pre-PR-D base reproduction documented above. PR E changes no guided task or
+Architecture + Foreground route. The full local E2E sequence remains
+incomplete after that first test; the rollout E2Es were run separately.
+
+**PR E decision: NATIVE WEBGPU VERIFIED — GO for the explicit development-only
+Architecture Rise pilot.** Hardware acceleration remains unconfirmed, and
+this result does not enable production WebGPU, additional scenes, or Ground
+Glass migration.
