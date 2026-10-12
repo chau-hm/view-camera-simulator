@@ -1339,31 +1339,67 @@ renderer-recovery sequences. The suite runs with
 production-preview E2E discovery. Method details and interpretation are in
 [`docs/benchmarks/OBSERVER_BACKEND_COMPARISON.md`](benchmarks/OBSERVER_BACKEND_COMPARISON.md).
 
-The completed run used headed Chrome 155.0.8059.39 on macOS Darwin 27.0.0
-arm64, Three.js r186. The WebGPU API and adapter were available. All six
-WebGPU scene-trials mounted `webgpu-renderer / webgpu` after exactly one
-initialization attempt and without application fallback; all paired WebGL
-trials mounted `webgl-renderer / webgl2`. Both scenes recovered through
-WebGL2 → native WebGPU → WebGL2 → native WebGPU transitions. Architecture
-Rise environment readiness passed. Ground Glass retained its existing
-WebGL2 context, contentful output, and Raw/Upright visual response.
+### PR F review-fix round 1 — measurement boundaries and evidence
 
-The run measured route-to-active-renderer wall time, browser rAF cadence, and
-pixel differences from actual Observer canvas captures. It did not measure
-GPU execution time, input-to-present latency, or VRAM. rAF median was 16.7 ms
-in each backend's samples and the p95 range was 17.8–18.3 ms. Median
-route-to-active-renderer time was 899 ms WebGL2 / 1,471 ms WebGPU for Anatomy
-and 996 ms / 1,563 ms for Architecture Rise. These are route-to-mounted
-renderer wall times, not GPU timings, and do not establish a sustained render
-performance ranking. Anatomy camera-model and registered target-board ROIs
-had MAE 15.42 and 14.06/255; Architecture Rise facade ROIs had MAE
-22.76/255 in the default view and 21.83/255 in the close view. Captures show
-visible tone/background and facade/glazing differences that need human
-teaching-use review. Chrome reported Metal and no software renderer was
-identified, but hardware-backed execution remains **unconfirmed**. The final
-report and captures are ignored local artifacts at
-`test-results/observer-backend-comparison/2026-10-12T15-52-26.407Z-a454fdf4ab3e/`
-for commit `a454fdf4ab3ea9ffd0f2437330f1c1f51532ee6c`.
+The review identified four benchmark-evidence defects: renderer/capture timing
+boundaries were not isolated; a fixed-duration cadence window could include
+idle frames or miss a short workload; the Ground Glass restore check used an
+overly permissive fixed threshold; and some earlier sample/trial labels did
+not match the measured behavior. The benchmark now reports context/page setup,
+navigation-to-DOMContentLoaded, navigation-to-mounted-active-renderer,
+adapter-diagnostic completion, and navigation-to-verified-subject-capture as
+separate monotonic wall-time intervals. Adapter readiness is observed
+asynchronously and does not delay renderer or capture timing. The screenshot
+milestone is recorded only after actual canvas pixels in the geometry-derived
+subject region are meaningful; it is not labeled as a first contentful frame.
+
+Cadence now comes from four real OrbitControls pointer gestures. Only rAF
+intervals with both endpoints inside the same pointerdown/up gesture count as
+active. Inter-gesture cadence is separate, pre/post idle intervals are
+excluded, and every gesture must change camera pose. Ground Glass captures
+three same-mode baselines at a one-level channel threshold and accepts
+restoration only within the worst repeated-capture variation in pixel fraction,
+RGB MAE, and signed luminance; the previous fixed tolerance was removed.
+
+The corrected canonical run used headed Chromium 155.0.8059.39 on macOS Darwin
+27.0.0 arm64 with Three.js r186, viewport 1440 × 1000, DPR 1. Its measurement
+commit is `91d621b7815b69a142d4543401330ea9f1641c6a`, and its complete report is
+in the ignored local artifact directory
+`test-results/observer-backend-comparison/2026-10-12T17-08-31.178Z-91d621b7815b/`
+(generated `2026-10-12T17:09:22.541Z`). The WebGPU API and adapter were
+available. All six WebGPU trials mounted `webgpu-renderer / webgpu` with one
+initialization attempt and no application fallback; all six WebGL trials
+mounted `webgl-renderer / webgl2`. All 12 trials were valid, with no page or
+console errors. Both scenes recovered through WebGL2 → native WebGPU → WebGL2
+→ native WebGPU with advancing generations. Architecture Rise environment
+readiness remained active. Ground Glass remained WebGL2-backed and contentful,
+responded to Raw/Upright mode changes, and restored to the exact initial pixels
+in this run.
+
+| Scene | Backend | Navigation to active renderer, median | Navigation to verified subject capture, median | Active-gesture rAF cadence |
+| --- | --- | ---: | ---: | --- |
+| View Camera Anatomy | WebGL2 | 749 ms | 916 ms | 36 samples/trial; median 16.7 ms; p95 16.8–18.4 ms |
+| View Camera Anatomy | Native WebGPU | 1,367 ms | 1,532 ms | 36 samples/trial; median 16.7 ms; p95 17.7–18.2 ms |
+| Architecture Rise | WebGL2 | 859 ms | 1,024 ms | 36 samples/trial; median 16.7 ms; p95 17.8–18.6 ms |
+| Architecture Rise | Native WebGPU | 1,417 ms | 1,601 ms | 36 samples/trial; median 16.7 ms; p95 16.8–17.9 ms |
+
+These wall times include browser/server scheduling, module loading, renderer
+initialization, and scene realization; they are not GPU timings. WebGPU
+route-to-active and verified-capture times were higher in these three paired
+trials per scene, but this does not establish a sustained rendering-performance
+ranking. Active cadence had no intervals over 50 ms. Whole-canvas/subject ROI
+MAE was 22.10/15.42 for Anatomy camera inspection and 21.34/14.06 for its
+registered target-board view. Architecture Rise facade ROI MAE was 22.76 in
+the default view and 21.83 in the close view. The images show tone/background
+and facade/glazing differences that need human teaching-use review.
+
+The largest observed same-mode Ground Glass baseline variation was 0.1559%
+changed pixels and 0.00112 RGB MAE for Anatomy; Architecture Rise repeat
+captures were identical. Restored captures were pixel-identical in all trials.
+Chrome DevTools Protocol reported Metal and no software renderer, but does not
+identify the adapter actually selected by WebGPU, so hardware acceleration
+remains **unconfirmed**. The previous PR F report is superseded for timing,
+cadence, and restoration evidence by the run above.
 
 **PR F decision: native WebGPU functional rendering verified for both tested
 development pilots; visual equivalence and performance remain inconclusive;
