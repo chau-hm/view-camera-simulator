@@ -132,3 +132,15 @@ does not establish a practical performance advantage or decision-grade visual
 parity. It does not authorize production WebGPU, additional scene eligibility,
 or a Ground Glass migration. Results cover one macOS/Chrome combination and do
 not establish behavior on other drivers, GPUs, operating systems, or browsers.
+
+## PR G visual-parity follow-up
+
+PR G added a separate matched-pose Architecture Rise visual diagnostic without
+changing the performance benchmark's renderer or timing behavior. On headed
+Chrome 155 / Three.js r186, native WebGPU background samples were
+`[225,225,226]` versus WebGL `[248,250,252]`; same-backend overlay deltas also
+showed color-response differences over the façade and background. The
+renderer-path diagnosis and the NO-GO parity decision are recorded separately
+in `docs/VISUAL_PIPELINE_READINESS.md` under **PR G — Observer Background and
+Transparent Overlay Parity**. PR F's historical performance and timing results
+remain unchanged.

@@ -1406,3 +1406,133 @@ development pilots; visual equivalence and performance remain inconclusive;
 hardware acceleration is unconfirmed.** Continue the development-only pilots
 (direction A). This benchmark does not authorize production rollout, further
 scene eligibility, or Ground Glass migration.
+
+## PR G — Observer Background and Transparent Overlay Parity
+
+PR G adds a dedicated, opt-in matched-pose visual capture for the existing
+Architecture Rise WebGL and native WebGPU pilots. It records the actual mounted
+renderer, public canvas configuration, two clear background regions, real
+Observer canvas screenshots for overlay-off/focus-only/DOF-only/combined states,
+and same-backend overlay-on minus overlay-off response. It does not change
+renderer, scene, lighting, material, geometry, or optics behavior. Generated
+JSON and PNG evidence stays under the ignored
+`test-results/observer-backend-comparison/playwright/` directory.
+
+The six earlier human screenshots identified a visible gray WebGPU background
+and weaker/different transparent plane colors. Their camera poses were not
+known to match, so the plane-position variation in those screenshots is not
+treated as geometry evidence. The new capture uses the existing deterministic
+Architecture Rise view event and verifies the mounted camera position
+`[4.8, 2.7, 4.2]`, target `[0, 1.25, 9.3]`, 45-degree FOV, near/far `0.01/200`,
+1440 × 1000 browser viewport, DPR 1, and identical canonical controls. It
+captures the actual canvas after hiding overlapping HTML controls for the
+screenshot and restores those controls immediately afterward.
+
+### Matched native baseline
+
+The baseline was run on headed Google Chrome 155.0.8059.40 on macOS Darwin
+27.0.0 arm64, Node 24.19.0, Three.js r186. `navigator.gpu` was present and the
+adapter probe was available. The actual mounted WebGL route reported
+`webgl-renderer / webgl2`, no fallback, and zero WebGPU module requests. The
+explicit WebGPU route reported `webgpu-renderer / webgpu`, one initialization
+attempt, no application fallback, and one lazy WebGPU module request. Hardware
+acceleration remains unconfirmed.
+
+The WebGL context reported alpha, premultiplied alpha, and antialias enabled.
+The actual WebGPU canvas configuration was `bgra8unorm`, sRGB, premultiplied
+alpha, and tone-mapping mode `standard`. Both mounted renderers reported ACES
+filmic, exposure 1, and sRGB output. The Observer screenshots have matching
+canvas dimensions (514 × 410.39 CSS pixels; 1028 × 820 backing pixels).
+
+| Evidence | WebGL2 | Native WebGPU |
+| --- | --- | --- |
+| No-overlay subject ROI | 160 distinct color buckets; façade response baseline | Same projected façade, 164 buckets; cross-backend façade ROI MAE 2.09 |
+| Clear top-left background, 3,692 pixels | `[248, 250, 252]`, no variation | `[225, 225, 226]`, no variation |
+| Clear top-right background, 3,692 pixels | `[248, 250, 252]`, no variation | `[225, 225, 226]`, no variation |
+| Ground Glass | Contentful; WebGL 2 RTT | Contentful; same independent WebGL 2 RTT |
+| Page/console errors | None | None |
+
+Each clear background region differs by 24.67 mean absolute RGB levels from
+the authored `#f8fafc` / WebGL result. The overlay-only comparison subtracts
+each backend's own overlay-off image before comparing response, so it isolates
+transparent overlay contribution from the pre-existing background mismatch.
+The reported mean absolute response difference is over pixels active in either
+backend; mask IoU measures spatial agreement, not color agreement.
+
+| Overlay state | Whole-canvas response difference | Projected façade response difference | Clear background response difference |
+| --- | ---: | ---: | --- |
+| Focus Plane only | 31.62 RGB | 14.83 RGB; mask IoU 0.985 | Top-left 52.00 RGB; top-right no changed pixels |
+| Near/Far DOF planes | 13.58 RGB | 14.42 RGB; mask IoU 1.000 | Top-left 12.42; top-right 14.67 RGB |
+| Combined | 28.20 RGB | 20.84 RGB; mask IoU 1.000 | Top-left 54.23; top-right 14.67 RGB |
+
+The same-backend captures prove that focus and DOF geometry contributes
+pixels. The cross-backend masks largely overlap, while the visible color
+response differs. In the screenshots the focus surface remains visible but its
+green contribution and compositing are materially different; near/far DOF
+surfaces remain visible, but their fill and overlap response is also different.
+The source colors and opacities are still the shared authored values: focus
+`#16a34a`/0.42, near DOF `#60a5fa`/0.24, and far DOF `#a78bfa`/0.22. Fill
+materials retain double-sided rendering, depth testing, disabled depth write,
+polygon offset, and `toneMapped={false}`. Outlines retain the same base color,
+opacity `min(1, fill opacity + 0.45)`, disabled depth testing/writing, and
+`toneMapped={false}`. The combined-state capture includes the actual fill and
+outline together; this run does not claim independent per-outline pixel
+isolation.
+
+### Renderer-path diagnosis and decision
+
+The pinned Three.js r186 paths explain the measured background difference.
+WebGL's `WebGLBackground.setClear()` converts a Color clear to the renderer's
+unlit output color space. The common WebGPU `Background.update()` copies the
+scene Color in the working color space. With ACES and sRGB output, the common
+renderer needs an intermediate frame buffer and applies tone mapping/output
+conversion in `_renderOutput()` after scene rendering. That transform therefore
+also sees the WebGPU clear and transparent surfaces after they have been
+composited. The WebGL program path selects tone mapping per material; the
+shared overlay materials explicitly opt out with `toneMapped={false}`. The
+common WebGPU output pass does not provide the same per-material output
+boundary. The canvas's `standard` mode is recorded in evidence, but its standard
+range clamp alone does not explain the sampled in-range gray values.
+
+A temporary `Scene.backgroundNode` derived from the authored Color was tested
+and rejected: it draws through the same transformed scene output and left the
+background samples unchanged. No backend-specific color/opacity compensation
+or runtime renderer change is included. Correcting the remaining mismatch
+requires an output/compositing boundary that preserves the WebGL per-material
+semantics for WebGPU; that is a larger renderer-pipeline change than this
+verification round and needs its own design and review.
+
+| Teaching-use area | Assessment | Evidence |
+| --- | --- | --- |
+| Architecture geometry and façade | **ACCEPTABLE** | Matched pose; no-overlay façade ROI MAE 2.09; subject and overlay masks align |
+| Focus Plane readability | **INVESTIGATE** | Still visible, but façade response differs by 14.83 RGB and clear-background response by 52 RGB |
+| Near/Far DOF readability | **INVESTIGATE** | Both surfaces contribute, but façade and background response differ by about 14 RGB |
+| Transparent overlap and outlines | **INVESTIGATE** | Combined façade response differs by 20.84 RGB; fills/outlines were captured together |
+| Background/material presentation | **INVESTIGATE** | WebGPU clear is consistently 23–27 levels darker per RGB channel in both clear regions |
+
+**PR G decision: NO-GO for claiming Observer background/overlay parity or
+expanding native WebGPU rollout.** The native WebGPU path remains correctly
+qualified and the existing WebGL baseline is unchanged, but actual framebuffer
+evidence confirms an unresolved presentation mismatch. The next work needs a
+bounded output/compositing design that can preserve per-material tone-mapping
+semantics and then repeat this matched capture. Do not infer a geometry/optics
+defect from the color differences. Ground Glass remains the existing
+independent WebGL 2 RTT, no optical state or material authoring changed, and
+production remains WebGL-only. This finding does not revise PR F's historical
+performance measurements.
+
+To reproduce the diagnostic baseline on a native-capable headed Chrome machine:
+
+```bash
+OBSERVER_VISUAL_PARITY_REQUIRED=1 \
+OBSERVER_NATIVE_WEBGPU_REQUIRED=1 \
+OBSERVER_VISUAL_PARITY_BASELINE=1 \
+npx playwright test \
+  --config=playwright.observer-backend-benchmark.config.ts \
+  src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1
+```
+
+The baseline mode records the mismatch without asserting the parity thresholds.
+Omit `OBSERVER_VISUAL_PARITY_BASELINE=1` to run the parity acceptance gates; on
+this uncorrected baseline, the first background-parity assertion is expected
+to fail. A passing capture run is not a parity acceptance result.
