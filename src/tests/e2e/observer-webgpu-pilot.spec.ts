@@ -1506,6 +1506,7 @@ test("material-aware output adapts the Architecture Rise Observer and stays scen
   await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
   await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
   expect(pageErrors).toEqual([]);
+  const returnedAttributes = await readObserverAttributes(observer);
 
   const integrationEvidence = {
     requestedRoute: candidatePath,
@@ -1521,13 +1522,30 @@ test("material-aware output adapts the Architecture Rise Observer and stays scen
     },
     anatomyCandidateSelection: {
       scene: "view-camera-anatomy",
+      requestedRenderer: anatomyPolicyAttributes["data-observer-renderer-request"],
+      rendererFamily: anatomyPolicyAttributes["data-observer-renderer-family"],
+      executionBackend: anatomyPolicyAttributes["data-observer-execution-backend"],
+      applicationFallback: anatomyPolicyAttributes["data-observer-application-fallback"],
+      adapterAvailability: anatomyPolicyAttributes["data-observer-adapter-availability"],
+      initializationAttempts: anatomyPolicyAttributes["data-observer-webgpu-initialization-attempts"],
       outputPolicy: anatomyPolicyAttributes["data-observer-output-policy-selected"],
       reason: anatomyPolicyAttributes["data-observer-output-policy-selection-reason"],
     },
     returnedArchitectureRise: {
-      rendererFamily: returnedFamily,
-      outputPolicy: await observer.getAttribute("data-observer-output-policy-installed"),
-      generation: await observer.getAttribute("data-observer-renderer-generation"),
+      requestedRenderer: returnedAttributes["data-observer-renderer-request"],
+      selectionReason: returnedAttributes["data-observer-selection-reason"],
+      rendererAttempt: returnedAttributes["data-observer-renderer-attempt"],
+      rendererFamily: returnedAttributes["data-observer-renderer-family"],
+      executionBackend: returnedAttributes["data-observer-execution-backend"],
+      applicationFallback: returnedAttributes["data-observer-application-fallback"],
+      failureStage: returnedAttributes["data-observer-renderer-failure-stage"] ?? null,
+      adapterAvailability: returnedAttributes["data-observer-adapter-availability"],
+      initializationAttempts: returnedAttributes["data-observer-webgpu-initialization-attempts"],
+      outputPolicyRequested: returnedAttributes["data-observer-output-policy-requested"],
+      outputPolicySelected: returnedAttributes["data-observer-output-policy-selected"],
+      outputPolicy: returnedAttributes["data-observer-output-policy-installed"],
+      outputPolicyStatus: returnedAttributes["data-observer-output-policy-status"],
+      generation: returnedAttributes["data-observer-renderer-generation"],
       materialInventory: returnedMaterialInventory,
     },
     materialAwareModuleRequests,
