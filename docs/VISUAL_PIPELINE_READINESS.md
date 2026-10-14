@@ -1406,3 +1406,204 @@ development pilots; visual equivalence and performance remain inconclusive;
 hardware acceleration is unconfirmed.** Continue the development-only pilots
 (direction A). This benchmark does not authorize production rollout, further
 scene eligibility, or Ground Glass migration.
+
+## PR G — Observer Background and Transparent Overlay Parity
+
+PR G adds a dedicated, opt-in matched-pose visual capture for the existing
+Architecture Rise WebGL and native WebGPU pilots. It records the actual mounted
+renderer, public canvas configuration, two clear background regions, real
+Observer canvas screenshots for overlay-off/focus-only/DOF-only/combined states,
+and same-backend overlay-on minus overlay-off response. It does not change
+renderer, scene, lighting, material, geometry, or optics behavior. Generated
+JSON and PNG evidence stays under the ignored
+`test-results/observer-backend-comparison/playwright/` directory.
+
+The six earlier human screenshots identified a visible gray WebGPU background
+and weaker/different transparent plane colors. Their camera poses were not
+known to match, so the plane-position variation in those screenshots is not
+treated as geometry evidence. The new capture uses the existing deterministic
+Architecture Rise view event and verifies the mounted camera position
+`[4.8, 2.7, 4.2]`, target `[0, 1.25, 9.3]`, 45-degree FOV, near/far `0.01/200`,
+1440 × 1000 browser viewport, DPR 1, and identical canonical controls. It
+captures the actual canvas after hiding overlapping HTML controls for the
+screenshot and restores those controls immediately afterward.
+
+### Matched native baseline
+
+The baseline was run on headed Google Chrome 155.0.8059.40 on macOS Darwin
+27.0.0 arm64, Node 24.19.0, Three.js r186. `navigator.gpu` was present and the
+adapter probe was available. The actual mounted WebGL route reported
+`webgl-renderer / webgl2`, no fallback, and zero WebGPU module requests. The
+explicit WebGPU route reported `webgpu-renderer / webgpu`, one initialization
+attempt, no application fallback, and one lazy WebGPU module request. Hardware
+acceleration remains unconfirmed.
+
+The WebGL context reported alpha, premultiplied alpha, and antialias enabled.
+The actual WebGPU canvas configuration was `bgra8unorm`, sRGB, premultiplied
+alpha, and tone-mapping mode `standard`. Both mounted renderers reported ACES
+filmic, exposure 1, and sRGB output. The Observer screenshots have matching
+canvas dimensions (514 × 410.39 CSS pixels; 1028 × 820 backing pixels).
+
+| Evidence | WebGL2 | Native WebGPU |
+| --- | --- | --- |
+| No-overlay subject ROI | 160 distinct color buckets; façade response baseline | Same projected façade, 164 buckets; cross-backend façade ROI MAE 2.09 |
+| Clear top-left background, 3,692 pixels | `[248, 250, 252]`, no variation | `[225, 225, 226]`, no variation |
+| Clear top-right background, 3,692 pixels | `[248, 250, 252]`, no variation | `[225, 225, 226]`, no variation |
+| Ground Glass | Contentful; WebGL 2 RTT | Contentful; same independent WebGL 2 RTT |
+| Page/console errors | None | None |
+
+Each clear background region differs by 24.67 mean absolute RGB levels from
+the authored `#f8fafc` / WebGL result. The overlay-only comparison subtracts
+each backend's own overlay-off image before comparing response, so it isolates
+transparent overlay contribution from the pre-existing background mismatch.
+The reported mean absolute response difference is over pixels active in either
+backend; mask IoU measures spatial agreement, not color agreement.
+
+| Overlay state | Whole-canvas response difference | Projected façade response difference | Clear background response difference |
+| --- | ---: | ---: | --- |
+| Focus Plane only | 31.62 RGB | 14.83 RGB; mask IoU 0.985 | Top-left 52.00 RGB; top-right no changed pixels |
+| Near/Far DOF planes | 13.58 RGB | 14.42 RGB; mask IoU 1.000 | Top-left 12.42; top-right 14.67 RGB |
+| Combined | 28.20 RGB | 20.84 RGB; mask IoU 1.000 | Top-left 54.23; top-right 14.67 RGB |
+
+The same-backend captures prove that focus and DOF geometry contributes
+pixels. The cross-backend masks largely overlap, while the visible color
+response differs. In the screenshots the focus surface remains visible but its
+green contribution and compositing are materially different; near/far DOF
+surfaces remain visible, but their fill and overlap response is also different.
+The source colors and opacities are still the shared authored values: focus
+`#16a34a`/0.42, near DOF `#60a5fa`/0.24, and far DOF `#a78bfa`/0.22. Fill
+materials retain double-sided rendering, depth testing, disabled depth write,
+polygon offset, and `toneMapped={false}`. Outlines retain the same base color,
+opacity `min(1, fill opacity + 0.45)`, disabled depth testing/writing, and
+`toneMapped={false}`. The combined-state capture includes the actual fill and
+outline together; this run does not claim independent per-outline pixel
+isolation.
+
+### Renderer-path diagnosis and decision
+
+The pinned Three.js r186 paths explain the measured background difference.
+WebGL's `WebGLBackground.setClear()` converts a Color clear to the renderer's
+unlit output color space. The common WebGPU `Background.update()` copies the
+scene Color in the working color space. With ACES and sRGB output, the common
+renderer needs an intermediate frame buffer and applies tone mapping/output
+conversion in `_renderOutput()` after scene rendering. That transform therefore
+also sees the WebGPU clear and transparent surfaces after they have been
+composited. The WebGL program path selects tone mapping per material; the
+shared overlay materials explicitly opt out with `toneMapped={false}`. The
+common WebGPU output pass does not provide the same per-material output
+boundary. The canvas's `standard` mode is recorded in evidence, but its standard
+range clamp alone does not explain the sampled in-range gray values.
+
+A temporary `Scene.backgroundNode` derived from the authored Color was tested
+and rejected: it draws through the same transformed scene output and left the
+background samples unchanged. No backend-specific color/opacity compensation
+or runtime renderer change is included. Correcting the remaining mismatch
+requires an output/compositing boundary that preserves the WebGL per-material
+semantics for WebGPU; that is a larger renderer-pipeline change than this
+verification round and needs its own design and review.
+
+| Teaching-use area | Assessment | Evidence |
+| --- | --- | --- |
+| Architecture geometry and façade | **ACCEPTABLE** | Matched pose; no-overlay façade ROI MAE 2.09; subject and overlay masks align |
+| Focus Plane readability | **INVESTIGATE** | Still visible, but façade response differs by 14.83 RGB and clear-background response by 52 RGB |
+| Near/Far DOF readability | **INVESTIGATE** | Both surfaces contribute, but façade and background response differ by about 14 RGB |
+| Transparent overlap and outlines | **INVESTIGATE** | Combined façade response differs by 20.84 RGB; fills/outlines were captured together |
+| Background/material presentation | **INVESTIGATE** | WebGPU clear is consistently 23–27 levels darker per RGB channel in both clear regions |
+
+**PR G decision: NO-GO for claiming Observer background/overlay parity or
+expanding native WebGPU rollout.** The native WebGPU path remains correctly
+qualified and the existing WebGL baseline is unchanged, but actual framebuffer
+evidence confirms an unresolved presentation mismatch. The next work needs a
+bounded output/compositing design that can preserve per-material tone-mapping
+semantics and then repeat this matched capture. Do not infer a geometry/optics
+defect from the color differences. Ground Glass remains the existing
+independent WebGL 2 RTT, no optical state or material authoring changed, and
+production remains WebGL-only. This finding does not revise PR F's historical
+performance measurements.
+
+To reproduce the diagnostic baseline on a native-capable headed Chrome machine:
+
+```bash
+OBSERVER_VISUAL_PARITY_REQUIRED=1 \
+OBSERVER_NATIVE_WEBGPU_REQUIRED=1 \
+OBSERVER_VISUAL_PARITY_BASELINE=1 \
+npx playwright test \
+  --config=playwright.observer-backend-benchmark.config.ts \
+  src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1
+```
+
+The baseline mode records the complete acceptance result without failing on
+parity differences, provided the mounted backends and captures are valid. Omit
+`OBSERVER_VISUAL_PARITY_BASELINE=1` to enforce the strict gate. The strict mode
+attaches the same complete JSON before failing and reports every failed
+criterion together; a passing baseline capture is not a parity acceptance
+result.
+
+### Review-fix round 1 — complete, fail-closed parity evidence
+
+Review found that the strict test stopped at its first background assertion,
+looked only at whole-canvas overlay response, and accidentally compared
+no-overlay images for every state's background region. The report now separates
+three measurements:
+
+1. **Baseline background parity** compares the matched no-overlay WebGL and
+   WebGPU captures in regions that are uniform in both baseline images.
+2. **State-composited parity** compares the actual selected-state WebGL and
+   WebGPU images for no-overlay, focus-only, DOF-only, and combined states.
+   Stable background ROI selection still comes only from the no-overlay
+   captures; pixel differences use each state's own images.
+3. **Overlay contribution response** subtracts each backend's own no-overlay
+   image from its enabled image, then compares the resulting response and
+   changed-pixel masks. This separates overlay response from the pre-existing
+   clear-color mismatch.
+
+The strict JSON records all measured criteria and their values, thresholds,
+pass/fail/not-applicable status, and reason before the test fails. Whole canvas,
+the projected Architecture Rise façade, and every applicable background ROI
+have independent response and mask checks. Required contribution is enforced
+in the whole canvas and façade. For the fixed benchmark view, Focus is expected
+in the top-left background ROI; DOF-only and combined overlays are expected in
+both top corners. The focus top-right ROI has no contribution in either
+backend, so it is reported as not applicable. A missing or invalid measurement
+fails closed; it is not treated as a non-participating region. Required
+WebGL/WebGPU subject, overlay-geometry, restoration, capture-consistency, and
+state-ROI records also fail closed when an entire backend record or field is
+absent.
+
+The thresholds are recorded in the JSON. Clear baseline background MAE is at
+most 4 RGB levels. Composited whole-canvas MAE is at most 16, the façade is at
+most 8, and a clean-reference background ROI is at most 10. These broader
+composited limits allow small integration changes while keeping the façade
+tighter because it carries the teaching geometry. Overlay-response MAE limits
+are 10 for whole canvas, 8 for the façade, and 6 for background ROIs; the
+façade and background limits are tighter because local contrast and
+transparent-plane color are directly relevant to teaching. Changed-pixel mask
+IoU must exceed 0.70. Minimum response counts are also explicit for each
+region, and every required region must be measurably active in both backends.
+
+The native-required capture now waits for the adapter probe to reach
+`available` (or a terminal failure/timeout), then reads the mounted Observer
+attributes again. The report includes the pre-wait and final snapshots and
+rejects any renderer generation, status, family, execution-backend, request,
+fallback, or initialization-attempt change during the wait. The WebGL capture
+does not wait for adapter diagnostics.
+
+On the review-fix run, headed Google Chrome 155.0.8059.40 on macOS Darwin
+27.0.0 arm64 with Three.js r186 again reported an available API and adapter,
+mounted `webgpu-renderer / webgpu`, one initialization attempt, no application
+fallback, and one lazy WebGPU module request. Capture validity passed for both
+backends: the façade contained 74,120 samples with 160 WebGL and 164 WebGPU
+color buckets; Ground Glass remained contentful and WebGL 2-backed; both runs
+had no page or console errors. Hardware acceleration remains unconfirmed.
+Baseline-only mode passed as a capture while recording strict parity as FAIL.
+Strict mode attached an 81-criterion report and failed 26 criteria, including
+the 24.67 RGB clear-background MAE, the façade response differences, and the
+overlay-response differences listed above. Its failure is the expected
+**NO-GO for parity**, not a native WebGPU initialization or capture failure.
+
+The corresponding unit suite exercises whole-canvas pass with façade fail,
+multiple simultaneous failures, missing façade evidence, required versus
+non-participating background regions, actual selected-state image comparison,
+adapter pending-to-available ordering, terminal adapter outcomes, timeout,
+and renderer fallback/generation changes. No renderer, material, Ground Glass,
+or optical behavior changed in this review fix.
