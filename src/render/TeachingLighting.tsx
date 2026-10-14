@@ -35,7 +35,9 @@ const isLitMaterial = (material: THREE.Material): boolean =>
   material instanceof THREE.MeshStandardMaterial ||
   material instanceof THREE.MeshPhysicalMaterial ||
   material instanceof THREE.MeshLambertMaterial ||
-  material instanceof THREE.MeshPhongMaterial;
+  material instanceof THREE.MeshPhongMaterial ||
+  (material as THREE.Material & { isMeshStandardNodeMaterial?: boolean })
+    .isMeshStandardNodeMaterial === true;
 
 const hasLitMaterial = (mesh: THREE.Mesh): boolean => {
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];

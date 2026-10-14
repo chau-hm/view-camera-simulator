@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from "three/webgpu";
 import { describe, expect, it, vi } from "vitest";
 import {
   applyPresentationLightingProfile,
@@ -249,5 +250,27 @@ describe("shared presentation lighting", () => {
     expect(camera.receiveShadow).toBe(false);
     expect(filmPlane.castShadow).toBe(false);
     expect(filmPlane.receiveShadow).toBe(false);
+  });
+
+  it("keeps standard NodeMaterials lit while excluding unlit NodeMaterial helpers", () => {
+    const root = new THREE.Group();
+    const nodeLit = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new MeshStandardNodeMaterial());
+    nodeLit.name = "node-lit-subject";
+    const nodeUnlit = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new MeshBasicNodeMaterial());
+    nodeUnlit.name = "node-unlit-guide";
+    root.add(nodeLit, nodeUnlit);
+
+    const summary = configureTeachingShadowParticipation(root);
+
+    expect(nodeLit.castShadow).toBe(true);
+    expect(nodeLit.receiveShadow).toBe(false);
+    expect(nodeUnlit.castShadow).toBe(false);
+    expect(nodeUnlit.receiveShadow).toBe(false);
+    expect(summary).toEqual({ casterCount: 1, receiverCount: 0 });
+
+    nodeLit.material.dispose();
+    nodeUnlit.material.dispose();
+    nodeLit.geometry.dispose();
+    nodeUnlit.geometry.dispose();
   });
 });

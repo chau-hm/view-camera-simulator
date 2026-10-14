@@ -87,6 +87,9 @@ import {
   type ObserverVisualPipelineCapabilities,
 } from "./backend/observerVisualPipelineCapabilities";
 import type { ObserverWebGpuAdapterAvailability } from "./backend/observerWebGpuDiagnostic";
+import type { ObserverOutputPolicySelection } from "./backend/observerOutputPolicy";
+
+type MaterialAwareOutputModule = typeof import("./backend/materialAwareObserverOutput");
 
 type SceneRendererProps = {
   backendSelection: SelectedObserverBackend;
@@ -100,9 +103,12 @@ type SceneRendererProps = {
   webgpuApiPresent: boolean;
   webgpuAdapterAvailability: ObserverWebGpuAdapterAvailability;
   webgpuInitializationAttempts: number;
-  rendererFailureStage: "initialization" | null;
+  rendererFailureStage: "initialization" | "output-policy" | null;
+  rendererFailureReason: string | null;
   onWebGpuInitializationAttempt: () => void;
   onWebGpuInitializationFailure: () => void;
+  onWebGpuOutputPolicyFailure: (reason: string) => void;
+  outputPolicySelection: ObserverOutputPolicySelection;
   onObserverCanvasError: (error: Error, info: ErrorInfo) => void;
   scene: SceneDefinition;
   opticsState: DerivedOpticsState;
@@ -147,8 +153,10 @@ const ObserverRendererCapabilityReporter = ({
 
   useEffect(() => {
     onCapabilitiesChange(mountGeneration, capabilities);
-    return () => onCapabilitiesChange(mountGeneration, null);
-  }, [capabilities, mountGeneration, onCapabilitiesChange]);
+    return () => {
+      onCapabilitiesChange(mountGeneration, null);
+    };
+  }, [capabilities, gl, mountGeneration, onCapabilitiesChange]);
 
   return null;
 };
@@ -1536,8 +1544,11 @@ export const SceneRenderer = ({
   webgpuAdapterAvailability,
   webgpuInitializationAttempts,
   rendererFailureStage,
+  rendererFailureReason,
   onWebGpuInitializationAttempt,
   onWebGpuInitializationFailure,
+  onWebGpuOutputPolicyFailure,
+  outputPolicySelection,
   onObserverCanvasError,
   scene,
   opticsState,
@@ -1559,6 +1570,38 @@ export const SceneRenderer = ({
   architectureRiseVerificationHarness = false,
   onSubjectCapacityChange,
 }: SceneRendererProps) => {
+  const materialAwareOutputRequested =
+    import.meta.env.DEV &&
+    scene.id === "architecture-rise" &&
+    outputPolicySelection.selected === "material-aware" &&
+    backendSelection.rendererAttempt === "webgpu";
+  const [materialAwareOutputModule, setMaterialAwareOutputModule] =
+    useState<MaterialAwareOutputModule | null>(null);
+  const [materialAwareOutputModuleFailure, setMaterialAwareOutputModuleFailure] =
+    useState<string | null>(null);
+  useEffect(() => {
+    if (!materialAwareOutputRequested) return;
+    let active = true;
+    setMaterialAwareOutputModule(null);
+    setMaterialAwareOutputModuleFailure(null);
+    void import("./backend/materialAwareObserverOutput").then(
+      (module) => {
+        if (active) setMaterialAwareOutputModule(module);
+      },
+      (error: unknown) => {
+        if (!active) return;
+        const reason = error instanceof Error ? error.message : String(error);
+        setMaterialAwareOutputModuleFailure(reason);
+        onWebGpuOutputPolicyFailure(`material-aware output module could not load: ${reason}`);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [materialAwareOutputRequested, onWebGpuOutputPolicyFailure, rendererMountGeneration]);
+
+  const canRenderMaterialAwareScene =
+    !materialAwareOutputRequested || Boolean(materialAwareOutputModule && !materialAwareOutputModuleFailure);
   const includeWebGpuRuntimeDiagnostics =
     backendSelection.requestedRenderer === "webgpu-pilot" ||
     (import.meta.env.DEV && backendSelection.requestedRenderer === "webgpu-verification");
@@ -1620,11 +1663,13 @@ export const SceneRenderer = ({
         qualityConfig.antialias,
         onWebGpuInitializationFailure,
         onWebGpuInitializationAttempt,
+        outputPolicySelection.selected,
       ),
     [
       backendSelection,
       onWebGpuInitializationAttempt,
       onWebGpuInitializationFailure,
+      outputPolicySelection.selected,
       qualityConfig.antialias,
     ],
   );
@@ -1799,6 +1844,29 @@ export const SceneRenderer = ({
           : undefined
       }
       data-observer-renderer-failure-stage={rendererFailureStage ?? undefined}
+      data-observer-renderer-failure-reason={
+        import.meta.env.DEV ? rendererFailureReason ?? undefined : undefined
+      }
+      data-observer-output-policy-requested={
+        import.meta.env.DEV ? outputPolicySelection.requested : undefined
+      }
+      data-observer-output-policy-selected={
+        import.meta.env.DEV ? outputPolicySelection.selected : undefined
+      }
+      data-observer-output-policy-selection-reason={
+        import.meta.env.DEV ? outputPolicySelection.reason : undefined
+      }
+      data-observer-output-policy-installed={
+        import.meta.env.DEV && !materialAwareOutputRequested &&
+        mountedObserverCapabilities?.status === "active"
+          ? "standard"
+          : undefined
+      }
+      data-observer-output-policy-failure={
+        import.meta.env.DEV && rendererFailureStage === "output-policy"
+          ? rendererFailureReason ?? "output-policy-installation-failed"
+          : undefined
+      }
       data-observer-environment-status={
         import.meta.env.DEV ? worldEnvironmentStatus : undefined
       }
@@ -2016,10 +2084,17 @@ export const SceneRenderer = ({
           mountGeneration={rendererMountGeneration}
           onCapabilitiesChange={onObserverCapabilitiesChange}
         />
+        {materialAwareOutputRequested && materialAwareOutputModule
+          ? <materialAwareOutputModule.MaterialAwareOutputPolicyController
+              rendererGeneration={rendererMountGeneration}
+              onFailure={onWebGpuOutputPolicyFailure}
+              onCapabilitiesChange={onObserverCapabilitiesChange}
+            />
+          : null}
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} lensCoverageGeometry={renderedLensCoverageGeometry} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
-        <SceneContent
+        {canRenderMaterialAwareScene ? <SceneContent
           scene={{ ...renderScene, assets: activeAssets }}
           cameraMovementPresentation={cameraMovementPresentation}
           opticsState={opticsState}
@@ -2041,7 +2116,7 @@ export const SceneRenderer = ({
           architectureRiseVerificationHarness={
             import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
           }
-        />
+        /> : null}
         <OrbitControls
           ref={controlsRef}
           enablePan={false}

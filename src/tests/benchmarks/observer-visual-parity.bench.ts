@@ -36,6 +36,11 @@ import {
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 const enabled = nativeRequired || process.env.OBSERVER_VISUAL_PARITY_REQUIRED === "1";
 const baselineOnly = process.env.OBSERVER_VISUAL_PARITY_BASELINE === "1";
+const requestedOutputPolicy = process.env.OBSERVER_OUTPUT_POLICY ?? "standard";
+if (!new Set(["standard", "material-aware"]).has(requestedOutputPolicy)) {
+  throw new Error(`Unsupported OBSERVER_OUTPUT_POLICY: ${requestedOutputPolicy}`);
+}
+const materialAwareCandidate = requestedOutputPolicy === "material-aware";
 const viewEvent = "vcs:observer-verification:architecture-rise-view";
 const architectureView = {
   position: [4.8, 2.7, 4.2] as const,
@@ -105,6 +110,7 @@ type BackendCapture = Readonly<{
   browser: Readonly<{ name: string; version: string; userAgent: string }>;
   adapter: Readonly<{ apiPresent: string | null; availability: string | null }>;
   canvasOutput: Readonly<Record<string, string | boolean | null>>;
+  materialInventory: Record<string, unknown> | null;
   canonicalControls: unknown;
   canvas: CapturedState["canvas"];
   camera: Readonly<{ position: VectorTuple; target: VectorTuple; fov: 45; near: 0.01; far: 200 }>;
@@ -121,6 +127,18 @@ type BackendCapture = Readonly<{
 }>;
 
 const observerLocator = (page: Page) => page.getByTestId("scene-canvas");
+
+const parseMaterialInventory = (value: string | undefined): Record<string, unknown> | null => {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+};
 
 const parseVector = (value: string | null): VectorTuple | null => {
   if (!value) return null;
@@ -557,7 +575,9 @@ const captureBackend = async (
   });
 
   try {
-    const query = backend === "webgpu" ? "?observerRenderer=webgpu&rttDiagnostics=1" : "?rttDiagnostics=1";
+    const query = backend === "webgpu"
+      ? `?observerRenderer=webgpu${materialAwareCandidate ? "&observerOutput=material-aware" : ""}&rttDiagnostics=1`
+      : "?rttDiagnostics=1";
     await page.goto(`/simulator/free/architecture-rise${query}`, {
       waitUntil: "domcontentloaded",
       timeout: 120_000,
@@ -584,6 +604,69 @@ const captureBackend = async (
       mountedObserver = await readAttributes(observer);
       qualificationMismatches = observerBackendMismatches(mountedObserver, "webgl");
     }
+    if (backend === "webgpu" && materialAwareCandidate) {
+      let candidateDiagnosticSettled = false;
+      try {
+        await page.waitForFunction(() => {
+          const element = document.querySelector<HTMLElement>('[data-testid="scene-canvas"]');
+          return element?.getAttribute("data-observer-output-policy-status") === "active" ||
+            element?.getAttribute("data-observer-output-policy-status") === "failed" ||
+            element?.getAttribute("data-observer-renderer-family") === "webgl-renderer";
+        }, undefined, { timeout: 30_000 });
+        candidateDiagnosticSettled = true;
+      } catch {
+        // Preserve the failure as structured capture evidence below.
+      }
+      mountedObserver = await readAttributes(observer);
+      qualificationMismatches.push(...observerBackendMismatches(mountedObserver, "native-webgpu"));
+      for (const attribute of [
+        "data-observer-renderer-status",
+        "data-observer-renderer-generation",
+        "data-observer-renderer-request",
+        "data-observer-renderer-family",
+        "data-observer-execution-backend",
+        "data-observer-application-fallback",
+        "data-observer-webgpu-initialization-attempts",
+        "data-observer-renderer-failure-stage",
+      ]) {
+        if (mountedObserver[attribute] !== nativeQualification?.final[attribute]) {
+          qualificationMismatches.push(`mounted native renderer changed before output evidence at ${attribute}`);
+        }
+      }
+      if (!candidateDiagnosticSettled) {
+        qualificationMismatches.push("material-aware output diagnostics did not reach an active, failed, or fallback state");
+      }
+      if (mountedObserver["data-observer-output-policy-selected"] !== "material-aware") {
+        qualificationMismatches.push("the selected output policy was not material-aware");
+      }
+      if (mountedObserver["data-observer-output-policy-installed"] !== "material-aware") {
+        qualificationMismatches.push("the material-aware output policy was not installed");
+      }
+      if (mountedObserver["data-observer-output-policy-status"] !== "active") {
+        qualificationMismatches.push("the material-aware output policy did not become active");
+      }
+      const inventory = parseMaterialInventory(mountedObserver["data-observer-material-inventory"]);
+      if (!inventory) {
+        qualificationMismatches.push("the runtime material inventory was missing or invalid");
+      } else {
+        if (inventory.sceneId !== "architecture-rise") {
+          qualificationMismatches.push("the runtime material inventory was not for Architecture Rise");
+        }
+        if (inventory.unsupportedMaterialInstances !== 0) {
+          qualificationMismatches.push(`the runtime inventory found ${String(inventory.unsupportedMaterialInstances)} unsupported material instances`);
+        }
+        if (Number(inventory.adaptedMaterialInstances) <= 0) {
+          qualificationMismatches.push("the runtime inventory found no adapted material instances");
+        }
+        const families = Array.isArray(inventory.families)
+          ? inventory.families as Array<Record<string, unknown>>
+          : [];
+        if (families.length === 0 || families.some((family) => family.status !== "supported")) {
+          qualificationMismatches.push("one or more runtime material families were unsupported or absent");
+        }
+      }
+    }
+    const materialInventory = parseMaterialInventory(mountedObserver["data-observer-material-inventory"]);
     const canvasOutput = await observer.locator("canvas").evaluate((element, selectedBackend) => {
       const canvas = element as HTMLCanvasElement;
       if (selectedBackend === "webgl") {
@@ -757,6 +840,7 @@ const captureBackend = async (
       browser: browserEvidence,
       adapter,
       canvasOutput,
+      materialInventory,
       canonicalControls,
       canvas,
       camera: {
@@ -870,6 +954,15 @@ const summarizeBackend = (capture: BackendCapture) => {
       outputColorSpace: capture.mountedObserver["data-observer-output-color-space"],
       shadowMapStatus: capture.mountedObserver["data-observer-shadow-map-status"],
       shadowMapType: capture.mountedObserver["data-observer-shadow-map-type"],
+    },
+    outputPolicy: {
+      requested: capture.mountedObserver["data-observer-output-policy-requested"] ?? null,
+      selected: capture.mountedObserver["data-observer-output-policy-selected"] ?? null,
+      selectionReason: capture.mountedObserver["data-observer-output-policy-selection-reason"] ?? null,
+      installed: capture.mountedObserver["data-observer-output-policy-installed"] ?? null,
+      status: capture.mountedObserver["data-observer-output-policy-status"] ?? null,
+      failure: capture.mountedObserver["data-observer-output-policy-failure"] ?? null,
+      materialInventory: capture.materialInventory,
     },
     overlayGeometry: capture.overlayGeometry,
     overlayContract,
@@ -1081,6 +1174,8 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
     const captureValidityChecks = [
       { id: "webgl-mounted-backend", passed: webgl.qualificationMismatches.length === 0, details: webgl.qualificationMismatches },
       { id: "native-webgpu-mounted-backend", passed: webgpu.qualificationMismatches.length === 0, details: webgpu.qualificationMismatches },
+      { id: "webgl-standard-output-policy", passed: webgl.mountedObserver["data-observer-output-policy-selected"] === "standard" && webgl.mountedObserver["data-observer-output-policy-installed"] === "standard", details: { selected: webgl.mountedObserver["data-observer-output-policy-selected"], installed: webgl.mountedObserver["data-observer-output-policy-installed"] } },
+      { id: `webgpu-${materialAwareCandidate ? "material-aware" : "standard"}-output-policy`, passed: webgpu.mountedObserver["data-observer-output-policy-selected"] === (materialAwareCandidate ? "material-aware" : "standard") && webgpu.mountedObserver["data-observer-output-policy-installed"] === (materialAwareCandidate ? "material-aware" : "standard") && (!materialAwareCandidate || webgpu.mountedObserver["data-observer-output-policy-status"] === "active"), details: { selected: webgpu.mountedObserver["data-observer-output-policy-selected"], installed: webgpu.mountedObserver["data-observer-output-policy-installed"], status: webgpu.mountedObserver["data-observer-output-policy-status"] ?? null } },
       { id: "webgl-capture-stability", passed: webgl.captureConsistencyMismatches.length === 0, details: webgl.captureConsistencyMismatches },
       { id: "webgpu-capture-stability", passed: webgpu.captureConsistencyMismatches.length === 0, details: webgpu.captureConsistencyMismatches },
       { id: "matched-canvas-dimensions", passed: JSON.stringify(webgl.canvas) === JSON.stringify(webgpu.canvas), details: { webgl: webgl.canvas, webgpu: webgpu.canvas } },
@@ -1109,7 +1204,14 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
       sceneId: "architecture-rise",
       route: {
         webgl: "/simulator/free/architecture-rise?rttDiagnostics=1",
-        webgpu: "/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1",
+        webgpu: `/simulator/free/architecture-rise?observerRenderer=webgpu${materialAwareCandidate ? "&observerOutput=material-aware" : ""}&rttDiagnostics=1`,
+      },
+      outputPolicyExperiment: {
+        requested: requestedOutputPolicy,
+        selectedForWebGpuRoute: webgpu.mountedObserver["data-observer-output-policy-selected"] ?? null,
+        installedOnWebGpuRoute: webgpu.mountedObserver["data-observer-output-policy-installed"] ?? null,
+        status: webgpu.mountedObserver["data-observer-output-policy-status"] ?? null,
+        materialInventory: webgpu.materialInventory,
       },
       camera: {
         requestedAndObserved: architectureView,

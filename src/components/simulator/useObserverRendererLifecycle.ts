@@ -62,6 +62,8 @@ export const useObserverRendererLifecycle = ({
 
   const activeGenerationRef = useRef<number | null>(null);
   const failedWebGpuGenerationRef = useRef<number | null>(null);
+  const failedOutputPolicyGenerationRef = useRef<number | null>(null);
+  const fallbackRequestedGenerationRef = useRef<number | null>(null);
   useInsertionEffect(() => {
     activeGenerationRef.current = mountGeneration;
     if (failedWebGpuGenerationRef.current !== mountGeneration) {
@@ -73,6 +75,12 @@ export const useObserverRendererLifecycle = ({
       }
       if (failedWebGpuGenerationRef.current === mountGeneration) {
         failedWebGpuGenerationRef.current = null;
+      }
+      if (failedOutputPolicyGenerationRef.current === mountGeneration) {
+        failedOutputPolicyGenerationRef.current = null;
+      }
+      if (fallbackRequestedGenerationRef.current === mountGeneration) {
+        fallbackRequestedGenerationRef.current = null;
       }
     };
   }, [mountGeneration]);
@@ -87,7 +95,8 @@ export const useObserverRendererLifecycle = ({
       : 0;
   const [rendererFailure, setRendererFailure] = useState<{
     requestIdentity: string;
-    stage: "initialization";
+    stage: "initialization" | "output-policy";
+    reason?: string;
   } | null>(null);
   useLayoutEffect(() => {
     setInitializationAttemptsByRequest((current) =>
@@ -134,6 +143,7 @@ export const useObserverRendererLifecycle = ({
 
   const onWebGpuInitializationFailure = useCallback(() => {
     if (activeGenerationRef.current !== mountGeneration) return;
+    if (fallbackRequestedGenerationRef.current === mountGeneration) return;
     failedWebGpuGenerationRef.current = mountGeneration;
     setRendererFailure((current) =>
       activeGenerationRef.current === mountGeneration
@@ -142,8 +152,34 @@ export const useObserverRendererLifecycle = ({
     );
   }, [mountGeneration, requestIdentity]);
 
+  const onWebGpuOutputPolicyFailure = useCallback((reason: string) => {
+    if (activeGenerationRef.current !== mountGeneration) return;
+    if (failedOutputPolicyGenerationRef.current === mountGeneration) return;
+    if (failedWebGpuGenerationRef.current === mountGeneration) return;
+    failedOutputPolicyGenerationRef.current = mountGeneration;
+    fallbackRequestedGenerationRef.current = mountGeneration;
+    setRendererFailure((current) => activeGenerationRef.current === mountGeneration
+      ? { requestIdentity, stage: "output-policy", reason }
+      : current);
+    if (backendSelection.status === "selected" && backendSelection.rendererAttempt === "webgpu") {
+      const nextSelection = resolveObserverRendererInitializationFailure(backendSelection);
+      onApplicationFallback(nextSelection);
+      if (nextSelection.status === "selected") onFallbackRemount();
+      return;
+    }
+    onCanvasFailure();
+  }, [
+    backendSelection,
+    mountGeneration,
+    onApplicationFallback,
+    onCanvasFailure,
+    onFallbackRemount,
+    requestIdentity,
+  ]);
+
   const onObserverCanvasError = useCallback(() => {
     if (activeGenerationRef.current !== mountGeneration) return;
+    if (fallbackRequestedGenerationRef.current === mountGeneration) return;
     const failedDuringWebGpuInitialization =
       failedWebGpuGenerationRef.current === mountGeneration;
     if (failedDuringWebGpuInitialization) {
@@ -171,6 +207,8 @@ export const useObserverRendererLifecycle = ({
     initializationAttempts,
     rendererFailureStage:
       rendererFailure?.requestIdentity === requestIdentity ? rendererFailure.stage : null,
+    rendererFailureReason:
+      rendererFailure?.requestIdentity === requestIdentity ? rendererFailure.reason ?? null : null,
     observerCapabilities:
       reportedCapabilities?.generation === mountGeneration
         ? reportedCapabilities.capabilities
@@ -178,6 +216,7 @@ export const useObserverRendererLifecycle = ({
     onObserverCapabilitiesChange,
     onWebGpuInitializationAttempt,
     onWebGpuInitializationFailure,
+    onWebGpuOutputPolicyFailure,
     onObserverCanvasError,
   } as const;
 };

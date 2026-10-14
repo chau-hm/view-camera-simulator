@@ -13,6 +13,7 @@ import {
   selectObserverBackend,
   type ObserverBackendSelection,
 } from "../../render/backend/observerBackend";
+import { resolveObserverOutputPolicy } from "../../render/backend/observerOutputPolicy";
 import { resolveObserverSceneCompatibility } from "../../render/backend/observerSceneCompatibility";
 import { useObserverRendererLifecycle } from "./useObserverRendererLifecycle";
 import type { UiErrorState } from "../../types/ui";
@@ -126,6 +127,9 @@ export const SceneViewport = ({
   const requestedRendererParam = typeof window === "undefined"
     ? null
     : new URLSearchParams(window.location.search).get("observerRenderer");
+  const requestedOutputParam = typeof window === "undefined"
+    ? null
+    : new URLSearchParams(window.location.search).get("observerOutput");
   const architectureRiseVerificationHarness =
     import.meta.env.DEV &&
     developmentArchitectureRiseWebGpuVerification &&
@@ -150,15 +154,32 @@ export const SceneViewport = ({
   const selectionForRequest = architectureRiseVerificationHarness
     ? selectArchitectureRiseWebGpuVerificationBackend(webglAvailable)
     : requestedBackendSelection;
+  const requestedOutputPolicy = resolveObserverOutputPolicy({
+    sceneId: scene.id,
+    requestedRendererParam,
+    requestedOutputParam,
+    backendSelection: selectionForRequest,
+    developmentBuild: import.meta.env.DEV,
+  });
+  const outputPolicyRequestKey = requestedOutputPolicy.selected === "material-aware"
+    ? "material-aware"
+    : "standard";
   const [rendererSelectionOverride, setRendererSelectionOverride] = useState<{
     requestIdentity: string;
     selection: ObserverBackendSelection;
   } | null>(null);
   const [rendererMountKey, setRendererMountKey] = useState(0);
-  const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}:${architectureRiseVerificationHarness ? "architecture-rise-verification" : "public"}`;
+  const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}:${architectureRiseVerificationHarness ? "architecture-rise-verification" : "public"}:${outputPolicyRequestKey}`;
   const backendSelection = rendererSelectionOverride?.requestIdentity === requestIdentity
     ? rendererSelectionOverride.selection
     : selectionForRequest;
+  const outputPolicySelection = resolveObserverOutputPolicy({
+    sceneId: scene.id,
+    requestedRendererParam,
+    requestedOutputParam,
+    backendSelection,
+    developmentBuild: import.meta.env.DEV,
+  });
   const previousRequestIdentityRef = useRef(requestIdentity);
   useLayoutEffect(() => {
     if (previousRequestIdentityRef.current === requestIdentity) return;
@@ -385,9 +406,12 @@ export const SceneViewport = ({
             webgpuAdapterAvailability={webgpuAdapterAvailability}
             webgpuInitializationAttempts={rendererLifecycle.initializationAttempts}
             rendererFailureStage={rendererLifecycle.rendererFailureStage}
+            rendererFailureReason={rendererLifecycle.rendererFailureReason}
             onWebGpuInitializationAttempt={rendererLifecycle.onWebGpuInitializationAttempt}
             onWebGpuInitializationFailure={rendererLifecycle.onWebGpuInitializationFailure}
+            onWebGpuOutputPolicyFailure={rendererLifecycle.onWebGpuOutputPolicyFailure}
             onObserverCanvasError={rendererLifecycle.onObserverCanvasError}
+            outputPolicySelection={outputPolicySelection}
             scene={scene}
             opticsState={opticsState}
             attempt={attempt}

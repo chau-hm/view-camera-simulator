@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { release } from "node:os";
 import { inflateSync } from "node:zlib";
 import { PerspectiveCamera, REVISION, Vector3 } from "three";
@@ -1282,6 +1284,265 @@ test("an unevaluated scene refuses the WebGPU pilot", async ({ page }, testInfo)
     }, null, 2),
     contentType: "application/json",
   });
+});
+
+test("Architecture Rise restores standard output after a controlled material-aware module failure", async ({ page }, testInfo) => {
+  test.skip(
+    nativeWebGpuRequired,
+    "This fault-injection case verifies output-policy fallback; native-required parity runs without module interception.",
+  );
+  test.setTimeout(180_000);
+  const pageErrors: string[] = [];
+  const materialAwareModuleRequests: string[] = [];
+  const materialAwareModuleRoute = /materialAwareObserverOutput/i;
+  let releaseOutputPolicyFailure!: () => void;
+  const outputPolicyFailureGate = new Promise<void>((resolve) => {
+    releaseOutputPolicyFailure = resolve;
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("request", (request) => {
+    if (materialAwareModuleRoute.test(request.url())) {
+      materialAwareModuleRequests.push(request.url());
+    }
+  });
+  const moduleRequest = page.waitForRequest(materialAwareModuleRoute, { timeout: 90_000 });
+  await page.route(materialAwareModuleRoute, async (route) => {
+    await outputPolicyFailureGate;
+    await route.abort();
+  });
+  await page.goto(
+    "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1",
+    { waitUntil: "domcontentloaded" },
+  );
+
+  const observer = await waitForMountedObserver(page, "architecture-rise");
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-requested", "material-aware");
+  await moduleRequest;
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgpu");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  releaseOutputPolicyFailure();
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "app-webgl");
+  await expect(observer).toHaveAttribute("data-observer-renderer-failure-stage", "output-policy");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selection-reason", "webgpu-not-selected");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+  await expect(observer).toHaveAttribute("data-observer-tone-mapping", "aces-filmic");
+  await expect(observer).toHaveAttribute("data-observer-output-color-space", "srgb");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise");
+
+  const screenshot = await captureObserverCanvasScreenshot(page, observer.locator("canvas"));
+  const screenshotPixels = analyzeCanvasScreenshot(screenshot);
+  expect(screenshotPixels.contentful).toBe(true);
+  const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  expect(materialAwareModuleRequests).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
+
+  await testInfo.attach("architecture-rise-material-aware-fallback.png", {
+    body: screenshot,
+    contentType: "image/png",
+  });
+  await testInfo.attach("architecture-rise-material-aware-fallback.json", {
+    body: JSON.stringify({
+      request: page.url(),
+      outputPolicyRequested: await observer.getAttribute("data-observer-output-policy-requested"),
+      outputPolicySelectedAfterFallback: await observer.getAttribute("data-observer-output-policy-selected"),
+      outputPolicyFailure: await observer.getAttribute("data-observer-output-policy-failure"),
+      rendererFamily: await observer.getAttribute("data-observer-renderer-family"),
+      executionBackend: await observer.getAttribute("data-observer-execution-backend"),
+      applicationFallback: await observer.getAttribute("data-observer-application-fallback"),
+      failureStage: await observer.getAttribute("data-observer-renderer-failure-stage"),
+      initializationAttempts: await observer.getAttribute("data-observer-webgpu-initialization-attempts"),
+      screenshotPixels,
+      groundGlassContentful: await groundGlass.getAttribute("data-rtt-final-contentful"),
+      materialAwareModuleRequests,
+      pageErrors,
+    }, null, 2),
+    contentType: "application/json",
+  });
+});
+
+test("material-aware output adapts the Architecture Rise Observer and stays scene-scoped across navigation", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  const pageErrors: string[] = [];
+  const materialAwareModuleRequests: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("request", (request) => {
+    if (/materialAwareObserverOutput/i.test(request.url())) {
+      materialAwareModuleRequests.push(request.url());
+    }
+  });
+  const candidatePath = "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1";
+  await page.goto(candidatePath);
+
+  const observer = await waitForMountedObserver(page, "architecture-rise");
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-requested", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await page.waitForFunction(() => {
+    const element = document.querySelector<HTMLElement>('[data-testid="scene-canvas"]');
+    const family = element?.getAttribute("data-observer-renderer-family");
+    const fallback = element?.getAttribute("data-observer-application-fallback");
+    return (family === "webgpu-renderer" && element?.getAttribute("data-observer-output-policy-status") === "active") ||
+      (family === "webgl-renderer" && fallback === "app-webgl");
+  }, undefined, { timeout: 90_000 });
+  const firstGeneration = Number(await observer.getAttribute("data-observer-renderer-generation"));
+  const firstFamily = await observer.getAttribute("data-observer-renderer-family");
+  if (nativeWebGpuRequired) {
+    await expect(observer).toHaveAttribute("data-observer-webgpu-api-present", "true");
+    await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available", {
+      timeout: 60_000,
+    });
+    expectNativeWebGpuMount(await readObserverAttributes(observer));
+  }
+  let materialInventory: Record<string, unknown> | null = null;
+  if (firstFamily === "webgpu-renderer") {
+    await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgpu");
+    await expect(observer).toHaveAttribute("data-observer-execution-backend", /^(webgpu|webgl2-fallback)$/);
+    await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "material-aware");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+    const inventoryValue = await observer.getAttribute("data-observer-material-inventory");
+    if (!inventoryValue) throw new Error("The mounted material-aware candidate did not publish a runtime inventory");
+    materialInventory = JSON.parse(inventoryValue) as Record<string, unknown>;
+    expect(materialInventory.sceneId).toBe("architecture-rise");
+    expect(materialInventory.unsupportedMaterialInstances).toBe(0);
+    expect(Number(materialInventory.adaptedMaterialInstances)).toBeGreaterThan(0);
+    expect(Array.isArray(materialInventory.families)).toBe(true);
+    expect((materialInventory.families as Array<Record<string, unknown>>).length).toBeGreaterThan(0);
+    expect((materialInventory.families as Array<Record<string, unknown>>).every((family) => family.status === "supported")).toBe(true);
+    expect((materialInventory.environment as Record<string, unknown>).assigned).toBe(true);
+  } else if (firstFamily === "webgl-renderer") {
+    await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
+    await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+    await expect(observer).toHaveAttribute("data-observer-application-fallback", "app-webgl");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+    await expect(observer).toHaveAttribute("data-observer-renderer-failure-stage", /^(initialization|output-policy)$/);
+  } else {
+    throw new Error(`The material-aware request mounted an unsupported renderer family: ${String(firstFamily)}`);
+  }
+  await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+  const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+  const firstMountAttributes = await readObserverAttributes(observer);
+  const firstScreenshot = await captureObserverCanvasScreenshot(page, observer.locator("canvas"));
+  const firstScreenshotPixels = analyzeCanvasScreenshot(firstScreenshot);
+  expect(firstScreenshotPixels.contentful).toBe(true);
+  const candidateInteractions = await exerciseObserverControls(page, observer);
+  expect(candidateInteractions.cameraFocusSelected).toBe(true);
+  expect(candidateInteractions.orbitInteractionWorked).toBe(true);
+  expect(candidateInteractions.resetRestoredCameraPosition).toBe(true);
+  expect(candidateInteractions.resetRestoredOrbitTarget).toBe(true);
+  expect(await observer.getAttribute("data-observer-renderer-generation")).toBe(String(firstGeneration));
+
+  const requestsBeforeIneligibleScene = materialAwareModuleRequests.length;
+  await navigateWithinSimulator(
+    page,
+    "/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1",
+  );
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-output-policy-requested", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selection-reason", "scene-not-eligible");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+  await expect(observer).not.toHaveAttribute("data-observer-material-inventory");
+  if (nativeWebGpuRequired) {
+    await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available", {
+      timeout: 60_000,
+    });
+    expectNativeWebGpuMount(await readObserverAttributes(observer));
+  }
+  const anatomyPolicyAttributes = await readObserverAttributes(observer);
+  expect(materialAwareModuleRequests).toHaveLength(requestsBeforeIneligibleScene);
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+
+  await navigateWithinSimulator(page, candidatePath);
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+  await page.waitForFunction(() => {
+    const element = document.querySelector<HTMLElement>('[data-testid="scene-canvas"]');
+    const family = element?.getAttribute("data-observer-renderer-family");
+    const fallback = element?.getAttribute("data-observer-application-fallback");
+    return (family === "webgpu-renderer" && element?.getAttribute("data-observer-output-policy-status") === "active") ||
+      (family === "webgl-renderer" && fallback === "app-webgl");
+  }, undefined, { timeout: 90_000 });
+  if (nativeWebGpuRequired) {
+    await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available", {
+      timeout: 60_000,
+    });
+    expectNativeWebGpuMount(await readObserverAttributes(observer));
+  }
+  expect(Number(await observer.getAttribute("data-observer-renderer-generation"))).toBeGreaterThan(firstGeneration);
+  const returnedFamily = await observer.getAttribute("data-observer-renderer-family");
+  let returnedMaterialInventory: Record<string, unknown> | null = null;
+  if (returnedFamily === "webgpu-renderer") {
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+    const returnedInventory = await observer.getAttribute("data-observer-material-inventory");
+    expect(returnedInventory).toBeTruthy();
+    returnedMaterialInventory = JSON.parse(returnedInventory ?? "{}") as Record<string, unknown>;
+    expect(returnedMaterialInventory.unsupportedMaterialInstances).toBe(0);
+  } else {
+    await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+    await expect(observer).toHaveAttribute("data-observer-application-fallback", "app-webgl");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+  }
+  await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+  expect(pageErrors).toEqual([]);
+
+  const integrationEvidence = {
+    requestedRoute: candidatePath,
+    firstMount: {
+      rendererFamily: firstMountAttributes["data-observer-renderer-family"],
+      executionBackend: firstMountAttributes["data-observer-execution-backend"],
+      applicationFallback: firstMountAttributes["data-observer-application-fallback"],
+      failureStage: firstMountAttributes["data-observer-renderer-failure-stage"] ?? null,
+      generation: firstGeneration,
+      materialInventory,
+      screenshotPixels: firstScreenshotPixels,
+      interactions: candidateInteractions,
+    },
+    anatomyCandidateSelection: {
+      scene: "view-camera-anatomy",
+      outputPolicy: anatomyPolicyAttributes["data-observer-output-policy-selected"],
+      reason: anatomyPolicyAttributes["data-observer-output-policy-selection-reason"],
+    },
+    returnedArchitectureRise: {
+      rendererFamily: returnedFamily,
+      outputPolicy: await observer.getAttribute("data-observer-output-policy-installed"),
+      generation: await observer.getAttribute("data-observer-renderer-generation"),
+      materialInventory: returnedMaterialInventory,
+    },
+    materialAwareModuleRequests,
+    groundGlassContentful: await groundGlass.getAttribute("data-rtt-final-contentful"),
+    pageErrors,
+  };
+  const evidenceBody = JSON.stringify(integrationEvidence, null, 2);
+  const evidencePath = testInfo.outputPath("architecture-rise-material-aware-integration.json");
+  await mkdir(dirname(evidencePath), { recursive: true });
+  await writeFile(evidencePath, evidenceBody);
+  await testInfo.attach("architecture-rise-material-aware-integration.json", {
+    body: evidenceBody,
+    contentType: "application/json",
+  });
+  console.info(`Architecture Rise material-aware evidence: ${evidencePath}`);
 });
 
 test("Observer backend state follows eligible and ineligible SPA scene/request transitions", async ({ page }, testInfo) => {
