@@ -1607,3 +1607,26 @@ non-participating background regions, actual selected-state image comparison,
 adapter pending-to-available ordering, terminal adapter outcomes, timeout,
 and renderer fallback/generation changes. No renderer, material, Ground Glass,
 or optical behavior changed in this review fix.
+
+### PR H — Observer output and compositing architecture
+
+PR H inspected the installed Three.js r186 output pipeline and tested a
+test-only, material-aware `NodeMaterial.setupOutput()` candidate. In a headed
+Chrome 155 native-required run on macOS Darwin 27.0.0 arm64, the mounted
+candidate was `webgpu-renderer / webgpu`, with one initialization attempt, no
+application fallback, no initialization failure, and `rendererAlpha=true`.
+The candidate matched the WebGL fixture's light, gray, and dark background
+samples exactly; its lit subject ROI differed by 0.17 RGB MAE, and its
+front/oblique transparent-overlay response differed by at most 0.32 RGB MAE.
+The depth negative control preserved opaque-subject occlusion. Hardware
+acceleration was not independently confirmed.
+
+**Decision: H2 — architecture provisionally viable.** The experiment is a
+synthetic fixture, not the Architecture Rise scene. Real-scene material-family,
+environment, fallback, and transparent-canvas integration remain unverified;
+this does not authorize a wider rollout. The experiment, source analysis,
+integration proposal, report, and native screenshots are in
+[`OBSERVER_WEBGPU_OUTPUT_COMPOSITING.md`](architecture/OBSERVER_WEBGPU_OUTPUT_COMPOSITING.md)
+and its adjacent `observer-output-compositing/` evidence directory. Normal
+Observer rendering, production WebGL behavior, Ground Glass, and canonical
+optics were unchanged.

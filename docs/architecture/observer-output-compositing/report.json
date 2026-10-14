@@ -1,0 +1,854 @@
+{
+  "objective": "r186 isolated WebGPU output/compositing architecture prototype",
+  "generatedAt": "2026-10-14T14:41:57.802Z",
+  "environment": {
+    "browserVersion": "155.0.8059.79",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "platform": "darwin",
+    "release": "27.0.0",
+    "architecture": "arm64",
+    "nodeVersion": "v24.19.0",
+    "threeRevision": "186",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "deviceScaleFactor": 1,
+    "browserWebGpuApiPresent": true,
+    "nativeRequired": true,
+    "hardwareAcceleration": "unconfirmed"
+  },
+  "rendererRuns": [
+    {
+      "variant": "webgl",
+      "rendererFamily": "webgl-renderer",
+      "executionBackend": "webgl2",
+      "browserWebGpuApiPresent": true,
+      "rendererAlpha": "true",
+      "initializationAttempts": 0,
+      "applicationFallback": "none",
+      "initializationFailure": "none",
+      "toneMapping": "4",
+      "outputColorSpace": "srgb",
+      "fixtureError": null
+    },
+    {
+      "variant": "webgpu-standard",
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "browserWebGpuApiPresent": true,
+      "rendererAlpha": "true",
+      "initializationAttempts": 1,
+      "applicationFallback": "none",
+      "initializationFailure": "none",
+      "toneMapping": "4",
+      "outputColorSpace": "srgb",
+      "fixtureError": null
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "browserWebGpuApiPresent": true,
+      "rendererAlpha": "true",
+      "initializationAttempts": 1,
+      "applicationFallback": "none",
+      "initializationFailure": "none",
+      "toneMapping": "0",
+      "outputColorSpace": "srgb-linear",
+      "fixtureError": null
+    }
+  ],
+  "backgroundEvidence": [
+    {
+      "authored": "#f8fafc",
+      "webglRgb": [
+        248,
+        250,
+        252
+      ],
+      "webgpuStandardRgb": [
+        225,
+        225,
+        226
+      ],
+      "materialAwareRgb": [
+        248,
+        250,
+        252
+      ],
+      "standardVsWebgl": {
+        "meanAbsoluteRgbDifference": 24.666666666666668,
+        "changedPixelCount": 10650,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": -24.646999999997632
+      },
+      "materialAwareVsWebgl": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    },
+    {
+      "authored": "#808080",
+      "webglRgb": [
+        128,
+        128,
+        128
+      ],
+      "webgpuStandardRgb": [
+        141,
+        141,
+        141
+      ],
+      "materialAwareRgb": [
+        128,
+        128,
+        128
+      ],
+      "standardVsWebgl": {
+        "meanAbsoluteRgbDifference": 13,
+        "changedPixelCount": 10650,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 13
+      },
+      "materialAwareVsWebgl": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    },
+    {
+      "authored": "#172331",
+      "webglRgb": [
+        23,
+        35,
+        49
+      ],
+      "webgpuStandardRgb": [
+        6,
+        17,
+        30
+      ],
+      "materialAwareRgb": [
+        23,
+        35,
+        49
+      ],
+      "standardVsWebgl": {
+        "meanAbsoluteRgbDifference": 18,
+        "changedPixelCount": 10650,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": -17.859599999998018
+      },
+      "materialAwareVsWebgl": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    }
+  ],
+  "litSubjectEvidence": [
+    {
+      "variant": "webgl",
+      "meanRgb": [
+        169.76865248226952,
+        174.44648226950355,
+        175.54720567375887
+      ],
+      "colorBuckets": 26,
+      "materialVsWebgl": null
+    },
+    {
+      "variant": "webgpu-standard",
+      "meanRgb": [
+        162.67787234042552,
+        166.79660992907802,
+        167.51463829787235
+      ],
+      "colorBuckets": 24,
+      "materialVsWebgl": {
+        "meanAbsoluteRgbDifference": 8.516302600472812,
+        "changedPixelCount": 23701,
+        "changedPixelFraction": 0.33618439716312054,
+        "meanSignedLuminanceDifference": -7.5586399205650885
+      }
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "meanRgb": [
+        169.8604255319149,
+        174.6657730496454,
+        175.72025531914895
+      ],
+      "colorBuckets": 26,
+      "materialVsWebgl": {
+        "meanAbsoluteRgbDifference": 0.16831205673758864,
+        "changedPixelCount": 13,
+        "changedPixelFraction": 0.00018439716312056736,
+        "meanSignedLuminanceDifference": 0.18884190070924428
+      }
+    }
+  ],
+  "overlayParityEvidence": [
+    {
+      "background": "light",
+      "overlay": "focus",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.03314355702710706,
+        "changedPixelCount": 4,
+        "changedPixelFraction": 0.00008075587498990552
+      }
+    },
+    {
+      "background": "light",
+      "overlay": "near",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.038002368838999705,
+        "changedPixelCount": 4,
+        "changedPixelFraction": 0.00008075587498990552
+      }
+    },
+    {
+      "background": "light",
+      "overlay": "far",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.14597297370050338,
+        "changedPixelCount": 4,
+        "changedPixelFraction": 0.00008075587498990552
+      }
+    },
+    {
+      "background": "light",
+      "overlay": "overlap",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.16266925085466635,
+        "changedPixelCount": 22,
+        "changedPixelFraction": 0.0004441573124444803
+      }
+    },
+    {
+      "background": "gray",
+      "overlay": "overlap",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.1583622708552047,
+        "changedPixelCount": 20,
+        "changedPixelFraction": 0.0004037793749495276
+      }
+    },
+    {
+      "background": "dark",
+      "overlay": "focus",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.0285472018089316,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0
+      }
+    },
+    {
+      "background": "dark",
+      "overlay": "near",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.03346658052706668,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0
+      }
+    },
+    {
+      "background": "dark",
+      "overlay": "far",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.14306576220086678,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0
+      }
+    },
+    {
+      "background": "dark",
+      "overlay": "overlap",
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.15631645535546043,
+        "changedPixelCount": 16,
+        "changedPixelFraction": 0.00032302349995962207
+      }
+    }
+  ],
+  "shadowEvidence": [
+    {
+      "variant": "webgl",
+      "shadowRgb": [
+        122.03445658773528,
+        126.48831208257438,
+        129.7748937462052
+      ],
+      "adjacentGroundRgb": [
+        187,
+        190,
+        193
+      ],
+      "absoluteMeanLuminanceContrast": 63.80008639951424,
+      "shadowRegionBuckets": 19
+    },
+    {
+      "variant": "webgpu-standard",
+      "shadowRgb": [
+        122.42273831208257,
+        126.88289313904068,
+        130.39071038251367
+      ],
+      "adjacentGroundRgb": [
+        187,
+        190.2104584092289,
+        194
+      ],
+      "absoluteMeanLuminanceContrast": 63.61359122647235,
+      "shadowRegionBuckets": 19
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "shadowRgb": [
+        122.1183970856102,
+        126.59828476017,
+        130.09646326654524
+      ],
+      "adjacentGroundRgb": [
+        187,
+        190.35033394049788,
+        194
+      ],
+      "absoluteMeanLuminanceContrast": 64.0031297055252,
+      "shadowRegionBuckets": 19
+    }
+  ],
+  "overlayResponseEvidence": [
+    {
+      "variant": "webgl",
+      "background": "light",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 34.03045842418369,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": -6.38979624081342
+      },
+      "isolated": [
+        {
+          "overlay": "focus",
+          "measuredRgb": [
+            94.62567633045305,
+            155.3291407574901,
+            119.28062666558992
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 36.2652090231231,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": -9.466792941933022
+          }
+        },
+        {
+          "overlay": "near",
+          "measuredRgb": [
+            133.41361140272954,
+            154.003916659937,
+            174.35976742308003
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 17.675240248728095,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 1.8084357425505337
+          }
+        },
+        {
+          "overlay": "far",
+          "measuredRgb": [
+            149.38145037551482,
+            148.07225631914721,
+            172.20419122991197
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 15.877331825890334,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 0.8052422312846584
+          }
+        }
+      ]
+    },
+    {
+      "variant": "webgl",
+      "background": "gray",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 30.533096449433362,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 0.5994437010420854
+      },
+      "isolated": []
+    },
+    {
+      "variant": "webgl",
+      "background": "dark",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 33.9156033809793,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 6.1217428208043865
+      },
+      "isolated": [
+        {
+          "overlay": "focus",
+          "measuredRgb": [
+            78.16756844060406,
+            139.6344181539207,
+            104.46896955503513
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 30.414580473229428,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 2.112862650404981
+          }
+        },
+        {
+          "overlay": "near",
+          "measuredRgb": [
+            111.76990632318501,
+            133.24541710409432,
+            154.74148025518858
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 19.498438719750194,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 8.316981405959636
+          }
+        },
+        {
+          "overlay": "far",
+          "measuredRgb": [
+            127.22993216506501,
+            126.80711459258661,
+            152.08067511911491
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 18.380770680233653,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 6.806998812890722
+          }
+        }
+      ]
+    },
+    {
+      "variant": "webgpu-standard",
+      "background": "light",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 27.280290182777463,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 12.465003032384693
+      },
+      "isolated": [
+        {
+          "overlay": "focus",
+          "measuredRgb": [
+            118.8235686021158,
+            167.21097472341114,
+            132.95671485100542
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 23.19366604753829,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 7.440248526206968
+          }
+        },
+        {
+          "overlay": "near",
+          "measuredRgb": [
+            141.86245255592345,
+            162.06109181942986,
+            185.8640474844545
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 21.65614148429298,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 12.475028417994952
+          }
+        },
+        {
+          "overlay": "far",
+          "measuredRgb": [
+            158.91381329241702,
+            154.50904465799886,
+            183.9169022046354
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 22.624915879296886,
+            "changedPixelCount": 41757,
+            "changedPixelFraction": 0.8430307679883712,
+            "meanSignedLuminanceDifference": 10.558339691508577
+          }
+        }
+      ]
+    },
+    {
+      "variant": "webgpu-standard",
+      "background": "gray",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 28.380037147702495,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 16.068853323109312
+      },
+      "isolated": []
+    },
+    {
+      "variant": "webgpu-standard",
+      "background": "dark",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 37.44620312794422,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 26.487896939357796
+      },
+      "isolated": [
+        {
+          "overlay": "focus",
+          "measuredRgb": [
+            92.57809093111524,
+            154.9045263667932,
+            113.0547726722119
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 26.546010659775497,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 18.61978083259034
+          }
+        },
+        {
+          "overlay": "near",
+          "measuredRgb": [
+            118.19805378341275,
+            145.09652345958168,
+            175.97971008640877
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 30.372143260922233,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 21.595081737067
+          }
+        },
+        {
+          "overlay": "far",
+          "measuredRgb": [
+            140.9179318420415,
+            134.96337721069207,
+            173.2555721553743
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 32.29511561549436,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 18.981418856500916
+          }
+        }
+      ]
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "background": "light",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 34.07416081186573,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": -6.595682556729913
+      },
+      "isolated": [
+        {
+          "overlay": "focus",
+          "measuredRgb": [
+            94.74531615925059,
+            155.61386578373578,
+            119.42752160219656
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 36.282026434089744,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": -9.483392566418019
+          }
+        },
+        {
+          "overlay": "near",
+          "measuredRgb": [
+            133.53787450537027,
+            154.2913671969636,
+            174.50767180812403
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 17.64791111470026,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 1.7948411935717687
+          }
+        },
+        {
+          "overlay": "far",
+          "measuredRgb": [
+            149.42184850197853,
+            148.14338205604457,
+            172.31379714124202
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 15.93976284691378,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 0.6163373415164922
+          }
+        }
+      ]
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "background": "gray",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 30.576771918490405,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 0.39507350399768243
+      },
+      "isolated": []
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "background": "dark",
+      "overlapContribution": {
+        "meanAbsoluteRgbDifference": 33.958134808473986,
+        "changedPixelCount": 49532,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 5.916516490349666
+      },
+      "isolated": [
+        {
+          "overlay": "focus",
+          "measuredRgb": [
+            78.2872486473391,
+            139.91734636194784,
+            104.61584430267303
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 30.429345339040083,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 2.096446131790726
+          }
+        },
+        {
+          "overlay": "near",
+          "measuredRgb": [
+            111.89255430832593,
+            133.53145441330858,
+            154.88738593232657
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 19.470651969097418,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 8.303349499313786
+          }
+        },
+        {
+          "overlay": "far",
+          "measuredRgb": [
+            127.27018896874748,
+            126.87712993620286,
+            152.18452717435193
+          ],
+          "contribution": {
+            "meanAbsoluteRgbDifference": 18.442622950819672,
+            "changedPixelCount": 48068,
+            "changedPixelFraction": 0.9704433497536946,
+            "meanSignedLuminanceDifference": 6.618315359770116
+          }
+        }
+      ]
+    }
+  ],
+  "depthOcclusionEvidence": [
+    {
+      "variant": "webgl",
+      "subjectCenterDifference": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "exposedPlaneDifference": {
+        "meanAbsoluteRgbDifference": 14.011689291101057,
+        "changedPixelCount": 315,
+        "changedPixelFraction": 0.17816742081447964,
+        "meanSignedLuminanceDifference": -10.555707692307694
+      }
+    },
+    {
+      "variant": "webgpu-standard",
+      "subjectCenterDifference": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "exposedPlaneDifference": {
+        "meanAbsoluteRgbDifference": 4.631410256410256,
+        "changedPixelCount": 315,
+        "changedPixelFraction": 0.17816742081447964,
+        "meanSignedLuminanceDifference": -3.5201501131221633
+      }
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "subjectCenterDifference": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "exposedPlaneDifference": {
+        "meanAbsoluteRgbDifference": 14.011689291101057,
+        "changedPixelCount": 315,
+        "changedPixelFraction": 0.17816742081447964,
+        "meanSignedLuminanceDifference": -10.555707692307694
+      }
+    }
+  ],
+  "obliqueEvidence": [
+    {
+      "variant": "webgl",
+      "view": "oblique",
+      "visibleContribution": {
+        "meanAbsoluteRgbDifference": 28.040842283776144,
+        "changedPixelCount": 48732,
+        "changedPixelFraction": 0.9838488250020189,
+        "meanSignedLuminanceDifference": 4.83685646450652
+      },
+      "renderedColorBuckets": 148,
+      "materialAwareResponseVsWebgl": null
+    },
+    {
+      "variant": "webgpu-standard",
+      "view": "oblique",
+      "visibleContribution": {
+        "meanAbsoluteRgbDifference": 30.70790600016151,
+        "changedPixelCount": 48726,
+        "changedPixelFraction": 0.9837276911895341,
+        "meanSignedLuminanceDifference": 19.599635653722043
+      },
+      "renderedColorBuckets": 122,
+      "materialAwareResponseVsWebgl": null
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "view": "oblique",
+      "visibleContribution": {
+        "meanAbsoluteRgbDifference": 27.989340224501333,
+        "changedPixelCount": 48726,
+        "changedPixelFraction": 0.9837276911895341,
+        "meanSignedLuminanceDifference": 4.780213728498468
+      },
+      "renderedColorBuckets": 148,
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.29158927561980136,
+        "changedPixelCount": 517,
+        "changedPixelFraction": 0.010437696842445289
+      }
+    },
+    {
+      "variant": "webgl",
+      "view": "back-oblique",
+      "visibleContribution": {
+        "meanAbsoluteRgbDifference": 34.020760989528654,
+        "changedPixelCount": 48448,
+        "changedPixelFraction": 0.9781151578777356,
+        "meanSignedLuminanceDifference": 19.3201741015981
+      },
+      "renderedColorBuckets": 165,
+      "materialAwareResponseVsWebgl": null
+    },
+    {
+      "variant": "webgpu-standard",
+      "view": "back-oblique",
+      "visibleContribution": {
+        "meanAbsoluteRgbDifference": 45.77802901827775,
+        "changedPixelCount": 48451,
+        "changedPixelFraction": 0.9781757247839781,
+        "meanSignedLuminanceDifference": 37.34752085924745
+      },
+      "renderedColorBuckets": 143,
+      "materialAwareResponseVsWebgl": null
+    },
+    {
+      "variant": "webgpu-material-aware",
+      "view": "back-oblique",
+      "visibleContribution": {
+        "meanAbsoluteRgbDifference": 34.142338959325954,
+        "changedPixelCount": 48451,
+        "changedPixelFraction": 0.9781757247839781,
+        "meanSignedLuminanceDifference": 19.214559068885436
+      },
+      "renderedColorBuckets": 166,
+      "materialAwareResponseVsWebgl": {
+        "meanAbsoluteRgbResponseDifference": 0.31813776952273276,
+        "changedPixelCount": 556,
+        "changedPixelFraction": 0.011225066623596867
+      }
+    }
+  ],
+  "repeatedCaptureConsistency": {
+    "meanAbsoluteRgbDifference": 0,
+    "changedPixelCount": 0,
+    "changedPixelFraction": 0,
+    "meanSignedLuminanceDifference": 0
+  },
+  "fixtureErrors": [],
+  "testInterpretation": "The material-aware path is an isolated TSL/NodeMaterial prototype. It does not change SceneRenderer or establish Architecture Rise parity.",
+  "overlayAuthoring": [
+    {
+      "role": "focus",
+      "color": "#16a34a",
+      "opacity": 0.42
+    },
+    {
+      "role": "near",
+      "color": "#60a5fa",
+      "opacity": 0.24
+    },
+    {
+      "role": "far",
+      "color": "#a78bfa",
+      "opacity": 0.22
+    }
+  ],
+  "overlayPipeline": {
+    "transparent": true,
+    "blending": "NormalBlending",
+    "premultipliedAlpha": false,
+    "side": "DoubleSide",
+    "depthTest": true,
+    "depthWrite": false,
+    "outlineDepthTest": false,
+    "outlineDepthWrite": false,
+    "objectCreationOrder": [
+      "far",
+      "near",
+      "focus"
+    ]
+  }
+}
