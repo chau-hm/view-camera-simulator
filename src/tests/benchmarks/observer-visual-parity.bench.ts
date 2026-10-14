@@ -19,8 +19,19 @@ import {
   subjectRoiHasMeaningfulPixels,
   summarizePixelRegion,
   type DecodedPng,
+  type ImageDifferenceSummary,
   type PixelRegion,
 } from "./observerBackendBenchmark";
+import {
+  evaluateVisualParityAcceptance,
+  compareBaselineAndCompositedRegion,
+  readNativeObserverAfterAdapterProbe,
+  waitForNativeAdapterAvailability,
+  type BackgroundReferenceEvidence,
+  type CompositedStateEvidence,
+  type OverlayResponseMetric,
+  type OverlayResponseState,
+} from "./observerVisualParityDiagnostics";
 
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 const enabled = nativeRequired || process.env.OBSERVER_VISUAL_PARITY_REQUIRED === "1";
@@ -85,7 +96,10 @@ type CapturedState = Readonly<{
 type BackendCapture = Readonly<{
   backend: Backend;
   mountedObserver: Record<string, string | undefined>;
+  qualificationMismatches: string[];
+  nativeQualification: Awaited<ReturnType<typeof readNativeObserverAfterAdapterProbe>> | null;
   requestedModuleUrls: string[];
+  captureConsistencyMismatches: string[];
   pageErrors: string[];
   consoleErrors: string[];
   browser: Readonly<{ name: string; version: string; userAgent: string }>;
@@ -95,6 +109,13 @@ type BackendCapture = Readonly<{
   canvas: CapturedState["canvas"];
   camera: Readonly<{ position: VectorTuple; target: VectorTuple; fov: 45; near: 0.01; far: 200 }>;
   overlayGeometry: Readonly<{ focusVertices: number; nearDofVertices: number; farDofVertices: number }>;
+  subjectEvidence: Readonly<{
+    region: PixelRegion | null;
+    sampleCount: number | null;
+    distinctColorBuckets: number | null;
+    luminanceStandardDeviation: number | null;
+    meaningful: boolean;
+  }>;
   groundGlass: Readonly<{ contentful: boolean; renderer: string | null; canvasCount: number }>;
   captures: Partial<Record<StateName | "restored-no-overlays", CapturedState>>;
 }>;
@@ -309,7 +330,7 @@ const compareOverlayResponses = (
   webgpuOn: DecodedPng,
   region: PixelRegion = { left: 0, top: 0, right: webglOff.width, bottom: webglOff.height },
   channelThreshold = 4,
-) => {
+): OverlayResponseMetric => {
   if (
     webglOff.width !== webglOn.width ||
     webglOff.height !== webglOn.height ||
@@ -321,6 +342,8 @@ const compareOverlayResponses = (
 
   let unionPixels = 0;
   let bothPixels = 0;
+  let webglActivePixels = 0;
+  let webgpuActivePixels = 0;
   let responseDifferenceTotal = 0;
   const webglDelta = [0, 0, 0];
   const webgpuDelta = [0, 0, 0];
@@ -339,6 +362,8 @@ const compareOverlayResponses = (
       );
       const activeGl = Math.max(...deltaGl.map(Math.abs)) >= channelThreshold;
       const activeGpu = Math.max(...deltaGpu.map(Math.abs)) >= channelThreshold;
+      if (activeGl) webglActivePixels += 1;
+      if (activeGpu) webgpuActivePixels += 1;
       if (!activeGl && !activeGpu) continue;
       unionPixels += 1;
       if (activeGl && activeGpu) bothPixels += 1;
@@ -355,6 +380,8 @@ const compareOverlayResponses = (
     region: { left, top, right, bottom },
     activePixelUnion: unionPixels,
     activePixelIntersection: bothPixels,
+    webglActivePixels,
+    webgpuActivePixels,
     intersectionOverUnion: unionPixels > 0 ? bothPixels / unionPixels : 0,
     meanWebglResponseRgb: unionPixels > 0
       ? webglDelta.map((value) => value / unionPixels) as unknown as Rgb
@@ -366,6 +393,29 @@ const compareOverlayResponses = (
       ? responseDifferenceTotal / (unionPixels * 3)
       : 0,
   };
+};
+
+const compareOverlayResponsesSafely = (
+  webglOff: DecodedPng,
+  webglOn: DecodedPng,
+  webgpuOff: DecodedPng,
+  webgpuOn: DecodedPng,
+  region: PixelRegion,
+): OverlayResponseMetric => {
+  try {
+    return compareOverlayResponses(webglOff, webglOn, webgpuOff, webgpuOn, region);
+  } catch (error) {
+    return {
+      region,
+      activePixelUnion: 0,
+      activePixelIntersection: 0,
+      webglActivePixels: 0,
+      webgpuActivePixels: 0,
+      intersectionOverUnion: 0,
+      meanAbsoluteResponseDifference: 0,
+      measurementError: error instanceof Error ? error.message : String(error),
+    };
+  }
 };
 
 const ensureOverlayGroupOpen = async (page: Page): Promise<void> => {
@@ -517,7 +567,23 @@ const captureBackend = async (
     await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 120_000 });
     await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise");
     await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
-    const mountedObserver = await readAttributes(observer);
+    let mountedObserver: Record<string, string | undefined>;
+    let nativeQualification: Awaited<ReturnType<typeof readNativeObserverAfterAdapterProbe>> | null = null;
+    let qualificationMismatches: string[];
+    if (backend === "webgpu") {
+      nativeQualification = await readNativeObserverAfterAdapterProbe(
+        () => readAttributes(observer),
+        () => waitForNativeAdapterAvailability(
+          () => observer.getAttribute("data-observer-adapter-availability"),
+          { timeoutMs: 30_000, pollIntervalMs: 100 },
+        ),
+      );
+      mountedObserver = { ...nativeQualification.final };
+      qualificationMismatches = [...nativeQualification.mismatches];
+    } else {
+      mountedObserver = await readAttributes(observer);
+      qualificationMismatches = observerBackendMismatches(mountedObserver, "webgl");
+    }
     const canvasOutput = await observer.locator("canvas").evaluate((element, selectedBackend) => {
       const canvas = element as HTMLCanvasElement;
       if (selectedBackend === "webgl") {
@@ -552,18 +618,11 @@ const captureBackend = async (
         preserveDrawingBuffer: null,
       };
     }, backend);
-    const mismatches = observerBackendMismatches(mountedObserver, backend === "webgpu" ? "native-webgpu" : "webgl");
-    expect(mismatches, `${backend} mounted renderer qualification`).toEqual([]);
-    if (backend === "webgl") {
-      expect(requestedModuleUrls, "the default WebGL route must not request the lazy WebGPU module").toEqual([]);
-    } else {
-      expect(requestedModuleUrls, "the explicit WebGPU route must request the lazy WebGPU module").not.toEqual([]);
-      await expect(observer).toHaveAttribute("data-observer-webgpu-api-present", "true");
-      await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available", { timeout: 30_000 });
-      expect(mountedObserver["data-observer-renderer-family"]).toBe("webgpu-renderer");
-      expect(mountedObserver["data-observer-execution-backend"]).toBe("webgpu");
-      expect(mountedObserver["data-observer-application-fallback"]).toBe("none");
-      expect(mountedObserver["data-observer-webgpu-initialization-attempts"]).toBe("1");
+    if (backend === "webgpu" && requestedModuleUrls.length === 0) {
+      qualificationMismatches.push("the explicit WebGPU route did not request the lazy WebGPU module");
+    }
+    if (backend === "webgl" && requestedModuleUrls.length > 0) {
+      qualificationMismatches.push("the default WebGL route requested the lazy WebGPU module");
     }
 
     const groundGlass = page.getByTestId("ground-glass-rtt").first();
@@ -579,9 +638,6 @@ const captureBackend = async (
         canvasCount: element.querySelectorAll("canvas").length,
       };
     });
-    expect(groundGlassEvidence.contentful).toBe(true);
-    expect(groundGlassEvidence.renderer).toContain("WebGL 2");
-    expect(groundGlassEvidence.canvasCount).toBe(1);
 
     await observer.evaluate((element, payload) => {
       element.dispatchEvent(new CustomEvent(payload.event, { detail: payload.view }));
@@ -589,13 +645,6 @@ const captureBackend = async (
       event: viewEvent,
       view: { position: [...architectureView.position], target: [...architectureView.target] },
     });
-    await expect.poll(async () => vectorsMatch(
-      parseVector(await observer.getAttribute("data-observer-camera-position")),
-      architectureView.position,
-    ) && vectorsMatch(
-      parseVector(await observer.getAttribute("data-orbit-target")),
-      architectureView.target,
-    )).toBe(true);
     await waitForFrames(page);
 
     const canonicalControls = await readCanonicalControls(page);
@@ -609,18 +658,31 @@ const captureBackend = async (
         dpr: window.devicePixelRatio,
       };
     });
-    expect(canvas.dpr).toBe(1);
-    expect(canvas.backingWidth).toBeGreaterThan(100);
-    expect(canvas.backingHeight).toBeGreaterThan(100);
+    const captureConsistencyMismatches: string[] = [];
     const initialAttributes = await readAttributes(observer);
+    for (const attribute of [
+      "data-observer-renderer-status",
+      "data-observer-renderer-generation",
+      "data-observer-renderer-request",
+      "data-observer-renderer-attempt",
+      "data-observer-renderer-family",
+      "data-observer-execution-backend",
+      "data-observer-application-fallback",
+      "data-observer-webgpu-initialization-attempts",
+      "data-observer-renderer-failure-stage",
+    ]) {
+      if (initialAttributes[attribute] !== mountedObserver[attribute]) {
+        captureConsistencyMismatches.push(`mounted renderer changed after qualification at ${attribute}`);
+      }
+    }
+    if (canvas.dpr !== 1) captureConsistencyMismatches.push("device pixel ratio was not one");
+    if (canvas.backingWidth <= 100) captureConsistencyMismatches.push("Observer canvas backing width was too small");
+    if (canvas.backingHeight <= 100) captureConsistencyMismatches.push("Observer canvas backing height was too small");
     const overlayGeometry = {
       focusVertices: Number(initialAttributes["data-focus-overlay-vertices"] ?? 0),
       nearDofVertices: Number(initialAttributes["data-near-dof-overlay-vertices"] ?? 0),
       farDofVertices: Number(initialAttributes["data-far-dof-overlay-vertices"] ?? 0),
     };
-    expect(overlayGeometry.focusVertices).toBeGreaterThan(0);
-    expect(overlayGeometry.nearDofVertices).toBeGreaterThan(0);
-    expect(overlayGeometry.farDofVertices).toBeGreaterThan(0);
 
     const captures: Partial<Record<StateName | "restored-no-overlays", CapturedState>> = {};
     for (const state of stateDefinitions) {
@@ -640,15 +702,30 @@ const captureBackend = async (
     if (!camera) throw new Error("The no-overlay capture is missing");
     for (const [name, capture] of Object.entries(captures)) {
       if (!capture) continue;
-      expect(vectorsMatch(capture.cameraPosition, architectureView.position), `${backend}/${name} camera position`).toBe(true);
-      expect(vectorsMatch(capture.orbitTarget, architectureView.target), `${backend}/${name} orbit target`).toBe(true);
-      expect(capture.canvas).toEqual(canvas);
-      expect(capture.attributes["data-observer-renderer-generation"])
-        .toBe(initialAttributes["data-observer-renderer-generation"]);
-      expect(capture.attributes["data-observer-renderer-family"])
-        .toBe(initialAttributes["data-observer-renderer-family"]);
-      expect(capture.attributes["data-observer-execution-backend"])
-        .toBe(initialAttributes["data-observer-execution-backend"]);
+      if (!vectorsMatch(capture.cameraPosition, architectureView.position)) {
+        captureConsistencyMismatches.push(`${backend}/${name} camera position did not match the requested view`);
+      }
+      if (!vectorsMatch(capture.orbitTarget, architectureView.target)) {
+        captureConsistencyMismatches.push(`${backend}/${name} orbit target did not match the requested view`);
+      }
+      if (JSON.stringify(capture.canvas) !== JSON.stringify(canvas)) {
+        captureConsistencyMismatches.push(`${backend}/${name} canvas dimensions changed during the capture series`);
+      }
+      for (const attribute of [
+        "data-observer-renderer-status",
+        "data-observer-renderer-generation",
+        "data-observer-renderer-request",
+        "data-observer-renderer-attempt",
+        "data-observer-renderer-family",
+        "data-observer-execution-backend",
+        "data-observer-application-fallback",
+        "data-observer-webgpu-initialization-attempts",
+        "data-observer-renderer-failure-stage",
+      ]) {
+        if (capture.attributes[attribute] !== initialAttributes[attribute]) {
+          captureConsistencyMismatches.push(`${backend}/${name} mounted renderer changed at ${attribute}`);
+        }
+      }
     }
 
     const facadeRegion = projectArchitectureFacade(
@@ -657,9 +734,7 @@ const captureBackend = async (
       camera.cameraPosition,
       camera.orbitTarget,
     );
-    if (!facadeRegion) throw new Error("Could not derive a projected Architecture Rise façade ROI");
-    const subjectEvidence = summarizePixelRegion(camera.image, facadeRegion);
-    expect(subjectRoiHasMeaningfulPixels(subjectEvidence), `${backend} Architecture Rise façade pixels`).toBe(true);
+    const subjectEvidence = facadeRegion ? summarizePixelRegion(camera.image, facadeRegion) : null;
 
     const browserEvidence = {
       name: backend === "webgl" ? "Google Chrome (stable channel)" : "Google Chrome (stable channel)",
@@ -670,14 +745,13 @@ const captureBackend = async (
       apiPresent: mountedObserver["data-observer-webgpu-api-present"] ?? null,
       availability: mountedObserver["data-observer-adapter-availability"] ?? null,
     };
-    const finalErrors = { pageErrors: [...pageErrors], consoleErrors: [...consoleErrors] };
-    expect(finalErrors.pageErrors, `${backend} page errors`).toEqual([]);
-    expect(finalErrors.consoleErrors, `${backend} console errors`).toEqual([]);
-
     return {
       backend,
       mountedObserver,
+      qualificationMismatches,
+      nativeQualification,
       requestedModuleUrls,
+      captureConsistencyMismatches,
       pageErrors,
       consoleErrors,
       browser: browserEvidence,
@@ -693,6 +767,13 @@ const captureBackend = async (
         far: 200,
       },
       overlayGeometry,
+      subjectEvidence: {
+        region: facadeRegion,
+        sampleCount: subjectEvidence?.sampleCount ?? null,
+        distinctColorBuckets: subjectEvidence?.distinctColorBuckets ?? null,
+        luminanceStandardDeviation: subjectEvidence?.luminanceStandardDeviation ?? null,
+        meaningful: subjectRoiHasMeaningfulPixels(subjectEvidence),
+      },
       groundGlass: groundGlassEvidence,
       captures,
     };
@@ -714,7 +795,13 @@ const imageDifference = (
   first: DecodedPng,
   second: DecodedPng,
   region: PixelRegion,
-) => comparePixelRegions(first, second, region, 4);
+): ImageDifferenceSummary | null => {
+  try {
+    return comparePixelRegions(first, second, region, 4);
+  } catch {
+    return null;
+  }
+};
 
 const fullCanvasRegion = (image: DecodedPng): PixelRegion => ({
   left: 0,
@@ -753,7 +840,6 @@ const summarizeBackend = (capture: BackendCapture) => {
     noOverlay.cameraPosition,
     noOverlay.orbitTarget,
   );
-  if (!facadeRegion) throw new Error("Could not derive the Architecture Rise façade ROI for reporting");
   const regions = getBackgroundRegions(noOverlay.image.width, noOverlay.image.height);
   const background = backgroundStats(noOverlay.image);
   const uniformBackgroundRegions = Object.entries(background)
@@ -794,7 +880,8 @@ const summarizeBackend = (capture: BackendCapture) => {
       uniformRegions: uniformBackgroundRegions,
       comparedRegions: Object.fromEntries(uniformBackgroundRegions.map((name) => [name, regions[name]])),
       subjectRoi: facadeRegion,
-      subjectPixels: summarizePixelRegion(noOverlay.image, facadeRegion),
+      subjectPixels: facadeRegion ? summarizePixelRegion(noOverlay.image, facadeRegion) : null,
+      subjectEvidence: capture.subjectEvidence,
     },
     overlayContribution: overlay,
     restoredNoOverlayImage: restoration,
@@ -838,30 +925,59 @@ const compareOverlayStateAcrossBackends = (
     webglState.cameraPosition,
     webglState.orbitTarget,
   );
-  if (!subjectRegion) throw new Error("Could not derive subject ROI for cross-backend comparison");
   const backgroundRegions = getBackgroundRegions(webglState.image.width, webglState.image.height);
-  const webglBackground = backgroundStats(requiredCapture(webgl, "no-overlays").image);
-  const webgpuBackground = backgroundStats(requiredCapture(webgpu, "no-overlays").image);
-  const commonBackgroundRegions = Object.keys(backgroundRegions).filter((name) =>
-    backgroundRegionIsUniform(webglBackground[name]!) &&
-    backgroundRegionIsUniform(webgpuBackground[name]!),
-  );
+  const webglBaselineImage = requiredCapture(webgl, "no-overlays").image;
+  const webgpuBaselineImage = requiredCapture(webgpu, "no-overlays").image;
+  const webglBackground = backgroundStats(webglBaselineImage);
+  const webgpuBackground = backgroundStats(webgpuBaselineImage);
+  const baselineCleanBackgroundReferenceRegions = Object.fromEntries(Object.entries(backgroundRegions).map(([name, region]) => {
+    const webglSummary = webglBackground[name];
+    const webgpuSummary = webgpuBackground[name];
+    const eligible = Boolean(
+      webglSummary && webgpuSummary &&
+      backgroundRegionIsUniform(webglSummary) && backgroundRegionIsUniform(webgpuSummary),
+    );
+    const comparison = eligible
+      ? compareBaselineAndCompositedRegion(
+        webglBaselineImage,
+        webgpuBaselineImage,
+        webglBaselineImage,
+        webgpuBaselineImage,
+        region,
+      )
+      : null;
+    return [name, {
+      eligible,
+      reason: eligible ? undefined : "region is not stable and uniform in both no-overlay baseline captures",
+      pixelCount: eligible ? Math.min(webglSummary?.pixelCount ?? 0, webgpuSummary?.pixelCount ?? 0) : null,
+      webgl: webglSummary ?? null,
+      webgpu: webgpuSummary ?? null,
+      difference: comparison?.baselineDifference ?? null,
+    }];
+  }));
+  const stateCompositedBackgroundRegions = Object.fromEntries(Object.entries(backgroundRegions).map(([name, region]) => {
+    const baselineReference = baselineCleanBackgroundReferenceRegions[name];
+    const comparison = baselineReference?.eligible
+      ? compareBaselineAndCompositedRegion(
+        webglBaselineImage,
+        webgpuBaselineImage,
+        webglState.image,
+        webgpuState.image,
+        region,
+      )
+      : null;
+    return [name, {
+      eligible: baselineReference?.eligible ?? false,
+      reason: baselineReference?.reason,
+      difference: comparison?.compositedDifference ?? null,
+    }];
+  }));
   return {
     stateName,
     wholeCanvas: imageDifference(webglState.image, webgpuState.image, full),
-    subjectRoi: imageDifference(webglState.image, webgpuState.image, subjectRegion),
-    commonBackgroundRegions: Object.fromEntries(commonBackgroundRegions.map((name) => [
-      name,
-      {
-        webgl: webglBackground[name],
-        webgpu: webgpuBackground[name],
-        difference: imageDifference(
-          requiredCapture(webgl, "no-overlays").image,
-          requiredCapture(webgpu, "no-overlays").image,
-          backgroundRegions[name]!,
-        ),
-      },
-    ])),
+    subjectRoi: subjectRegion ? imageDifference(webglState.image, webgpuState.image, subjectRegion) : null,
+    baselineCleanBackgroundReferenceRegions,
+    stateCompositedBackgroundRegions,
   };
 };
 
@@ -874,12 +990,11 @@ const compareOverlayResponse = (webgl: BackendCapture, webgpu: BackendCapture) =
     requiredCapture(webgl, "no-overlays").cameraPosition,
     requiredCapture(webgl, "no-overlays").orbitTarget,
   );
-  if (!subjectRoi) throw new Error("Could not derive the façade ROI for overlay response comparison");
   const backgroundRegions = getBackgroundRegions(webglOff.width, webglOff.height);
   const compare = (stateName: StateName) => {
     const webglOn = requiredCapture(webgl, stateName).image;
     const webgpuOn = requiredCapture(webgpu, stateName).image;
-    const compareIn = (region: PixelRegion) => compareOverlayResponses(
+    const compareIn = (region: PixelRegion) => compareOverlayResponsesSafely(
       webglOff,
       webglOn,
       webgpuOff,
@@ -887,8 +1002,8 @@ const compareOverlayResponse = (webgl: BackendCapture, webgpu: BackendCapture) =
       region,
     );
     return {
-      ...compareIn(fullCanvasRegion(webglOff)),
-      subjectRoi: compareIn(subjectRoi),
+      wholeCanvas: compareIn(fullCanvasRegion(webglOff)),
+      subjectRoi: subjectRoi ? compareIn(subjectRoi) : null,
       backgroundRegions: Object.fromEntries(Object.entries(backgroundRegions).map(([name, region]) => [
         name,
         compareIn(region),
@@ -912,25 +1027,80 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
     const webgl = await captureBackend(browser, "webgl", testInfo);
     const webgpu = await captureBackend(browser, "webgpu", testInfo);
 
-    const webglNoOverlay = requiredCapture(webgl, "no-overlays");
-    const webgpuNoOverlay = requiredCapture(webgpu, "no-overlays");
-    expect(webgl.canvas).toEqual(webgpu.canvas);
-    expect(webgl.camera).toEqual(webgpu.camera);
-    expect(JSON.stringify(webgl.canonicalControls)).toBe(JSON.stringify(webgpu.canonicalControls));
-
     const webglSummary = summarizeBackend(webgl);
     const webgpuSummary = summarizeBackend(webgpu);
-    expect(webglSummary.background.uniformRegions.length, "WebGL needs multiple stable background sample regions").toBeGreaterThanOrEqual(2);
-    expect(webgpuSummary.background.uniformRegions.length, "WebGPU needs multiple stable background sample regions").toBeGreaterThanOrEqual(2);
 
     const overlayResponse = compareOverlayResponse(webgl, webgpu);
     const crossBackendByState = Object.fromEntries(stateDefinitions.map((state) => [
       state.name,
       compareOverlayStateAcrossBackends(webgl, webgpu, state.focusPlane, state.dofPlanes),
     ]));
+    const baselineState = crossBackendByState["no-overlays"];
+    const baselineBackgroundRegions: Record<string, BackgroundReferenceEvidence> = Object.fromEntries(
+      Object.entries(baselineState?.baselineCleanBackgroundReferenceRegions ?? {}).map(([name, evidence]) => [name, {
+        eligible: evidence.eligible,
+        reason: evidence.reason,
+        pixelCount: evidence.pixelCount,
+        baselineDifference: evidence.difference,
+      }]),
+    );
+    const compositedStates: Record<string, CompositedStateEvidence> = Object.fromEntries(
+      Object.entries(crossBackendByState).map(([stateName, evidence]) => [stateName, {
+        wholeCanvas: evidence.wholeCanvas,
+        subjectRoi: evidence.subjectRoi,
+        backgroundRegions: Object.fromEntries(
+          Object.entries(evidence.stateCompositedBackgroundRegions).map(([name, region]) => [name, {
+            eligible: region.eligible,
+            reason: region.reason,
+            difference: region.difference,
+          }]),
+        ),
+      }]),
+    );
+    const parityAcceptance = evaluateVisualParityAcceptance({
+      baselineBackgroundRegions,
+      compositedStates,
+      overlayContribution: overlayResponse as Record<string, OverlayResponseState>,
+      subjectEvidence: {
+        webgl: webgl.subjectEvidence,
+        webgpu: webgpu.subjectEvidence,
+      },
+      overlayGeometry: {
+        webgl: webgl.overlayGeometry,
+        webgpu: webgpu.overlayGeometry,
+      },
+      restoredNoOverlay: {
+        webgl: webglSummary.restoredNoOverlayImage,
+        webgpu: webgpuSummary.restoredNoOverlayImage,
+      },
+      consistency: {
+        webgl: webgl.captureConsistencyMismatches.length === 0,
+        webgpu: webgpu.captureConsistencyMismatches.length === 0,
+      },
+    });
+    const captureValidityChecks = [
+      { id: "webgl-mounted-backend", passed: webgl.qualificationMismatches.length === 0, details: webgl.qualificationMismatches },
+      { id: "native-webgpu-mounted-backend", passed: webgpu.qualificationMismatches.length === 0, details: webgpu.qualificationMismatches },
+      { id: "webgl-capture-stability", passed: webgl.captureConsistencyMismatches.length === 0, details: webgl.captureConsistencyMismatches },
+      { id: "webgpu-capture-stability", passed: webgpu.captureConsistencyMismatches.length === 0, details: webgpu.captureConsistencyMismatches },
+      { id: "matched-canvas-dimensions", passed: JSON.stringify(webgl.canvas) === JSON.stringify(webgpu.canvas), details: { webgl: webgl.canvas, webgpu: webgpu.canvas } },
+      { id: "matched-observer-camera", passed: JSON.stringify(webgl.camera) === JSON.stringify(webgpu.camera), details: { webgl: webgl.camera, webgpu: webgpu.camera } },
+      { id: "matched-canonical-controls", passed: JSON.stringify(webgl.canonicalControls) === JSON.stringify(webgpu.canonicalControls), details: null },
+      { id: "webgl-subject-visible", passed: webgl.subjectEvidence.meaningful, details: webgl.subjectEvidence },
+      { id: "webgpu-subject-visible", passed: webgpu.subjectEvidence.meaningful, details: webgpu.subjectEvidence },
+      { id: "webgl-ground-glass", passed: webgl.groundGlass.contentful && webgl.groundGlass.renderer?.includes("WebGL 2") === true && webgl.groundGlass.canvasCount === 1, details: webgl.groundGlass },
+      { id: "webgpu-ground-glass", passed: webgpu.groundGlass.contentful && webgpu.groundGlass.renderer?.includes("WebGL 2") === true && webgpu.groundGlass.canvasCount === 1, details: webgpu.groundGlass },
+      { id: "webgl-no-page-or-console-errors", passed: webgl.pageErrors.length === 0 && webgl.consoleErrors.length === 0, details: { pageErrors: webgl.pageErrors, consoleErrors: webgl.consoleErrors } },
+      { id: "webgpu-no-page-or-console-errors", passed: webgpu.pageErrors.length === 0 && webgpu.consoleErrors.length === 0, details: { pageErrors: webgpu.pageErrors, consoleErrors: webgpu.consoleErrors } },
+    ];
+    const captureValidity = {
+      status: captureValidityChecks.every((check) => check.passed) ? "pass" as const : "fail" as const,
+      checks: captureValidityChecks,
+      failures: captureValidityChecks.filter((check) => !check.passed),
+    };
     const result = {
-      schemaVersion: 1,
-      phase: baselineOnly ? "pre-correction-baseline" : "verification",
+      schemaVersion: 2,
+      phase: baselineOnly ? "baseline-capture-only" : "strict-verification",
       generatedAt: new Date().toISOString(),
       host: { platform: platform(), architecture: arch(), osRelease: release(), node: process.version },
       browser: webgl.browser,
@@ -962,6 +1132,7 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
           executionBackend: webglSummary.executionBackend,
           applicationFallback: webglSummary.applicationFallback,
           webgpuModuleRequestCount: webgl.requestedModuleUrls.length,
+          mismatches: webgl.qualificationMismatches,
         },
         webgpu: {
           apiPresent: webgpu.adapter.apiPresent,
@@ -971,13 +1142,28 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
           applicationFallback: webgpuSummary.applicationFallback,
           initializationAttempts: webgpuSummary.initializationAttempts,
           webgpuModuleRequestCount: webgpu.requestedModuleUrls.length,
+          adapterProbe: webgpu.nativeQualification,
+          mismatches: webgpu.qualificationMismatches,
         },
         hardwareAcceleration: "unconfirmed",
       },
+      captureValidity,
+      strictParityAcceptance: {
+        enforcement: baselineOnly ? "diagnostic-only" : "required",
+        ...parityAcceptance,
+      },
       webgl: webglSummary,
       webgpu: webgpuSummary,
-      crossBackendByState,
-      overlayResponse,
+      visualComparisons: {
+        definitions: {
+          baselineBackgroundParity: "Cross-backend difference between the matched no-overlay captures, measured only in regions uniform in both captures.",
+          stateCompositedPixelParity: "Cross-backend difference between each state's actual selected WebGL and WebGPU captures; clean regions are selected using no-overlay baselines only.",
+          overlayContributionResponse: "Per-backend overlay-on minus that backend's own no-overlay image, then compare the incremental responses and changed-pixel masks.",
+        },
+        baselineBackgroundParity: baselineState?.baselineCleanBackgroundReferenceRegions ?? {},
+        stateCompositedPixelParity: crossBackendByState,
+        overlayContributionResponse: overlayResponse,
+      },
       groundGlass: { webgl: webgl.groundGlass, webgpu: webgpu.groundGlass },
       errors: {
         webgl: { page: webgl.pageErrors, console: webgl.consoleErrors },
@@ -998,34 +1184,13 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
       body: Buffer.from(report),
       contentType: "application/json",
     });
-    console.info(`Observer visual parity evidence ${JSON.stringify(result)}`);
+    console.info(`Observer visual parity evidence: capture=${captureValidity.status}, strict-parity=${parityAcceptance.status}, failing-criteria=${parityAcceptance.failures.length}, report=${reportPath}`);
 
+    expect(captureValidity.status, `invalid capture evidence: ${captureValidity.failures.map((failure) => failure.id).join(", ")}`)
+      .toBe("pass");
     if (!baselineOnly) {
-      const uniformBackgroundWebgl = Object.keys(webglSummary.background.comparedRegions);
-      const uniformBackgroundWebgpu = Object.keys(webgpuSummary.background.comparedRegions);
-      const sharedBackgroundNames = uniformBackgroundWebgl.filter((name) => uniformBackgroundWebgpu.includes(name));
-      expect(sharedBackgroundNames.length, "at least two matched, subject-free background regions").toBeGreaterThanOrEqual(2);
-      const backgroundDifferences = sharedBackgroundNames.map((name) =>
-        crossBackendByState["no-overlays"]?.commonBackgroundRegions[name]?.difference.meanAbsoluteRgbDifference ?? Infinity,
-      );
-      expect(Math.max(...backgroundDifferences), "background RGB differences across clear regions must be small").toBeLessThanOrEqual(4);
-
-      for (const [name, evidence] of Object.entries(overlayResponse)) {
-        expect(evidence.activePixelUnion, `${name} must contribute visible pixels in both renderer captures`).toBeGreaterThan(500);
-        expect(evidence.intersectionOverUnion, `${name} changed-pixel masks should spatially align`).toBeGreaterThan(0.7);
-        expect(evidence.meanAbsoluteResponseDifference, `${name} composited response should remain comparable`).toBeLessThanOrEqual(10);
-      }
-
-      for (const backend of [webgl, webgpu]) {
-        const restored = summarizeBackend(backend).restoredNoOverlayImage;
-        expect(restored.meanAbsoluteRgbDifference, `${backend.backend} no-overlay image should restore after toggles`).toBeLessThanOrEqual(1);
-        expect(restored.changedPixelFraction, `${backend.backend} no-overlay image should restore after toggles`).toBeLessThanOrEqual(0.01);
-      }
+      expect(parityAcceptance.status, `strict parity criteria failed: ${parityAcceptance.failures.map((failure) => failure.id).join(", ")}`)
+        .toBe("pass");
     }
-
-    expect(webglNoOverlay.image.width).toBe(webgpuNoOverlay.image.width);
-    expect(webglNoOverlay.image.height).toBe(webgpuNoOverlay.image.height);
-    expect(webgl.groundGlass.contentful).toBe(true);
-    expect(webgpu.groundGlass.contentful).toBe(true);
   });
 });

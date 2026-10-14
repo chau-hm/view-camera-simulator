@@ -1532,7 +1532,78 @@ npx playwright test \
   src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1
 ```
 
-The baseline mode records the mismatch without asserting the parity thresholds.
-Omit `OBSERVER_VISUAL_PARITY_BASELINE=1` to run the parity acceptance gates; on
-this uncorrected baseline, the first background-parity assertion is expected
-to fail. A passing capture run is not a parity acceptance result.
+The baseline mode records the complete acceptance result without failing on
+parity differences, provided the mounted backends and captures are valid. Omit
+`OBSERVER_VISUAL_PARITY_BASELINE=1` to enforce the strict gate. The strict mode
+attaches the same complete JSON before failing and reports every failed
+criterion together; a passing baseline capture is not a parity acceptance
+result.
+
+### Review-fix round 1 — complete, fail-closed parity evidence
+
+Review found that the strict test stopped at its first background assertion,
+looked only at whole-canvas overlay response, and accidentally compared
+no-overlay images for every state's background region. The report now separates
+three measurements:
+
+1. **Baseline background parity** compares the matched no-overlay WebGL and
+   WebGPU captures in regions that are uniform in both baseline images.
+2. **State-composited parity** compares the actual selected-state WebGL and
+   WebGPU images for no-overlay, focus-only, DOF-only, and combined states.
+   Stable background ROI selection still comes only from the no-overlay
+   captures; pixel differences use each state's own images.
+3. **Overlay contribution response** subtracts each backend's own no-overlay
+   image from its enabled image, then compares the resulting response and
+   changed-pixel masks. This separates overlay response from the pre-existing
+   clear-color mismatch.
+
+The strict JSON records all measured criteria and their values, thresholds,
+pass/fail/not-applicable status, and reason before the test fails. Whole canvas,
+the projected Architecture Rise façade, and every applicable background ROI
+have independent response and mask checks. Required contribution is enforced
+in the whole canvas and façade. For the fixed benchmark view, Focus is expected
+in the top-left background ROI; DOF-only and combined overlays are expected in
+both top corners. The focus top-right ROI has no contribution in either
+backend, so it is reported as not applicable. A missing or invalid measurement
+fails closed; it is not treated as a non-participating region. Required
+WebGL/WebGPU subject, overlay-geometry, restoration, capture-consistency, and
+state-ROI records also fail closed when an entire backend record or field is
+absent.
+
+The thresholds are recorded in the JSON. Clear baseline background MAE is at
+most 4 RGB levels. Composited whole-canvas MAE is at most 16, the façade is at
+most 8, and a clean-reference background ROI is at most 10. These broader
+composited limits allow small integration changes while keeping the façade
+tighter because it carries the teaching geometry. Overlay-response MAE limits
+are 10 for whole canvas, 8 for the façade, and 6 for background ROIs; the
+façade and background limits are tighter because local contrast and
+transparent-plane color are directly relevant to teaching. Changed-pixel mask
+IoU must exceed 0.70. Minimum response counts are also explicit for each
+region, and every required region must be measurably active in both backends.
+
+The native-required capture now waits for the adapter probe to reach
+`available` (or a terminal failure/timeout), then reads the mounted Observer
+attributes again. The report includes the pre-wait and final snapshots and
+rejects any renderer generation, status, family, execution-backend, request,
+fallback, or initialization-attempt change during the wait. The WebGL capture
+does not wait for adapter diagnostics.
+
+On the review-fix run, headed Google Chrome 155.0.8059.40 on macOS Darwin
+27.0.0 arm64 with Three.js r186 again reported an available API and adapter,
+mounted `webgpu-renderer / webgpu`, one initialization attempt, no application
+fallback, and one lazy WebGPU module request. Capture validity passed for both
+backends: the façade contained 74,120 samples with 160 WebGL and 164 WebGPU
+color buckets; Ground Glass remained contentful and WebGL 2-backed; both runs
+had no page or console errors. Hardware acceleration remains unconfirmed.
+Baseline-only mode passed as a capture while recording strict parity as FAIL.
+Strict mode attached an 81-criterion report and failed 26 criteria, including
+the 24.67 RGB clear-background MAE, the façade response differences, and the
+overlay-response differences listed above. Its failure is the expected
+**NO-GO for parity**, not a native WebGPU initialization or capture failure.
+
+The corresponding unit suite exercises whole-canvas pass with façade fail,
+multiple simultaneous failures, missing façade evidence, required versus
+non-participating background regions, actual selected-state image comparison,
+adapter pending-to-available ordering, terminal adapter outcomes, timeout,
+and renderer fallback/generation changes. No renderer, material, Ground Glass,
+or optical behavior changed in this review fix.
