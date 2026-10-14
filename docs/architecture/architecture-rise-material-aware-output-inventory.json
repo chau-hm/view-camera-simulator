@@ -1,0 +1,596 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-14T17:15:34.554Z",
+  "measurementCommit": "9378969d3396a72c3da93e445b102dbcbaa49694",
+  "scope": {
+    "sceneId": "architecture-rise",
+    "surface": "development-only Observer candidate",
+    "rendererFamily": "webgpu-renderer",
+    "executionBackend": "webgpu",
+    "applicationFallback": "none",
+    "threeRevision": "186",
+    "browserVersion": "155.0.8059.79",
+    "hardwareAcceleration": "unconfirmed"
+  },
+  "authoredRoles": [
+    {
+      "role": "registered Architecture Rise subject",
+      "owner": "disposeArchitectureRiseGroup -> disposeTeachingSubjectResources",
+      "source": "src/render/ArchitectureRiseSubjectFactory.tsx",
+      "authoredMaterialCounts": {
+        "MeshStandardMaterial": 11,
+        "MeshBasicMaterial": 3
+      },
+      "nodeMaterialMapping": {
+        "MeshStandardMaterial": "MeshStandardNodeMaterial",
+        "MeshBasicMaterial": "MeshBasicNodeMaterial"
+      },
+      "authoredFeatures": [
+        "building/facade",
+        "roof",
+        "trim",
+        "glazing",
+        "recess",
+        "pavement",
+        "sidewalk",
+        "ground",
+        "reference objects",
+        "reference light",
+        "focus-chart details"
+      ],
+      "status": "supported"
+    },
+    {
+      "role": "focus targets",
+      "owner": "R3F Observer scene ownership",
+      "source": "src/render/SceneRenderer.tsx",
+      "runtimeSourceMaterialFamily": "MeshStandardMaterial",
+      "nodeMaterialFamily": "MeshStandardNodeMaterial",
+      "authoredFeatures": [
+        "lit target marker",
+        "casts authored shadow"
+      ],
+      "status": "supported"
+    },
+    {
+      "role": "conceptual camera",
+      "owner": "R3F authored materials; candidate NodeMaterials owned by output controller",
+      "source": "src/render/SceneRenderer.tsx and camera subject components",
+      "runtimeSourceMaterialFamilies": [
+        "MeshBasicMaterial",
+        "MeshStandardMaterial"
+      ],
+      "nodeMaterialMapping": {
+        "MeshBasicMaterial": "MeshBasicNodeMaterial",
+        "MeshStandardMaterial": "MeshStandardNodeMaterial"
+      },
+      "status": "supported"
+    },
+    {
+      "role": "optical helpers and focus/DOF overlays",
+      "owner": "R3F authored materials; candidate NodeMaterials owned by output controller",
+      "source": "src/render/SceneRenderer.tsx and optical overlay components",
+      "runtimeSourceMaterialFamilies": [
+        "MeshBasicMaterial",
+        "LineBasicMaterial"
+      ],
+      "nodeMaterialMapping": {
+        "MeshBasicMaterial": "MeshBasicNodeMaterial",
+        "LineBasicMaterial": "LineBasicNodeMaterial"
+      },
+      "authoredFeatures": [
+        "opacity",
+        "blending",
+        "depth test/write",
+        "polygon offset",
+        "outline behavior"
+      ],
+      "status": "supported"
+    },
+    {
+      "role": "other Observer geometry",
+      "owner": "R3F authored materials; candidate NodeMaterials owned by output controller",
+      "runtimeSourceMaterialFamilies": [
+        "MeshStandardMaterial",
+        "LineBasicMaterial"
+      ],
+      "status": "supported"
+    }
+  ],
+  "supportedFamilies": [
+    {
+      "source": "MeshStandardMaterial",
+      "target": "MeshStandardNodeMaterial",
+      "lit": true,
+      "output": "ACES Filmic when source toneMapped is true, then sRGB conversion"
+    },
+    {
+      "source": "MeshBasicMaterial",
+      "target": "MeshBasicNodeMaterial",
+      "lit": false,
+      "output": "sRGB conversion without ACES"
+    },
+    {
+      "source": "LineBasicMaterial",
+      "target": "LineBasicNodeMaterial",
+      "lit": false,
+      "output": "sRGB conversion without ACES"
+    }
+  ],
+  "unsupportedFamilyBehavior": "The candidate keeps scene content hidden until every encountered material is adapted. An unsupported family fails the candidate and requests the existing one-shot application WebGL fallback.",
+  "runtimeObservation": {
+    "sceneId": "architecture-rise",
+    "frame": 3,
+    "meshAssignments": 393,
+    "distinctMaterialInstances": 73,
+    "adaptedMaterialInstances": 73,
+    "unsupportedMaterialInstances": 0,
+    "unsupported": [],
+    "families": [
+      {
+        "role": "architecture-rise-subject",
+        "sourceMaterialFamily": "MeshBasicMaterial",
+        "nodeMaterialFamily": "MeshBasicNodeMaterial",
+        "materialInstances": 3,
+        "meshAssignments": 81,
+        "lit": false,
+        "transparentInstances": 0,
+        "opacityRange": [
+          1,
+          1
+        ],
+        "toneMappedInstances": 81,
+        "depthTestInstances": 81,
+        "depthWriteInstances": 81,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "0"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [],
+        "roughnessValues": [],
+        "metalnessValues": [],
+        "owner": "disposeArchitectureRiseGroup -> disposeTeachingSubjectResources",
+        "status": "supported"
+      },
+      {
+        "role": "architecture-rise-subject",
+        "sourceMaterialFamily": "MeshStandardMaterial",
+        "nodeMaterialFamily": "MeshStandardNodeMaterial",
+        "materialInstances": 11,
+        "meshAssignments": 253,
+        "lit": true,
+        "transparentInstances": 0,
+        "opacityRange": [
+          1,
+          1
+        ],
+        "toneMappedInstances": 253,
+        "depthTestInstances": 253,
+        "depthWriteInstances": 253,
+        "shadowCasterAssignments": 253,
+        "shadowReceiverAssignments": 41,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "0"
+        ],
+        "textureSlots": {
+          "map": {
+            "count": 163,
+            "colorSpaces": [
+              "srgb"
+            ],
+            "repeatValues": [
+              [
+                3,
+                3
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                10,
+                8
+              ]
+            ],
+            "wrapModes": [
+              [
+                1000,
+                1000
+              ]
+            ]
+          },
+          "normalMap": {
+            "count": 163,
+            "colorSpaces": [
+              "none"
+            ],
+            "repeatValues": [
+              [
+                3,
+                3
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                10,
+                8
+              ]
+            ],
+            "wrapModes": [
+              [
+                1000,
+                1000
+              ]
+            ]
+          },
+          "roughnessMap": {
+            "count": 163,
+            "colorSpaces": [
+              "none"
+            ],
+            "repeatValues": [
+              [
+                3,
+                3
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                10,
+                8
+              ]
+            ],
+            "wrapModes": [
+              [
+                1000,
+                1000
+              ]
+            ]
+          }
+        },
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [
+          [
+            1,
+            1
+          ],
+          [
+            0.3,
+            0.3
+          ],
+          [
+            0.14,
+            0.14
+          ],
+          [
+            0.12,
+            0.12
+          ],
+          [
+            0.1,
+            0.1
+          ]
+        ],
+        "roughnessValues": [
+          0.24,
+          0.68,
+          0.82,
+          0.92,
+          0.94,
+          0.97,
+          0.98,
+          0.99
+        ],
+        "metalnessValues": [
+          0,
+          0.08
+        ],
+        "owner": "disposeArchitectureRiseGroup -> disposeTeachingSubjectResources",
+        "status": "supported"
+      },
+      {
+        "role": "conceptual-camera",
+        "sourceMaterialFamily": "MeshBasicMaterial",
+        "nodeMaterialFamily": "MeshBasicNodeMaterial",
+        "materialInstances": 1,
+        "meshAssignments": 1,
+        "lit": false,
+        "transparentInstances": 0,
+        "opacityRange": [
+          0.92,
+          0.92
+        ],
+        "toneMappedInstances": 1,
+        "depthTestInstances": 1,
+        "depthWriteInstances": 0,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "2"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [],
+        "roughnessValues": [],
+        "metalnessValues": [],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      },
+      {
+        "role": "conceptual-camera",
+        "sourceMaterialFamily": "MeshStandardMaterial",
+        "nodeMaterialFamily": "MeshStandardNodeMaterial",
+        "materialInstances": 29,
+        "meshAssignments": 29,
+        "lit": true,
+        "transparentInstances": 2,
+        "opacityRange": [
+          0.28,
+          1
+        ],
+        "toneMappedInstances": 29,
+        "depthTestInstances": 29,
+        "depthWriteInstances": 28,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "0",
+          "2"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [
+          [
+            1,
+            1
+          ]
+        ],
+        "roughnessValues": [
+          0.18,
+          0.76,
+          0.82,
+          0.88,
+          1
+        ],
+        "metalnessValues": [
+          0,
+          0.08,
+          0.15
+        ],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      },
+      {
+        "role": "focus-targets",
+        "sourceMaterialFamily": "MeshStandardMaterial",
+        "nodeMaterialFamily": "MeshStandardNodeMaterial",
+        "materialInstances": 1,
+        "meshAssignments": 1,
+        "lit": true,
+        "transparentInstances": 0,
+        "opacityRange": [
+          1,
+          1
+        ],
+        "toneMappedInstances": 1,
+        "depthTestInstances": 1,
+        "depthWriteInstances": 1,
+        "shadowCasterAssignments": 1,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "0"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [
+          [
+            1,
+            1
+          ]
+        ],
+        "roughnessValues": [
+          1
+        ],
+        "metalnessValues": [
+          0
+        ],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      },
+      {
+        "role": "observer-other",
+        "sourceMaterialFamily": "LineBasicMaterial",
+        "nodeMaterialFamily": "LineBasicNodeMaterial",
+        "materialInstances": 5,
+        "meshAssignments": 5,
+        "lit": false,
+        "transparentInstances": 1,
+        "opacityRange": [
+          0.95,
+          1
+        ],
+        "toneMappedInstances": 5,
+        "depthTestInstances": 5,
+        "depthWriteInstances": 5,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "0"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [],
+        "roughnessValues": [],
+        "metalnessValues": [],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      },
+      {
+        "role": "observer-other",
+        "sourceMaterialFamily": "MeshStandardMaterial",
+        "nodeMaterialFamily": "MeshStandardNodeMaterial",
+        "materialInstances": 1,
+        "meshAssignments": 1,
+        "lit": true,
+        "transparentInstances": 1,
+        "opacityRange": [
+          0.35,
+          0.35
+        ],
+        "toneMappedInstances": 1,
+        "depthTestInstances": 1,
+        "depthWriteInstances": 1,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "2"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [
+          [
+            1,
+            1
+          ]
+        ],
+        "roughnessValues": [
+          1
+        ],
+        "metalnessValues": [
+          0
+        ],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      },
+      {
+        "role": "optical-helpers",
+        "sourceMaterialFamily": "LineBasicMaterial",
+        "nodeMaterialFamily": "LineBasicNodeMaterial",
+        "materialInstances": 16,
+        "meshAssignments": 16,
+        "lit": false,
+        "transparentInstances": 16,
+        "opacityRange": [
+          0.55,
+          0.9
+        ],
+        "toneMappedInstances": 0,
+        "depthTestInstances": 0,
+        "depthWriteInstances": 0,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "0"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [],
+        "roughnessValues": [],
+        "metalnessValues": [],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      },
+      {
+        "role": "optical-helpers",
+        "sourceMaterialFamily": "MeshBasicMaterial",
+        "nodeMaterialFamily": "MeshBasicNodeMaterial",
+        "materialInstances": 6,
+        "meshAssignments": 6,
+        "lit": false,
+        "transparentInstances": 6,
+        "opacityRange": [
+          0.08,
+          0.7
+        ],
+        "toneMappedInstances": 2,
+        "depthTestInstances": 5,
+        "depthWriteInstances": 2,
+        "shadowCasterAssignments": 0,
+        "shadowReceiverAssignments": 0,
+        "blendingModes": [
+          "1"
+        ],
+        "sides": [
+          "2"
+        ],
+        "textureSlots": {},
+        "environmentMappedInstances": 0,
+        "normalScaleValues": [],
+        "roughnessValues": [],
+        "metalnessValues": [],
+        "owner": "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+        "status": "supported"
+      }
+    ],
+    "background": {
+      "authoredColor": "#f8fafc",
+      "nodeInstalled": true
+    },
+    "globalEnvironment": {
+      "assigned": true,
+      "textureType": "1016",
+      "colorSpace": "srgb-linear",
+      "intensity": 0.95
+    },
+    "lighting": {
+      "hemisphereLights": 1,
+      "directionalLights": 2,
+      "shadowCastingDirectionalLights": 1,
+      "shadowMapSizes": [
+        [
+          1024,
+          1024
+        ],
+        [
+          512,
+          512
+        ]
+      ]
+    },
+    "candidateRendererSettings": {
+      "toneMapping": "none",
+      "exposure": "1.000000",
+      "outputColorSpace": "srgb-linear",
+      "shadowMapStatus": "active",
+      "shadowMapType": "pcf"
+    },
+    "groundGlass": {
+      "contentful": true,
+      "renderer": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "canvasCount": 1
+    },
+    "pageErrors": [],
+    "consoleErrors": []
+  }
+}

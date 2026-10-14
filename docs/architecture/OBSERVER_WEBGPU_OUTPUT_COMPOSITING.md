@@ -417,3 +417,91 @@ WebGPU as part of this architecture decision.
 limited Architecture Rise integration experiment under the existing
 development-only pilot. This PR does not authorize rollout or production
 activation.
+
+## 13. PR I — Architecture Rise integration result
+
+PR I implemented the material-aware candidate in the real Architecture Rise
+Observer, selected only by the development-only
+`observerRenderer=webgpu&observerOutput=material-aware` query. The PR #255
+fixture measurements above remain historical fixture evidence; this section
+records a separate real-scene run.
+
+The first integration attempt set `toneMapping` and `outputColorSpace` on the
+renderer after `WebGPURenderer.init()`. That was too early for React Three
+Fiber: its asynchronous Canvas configuration reapplied the default renderer
+settings afterward. The pilot now selects R3F's public Canvas `flat` and
+`linear` props for this candidate only. The mounted capability reporter
+confirms `NoToneMapping` and `LinearSRGBColorSpace` before any candidate scene
+content is enabled. The output-policy controller still holds the scene while
+it adapts all materials and fails closed on unsupported runtime families.
+Application fallback remounts Canvas with the standard WebGL configuration.
+
+The runtime inventory observed 73 distinct material instances across 393
+assignments. All 73 were supported and adapted, with no unsupported family:
+`MeshStandardMaterial` to `MeshStandardNodeMaterial`, `MeshBasicMaterial` to
+`MeshBasicNodeMaterial`, and `LineBasicMaterial` to `LineBasicNodeMaterial`.
+The Architecture Rise subject's 11 authored Standard and 3 Basic materials
+remain under its existing subject disposer; controller-owned NodeMaterials for
+the rest of the Observer are disposed by the controller. Albedo maps retain
+sRGB color space; roughness and normal maps retain linear data color spaces,
+repeat, and normal-scale values. Material opacity, blending, depth, tone-map
+intent, and shadow assignments are copied from the authored material. The
+global scene environment remains linear scene-radiance input to lit shading;
+it is not converted as a display-color texture.
+
+The matched 2026-10-14 UTC headed Chrome 155.0.8059.79 native run used macOS
+Darwin 27.0 arm64, Node 24.19.0, Three.js r186, the same Architecture Rise
+camera pose, and DPR 1 for both routes. Both standard WebGPU and the
+material-aware candidate mounted `webgpu-renderer / webgpu`, with an available
+adapter, one renderer initialization attempt, no application fallback, and no
+page or console errors. Candidate output reported `none` tone mapping and
+`srgb-linear`; the standard route retained ACES Filmic and sRGB.
+
+Both measurements ran against implementation commit
+`9378969d3396a72c3da93e445b102dbcbaa49694`. The standard WebGPU control was
+captured at `2026-10-14T17:15:18.419Z` in baseline-capture mode (capture
+validity passed; the expected 26 strict-parity differences were recorded).
+The material-aware candidate ran at `2026-10-14T17:15:34.554Z` with strict
+parity enforcement and passed. The compact report includes both complete
+81-criterion result sets, run commands, backend qualification, camera and
+canvas state, material-family counts, Ground Glass result, and selected capture
+checksums in
+[`architecture-rise-material-aware-output/measurement-report.json`](architecture-rise-material-aware-output/measurement-report.json).
+
+The unchanged PR #254 81-criterion diagnostic recorded 26 failures on standard
+WebGPU and 0 failures on the candidate (78 pass, 3 conditional non-applicable).
+The baseline clear-background sample was `[225,225,226]` (24.67 RGB MAE);
+candidate was `[248,250,252]` (0 MAE). Façade MAE changed from 2.09 to 1.09
+without overlays and from 21.82 to 0.72 with combined overlays. Focus, DOF,
+and combined overlay response MAEs on the façade were 0.63, 0.33, and 0.56;
+the corresponding whole-canvas response MAEs were 0.26, 0.16, and 0.25. The
+required changed-pixel and spatial-alignment criteria also passed. No
+acceptance threshold was changed.
+
+The candidate runtime reported an active environment at intensity 0.95, one
+hemisphere light, two directional lights, an active PCF shadow map, and
+contentful Ground Glass on its independent WebGL 2 RTT. The Architecture Rise
+browser suite and controlled-fallback tests cover authored texture/material
+inventory, shadow-caster behavior, interactivity, output-policy restoration,
+and SPA navigation. Hardware acceleration remains unconfirmed. No GPU timing
+or memory benchmark was performed.
+
+The selected images below are from those final runs. The WebGL capture is the
+matched control, standard WebGPU shows the pre-integration output, and the two
+candidate images show its no-overlay and combined-overlay states.
+
+| WebGL control | Standard WebGPU | Material-aware candidate, no overlays | Material-aware candidate, combined overlays |
+| --- | --- | --- | --- |
+| ![Architecture Rise WebGL control](architecture-rise-material-aware-output/webgl-combined-overlays.png) | ![Standard WebGPU output](architecture-rise-material-aware-output/webgpu-standard-combined-overlays.png) | ![Material-aware candidate without overlays](architecture-rise-material-aware-output/webgpu-material-aware-no-overlays.png) | ![Material-aware candidate with combined overlays](architecture-rise-material-aware-output/webgpu-material-aware-combined-overlays.png) |
+
+The authored/runtime inventory is in
+[`architecture-rise-material-aware-output-inventory.md`](architecture-rise-material-aware-output-inventory.md)
+and its machine-readable companion. The compact measurement report retains
+all parity criteria; raw Playwright attachments remain in ignored
+`test-results/` output.
+
+**Decision: I1 — REAL-SCENE INTEGRATION VALIDATED.** The opt-in Architecture
+Rise candidate satisfies the existing strict parity gate with supported
+material coverage and the tested environment, shadow, fallback, lifecycle,
+and Ground Glass contracts. This does not change the default development
+renderer, enable production WebGPU, or authorize additional scenes.

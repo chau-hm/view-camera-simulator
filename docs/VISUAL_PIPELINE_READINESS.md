@@ -1630,3 +1630,80 @@ integration proposal, report, and native screenshots are in
 and its adjacent `observer-output-compositing/` evidence directory. Normal
 Observer rendering, production WebGL behavior, Ground Glass, and canonical
 optics were unchanged.
+
+### PR I — Architecture Rise material-aware output integration
+
+PR I integrates the PR #255 material-aware output mechanism into the real
+Architecture Rise Observer behind the development-only, explicit URL
+`observerRenderer=webgpu&observerOutput=material-aware`. Default WebGL,
+standard WebGPU, other scenes, and production keep the standard output path.
+The candidate configures `linear` and `flat` through React Three Fiber's
+Canvas props, because R3F reapplies renderer defaults after an asynchronous
+`gl` factory resolves. A material-aware fallback/remount receives fresh
+standard Canvas configuration.
+
+On 2026-10-14 UTC, matched headed Google Chrome 155.0.8059.79 runs on macOS
+Darwin 27.0 arm64 with Node 24.19.0 and Three.js r186 compared the standard
+PR #254 baseline with the candidate using the unchanged 81-criterion
+diagnostic, same camera pose, and DPR 1. Both runs used an available WebGPU
+adapter, mounted `webgpu-renderer / webgpu`, initialized once, and had no
+application fallback. Standard WebGPU retained ACES/sRGB output; the candidate
+reported `toneMapping=none`, `outputColorSpace=srgb-linear`, and active
+material-aware output. Both runs used implementation commit
+`9378969d3396a72c3da93e445b102dbcbaa49694`; the baseline captured at
+`2026-10-14T17:15:18.419Z` and recorded 26 expected parity failures, while
+the strict candidate run at `2026-10-14T17:15:34.554Z` passed all 78
+applicable criteria (3 conditional criteria were not applicable). No threshold
+was changed.
+
+| PR #254 measurement | Standard WebGPU | Material-aware candidate |
+| --- | ---: | ---: |
+| Clear background RGB / MAE | `[225,225,226]` / `24.67` | `[248,250,252]` / `0` |
+| No-overlay façade ROI MAE | `2.09` | `1.09` |
+| Combined-overlay façade ROI MAE | `21.82` | `0.72` |
+| Focus response MAE (canvas / façade) | `31.62` / `14.83` | `0.26` / `0.63` |
+| DOF response MAE (canvas / façade) | `13.58` / `14.42` | `0.16` / `0.33` |
+| Combined response MAE (canvas / façade) | `28.20` / `20.84` | `0.25` / `0.56` |
+| Strict result | 26 failures / 81 | 78 pass, 0 fail, 3 N/A / 81 |
+
+The complete criterion values, backend qualification, camera/canvas state,
+run commands, timestamps, and screenshot SHA-256 values are recorded in the
+[machine-readable measurement report](architecture/architecture-rise-material-aware-output/measurement-report.json).
+
+The runtime graph contained 393 mesh/material assignments using 73 distinct
+material instances. The controller adapted all 73 with zero unsupported
+instances: Standard → `MeshStandardNodeMaterial`, Basic →
+`MeshBasicNodeMaterial`, and LineBasic → `LineBasicNodeMaterial`. It preserved
+Architecture Rise albedo maps as sRGB and normal/roughness maps as linear data,
+along with repeats, normal scales, roughness, metalness, transparency, depth
+policy, and shadow participation. The scene environment was active at intensity
+0.95; one hemisphere and two directional lights remained present, the key
+light cast shadows, and the mounted shadow map reported active PCF. The
+environment remains scene-radiance input to Standard shading, not a
+display-space material map. The full authored and runtime inventory is in
+[`architecture-rise-material-aware-output-inventory.md`](architecture/architecture-rise-material-aware-output-inventory.md)
+and its adjacent JSON evidence. The measurement report and selected matched
+captures are in
+[`architecture-rise-material-aware-output/`](architecture/architecture-rise-material-aware-output/).
+
+The candidate report also recorded a visible subject, active environment,
+contentful Ground Glass RTT on WebGL 2, and no page or console errors. The
+Observer pilot E2E passed all eight ordinary Chromium cases, including default
+WebGL, internal WebGL2 fallback, controlled application fallback, candidate
+material coverage, fallback policy restoration, and SPA scene/request changes.
+A native-required candidate interaction E2E also passed on headed Chrome:
+Camera focus, orbit, reset, navigation to Anatomy with standard output, and a
+return to Architecture Rise with a fresh material-aware mount all retained the
+actual native backend; Ground Glass remained contentful. The Architecture Rise
+validation E2E and production-preview checks are recorded in the PR I handoff.
+Browser fallback runs are not counted as native evidence. Hardware
+acceleration remains unconfirmed.
+
+**Decision: I1 — REAL-SCENE INTEGRATION VALIDATED.** The candidate passes the
+unchanged native PR #254 strict gate with complete observed material coverage,
+active environment/shadows, and independent Ground Glass readiness. This only
+validates an opt-in development Architecture Rise pilot; it does not change
+the standard WebGPU path, production WebGL boundary, scene eligibility, or
+authorize rollout to other scenes. Selected matched captures and the compact
+machine-readable report are in
+[`architecture-rise-material-aware-output/`](architecture/architecture-rise-material-aware-output/).
