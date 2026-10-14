@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { toneMappingExposure, vec4 } from "three/tsl";
 import { describe, expect, it, vi } from "vitest";
 import {
   MaterialAwareBasicNodeMaterial,
@@ -8,6 +9,57 @@ import {
 } from "../../render/backend/materialAwareNodeMaterials";
 import { observerOutputSourceMaterial } from "../../render/backend/observerMaterialOutputIdentity";
 import { disposeTeachingSubjectResources } from "../../render/TeachingMaterials";
+
+type OutputGraphNode = {
+  type?: string;
+  target?: string;
+  colorNode?: unknown;
+  exposureNode?: unknown;
+  getToneMapping?: () => number;
+  setup?: (builder: never) => unknown;
+};
+
+const expectOutputGraph = (
+  material: object,
+  sourceOutput: unknown,
+  toneMapped: boolean,
+) => {
+  const nodeMaterial = material as unknown as {
+    fog: boolean;
+    premultipliedAlpha: boolean;
+    setupOutput: (builder: never, outputNode: never) => unknown;
+  };
+  nodeMaterial.fog = false;
+  nodeMaterial.premultipliedAlpha = false;
+  const displayOutput = nodeMaterial.setupOutput(
+    {} as never,
+    sourceOutput as never,
+  ) as OutputGraphNode;
+
+  expect(displayOutput.type).toBe("ColorSpaceNode");
+  expect(displayOutput.target).toBe(THREE.SRGBColorSpace);
+
+  if (!toneMapped) {
+    expect(displayOutput.colorNode).toBe(sourceOutput);
+    return;
+  }
+
+  const mappedOutput = displayOutput.colorNode as OutputGraphNode;
+  expect(mappedOutput.type).toBe("ToneMappingNode");
+  expect(mappedOutput.getToneMapping?.()).toBe(THREE.ACESFilmicToneMapping);
+  expect(mappedOutput.exposureNode).toBe(toneMappingExposure);
+  expect(mappedOutput.colorNode).toBe(sourceOutput);
+
+  const mappedVec4 = mappedOutput.setup?.({
+    context: { color: sourceOutput },
+    renderer: {
+      library: {
+        getToneMappingFunction: () => (rgb: unknown) => rgb,
+      },
+    },
+  } as never) as { node?: { nodes?: unknown[] } } | undefined;
+  expect(mappedVec4?.node?.nodes?.[1]).toBe((sourceOutput as { a: unknown }).a);
+};
 
 const texture = (colorSpace: THREE.ColorSpace): THREE.DataTexture => {
   const value = new THREE.DataTexture(new Uint8Array([120, 140, 160, 255]), 1, 1);
@@ -73,6 +125,7 @@ describe("material-aware Observer NodeMaterial adaptation", () => {
     expect((adapted as typeof adapted & { [observerOutputSourceMaterial]?: THREE.Material })[
       observerOutputSourceMaterial
     ]).toBe(source);
+    expectOutputGraph(adapted as MaterialAwareStandardNodeMaterial, vec4(0.8, 0.6, 0.4, 0.37), false);
 
     adapted?.dispose();
     source.dispose();
@@ -121,11 +174,44 @@ describe("material-aware Observer NodeMaterial adaptation", () => {
       depthWrite: false,
       toneMapped: false,
     });
+    expectOutputGraph(adaptedBasic as MaterialAwareBasicNodeMaterial, vec4(0.8, 0.6, 0.4, 0.37), false);
+    expectOutputGraph(adaptedLine as MaterialAwareLineNodeMaterial, vec4(0.8, 0.6, 0.4, 0.37), false);
 
     adaptedBasic?.dispose();
     adaptedLine?.dispose();
     basic.dispose();
     line.dispose();
+  });
+
+  it("applies material-level ACES to default tone-mapped Basic and LineBasic outputs", () => {
+    const basic = new THREE.MeshBasicMaterial({ color: "#f5f8fa", transparent: true, opacity: 0.73 });
+    const line = new THREE.LineBasicMaterial({ color: "#06b6d4", transparent: true, opacity: 0.91 });
+    const standard = new THREE.MeshStandardMaterial({ color: "#d7c19c" });
+    const adaptedBasic = adaptObserverMaterialForOutput(basic);
+    const adaptedLine = adaptObserverMaterialForOutput(line);
+    const adaptedStandard = adaptObserverMaterialForOutput(standard);
+
+    expect(basic.toneMapped).toBe(true);
+    expect(line.toneMapped).toBe(true);
+    expect(standard.toneMapped).toBe(true);
+    expect(adaptedBasic).toBeInstanceOf(MaterialAwareBasicNodeMaterial);
+    expect(adaptedLine).toBeInstanceOf(MaterialAwareLineNodeMaterial);
+    expect(adaptedStandard).toBeInstanceOf(MaterialAwareStandardNodeMaterial);
+    expect(adaptedBasic).toMatchObject({ toneMapped: true, transparent: true, opacity: 0.73 });
+    expect(adaptedLine).toMatchObject({ toneMapped: true, transparent: true, opacity: 0.91 });
+    expect(adaptedStandard).toMatchObject({ toneMapped: true });
+
+    const rgba = () => vec4(0.8, 0.6, 0.4, 0.37);
+    expectOutputGraph(adaptedBasic as MaterialAwareBasicNodeMaterial, rgba(), true);
+    expectOutputGraph(adaptedLine as MaterialAwareLineNodeMaterial, rgba(), true);
+    expectOutputGraph(adaptedStandard as MaterialAwareStandardNodeMaterial, rgba(), true);
+
+    adaptedBasic?.dispose();
+    adaptedLine?.dispose();
+    adaptedStandard?.dispose();
+    basic.dispose();
+    line.dispose();
+    standard.dispose();
   });
 
   it("fails closed for a material family outside the audited set", () => {

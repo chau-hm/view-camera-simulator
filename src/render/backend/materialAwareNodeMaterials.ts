@@ -30,6 +30,13 @@ export type MaterialAwareNode = THREE.Material & { copy: (source: THREE.Material
 const toDisplayColor = (linearOutput: Node) =>
   workingToColorSpace(linearOutput, THREE.SRGBColorSpace);
 
+const toDisplayOutput = (linearOutput: Node, toneMapped: boolean) => {
+  const toneMappedOutput = toneMapped
+    ? toneMapping(THREE.ACESFilmicToneMapping, toneMappingExposure, linearOutput)
+    : linearOutput;
+  return toDisplayColor(toneMappedOutput);
+};
+
 /** NodeMaterial output hooks verified by the PR #255 r186 fixture. */
 export class MaterialAwareStandardNodeMaterial extends MeshStandardNodeMaterial {
   override setupOutput(
@@ -37,10 +44,7 @@ export class MaterialAwareStandardNodeMaterial extends MeshStandardNodeMaterial 
     outputNode: Parameters<MeshStandardNodeMaterial["setupOutput"]>[1],
   ) {
     const typedOutput = outputNode as Node<"vec4">;
-    const toneMappedOutput = this.toneMapped
-      ? toneMapping(THREE.ACESFilmicToneMapping, toneMappingExposure, typedOutput)
-      : typedOutput;
-    return super.setupOutput(builder, toDisplayColor(toneMappedOutput));
+    return super.setupOutput(builder, toDisplayOutput(typedOutput, this.toneMapped));
   }
 }
 
@@ -49,7 +53,7 @@ export class MaterialAwareBasicNodeMaterial extends MeshBasicNodeMaterial {
     builder: Parameters<MeshBasicNodeMaterial["setupOutput"]>[0],
     outputNode: Parameters<MeshBasicNodeMaterial["setupOutput"]>[1],
   ) {
-    return super.setupOutput(builder, toDisplayColor(outputNode));
+    return super.setupOutput(builder, toDisplayOutput(outputNode, this.toneMapped));
   }
 }
 
@@ -58,7 +62,7 @@ export class MaterialAwareLineNodeMaterial extends LineBasicNodeMaterial {
     builder: Parameters<LineBasicNodeMaterial["setupOutput"]>[0],
     outputNode: Parameters<LineBasicNodeMaterial["setupOutput"]>[1],
   ) {
-    return super.setupOutput(builder, toDisplayColor(outputNode));
+    return super.setupOutput(builder, toDisplayOutput(outputNode, this.toneMapped));
   }
 }
 
