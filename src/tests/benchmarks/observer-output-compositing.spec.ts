@@ -10,6 +10,12 @@ import {
   type DecodedPng,
   type PixelRegion,
 } from "./observerBackendBenchmark";
+import {
+  compareRepeatCaptureEvidence,
+  getCaptureStorageKey,
+  storeCaptureWithoutReplacement,
+  type RepeatCaptureEvidence,
+} from "./observerOutputCompositingEvidence";
 
 const fixtureUrl = "/src/tests/e2e/fixtures/observer-output-compositing.html";
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -23,10 +29,15 @@ type Variant = Readonly<{
 }>;
 
 type CapturedImage = Readonly<{
+  captureId: string;
+  storageKey: string;
   variant: Variant;
   background: (typeof backgrounds)[number];
   overlay: "none" | "focus" | "near" | "far" | "overlap" | "behind";
   view: "front" | "oblique" | "back-oblique";
+  viewport: Readonly<{ width: number; height: number }>;
+  devicePixelRatio: number;
+  canvas: Readonly<{ width: number; height: number }>;
   png: Buffer;
   decoded: DecodedPng;
   runtime: RuntimeEvidence;
@@ -162,18 +173,45 @@ test("isolated output/compositing experiment records renderer and subject pixel 
 
   const captures = new Map<string, CapturedImage>();
   const runtimes: RuntimeEvidence[] = [];
+  let captureSequence = 0;
   const capture = async (
     variant: Variant,
     background: CapturedImage["background"],
     overlay: CapturedImage["overlay"],
     view: CapturedImage["view"],
+    role: "canonical" | "repeat" = "canonical",
   ): Promise<CapturedImage> => {
     const runtime = await readRuntime(page);
     if (runtime.fixtureError) throw new Error(`Experiment fixture error: ${runtime.fixtureError}`);
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error("Experiment page viewport is unavailable");
+    const canvas = await page.locator("canvas").evaluate((element) => ({
+      width: (element as HTMLCanvasElement).width,
+      height: (element as HTMLCanvasElement).height,
+    }));
     const png = await page.locator("canvas").screenshot({ animations: "disabled" });
     const decoded = decodePlaywrightPng(png);
-    const image = { variant, background, overlay, view, png, decoded, runtime } satisfies CapturedImage;
-    captures.set(`${variant.id}/${background}/${overlay}/${view}`, image);
+    const canonicalKey = `${variant.id}/${background}/${overlay}/${view}`;
+    const captureId = `capture-${++captureSequence}`;
+    const storageKey = getCaptureStorageKey(canonicalKey, role === "canonical"
+      ? { kind: "canonical" }
+      : { kind: "repeat", captureId });
+    const devicePixelRatio = await page.evaluate(() => window.devicePixelRatio);
+    const image = {
+      captureId,
+      storageKey,
+      variant,
+      background,
+      overlay,
+      view,
+      viewport,
+      devicePixelRatio,
+      canvas,
+      png,
+      decoded,
+      runtime,
+    } satisfies CapturedImage;
+    storeCaptureWithoutReplacement(captures, storageKey, image);
     return image;
   };
 
@@ -384,11 +422,31 @@ test("isolated output/compositing experiment records renderer and subject pixel 
   await waitForFrameAfterControl(page, "Background", "light");
   await waitForFrameAfterControl(page, "Camera view", "front");
   await waitForFrameAfterControl(page, "Teaching overlay", "overlap");
-  const repeated = await capture(repeatVariant, "light", "overlap", "front");
-  const repeatedCaptureConsistency = difference(
-    getCapture(repeatVariant, "light", "overlap").decoded,
-    repeated.decoded,
-    overlapRegion(repeated),
+  const original = getCapture(repeatVariant, "light", "overlap", "front");
+  const repeated = await capture(repeatVariant, "light", "overlap", "front", "repeat");
+  const repeatEvidence = (image: CapturedImage): RepeatCaptureEvidence => ({
+    captureId: image.captureId,
+    rendererVariant: image.variant.id,
+    rendererFamily: image.runtime.rendererFamily,
+    executionBackend: image.runtime.executionBackend,
+    rendererAlpha: image.runtime.rendererAlpha,
+    toneMapping: image.runtime.toneMapping,
+    outputColorSpace: image.runtime.outputColorSpace,
+    initializationAttempts: image.runtime.initializationAttempts,
+    applicationFallback: image.runtime.applicationFallback,
+    initializationFailure: image.runtime.initializationFailure,
+    background: image.background,
+    overlay: image.overlay,
+    view: image.view,
+    viewport: image.viewport,
+    devicePixelRatio: image.devicePixelRatio,
+    canvas: image.canvas,
+    decoded: image.decoded,
+  });
+  const repeatedCaptureConsistency = compareRepeatCaptureEvidence(
+    repeatEvidence(original),
+    repeatEvidence(repeated),
+    overlapRegion(original),
   );
 
   const selectedArtifactKeys = [
@@ -408,6 +466,10 @@ test("isolated output/compositing experiment records renderer and subject pixel 
       contentType: "image/png",
     });
   }
+  await testInfo.attach("observer-output-webgpu-material-aware-light-overlap-front-repeat.png", {
+    body: repeated.png,
+    contentType: "image/png",
+  });
 
   const report = {
     objective: "r186 isolated WebGPU output/compositing architecture prototype",
@@ -434,7 +496,41 @@ test("isolated output/compositing experiment records renderer and subject pixel 
     overlayResponseEvidence,
     depthOcclusionEvidence,
     obliqueEvidence,
-    repeatedCaptureConsistency,
+    repeatedCaptureConsistency: {
+      ...repeatedCaptureConsistency,
+      measurementCommit: process.env.OBSERVER_OUTPUT_COMPOSITING_MEASUREMENT_COMMIT ??
+        process.env.GITHUB_SHA ?? "unrecorded",
+      browserVersion: browser.version(),
+      threeRevision: REVISION,
+      state: {
+        rendererVariant: repeated.variant.id,
+        rendererFamily: repeated.runtime.rendererFamily,
+        executionBackend: repeated.runtime.executionBackend,
+        rendererAlpha: repeated.runtime.rendererAlpha,
+        toneMapping: repeated.runtime.toneMapping,
+        outputColorSpace: repeated.runtime.outputColorSpace,
+        initializationAttempts: repeated.runtime.initializationAttempts,
+        applicationFallback: repeated.runtime.applicationFallback,
+        initializationFailure: repeated.runtime.initializationFailure,
+        background: repeated.background,
+        overlay: repeated.overlay,
+        cameraView: repeated.view,
+        viewport: repeated.viewport,
+        devicePixelRatio: repeated.devicePixelRatio,
+        canvasBackingDimensions: repeated.canvas,
+      },
+      originalCapture: {
+        captureId: original.captureId,
+        storageKey: original.storageKey,
+        pngDimensions: { width: original.decoded.width, height: original.decoded.height },
+      },
+      repeatedCapture: {
+        captureId: repeated.captureId,
+        storageKey: repeated.storageKey,
+        pngDimensions: { width: repeated.decoded.width, height: repeated.decoded.height },
+      },
+      independentPixelBuffers: original.decoded.pixels !== repeated.decoded.pixels,
+    },
     fixtureErrors: pageErrors,
     testInterpretation: "The material-aware path is an isolated TSL/NodeMaterial prototype. It does not change SceneRenderer or establish Architecture Rise parity.",
     overlayAuthoring: [
@@ -462,6 +558,10 @@ test("isolated output/compositing experiment records renderer and subject pixel 
   const outputDirectory = join("test-results", "observer-output-compositing");
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(join(outputDirectory, "report.json"), JSON.stringify(report, null, 2));
+  await writeFile(
+    join(outputDirectory, "webgpu-material-aware-light-overlap-front-repeat.png"),
+    repeated.png,
+  );
   for (const key of selectedArtifactKeys) {
     const image = captures.get(key);
     if (image) await writeFile(join(outputDirectory, `${key.replaceAll("/", "-")}.png`), image.png);
