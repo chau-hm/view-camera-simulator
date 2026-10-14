@@ -229,7 +229,47 @@ adapter, so hardware acceleration is **unconfirmed**.
 | Overlapping-plane response, front view, all backgrounds | Reported in attached JSON | Maximum 0.17 RGB response MAE |
 | Overlapping-plane response, oblique / reverse-side oblique | Reported in attached JSON | 0.29 / 0.32 RGB response MAE |
 | Behind-plane occlusion | Center change 0 pixels | Center change 0 pixels; projected exposed strip changed 315 pixels |
-| Repeated capture | 0 RGB MAE | 0 RGB MAE |
+| Independent repeat capture of material-aware native WebGPU | — | 0.00 RGB MAE; 0 changed pixels (0%) |
+
+#### Review-fix round 1 — corrected repeat-consistency evidence
+
+The original PR H report's repeat value was invalid: the second capture was
+stored under the same map key as the first, replacing the canonical image
+before it was looked up for comparison. That made the reported zero a
+self-comparison, not repeatability evidence.
+
+The corrected harness captures the original first, then gives the repeated
+image its own capture ID and storage key. Duplicate map keys now fail instead
+of replacing a capture. The comparison also requires two distinct capture IDs
+and decoded pixel buffers, and verifies that renderer family/backend,
+initialization/fallback state, output settings, background, overlay, camera
+view, viewport, device pixel ratio, and canvas dimensions match. Missing
+images, invalid buffers, incompatible dimensions, or an empty/out-of-bounds
+ROI fail explicitly.
+
+The native run measured two independent captures on measurement commit
+`329b1616408ed53616462173bd86e2bda98352a6`: headed Chrome **155.0.8059.79**,
+macOS Darwin **27.0.0 arm64**, Three.js **r186**, mounted
+`webgpu-renderer / webgpu`, one initialization attempt, no application
+fallback/failure, viewport **1280 × 720**, DPR **1**, and canvas backing size
+**1280 × 672**. The canonical frame is `capture-36` at
+`webgpu-material-aware/light/overlap/front`; the independent repeat is
+`capture-52` at
+`webgpu-material-aware/light/overlap/front/repeat/capture-52`. Both PNGs are
+1280 × 672. Their actual comparison measured **0.00 RGB MAE, 0 changed pixels,
+and 0% changed pixels**, within the unchanged `<= 0.5` MAE threshold. The
+report records the native runtime, measurement commit, capture IDs/keys, state,
+dimensions, and independent-buffer check. The two separately saved screenshots
+are `webgpu-material-aware-light-overlap-front.png` and
+`webgpu-material-aware-light-overlap-front-repeat.png` in the evidence folder.
+
+Five focused unit tests cover changed pixels, independently allocated but
+identical images, preservation of the canonical map entry, rejection of a
+duplicate key, and missing/incompatible evidence. The corrected native fixture
+passed. The previous zero is superseded; the measured zero is now supported by
+two independent frames. The architecture decision remains **H2 —
+provisionally viable**; this repeatability correction does not establish
+Architecture Rise integration or hardware acceleration.
 
 Overlay response MAE compares the per-backend on-minus-off response, which
 removes a baseline background difference before comparing the overlay's

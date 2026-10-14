@@ -1,6 +1,6 @@
 {
   "objective": "r186 isolated WebGPU output/compositing architecture prototype",
-  "generatedAt": "2026-10-14T14:41:57.802Z",
+  "generatedAt": "2026-10-14T15:27:45.962Z",
   "environment": {
     "browserVersion": "155.0.8059.79",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
@@ -815,7 +815,50 @@
     "meanAbsoluteRgbDifference": 0,
     "changedPixelCount": 0,
     "changedPixelFraction": 0,
-    "meanSignedLuminanceDifference": 0
+    "meanSignedLuminanceDifference": 0,
+    "measurementCommit": "329b1616408ed53616462173bd86e2bda98352a6",
+    "browserVersion": "155.0.8059.79",
+    "threeRevision": "186",
+    "state": {
+      "rendererVariant": "webgpu-material-aware",
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "rendererAlpha": "true",
+      "toneMapping": "0",
+      "outputColorSpace": "srgb-linear",
+      "initializationAttempts": 1,
+      "applicationFallback": "none",
+      "initializationFailure": "none",
+      "background": "light",
+      "overlay": "overlap",
+      "cameraView": "front",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "devicePixelRatio": 1,
+      "canvasBackingDimensions": {
+        "width": 1280,
+        "height": 672
+      }
+    },
+    "originalCapture": {
+      "captureId": "capture-36",
+      "storageKey": "webgpu-material-aware/light/overlap/front",
+      "pngDimensions": {
+        "width": 1280,
+        "height": 672
+      }
+    },
+    "repeatedCapture": {
+      "captureId": "capture-52",
+      "storageKey": "webgpu-material-aware/light/overlap/front/repeat/capture-52",
+      "pngDimensions": {
+        "width": 1280,
+        "height": 672
+      }
+    },
+    "independentPixelBuffers": true
   },
   "fixtureErrors": [],
   "testInterpretation": "The material-aware path is an isolated TSL/NodeMaterial prototype. It does not change SceneRenderer or establish Architecture Rise parity.",
