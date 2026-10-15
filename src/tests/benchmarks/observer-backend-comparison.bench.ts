@@ -596,8 +596,14 @@ const runArchitectureRiseControlWorkload = async (page: Page, observer: Locator)
   await setStepRangeInput(page, "Rise", riseValueBefore);
 
   for (const overlay of ["Focus plane", "DOF region"]) {
-    const button = page.getByRole("button", { name: new RegExp(`^(Show|Hide) ${overlay}$`) });
-    await expect(button).toBeVisible();
+    let button = page.getByRole("button", { name: new RegExp(`^(Show|Hide) ${overlay}$`) });
+    if (!await button.isVisible().catch(() => false)) {
+      const menuTrigger = page.getByRole("button", { name: /View overlays/i });
+      await expect(menuTrigger).toBeVisible({ timeout: 5_000 });
+      if (await menuTrigger.getAttribute("aria-expanded") !== "true") await menuTrigger.click();
+      button = page.getByRole("button", { name: new RegExp(`^(Show|Hide) ${overlay}$`) });
+    }
+    await expect(button).toBeVisible({ timeout: 5_000 });
     const initiallyVisible = await observer.getAttribute(
       overlay === "Focus plane" ? "data-focus-overlay-visible" : "data-dof-overlay-visible",
     );
@@ -612,6 +618,10 @@ const runArchitectureRiseControlWorkload = async (page: Page, observer: Locator)
       overlay === "Focus plane" ? "data-focus-overlay-visible" : "data-dof-overlay-visible",
       initiallyVisible ?? "true",
     );
+  }
+  const overlayMenuTrigger = page.getByRole("button", { name: /View overlays/i });
+  if (await overlayMenuTrigger.count() > 0 && await overlayMenuTrigger.getAttribute("aria-expanded") === "true") {
+    await overlayMenuTrigger.click();
   }
 
   await page.getByRole("button", { name: "Camera", exact: true }).first().click();
