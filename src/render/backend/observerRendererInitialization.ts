@@ -1,5 +1,6 @@
 import type { CanvasProps, GLProps } from "@react-three/fiber";
 import type { ObserverRendererAttempt, SelectedObserverBackend } from "./observerBackend";
+import type { ObserverOutputPolicy } from "./observerOutputPolicy";
 
 type InitializableRenderer = Readonly<{
   init: () => PromiseLike<unknown> | unknown;
@@ -33,7 +34,7 @@ export const initializeObserverWebGpuRenderer = async <
 
 export type ObserverCanvasInitialization = Readonly<{
   rendererAttempt: ObserverRendererAttempt;
-  canvasProps: Pick<CanvasProps, "gl">;
+  canvasProps: Pick<CanvasProps, "gl" | "linear" | "flat">;
 }>;
 
 /** R3F initialization seam; only the explicitly selected pilot loads three/webgpu. */
@@ -42,6 +43,7 @@ export const resolveObserverCanvasInitialization = (
   antialias: boolean,
   onWebGpuInitializationFailure: () => void,
   onWebGpuInitializationAttempt: () => void = () => undefined,
+  outputPolicy: ObserverOutputPolicy = "standard",
 ): ObserverCanvasInitialization => {
   if (selection.rendererAttempt === "webgl") {
     return {
@@ -55,7 +57,7 @@ export const resolveObserverCanvasInitialization = (
     return initializeObserverWebGpuRenderer(
       async () => {
         const { WebGPURenderer } = await import("three/webgpu");
-        return new WebGPURenderer({
+        const renderer = new WebGPURenderer({
           // Canvas currently mounts a DOM canvas; R3F's public factory type includes a local OffscreenCanvas shim.
           canvas: defaults.canvas as HTMLCanvasElement,
           alpha: defaults.alpha,
@@ -64,6 +66,7 @@ export const resolveObserverCanvasInitialization = (
             : "high-performance",
           antialias,
         });
+        return renderer;
       },
       onWebGpuInitializationFailure,
     );
@@ -71,6 +74,11 @@ export const resolveObserverCanvasInitialization = (
 
   return {
     rendererAttempt: "webgpu",
-    canvasProps: { gl: createWebGpuRenderer },
+    // R3F configures outputColorSpace and toneMapping after resolving an async
+    // renderer factory. Use its public Canvas controls so these values survive
+    // configure() and are active before the first scene frame.
+    canvasProps: outputPolicy === "material-aware"
+      ? { gl: createWebGpuRenderer, linear: true, flat: true }
+      : { gl: createWebGpuRenderer },
   };
 };

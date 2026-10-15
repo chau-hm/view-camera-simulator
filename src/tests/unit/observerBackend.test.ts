@@ -298,6 +298,47 @@ describe("Observer renderer initialization and fallback", () => {
     });
   });
 
+  it("uses R3F Canvas output controls only for the material-aware WebGPU candidate", () => {
+    const webgpuSelection = selectObserverBackend({
+      ...selectionInput,
+      sceneCompatibility: resolveObserverSceneCompatibility("architecture-rise"),
+      requestedRendererParam: "webgpu",
+    });
+    if (webgpuSelection.status !== "selected") throw new Error("Pilot selection expected");
+
+    const standard = resolveObserverCanvasInitialization(
+      webgpuSelection,
+      true,
+      vi.fn(),
+      vi.fn(),
+      "standard",
+    );
+    expect(standard.canvasProps).toEqual({ gl: expect.any(Function) });
+
+    const materialAware = resolveObserverCanvasInitialization(
+      webgpuSelection,
+      true,
+      vi.fn(),
+      vi.fn(),
+      "material-aware",
+    );
+    expect(materialAware.canvasProps).toEqual({
+      gl: expect.any(Function),
+      linear: true,
+      flat: true,
+    });
+
+    const webglSelection = selectObserverBackend(selectionInput);
+    if (webglSelection.status !== "selected") throw new Error("WebGL selection expected");
+    expect(resolveObserverCanvasInitialization(
+      webglSelection,
+      true,
+      vi.fn(),
+      vi.fn(),
+      "material-aware",
+    ).canvasProps).toEqual({ gl: { antialias: true } });
+  });
+
   it("falls back once from a failed WebGPU attempt to the legacy WebGL path", () => {
     const webgpuSelection = selectObserverBackend({
       ...selectionInput,
