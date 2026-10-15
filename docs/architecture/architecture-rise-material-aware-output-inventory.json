@@ -102,19 +102,19 @@
       "source": "MeshStandardMaterial",
       "target": "MeshStandardNodeMaterial",
       "lit": true,
-      "output": "ACES Filmic when source toneMapped is true, then sRGB conversion"
+      "output": "Apply ACES Filmic with renderer exposure when source toneMapped is true, then convert to sRGB; skip ACES but retain sRGB conversion when false"
     },
     {
       "source": "MeshBasicMaterial",
       "target": "MeshBasicNodeMaterial",
       "lit": false,
-      "output": "sRGB conversion without ACES"
+      "output": "Apply ACES Filmic with renderer exposure when source toneMapped is true, then convert to sRGB; skip ACES but retain sRGB conversion when false"
     },
     {
       "source": "LineBasicMaterial",
       "target": "LineBasicNodeMaterial",
       "lit": false,
-      "output": "sRGB conversion without ACES"
+      "output": "Apply ACES Filmic with renderer exposure when source toneMapped is true, then convert to sRGB; skip ACES but retain sRGB conversion when false"
     }
   ],
   "unsupportedFamilyBehavior": "The candidate keeps scene content hidden until every encountered material is adapted. An unsupported family fails the candidate and requests the existing one-shot application WebGL fallback.",
@@ -592,5 +592,20 @@
     },
     "pageErrors": [],
     "consoleErrors": []
+  },
+  "toneMappingSemantics": {
+    "sourceFlag": "toneMapped",
+    "whenTrue": "ACES Filmic with renderer exposure, followed by sRGB conversion",
+    "whenFalse": "sRGB conversion without ACES",
+    "families": [
+      "MeshStandardNodeMaterial",
+      "MeshBasicNodeMaterial",
+      "LineBasicNodeMaterial"
+    ],
+    "verifiedBy": {
+      "implementationCommit": "fe914b765188d276c8c900482582cec126af1266",
+      "unitTest": "src/tests/unit/materialAwareObserverOutput.test.ts",
+      "nativeSceneEvidence": "reviewFixRound1 in architecture-rise-material-aware-output/measurement-report.json"
+    }
   }
 }

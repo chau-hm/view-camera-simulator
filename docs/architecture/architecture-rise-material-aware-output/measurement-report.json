@@ -2170,5 +2170,213 @@
     "Hardware acceleration is unconfirmed; the report establishes native WebGPU API execution, not the adapter hardware type.",
     "Parity is measured on the tested Architecture Rise Observer scene and browser configuration; it does not authorize other scenes or production WebGPU.",
     "Ground Glass remains a separate WebGL 2 render-to-texture path."
-  ]
+  ],
+  "reviewFixRound1": {
+    "finding": "P2 — Basic and LineBasic NodeMaterial output did not honor source material toneMapped=true.",
+    "rootCause": "The candidate disabled renderer-wide tone mapping and the NodeMaterial output path applied ACES only to Standard materials. Basic and LineBasic outputs converted directly to sRGB, so copied toneMapped=true intent was not honored.",
+    "correction": {
+      "implementationCommit": "fe914b765188d276c8c900482582cec126af1266",
+      "files": [
+        "src/render/backend/materialAwareNodeMaterials.ts",
+        "src/tests/unit/materialAwareObserverOutput.test.ts",
+        "src/tests/e2e/observer-webgpu-pilot.spec.ts"
+      ],
+      "behavior": "Standard, Basic, and LineBasic NodeMaterials apply ACES Filmic with renderer exposure when the source toneMapped flag is true, then convert to sRGB. When false, they skip ACES and still convert to sRGB.",
+      "unitTestCommand": "npx vitest run src/tests/unit/materialAwareObserverOutput.test.ts",
+      "unitTestResult": "passed: 5 tests"
+    },
+    "nativeSceneVerification": {
+      "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- --grep \"material-aware output adapts the Architecture Rise Observer\" --workers=1",
+      "evidenceFileUpdatedAt": "2026-10-15T07:54:58+08:00",
+      "testOutcome": "passed: 1 test",
+      "route": "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1",
+      "environment": {
+        "os": "macOS Darwin 27.0.0 arm64",
+        "browser": "Google Chrome stable, headed",
+        "browserVersion": "155.0.8059.79",
+        "node": "v24.19.0",
+        "threeRevision": "186"
+      },
+      "browserWebGpuApi": "present",
+      "adapterAvailability": "available",
+      "mountedRendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "applicationFallback": "none",
+      "initializationFailure": null,
+      "initializationAttempts": 1,
+      "outputPolicy": "material-aware",
+      "outputPolicyStatus": "active",
+      "hardwareAcceleration": "unconfirmed",
+      "observer": {
+        "subjectId": "architecture-rise",
+        "screenshotPixelsContentful": true,
+        "focusCameraView": {
+          "position": "6.500000,3.000000,-6.500000",
+          "target": "0.000000,0.900000,5.600000"
+        },
+        "opticalAxisCameraView": {
+          "position": "0.336813,0.108816,-0.701990",
+          "target": "0.000000,0.000000,-0.075000"
+        },
+        "captureConfiguration": {
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "devicePixelRatio": 1,
+          "canvas": {
+            "cssWidth": 1074,
+            "cssHeight": 763,
+            "backingWidth": 2148,
+            "backingHeight": 1526
+          }
+        },
+        "interactions": {
+          "cameraFocusSelected": true,
+          "orbitInteractionWorked": true,
+          "resetRestoredCameraPosition": true,
+          "resetRestoredOrbitTarget": true
+        },
+        "pageErrors": []
+      },
+      "groundGlassContentful": true,
+      "toneMappedMaterialPixelEvidence": {
+        "dimensions": {
+          "width": 1074,
+          "height": 763
+        },
+        "focusChartRegion": {
+          "left": 425,
+          "top": 329,
+          "right": 477,
+          "bottom": 386
+        },
+        "focusChart": {
+          "darkBasic": {
+            "referencePixelCount": 780,
+            "meanAbsoluteRgbDelta": 0.6585470085470088,
+            "maximumChannelDelta": 34
+          },
+          "lightBasic": {
+            "referencePixelCount": 859,
+            "meanAbsoluteRgbDelta": 0.8634070624757534,
+            "maximumChannelDelta": 27
+          },
+          "redCrosshairBasic": {
+            "referencePixelCount": 7,
+            "meanAbsoluteRgbDelta": 1.0952380952380951,
+            "maximumChannelDelta": 14
+          }
+        },
+        "opticalAxisLineBasic": {
+          "referencePixelCount": 526,
+          "meanAbsoluteRgbDelta": 1.2921419518377721,
+          "maximumChannelDelta": 12
+        },
+        "projectedOpticalAxisPath": [
+          {
+            "x": 588.8223222404185,
+            "y": 396.0797051579845,
+            "depth": 0.9694446421650027
+          },
+          {
+            "x": 495.3741556177108,
+            "y": 369.78897448419286,
+            "depth": 0.9746311368922401
+          },
+          {
+            "x": 78.74912497052838,
+            "y": 252.5755836968816,
+            "depth": 0.9977543676925938
+          },
+          {
+            "x": 74.44601789548757,
+            "y": 251.36494647135808,
+            "depth": 0.9979931957291623
+          }
+        ],
+        "opticalAxisPixelRegion": {
+          "left": 70,
+          "top": 247,
+          "right": 593,
+          "bottom": 401
+        }
+      },
+      "screenshots": [
+        {
+          "file": "fix-round-1-webgl-focus-chart.png",
+          "width": 1074,
+          "height": 763,
+          "bytes": 101866,
+          "sha256": "2441fe50d0e67e370a17938c641bb0b9a821f52ecb89eda319d5f3924bf8ecf8"
+        },
+        {
+          "file": "fix-round-1-webgpu-focus-chart.png",
+          "width": 1074,
+          "height": 763,
+          "bytes": 102629,
+          "sha256": "3353c9aa5c14a63a6599a1bb7b6c57884fa59670ab22f6a68a3e2f2f886f36c5"
+        },
+        {
+          "file": "fix-round-1-webgl-optical-axis.png",
+          "width": 1074,
+          "height": 763,
+          "bytes": 196467,
+          "sha256": "acdcb36ca3e15cec58fc537c07582587734738803ecb3e74c3b30f909b1b1eb5"
+        },
+        {
+          "file": "fix-round-1-webgpu-optical-axis.png",
+          "width": 1074,
+          "height": 763,
+          "bytes": 197590,
+          "sha256": "692a1753e0ae1640d0750afcf305d578d2c364457eaf78613d66141b71fd9aa3"
+        }
+      ],
+      "evidenceProvenance": {
+        "integrationReport": "test-results/observer-webgpu-pilot-mate-171e6-ne-scoped-across-navigation-chrome-native-webgpu/architecture-rise-material-aware-integration.json (ignored test output)",
+        "pixelReport": "test-results/observer-webgpu-pilot-mate-171e6-ne-scoped-across-navigation-chrome-native-webgpu/architecture-rise-tone-mapped-material-pixel-evidence.json (ignored test output)",
+        "committedScreenshots": "the four files listed in screenshots"
+      }
+    },
+    "unchangedPr254StrictParityRerun": {
+      "command": "OBSERVER_VISUAL_PARITY_REQUIRED=1 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_OUTPUT_POLICY=material-aware npx playwright test --config=playwright.observer-backend-benchmark.config.ts src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1",
+      "generatedAt": "2026-10-14T23:55:14.940Z",
+      "measurementCommit": "fe914b765188d276c8c900482582cec126af1266",
+      "browserVersion": "155.0.8059.79",
+      "threeRevision": "186",
+      "mountedRendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "applicationFallback": "none",
+      "initializationAttempts": 1,
+      "strictCriteria": 81,
+      "passed": 78,
+      "failed": 0,
+      "conditionalNotApplicable": 3,
+      "status": "pass",
+      "thresholdsChanged": false
+    },
+    "decision": "I1 — REAL-SCENE INTEGRATION VALIDATED remains supported. The correction restores source material toneMapped behavior and was checked against actual native WebGPU pixels; the unchanged strict parity gate still passes. This remains limited to the opt-in Architecture Rise development candidate.",
+    "limitations": [
+      "Hardware acceleration is unconfirmed; evidence proves native WebGPU API execution only.",
+      "The comparison covers the Architecture Rise candidate and sampled Basic/LineBasic regions, not every material configuration or scene.",
+      "Ground Glass remains the independent WebGL 2 RTT; no Ground Glass or canonical optics implementation changed."
+    ],
+    "ordinaryChromiumRegression": {
+      "command": "npm run test:e2e -- --project=chromium src/tests/e2e/observer-webgpu-pilot.spec.ts",
+      "testOutcome": "passed: 8 tests",
+      "browser": "Playwright Chromium 149.0.7827.55",
+      "webGpuApi": "present",
+      "adapterAvailability": "unavailable",
+      "defaultRenderer": "webgl-renderer / webgl2",
+      "developmentPilot": "webgpu-renderer / webgl2-fallback",
+      "applicationFallback": "none for the internal fallback case; controlled initialization-failure cases separately verified app-webgl fallback",
+      "initializationAttempts": 1,
+      "subjectEvidence": "registered-subject visibility differential passed; actual subject pixels changed only within the projected Anatomy region",
+      "observerInteractionsPassed": true,
+      "groundGlassContentful": true,
+      "pageErrors": [],
+      "nativeWebGpuEvidence": false,
+      "note": "This ordinary automated Chromium run is regression coverage only; its unavailable adapter does not qualify as native WebGPU."
+    }
+  }
 }

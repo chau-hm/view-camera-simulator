@@ -44,11 +44,23 @@ source family; they are not authored object counts.
 | Optical helpers | Basic → `MeshBasicNodeMaterial` | 6 / 6 | no / 6 | 2 / 5 / 2 | 0 / 0 | supported |
 
 `toneMapped` is copied for authored NodeMaterial instances and is reported as
-runtime evidence. The output node handles lit Standard materials with ACES
-Filmic followed by sRGB conversion when tone mapping is enabled; Basic and
-LineBasic roles use sRGB conversion without ACES. The candidate disables the
-renderer-wide transform with R3F Canvas `flat` and `linear`, keeping output
-semantics at the material boundary.
+runtime evidence. All three output families preserve that per-material
+setting: when the source has `toneMapped=true`, the output node applies ACES
+Filmic with the renderer exposure and then converts to sRGB; when false, it
+skips ACES but still converts to sRGB. This applies to Standard, Basic, and
+LineBasic materials. The candidate disables the renderer-wide transform with
+R3F Canvas `flat` and `linear`, keeping output semantics at the material
+boundary.
+
+PR #256 review-fix round 1 verified the Basic and LineBasic paths with both
+NodeMaterial graph assertions and matched WebGL/native-WebGPU pixels from the
+real Architecture Rise Observer. The focus-chart Basic regions measured
+0.66/0.86 RGB MAE for dark/light samples, and the projected optical-axis
+LineBasic region measured 1.29 RGB MAE. The native run used the mounted
+`webgpu-renderer / webgpu`; the four matched captures, pixel counts, view
+state, and runtime details are recorded in the measurement report. These
+results verify the corrected material flag behavior in this scene, not a
+general material-family or hardware-acceleration claim.
 
 ### Maps, environment, lighting, and lifecycle
 

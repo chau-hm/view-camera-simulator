@@ -505,3 +505,55 @@ Rise candidate satisfies the existing strict parity gate with supported
 material coverage and the tested environment, shadow, fallback, lifecycle,
 and Ground Glass contracts. This does not change the default development
 renderer, enable production WebGPU, or authorize additional scenes.
+
+### Review-fix round 1 — material tone-mapping semantics
+
+The first PR #256 review found that the NodeMaterial output path applied ACES
+only to Standard materials. Basic and LineBasic materials copied the source
+`toneMapped` flag, but their output nodes converted directly to sRGB. Since
+this candidate disables the renderer-wide output transform, Basic/LineBasic
+materials authored with `toneMapped=true` missed the material-level ACES step.
+
+The correction uses one output helper for all three material families. It
+applies ACES Filmic with renderer exposure when the source flag is true and
+then converts to sRGB; when false it skips ACES and still converts to sRGB.
+Focused Three.js r186 NodeMaterial graph tests cover both flag values for
+Standard, Basic, and LineBasic nodes, including exposure and alpha behavior.
+
+The native real-scene check compared the actual Architecture Rise Observer
+framebuffer against the default WebGL view with matched camera states,
+viewport, DPR, and canvas dimensions. The geometry-derived Basic focus-chart
+ROI measured 0.66 RGB MAE over 780 dark samples and 0.86 over 859 light
+samples; the red crosshair core measured 1.10 over 7 samples. The
+canonical-projection LineBasic optical-axis region measured 1.29 RGB MAE over
+526 samples. The camera views were restored after capture. These are subject
+pixel measurements, not material metadata. The four committed capture images
+and their checksums are recorded under `reviewFixRound1` in
+[`measurement-report.json`](architecture-rise-material-aware-output/measurement-report.json).
+
+The run used headed Chrome 155.0.8059.79 on macOS Darwin 27.0 arm64, Node
+24.19.0, and Three.js r186. `navigator.gpu` and an adapter were available; the
+actual mounted renderer was `webgpu-renderer / webgpu`, initialization ran
+once, application fallback and initialization failure were absent, the
+material-aware policy was active, Observer interaction and Ground Glass RTT
+checks passed, and no page errors were recorded. Hardware acceleration remains
+unconfirmed.
+
+The unchanged PR #254 native strict parity command was rerun on implementation
+commit `fe914b765188d276c8c900482582cec126af1266`. It passed 78 applicable
+criteria, failed none, and reported 3 conditional criteria as not applicable
+out of 81; no threshold changed. The focused material-output unit tests passed
+5/5. The corrected real-scene output and strict parity evidence continue to
+support **I1 — REAL-SCENE INTEGRATION VALIDATED** for the opt-in Architecture
+Rise development candidate only.
+
+The ordinary Chromium pilot suite also passed 8/8. That automated Chromium
+149.0.7827.55 run reported the WebGPU API but no available adapter, so the
+pilot used `webgpu-renderer / webgl2-fallback`; this is WebGL regression
+evidence, not native WebGPU evidence. The headed Chrome 155 native result
+above remains the native qualification.
+
+| Matched output | WebGL | Native WebGPU |
+| --- | --- | --- |
+| Basic focus chart | ![WebGL focus chart](architecture-rise-material-aware-output/fix-round-1-webgl-focus-chart.png) | ![Native WebGPU focus chart](architecture-rise-material-aware-output/fix-round-1-webgpu-focus-chart.png) |
+| LineBasic optical axis | ![WebGL optical axis](architecture-rise-material-aware-output/fix-round-1-webgl-optical-axis.png) | ![Native WebGPU optical axis](architecture-rise-material-aware-output/fix-round-1-webgpu-optical-axis.png) |

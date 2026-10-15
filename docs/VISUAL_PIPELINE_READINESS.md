@@ -1707,3 +1707,13 @@ the standard WebGPU path, production WebGL boundary, scene eligibility, or
 authorize rollout to other scenes. Selected matched captures and the compact
 machine-readable report are in
 [`architecture-rise-material-aware-output/`](architecture/architecture-rise-material-aware-output/).
+
+PR #256 review-fix round 1 corrected Basic and LineBasic NodeMaterial output so
+ACES Filmic follows the source material's `toneMapped` flag for all supported
+families, with sRGB conversion retained when tone mapping is disabled. Focused
+r186 graph tests and geometry-derived Basic/LineBasic pixel comparisons on the
+native Architecture Rise WebGPU mount passed. The unchanged PR #254 strict
+parity gate passed again: 78 applicable pass, 0 fail, and 3 conditional N/A
+out of 81. The native backend was `webgpu-renderer / webgpu`; hardware
+acceleration remains unconfirmed. See the review-fix evidence in the
+[measurement report](architecture/architecture-rise-material-aware-output/measurement-report.json).
