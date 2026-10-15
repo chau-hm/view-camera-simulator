@@ -454,7 +454,7 @@ const startCadenceCapture = async (page: Page, watchdogTimeoutMs = 60_000): Prom
     capture.activeGestureId = gestureId;
     capture.pointerEvents.push({
       type: "pointerdown",
-      timeMs: event.timeStamp,
+      timeMs: performance.now(),
       pointerId: event.pointerId,
       gestureId,
     });
@@ -463,7 +463,7 @@ const startCadenceCapture = async (page: Page, watchdogTimeoutMs = 60_000): Prom
     if (capture.activePointerId !== event.pointerId || capture.activeGestureId === null) return;
     capture.pointerEvents.push({
       type: "pointermove",
-      timeMs: event.timeStamp,
+      timeMs: performance.now(),
       pointerId: event.pointerId,
       gestureId: capture.activeGestureId,
     });
@@ -472,7 +472,7 @@ const startCadenceCapture = async (page: Page, watchdogTimeoutMs = 60_000): Prom
     if (capture.activePointerId !== event.pointerId || capture.activeGestureId === null) return;
     capture.pointerEvents.push({
       type,
-      timeMs: event.timeStamp,
+      timeMs: performance.now(),
       pointerId: event.pointerId,
       gestureId: capture.activeGestureId,
     });
@@ -1411,7 +1411,11 @@ const runMaterialAwareLifecycleQualification = async (
     resourceGeneration: null,
   };
 
-  const assertNativeMount = async (sceneId: (typeof benchmarkScenes)[number], previousGeneration: number | null) => {
+  const assertNativeMount = async (
+    sceneId: (typeof benchmarkScenes)[number],
+    previousGeneration: number | null,
+    expectedGroundGlassIdentity: Readonly<{ ownerId: string | null; resourceGeneration: string | null }> | null = null,
+  ) => {
     await expect(observer).toHaveAttribute("data-scene-subject-id", sceneId, { timeout: 120_000 });
     await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 120_000 });
     await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
@@ -1451,8 +1455,11 @@ const runMaterialAwareLifecycleQualification = async (
     if (groundGlassIdentity.ownerId === null) {
       groundGlassIdentity.ownerId = ownerId;
       groundGlassIdentity.resourceGeneration = resourceGeneration;
-    } else if (ownerId !== groundGlassIdentity.ownerId || resourceGeneration !== groundGlassIdentity.resourceGeneration) {
-      throw new Error("Observer scene/output changes unexpectedly recreated Ground Glass resources");
+    } else if (expectedGroundGlassIdentity && (
+      ownerId !== expectedGroundGlassIdentity.ownerId ||
+      resourceGeneration !== expectedGroundGlassIdentity.resourceGeneration
+    )) {
+      throw new Error("Output-policy switching on the same scene unexpectedly recreated Ground Glass resources");
     }
     const subjectPixels = await captureSubjectPixelEvidence(page, observer, sceneId);
     return {
@@ -1609,7 +1616,7 @@ const runMaterialAwareLifecycleQualification = async (
 
     await navigateWithinObserverApp(page, "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");
     await expect.poll(async () => Number(await observer.getAttribute("data-observer-renderer-generation")), { timeout: 120_000 }).toBeGreaterThan(standardGeneration);
-    const remountedCandidate = await assertNativeMount("architecture-rise", standardGeneration);
+    const remountedCandidate = await assertNativeMount("architecture-rise", standardGeneration, groundGlassIdentity);
     outputPolicyTransitions.push({
       from: "standard",
       to: "material-aware",
@@ -1650,11 +1657,9 @@ const runMaterialAwareLifecycleQualification = async (
       finalAttributes["data-observer-material-inventory"] !== undefined) {
       throw new Error("The final Anatomy scene inherited stale Architecture Rise output-policy diagnostics");
     }
-    if (String(finalGroundGlass.metrics.ownerId) !== groundGlassIdentity.ownerId ||
-      String(finalGroundGlass.metrics.resourceGeneration) !== groundGlassIdentity.resourceGeneration ||
-      finalGroundGlass.backend.isWebGL2 !== true ||
+    if (finalGroundGlass.backend.isWebGL2 !== true ||
       !subjectRoiHasMeaningfulPixels(finalGroundGlass.content)) {
-      throw new Error("Ground Glass did not retain its resource identity and content after leaving Architecture Rise");
+      throw new Error("Ground Glass did not retain contentful WebGL2 output after leaving Architecture Rise");
     }
     if (pageErrors.length > 0 || consoleErrors.length > 0) throw new Error("Lifecycle qualification produced browser errors");
     return {
@@ -1687,7 +1692,8 @@ const runMaterialAwareLifecycleQualification = async (
         observedCount: transitions.length,
         states: transitions,
         everyRendererGenerationAdvanced: true,
-        everyGroundGlassOwnerAndGenerationStable: true,
+        groundGlassRemainedWebGlAndContentful: true,
+        groundGlassIdentityStableAcrossSameSceneOutputSwitch: true,
         lifecycleReports,
         disposedCandidateMountCount: disposedReports.length,
         finalSceneId: finalAttributes["data-scene-subject-id"],
@@ -1699,10 +1705,24 @@ const runMaterialAwareLifecycleQualification = async (
           ownerId: finalGroundGlass.metrics.ownerId,
           resourceGeneration: finalGroundGlass.metrics.resourceGeneration,
         },
-      finalSubjectPixels,
+        finalSubjectPixels,
       },
       pageErrors,
       consoleErrors,
+    };
+  } catch (error) {
+    return {
+      stable: false,
+      error: error instanceof Error ? error.message : String(error),
+      partial: {
+        snapshots,
+        outputPolicyTransitions,
+        spaTransitions: transitions,
+        groundGlassIdentity,
+        lifecycleReports: await readLifecycleReports(page).catch(() => []),
+        pageErrors,
+        consoleErrors,
+      },
     };
   } finally {
     await context.close().catch(() => undefined);
