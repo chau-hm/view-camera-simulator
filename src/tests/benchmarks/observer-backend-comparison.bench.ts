@@ -425,7 +425,7 @@ const prepareView = async (
   await expect(observer).toHaveAttribute("data-view-focus", desiredFocus);
 };
 
-const startCadenceCapture = async (page: Page): Promise<void> => page.evaluate(() => {
+const startCadenceCapture = async (page: Page, watchdogTimeoutMs = 60_000): Promise<void> => page.evaluate((timeoutMs) => {
   const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="scene-canvas"] canvas');
   if (!canvas) throw new Error("Observer canvas is missing before orbit cadence capture");
   const capture = {
@@ -504,10 +504,10 @@ const startCadenceCapture = async (page: Page): Promise<void> => page.evaluate((
   capture.watchdogTimeoutId = window.setTimeout(() => {
     capture.timedOut = true;
     capture.stop?.();
-  }, 60_000);
+  }, timeoutMs);
   (window as unknown as { __observerBackendBenchmarkCapture?: typeof capture })
     .__observerBackendBenchmarkCapture = capture;
-});
+}, watchdogTimeoutMs);
 
 const finishCadenceCapture = async (page: Page): Promise<{
   frames: OrbitFrame[];
@@ -530,6 +530,39 @@ const finishCadenceCapture = async (page: Page): Promise<{
     return snapshot;
   });
 
+const performOrbitGestures = async (
+  page: Page,
+  observer: Locator,
+): Promise<number> => {
+  const canvas = observer.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) throw new Error("Observer canvas has no visible browser bounds");
+  const center = { x: bounds.x + bounds.width * 0.52, y: bounds.y + bounds.height * 0.52 };
+  let gesturePoseChanges = 0;
+  for (const [gestureIndex, gesture] of orbitSequence.entries()) {
+    const before = await observer.getAttribute("data-observer-camera-position");
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await waitForFrames(page, 1);
+    await page.mouse.move(center.x + gesture.deltaX, center.y + gesture.deltaY, { steps: gesture.steps });
+    await waitForFrames(page, 1);
+    await page.mouse.up();
+    try {
+      await expect.poll(async () => observer.getAttribute("data-observer-camera-position"), {
+        timeout: 10_000,
+      }).not.toBe(before);
+    } catch (error) {
+      const after = await observer.getAttribute("data-observer-camera-position");
+      throw new Error(
+        `orbit gesture ${gestureIndex + 1}/${orbitSequence.length} (${gesture.deltaX}, ${gesture.deltaY}) did not change camera position (${before} → ${after}): ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    gesturePoseChanges += 1;
+  }
+
+  return gesturePoseChanges;
+};
+
 const runOrbitWorkload = async (
   page: Page,
   observer: Locator,
@@ -540,34 +573,11 @@ const runOrbitWorkload = async (
   pointerEvents: OrbitPointerEvent[];
   captureTimedOut: boolean;
 }> => {
-  const canvas = observer.locator("canvas");
-  const bounds = await canvas.boundingBox();
-  if (!bounds) throw new Error("Observer canvas has no visible browser bounds");
-  const center = { x: bounds.x + bounds.width * 0.52, y: bounds.y + bounds.height * 0.52 };
-  let gesturePoseChanges = 0;
   await startCadenceCapture(page);
   let captured: { frames: OrbitFrame[]; pointerEvents: OrbitPointerEvent[]; timedOut: boolean } | null = null;
+  let gesturePoseChanges = 0;
   try {
-    for (const [gestureIndex, gesture] of orbitSequence.entries()) {
-      const before = await observer.getAttribute("data-observer-camera-position");
-      await page.mouse.move(center.x, center.y);
-      await page.mouse.down();
-      await waitForFrames(page, 1);
-      await page.mouse.move(center.x + gesture.deltaX, center.y + gesture.deltaY, { steps: gesture.steps });
-      await waitForFrames(page, 1);
-      await page.mouse.up();
-      try {
-        await expect.poll(async () => observer.getAttribute("data-observer-camera-position"), {
-          timeout: 10_000,
-        }).not.toBe(before);
-      } catch (error) {
-        const after = await observer.getAttribute("data-observer-camera-position");
-        throw new Error(
-          `orbit gesture ${gestureIndex + 1}/${orbitSequence.length} (${gesture.deltaX}, ${gesture.deltaY}) did not change camera position (${before} → ${after}): ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
-      gesturePoseChanges += 1;
-    }
+    gesturePoseChanges = await performOrbitGestures(page, observer);
   } finally {
     captured = await finishCadenceCapture(page);
   }
@@ -1249,9 +1259,9 @@ const runRecoverySequence = async (
     await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 120_000 });
     const sequence = [
       { label: "default-webgl", query: "", expected: "webgl" as const },
-      { label: "explicit-webgpu", query: "?observerRenderer=webgpu", expected: "webgpu" as const },
+      { label: "explicit-webgpu-standard", query: "?observerRenderer=webgpu&observerOutput=standard", expected: "webgpu" as const },
       { label: "return-to-webgl", query: "", expected: "webgl" as const },
-      { label: "return-to-webgpu", query: "?observerRenderer=webgpu", expected: "webgpu" as const },
+      { label: "return-to-webgpu-standard", query: "?observerRenderer=webgpu&observerOutput=standard", expected: "webgpu" as const },
     ];
     for (let index = 0; index < sequence.length; index += 1) {
       const step = sequence[index];
@@ -1279,6 +1289,10 @@ const runRecoverySequence = async (
         { timeout: 120_000 },
       );
       await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+      if (step.expected === "webgpu") {
+        await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
+        await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+      }
       await expect(observer).toHaveAttribute("data-scene-subject-id", sceneId);
       await expect(page.getByTestId("ground-glass-rtt").first()).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 30_000 });
       const groundGlassCapture = await captureGroundGlass(page);
@@ -1301,6 +1315,7 @@ const runRecoverySequence = async (
         rendererFamily: attrs["data-observer-renderer-family"],
         executionBackend: attrs["data-observer-execution-backend"],
         applicationFallback: attrs["data-observer-application-fallback"],
+        outputPolicy: attrs["data-observer-output-policy-installed"] ?? null,
         environmentStatus: attrs["data-observer-environment-status"] ?? null,
         groundGlassContentful,
         observerCanvasCount: await observer.locator("canvas").count(),
@@ -1315,6 +1330,383 @@ const runRecoverySequence = async (
     await context.close().catch(() => undefined);
   }
   return { sceneId, steps, pageErrors: errors, stable: steps.length === 4 && errors.length === 0 };
+};
+
+const readOutputPolicyPerformance = async (observer: Locator): Promise<Record<string, unknown> | null> =>
+  observer.evaluate((element) => {
+    window.dispatchEvent(new Event("vcs:observer-verification:read-output-policy-performance"));
+    const value = element.getAttribute("data-observer-output-policy-performance");
+    return value ? JSON.parse(value) as Record<string, unknown> : null;
+  });
+
+const navigateWithinObserverApp = async (page: Page, path: string): Promise<void> => page.evaluate((nextPath) => {
+  window.history.pushState(window.history.state, "", nextPath);
+  window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+}, path);
+
+const captureSubjectPixelEvidence = async (
+  page: Page,
+  observer: Locator,
+  sceneId: (typeof benchmarkScenes)[number],
+): Promise<Record<string, unknown>> => {
+  let restoreView: ObserverView | null = null;
+  const viewName = sceneId === "architecture-rise" ? "close-facade" : "registered-anatomy-subject";
+  if (sceneId === "architecture-rise") {
+    await setArchitectureCloseView(observer);
+  } else {
+    restoreView = await setAnatomyRegisteredSubjectView(observer);
+  }
+  try {
+    await waitForFrames(page, 4);
+    const camera = await readObserverView(observer);
+    const image = decodePlaywrightPng(await observer.locator("canvas").screenshot({ animations: "disabled" }));
+    const subjectRegionName = getNamedRegions(sceneId, camera, image.width, image.height, viewName).subjectRegionName;
+    const region = getNamedRegions(sceneId, camera, image.width, image.height, viewName).regions[subjectRegionName] ?? null;
+    const pixels = region ? summarizePixelRegion(image, region) : null;
+    const contentful = subjectRoiHasMeaningfulPixels(pixels);
+    if (!contentful) throw new Error(`${sceneId} ${subjectRegionName} subject ROI did not contain meaningful rendered pixels`);
+    return { sceneId, subjectRegionName, camera, imageDimensions: { width: image.width, height: image.height }, region, pixels, contentful };
+  } finally {
+    if (restoreView) await restoreObserverView(observer, restoreView);
+  }
+};
+
+const readLifecycleReports = async (page: Page): Promise<Array<Record<string, unknown>>> =>
+  page.evaluate(() => {
+    const target = window as unknown as { __observerOutputPolicyLifecycleReports?: unknown[] };
+    return (target.__observerOutputPolicyLifecycleReports ?? []) as Array<Record<string, unknown>>;
+  });
+
+const runMaterialAwareLifecycleQualification = async (
+  browser: Browser,
+): Promise<Record<string, unknown>> => {
+  const context = await browser.newContext({
+    viewport,
+    deviceScaleFactor,
+    locale: "en-US",
+    timezoneId: "UTC",
+    colorScheme: "light",
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+  await page.addInitScript(() => {
+    const target = window as unknown as { __observerOutputPolicyLifecycleReports: unknown[] };
+    target.__observerOutputPolicyLifecycleReports = [];
+    window.addEventListener("vcs:observer-output-policy-lifecycle", (event) => {
+      target.__observerOutputPolicyLifecycleReports.push((event as CustomEvent<unknown>).detail);
+    });
+  });
+
+  const observer = observerLocator(page);
+  const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  const snapshots: Array<Record<string, unknown>> = [];
+  const transitions: Array<Record<string, unknown>> = [];
+  const outputPolicyTransitions: Array<Record<string, unknown>> = [];
+  const groundGlassIdentity: { ownerId: string | null; resourceGeneration: string | null } = {
+    ownerId: null,
+    resourceGeneration: null,
+  };
+
+  const assertNativeMount = async (sceneId: (typeof benchmarkScenes)[number], previousGeneration: number | null) => {
+    await expect(observer).toHaveAttribute("data-scene-subject-id", sceneId, { timeout: 120_000 });
+    await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 120_000 });
+    await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
+    await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgpu");
+    await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+    await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available");
+    await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
+    await expect(observer.locator("canvas")).toHaveCount(1);
+    const generation = Number(await observer.getAttribute("data-observer-renderer-generation"));
+    if (!Number.isFinite(generation) || (previousGeneration !== null && generation <= previousGeneration)) {
+      throw new Error(`${sceneId} did not advance to a unique Observer generation (${previousGeneration} → ${generation})`);
+    }
+    if (sceneId === "architecture-rise") {
+      await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "material-aware");
+      await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware");
+      await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 90_000 });
+      await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+      const inventory = JSON.parse((await observer.getAttribute("data-observer-material-inventory")) ?? "null") as Record<string, unknown> | null;
+      if (!inventory || inventory.sceneId !== sceneId || Number(inventory.unsupportedMaterialInstances) !== 0 || Number(inventory.adaptedMaterialInstances) < 1) {
+        throw new Error("Architecture Rise material-aware inventory was missing, unsupported, or empty");
+      }
+    } else {
+      await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
+      await expect(observer).toHaveAttribute("data-observer-output-policy-selection-reason", "scene-not-eligible");
+      await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+      await expect(observer).not.toHaveAttribute("data-observer-material-inventory");
+      await expect(observer).not.toHaveAttribute("data-observer-output-policy-status");
+    }
+    await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+    const groundGlassCapture = await captureGroundGlass(page);
+    if (!subjectRoiHasMeaningfulPixels(groundGlassCapture.content) || groundGlassCapture.backend.isWebGL2 !== true) {
+      throw new Error(`${sceneId} transition did not retain contentful WebGL2 Ground Glass output`);
+    }
+    const ownerId = String(groundGlassCapture.metrics.ownerId ?? "");
+    const resourceGeneration = String(groundGlassCapture.metrics.resourceGeneration ?? "");
+    if (!ownerId || !resourceGeneration) throw new Error("Ground Glass ownership/generation evidence was missing");
+    if (groundGlassIdentity.ownerId === null) {
+      groundGlassIdentity.ownerId = ownerId;
+      groundGlassIdentity.resourceGeneration = resourceGeneration;
+    } else if (ownerId !== groundGlassIdentity.ownerId || resourceGeneration !== groundGlassIdentity.resourceGeneration) {
+      throw new Error("Observer scene/output changes unexpectedly recreated Ground Glass resources");
+    }
+    const subjectPixels = await captureSubjectPixelEvidence(page, observer, sceneId);
+    return {
+      sceneId,
+      rendererGeneration: generation,
+      rendererFamily: await observer.getAttribute("data-observer-renderer-family"),
+      executionBackend: await observer.getAttribute("data-observer-execution-backend"),
+      applicationFallback: await observer.getAttribute("data-observer-application-fallback"),
+      outputPolicy: await observer.getAttribute("data-observer-output-policy-installed"),
+      observerCanvasCount: await observer.locator("canvas").count(),
+      subjectPixels,
+      groundGlass: {
+        contentful: true,
+        backend: groundGlassCapture.backend,
+        ownerId,
+        resourceGeneration,
+        canvasCount: groundGlassCapture.metrics.resourceCanvasCount,
+      },
+    };
+  };
+
+  const readResourceSnapshot = async (label: string) => {
+    const attributes = await readObserverAttributes(observer);
+    const performanceMetrics = await readOutputPolicyPerformance(observer);
+    const inventory = JSON.parse(attributes["data-observer-material-inventory"] ?? "null") as Record<string, unknown> | null;
+    const snapshot = {
+      label,
+      rendererGeneration: attributes["data-observer-renderer-generation"] ?? null,
+      outputPolicyStatus: attributes["data-observer-output-policy-status"] ?? null,
+      performance: performanceMetrics,
+      inventory: inventory ? {
+        totalMeshAssignments: inventory.totalMeshAssignments ?? null,
+        distinctMaterialInstances: inventory.distinctMaterialInstances ?? null,
+        adaptedMaterialInstances: inventory.adaptedMaterialInstances ?? null,
+        unsupportedMaterialInstances: inventory.unsupportedMaterialInstances ?? null,
+      } : null,
+    };
+    snapshots.push(snapshot);
+    return snapshot;
+  };
+
+  try {
+    await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1", {
+      waitUntil: "domcontentloaded",
+      timeout: 120_000,
+    });
+    await assertNativeMount("architecture-rise", null);
+    const initialAttributes = await readObserverAttributes(observer);
+    const initialGeneration = Number(initialAttributes["data-observer-renderer-generation"]);
+    const initialSubjectPixels = await captureSubjectPixelEvidence(page, observer, "architecture-rise");
+    const initialSnapshot = await readResourceSnapshot("sustained-start");
+    const initialPerformance = initialSnapshot.performance as Record<string, unknown> | null;
+    if (!initialPerformance) throw new Error("Initial candidate performance snapshot was unavailable");
+
+    const sustainedDurationTargetMs = 120_000;
+    const sustainedStartedAt = performance.now();
+    const orbitFrames: OrbitFrame[] = [];
+    const orbitPointerEvents: OrbitPointerEvent[] = [];
+    let orbitGestureCount = 0;
+    let controlWorkloadCount = 0;
+    let sustainedOrbitCaptureTimedOut = false;
+    await startCadenceCapture(page, 180_000);
+    try {
+      while (performance.now() - sustainedStartedAt < sustainedDurationTargetMs) {
+        orbitGestureCount += await performOrbitGestures(page, observer);
+        if (orbitGestureCount > 0 && orbitGestureCount % (orbitSequence.length * 4) === 0) {
+          await runArchitectureRiseControlWorkload(page, observer);
+          controlWorkloadCount += 1;
+        }
+        if (controlWorkloadCount > 0 && controlWorkloadCount % 5 === 0) {
+          const attributes = await readObserverAttributes(observer);
+          if (attributes["data-observer-renderer-generation"] !== String(initialGeneration) ||
+            attributes["data-observer-output-policy-status"] !== "active" ||
+            attributes["data-observer-renderer-family"] !== "webgpu-renderer" ||
+            attributes["data-observer-execution-backend"] !== "webgpu") {
+            throw new Error("The sustained candidate mount lost its active native material-aware identity");
+          }
+          await readResourceSnapshot(`sustained-cycle-${controlWorkloadCount}`);
+        }
+      }
+    } finally {
+      const cadenceCapture = await finishCadenceCapture(page);
+      orbitFrames.push(...cadenceCapture.frames);
+      orbitPointerEvents.push(...cadenceCapture.pointerEvents);
+      sustainedOrbitCaptureTimedOut = cadenceCapture.timedOut;
+    }
+    const sustainedDurationMs = performance.now() - sustainedStartedAt;
+    await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
+    await waitForFrames(page, 4);
+    const endingSnapshot = await readResourceSnapshot("sustained-end");
+    const endingPerformance = endingSnapshot.performance as Record<string, unknown> | null;
+    const finalSubjectPixelsDuringSustain = await captureSubjectPixelEvidence(page, observer, "architecture-rise");
+    const sustainedCadence = analyzeOrbitCadence(orbitPointerEvents, orbitFrames, orbitGestureCount);
+    if (sustainedOrbitCaptureTimedOut || sustainedDurationMs < sustainedDurationTargetMs || sustainedCadence.invalidReasons.length > 0) {
+      throw new Error(`Sustained workload did not complete cleanly: ${sustainedCadence.invalidReasons.join("; ")}`);
+    }
+    if (!endingPerformance || !finalSubjectPixelsDuringSustain.contentful) throw new Error("Final sustained candidate evidence was unavailable");
+
+    const startTiming = (initialPerformance.timing as Record<string, unknown>).controllerCallback as Record<string, unknown>;
+    const endTiming = (endingPerformance.timing as Record<string, unknown>).controllerCallback as Record<string, unknown>;
+    const measuredFrames = Number(endingPerformance.frameCount) - Number(initialPerformance.frameCount);
+    const callbackTotal = (timing: Record<string, unknown>) => Number(timing.cumulativeMeanMs) * Number(timing.sampleCount);
+    const sustainedControllerMeanMsPerFrame = measuredFrames > 0
+      ? (callbackTotal(endTiming) - callbackTotal(startTiming)) / measuredFrames
+      : null;
+    const sustainedInventory = endingSnapshot.inventory as Record<string, unknown> | null;
+    const sustainedPerformanceMetrics = endingPerformance as Record<string, unknown>;
+    const activeMaterialCount = Number(sustainedPerformanceMetrics.managedMaterialCount);
+    const activeCreationBalance = Number(sustainedPerformanceMetrics.adaptedMaterialCreations) - Number(sustainedPerformanceMetrics.disposedNodeMaterials);
+    if (measuredFrames < 1000 || activeMaterialCount < 1 || activeCreationBalance !== activeMaterialCount ||
+      Number(sustainedInventory?.unsupportedMaterialInstances) !== 0) {
+      throw new Error("Sustained candidate material/resource counts were not stable or did not balance to the active managed set");
+    }
+
+    const candidateGeneration = Number(await observer.getAttribute("data-observer-renderer-generation"));
+    const outputSwitchStart = (await readLifecycleReports(page)).length;
+    await navigateWithinObserverApp(page, "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=standard&rttDiagnostics=1");
+    await expect.poll(async () => Number(await observer.getAttribute("data-observer-renderer-generation")), { timeout: 120_000 }).toBeGreaterThan(candidateGeneration);
+    await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 120_000 });
+    await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
+    await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgpu");
+    await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+    await expect(observer).not.toHaveAttribute("data-observer-material-inventory");
+    await expect(observer).not.toHaveAttribute("data-observer-output-policy-status");
+    await expect.poll(async () => (await readLifecycleReports(page)).length).toBeGreaterThan(outputSwitchStart);
+    const standardGeneration = Number(await observer.getAttribute("data-observer-renderer-generation"));
+    const outputLifecycleReport = (await readLifecycleReports(page)).at(-1);
+    if (!outputLifecycleReport || Number(outputLifecycleReport.rendererGeneration) !== candidateGeneration ||
+      Number(outputLifecycleReport.managedMaterialCount) !== 0 ||
+      Number(outputLifecycleReport.adaptedMaterialCreations) !== Number(outputLifecycleReport.disposedNodeMaterials)) {
+      throw new Error("Material-aware → standard transition did not report disposal of the old candidate mount's adapted materials");
+    }
+    const standardGroundGlass = await captureGroundGlass(page);
+    if (!subjectRoiHasMeaningfulPixels(standardGroundGlass.content) || standardGroundGlass.backend.isWebGL2 !== true) {
+      throw new Error("Ground Glass did not remain contentful WebGL2 during the standard-output rollback");
+    }
+    if (String(standardGroundGlass.metrics.ownerId) !== groundGlassIdentity.ownerId ||
+      String(standardGroundGlass.metrics.resourceGeneration) !== groundGlassIdentity.resourceGeneration) {
+      throw new Error("Standard output rollback recreated Ground Glass resources");
+    }
+    outputPolicyTransitions.push({
+      from: "material-aware",
+      to: "standard",
+      candidateGeneration,
+      standardGeneration,
+      rendererFamily: await observer.getAttribute("data-observer-renderer-family"),
+      executionBackend: await observer.getAttribute("data-observer-execution-backend"),
+      applicationFallback: await observer.getAttribute("data-observer-application-fallback"),
+      inventoryCleared: true,
+      lifecycleDisposal: outputLifecycleReport,
+    });
+
+    await navigateWithinObserverApp(page, "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");
+    await expect.poll(async () => Number(await observer.getAttribute("data-observer-renderer-generation")), { timeout: 120_000 }).toBeGreaterThan(standardGeneration);
+    const remountedCandidate = await assertNativeMount("architecture-rise", standardGeneration);
+    outputPolicyTransitions.push({
+      from: "standard",
+      to: "material-aware",
+      rendererGeneration: remountedCandidate.rendererGeneration,
+      outputPolicy: remountedCandidate.outputPolicy,
+      inventory: remountedCandidate.subjectPixels,
+    });
+
+    let previousGeneration = Number(remountedCandidate.rendererGeneration);
+    for (let index = 0; index < 11; index += 1) {
+      const sceneId = index % 2 === 0 ? "view-camera-anatomy" : "architecture-rise";
+      const path = `/simulator/free/${sceneId}?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1`;
+      await navigateWithinObserverApp(page, path);
+      const transition = await assertNativeMount(sceneId, previousGeneration);
+      previousGeneration = Number(transition.rendererGeneration);
+      transitions.push({ ordinal: index + 1, ...transition });
+    }
+
+    const lifecycleReports = await readLifecycleReports(page);
+    const archGenerations = new Set([
+      candidateGeneration,
+      Number(remountedCandidate.rendererGeneration),
+      ...transitions.filter((transition) => transition.sceneId === "architecture-rise").map((transition) => Number(transition.rendererGeneration)),
+    ]);
+    const disposedReports = lifecycleReports.filter((report) => archGenerations.has(Number(report.rendererGeneration)));
+    if (disposedReports.length < 7 || disposedReports.some((report) =>
+      Number(report.managedMaterialCount) !== 0 ||
+      Number(report.adaptedMaterialCreations) !== Number(report.disposedNodeMaterials),
+    )) {
+      throw new Error("Repeated Architecture Rise remounts did not fully release their adapted NodeMaterials");
+    }
+
+    const finalAttributes = await readObserverAttributes(observer);
+    const finalGroundGlass = await captureGroundGlass(page);
+    const finalSubjectPixels = transitions.at(-1)?.subjectPixels;
+    if (String(finalAttributes["data-scene-subject-id"]) !== "view-camera-anatomy" ||
+      finalAttributes["data-observer-output-policy-installed"] !== "standard" ||
+      finalAttributes["data-observer-material-inventory"] !== undefined) {
+      throw new Error("The final Anatomy scene inherited stale Architecture Rise output-policy diagnostics");
+    }
+    if (String(finalGroundGlass.metrics.ownerId) !== groundGlassIdentity.ownerId ||
+      String(finalGroundGlass.metrics.resourceGeneration) !== groundGlassIdentity.resourceGeneration ||
+      finalGroundGlass.backend.isWebGL2 !== true ||
+      !subjectRoiHasMeaningfulPixels(finalGroundGlass.content)) {
+      throw new Error("Ground Glass did not retain its resource identity and content after leaving Architecture Rise");
+    }
+    if (pageErrors.length > 0 || consoleErrors.length > 0) throw new Error("Lifecycle qualification produced browser errors");
+    return {
+      stable: true,
+      nativeBackend: "webgpu-renderer / webgpu",
+      sustainedUse: {
+        targetDurationMs: sustainedDurationTargetMs,
+        measuredDurationMs: sustainedDurationMs,
+        orbitGestureCount: orbitGestureCount,
+        controlWorkloadCount,
+        activeGestureCadence: sustainedCadence.activeGestureCadence,
+        allObservedFrameCadence: summarizeFrameCadence(orbitFrames.slice(1).map((frame, index) =>
+          frame.timestampMs - (orbitFrames[index]?.timestampMs ?? frame.timestampMs),
+        )),
+        framesMeasured: measuredFrames,
+        controllerMeanCpuMsPerFrameDuringSustain: sustainedControllerMeanMsPerFrame,
+        signatureEvaluationsPerFrame: Number(sustainedPerformanceMetrics.materialSignatureEvaluations) / Number(sustainedPerformanceMetrics.frameCount),
+        inventoryBuildCount: Number(sustainedPerformanceMetrics.inventoryBuildCount) - Number(initialPerformance.inventoryBuildCount),
+        inventoryRefreshIntervalFrames: sustainedPerformanceMetrics.inventoryRefreshIntervalFrames,
+        initialResources: initialSnapshot,
+        peakManagedMaterialCount: sustainedPerformanceMetrics.peakManagedMaterialCount,
+        finalResources: endingSnapshot,
+        initialSubjectPixels,
+        finalSubjectPixels: finalSubjectPixelsDuringSustain,
+        activeAdaptedMaterialBalance: activeCreationBalance,
+      },
+      outputPolicyTransitions,
+      spaTransitions: {
+        requiredCount: 11,
+        observedCount: transitions.length,
+        states: transitions,
+        everyRendererGenerationAdvanced: true,
+        everyGroundGlassOwnerAndGenerationStable: true,
+        lifecycleReports,
+        disposedCandidateMountCount: disposedReports.length,
+        finalSceneId: finalAttributes["data-scene-subject-id"],
+        finalOutputPolicy: finalAttributes["data-observer-output-policy-installed"],
+        finalRendererGeneration: finalAttributes["data-observer-renderer-generation"],
+        finalGroundGlass: {
+          contentful: subjectRoiHasMeaningfulPixels(finalGroundGlass.content),
+          backend: finalGroundGlass.backend,
+          ownerId: finalGroundGlass.metrics.ownerId,
+          resourceGeneration: finalGroundGlass.metrics.resourceGeneration,
+        },
+      finalSubjectPixels,
+      },
+      pageErrors,
+      consoleErrors,
+    };
+  } finally {
+    await context.close().catch(() => undefined);
+  }
 };
 
 type BenchmarkSummaryReport = Readonly<{
@@ -1546,6 +1938,17 @@ test.describe("Observer backend comparison benchmark", () => {
         recovery.push({ sceneId, stable: false, error: error instanceof Error ? error.message : String(error) });
       }
     }
+    let materialAwareLifecycleQualification: Record<string, unknown> | null = null;
+    if (outputPolicyComparisonEnabled) {
+      try {
+        materialAwareLifecycleQualification = await runMaterialAwareLifecycleQualification(browser);
+      } catch (error) {
+        materialAwareLifecycleQualification = {
+          stable: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
     const { comparisons, pairProblems } = outputPolicyComparisonEnabled
       ? { comparisons: [] as VisualComparison[], pairProblems: [] as string[] }
       : await computeVisualComparisons(trials);
@@ -1605,7 +2008,9 @@ test.describe("Observer backend comparison benchmark", () => {
       : benchmarkScenes.length * trialCount * 2;
     const complete = trials.length === expectedTrialCount &&
       trials.every((trial) => trial.valid) &&
-      recovery.every((record) => record.stable === true) && pairProblems.length === 0;
+      recovery.every((record) => record.stable === true) &&
+      (!outputPolicyComparisonEnabled || materialAwareLifecycleQualification?.stable === true) &&
+      pairProblems.length === 0;
     const nativeExecution = trials.length > 0 && trials.every((trial) =>
       trial.requestedBackend !== "webgpu" || trial.mountedBackend === "webgpu-renderer / webgpu",
     );
@@ -1693,6 +2098,7 @@ test.describe("Observer backend comparison benchmark", () => {
         interpretation: "Compare paired deltas with the within-mode trial ranges; three pairs are bounded evidence, not a broad performance ranking.",
       } : null,
       recovery,
+      materialAwareLifecycleQualification,
       visualComparisons: comparisons,
       invalidPairs: pairProblems,
       decision: {
@@ -1730,11 +2136,15 @@ test.describe("Observer backend comparison benchmark", () => {
       const recoveryFailures = recovery.filter((record) => record.stable !== true).map((record) =>
         `${record.sceneId ?? "unknown scene"} recovery: ${String(record.error ?? "unstable")}`,
       );
+      const lifecycleFailures = materialAwareLifecycleQualification?.stable === false
+        ? [`material-aware lifecycle qualification: ${String(materialAwareLifecycleQualification.error ?? "unstable")}`]
+        : [];
       throw new Error([
         `Observer backend comparison is incomplete. Evidence written to ${relative(process.cwd(), outputDirectory)}.`,
         ...invalids,
         ...pairProblems,
         ...recoveryFailures,
+        ...lifecycleFailures,
       ].join("\n"));
     }
     expect(nativeExecution, "WebGPU trials must all mount WebGPURenderer with native WebGPU execution").toBe(true);

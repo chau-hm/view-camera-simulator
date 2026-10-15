@@ -45,6 +45,7 @@ type OutputPolicyPerformance = {
   inventoryRefreshIntervalFrames: number;
   frameCount: number;
   managedMaterialCount: number;
+  peakManagedMaterialCount: number;
   materialAssignmentCount: number;
   adaptedMaterialCreations: number;
   materialAssignmentReplacements: number;
@@ -107,6 +108,7 @@ const createOutputPolicyPerformance = (rendererGeneration: number): OutputPolicy
   inventoryRefreshIntervalFrames: INVENTORY_REFRESH_INTERVAL_FRAMES,
   frameCount: 0,
   managedMaterialCount: 0,
+  peakManagedMaterialCount: 0,
   materialAssignmentCount: 0,
   adaptedMaterialCreations: 0,
   materialAssignmentReplacements: 0,
@@ -129,6 +131,7 @@ const serializeOutputPolicyPerformance = (metrics: OutputPolicyPerformance): str
   inventoryRefreshIntervalFrames: metrics.inventoryRefreshIntervalFrames,
   frameCount: metrics.frameCount,
   managedMaterialCount: metrics.managedMaterialCount,
+  peakManagedMaterialCount: metrics.peakManagedMaterialCount,
   materialAssignmentCount: metrics.materialAssignmentCount,
   adaptedMaterialCreations: metrics.adaptedMaterialCreations,
   materialAssignmentReplacements: metrics.materialAssignmentReplacements,
@@ -649,15 +652,17 @@ export const MaterialAwareOutputPolicyController = ({
         if (record.ownership !== "architecture-rise-subject") record.output.dispose();
       });
       managedMaterials.clear();
+      performanceRef.managedMaterialCount = 0;
+      performanceRef.materialAssignmentCount = 0;
+      performanceRef.diagnosticDomWrites += 1;
       if (import.meta.env.DEV && typeof window !== "undefined") {
-        const lifecycleReport = serializeOutputPolicyPerformance(performanceRef);
         queueMicrotask(() => {
+          const lifecycleReport = serializeOutputPolicyPerformance(performanceRef);
           window.dispatchEvent(new CustomEvent("vcs:observer-output-policy-lifecycle", {
             detail: JSON.parse(lifecycleReport) as unknown,
           }));
         });
       }
-      performanceRef.diagnosticDomWrites += 1;
       clearDiagnosticAttributes(container);
     };
   }, [backgroundNode, gl, onCapabilitiesChange, performanceRef, rendererGeneration, reportFailure, scene]);
@@ -800,6 +805,10 @@ export const MaterialAwareOutputPolicyController = ({
       const inventory = lastInventoryRef.current!;
       performance.materialAssignmentCount = meshAssignmentCount;
       performance.managedMaterialCount = managedMaterialsRef.current.size;
+      performance.peakManagedMaterialCount = Math.max(
+        performance.peakManagedMaterialCount,
+        performance.managedMaterialCount,
+      );
       const reportKey = JSON.stringify({ ...inventory, frame: 0 });
       if (reportKey !== lastReportRef.current) {
         lastReportRef.current = reportKey;

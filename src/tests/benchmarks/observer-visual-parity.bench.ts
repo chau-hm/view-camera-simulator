@@ -576,7 +576,7 @@ const captureBackend = async (
 
   try {
     const query = backend === "webgpu"
-      ? `?observerRenderer=webgpu${materialAwareCandidate ? "&observerOutput=material-aware" : ""}&rttDiagnostics=1`
+      ? `?observerRenderer=webgpu&observerOutput=${materialAwareCandidate ? "material-aware" : "standard"}&rttDiagnostics=1`
       : "?rttDiagnostics=1";
     await page.goto(`/simulator/free/architecture-rise${query}`, {
       waitUntil: "domcontentloaded",
@@ -1204,7 +1204,7 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
       sceneId: "architecture-rise",
       route: {
         webgl: "/simulator/free/architecture-rise?rttDiagnostics=1",
-        webgpu: `/simulator/free/architecture-rise?observerRenderer=webgpu${materialAwareCandidate ? "&observerOutput=material-aware" : ""}&rttDiagnostics=1`,
+        webgpu: `/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=${materialAwareCandidate ? "material-aware" : "standard"}&rttDiagnostics=1`,
       },
       outputPolicyExperiment: {
         requested: requestedOutputPolicy,
