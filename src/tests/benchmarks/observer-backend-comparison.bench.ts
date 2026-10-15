@@ -1650,12 +1650,13 @@ const runMaterialAwareLifecycleQualification = async (
     }
 
     const finalAttributes = await readObserverAttributes(observer);
+    const finalSceneSubjectId = await observer.getAttribute("data-scene-subject-id");
     const finalGroundGlass = await captureGroundGlass(page);
     const finalSubjectPixels = transitions.at(-1)?.subjectPixels;
-    if (String(finalAttributes["data-scene-subject-id"]) !== "view-camera-anatomy" ||
+    if (finalSceneSubjectId !== "view-camera-anatomy" ||
       finalAttributes["data-observer-output-policy-installed"] !== "standard" ||
       finalAttributes["data-observer-material-inventory"] !== undefined) {
-      throw new Error("The final Anatomy scene inherited stale Architecture Rise output-policy diagnostics");
+      throw new Error(`The final Anatomy scene inherited stale Architecture Rise output-policy diagnostics: scene=${finalSceneSubjectId}, installed=${finalAttributes["data-observer-output-policy-installed"]}, inventory=${finalAttributes["data-observer-material-inventory"]}`);
     }
     if (finalGroundGlass.backend.isWebGL2 !== true ||
       !subjectRoiHasMeaningfulPixels(finalGroundGlass.content)) {
@@ -1696,7 +1697,7 @@ const runMaterialAwareLifecycleQualification = async (
         groundGlassIdentityStableAcrossSameSceneOutputSwitch: true,
         lifecycleReports,
         disposedCandidateMountCount: disposedReports.length,
-        finalSceneId: finalAttributes["data-scene-subject-id"],
+        finalSceneId: finalSceneSubjectId,
         finalOutputPolicy: finalAttributes["data-observer-output-policy-installed"],
         finalRendererGeneration: finalAttributes["data-observer-renderer-generation"],
         finalGroundGlass: {
