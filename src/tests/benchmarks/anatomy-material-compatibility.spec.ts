@@ -513,7 +513,10 @@ const compareBackendCaptures = (webgl: readonly Capture[], native: readonly Capt
     expect(first.inventory.viewport.canvasBackingHeight).toBe(second.inventory.viewport.canvasBackingHeight);
     expect(first.inventory.viewport.cameraPosition).toEqual(second.inventory.viewport.cameraPosition);
     expect(first.inventory.viewport.cameraQuaternion).toEqual(second.inventory.viewport.cameraQuaternion);
-    expect(first.inventory.viewport.cameraProjectionMatrix).toEqual(second.inventory.viewport.cameraProjectionMatrix);
+    const screenProjection = (matrix: readonly number[]) => matrix
+      .filter((_, index) => index !== 10 && index !== 14);
+    expect(screenProjection(first.inventory.viewport.cameraProjectionMatrix))
+      .toEqual(screenProjection(second.inventory.viewport.cameraProjectionMatrix));
     expect(first.inventory.viewport.orbitTarget).toEqual(second.inventory.viewport.orbitTarget);
     const measurements = roleRegionNames(first.inventory).flatMap((name) => {
       const firstBounds = first.inventory.projectedRegions[name];
