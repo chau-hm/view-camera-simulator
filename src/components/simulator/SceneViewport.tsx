@@ -35,6 +35,7 @@ import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfil
 
 type SceneViewportProps = {
   scene: SceneDefinition;
+  routeSceneId?: string;
   developmentArchitectureRiseWebGpuVerification?: boolean;
   opticsState: DerivedOpticsState;
   renderQuality: RenderQualityProfile;
@@ -67,6 +68,7 @@ return "high";
 
 export const SceneViewport = ({
   scene,
+  routeSceneId = scene.id,
   developmentArchitectureRiseWebGpuVerification = false,
   opticsState,
   renderQuality,
@@ -130,6 +132,13 @@ export const SceneViewport = ({
   const requestedOutputParam = typeof window === "undefined"
     ? null
     : new URLSearchParams(window.location.search).get("observerOutput");
+  // SimulatorWorkspace applies route presets in an effect. Until the store's
+  // active scene matches the route, do not let the previous scene's identity
+  // authorize a lazy WebGPU/output-policy import for the destination request.
+  const routeSceneMatchesActiveScene = routeSceneId === scene.id;
+  const sceneRequestedRendererParam = routeSceneMatchesActiveScene
+    ? requestedRendererParam
+    : null;
   const architectureRiseVerificationHarness =
     import.meta.env.DEV &&
     developmentArchitectureRiseWebGpuVerification &&
@@ -145,18 +154,18 @@ export const SceneViewport = ({
     () =>
       selectObserverBackend({
         webglAvailable,
-        requestedRendererParam,
+        requestedRendererParam: sceneRequestedRendererParam,
         sceneCompatibility,
         developmentPilotEnabled: import.meta.env.DEV,
       }),
-    [requestedRendererParam, sceneCompatibility, webglAvailable],
+    [sceneRequestedRendererParam, sceneCompatibility, webglAvailable],
   );
   const selectionForRequest = architectureRiseVerificationHarness
     ? selectArchitectureRiseWebGpuVerificationBackend(webglAvailable)
     : requestedBackendSelection;
   const requestedOutputPolicy = resolveObserverOutputPolicy({
     sceneId: scene.id,
-    requestedRendererParam,
+    requestedRendererParam: sceneRequestedRendererParam,
     requestedOutputParam,
     backendSelection: selectionForRequest,
     developmentBuild: import.meta.env.DEV,
@@ -169,13 +178,13 @@ export const SceneViewport = ({
     selection: ObserverBackendSelection;
   } | null>(null);
   const [rendererMountKey, setRendererMountKey] = useState(0);
-  const requestIdentity = `${scene.id}:${requestedRendererParam ?? "default"}:${architectureRiseVerificationHarness ? "architecture-rise-verification" : "public"}:${outputPolicyRequestKey}`;
+  const requestIdentity = `${scene.id}:${sceneRequestedRendererParam ?? "default"}:${architectureRiseVerificationHarness ? "architecture-rise-verification" : "public"}:${outputPolicyRequestKey}`;
   const backendSelection = rendererSelectionOverride?.requestIdentity === requestIdentity
     ? rendererSelectionOverride.selection
     : selectionForRequest;
   const outputPolicySelection = resolveObserverOutputPolicy({
     sceneId: scene.id,
-    requestedRendererParam,
+    requestedRendererParam: sceneRequestedRendererParam,
     requestedOutputParam,
     backendSelection,
     developmentBuild: import.meta.env.DEV,

@@ -1717,3 +1717,36 @@ parity gate passed again: 78 applicable pass, 0 fail, and 3 conditional N/A
 out of 81. The native backend was `webgpu-renderer / webgpu`; hardware
 acceleration remains unconfirmed. See the review-fix evidence in the
 [measurement report](architecture/architecture-rise-material-aware-output/measurement-report.json).
+
+### PR J — Architecture Rise material-aware development pilot promotion
+
+PR J makes the already-integrated material-aware output the development pilot
+default only when Architecture Rise is explicitly requested with
+`observerRenderer=webgpu` and `observerOutput` is omitted. The normal Observer
+renderer remains WebGL; Anatomy keeps standard output; other scenes stay
+fail-closed; production continues to deny WebGPU. The query
+`observerOutput=standard` remains the rollback path.
+
+On 2026-10-15, headed Chrome 155.0.8059.79 on macOS Darwin 27.0 arm64 with
+Three.js r186 reported an available adapter and mounted
+`webgpu-renderer / webgpu` for the promoted route, with one initialization,
+no application fallback, and active material-aware output. The unchanged
+strict parity gate passed: 78 applicable criteria passed, none failed, and
+three conditional criteria were not applicable. The Architecture Rise scene
+validation and Anatomy subject/interaction checks passed; Ground Glass stayed
+contentful on its independent WebGL2 RTT. Hardware acceleration remains
+unconfirmed.
+
+The ordinary Chromium pilot passed all eight cases, including its internal
+WebGL2 fallback and controlled one-shot application-fallback paths. The
+native-required pilot passed its five applicable cases; its three intentional
+fallback-injection cases are excluded in that mode and were exercised by the
+ordinary suite. The production-preview WebGL-only test also passed. Paired
+startup/capture, active-gesture cadence, material-controller CPU work, and
+sustained resource-lifecycle measurements are recorded in the
+[PR J qualification report](benchmarks/ARCHITECTURE_RISE_WEBGPU_OUTPUT_PROMOTION.md).
+
+**Decision: J1 — PROMOTED DEFAULT FOR THE DEVELOPMENT ARCHITECTURE RISE WEBGPU
+PILOT.** This changes output policy only for that explicit development request.
+It does not promote WebGPU to the normal Observer default, change production,
+or authorize another scene or Ground Glass migration.
