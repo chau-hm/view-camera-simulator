@@ -733,6 +733,7 @@ export const SimulatorWorkspace = ({
               <SceneViewport
                 overlayMenuResetGeneration={overlayMenuResetGeneration}
                 scene={safeScene}
+                routeSceneId={sceneId}
                 developmentArchitectureRiseWebGpuVerification={
                   developmentArchitectureRiseWebGpuVerification
                 }

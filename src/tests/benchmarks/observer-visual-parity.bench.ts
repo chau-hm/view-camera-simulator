@@ -41,6 +41,10 @@ if (!new Set(["standard", "material-aware"]).has(requestedOutputPolicy)) {
   throw new Error(`Unsupported OBSERVER_OUTPUT_POLICY: ${requestedOutputPolicy}`);
 }
 const materialAwareCandidate = requestedOutputPolicy === "material-aware";
+const materialAwareDefaultRequest = process.env.OBSERVER_OUTPUT_POLICY_DEFAULT === "1";
+if (materialAwareDefaultRequest && !materialAwareCandidate) {
+  throw new Error("OBSERVER_OUTPUT_POLICY_DEFAULT=1 requires OBSERVER_OUTPUT_POLICY=material-aware");
+}
 const viewEvent = "vcs:observer-verification:architecture-rise-view";
 const architectureView = {
   position: [4.8, 2.7, 4.2] as const,
@@ -575,8 +579,11 @@ const captureBackend = async (
   });
 
   try {
+    const outputParameter = materialAwareCandidate
+      ? materialAwareDefaultRequest ? "" : "&observerOutput=material-aware"
+      : "&observerOutput=standard";
     const query = backend === "webgpu"
-      ? `?observerRenderer=webgpu&observerOutput=${materialAwareCandidate ? "material-aware" : "standard"}&rttDiagnostics=1`
+      ? `?observerRenderer=webgpu${outputParameter}&rttDiagnostics=1`
       : "?rttDiagnostics=1";
     await page.goto(`/simulator/free/architecture-rise${query}`, {
       waitUntil: "domcontentloaded",
@@ -638,6 +645,16 @@ const captureBackend = async (
       }
       if (mountedObserver["data-observer-output-policy-selected"] !== "material-aware") {
         qualificationMismatches.push("the selected output policy was not material-aware");
+      }
+      const expectedOutputParameter = materialAwareDefaultRequest ? "unspecified" : "material-aware";
+      if (mountedObserver["data-observer-output-policy-requested-param"] !== expectedOutputParameter) {
+        qualificationMismatches.push(`the output policy request parameter was not ${expectedOutputParameter}`);
+      }
+      const expectedSelectionReason = materialAwareDefaultRequest
+        ? "development-pilot-default"
+        : "material-aware-selected";
+      if (mountedObserver["data-observer-output-policy-selection-reason"] !== expectedSelectionReason) {
+        qualificationMismatches.push(`the output policy selection reason was not ${expectedSelectionReason}`);
       }
       if (mountedObserver["data-observer-output-policy-installed"] !== "material-aware") {
         qualificationMismatches.push("the material-aware output policy was not installed");
@@ -1204,10 +1221,15 @@ test.describe("Observer Architecture Rise background and overlay parity", () => 
       sceneId: "architecture-rise",
       route: {
         webgl: "/simulator/free/architecture-rise?rttDiagnostics=1",
-        webgpu: `/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=${materialAwareCandidate ? "material-aware" : "standard"}&rttDiagnostics=1`,
+        webgpu: `/simulator/free/architecture-rise?observerRenderer=webgpu${materialAwareCandidate
+          ? materialAwareDefaultRequest ? "" : "&observerOutput=material-aware"
+          : "&observerOutput=standard"}&rttDiagnostics=1`,
       },
       outputPolicyExperiment: {
         requested: requestedOutputPolicy,
+        requestedParameter: materialAwareCandidate
+          ? materialAwareDefaultRequest ? "unspecified" : "material-aware"
+          : "standard",
         selectedForWebGpuRoute: webgpu.mountedObserver["data-observer-output-policy-selected"] ?? null,
         installedOnWebGpuRoute: webgpu.mountedObserver["data-observer-output-policy-installed"] ?? null,
         status: webgpu.mountedObserver["data-observer-output-policy-status"] ?? null,

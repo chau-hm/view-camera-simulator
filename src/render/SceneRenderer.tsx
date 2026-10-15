@@ -1850,6 +1850,11 @@ export const SceneRenderer = ({
       data-observer-output-policy-requested={
         import.meta.env.DEV ? outputPolicySelection.requested : undefined
       }
+      data-observer-output-policy-requested-param={
+        import.meta.env.DEV
+          ? outputPolicySelection.requestedParameter ?? "unspecified"
+          : undefined
+      }
       data-observer-output-policy-selected={
         import.meta.env.DEV ? outputPolicySelection.selected : undefined
       }
