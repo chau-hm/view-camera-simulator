@@ -8,6 +8,7 @@ import { expect, test, type Browser, type Locator, type Page } from "@playwright
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import architectureRiseGeometry, { architectureRiseWindowBays } from "../../scenes/architectureRiseGeometry";
 import { toWorld } from "../../render/rttUtils";
+import { setStepRangeInput } from "../e2e/helpers/stepRangeInput";
 import {
   analyzeOrbitCadence,
   calculateBenchmarkWallTimes,
@@ -30,6 +31,11 @@ import {
 
 const benchmarkEnabled = process.env.OBSERVER_BACKEND_BENCHMARK === "1";
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
+const outputPolicyComparisonEnabled = process.env.OBSERVER_OUTPUT_POLICY_COMPARISON === "1";
+if (process.env.OBSERVER_BACKEND_BENCHMARK_OUTPUT_POLICY !== undefined &&
+  !new Set(["standard", "material-aware"]).has(process.env.OBSERVER_BACKEND_BENCHMARK_OUTPUT_POLICY)) {
+  throw new Error("OBSERVER_BACKEND_BENCHMARK_OUTPUT_POLICY must be standard or material-aware");
+}
 const trialCount = 3;
 const viewport = { width: 1440, height: 1000 } as const;
 const deviceScaleFactor = 1;
@@ -81,10 +87,16 @@ type BenchmarkTrial = {
   executionOrder: number;
   orderWithinPair: number;
   requestedBackend: "webgl" | "webgpu";
+  requestedOutputPolicy: "standard" | "material-aware" | null;
   mountedBackend: string | null;
   valid: boolean;
   invalidReasons: string[];
   timing: BenchmarkWallTimes;
+  readiness: {
+    navigationToEnvironmentActiveWallMs: number | null;
+    navigationToOutputPolicyActiveWallMs: number | null;
+  };
+  outputPolicyPerformance: Record<string, unknown> | null;
   mountedObserver: Record<string, string>;
   adapter: { apiPresent: string | null; availability: string | null };
   browserGpuDiagnostics: BrowserGpuDiagnostics;
@@ -569,6 +581,55 @@ const runOrbitWorkload = async (
   };
 };
 
+const runArchitectureRiseControlWorkload = async (page: Page, observer: Locator) => {
+  const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
+  const focusValueBefore = Number(await focus.inputValue());
+  await focus.focus();
+  await focus.press("ArrowRight");
+  await expect.poll(async () => Number(await focus.inputValue())).not.toBe(focusValueBefore);
+  await focus.press("ArrowLeft");
+  await expect.poll(async () => Number(await focus.inputValue())).toBe(focusValueBefore);
+
+  const rise = page.getByRole("slider", { name: "Rise", exact: true });
+  const riseValueBefore = Number(await rise.inputValue());
+  await setStepRangeInput(page, "Rise", 22);
+  await setStepRangeInput(page, "Rise", riseValueBefore);
+
+  for (const overlay of ["Focus plane", "DOF region"]) {
+    const button = page.getByRole("button", { name: new RegExp(`^(Show|Hide) ${overlay}$`) });
+    await expect(button).toBeVisible();
+    const initiallyVisible = await observer.getAttribute(
+      overlay === "Focus plane" ? "data-focus-overlay-visible" : "data-dof-overlay-visible",
+    );
+    await button.click();
+    await expect(observer).toHaveAttribute(
+      overlay === "Focus plane" ? "data-focus-overlay-visible" : "data-dof-overlay-visible",
+      initiallyVisible === "true" ? "false" : "true",
+    );
+    await expect.poll(async () => button.getAttribute("aria-pressed")).not.toBe(initiallyVisible);
+    await page.getByRole("button", { name: new RegExp(`^(Show|Hide) ${overlay}$`) }).click();
+    await expect(observer).toHaveAttribute(
+      overlay === "Focus plane" ? "data-focus-overlay-visible" : "data-dof-overlay-visible",
+      initiallyVisible ?? "true",
+    );
+  }
+
+  await page.getByRole("button", { name: "Camera", exact: true }).first().click();
+  await expect(observer).toHaveAttribute("data-view-focus", "camera");
+  await page.getByRole("button", { name: "Scene", exact: true }).first().click();
+  await expect(observer).toHaveAttribute("data-view-focus", "scene");
+  await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
+  await waitForFrames(page, 4);
+  return {
+    focusDistanceChangedAndRestored: true,
+    frontRiseChangedAndRestored: true,
+    focusOverlayToggledAndRestored: true,
+    dofOverlayToggledAndRestored: true,
+    cameraAndSceneFocusSelected: true,
+    reset3dView: true,
+  };
+};
+
 const captureGroundGlass = async (page: Page) => {
   const groundGlass = page.getByTestId("ground-glass-rtt").first();
   await waitForFrames(page, 4);
@@ -742,6 +803,7 @@ const runSingleTrial = async (
   executionOrder: number,
   orderWithinPair: number,
   requestedBackend: "webgl" | "webgpu",
+  requestedOutputPolicy: "standard" | "material-aware" | null,
   browserGpuDiagnostics: BrowserGpuDiagnostics,
 ): Promise<BenchmarkTrial> => {
   const trial: BenchmarkTrial = {
@@ -750,6 +812,7 @@ const runSingleTrial = async (
     executionOrder,
     orderWithinPair,
     requestedBackend,
+    requestedOutputPolicy,
     mountedBackend: null,
     valid: false,
     invalidReasons: [],
@@ -761,6 +824,11 @@ const runSingleTrial = async (
       navigationToAdapterDiagnosticWallMs: null,
       navigationToFirstVerifiedObserverCaptureWallMs: null,
     },
+    readiness: {
+      navigationToEnvironmentActiveWallMs: null,
+      navigationToOutputPolicyActiveWallMs: null,
+    },
+    outputPolicyPerformance: null,
     mountedObserver: {},
     adapter: { apiPresent: null, availability: null },
     browserGpuDiagnostics,
@@ -803,7 +871,9 @@ const runSingleTrial = async (
     }
   });
   try {
-    const rendererQuery = requestedBackend === "webgpu" ? "?observerRenderer=webgpu" : "";
+    const rendererQuery = requestedBackend === "webgpu"
+      ? `?observerRenderer=webgpu&observerOutput=${requestedOutputPolicy ?? "standard"}`
+      : "";
     timingMarks = { ...timingMarks, navigationStartedAtMs: performance.now() };
     await page.goto(
       `/simulator/free/${sceneId}${rendererQuery}`,
@@ -838,6 +908,23 @@ const runSingleTrial = async (
     await prepareView(page, observer, sceneId);
     if (sceneId === "architecture-rise") {
       await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+      trial.readiness.navigationToEnvironmentActiveWallMs =
+        performance.now() - (timingMarks.navigationStartedAtMs ?? performance.now());
+    }
+    if (requestedBackend === "webgpu" && requestedOutputPolicy) {
+      const expectedPolicy = requestedOutputPolicy;
+      if (expectedPolicy === "material-aware") {
+        await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 90_000 });
+      } else {
+        await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard", { timeout: 30_000 });
+      }
+      const selected = await observer.getAttribute("data-observer-output-policy-selected");
+      const installed = await observer.getAttribute("data-observer-output-policy-installed");
+      if (selected !== expectedPolicy || installed !== expectedPolicy) {
+        trial.invalidReasons.push(`requested ${expectedPolicy} output policy but observed ${selected}/${installed}`);
+      }
+      trial.readiness.navigationToOutputPolicyActiveWallMs =
+        performance.now() - (timingMarks.navigationStartedAtMs ?? performance.now());
     }
     trial.canonicalState = await readCanonicalState(page, observer);
     const canvasData = await observer.locator("canvas").evaluate((element) => {
@@ -904,10 +991,27 @@ const runSingleTrial = async (
     if (sceneId === "architecture-rise" && trial.environment.status !== "active") {
       trial.invalidReasons.push("Architecture Rise world environment was not active");
     }
+    let materialInventory: Record<string, unknown> | null = null;
+    const inventoryAttribute = attributes["data-observer-material-inventory"];
+    if (inventoryAttribute) {
+      try {
+        materialInventory = JSON.parse(inventoryAttribute) as Record<string, unknown>;
+      } catch {
+        trial.invalidReasons.push("material-aware runtime inventory was not valid JSON");
+      }
+    }
     trial.sceneResources = {
-      observerSubject: "not measured by this benchmark",
-      groundGlassRenderer: "mounted canvas WebGL2 context inspected directly",
-      interpretation: "No renderer-owned memory or VRAM metric is inferred.",
+      observerCanvasCount: await observer.locator("canvas").count(),
+      groundGlassCanvasCount: await groundGlass.locator("canvas").count(),
+      architectureRiseInventory: materialInventory ? {
+        totalMeshAssignments: materialInventory.totalMeshAssignments ?? null,
+        distinctMaterialInstances: materialInventory.distinctMaterialInstances ?? null,
+        adaptedMaterialInstances: materialInventory.adaptedMaterialInstances ?? null,
+        unsupportedMaterialInstances: materialInventory.unsupportedMaterialInstances ?? null,
+      } : null,
+      rendererOwnedGpuMemory: "not reported",
+      vram: "not measured",
+      interpretation: "Scene/material inventory counts are object-level evidence, not GPU allocation or VRAM measurements.",
     };
     if (anatomyView) {
       const baselineView = await setAnatomyRegisteredSubjectView(observer);
@@ -941,6 +1045,9 @@ const runSingleTrial = async (
     if (interaction.gesturePoseChanges !== orbitSequence.length) {
       trial.invalidReasons.push("not every orbit gesture changed the mounted Observer camera pose");
     }
+    const architectureRiseControls = outputPolicyComparisonEnabled && sceneId === "architecture-rise"
+      ? await runArchitectureRiseControlWorkload(page, observer)
+      : null;
     trial.interaction = {
       method: "real Playwright pointer drags through the mounted OrbitControls canvas",
       sequence: orbitSequence,
@@ -958,8 +1065,19 @@ const runSingleTrial = async (
       activeGestureCadence: interaction.cadence.activeGestureCadence,
       interGestureCadence: interaction.cadence.interGestureCadence,
       excludedFrameIntervalCount: interaction.cadence.excludedFrameIntervalCount,
+      architectureRiseControls,
       frameCadenceLabel: "Observed browser requestAnimationFrame intervals with both interval endpoints inside the same actual pointer-down/up OrbitControls gesture. Inter-gesture intervals are reported separately; pre/post workload idle intervals are excluded.",
     };
+    if (requestedBackend === "webgpu" && requestedOutputPolicy === "material-aware") {
+      trial.outputPolicyPerformance = await observer.evaluate((element) => {
+        window.dispatchEvent(new Event("vcs:observer-verification:read-output-policy-performance"));
+        const value = element.getAttribute("data-observer-output-policy-performance");
+        return value ? JSON.parse(value) as Record<string, unknown> : null;
+      });
+      if (!trial.outputPolicyPerformance) {
+        trial.invalidReasons.push("material-aware controller performance instrumentation was unavailable");
+      }
+    }
     console.log(`[benchmark] ${sceneId} pair ${trialNumber} ${requestedBackend}: orbit workload recorded ${interaction.cadence.activeGestureCadence.sampleCount} active-gesture and ${interaction.cadence.interGestureCadence.sampleCount} inter-gesture rAF intervals`);
     trial.groundGlass = await verifyGroundGlassResponse(page, observer);
     const groundGlassEvidence = trial.groundGlass as {
@@ -1229,7 +1347,7 @@ const buildMarkdown = (report: BenchmarkSummaryReport): string => {
     } | null;
     const active = cadence?.activeGestureCadence;
     const gaps = cadence?.interGestureCadence;
-    return `| ${trial.sceneId} | ${trial.trialNumber} | ${trial.requestedBackend} | ${trial.mountedBackend ?? "unavailable"} | ${trial.valid ? "valid" : "invalid"} | ${trial.timing.contextPageSetupWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToDocumentReadyWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToActiveRendererWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToAdapterDiagnosticWallMs?.toFixed(1) ?? "—"} | ${trial.timing.activeRendererToAdapterDiagnosticWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToFirstVerifiedObserverCaptureWallMs?.toFixed(1) ?? "—"} | ${active?.sampleCount ?? 0} / ${active?.medianMs?.toFixed(2) ?? "—"} | ${gaps?.sampleCount ?? 0} / ${gaps?.medianMs?.toFixed(2) ?? "—"} |`;
+    return `| ${trial.sceneId} | ${trial.trialNumber} | ${trial.requestedBackend} | ${trial.requestedOutputPolicy ?? "n/a"} | ${trial.mountedBackend ?? "unavailable"} | ${trial.valid ? "valid" : "invalid"} | ${trial.timing.contextPageSetupWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToDocumentReadyWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToActiveRendererWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToAdapterDiagnosticWallMs?.toFixed(1) ?? "—"} | ${trial.timing.activeRendererToAdapterDiagnosticWallMs?.toFixed(1) ?? "—"} | ${trial.timing.navigationToFirstVerifiedObserverCaptureWallMs?.toFixed(1) ?? "—"} | ${active?.sampleCount ?? 0} / ${active?.medianMs?.toFixed(2) ?? "—"} | ${gaps?.sampleCount ?? 0} / ${gaps?.medianMs?.toFixed(2) ?? "—"} |`;
   });
   const visualRows = report.visualComparisons.map((comparison) => {
     const fullCanvas = comparison.regions.fullCanvas;
@@ -1258,8 +1376,8 @@ const buildMarkdown = (report: BenchmarkSummaryReport): string => {
     "",
     "## Observer trials",
     "",
-    "| Scene | Pair | Requested backend | Mounted family / execution | Validity | Context/page setup ms | Navigation to DOMContentLoaded ms | Navigation to observed active renderer ms | Navigation to adapter diagnostic ms | Active renderer to adapter diagnostic ms | Navigation to verified subject capture ms | Active gesture rAF samples / median ms | Inter-gesture rAF samples / median ms |",
-    "| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    "| Scene | Pair | Requested backend | Requested output | Mounted family / execution | Validity | Context/page setup ms | Navigation to DOMContentLoaded ms | Navigation to observed active renderer ms | Navigation to adapter diagnostic ms | Active renderer to adapter diagnostic ms | Navigation to verified subject capture ms | Active gesture rAF samples / median ms | Inter-gesture rAF samples / median ms |",
+    "| --- | ---: | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...trialRows,
     "",
     "Context/page setup is timed separately and ends before navigation begins. Navigation timing uses one monotonic Node `performance.now()` clock starting immediately before `page.goto`; observed renderer readiness requires the correct scene, active status, resolved renderer family/execution backend, and a current renderer generation. Adapter diagnostic completion is captured asynchronously from the active-renderer boundary, so its time does not delay renderer readiness or the first verified capture. The verified-capture value is recorded only after an actual Observer screenshot has meaningful pixels in its geometry-derived subject ROI; it is not labeled the first contentful frame. None of these wall times is GPU time.",
@@ -1314,7 +1432,7 @@ test.describe("Observer backend comparison benchmark", () => {
   test.skip(!nativeRequired, "The comparison requires the explicit native-WebGPU Chrome run mode.");
   test.describe.configure({ mode: "serial" });
 
-  test("records matched WebGL2 and native WebGPU Observer trials", async ({ browser }, testInfo) => {
+  test("records matched Observer backend or output-policy trials", async ({ browser }, testInfo) => {
     test.setTimeout(30 * 60 * 1000);
     const browserGpuDiagnostics = await readBrowserGpuDiagnostics(browser);
     const trials: BenchmarkTrial[] = [];
@@ -1344,7 +1462,13 @@ test.describe("Observer backend comparison benchmark", () => {
               : "not verified",
           hardwareAcceleration: browserGpuDiagnostics.softwareRendererDetected === true ? "software-backed" : "unconfirmed",
         },
-        configuration: { viewport, deviceScaleFactor, pairedTrialsPerScene: trialCount },
+        configuration: {
+          viewport,
+          deviceScaleFactor,
+          pairedTrialsPerScene: trialCount,
+          outputPolicyComparisonEnabled,
+          requestedOutputPolicy: process.env.OBSERVER_BACKEND_BENCHMARK_OUTPUT_POLICY ?? "standard",
+        },
         trials,
         limitations: ["An in-progress report is partial and is not a completed comparison."],
       }));
@@ -1356,37 +1480,109 @@ test.describe("Observer backend comparison benchmark", () => {
       ["architecture-rise", "view-camera-anatomy"],
       ["view-camera-anatomy", "architecture-rise"],
     ];
-    for (let trialIndex = 0; trialIndex < trialCount; trialIndex += 1) {
-      const requestedOrder = trialIndex % 2 === 0 ? ["webgl", "webgpu"] as const : ["webgpu", "webgl"] as const;
-      const scenes = sceneSequence[trialIndex] ?? benchmarkScenes;
-      for (const sceneId of scenes) {
-        for (let orderWithinPair = 0; orderWithinPair < requestedOrder.length; orderWithinPair += 1) {
-          const requestedBackend = requestedOrder[orderWithinPair];
-          if (!requestedBackend) continue;
+    if (outputPolicyComparisonEnabled) {
+      for (let trialIndex = 0; trialIndex < trialCount; trialIndex += 1) {
+        const policyOrder = trialIndex % 2 === 0
+          ? ["standard", "material-aware"] as const
+          : ["material-aware", "standard"] as const;
+        for (let orderWithinPair = 0; orderWithinPair < policyOrder.length; orderWithinPair += 1) {
+          const requestedOutputPolicy = policyOrder[orderWithinPair];
+          if (!requestedOutputPolicy) continue;
           executionOrder += 1;
           trials.push(await runSingleTrial(
             browser,
-            sceneId,
+            "architecture-rise",
             trialIndex + 1,
             executionOrder,
             orderWithinPair + 1,
-            requestedBackend,
+            "webgpu",
+            requestedOutputPolicy,
             browserGpuDiagnostics,
           ));
           await writeProgress();
         }
       }
+    } else {
+      for (let trialIndex = 0; trialIndex < trialCount; trialIndex += 1) {
+        const requestedOrder = trialIndex % 2 === 0 ? ["webgl", "webgpu"] as const : ["webgpu", "webgl"] as const;
+        const scenes = sceneSequence[trialIndex] ?? benchmarkScenes;
+        for (const sceneId of scenes) {
+          for (let orderWithinPair = 0; orderWithinPair < requestedOrder.length; orderWithinPair += 1) {
+            const requestedBackend = requestedOrder[orderWithinPair];
+            if (!requestedBackend) continue;
+            executionOrder += 1;
+            trials.push(await runSingleTrial(
+              browser,
+              sceneId,
+              trialIndex + 1,
+              executionOrder,
+              orderWithinPair + 1,
+              requestedBackend,
+              requestedBackend === "webgpu" ? "standard" : null,
+              browserGpuDiagnostics,
+            ));
+            await writeProgress();
+          }
+        }
+      }
     }
 
     const recovery: Array<Record<string, unknown>> = [];
-    for (const sceneId of benchmarkScenes) {
+    const recoveryScenes = outputPolicyComparisonEnabled ? ["architecture-rise"] as const : benchmarkScenes;
+    for (const sceneId of recoveryScenes) {
       try {
         recovery.push(await runRecoverySequence(browser, sceneId));
       } catch (error) {
         recovery.push({ sceneId, stable: false, error: error instanceof Error ? error.message : String(error) });
       }
     }
-    const { comparisons, pairProblems } = await computeVisualComparisons(trials);
+    const { comparisons, pairProblems } = outputPolicyComparisonEnabled
+      ? { comparisons: [] as VisualComparison[], pairProblems: [] as string[] }
+      : await computeVisualComparisons(trials);
+    if (outputPolicyComparisonEnabled) {
+      for (let trialNumber = 1; trialNumber <= trialCount; trialNumber += 1) {
+        const standard = trials.find((trial) =>
+          trial.trialNumber === trialNumber && trial.requestedOutputPolicy === "standard",
+        );
+        const materialAware = trials.find((trial) =>
+          trial.trialNumber === trialNumber && trial.requestedOutputPolicy === "material-aware",
+        );
+        if (!standard || !materialAware) {
+          pairProblems.push(`Architecture Rise output-policy pair ${trialNumber} is incomplete`);
+          continue;
+        }
+        const standardState = standard.canonicalState as {
+          controls?: unknown;
+          renderQuality?: unknown;
+          overlays?: unknown;
+        } | null;
+        const candidateState = materialAware.canonicalState as {
+          controls?: unknown;
+          renderQuality?: unknown;
+          overlays?: unknown;
+        } | null;
+        if (JSON.stringify(standardState?.controls) !== JSON.stringify(candidateState?.controls) ||
+          standardState?.renderQuality !== candidateState?.renderQuality ||
+          JSON.stringify(standardState?.overlays) !== JSON.stringify(candidateState?.overlays)) {
+          pairProblems.push(`Architecture Rise output-policy pair ${trialNumber} has different canonical controls or quality`);
+        }
+        if (!standard.canvas || !materialAware.canvas ||
+          standard.canvas.cssWidth !== materialAware.canvas.cssWidth ||
+          standard.canvas.cssHeight !== materialAware.canvas.cssHeight ||
+          standard.canvas.backingWidth !== materialAware.canvas.backingWidth ||
+          standard.canvas.backingHeight !== materialAware.canvas.backingHeight ||
+          standard.canvas.dpr !== materialAware.canvas.dpr) {
+          pairProblems.push(`Architecture Rise output-policy pair ${trialNumber} has different canvas dimensions or DPR`);
+        }
+        const standardView = standard.views[0]?.camera;
+        const candidateView = materialAware.views[0]?.camera;
+        if (!standardView || !candidateView ||
+          !vectorsMatch(standardView.position, candidateView.position) ||
+          !vectorsMatch(standardView.target, candidateView.target)) {
+          pairProblems.push(`Architecture Rise output-policy pair ${trialNumber} has different camera pose`);
+        }
+      }
+    }
     for (const problem of pairProblems) {
       const affected = trials.filter((trial) => problem.includes(trial.sceneId) && (problem.includes(`trial ${trial.trialNumber}`) || !/trial \d+/.test(problem)));
       for (const trial of affected) {
@@ -1394,7 +1590,10 @@ test.describe("Observer backend comparison benchmark", () => {
         trial.valid = false;
       }
     }
-    const complete = trials.length === benchmarkScenes.length * trialCount * 2 &&
+    const expectedTrialCount = outputPolicyComparisonEnabled
+      ? trialCount * 2
+      : benchmarkScenes.length * trialCount * 2;
+    const complete = trials.length === expectedTrialCount &&
       trials.every((trial) => trial.valid) &&
       recovery.every((record) => record.stable === true) && pairProblems.length === 0;
     const nativeExecution = trials.length > 0 && trials.every((trial) =>
@@ -1425,13 +1624,16 @@ test.describe("Observer backend comparison benchmark", () => {
         hardwareQualifiedPerformanceResult: false,
       },
       configuration: {
-        sceneIds: benchmarkScenes,
+        sceneIds: outputPolicyComparisonEnabled ? ["architecture-rise"] : benchmarkScenes,
         pairedTrialsPerScene: trialCount,
         viewport,
         deviceScaleFactor,
         renderQuality: "high (simulator route default)",
-        route: "/simulator/free/<scene>?observerRenderer=<backend>",
-        executionOrder: trials.map(({ executionOrder: order, sceneId, trialNumber, requestedBackend }) => ({ order, sceneId, trialNumber, requestedBackend })),
+        route: outputPolicyComparisonEnabled
+          ? "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=<standard|material-aware>"
+          : "/simulator/free/<scene>?observerRenderer=<backend>&observerOutput=standard for WebGPU controls",
+        outputPolicyRunOrder: trials.map(({ executionOrder: order, trialNumber, requestedOutputPolicy }) => ({ order, trialNumber, requestedOutputPolicy })),
+        executionOrder: trials.map(({ executionOrder: order, sceneId, trialNumber, requestedBackend, requestedOutputPolicy }) => ({ order, sceneId, trialNumber, requestedBackend, requestedOutputPolicy })),
         orbitSequence,
         cadenceSampling: "rAF intervals wholly inside actual pointerdown/up gestures; inter-gesture cadence separate; pre/post idle discarded",
         minimumActiveGestureCadenceSamples: 8,
@@ -1441,6 +1643,45 @@ test.describe("Observer backend comparison benchmark", () => {
       },
       comparisonComplete: complete,
       trials,
+      outputPolicyComparison: outputPolicyComparisonEnabled ? {
+        scene: "architecture-rise",
+        backendQualification: "Every policy trial must mount webgpu-renderer / webgpu with no fallback and one initialization attempt.",
+        order: "Three matched pairs; standard/candidate order alternates by pair: standard→candidate, candidate→standard, standard→candidate.",
+        pairedEvidence: Array.from({ length: trialCount }, (_, index) => {
+          const trialNumber = index + 1;
+          const standard = trials.find((trial) => trial.trialNumber === trialNumber && trial.requestedOutputPolicy === "standard");
+          const candidate = trials.find((trial) => trial.trialNumber === trialNumber && trial.requestedOutputPolicy === "material-aware");
+          const standardActive = standard?.timing.navigationToActiveRendererWallMs ?? null;
+          const candidateActive = candidate?.timing.navigationToActiveRendererWallMs ?? null;
+          const standardCapture = standard?.timing.navigationToFirstVerifiedObserverCaptureWallMs ?? null;
+          const candidateCapture = candidate?.timing.navigationToFirstVerifiedObserverCaptureWallMs ?? null;
+          const standardCadence = (standard?.interaction as { activeGestureCadence?: { medianMs?: number | null; p95Ms?: number | null } } | null)?.activeGestureCadence;
+          const candidateCadence = (candidate?.interaction as { activeGestureCadence?: { medianMs?: number | null; p95Ms?: number | null } } | null)?.activeGestureCadence;
+          return {
+            trialNumber,
+            order: standard && candidate
+              ? (standard.executionOrder < candidate.executionOrder ? "standard-then-material-aware" : "material-aware-then-standard")
+              : "incomplete",
+            nativeBackend: { standard: standard?.mountedBackend ?? null, materialAware: candidate?.mountedBackend ?? null },
+            readinessDeltaMs: {
+              materialAwareMinusStandardActiveRenderer: standardActive !== null && candidateActive !== null ? candidateActive - standardActive : null,
+              materialAwareMinusStandardVerifiedCapture: standardCapture !== null && candidateCapture !== null ? candidateCapture - standardCapture : null,
+              materialAwareOutputPolicyReady: candidate?.readiness.navigationToOutputPolicyActiveWallMs ?? null,
+              environmentReadyStandard: standard?.readiness.navigationToEnvironmentActiveWallMs ?? null,
+              environmentReadyMaterialAware: candidate?.readiness.navigationToEnvironmentActiveWallMs ?? null,
+            },
+            activeGestureCadence: {
+              standardMedianMs: standardCadence?.medianMs ?? null,
+              materialAwareMedianMs: candidateCadence?.medianMs ?? null,
+              standardP95Ms: standardCadence?.p95Ms ?? null,
+              materialAwareP95Ms: candidateCadence?.p95Ms ?? null,
+            },
+            controllerCpu: candidate?.outputPolicyPerformance ?? null,
+          };
+        }),
+        measuredGpuTime: false,
+        interpretation: "Compare paired deltas with the within-mode trial ranges; three pairs are bounded evidence, not a broad performance ranking.",
+      } : null,
       recovery,
       visualComparisons: comparisons,
       invalidPairs: pairProblems,

@@ -30,6 +30,113 @@ type ManagedNodeMaterial = Readonly<{
   shaderSignature: string;
 }>;
 
+type DurationWindow = {
+  values: Float64Array;
+  next: number;
+  count: number;
+  totalMs: number;
+  maxMs: number;
+};
+
+type OutputPolicyPerformance = {
+  schemaVersion: 1;
+  rendererGeneration: number;
+  detailedSampleIntervalFrames: number;
+  frameCount: number;
+  managedMaterialCount: number;
+  materialAssignmentCount: number;
+  adaptedMaterialCreations: number;
+  materialAssignmentReplacements: number;
+  disposedNodeMaterials: number;
+  diagnosticDomWrites: number;
+  sceneTraversal: DurationWindow;
+  materialSignatures: DurationWindow;
+  materialAdaptation: DurationWindow;
+  staleCleanup: DurationWindow;
+  inventoryAndDiagnostics: DurationWindow;
+  controllerCallback: DurationWindow;
+};
+
+const PERFORMANCE_WINDOW_SIZE = 600;
+const DETAILED_SAMPLE_INTERVAL_FRAMES = 30;
+const READ_PERFORMANCE_EVENT = "vcs:observer-verification:read-output-policy-performance";
+
+const createDurationWindow = (): DurationWindow => ({
+  values: new Float64Array(PERFORMANCE_WINDOW_SIZE),
+  next: 0,
+  count: 0,
+  totalMs: 0,
+  maxMs: 0,
+});
+
+const recordDuration = (window: DurationWindow, durationMs: number): void => {
+  window.values[window.next] = durationMs;
+  window.next = (window.next + 1) % window.values.length;
+  window.count += 1;
+  window.totalMs += durationMs;
+  window.maxMs = Math.max(window.maxMs, durationMs);
+};
+
+const summarizeDurationWindow = (window: DurationWindow) => {
+  const rollingSampleCount = Math.min(window.count, window.values.length);
+  const rollingValues = window.count <= window.values.length
+    ? Array.from(window.values.slice(0, rollingSampleCount))
+    : Array.from(window.values);
+  rollingValues.sort((left, right) => left - right);
+  const percentile = (fraction: number): number | null => rollingValues.length === 0
+    ? null
+    : rollingValues[Math.min(rollingValues.length - 1, Math.ceil(rollingValues.length * fraction) - 1)] ?? null;
+  return {
+    sampleCount: window.count,
+    rollingSampleCount,
+    cumulativeMeanMs: window.count > 0 ? window.totalMs / window.count : null,
+    cumulativeMaxMs: window.count > 0 ? window.maxMs : null,
+    rollingMedianMs: percentile(0.5),
+    rollingP95Ms: percentile(0.95),
+  };
+};
+
+const createOutputPolicyPerformance = (rendererGeneration: number): OutputPolicyPerformance => ({
+  schemaVersion: 1,
+  rendererGeneration,
+  detailedSampleIntervalFrames: DETAILED_SAMPLE_INTERVAL_FRAMES,
+  frameCount: 0,
+  managedMaterialCount: 0,
+  materialAssignmentCount: 0,
+  adaptedMaterialCreations: 0,
+  materialAssignmentReplacements: 0,
+  disposedNodeMaterials: 0,
+  diagnosticDomWrites: 0,
+  sceneTraversal: createDurationWindow(),
+  materialSignatures: createDurationWindow(),
+  materialAdaptation: createDurationWindow(),
+  staleCleanup: createDurationWindow(),
+  inventoryAndDiagnostics: createDurationWindow(),
+  controllerCallback: createDurationWindow(),
+});
+
+const serializeOutputPolicyPerformance = (metrics: OutputPolicyPerformance): string => JSON.stringify({
+  schemaVersion: metrics.schemaVersion,
+  rendererGeneration: metrics.rendererGeneration,
+  detailedSampleIntervalFrames: metrics.detailedSampleIntervalFrames,
+  frameCount: metrics.frameCount,
+  managedMaterialCount: metrics.managedMaterialCount,
+  materialAssignmentCount: metrics.materialAssignmentCount,
+  adaptedMaterialCreations: metrics.adaptedMaterialCreations,
+  materialAssignmentReplacements: metrics.materialAssignmentReplacements,
+  disposedNodeMaterials: metrics.disposedNodeMaterials,
+  diagnosticDomWrites: metrics.diagnosticDomWrites,
+  timing: {
+    sceneTraversal: summarizeDurationWindow(metrics.sceneTraversal),
+    materialSignatures: summarizeDurationWindow(metrics.materialSignatures),
+    materialAdaptation: summarizeDurationWindow(metrics.materialAdaptation),
+    staleCleanup: summarizeDurationWindow(metrics.staleCleanup),
+    inventoryAndDiagnostics: summarizeDurationWindow(metrics.inventoryAndDiagnostics),
+    controllerCallback: summarizeDurationWindow(metrics.controllerCallback),
+  },
+  measurement: "Development-only CPU callback instrumentation; browser scheduling and GPU execution are not measured here.",
+});
+
 export type ObserverMaterialInventoryEntry = Readonly<{
   role: string;
   sourceMaterialFamily: string;
@@ -453,6 +560,10 @@ export const MaterialAwareOutputPolicyController = ({
   }> | null>(null);
   const managedMaterialsRef = useRef(new Map<THREE.Material, ManagedNodeMaterial>());
   const frameRef = useRef(0);
+  const performanceRef = useMemo(
+    () => createOutputPolicyPerformance(rendererGeneration),
+    [rendererGeneration],
+  );
   const currentGenerationRef = useRef(rendererGeneration);
   const failureCalledRef = useRef(false);
   const lastReportRef = useRef("");
@@ -461,13 +572,27 @@ export const MaterialAwareOutputPolicyController = ({
   onFailureRef.current = onFailure;
   currentGenerationRef.current = rendererGeneration;
 
-  const reportFailure = (container: HTMLElement | null, reason: string) => {
+  useLayoutEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") return;
+    const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
+    const readPerformance = () => {
+      container?.setAttribute(
+        "data-observer-output-policy-performance",
+        serializeOutputPolicyPerformance(performanceRef),
+      );
+    };
+    window.addEventListener(READ_PERFORMANCE_EVENT, readPerformance);
+    return () => window.removeEventListener(READ_PERFORMANCE_EVENT, readPerformance);
+  }, [gl, performanceRef]);
+
+  const reportFailure = useCallback((container: HTMLElement | null, reason: string) => {
     if (failureCalledRef.current) return;
     failureCalledRef.current = true;
     lastStatusRef.current = "failed";
+    performanceRef.diagnosticDomWrites += 1;
     setDiagnosticAttributes(container, "failed", undefined, reason);
     onFailureRef.current(reason);
-  };
+  }, [performanceRef]);
 
   useLayoutEffect(() => {
     const runtime = resolveObserverRendererRuntime(gl);
@@ -494,6 +619,7 @@ export const MaterialAwareOutputPolicyController = ({
     scene.backgroundNode = backgroundNode;
     scene.visible = false;
     lastStatusRef.current = "pending";
+    performanceRef.diagnosticDomWrites += 1;
     setDiagnosticAttributes(container, "pending");
     const managedMaterials = managedMaterialsRef.current;
 
@@ -508,103 +634,158 @@ export const MaterialAwareOutputPolicyController = ({
         if (record.ownership !== "architecture-rise-subject") record.output.dispose();
       });
       managedMaterials.clear();
+      if (import.meta.env.DEV && typeof window !== "undefined") {
+        const lifecycleReport = serializeOutputPolicyPerformance(performanceRef);
+        queueMicrotask(() => {
+          window.dispatchEvent(new CustomEvent("vcs:observer-output-policy-lifecycle", {
+            detail: JSON.parse(lifecycleReport) as unknown,
+          }));
+        });
+      }
+      performanceRef.diagnosticDomWrites += 1;
       clearDiagnosticAttributes(container);
     };
-  }, [backgroundNode, gl, onCapabilitiesChange, rendererGeneration, scene]);
+  }, [backgroundNode, gl, onCapabilitiesChange, performanceRef, rendererGeneration, reportFailure, scene]);
 
   useFrame(() => {
     if (failureCalledRef.current || currentGenerationRef.current !== rendererGeneration) return;
+    const performance = performanceRef;
+    const callbackStartedAt = import.meta.env.DEV ? window.performance.now() : 0;
     const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
-    frameRef.current += 1;
-    const currentFrame = frameRef.current;
-    const seenSources = new Set<THREE.Material>();
-    const unsupported: Array<Readonly<{ objectName: string; materialFamily: string }>> = [];
+    try {
+      frameRef.current += 1;
+      const currentFrame = frameRef.current;
+      const collectDetailedSample = import.meta.env.DEV &&
+        (currentFrame === 1 || currentFrame % DETAILED_SAMPLE_INTERVAL_FRAMES === 0);
+      const seenSources = new Set<THREE.Material>();
+      const unsupported: Array<Readonly<{ objectName: string; materialFamily: string }>> = [];
 
-    // R3F attaches its scene background after layout effects. Reassert the
-    // explicitly display-encoded background before this frame is rendered.
-    scene.background = null;
-    scene.backgroundNode = backgroundNode;
+      // R3F attaches its scene background after layout effects. Reassert the
+      // explicitly display-encoded background before this frame is rendered.
+      scene.background = null;
+      scene.backgroundNode = backgroundNode;
 
-    scene.traverse((object) => {
-      if (!isRenderable(object)) return;
-      const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
-      const nextMaterials = sourceMaterials.map((attached) => {
-        const source = readSource(attached) ?? attached;
-        seenSources.add(source);
-        const existing = managedMaterialsRef.current.get(source);
-        if (existing) {
-          const nextSignature = materialSignature(source);
-          const nextShaderSignature = materialShaderSignature(source);
-          if (nextSignature !== existing.signature) {
-            existing.output.copy(source);
-            if (nextShaderSignature !== existing.shaderSignature) existing.output.needsUpdate = true;
-            managedMaterialsRef.current.set(source, {
-              ...existing,
-              lastSeenFrame: currentFrame,
-              signature: nextSignature,
-              shaderSignature: nextShaderSignature,
-            });
-          } else {
-            managedMaterialsRef.current.set(source, { ...existing, lastSeenFrame: currentFrame });
+      const traversalStartedAt = collectDetailedSample ? window.performance.now() : 0;
+      let materialSignatureMs = 0;
+      let materialAdaptationMs = 0;
+      scene.traverse((object) => {
+        if (!isRenderable(object)) return;
+        const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
+        const nextMaterials = sourceMaterials.map((attached) => {
+          const source = readSource(attached) ?? attached;
+          seenSources.add(source);
+          const existing = managedMaterialsRef.current.get(source);
+          if (existing) {
+            const signatureStartedAt = collectDetailedSample ? window.performance.now() : 0;
+            const nextSignature = materialSignature(source);
+            const nextShaderSignature = materialShaderSignature(source);
+            if (collectDetailedSample) materialSignatureMs += window.performance.now() - signatureStartedAt;
+            if (nextSignature !== existing.signature) {
+              const adaptationStartedAt = collectDetailedSample ? window.performance.now() : 0;
+              existing.output.copy(source);
+              if (nextShaderSignature !== existing.shaderSignature) existing.output.needsUpdate = true;
+              if (collectDetailedSample) materialAdaptationMs += window.performance.now() - adaptationStartedAt;
+              managedMaterialsRef.current.set(source, {
+                ...existing,
+                lastSeenFrame: currentFrame,
+                signature: nextSignature,
+                shaderSignature: nextShaderSignature,
+              });
+            } else {
+              managedMaterialsRef.current.set(source, { ...existing, lastSeenFrame: currentFrame });
+            }
+            return existing.output;
           }
-          return existing.output;
-        }
 
-        const output = adaptObserverMaterialForOutput(source);
-        if (!output) {
-          unsupported.push({ objectName: object.name || object.type, materialFamily: source.type });
-          return attached;
-        }
-        const owner: AdapterOwnership = isOwnedByArchitectureRiseSubject(object)
-          ? "architecture-rise-subject"
-          : "observer-output-policy";
-        managedMaterialsRef.current.set(source, {
-          source,
-          output,
-          ownership: owner,
-          lastSeenFrame: currentFrame,
-          signature: materialSignature(source),
-          shaderSignature: materialShaderSignature(source),
+          const adaptationStartedAt = collectDetailedSample ? window.performance.now() : 0;
+          const output = adaptObserverMaterialForOutput(source);
+          if (collectDetailedSample) materialAdaptationMs += window.performance.now() - adaptationStartedAt;
+          if (!output) {
+            unsupported.push({ objectName: object.name || object.type, materialFamily: source.type });
+            return attached;
+          }
+          const owner: AdapterOwnership = isOwnedByArchitectureRiseSubject(object)
+            ? "architecture-rise-subject"
+            : "observer-output-policy";
+          const signatureStartedAt = collectDetailedSample ? window.performance.now() : 0;
+          const signature = materialSignature(source);
+          const shaderSignature = materialShaderSignature(source);
+          if (collectDetailedSample) materialSignatureMs += window.performance.now() - signatureStartedAt;
+          output.addEventListener("dispose", () => {
+            performance.disposedNodeMaterials += 1;
+          });
+          performance.adaptedMaterialCreations += 1;
+          managedMaterialsRef.current.set(source, {
+            source,
+            output,
+            ownership: owner,
+            lastSeenFrame: currentFrame,
+            signature,
+            shaderSignature,
+          });
+          return output;
         });
-        return output;
+        if (nextMaterials.some((material, index) => material !== sourceMaterials[index])) {
+          performance.materialAssignmentReplacements += nextMaterials.filter((material, index) =>
+            material !== sourceMaterials[index],
+          ).length;
+          object.material = Array.isArray(object.material) ? nextMaterials : nextMaterials[0]!;
+        }
       });
-      if (nextMaterials.some((material, index) => material !== sourceMaterials[index])) {
-        object.material = Array.isArray(object.material) ? nextMaterials : nextMaterials[0]!;
+      if (collectDetailedSample) {
+        recordDuration(performance.sceneTraversal, window.performance.now() - traversalStartedAt);
+        recordDuration(performance.materialSignatures, materialSignatureMs);
+        recordDuration(performance.materialAdaptation, materialAdaptationMs);
       }
-    });
 
-    // R3F-owned camera and overlay materials can be detached by visibility
-    // controls. Release their node counterpart after two missed frames. The
-    // registered subject's disposer owns its NodeMaterials and textures.
-    managedMaterialsRef.current.forEach((record, source) => {
-      if (seenSources.has(source) || currentFrame - record.lastSeenFrame < 2) return;
-      if (record.ownership !== "architecture-rise-subject") record.output.dispose();
-      managedMaterialsRef.current.delete(source);
-    });
+      // R3F-owned camera and overlay materials can be detached by visibility
+      // controls. Release their node counterpart after two missed frames. The
+      // registered subject's disposer owns its NodeMaterials and textures.
+      const cleanupStartedAt = collectDetailedSample ? window.performance.now() : 0;
+      managedMaterialsRef.current.forEach((record, source) => {
+        if (seenSources.has(source) || currentFrame - record.lastSeenFrame < 2) return;
+        if (record.ownership !== "architecture-rise-subject") record.output.dispose();
+        managedMaterialsRef.current.delete(source);
+      });
+      if (collectDetailedSample) recordDuration(performance.staleCleanup, window.performance.now() - cleanupStartedAt);
 
-    const architectureSubjectMounted = scene.getObjectByName("architecture-rise-subject") !== undefined;
-    const inventory = buildInventory(scene, currentFrame, unsupported);
-    const reportKey = JSON.stringify({ ...inventory, frame: 0 });
-    if (reportKey !== lastReportRef.current) {
-      lastReportRef.current = reportKey;
-      setDiagnosticAttributes(container, lastStatusRef.current, inventory);
-    }
+      const architectureSubjectMounted = scene.getObjectByName("architecture-rise-subject") !== undefined;
+      const inventoryStartedAt = collectDetailedSample ? window.performance.now() : 0;
+      const inventory = buildInventory(scene, currentFrame, unsupported);
+      performance.materialAssignmentCount = inventory.totalMeshAssignments;
+      performance.managedMaterialCount = managedMaterialsRef.current.size;
+      const reportKey = JSON.stringify({ ...inventory, frame: 0 });
+      if (reportKey !== lastReportRef.current) {
+        lastReportRef.current = reportKey;
+        performance.diagnosticDomWrites += 1;
+        setDiagnosticAttributes(container, lastStatusRef.current, inventory);
+      }
+      if (collectDetailedSample) {
+        recordDuration(performance.inventoryAndDiagnostics, window.performance.now() - inventoryStartedAt);
+      }
 
-    if (unsupported.length > 0) {
-      scene.visible = false;
-      reportFailure(container, `unsupported material family: ${unsupported.map((item) => `${item.objectName}/${item.materialFamily}`).join(", ")}`);
-      return;
-    }
-    if (!architectureSubjectMounted) {
-      scene.visible = false;
-      return;
-    }
+      if (unsupported.length > 0) {
+        scene.visible = false;
+        reportFailure(container, `unsupported material family: ${unsupported.map((item) => `${item.objectName}/${item.materialFamily}`).join(", ")}`);
+        return;
+      }
+      if (!architectureSubjectMounted) {
+        scene.visible = false;
+        return;
+      }
 
-    const original = originalSettingsRef.current;
-    scene.visible = original?.sceneVisible ?? true;
-    if (lastStatusRef.current !== "active") {
-      lastStatusRef.current = "active";
-      setDiagnosticAttributes(container, "active", inventory);
+      const original = originalSettingsRef.current;
+      scene.visible = original?.sceneVisible ?? true;
+      if (lastStatusRef.current !== "active") {
+        lastStatusRef.current = "active";
+        performance.diagnosticDomWrites += 1;
+        setDiagnosticAttributes(container, "active", inventory);
+      }
+    } finally {
+      if (import.meta.env.DEV) {
+        performance.frameCount += 1;
+        recordDuration(performance.controllerCallback, window.performance.now() - callbackStartedAt);
+      }
     }
   });
 
