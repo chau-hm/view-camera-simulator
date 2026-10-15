@@ -81,6 +81,7 @@ import {
 } from "./backend/observerBackend";
 import { resolveObserverCanvasInitialization } from "./backend/observerRendererInitialization";
 import type { ObserverSceneCompatibility } from "./backend/observerSceneCompatibility";
+import { AnatomyMaterialAuditProbe } from "./anatomyMaterialAuditProbe";
 import { ObserverCanvasErrorBoundary } from "./backend/ObserverCanvasErrorBoundary";
 import {
   resolveObserverVisualPipelineCapabilities,
@@ -1364,6 +1365,7 @@ const SceneContent = ({
   cameraPresentation,
   onSubjectCapacityChange,
   rendererMountGeneration,
+  anatomyMaterialAuditEnabled,
   createEnvironmentRealizationToken,
   onEnvironmentStatusChange,
   architectureRiseVerificationHarness,
@@ -1382,6 +1384,7 @@ const SceneContent = ({
   cameraPresentation?: ConceptualCameraPresentation;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
   rendererMountGeneration: number;
+  anatomyMaterialAuditEnabled: boolean;
   createEnvironmentRealizationToken: (
     generation: number,
   ) => ObserverWorldEnvironmentRealizationToken;
@@ -1427,6 +1430,9 @@ const SceneContent = ({
       onEnvironmentStatusChange={onEnvironmentStatusChange}
       architectureRiseVerificationHarness={architectureRiseVerificationHarness}
     />
+    {anatomyMaterialAuditEnabled && scene.id === "view-camera-anatomy"
+      ? <AnatomyMaterialAuditProbe generation={rendererMountGeneration} />
+      : null}
     {import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
       ? <ArchitectureRiseVerificationProbe />
       : null}
@@ -2116,6 +2122,10 @@ export const SceneRenderer = ({
           cameraPresentation={cameraPresentation}
           onSubjectCapacityChange={onSubjectCapacityChange}
           rendererMountGeneration={rendererMountGeneration}
+          anatomyMaterialAuditEnabled={import.meta.env.DEV &&
+            scene.id === "view-camera-anatomy" &&
+            typeof window !== "undefined" &&
+            new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1"}
           createEnvironmentRealizationToken={createEnvironmentRealizationToken}
           onEnvironmentStatusChange={onEnvironmentStatusChange}
           architectureRiseVerificationHarness={
