@@ -1827,7 +1827,23 @@ The Architecture Rise validation suite was repeated on the final source commit
 that run is recorded as fallback regression coverage. Native claims come from
 the strict parity and performance/lifecycle runs above.
 
-**Decision: PR L — SHARED OUTPUT CORE EXTRACTED; ANATOMY INTEGRATION NOT
-ENABLED.** The K2 blocker is reduced at the ownership boundary, but Anatomy
-still needs its own readiness, dynamic material/geometry coverage, and matched
-visual validation before a material-aware runtime can be considered.
+Review-fix round 1 corrected attachment retention: each renderable/material
+slot now expires after two missed traversal frames even while a sibling keeps
+its shared material record active. A deterministic two-mesh regression failed
+before the correction, and the fixed tests cover 100 mount/unmount cycles,
+reordering/replacement, reattachment, owner boundaries, and restoration.
+Matched native Chrome runs on the reviewed and corrected PR commits each
+processed 393 Architecture Rise assignments and retained 73 adapted materials.
+The corrected run recorded 393 live attachments and renderables. Its sustained
+controller mean was 0.913 ms/frame versus 0.871 ms/frame on the reviewed head;
+the sampled stale sweep averaged 0.0081 ms (0.1 ms p95). The strict native
+parity result remained 78 pass, 0 fail, 3 conditional N/A, with contentful
+independent Ground Glass. Hardware acceleration remains unconfirmed.
+Details and measurement provenance are in the [shared-core architecture
+report](architecture/SHARED_MATERIAL_AWARE_OUTPUT_CORE.md).
+
+**Decision: L1 — SHARED CORE VALIDATED; ANATOMY INTEGRATION NOT ENABLED.** The
+shared ownership core is validated for the existing Architecture Rise
+integration. Anatomy still needs its own readiness, dynamic material/geometry
+coverage, and matched visual validation before a material-aware runtime can be
+considered.

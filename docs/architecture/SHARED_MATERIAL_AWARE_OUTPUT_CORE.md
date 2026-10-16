@@ -126,10 +126,14 @@ assignment remains active. A newer material assignment wins during cleanup:
 the tracker restores the source only when that assignment still points to its
 adapted copy.
 
-Removed renderables become stale during scene traversal and release after the
-bounded stale window. Tracker teardown restores still-attached source
-assignments before disposing its owned copies. Source geometry, materials, and
-textures remain outside the tracker's disposal authority.
+Each tracked material slot has its own last-seen frame. When a renderable stops
+appearing in scene traversal, its attachment is restored and detached after two
+missed frames, even if another renderable keeps the shared material record
+active. The shared adapted copy is released only after its record has no live
+attachments and its own two-frame stale window has elapsed. Tracker teardown
+restores assignments that still point to a copy before releasing it. Source
+geometry, materials, and textures remain outside the tracker's disposal
+authority.
 
 ## 9. Renderer generation and fallback
 
@@ -262,3 +266,113 @@ strict report is at
 Both completed performance/lifecycle runs and the native strict run report no
 page or console errors. Existing `THREE.Clock` deprecation warnings were emitted
 by the dependency path and are not page/console errors.
+
+## 14. Review-Fix Round 1 — Renderable Attachment Lifetime
+
+### F1 — Stale attachment retention
+
+The initial stale sweep expired only `ManagedMaterial` records. If Mesh A and
+Mesh B shared a source-plus-owner output and A left the scene, B refreshed the
+record every frame. A's attachment therefore stayed in both the record's
+attachment set and the renderable index indefinitely. The record's liveness
+could not establish the liveness of every renderable using it.
+
+Each `MaterialAttachment` now stores its own `lastSeenFrame`. Reconciliation
+refreshes that frame and reuses the attachment when the same renderable and
+material slot return before expiry. The stale sweep removes attachments absent
+for two complete frames, independent of their record's activity. It restores a
+slot only when the renderable still points to that attachment's adapted output;
+a newer authored assignment is preserved. A shared record and NodeMaterial
+remain alive while any attachment is active. The existing `MaterialOutputOwner`
+continues to be the only authority that releases the output, keeping source plus
+owner identity and Architecture Rise's registered-subject owner unchanged.
+
+Read-only tracker counts expose current attached slots and renderables for unit
+assertions. The existing development-only performance report now includes
+current and peak attachment/renderable counts. Cleanup operates over currently
+tracked attachments and records; it keeps no history of expired renderables.
+
+### Regression evidence
+
+The new two-mesh scene-traversal regression failed against the reviewed tracker:
+after A had missed the two-frame window while B remained active, the expected
+one attachment was still two. After the fix it verifies that A is restored and
+removed from both indexes, B keeps the shared output, and that output is
+released once only after B also expires.
+
+Additional focused coverage exercises 100 temporary-mesh mount/unmount cycles,
+source replacement while a sibling remains active, multi-material slot
+reordering and replacement, reattachment before expiry, independent owner
+domains, a newer authored assignment, Architecture Rise's registered-subject
+owner, and final tracker/generation cleanup. The 100-cycle test checks the
+tracked-renderable and attachment counts after every cycle and requires one
+final output disposal with the borrowed source still alive. The Anatomy
+module-shared-source lifecycle tests remain passing; Anatomy material-aware
+output remains disabled.
+
+| Scenario | Expected attachments | Observed | Output disposal |
+| --- | ---: | ---: | --- |
+| Two shared meshes active | 2 | 2 | None |
+| One mesh expired, sibling active | 1 | 1 | None; shared output retained |
+| 100 temporary cycles with persistent sibling | 1 after each cycle | 1 after each cycle | None during cycles |
+| All attachments expired | 0 | 0 | Shared output disposed once |
+| Tracker/renderer-generation teardown | 0 | 0 | Owned copies released once; source materials remain alive |
+
+### Matched performance and native parity
+
+The corrected comparison used the same isolated benchmark on the reviewed
+implementation commit `e7a7a428eafd16000306238118edfbefcb2e2554` and corrected
+implementation commit `e45e7aa753787dad3e36e15570606f8ca051880c`. Both ran on
+macOS Darwin 27.0 arm64, headed Chrome 155.0.8059.84, Three.js r186, Node
+24.19.0, at 1440×1000 / DPR 1. The browser API and adapter were available and
+the actual mounted renderer was `webgpu-renderer / webgpu`. Hardware
+acceleration remains unconfirmed.
+
+| Measurement | Reviewed PR head | Corrected candidate |
+| --- | ---: | ---: |
+| Valid matched native trials | 6 / 6 | 6 / 6 |
+| Material-aware callback mean across 3 pairs | 0.983 ms | 0.972 ms |
+| Pair callback median / p95 | 0.9 / 1.3–1.4 ms | 0.9 / 1.4 ms |
+| Assignments / active records | 393 / 73 | 393 / 73 |
+| Current / peak attachments | Not instrumented | 393 / 393 |
+| Current / peak tracked renderables | Not instrumented | 393 / 393 |
+| Sustained callback mean over about 120 seconds | 0.871 ms/frame | 0.913 ms/frame |
+| Sustained callback median / p95 | 0.8 / 1.0 ms | 0.9 / 1.2 ms |
+| Sustained scene-traversal mean | 0.873 ms | 0.912 ms |
+| Detailed stale-cleanup mean / p95 | 0.0023 / 0 ms | 0.0081 / 0.1 ms |
+| Signatures evaluated / frame | 72.931 | 72.930 |
+| Adapted material creations / disposals during sustained use | 271 / 198 | 271 / 198 |
+| Active-gesture rAF median / p95 | 13.3 / 14.1 ms | 13.4 / 14.2 ms |
+
+The corrected candidate's sustained controller mean was 0.042 ms/frame higher
+in this single paired run; the sampled stale sweep averaged 0.0081 ms with a
+0.1 ms p95 across 298 detailed samples. These measurements are CPU callback
+instrumentation, not GPU time, and the browser timing resolution is coarse at
+these durations. The three short paired callback means did not increase on the
+corrected candidate. Results are descriptive and do not set a performance
+threshold or general platform ranking. Both sustained runs kept 393
+assignments, 73 active adapted materials, 33 control operations, and similar
+gesture cadence. On the corrected run, material creation minus disposal
+remained 73 after state churn; teardown reported zero attachments/renderables
+and balanced 271 creations with 271 disposals. All 11/11 recovery/navigation
+transitions passed with no page or console errors and contentful Ground Glass.
+
+The strict PR #254 native visual-parity gate was rerun on the corrected commit
+without changing its criteria: 78 applicable criteria passed, zero failed, and
+3 conditional N/A. The standard-output control also remained native WebGPU;
+Ground Glass remained contentful on its independent WebGL2 RTT.
+
+### Decision
+
+**L1 — SHARED CORE VALIDATED.** Attachment liveness is independent from shared
+material-record lifetime, owned outputs are released through their existing
+owners, the stress regression shows bounded counts, and native Architecture
+Rise parity remains valid. This decision validates the shared core for its
+current Architecture Rise integration. It does not activate Anatomy
+material-aware output or authorize production WebGPU.
+
+The matched reports are under the ignored `test-results` directory:
+
+- Reviewed implementation: `test-results/observer-backend-comparison/pr-l-review-fix-baseline/run.json`
+- Corrected implementation: `test-results/observer-backend-comparison/pr-l-review-fix-candidate/run.json`
+- Corrected strict parity: `test-results/observer-backend-comparison/playwright/observer-visual-parity.ben-f1f5b-ounds-and-teaching-overlays-chrome-native-webgpu/observer-visual-parity.json`
