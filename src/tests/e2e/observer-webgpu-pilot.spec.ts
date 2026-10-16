@@ -219,6 +219,58 @@ const decodePngScreenshot = (png: Buffer): DecodedPng => {
 
 const ANATOMY_VISIBILITY_EVENT = "vcs:observer-verification:anatomy-visibility";
 const ANATOMY_VERIFICATION_VIEW_EVENT = "vcs:observer-verification:anatomy-view";
+const ANATOMY_AUDIT_REQUEST_EVENT = "vcs:observer-verification:anatomy-material-audit";
+const ANATOMY_AUDIT_RESULT_EVENT = "vcs:observer-verification:anatomy-material-audit-result";
+const ANATOMY_OBJECT_VISIBILITY_EVENT = "vcs:observer-verification:anatomy-object-visibility";
+
+const setAnatomyObjectVisible = async (
+  observer: Locator,
+  objectName: string,
+  visible: boolean,
+) => {
+  await observer.evaluate((element, payload) => {
+    element.dispatchEvent(new CustomEvent(payload.eventName, {
+      detail: { objectName: payload.objectName, visible: payload.visible },
+    }));
+  }, { eventName: ANATOMY_OBJECT_VISIBILITY_EVENT, objectName, visible });
+  await expect(observer).toHaveAttribute(
+    "data-observer-test-object-visibility",
+    JSON.stringify({ objectName, visible }),
+  );
+  await observer.page().evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+};
+
+type AnatomyAuditSnapshot = Readonly<{
+  projectedRegions: Record<string, PixelRegion | null>;
+  materials: readonly Readonly<{
+    role: string;
+    sourceMaterialId: string;
+    outputMaterialIds: readonly string[];
+    outputMaterialFamilies: readonly string[];
+    adapted: boolean;
+    properties: Readonly<{ family: string }>;
+  }>[];
+}>;
+
+const readAnatomyAuditSnapshot = async (observer: Locator): Promise<AnatomyAuditSnapshot> =>
+  observer.evaluate((element, payload) => new Promise<AnatomyAuditSnapshot>((resolve, reject) => {
+    const requestId = `observer-audit-${Date.now()}`;
+    const timeout = window.setTimeout(() => {
+      element.removeEventListener(payload.resultEvent, onResult);
+      reject(new Error("Timed out waiting for the Anatomy audit projection snapshot"));
+    }, 10_000);
+    const onResult = (event: Event) => {
+      const result = (event as CustomEvent<{ requestId: string; snapshot: AnatomyAuditSnapshot }>).detail;
+      if (result?.requestId !== requestId) return;
+      window.clearTimeout(timeout);
+      element.removeEventListener(payload.resultEvent, onResult);
+      resolve(result.snapshot);
+    };
+    element.addEventListener(payload.resultEvent, onResult);
+    element.dispatchEvent(new CustomEvent(payload.requestEvent, { detail: { requestId } }));
+  }), { requestEvent: ANATOMY_AUDIT_REQUEST_EVENT, resultEvent: ANATOMY_AUDIT_RESULT_EVENT });
 
 const setAnatomySubjectVisible = async (
   page: Page,
@@ -2037,18 +2089,31 @@ test("material-aware output adapts the Architecture Rise Observer and stays scen
   expect(candidateInteractions.resetRestoredOrbitTarget).toBe(true);
   expect(await observer.getAttribute("data-observer-renderer-generation")).toBe(String(firstGeneration));
 
-  const requestsBeforeIneligibleScene = materialAwareModuleRequests.length;
+  const requestsBeforeAnatomyCandidate = materialAwareModuleRequests.length;
   await navigateWithinSimulator(
     page,
     "/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1",
   );
+  const anatomyCandidateMount = await waitForActiveObserverGeneration(observer, firstGeneration);
   await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-output-policy-requested", "material-aware");
-  await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "standard");
-  await expect(observer).toHaveAttribute("data-observer-output-policy-selection-reason", "scene-not-eligible");
-  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
-  await expect(observer).not.toHaveAttribute("data-observer-material-inventory");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selected", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selection-reason", "material-aware-selected");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-scene-adapter", "view-camera-anatomy");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready");
+  const anatomyCandidateInventoryText = await observer.getAttribute("data-observer-material-inventory");
+  expect(anatomyCandidateInventoryText).toBeTruthy();
+  const anatomyCandidateInventory = JSON.parse(anatomyCandidateInventoryText ?? "{}") as {
+    sceneId?: string;
+    unsupportedMaterialInstances?: number;
+    adaptedMaterialInstances?: number;
+  };
+  expect(anatomyCandidateInventory.sceneId).toBe("view-camera-anatomy");
+  expect(anatomyCandidateInventory.unsupportedMaterialInstances).toBe(0);
+  expect(Number(anatomyCandidateInventory.adaptedMaterialInstances)).toBeGreaterThan(0);
   if (nativeWebGpuRequired) {
     await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available", {
       timeout: 60_000,
@@ -2056,10 +2121,15 @@ test("material-aware output adapts the Architecture Rise Observer and stays scen
     expectNativeWebGpuMount(await readObserverAttributes(observer));
   }
   const anatomyPolicyAttributes = await readObserverAttributes(observer);
-  expect(materialAwareModuleRequests).toHaveLength(requestsBeforeIneligibleScene);
+  expect(materialAwareModuleRequests.length).toBeLessThanOrEqual(requestsBeforeAnatomyCandidate + 1);
+  expect(Number(anatomyCandidateMount["data-observer-renderer-generation"])).toBeGreaterThan(firstGeneration);
   await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
 
   await navigateWithinSimulator(page, candidatePath);
+  const returnedArchitectureRiseMount = await waitForActiveObserverGeneration(
+    observer,
+    Number(anatomyCandidateMount["data-observer-renderer-generation"]),
+  );
   await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
@@ -2076,7 +2146,8 @@ test("material-aware output adapts the Architecture Rise Observer and stays scen
     });
     expectNativeWebGpuMount(await readObserverAttributes(observer));
   }
-  expect(Number(await observer.getAttribute("data-observer-renderer-generation"))).toBeGreaterThan(firstGeneration);
+  expect(Number(returnedArchitectureRiseMount["data-observer-renderer-generation"]))
+    .toBeGreaterThan(Number(anatomyCandidateMount["data-observer-renderer-generation"]));
   const returnedFamily = await observer.getAttribute("data-observer-renderer-family");
   let returnedMaterialInventory: Record<string, unknown> | null = null;
   if (returnedFamily === "webgpu-renderer") {
@@ -2459,4 +2530,225 @@ test("Observer backend state follows eligible and ineligible SPA scene/request t
     }, null, 2),
     contentType: "application/json",
   });
+});
+
+test("explicit Anatomy material-aware output keeps source ownership and rendered teaching parts intact", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&observerMaterialAudit=1&observerMaterialAuditGhost=1&rttDiagnostics=1");
+  const observer = await waitForMountedObserver(page);
+  await expect(observer).toHaveAttribute("data-observer-output-policy-requested", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-selected", /^(material-aware|standard)$/);
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
+
+  const initialAttributes = await readObserverAttributes(observer);
+  if (nativeWebGpuRequired) {
+    expectNativeWebGpuMount(initialAttributes);
+    expect(initialAttributes["data-observer-output-policy-selected"]).toBe("material-aware");
+  }
+  if (initialAttributes["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(initialAttributes["data-observer-output-policy-selected"], JSON.stringify(initialAttributes, null, 2)).toBe("material-aware");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-scene-adapter", "view-camera-anatomy");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+    await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-unsupported-count", "0");
+    const inventoryText = await observer.getAttribute("data-observer-material-inventory");
+    expect(inventoryText).toBeTruthy();
+    const inventory = JSON.parse(inventoryText ?? "{}") as {
+      sceneId?: string;
+      totalMeshAssignments?: number;
+      adaptedMaterialInstances?: number;
+      unsupportedMaterialInstances?: number;
+      families?: Array<{ role: string; status: string }>;
+    };
+    expect(inventory.sceneId).toBe("view-camera-anatomy");
+    expect(inventory.totalMeshAssignments).toBeGreaterThan(0);
+    expect(inventory.adaptedMaterialInstances).toBeGreaterThan(0);
+    expect(inventory.unsupportedMaterialInstances).toBe(0);
+    expect(inventory.families?.every((family) => family.status === "supported")).toBe(true);
+  } else {
+    expect(initialAttributes["data-observer-renderer-family"]).toBe("webgl-renderer");
+    expect(initialAttributes["data-observer-application-fallback"]).toBe("app-webgl");
+    expect(initialAttributes["data-observer-output-policy-selected"]).toBe("standard");
+    expect(initialAttributes["data-observer-output-policy-installed"]).toBe("standard");
+  }
+
+  const groundGlass = page.getByTestId("ground-glass-rtt");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+  const rttChannel = page.locator('[data-rtt-resource-channel="default"]');
+  await expect(rttChannel).toHaveAttribute("data-rtt-anatomy-resource-snapshot", /view-camera-anatomy-subject/);
+  const rttSnapshotText = await rttChannel.getAttribute("data-rtt-anatomy-resource-snapshot");
+  expect(rttSnapshotText).toBeTruthy();
+  const rttSnapshot = JSON.parse(rttSnapshotText ?? "{}") as {
+    meshAssignments: number;
+    materialAssignments: number;
+    sourceMaterials: Array<{ uuid: string; family: string }>;
+    geometryIds: string[];
+    rendererFamily: string;
+    executionBackend: string;
+  };
+  expect(rttSnapshot.meshAssignments).toBe(VIEW_CAMERA_ANATOMY_PRESENTATION.geometry.boxes.length);
+  expect(rttSnapshot.materialAssignments).toBe(5);
+  expect(rttSnapshot.sourceMaterials.every((material) => material.family === "MeshStandardMaterial")).toBe(true);
+  expect(rttSnapshot.geometryIds).toHaveLength(1);
+  expect(rttSnapshot.rendererFamily).toBe("webgl-renderer");
+  expect(rttSnapshot.executionBackend).toBe("webgl2");
+
+  const observerAudit = await readAnatomyAuditSnapshot(observer);
+  const ghostMaterials = observerAudit.materials.filter((material) => material.role.startsWith("ghost-reference-camera/"));
+  expect(ghostMaterials.length, "the explicit audit query must mount the ghost reference camera").toBeGreaterThan(0);
+  expect(observerAudit.projectedRegions.ghostReferenceCamera, "the ghost camera must have a projected screen region").not.toBeNull();
+  const targetMaterials = observerAudit.materials.filter((material) => material.role === "registered-target-subject");
+  expect(targetMaterials).toHaveLength(5);
+  expect(targetMaterials.every((material) => material.sourceMaterialId && material.adapted)).toBe(
+    initialAttributes["data-observer-renderer-family"] === "webgpu-renderer",
+  );
+  if (initialAttributes["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(targetMaterials.every((material) => material.outputMaterialFamilies.some((family) => family.startsWith("MaterialAware")))).toBe(true);
+  }
+  expect(targetMaterials.map((material) => material.sourceMaterialId).sort())
+    .toEqual(rttSnapshot.sourceMaterials.map((material) => material.uuid).sort());
+
+  if (initialAttributes["data-observer-renderer-family"] === "webgpu-renderer") {
+    expect(ghostMaterials.every((material) => material.adapted)).toBe(true);
+    expect(ghostMaterials.every((material) => material.outputMaterialFamilies.some((family) => family.startsWith("MaterialAware")))).toBe(true);
+  } else {
+    expect(ghostMaterials.every((material) => !material.adapted)).toBe(true);
+  }
+  const ghostRegionNormalized = observerAudit.projectedRegions.ghostReferenceCamera;
+  if (!ghostRegionNormalized) throw new Error("The ghost reference camera has no projected region");
+  const ghostCanvas = observer.locator("canvas");
+  const ghostVisibleImage = await captureObserverCanvasScreenshot(page, ghostCanvas);
+  const ghostVisibleDecoded = decodePngScreenshot(ghostVisibleImage);
+  const ghostRegionPixels = {
+    left: Math.floor(ghostRegionNormalized.left * ghostVisibleDecoded.width),
+    top: Math.floor(ghostRegionNormalized.top * ghostVisibleDecoded.height),
+    right: Math.ceil(ghostRegionNormalized.right * ghostVisibleDecoded.width),
+    bottom: Math.ceil(ghostRegionNormalized.bottom * ghostVisibleDecoded.height),
+  };
+  let ghostHiddenImage = ghostVisibleImage;
+  let ghostRestoredImage = ghostVisibleImage;
+  try {
+    await setAnatomyObjectVisible(observer, "original-ghost-camera-rig-placement", false);
+    ghostHiddenImage = await captureObserverCanvasScreenshot(page, ghostCanvas);
+  } finally {
+    await setAnatomyObjectVisible(observer, "original-ghost-camera-rig-placement", true);
+    ghostRestoredImage = await captureObserverCanvasScreenshot(page, ghostCanvas);
+  }
+  const ghostRendering = compareSubjectFrames(ghostVisibleImage, ghostHiddenImage, ghostRestoredImage, ghostRegionPixels);
+  expect(ghostRendering.visibleVsHidden.changedPixels).toBeGreaterThan(64);
+  expect(ghostRendering.visibleVsHidden.changedPixelsInProjectedRegion).toBeGreaterThan(32);
+  expect(ghostRendering.visibleVsHidden.changedPixelFractionInProjectedRegion).toBeGreaterThanOrEqual(0.6);
+  expect(ghostRendering.hiddenCanvasContentful).toBe(true);
+  expect(ghostRendering.changedPixelsFromInitialAfterRestore)
+    .toBeLessThanOrEqual(Math.ceil(ghostRendering.pixelCount * 0.005));
+
+  await selectAnatomySceneFocus(page, observer);
+  const viewState = await setAnatomyVerificationView(page, observer);
+  const subjectRendering = await captureSubjectRenderingEvidence(page, observer, testInfo);
+  await restoreObserverSceneView(page, observer, viewState);
+  expect(subjectRendering.status, "the registered Anatomy target must contribute pixels under the selected output policy").toBe("verified");
+
+  const panel = page.locator(".anatomy-lesson-panel");
+  await panel.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(panel.getByRole("heading", { level: 3 })).toHaveText("Front Standard");
+  const frontStandardRegions = await readAnatomyAuditSnapshot(observer);
+  const normalizedRegion = frontStandardRegions.projectedRegions["cameraPart:front-standard"];
+  expect(normalizedRegion, "the camera part negative control requires a projected front-standard ROI").not.toBeNull();
+  const canvas = observer.locator("canvas");
+  const visibleImage = await captureObserverCanvasScreenshot(page, canvas);
+  const visibleDecoded = decodePngScreenshot(visibleImage);
+  const partRegion = normalizedRegion
+    ? {
+        left: Math.floor(normalizedRegion.left * visibleDecoded.width),
+        top: Math.floor(normalizedRegion.top * visibleDecoded.height),
+        right: Math.ceil(normalizedRegion.right * visibleDecoded.width),
+        bottom: Math.ceil(normalizedRegion.bottom * visibleDecoded.height),
+      }
+    : null;
+  expect(partRegion && partRegion.right > partRegion.left && partRegion.bottom > partRegion.top).toBe(true);
+  let hiddenImage = visibleImage;
+  let restoredImage = visibleImage;
+  try {
+    await setAnatomyObjectVisible(observer, "camera-anatomy-front-standard", false);
+    hiddenImage = await captureObserverCanvasScreenshot(page, canvas);
+  } finally {
+    await setAnatomyObjectVisible(observer, "camera-anatomy-front-standard", true);
+    restoredImage = await captureObserverCanvasScreenshot(page, canvas);
+  }
+  const partDifference = compareSubjectFrames(visibleImage, hiddenImage, restoredImage, partRegion);
+  expect(partDifference.visibleVsHidden.changedPixels).toBeGreaterThan(64);
+  expect(partDifference.visibleVsHidden.changedPixelsInProjectedRegion).toBeGreaterThan(32);
+  expect(partDifference.visibleVsHidden.changedPixelFractionInProjectedRegion).toBeGreaterThanOrEqual(0.6);
+  expect(partDifference.hiddenCanvasContentful).toBe(true);
+  expect(partDifference.changedPixelsFromInitialAfterRestore)
+    .toBeLessThanOrEqual(Math.ceil(partDifference.pixelCount * 0.005));
+
+  const evidence = {
+    route: page.url(),
+    nativeRequired: nativeWebGpuRequired,
+    observer: initialAttributes,
+    outputReadiness: await observer.getAttribute("data-observer-output-policy-readiness-evidence"),
+    anatomyTargetRenderedEvidence: subjectRendering,
+    ghostCameraRenderedEvidence: ghostRendering,
+    frontStandardNegativeControl: partDifference,
+    groundGlassResourceSnapshot: rttSnapshot,
+    observerSourceMaterialsMatchGroundGlass: targetMaterials.map((material) => material.sourceMaterialId).sort()
+      .every((id, index) => id === rttSnapshot.sourceMaterials.map((material) => material.uuid).sort()[index]),
+    pageErrors,
+  };
+  await testInfo.attach("anatomy-material-aware-runtime-evidence.json", {
+    body: JSON.stringify(evidence, null, 2),
+    contentType: "application/json",
+  });
+  expect(pageErrors).toEqual([]);
+});
+
+test("Anatomy material-aware output failure uses the existing one-shot standard WebGL fallback", async ({ page }) => {
+  test.skip(!nativeWebGpuRequired, "The deterministic candidate failure is exercised with the native-required headed Chrome run.");
+  test.setTimeout(180_000);
+  await page.addInitScript(() => {
+    const target = window as Window & { __observerOutputLifecycle?: unknown[] };
+    target.__observerOutputLifecycle = [];
+    window.addEventListener("vcs:observer-output-policy-lifecycle", (event) => {
+      target.__observerOutputLifecycle?.push((event as CustomEvent<unknown>).detail);
+    });
+  });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&observerMaterialAudit=1&rttDiagnostics=1");
+  const observer = await waitForMountedObserver(page);
+  const before = await readObserverAttributes(observer);
+  expectNativeWebGpuMount(before);
+  await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+  const generation = Number(before["data-observer-renderer-generation"]);
+  const groundGlass = page.getByTestId("ground-glass-rtt");
+  const rttChannel = page.locator('[data-rtt-resource-channel="default"]');
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  const rttSnapshot = await rttChannel.getAttribute("data-rtt-anatomy-resource-snapshot");
+
+  await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
+    "vcs:observer-verification:inject-output-policy-failure",
+    { detail: "e2e-injected-anatomy-output-failure" },
+  )));
+  const fallback = await waitForActiveObserverGeneration(observer, generation);
+  expect(fallback["data-observer-renderer-family"]).toBe("webgl-renderer");
+  expect(fallback["data-observer-execution-backend"]).toBe("webgl2");
+  expect(fallback["data-observer-application-fallback"]).toBe("app-webgl");
+  expect(fallback["data-observer-renderer-failure-stage"]).toBe("output-policy");
+  expect(fallback["data-observer-renderer-failure-reason"]).toContain("e2e-injected-anatomy-output-failure");
+  expect(fallback["data-observer-output-policy-selected"]).toBe("standard");
+  expect(fallback["data-observer-output-policy-installed"]).toBe("standard");
+  expect(fallback["data-observer-webgpu-initialization-attempts"]).toBe("1");
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  expect(await rttChannel.getAttribute("data-rtt-anatomy-resource-snapshot")).toBe(rttSnapshot);
+  expect(pageErrors).toEqual([]);
+
+  const lifecycle = await page.evaluate(() => (window as Window & { __observerOutputLifecycle?: unknown[] }).__observerOutputLifecycle ?? []);
+  const disposedCandidate = (lifecycle as Array<Record<string, unknown>>)
+    .find((entry) => entry.rendererGeneration === generation);
+  expect(disposedCandidate).toBeTruthy();
+  expect(disposedCandidate?.disposedNodeMaterials).toBe(disposedCandidate?.adaptedMaterialCreations);
 });

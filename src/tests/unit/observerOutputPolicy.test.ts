@@ -29,6 +29,41 @@ describe("Observer output policy selection", () => {
     });
   });
 
+  it("allows Anatomy material-aware output only with an explicit development opt-in", () => {
+    const anatomySelection = selectObserverBackend({
+      webglAvailable: true,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: resolveObserverSceneCompatibility("view-camera-anatomy"),
+      developmentPilotEnabled: true,
+    });
+    expect(resolveObserverOutputPolicy({
+      sceneId: "view-camera-anatomy",
+      requestedRendererParam: "webgpu",
+      requestedOutputParam: "material-aware",
+      backendSelection: anatomySelection,
+      developmentBuild: true,
+    })).toEqual({
+      requestedParameter: "material-aware",
+      requested: "material-aware",
+      selected: "material-aware",
+      reason: "material-aware-selected",
+    });
+    expect(resolveObserverOutputPolicy({
+      sceneId: "view-camera-anatomy",
+      requestedRendererParam: "webgpu",
+      requestedOutputParam: null,
+      backendSelection: anatomySelection,
+      developmentBuild: true,
+    })).toMatchObject({ requested: "standard", selected: "standard", reason: "standard-default" });
+    expect(resolveObserverOutputPolicy({
+      sceneId: "view-camera-anatomy",
+      requestedRendererParam: "webgpu",
+      requestedOutputParam: "standard",
+      backendSelection: anatomySelection,
+      developmentBuild: true,
+    })).toMatchObject({ requested: "standard", selected: "standard", reason: "standard-requested" });
+  });
+
   it("selects material-aware by default for the explicitly requested Architecture Rise development pilot", () => {
     expect(resolveObserverOutputPolicy({
       sceneId: "architecture-rise",
@@ -106,11 +141,17 @@ describe("Observer output policy selection", () => {
       developmentPilotEnabled: true,
     });
 
+    const tableTiltSelection = selectObserverBackend({
+      webglAvailable: true,
+      requestedRendererParam: "webgpu",
+      sceneCompatibility: resolveObserverSceneCompatibility("table-tilt"),
+      developmentPilotEnabled: true,
+    });
     expect(resolveObserverOutputPolicy({
-      sceneId: "view-camera-anatomy",
+      sceneId: "table-tilt",
       requestedRendererParam: "webgpu",
       requestedOutputParam: "material-aware",
-      backendSelection: anatomySelection,
+      backendSelection: tableTiltSelection,
       developmentBuild: true,
     })).toMatchObject({ requestedParameter: "material-aware", selected: "standard", reason: "scene-not-eligible" });
     expect(resolveObserverOutputPolicy({
@@ -135,6 +176,18 @@ describe("Observer output policy selection", () => {
       backendSelection: anatomySelection,
       developmentBuild: true,
     })).toMatchObject({ requested: "standard", selected: "standard" });
+    expect(resolveObserverOutputPolicy({
+      sceneId: "view-camera-anatomy",
+      requestedRendererParam: "webgpu",
+      requestedOutputParam: "material-aware",
+      backendSelection: anatomySelection,
+      developmentBuild: false,
+    })).toMatchObject({
+      requestedParameter: "material-aware",
+      requested: "material-aware",
+      selected: "standard",
+      reason: "development-gate-disabled",
+    });
   });
 
   it("restores standard output selection after the current pilot falls back to WebGL", () => {

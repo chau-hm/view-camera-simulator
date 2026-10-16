@@ -1366,6 +1366,7 @@ const SceneContent = ({
   onSubjectCapacityChange,
   rendererMountGeneration,
   anatomyMaterialAuditEnabled,
+  anatomyMaterialAuditIncludeGhost,
   createEnvironmentRealizationToken,
   onEnvironmentStatusChange,
   architectureRiseVerificationHarness,
@@ -1385,6 +1386,7 @@ const SceneContent = ({
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
   rendererMountGeneration: number;
   anatomyMaterialAuditEnabled: boolean;
+  anatomyMaterialAuditIncludeGhost: boolean;
   createEnvironmentRealizationToken: (
     generation: number,
   ) => ObserverWorldEnvironmentRealizationToken;
@@ -1486,7 +1488,9 @@ const SceneContent = ({
         ))
       )}
     </TeachingShadowParticipation>
-    {referenceCameraVisible ? <OriginalGhostCamera scene={scene} /> : null}
+    {referenceCameraVisible || anatomyMaterialAuditIncludeGhost
+      ? <OriginalGhostCamera scene={scene} />
+      : null}
     </>
   );
 };
@@ -1578,9 +1582,15 @@ export const SceneRenderer = ({
 }: SceneRendererProps) => {
   const materialAwareOutputRequested =
     import.meta.env.DEV &&
-    scene.id === "architecture-rise" &&
+    (scene.id === "architecture-rise" || scene.id === "view-camera-anatomy") &&
     outputPolicySelection.selected === "material-aware" &&
     backendSelection.rendererAttempt === "webgpu";
+  const anatomyMaterialAuditEnabled = import.meta.env.DEV &&
+    scene.id === "view-camera-anatomy" &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1";
+  const anatomyMaterialAuditIncludeGhost = anatomyMaterialAuditEnabled &&
+    new URLSearchParams(window.location.search).get("observerMaterialAuditGhost") === "1";
   const [materialAwareOutputModule, setMaterialAwareOutputModule] =
     useState<MaterialAwareOutputModule | null>(null);
   const [materialAwareOutputModuleFailure, setMaterialAwareOutputModuleFailure] =
@@ -1814,7 +1824,7 @@ export const SceneRenderer = ({
       data-observer-verification-scene={
         import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
           ? "architecture-rise"
-          : undefined
+          : anatomyMaterialAuditEnabled ? "view-camera-anatomy" : undefined
       }
       data-observer-renderer-generation={
         import.meta.env.DEV ? String(rendererMountGeneration) : undefined
@@ -2096,11 +2106,20 @@ export const SceneRenderer = ({
           onCapabilitiesChange={onObserverCapabilitiesChange}
         />
         {materialAwareOutputRequested && materialAwareOutputModule
-          ? <materialAwareOutputModule.MaterialAwareOutputPolicyController
-              rendererGeneration={rendererMountGeneration}
-              onFailure={onWebGpuOutputPolicyFailure}
-              onCapabilitiesChange={onObserverCapabilitiesChange}
-            />
+          ? scene.id === "view-camera-anatomy"
+            ? <materialAwareOutputModule.AnatomyMaterialAwareOutputPolicyController
+                rendererGeneration={rendererMountGeneration}
+                onFailure={onWebGpuOutputPolicyFailure}
+                onCapabilitiesChange={onObserverCapabilitiesChange}
+                allowFailureInjection={import.meta.env.DEV &&
+                  typeof window !== "undefined" &&
+                  new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1"}
+              />
+            : <materialAwareOutputModule.MaterialAwareOutputPolicyController
+                rendererGeneration={rendererMountGeneration}
+                onFailure={onWebGpuOutputPolicyFailure}
+                onCapabilitiesChange={onObserverCapabilitiesChange}
+              />
           : null}
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
@@ -2122,10 +2141,8 @@ export const SceneRenderer = ({
           cameraPresentation={cameraPresentation}
           onSubjectCapacityChange={onSubjectCapacityChange}
           rendererMountGeneration={rendererMountGeneration}
-          anatomyMaterialAuditEnabled={import.meta.env.DEV &&
-            scene.id === "view-camera-anatomy" &&
-            typeof window !== "undefined" &&
-            new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1"}
+          anatomyMaterialAuditEnabled={anatomyMaterialAuditEnabled}
+          anatomyMaterialAuditIncludeGhost={anatomyMaterialAuditIncludeGhost}
           createEnvironmentRealizationToken={createEnvironmentRealizationToken}
           onEnvironmentStatusChange={onEnvironmentStatusChange}
           architectureRiseVerificationHarness={

@@ -41,7 +41,7 @@ export type ObserverMaterialInventoryEntry = Readonly<{
 }>;
 
 export type ObserverMaterialInventory = Readonly<{
-  sceneId: "architecture-rise";
+  sceneId: "architecture-rise" | "view-camera-anatomy";
   frame: number;
   totalMeshAssignments: number;
   distinctMaterialInstances: number;
@@ -125,11 +125,18 @@ type MutableInventoryFamily = {
   owner: string;
 };
 
-/** Architecture Rise's scene-specific diagnostic interpretation of shared material tracking. */
-export const buildArchitectureRiseMaterialInventory = (
+export type ObserverMaterialInventoryProfile = Readonly<{
+  sceneId: ObserverMaterialInventory["sceneId"];
+  roleForObject: (object: THREE.Object3D, scene: THREE.Scene) => string;
+  outputOwnerForRole: (role: string) => string;
+}>;
+
+/** Shared material inventory mechanics with scene-specific role and ownership interpretation. */
+export const buildObserverMaterialInventory = (
   scene: THREE.Scene,
   frame: number,
   unsupported: readonly UnsupportedMaterialAssignment[],
+  profile: ObserverMaterialInventoryProfile,
 ): ObserverMaterialInventory => {
   const families = new Map<string, MutableInventoryFamily>();
   const adaptedSources = new Set<THREE.Material>();
@@ -137,7 +144,7 @@ export const buildArchitectureRiseMaterialInventory = (
   let totalMeshAssignments = 0;
   scene.traverse((object) => {
     if (!isMaterialAwareRenderable(object)) return;
-    const role = architectureRiseObjectRole(object);
+    const role = profile.roleForObject(object, scene);
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     materials.forEach((attached) => {
       totalMeshAssignments += 1;
@@ -168,9 +175,7 @@ export const buildArchitectureRiseMaterialInventory = (
           normalScales: new Set(),
           roughnessValues: new Set(),
           metalnessValues: new Set(),
-          owner: role === "architecture-rise-subject"
-            ? "disposeArchitectureRiseGroup -> disposeTeachingSubjectResources"
-            : "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+          owner: profile.outputOwnerForRole(role),
         };
         families.set(familyKey, family);
       }
@@ -268,7 +273,7 @@ export const buildArchitectureRiseMaterialInventory = (
   }).sort((left, right) => `${left.role}/${left.sourceMaterialFamily}`.localeCompare(`${right.role}/${right.sourceMaterialFamily}`));
 
   return {
-    sceneId: "architecture-rise",
+    sceneId: profile.sceneId,
     frame,
     totalMeshAssignments,
     distinctMaterialInstances: new Set([...families.values()].flatMap((family) => [...family.sources])).size,
@@ -291,3 +296,16 @@ export const buildArchitectureRiseMaterialInventory = (
     },
   };
 };
+
+/** Architecture Rise's scene-specific diagnostic interpretation of shared material tracking. */
+export const buildArchitectureRiseMaterialInventory = (
+  scene: THREE.Scene,
+  frame: number,
+  unsupported: readonly UnsupportedMaterialAssignment[],
+): ObserverMaterialInventory => buildObserverMaterialInventory(scene, frame, unsupported, {
+  sceneId: "architecture-rise",
+  roleForObject: architectureRiseObjectRole,
+  outputOwnerForRole: (role) => role === "architecture-rise-subject"
+    ? "disposeArchitectureRiseGroup -> disposeTeachingSubjectResources"
+    : "Observer output-policy controller (NodeMaterial); React Three Fiber (authored material)",
+});

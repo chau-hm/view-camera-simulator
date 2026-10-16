@@ -770,6 +770,44 @@ function OffscreenRenderer({
     }
     sceneProfile.configureRttShadowParticipation(mounted.group);
     mountedSceneSubjectRef.current = mounted;
+    const anatomyResourceChannel = import.meta.env.DEV &&
+      sceneDefinition.id === "view-camera-anatomy"
+      ? gl.domElement.closest<HTMLElement>("[data-rtt-resource-channel]")
+      : null;
+    const anatomyResourceSnapshot = anatomyResourceChannel
+      ? (() => {
+          const materials = new Map<string, { uuid: string; type: string; family: string }>();
+          const geometries = new Set<string>();
+          let meshAssignments = 0;
+          mounted.group.traverse((object) => {
+            if (!(object as THREE.Mesh).isMesh) return;
+            const mesh = object as THREE.Mesh;
+            geometries.add(mesh.geometry.uuid);
+            const attached = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            attached.forEach((material) => {
+              meshAssignments += 1;
+              materials.set(material.uuid, {
+                uuid: material.uuid,
+                type: material.type,
+                family: material.constructor.name,
+              });
+            });
+          });
+          return JSON.stringify({
+            subjectId: mounted.group.userData.subjectId ?? "view-camera-anatomy",
+            rootName: mounted.group.name,
+            meshAssignments,
+            materialAssignments: materials.size,
+            sourceMaterials: [...materials.values()].sort((left, right) => left.uuid.localeCompare(right.uuid)),
+            geometryIds: [...geometries].sort(),
+            rendererFamily: "webgl-renderer",
+            executionBackend: "webgl2",
+          });
+        })()
+      : null;
+    if (anatomyResourceSnapshot) {
+      anatomyResourceChannel?.setAttribute("data-rtt-anatomy-resource-snapshot", anatomyResourceSnapshot);
+    }
 
     const runtimeInfo = mounted.runtimeInfo;
     const currentInfo = readRuntimeInfo();
@@ -807,6 +845,10 @@ function OffscreenRenderer({
     }
 
     return () => {
+      if (anatomyResourceSnapshot &&
+          anatomyResourceChannel?.getAttribute("data-rtt-anatomy-resource-snapshot") === anatomyResourceSnapshot) {
+        anatomyResourceChannel.removeAttribute("data-rtt-anatomy-resource-snapshot");
+      }
       if (mountedSceneSubjectRef.current === mounted) {
         mountedSceneSubjectRef.current = null;
       }

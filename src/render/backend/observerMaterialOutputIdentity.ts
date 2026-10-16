@@ -12,3 +12,9 @@ export type AdaptedObserverMaterial = THREE.Material & {
   [observerOutputOwnerIdentity]?: object;
   [observerOutputTrackerIdentity]?: object;
 };
+
+/** Reads the borrowed authored source from an adapted output material without loading renderer-specific NodeMaterial code. */
+export const readObserverOutputSourceMaterial = (
+  material: THREE.Material,
+): THREE.Material | null =>
+  (material as AdaptedObserverMaterial)[observerOutputSourceMaterial] ?? null;

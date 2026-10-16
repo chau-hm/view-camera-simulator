@@ -16,6 +16,7 @@ import {
 } from "./observerBackendBenchmark";
 
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
+const anatomyAuditMode = process.env.OBSERVER_ANATOMY_AUDIT_MODE ?? "standard";
 const auditRequestEvent = "vcs:observer-verification:anatomy-material-audit";
 const auditResultEvent = "vcs:observer-verification:anatomy-material-audit-result";
 const cameraPoseEvent = "vcs:observer-verification:anatomy-view";
@@ -36,6 +37,7 @@ const evidenceStates = [
 ] as const;
 
 type BackendName = "webgl" | "native-webgpu";
+type OutputMode = "standard" | "material-aware";
 type Bounds = Readonly<{ left: number; top: number; right: number; bottom: number }>;
 type Bounds3 = Readonly<{
   min: readonly [number, number, number];
@@ -45,6 +47,10 @@ type MaterialRecord = Readonly<{
   role: string;
   cameraPart: string | null;
   owner: string;
+  sourceMaterialId: string;
+  outputMaterialIds: readonly string[];
+  outputMaterialFamilies: readonly string[];
+  adapted: boolean;
   assignments: number;
   objectNames: readonly string[];
   properties: Readonly<{
@@ -136,6 +142,7 @@ type Capture = Readonly<{
   filename: string;
   state: string;
   backend: BackendName;
+  outputMode: OutputMode;
   screenshot: Buffer;
   decoded: DecodedPng;
   subjectPixels: CanvasEvidence | null;
@@ -145,6 +152,8 @@ type Capture = Readonly<{
   groundGlass: Readonly<{
     attributes: Record<string, string>;
     pixels: CanvasEvidence;
+    decoded: DecodedPng;
+    resourceSnapshot: string | null;
   }>;
 }>;
 
@@ -243,6 +252,7 @@ const setCameraPose = async (
 const captureState = async (
   page: Page,
   backend: BackendName,
+  outputMode: OutputMode,
   state: string,
   pose: Readonly<{ position: readonly number[]; target: readonly number[] }>,
   testInfo: TestInfo,
@@ -258,6 +268,8 @@ const captureState = async (
     : null;
   const groundGlass = page.getByTestId("ground-glass-rtt");
   const groundGlassAttributes = await attributes(groundGlass);
+  const resourceChannel = page.locator('[data-rtt-resource-channel="default"]');
+  const resourceSnapshot = await resourceChannel.getAttribute("data-rtt-anatomy-resource-snapshot");
   const groundGlassScreenshot = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
   const groundGlassImage = decodePlaywrightPng(groundGlassScreenshot);
   const groundGlassPixels = summarizeImage(groundGlassImage);
@@ -271,17 +283,18 @@ const captureState = async (
       };
     }),
   );
-  const filename = `${backend}-${state}.png`;
+  const filename = `${backend}${outputMode === "material-aware" ? "-material-aware" : ""}-${state}.png`;
   const output = testInfo.outputPath(filename);
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, screenshot);
   await testInfo.attach(filename, { body: screenshot, contentType: "image/png" });
 
   return {
-    id: `${backend}/${state}`,
+    id: `${backend}${outputMode === "material-aware" ? "-material-aware" : ""}/${state}`,
     filename,
     state,
     backend,
+    outputMode,
     screenshot,
     decoded,
     subjectPixels: subjectPixels
@@ -297,21 +310,44 @@ const captureState = async (
     movementState,
     inventory,
     observerAttributes: await attributes(observer),
-    groundGlass: { attributes: groundGlassAttributes, pixels: groundGlassPixels },
+    groundGlass: { attributes: groundGlassAttributes, pixels: groundGlassPixels, decoded: groundGlassImage, resourceSnapshot },
   };
 };
 
-const waitForInitialState = async (page: Page, backend: BackendName): Promise<Readonly<{
+const waitForInitialState = async (
+  page: Page,
+  backend: BackendName,
+  outputMode: OutputMode = "standard",
+  includeGhost = false,
+): Promise<Readonly<{
   position: number[];
   target: number[];
 }>> => {
-  await page.goto("/simulator/free/view-camera-anatomy?lesson=1&observerMaterialAudit=1&rttDiagnostics=1" +
-    (backend === "native-webgpu" ? "&observerRenderer=webgpu" : ""));
+  const params = new URLSearchParams({
+    lesson: "1",
+    observerMaterialAudit: "1",
+    rttDiagnostics: "1",
+    observerOutput: "standard",
+  });
+  if (includeGhost) params.set("observerMaterialAuditGhost", "1");
+  if (backend === "native-webgpu") {
+    params.set("observerRenderer", "webgpu");
+    params.set("observerOutput", outputMode);
+  }
+  await page.goto(`/simulator/free/view-camera-anatomy?${params.toString()}`);
   const observer = page.getByTestId("scene-canvas");
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-family", /^(webgl-renderer|webgpu-renderer)$/);
   await expect(observer).toHaveAttribute("data-observer-execution-backend", /^(webgl2|webgpu|webgl2-fallback)$/);
-  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+  if (backend === "webgl" || outputMode === "standard") {
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "standard");
+  } else {
+    await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware", { timeout: 60_000 });
+    await expect(observer).toHaveAttribute("data-observer-output-policy-scene-adapter", "view-camera-anatomy");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-unsupported-count", "0");
+  }
   await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
   await expect(page.locator(".anatomy-lesson-panel").getByRole("heading", { level: 3 })).toHaveText("The complete camera");
   await expect(page.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
@@ -331,6 +367,7 @@ const waitForInitialState = async (page: Page, backend: BackendName): Promise<Re
     await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
     await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available");
     await expect(observer).not.toHaveAttribute("data-observer-renderer-failure-stage");
+    await expect(observer).toHaveAttribute("data-observer-output-policy-selected", outputMode);
   }
 
   const positionText = await observer.getAttribute("data-observer-camera-position");
@@ -347,6 +384,9 @@ const captureBackend = async (
   backend: BackendName,
   pose: Readonly<{ position: readonly number[]; target: readonly number[] }> | null,
   testInfo: TestInfo,
+  outputMode: OutputMode = "standard",
+  includeGhost = false,
+  collectNegativeControls = false,
 ) => {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
@@ -361,8 +401,9 @@ const captureBackend = async (
     if (message.type() === "error") pageErrors.push(message.text());
   });
   try {
-    const initialPose = await waitForInitialState(page, backend);
+    const initialPose = await waitForInitialState(page, backend, outputMode, includeGhost);
     const cameraPose = pose ?? initialPose;
+    const observer = page.getByTestId("scene-canvas");
     const subjectBounds = VIEW_CAMERA_ANATOMY_PRESENTATION.geometry.bounds;
     const subjectTarget = [
       toWorld((subjectBounds.min.x + subjectBounds.max.x) / 2),
@@ -378,6 +419,111 @@ const captureBackend = async (
     const heading = panel.getByRole("heading", { level: 3 });
     const next = panel.getByRole("button", { name: "Next", exact: true });
     const captures: Capture[] = [];
+    const repeatCaptureConsistency: Record<string, unknown> = {};
+    const negativeControls: Record<string, unknown> = {};
+    const captureVisibilityDifferential = async (
+      reference: Capture,
+      controlName: "registered-target-subject" | "camera-anatomy-front-standard",
+      regionName: string,
+    ) => {
+      const normalized = reference.inventory.projectedRegions[regionName];
+      if (!normalized) throw new Error(`${backend}/${outputMode} has no projected region for ${regionName}`);
+      const region = regionInPixels(normalized, reference.decoded);
+      if (region.right <= region.left || region.bottom <= region.top) {
+        throw new Error(`${backend}/${outputMode} ${regionName} is empty`);
+      }
+      const canvas = observer.locator("canvas");
+      let hidden: Buffer | null = null;
+      let restored: Buffer | null = null;
+      try {
+        if (controlName === "registered-target-subject") {
+          await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
+            "vcs:observer-verification:anatomy-visibility",
+            { detail: false },
+          )));
+          await expect(observer).toHaveAttribute("data-observer-test-anatomy-subject-visible", "false");
+        } else {
+          await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
+            "vcs:observer-verification:anatomy-object-visibility",
+            { detail: { objectName: "camera-anatomy-front-standard", visible: false } },
+          )));
+          await expect(observer).toHaveAttribute("data-observer-test-object-visibility", JSON.stringify({
+            objectName: "camera-anatomy-front-standard",
+            visible: false,
+          }));
+        }
+        await stabilizeFrame(page);
+        hidden = await canvas.screenshot({ animations: "disabled" });
+      } finally {
+        if (controlName === "registered-target-subject") {
+          await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
+            "vcs:observer-verification:anatomy-visibility",
+            { detail: true },
+          )));
+          await expect(observer).toHaveAttribute("data-observer-test-anatomy-subject-visible", "true");
+        } else {
+          await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
+            "vcs:observer-verification:anatomy-object-visibility",
+            { detail: { objectName: "camera-anatomy-front-standard", visible: true } },
+          )));
+          await expect(observer).toHaveAttribute("data-observer-test-object-visibility", JSON.stringify({
+            objectName: "camera-anatomy-front-standard",
+            visible: true,
+          }));
+        }
+        await stabilizeFrame(page);
+        restored = await canvas.screenshot({ animations: "disabled" });
+      }
+      if (!hidden || !restored) throw new Error(`${controlName} negative-control captures were not completed`);
+      const hiddenDecoded = decodePlaywrightPng(hidden);
+      const restoredDecoded = decodePlaywrightPng(restored);
+      const regionDifference = comparePixelRegions(reference.decoded, hiddenDecoded, region, 12);
+      const fullDifference = comparePixelRegions(reference.decoded, hiddenDecoded, {
+        left: 0,
+        top: 0,
+        right: reference.decoded.width,
+        bottom: reference.decoded.height,
+      }, 12);
+      const restorationDifference = comparePixelRegions(reference.decoded, restoredDecoded, {
+        left: 0,
+        top: 0,
+        right: reference.decoded.width,
+        bottom: reference.decoded.height,
+      }, 12);
+      const hiddenPixels = summarizeImage(hiddenDecoded);
+      const hiddenCanvasContentful = subjectRoiHasMeaningfulPixels({
+        region: { left: 0, top: 0, right: hiddenDecoded.width, bottom: hiddenDecoded.height },
+        sampleCount: hiddenPixels.sampleCount,
+        distinctColorBuckets: hiddenPixels.distinctColorBuckets,
+        meanLuminance: hiddenPixels.meanLuminance,
+        luminanceStandardDeviation: hiddenPixels.luminanceStandardDeviation,
+      });
+      const localizedFraction = fullDifference.changedPixelCount > 0
+        ? regionDifference.changedPixelCount / fullDifference.changedPixelCount
+        : 0;
+      const minimumChangedPixels = Math.max(64, Math.ceil(regionDifference.changedPixelCount > 0 ? 0.001 * (region.right - region.left) * (region.bottom - region.top) : 64));
+      const evidence = {
+        method: "actual Observer framebuffer visibility differential",
+        objectName: controlName === "registered-target-subject" ? "view-camera-anatomy-subject" : controlName,
+        normalizedProjectedRegion: normalized,
+        pixelRegion: region,
+        regionDifference,
+        fullCanvasDifference: fullDifference,
+        changedPixelFractionLocalizedToRegion: localizedFraction,
+        minimumChangedPixels,
+        hiddenCanvasContentful,
+        restorationDifference,
+      };
+      expect(regionDifference.changedPixelCount, `${backend}/${outputMode} ${controlName} absence must change projected pixels`)
+        .toBeGreaterThan(minimumChangedPixels);
+      expect(localizedFraction, `${backend}/${outputMode} ${controlName} pixel change must be localized to its projected ROI`)
+        .toBeGreaterThanOrEqual(0.6);
+      expect(hiddenCanvasContentful, `${backend}/${outputMode} unrelated scene and background remain visible in the negative control`)
+        .toBe(true);
+      expect(restorationDifference.changedPixelFraction)
+        .toBeLessThanOrEqual(0.005);
+      return evidence;
+    };
     const capture = async (
       state: typeof evidenceStates[number],
       capturePose: Readonly<{ position: readonly number[]; target: readonly number[] }> = cameraPose,
@@ -395,7 +541,7 @@ const captureBackend = async (
         : state === "image-circle-lesson" ? "Understanding the Image Circle"
         : "Front Rise");
       await stabilizeFrame(page);
-      const result = await captureState(page, backend, state, capturePose, testInfo);
+      const result = await captureState(page, backend, outputMode, state, capturePose, testInfo);
       const subjectSummary = result.subjectPixels;
       if (state === "registered-target-subject") {
         expect(subjectSummary, `${backend}/${state} must project the registered target subject into the Observer`).not.toBeNull();
@@ -413,7 +559,54 @@ const captureBackend = async (
       expect(result.groundGlass.attributes["data-rtt-camera-ok"]).toBe("true");
       expect(result.groundGlass.pixels.distinctColorBuckets).toBeGreaterThan(4);
       expect(result.groundGlass.pixels.luminanceStandardDeviation ?? 0).toBeGreaterThan(1);
+      if (outputMode === "material-aware") {
+        expect(result.observerAttributes["data-observer-output-policy-installed"]).toBe("material-aware");
+        expect(result.observerAttributes["data-observer-output-policy-status"]).toBe("active");
+        expect(result.observerAttributes["data-observer-output-policy-readiness"]).toBe("ready");
+        expect(result.observerAttributes["data-observer-output-policy-unsupported-count"]).toBe("0");
+      }
       captures.push(result);
+      if (state === "initial") {
+        await stabilizeFrame(page);
+        const repeatedPng = await observer.locator("canvas").screenshot({ animations: "disabled" });
+        const repeated = decodePlaywrightPng(repeatedPng);
+        const fullRegion = { left: 0, top: 0, right: result.decoded.width, bottom: result.decoded.height };
+        const consistency = comparePixelRegions(result.decoded, repeated, fullRegion, 8);
+        expect(repeated.width).toBe(result.decoded.width);
+        expect(repeated.height).toBe(result.decoded.height);
+        expect(consistency.meanAbsoluteRgbDifference, `${backend}/${outputMode} repeated initial capture must stay within measured noise limit`)
+          .toBeLessThanOrEqual(0.5);
+        const repeatFilename = `${backend}${outputMode === "material-aware" ? "-material-aware" : ""}-initial-repeat-1.png`;
+        const repeatPath = testInfo.outputPath(repeatFilename);
+        await writeFile(repeatPath, repeatedPng);
+        await testInfo.attach(repeatFilename, { body: repeatedPng, contentType: "image/png" });
+        repeatCaptureConsistency.initial = {
+          firstCaptureId: result.id,
+          repeatedCaptureId: `${result.id}/initial-repeat-1`,
+          repeatedFilename: repeatFilename,
+          sameOutputMode: outputMode,
+          sameSceneState: state,
+          cameraPose: result.inventory.viewport.cameraPosition,
+          orbitTarget: result.inventory.viewport.orbitTarget,
+          viewport: [result.decoded.width, result.decoded.height],
+          devicePixelRatio: result.inventory.viewport.devicePixelRatio,
+          metrics: consistency,
+        };
+      }
+      if (collectNegativeControls && state === "registered-target-subject") {
+        negativeControls.registeredTargetHidden = await captureVisibilityDifferential(
+          result,
+          "registered-target-subject",
+          "registeredTargetSubject",
+        );
+      }
+      if (collectNegativeControls && state === "highlighted-front-standard") {
+        negativeControls.frontStandardHidden = await captureVisibilityDifferential(
+          result,
+          "camera-anatomy-front-standard",
+          "cameraPart:front-standard",
+        );
+      }
       return result;
     };
 
@@ -477,15 +670,22 @@ const captureBackend = async (
     await expect(heading).toHaveText("The complete camera");
     const reset = await capture("after-reset");
 
-    const observer = page.getByTestId("scene-canvas");
+    if (outputMode === "material-aware") {
+      await page.evaluate(() => window.dispatchEvent(new Event("vcs:observer-verification:read-output-policy-performance")));
+    }
     const observerAttributes = await attributes(observer);
+    const outputPerformanceText = await observer.getAttribute("data-observer-output-policy-performance");
     const runtime = {
       browserVersion: browser.version(),
       os: { platform: platform(), release: release(), architecture: arch() },
       threeRevision: REVISION,
       observerAttributes,
+      outputMode,
+      outputPerformance: outputPerformanceText ? JSON.parse(outputPerformanceText) as unknown : null,
       pageErrors,
       captureCount: captures.length,
+      repeatCaptureConsistency,
+      negativeControls,
       groundGlassContentfulForEveryCapture: captures.every((item) =>
         item.groundGlass.attributes["data-rtt-final-contentful"] === "true" &&
         item.groundGlass.pixels.distinctColorBuckets > 4),
@@ -542,28 +742,84 @@ const compareBackendCaptures = (webgl: readonly Capture[], native: readonly Capt
       if (!firstBounds || !secondBounds) return [];
       const bounds = unionBounds(firstBounds, secondBounds);
       const region = regionInPixels(bounds, first.decoded);
+      const firstRegionEvidence = summarizePixelRegion(first.decoded, region);
+      const secondRegionEvidence = summarizePixelRegion(second.decoded, region);
+      if (firstRegionEvidence.sampleCount === 0 || secondRegionEvidence.sampleCount === 0) {
+        throw new Error(`Matched ROI ${state}/${name} has no framebuffer samples`);
+      }
       return [{
         regionName: name,
         normalizedRegion: bounds,
+        sampleCount: firstRegionEvidence.sampleCount,
         webglMeanRgb: meanRgb(first.decoded, region),
         nativeWebGpuMeanRgb: meanRgb(second.decoded, region),
         subjectRoiColorEvidence: name === "registeredTargetSubject"
           ? {
-              webgl: summarizePixelRegion(first.decoded, region),
-              nativeWebGpu: summarizePixelRegion(second.decoded, region),
+              webgl: firstRegionEvidence,
+              nativeWebGpu: secondRegionEvidence,
             }
           : undefined,
         webglVsNativeWebGpu: comparePixelRegions(first.decoded, second.decoded, region, 8),
       }];
     });
+    const firstGroundGlass = first.groundGlass.decoded;
+    const secondGroundGlass = second.groundGlass.decoded;
+    if (firstGroundGlass.width !== secondGroundGlass.width || firstGroundGlass.height !== secondGroundGlass.height) {
+      throw new Error(`Ground Glass captures for ${state} have incompatible dimensions`);
+    }
+    const groundGlassRegion = {
+      left: 0,
+      top: 0,
+      right: firstGroundGlass.width,
+      bottom: firstGroundGlass.height,
+    };
+    const groundGlassSamples = summarizePixelRegion(firstGroundGlass, groundGlassRegion);
+    if (groundGlassSamples.sampleCount === 0 || groundGlassSamples.distinctColorBuckets <= 4) {
+      throw new Error(`Ground Glass capture for ${state} is not contentful`);
+    }
+    if (!first.groundGlass.resourceSnapshot || !second.groundGlass.resourceSnapshot) {
+      throw new Error(`Ground Glass resource snapshots are missing for ${state}`);
+    }
+    const firstGroundGlassResources = JSON.parse(first.groundGlass.resourceSnapshot) as {
+      rendererFamily?: string;
+      executionBackend?: string;
+      sourceMaterials?: Array<{ uuid: string }>;
+      geometryIds?: string[];
+    };
+    const secondGroundGlassResources = JSON.parse(second.groundGlass.resourceSnapshot) as typeof firstGroundGlassResources;
+    expect(firstGroundGlassResources.rendererFamily).toBe("webgl-renderer");
+    expect(secondGroundGlassResources.rendererFamily).toBe("webgl-renderer");
+    expect(firstGroundGlassResources.executionBackend).toBe("webgl2");
+    expect(secondGroundGlassResources.executionBackend).toBe("webgl2");
+    const groundGlassComparison = comparePixelRegions(firstGroundGlass, secondGroundGlass, groundGlassRegion, 8);
     const backgroundBounds = { left: 0.015, top: 0.015, right: 0.085, bottom: 0.085 };
     const backgroundRegion = regionInPixels(backgroundBounds, first.decoded);
+    const backgroundSamples = summarizePixelRegion(first.decoded, backgroundRegion).sampleCount;
+    if (backgroundSamples === 0) throw new Error(`Matched background ROI for ${state} has no framebuffer samples`);
     return {
       state,
       screenshotDimensions: { width: first.decoded.width, height: first.decoded.height },
       measurements,
+      groundGlassReference: {
+        left: {
+          backend: firstGroundGlassResources.rendererFamily,
+          executionBackend: firstGroundGlassResources.executionBackend,
+          sourceMaterials: firstGroundGlassResources.sourceMaterials,
+          geometryIds: firstGroundGlassResources.geometryIds,
+        },
+        right: {
+          backend: secondGroundGlassResources.rendererFamily,
+          executionBackend: secondGroundGlassResources.executionBackend,
+          sourceMaterials: secondGroundGlassResources.sourceMaterials,
+          geometryIds: secondGroundGlassResources.geometryIds,
+        },
+        sampleCount: groundGlassSamples.sampleCount,
+        distinctColorBuckets: groundGlassSamples.distinctColorBuckets,
+        webglVsNativeWebGpu: groundGlassComparison,
+      },
       backgroundReference: {
         normalizedRegion: backgroundBounds,
+        sampleCount: backgroundSamples,
         webglMeanRgb: meanRgb(first.decoded, backgroundRegion),
         nativeWebGpuMeanRgb: meanRgb(second.decoded, backgroundRegion),
         webglVsNativeWebGpu: comparePixelRegions(first.decoded, second.decoded, backgroundRegion, 8),
@@ -589,7 +845,7 @@ const captureForState = (captures: readonly Capture[], state: string): Capture =
   return capture;
 };
 
-const verifyDynamicPresentationInventory = (captures: readonly Capture[]) => {
+const verifyDynamicPresentationInventory = (captures: readonly Capture[], expectGhost = false) => {
   const initial = captureForState(captures, "initial");
   const highlightedLens = captureForState(captures, "highlighted-lens-and-board");
   const dimmedBellows = materialForObject(highlightedLens, "bellows-folded-surface");
@@ -609,12 +865,12 @@ const verifyDynamicPresentationInventory = (captures: readonly Capture[]) => {
 
   const groundGlassBack = captureForState(captures, "ground-glass-back");
   const filmHolder = captureForState(captures, "film-holder");
-  expect(groundGlassBack.inventory.categories.flatMap((category) => category.objectNames))
-    .toContain("ground-glass-screen");
-  expect(filmHolder.inventory.categories.flatMap((category) => category.objectNames))
-    .toContain("film-holder-body");
-  expect(filmHolder.inventory.categories.flatMap((category) => category.objectNames))
-    .not.toContain("ground-glass-screen");
+  const conceptualCameraObjects = (capture: Capture) => capture.inventory.categories
+    .filter((category) => category.role.startsWith("conceptual-camera/"))
+    .flatMap((category) => category.objectNames);
+  expect(conceptualCameraObjects(groundGlassBack)).toContain("ground-glass-screen");
+  expect(conceptualCameraObjects(filmHolder)).toContain("film-holder-body");
+  expect(conceptualCameraObjects(filmHolder)).not.toContain("ground-glass-screen");
 
   const imageCircleLesson = captureForState(captures, "image-circle-lesson");
   expect(imageCircleLesson.inventory.projectedRegions).toHaveProperty("conceptualCamera");
@@ -706,7 +962,11 @@ const verifyDynamicPresentationInventory = (captures: readonly Capture[]) => {
   ]);
   expect(initial.inventory.lights.filter((light) => light.family === "HemisphereLight")).toHaveLength(1);
   expect(initial.inventory.lights.filter((light) => light.family === "DirectionalLight" && light.castShadow === true)).toHaveLength(1);
-  expect(initial.inventory.projectedRegions.ghostReferenceCamera).toBeUndefined();
+  if (expectGhost) {
+    expect(initial.inventory.projectedRegions.ghostReferenceCamera).not.toBeNull();
+  } else {
+    expect(initial.inventory.projectedRegions.ghostReferenceCamera).toBeUndefined();
+  }
   return {
     owner: "module-shared-asset-source",
     uniqueSourceMaterials: sourceMaterials.length,
@@ -729,11 +989,93 @@ const materialAwareNodeFamilyBySourceFamily: Readonly<Record<string, string>> = 
   LineBasicMaterial: "MaterialAwareLineNodeMaterial",
 };
 
-const createCompatibilityMatrix = (captures: readonly Capture[]) => {
+const verifyGroundGlassBorrowedResources = (captures: readonly Capture[]) => captures.map((capture) => {
+  const snapshotText = capture.groundGlass.resourceSnapshot;
+  if (!snapshotText) throw new Error(`${capture.id} has no mounted Ground Glass Anatomy resource snapshot`);
+  const snapshot = JSON.parse(snapshotText) as {
+    rootName: string;
+    meshAssignments: number;
+    materialAssignments: number;
+    sourceMaterials: Array<{ uuid: string; family: string }>;
+    geometryIds: string[];
+    rendererFamily: string;
+    executionBackend: string;
+  };
+  const targetMaterials = capture.inventory.materials.filter((entry) => entry.role === "registered-target-subject");
+  const observerSourceIds = targetMaterials.map((entry) => entry.sourceMaterialId).sort();
+  const groundGlassSourceIds = snapshot.sourceMaterials.map((entry) => entry.uuid).sort();
+  const observerGeometryIds = capture.inventory.geometries
+    .filter((entry) => entry.role === "registered-target-subject")
+    .map((entry) => entry.properties.id)
+    .sort();
+  expect(snapshot.rootName).toBe("view-camera-anatomy-subject");
+  expect(snapshot.meshAssignments).toBe(VIEW_CAMERA_ANATOMY_PRESENTATION.geometry.boxes.length);
+  expect(snapshot.materialAssignments).toBe(5);
+  expect(snapshot.sourceMaterials.every((entry) => entry.family === "MeshStandardMaterial")).toBe(true);
+  expect(snapshot.geometryIds).toHaveLength(1);
+  expect(observerGeometryIds).toEqual(snapshot.geometryIds);
+  expect(snapshot.rendererFamily).toBe("webgl-renderer");
+  expect(snapshot.executionBackend).toBe("webgl2");
+  expect(observerSourceIds).toEqual(groundGlassSourceIds);
+  const outputIds = targetMaterials.flatMap((entry) => entry.outputMaterialIds);
+  if (capture.outputMode === "material-aware") {
+    expect(targetMaterials.every((entry) => entry.adapted)).toBe(true);
+    expect(outputIds.some((id) => groundGlassSourceIds.includes(id))).toBe(false);
+    expect(targetMaterials.every((entry) => entry.outputMaterialFamilies.some((family) => family.startsWith("MaterialAware")))).toBe(true);
+  } else {
+    expect(targetMaterials.every((entry) => !entry.adapted)).toBe(true);
+  }
+  return {
+    captureId: capture.id,
+    outputMode: capture.outputMode,
+    observerSourceMaterialIds: observerSourceIds,
+    groundGlassSourceMaterialIds: groundGlassSourceIds,
+    observerOutputMaterialIds: [...new Set(outputIds)].sort(),
+    observerOutputMaterialsDistinctFromGroundGlass: !outputIds.some((id) => groundGlassSourceIds.includes(id)),
+    observerGeometryIds,
+    groundGlassGeometryIds: snapshot.geometryIds,
+    resourceSnapshot: snapshot,
+  };
+});
+
+const verifyStableGroundGlassSourceIdentity = (captures: readonly Capture[]) => {
+  if (captures.length === 0) throw new Error("Cannot verify Ground Glass identity without captures");
+  const resourceIds = captures.map((capture) => {
+    if (!capture.groundGlass.resourceSnapshot) {
+      throw new Error(`${capture.id} has no mounted Ground Glass Anatomy resource snapshot`);
+    }
+    const snapshot = JSON.parse(capture.groundGlass.resourceSnapshot) as {
+      sourceMaterials: Array<{ uuid: string }>;
+      geometryIds: string[];
+    };
+    return {
+      captureId: capture.id,
+      sourceMaterialIds: snapshot.sourceMaterials.map((entry) => entry.uuid).sort(),
+      geometryIds: snapshot.geometryIds.slice().sort(),
+    };
+  });
+  const [first, ...remaining] = resourceIds;
+  if (!first) throw new Error("Ground Glass identity evidence is empty");
+  for (const resource of remaining) {
+    expect(resource.sourceMaterialIds, `${resource.captureId} should retain its run's module-shared Anatomy source materials`)
+      .toEqual(first.sourceMaterialIds);
+    expect(resource.geometryIds, `${resource.captureId} should retain its run's module-shared Anatomy geometry`)
+      .toEqual(first.geometryIds);
+  }
+  return {
+    captureCount: captures.length,
+    stableAcrossTeachingStates: true,
+    sourceMaterialIds: first.sourceMaterialIds,
+    geometryIds: first.geometryIds,
+  };
+};
+
+const createCompatibilityMatrix = (captures: readonly Capture[], materialAwareCandidate = false) => {
   const groups = new Map<string, {
     role: string;
     sourceFamily: string;
     backend: BackendName;
+    outputMode: OutputMode;
     owner: string;
     instances: Set<string>;
     assignmentsByState: Map<string, number>;
@@ -744,14 +1086,17 @@ const createCompatibilityMatrix = (captures: readonly Capture[]) => {
     depthWriteValues: Set<boolean>;
     sides: Set<string>;
     textureSlots: Set<string>;
+    outputFamilies: Set<string>;
+    adaptedSourceIds: Set<string>;
   }>();
   captures.forEach((capture) => {
     capture.inventory.materials.forEach((entry) => {
-      const key = `${capture.backend}/${entry.role}/${entry.properties.family}`;
+      const key = `${capture.backend}/${capture.outputMode}/${entry.role}/${entry.properties.family}`;
       const group = groups.get(key) ?? {
         role: entry.role,
         sourceFamily: entry.properties.family,
         backend: capture.backend,
+        outputMode: capture.outputMode,
         owner: entry.owner,
         instances: new Set<string>(),
         assignmentsByState: new Map<string, number>(),
@@ -762,6 +1107,8 @@ const createCompatibilityMatrix = (captures: readonly Capture[]) => {
         depthWriteValues: new Set<boolean>(),
         sides: new Set<string>(),
         textureSlots: new Set<string>(),
+        outputFamilies: new Set<string>(),
+        adaptedSourceIds: new Set<string>(),
       };
       group.instances.add(entry.properties.id);
       group.assignmentsByState.set(
@@ -775,11 +1122,14 @@ const createCompatibilityMatrix = (captures: readonly Capture[]) => {
       group.depthWriteValues.add(entry.properties.depthWrite);
       group.sides.add(entry.properties.side);
       Object.keys(entry.properties.textureSlots).forEach((slot) => group.textureSlots.add(slot));
+      entry.outputMaterialFamilies.forEach((family) => group.outputFamilies.add(family));
+      if (entry.adapted) group.adaptedSourceIds.add(entry.sourceMaterialId);
       groups.set(key, group);
     });
   });
   return [...groups.values()].map((group) => ({
     backend: group.backend,
+    outputMode: group.outputMode,
     role: group.role,
     sourceMaterialFamily: group.sourceFamily,
     distinctSourceMaterials: group.instances.size,
@@ -788,7 +1138,11 @@ const createCompatibilityMatrix = (captures: readonly Capture[]) => {
     owner: group.owner,
     candidateNodeMaterialFamily: materialAwareNodeFamilyBySourceFamily[group.sourceFamily] ?? null,
     candidateFamilySupportedByExistingAdapter: group.sourceFamily in materialAwareNodeFamilyBySourceFamily,
-    integrationStatus: "family support is source-level evidence; Anatomy adaptation is not implemented or validated",
+    actualOutputMaterialFamilies: [...group.outputFamilies].sort(),
+    adaptedSourceMaterialCount: group.adaptedSourceIds.size,
+    integrationStatus: materialAwareCandidate && group.outputMode === "material-aware"
+      ? "observed in the development-only Anatomy candidate; visual acceptance remains a separate evidence gate"
+      : "source and output family evidence from the explicit control mode",
     toneMappedValues: [...group.toneMappedValues].sort(),
     transparentMaterialInstances: group.transparentInstances.size,
     depthTestValues: [...group.depthTestValues].sort(),
@@ -796,17 +1150,18 @@ const createCompatibilityMatrix = (captures: readonly Capture[]) => {
     sides: [...group.sides].sort(),
     textureSlots: [...group.textureSlots].sort(),
     adapterOwnerRequirement: group.owner === "module-shared-asset-source"
-      ? "Observer-owned NodeMaterial copies; never mutate/dispose module-shared source resources"
+      ? "Observer-owned NodeMaterial copies; module-shared source materials and geometry remain borrowed"
       : "Observer controller owns adapted NodeMaterials; preserve component material lifecycle",
-  })).sort((left, right) => `${left.backend}/${left.role}/${left.sourceMaterialFamily}`
-    .localeCompare(`${right.backend}/${right.role}/${right.sourceMaterialFamily}`));
+  })).sort((left, right) => `${left.backend}/${left.outputMode}/${left.role}/${left.sourceMaterialFamily}`
+    .localeCompare(`${right.backend}/${right.outputMode}/${right.role}/${right.sourceMaterialFamily}`));
 };
 
 test("View Camera Anatomy runtime material audit records matched WebGL and native WebGPU states", async ({ browser }, testInfo) => {
+  test.skip(anatomyAuditMode === "material-aware", "The explicit material-aware mode emits a separate three-way evidence report.");
   test.setTimeout(300_000);
   expect(nativeRequired, "Run this evidence audit with OBSERVER_NATIVE_WEBGPU_REQUIRED=1 and headed Chrome").toBe(true);
 
-  const webgl = await captureBackend(browser, "webgl", null, testInfo);
+  const webgl = await captureBackend(browser, "webgl", null, testInfo, "standard");
   const webglSharedResources = verifyDynamicPresentationInventory(webgl.captures);
   const initialWebgl = webgl.captures.find((capture) => capture.state === "initial");
   if (!initialWebgl) throw new Error("The WebGL initial capture is missing");
@@ -815,7 +1170,7 @@ test("View Camera Anatomy runtime material audit records matched WebGL and nativ
   const nativeWebGpu = await captureBackend(browser, "native-webgpu", {
       position: initialWebgl.inventory.viewport.cameraPosition,
       target: initialOrbitTarget,
-  }, testInfo);
+  }, testInfo, "standard");
   const nativeSharedResources = verifyDynamicPresentationInventory(nativeWebGpu.captures);
 
   const nativeInitial = nativeWebGpu.captures.find((capture) => capture.state === "initial");
@@ -949,6 +1304,249 @@ test("View Camera Anatomy runtime material audit records matched WebGL and nativ
   });
   await webgl.context.close();
   await nativeWebGpu.context.close();
+});
+
+type CapturedBackendRun = Awaited<ReturnType<typeof captureBackend>>;
+
+const compactRendererEvidence = (observerAttributes: Record<string, string>) => ({
+  rendererGeneration: observerAttributes["data-observer-renderer-generation"] ?? null,
+  rendererRequest: observerAttributes["data-observer-renderer-request"] ?? null,
+  rendererAttempt: observerAttributes["data-observer-renderer-attempt"] ?? null,
+  selectionReason: observerAttributes["data-observer-selection-reason"] ?? null,
+  rendererFamily: observerAttributes["data-observer-renderer-family"] ?? null,
+  executionBackend: observerAttributes["data-observer-execution-backend"] ?? null,
+  webgpuApiPresent: observerAttributes["data-observer-webgpu-api-present"] ?? null,
+  adapterAvailability: observerAttributes["data-observer-adapter-availability"] ?? null,
+  initializationAttempts: observerAttributes["data-observer-webgpu-initialization-attempts"] ?? null,
+  applicationFallback: observerAttributes["data-observer-application-fallback"] ?? null,
+  outputPolicyRequested: observerAttributes["data-observer-output-policy-requested"] ?? null,
+  outputPolicySelected: observerAttributes["data-observer-output-policy-selected"] ?? null,
+  outputPolicySelectionReason: observerAttributes["data-observer-output-policy-selection-reason"] ?? null,
+  outputPolicyInstalled: observerAttributes["data-observer-output-policy-installed"] ?? null,
+  outputPolicyStatus: observerAttributes["data-observer-output-policy-status"] ?? null,
+  outputPolicyReadiness: observerAttributes["data-observer-output-policy-readiness"] ?? null,
+  outputPolicyReadinessEvidence: observerAttributes["data-observer-output-policy-readiness-evidence"]
+    ? JSON.parse(observerAttributes["data-observer-output-policy-readiness-evidence"]!) as unknown
+    : null,
+  unsupportedMaterialCount: observerAttributes["data-observer-output-policy-unsupported-count"] ?? null,
+  initializationFailureStage: observerAttributes["data-observer-renderer-failure-stage"] ?? null,
+  toneMapping: observerAttributes["data-observer-tone-mapping"] ?? null,
+  toneMappingActive: observerAttributes["data-observer-tone-mapping-active"] ?? null,
+  toneMappingExposure: observerAttributes["data-observer-tone-mapping-exposure"] ?? null,
+  outputColorSpace: observerAttributes["data-observer-output-color-space"] ?? null,
+  shadowMapStatus: observerAttributes["data-observer-shadow-map-status"] ?? null,
+  shadowMapType: observerAttributes["data-observer-shadow-map-type"] ?? null,
+});
+
+const compactRuntimeEvidence = (runtime: CapturedBackendRun["runtime"]) => ({
+  browserVersion: runtime.browserVersion,
+  operatingSystem: runtime.os,
+  threeRevision: runtime.threeRevision,
+  outputMode: runtime.outputMode,
+  renderer: compactRendererEvidence(runtime.observerAttributes),
+  pageErrors: runtime.pageErrors,
+  captureCount: runtime.captureCount,
+  repeatCaptureConsistency: runtime.repeatCaptureConsistency,
+  negativeControls: runtime.negativeControls,
+  groundGlassContentfulForEveryCapture: runtime.groundGlassContentfulForEveryCapture,
+  initialAndResetSubjectBoundsMatch: runtime.initialAndResetSubjectBoundsMatch,
+});
+
+const summarizeRoiDifferences = (states: ReturnType<typeof compareBackendCaptures>) => {
+  const values = states.flatMap((state) => state.measurements
+    .map((measurement) => measurement.webglVsNativeWebGpu.meanAbsoluteRgbDifference));
+  if (values.length === 0) throw new Error("Cannot summarize an empty Anatomy ROI comparison");
+  return {
+    stateCount: states.length,
+    roiCount: values.length,
+    meanRoiRgbMae: values.reduce((total, value) => total + value, 0) / values.length,
+    minimumRoiRgbMae: Math.min(...values),
+    maximumRoiRgbMae: Math.max(...values),
+    perStateMeanRoiRgbMae: states.map((state) => ({
+      state: state.state,
+      meanRoiRgbMae: state.measurements.reduce(
+        (total, measurement) => total + measurement.webglVsNativeWebGpu.meanAbsoluteRgbDifference,
+        0,
+      ) / state.measurements.length,
+    })),
+  };
+};
+
+test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, and candidate states", async ({ browser }, testInfo) => {
+  test.skip(anatomyAuditMode !== "material-aware", "Set OBSERVER_ANATOMY_AUDIT_MODE=material-aware to run the three-way candidate audit.");
+  test.setTimeout(900_000);
+  expect(nativeRequired, "Material-aware evidence requires OBSERVER_NATIVE_WEBGPU_REQUIRED=1 and headed Chrome").toBe(true);
+
+  const webgl = await captureBackend(browser, "webgl", null, testInfo, "standard", false, true);
+  const webglInitial = captureForState(webgl.captures, "initial");
+  const orbitTarget = webglInitial.inventory.viewport.orbitTarget;
+  if (!orbitTarget) throw new Error("The matched WebGL capture did not expose an orbit target");
+  const pose = { position: webglInitial.inventory.viewport.cameraPosition, target: orbitTarget };
+  const nativeStandard = await captureBackend(browser, "native-webgpu", pose, testInfo, "standard", false, true);
+  const nativeCandidate = await captureBackend(browser, "native-webgpu", pose, testInfo, "material-aware", false, true);
+  const inventories = {
+    webgl: verifyDynamicPresentationInventory(webgl.captures),
+    nativeStandard: verifyDynamicPresentationInventory(nativeStandard.captures),
+    nativeMaterialAware: verifyDynamicPresentationInventory(nativeCandidate.captures),
+  };
+  const groundGlassOwnership = {
+    webgl: {
+      borrowedResourcesByCapture: verifyGroundGlassBorrowedResources(webgl.captures),
+      stableIdentity: verifyStableGroundGlassSourceIdentity(webgl.captures),
+    },
+    nativeStandard: {
+      borrowedResourcesByCapture: verifyGroundGlassBorrowedResources(nativeStandard.captures),
+      stableIdentity: verifyStableGroundGlassSourceIdentity(nativeStandard.captures),
+    },
+    nativeMaterialAware: {
+      borrowedResourcesByCapture: verifyGroundGlassBorrowedResources(nativeCandidate.captures),
+      stableIdentity: verifyStableGroundGlassSourceIdentity(nativeCandidate.captures),
+    },
+  };
+  const standardInitial = captureForState(nativeStandard.captures, "initial");
+  const candidateInitial = captureForState(nativeCandidate.captures, "initial");
+  for (const capture of [standardInitial, candidateInitial]) {
+    expect(capture.observerAttributes["data-observer-renderer-family"]).toBe("webgpu-renderer");
+    expect(capture.observerAttributes["data-observer-execution-backend"]).toBe("webgpu");
+    expect(capture.observerAttributes["data-observer-application-fallback"]).toBe("none");
+    expect(capture.observerAttributes["data-observer-webgpu-initialization-attempts"]).toBe("1");
+    expect(capture.observerAttributes["data-observer-adapter-availability"]).toBe("available");
+    expect(capture.observerAttributes["data-observer-renderer-failure-stage"]).toBeUndefined();
+  }
+  expect(standardInitial.observerAttributes["data-observer-output-policy-selected"]).toBe("standard");
+  expect(standardInitial.observerAttributes["data-observer-output-policy-installed"]).toBe("standard");
+  expect(candidateInitial.observerAttributes["data-observer-output-policy-selected"]).toBe("material-aware");
+  expect(candidateInitial.observerAttributes["data-observer-output-policy-installed"]).toBe("material-aware");
+  expect(candidateInitial.observerAttributes["data-observer-output-policy-scene-adapter"]).toBe("view-camera-anatomy");
+  expect(candidateInitial.observerAttributes["data-observer-output-policy-readiness"]).toBe("ready");
+  expect(candidateInitial.observerAttributes["data-observer-output-policy-unsupported-count"]).toBe("0");
+  const outputInventory = JSON.parse(candidateInitial.observerAttributes["data-observer-material-inventory"] ?? "{}") as {
+    sceneId?: string;
+    totalMeshAssignments?: number;
+    adaptedMaterialInstances?: number;
+    unsupportedMaterialInstances?: number;
+  };
+  expect(outputInventory.sceneId).toBe("view-camera-anatomy");
+  expect(outputInventory.totalMeshAssignments).toBeGreaterThan(0);
+  expect(outputInventory.adaptedMaterialInstances).toBeGreaterThan(0);
+  expect(outputInventory.unsupportedMaterialInstances).toBe(0);
+
+  const matchedMeasurements = {
+    webglVsNativeStandard: compareBackendCaptures(webgl.captures, nativeStandard.captures),
+    webglVsNativeMaterialAware: compareBackendCaptures(webgl.captures, nativeCandidate.captures),
+    nativeStandardVsNativeMaterialAware: compareBackendCaptures(nativeStandard.captures, nativeCandidate.captures),
+  };
+  const allCaptures = [...webgl.captures, ...nativeStandard.captures, ...nativeCandidate.captures];
+  const report = {
+    schemaVersion: 1,
+    audit: "view-camera-anatomy-material-aware-integration",
+    decision: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+    decisionReason: "The candidate initialized natively, adapted all current material assignments, and captured all 13 matched states. However, object-aligned RGB MAE is large in highlighted, dimmed, aperture, and rear-back states (see the per-state summaries); only initial/reset and background samples are close. Repeat capture noise measured zero in this run, but no approved cross-backend tolerance exists. Keep the opt-in experimental pending focused transparency/material-output investigation and independent parity criteria.",
+    provenance: {
+      measurementCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+      browserVersion: nativeCandidate.runtime.browserVersion,
+      operatingSystem: nativeCandidate.runtime.os,
+      threeRevision: REVISION,
+      hardwareAcceleration: "unconfirmed",
+      nativeQualification: compactRendererEvidence(candidateInitial.observerAttributes),
+      captureConfiguration: {
+        viewport: [webglInitial.inventory.viewport.width, webglInitial.inventory.viewport.height],
+        devicePixelRatio: webglInitial.inventory.viewport.devicePixelRatio,
+        cameraPosition: pose.position,
+        orbitTarget: pose.target,
+        states: evidenceStates,
+      },
+    },
+    runtime: {
+      webgl: compactRuntimeEvidence(webgl.runtime),
+      nativeStandard: compactRuntimeEvidence(nativeStandard.runtime),
+      nativeMaterialAware: compactRuntimeEvidence(nativeCandidate.runtime),
+    },
+    candidateMaterialInventory: outputInventory,
+    sourceOwnership: {
+      observerAdaptedOutputs: "renderer-generation-scoped MaterialAwareMaterialTracker controllerOwner",
+      moduleSharedAnatomyResources: { geometryCount: 1, materialCount: 5 },
+      groundGlass: "independent WebGL2 RTT; source material and geometry UUIDs match Observer source UUIDs while candidate NodeMaterial UUIDs remain separate",
+      evidence: groundGlassOwnership,
+    },
+    dynamicTeachingStates: {
+      count: evidenceStates.length,
+      states: evidenceStates,
+      inventoryChecks: inventories,
+      criteria: "registered target, highlight/dim state, aperture, rear-back, bellows deformation, optical helper, reset, and Ground Glass checks completed",
+    },
+    repeatCaptureNoiseCalibration: {
+      webgl: webgl.runtime.repeatCaptureConsistency,
+      nativeStandard: nativeStandard.runtime.repeatCaptureConsistency,
+      nativeMaterialAware: nativeCandidate.runtime.repeatCaptureConsistency,
+      maximumMeanAbsoluteRgbDifference: 0.5,
+      thresholdInterpretation: "Same-mode repeat stability only; not a cross-backend parity threshold.",
+    },
+    negativeControls: {
+      registeredTargetHidden: {
+        webgl: webgl.runtime.negativeControls,
+        nativeStandard: nativeStandard.runtime.negativeControls,
+        nativeMaterialAware: nativeCandidate.runtime.negativeControls,
+      },
+      frontStandardHidden: "run during the highlighted-front-standard state under each backend/output mode",
+    },
+    matchedMeasurements: {
+      parityStatus: "descriptive; no cross-backend pass threshold claimed",
+      roiMethod: "current projected object bounds; every emitted ROI requires nonzero pixel samples",
+      metrics: ["RGB MAE", "changed pixels/fraction", "signed luminance", "mean RGB", "color buckets", "sample count"],
+      summary: {
+        webglVsNativeStandard: summarizeRoiDifferences(matchedMeasurements.webglVsNativeStandard),
+        webglVsNativeMaterialAware: summarizeRoiDifferences(matchedMeasurements.webglVsNativeMaterialAware),
+        nativeStandardVsNativeMaterialAware: summarizeRoiDifferences(matchedMeasurements.nativeStandardVsNativeMaterialAware),
+      },
+      ...matchedMeasurements,
+    },
+    performance: {
+      standard: nativeStandard.runtime.outputPerformance,
+      materialAware: nativeCandidate.runtime.outputPerformance,
+      interpretation: "CPU controller callback, adaptation, inventory and cleanup counters; GPU timing is not inferred.",
+    },
+    compatibilityMatrix: createCompatibilityMatrix(allCaptures, true),
+    captureFiles: allCaptures.map(({ id, filename, state, backend, outputMode, inventory }) => ({
+      id,
+      filename,
+      state,
+      backend,
+      outputMode,
+      renderer: inventory.renderer,
+      camera: inventory.viewport,
+      projectedRegions: inventory.projectedRegions,
+      worldBounds: inventory.worldBounds,
+      sourceMaterials: inventory.materials.map((entry) => ({
+        role: entry.role,
+        sourceMaterialId: entry.sourceMaterialId,
+        outputMaterialIds: entry.outputMaterialIds,
+        outputMaterialFamilies: entry.outputMaterialFamilies,
+        adapted: entry.adapted,
+      })),
+    })),
+    architectureRiseRegression: {
+      thresholdsAnd81CriteriaChanged: false,
+      command: "OBSERVER_VISUAL_PARITY_REQUIRED=1 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_OUTPUT_POLICY=material-aware npx playwright test --config=playwright.observer-backend-benchmark.config.ts src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1",
+    },
+    limitations: [
+      "Hardware acceleration is unconfirmed.",
+      "Visual parity thresholds remain provisional pending independent review of measured noise and ROI differences.",
+      "Ghost-camera rendering is verified separately by the candidate E2E visibility differential and is excluded from the matched 13-state triad.",
+      "Ground Glass remains the existing independent WebGL RTT.",
+    ],
+  };
+  const reportPath = testInfo.outputPath("view-camera-anatomy-material-aware-integration.json");
+  await mkdir(dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, JSON.stringify(report, null, 2));
+  await testInfo.attach("view-camera-anatomy-material-aware-integration.json", {
+    path: reportPath,
+    contentType: "application/json",
+  });
+  console.info("ANATOMY_MATERIAL_AWARE_EVIDENCE " + reportPath);
+  await webgl.context.close();
+  await nativeStandard.context.close();
+  await nativeCandidate.context.close();
 });
 
 const capturesSubjectEvidence = (

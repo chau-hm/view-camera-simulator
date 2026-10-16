@@ -16,10 +16,15 @@ import {
   buildArchitectureRiseMaterialInventory,
   type ObserverMaterialInventory,
 } from "./architectureRiseMaterialInventory";
+import { buildAnatomyMaterialInventory } from "./anatomyMaterialInventory";
 import {
   isArchitectureRiseMaterialOutputReady,
   resolveArchitectureRiseMaterialOutputOwner,
 } from "./architectureRiseMaterialOutputAdapter";
+import {
+  inspectAnatomyMaterialOutputReadiness,
+  resolveAnatomyMaterialOutputOwner,
+} from "./anatomyMaterialOutputAdapter";
 import { getObserverMaterialSignatures } from "./observerMaterialSignatures";
 
 type DurationWindow = {
@@ -36,6 +41,8 @@ type OutputPolicyPerformance = {
   detailedSampleIntervalFrames: number;
   inventoryRefreshIntervalFrames: number;
   frameCount: number;
+  readinessFrameCount: number;
+  readinessWaitMs: number | null;
   managedMaterialCount: number;
   peakManagedMaterialCount: number;
   attachmentCount: number;
@@ -103,6 +110,8 @@ const createOutputPolicyPerformance = (rendererGeneration: number): OutputPolicy
   detailedSampleIntervalFrames: DETAILED_SAMPLE_INTERVAL_FRAMES,
   inventoryRefreshIntervalFrames: INVENTORY_REFRESH_INTERVAL_FRAMES,
   frameCount: 0,
+  readinessFrameCount: 0,
+  readinessWaitMs: null,
   managedMaterialCount: 0,
   peakManagedMaterialCount: 0,
   attachmentCount: 0,
@@ -130,6 +139,8 @@ const serializeOutputPolicyPerformance = (metrics: OutputPolicyPerformance): str
   detailedSampleIntervalFrames: metrics.detailedSampleIntervalFrames,
   inventoryRefreshIntervalFrames: metrics.inventoryRefreshIntervalFrames,
   frameCount: metrics.frameCount,
+  readinessFrameCount: metrics.readinessFrameCount,
+  readinessWaitMs: metrics.readinessWaitMs,
   managedMaterialCount: metrics.managedMaterialCount,
   peakManagedMaterialCount: metrics.peakManagedMaterialCount,
   attachmentCount: metrics.attachmentCount,
@@ -168,6 +179,67 @@ export type MaterialAwareOutputPolicyControllerProps = Readonly<{
   ) => void;
 }>;
 
+type MaterialAwareOutputSceneAdapter = Readonly<{
+  sceneId: ObserverMaterialInventory["sceneId"];
+  resolveOwner: typeof resolveArchitectureRiseMaterialOutputOwner;
+  buildInventory: (
+    scene: THREE.Scene,
+    frame: number,
+    unsupported: readonly UnsupportedMaterialAssignment[],
+  ) => ObserverMaterialInventory;
+  inspectReadiness: (
+    scene: THREE.Scene,
+    inventory: ObserverMaterialInventory | null,
+    trackedAttachments: number,
+    backgroundInstalled: boolean,
+    unsupported: readonly UnsupportedMaterialAssignment[],
+  ) => Readonly<{ ready: boolean; reason: string | null; evidence?: Readonly<Record<string, number>> }>;
+  readinessTimeoutMs: number;
+}>;
+
+const architectureRiseAdapter: MaterialAwareOutputSceneAdapter = {
+  sceneId: "architecture-rise",
+  resolveOwner: resolveArchitectureRiseMaterialOutputOwner,
+  buildInventory: buildArchitectureRiseMaterialInventory,
+  inspectReadiness: (scene) => ({
+    ready: isArchitectureRiseMaterialOutputReady(scene),
+    reason: isArchitectureRiseMaterialOutputReady(scene)
+      ? null
+      : "registered-architecture-rise-subject-not-mounted",
+    evidence: { registeredSubjectMounted: Number(isArchitectureRiseMaterialOutputReady(scene)) },
+  }),
+  readinessTimeoutMs: 0,
+};
+
+const anatomyAdapter: MaterialAwareOutputSceneAdapter = {
+  sceneId: "view-camera-anatomy",
+  resolveOwner: resolveAnatomyMaterialOutputOwner,
+  buildInventory: buildAnatomyMaterialInventory,
+  inspectReadiness: (scene, inventory, attachments, backgroundInstalled, unsupported) => {
+    const result = inspectAnatomyMaterialOutputReadiness(
+      scene,
+      inventory,
+      attachments,
+      backgroundInstalled,
+      unsupported,
+    );
+    return {
+      ready: result.ready,
+      reason: result.reason,
+      evidence: {
+        registeredSubjectRenderables: result.registeredSubjectRenderables,
+        expectedSubjectRenderables: result.expectedSubjectRenderables,
+        conceptualCameraRenderables: result.conceptualCameraRenderables,
+        materialAssignments: result.materialAssignments,
+        trackedAttachments: result.trackedAttachments,
+      },
+    };
+  },
+  readinessTimeoutMs: 12_000,
+};
+
+const FAILURE_INJECTION_EVENT = "vcs:observer-verification:inject-output-policy-failure";
+
 const setDiagnosticAttributes = (
   container: HTMLElement | null,
   status: OutputPolicyStatus,
@@ -196,18 +268,25 @@ const clearDiagnosticAttributes = (container: HTMLElement | null): void => {
   container.removeAttribute("data-observer-output-policy-material-count");
   container.removeAttribute("data-observer-output-policy-unsupported-count");
   container.removeAttribute("data-observer-material-inventory");
+  container.removeAttribute("data-observer-output-policy-readiness");
+  container.removeAttribute("data-observer-output-policy-readiness-reason");
+  container.removeAttribute("data-observer-output-policy-readiness-evidence");
+  container.removeAttribute("data-observer-output-policy-scene-adapter");
 };
 
-/**
- * The development-only candidate adapts only the three inventoried r186
- * material families. Unknown families keep the canvas hidden and request the
- * host's existing one-shot WebGL fallback.
- */
-export const MaterialAwareOutputPolicyController = ({
+type MaterialAwareOutputControllerProps = MaterialAwareOutputPolicyControllerProps & Readonly<{
+  adapter: MaterialAwareOutputSceneAdapter;
+  allowFailureInjection?: boolean;
+}>;
+
+/** Shared renderer-generation lifecycle and material reconciliation shell. */
+const MaterialAwareOutputController = ({
   rendererGeneration,
   onFailure,
   onCapabilitiesChange,
-}: MaterialAwareOutputPolicyControllerProps) => {
+  adapter,
+  allowFailureInjection = false,
+}: MaterialAwareOutputControllerProps) => {
   const { gl, scene } = useThree();
   const backgroundNode = useMemo(() => workingToColorSpace(
     vec4(color(new THREE.Color("#f8fafc")), 1),
@@ -220,6 +299,7 @@ export const MaterialAwareOutputPolicyController = ({
   }> | null>(null);
   const lastInventoryRef = useRef<ObserverMaterialInventory | null>(null);
   const lastInventoryRefreshFrameRef = useRef(0);
+  const readinessStartedAtRef = useRef<number | null>(null);
   const frameRef = useRef(0);
   const performanceRef = useMemo(
     () => createOutputPolicyPerformance(rendererGeneration),
@@ -265,6 +345,26 @@ export const MaterialAwareOutputPolicyController = ({
   }, [performanceRef]);
 
   useLayoutEffect(() => {
+    if (!allowFailureInjection || !import.meta.env.DEV) return;
+    const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
+    if (!container) return;
+    const injectFailure = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const reason = typeof detail === "string" && detail.length > 0
+        ? detail
+        : "test-injected-material-aware-output-failure";
+      scene.visible = false;
+      reportFailure(container, reason);
+    };
+    container.addEventListener(FAILURE_INJECTION_EVENT, injectFailure);
+    container.setAttribute("data-observer-output-policy-failure-hook", "ready");
+    return () => {
+      container.removeEventListener(FAILURE_INJECTION_EVENT, injectFailure);
+      container.removeAttribute("data-observer-output-policy-failure-hook");
+    };
+  }, [allowFailureInjection, gl, reportFailure, scene]);
+
+  useLayoutEffect(() => {
     const runtime = resolveObserverRendererRuntime(gl);
     const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
     if (runtime.rendererFamily !== "webgpu-renderer") {
@@ -288,7 +388,11 @@ export const MaterialAwareOutputPolicyController = ({
     scene.background = null;
     scene.backgroundNode = backgroundNode;
     scene.visible = false;
+    readinessStartedAtRef.current = window.performance.now();
     lastStatusRef.current = "pending";
+    container?.setAttribute("data-observer-output-policy-scene-adapter", adapter.sceneId);
+    container?.setAttribute("data-observer-output-policy-readiness", "pending");
+    container?.removeAttribute("data-observer-output-policy-readiness-reason");
     performanceRef.diagnosticDomWrites += 1;
     setDiagnosticAttributes(container, "pending");
 
@@ -315,7 +419,7 @@ export const MaterialAwareOutputPolicyController = ({
       }
       clearDiagnosticAttributes(container);
     };
-  }, [backgroundNode, gl, materialTracker, onCapabilitiesChange, performanceRef, rendererGeneration, reportFailure, scene]);
+  }, [adapter, backgroundNode, gl, materialTracker, onCapabilitiesChange, performanceRef, rendererGeneration, reportFailure, scene]);
 
   useFrame(() => {
     if (failureCalledRef.current || currentGenerationRef.current !== rendererGeneration) return;
@@ -365,7 +469,7 @@ export const MaterialAwareOutputPolicyController = ({
         meshAssignmentCount += sourceMaterials.length;
         const reconciliation = materialTracker.reconcileRenderable(
           object,
-          resolveArchitectureRiseMaterialOutputOwner(object, materialTracker.controllerOwner),
+          adapter.resolveOwner(object, materialTracker.controllerOwner),
           currentFrame,
           getSignatures,
           measureAdaptation,
@@ -385,15 +489,14 @@ export const MaterialAwareOutputPolicyController = ({
       }
 
       // R3F-owned camera and overlay materials can be detached by visibility
-      // controls. Release their node counterpart after two missed frames. The
-      // registered subject's disposer owns its NodeMaterials and textures.
+      // controls. Release their node counterpart after two missed frames; a
+      // scene adapter may route registered-subject copies to a longer owner.
       const cleanupStartedAt = collectDetailedSample ? window.performance.now() : 0;
       const attachmentCountBeforeCleanup = materialTracker.attachmentCount;
       if (materialTracker.releaseStaleMaterials(currentFrame) > 0) materialInventoryDirty = true;
       if (materialTracker.attachmentCount !== attachmentCountBeforeCleanup) materialInventoryDirty = true;
       if (collectDetailedSample) recordDuration(performance.staleCleanup, window.performance.now() - cleanupStartedAt);
 
-      const architectureSubjectMounted = isArchitectureRiseMaterialOutputReady(scene);
       const inventoryStartedAt = collectDetailedSample ? window.performance.now() : 0;
       const previousInventory = lastInventoryRef.current;
       const inventoryNeedsRefresh = materialInventoryDirty ||
@@ -402,7 +505,7 @@ export const MaterialAwareOutputPolicyController = ({
         previousInventory.totalMeshAssignments !== meshAssignmentCount ||
         currentFrame - lastInventoryRefreshFrameRef.current >= INVENTORY_REFRESH_INTERVAL_FRAMES;
       if (inventoryNeedsRefresh) {
-        lastInventoryRef.current = buildArchitectureRiseMaterialInventory(scene, currentFrame, unsupported);
+        lastInventoryRef.current = adapter.buildInventory(scene, currentFrame, unsupported);
         lastInventoryRefreshFrameRef.current = currentFrame;
         performance.inventoryBuildCount += 1;
       }
@@ -438,18 +541,50 @@ export const MaterialAwareOutputPolicyController = ({
         reportFailure(container, `unsupported material family: ${unsupported.map((item) => `${item.objectName}/${item.materialFamily}`).join(", ")}`);
         return;
       }
-      if (!architectureSubjectMounted) {
+      const readiness = adapter.inspectReadiness(
+        scene,
+        inventory,
+        materialTracker.attachmentCount,
+        scene.backgroundNode === backgroundNode,
+        unsupported,
+      );
+      if (!readiness.ready) {
         scene.visible = false;
+        performance.readinessFrameCount += 1;
+        container?.setAttribute("data-observer-output-policy-readiness", "pending");
+        if (readiness.reason) {
+          container?.setAttribute("data-observer-output-policy-readiness-reason", readiness.reason);
+        }
+        if (readiness.evidence) {
+          container?.setAttribute("data-observer-output-policy-readiness-evidence", JSON.stringify(readiness.evidence));
+        }
+        const startedAt = readinessStartedAtRef.current;
+        if (adapter.readinessTimeoutMs > 0 && startedAt !== null &&
+            window.performance.now() - startedAt >= adapter.readinessTimeoutMs) {
+          reportFailure(container, `scene readiness timed out: ${readiness.reason ?? "unknown"}`);
+        }
         return;
       }
 
       const original = originalSettingsRef.current;
       scene.visible = original?.sceneVisible ?? true;
+      performance.readinessWaitMs ??= readinessStartedAtRef.current === null
+        ? null
+        : window.performance.now() - readinessStartedAtRef.current;
+      container?.setAttribute("data-observer-output-policy-readiness", "ready");
+      container?.removeAttribute("data-observer-output-policy-readiness-reason");
+      if (readiness.evidence) {
+        container?.setAttribute("data-observer-output-policy-readiness-evidence", JSON.stringify(readiness.evidence));
+      }
       if (lastStatusRef.current !== "active") {
         lastStatusRef.current = "active";
         performance.diagnosticDomWrites += 1;
         setDiagnosticAttributes(container, "active", inventory);
       }
+    } catch (error) {
+      scene.visible = false;
+      const reason = error instanceof Error ? error.message : String(error);
+      reportFailure(container, `material-aware output reconciliation failed: ${reason}`);
     } finally {
       if (import.meta.env.DEV) {
         performance.frameCount += 1;
@@ -460,3 +595,13 @@ export const MaterialAwareOutputPolicyController = ({
 
   return null;
 };
+
+/** Existing Architecture Rise integration remains a stable public controller export. */
+export const MaterialAwareOutputPolicyController = (
+  props: MaterialAwareOutputPolicyControllerProps,
+) => <MaterialAwareOutputController {...props} adapter={architectureRiseAdapter} />;
+
+/** Explicit development Anatomy opt-in uses the same controller with Anatomy ownership/readiness. */
+export const AnatomyMaterialAwareOutputPolicyController = (
+  props: MaterialAwareOutputPolicyControllerProps & Readonly<{ allowFailureInjection?: boolean }>,
+) => <MaterialAwareOutputController {...props} adapter={anatomyAdapter} />;

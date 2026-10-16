@@ -194,3 +194,76 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     consoleErrors,
   });
 });
+
+test("production preview denies the Anatomy material-aware WebGPU candidate", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+  const webgpuModuleRequests: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("request", (request) => {
+    if (/three[/._-]webgpu|\/webgpu\//i.test(request.url())) webgpuModuleRequests.push(request.url());
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");
+  const observer = page.getByTestId("scene-canvas");
+  const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "development-gate-disabled");
+  await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
+  const observerScreenshot = await observer.locator("canvas").screenshot();
+  const groundGlassScreenshot = await groundGlass.screenshot();
+  const observerPixels = await analyzeScreenshot(page, observerScreenshot);
+  const groundGlassPixels = await analyzeScreenshot(page, groundGlassScreenshot);
+  expect(observerPixels.contentful).toBe(true);
+  expect(groundGlassPixels.contentful).toBe(true);
+  expect(webgpuModuleRequests).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+
+  const evidence = await observer.evaluate((element) => ({
+    rendererRequest: element.getAttribute("data-observer-renderer-request"),
+    selectionReason: element.getAttribute("data-observer-selection-reason"),
+    rendererAttempt: element.getAttribute("data-observer-renderer-attempt"),
+    rendererFamily: element.getAttribute("data-observer-renderer-family"),
+    executionBackend: element.getAttribute("data-observer-execution-backend"),
+    applicationFallback: element.getAttribute("data-observer-application-fallback"),
+    initializationAttempts: element.getAttribute("data-observer-webgpu-initialization-attempts"),
+    candidatePolicyAttributesPresent: [
+      "data-observer-output-policy-selected",
+      "data-observer-output-policy-installed",
+      "data-observer-output-policy-status",
+    ].some((name) => element.hasAttribute(name)),
+    developmentVerificationHookPresent: element.hasAttribute("data-observer-verification-scene") ||
+      Array.from(element.attributes).some((attribute) => attribute.name.startsWith("data-observer-test-")),
+  }));
+  expect(evidence.candidatePolicyAttributesPresent).toBe(false);
+  expect(evidence.developmentVerificationHookPresent).toBe(false);
+  await testInfo.attach("view-camera-anatomy-production-webgl-denial.json", {
+    body: JSON.stringify({
+      browserVersion: page.context().browser()?.version() ?? "unknown",
+      threeRevision: REVISION,
+      route: new URL(page.url()).pathname + new URL(page.url()).search,
+      evidence,
+      observerPixels,
+      groundGlassPixels,
+      webgpuModuleRequests,
+      pageErrors,
+      consoleErrors,
+    }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("view-camera-anatomy-production-observer.png", {
+    body: observerScreenshot,
+    contentType: "image/png",
+  });
+});
