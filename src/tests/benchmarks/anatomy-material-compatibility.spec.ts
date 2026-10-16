@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { arch, platform, release } from "node:os";
+import { performance } from "node:perf_hooks";
 import { dirname } from "node:path";
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
 import { REVISION } from "three";
@@ -180,6 +181,58 @@ const summarizeImage = (image: DecodedPng): CanvasEvidence => {
     luminanceStandardDeviation: summary.luminanceStandardDeviation,
   };
 };
+
+const startFrameCadenceProbe = async (page: Page): Promise<void> => {
+  await page.evaluate(() => {
+    type ProbeWindow = Window & {
+      __anatomyMaterialAwareFrameCadence?: {
+        active: boolean;
+        previousTimestamp: number | null;
+        intervals: number[];
+      };
+    };
+    const target = window as ProbeWindow;
+    const probe: NonNullable<ProbeWindow["__anatomyMaterialAwareFrameCadence"]> = {
+      active: true,
+      previousTimestamp: null,
+      intervals: [],
+    };
+    target.__anatomyMaterialAwareFrameCadence = probe;
+    const sample = (timestamp: number) => {
+      if (!probe.active) return;
+      if (probe.previousTimestamp !== null) probe.intervals.push(timestamp - probe.previousTimestamp);
+      probe.previousTimestamp = timestamp;
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+};
+
+const finishFrameCadenceProbe = async (page: Page) => page.evaluate(() => {
+  type ProbeWindow = Window & {
+    __anatomyMaterialAwareFrameCadence?: {
+      active: boolean;
+      previousTimestamp: number | null;
+      intervals: number[];
+    };
+  };
+  const probe = (window as ProbeWindow).__anatomyMaterialAwareFrameCadence;
+  if (!probe) throw new Error("Anatomy frame cadence probe was not started");
+  probe.active = false;
+  const sorted = probe.intervals.slice().sort((left, right) => left - right);
+  const percentile = (fraction: number): number | null => sorted.length === 0
+    ? null
+    : sorted[Math.min(sorted.length - 1, Math.ceil(fraction * sorted.length) - 1)] ?? null;
+  const medianFrameIntervalMs = percentile(0.5);
+  return {
+    sampleCount: sorted.length,
+    medianFrameIntervalMs,
+    p95FrameIntervalMs: percentile(0.95),
+    medianFramesPerSecond: medianFrameIntervalMs && medianFrameIntervalMs > 0
+      ? 1000 / medianFrameIntervalMs
+      : null,
+  };
+});
 
 const meanRgb = (image: DecodedPng, region: PixelRegion) => {
   const left = Math.max(0, Math.min(image.width, Math.floor(region.left)));
@@ -395,6 +448,7 @@ const captureBackend = async (
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const navigationStartedAt = performance.now();
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
@@ -402,6 +456,7 @@ const captureBackend = async (
   });
   try {
     const initialPose = await waitForInitialState(page, backend, outputMode, includeGhost);
+    const navigationToRendererReadyMs = performance.now() - navigationStartedAt;
     const cameraPose = pose ?? initialPose;
     const observer = page.getByTestId("scene-canvas");
     const subjectBounds = VIEW_CAMERA_ANATOMY_PRESENTATION.geometry.bounds;
@@ -415,6 +470,7 @@ const captureBackend = async (
       position: [subjectTarget[0] + 0.55, subjectTarget[1] + 0.3, subjectTarget[2] + 1.2],
     };
     await setCameraPose(page, cameraPose.position, cameraPose.target);
+    await startFrameCadenceProbe(page);
     const panel = page.locator(".anatomy-lesson-panel");
     const heading = panel.getByRole("heading", { level: 3 });
     const next = panel.getByRole("button", { name: "Next", exact: true });
@@ -611,6 +667,7 @@ const captureBackend = async (
     };
 
     const subjectCapture = await capture("registered-target-subject", subjectPose);
+    const navigationToFirstVerifiedCaptureMs = performance.now() - navigationStartedAt;
     expect(subjectCapture.inventory.projectedRegions.registeredTargetSubject).not.toBeNull();
     const initial = await capture("initial", cameraPose);
     const activePose = initial.inventory.viewport;
@@ -669,6 +726,7 @@ const captureBackend = async (
     await panel.getByRole("button", { name: "Restart lesson", exact: true }).click();
     await expect(heading).toHaveText("The complete camera");
     const reset = await capture("after-reset");
+    const frameCadenceDuringTeachingStates = await finishFrameCadenceProbe(page);
 
     if (outputMode === "material-aware") {
       await page.evaluate(() => window.dispatchEvent(new Event("vcs:observer-verification:read-output-policy-performance")));
@@ -682,6 +740,9 @@ const captureBackend = async (
       observerAttributes,
       outputMode,
       outputPerformance: outputPerformanceText ? JSON.parse(outputPerformanceText) as unknown : null,
+      navigationToRendererReadyMs,
+      navigationToFirstVerifiedCaptureMs,
+      frameCadenceDuringTeachingStates,
       pageErrors,
       captureCount: captures.length,
       repeatCaptureConsistency,
@@ -1343,6 +1404,9 @@ const compactRuntimeEvidence = (runtime: CapturedBackendRun["runtime"]) => ({
   operatingSystem: runtime.os,
   threeRevision: runtime.threeRevision,
   outputMode: runtime.outputMode,
+  navigationToRendererReadyMs: runtime.navigationToRendererReadyMs,
+  navigationToFirstVerifiedCaptureMs: runtime.navigationToFirstVerifiedCaptureMs,
+  frameCadenceDuringTeachingStates: runtime.frameCadenceDuringTeachingStates,
   renderer: compactRendererEvidence(runtime.observerAttributes),
   pageErrors: runtime.pageErrors,
   captureCount: runtime.captureCount,
