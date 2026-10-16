@@ -1847,3 +1847,44 @@ shared ownership core is validated for the existing Architecture Rise
 integration. Anatomy still needs its own readiness, dynamic material/geometry
 coverage, and matched visual validation before a material-aware runtime can be
 considered.
+
+### PR M — View Camera Anatomy material-aware WebGPU opt-in integration
+
+PR M adds the real View Camera Anatomy material-aware candidate behind the
+explicit development route
+`/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware`.
+The normal Anatomy route remains WebGL; an explicit Anatomy WebGPU request
+without the output parameter remains standard. Architecture Rise keeps its
+existing material-aware development default, and production remains WebGL-only.
+
+Three headed Chrome 155.0.8059.84 runs on macOS Darwin 27.0 arm64 with Three.js
+r186 mounted the candidate as `webgpu-renderer / webgpu`, with an available
+adapter, one initialization, active/ready output, zero unsupported assignments,
+and no application fallback. Across 13 matched states, the readiness inventory
+contained 47 material attachments, 35 distinct/adapted materials, 17 Anatomy
+target renderables, and 30 conceptual-camera renderables. Hardware acceleration
+remains unconfirmed.
+
+The candidate uses the shared PR #259 tracker with an Anatomy-specific
+readiness, inventory, and Observer-owned material-copy adapter. The five
+module-shared Anatomy materials and shared BoxGeometry remained attached to
+Ground Glass sources; the adapted Observer NodeMaterials stayed distinct.
+Ground Glass remained WebGL2 and contentful in all 13 states, with zero RGB
+pixel difference across the three WebGL RTT output comparisons. The production
+preview denial test passed, and the unchanged Architecture Rise strict parity
+gate remained 78 pass / 0 fail / 3 conditional N/A.
+
+Matched object-aligned measurements show mean RGB MAE 19.7513 for WebGL vs
+standard native WebGPU and 33.3534 for WebGL vs material-aware native WebGPU
+(138 ROIs across 13 states). Repeat captures measured zero same-mode noise in
+all three trials; this does not establish cross-backend parity. Highlighted,
+dimmed, aperture, bellows, and rear-back states retain significant candidate
+differences. **Decision: M2 — OPT-IN IMPLEMENTATION INCOMPLETE.** Keep the
+candidate explicit and experimental; PR N default-promotion work requires an
+independently reviewed Anatomy parity criterion and resolution of the measured
+material/transparency differences. Hardware acceleration remains unconfirmed.
+The provenance, state-level ROI values, runtime timing/cadence, source identity,
+Ground Glass, negative-control, and lifecycle evidence are in the
+[Anatomy material-aware integration report](architecture/VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_INTEGRATION.md)
+and its [machine-readable report](architecture/view-camera-anatomy-material-aware/report.json)
+and [three-trial summary](architecture/view-camera-anatomy-material-aware/repeat-trials.json).
