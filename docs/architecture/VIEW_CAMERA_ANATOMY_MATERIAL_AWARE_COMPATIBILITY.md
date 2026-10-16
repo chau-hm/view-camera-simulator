@@ -379,3 +379,20 @@ Rollback should consist of removing the Anatomy-specific adapter/opt-in while
 leaving the standard WebGPU path and Architecture Rise-specific adapter
 untouched. No production renderer, Ground Glass, or canonical optics change is
 part of this audit or its proposed first extraction.
+
+## PR L follow-up — shared output core extracted
+
+PR L extracts source signatures, NodeMaterial adaptation tracking, and
+renderer-generation-scoped ownership into a shared core while retaining
+Architecture Rise readiness, inventory, and registered-subject disposal in a
+scene-specific adapter. A focused lifecycle test now exercises the
+module-shared Anatomy source contract: Observer owns an adapted copy, Ground
+Glass retains the source, source updates propagate to the copy, and tracker
+cleanup does not dispose the shared material or geometry.
+
+This reduces the ownership blocker behind K2 but does not integrate material-
+aware output into Anatomy. The route still uses standard WebGPU output when
+explicitly requested, and normal Observer selection remains WebGL. Anatomy
+still requires its own readiness policy and native visual validation for
+dynamic camera materials, deformable/replaced geometry, and lesson states.
+K2 remains the decision until that scene-specific work is completed.
