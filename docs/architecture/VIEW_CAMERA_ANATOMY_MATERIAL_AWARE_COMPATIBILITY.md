@@ -202,6 +202,88 @@ Playwright `test-results`; copy only a completed run’s selected evidence into
 the committed directory. This environment had native WebGPU, but no
 independent GPU diagnostics were collected to establish hardware acceleration.
 
+## Review-Fix Round 1 — Precise bounds for deformable geometry
+
+The first audit called `Box3.setFromObject(object)` with its default
+`precise=false`. In the pinned Three.js r186.0 source, that path can reuse or
+compute `geometry.boundingBox`. Lesson 0 updates the existing bellows position
+attribute but does not refresh a previously populated bounding box. A cached
+box could therefore leave the `cameraPart:bellows` projected ROI at its earlier
+shape after Front Rise changed the vertices. The original report did not store
+world-space bounds, so its cached-box extent cannot be reconstructed from that
+report alone.
+
+The audit now uses `THREE.Box3.setFromObject(object, true)`. The pinned
+`Box3.expandByObject` precise branch walks child objects, reads current
+position attributes through `Mesh.getVertexPosition()` for meshes, and applies
+each current `matrixWorld`. Before using that branch, the audit fails closed on
+descendants without position attributes or `InstancedMesh` objects, where r186
+would fall back to cached bounds. It records existing cached boxes without
+creating them. The probe does not change vertex/index buffers, cached boxes,
+materials, visibility, camera transforms, or geometry ownership; only the
+existing world-matrix synchronization and camera projection are used.
+
+Seven focused unit tests cover the original stale-cache negative control,
+deformable and static children in a parent group, stable repeated bounds,
+parent/child transforms, read-only behavior (including absent cached bounds),
+unsupported geometry failing closed, and projected ROI movement. The stale-cache
+test confirms that the old default path still returns the initial `[-1, 1]`
+x-range after vertices move to `[2, 4]`, while the corrected audit returns the
+current range. The test suite therefore distinguishes the fix from the old
+behavior rather than only checking a helper's output in isolation.
+
+The native rerun used measurement commit
+`611a58e3cabbc3f312ff355df2f44440790b5522`, headed Chrome 155.0.8059.84 on
+macOS Darwin 27.0.0 arm64, and Three.js r186. It captured 13 states on each
+backend at matched camera pose, viewport, DPR, and scene state. The native mount
+reported `webgpu-renderer / webgpu`, an available adapter, standard output, one
+initialization attempt, no initialization failure, and no application
+fallback. Ground Glass remained contentful in all 26 captures; the native run
+had no page errors. Hardware acceleration remains unconfirmed.
+
+The report now includes current world bounds for each projected region,
+existing local cached bounding boxes when present, geometry identity and
+position/index attribute versions, camera pose, and movement-control values.
+For the real Bellows, the WebGL geometry UUID remained
+`1107eec2-780b-4609-b8e5-92cd7b8c6788` and the native UUID remained
+`ca958124-88db-4658-b56d-781dab903c09`; each kept one UUID while position
+attribute versions changed from `1` (initial), `3` (highlighted), `7` (Front
+Rise), to `19` (after reset). Cached bounding boxes were `null` in those
+captures because the corrected audit does not create them. The Front Rise
+control was `12`; after reset, Bellows world and projected bounds exactly
+matched the initial state.
+
+| State / ROI | Previous projected ROI `(L,T,R,B)` | Corrected projected ROI `(L,T,R,B)` | Previous RGB MAE | Corrected RGB MAE |
+| --- | --- | --- | ---: | ---: |
+| Initial conceptual camera | `(0.262614, 0.333703, 0.707694, 0.826479)` | `(0.262614, 0.333703, 0.707694, 0.826479)` | 13.717306 | 13.717306 |
+| Bellows highlighted | `(0.363308, 0.381170, 0.632017, 0.647917)` | `(0.363308, 0.381170, 0.632017, 0.647917)` | 4.754834 | 4.754834 |
+| Front Rise Bellows (`12`) | `(0.363308, 0.381170, 0.632017, 0.647917)` | `(0.362992, 0.373517, 0.632311, 0.645413)` | 40.063149 | 39.570796 |
+| Front Rise conceptual camera | `(0.261253, 0.316823, 0.708734, 0.826479)` | `(0.261253, 0.316823, 0.708734, 0.826479)` | 26.265815 | 26.265815 |
+| Registered target subject | `(0.251448, 0.265523, 0.768839, 0.800982)` | `(0.251448, 0.265523, 0.768839, 0.800982)` | 13.375735 | 13.375735 |
+
+Only the Front Rise Bellows ROI changed. Its WebGL sample count changed from
+15,429 to 15,820; its changed-pixel count/fraction changed from 9,183 / 0.595178
+to 9,636 / 0.609102. Its corrected world bounds are
+`min=(-0.066144, -0.049000, -0.155340)` and
+`max=(0.066144, 0.055604, -0.008000)`. The initial, highlighted, and reset
+Bellows world bounds are `min=(-0.066144, -0.050456, -0.155340)` and
+`max=(0.066144, 0.050456, -0.008000)`. The Front Rise conceptual-camera world
+maximum y is `0.082` versus `0.070` initially, while its projected ROI stays
+the same because another camera component still sets those screen extrema.
+The registered-target and background RGB MAE remain `13.375735` and
+`24.666667` respectively.
+
+All 26 new screenshots were byte-identical to the previously committed
+WebGL/native PNGs, so those selected artifacts are reused without replacement;
+the regenerated JSON report contains the new measurement commit and bounds
+evidence. The full-precision measurements and per-capture values are in
+[`view-camera-anatomy-material-inventory.json`](view-camera-anatomy-material-inventory.json).
+
+This correction changes the reliability of one measurement, not the material
+ownership finding. **K2 — ARCHITECTURE WORK REQUIRED** remains the supported
+decision: Anatomy still needs a shared output core with scene-specific
+ownership/readiness, and an Observer-owned adapter for copied materials.
+
 ## Existing material-aware controller assumptions
 
 | Controller responsibility | Audit classification |

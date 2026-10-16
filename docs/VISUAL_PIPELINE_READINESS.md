@@ -1764,6 +1764,15 @@ Native WebGPU completed one initialization with an available adapter and no
 application fallback; hardware acceleration remains unconfirmed. Measurements
 are descriptive and do not establish visual parity.
 
+Review-fix round 1 recomputed projected regions from current vertex data with
+Three.js r186 precise bounds. Only the Front Rise Bellows ROI changed; the
+cross-backend ROI MAE moved from 40.063149 to 39.570796 while the captured
+images remained byte-identical. The regenerated report records current world
+bounds, cached boxes when present, and per-state Bellows geometry versions at
+measurement commit `611a58e3cabbc3f312ff355df2f44440790b5522`. The K2
+ownership/readiness decision is unchanged; see the review-fix section in the
+[Anatomy compatibility audit](architecture/VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_COMPATIBILITY.md).
+
 The registered target shares one module-owned box geometry and five source
 materials between separate Observer and Ground Glass groups. The scene also
 uses Standard, Basic, and LineBasic camera/helper materials with dynamic Lesson
