@@ -53,11 +53,12 @@ type ManagedMaterial = {
   released: boolean;
 };
 
-type MaterialAttachment = Readonly<{
+type MaterialAttachment = {
   renderable: MaterialAwareRenderable;
   materialIndex: number;
   record: ManagedMaterial;
-}>;
+  lastSeenFrame: number;
+};
 
 export const isMaterialAwareRenderable = (
   object: THREE.Object3D,
@@ -102,6 +103,7 @@ export class MaterialAwareMaterialTracker {
   private readonly records = new Map<THREE.Material, Map<object, ManagedMaterial>>();
   private readonly attachmentsByRenderable = new Map<MaterialAwareRenderable, MaterialAttachment[]>();
   private recordCount = 0;
+  private attachmentCountValue = 0;
   readonly rendererGeneration: number;
   private readonly onOutputCreated?: (output: MaterialAwareNode) => void;
 
@@ -115,6 +117,16 @@ export class MaterialAwareMaterialTracker {
 
   get managedMaterialCount(): number {
     return this.recordCount;
+  }
+
+  /** Number of currently tracked renderable/material-slot attachments. */
+  get attachmentCount(): number {
+    return this.attachmentCountValue;
+  }
+
+  /** Number of renderables with at least one tracked adapted material slot. */
+  get trackedRenderableCount(): number {
+    return this.attachmentsByRenderable.size;
   }
 
   reconcileRenderable(
@@ -222,15 +234,21 @@ export class MaterialAwareMaterialTracker {
           renderable,
           materialIndex,
           record: activeRecord,
+          lastSeenFrame: frame,
         };
-      if (attachment !== previousAttachment) activeRecord.attachments.add(attachment);
+      attachment.lastSeenFrame = frame;
+      if (attachment !== previousAttachment) {
+        activeRecord.attachments.add(attachment);
+        this.attachmentCountValue += 1;
+      }
       nextAttachments.push(attachment);
     });
 
     previousAttachments.forEach((attachment) => {
-      if (!nextAttachments.includes(attachment)) attachment.record.attachments.delete(attachment);
+      if (!nextAttachments.includes(attachment)) this.detachAttachment(attachment);
     });
-    this.attachmentsByRenderable.set(renderable, nextAttachments);
+    if (nextAttachments.length === 0) this.attachmentsByRenderable.delete(renderable);
+    else this.attachmentsByRenderable.set(renderable, nextAttachments);
     return {
       materials: nextMaterials,
       unsupported,
@@ -239,12 +257,23 @@ export class MaterialAwareMaterialTracker {
     };
   }
 
-  /** Release copies absent from the scene for two complete frames. */
+  /** Detach missing slots, then release unused copies after two complete frames. */
   releaseStaleMaterials(frame: number): number {
+    const staleAttachments: MaterialAttachment[] = [];
+    this.attachmentsByRenderable.forEach((attachments) => {
+      attachments.forEach((attachment) => {
+        if (frame - attachment.lastSeenFrame >= 2) staleAttachments.push(attachment);
+      });
+    });
+    staleAttachments.forEach((attachment) => {
+      this.restoreAttachment(attachment);
+      this.detachAttachment(attachment);
+    });
+
     const stale: ManagedMaterial[] = [];
     this.records.forEach((byOwner) => {
       byOwner.forEach((record) => {
-        if (frame - record.lastSeenFrame >= 2) stale.push(record);
+        if (frame - record.lastSeenFrame >= 2 && record.attachments.size === 0) stale.push(record);
       });
     });
     stale.forEach((record) => this.releaseRecord(record, true));
@@ -259,6 +288,7 @@ export class MaterialAwareMaterialTracker {
     this.attachmentsByRenderable.clear();
     this.records.clear();
     this.recordCount = 0;
+    this.attachmentCountValue = 0;
   }
 
   private getRecord(
@@ -300,18 +330,25 @@ export class MaterialAwareMaterialTracker {
     }
   }
 
+  private detachAttachment(attachment: MaterialAttachment): void {
+    attachment.record.attachments.delete(attachment);
+    const renderableAttachments = this.attachmentsByRenderable.get(attachment.renderable);
+    if (!renderableAttachments) return;
+    const attachmentIndex = renderableAttachments.indexOf(attachment);
+    if (attachmentIndex < 0) return;
+    const remaining = renderableAttachments.filter((candidate) => candidate !== attachment);
+    if (remaining.length === 0) this.attachmentsByRenderable.delete(attachment.renderable);
+    else this.attachmentsByRenderable.set(attachment.renderable, remaining);
+    this.attachmentCountValue = Math.max(0, this.attachmentCountValue - 1);
+  }
+
   private releaseRecord(record: ManagedMaterial, restore: boolean): void {
     if (record.released) return;
     record.released = true;
     const attachments = [...record.attachments];
-    if (restore) attachments.forEach((attachment) => this.restoreAttachment(attachment));
     attachments.forEach((attachment) => {
-      record.attachments.delete(attachment);
-      const renderableAttachments = this.attachmentsByRenderable.get(attachment.renderable);
-      if (!renderableAttachments) return;
-      const remaining = renderableAttachments.filter((candidate) => candidate !== attachment);
-      if (remaining.length === 0) this.attachmentsByRenderable.delete(attachment.renderable);
-      else this.attachmentsByRenderable.set(attachment.renderable, remaining);
+      if (restore) this.restoreAttachment(attachment);
+      this.detachAttachment(attachment);
     });
 
     const byOwner = this.records.get(record.source);

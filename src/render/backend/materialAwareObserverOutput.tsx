@@ -38,6 +38,10 @@ type OutputPolicyPerformance = {
   frameCount: number;
   managedMaterialCount: number;
   peakManagedMaterialCount: number;
+  attachmentCount: number;
+  peakAttachmentCount: number;
+  trackedRenderableCount: number;
+  peakTrackedRenderableCount: number;
   materialAssignmentCount: number;
   adaptedMaterialCreations: number;
   materialAssignmentReplacements: number;
@@ -101,6 +105,10 @@ const createOutputPolicyPerformance = (rendererGeneration: number): OutputPolicy
   frameCount: 0,
   managedMaterialCount: 0,
   peakManagedMaterialCount: 0,
+  attachmentCount: 0,
+  peakAttachmentCount: 0,
+  trackedRenderableCount: 0,
+  peakTrackedRenderableCount: 0,
   materialAssignmentCount: 0,
   adaptedMaterialCreations: 0,
   materialAssignmentReplacements: 0,
@@ -124,6 +132,10 @@ const serializeOutputPolicyPerformance = (metrics: OutputPolicyPerformance): str
   frameCount: metrics.frameCount,
   managedMaterialCount: metrics.managedMaterialCount,
   peakManagedMaterialCount: metrics.peakManagedMaterialCount,
+  attachmentCount: metrics.attachmentCount,
+  peakAttachmentCount: metrics.peakAttachmentCount,
+  trackedRenderableCount: metrics.trackedRenderableCount,
+  peakTrackedRenderableCount: metrics.peakTrackedRenderableCount,
   materialAssignmentCount: metrics.materialAssignmentCount,
   adaptedMaterialCreations: metrics.adaptedMaterialCreations,
   materialAssignmentReplacements: metrics.materialAssignmentReplacements,
@@ -289,6 +301,8 @@ export const MaterialAwareOutputPolicyController = ({
         scene.visible = original.sceneVisible;
       }
       performanceRef.managedMaterialCount = 0;
+      performanceRef.attachmentCount = 0;
+      performanceRef.trackedRenderableCount = 0;
       performanceRef.materialAssignmentCount = 0;
       performanceRef.diagnosticDomWrites += 1;
       if (import.meta.env.DEV && typeof window !== "undefined") {
@@ -374,7 +388,9 @@ export const MaterialAwareOutputPolicyController = ({
       // controls. Release their node counterpart after two missed frames. The
       // registered subject's disposer owns its NodeMaterials and textures.
       const cleanupStartedAt = collectDetailedSample ? window.performance.now() : 0;
+      const attachmentCountBeforeCleanup = materialTracker.attachmentCount;
       if (materialTracker.releaseStaleMaterials(currentFrame) > 0) materialInventoryDirty = true;
+      if (materialTracker.attachmentCount !== attachmentCountBeforeCleanup) materialInventoryDirty = true;
       if (collectDetailedSample) recordDuration(performance.staleCleanup, window.performance.now() - cleanupStartedAt);
 
       const architectureSubjectMounted = isArchitectureRiseMaterialOutputReady(scene);
@@ -393,9 +409,19 @@ export const MaterialAwareOutputPolicyController = ({
       const inventory = lastInventoryRef.current!;
       performance.materialAssignmentCount = meshAssignmentCount;
       performance.managedMaterialCount = materialTracker.managedMaterialCount;
+      performance.attachmentCount = materialTracker.attachmentCount;
+      performance.trackedRenderableCount = materialTracker.trackedRenderableCount;
       performance.peakManagedMaterialCount = Math.max(
         performance.peakManagedMaterialCount,
         performance.managedMaterialCount,
+      );
+      performance.peakAttachmentCount = Math.max(
+        performance.peakAttachmentCount,
+        performance.attachmentCount,
+      );
+      performance.peakTrackedRenderableCount = Math.max(
+        performance.peakTrackedRenderableCount,
+        performance.trackedRenderableCount,
       );
       const reportKey = JSON.stringify({ ...inventory, frame: 0 });
       if (reportKey !== lastReportRef.current) {
