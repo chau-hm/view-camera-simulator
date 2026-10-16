@@ -3,6 +3,11 @@ import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { resolveObserverVisualPipelineCapabilities } from "./backend/observerVisualPipelineCapabilities";
+import {
+  calculateAnatomyProjectedBounds,
+  type AnatomyProjectedRegion,
+  type AnatomyWorldBounds,
+} from "./anatomyProjectedBounds";
 
 export const ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT =
   "vcs:observer-verification:anatomy-material-audit";
@@ -10,13 +15,6 @@ export const ANATOMY_MATERIAL_AUDIT_RESULT_EVENT =
   "vcs:observer-verification:anatomy-material-audit-result";
 
 type AnatomyMaterialAuditRequest = Readonly<{ requestId: string }>;
-
-type ProjectedBounds = Readonly<{
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-}>;
 
 const isRenderable = (
   object: THREE.Object3D,
@@ -83,32 +81,6 @@ const classifyRole = (object: THREE.Object3D, scene: THREE.Scene): {
   return { role: "other-scene-renderable", cameraPart: null, owner: "r3f-scene-component" };
 };
 
-const projectedBounds = (
-  object: THREE.Object3D,
-  camera: THREE.Camera,
-): ProjectedBounds | null => {
-  const bounds = new THREE.Box3().setFromObject(object);
-  if (bounds.isEmpty()) return null;
-  const points: THREE.Vector3[] = [];
-  for (const x of [bounds.min.x, bounds.max.x]) {
-    for (const y of [bounds.min.y, bounds.max.y]) {
-      for (const z of [bounds.min.z, bounds.max.z]) {
-        points.push(new THREE.Vector3(x, y, z).project(camera));
-      }
-    }
-  }
-  const visiblePoints = points.filter((point) =>
-    Number.isFinite(point.x) && Number.isFinite(point.y) && Number.isFinite(point.z) &&
-    point.z >= -1 && point.z <= 1,
-  );
-  if (visiblePoints.length === 0) return null;
-  const left = Math.max(0, Math.min(...visiblePoints.map((point) => point.x * 0.5 + 0.5)));
-  const right = Math.min(1, Math.max(...visiblePoints.map((point) => point.x * 0.5 + 0.5)));
-  const top = Math.max(0, Math.min(...visiblePoints.map((point) => 0.5 - point.y * 0.5)));
-  const bottom = Math.min(1, Math.max(...visiblePoints.map((point) => 0.5 - point.y * 0.5)));
-  return right > left && bottom > top ? { left, top, right, bottom } : null;
-};
-
 const textureSlots = (material: THREE.Material): Record<string, Readonly<{
   uuid: string;
   type: string;
@@ -168,6 +140,12 @@ const getGeometryProperties = (geometry: THREE.BufferGeometry) => {
     positionAttributeVersion,
     indexCount: geometry.index?.count ?? 0,
     indexVersion: geometry.index?.version ?? null,
+    cachedBoundingBox: geometry.boundingBox
+      ? {
+          min: geometry.boundingBox.min.toArray(),
+          max: geometry.boundingBox.max.toArray(),
+        }
+      : null,
   };
 };
 
@@ -209,10 +187,17 @@ export const collectAnatomyMaterialAuditSnapshot = (
     assignments: number;
     objectNames: Set<string>;
   }>();
-  const projectedRegions: Record<string, ProjectedBounds | null> = {};
+  const projectedRegions: Record<string, AnatomyProjectedRegion | null> = {};
+  const worldBounds: Record<string, AnatomyWorldBounds | null> = {};
   const lights: Array<Readonly<Record<string, unknown>>> = [];
   let renderableObjectCount = 0;
   let materialAssignmentCount = 0;
+
+  const recordBounds = (name: string, object: THREE.Object3D) => {
+    const bounds = calculateAnatomyProjectedBounds(object, camera);
+    projectedRegions[name] = bounds.projectedBounds;
+    worldBounds[name] = bounds.worldBounds;
+  };
 
   scene.traverse((object) => {
     if ((object as THREE.Light).isLight === true) {
@@ -235,22 +220,22 @@ export const collectAnatomyMaterialAuditSnapshot = (
     }
 
     if (object.name === "view-camera-anatomy-subject") {
-      projectedRegions.registeredTargetSubject = projectedBounds(object, camera);
+      recordBounds("registeredTargetSubject", object);
     }
     if (typeof object.userData.subjectPartId === "string") {
-      projectedRegions[`registeredTargetPart:${object.userData.subjectPartId}`] = projectedBounds(object, camera);
+      recordBounds(`registeredTargetPart:${object.userData.subjectPartId}`, object);
     }
     if (object.name === "camera-rig-placement") {
-      projectedRegions.conceptualCamera = projectedBounds(object, camera);
+      recordBounds("conceptualCamera", object);
     }
     if (object.name === "original-ghost-camera-rig-placement") {
-      projectedRegions.ghostReferenceCamera = projectedBounds(object, camera);
+      recordBounds("ghostReferenceCamera", object);
     }
     if (typeof object.userData.anatomyPart === "string") {
-      projectedRegions[`cameraPart:${object.userData.anatomyPart}`] = projectedBounds(object, camera);
+      recordBounds(`cameraPart:${object.userData.anatomyPart}`, object);
     }
     if (/physical-image-circle|physical-coverage-conic|scheimpflug-construction|lens-plane-helper/.test(object.name)) {
-      projectedRegions[`opticalHelper:${object.name}`] = projectedBounds(object, camera);
+      recordBounds(`opticalHelper:${object.name}`, object);
     }
 
     if (!isRenderable(object)) return;
@@ -408,6 +393,7 @@ export const collectAnatomyMaterialAuditSnapshot = (
       ),
     ),
     projectedRegions,
+    worldBounds,
   };
 };
 

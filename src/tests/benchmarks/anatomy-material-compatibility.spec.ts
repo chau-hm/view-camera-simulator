@@ -37,6 +37,10 @@ const evidenceStates = [
 
 type BackendName = "webgl" | "native-webgpu";
 type Bounds = Readonly<{ left: number; top: number; right: number; bottom: number }>;
+type Bounds3 = Readonly<{
+  min: readonly [number, number, number];
+  max: readonly [number, number, number];
+}>;
 type MaterialRecord = Readonly<{
   role: string;
   cameraPart: string | null;
@@ -74,6 +78,7 @@ type GeometryRecord = Readonly<{
     positionAttributeVersion: number | null;
     indexCount: number;
     indexVersion: number | null;
+    cachedBoundingBox: Bounds3 | null;
   }>;
 }>;
 type InventorySnapshot = Readonly<{
@@ -116,6 +121,7 @@ type InventorySnapshot = Readonly<{
   materials: readonly MaterialRecord[];
   geometries: readonly GeometryRecord[];
   projectedRegions: Readonly<Record<string, Bounds | null>>;
+  worldBounds: Readonly<Record<string, Bounds3 | null>>;
 }>;
 type CanvasEvidence = Readonly<{
   width: number;
@@ -133,6 +139,7 @@ type Capture = Readonly<{
   screenshot: Buffer;
   decoded: DecodedPng;
   subjectPixels: CanvasEvidence | null;
+  movementState: readonly Readonly<{ label: string; value: string }>[];
   inventory: InventorySnapshot;
   observerAttributes: Record<string, string>;
   groundGlass: Readonly<{
@@ -254,6 +261,16 @@ const captureState = async (
   const groundGlassScreenshot = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
   const groundGlassImage = decodePlaywrightPng(groundGlassScreenshot);
   const groundGlassPixels = summarizeImage(groundGlassImage);
+  const movementState = await page.locator('input[type="range"]').evaluateAll((inputs) =>
+    inputs.map((input, index) => {
+      const range = input as HTMLInputElement;
+      const labels = Array.from(range.labels ?? []).map((label) => label.textContent?.trim()).filter(Boolean);
+      return {
+        label: range.getAttribute("aria-label") || labels.join(" ") || range.id || `range-${index}`,
+        value: range.value,
+      };
+    }),
+  );
   const filename = `${backend}-${state}.png`;
   const output = testInfo.outputPath(filename);
   await mkdir(dirname(output), { recursive: true });
@@ -277,6 +294,7 @@ const captureState = async (
           luminanceStandardDeviation: subjectPixels.luminanceStandardDeviation,
         }
       : null,
+    movementState,
     inventory,
     observerAttributes: await attributes(observer),
     groundGlass: { attributes: groundGlassAttributes, pixels: groundGlassPixels },
@@ -610,6 +628,26 @@ const verifyDynamicPresentationInventory = (captures: readonly Capture[]) => {
     .toBe(geometryForObject(initial, "bellows-folded-surface").properties.id);
   expect(geometryForObject(moved, "bellows-folded-surface").properties.positionAttributeVersion)
     .toBeGreaterThan(geometryForObject(initial, "bellows-folded-surface").properties.positionAttributeVersion ?? -1);
+  expect(moved.movementState).toContainEqual({ label: "Front Rise", value: "12" });
+
+  for (const capture of [
+    initial,
+    captureForState(captures, "bellows-highlighted"),
+    moved,
+    captureForState(captures, "after-reset"),
+  ]) {
+    for (const regionName of ["cameraPart:bellows", "conceptualCamera"]) {
+      const worldBounds = capture.inventory.worldBounds[regionName];
+      const projectedRegion = capture.inventory.projectedRegions[regionName];
+      expect(worldBounds, `${capture.id} ${regionName} world bounds must be recorded`).not.toBeNull();
+      expect(projectedRegion, `${capture.id} ${regionName} projected ROI must be recorded`).not.toBeNull();
+      expect(worldBounds && [...worldBounds.min, ...worldBounds.max].every(Number.isFinite)).toBe(true);
+    }
+    const bellowsGeometry = geometryForObject(capture, "bellows-folded-surface").properties;
+    expect(bellowsGeometry.id).toBeTruthy();
+    expect(typeof bellowsGeometry.positionAttributeVersion).toBe("number");
+    expect(bellowsGeometry).toHaveProperty("cachedBoundingBox");
+  }
 
   const sourceMaterials = initial.inventory.materials
     .filter((entry) => entry.role === "registered-target-subject")
@@ -787,6 +825,14 @@ test("View Camera Anatomy runtime material audit records matched WebGL and nativ
     schemaVersion: 1,
     audit: "view-camera-anatomy-material-aware-compatibility",
     evidenceMethod: "Development-only, read-only R3F scene traversal requested by a test event; material and geometry objects are never changed.",
+    projectedBoundsMethod: {
+      threeRevision: `r${REVISION}`,
+      method: "THREE.Box3.setFromObject(object, true)",
+      vertexSource: "Current position attributes via Mesh.getVertexPosition() for meshes.",
+      groups: "Descendants are traversed and each child world transform is applied.",
+      cachePolicy: "Existing geometry bounding boxes are recorded when present but never computed or replaced by the audit.",
+      unsupportedGeometry: "Regions without position attributes or containing InstancedMesh return unknown bounds rather than using a mutating fallback.",
+    },
     decisionGate: "K2 — ARCHITECTURE WORK REQUIRED",
     decisionReason: "Native standard WebGPU executes, but the Architecture Rise controller currently binds readiness, subject lookup, inventory schema, ownership, and disposal to Architecture Rise-owned resources. Anatomy source assets are module-shared and dynamic camera materials need an explicit independently owned adapter lifecycle before integration.",
     provenance: {
@@ -831,13 +877,22 @@ test("View Camera Anatomy runtime material audit records matched WebGL and nativ
       "src/render/SceneAssetSubjects.tsx",
       "src/render/sceneSubjectRegistry.tsx",
       "src/render/ConceptualViewCamera.tsx",
+      "src/render/anatomyProjectedBounds.ts",
       "src/render/CameraBodyAssembly.tsx",
       "src/render/TeachingLighting.tsx",
       "src/render/backend/materialAwareNodeMaterials.ts",
       "src/render/backend/materialAwareObserverOutput.tsx",
       "src/tests/unit/sharedSceneResourceLifecycle.test.ts",
+      "src/tests/unit/anatomyProjectedBounds.test.ts",
     ],
-    captureFiles: [...webgl.captures, ...nativeWebGpu.captures].map(({ id, filename, state, backend, inventory }) => ({
+    captureFiles: [...webgl.captures, ...nativeWebGpu.captures].map(({
+      id,
+      filename,
+      state,
+      backend,
+      inventory,
+      movementState,
+    }) => ({
       id,
       filename,
       documentationPath: `view-camera-anatomy-material-compatibility/${filename}`,
@@ -855,6 +910,8 @@ test("View Camera Anatomy runtime material audit records matched WebGL and nativ
         canvasBackingSize: [inventory.viewport.canvasBackingWidth, inventory.viewport.canvasBackingHeight],
       },
       projectedRegions: inventory.projectedRegions,
+      worldBounds: inventory.worldBounds,
+      movementState,
       subjectPixels: capturesSubjectEvidence(inventory, backend === "webgl" ? webgl.captures : nativeWebGpu.captures, state),
       background: inventory.background,
       environment: inventory.environment,
