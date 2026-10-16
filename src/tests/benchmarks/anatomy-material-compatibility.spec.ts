@@ -629,12 +629,19 @@ const verifyDynamicPresentationInventory = (captures: readonly Capture[]) => {
   expect(geometryForObject(moved, "bellows-folded-surface").properties.positionAttributeVersion)
     .toBeGreaterThan(geometryForObject(initial, "bellows-folded-surface").properties.positionAttributeVersion ?? -1);
   expect(moved.movementState).toContainEqual({ label: "Front Rise", value: "12" });
+  const reset = captureForState(captures, "after-reset");
+  expect(reset.inventory.worldBounds["cameraPart:bellows"])
+    .toEqual(initial.inventory.worldBounds["cameraPart:bellows"]);
+  expect(reset.inventory.projectedRegions["cameraPart:bellows"])
+    .toEqual(initial.inventory.projectedRegions["cameraPart:bellows"]);
+  expect(reset.inventory.worldBounds.conceptualCamera)
+    .toEqual(initial.inventory.worldBounds.conceptualCamera);
 
   for (const capture of [
     initial,
     captureForState(captures, "bellows-highlighted"),
     moved,
-    captureForState(captures, "after-reset"),
+    reset,
   ]) {
     for (const regionName of ["cameraPart:bellows", "conceptualCamera"]) {
       const worldBounds = capture.inventory.worldBounds[regionName];
