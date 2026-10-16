@@ -1785,3 +1785,49 @@ and readiness, and an Anatomy adapter owns independent material copies. The
 audit did not install that adapter; production WebGL, Architecture Rise, Ground
 Glass, and canonical optics are unchanged. Details are in
 [`VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_COMPATIBILITY.md`](architecture/VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_COMPATIBILITY.md).
+
+### PR L — Shared Material-Aware Output Core & Ownership Boundary
+
+PR L extracts material signatures, source-to-NodeMaterial tracking, and
+renderer-generation-scoped ownership from the Architecture Rise controller.
+Architecture Rise keeps its scene-specific readiness, inventory, and
+registered-subject ownership adapter. The new tracker keys adapted copies by
+source plus explicit owner and never disposes source materials, source
+textures, or geometry. An isolated module-shared Anatomy lifecycle test proves
+an Observer-owned copy can update from a shared source while the Ground Glass
+consumer stays on that source.
+
+The Anatomy runtime is intentionally unchanged: it still uses standard output
+for explicit WebGPU and WebGL by default. PR L adds no Anatomy output query or
+eligibility. Production remains WebGL-only, and Ground Glass remains an
+independent WebGL2 RTT.
+
+The unchanged native PR #254 strict gate passed on headed Chrome 155.0.8059.84,
+macOS Darwin 27.0 arm64, Three.js r186: mounted `webgpu-renderer / webgpu`, one
+initialization, no fallback, 78 applicable criteria passed, 0 failed, 3
+conditional N/A. The standard-output control also mounted native WebGPU.
+Ground Glass remained contentful; hardware acceleration remains unconfirmed.
+The native paired performance/lifecycle run measured 393 adapted assignments,
+about 72.9 source signatures per frame, 8 inventory builds per 143-frame pair,
+and stable 73-material ownership during a 121-second sustained workload. The
+matched `origin/main` comparison and measurement commit are recorded in the
+[shared-core architecture report](architecture/SHARED_MATERIAL_AWARE_OUTPUT_CORE.md).
+Against the matched main run, controller callback mean increased by 0.083 ms
+(0.868 to 0.951 ms) and sustained mean by 0.082 ms/frame (0.760 to 0.842 ms).
+Assignments, signature evaluations, and inventory cadence were effectively
+unchanged; the measured increase is under 0.1 ms/frame and is reported as the
+cost of source-plus-owner and attachment-lifecycle tracking. No GPU render-time
+advantage or general performance conclusion is claimed.
+
+Focused/full unit, typecheck, lint, CSS, build, Observer pilot, Architecture
+Rise validation, Anatomy Lesson 0, and production-preview checks passed. The
+standard WebGL route and production denial test remain intact.
+The Architecture Rise validation suite was repeated on the final source commit
+(2/2); ordinary Chromium used Three.js `webgpu-renderer / webgl2-fallback`, so
+that run is recorded as fallback regression coverage. Native claims come from
+the strict parity and performance/lifecycle runs above.
+
+**Decision: PR L — SHARED OUTPUT CORE EXTRACTED; ANATOMY INTEGRATION NOT
+ENABLED.** The K2 blocker is reduced at the ownership boundary, but Anatomy
+still needs its own readiness, dynamic material/geometry coverage, and matched
+visual validation before a material-aware runtime can be considered.
