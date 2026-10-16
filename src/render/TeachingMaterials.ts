@@ -66,7 +66,10 @@ const textureSlots: readonly TextureSlot[] = [
 ];
 
 /** Dispose one factory-owned subject tree, including maps not released by Material.dispose(). */
-export const disposeTeachingSubjectResources = (root: THREE.Object3D): void => {
+export const disposeTeachingSubjectResources = (
+  root: THREE.Object3D,
+  additionalOwnedMaterials: Iterable<THREE.Material> = [],
+): void => {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
   const textures = new Set<THREE.Texture>();
@@ -101,6 +104,7 @@ export const disposeTeachingSubjectResources = (root: THREE.Object3D): void => {
       if (resource instanceof THREE.Material) materials.add(resource);
     });
   }
+  for (const material of additionalOwnedMaterials) materials.add(material);
 
   materials.forEach((material) => {
     const materialWithTextures = material as THREE.Material &

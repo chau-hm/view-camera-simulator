@@ -23,6 +23,7 @@ type ArchitectureRiseResources = {
   focusDark: THREE.MeshBasicMaterial;
   focusLight: THREE.MeshBasicMaterial;
   focusCrosshair: THREE.MeshBasicMaterial;
+  adaptedOutputMaterials: Set<THREE.Material>;
 };
 
 const standard = (
@@ -80,6 +81,7 @@ const createResources = (
     polygonOffsetFactor: 1,
     polygonOffsetUnits: 1,
   }),
+  adaptedOutputMaterials: new Set<THREE.Material>(),
 });
 
 type BoxSpec = {
@@ -662,5 +664,7 @@ export function createArchitectureRiseGroup(
 }
 
 export const disposeArchitectureRiseGroup = (group: THREE.Group): void => {
-  disposeTeachingSubjectResources(group);
+  const resources = group.userData.resources as ArchitectureRiseResources | undefined;
+  disposeTeachingSubjectResources(group, resources?.adaptedOutputMaterials);
+  resources?.adaptedOutputMaterials.clear();
 };
