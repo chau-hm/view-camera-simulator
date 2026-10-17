@@ -1,0 +1,2191 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "pr-m-inv-anatomy-transparency-output",
+  "decision": {
+    "classification": "I2",
+    "title": "PARTIAL ROOT CAUSE",
+    "outcome": "CONTINUE — run a bounded real-scene follow-up before changing the shared output core or promoting the Anatomy candidate.",
+    "confidence": "High for the controlled output-stage finding; insufficient to explain the real Anatomy candidate's large state-dependent errors.",
+    "summary": "The controlled fixture shows that output-transform staging changes RGB results while preserving alpha. The material-aware path matches WebGL within one RGB code value on this fixture, but the same candidate remains worse than standard WebGPU in most high-priority real Anatomy states. No complete real-scene root cause is isolated."
+  },
+  "priorEvidence": {
+    "pr260MeasurementCommit": "da29db824cf4cbebe5fdf5016c0c6750c676dbe9",
+    "historicalAggregateMeasurementsPreserved": true,
+    "latestMatchedAuditExactlyReproducedHistoricalAggregateValues": true,
+    "historicalReportUnmodified": true
+  },
+  "provenance": {
+    "measurementSourceCommit": "ef596d81cb87b00190210bab682978c06920f42a",
+    "controlledFixtureSourceCommit": "ef596d81cb87b00190210bab682978c06920f42a",
+    "browser": "Google Chrome",
+    "browserVersion": "155.0.8059.84",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64"
+    },
+    "threeRevision": "186",
+    "hardwareAcceleration": "unconfirmed",
+    "hardwareAccelerationEvidence": "No independent browser/system GPU diagnostics were collected.",
+    "controlledFixtureNativeQualification": [
+      {
+        "mode": "webgpu-standard",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "browserWebGpuApiPresent": true,
+        "adapterAvailability": "available",
+        "outputPolicy": "standard",
+        "outputPolicyStatus": "standard",
+        "initializationAttempts": 1,
+        "initializationFailure": "none",
+        "applicationFallback": "none",
+        "hardwareAcceleration": "unconfirmed"
+      },
+      {
+        "mode": "webgpu-material-aware",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "browserWebGpuApiPresent": true,
+        "adapterAvailability": "available",
+        "outputPolicy": "material-aware",
+        "outputPolicyStatus": "active",
+        "initializationAttempts": 1,
+        "initializationFailure": "none",
+        "applicationFallback": "none",
+        "hardwareAcceleration": "unconfirmed"
+      }
+    ],
+    "realAnatomyNativeQualification": {
+      "rendererGeneration": "1",
+      "rendererRequest": "webgpu-pilot",
+      "rendererAttempt": "webgpu",
+      "selectionReason": "webgpu-pilot-approved",
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "webgpuApiPresent": "true",
+      "adapterAvailability": "timed-out",
+      "initializationAttempts": "1",
+      "applicationFallback": "none",
+      "outputPolicyRequested": "material-aware",
+      "outputPolicySelected": "material-aware",
+      "outputPolicySelectionReason": "material-aware-selected",
+      "outputPolicyInstalled": "material-aware",
+      "outputPolicyStatus": "active",
+      "outputPolicyReadiness": "ready",
+      "outputPolicyReadinessEvidence": {
+        "registeredSubjectRenderables": 17,
+        "expectedSubjectRenderables": 17,
+        "conceptualCameraRenderables": 30,
+        "materialAssignments": 47,
+        "trackedAttachments": 47
+      },
+      "unsupportedMaterialCount": "0",
+      "initializationFailureStage": null,
+      "toneMapping": "none",
+      "toneMappingActive": "false",
+      "toneMappingExposure": "1.000000",
+      "outputColorSpace": "srgb-linear",
+      "shadowMapStatus": "active",
+      "shadowMapType": "pcf"
+    },
+    "rawControlledReportPath": ".test-results/anatomy-transparency-output-investigation/playwright/anatomy-transparency-outpu-dc405-overlap-depth-and-mutations-chrome-native-webgpu/anatomy-transparency-investigation-report.json",
+    "rawAnatomyReportPath": ".test-results/anatomy-transparency-output-investigation/raw-anatomy-audit/view-camera-anatomy-material-aware-integration.json",
+    "realAnatomyModeQualifications": [
+      {
+        "mode": "webgl",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "outputPolicy": "standard",
+        "outputPolicyStatus": null,
+        "initializationAttempts": null,
+        "adapterAvailability": "not-requested",
+        "applicationFallback": "none",
+        "initializationFailureStage": null,
+        "toneMapping": "aces-filmic",
+        "toneMappingActive": "true",
+        "outputColorSpace": "srgb"
+      },
+      {
+        "mode": "nativeStandard",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "outputPolicy": "standard",
+        "outputPolicyStatus": null,
+        "initializationAttempts": "1",
+        "adapterAvailability": "available",
+        "applicationFallback": "none",
+        "initializationFailureStage": null,
+        "toneMapping": "aces-filmic",
+        "toneMappingActive": "true",
+        "outputColorSpace": "srgb"
+      },
+      {
+        "mode": "nativeMaterialAware",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "outputPolicy": "material-aware",
+        "outputPolicyStatus": "active",
+        "initializationAttempts": "1",
+        "adapterAvailability": "timed-out",
+        "applicationFallback": "none",
+        "initializationFailureStage": null,
+        "toneMapping": "none",
+        "toneMappingActive": "false",
+        "outputColorSpace": "srgb-linear"
+      }
+    ]
+  },
+  "sourceReview": {
+    "threeSourceRevision": "three@0.186.0; runtime REVISION 186",
+    "verifiedThreeJsPaths": [
+      "node_modules/three/src/materials/nodes/NodeMaterial.js: setupDiffuseColor and setupOutput",
+      "node_modules/three/src/nodes/display/ToneMappingNode.js: setup",
+      "node_modules/three/src/nodes/display/ColorSpaceNode.js: setup",
+      "node_modules/three/src/nodes/display/RenderOutputNode.js: setup",
+      "node_modules/three/src/renderers/common/Renderer.js: _renderScene, _renderOutput",
+      "node_modules/three/src/renderers/common/nodes/NodeManager.js: getOutputNode",
+      "node_modules/three/src/renderers/common/RenderList.js: transparent sort comparators and sort",
+      "node_modules/three/src/renderers/webgl/WebGLPrograms.js: per-material tone-mapping selection",
+      "node_modules/three/src/renderers/webgl/shaders/ShaderLib/meshbasic.glsl.js: tone-mapping, color-space, premultiply order",
+      "node_modules/three/src/renderers/webgl/WebGLState.js: blending and depth-write state"
+    ],
+    "findings": [
+      "NodeMaterial.setupDiffuseColor multiplies diffuse alpha by material opacity; opaque materials force alpha to 1.",
+      "ToneMappingNode transforms RGB and passes input alpha through unchanged; ColorSpaceNode conversions also preserve alpha.",
+      "NodeMaterial.setupOutput itself applies fog and optional premultiplication; it does not add renderer tone mapping or output color-space conversion.",
+      "The WebGL shader applies the selected per-material tone mapping and output color-space conversion before the fragment reaches fixed-function blending.",
+      "For the on-screen WebGPU output path, transparent objects render into the common working-color-space framebuffer target; Renderer._renderOutput then runs a completed-image RenderOutputNode that clamps alpha, unpremultiplies, tone maps, converts color space, and premultiplies.",
+      "The material-aware adapter moves the per-material tone-mapping and sRGB conversion into each adapted NodeMaterial.setupOutput hook before blending. Its conversions are RGB-only and retain alpha.",
+      "Three.js common and WebGL render lists both include groupOrder, renderOrder, and depth in their transparent sorting keys; the fixture also recorded matching actual draw callbacks."
+    ],
+    "localAdapterReferences": [
+      "src/render/backend/materialAwareNodeMaterials.ts: toDisplayOutput and the Basic, Standard, and Line setupOutput overrides",
+      "src/render/backend/materialAwareMaterialTracker.ts: output.copy(source), signatures, attachment reconciliation and owner disposal",
+      "src/render/backend/observerMaterialSignatures.ts: property and shader signatures",
+      "src/render/ConceptualViewCamera.tsx: dynamic opacity, highlighting, aperture and bellows presentation",
+      "src/tests/benchmarks/anatomy-material-compatibility.spec.ts: matched capture, inventory, ROI, repeat and Ground Glass evidence"
+    ]
+  },
+  "controlledFixture": {
+    "modes": [
+      "webgl-standard",
+      "webgpu-standard",
+      "webgpu-material-aware"
+    ],
+    "nativeRequired": true,
+    "viewport": [
+      1600,
+      900
+    ],
+    "devicePixelRatio": 1,
+    "camera": {
+      "type": "orthographic",
+      "left": -8,
+      "right": 8,
+      "top": 4.5,
+      "bottom": -4.5,
+      "position": [
+        0,
+        0,
+        10
+      ]
+    },
+    "opaqueBackgroundSrgb": "#64748b",
+    "sourceFamilies": [
+      "MeshBasicMaterial",
+      "MeshStandardMaterial",
+      "LineBasicMaterial"
+    ],
+    "sourceColorsSrgb": [
+      "#808080",
+      "#ffffff",
+      "#f59e0b",
+      "#111827"
+    ],
+    "toneMappedValues": [
+      true,
+      false
+    ],
+    "transparentValues": [
+      true,
+      false
+    ],
+    "opacityValues": [
+      1,
+      0.9,
+      0.5,
+      0.25,
+      0.16,
+      0.08
+    ],
+    "gridSampleCountPerMode": 288,
+    "clearCanvasAlpha": {
+      "crossModeMatchedSamples": 288,
+      "maximumAbsoluteAlphaDifferenceBetweenModes": 0,
+      "measurementsByMode": [
+        {
+          "mode": "webgl-standard",
+          "sampleCount": 288,
+          "sourceOpacitySampleCount": 96,
+          "maxAbsoluteAlphaErrorFromMaterialOpacity": 1
+        },
+        {
+          "mode": "webgpu-standard",
+          "sampleCount": 288,
+          "sourceOpacitySampleCount": 96,
+          "maxAbsoluteAlphaErrorFromMaterialOpacity": 1
+        },
+        {
+          "mode": "webgpu-material-aware",
+          "sampleCount": 288,
+          "sourceOpacitySampleCount": 96,
+          "maxAbsoluteAlphaErrorFromMaterialOpacity": 1
+        }
+      ],
+      "lineNote": "Line sample alpha includes raster coverage and is compared across modes rather than required to equal source opacity."
+    },
+    "rgbMaeBySourceFamilyForTransparentSamples": [
+      {
+        "family": "basic",
+        "samplesPerComparison": 48,
+        "webglVsStandardMeanRgbMae": 15.506944444444443,
+        "webglVsStandardMaxRgbMae": 36.666666666666664,
+        "webglVsMaterialAwareMeanRgbMae": 0.08333333333333333,
+        "webglVsMaterialAwareMaxRgbMae": 1
+      },
+      {
+        "family": "standard",
+        "samplesPerComparison": 48,
+        "webglVsStandardMeanRgbMae": 13.66666666666667,
+        "webglVsStandardMaxRgbMae": 33.666666666666664,
+        "webglVsMaterialAwareMeanRgbMae": 0.041666666666666664,
+        "webglVsMaterialAwareMaxRgbMae": 0.6666666666666666
+      },
+      {
+        "family": "line",
+        "samplesPerComparison": 48,
+        "webglVsStandardMeanRgbMae": 15.20833333333333,
+        "webglVsStandardMaxRgbMae": 37.333333333333336,
+        "webglVsMaterialAwareMeanRgbMae": 0.09722222222222221,
+        "webglVsMaterialAwareMaxRgbMae": 1
+      }
+    ],
+    "rgbMaeByToneMappingAndTransparencyFlags": [
+      {
+        "family": "basic",
+        "toneMapped": true,
+        "transparent": true,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 13.555555555555557,
+          "maximumRgbMae": 36.666666666666664
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.16666666666666666,
+          "maximumRgbMae": 1
+        }
+      },
+      {
+        "family": "basic",
+        "toneMapped": true,
+        "transparent": false,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.33333333333333326,
+          "maximumRgbMae": 1
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.33333333333333326,
+          "maximumRgbMae": 1
+        }
+      },
+      {
+        "family": "basic",
+        "toneMapped": false,
+        "transparent": true,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 17.458333333333332,
+          "maximumRgbMae": 29.666666666666668
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      },
+      {
+        "family": "basic",
+        "toneMapped": false,
+        "transparent": false,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 20.33333333333333,
+          "maximumRgbMae": 28
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      },
+      {
+        "family": "standard",
+        "toneMapped": true,
+        "transparent": true,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 12.000000000000002,
+          "maximumRgbMae": 33.666666666666664
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.08333333333333333,
+          "maximumRgbMae": 0.6666666666666666
+        }
+      },
+      {
+        "family": "standard",
+        "toneMapped": true,
+        "transparent": false,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      },
+      {
+        "family": "standard",
+        "toneMapped": false,
+        "transparent": true,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 15.33333333333333,
+          "maximumRgbMae": 28.333333333333332
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      },
+      {
+        "family": "standard",
+        "toneMapped": false,
+        "transparent": false,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 16.499999999999996,
+          "maximumRgbMae": 21
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      },
+      {
+        "family": "line",
+        "toneMapped": true,
+        "transparent": true,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 12.527777777777777,
+          "maximumRgbMae": 37.333333333333336
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.19444444444444442,
+          "maximumRgbMae": 1
+        }
+      },
+      {
+        "family": "line",
+        "toneMapped": true,
+        "transparent": false,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.33333333333333326,
+          "maximumRgbMae": 1
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0.33333333333333326,
+          "maximumRgbMae": 1
+        }
+      },
+      {
+        "family": "line",
+        "toneMapped": false,
+        "transparent": true,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 17.88888888888889,
+          "maximumRgbMae": 29
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      },
+      {
+        "family": "line",
+        "toneMapped": false,
+        "transparent": false,
+        "webglVsStandard": {
+          "sampleCount": 24,
+          "meanRgbMae": 20.33333333333333,
+          "maximumRgbMae": 28
+        },
+        "webglVsMaterialAware": {
+          "sampleCount": 24,
+          "meanRgbMae": 0,
+          "maximumRgbMae": 0
+        }
+      }
+    ],
+    "repeatNoise": [
+      {
+        "mode": "webgl-standard",
+        "firstCaptureId": "webgl-standard/basic-alpha-grid/first",
+        "repeatedCaptureId": "webgl-standard/basic-alpha-grid/repeat-1",
+        "viewport": [
+          1600,
+          900
+        ],
+        "devicePixelRatio": 1,
+        "canvas": [
+          1600,
+          900
+        ],
+        "metrics": {
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        }
+      },
+      {
+        "mode": "webgpu-standard",
+        "firstCaptureId": "webgpu-standard/basic-alpha-grid/first",
+        "repeatedCaptureId": "webgpu-standard/basic-alpha-grid/repeat-1",
+        "viewport": [
+          1600,
+          900
+        ],
+        "devicePixelRatio": 1,
+        "canvas": [
+          1600,
+          900
+        ],
+        "metrics": {
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        }
+      },
+      {
+        "mode": "webgpu-material-aware",
+        "firstCaptureId": "webgpu-material-aware/basic-alpha-grid/first",
+        "repeatedCaptureId": "webgpu-material-aware/basic-alpha-grid/repeat-1",
+        "viewport": [
+          1600,
+          900
+        ],
+        "devicePixelRatio": 1,
+        "canvas": [
+          1600,
+          900
+        ],
+        "metrics": {
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        }
+      }
+    ],
+    "compositingAndDepth": {
+      "overlapCaseCount": 7,
+      "depthCaseCount": 4,
+      "actualDrawOrdersMatched": true,
+      "materialAwareCenterPixelsMatchWebglWithinRgbMae": 1,
+      "premultipliedAlphaToggleDifference": {
+        "webglMeanRgbMae": 0,
+        "materialAwareMeanRgbMae": 0
+      },
+      "premultipliedAlphaToggleScope": {
+        "testedVariable": "Material.premultipliedAlpha",
+        "rendererConfigurationVariedWithinComparison": false,
+        "rendererContextPremultiplicationStatus": "not-tested",
+        "rendererAlphaFieldMeaning": "renderer alpha flag or WebGL context alpha attribute; not premultiplied-alpha mode",
+        "blendMode": "normal",
+        "pairedComparison": "two-layer natural-order overlap; source material false versus true",
+        "capturedButNotIncludedInToggleMetric": "two-layer near-first overlap with source material flag true",
+        "measuredChannels": "center-pixel RGB",
+        "measuredModes": [
+          "webgl-standard",
+          "webgpu-material-aware"
+        ]
+      },
+      "depthWriteToggleDifferenceInWebgl": 41.666666666666664,
+      "negativeControls": [
+        {
+          "mode": "webgl-standard",
+          "oneLayerVsTwoLayersMeanRgbDifference": 23,
+          "naturalVsExplicitRenderOrderMeanRgbDifference": 8,
+          "normalVsDimmedOpacityMeanRgbDifference": 60.333333333333336,
+          "actualDrawOrderChanged": true
+        },
+        {
+          "mode": "webgpu-standard",
+          "oneLayerVsTwoLayersMeanRgbDifference": 27.666666666666668,
+          "naturalVsExplicitRenderOrderMeanRgbDifference": 6.333333333333333,
+          "normalVsDimmedOpacityMeanRgbDifference": 73.66666666666667,
+          "actualDrawOrderChanged": true
+        },
+        {
+          "mode": "webgpu-material-aware",
+          "oneLayerVsTwoLayersMeanRgbDifference": 23,
+          "naturalVsExplicitRenderOrderMeanRgbDifference": 7.666666666666667,
+          "normalVsDimmedOpacityMeanRgbDifference": 60.333333333333336,
+          "actualDrawOrderChanged": true
+        }
+      ]
+    },
+    "dynamicMaterialMutation": {
+      "sourceOutputPropertiesMatched": true,
+      "identityStableAcrossInPlaceMutation": true,
+      "shaderSignatureAndOutputVersionUpdated": true,
+      "replacementMaterialReceivedFreshOutput": true,
+      "candidatePixelsMatchedWebglAcrossStages": true,
+      "stages": [
+        {
+          "stage": "normal",
+          "sourceVersion": 1,
+          "outputVersion": 0,
+          "sourceUuid": "51bc58b8-159a-4694-bece-d07c831881db",
+          "outputUuid": "0eb417aa-470d-4f54-ab60-09a20a90f0f1"
+        },
+        {
+          "stage": "highlighted",
+          "sourceVersion": 2,
+          "outputVersion": 0,
+          "sourceUuid": "51bc58b8-159a-4694-bece-d07c831881db",
+          "outputUuid": "0eb417aa-470d-4f54-ab60-09a20a90f0f1"
+        },
+        {
+          "stage": "dimmed",
+          "sourceVersion": 3,
+          "outputVersion": 1,
+          "sourceUuid": "51bc58b8-159a-4694-bece-d07c831881db",
+          "outputUuid": "0eb417aa-470d-4f54-ab60-09a20a90f0f1"
+        },
+        {
+          "stage": "ghost",
+          "sourceVersion": 4,
+          "outputVersion": 1,
+          "sourceUuid": "51bc58b8-159a-4694-bece-d07c831881db",
+          "outputUuid": "0eb417aa-470d-4f54-ab60-09a20a90f0f1"
+        },
+        {
+          "stage": "aperture",
+          "sourceVersion": 5,
+          "outputVersion": 2,
+          "sourceUuid": "51bc58b8-159a-4694-bece-d07c831881db",
+          "outputUuid": "0eb417aa-470d-4f54-ab60-09a20a90f0f1"
+        },
+        {
+          "stage": "normal",
+          "sourceVersion": 6,
+          "outputVersion": 3,
+          "sourceUuid": "51bc58b8-159a-4694-bece-d07c831881db",
+          "outputUuid": "0eb417aa-470d-4f54-ab60-09a20a90f0f1"
+        },
+        {
+          "stage": "rear-back-replacement",
+          "sourceVersion": 0,
+          "outputVersion": 0,
+          "sourceUuid": "b7868c15-1bdd-4daa-acbb-6a40de3c3b08",
+          "outputUuid": "fa45a3d1-0db7-49b6-8efd-49d72f3a11a7"
+        }
+      ]
+    },
+    "errors": [],
+    "interpretation": "RGB changes are reported separately from measured framebuffer alpha. The measured channel data does not use a guessed sRGB blend equation; the source trace and matched captures establish the tested pipeline-stage distinction."
+  },
+  "realAnatomy": {
+    "modeQualifications": {
+      "webglStandard": {
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "outputPolicy": "standard",
+        "applicationFallback": "none",
+        "initializationFailure": null
+      },
+      "webgpuStandard": {
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "adapterAvailability": "available",
+        "outputPolicy": "standard",
+        "applicationFallback": "none",
+        "initializationAttempts": "1",
+        "initializationFailure": null
+      },
+      "webgpuMaterialAware": {
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "browserWebGpuApiPresent": "true",
+        "adapterAvailability": "timed-out",
+        "adapterProbeInterpretation": "timed-out is unknown diagnostic evidence; mounted renderer identity/backend is authoritative",
+        "outputPolicy": "material-aware",
+        "outputPolicyStatus": "active",
+        "outputPolicyReadiness": "ready",
+        "applicationFallback": "none",
+        "initializationAttempts": "1",
+        "initializationFailure": null
+      }
+    },
+    "stateCount": 13,
+    "captureCount": 39,
+    "states": [
+      {
+        "state": "initial",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 5.38616467658272,
+        "webglVsMaterialAwareMeanRoiRgbMae": 0.25684918114127847,
+        "standardVsMaterialAwareMeanRoiRgbMae": 5.282423987355231,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 0.35151315789473686,
+            "sampleCount": 15200
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 0.27337271973466004,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:front-standard",
+            "meanAbsoluteRgbDifference": 0.26590563165905634,
+            "sampleCount": 19710
+          }
+        ]
+      },
+      {
+        "state": "registered-target-subject",
+        "roiCount": 26,
+        "webglVsStandardMeanRoiRgbMae": 4.311518342072917,
+        "webglVsMaterialAwareMeanRoiRgbMae": 0.4107292319468617,
+        "standardVsMaterialAwareMeanRoiRgbMae": 4.187568362562308,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 1.5056980056980056,
+            "sampleCount": 234
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 1.1228070175438596,
+            "sampleCount": 399
+          },
+          {
+            "region": "cameraPart:rear-standard",
+            "meanAbsoluteRgbDifference": 1.0622759856630823,
+            "sampleCount": 744
+          }
+        ]
+      },
+      {
+        "state": "highlighted-front-standard",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 32.47411235169646,
+        "webglVsMaterialAwareMeanRoiRgbMae": 30.62652919952113,
+        "standardVsMaterialAwareMeanRoiRgbMae": 62.11302160171461,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:rear-standard",
+            "meanAbsoluteRgbDifference": 68.0458958517211,
+            "sampleCount": 11330
+          },
+          {
+            "region": "cameraPart:ground-glass-back",
+            "meanAbsoluteRgbDifference": 49.355555555555554,
+            "sampleCount": 6450
+          },
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 44.46570175438597,
+            "sampleCount": 15200
+          }
+        ]
+      },
+      {
+        "state": "highlighted-lens-and-board",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 32.47420887009465,
+        "webglVsMaterialAwareMeanRoiRgbMae": 52.181325584170516,
+        "standardVsMaterialAwareMeanRoiRgbMae": 83.5649328266053,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:rear-standard",
+            "meanAbsoluteRgbDifference": 80.40158870255958,
+            "sampleCount": 11330
+          },
+          {
+            "region": "cameraPart:ground-glass-back",
+            "meanAbsoluteRgbDifference": 64.9487338501292,
+            "sampleCount": 6450
+          },
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 62.81037280701754,
+            "sampleCount": 15200
+          }
+        ]
+      },
+      {
+        "state": "aperture-small-opening",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 32.47418601911363,
+        "webglVsMaterialAwareMeanRoiRgbMae": 74.06399185525527,
+        "standardVsMaterialAwareMeanRoiRgbMae": 105.38900344590533,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 90.19988598673301,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:rear-standard",
+            "meanAbsoluteRgbDifference": 81.84948514268902,
+            "sampleCount": 11330
+          },
+          {
+            "region": "cameraPart:lens",
+            "meanAbsoluteRgbDifference": 78.7496740547588,
+            "sampleCount": 3835
+          }
+        ]
+      },
+      {
+        "state": "bellows-highlighted",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 6.82644663512371,
+        "webglVsMaterialAwareMeanRoiRgbMae": 59.40371618242965,
+        "standardVsMaterialAwareMeanRoiRgbMae": 62.816821908403526,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:lens",
+            "meanAbsoluteRgbDifference": 83.40756192959583,
+            "sampleCount": 3835
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 70.13090796019901,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 67.60440789473684,
+            "sampleCount": 15200
+          }
+        ]
+      },
+      {
+        "state": "rear-standard-highlighted",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 29.153719501332994,
+        "webglVsMaterialAwareMeanRoiRgbMae": 62.14411856901931,
+        "standardVsMaterialAwareMeanRoiRgbMae": 90.72600924452803,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:lens",
+            "meanAbsoluteRgbDifference": 114.10760538896132,
+            "sampleCount": 3835
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 109.66868781094527,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:front-standard",
+            "meanAbsoluteRgbDifference": 74.00955521731777,
+            "sampleCount": 19710
+          }
+        ]
+      },
+      {
+        "state": "ground-glass-back",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 28.50416162679886,
+        "webglVsMaterialAwareMeanRoiRgbMae": 77.32524945288621,
+        "standardVsMaterialAwareMeanRoiRgbMae": 104.97813538872242,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:lens",
+            "meanAbsoluteRgbDifference": 114.10760538896132,
+            "sampleCount": 3835
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 111.31706053067994,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:front-standard",
+            "meanAbsoluteRgbDifference": 79.90098088956536,
+            "sampleCount": 19710
+          }
+        ]
+      },
+      {
+        "state": "film-holder",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 11.914107809394457,
+        "webglVsMaterialAwareMeanRoiRgbMae": 70.55201910927671,
+        "standardVsMaterialAwareMeanRoiRgbMae": 81.56790437338701,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:lens",
+            "meanAbsoluteRgbDifference": 114.10760538896132,
+            "sampleCount": 3835
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 111.31706053067994,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 77.29519736842106,
+            "sampleCount": 15200
+          }
+        ]
+      },
+      {
+        "state": "camera-support-highlighted",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 34.59059386738388,
+        "webglVsMaterialAwareMeanRoiRgbMae": 66.48240597927636,
+        "standardVsMaterialAwareMeanRoiRgbMae": 99.99461332936765,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:lens",
+            "meanAbsoluteRgbDifference": 114.07631464580618,
+            "sampleCount": 3835
+          },
+          {
+            "region": "cameraPart:lens-board",
+            "meanAbsoluteRgbDifference": 106.19879767827528,
+            "sampleCount": 6432
+          },
+          {
+            "region": "cameraPart:bellows",
+            "meanAbsoluteRgbDifference": 66.42320738004192,
+            "sampleCount": 15429
+          }
+        ]
+      },
+      {
+        "state": "image-circle-lesson",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 8.552508928527004,
+        "webglVsMaterialAwareMeanRoiRgbMae": 0.6352924882189638,
+        "standardVsMaterialAwareMeanRoiRgbMae": 8.107741570664198,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:bellows",
+            "meanAbsoluteRgbDifference": 1.1770475511482705,
+            "sampleCount": 15429
+          },
+          {
+            "region": "cameraPart:ground-glass-back",
+            "meanAbsoluteRgbDifference": 0.7538296672306825,
+            "sampleCount": 29550
+          },
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 0.7479166666666667,
+            "sampleCount": 15200
+          }
+        ]
+      },
+      {
+        "state": "front-rise-adjusted",
+        "roiCount": 24,
+        "webglVsStandardMeanRoiRgbMae": 32.811849949817436,
+        "webglVsMaterialAwareMeanRoiRgbMae": 26.508372984163827,
+        "standardVsMaterialAwareMeanRoiRgbMae": 55.419412586792134,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:rear-standard",
+            "meanAbsoluteRgbDifference": 53.694880847308035,
+            "sampleCount": 11330
+          },
+          {
+            "region": "cameraPart:camera-support",
+            "meanAbsoluteRgbDifference": 46.23502192982456,
+            "sampleCount": 15200
+          },
+          {
+            "region": "opticalHelper:physical-image-circle-coverage-ray-9",
+            "meanAbsoluteRgbDifference": 41.7588785046729,
+            "sampleCount": 8025
+          }
+        ]
+      },
+      {
+        "state": "after-reset",
+        "roiCount": 8,
+        "webglVsStandardMeanRoiRgbMae": 5.912415528209207,
+        "webglVsMaterialAwareMeanRoiRgbMae": 0.815110504650321,
+        "standardVsMaterialAwareMeanRoiRgbMae": 5.282423987355231,
+        "highestMaterialAwareRoisVsWebgl": [
+          {
+            "region": "cameraPart:rear-standard",
+            "meanAbsoluteRgbDifference": 1.4018829067372758,
+            "sampleCount": 11330
+          },
+          {
+            "region": "cameraPart:ground-glass-back",
+            "meanAbsoluteRgbDifference": 1.3693540051679587,
+            "sampleCount": 6450
+          },
+          {
+            "region": "cameraPart:bellows",
+            "meanAbsoluteRgbDifference": 1.1783438114373366,
+            "sampleCount": 15429
+          }
+        ]
+      }
+    ],
+    "aggregateMeasurements": {
+      "roiCount": 138,
+      "meanRoiRgbMae": {
+        "webglVsStandardWebgpu": 19.75133972611286,
+        "webglVsMaterialAwareWebgpu": 33.353425916647225,
+        "standardVsMaterialAwareWebgpu": 51.57628212189635
+      },
+      "maximumRoiRgbMae": {
+        "webglVsStandardWebgpu": 99.80790697674419,
+        "webglVsMaterialAwareWebgpu": 114.10760538896132,
+        "standardVsMaterialAwareWebgpu": 157.66501291989664
+      },
+      "historicalReportValuesMatch": true,
+      "methodology": "Equal-weight mean across projected object-aligned ROI MAEs. Regions can overlap, so ROI count is not a count of unique independent framebuffer pixels; values are descriptive and are not a parity threshold."
+    },
+    "exactBackgroundAndGroundGlassComparisons": {
+      "webglVsNativeStandard": {
+        "stateCount": 13,
+        "groundGlassExact": true,
+        "backgroundReference": [
+          {
+            "state": "initial",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "registered-target-subject",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "highlighted-front-standard",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "highlighted-lens-and-board",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "aperture-small-opening",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "bellows-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "rear-standard-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "ground-glass-back",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "film-holder",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "camera-support-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "image-circle-lesson",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "front-rise-adjusted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          },
+          {
+            "state": "after-reset",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": -24.647000000000563
+            }
+          }
+        ],
+        "summary": {
+          "sampleCountPerState": 1073,
+          "meanAbsoluteRgbDifference": 24.666666666666668,
+          "changedPixelFraction": 1
+        }
+      },
+      "webglVsNativeMaterialAware": {
+        "stateCount": 13,
+        "groundGlassExact": true,
+        "backgroundReference": [
+          {
+            "state": "initial",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "registered-target-subject",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "highlighted-front-standard",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "highlighted-lens-and-board",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "aperture-small-opening",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "bellows-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "rear-standard-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "ground-glass-back",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "film-holder",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "camera-support-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "image-circle-lesson",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "front-rise-adjusted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          },
+          {
+            "state": "after-reset",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgl-standard": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0,
+              "changedPixelFraction": 0,
+              "meanSignedLuminanceDifference": 0
+            }
+          }
+        ],
+        "summary": {
+          "sampleCountPerState": 1073,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelFraction": 0
+        }
+      },
+      "nativeStandardVsNativeMaterialAware": {
+        "stateCount": 13,
+        "groundGlassExact": true,
+        "backgroundReference": [
+          {
+            "state": "initial",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "registered-target-subject",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "highlighted-front-standard",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "highlighted-lens-and-board",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "aperture-small-opening",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "bellows-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "rear-standard-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "ground-glass-back",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "film-holder",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "camera-support-highlighted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "image-circle-lesson",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "front-rise-adjusted",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          },
+          {
+            "state": "after-reset",
+            "sampleCount": 1073,
+            "meanRgbByMode": {
+              "webgpu-standard": {
+                "red": 225,
+                "green": 225,
+                "blue": 226,
+                "pixels": 1073
+              },
+              "webgpu-material-aware": {
+                "red": 248,
+                "green": 250,
+                "blue": 252,
+                "pixels": 1073
+              }
+            },
+            "difference": {
+              "meanAbsoluteRgbDifference": 24.666666666666668,
+              "changedPixelCount": 1073,
+              "changedPixelFraction": 1,
+              "meanSignedLuminanceDifference": 24.647000000000563
+            }
+          }
+        ],
+        "summary": {
+          "sampleCountPerState": 1073,
+          "meanAbsoluteRgbDifference": 24.666666666666668,
+          "changedPixelFraction": 1
+        }
+      },
+      "interpretation": "The top-left canvas-background reference sample is distinct from object pixels. The standard WebGPU capture differs from WebGL in this patch; material-aware WebGPU matches WebGL. Existing object-aligned ROIs are rectangular and not background-masked, so empty pixels inside those rectangles may contribute; that contribution was not separately quantified. Exact Ground Glass comparison is across all 13 states and all three mode pairs.",
+      "groundGlassSampleCountPerState": 211768
+    },
+    "sameModeRepeatNoise": {
+      "webgl": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "webgpuStandard": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "webgpuMaterialAware": {
+        "meanAbsoluteRgbDifference": 0,
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    },
+    "sceneInputParity": {
+      "viewPoseMismatchesAcrossModesAndStates": 0,
+      "matchedStates": 13,
+      "modes": [
+        "webgl-standard",
+        "webgpu-standard",
+        "webgpu-material-aware"
+      ],
+      "positionQuaternionAndOrbitTargetMatch": true,
+      "projectionXyTermsMatch": true,
+      "projectionDepthTermsDifferByRendererCoordinateConvention": true,
+      "normalizedRenderablePairComparisons": 26,
+      "normalizedRenderableMismatches": 0,
+      "sourceMaterialAssignmentComparisons": 1256,
+      "sourceMaterialPropertyMismatches": 0,
+      "candidateAdaptedAssignments": 628,
+      "candidateAdaptedPropertyChecks": 9420,
+      "candidateAdaptedPropertyMismatches": 0,
+      "normalization": "Per-run object/material/geometry UUIDs and candidate-only adapted flags are excluded; renderable names, roles, transforms, state flags, geometry type/count/version and source material property values remain compared.",
+      "projectionNote": "WebGPU and WebGL use different normalized depth projection terms; camera position/quaternion, target, horizontal/vertical projection terms and displayed scene view are matched."
+    },
+    "groundGlass": {
+      "rendererFamily": "webgl-renderer",
+      "executionBackend": "webgl2",
+      "contentfulAcrossAllCaptures": true,
+      "sourceMaterialAndGeometryIdentityPreserved": true,
+      "rendererIndependentFromObserverOutputAdaptation": true
+    },
+    "pageErrors": {
+      "webgl": [],
+      "nativeStandard": [],
+      "nativeMaterialAware": []
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "classification": "rejected as the cause of the tested RGB discrepancy",
+      "result": "Across 288 matched clear-canvas RGBA sample comparisons, cross-mode alpha difference was zero; Basic and Standard material alpha tracked source opacity within the asserted two-code-value bound.",
+      "confidence": "High for the tested fixture/material families; not every renderer compositor."
+    },
+    {
+      "id": "H2",
+      "classification": "confirmed contributing factor in the controlled fixture; not a complete Anatomy root cause",
+      "result": "Standard WebGPU RGB differed from WebGL for Basic, Standard, and Line fixtures. The material-aware per-material output path reduced the measured error to <=1 RGB code value. This supports output-transform staging/per-material tone-mapping treatment as a controlled discrepancy category, but does not explain why the real Anatomy candidate remains worse overall.",
+      "confidence": "High for the controlled output-stage contribution; low for explaining real Anatomy states."
+    },
+    {
+      "id": "H3",
+      "classification": "partially tested: material-level flag had no measurable effect in the paired case; renderer/context-level remains untested",
+      "result": "The fixture toggled source Material.premultipliedAlpha on the two-layer natural-order Basic-material overlap while reusing each mode's fixed renderer/context configuration. The measured center-pixel RGB MAE was zero for WebGL and material-aware WebGPU. A near-first flag-true case was captured but is not part of the stored toggle metric. Renderer/context-level premultiplication and browser canvas compositing were not independently varied.",
+      "testedVariable": "Material.premultipliedAlpha",
+      "rendererConfigurationVariedWithinComparison": false,
+      "rendererContextPremultiplicationStatus": "not-tested",
+      "confidence": "Limited to the paired normal-blending center-pixel comparison; does not establish renderer/context or real-scene behavior."
+    },
+    {
+      "id": "H4",
+      "classification": "rejected as the cause of the cross-backend mismatch in tested depth cases",
+      "result": "Depth-write changes materially affected the reference sample, but material-aware WebGPU matched WebGL within RGB MAE 1 across all tested depth cases.",
+      "confidence": "High for tested depth controls; not all scene intersections."
+    },
+    {
+      "id": "H5",
+      "classification": "rejected as the cause of the cross-backend mismatch in tested sort cases",
+      "result": "Adding layers and explicit render-order swaps changed measured pixels and actual draw callbacks; draw order matched across modes and material-aware pixels stayed within RGB MAE 1 of WebGL.",
+      "confidence": "High for tested sort/render-order cases."
+    },
+    {
+      "id": "H6",
+      "classification": "rejected for the tested dynamic property propagation path",
+      "result": "The tracker propagated source material changes into stable adapted outputs; a replacement source produced a new output. Real candidate source/output values also matched for all 15 tested fields across the collected assignments.",
+      "confidence": "High for the captured properties and replacement stages."
+    },
+    {
+      "id": "H7",
+      "classification": "rejected for the tested shader-state transitions",
+      "result": "Transparency and tone-mapping signature changes advanced adapted output versions as expected and captured candidate pixels tracked WebGL across stages.",
+      "confidence": "High for tested transparency/tone-mapping shader-state transitions."
+    },
+    {
+      "id": "H8",
+      "classification": "rejected as a mismatched camera view or source-material/geometry input for the 13 measured states",
+      "result": "Position, quaternion, orbit target and x/y projection terms match across all 13 states; 26 normalized renderable-pair comparisons and 1,256 source-material assignment comparisons have no mismatch. WebGPU depth projection terms differ by renderer coordinate convention. The evidence does not isolate the real-scene cause of the remaining pixel differences.",
+      "confidence": "High for the recorded camera pose, geometry, transform, and source-property comparisons; does not identify the pixel cause."
+    },
+    {
+      "id": "H9",
+      "classification": "same-mode noise rejected; background and rectangular-ROI contributions remain unquantified",
+      "result": "Repeat noise is zero in the controlled fixture and real audit. The sampled top-left canvas-background patch differs by RGB MAE 24.67 between WebGL and standard WebGPU but is exact between WebGL and the material-aware candidate. Object-aligned rectangles are not foreground masked, so empty-area contribution remains unknown; it cannot alone explain the candidate-specific subject differences.",
+      "confidence": "High that repeats were stable and the sampled background differs; low for foreground-only ROI attribution."
+    }
+  ],
+  "recommendation": {
+    "nextDecision": "Do not implement a full Anatomy output correction from this evidence alone.",
+    "nextInvestigation": "Isolate the real scene's material-family and overlap combinations using per-renderable/material contribution captures or a narrowly scoped state-by-state negative control, then test the predicted output-stage correction against the actual high-error Anatomy ROIs.",
+    "likelyCorrectionSurfaceIfConfirmed": "The shared material-aware NodeMaterial.setupOutput output adapter, kept opt-in and covered by the controlled alpha/RGB fixture.",
+    "requiredRegressionGates": [
+      "The controlled per-family opaque/transparent matrix must preserve measured alpha and keep candidate output within the measured WebGL fixture envelope.",
+      "Retain the 13 matched Anatomy states and meaningful object-specific ROIs without relaxing thresholds.",
+      "Run Architecture Rise's existing strict native parity gate before changing the shared output core.",
+      "Verify module-shared Anatomy source resources and independent WebGL Ground Glass.",
+      "Verify production remains WebGL-only and Anatomy remains explicit-only until independent parity acceptance."
+    ],
+    "architectureRiseRisk": "The same output adapter is shared with Architecture Rise; any output-stage change must rerun its 81-criterion contract.",
+    "groundGlassRisk": "No Ground Glass code changed; the measured RTT remains independently WebGL2 and contentful.",
+    "ownershipRisk": "No resource tracker, source ownership, or disposal behavior changed; probe additions are observation-only."
+  },
+  "codeBoundary": {
+    "runtimeRendererSourceChanged": false,
+    "authoredMaterialOrGeometryChanged": false,
+    "canonicalOpticsChanged": false,
+    "groundGlassImplementationChanged": false,
+    "productionPolicyChanged": false,
+    "diagnosticChanges": [
+      "The isolated benchmark fixture owns its own renderer, scene, and disposable resources; it is imported only by its standalone test HTML.",
+      "The Anatomy audit probe now records source/output properties, renderable transforms, geometry attribute versions, and output material references for evidence only.",
+      "The audit accepts an adapter probe timeout as unknown while still requiring the actual mounted WebGPU renderer/backend, one initialization attempt, no failure, and no application fallback."
+    ],
+    "productionBundleFixtureIdentifiersPresent": false
+  },
+  "validation": {
+    "static": {
+      "lint": "pass",
+      "typecheck": "pass",
+      "unitTestFiles": 253,
+      "unitTests": 2350,
+      "css": "pass",
+      "productionBuild": "pass",
+      "productionBundleExcludesFixture": true,
+      "gitDiffCheck": "pass"
+    },
+    "browser": [
+      {
+        "name": "controlled native transparency fixture",
+        "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npx playwright test --config=playwright.anatomy-transparency-investigation.config.ts --workers=1",
+        "result": "1 passed"
+      },
+      {
+        "name": "13-state native Anatomy audit",
+        "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1",
+        "result": "1 passed, 1 skipped (existing standard-mode case); raw report cross-check records the standard-WebGPU background patch difference and matched view poses."
+      },
+      {
+        "name": "Lesson 0 Anatomy",
+        "command": "npm run test:e2e -- --project=chromium src/tests/e2e/lesson-zero-anatomy.spec.ts",
+        "result": "1 passed"
+      },
+      {
+        "name": "Architecture Rise native validation",
+        "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- src/tests/e2e/architecture-rise-webgpu-validation.spec.ts",
+        "result": "2 passed"
+      },
+      {
+        "name": "Architecture Rise production preview",
+        "command": "npm run test:e2e -- --config=playwright.production.config.ts src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+        "result": "2 passed"
+      },
+      {
+        "name": "Architecture Rise strict native visual parity",
+        "command": "PATH=/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH OBSERVER_VISUAL_PARITY_REQUIRED=1 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_OUTPUT_POLICY=material-aware npx playwright test --config=playwright.observer-backend-benchmark.config.ts src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1",
+        "browser": "Chrome 155.0.8059.84; macOS Darwin 27.0 arm64; Node v24.19.0; Three.js r186",
+        "result": "1 passed; 78 applicable criteria passed, 0 failed, 3 conditional not applicable; mounted webgpu-renderer / webgpu, adapter available, one initialization, no application fallback."
+      }
+    ],
+    "hostedCi": {
+      "result": "pass",
+      "commit": "3ca2547627c147b0ddd1f8dc4c392256d93f6f50",
+      "workflow": "CI and Deploy to GitHub Pages",
+      "runId": 38997969930,
+      "runUrl": "https://github.com/chau-hm/view-camera-simulator/actions/runs/38997969930",
+      "ciJob": "success",
+      "deployJob": "skipped",
+      "note": "This run covers the initial published PR head; checks rerun for the following documentation-only handoff commit."
+    }
+  },
+  "selectedArtifacts": [
+    {
+      "path": "anatomy-transparency-investigation/webgl-basic-alpha-grid-clear.png",
+      "sha256": "21c0f687377891be4876482de6709a1933b1c3fbd08082093f368265879ecbe0"
+    },
+    {
+      "path": "anatomy-transparency-investigation/webgpu-standard-basic-alpha-grid-clear.png",
+      "sha256": "db2e7a3e64c4c3c265e52d606d8b5acad6ee481db7e6e873aefcb00082422bfd"
+    },
+    {
+      "path": "anatomy-transparency-investigation/webgpu-material-aware-basic-alpha-grid-clear.png",
+      "sha256": "511e9b4ecf8739dcf3a4a643f3e0e9604cd68bdbae38f185c9cbdf339d2e765d"
+    },
+    {
+      "path": "anatomy-transparency-investigation/anatomy-aperture-webgl.png",
+      "sha256": "a278104dcc2c03fdd55b1558cb6c0c6fd7e643d0f268071b128a1b89b0b78565"
+    },
+    {
+      "path": "anatomy-transparency-investigation/anatomy-aperture-webgpu-standard.png",
+      "sha256": "7432ccbc59f020de5f614695308f8f95408c4937355b6f6b67222af26095c507"
+    },
+    {
+      "path": "anatomy-transparency-investigation/anatomy-aperture-webgpu-material-aware.png",
+      "sha256": "304e37f36800fea02d6224f39245ca1c76db91aeb90d6897e8ae97e0732da112"
+    }
+  ],
+  "limitations": [
+    "Chrome 155 on macOS arm64 exposed a native WebGPU adapter, but no independent browser/system GPU diagnostics were collected; hardware acceleration is unconfirmed.",
+    "The real Anatomy audit's separate bounded adapter probe returned timed-out during the captured mount. The actual renderer, execution backend, initialization count, output readiness, and no-fallback assertions passed; timed-out is not treated as adapter success.",
+    "The controlled fixture does not include the actual Anatomy world environment, shadow composition, and full transparent geometry stack; it isolates rather than reproduces that scene.",
+    "No GPU timing or hardware performance claim is made. Frame cadence is not GPU execution time.",
+    "No cross-backend parity threshold was approved by this investigation; reported MAE values are descriptive."
+  ]
+}
