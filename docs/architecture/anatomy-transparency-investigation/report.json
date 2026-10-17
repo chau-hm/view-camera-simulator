@@ -523,6 +523,20 @@
         "webglMeanRgbMae": 0,
         "materialAwareMeanRgbMae": 0
       },
+      "premultipliedAlphaToggleScope": {
+        "testedVariable": "Material.premultipliedAlpha",
+        "rendererConfigurationVariedWithinComparison": false,
+        "rendererContextPremultiplicationStatus": "not-tested",
+        "rendererAlphaFieldMeaning": "renderer alpha flag or WebGL context alpha attribute; not premultiplied-alpha mode",
+        "blendMode": "normal",
+        "pairedComparison": "two-layer natural-order overlap; source material false versus true",
+        "capturedButNotIncludedInToggleMetric": "two-layer near-first overlap with source material flag true",
+        "measuredChannels": "center-pixel RGB",
+        "measuredModes": [
+          "webgl-standard",
+          "webgpu-material-aware"
+        ]
+      },
       "depthWriteToggleDifferenceInWebgl": 41.666666666666664,
       "negativeControls": [
         {
@@ -2014,9 +2028,12 @@
     },
     {
       "id": "H3",
-      "classification": "rejected for tested normal-blending cases",
-      "result": "Toggling premultipliedAlpha caused zero measured center-pixel change in WebGL and material-aware WebGPU in the tested one/two-layer compositions.",
-      "confidence": "Medium; only tested normal-blending center-pixel cases."
+      "classification": "partially tested: material-level flag had no measurable effect in the paired case; renderer/context-level remains untested",
+      "result": "The fixture toggled source Material.premultipliedAlpha on the two-layer natural-order Basic-material overlap while reusing each mode's fixed renderer/context configuration. The measured center-pixel RGB MAE was zero for WebGL and material-aware WebGPU. A near-first flag-true case was captured but is not part of the stored toggle metric. Renderer/context-level premultiplication and browser canvas compositing were not independently varied.",
+      "testedVariable": "Material.premultipliedAlpha",
+      "rendererConfigurationVariedWithinComparison": false,
+      "rendererContextPremultiplicationStatus": "not-tested",
+      "confidence": "Limited to the paired normal-blending center-pixel comparison; does not establish renderer/context or real-scene behavior."
     },
     {
       "id": "H4",

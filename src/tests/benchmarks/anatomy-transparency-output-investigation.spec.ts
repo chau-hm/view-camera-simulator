@@ -693,6 +693,18 @@ test("Anatomy material output investigation isolates alpha, color output, overla
     compositingAndDepthAssertions: {
       observedDrawOrdersMatchedAcrossModes: true,
       candidatePixelsMatchedWebglWithinRgbMae1: true,
+      // H3 varies only source Material.premultipliedAlpha; each mode's renderer/context remains fixed.
+      premultipliedAlphaTestScope: {
+        testedVariable: "Material.premultipliedAlpha",
+        rendererConfigurationVariedWithinComparison: false,
+        rendererContextPremultiplication: "not-tested",
+        rendererAlphaFieldMeaning: "renderer alpha flag or WebGL context alpha attribute; not premultiplied-alpha mode",
+        blendMode: "normal",
+        pairedComparison: "two-layer natural-order overlap; source material false versus true",
+        capturedButNotIncludedInToggleMetric: "two-layer near-first overlap with source material flag true",
+        measuredChannels: "center-pixel RGB",
+        measuredModes: ["webgl-standard", "webgpu-material-aware"],
+      },
       webglPremultipliedAlphaToggleMeanRgbDifference: meanDifference(
         webglRun.compositing[1]!.centerPixelRgba as number[],
         webglRun.compositing[5]!.centerPixelRgba as number[],
@@ -710,7 +722,7 @@ test("Anatomy material output investigation isolates alpha, color output, overla
     hypothesisClassifications: {
       H1: "controlled-clear-canvas-alpha-matches-source-opacity-and-all-renderer-modes",
       H2: "confirmed-controlled-per-fragment-rgb-output-before-transparent-blend",
-      H3: "premultiplied-alpha-toggle-preserves-final-pixels-in-controlled-fixture",
+      H3: "material-premultipliedAlpha-tested-no-measured-effect-renderer-context-premultiplication-untested",
       H4: "depth-write-control-behaves-consistently-across-webgl-and-candidate",
       H5: "observed-sort-and-render-order-match-across-modes",
       H6: "source-material-mutations-are-copied-to-stable-adapted-output",

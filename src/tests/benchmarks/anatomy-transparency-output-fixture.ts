@@ -16,6 +16,7 @@ type FixtureCommand = Readonly<{
   layerCount?: number;
   order?: "natural" | "near-first" | "far-first";
   depthWrite?: boolean;
+  /** Source Material.premultipliedAlpha value for overlap materials; not a renderer/context option. */
   premultipliedAlpha?: boolean;
   stage?: "normal" | "highlighted" | "dimmed" | "ghost" | "aperture" | "rear-back-replacement";
 }>;
@@ -253,7 +254,7 @@ const addPlane = (
 const addOverlap = (
   layerCount: number,
   order: "natural" | "near-first" | "far-first",
-  premultipliedAlpha: boolean,
+  materialPremultipliedAlpha: boolean,
 ): void => {
   const layerDefinitions = [
     { name: "far", color: "#16a34a", opacity: 0.28, z: -0.5 },
@@ -273,7 +274,7 @@ const addOverlap = (
       transparent: true,
       toneMapped: true,
       depthWrite: false,
-      premultipliedAlpha,
+      premultipliedAlpha: materialPremultipliedAlpha,
     });
     const plane = addPlane("overlap-" + layer.name, material, layer.z, renderOrder);
     plane.rotation.set(index === 0 ? 0.12 : index === 1 ? -0.1 : 0.08, index === 1 ? 0.16 : -0.12, 0);
