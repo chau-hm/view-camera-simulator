@@ -242,7 +242,8 @@ PR N.
 ## 9. Validation provenance
 
 - Measurement/source commit: `bccddef` (see full SHA in `report.json`).
-- Native audit: `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1 --grep "candidate captures matched"` — 1 passed; 13 captures per mode; native backend qualified as above.
+- Measurement run: `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1 --grep "candidate captures matched"` — 1 passed; this produced the committed report and selected images, with 13 captures per mode.
+- Full audit file: `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1` — 2 passed, 1 expected skip. The legacy two-way audit is skipped in explicit material-aware mode; the three-way matched experiment and normal-route hook-absence check passed.
 - Full unit suite: 254 files, 2,364 tests passed.
 - Typecheck, lint, CSS structure check, and build are recorded in the PR handoff after final validation.
 - Architecture Rise native strict parity and production-preview WebGL denial are separate regression gates; their final-head results are recorded in the PR handoff.
