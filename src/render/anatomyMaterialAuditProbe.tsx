@@ -732,8 +732,16 @@ export const AnatomyMaterialAuditProbe = ({
           fail("unknown-or-stale-visibility-transaction");
           return;
         }
+        const sourceResourceReferencesAtRestore = transaction.targets.flatMap((record) => isRenderable(record.value)
+          ? [{ id: record.id, geometry: record.value.geometry, material: record.value.material }]
+          : []);
         restoreAnatomyRenderables(transaction.snapshots);
-        const sourceResourceIdentityPreserved = transaction.sourceResourceReferences.every((reference) => {
+        const sourceResourceIdentityPreserved = sourceResourceReferencesAtRestore.every((reference) => {
+          const target = transaction.targets.find((record) => record.id === reference.id)?.value;
+          return target !== undefined && isRenderable(target) && target.geometry === reference.geometry &&
+            target.material === reference.material;
+        });
+        const sourceResourceIdentityMatchesInitialExclusion = transaction.sourceResourceReferences.every((reference) => {
           const target = transaction.targets.find((record) => record.id === reference.id)?.value;
           return target !== undefined && isRenderable(target) && target.geometry === reference.geometry &&
             target.material === reference.material;
@@ -747,6 +755,7 @@ export const AnatomyMaterialAuditProbe = ({
           transactionId: request.transactionId,
           targetCount: transaction.snapshots.length,
           sourceResourceIdentityPreserved,
+          sourceResourceIdentityMatchesInitialExclusion,
           restored: transaction.snapshots.map((snapshot) => ({ id: snapshot.id, visible: snapshot.visible })),
         });
         return;

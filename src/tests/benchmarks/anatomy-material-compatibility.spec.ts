@@ -253,6 +253,7 @@ type RenderableContributionFrame = Readonly<{
   restorationGroundGlassDifference: ReturnType<typeof compareAnatomyImages>;
   rendererIdentityStable: boolean;
   sourceResourceIdentityPreservedByVisibilityMutations: boolean;
+  sourceResourceIdentityMatchesInitialExclusion: boolean;
   sourceMaterialPropertiesAndGeometryContentsStable: boolean;
   geometryIdentityChanges: Readonly<{
     referenceToVisible: readonly Readonly<Record<string, unknown>>[];
@@ -551,6 +552,7 @@ type VisibilityRequestResult = Readonly<{
   transactionId?: string;
   targetCount?: number;
   sourceResourceIdentityPreserved?: boolean;
+  sourceResourceIdentityMatchesInitialExclusion?: boolean;
   targets?: readonly Readonly<Record<string, unknown>>[];
   restored?: readonly Readonly<{ id: string; visible: boolean }>[];
 }>;
@@ -990,6 +992,7 @@ const captureBackend = async (
       expect(sourceResourceIdentityPreservedByVisibilityMutations,
         `${backend}/${outputMode}/${reference.state}/${condition} visibility operations must preserve source geometry/material references`)
         .toBe(true);
+      const sourceResourceIdentityMatchesInitialExclusion = restoreResult.sourceResourceIdentityMatchesInitialExclusion === true;
       const restoredTargetRecords = restoredInventory.renderables.filter((renderable) => targetIds.has(renderable.objectId));
       expect(restoredTargetRecords).toHaveLength(targetIds.size);
       expect(restoredTargetRecords.every((renderable) => renderable.visible)).toBe(true);
@@ -1067,6 +1070,7 @@ const captureBackend = async (
         hiddenObserverAttributes,
         restoredObserverAttributes,
         sourceResourceIdentityPreservedByVisibilityMutations,
+        sourceResourceIdentityMatchesInitialExclusion,
         rendererIdentityStable: observerIdentity(hiddenObserverAttributes) === observerIdentity(reference.observerAttributes) &&
           observerIdentity(restoredObserverAttributes) === observerIdentity(reference.observerAttributes),
         sourceMaterialPropertiesAndGeometryContentsStable: changedRenderableResourceIdentities(visibleInventory, hiddenInventory).length === 0 &&
@@ -1440,6 +1444,7 @@ const summarizeRenderableContributionFrame = (frame: RenderableContributionFrame
     },
     rendererIdentityStable: frame.rendererIdentityStable,
     sourceResourceIdentityPreservedByVisibilityMutations: frame.sourceResourceIdentityPreservedByVisibilityMutations,
+    sourceResourceIdentityMatchesInitialExclusion: frame.sourceResourceIdentityMatchesInitialExclusion,
     sourceMaterialPropertiesAndGeometryContentsStable: frame.sourceMaterialPropertiesAndGeometryContentsStable,
     geometryIdentityChanges: {
       referenceToVisible: summarizeGeometryIdentityChanges(frame.geometryIdentityChanges.referenceToVisible),
