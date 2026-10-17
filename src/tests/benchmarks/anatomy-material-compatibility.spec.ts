@@ -2773,10 +2773,64 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     },
     subjectAndRenderableCaptures: renderableContributionEvidence.conditionsByRun,
     crossBackendComparisons: renderableContributionComparisons,
+    backgroundProbe: renderableContributionEvidence.backgroundProbe,
     exclusionRepeatConsistency: renderableContributionEvidence.exclusionRepeatConsistency,
     maskMethodology: renderableContributionEvidence.maskMethodology,
     rankedTransparentProjectedOverlapCandidates: renderableContributionEvidence.transparentProjectedOverlapCandidates,
     controls: renderableContributionEvidence.restorationAndGroundGlassContracts,
+    hypothesisClassification: [
+      {
+        id: "explicit-transparent-renderables",
+        status: "visible contribution measured; blending mechanism unresolved",
+        evidence: "Two explicit-transparent renderables were excluded in the initial state; the lens-front-glass was also excluded independently.",
+      },
+      {
+        id: "selected-and-dimmed-camera-parts",
+        status: "part-group contribution associated with high-error teaching states; mechanism unresolved",
+        evidence: "Cross-backend differential responses are reported for selected and dimmed groups in the highlighted front-standard, lens/board, aperture, and bellows states.",
+      },
+      {
+        id: "standard-webgpu-canvas-background",
+        status: "large background-associated discrepancy measured; renderer cause unresolved",
+        evidence: "The full-scene and all-renderables-hidden comparisons plus a fixed top-left canvas sample are reported separately.",
+      },
+      {
+        id: "transparent-overlap",
+        status: "not isolated",
+        evidence: "No T5 projected-rectangle overlap candidates were found in the initial state; projected rectangles do not prove visible-pixel overlap.",
+      },
+      {
+        id: "lighting-and-shadows",
+        status: "not independently varied",
+        evidence: "Light and shadow state were held constant and inventoried; no light, shadow, or depth intervention was run.",
+      },
+      {
+        id: "renderer-context-premultiplication",
+        status: "untested",
+        evidence: "PR #261 varied Material.premultipliedAlpha only; renderer/context and browser-compositor configuration were not varied.",
+      },
+      {
+        id: "complete-real-scene-root-cause",
+        status: "not isolated",
+        evidence: "Visibility differentials include revealed background, occlusion, depth, blending, and shadow effects.",
+      },
+    ],
+    resourceLifecycleObservation: {
+      generationAndRendererStableDuringEveryVisibilityTransaction: true,
+      objectAndMaterialPropertiesAndGeometryContentsUnchangedByVisibilityMutation: true,
+      exactVisibilityRestoration: true,
+      crossSnapshotGeometryUuidChurn: {
+        affectedRenderableNames: [
+          "lens-aperture-blade-0-surface",
+          "lens-aperture-blade-1-surface",
+          "lens-aperture-blade-2-surface",
+          "lens-aperture-blade-3-surface",
+          "lens-aperture-blade-4-surface",
+          "lens-aperture-blade-5-surface",
+        ],
+        interpretation: "Six blade geometry UUIDs changed between some inventory snapshots while vertex/index content and material properties remained equal. The visibility transaction itself preserved the live object/material/geometry references; cross-snapshot UUID churn is recorded separately and is not attributed to the visibility controller.",
+      },
+    },
     groundGlassResourcePreservation: Object.fromEntries(
       Object.entries(groundGlassOwnership).map(([mode, evidence]) => {
         const captures = evidence.borrowedResourcesByCapture;
@@ -2796,10 +2850,12 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
         }];
       }),
     ),
-    nextInvestigation: "Use the highest-ranked projected candidates to choose bounded, visually verified pairwise transparent-overlap controls. Keep source assignments, shared ownership, and output pipeline fixed while isolating one contribution at a time.",
+    nextInvestigation: "Investigate the selected/dimmed material output response in highlighted Anatomy states and the Standard WebGPU canvas background as separate mechanisms. Keep source assignments and output pipeline fixed while making one bounded intervention at a time. Add pairwise transparent-overlap tests only if a later camera view or state yields a verified candidate.",
     limitations: [
       "Projected rectangles are candidate localization only and do not prove exact visible-silhouette overlap.",
       "Visibility exclusion measures renderable-set contribution under one state; it does not independently vary renderer/context premultiplication or browser compositing.",
+      "No lighting, shadow, depth, or pairwise-overlap intervention was performed; those mechanisms remain unresolved.",
+      "The complement of an observed visibility differential is an unaffected/background candidate and may contain other pixels unaffected by the selected renderable set.",
       "Hardware acceleration is unconfirmed.",
       "Ground Glass remains its independent WebGL RTT.",
       "No production renderer or material behavior changed.",
