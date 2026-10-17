@@ -3,7 +3,7 @@ export const ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT =
 export const ANATOMY_GPU_BLEND_INTERMEDIATE_RESULT_EVENT =
   "vcs:observer-verification:anatomy-gpu-blend-intermediate-capture-result";
 
-export type AnatomyGpuCaptureMethod = "draw-boundary" | "single-renderable-replay";
+export type AnatomyGpuCaptureMethod = "draw-boundary" | "single-renderable-replay" | "native-draw-boundary";
 
 export class AnatomyGpuCaptureCancelledError extends Error {
   constructor(reason = "Anatomy GPU capture was cancelled.") {
