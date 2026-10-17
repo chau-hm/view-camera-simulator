@@ -2114,6 +2114,8 @@ export const SceneRenderer = ({
                 rendererGeneration={rendererMountGeneration}
                 onFailure={onWebGpuOutputPolicyFailure}
                 onCapabilitiesChange={onObserverCapabilitiesChange}
+                anatomyPresentation={cameraPresentation?.anatomy ?? null}
+                allowAnatomyOutputIntervention={anatomyMaterialAuditEnabled}
                 allowFailureInjection={import.meta.env.DEV &&
                   typeof window !== "undefined" &&
                   new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1"}

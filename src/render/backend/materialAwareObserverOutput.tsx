@@ -10,6 +10,7 @@ import {
 import {
   MaterialAwareMaterialTracker,
   isMaterialAwareRenderable,
+  type MaterialOutputOwner,
   type UnsupportedMaterialAssignment,
 } from "./materialAwareMaterialTracker";
 import {
@@ -23,8 +24,20 @@ import {
 } from "./architectureRiseMaterialOutputAdapter";
 import {
   inspectAnatomyMaterialOutputReadiness,
+  createAnatomyMaterialOutputVariantOwner,
   resolveAnatomyMaterialOutputOwner,
 } from "./anatomyMaterialOutputAdapter";
+import {
+  ANATOMY_OUTPUT_INTERVENTION_EVENT,
+  ANATOMY_OUTPUT_INTERVENTION_RESULT_EVENT,
+  resolveAnatomyOutputIntervention,
+  type AnatomyOutputInterventionMode,
+  type AnatomyOutputInterventionRenderable,
+  type AnatomyOutputInterventionSelection,
+} from "./anatomyMaterialOutputIntervention";
+import { classifyAnatomyMaterialRole } from "../anatomyMaterialRoles";
+import { isAnatomyRendererGenerationCurrent } from "../anatomyRenderableContribution";
+import type { ConceptualCameraAnatomyPresentation } from "../ConceptualViewCamera";
 import { getObserverMaterialSignatures } from "./observerMaterialSignatures";
 import {
   advanceMaterialAwareReadinessTiming,
@@ -182,6 +195,8 @@ export type MaterialAwareOutputPolicyControllerProps = Readonly<{
     generation: number,
     capabilities: ObserverVisualPipelineCapabilities | null,
   ) => void;
+  anatomyPresentation?: ConceptualCameraAnatomyPresentation | null;
+  allowAnatomyOutputIntervention?: boolean;
 }>;
 
 type MaterialAwareOutputSceneAdapter = Readonly<{
@@ -279,12 +294,64 @@ const clearDiagnosticAttributes = (container: HTMLElement | null): void => {
   container.removeAttribute("data-observer-output-policy-readiness-reason");
   container.removeAttribute("data-observer-output-policy-readiness-evidence");
   container.removeAttribute("data-observer-output-policy-scene-adapter");
+  container.removeAttribute("data-observer-anatomy-output-intervention-hook");
+  container.removeAttribute("data-observer-anatomy-output-intervention-mode");
+  container.removeAttribute("data-observer-anatomy-output-intervention-requested-mode");
+  container.removeAttribute("data-observer-anatomy-output-intervention-scope");
+  container.removeAttribute("data-observer-anatomy-output-intervention-target-count");
+  container.removeAttribute("data-observer-anatomy-output-intervention-output-transform");
+  container.removeAttribute("data-observer-anatomy-output-intervention-error");
+  container.removeAttribute("data-observer-anatomy-output-intervention-generation");
+  container.removeAttribute("data-observer-anatomy-output-intervention-renderable-ids");
 };
 
 type MaterialAwareOutputControllerProps = MaterialAwareOutputPolicyControllerProps & Readonly<{
   adapter: MaterialAwareOutputSceneAdapter;
   allowFailureInjection?: boolean;
 }>;
+
+type ActiveAnatomyOutputIntervention = Readonly<{
+  requestId: string;
+  generation: number;
+  mode: AnatomyOutputInterventionMode;
+  selection: AnatomyOutputInterventionSelection;
+}>;
+
+const isAnatomyOutputInterventionMode = (value: unknown): value is AnatomyOutputInterventionMode =>
+  value === "B0" || value === "B1" || value === "B2" || value === "B3" || value === "B4";
+
+const isAnatomyOutputInterventionSelection = (
+  value: unknown,
+): value is AnatomyOutputInterventionSelection => {
+  if (!value || typeof value !== "object") return false;
+  const selection = value as Record<string, unknown>;
+  if (selection.kind === "presentation-group") return true;
+  return selection.kind === "renderable-ids" && Array.isArray(selection.renderableIds) &&
+    selection.renderableIds.every((id) => typeof id === "string");
+};
+
+const collectAnatomyOutputInterventionRenderables = (
+  scene: THREE.Scene,
+): AnatomyOutputInterventionRenderable[] => {
+  const records: AnatomyOutputInterventionRenderable[] = [];
+  scene.traverse((object) => {
+    if (!isMaterialAwareRenderable(object)) return;
+    const classification = classifyAnatomyMaterialRole(object, scene);
+    let visible = true;
+    let ancestor: THREE.Object3D | null = object;
+    while (ancestor && ancestor !== scene) {
+      visible &&= ancestor.visible;
+      ancestor = ancestor.parent;
+    }
+    records.push({
+      id: object.uuid,
+      role: classification.role,
+      cameraPart: classification.cameraPart,
+      visible,
+    });
+  });
+  return records;
+};
 
 /** Shared renderer-generation lifecycle and material reconciliation shell. */
 const MaterialAwareOutputController = ({
@@ -293,8 +360,14 @@ const MaterialAwareOutputController = ({
   onCapabilitiesChange,
   adapter,
   allowFailureInjection = false,
+  anatomyPresentation = null,
+  allowAnatomyOutputIntervention = false,
 }: MaterialAwareOutputControllerProps) => {
   const { gl, scene } = useThree();
+  const anatomyPresentationRef = useRef(anatomyPresentation);
+  anatomyPresentationRef.current = anatomyPresentation;
+  const anatomyOutputInterventionRef = useRef<ActiveAnatomyOutputIntervention | null>(null);
+  const scopedAnatomyOwnersRef = useRef(new Map<string, MaterialOutputOwner>());
   const backgroundNode = useMemo(() => workingToColorSpace(
     vec4(color(new THREE.Color("#f8fafc")), 1),
     THREE.SRGBColorSpace,
@@ -343,6 +416,83 @@ const MaterialAwareOutputController = ({
     window.addEventListener(READ_PERFORMANCE_EVENT, readPerformance);
     return () => window.removeEventListener(READ_PERFORMANCE_EVENT, readPerformance);
   }, [gl, performanceRef]);
+
+  useLayoutEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined" ||
+        !allowAnatomyOutputIntervention || adapter.sceneId !== "view-camera-anatomy") return;
+    const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
+    if (!container) return;
+    const scopedAnatomyOwners = scopedAnatomyOwnersRef.current;
+
+    const handleRequest = (event: Event) => {
+      const request = (event as CustomEvent<unknown>).detail as Record<string, unknown> | null;
+      const requestId = typeof request?.requestId === "string" ? request.requestId : "";
+      const respond = (result: Readonly<Record<string, unknown>>) => {
+        container.dispatchEvent(new CustomEvent(ANATOMY_OUTPUT_INTERVENTION_RESULT_EVENT, {
+          detail: { requestId, generation: rendererGeneration, ...result },
+        }));
+      };
+      if (!request || requestId.length === 0 || !isAnatomyOutputInterventionMode(request.mode)) {
+        respond({ ok: false, reason: "invalid-intervention-request" });
+        return;
+      }
+      if (!isAnatomyRendererGenerationCurrent(Number(request.generation), rendererGeneration)) {
+        respond({ ok: false, reason: "stale-renderer-generation" });
+        return;
+      }
+      const selection = request.selection === undefined
+        ? { kind: "presentation-group" } as const
+        : request.selection;
+      if (!isAnatomyOutputInterventionSelection(selection)) {
+        respond({ ok: false, reason: "invalid-selection" });
+        return;
+      }
+      const resolution = resolveAnatomyOutputIntervention(
+        request.mode,
+        anatomyPresentationRef.current,
+        collectAnatomyOutputInterventionRenderables(scene),
+        selection,
+      );
+      if (!resolution.ok) {
+        respond({ ok: false, reason: resolution.reason });
+        return;
+      }
+      anatomyOutputInterventionRef.current = {
+        requestId,
+        generation: rendererGeneration,
+        mode: request.mode,
+        selection,
+      };
+      container.setAttribute("data-observer-anatomy-output-intervention-requested-mode", request.mode);
+      respond({
+        ok: true,
+        mode: resolution.mode,
+        targetGroup: resolution.targetGroup,
+        outputTransform: resolution.outputTransform,
+        renderableIds: resolution.renderableIds,
+        semanticParts: resolution.semanticParts,
+        selection: selection.kind,
+      });
+    };
+
+    container.addEventListener(ANATOMY_OUTPUT_INTERVENTION_EVENT, handleRequest);
+    container.setAttribute("data-observer-anatomy-output-intervention-hook", "ready");
+    container.setAttribute("data-observer-anatomy-output-intervention-mode", "B0");
+    return () => {
+      container.removeEventListener(ANATOMY_OUTPUT_INTERVENTION_EVENT, handleRequest);
+      anatomyOutputInterventionRef.current = null;
+      scopedAnatomyOwners.clear();
+      container.removeAttribute("data-observer-anatomy-output-intervention-hook");
+      container.removeAttribute("data-observer-anatomy-output-intervention-mode");
+      container.removeAttribute("data-observer-anatomy-output-intervention-requested-mode");
+      container.removeAttribute("data-observer-anatomy-output-intervention-scope");
+      container.removeAttribute("data-observer-anatomy-output-intervention-target-count");
+      container.removeAttribute("data-observer-anatomy-output-intervention-output-transform");
+      container.removeAttribute("data-observer-anatomy-output-intervention-error");
+      container.removeAttribute("data-observer-anatomy-output-intervention-generation");
+      container.removeAttribute("data-observer-anatomy-output-intervention-renderable-ids");
+    };
+  }, [adapter.sceneId, allowAnatomyOutputIntervention, gl, rendererGeneration, scene]);
 
   const reportFailure = useCallback((container: HTMLElement | null, reason: string) => {
     if (failureCalledRef.current) return;
@@ -440,6 +590,7 @@ const MaterialAwareOutputController = ({
     );
     injectedReadinessFailureRef.current = null;
     lastStatusRef.current = "pending";
+    const scopedAnatomyOwners = scopedAnatomyOwnersRef.current;
     container?.setAttribute("data-observer-output-policy-scene-adapter", adapter.sceneId);
     container?.setAttribute("data-observer-output-policy-readiness", "pending");
     container?.removeAttribute("data-observer-output-policy-readiness-reason");
@@ -448,6 +599,8 @@ const MaterialAwareOutputController = ({
 
     return () => {
       materialTracker.dispose();
+      anatomyOutputInterventionRef.current = null;
+      scopedAnatomyOwners.clear();
       readinessTimingRef.current = null;
       injectedReadinessFailureRef.current = null;
       const original = originalSettingsRef.current;
@@ -490,6 +643,55 @@ const MaterialAwareOutputController = ({
       const unsupported: UnsupportedMaterialAssignment[] = [];
       let materialInventoryDirty = lastInventoryRef.current === null;
       let meshAssignmentCount = 0;
+      const activeIntervention = adapter.sceneId === "view-camera-anatomy" &&
+        allowAnatomyOutputIntervention
+        ? anatomyOutputInterventionRef.current
+        : null;
+      const interventionResolution = activeIntervention &&
+        isAnatomyRendererGenerationCurrent(activeIntervention.generation, rendererGeneration)
+        ? resolveAnatomyOutputIntervention(
+            activeIntervention.mode,
+            anatomyPresentationRef.current,
+            collectAnatomyOutputInterventionRenderables(scene),
+            activeIntervention.selection,
+          )
+        : null;
+      const interventionTargetIds = interventionResolution?.ok
+        ? new Set(interventionResolution.renderableIds)
+        : new Set<string>();
+      const interventionMode = activeIntervention && interventionResolution?.ok
+        ? activeIntervention.mode
+        : "B0";
+      if (allowAnatomyOutputIntervention && adapter.sceneId === "view-camera-anatomy") {
+        container?.setAttribute("data-observer-anatomy-output-intervention-mode", interventionMode);
+        container?.setAttribute("data-observer-anatomy-output-intervention-generation", String(rendererGeneration));
+        if (interventionResolution?.ok) {
+          container?.setAttribute(
+            "data-observer-anatomy-output-intervention-scope",
+            activeIntervention?.selection.kind ?? "presentation-group",
+          );
+          container?.setAttribute(
+            "data-observer-anatomy-output-intervention-target-count",
+            String(interventionResolution.renderableIds.length),
+          );
+          container?.setAttribute(
+            "data-observer-anatomy-output-intervention-output-transform",
+            interventionResolution.outputTransform ?? "material-aware",
+          );
+          container?.setAttribute(
+            "data-observer-anatomy-output-intervention-renderable-ids",
+            JSON.stringify(interventionResolution.renderableIds),
+          );
+          container?.removeAttribute("data-observer-anatomy-output-intervention-error");
+        } else if (interventionResolution) {
+          container?.setAttribute("data-observer-anatomy-output-intervention-error", interventionResolution.reason);
+          container?.setAttribute("data-observer-anatomy-output-intervention-target-count", "0");
+          container?.setAttribute("data-observer-anatomy-output-intervention-renderable-ids", "[]");
+        } else {
+          container?.setAttribute("data-observer-anatomy-output-intervention-target-count", "0");
+          container?.setAttribute("data-observer-anatomy-output-intervention-renderable-ids", "[]");
+        }
+      }
 
       // R3F attaches its scene background after layout effects. Reassert the
       // explicitly display-encoded background before this frame is rendered.
@@ -519,9 +721,26 @@ const MaterialAwareOutputController = ({
         if (!isMaterialAwareRenderable(object)) return;
         const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
         meshAssignmentCount += sourceMaterials.length;
+        const baseOwner = adapter.resolveOwner(object, materialTracker.controllerOwner);
+        let outputOwner = baseOwner;
+        if (activeIntervention && interventionResolution?.ok &&
+            interventionResolution.outputTransform && interventionTargetIds.has(object.uuid)) {
+          const selectionScope = activeIntervention.selection.kind === "presentation-group"
+            ? `presentation-${interventionResolution.targetGroup}`
+            : `renderables-${interventionResolution.renderableIds.join(",")}`;
+          const variantKey = `${activeIntervention.mode}/${selectionScope}`;
+          outputOwner = scopedAnatomyOwnersRef.current.get(variantKey) ??
+            createAnatomyMaterialOutputVariantOwner(
+              baseOwner,
+              {},
+              interventionResolution.outputTransform,
+              activeIntervention.mode,
+            );
+          scopedAnatomyOwnersRef.current.set(variantKey, outputOwner);
+        }
         const reconciliation = materialTracker.reconcileRenderable(
           object,
-          adapter.resolveOwner(object, materialTracker.controllerOwner),
+          outputOwner,
           currentFrame,
           getSignatures,
           measureAdaptation,

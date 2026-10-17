@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import {
   adaptObserverMaterialForOutput,
+  type MaterialAwareOutputInterventionId,
+  type MaterialAwareOutputTransform,
   type MaterialAwareNode,
 } from "./materialAwareNodeMaterials";
 import {
@@ -22,6 +24,10 @@ export type MaterialOutputOwnerKind = "observer-controller" | "registered-subjec
 export type MaterialOutputOwner = Readonly<{
   identity: object;
   kind: MaterialOutputOwnerKind;
+  /** Optional output-graph variant; only scoped Anatomy audit owners set this. */
+  outputTransform?: MaterialAwareOutputTransform;
+  /** Experimental mode identity recorded on adapted copies for audit evidence. */
+  outputInterventionId?: MaterialAwareOutputInterventionId;
   retain: (output: MaterialAwareNode) => void;
   release: (output: MaterialAwareNode) => void;
 }>;
@@ -165,7 +171,11 @@ export class MaterialAwareMaterialTracker {
           dirty = true;
         }
       } else {
-        const output = measureAdaptation(() => adaptObserverMaterialForOutput(source));
+        const output = measureAdaptation(() => adaptObserverMaterialForOutput(
+          source,
+          owner.outputTransform,
+          owner.outputInterventionId,
+        ));
         if (!output) {
           unsupported.push({
             objectName: renderable.name || renderable.type,

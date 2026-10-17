@@ -651,10 +651,14 @@ const renderableResourceRecords = (inventory: InventorySnapshot) => inventory.re
   geometryContentFingerprint: (renderable.geometry as { contentFingerprint?: string }).contentFingerprint ?? null,
   materials: renderable.materialAssignments.map((assignment) => ({
     slot: assignment.slot,
-    source: assignment.source,
-    output: assignment.output,
+    source: stableMaterialProperties(assignment.source),
+    output: stableMaterialProperties(assignment.output),
   })),
 })).sort((left, right) => left.objectId.localeCompare(right.objectId));
+
+const stableMaterialProperties = (properties: object): Readonly<Record<string, unknown>> => Object.fromEntries(
+  Object.entries(properties).filter(([key]) => key !== "materialVersion" && key !== "outputGraphBuildCount"),
+);
 
 const changedGeometryInstanceIds = (expected: InventorySnapshot, actual: InventorySnapshot) => {
   const expectedById = new Map(expected.renderables.map((renderable) => [renderable.objectId, renderable]));
@@ -2187,6 +2191,7 @@ test("Anatomy visibility controls stay absent without the explicit audit query",
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
   await expect(observer).not.toHaveAttribute("data-observer-test-renderable-contribution-hook");
+  await expect(observer).not.toHaveAttribute("data-observer-anatomy-output-intervention-hook");
 
   const respondedToDiagnosticEvent = await observer.evaluate((element, resultEventName) => new Promise<boolean>((resolve) => {
     let responded = false;
@@ -2205,6 +2210,25 @@ test("Anatomy visibility controls stay absent without the explicit audit query",
     }));
   }), visibilityResultEvent);
   expect(respondedToDiagnosticEvent, "A normal Anatomy route must not install the visibility-exclusion listener").toBe(false);
+
+  const respondedToOutputIntervention = await observer.evaluate((element, resultEventName) => new Promise<boolean>((resolve) => {
+    let responded = false;
+    const onResult = () => { responded = true; };
+    element.addEventListener(resultEventName, onResult);
+    element.dispatchEvent(new CustomEvent("vcs:observer-verification:anatomy-output-intervention", {
+      detail: {
+        requestId: "normal-route-must-not-handle-output-intervention",
+        generation: Number(element.getAttribute("data-observer-renderer-generation")),
+        mode: "B1",
+      },
+    }));
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      element.removeEventListener(resultEventName, onResult);
+      resolve(responded);
+    }));
+  }), "vcs:observer-verification:anatomy-output-intervention-result");
+  expect(respondedToOutputIntervention,
+    "A normal Anatomy route must not install the output-intervention listener").toBe(false);
 });
 
 test("View Camera Anatomy runtime material audit records matched WebGL and native WebGPU states", async ({ browser }, testInfo) => {

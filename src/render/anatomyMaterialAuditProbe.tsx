@@ -119,6 +119,9 @@ const getMaterialProperties = (material: THREE.Material) => {
     roughness?: number;
     metalness?: number;
     map?: THREE.Texture | null;
+    outputTransform?: string;
+    outputInterventionId?: string;
+    outputGraphBuildCount?: number;
   };
   const side = material.side === THREE.DoubleSide
     ? "double"
@@ -143,6 +146,10 @@ const getMaterialProperties = (material: THREE.Material) => {
     alphaTest: material.alphaTest,
     roughness: materialWithSceneProperties.roughness ?? null,
     metalness: materialWithSceneProperties.metalness ?? null,
+    outputTransform: materialWithSceneProperties.outputTransform ?? null,
+    outputInterventionId: materialWithSceneProperties.outputInterventionId ?? null,
+    outputGraphBuildCount: materialWithSceneProperties.outputGraphBuildCount ?? null,
+    materialVersion: material.version,
     textureSlots: textureSlots(material),
   };
 };
