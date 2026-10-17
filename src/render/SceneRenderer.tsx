@@ -1433,7 +1433,10 @@ const SceneContent = ({
       architectureRiseVerificationHarness={architectureRiseVerificationHarness}
     />
     {anatomyMaterialAuditEnabled && scene.id === "view-camera-anatomy"
-      ? <AnatomyMaterialAuditProbe generation={rendererMountGeneration} />
+      ? <AnatomyMaterialAuditProbe
+          generation={rendererMountGeneration}
+          anatomyPresentation={cameraPresentation?.anatomy ?? null}
+        />
       : null}
     {import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
       ? <ArchitectureRiseVerificationProbe />

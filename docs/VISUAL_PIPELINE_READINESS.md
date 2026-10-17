@@ -1936,3 +1936,53 @@ overlap contribution study before changing the shared output core. The normal
 Observer remains WebGL; material-aware Anatomy remains explicit development
 opt-in; production remains WebGL-only. See the [full investigation](architecture/VIEW_CAMERA_ANATOMY_TRANSPARENCY_INVESTIGATION.md)
 and [machine-readable evidence](architecture/anatomy-transparency-investigation/report.json).
+
+### PR M-INV2 — real Anatomy renderable contribution and transparency isolation
+
+The follow-up used the actual Anatomy Observer across the same 13 teaching
+states in WebGL, standard native WebGPU, and material-aware native WebGPU. On
+Chrome 155.0.8059.84 / macOS Darwin 27.0 arm64 / Three.js r186, both WebGPU
+modes mounted `webgpu-renderer / webgpu` with one initialization, no
+initialization failure, and no application fallback. Material-aware output was
+active and ready. All modes completed 13 captures and 16 bounded visibility
+transactions with zero page errors; the independent Ground Glass WebGL2 RTT
+remained contentful, and visibility restoration matched the captured frame.
+Hardware acceleration remains unconfirmed.
+
+The initial scene contained 47 visible renderables, including two explicit
+transparent surfaces. Their combined visibility differential changed 1,012
+pixels in WebGL, 979 in standard WebGPU, and 1,015 in material-aware WebGPU;
+the measured whole-frame RGB MAE contributions were 0.1394, 0.0995, and
+0.1395. No initial projected-rectangle overlap candidates met the T5 rule, so
+no pairwise transparency interaction mask was generated. These results confirm
+visible contributions, not an alpha-blending defect.
+
+The Front Standard contribution result was corrected in review-fix round 1.
+The earlier 26-target inverse selection included the structurally highlighted
+lens and lens board, so its 6.082-to-0.018 result is superseded mixed-selection
+evidence. The mounted presentation resolves 17 highlighted renderables and 13
+dimmed renderables. Hiding the corrected dimmed group changes the matched
+WebGL-versus-candidate whole-frame MAE from 6.082 to 0.023 (DResponse 6.066);
+hiding the highlighted group changes it to 7.289 (DResponse 1.240). The other
+dimmed-group results remain 9.046 to 0.013 (Lens and Board), 11.029 to 0.011
+(Smaller Aperture), and 9.222 to 1.054 (Bellows Highlighted). These
+visibility differentials associate differences with the tested renderable
+sets but do not isolate material output, transparency, depth, or shadow
+causality. The corrected values and superseded history are in the
+[machine-readable report](architecture/anatomy-renderable-contribution-investigation/report.json).
+
+A fixed 32×32 top-left probe was unchanged within each mode after all audited
+renderables were hidden. Its mean RGB was `[244.50, 246.90, 249.11]` for
+WebGL and material-aware WebGPU, versus `[221.89, 222.32, 223.54]` for standard
+WebGPU; WebGL-versus-standard MAE in the patch was 24.2542. `SceneRenderer`
+attaches `#f8fafc` as the scene background, while the material-aware controller
+uses an sRGB-converted background node for that same color. Renderer background
+output, canvas alpha, and browser composition were not independently varied;
+the source paths are not a root-cause proof.
+
+**Decision: I2 — PARTIAL ROOT CAUSE.** Keep Anatomy at **M2 — OPT-IN
+IMPLEMENTATION INCOMPLETE**. The next bounded work should isolate dimmed-part
+output behavior and standard-WebGPU background output separately. Do not
+promote the candidate or change the shared output implementation from these
+visibility differentials alone. See the [full M-INV2 report](architecture/VIEW_CAMERA_ANATOMY_RENDERABLE_CONTRIBUTION_INVESTIGATION.md)
+and [machine-readable evidence with representative captures](architecture/anatomy-renderable-contribution-investigation/report.json).
