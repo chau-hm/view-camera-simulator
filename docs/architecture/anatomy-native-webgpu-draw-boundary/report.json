@@ -1,0 +1,1392 @@
+{
+  "schemaVersion": 1,
+  "audit": "anatomy-native-webgpu-draw-boundary",
+  "decision": "N2",
+  "preservedResearchDecisions": {
+    "anatomy": "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+    "overall": "G2 — PARTIAL STAGE ATTRIBUTION"
+  },
+  "provenance": {
+    "baseCommit": "eeda498658df26ab6ceb74d4dff49033774de9bb",
+    "measurementCommit": "8369f770985e48b92ebbac2d15d52de98ddc2999",
+    "threeRevision": "186",
+    "browserVersion": "155.0.8059.84",
+    "operatingSystem": {
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "viewport": [
+      1440,
+      1000
+    ],
+    "devicePixelRatio": 1,
+    "rendererFamily": "webgpu-renderer",
+    "executionBackend": "webgpu",
+    "applicationFallback": "none",
+    "outputPolicy": "material-aware",
+    "hardwareAcceleration": "unconfirmed by this experiment"
+  },
+  "scope": {
+    "teachingState": "Front Standard highlighted; Bellows dimmed",
+    "semanticPart": "bellows-folded-surface",
+    "selectedRenderable": {
+      "id": "a9787f9b-8e2a-4599-80fd-d0543064e461",
+      "name": "bellows-folded-surface"
+    },
+    "sourceMaterialId": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+    "geometry": {
+      "id": "9e1ccb8d-02f8-476a-9a34-b04c8dc619e0",
+      "type": "BufferGeometry",
+      "indexCount": 240,
+      "attributes": {
+        "position": {
+          "count": 44,
+          "itemSize": 3,
+          "arrayType": "Float32Array"
+        },
+        "normal": {
+          "count": 44,
+          "itemSize": 3,
+          "arrayType": "Float32Array"
+        }
+      }
+    },
+    "selectedFixedFramebufferSamples": [
+      323305,
+      329457,
+      427115,
+      447675,
+      403471,
+      482757,
+      339759,
+      462077,
+      323279
+    ],
+    "negativeControlFramebufferSample": 323279
+  },
+  "attachment": {
+    "width": 1028,
+    "height": 820,
+    "format": "bgra8unorm",
+    "sampleCount": 4,
+    "representation": "raw native canvas 8-bit normalized color bytes, reported in RGBA channel order; no browser canvas composition",
+    "premultiplication": {
+      "canvasAlphaMode": "premultiplied",
+      "interpretation": "raw attachment RGB and alpha bytes; browser canvas composition is not included"
+    },
+    "outputColorSpace": "srgb-linear",
+    "toneMapping": 0,
+    "sampledRegion": {
+      "x": 487,
+      "y": 314,
+      "width": 139,
+      "height": 156
+    },
+    "sampleCountInSelectedSet": 9
+  },
+  "feasibilityByMeasurement": {
+    "actualNativeDestinationAndPostDrawSamples": "F2",
+    "actualNativeDrawIdentityAndPassMetadata": "F1",
+    "nativeGpuPipelineBlendDescriptor": "F3",
+    "nativeSourceFragmentRgbAndAlpha": {
+      "classification": "F0",
+      "rgb": null,
+      "alpha": null,
+      "reason": "The WebGPU API does not expose source shader outputs from the compiled render pipeline."
+    },
+    "rawAttachmentToCssScreenshotComparison": {
+      "classification": "F0",
+      "result": {
+        "screenshotWidth": 514,
+        "screenshotHeight": 411,
+        "comparedPixelCount": 211254,
+        "meanAbsoluteRgbDifference": 1.2691562447732745,
+        "centerSampleMeanAbsoluteRgbDifference": 1.5133488596665625,
+        "maxAbsoluteRgbDifference": 235,
+        "changedPixelCount": 5409,
+        "baselineRepeatNoiseMae": 0,
+        "toleranceMae": 0,
+        "qualified": false,
+        "mapping": "bilinear RGB resampling from raw GPU attachment pixel centers to CSS screenshot pixel centers",
+        "browserComposition": "the comparison includes browser canvas resampling and screenshot composition; it is reported separately from raw draw-boundary values"
+      },
+      "reason": "The raw GPU drawing buffer and CSS-sized browser screenshot do not meet the measured repeat-noise threshold under the recorded resampling; this cross-representation comparison cannot establish unchanged final output."
+    },
+    "webglDrawBoundaryBaseline": "F1"
+  },
+  "renderPass": {
+    "instrumentation": "Guarded r186 WebGPUBackend.draw and finishRender wrappers; renderer.copyFramebufferToTexture splits the live pass in its existing command encoder.",
+    "observations": [
+      {
+        "drawOrder": 0,
+        "call": "native-drawIndexed",
+        "commandCount": 1,
+        "drawParameters": {
+          "vertexCount": 240,
+          "firstVertex": 0,
+          "instanceCount": 1,
+          "firstInstance": 0
+        },
+        "renderPassId": 1,
+        "passId": null,
+        "materialId": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+        "sourceMaterialId": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+        "material": {
+          "id": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+          "type": "MeshStandardNodeMaterial",
+          "side": 1,
+          "transparent": true,
+          "opacity": 0.16,
+          "premultipliedAlpha": false,
+          "blending": 1,
+          "gpuBlendDescriptor": {
+            "color": {
+              "srcFactor": "src-alpha",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            },
+            "alpha": {
+              "srcFactor": "one",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            }
+          },
+          "depthTest": true,
+          "depthWrite": false,
+          "depthFunction": 3,
+          "gpuDepthCompare": "less-equal",
+          "stencilWrite": false,
+          "stencilRef": 0,
+          "outputTransform": "material-aware",
+          "outputInterventionId": "B0"
+        },
+        "sourceMaterial": {
+          "id": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+          "type": "MeshStandardMaterial",
+          "side": 2,
+          "transparent": true,
+          "opacity": 0.16,
+          "premultipliedAlpha": false,
+          "blending": 1,
+          "gpuBlendDescriptor": {
+            "color": {
+              "srcFactor": "src-alpha",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            },
+            "alpha": {
+              "srcFactor": "one",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            }
+          },
+          "depthTest": true,
+          "depthWrite": false,
+          "depthFunction": 3,
+          "gpuDepthCompare": "less-equal",
+          "stencilWrite": false,
+          "stencilRef": 0,
+          "outputTransform": null,
+          "outputInterventionId": null
+        },
+        "pipeline": {
+          "id": null,
+          "colorFormat": "bgra8unorm",
+          "colorSpace": "srgb-linear"
+        },
+        "state": {
+          "passStateBeforeSplit": {
+            "colorAttachments": [
+              {
+                "loadOp": "clear",
+                "storeOp": "store",
+                "hasResolveTarget": true,
+                "clearValue": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 0
+                }
+              }
+            ],
+            "depthStencilAttachment": {
+              "depthLoadOp": "clear",
+              "depthStoreOp": "store",
+              "stencilLoadOp": null,
+              "stencilStoreOp": null
+            }
+          },
+          "drawPassState": {
+            "colorAttachments": [
+              {
+                "loadOp": "load",
+                "storeOp": "store",
+                "hasResolveTarget": true,
+                "clearValue": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 0
+                }
+              }
+            ],
+            "depthStencilAttachment": {
+              "depthLoadOp": "load",
+              "depthStoreOp": "store",
+              "stencilLoadOp": null,
+              "stencilStoreOp": null
+            }
+          },
+          "colorAttachment": {
+            "format": "bgra8unorm",
+            "sampleCount": 4,
+            "resolvedCanvasCopy": true,
+            "depthEnabled": true,
+            "stencilEnabled": false,
+            "depthStencilFormat": "depth24plus"
+          },
+          "viewport": {
+            "x": 0,
+            "y": 0,
+            "z": 1028,
+            "w": 820,
+            "minDepth": 0,
+            "maxDepth": 1
+          },
+          "scissor": {
+            "x": 0,
+            "y": 0,
+            "z": 600,
+            "w": 300
+          },
+          "scissorTest": false
+        }
+      },
+      {
+        "drawOrder": 1,
+        "call": "native-drawIndexed",
+        "commandCount": 1,
+        "drawParameters": {
+          "vertexCount": 240,
+          "firstVertex": 0,
+          "instanceCount": 1,
+          "firstInstance": 0
+        },
+        "renderPassId": 2,
+        "passId": null,
+        "materialId": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+        "sourceMaterialId": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+        "material": {
+          "id": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+          "type": "MeshStandardNodeMaterial",
+          "side": 0,
+          "transparent": true,
+          "opacity": 0.16,
+          "premultipliedAlpha": false,
+          "blending": 1,
+          "gpuBlendDescriptor": {
+            "color": {
+              "srcFactor": "src-alpha",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            },
+            "alpha": {
+              "srcFactor": "one",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            }
+          },
+          "depthTest": true,
+          "depthWrite": false,
+          "depthFunction": 3,
+          "gpuDepthCompare": "less-equal",
+          "stencilWrite": false,
+          "stencilRef": 0,
+          "outputTransform": "material-aware",
+          "outputInterventionId": "B0"
+        },
+        "sourceMaterial": {
+          "id": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+          "type": "MeshStandardMaterial",
+          "side": 2,
+          "transparent": true,
+          "opacity": 0.16,
+          "premultipliedAlpha": false,
+          "blending": 1,
+          "gpuBlendDescriptor": {
+            "color": {
+              "srcFactor": "src-alpha",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            },
+            "alpha": {
+              "srcFactor": "one",
+              "dstFactor": "one-minus-src-alpha",
+              "operation": "add"
+            }
+          },
+          "depthTest": true,
+          "depthWrite": false,
+          "depthFunction": 3,
+          "gpuDepthCompare": "less-equal",
+          "stencilWrite": false,
+          "stencilRef": 0,
+          "outputTransform": null,
+          "outputInterventionId": null
+        },
+        "pipeline": {
+          "id": null,
+          "colorFormat": "bgra8unorm",
+          "colorSpace": "srgb-linear"
+        },
+        "state": {
+          "passStateBeforeSplit": {
+            "colorAttachments": [
+              {
+                "loadOp": "load",
+                "storeOp": "store",
+                "hasResolveTarget": true,
+                "clearValue": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 0
+                }
+              }
+            ],
+            "depthStencilAttachment": {
+              "depthLoadOp": "load",
+              "depthStoreOp": "store",
+              "stencilLoadOp": null,
+              "stencilStoreOp": null
+            }
+          },
+          "drawPassState": {
+            "colorAttachments": [
+              {
+                "loadOp": "load",
+                "storeOp": "store",
+                "hasResolveTarget": true,
+                "clearValue": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 0
+                }
+              }
+            ],
+            "depthStencilAttachment": {
+              "depthLoadOp": "load",
+              "depthStoreOp": "store",
+              "stencilLoadOp": null,
+              "stencilStoreOp": null
+            }
+          },
+          "colorAttachment": {
+            "format": "bgra8unorm",
+            "sampleCount": 4,
+            "resolvedCanvasCopy": true,
+            "depthEnabled": true,
+            "stencilEnabled": false,
+            "depthStencilFormat": "depth24plus"
+          },
+          "viewport": {
+            "x": 0,
+            "y": 0,
+            "z": 1028,
+            "w": 820,
+            "minDepth": 0,
+            "maxDepth": 1
+          },
+          "scissor": {
+            "x": 0,
+            "y": 0,
+            "z": 600,
+            "w": 300
+          },
+          "scissorTest": false
+        }
+      }
+    ],
+    "actualNativeBackendDrawInvocationCount": 2,
+    "eachBackendInvocationContainsOneNativeDrawCommand": true,
+    "attachments": [
+      {
+        "passStateBeforeSplit": {
+          "colorAttachments": [
+            {
+              "loadOp": "clear",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "clear",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "drawPassState": {
+          "colorAttachments": [
+            {
+              "loadOp": "load",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "load",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "colorAttachment": {
+          "format": "bgra8unorm",
+          "sampleCount": 4,
+          "resolvedCanvasCopy": true,
+          "depthEnabled": true,
+          "stencilEnabled": false,
+          "depthStencilFormat": "depth24plus"
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "z": 1028,
+          "w": 820,
+          "minDepth": 0,
+          "maxDepth": 1
+        },
+        "scissor": {
+          "x": 0,
+          "y": 0,
+          "z": 600,
+          "w": 300
+        },
+        "scissorTest": false
+      },
+      {
+        "passStateBeforeSplit": {
+          "colorAttachments": [
+            {
+              "loadOp": "load",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "load",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "drawPassState": {
+          "colorAttachments": [
+            {
+              "loadOp": "load",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "load",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "colorAttachment": {
+          "format": "bgra8unorm",
+          "sampleCount": 4,
+          "resolvedCanvasCopy": true,
+          "depthEnabled": true,
+          "stencilEnabled": false,
+          "depthStencilFormat": "depth24plus"
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "z": 1028,
+          "w": 820,
+          "minDepth": 0,
+          "maxDepth": 1
+        },
+        "scissor": {
+          "x": 0,
+          "y": 0,
+          "z": 600,
+          "w": 300
+        },
+        "scissorTest": false
+      }
+    ],
+    "finalFramePassCountAdded": 1,
+    "addedPassCount": 5,
+    "passEquivalence": {
+      "descriptorLoadOpsResumedAsLoad": true,
+      "finalFrameParity": {
+        "screenshotWidth": 514,
+        "screenshotHeight": 411,
+        "comparedPixelCount": 211254,
+        "meanAbsoluteRgbDifference": 1.2691562447732745,
+        "centerSampleMeanAbsoluteRgbDifference": 1.5133488596665625,
+        "maxAbsoluteRgbDifference": 235,
+        "changedPixelCount": 5409,
+        "baselineRepeatNoiseMae": 0,
+        "toleranceMae": 0,
+        "qualified": false,
+        "mapping": "bilinear RGB resampling from raw GPU attachment pixel centers to CSS screenshot pixel centers",
+        "browserComposition": "the comparison includes browser canvas resampling and screenshot composition; it is reported separately from raw draw-boundary values"
+      },
+      "parityQualified": false
+    }
+  },
+  "nativeDestinationObservations": [
+    {
+      "call": "native-drawIndexed",
+      "drawOrder": 0,
+      "renderObjectId": 45,
+      "renderPassId": 1,
+      "passId": null,
+      "commandCount": 1,
+      "drawParameters": {
+        "vertexCount": 240,
+        "firstVertex": 0,
+        "instanceCount": 1,
+        "firstInstance": 0
+      },
+      "state": {
+        "passStateBeforeSplit": {
+          "colorAttachments": [
+            {
+              "loadOp": "clear",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "clear",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "drawPassState": {
+          "colorAttachments": [
+            {
+              "loadOp": "load",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "load",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "colorAttachment": {
+          "format": "bgra8unorm",
+          "sampleCount": 4,
+          "resolvedCanvasCopy": true,
+          "depthEnabled": true,
+          "stencilEnabled": false,
+          "depthStencilFormat": "depth24plus"
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "z": 1028,
+          "w": 820,
+          "minDepth": 0,
+          "maxDepth": 1
+        },
+        "scissor": {
+          "x": 0,
+          "y": 0,
+          "z": 600,
+          "w": 300
+        },
+        "scissorTest": false
+      },
+      "pipeline": {
+        "id": null,
+        "colorFormat": "bgra8unorm",
+        "colorSpace": "srgb-linear"
+      },
+      "materialId": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+      "sourceMaterialId": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+      "material": {
+        "id": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+        "type": "MeshStandardNodeMaterial",
+        "side": 1,
+        "transparent": true,
+        "opacity": 0.16,
+        "premultipliedAlpha": false,
+        "blending": 1,
+        "gpuBlendDescriptor": {
+          "color": {
+            "srcFactor": "src-alpha",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          },
+          "alpha": {
+            "srcFactor": "one",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          }
+        },
+        "depthTest": true,
+        "depthWrite": false,
+        "depthFunction": 3,
+        "gpuDepthCompare": "less-equal",
+        "stencilWrite": false,
+        "stencilRef": 0,
+        "outputTransform": "material-aware",
+        "outputInterventionId": "B0"
+      },
+      "sourceMaterial": {
+        "id": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+        "type": "MeshStandardMaterial",
+        "side": 2,
+        "transparent": true,
+        "opacity": 0.16,
+        "premultipliedAlpha": false,
+        "blending": 1,
+        "gpuBlendDescriptor": {
+          "color": {
+            "srcFactor": "src-alpha",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          },
+          "alpha": {
+            "srcFactor": "one",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          }
+        },
+        "depthTest": true,
+        "depthWrite": false,
+        "depthFunction": 3,
+        "gpuDepthCompare": "less-equal",
+        "stencilWrite": false,
+        "stencilRef": 0,
+        "outputTransform": null,
+        "outputInterventionId": null
+      },
+      "destinationAndPostDrawSamples": [
+        {
+          "index": 323305,
+          "x": 513,
+          "y": 314,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            187,
+            189,
+            192,
+            255
+          ]
+        },
+        {
+          "index": 329457,
+          "x": 497,
+          "y": 320,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            180,
+            182,
+            184,
+            255
+          ]
+        },
+        {
+          "index": 427115,
+          "x": 495,
+          "y": 415,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            157,
+            159,
+            162,
+            255
+          ]
+        },
+        {
+          "index": 447675,
+          "x": 495,
+          "y": 435,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            158,
+            160,
+            163,
+            255
+          ]
+        },
+        {
+          "index": 403471,
+          "x": 495,
+          "y": 392,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            157,
+            159,
+            161,
+            255
+          ]
+        },
+        {
+          "index": 482757,
+          "x": 625,
+          "y": 469,
+          "destination": [
+            195,
+            199,
+            203,
+            255
+          ],
+          "postDraw": [
+            195,
+            199,
+            203,
+            255
+          ]
+        },
+        {
+          "index": 339759,
+          "x": 519,
+          "y": 330,
+          "destination": [
+            189,
+            192,
+            196,
+            255
+          ],
+          "postDraw": [
+            189,
+            192,
+            196,
+            255
+          ]
+        },
+        {
+          "index": 462077,
+          "x": 505,
+          "y": 449,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            159,
+            161,
+            164,
+            255
+          ]
+        },
+        {
+          "index": 323279,
+          "x": 487,
+          "y": 314,
+          "destination": [
+            248,
+            250,
+            252,
+            255
+          ],
+          "postDraw": [
+            248,
+            250,
+            252,
+            255
+          ]
+        }
+      ],
+      "response": {
+        "sampleCount": 9,
+        "changedSampleCount": 5,
+        "meanAbsoluteRgbDifference": 13.851851851851851,
+        "meanAbsoluteAlphaDifference": 0,
+        "maxAbsoluteChannelDifference": 31
+      }
+    },
+    {
+      "call": "native-drawIndexed",
+      "drawOrder": 1,
+      "renderObjectId": 46,
+      "renderPassId": 2,
+      "passId": null,
+      "commandCount": 1,
+      "drawParameters": {
+        "vertexCount": 240,
+        "firstVertex": 0,
+        "instanceCount": 1,
+        "firstInstance": 0
+      },
+      "state": {
+        "passStateBeforeSplit": {
+          "colorAttachments": [
+            {
+              "loadOp": "load",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "load",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "drawPassState": {
+          "colorAttachments": [
+            {
+              "loadOp": "load",
+              "storeOp": "store",
+              "hasResolveTarget": true,
+              "clearValue": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 0
+              }
+            }
+          ],
+          "depthStencilAttachment": {
+            "depthLoadOp": "load",
+            "depthStoreOp": "store",
+            "stencilLoadOp": null,
+            "stencilStoreOp": null
+          }
+        },
+        "colorAttachment": {
+          "format": "bgra8unorm",
+          "sampleCount": 4,
+          "resolvedCanvasCopy": true,
+          "depthEnabled": true,
+          "stencilEnabled": false,
+          "depthStencilFormat": "depth24plus"
+        },
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "z": 1028,
+          "w": 820,
+          "minDepth": 0,
+          "maxDepth": 1
+        },
+        "scissor": {
+          "x": 0,
+          "y": 0,
+          "z": 600,
+          "w": 300
+        },
+        "scissorTest": false
+      },
+      "pipeline": {
+        "id": null,
+        "colorFormat": "bgra8unorm",
+        "colorSpace": "srgb-linear"
+      },
+      "materialId": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+      "sourceMaterialId": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+      "material": {
+        "id": "90b47dce-c6e5-4bbb-815f-ba24c1ace64c",
+        "type": "MeshStandardNodeMaterial",
+        "side": 0,
+        "transparent": true,
+        "opacity": 0.16,
+        "premultipliedAlpha": false,
+        "blending": 1,
+        "gpuBlendDescriptor": {
+          "color": {
+            "srcFactor": "src-alpha",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          },
+          "alpha": {
+            "srcFactor": "one",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          }
+        },
+        "depthTest": true,
+        "depthWrite": false,
+        "depthFunction": 3,
+        "gpuDepthCompare": "less-equal",
+        "stencilWrite": false,
+        "stencilRef": 0,
+        "outputTransform": "material-aware",
+        "outputInterventionId": "B0"
+      },
+      "sourceMaterial": {
+        "id": "ef6e616c-2183-40d2-8f42-c4cd7d474d09",
+        "type": "MeshStandardMaterial",
+        "side": 2,
+        "transparent": true,
+        "opacity": 0.16,
+        "premultipliedAlpha": false,
+        "blending": 1,
+        "gpuBlendDescriptor": {
+          "color": {
+            "srcFactor": "src-alpha",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          },
+          "alpha": {
+            "srcFactor": "one",
+            "dstFactor": "one-minus-src-alpha",
+            "operation": "add"
+          }
+        },
+        "depthTest": true,
+        "depthWrite": false,
+        "depthFunction": 3,
+        "gpuDepthCompare": "less-equal",
+        "stencilWrite": false,
+        "stencilRef": 0,
+        "outputTransform": null,
+        "outputInterventionId": null
+      },
+      "destinationAndPostDrawSamples": [
+        {
+          "index": 323305,
+          "x": 513,
+          "y": 314,
+          "destination": [
+            187,
+            189,
+            192,
+            255
+          ],
+          "postDraw": [
+            180,
+            182,
+            185,
+            255
+          ]
+        },
+        {
+          "index": 329457,
+          "x": 497,
+          "y": 320,
+          "destination": [
+            180,
+            182,
+            184,
+            255
+          ],
+          "postDraw": [
+            174,
+            176,
+            179,
+            255
+          ]
+        },
+        {
+          "index": 427115,
+          "x": 495,
+          "y": 415,
+          "destination": [
+            157,
+            159,
+            162,
+            255
+          ],
+          "postDraw": [
+            157,
+            159,
+            162,
+            255
+          ]
+        },
+        {
+          "index": 447675,
+          "x": 495,
+          "y": 435,
+          "destination": [
+            158,
+            160,
+            163,
+            255
+          ],
+          "postDraw": [
+            158,
+            160,
+            163,
+            255
+          ]
+        },
+        {
+          "index": 403471,
+          "x": 495,
+          "y": 392,
+          "destination": [
+            157,
+            159,
+            161,
+            255
+          ],
+          "postDraw": [
+            157,
+            159,
+            161,
+            255
+          ]
+        },
+        {
+          "index": 482757,
+          "x": 625,
+          "y": 469,
+          "destination": [
+            195,
+            199,
+            203,
+            255
+          ],
+          "postDraw": [
+            195,
+            199,
+            203,
+            255
+          ]
+        },
+        {
+          "index": 339759,
+          "x": 519,
+          "y": 330,
+          "destination": [
+            189,
+            192,
+            196,
+            255
+          ],
+          "postDraw": [
+            163,
+            166,
+            170,
+            255
+          ]
+        },
+        {
+          "index": 462077,
+          "x": 505,
+          "y": 449,
+          "destination": [
+            159,
+            161,
+            164,
+            255
+          ],
+          "postDraw": [
+            147,
+            148,
+            151,
+            255
+          ]
+        },
+        {
+          "index": 323279,
+          "x": 487,
+          "y": 314,
+          "destination": [
+            248,
+            250,
+            252,
+            255
+          ],
+          "postDraw": [
+            248,
+            250,
+            252,
+            255
+          ]
+        }
+      ],
+      "response": {
+        "sampleCount": 9,
+        "changedSampleCount": 4,
+        "meanAbsoluteRgbDifference": 5.703703703703703,
+        "meanAbsoluteAlphaDifference": 0,
+        "maxAbsoluteChannelDifference": 26
+      }
+    }
+  ],
+  "webglComparison": {
+    "classification": "F1 raw 8-bit default-canvas code values; BGRA was normalized to RGBA; no browser-composited output is used for the draw-boundary pair.",
+    "webglDrawCount": 2,
+    "nativeDrawCount": 2,
+    "crossBackendDrawPairCount": 4,
+    "drawPairingPolicy": "All-pairs numerical candidates are retained. No native/WebGL draw-order equivalence is asserted.",
+    "stageComparisons": [
+      {
+        "nativeDrawOrder": 0,
+        "webglCaptureOrder": 0,
+        "pairing": "all-pairs numerical candidate; no native/WebGL draw-order equivalence is asserted",
+        "sampleCount": 9,
+        "meanAbsoluteRgbCodeValueDifference": 150.55555555555554,
+        "meanAbsoluteAlphaCodeValueDifference": 0
+      },
+      {
+        "nativeDrawOrder": 0,
+        "webglCaptureOrder": 1,
+        "pairing": "all-pairs numerical candidate; no native/WebGL draw-order equivalence is asserted",
+        "sampleCount": 9,
+        "meanAbsoluteRgbCodeValueDifference": 150.53703703703704,
+        "meanAbsoluteAlphaCodeValueDifference": 0
+      },
+      {
+        "nativeDrawOrder": 1,
+        "webglCaptureOrder": 0,
+        "pairing": "all-pairs numerical candidate; no native/WebGL draw-order equivalence is asserted",
+        "sampleCount": 9,
+        "meanAbsoluteRgbCodeValueDifference": 140.77777777777777,
+        "meanAbsoluteAlphaCodeValueDifference": 0
+      },
+      {
+        "nativeDrawOrder": 1,
+        "webglCaptureOrder": 1,
+        "pairing": "all-pairs numerical candidate; no native/WebGL draw-order equivalence is asserted",
+        "sampleCount": 9,
+        "meanAbsoluteRgbCodeValueDifference": 140.75925925925927,
+        "meanAbsoluteAlphaCodeValueDifference": 0
+      }
+    ]
+  },
+  "finalFrameParity": {
+    "repeatNoiseMae": 0,
+    "screenshotWidth": 514,
+    "screenshotHeight": 411,
+    "comparedPixelCount": 211254,
+    "meanAbsoluteRgbDifference": 1.2691562447732745,
+    "centerSampleMeanAbsoluteRgbDifference": 1.5133488596665625,
+    "maxAbsoluteRgbDifference": 235,
+    "changedPixelCount": 5409,
+    "baselineRepeatNoiseMae": 0,
+    "toleranceMae": 0,
+    "qualified": false,
+    "mapping": "bilinear RGB resampling from raw GPU attachment pixel centers to CSS screenshot pixel centers",
+    "browserComposition": "the comparison includes browser canvas resampling and screenshot composition; it is reported separately from raw draw-boundary values",
+    "nextUninstrumentedCanvasRestorationMae": 0,
+    "groundGlassRestorationMae": 0,
+    "groundGlassRepeatNoiseMae": 0.0011112790097339226
+  },
+  "negativeControls": {
+    "unchangedCanvasSampleAfterSelectedDraws": true,
+    "unchangedControlIndex": 323279,
+    "sourceMaterialIdentityMatched": true,
+    "sourceMaterialPropertiesPreserved": true,
+    "sourceGeometryRestored": true,
+    "resourceOwnership": "The capture owns FramebufferTexture snapshots and readback buffers. Each buffer is destroyed in finally after mapAsync settles or rejects. Scene materials, geometry, textures and Ground Glass targets are borrowed and untouched.",
+    "resourceCleanup": {
+      "temporaryFramebufferTextureCount": 5,
+      "temporaryFramebufferTextureDisposeCount": 5,
+      "temporaryFramebufferTextureDisposeEventsPerResource": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "temporaryFramebufferTextureDisposalFailures": 0,
+      "readbackBufferCount": 5,
+      "readbackBufferDestroyCount": 5,
+      "readbackBufferDisposalFailures": 0,
+      "noBorrowedResourceDisposed": true
+    }
+  },
+  "captureLifecycle": {
+    "singleActiveCapturePolicy": "reject capture-already-active",
+    "cancellationEvidence": "The pending native readback SPA-retirement regression is a separate deterministic browser test in the same focused suite.",
+    "pendingReadbackRegressions": {
+      "deterministicControl": "A test-only GPUBuffer.mapAsync wrapper starts the native map operation immediately, then holds the application-visible promise behind an event gate until the test resolves or rejects it. Navigation uses SPA history/popstate; no arbitrary sleep is used.",
+      "calibration": {
+        "status": "passed",
+        "rendererRetiredWhileReadbackPending": true,
+        "mapAsyncCallsForRetiredCapture": 1,
+        "additionalFixtureReadbackAfterResolve": 0,
+        "staleOldContainerRequestPublished": false,
+        "overlappingRequest": "capture-already-active",
+        "cleanup": {
+          "temporaryRenderTargetDisposeCount": 2,
+          "geometryDisposeCount": 1,
+          "materialDisposeCount": 8
+        }
+      },
+      "singleRenderableProxy": {
+        "status": "passed",
+        "rendererRetiredWhileReadbackPending": true,
+        "authoredSceneStateRestoredBeforeAwait": true,
+        "sourceMaterialPropertiesPreserved": true,
+        "geometryIdentityPreserved": true,
+        "cleanup": {
+          "temporaryRenderTargetDisposeCount": 1,
+          "temporaryMaterialDisposeCount": 1,
+          "noBorrowedResourceDisposed": true
+        }
+      },
+      "nativeDrawBoundary": {
+        "status": "passed",
+        "rendererRetiredWhileReadbacksPending": true,
+        "applicationVisibleReadbackRejectionAfterRetirement": true,
+        "rejectionInjection": "The test rejects the held application promise after the underlying native map operation settles; this does not simulate device loss.",
+        "oldCaptureResultPublished": false,
+        "overlappingRequest": "capture-already-active",
+        "cleanup": {
+          "temporaryFramebufferTextureDisposeCount": 5,
+          "readbackBufferDestroyCount": 5,
+          "disposalFailures": 0,
+          "noBorrowedResourceDisposed": true
+        }
+      },
+      "pageErrors": []
+    }
+  },
+  "interpretation": "The pass split yielded actual native draw identities and raw destination/post-draw bytes, but semantic equivalence did not qualify. The raw GPU attachment was compared with a lower-resolution CSS screenshot and did not meet repeat noise; that cross-representation delta is not attributed to the pass split. Keep pixel evidence at F2 and use the narrow raw-to-raw baseline comparison as the next step.",
+  "remainingUnknowns": [
+    "The WebGPU API does not expose compiled pipeline descriptors after creation; blend and depth mappings are recorded from the pinned r186 pipeline utility and active render-object material.",
+    "Native fragment RGB/alpha before fixed-function blending remains unavailable.",
+    "A qualified native boundary observation does not by itself establish the dominant rendering mechanism or authorize correction."
+  ],
+  "validation": {
+    "focusedNativeMInv4MInv5BrowserSuite": {
+      "status": "passed",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "nativeRequired": true,
+      "renderer": "webgpu-renderer/webgpu",
+      "applicationFallback": "none"
+    },
+    "pendingReadbackSpaRetirementTests": {
+      "status": "passed",
+      "passed": 3,
+      "failed": 0
+    },
+    "nativeDrawBoundaryUnitTests": {
+      "status": "passed",
+      "passed": 5,
+      "failed": 0
+    },
+    "repository": {
+      "npmTest": {
+        "status": "passed",
+        "files": 258,
+        "tests": 2388
+      },
+      "typecheck": "passed",
+      "lint": "passed",
+      "checkCss": "passed",
+      "build": {
+        "status": "passed",
+        "modulesTransformed": 700
+      },
+      "diffCheck": "passed"
+    },
+    "regressions": {
+      "nativeAnatomy13StateAudit": {
+        "passed": 2,
+        "skipped": 1,
+        "skippedCountedAsPass": false,
+        "allConfiguredCandidatesCaptured": true
+      },
+      "pr263FourStateOutputMechanism": {
+        "status": "passed",
+        "passed": 1
+      },
+      "architectureRiseStrictParity": {
+        "status": "passed",
+        "passed": 1,
+        "criteria": 81,
+        "failures": 0
+      },
+      "productionPreviewAndIsolation": {
+        "status": "passed",
+        "passed": 2,
+        "defaultRenderer": "WebGL",
+        "explicitWebGpuRequest": "refused",
+        "anatomyMaterialAwareCandidate": "denied",
+        "developmentCaptureAssets": "absent per loaded-asset assertions"
+      }
+    }
+  },
+  "importantLimitations": [
+    "Raw native attachment samples are F2 because the final-parity control compares a 1028x820 raw attachment to a 514x411 CSS screenshot and did not qualify.",
+    "No claim is made that the measured cross-representation delta was caused by pass segmentation.",
+    "Native fragment source RGB/alpha remain unavailable (F0); pipeline blend mapping is inferred (F3).",
+    "The single skipped test in the 13-state audit is not represented as passed."
+  ]
+}
