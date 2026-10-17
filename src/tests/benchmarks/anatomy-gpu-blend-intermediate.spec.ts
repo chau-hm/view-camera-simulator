@@ -202,6 +202,86 @@ const requestProbe = async (page: Page, request: ProbeRequest): Promise<ProbeRes
   });
 };
 
+type CaptureLifecycleState = {
+  pendingCount: number;
+  pendingMethods: string[];
+  results: ProbeResult[];
+  settlements: Readonly<Record<string, unknown>>[];
+  pendingPromise: Promise<void>;
+  settledPromise: Promise<Readonly<Record<string, unknown>>>;
+  release: () => void;
+  resolvePending: () => void;
+  resolveSettled: (value: Readonly<Record<string, unknown>>) => void;
+};
+
+type CaptureLifecycleWindow = Window & {
+  __anatomyGpuCaptureLifecycle?: CaptureLifecycleState;
+  __anatomyGpuOldProbeContainer?: HTMLElement;
+};
+
+const holdCaptureAtNativeReadback = async (
+  page: Page,
+  requestId: string,
+  request: ProbeRequest,
+): Promise<void> => {
+  await page.locator(canvasSelector).evaluate((element, payload) => {
+    const browserWindow = window as CaptureLifecycleWindow;
+    let release!: () => void;
+    const gate = new Promise<void>((resolveGate) => { release = resolveGate; });
+    let resolvePending!: () => void;
+    let resolveSettled!: (value: Readonly<Record<string, unknown>>) => void;
+    const state: CaptureLifecycleState = {
+      pendingCount: 0,
+      pendingMethods: [],
+      results: [],
+      settlements: [],
+      pendingPromise: new Promise<void>((resolvePromise) => { resolvePending = resolvePromise; }),
+      settledPromise: new Promise<Readonly<Record<string, unknown>>>((resolvePromise) => { resolveSettled = resolvePromise; }),
+      release,
+      resolvePending: () => resolvePending(),
+      resolveSettled: (value) => resolveSettled(value),
+    };
+    browserWindow.__anatomyGpuCaptureLifecycle = state;
+    browserWindow.__anatomyGpuOldProbeContainer = element as HTMLElement;
+    element.addEventListener("vcs:observer-verification:anatomy-gpu-blend-intermediate-readback-pending", (event) => {
+      const detail = (event as CustomEvent<{
+        requestId: string;
+        method: string;
+        defer: (wait: Promise<unknown>) => void;
+      }>).detail;
+      if (detail?.requestId !== payload.requestId) return;
+      state.pendingCount += 1;
+      state.pendingMethods.push(detail.method);
+      detail.defer(gate);
+      state.resolvePending();
+    });
+    element.addEventListener(payload.resultEvent, (event) => {
+      const detail = (event as CustomEvent<ProbeResult>).detail;
+      if (detail?.requestId === payload.requestId || detail?.requestId === payload.overlapRequestId) {
+        state.results.push(detail);
+      }
+    });
+    element.addEventListener("vcs:observer-verification:anatomy-gpu-blend-intermediate-capture-settled", (event) => {
+      const detail = (event as CustomEvent<Readonly<Record<string, unknown>> & { requestId: string }>).detail;
+      if (detail?.requestId !== payload.requestId) return;
+      state.settlements.push(detail);
+      state.resolveSettled(detail);
+    });
+    element.dispatchEvent(new CustomEvent(payload.captureEvent, {
+      detail: { ...payload.request, requestId: payload.requestId },
+    }));
+  }, {
+    requestId,
+    request,
+    overlapRequestId: `${requestId}-overlap`,
+    captureEvent: ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT,
+    resultEvent: ANATOMY_GPU_BLEND_INTERMEDIATE_RESULT_EVENT,
+  });
+  await expect.poll(async () => page.evaluate(() =>
+    (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.pendingCount ?? 0,
+  ), { timeout: 30_000 }).toBe(1);
+};
+
 const openBackend = async (browser: Browser, backend: BackendName): Promise<BackendPage> => {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
@@ -241,6 +321,172 @@ const openBackend = async (browser: Browser, backend: BackendName): Promise<Back
   expect(initial.viewport.devicePixelRatio).toBe(1);
   return { context, page, initial };
 };
+
+test("native calibration stops after SPA retirement while its readback boundary is held pending", async ({ browser }) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
+  test.setTimeout(240_000);
+  const backend = await openBackend(browser, "native-webgpu-material-aware");
+  const pageErrors: string[] = [];
+  backend.page.on("pageerror", (error) => { pageErrors.push(error.message); });
+  const canvas = backend.page.locator(canvasSelector);
+  const generation = Number(await canvas.getAttribute("data-observer-renderer-generation"));
+  const requestId = `anatomy-cancel-calibration-${++requestCounter}`;
+  const overlapRequestId = `${requestId}-overlap`;
+
+  try {
+    await holdCaptureAtNativeReadback(backend.page, requestId, {
+      generation,
+      method: "calibration",
+    });
+    expect(await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.pendingMethods,
+    )).toEqual(["calibration"]);
+
+    await canvas.evaluate((element, payload) => {
+      element.dispatchEvent(new CustomEvent(payload.eventName, {
+        detail: { requestId: payload.requestId, generation: payload.generation, method: "calibration" },
+      }));
+    }, {
+      eventName: ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT,
+      requestId: overlapRequestId,
+      generation,
+    });
+    const overlap = await backend.page.evaluate((id) =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.results.find((result) => result.requestId === id) ?? null,
+    overlapRequestId);
+    expect(overlap).toMatchObject({ status: "rejected", reason: "capture-already-active" });
+
+    await backend.page.evaluate(() => {
+      window.history.pushState(window.history.state, "", "/simulator/free/architecture-rise?observerRenderer=webgpu");
+      window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+    });
+    await expect(backend.page).toHaveURL(/\/simulator\/free\/architecture-rise/);
+    const nextCanvas = backend.page.locator(canvasSelector);
+    await expect(nextCanvas).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+    await expect.poll(async () => Number(await nextCanvas.getAttribute("data-observer-renderer-generation")))
+      .toBeGreaterThan(generation);
+    await expect(nextCanvas).not.toHaveAttribute("data-observer-anatomy-gpu-blend-probe", "ready");
+
+    const beforeStaleRequestCount = await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.results.length ?? 0,
+    );
+    await backend.page.evaluate((payload) => {
+      (window as CaptureLifecycleWindow).__anatomyGpuOldProbeContainer?.dispatchEvent(new CustomEvent(payload.eventName, {
+        detail: { requestId: "retired-generation-request", generation: payload.generation, method: "calibration" },
+      }));
+    }, { eventName: ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT, generation });
+    expect(await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.results.length ?? 0,
+    )).toBe(beforeStaleRequestCount);
+
+    await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
+    );
+    const settlement = await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settledPromise,
+    );
+    expect(settlement).toMatchObject({
+      requestId,
+      method: "calibration",
+      generation,
+      status: "cancelled",
+      resourceCleanup: { targetDisposeCount: 2, geometryDisposeCount: 1, materialDisposeCount: 8 },
+    });
+    const finalState = await backend.page.evaluate(() => {
+      const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
+      return { pendingCount: state?.pendingCount, results: state?.results };
+    });
+    expect(finalState.pendingCount).toBe(1);
+    expect(finalState.results).toHaveLength(1);
+    expect(finalState.results?.[0]).toMatchObject({ requestId: overlapRequestId, reason: "capture-already-active" });
+    expect(pageErrors).toEqual([]);
+  } finally {
+    await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
+    ).catch(() => undefined);
+    await backend.context.close();
+  }
+});
+
+test("native proxy restores authored scene state before a pending readback and suppresses the retired result", async ({ browser }) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
+  test.setTimeout(240_000);
+  const backend = await openBackend(browser, "native-webgpu-material-aware");
+  const pageErrors: string[] = [];
+  backend.page.on("pageerror", (error) => { pageErrors.push(error.message); });
+
+  try {
+    await advanceToFrontStandard(backend.page);
+    const baseline = await readAuditSnapshot(backend.page, `proxy-cancel-before-${++requestCounter}`);
+    const bellows = baseline.renderables.find((renderable) =>
+      renderable.visible && renderable.name === "bellows-folded-surface" && renderable.cameraPart === "bellows",
+    );
+    expect(bellows).toBeTruthy();
+    if (!bellows) throw new Error("The Front Standard bellows renderable was not found");
+    const generation = baseline.generation;
+    const sourceMaterialId = bellows.materialAssignments[0]?.source.id;
+    const requestId = `anatomy-cancel-proxy-${++requestCounter}`;
+
+    await holdCaptureAtNativeReadback(backend.page, requestId, {
+      generation,
+      method: "single-renderable-replay",
+      renderableId: bellows.objectId,
+      ...(typeof sourceMaterialId === "string" ? { sourceMaterialId } : {}),
+      maskPixelIndices: [0],
+      samplePixelIndices: [0],
+    });
+
+    const duringPendingReadback = await readAuditSnapshot(backend.page, `proxy-cancel-restored-${++requestCounter}`);
+    expect(canonicalSceneInputs(duringPendingReadback)).toEqual(canonicalSceneInputs(baseline));
+    const restoredBellows = duringPendingReadback.renderables.find((renderable) => renderable.objectId === bellows.objectId);
+    expect(restoredBellows?.geometry.id).toBe(bellows.geometry.id);
+    expect(restoredBellows?.materialAssignments.map(({ source }) => source.id))
+      .toEqual(bellows.materialAssignments.map(({ source }) => source.id));
+
+    await backend.page.evaluate(() => {
+      window.history.pushState(window.history.state, "", "/simulator/free/architecture-rise?observerRenderer=webgpu");
+      window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+    });
+    await expect(backend.page).toHaveURL(/\/simulator\/free\/architecture-rise/);
+    const nextCanvas = backend.page.locator(canvasSelector);
+    await expect(nextCanvas).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+    await expect.poll(async () => Number(await nextCanvas.getAttribute("data-observer-renderer-generation")))
+      .toBeGreaterThan(generation);
+    await expect(nextCanvas).not.toHaveAttribute("data-observer-anatomy-gpu-blend-probe", "ready");
+
+    await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
+    );
+    const settlement = await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settledPromise,
+    );
+    expect(settlement).toMatchObject({
+      requestId,
+      method: "single-renderable-replay",
+      generation,
+      status: "cancelled",
+      resourceCleanup: {
+        temporaryTargetDisposeCount: 1,
+        temporaryMaterialDisposeCount: 1,
+        originalRenderableMaterialAndGeometryRestored: true,
+        sourcePropertiesPreserved: true,
+        noBorrowedResourceDisposed: true,
+      },
+    });
+    const finalState = await backend.page.evaluate(() => {
+      const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
+      return { pendingCount: state?.pendingCount, results: state?.results };
+    });
+    expect(finalState.pendingCount).toBe(1);
+    expect(finalState.results).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    await backend.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
+    ).catch(() => undefined);
+    await backend.context.close();
+  }
+});
 
 const stabilizeFrame = async (page: Page): Promise<void> => page.evaluate(() => new Promise<void>((resolveFrame) => {
   requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame())));

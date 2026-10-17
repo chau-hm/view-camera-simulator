@@ -4,6 +4,20 @@ export const ANATOMY_GPU_BLEND_INTERMEDIATE_RESULT_EVENT =
   "vcs:observer-verification:anatomy-gpu-blend-intermediate-capture-result";
 
 export type AnatomyGpuCaptureMethod = "draw-boundary" | "single-renderable-replay";
+
+export class AnatomyGpuCaptureCancelledError extends Error {
+  constructor(reason = "Anatomy GPU capture was cancelled.") {
+    super(reason);
+    this.name = "AbortError";
+  }
+}
+
+export const throwIfAnatomyGpuCaptureAborted = (signal?: AbortSignal): void => {
+  if (!signal?.aborted) return;
+  const reason = signal.reason;
+  if (reason instanceof Error) throw reason;
+  throw new AnatomyGpuCaptureCancelledError(typeof reason === "string" ? reason : undefined);
+};
 export type AnatomyGpuCaptureFeasibility = "F1" | "F2" | "F0";
 export type AnatomyGpuColorRepresentation =
   | "canvas-rgba8-srgb-shader-output"

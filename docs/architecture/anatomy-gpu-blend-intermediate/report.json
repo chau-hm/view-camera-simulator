@@ -1478,6 +1478,63 @@
     },
     "rendererGenerationScoped": true
   },
+  "asyncCaptureLifecycleReviewFix": {
+    "scope": "development-only capture lifecycle; M-INV4 measurement configuration and results were not refreshed",
+    "owner": "unique per-mount identity with an AbortController and one active-operation slot per probe",
+    "invalidatedBy": [
+      "probe unmount",
+      "renderer-generation retirement",
+      "WebGL context loss",
+      "WebGPU device loss"
+    ],
+    "overlapPolicy": {
+      "status": "rejected",
+      "reason": "capture-already-active",
+      "appliesTo": ["calibration", "single-renderable replay", "direct draw-boundary capture"]
+    },
+    "submittedReadbackPolicy": "The underlying readback is not cancelled or abandoned. The capture awaits resolution or rejection before releasing owned resources; invalidation prevents subsequent GPU submissions and result publication.",
+    "pendingReadbackQualification": "The browser test submits a native readback and holds the application's await boundary with a deterministic development-only gate through SPA retirement. This proves the handler remains suspended and cleanup/publication gates work; it does not claim the underlying WebGPU mapAsync promise stays unresolved while the gate is held.",
+    "tests": {
+      "nativeCalibrationPendingDuringSpaNavigation": {
+        "status": "passed",
+        "pendingBoundaryCount": 1,
+        "postRetirementCalibrationSubmissions": 0,
+        "captureResultAfterRetirement": false,
+        "cleanup": {
+          "targetDisposeCount": 2,
+          "geometryDisposeCount": 1,
+          "materialDisposeCount": 8
+        }
+      },
+      "nativeProxyPendingDuringSpaNavigation": {
+        "status": "passed",
+        "pendingBoundaryCount": 1,
+        "authoredStateRestoredBeforeAwait": true,
+        "captureResultAfterRetirement": false,
+        "cleanup": {
+          "temporaryTargetDisposeCount": 1,
+          "temporaryMaterialDisposeCount": 1,
+          "originalRenderableMaterialAndGeometryRestored": true,
+          "sourcePropertiesPreserved": true,
+          "noBorrowedResourceDisposed": true
+        }
+      },
+      "overlappingCapture": {
+        "status": "passed",
+        "secondRequestReason": "capture-already-active"
+      },
+      "calibrationReadbackResolutionAndRejectionAfterAbort": {
+        "status": "passed",
+        "postAbortFixtureSubmissions": 0,
+        "ownedResourcesReleasedAfterSettlement": true,
+        "originalCancellationReasonPreserved": true
+      }
+    },
+    "productionAssetIsolation": {
+      "status": "passed",
+      "loadedJavaScriptCaptureIdentifiers": []
+    }
+  },
   "regressions": {
     "focusedM4NativeExperiment": "passed; chrome-native-webgpu",
     "PR263FourStateNativeExperiment": {

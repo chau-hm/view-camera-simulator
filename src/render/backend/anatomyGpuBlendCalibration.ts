@@ -1,5 +1,8 @@
 import * as THREE from "three";
-import { unpackAnatomyGpuRgbaReadbackRows } from "./anatomyGpuBlendIntermediate";
+import {
+  throwIfAnatomyGpuCaptureAborted,
+  unpackAnatomyGpuRgbaReadbackRows,
+} from "./anatomyGpuBlendIntermediate";
 import type { AnatomyGpuCaptureRuntime } from "./anatomyGpuBlendIntermediate";
 
 type CalibrationRenderer = {
@@ -52,6 +55,17 @@ export type AnatomyGpuBlendCalibrationResult = Readonly<{
   error?: string;
 }>;
 
+export type AnatomyGpuBlendCalibrationOptions = Readonly<{
+  signal?: AbortSignal;
+  isCaptureActive?: () => boolean;
+  awaitReadback?: (readback: Promise<ArrayBufferView>) => Promise<ArrayBufferView>;
+  onResourcesReleased?: (lifecycle: Readonly<{
+    targetDisposeCount: number;
+    geometryDisposeCount: number;
+    materialDisposeCount: number;
+  }>) => void;
+}>;
+
 const maxByteError = (observed: readonly number[], expected: readonly number[]): number =>
   Math.max(...expected.map((value, index) => Math.abs((observed[index] ?? 0) - value)));
 
@@ -62,7 +76,17 @@ const rgbDifference = (first: readonly number[], second: readonly number[]): num
 export const runAnatomyGpuBlendCalibration = async (
   rendererValue: unknown,
   runtime: AnatomyGpuCaptureRuntime,
+  options: AnatomyGpuBlendCalibrationOptions = {},
 ): Promise<AnatomyGpuBlendCalibrationResult> => {
+  const { signal, awaitReadback } = options;
+  const assertActive = () => {
+    throwIfAnatomyGpuCaptureAborted(signal);
+    if (options.isCaptureActive && !options.isCaptureActive()) {
+      throwIfAnatomyGpuCaptureAborted(signal);
+      throw new Error("Anatomy GPU capture no longer owns its renderer generation.");
+    }
+  };
+  assertActive();
   const renderer = rendererValue as CalibrationRenderer;
   const readAsync = renderer.readRenderTargetPixelsAsync;
   const readSync = renderer.readRenderTargetPixels;
@@ -191,7 +215,19 @@ export const runAnatomyGpuBlendCalibration = async (
   const previousClearColor = renderer.getClearColor(new THREE.Color()).clone();
   const previousClearAlpha = renderer.getClearAlpha();
   const captures = new Map<string, readonly number[]>();
+  const rendererContextAvailable = (): boolean => {
+    if (signal?.aborted || (options.isCaptureActive && !options.isCaptureActive())) return false;
+    try {
+      const context = (renderer as CalibrationRenderer & {
+        getContext?: () => { isContextLost?: () => boolean } | null;
+      }).getContext?.();
+      return !context?.isContextLost?.();
+    } catch {
+      return false;
+    }
+  };
   const restoreRendererState = () => {
+    if (!rendererContextAvailable()) return;
     renderer.setRenderTarget(previousTarget);
     renderer.setViewport(previousViewport);
     renderer.setScissor(previousScissor);
@@ -205,13 +241,20 @@ export const runAnatomyGpuBlendCalibration = async (
     height: number,
     clearAlpha: number,
   ): Promise<void> => {
+    assertActive();
     let synchronousPixels: Uint8Array | null = null;
     let asynchronousPixels: Promise<ArrayBufferView> | null = null;
+    let submissionError: unknown = null;
     try {
+      assertActive();
       renderer.setRenderTarget(activeTarget);
+      assertActive();
       renderer.setScissorTest(false);
+      assertActive();
       renderer.setClearColor(0x000000, clearAlpha);
+      assertActive();
       renderer.clear(true, true, true);
+      assertActive();
       const renderResult = renderer.render(scene, camera);
       if (renderResult && typeof (renderResult as PromiseLike<unknown>).then === "function") {
         throw new Error("The mounted renderer returned an asynchronous render promise.");
@@ -219,16 +262,34 @@ export const runAnatomyGpuBlendCalibration = async (
       if (runtime.executionBackend === "webgl2") {
         if (!readSync) throw new Error("WebGL2 render-target readback is unavailable.");
         synchronousPixels = new Uint8Array(width * height * 4);
+        assertActive();
         readSync.call(renderer, activeTarget, 0, 0, width, height, synchronousPixels);
       } else {
         if (!readAsync) throw new Error("Native WebGPU render-target readback is unavailable.");
         // Queue the copy while the probe target is active; restore the mounted output before awaiting mapAsync.
+        assertActive();
         asynchronousPixels = readAsync.call(renderer, activeTarget, 0, 0, width, height);
       }
+    } catch (cause) {
+      submissionError = cause;
     } finally {
-      restoreRendererState();
+      try {
+        restoreRendererState();
+      } catch (cause) {
+        submissionError ??= cause;
+      }
     }
-    const rawPixels = asynchronousPixels ? await asynchronousPixels : synchronousPixels;
+    let rawPixels: ArrayBufferView | null = synchronousPixels;
+    if (asynchronousPixels) {
+      try {
+        rawPixels = await (awaitReadback ? awaitReadback(asynchronousPixels) : asynchronousPixels);
+      } catch (cause) {
+        if (submissionError !== null) throw submissionError;
+        throw cause;
+      }
+    }
+    if (submissionError !== null) throw submissionError;
+    assertActive();
     if (!(rawPixels instanceof Uint8Array)) {
       throw new Error(`Calibration readback returned ${rawPixels?.constructor.name ?? "no data"} with ${rawPixels?.byteLength ?? 0} bytes.`);
     }
@@ -241,8 +302,11 @@ export const runAnatomyGpuBlendCalibration = async (
   let error: string | undefined;
   let apiRowOrder: "bottom-up" | "top-down" | "unresolved" = "unresolved";
   let orientationControl: "passed" | "failed" | "not-run" = "not-run";
+  let resourcesDisposed = false;
   try {
+    assertActive();
     if (previousTarget !== null) throw new Error("Calibration requires the screen output target to be mounted before capture.");
+    assertActive();
     opaqueMesh.visible = true;
     transparentMesh.visible = false;
     firstOrderMesh.visible = false;
@@ -250,14 +314,17 @@ export const runAnatomyGpuBlendCalibration = async (
     quadrants.forEach((mesh) => { mesh.visible = false; });
     await renderPixel("opaque", 0);
 
+    assertActive();
     opaqueMesh.visible = false;
     transparentMesh.visible = true;
     transparentMaterial.blending = THREE.NormalBlending;
     await renderPixel("transparent-normal", 0);
+    assertActive();
     transparentMaterial.blending = THREE.NoBlending;
     transparentMaterial.needsUpdate = true;
     await renderPixel("transparent-disabled", 0);
 
+    assertActive();
     transparentMesh.visible = false;
     firstOrderMesh.visible = true;
     secondOrderMesh.visible = true;
@@ -266,14 +333,17 @@ export const runAnatomyGpuBlendCalibration = async (
     firstOrderMaterial.blending = THREE.NormalBlending;
     secondOrderMaterial.blending = THREE.NormalBlending;
     await renderPixel("order-first-second", 0);
+    assertActive();
     firstOrderMesh.renderOrder = 2;
     secondOrderMesh.renderOrder = 1;
     await renderPixel("order-second-first", 0);
 
+    assertActive();
     firstOrderMesh.visible = false;
     secondOrderMesh.visible = false;
     quadrants.forEach((mesh) => { mesh.visible = true; });
     await renderAndRead("orientation", orientationTarget, 2, 2, 0);
+    assertActive();
     const observed = captures.get("orientation") ?? [];
     const expectedTopDown = [
       [255, 0, 0, 255], [0, 255, 0, 255],
@@ -292,13 +362,23 @@ export const runAnatomyGpuBlendCalibration = async (
     orientationControl = orientationError <= 2 ? "passed" : "failed";
     if (orientationControl === "passed") apiRowOrder = topError < bottomError ? "top-down" : "bottom-up";
   } catch (cause) {
+    if (signal?.aborted) throwIfAnatomyGpuCaptureAborted(signal);
     error = cause instanceof Error ? cause.message : String(cause);
   } finally {
-    restoreRendererState();
-    [opaqueMaterial, transparentMaterial, firstOrderMaterial, secondOrderMaterial, ...quadrantMaterials].forEach((material) => material.dispose());
-    geometry.dispose();
-    target.dispose();
-    orientationTarget.dispose();
+    try {
+      restoreRendererState();
+    } catch (cause) {
+      if (!signal?.aborted && !error) error = cause instanceof Error ? cause.message : String(cause);
+    } finally {
+      if (!resourcesDisposed) {
+        resourcesDisposed = true;
+        [opaqueMaterial, transparentMaterial, firstOrderMaterial, secondOrderMaterial, ...quadrantMaterials].forEach((material) => material.dispose());
+        geometry.dispose();
+        target.dispose();
+        orientationTarget.dispose();
+        options.onResourcesReleased?.({ targetDisposeCount, geometryDisposeCount, materialDisposeCount });
+      }
+    }
   }
 
   const expectedOpaque = [191, 64, 26, 255];
@@ -345,6 +425,7 @@ export const runAnatomyGpuBlendCalibration = async (
       ? "passed"
       : "failed";
 
+  assertActive();
   return {
     status,
     runtime,

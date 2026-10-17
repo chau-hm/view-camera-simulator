@@ -122,7 +122,9 @@ The focused capture reports rendererFamily webgpu-renderer, executionBackend web
 
 ## 13. Source and resource ownership
 
-The probe owns only temporary material clones, its floating-point target, and calibration fixtures. It restores the original renderable material and geometry, source material properties, visibility, background metadata, render target, viewport, scissor, clear color, and clear alpha. It does not dispose scene textures, geometry, materials, or Ground Glass RTT resources. The probe is renderer-generation scoped and its listener is removed on SPA teardown.
+The probe owns only temporary material clones, its floating-point target, and calibration fixtures. It restores the original renderable material and geometry, source material properties, visibility, background metadata, render target, viewport, scissor, clear color, and clear alpha. It does not dispose scene textures, geometry, materials, or Ground Glass RTT resources. Each probe mount has a unique owner identity and an `AbortController`; unmount, renderer-generation retirement, WebGL context loss, and WebGPU device loss invalidate capture permission. Calibration, replay, and direct draw capture share a single active-operation slot, and a second request receives `capture-already-active`. A submitted readback is allowed to settle or reject before owned resources are released. After invalidation, no later fixture or proxy render/readback is submitted and no capture result is emitted. Temporary resources are disposed once in `finally`; renderer state is restored synchronously after submission only while that renderer generation remains available.
+
+The pending-readback browser regression submits the native WebGPU readback, then holds the capture's application-level await boundary with a deterministic development-only gate while the SPA retires the probe. It proves that the handler remains suspended across teardown, does not resume into another fixture or publish a result, and releases its resources after the readback and gate settle. The gate does not control WebGPU `mapAsync` itself, so the test does not claim that the underlying GPU promise remains unresolved for the whole navigation interval; separate unit coverage exercises both readback resolution and rejection after abort.
 
 ## 14. Ground Glass, Anatomy, Architecture Rise, and production regressions
 
@@ -138,6 +140,16 @@ Ground Glass remained contentful with 124 color buckets. Repeat noise was 0.0011
 - Architecture Rise strict parity: passed with zero failing criteria under the existing 81-criterion contract.
 - Production preview: both tests passed. Architecture Rise stayed WebGL for default and explicit WebGPU requests; Anatomy material-aware WebGPU remained denied.
 - Production preview made no WebGPU module requests. The built asset scan found no Anatomy GPU blend probe component or event identifiers.
+
+### Review-fix lifecycle validation — 2026-10-18
+
+- Native pending-readback SPA regressions: 2 passed. Calibration teardown disposed 2 targets, 1 geometry, and 8 fixture materials after settlement; proxy teardown disposed 1 owned target and 1 cloned material after restoring source material/geometry, visibility, and source properties. Both suppressed the retired capture result and left the next renderer generation active.
+- Overlap control: the second capture was rejected with `capture-already-active` while calibration was held at the pending readback boundary. The stale request dispatched to the retired probe container produced no result.
+- Calibration unit regressions: resolution and rejection after abort both stopped at the first fixture, preserved the cancellation reason, and disposed owned resources after settlement.
+- The full M-INV4 native run passed all 3 tests. The regular calibration and replay completed with the existing control outcomes and the same F1/F2/F0 classifications; the retained measurements were not refreshed.
+- `npm test`: 257 files and 2,383 tests passed. Typecheck, lint, CSS check, build, and `git diff --check` passed.
+- Native-required 13-state Anatomy audit: 2 passed, 1 expected skip; all 13 matched candidate states were captured. PR #263 four-state native study passed.
+- Architecture Rise strict parity passed with zero failures across the existing 81 criteria. Production preview passed both tests, and its loaded JavaScript scan found no Anatomy GPU capture probe, component, or event identifiers. Ground Glass remained contentful in the M-INV4 experiment.
 
 ## 15. Decision and remaining unknowns
 

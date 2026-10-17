@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import {
   classifyAnatomyGpuCaptureFeasibility,
   summarizeAnatomyGpuDrawResponse,
   unpackAnatomyGpuRgbaReadbackRows,
+  AnatomyGpuCaptureCancelledError,
+  throwIfAnatomyGpuCaptureAborted,
   ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT,
   ANATOMY_GPU_BLEND_INTERMEDIATE_RESULT_EVENT,
   type AnatomyGpuCaptureMethod,
@@ -29,6 +31,19 @@ type AnatomyGpuCaptureRequest = Readonly<{
   maskPixelIndices?: readonly number[];
   samplePixelIndices?: readonly number[];
 }>;
+
+type ActiveAnatomyGpuCapture = {
+  requestId: string;
+  generation: number;
+  method: AnatomyGpuCaptureRequest["method"];
+  resourceCleanup: Record<string, unknown>;
+};
+
+const anatomyGpuCaptureProbeOwners = new WeakMap<HTMLElement, object>();
+const anatomyGpuCaptureReadbackPendingEvent =
+  "vcs:observer-verification:anatomy-gpu-blend-intermediate-readback-pending";
+const anatomyGpuCaptureSettledEvent =
+  "vcs:observer-verification:anatomy-gpu-blend-intermediate-capture-settled";
 
 type DisposableRenderer = {
   getRenderTarget: () => THREE.RenderTarget | null;
@@ -243,6 +258,7 @@ const readRenderTargetFloatPixels = (
   renderer: DisposableRenderer,
   runtime: ReturnType<typeof resolveObserverRendererRuntime>,
   target: THREE.WebGLRenderTarget,
+  awaitReadback?: (readback: Promise<ArrayBufferView>) => Promise<ArrayBufferView>,
 ): Float32Array | Promise<Float32Array> => {
   const { width, height } = target;
   const rowOrder = runtime.executionBackend === "webgl2" ? "bottom-up" : "top-down";
@@ -255,7 +271,9 @@ const readRenderTargetFloatPixels = (
   if (runtime.executionBackend !== "webgpu" || !renderer.readRenderTargetPixelsAsync) {
     throw new Error("The mounted backend does not support qualified FloatType readback");
   }
-  return renderer.readRenderTargetPixelsAsync(target, 0, 0, width, height).then((raw) => {
+  const readback = renderer.readRenderTargetPixelsAsync(target, 0, 0, width, height);
+  const settledReadback = awaitReadback ? awaitReadback(readback) : readback;
+  return settledReadback.then((raw) => {
     if (!(raw instanceof Float32Array)) {
       throw new Error(`FloatType readback returned ${raw.constructor.name} with ${raw.byteLength} bytes`);
     }
@@ -309,14 +327,184 @@ export const AnatomyGpuBlendIntermediateProbe = ({
   const anatomyPresentationRef = useRef(anatomyPresentation);
   anatomyPresentationRef.current = anatomyPresentation;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!import.meta.env.DEV || typeof window === "undefined") return;
     const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
     if (!container) return;
+    const mountIdentity = {};
+    const lifetimeController = new AbortController();
+    let lifetimeActive = true;
+    let activeCapture: ActiveAnatomyGpuCapture | null = null;
     let directCaptureCleanup: (() => void) | null = null;
 
+    anatomyGpuCaptureProbeOwners.set(container, mountIdentity);
+
+    const ownsDestination = (): boolean => lifetimeActive &&
+      anatomyGpuCaptureProbeOwners.get(container) === mountIdentity &&
+      container.isConnected &&
+      container.getAttribute("data-observer-renderer-generation") === String(generation);
+
+    const invalidateLifetime = (reason: string) => {
+      if (!lifetimeActive) return;
+      lifetimeActive = false;
+      lifetimeController.abort(new AnatomyGpuCaptureCancelledError(reason));
+      activeCapture = null;
+      directCaptureCleanup?.();
+    };
+
+    const rendererContextAvailable = (): boolean => {
+      try {
+        const context = (gl as unknown as {
+          getContext?: () => { isContextLost?: () => boolean } | null;
+        }).getContext?.();
+        if (context?.isContextLost?.()) {
+          invalidateLifetime("renderer-context-unavailable");
+          return false;
+        }
+        return lifetimeActive;
+      } catch {
+        invalidateLifetime("renderer-context-unavailable");
+        return false;
+      }
+    };
+
+    const handleWebGlContextLost = () => invalidateLifetime("renderer-context-unavailable");
+    gl.domElement.addEventListener("webglcontextlost", handleWebGlContextLost);
+    const webGpuDeviceLost = (gl as unknown as {
+      backend?: { device?: { lost?: PromiseLike<unknown> } };
+    }).backend?.device?.lost;
+    if (webGpuDeviceLost) {
+      void Promise.resolve(webGpuDeviceLost).then(
+        () => invalidateLifetime("renderer-context-unavailable"),
+        () => invalidateLifetime("renderer-context-unavailable"),
+      ).catch(() => undefined);
+    }
+
+    const captureIsActive = (operation: ActiveAnatomyGpuCapture): boolean => {
+      if (!lifetimeActive || lifetimeController.signal.aborted || activeCapture !== operation) return false;
+      if (!ownsDestination()) {
+        invalidateLifetime("renderer-generation-retired");
+        return false;
+      }
+      if (!rendererContextAvailable()) return false;
+      return isAnatomyRendererGenerationCurrent(operation.generation, generation);
+    };
+
+    const assertCaptureActive = (operation: ActiveAnatomyGpuCapture) => {
+      if (captureIsActive(operation)) return;
+      throwIfAnatomyGpuCaptureAborted(lifetimeController.signal);
+      throw new AnatomyGpuCaptureCancelledError("Anatomy probe no longer owns this renderer generation.");
+    };
+
+    const beginCapture = (request: AnatomyGpuCaptureRequest): ActiveAnatomyGpuCapture | null => {
+      if (!lifetimeActive || anatomyGpuCaptureProbeOwners.get(container) !== mountIdentity) return null;
+      if (!isAnatomyRendererGenerationCurrent(request.generation, generation)) {
+        reject(request.requestId, "stale-renderer-generation");
+        return null;
+      }
+      if (!ownsDestination() || !rendererContextAvailable()) {
+        invalidateLifetime("renderer-generation-retired");
+        return null;
+      }
+      if (activeCapture) {
+        reject(request.requestId, "capture-already-active");
+        return null;
+      }
+      const operation: ActiveAnatomyGpuCapture = {
+        requestId: request.requestId,
+        generation: request.generation,
+        method: request.method,
+        resourceCleanup: {},
+      };
+      activeCapture = operation;
+      return operation;
+    };
+
+    const rejectionDetail = (reason: string, feasibility = "F0") => ({
+      status: "rejected",
+      feasibility,
+      reason,
+      generation,
+    });
+
+    const completeCapture = (
+      operation: ActiveAnatomyGpuCapture,
+      result: Readonly<Record<string, unknown>> | null,
+      settlement: string,
+    ) => {
+      const publish = result !== null && captureIsActive(operation);
+      if (activeCapture === operation) activeCapture = null;
+      if (publish && result) emitResult(container, operation.requestId, result);
+      if (import.meta.env.DEV) {
+        container.dispatchEvent(new CustomEvent(anatomyGpuCaptureSettledEvent, {
+          detail: {
+            requestId: operation.requestId,
+            method: operation.method,
+            generation: operation.generation,
+            status: publish ? settlement : "cancelled",
+            resourceCleanup: operation.resourceCleanup,
+          },
+        }));
+      }
+    };
+
+    const runCapture = async (
+      request: AnatomyGpuCaptureRequest,
+      capture: (operation: ActiveAnatomyGpuCapture) => Promise<Readonly<Record<string, unknown>>>,
+    ): Promise<void> => {
+      const operation = beginCapture(request);
+      if (!operation) return;
+      let result: Readonly<Record<string, unknown>> | null = null;
+      let settlement = "completed";
+      try {
+        result = await capture(operation);
+        if (result.status === "unsupported" || result.status === "rejected") settlement = String(result.status);
+      } catch (cause) {
+        if (captureIsActive(operation)) {
+          result = rejectionDetail(cause instanceof Error ? cause.message : String(cause));
+          settlement = "failed";
+        } else {
+          settlement = "cancelled";
+        }
+      } finally {
+        completeCapture(operation, result, settlement);
+      }
+    };
+
+    const awaitCaptureReadback = async <T extends ArrayBufferView>(
+      operation: ActiveAnatomyGpuCapture,
+      readback: Promise<T>,
+    ): Promise<T> => {
+      const waits: Promise<unknown>[] = [];
+      if (import.meta.env.DEV) {
+        container.dispatchEvent(new CustomEvent(anatomyGpuCaptureReadbackPendingEvent, {
+          detail: {
+            requestId: operation.requestId,
+            method: operation.method,
+            defer: (wait: Promise<unknown>) => { waits.push(wait); },
+          },
+        }));
+      }
+      const settledReadback = readback.then(
+        (pixels) => ({ ok: true as const, pixels }),
+        (error: unknown) => ({ ok: false as const, error }),
+      );
+      const settledWaits = Promise.all(waits).then(
+        () => ({ ok: true as const }),
+        (error: unknown) => ({ ok: false as const, error }),
+      );
+      const [readbackResult, waitsResult] = await Promise.all([settledReadback, settledWaits]);
+      assertCaptureActive(operation);
+      if (!readbackResult.ok) throw readbackResult.error;
+      if (!waitsResult.ok) throw waitsResult.error;
+      return readbackResult.pixels;
+    };
+
     const reject = (requestId: string, reason: string, feasibility = "F0") =>
-      emitResult(container, requestId, { status: "rejected", feasibility, reason, generation });
+      {
+        if (!ownsDestination() || lifetimeController.signal.aborted || !rendererContextAvailable()) return;
+        emitResult(container, requestId, rejectionDetail(reason, feasibility));
+      };
 
     const resolveTarget = (request: AnatomyGpuCaptureRequest) => {
       if (!request.renderableId) return { error: "missing-renderable-id" as const };
@@ -339,40 +527,34 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       return { target, materials, sources, resolution };
     };
 
-    const handleCalibration = async (request: AnatomyGpuCaptureRequest) => {
-      if (!isAnatomyRendererGenerationCurrent(request.generation, generation)) {
-        reject(request.requestId, "stale-renderer-generation");
-        return;
-      }
+    const handleCalibration = (request: AnatomyGpuCaptureRequest) => runCapture(request, async (operation) => {
+      assertCaptureActive(operation);
       const runtime = resolveObserverRendererRuntime(gl);
       if (runtime.executionBackend !== "webgl2" && runtime.executionBackend !== "webgpu") {
-        reject(request.requestId, `unqualified-renderer:${runtime.rendererFamily}/${runtime.executionBackend}`);
-        return;
+        return rejectionDetail(`unqualified-renderer:${runtime.rendererFamily}/${runtime.executionBackend}`);
       }
-      const result = await runAnatomyGpuBlendCalibration(gl, runtime);
-      emitResult(container, request.requestId, { status: result.status, generation, calibration: result });
-    };
+      const result = await runAnatomyGpuBlendCalibration(gl, runtime, {
+        signal: lifetimeController.signal,
+        isCaptureActive: () => captureIsActive(operation),
+        awaitReadback: (readback) => awaitCaptureReadback(operation, readback),
+        onResourcesReleased: (lifecycle) => Object.assign(operation.resourceCleanup, lifecycle),
+      });
+      assertCaptureActive(operation);
+      return { status: result.status, generation, calibration: result };
+    });
 
-    const handleProxy = async (request: AnatomyGpuCaptureRequest) => {
-      if (!isAnatomyRendererGenerationCurrent(request.generation, generation)) {
-        reject(request.requestId, "stale-renderer-generation");
-        return;
-      }
+    const handleProxy = (request: AnatomyGpuCaptureRequest) => runCapture(request, async (operation) => {
+      assertCaptureActive(operation);
       const runtime = resolveObserverRendererRuntime(gl);
       const feasibility = classifyAnatomyGpuCaptureFeasibility(runtime, "single-renderable-replay");
       if (feasibility.classification !== "F2") {
-        reject(request.requestId, feasibility.reason, feasibility.classification);
-        return;
-      }
-      if (directCaptureCleanup) {
-        reject(request.requestId, "another-capture-is-active");
-        return;
+        return rejectionDetail(feasibility.reason, feasibility.classification);
       }
       const selection = resolveTarget(request);
       if ("error" in selection) {
-        reject(request.requestId, selection.error ?? "invalid-renderable-selection");
-        return;
+        return rejectionDetail(selection.error ?? "invalid-renderable-selection");
       }
+      assertCaptureActive(operation);
       const { target: selected, materials, sources } = selection;
       const sourceSnapshotsBefore = sources.map(sourceMaterialSnapshot);
       const renderables: Array<THREE.Object3D & { visible: boolean }> = [];
@@ -380,22 +562,6 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       const visibilityBefore = new Map(renderables.map((object) => [object, object.visible]));
       const originalMaterial = selected.material;
       const sourceGeometry = selected.geometry;
-      const copies = materials.map((material) => {
-        const copy = material.clone();
-        const originalExperimental = material as THREE.Material & {
-          outputTransform?: string;
-          outputInterventionId?: string;
-        };
-        const copyExperimental = copy as THREE.Material & {
-          outputTransform?: string;
-          outputInterventionId?: string;
-        };
-        if (originalExperimental.outputTransform) copyExperimental.outputTransform = originalExperimental.outputTransform;
-        if (originalExperimental.outputInterventionId) copyExperimental.outputInterventionId = originalExperimental.outputInterventionId;
-        copy.blending = THREE.NoBlending;
-        copy.needsUpdate = true;
-        return copy;
-      });
       const sceneWithBackground = scene as THREE.Scene & { backgroundNode?: unknown };
       const originalBackground = scene.background;
       const originalBackgroundNode = sceneWithBackground.backgroundNode;
@@ -426,37 +592,88 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       let targetDisposeCount = 0;
       let cloneDisposeCount = 0;
       target.addEventListener("dispose", () => { targetDisposeCount += 1; });
-      copies.forEach((copy) => copy.addEventListener("dispose", () => { cloneDisposeCount += 1; }));
+      const copies: THREE.Material[] = [];
+      try {
+        materials.forEach((material) => {
+          assertCaptureActive(operation);
+          const copy = material.clone();
+          copies.push(copy);
+          copy.addEventListener("dispose", () => { cloneDisposeCount += 1; });
+          const originalExperimental = material as THREE.Material & {
+            outputTransform?: string;
+            outputInterventionId?: string;
+          };
+          const copyExperimental = copy as THREE.Material & {
+            outputTransform?: string;
+            outputInterventionId?: string;
+          };
+          if (originalExperimental.outputTransform) copyExperimental.outputTransform = originalExperimental.outputTransform;
+          if (originalExperimental.outputInterventionId) copyExperimental.outputInterventionId = originalExperimental.outputInterventionId;
+          copy.blending = THREE.NoBlending;
+          copy.needsUpdate = true;
+        });
+      } catch (cause) {
+        copies.forEach((copy) => copy.dispose());
+        target.dispose();
+        Object.assign(operation.resourceCleanup, {
+          temporaryTargetDisposeCount: targetDisposeCount,
+          temporaryMaterialDisposeCount: cloneDisposeCount,
+          noBorrowedResourceDisposed: true,
+        });
+        throw cause;
+      }
       let readback: Float32Array | Promise<Float32Array> | null = null;
       let error: string | null = null;
       let originalIdentityRestored = false;
       let sourcePropertiesPreserved = false;
       let resourcesDisposed = false;
+      const releaseOwnedResources = () => {
+        if (resourcesDisposed) return;
+        resourcesDisposed = true;
+        copies.forEach((copy) => copy.dispose());
+        target.dispose();
+        Object.assign(operation.resourceCleanup, {
+          temporaryTargetDisposeCount: targetDisposeCount,
+          temporaryMaterialDisposeCount: cloneDisposeCount,
+          originalRenderableMaterialAndGeometryRestored: originalIdentityRestored,
+          sourcePropertiesPreserved,
+          noBorrowedResourceDisposed: true,
+        });
+      };
 
       try {
+        assertCaptureActive(operation);
         if (previousTarget !== null) throw new Error("single-renderable replay requires the mounted screen target");
         if (width < 2 || height < 2) throw new Error("mounted drawing buffer is too small for a useful proxy");
-        renderables.forEach((object) => { object.visible = object === selected; });
+        renderables.forEach((object) => { assertCaptureActive(operation); object.visible = object === selected; });
+        assertCaptureActive(operation);
         if (Array.isArray(originalMaterial)) selected.material = copies;
         else selected.material = copies[0]!;
+        assertCaptureActive(operation);
         scene.background = null;
         sceneWithBackground.backgroundNode = null;
         target.texture.colorSpace = targetColorSpace;
 
+        assertCaptureActive(operation);
         renderer.setRenderTarget(target);
+        assertCaptureActive(operation);
         renderer.setScissorTest(false);
+        assertCaptureActive(operation);
         renderer.setClearColor(0x000000, 0);
+        assertCaptureActive(operation);
         renderer.clear(true, true, true);
+        assertCaptureActive(operation);
         const renderResult = renderer.render(scene, camera);
         if (renderResult && typeof (renderResult as PromiseLike<unknown>).then === "function") {
           throw new Error("r186 returned an asynchronous render result; replay stopped before yielding with temporary scene state");
         }
-        if (runtime.executionBackend === "webgpu") {
-          if (!renderer.readRenderTargetPixelsAsync) throw new Error("native WebGPU FloatType readback API is unavailable");
-          readback = readRenderTargetFloatPixels(renderer, runtime, target);
-        } else {
-          readback = readRenderTargetFloatPixels(renderer, runtime, target);
-        }
+        assertCaptureActive(operation);
+        readback = readRenderTargetFloatPixels(
+          renderer,
+          runtime,
+          target,
+          (pending) => awaitCaptureReadback(operation, pending),
+        );
       } catch (cause) {
         error = cause instanceof Error ? cause.message : String(cause);
       } finally {
@@ -464,11 +681,17 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         visibilityBefore.forEach((visible, object) => { object.visible = visible; });
         scene.background = originalBackground;
         sceneWithBackground.backgroundNode = originalBackgroundNode;
-        renderer.setRenderTarget(previousTarget);
-        renderer.setViewport(previousViewport);
-        renderer.setScissor(previousScissor);
-        renderer.setScissorTest(previousScissorTest);
-        renderer.setClearColor(previousClearColor, previousClearAlpha);
+        if (rendererContextAvailable() && captureIsActive(operation)) {
+          try {
+            renderer.setRenderTarget(previousTarget);
+            renderer.setViewport(previousViewport);
+            renderer.setScissor(previousScissor);
+            renderer.setScissorTest(previousScissorTest);
+            renderer.setClearColor(previousClearColor, previousClearAlpha);
+          } catch (cause) {
+            error ??= cause instanceof Error ? cause.message : String(cause);
+          }
+        }
         originalIdentityRestored = selected.material === originalMaterial && selected.geometry === sourceGeometry;
         sourcePropertiesPreserved = JSON.stringify(sources.map(sourceMaterialSnapshot)) === JSON.stringify(sourceSnapshotsBefore);
       }
@@ -478,8 +701,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         try {
           pixels = readback instanceof Promise ? await readback : readback;
         } catch (cause) {
+          if (!captureIsActive(operation)) throw cause;
           error = cause instanceof Error ? cause.message : String(cause);
         }
+        assertCaptureActive(operation);
         if (!pixels && !error) error = "render-target readback did not produce pixels";
         const maskPixelIndices = request.maskPixelIndices ?? [];
         const samplePixelIndices = request.samplePixelIndices ?? [];
@@ -500,11 +725,9 @@ export const AnatomyGpuBlendIntermediateProbe = ({
           temporaryBlending: copies[index]!.blending,
           outputMode: (material as THREE.Material & { outputTransform?: string }).outputTransform ?? "standard",
         }));
-        copies.forEach((copy) => copy.dispose());
-        target.dispose();
-        resourcesDisposed = true;
+        releaseOwnedResources();
         const success = !error && pixels !== null;
-        emitResult(container, request.requestId, {
+        return {
           status: success ? "ok" : "unsupported",
           generation,
           feasibility: "F2",
@@ -564,38 +787,36 @@ export const AnatomyGpuBlendIntermediateProbe = ({
             noTextureOrGeometryDisposed: true,
           },
           ...(error ? { reason: error } : {}),
-        });
+        };
       } finally {
-        if (!resourcesDisposed) {
-          copies.forEach((copy) => copy.dispose());
-          target.dispose();
-        }
+        releaseOwnedResources();
       }
-    };
+    });
 
     const handleDirectDrawCapture = (request: AnatomyGpuCaptureRequest) => {
-      if (!isAnatomyRendererGenerationCurrent(request.generation, generation)) {
-        reject(request.requestId, "stale-renderer-generation");
-        return;
-      }
+      const operation = beginCapture(request);
+      if (!operation) return;
+      const refuse = (reason: string, feasibility = "F0") => {
+        completeCapture(operation, rejectionDetail(reason, feasibility), "rejected");
+      };
       const runtime = resolveObserverRendererRuntime(gl);
       const feasibility = classifyAnatomyGpuCaptureFeasibility(runtime, "draw-boundary");
       if (feasibility.classification !== "F1") {
-        reject(request.requestId, feasibility.reason, feasibility.classification);
+        refuse(feasibility.reason, feasibility.classification);
         return;
       }
       if (directCaptureCleanup) {
-        reject(request.requestId, "another-capture-is-active");
+        refuse("capture-already-active");
         return;
       }
       const selection = resolveTarget(request);
       if ("error" in selection) {
-        reject(request.requestId, selection.error ?? "invalid-renderable-selection");
+        refuse(selection.error ?? "invalid-renderable-selection");
         return;
       }
       const { target: selected } = selection;
       if (request.maskPixelIndices && (request.maskPixelIndices.length === 0 || request.maskPixelIndices.length > 100_000)) {
-        reject(request.requestId, "invalid-or-excessive-response-mask");
+        refuse("invalid-or-excessive-response-mask");
         return;
       }
       const renderer = gl as unknown as DisposableRenderer & {
@@ -603,7 +824,7 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       };
       const context = (gl as unknown as { getContext?: () => WebGL2RenderingContext }).getContext?.();
       if (!context || renderer.getRenderTarget() !== null) {
-        reject(request.requestId, "direct-capture-requires-mounted-WebGL2-canvas-target");
+        refuse("direct-capture-requires-mounted-WebGL2-canvas-target");
         return;
       }
       const sourceMaterialId = request.sourceMaterialId;
@@ -633,7 +854,7 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       const samplePixelIndices = request.samplePixelIndices ?? [];
       if (samplePixelIndices.length > 32 || samplePixelIndices.some((index) =>
         !Number.isInteger(index) || index < 0 || index >= context.drawingBufferWidth * context.drawingBufferHeight)) {
-        reject(request.requestId, "invalid-or-excessive-fixed-sample-selection");
+        refuse("invalid-or-excessive-fixed-sample-selection");
         return;
       }
       const cleanup = () => {
@@ -646,13 +867,19 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         directCaptureCleanup = null;
       };
       const finish = (status: "ok" | "unsupported", reason?: string) => {
+        if (settled) return;
+        const publishable = captureIsActive(operation);
         cleanup();
+        if (!publishable) {
+          if (activeCapture === operation) activeCapture = null;
+          return;
+        }
         const ordered = [...drawRecords].sort((left, right) =>
           right.response.thresholdPixelCount - left.response.thresholdPixelCount ||
           right.response.meanAbsoluteRgbDifference - left.response.meanAbsoluteRgbDifference,
         );
         const selectedDraw = ordered[0];
-        emitResult(container, request.requestId, {
+        const result = {
           status,
           generation,
           feasibility: "F1",
@@ -713,7 +940,9 @@ export const AnatomyGpuBlendIntermediateProbe = ({
             reason: "The unmodified fragment shader output is not exposed by WebGL readPixels; these are direct before/after attachment samples and a per-material RGB/alpha proxy is captured separately.",
           },
           ...(reason ? { reason } : {}),
-        });
+        };
+        if (publishable) completeCapture(operation, result, status);
+        else if (activeCapture === operation) activeCapture = null;
       };
 
       try {
@@ -722,6 +951,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
           if (typeof method !== "function") continue;
           originalDrawMethods.set(name, method);
           drawApi[name] = (...args: unknown[]) => {
+            if (!captureIsActive(operation)) {
+              cleanup();
+              return method.apply(context, args);
+            }
             if (currentObject !== selected || !currentMaterial ||
                 (sourceMaterialId && sourceMaterialFor(currentMaterial).uuid !== sourceMaterialId)) {
               return method.apply(context, args);
@@ -769,6 +1002,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         }
         if (originalDrawMethods.size === 0) throw new Error("No supported WebGL2 draw entrypoints were found");
         renderer.renderBufferDirect = (...args: unknown[]) => {
+          if (!captureIsActive(operation)) {
+            cleanup();
+            return originalRenderBufferDirect.apply(renderer, args);
+          }
           const material = args[3] as THREE.Material | undefined;
           const object = args[4] as THREE.Object3D | undefined;
           const previousObject = currentObject;
@@ -787,6 +1024,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         };
         selected.onAfterRender = function (renderedWith, renderedScene, renderedCamera, geometry, material, group) {
           originalOnAfterRender.call(this, renderedWith, renderedScene, renderedCamera, geometry, material, group);
+          if (!captureIsActive(operation)) {
+            cleanup();
+            return;
+          }
           if (drawRecords.length > 0) finish("ok");
         };
         directCaptureCleanup = cleanup;
@@ -796,7 +1037,7 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         ), 5_000);
       } catch (cause) {
         cleanup();
-        reject(request.requestId, cause instanceof Error ? cause.message : String(cause));
+        completeCapture(operation, rejectionDetail(cause instanceof Error ? cause.message : String(cause)), "failed");
       }
     };
 
@@ -808,7 +1049,18 @@ export const AnatomyGpuBlendIntermediateProbe = ({
           reject(request.requestId, error instanceof Error ? error.message : String(error));
         });
       } else if (request.method === "draw-boundary") {
-        handleDirectDrawCapture(request);
+        try {
+          handleDirectDrawCapture(request);
+        } catch (error) {
+          const operation = activeCapture;
+          if (operation?.requestId === request.requestId) {
+            completeCapture(
+              operation,
+              rejectionDetail(error instanceof Error ? error.message : String(error)),
+              "failed",
+            );
+          }
+        }
       } else if (request.method === "single-renderable-replay") {
         void handleProxy(request).catch((error: unknown) => {
           reject(request.requestId, error instanceof Error ? error.message : String(error));
@@ -821,9 +1073,13 @@ export const AnatomyGpuBlendIntermediateProbe = ({
     container.addEventListener(ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT, handleCapture);
     container.setAttribute("data-observer-anatomy-gpu-blend-probe", "ready");
     return () => {
-      directCaptureCleanup?.();
+      invalidateLifetime("probe-unmounted");
+      gl.domElement.removeEventListener("webglcontextlost", handleWebGlContextLost);
       container.removeEventListener(ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT, handleCapture);
-      container.removeAttribute("data-observer-anatomy-gpu-blend-probe");
+      if (anatomyGpuCaptureProbeOwners.get(container) === mountIdentity) {
+        anatomyGpuCaptureProbeOwners.delete(container);
+        container.removeAttribute("data-observer-anatomy-gpu-blend-probe");
+      }
     };
   }, [camera, generation, gl, scene]);
 
