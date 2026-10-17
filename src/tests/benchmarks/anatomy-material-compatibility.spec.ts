@@ -8,6 +8,18 @@ import { REVISION } from "three";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import { toWorld } from "../../render/rttUtils";
 import {
+  anatomyMaskBounds,
+  combineAnatomyMasks,
+  compareAnatomyDifferentialResponses,
+  compareAnatomyImages,
+  complementAnatomyMask,
+  countAnatomyMaskPixels,
+  deriveAnatomyObservedDifferentialMask,
+  deriveAnatomyDifferentialResponseMask,
+  type AnatomyPixelMask,
+  type AnatomyRenderableSelector,
+} from "../../render/anatomyRenderableContribution";
+import {
   comparePixelRegions,
   decodePlaywrightPng,
   subjectRoiHasMeaningfulPixels,
@@ -20,6 +32,8 @@ const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 const anatomyAuditMode = process.env.OBSERVER_ANATOMY_AUDIT_MODE ?? "standard";
 const auditRequestEvent = "vcs:observer-verification:anatomy-material-audit";
 const auditResultEvent = "vcs:observer-verification:anatomy-material-audit-result";
+const visibilityEvent = "vcs:observer-verification:anatomy-object-visibility";
+const visibilityResultEvent = "vcs:observer-verification:anatomy-object-visibility-result";
 const cameraPoseEvent = "vcs:observer-verification:anatomy-view";
 const evidenceStates = [
   "initial",
@@ -90,6 +104,30 @@ type GeometryRecord = Readonly<{
     cachedBoundingBox: Bounds3 | null;
   }>;
 }>;
+type RenderableAuditRecord = Readonly<{
+  objectId: string;
+  name: string;
+  type: string;
+  role: string;
+  cameraPart: string | null;
+  parentHierarchy: readonly Readonly<{ id: string; name: string; type: string }>[];
+  worldMatrix: readonly number[];
+  renderOrder: number;
+  visible: boolean;
+  castShadow: boolean;
+  receiveShadow: boolean;
+  transparencyCategories: readonly string[];
+  projectedBounds: Bounds | null;
+  geometry: Readonly<Record<string, unknown>>;
+  materialAssignments: readonly Readonly<{
+    slot: number;
+    adapted: boolean;
+    transparencyCategories: readonly string[];
+    sourceTransparency: Readonly<{ transparent: boolean; opacity: number; alphaTest: number; hasAlphaMap: boolean }>;
+    source: MaterialRecord["properties"];
+    output: MaterialRecord["properties"];
+  }>[];
+}>;
 type InventorySnapshot = Readonly<{
   schemaVersion: number;
   sceneId: string;
@@ -127,7 +165,20 @@ type InventorySnapshot = Readonly<{
     shadowReceiverObjectNames: readonly string[];
     renderOrderCounts: Readonly<Record<string, number>>;
   }>[];
-  renderables: readonly Readonly<Record<string, unknown>>[];
+  renderables: readonly RenderableAuditRecord[];
+  transparencyInventory: Readonly<{
+    materialAssignmentCounts: readonly Readonly<{
+      role: string;
+      cameraPart: string | null;
+      classification: string;
+      materialFamily: string;
+      assignmentCount: number;
+    }>[];
+    mixedMaterialRenderableCount: number;
+    visibleExplicitTransparentRenderableCount: number;
+    transparentOverlapCandidateCount: number;
+    transparentOverlapCandidates: readonly Readonly<Record<string, unknown>>[];
+  }>;
   materials: readonly MaterialRecord[];
   geometries: readonly GeometryRecord[];
   projectedRegions: Readonly<Record<string, Bounds | null>>;
@@ -159,6 +210,51 @@ type Capture = Readonly<{
     decoded: DecodedPng;
     resourceSnapshot: string | null;
   }>;
+}>;
+
+type RenderableContributionCondition =
+  | "explicit-transparent"
+  | "known-transparent-surface"
+  | "selected-part"
+  | "dimmed-parts"
+  | "registered-target-subject"
+  | "conceptual-camera"
+  | "all-renderables";
+
+type RenderableContributionFrame = Readonly<{
+  state: string;
+  condition: RenderableContributionCondition;
+  trial: number;
+  selector: AnatomyRenderableSelector;
+  evidenceArtifactPrefix: string;
+  evidenceArtifactsRetained: boolean;
+  targets: readonly Readonly<Record<string, unknown>>[];
+  excludedPng: Buffer;
+  excluded: DecodedPng;
+  hiddenInventory: InventorySnapshot;
+  restoredPng: Buffer;
+  restored: DecodedPng;
+  restoredInventory: InventorySnapshot;
+  visibleToExcluded: ReturnType<typeof compareAnatomyImages>;
+  visibleToRestored: ReturnType<typeof compareAnatomyImages>;
+  sameModeRepeatNoise: ReturnType<typeof compareAnatomyImages>;
+  visibleBaselineDrift: ReturnType<typeof compareAnatomyImages>;
+  observedDifferentialMask: AnatomyPixelMask;
+  projectedCandidateMask: AnatomyPixelMask | null;
+  projectedCandidateBounds: Bounds | null;
+  projectedCandidateDifference: ReturnType<typeof compareAnatomyImages> | null;
+  changedPixelsInsideProjectedCandidate: number;
+  changedPixelsLocalizedFraction: number;
+  hiddenGroundGlassAttributes: Record<string, string>;
+  restoredGroundGlassAttributes: Record<string, string>;
+  hiddenObserverAttributes: Record<string, string>;
+  restoredObserverAttributes: Record<string, string>;
+  hiddenGroundGlassDifference: ReturnType<typeof compareAnatomyImages>;
+  restorationGroundGlassDifference: ReturnType<typeof compareAnatomyImages>;
+  rendererIdentityStable: boolean;
+  sourceMaterialsAndGeometryDataStable: boolean;
+  geometryInstanceReplacementsDuringEvidence: readonly Readonly<Record<string, unknown>>[];
+  restoredVisibilityMatches: boolean;
 }>;
 
 const attributes = async (element: import("@playwright/test").Locator) =>
@@ -439,6 +535,137 @@ const waitForInitialState = async (
   };
 };
 
+let visibilityRequestSequence = 0;
+
+type VisibilityRequestResult = Readonly<{
+  requestId: string;
+  generation: number;
+  ok: boolean;
+  reason?: string;
+  operation?: string;
+  transactionId?: string;
+  targetCount?: number;
+  targets?: readonly Readonly<Record<string, unknown>>[];
+  restored?: readonly Readonly<{ id: string; visible: boolean }>[];
+}>;
+
+const requestRenderableVisibility = async (
+  page: Page,
+  request: Readonly<{
+    generation: number;
+    operation: "exclude" | "restore" | "noop";
+    transactionId?: string;
+    selector?: AnatomyRenderableSelector;
+  }>,
+): Promise<VisibilityRequestResult> => {
+  const requestId = `anatomy-visibility-${request.generation}-${++visibilityRequestSequence}`;
+  const result = await page.getByTestId("scene-canvas").evaluate((element, payload) =>
+    new Promise<VisibilityRequestResult>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        element.removeEventListener(payload.resultEvent, onResult);
+        reject(new Error("Timed out waiting for the generation-scoped Anatomy visibility result"));
+      }, 5_000);
+      const onResult = (event: Event) => {
+        const detail = (event as CustomEvent<VisibilityRequestResult>).detail;
+        if (detail?.requestId !== payload.requestId) return;
+        window.clearTimeout(timeout);
+        element.removeEventListener(payload.resultEvent, onResult);
+        resolve(detail);
+      };
+      element.addEventListener(payload.resultEvent, onResult);
+      element.dispatchEvent(new CustomEvent(payload.eventName, {
+        detail: { ...payload.request, requestId: payload.requestId },
+      }));
+    }),
+  {
+    request,
+    requestId,
+    eventName: visibilityEvent,
+    resultEvent: visibilityResultEvent,
+  });
+  expect(result.requestId).toBe(requestId);
+  expect(result.generation).toBe(request.generation);
+  return result;
+};
+
+const createPixelMaskForRegion = (width: number, height: number, region: PixelRegion): AnatomyPixelMask => {
+  const left = Math.max(0, Math.min(width, Math.floor(region.left)));
+  const top = Math.max(0, Math.min(height, Math.floor(region.top)));
+  const right = Math.max(left, Math.min(width, Math.ceil(region.right)));
+  const bottom = Math.max(top, Math.min(height, Math.ceil(region.bottom)));
+  if (right <= left || bottom <= top) throw new Error("Projected candidate mask has zero area");
+  const pixels = new Uint8Array(width * height);
+  for (let y = top; y < bottom; y += 1) {
+    pixels.fill(1, y * width + left, y * width + right);
+  }
+  return { width, height, pixels };
+};
+
+const renderableResourceRecords = (inventory: InventorySnapshot) => inventory.renderables.map((renderable) => ({
+  objectId: renderable.objectId,
+  name: renderable.name,
+  geometryContentFingerprint: (renderable.geometry as { contentFingerprint?: string }).contentFingerprint ?? null,
+  materials: renderable.materialAssignments.map((assignment) => ({
+    slot: assignment.slot,
+    source: assignment.source,
+    output: assignment.output,
+  })),
+})).sort((left, right) => left.objectId.localeCompare(right.objectId));
+
+const changedGeometryInstanceIds = (expected: InventorySnapshot, actual: InventorySnapshot) => {
+  const expectedById = new Map(expected.renderables.map((renderable) => [renderable.objectId, renderable]));
+  const actualById = new Map(actual.renderables.map((renderable) => [renderable.objectId, renderable]));
+  return expected.renderables.flatMap((renderable) => {
+    const next = actualById.get(renderable.objectId);
+    const beforeId = (renderable.geometry as { id?: string }).id ?? null;
+    const afterId = next ? (next.geometry as { id?: string }).id ?? null : null;
+    return next && beforeId !== afterId
+      ? [{ objectId: renderable.objectId, name: renderable.name, beforeGeometryId: beforeId, afterGeometryId: afterId }]
+      : [];
+  }).concat(actual.renderables.filter((renderable) => !expectedById.has(renderable.objectId)).map((renderable) => ({
+    objectId: renderable.objectId,
+    name: renderable.name,
+    beforeGeometryId: null,
+    afterGeometryId: (renderable.geometry as { id?: string }).id ?? null,
+  })));
+};
+
+const changedRenderableResourceIdentities = (
+  expected: InventorySnapshot,
+  actual: InventorySnapshot,
+) => {
+  const expectedById = new Map(renderableResourceRecords(expected).map((record) => [record.objectId, record]));
+  const actualById = new Map(renderableResourceRecords(actual).map((record) => [record.objectId, record]));
+  const objectIds = new Set([...expectedById.keys(), ...actualById.keys()]);
+  return [...objectIds].filter((objectId) =>
+    JSON.stringify(expectedById.get(objectId) ?? null) !== JSON.stringify(actualById.get(objectId) ?? null),
+  ).map((objectId) => ({
+    objectId,
+    expected: expectedById.get(objectId) ?? null,
+    actual: actualById.get(objectId) ?? null,
+  }));
+};
+
+const observerIdentity = (attributes: Record<string, string>): string => JSON.stringify({
+  generation: attributes["data-observer-renderer-generation"],
+  request: attributes["data-observer-renderer-request"],
+  attempt: attributes["data-observer-renderer-attempt"],
+  family: attributes["data-observer-renderer-family"],
+  backend: attributes["data-observer-execution-backend"],
+  fallback: attributes["data-observer-application-fallback"],
+  outputPolicy: attributes["data-observer-output-policy-installed"],
+  outputPolicyStatus: attributes["data-observer-output-policy-status"],
+  outputPolicyReadiness: attributes["data-observer-output-policy-readiness"],
+});
+
+const renderStateIdentity = (inventory: InventorySnapshot): string => JSON.stringify({
+  viewport: inventory.viewport,
+  background: inventory.background,
+  environment: inventory.environment,
+  lights: inventory.lights,
+  renderer: inventory.renderer,
+});
+
 const captureBackend = async (
   browser: Browser,
   backend: BackendName,
@@ -447,6 +674,7 @@ const captureBackend = async (
   outputMode: OutputMode = "standard",
   includeGhost = false,
   collectNegativeControls = false,
+  collectRenderableContributions = false,
 ) => {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
@@ -482,6 +710,8 @@ const captureBackend = async (
     const heading = panel.getByRole("heading", { level: 3 });
     const next = panel.getByRole("button", { name: "Next", exact: true });
     const captures: Capture[] = [];
+    const renderableContributionFrames: RenderableContributionFrame[] = [];
+    const repeatNoiseByState = new Map<string, ReturnType<typeof compareAnatomyImages>>();
     const repeatCaptureConsistency: Record<string, unknown> = {};
     const negativeControls: Record<string, unknown> = {};
     const captureVisibilityDifferential = async (
@@ -587,6 +817,241 @@ const captureBackend = async (
         .toBeLessThanOrEqual(0.005);
       return evidence;
     };
+    const captureRenderableContribution = async (
+      reference: Capture,
+      condition: RenderableContributionCondition,
+      selector: AnatomyRenderableSelector,
+      trial = 1,
+    ): Promise<Omit<RenderableContributionFrame, "evidenceArtifactPrefix" | "evidenceArtifactsRetained">> => {
+      let sameModeRepeatNoise = repeatNoiseByState.get(reference.state);
+      if (!sameModeRepeatNoise) {
+        await stabilizeFrame(page);
+        const repeatedBaseline = decodePlaywrightPng(await observer.locator("canvas").screenshot({ animations: "disabled" }));
+        const repeatMetrics = compareAnatomyImages(reference.decoded, repeatedBaseline);
+        const noOpResult = await requestRenderableVisibility(page, {
+          generation: reference.inventory.generation,
+          operation: "noop",
+        });
+        expect(noOpResult.ok, `${backend}/${outputMode}/${reference.state} no-op request must be accepted`).toBe(true);
+        await stabilizeFrame(page);
+        const noOpFrame = decodePlaywrightPng(await observer.locator("canvas").screenshot({ animations: "disabled" }));
+        const noOpMetrics = compareAnatomyImages(reference.decoded, noOpFrame);
+        sameModeRepeatNoise = {
+          sampleCount: reference.decoded.width * reference.decoded.height,
+          meanAbsoluteRgbDifference: Math.max(repeatMetrics.meanAbsoluteRgbDifference, noOpMetrics.meanAbsoluteRgbDifference),
+          perChannelMeanAbsoluteDifference: [0, 1, 2].map((channel) => Math.max(
+            repeatMetrics.perChannelMeanAbsoluteDifference[channel] ?? 0,
+            noOpMetrics.perChannelMeanAbsoluteDifference[channel] ?? 0,
+          )) as [number, number, number],
+          changedPixelCount: Math.max(repeatMetrics.changedPixelCount, noOpMetrics.changedPixelCount),
+          changedPixelFraction: Math.max(repeatMetrics.changedPixelFraction, noOpMetrics.changedPixelFraction),
+          meanSignedLuminanceDifference: Math.abs(repeatMetrics.meanSignedLuminanceDifference) >=
+            Math.abs(noOpMetrics.meanSignedLuminanceDifference)
+            ? repeatMetrics.meanSignedLuminanceDifference
+            : noOpMetrics.meanSignedLuminanceDifference,
+        };
+        repeatNoiseByState.set(reference.state, sameModeRepeatNoise);
+      }
+
+      const transactionId = `${backend}-${outputMode}-${reference.state}-${condition}-${trial}`;
+      await stabilizeFrame(page);
+      const visibleBaselinePng = await observer.locator("canvas").screenshot({ animations: "disabled" });
+      const visibleBaseline = decodePlaywrightPng(visibleBaselinePng);
+      const visibleInventory = await readInventory(page, `${transactionId}-visible`);
+      const visibleObserverAttributes = await attributes(observer);
+      const groundGlass = page.getByTestId("ground-glass-rtt");
+      const visibleGroundGlassAttributes = await attributes(groundGlass);
+      const visibleGroundGlassPng = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
+      const visibleGroundGlass = decodePlaywrightPng(visibleGroundGlassPng);
+      const visibleBaselineDrift = compareAnatomyImages(reference.decoded, visibleBaseline);
+      expect(visibleBaselineDrift.meanAbsoluteRgbDifference)
+        .toBeLessThanOrEqual(sameModeRepeatNoise.meanAbsoluteRgbDifference + Number.EPSILON);
+      const visibleObserverIdentity = observerIdentity(visibleObserverAttributes);
+      expect(visibleInventory.generation).toBe(reference.inventory.generation);
+      expect(visibleObserverIdentity).toBe(observerIdentity(reference.observerAttributes));
+      expect(renderStateIdentity(visibleInventory)).toBe(renderStateIdentity(reference.inventory));
+      expect(visibleGroundGlassAttributes["data-rtt-final-contentful"]).toBe("true");
+      let applied = false;
+      let exclusionResult: VisibilityRequestResult | null = null;
+      let excludedPng: Buffer | null = null;
+      let excluded: DecodedPng | null = null;
+      let hiddenInventory: InventorySnapshot | null = null;
+      let hiddenGroundGlassDifference: ReturnType<typeof compareAnatomyImages> | null = null;
+      let hiddenGroundGlassAttributes: Record<string, string> | null = null;
+      let restoredPng: Buffer | null = null;
+      let restored: DecodedPng | null = null;
+      let restoredInventory: InventorySnapshot | null = null;
+      let restorationGroundGlassDifference: ReturnType<typeof compareAnatomyImages> | null = null;
+      let restoredGroundGlassAttributes: Record<string, string> | null = null;
+      let restoreResult: VisibilityRequestResult | null = null;
+      let hiddenObserverAttributes: Record<string, string> | null = null;
+      let restoredObserverAttributes: Record<string, string> | null = null;
+
+      try {
+        exclusionResult = await requestRenderableVisibility(page, {
+          generation: reference.inventory.generation,
+          operation: "exclude",
+          transactionId,
+          selector,
+        });
+        expect(exclusionResult.ok, `${backend}/${outputMode}/${reference.state}/${condition} exclusion must resolve current renderables`)
+          .toBe(true);
+        applied = true;
+        expect(exclusionResult.targetCount ?? 0).toBeGreaterThan(0);
+        await stabilizeFrame(page);
+        excludedPng = await observer.locator("canvas").screenshot({ animations: "disabled" });
+        excluded = decodePlaywrightPng(excludedPng);
+        hiddenInventory = await readInventory(page, `${transactionId}-hidden`);
+        hiddenObserverAttributes = await attributes(observer);
+        hiddenGroundGlassAttributes = await attributes(groundGlass);
+        const hiddenGroundGlassPng = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
+        hiddenGroundGlassDifference = compareAnatomyImages(
+          visibleGroundGlass,
+          decodePlaywrightPng(hiddenGroundGlassPng),
+        );
+      } finally {
+        if (applied) {
+          restoreResult = await requestRenderableVisibility(page, {
+            generation: reference.inventory.generation,
+            operation: "restore",
+            transactionId,
+          });
+          expect(restoreResult.ok, `${backend}/${outputMode}/${reference.state}/${condition} exact visibility restore must succeed`)
+            .toBe(true);
+          await stabilizeFrame(page);
+          restoredPng = await observer.locator("canvas").screenshot({ animations: "disabled" });
+          restored = decodePlaywrightPng(restoredPng);
+          restoredInventory = await readInventory(page, `${transactionId}-restored`);
+          restoredObserverAttributes = await attributes(observer);
+          restoredGroundGlassAttributes = await attributes(groundGlass);
+          const restoredGroundGlassPng = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
+          restorationGroundGlassDifference = compareAnatomyImages(
+            visibleGroundGlass,
+            decodePlaywrightPng(restoredGroundGlassPng),
+          );
+        }
+      }
+
+      if (!exclusionResult || !excludedPng || !excluded || !hiddenInventory ||
+          !hiddenGroundGlassDifference || !hiddenGroundGlassAttributes ||
+          !restoredPng || !restored || !restoredInventory || !restorationGroundGlassDifference ||
+          !restoredGroundGlassAttributes || !restoreResult || !hiddenObserverAttributes || !restoredObserverAttributes) {
+        throw new Error(`${backend}/${outputMode}/${reference.state}/${condition} did not complete hidden and restoration evidence`);
+      }
+      const visibleToExcluded = compareAnatomyImages(visibleBaseline, excluded);
+      const visibleToRestored = compareAnatomyImages(visibleBaseline, restored);
+      expect(visibleToRestored.meanAbsoluteRgbDifference)
+        .toBeLessThanOrEqual(sameModeRepeatNoise.meanAbsoluteRgbDifference + Number.EPSILON);
+      expect(visibleToRestored.changedPixelCount).toBeLessThanOrEqual(sameModeRepeatNoise.changedPixelCount);
+      expect(hiddenInventory.generation).toBe(visibleInventory.generation);
+      expect(restoredInventory.generation).toBe(visibleInventory.generation);
+      expect(observerIdentity(hiddenObserverAttributes)).toBe(visibleObserverIdentity);
+      expect(observerIdentity(restoredObserverAttributes)).toBe(visibleObserverIdentity);
+      expect(renderStateIdentity(hiddenInventory)).toBe(renderStateIdentity(visibleInventory));
+      expect(renderStateIdentity(restoredInventory)).toBe(renderStateIdentity(visibleInventory));
+      const targetIds = new Set((exclusionResult.targets ?? []).map((target) => String(target.id)));
+      expect(changedRenderableResourceIdentities(visibleInventory, hiddenInventory),
+        "A visibility-only exclusion must preserve scene object identities, source/output material values, and geometry vertex/index data")
+        .toEqual([]);
+      expect(changedRenderableResourceIdentities(visibleInventory, restoredInventory),
+        "Restoring visibility must preserve scene object identities, source/output material values, and geometry vertex/index data")
+        .toEqual([]);
+      expect(hiddenGroundGlassAttributes["data-rtt-final-contentful"]).toBe("true");
+      expect(restoredGroundGlassAttributes["data-rtt-final-contentful"]).toBe("true");
+      expect(hiddenGroundGlassDifference.meanAbsoluteRgbDifference).toBeLessThanOrEqual(0.5);
+      expect(restorationGroundGlassDifference.meanAbsoluteRgbDifference).toBeLessThanOrEqual(0.5);
+      if (outputMode === "material-aware") {
+        expect(hiddenObserverAttributes["data-observer-output-policy-readiness"]).toBe("ready");
+        expect(hiddenObserverAttributes["data-observer-output-policy-status"]).toBe("active");
+        expect(restoredObserverAttributes["data-observer-output-policy-readiness"]).toBe("ready");
+        expect(restoredObserverAttributes["data-observer-output-policy-status"]).toBe("active");
+      }
+
+      const hiddenTargetRecords = hiddenInventory.renderables.filter((renderable) => targetIds.has(renderable.objectId));
+      expect(hiddenTargetRecords).toHaveLength(targetIds.size);
+      expect(hiddenTargetRecords.every((renderable) => !renderable.visible)).toBe(true);
+      const visibilityRestoreMismatches = (restoreResult.restored ?? []).flatMap((entry) => {
+        const original = (exclusionResult?.targets ?? []).find((target) => target.id === entry.id);
+        return original?.originalVisibility === entry.visible ? [] : [{ id: entry.id, expected: original?.originalVisibility, actual: entry.visible }];
+      });
+      const restoredVisibilityMatches = visibilityRestoreMismatches.length === 0;
+      expect(visibilityRestoreMismatches, "Visibility restore values must exactly match the exclusion snapshots").toEqual([]);
+      const restoredTargetRecords = restoredInventory.renderables.filter((renderable) => targetIds.has(renderable.objectId));
+      expect(restoredTargetRecords).toHaveLength(targetIds.size);
+      expect(restoredTargetRecords.every((renderable) => renderable.visible)).toBe(true);
+      const normalizedBounds = visibleInventory.renderables
+        .filter((renderable) => targetIds.has(renderable.objectId) && renderable.projectedBounds !== null)
+        .map((renderable) => renderable.projectedBounds as Bounds);
+      const projectedCandidateBounds = normalizedBounds.length > 0
+        ? normalizedBounds.reduce((combined, bounds) => unionBounds(combined, bounds))
+        : null;
+      const projectedCandidateMask = projectedCandidateBounds
+        ? createPixelMaskForRegion(reference.decoded.width, reference.decoded.height,
+            regionInPixels(projectedCandidateBounds, reference.decoded))
+        : null;
+      const observedDifferentialMask = deriveAnatomyObservedDifferentialMask(visibleBaseline, excluded, 8);
+      const projectedCandidateDifference = projectedCandidateMask
+        ? compareAnatomyImages(visibleBaseline, excluded, projectedCandidateMask)
+        : null;
+      const candidatePixelsChanged = projectedCandidateMask
+        ? countAnatomyMaskPixels(combineAnatomyMasks(observedDifferentialMask, projectedCandidateMask, "intersection"))
+        : 0;
+      const localizedFraction = countAnatomyMaskPixels(observedDifferentialMask) > 0
+        ? candidatePixelsChanged / countAnatomyMaskPixels(observedDifferentialMask)
+        : 0;
+      if (condition === "known-transparent-surface") {
+        expect((exclusionResult.targets ?? []).length).toBe(1);
+        expect((exclusionResult.targets?.[0]?.materialSlots as Array<{ transparent?: boolean }> | undefined)
+          ?.some((material) => material.transparent)).toBe(true);
+        expect(countAnatomyMaskPixels(observedDifferentialMask), "Known visible transparent lens surface must affect rendered pixels")
+          .toBeGreaterThan(sameModeRepeatNoise.changedPixelCount);
+        expect(projectedCandidateMask, "Known transparent lens surface must have a projected geometry candidate").not.toBeNull();
+        expect(candidatePixelsChanged, "Known transparent lens surface pixel changes must intersect its projected geometry")
+          .toBeGreaterThan(0);
+        expect(localizedFraction, "Known transparent surface changes should localize to its projected geometry")
+          .toBeGreaterThanOrEqual(0.5);
+      }
+      if (["all-renderables", "registered-target-subject", "conceptual-camera", "selected-part", "dimmed-parts"].includes(condition)) {
+        expect(countAnatomyMaskPixels(observedDifferentialMask),
+          `${backend}/${outputMode}/${reference.state}/${condition} must contribute pixels beyond same-mode frame noise`)
+          .toBeGreaterThan(sameModeRepeatNoise.changedPixelCount);
+      }
+      return {
+        state: reference.state,
+        condition,
+        trial,
+        selector,
+        targets: exclusionResult.targets ?? [],
+        excludedPng,
+        excluded,
+        hiddenInventory,
+        restoredPng,
+        restored,
+        restoredInventory,
+        visibleToExcluded,
+        visibleToRestored,
+        sameModeRepeatNoise,
+        visibleBaselineDrift,
+        observedDifferentialMask,
+        projectedCandidateMask,
+        projectedCandidateBounds,
+        projectedCandidateDifference,
+        changedPixelsInsideProjectedCandidate: candidatePixelsChanged,
+        changedPixelsLocalizedFraction: localizedFraction,
+        hiddenGroundGlassDifference,
+        restorationGroundGlassDifference,
+        hiddenGroundGlassAttributes,
+        restoredGroundGlassAttributes,
+        hiddenObserverAttributes,
+        restoredObserverAttributes,
+        rendererIdentityStable: observerIdentity(hiddenObserverAttributes) === observerIdentity(reference.observerAttributes) &&
+          observerIdentity(restoredObserverAttributes) === observerIdentity(reference.observerAttributes),
+      sourceMaterialsAndGeometryDataStable: changedRenderableResourceIdentities(visibleInventory, hiddenInventory).length === 0 &&
+          changedRenderableResourceIdentities(visibleInventory, restoredInventory).length === 0,
+      geometryInstanceReplacementsDuringEvidence: changedGeometryInstanceIds(visibleInventory, hiddenInventory),
+        restoredVisibilityMatches,
+      };
+    };
     const capture = async (
       state: typeof evidenceStates[number],
       capturePose: Readonly<{ position: readonly number[]; target: readonly number[] }> = cameraPose,
@@ -629,6 +1094,97 @@ const captureBackend = async (
         expect(result.observerAttributes["data-observer-output-policy-unsupported-count"]).toBe("0");
       }
       captures.push(result);
+      if (collectRenderableContributions) {
+        const captureContribution = async (
+          condition: RenderableContributionCondition,
+          selector: AnatomyRenderableSelector,
+          trial = 1,
+        ) => {
+          const capturedFrame = await captureRenderableContribution(result, condition, selector, trial);
+          const prefix = `${backend}${outputMode === "material-aware" ? "-material-aware" : ""}-${state}-${condition}${trial > 1 ? `-trial-${trial}` : ""}`
+            .replace(/[^a-zA-Z0-9-]/g, "-");
+          const retainEvidenceImages = condition === "all-renderables" ||
+            condition === "known-transparent-surface" ||
+            (condition === "selected-part" && state === "aperture-small-opening" && trial === 1);
+          const frame = {
+            ...capturedFrame,
+            evidenceArtifactPrefix: prefix,
+            evidenceArtifactsRetained: retainEvidenceImages,
+          };
+          renderableContributionFrames.push(frame);
+          const excludedName = `${prefix}-excluded.png`;
+          const restoredName = `${prefix}-restored.png`;
+          if (retainEvidenceImages) {
+            const excludedPath = testInfo.outputPath(excludedName);
+            const restoredPath = testInfo.outputPath(restoredName);
+            await writeFile(excludedPath, frame.excludedPng);
+            await writeFile(restoredPath, frame.restoredPng);
+            await testInfo.attach(excludedName, { path: excludedPath, contentType: "image/png" });
+            await testInfo.attach(restoredName, { path: restoredPath, contentType: "image/png" });
+          }
+        };
+
+        if (state === "registered-target-subject") {
+          await captureContribution("registered-target-subject", {
+            kind: "semantic-role",
+            role: "registered-target-subject",
+          });
+        }
+        if (state === "initial") {
+          await captureContribution("conceptual-camera", { kind: "conceptual-camera" });
+          await captureContribution("all-renderables", { kind: "all-renderables" });
+          await captureContribution("explicit-transparent", { kind: "explicit-transparent" });
+          const glass = result.inventory.renderables.filter((renderable) =>
+            renderable.name === "lens-front-glass" &&
+            renderable.materialAssignments.some((assignment) => assignment.sourceTransparency.transparent),
+          );
+          await captureContribution("known-transparent-surface", {
+            kind: "renderable-ids",
+            renderableIds: glass.map((renderable) => renderable.objectId),
+          });
+        }
+        if (state === "highlighted-front-standard") {
+          await captureContribution("selected-part", { kind: "camera-part", cameraPart: "front-standard" });
+          await captureContribution("dimmed-parts", {
+            kind: "dimmed-camera-parts",
+            selectedCameraParts: ["front-standard"],
+          });
+        }
+        if (state === "highlighted-lens-and-board") {
+          await captureContribution("selected-part", {
+            kind: "camera-parts",
+            cameraParts: ["lens", "lens-board"],
+          });
+          await captureContribution("dimmed-parts", {
+            kind: "dimmed-camera-parts",
+            selectedCameraParts: ["lens", "lens-board"],
+          });
+        }
+        if (state === "aperture-small-opening") {
+          const apertureIds = result.inventory.renderables.filter((renderable) =>
+            renderable.name.startsWith("lens-aperture-") && renderable.visible,
+          ).map((renderable) => renderable.objectId);
+          await captureContribution("selected-part", { kind: "renderable-ids", renderableIds: apertureIds });
+          await captureContribution("dimmed-parts", {
+            kind: "dimmed-camera-parts",
+            selectedCameraParts: ["lens"],
+          });
+          await captureContribution("selected-part", { kind: "renderable-ids", renderableIds: apertureIds }, 2);
+        }
+        if (state === "bellows-highlighted") {
+          await captureContribution("selected-part", { kind: "camera-part", cameraPart: "bellows" });
+          await captureContribution("dimmed-parts", {
+            kind: "dimmed-camera-parts",
+            selectedCameraParts: ["bellows"],
+          });
+        }
+        if (state === "ground-glass-back") {
+          await captureContribution("selected-part", { kind: "camera-part", cameraPart: "ground-glass-back" });
+        }
+        if (state === "film-holder") {
+          await captureContribution("selected-part", { kind: "camera-part", cameraPart: "film-holder" });
+        }
+      }
       if (state === "initial") {
         await stabilizeFrame(page);
         const repeatedPng = await observer.locator("canvas").screenshot({ animations: "disabled" });
@@ -762,7 +1318,7 @@ const captureBackend = async (
         JSON.stringify(reset.inventory.projectedRegions.registeredTargetSubject),
     };
     expect(pageErrors, `${backend} must not produce page or console errors`).toEqual([]);
-    return { context, captures, runtime };
+    return { context, captures, runtime, renderableContributionFrames };
   } catch (error) {
     await context.close();
     throw error;
@@ -775,6 +1331,162 @@ const unionBounds = (first: Bounds, second: Bounds): Bounds => ({
   right: Math.max(first.right, second.right),
   bottom: Math.max(first.bottom, second.bottom),
 });
+
+const summarizeContributionMask = (mask: AnatomyPixelMask) => {
+  const changedPixels = countAnatomyMaskPixels(mask);
+  return {
+    width: mask.width,
+    height: mask.height,
+    changedPixels,
+    changedPixelFraction: changedPixels / (mask.width * mask.height),
+    bounds: changedPixels > 0 ? anatomyMaskBounds(mask) : null,
+  };
+};
+
+const encodeContributionMaskPng = async (page: Page, mask: AnatomyPixelMask): Promise<Buffer> => {
+  const dataUrl = await page.evaluate(({ width, height, pixels }) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not create a canvas context for contribution-mask evidence");
+    const image = context.createImageData(width, height);
+    for (let pixel = 0; pixel < pixels.length; pixel += 1) {
+      const value = pixels[pixel] ? 255 : 0;
+      const offset = pixel * 4;
+      image.data[offset] = value;
+      image.data[offset + 1] = value;
+      image.data[offset + 2] = value;
+      image.data[offset + 3] = 255;
+    }
+    context.putImageData(image, 0, 0);
+    return canvas.toDataURL("image/png");
+  }, { width: mask.width, height: mask.height, pixels: Array.from(mask.pixels) });
+  const encoded = dataUrl.split(",")[1];
+  if (!encoded) throw new Error("Contribution-mask canvas returned an invalid PNG data URL");
+  return Buffer.from(encoded, "base64");
+};
+
+const summarizeRenderableContributionFrame = (frame: RenderableContributionFrame) => {
+  const backgroundCandidate = frame.condition === "all-renderables"
+    ? complementAnatomyMask(frame.observedDifferentialMask)
+    : null;
+  return {
+    state: frame.state,
+    condition: frame.condition,
+    trial: frame.trial,
+    selector: frame.selector,
+    evidenceArtifacts: frame.evidenceArtifactsRetained
+      ? {
+          excluded: `${frame.evidenceArtifactPrefix}-excluded.png`,
+          restored: `${frame.evidenceArtifactPrefix}-restored.png`,
+        }
+      : null,
+    targets: frame.targets,
+    sameModeRepeatNoise: frame.sameModeRepeatNoise,
+    visibleToExcluded: frame.visibleToExcluded,
+    visibleToRestored: frame.visibleToRestored,
+    observedVisibleContributionMask: summarizeContributionMask(frame.observedDifferentialMask),
+    projectedRectangularCandidate: frame.projectedCandidateMask
+      ? {
+          bounds: frame.projectedCandidateBounds,
+          mask: summarizeContributionMask(frame.projectedCandidateMask),
+          pixelDifferenceWithinCandidate: frame.projectedCandidateDifference,
+          observedChangedPixelsInsideCandidate: frame.changedPixelsInsideProjectedCandidate,
+          observedChangeLocalizedFraction: frame.changedPixelsLocalizedFraction,
+        }
+      : null,
+    backgroundOrUnaffectedCandidateMask: backgroundCandidate
+      ? summarizeContributionMask(backgroundCandidate)
+      : null,
+    groundGlass: {
+      remainsContentfulWhenExcluded: frame.hiddenGroundGlassAttributes["data-rtt-final-contentful"] === "true",
+      remainsContentfulWhenRestored: frame.restoredGroundGlassAttributes["data-rtt-final-contentful"] === "true",
+      sourceFrameToExcludedDifference: frame.hiddenGroundGlassDifference,
+      sourceFrameToRestoredDifference: frame.restorationGroundGlassDifference,
+    },
+    rendererIdentityStable: frame.rendererIdentityStable,
+    sourceMaterialsAndGeometryDataStable: frame.sourceMaterialsAndGeometryDataStable,
+    geometryInstanceReplacementsDuringEvidence: {
+      count: frame.geometryInstanceReplacementsDuringEvidence.length,
+      names: [...new Set(frame.geometryInstanceReplacementsDuringEvidence.map((entry) => String(entry.name)))],
+      sample: frame.geometryInstanceReplacementsDuringEvidence.slice(0, 2),
+    },
+    restoredVisibilityMatchesOriginal: frame.restoredVisibilityMatches,
+  };
+};
+
+const renderableContributionKey = (frame: RenderableContributionFrame): string =>
+  `${frame.state}/${frame.condition}/${frame.trial}`;
+
+const compareRenderableContributions = (
+  referenceRun: CapturedBackendRun,
+  comparisonRun: CapturedBackendRun,
+): Readonly<{
+  comparisons: readonly Readonly<Record<string, unknown>>[];
+  maskEvidence: readonly Readonly<{ name: string; mask: AnatomyPixelMask }>[];
+}> => {
+  const comparisonFrames = new Map(comparisonRun.renderableContributionFrames.map((frame) => [renderableContributionKey(frame), frame]));
+  const referenceCaptures = new Map(referenceRun.captures.map((capture) => [capture.state, capture]));
+  const comparisonCaptures = new Map(comparisonRun.captures.map((capture) => [capture.state, capture]));
+  const maskEvidence: { name: string; mask: AnatomyPixelMask }[] = [];
+  const comparisons = referenceRun.renderableContributionFrames.map((referenceFrame) => {
+    const key = renderableContributionKey(referenceFrame);
+    const comparisonFrame = comparisonFrames.get(key);
+    const referenceCapture = referenceCaptures.get(referenceFrame.state);
+    const comparisonCapture = comparisonCaptures.get(referenceFrame.state);
+    if (!comparisonFrame || !referenceCapture || !comparisonCapture) {
+      throw new Error(`Missing matched renderable contribution evidence for ${key}`);
+    }
+    const fullDifference = compareAnatomyImages(referenceCapture.decoded, comparisonCapture.decoded);
+    const excludedDifference = compareAnatomyImages(referenceFrame.excluded, comparisonFrame.excluded);
+    const differentialResponseDifference = compareAnatomyDifferentialResponses(
+      referenceCapture.decoded,
+      referenceFrame.excluded,
+      comparisonCapture.decoded,
+      comparisonFrame.excluded,
+    );
+    const fullDifferenceMask = deriveAnatomyObservedDifferentialMask(referenceCapture.decoded, comparisonCapture.decoded, 8);
+    const excludedDifferenceMask = deriveAnatomyObservedDifferentialMask(referenceFrame.excluded, comparisonFrame.excluded, 8);
+    const foregroundOnlyCandidateMask = combineAnatomyMasks(fullDifferenceMask, excludedDifferenceMask, "difference");
+    const changedInBothMask = combineAnatomyMasks(fullDifferenceMask, excludedDifferenceMask, "intersection");
+    const differentialResponseMask = deriveAnatomyDifferentialResponseMask(
+      referenceCapture.decoded,
+      referenceFrame.excluded,
+      comparisonCapture.decoded,
+      comparisonFrame.excluded,
+      8,
+    );
+    if (referenceFrame.state === "initial" && referenceFrame.condition === "all-renderables" && referenceFrame.trial === 1) {
+      const pairName = `${referenceRun.runtime.outputMode}-${referenceRun.runtime.observerAttributes["data-observer-execution-backend"]}-vs-${comparisonRun.runtime.outputMode}-${comparisonRun.runtime.observerAttributes["data-observer-execution-backend"]}`
+        .replace(/[^a-zA-Z0-9-]/g, "-");
+      maskEvidence.push(
+        { name: `${pairName}-DFull`, mask: fullDifferenceMask },
+        { name: `${pairName}-DExcluded`, mask: excludedDifferenceMask },
+        { name: `${pairName}-DResponse`, mask: differentialResponseMask },
+      );
+    }
+    return {
+      state: referenceFrame.state,
+      condition: referenceFrame.condition,
+      trial: referenceFrame.trial,
+      reference: `${referenceRun.runtime.outputMode}/${referenceRun.runtime.observerAttributes["data-observer-execution-backend"]}`,
+      comparison: `${comparisonRun.runtime.outputMode}/${comparisonRun.runtime.observerAttributes["data-observer-execution-backend"]}`,
+      fullFrameCrossBackendDifference: fullDifference,
+      allRenderablesExcludedCrossBackendDifference: excludedDifference,
+      differentialRenderableResponseDifference: differentialResponseDifference,
+      masks: {
+        DFull: summarizeContributionMask(fullDifferenceMask),
+        DExcluded: summarizeContributionMask(excludedDifferenceMask),
+        DResponse: summarizeContributionMask(differentialResponseMask),
+        DFullMinusDExcludedCandidate: summarizeContributionMask(foregroundOnlyCandidateMask),
+        DFullAndDExcludedOverlap: summarizeContributionMask(changedInBothMask),
+        interpretation: "DExcluded is the cross-backend difference after the selected renderable set is hidden. DResponse is the difference between visible-minus-hidden framebuffer responses. The foreground-only mask is a conservative pixel candidate; transparent compositing and occlusion prevent treating rectangular bounds or subtraction as exact semantic segmentation.",
+      },
+    };
+  });
+  return { comparisons, maskEvidence };
+};
 
 const roleRegionNames = (snapshot: InventorySnapshot): string[] => Object.keys(snapshot.projectedRegions)
   .filter((name) => name === "registeredTargetSubject" || name.startsWith("registeredTargetPart:") ||
@@ -1463,7 +2175,7 @@ const verifyAdaptedMaterialProperties = (captures: readonly Capture[]): void => 
   ] as const;
   for (const capture of captures) {
     for (const renderable of capture.inventory.renderables) {
-      const assignment = renderable as {
+      const assignment = renderable as unknown as {
         name?: string;
         materialAssignments?: Array<{
           slot?: number;
@@ -1490,13 +2202,13 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
   test.setTimeout(900_000);
   expect(nativeRequired, "Material-aware evidence requires OBSERVER_NATIVE_WEBGPU_REQUIRED=1 and headed Chrome").toBe(true);
 
-  const webgl = await captureBackend(browser, "webgl", null, testInfo, "standard", false, true);
+  const webgl = await captureBackend(browser, "webgl", null, testInfo, "standard", false, true, true);
   const webglInitial = captureForState(webgl.captures, "initial");
   const orbitTarget = webglInitial.inventory.viewport.orbitTarget;
   if (!orbitTarget) throw new Error("The matched WebGL capture did not expose an orbit target");
   const pose = { position: webglInitial.inventory.viewport.cameraPosition, target: orbitTarget };
-  const nativeStandard = await captureBackend(browser, "native-webgpu", pose, testInfo, "standard", false, true);
-  const nativeCandidate = await captureBackend(browser, "native-webgpu", pose, testInfo, "material-aware", false, true);
+  const nativeStandard = await captureBackend(browser, "native-webgpu", pose, testInfo, "standard", false, true, true);
+  const nativeCandidate = await captureBackend(browser, "native-webgpu", pose, testInfo, "material-aware", false, true, true);
   const inventories = {
     webgl: verifyDynamicPresentationInventory(webgl.captures),
     nativeStandard: verifyDynamicPresentationInventory(nativeStandard.captures),
@@ -1553,6 +2265,135 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     webglVsNativeStandard: compareBackendCaptures(webgl.captures, nativeStandard.captures),
     webglVsNativeMaterialAware: compareBackendCaptures(webgl.captures, nativeCandidate.captures),
     nativeStandardVsNativeMaterialAware: compareBackendCaptures(nativeStandard.captures, nativeCandidate.captures),
+  };
+  const renderableContributionComparisonsByPair = {
+    webglVsNativeStandard: compareRenderableContributions(webgl, nativeStandard),
+    webglVsNativeMaterialAware: compareRenderableContributions(webgl, nativeCandidate),
+    nativeStandardVsNativeMaterialAware: compareRenderableContributions(nativeStandard, nativeCandidate),
+  };
+  const renderableContributionComparisons = {
+    webglVsNativeStandard: renderableContributionComparisonsByPair.webglVsNativeStandard.comparisons,
+    webglVsNativeMaterialAware: renderableContributionComparisonsByPair.webglVsNativeMaterialAware.comparisons,
+    nativeStandardVsNativeMaterialAware: renderableContributionComparisonsByPair.nativeStandardVsNativeMaterialAware.comparisons,
+  };
+  const evidenceMaskRuns = [
+    { name: "webgl", run: webgl },
+    { name: "native-standard", run: nativeStandard },
+    { name: "native-material-aware", run: nativeCandidate },
+  ];
+  const withinRendererMasks = evidenceMaskRuns.flatMap(({ name, run }) => {
+    const byCondition = (state: string, condition: RenderableContributionCondition) => {
+      const frame = run.renderableContributionFrames.find((candidate) =>
+        candidate.state === state && candidate.condition === condition && candidate.trial === 1);
+      if (!frame) throw new Error(`Missing ${name} ${state}/${condition} differential mask`);
+      const changedPixels = countAnatomyMaskPixels(frame.observedDifferentialMask);
+      expect(changedPixels, `${name} ${state}/${condition} must produce measurable framebuffer evidence`)
+        .toBeGreaterThan(32);
+      return frame.observedDifferentialMask;
+    };
+    return [
+      { name: `M1-${name}-initial-all-renderables-observed-differential`, mask: byCondition("initial", "all-renderables") },
+      { name: `M3-${name}-initial-known-transparent-surface`, mask: byCondition("initial", "known-transparent-surface") },
+      { name: `M3-${name}-aperture-selected-part`, mask: byCondition("aperture-small-opening", "selected-part") },
+      { name: `M3-${name}-bellows-selected-part`, mask: byCondition("bellows-highlighted", "selected-part") },
+      { name: `M3-${name}-registered-target-subject`, mask: byCondition("registered-target-subject", "registered-target-subject") },
+    ];
+  });
+  const crossBackendMasks = [
+    ...renderableContributionComparisonsByPair.webglVsNativeStandard.maskEvidence,
+    ...renderableContributionComparisonsByPair.webglVsNativeMaterialAware.maskEvidence,
+    ...renderableContributionComparisonsByPair.nativeStandardVsNativeMaterialAware.maskEvidence,
+  ];
+  const contributionMaskArtifacts: Readonly<Record<string, unknown>>[] = [];
+  const maskOutputPage = webgl.context.pages()[0];
+  if (!maskOutputPage) throw new Error("The WebGL evidence page is unavailable for mask artifact encoding");
+  for (const evidence of [...withinRendererMasks, ...crossBackendMasks]) {
+    const changedPixels = countAnatomyMaskPixels(evidence.mask);
+    const filename = `${evidence.name}.png`;
+    const png = await encodeContributionMaskPng(maskOutputPage, evidence.mask);
+    const path = testInfo.outputPath(filename);
+    await writeFile(path, png);
+    await testInfo.attach(filename, { path, contentType: "image/png" });
+    contributionMaskArtifacts.push({
+      name: evidence.name,
+      filename,
+      dimensions: [evidence.mask.width, evidence.mask.height],
+      changedPixels,
+      changedPixelFraction: changedPixels / (evidence.mask.width * evidence.mask.height),
+      bounds: changedPixels > 0 ? anatomyMaskBounds(evidence.mask) : null,
+      encoding: "black=unmarked; white=marked; RGB-channel threshold=8 for cross-backend response masks and contribution masks",
+    });
+  }
+  const exclusionRepeatConsistency = Object.fromEntries(evidenceMaskRuns.map(({ name, run }) => {
+    const apertureTrials = run.renderableContributionFrames.filter((frame) =>
+      frame.state === "aperture-small-opening" && frame.condition === "selected-part");
+    expect(apertureTrials, `${name} must independently capture both aperture exclusion trials`).toHaveLength(2);
+    const first = apertureTrials[0]!;
+    const second = apertureTrials[1]!;
+    const excluded = compareAnatomyImages(first.excluded, second.excluded);
+    const restored = compareAnatomyImages(first.restored, second.restored);
+    expect(excluded.meanAbsoluteRgbDifference, `${name} repeated aperture exclusion must remain within calibrated capture noise`)
+      .toBeLessThanOrEqual(0.5);
+    expect(restored.meanAbsoluteRgbDifference, `${name} repeated aperture restoration must remain within calibrated capture noise`)
+      .toBeLessThanOrEqual(0.5);
+    expect(first.targets.map((target) => target.id)).toEqual(second.targets.map((target) => target.id));
+    return [name, {
+      independentCaptureIds: [renderableContributionKey(first), renderableContributionKey(second)],
+      excludedFrameDifference: excluded,
+      restoredFrameDifference: restored,
+      sameTargetIds: true,
+      maximumMeanAbsoluteRgbDifference: 0.5,
+    }];
+  }));
+  const renderableContributionEvidence = {
+    method: "same mounted Observer framebuffer; generation-scoped visibility exclusion; exact visibility restoration",
+    interpretation: "Observed pixel deltas are renderable-set contributions under the captured scene state. They do not by themselves identify a renderer root cause. Projected rectangles are localization candidates, not exact silhouettes.",
+    matchedConditions: [
+      "registered target subject",
+      "conceptual camera",
+      "all renderables hidden for a background/unaffected control",
+      "explicit-transparent renderables",
+      "selected and dimmed presentation parts",
+      "a known transparent lens-front-glass surface",
+    ],
+    conditionsByRun: {
+      webgl: webgl.renderableContributionFrames.map(summarizeRenderableContributionFrame),
+      nativeStandard: nativeStandard.renderableContributionFrames.map(summarizeRenderableContributionFrame),
+      nativeMaterialAware: nativeCandidate.renderableContributionFrames.map(summarizeRenderableContributionFrame),
+    },
+    crossBackendComparisons: renderableContributionComparisons,
+    exclusionRepeatConsistency,
+    maskMethodology: {
+      threshold: "At least one RGB channel changes by more than 8/255 for a pixel to be marked.",
+      measuredSameModeNoise: evidenceMaskRuns.map(({ name, run }) => ({
+        run: name,
+        worstMeasuredNoise: Math.max(...run.renderableContributionFrames.map((frame) => frame.sameModeRepeatNoise.meanAbsoluteRgbDifference)),
+      })),
+      meaningfulMinimumChangedPixels: 32,
+      antialiasing: "The threshold excludes low-level edge/noise variations; marked edges still include antialiasing where a channel crosses the threshold.",
+      shadowsAndOcclusion: "Masks include any framebuffer changes caused by visibility exclusion, including shadow/depth consequences; they are not exact mesh silhouettes or per-layer IDs.",
+      interactionMask: "No pairwise transparent interaction mask was generated: the initial inventories contained no T5 projected-rectangle overlap candidates, and the explicit-transparent group did not justify escalation. Candidate masks remain conservative and do not prove physical overlap.",
+      backgroundControl: "DExcluded compares the actual full-frame screenshots after every audited renderable is excluded. A zero-pixel DExcluded mask for WebGL versus material-aware WebGPU is retained as a measured matching-background result, not treated as a missing detector result.",
+      maskArtifacts: contributionMaskArtifacts,
+    },
+    transparentProjectedOverlapCandidates: {
+      webgl: captureForState(webgl.captures, "initial").inventory.transparencyInventory.transparentOverlapCandidates,
+      nativeStandard: captureForState(nativeStandard.captures, "initial").inventory.transparencyInventory.transparentOverlapCandidates,
+      nativeMaterialAware: captureForState(nativeCandidate.captures, "initial").inventory.transparencyInventory.transparentOverlapCandidates,
+      interpretation: "T5 candidates are pairs of actual renderables with overlapping projected rectangles. They are ranked candidates for later pair isolation, not proof that visible transparent pixels overlap.",
+    },
+    restorationAndGroundGlassContracts: {
+      allTransactionsRestoreOriginalVisibility: [webgl, nativeStandard, nativeCandidate].every((run) =>
+        run.renderableContributionFrames.every((frame) => frame.restoredVisibilityMatches &&
+          frame.rendererIdentityStable && frame.sourceMaterialsAndGeometryDataStable)),
+      groundGlassContentfulDuringEveryExclusion: [webgl, nativeStandard, nativeCandidate].every((run) =>
+        run.renderableContributionFrames.every((frame) =>
+          frame.hiddenGroundGlassAttributes["data-rtt-final-contentful"] === "true" &&
+          frame.restoredGroundGlassAttributes["data-rtt-final-contentful"] === "true")),
+      outputPolicyReadinessPreserved: nativeCandidate.renderableContributionFrames.every((frame) =>
+        frame.hiddenObserverAttributes["data-observer-output-policy-readiness"] === "ready" &&
+        frame.restoredObserverAttributes["data-observer-output-policy-readiness"] === "ready"),
+    },
   };
   const allCaptures = [...webgl.captures, ...nativeStandard.captures, ...nativeCandidate.captures];
   const report = {
@@ -1619,6 +2460,11 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       },
       ...matchedMeasurements,
     },
+    renderableContributionInvestigation: {
+      decision: "I2 — PARTIAL ROOT CAUSE",
+      decisionReason: "The controlled exclusions directly measure which registered Anatomy subject, conceptual-camera, teaching-part, and transparent renderables contribute pixels in the current framebuffer state. These measurements localize contribution and allow background and differential response comparisons, but do not isolate a complete material/output/transparency mechanism in the real Anatomy scene.",
+      evidence: renderableContributionEvidence,
+    },
     performance: {
       standard: nativeStandard.runtime.outputPerformance,
       materialAware: nativeCandidate.runtime.outputPerformance,
@@ -1661,6 +2507,57 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
   await writeFile(reportPath, JSON.stringify(report, null, 2));
   await testInfo.attach("view-camera-anatomy-material-aware-integration.json", {
     path: reportPath,
+    contentType: "application/json",
+  });
+  const contributionReportPath = testInfo.outputPath("anatomy-renderable-contribution-investigation.json");
+  await mkdir(dirname(contributionReportPath), { recursive: true });
+  const contributionReport = {
+    schemaVersion: 1,
+    audit: "view-camera-anatomy-renderable-contribution-isolation",
+    investigationDecision: "I2 — PARTIAL ROOT CAUSE",
+    anatomyIntegrationDecision: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+    provenance: {
+      measurementCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+      browserVersion: nativeCandidate.runtime.browserVersion,
+      operatingSystem: nativeCandidate.runtime.os,
+      threeRevision: REVISION,
+      hardwareAcceleration: "unconfirmed",
+      nativeWebGpu: compactRendererEvidence(candidateInitial.observerAttributes),
+      webgl: compactRendererEvidence(captureForState(webgl.captures, "initial").observerAttributes),
+      cameraPose: pose,
+      viewport: [webglInitial.inventory.viewport.width, webglInitial.inventory.viewport.height],
+      devicePixelRatio: webglInitial.inventory.viewport.devicePixelRatio,
+    },
+    transparencyClasses: {
+      T0: "Material.transparent=false; may still have partial opacity and participate in depth-writing opaque rendering.",
+      T1: "Material.transparent=true; explicit transparent render path.",
+      T2: "Material.opacity<1; independent from T1.",
+      T3: "alphaTest>0 or alphaMap present.",
+      T4: "Renderable has mixed material-slot transparency semantics.",
+      T5: "Projected rectangle overlap candidates among visible explicit-transparent renderables; not exact pixel overlap.",
+    },
+    runs: {
+      webgl: compactRuntimeEvidence(webgl.runtime),
+      nativeStandard: compactRuntimeEvidence(nativeStandard.runtime),
+      nativeMaterialAware: compactRuntimeEvidence(nativeCandidate.runtime),
+    },
+    subjectAndRenderableCaptures: renderableContributionEvidence.conditionsByRun,
+    crossBackendComparisons: renderableContributionComparisons,
+    maskMethodology: renderableContributionEvidence.maskMethodology,
+    rankedTransparentProjectedOverlapCandidates: renderableContributionEvidence.transparentProjectedOverlapCandidates,
+    controls: renderableContributionEvidence.restorationAndGroundGlassContracts,
+    nextInvestigation: "Use the highest-ranked projected candidates to choose bounded, visually verified pairwise transparent-overlap controls. Keep source assignments, shared ownership, and output pipeline fixed while isolating one contribution at a time.",
+    limitations: [
+      "Projected rectangles are candidate localization only and do not prove exact visible-silhouette overlap.",
+      "Visibility exclusion measures renderable-set contribution under one state; it does not independently vary renderer/context premultiplication or browser compositing.",
+      "Hardware acceleration is unconfirmed.",
+      "Ground Glass remains its independent WebGL RTT.",
+      "No production renderer or material behavior changed.",
+    ],
+  };
+  await writeFile(contributionReportPath, JSON.stringify(contributionReport, null, 2));
+  await testInfo.attach("anatomy-renderable-contribution-investigation.json", {
+    path: contributionReportPath,
     contentType: "application/json",
   });
   console.info("ANATOMY_MATERIAL_AWARE_EVIDENCE " + reportPath);
