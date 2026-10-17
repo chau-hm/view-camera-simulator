@@ -10,7 +10,9 @@ export default defineConfig({
   retries: 0,
   timeout: 30 * 60 * 1000,
   expect: { timeout: 120_000 },
-  outputDir: "test-results/anatomy-transparency-output-investigation/playwright",
+  // Keep this investigation's raw evidence separate because Playwright's
+  // default test-results cleanup would otherwise remove it on the next suite.
+  outputDir: ".test-results/anatomy-transparency-output-investigation/playwright",
   use: {
     ...developmentConfig.use,
     baseURL: "http://127.0.0.1:4178",
