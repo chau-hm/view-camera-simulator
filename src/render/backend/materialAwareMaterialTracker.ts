@@ -5,10 +5,12 @@ import {
 } from "./materialAwareNodeMaterials";
 import {
   observerOutputOwnerIdentity,
-  observerOutputSourceMaterial,
+  readObserverOutputSourceMaterial,
   observerOutputTrackerIdentity,
 } from "./observerMaterialOutputIdentity";
 import type { ObserverMaterialSignatures } from "./observerMaterialSignatures";
+
+export { readObserverOutputSourceMaterial } from "./observerMaterialOutputIdentity";
 
 export type MaterialOutputOwnerKind = "observer-controller" | "registered-subject";
 
@@ -65,13 +67,6 @@ export const isMaterialAwareRenderable = (
 ): object is MaterialAwareRenderable =>
   (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) &&
   "material" in object;
-
-export const readObserverOutputSourceMaterial = (
-  material: THREE.Material,
-): THREE.Material | null =>
-  (material as THREE.Material & { [observerOutputSourceMaterial]?: THREE.Material })[
-    observerOutputSourceMaterial
-  ] ?? null;
 
 /** A controller owner is scoped to one tracker/renderer generation. */
 export const createObserverControllerMaterialOutputOwner = (): MaterialOutputOwner => {

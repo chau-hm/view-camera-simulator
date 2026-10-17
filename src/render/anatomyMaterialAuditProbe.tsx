@@ -8,11 +8,15 @@ import {
   type AnatomyProjectedRegion,
   type AnatomyWorldBounds,
 } from "./anatomyProjectedBounds";
+import { classifyAnatomyMaterialRole } from "./anatomyMaterialRoles";
+import { readObserverOutputSourceMaterial } from "./backend/observerMaterialOutputIdentity";
 
 export const ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT =
   "vcs:observer-verification:anatomy-material-audit";
 export const ANATOMY_MATERIAL_AUDIT_RESULT_EVENT =
   "vcs:observer-verification:anatomy-material-audit-result";
+export const ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT =
+  "vcs:observer-verification:anatomy-object-visibility";
 
 type AnatomyMaterialAuditRequest = Readonly<{ requestId: string }>;
 
@@ -34,51 +38,6 @@ const getAncestors = (object: THREE.Object3D, scene: THREE.Scene): THREE.Object3
     current = current.parent;
   }
   return ancestors;
-};
-
-const classifyRole = (object: THREE.Object3D, scene: THREE.Scene): {
-  role: string;
-  cameraPart: string | null;
-  owner: string;
-} => {
-  const ancestors = getAncestors(object, scene);
-  const hasName = (name: string) => ancestors.some((candidate) => candidate.name === name);
-  const cameraPart = ancestors.find(
-    (candidate) => typeof candidate.userData.anatomyPart === "string",
-  )?.userData.anatomyPart as string | undefined;
-
-  if (hasName("view-camera-anatomy-subject")) {
-    return {
-      role: "registered-target-subject",
-      cameraPart: null,
-      owner: "module-shared-asset-source",
-    };
-  }
-  if (hasName("original-ghost-camera-rig-placement")) {
-    return {
-      role: cameraPart ? `ghost-reference-camera/${cameraPart}` : "ghost-reference-camera",
-      cameraPart: cameraPart ?? null,
-      owner: "r3f-scene-component",
-    };
-  }
-  if (hasName("camera-rig-placement")) {
-    return {
-      role: cameraPart ? `conceptual-camera/${cameraPart}` : "conceptual-camera",
-      cameraPart: cameraPart ?? null,
-      owner: object.name === "bellows-folded-surface"
-        ? "component-owned-dynamic-geometry"
-        : "r3f-scene-component",
-    };
-  }
-  if ((object as THREE.Light).isLight === true) {
-    return { role: "lighting", cameraPart: null, owner: "r3f-scene-component" };
-  }
-  if (/image-circle|coverage|lens-plane|film-plane|focus-plane|dof|scheimpflug|optical|fov|helper/i.test(
-    ancestors.map((candidate) => candidate.name).join("/"),
-  )) {
-    return { role: "optical-helper", cameraPart: null, owner: "r3f-scene-component" };
-  }
-  return { role: "other-scene-renderable", cameraPart: null, owner: "r3f-scene-component" };
 };
 
 const textureSlots = (material: THREE.Material): Record<string, Readonly<{
@@ -177,6 +136,9 @@ export const collectAnatomyMaterialAuditSnapshot = (
     cameraPart: string | null;
     owner: string;
     properties: ReturnType<typeof getMaterialProperties>;
+    outputMaterialIds: Set<string>;
+    outputMaterialFamilies: Set<string>;
+    adapted: boolean;
     assignments: number;
     objectNames: Set<string>;
   }>();
@@ -240,7 +202,7 @@ export const collectAnatomyMaterialAuditSnapshot = (
 
     if (!isRenderable(object)) return;
     renderableObjectCount += 1;
-    const classification = classifyRole(object, scene);
+    const classification = classifyAnatomyMaterialRole(object, scene);
     const category = classification.role;
     const categoryEntry = categoryCounts.get(category) ?? {
       objectCount: 0,
@@ -296,8 +258,9 @@ export const collectAnatomyMaterialAuditSnapshot = (
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     materials.forEach((material) => {
       materialAssignmentCount += 1;
-      const properties = getMaterialProperties(material);
-      const materialKey = `${category}/${material.uuid}`;
+      const sourceMaterial = readObserverOutputSourceMaterial(material) ?? material;
+      const properties = getMaterialProperties(sourceMaterial);
+      const materialKey = `${category}/${sourceMaterial.uuid}`;
       const materialEntry = materialGroups.get(materialKey) ?? {
         role: category,
         cameraPart: classification.cameraPart,
@@ -305,9 +268,15 @@ export const collectAnatomyMaterialAuditSnapshot = (
           ? "module-shared-asset-source"
           : "r3f-scene-component",
         properties,
+        outputMaterialIds: new Set<string>(),
+        outputMaterialFamilies: new Set<string>(),
+        adapted: false,
         assignments: 0,
         objectNames: new Set<string>(),
       };
+      materialEntry.outputMaterialIds.add(material.uuid);
+      materialEntry.outputMaterialFamilies.add(material.constructor.name);
+      materialEntry.adapted ||= material !== sourceMaterial;
       materialEntry.assignments += 1;
       materialEntry.objectNames.add(object.name || object.type);
       materialGroups.set(materialKey, materialEntry);
@@ -378,6 +347,9 @@ export const collectAnatomyMaterialAuditSnapshot = (
     })).sort((left, right) => left.role.localeCompare(right.role)),
     materials: [...materialGroups.values()].map((entry) => ({
       ...entry,
+      sourceMaterialId: entry.properties.id,
+      outputMaterialIds: [...entry.outputMaterialIds].sort(),
+      outputMaterialFamilies: [...entry.outputMaterialFamilies].sort(),
       objectNames: [...entry.objectNames].sort(),
     })).sort((left, right) =>
       `${left.role}/${left.properties.family}/${left.properties.id}`.localeCompare(
@@ -415,8 +387,34 @@ export const AnatomyMaterialAuditProbe = ({
         detail: { requestId: request.requestId, snapshot },
       }));
     };
+    const visibilityBeforeTest = new Map<THREE.Object3D, boolean>();
+    const handleVisibilityRequest = (event: Event) => {
+      const request = (event as CustomEvent<unknown>).detail as
+        Readonly<{ objectName: string; visible: boolean }> | null;
+      if (!request || typeof request.objectName !== "string" || typeof request.visible !== "boolean") return;
+      if (request.objectName !== "camera-anatomy-front-standard" &&
+          request.objectName !== "original-ghost-camera-rig-placement") return;
+      const object = scene.getObjectByName(request.objectName);
+      if (!object) {
+        container.setAttribute("data-observer-test-object-visibility-error", `${request.objectName}:not-mounted`);
+        return;
+      }
+      if (!visibilityBeforeTest.has(object)) visibilityBeforeTest.set(object, object.visible);
+      object.visible = request.visible;
+      container.setAttribute("data-observer-test-object-visibility", JSON.stringify({
+        objectName: request.objectName,
+        visible: object.visible,
+      }));
+    };
     container.addEventListener(ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT, handleRequest);
-    return () => container.removeEventListener(ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT, handleRequest);
+    container.addEventListener(ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT, handleVisibilityRequest);
+    return () => {
+      visibilityBeforeTest.forEach((visible, object) => { object.visible = visible; });
+      container.removeEventListener(ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT, handleRequest);
+      container.removeEventListener(ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT, handleVisibilityRequest);
+      container.removeAttribute("data-observer-test-object-visibility");
+      container.removeAttribute("data-observer-test-object-visibility-error");
+    };
   }, [camera, generation, gl, scene]);
 
   return null;

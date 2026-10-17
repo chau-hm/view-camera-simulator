@@ -1847,3 +1847,67 @@ shared ownership core is validated for the existing Architecture Rise
 integration. Anatomy still needs its own readiness, dynamic material/geometry
 coverage, and matched visual validation before a material-aware runtime can be
 considered.
+
+### PR M — View Camera Anatomy material-aware WebGPU opt-in integration
+
+PR M adds the real View Camera Anatomy material-aware candidate behind the
+explicit development route
+`/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware`.
+The normal Anatomy route remains WebGL; an explicit Anatomy WebGPU request
+without the output parameter remains standard. Architecture Rise keeps its
+existing material-aware development default, and production remains WebGL-only.
+
+Three headed Chrome 155.0.8059.84 runs on macOS Darwin 27.0 arm64 with Three.js
+r186 mounted the candidate as `webgpu-renderer / webgpu`, with an available
+adapter, one initialization, active/ready output, zero unsupported assignments,
+and no application fallback. Across 13 matched states, the readiness inventory
+contained 47 material attachments, 35 distinct/adapted materials, 17 Anatomy
+target renderables, and 30 conceptual-camera renderables. Hardware acceleration
+remains unconfirmed.
+
+The candidate uses the shared PR #259 tracker with an Anatomy-specific
+readiness, inventory, and Observer-owned material-copy adapter. The five
+module-shared Anatomy materials and shared BoxGeometry remained attached to
+Ground Glass sources; the adapted Observer NodeMaterials stayed distinct.
+Ground Glass remained WebGL2 and contentful in all 13 states, with zero RGB
+pixel difference across the three WebGL RTT output comparisons. The production
+preview denial test passed, and the unchanged Architecture Rise strict parity
+gate remained 78 pass / 0 fail / 3 conditional N/A.
+
+Matched object-aligned measurements show mean RGB MAE 19.7513 for WebGL vs
+standard native WebGPU and 33.3534 for WebGL vs material-aware native WebGPU
+(138 ROIs across 13 states). Repeat captures measured zero same-mode noise in
+all three trials; this does not establish cross-backend parity. Highlighted,
+dimmed, aperture, bellows, and rear-back states retain significant candidate
+differences. **Decision: M2 — OPT-IN IMPLEMENTATION INCOMPLETE.** Keep the
+candidate explicit and experimental; PR N default-promotion work requires an
+independently reviewed Anatomy parity criterion and resolution of the measured
+material/transparency differences. Hardware acceleration remains unconfirmed.
+The provenance, state-level ROI values, runtime timing/cadence, source identity,
+Ground Glass, negative-control, and lifecycle evidence are in the
+[Anatomy material-aware integration report](architecture/VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_INTEGRATION.md)
+and its [machine-readable report](architecture/view-camera-anatomy-material-aware/report.json)
+and [three-trial summary](architecture/view-camera-anatomy-material-aware/repeat-trials.json).
+
+### PR #260 Review-Fix Round 1 — material-aware readiness recovery
+
+Anatomy keeps its initial 12-second material-aware readiness deadline. After
+first activation, every later incomplete attachment interval now receives its
+own fixed 12-second recovery window. Returning to ready clears that interval;
+the initial mount-to-ready readinessWaitMs diagnostic is unchanged. The
+Observer stays hidden while readiness is incomplete, and unsupported materials
+or fatal reconciliation errors still take the immediate one-shot fallback.
+
+Native headed Chrome 155.0.8059.84 on macOS Darwin 27.0 arm64, Three.js r186,
+verified the Anatomy candidate on webgpu-renderer / webgpu. After 12,103.2 ms
+of active time, an actual Lesson 0 transition produced ready → pending →
+ready on generation 1, with no fallback and contentful Ground Glass. A
+persistent-readiness negative control fell back after 13,015.7 ms, disposed all
+35 candidate NodeMaterials, and left zero candidate attachments. An unsupported
+material failed immediately after 166.1 ms. Hardware acceleration remains
+unconfirmed. Focused timing tests, full unit/static/build checks, ordinary
+Observer E2E, native-required Observer E2E, the 13-state Anatomy audit, strict
+Architecture Rise parity, Architecture Rise native validation, and production
+preview validation passed. **Decision: M2 — OPT-IN IMPLEMENTATION INCOMPLETE**
+remains unchanged; this lifecycle correction does not resolve the measured
+Anatomy output differences or authorize promotion.

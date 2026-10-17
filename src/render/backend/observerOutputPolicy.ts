@@ -26,7 +26,7 @@ export type ObserverOutputPolicyInput = Readonly<{
   developmentBuild: boolean;
 }>;
 
-/** Selects the Architecture Rise WebGPU output treatment without changing renderer eligibility. */
+/** Selects a scene's explicitly permitted development WebGPU output treatment. */
 export const resolveObserverOutputPolicy = ({
   sceneId,
   requestedRendererParam,
@@ -69,7 +69,10 @@ export const resolveObserverOutputPolicy = ({
       reason: "development-gate-disabled",
     };
   }
-  if (sceneId !== "architecture-rise") {
+  const architectureRiseDefault = sceneId === "architecture-rise";
+  const anatomyExplicitOptIn = sceneId === "view-camera-anatomy" &&
+    requestedOutputParam === "material-aware";
+  if (!architectureRiseDefault && !anatomyExplicitOptIn) {
     return {
       requestedParameter: requestedOutputParam,
       requested,

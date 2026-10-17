@@ -396,3 +396,28 @@ explicitly requested, and normal Observer selection remains WebGL. Anatomy
 still requires its own readiness policy and native visual validation for
 dynamic camera materials, deformable/replaced geometry, and lesson states.
 K2 remains the decision until that scene-specific work is completed.
+
+## PR M follow-up — real-scene candidate integrated
+
+The K2 decision above records the PR K audit state; PR L subsequently extracted
+the shared tracker and PR M adds the real Anatomy readiness, inventory, and
+Observer-owned material-copy adapter behind an explicit development-only
+`observerOutput=material-aware` request. Standard Anatomy WebGPU, default
+WebGL, Architecture Rise behavior, production policy, and Ground Glass remain
+separate and unchanged.
+
+Three matched 13-state native-required runs confirmed the candidate mounted as
+`webgpu-renderer / webgpu`, adapted all 47 active material attachments with
+zero unsupported assignments, and preserved shared-source identity for
+Ground Glass. They did not establish visual parity: mean object-ROI RGB MAE
+was 33.3534 against WebGL and 51.5763 against standard native WebGPU, with the
+largest differences in highlighted/dimmed, aperture, bellows, and rear-back
+states. Repeat captures remained stable; that does not offset the cross-backend
+differences.
+
+**Current PR M decision: M2 — OPT-IN IMPLEMENTATION INCOMPLETE.** The original
+K2 ownership concern is addressed by the new scene-specific adapter and shared
+core, but the candidate remains experimental until the material/transparency
+output differences have an independently reviewed fix and parity criterion.
+See the [PR M integration report](VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_INTEGRATION.md)
+and its [machine-readable measurements](view-camera-anatomy-material-aware/report.json).

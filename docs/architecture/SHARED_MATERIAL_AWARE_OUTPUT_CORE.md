@@ -376,3 +376,37 @@ The matched reports are under the ignored `test-results` directory:
 - Reviewed implementation: `test-results/observer-backend-comparison/pr-l-review-fix-baseline/run.json`
 - Corrected implementation: `test-results/observer-backend-comparison/pr-l-review-fix-candidate/run.json`
 - Corrected strict parity: `test-results/observer-backend-comparison/playwright/observer-visual-parity.ben-f1f5b-ounds-and-teaching-overlays-chrome-native-webgpu/observer-visual-parity.json`
+
+## PR M follow-up — real Anatomy candidate
+
+PR M uses the shared tracker in the real View Camera Anatomy Observer through
+an Anatomy-specific readiness, material inventory, and Observer-owned output
+adapter. Three native-required Chrome runs adapted all 47 measured assignments
+(35 distinct source materials, zero unsupported assignments), kept the five
+module-shared source materials and shared BoxGeometry attached to the Ground
+Glass consumer, and released NodeMaterials by the controller owner. Ground
+Glass remained pixel-identical across WebGL, standard native WebGPU, and the
+material-aware candidate in all 13 states.
+
+The measured mean object-ROI RGB MAE was 33.3534 for WebGL versus the Anatomy
+candidate and 51.5763 between standard native WebGPU and the candidate. The
+large highlighted, dimmed, aperture, bellows, and rear-back differences keep
+the integration experimental. The Architecture Rise strict parity result
+remains unchanged at 78 pass / 0 fail / 3 conditional N/A. **PR M decision: M2
+— OPT-IN IMPLEMENTATION INCOMPLETE.** The Anatomy route remains an explicit
+development opt-in; L1 still describes the shared core's validated use in
+Architecture Rise, not visual qualification of every scene adapter.
+
+The matched states, per-ROI values, renderer timing/cadence, source ownership,
+negative controls, and limitations are recorded in the
+[Anatomy integration report](VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_INTEGRATION.md)
+and its [three-trial summary](view-camera-anatomy-material-aware/repeat-trials.json).
+
+## PR #260 Review-Fix Round 1 — readiness timing clarification
+
+The shared controller now distinguishes its initial readiness deadline from
+later recovery intervals. Anatomy uses a 12-second initial deadline and a
+fresh fixed 12-second deadline for each incomplete interval after activation.
+Architecture Rise retains its adapter configuration with readiness timeout
+disabled. This timing helper does not alter the shared material tracker,
+scene-specific readiness criteria, ownership, or output policy.

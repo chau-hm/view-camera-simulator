@@ -1,0 +1,1816 @@
+{
+  "schemaVersion": 1,
+  "audit": "view-camera-anatomy-material-aware-integration",
+  "measurementCommit": "da29db824cf4cbebe5fdf5016c0c6750c676dbe9",
+  "environment": {
+    "browserVersion": "155.0.8059.84",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64"
+    },
+    "threeRevision": "186",
+    "hardwareAcceleration": "unconfirmed"
+  },
+  "collection": {
+    "trialCount": 3,
+    "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware npx playwright test --config=playwright.anatomy-material-audit.config.ts --workers=1",
+    "description": "Trial 1 is the retained primary report from a successful --repeat-each=3 invocation. Trials 2 and 3 were separate successful one-run invocations with unique --output directories. Each trial executed WebGL, native standard WebGPU, and native material-aware WebGPU over the same 13 states."
+  },
+  "trials": [
+    {
+      "id": "trial-1",
+      "reportSource": "report.json (same native run)",
+      "rawReportSha256": "513f7c0f262328d5d7a3515e502964012ea3484375fd1409912c63676f658a54",
+      "nativeQualification": {
+        "rendererGeneration": "1",
+        "rendererRequest": "webgpu-pilot",
+        "rendererAttempt": "webgpu",
+        "selectionReason": "webgpu-pilot-approved",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "webgpuApiPresent": "true",
+        "adapterAvailability": "available",
+        "initializationAttempts": "1",
+        "applicationFallback": "none",
+        "outputPolicyRequested": "material-aware",
+        "outputPolicySelected": "material-aware",
+        "outputPolicySelectionReason": "material-aware-selected",
+        "outputPolicyInstalled": "material-aware",
+        "outputPolicyStatus": "active",
+        "outputPolicyReadiness": "ready",
+        "outputPolicyReadinessEvidence": {
+          "registeredSubjectRenderables": 17,
+          "expectedSubjectRenderables": 17,
+          "conceptualCameraRenderables": 30,
+          "materialAssignments": 47,
+          "trackedAttachments": 47
+        },
+        "unsupportedMaterialCount": "0",
+        "initializationFailureStage": null,
+        "toneMapping": "none",
+        "toneMappingActive": "false",
+        "toneMappingExposure": "1.000000",
+        "outputColorSpace": "srgb-linear",
+        "shadowMapStatus": "active",
+        "shadowMapType": "pcf"
+      },
+      "runtimeModes": {
+        "webgl": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgl",
+            "attempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "family": "webgl-renderer",
+            "executionBackend": "webgl2",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "not-requested",
+            "initializationAttempts": null,
+            "applicationFallback": "none",
+            "outputPolicySelected": "standard",
+            "outputPolicyStatus": null,
+            "outputPolicyReadiness": null,
+            "initializationFailureStage": null,
+            "toneMapping": "aces-filmic",
+            "toneMappingActive": "true",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1093.6051250000003,
+          "navigationToFirstVerifiedCaptureMs": 1762.051083,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 363,
+            "medianFrameIntervalMs": 16.699999999999818,
+            "p95FrameIntervalMs": 17.300000000000182,
+            "medianFramesPerSecond": 59.88023952095874
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "webgl/initial",
+              "repeatedCaptureId": "webgl/initial/initial-repeat-1",
+              "repeatedFilename": "webgl-initial-repeat-1.png",
+              "sameOutputMode": "standard",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        },
+        "nativeStandard": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgpu-pilot",
+            "attempt": "webgpu",
+            "selectionReason": "webgpu-pilot-approved",
+            "family": "webgpu-renderer",
+            "executionBackend": "webgpu",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "available",
+            "initializationAttempts": "1",
+            "applicationFallback": "none",
+            "outputPolicySelected": "standard",
+            "outputPolicyStatus": null,
+            "outputPolicyReadiness": null,
+            "initializationFailureStage": null,
+            "toneMapping": "aces-filmic",
+            "toneMappingActive": "true",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1092.9961669999993,
+          "navigationToFirstVerifiedCaptureMs": 1760.0319999999992,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 379,
+            "medianFrameIntervalMs": 16.699999999999818,
+            "p95FrameIntervalMs": 17.5,
+            "medianFramesPerSecond": 59.88023952095874
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "native-webgpu/initial",
+              "repeatedCaptureId": "native-webgpu/initial/initial-repeat-1",
+              "repeatedFilename": "native-webgpu-initial-repeat-1.png",
+              "sameOutputMode": "standard",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        },
+        "nativeMaterialAware": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgpu-pilot",
+            "attempt": "webgpu",
+            "selectionReason": "webgpu-pilot-approved",
+            "family": "webgpu-renderer",
+            "executionBackend": "webgpu",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "available",
+            "initializationAttempts": "1",
+            "applicationFallback": "none",
+            "outputPolicySelected": "material-aware",
+            "outputPolicyStatus": "active",
+            "outputPolicyReadiness": "ready",
+            "initializationFailureStage": null,
+            "toneMapping": "none",
+            "toneMappingActive": "false",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb-linear",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1224.962125,
+          "navigationToFirstVerifiedCaptureMs": 1894.1196250000012,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 383,
+            "medianFrameIntervalMs": 16.699999999999818,
+            "p95FrameIntervalMs": 17.5,
+            "medianFramesPerSecond": 59.88023952095874
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "native-webgpu-material-aware/initial",
+              "repeatedCaptureId": "native-webgpu-material-aware/initial/initial-repeat-1",
+              "repeatedFilename": "native-webgpu-material-aware-initial-repeat-1.png",
+              "sameOutputMode": "material-aware",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        }
+      },
+      "candidateReadiness": {
+        "totalMeshAssignments": 47,
+        "distinctMaterialInstances": 35,
+        "adaptedMaterialInstances": 35,
+        "unsupportedMaterialInstances": 0,
+        "readinessEvidence": {
+          "registeredSubjectRenderables": 17,
+          "expectedSubjectRenderables": 17,
+          "conceptualCameraRenderables": 30,
+          "materialAssignments": 47,
+          "trackedAttachments": 47
+        }
+      },
+      "visualComparisons": {
+        "webglVsNativeStandard": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 19.75133972611286,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 99.80790697674419,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 5.38616467658272
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 4.311518342072917
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 32.47411235169646
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 32.47420887009465
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 32.47418601911363
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 6.82644663512371
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 29.153719501332994
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 28.50416162679886
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 11.914107809394457
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 34.59059386738388
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 8.552508928527004
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 32.811849949817436
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 5.912415528209207
+            }
+          ]
+        },
+        "webglVsNativeMaterialAware": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 33.353425916647225,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 114.10760538896132,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 0.25684918114127847
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 0.4107292319468617
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 30.62652919952113
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 52.181325584170516
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 74.06399185525527
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 59.40371618242965
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 62.14411856901931
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 77.32524945288621
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 70.55201910927671
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 66.48240597927636
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 0.6352924882189638
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 26.508372984163827
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 0.815110504650321
+            }
+          ]
+        },
+        "nativeStandardVsNativeMaterialAware": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 51.57628212189635,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 157.66501291989664,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 5.282423987355231
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 4.187568362562308
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 62.11302160171461
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 83.5649328266053
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 105.38900344590533
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 62.816821908403526
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 90.72600924452803
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 104.97813538872242
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 81.56790437338701
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 99.99461332936765
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 8.107741570664198
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 55.419412586792134
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 5.282423987355231
+            }
+          ]
+        }
+      },
+      "groundGlass": {
+        "allThirteenCapturesContentful": true,
+        "sharedResourceIdentity": {
+          "captureCount": 13,
+          "sourceMaterialsMatchGroundGlassEveryCapture": true,
+          "sourceGeometryMatchesGroundGlassEveryCapture": true,
+          "outputMaterialsDistinctFromGroundGlassEveryCapture": true,
+          "observerBackend": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          }
+        },
+        "crossOutputPixelComparisons": {
+          "webglVsNativeStandard": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          },
+          "webglVsNativeMaterialAware": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          },
+          "nativeStandardVsNativeMaterialAware": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          }
+        }
+      },
+      "resourceLifecycle": {
+        "instrumentation": "Development-only CPU callback instrumentation; browser scheduling and GPU execution are not measured here.",
+        "frameCount": 394,
+        "readinessWaitMs": 7.799999952316284,
+        "managedMaterialCount": 35,
+        "peakManagedMaterialCount": 51,
+        "attachmentCount": 47,
+        "peakAttachmentCount": 63,
+        "trackedRenderableCount": 47,
+        "peakTrackedRenderableCount": 63,
+        "adaptedMaterialCreations": 62,
+        "disposedNodeMaterials": 27,
+        "endStateLiveMaterialCopies": 35,
+        "creationMinusDisposalMatchesLiveCopies": true,
+        "controllerCallback": {
+          "sampleCount": 394,
+          "rollingSampleCount": 394,
+          "cumulativeMeanMs": 0.47918781683529693,
+          "cumulativeMaxMs": 3.5,
+          "rollingMedianMs": 0.5,
+          "rollingP95Ms": 0.6000000238418579
+        }
+      },
+      "negativeControls": {
+        "registeredTargetHidden": {
+          "method": "actual Observer framebuffer visibility differential",
+          "objectName": "view-camera-anatomy-subject",
+          "normalizedProjectedRegion": {
+            "left": 0.2514483981145747,
+            "top": 0.2655230139640524,
+            "right": 0.7688385240792364,
+            "bottom": 0.8009820169061348
+          },
+          "pixelRegion": {
+            "left": 129,
+            "top": 109,
+            "right": 396,
+            "bottom": 330
+          },
+          "regionDifference": {
+            "meanAbsoluteRgbDifference": 110.809107394038,
+            "changedPixelCount": 27317,
+            "changedPixelFraction": 0.4629450743132171,
+            "meanSignedLuminanceDifference": 111.07314175950587
+          },
+          "fullCanvasDifference": {
+            "meanAbsoluteRgbDifference": 30.950954774820833,
+            "changedPixelCount": 27317,
+            "changedPixelFraction": 0.1293087941530101,
+            "meanSignedLuminanceDifference": 31.02470426975661
+          },
+          "changedPixelFractionLocalizedToRegion": 1,
+          "minimumChangedPixels": 64,
+          "hiddenCanvasContentful": true,
+          "restorationDifference": {
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "frontStandardHidden": {
+          "method": "actual Observer framebuffer visibility differential",
+          "objectName": "camera-anatomy-front-standard",
+          "normalizedProjectedRegion": {
+            "left": 0.27192061569546644,
+            "top": 0.38451824827479,
+            "right": 0.5312858880215737,
+            "bottom": 0.7379999685331904
+          },
+          "pixelRegion": {
+            "left": 139,
+            "top": 158,
+            "right": 274,
+            "bottom": 304
+          },
+          "regionDifference": {
+            "meanAbsoluteRgbDifference": 83.80590224928125,
+            "changedPixelCount": 9866,
+            "changedPixelFraction": 0.5005580923389142,
+            "meanSignedLuminanceDifference": 80.87451518010931
+          },
+          "fullCanvasDifference": {
+            "meanAbsoluteRgbDifference": 7.819091393930213,
+            "changedPixelCount": 9866,
+            "changedPixelFraction": 0.04670207428025031,
+            "meanSignedLuminanceDifference": 7.545592955399446
+          },
+          "changedPixelFractionLocalizedToRegion": 1,
+          "minimumChangedPixels": 64,
+          "hiddenCanvasContentful": true,
+          "restorationDifference": {
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        }
+      },
+      "pageErrors": {
+        "webgl": [],
+        "nativeStandard": [],
+        "nativeMaterialAware": []
+      }
+    },
+    {
+      "id": "trial-2",
+      "reportSource": "test-results/anatomy-material-aware-trial-2/anatomy-material-compatibi-b245c-WebGPU-and-candidate-states-chrome-native-webgpu/view-camera-anatomy-material-aware-integration.json",
+      "rawReportSha256": "1b90fae5987b938d0ac9eb7ac7aae58fca5f28f9a2253647013544a6999aabf2",
+      "nativeQualification": {
+        "rendererGeneration": "1",
+        "rendererRequest": "webgpu-pilot",
+        "rendererAttempt": "webgpu",
+        "selectionReason": "webgpu-pilot-approved",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "webgpuApiPresent": "true",
+        "adapterAvailability": "available",
+        "initializationAttempts": "1",
+        "applicationFallback": "none",
+        "outputPolicyRequested": "material-aware",
+        "outputPolicySelected": "material-aware",
+        "outputPolicySelectionReason": "material-aware-selected",
+        "outputPolicyInstalled": "material-aware",
+        "outputPolicyStatus": "active",
+        "outputPolicyReadiness": "ready",
+        "outputPolicyReadinessEvidence": {
+          "registeredSubjectRenderables": 17,
+          "expectedSubjectRenderables": 17,
+          "conceptualCameraRenderables": 30,
+          "materialAssignments": 47,
+          "trackedAttachments": 47
+        },
+        "unsupportedMaterialCount": "0",
+        "initializationFailureStage": null,
+        "toneMapping": "none",
+        "toneMappingActive": "false",
+        "toneMappingExposure": "1.000000",
+        "outputColorSpace": "srgb-linear",
+        "shadowMapStatus": "active",
+        "shadowMapType": "pcf"
+      },
+      "runtimeModes": {
+        "webgl": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgl",
+            "attempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "family": "webgl-renderer",
+            "executionBackend": "webgl2",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "not-requested",
+            "initializationAttempts": null,
+            "applicationFallback": "none",
+            "outputPolicySelected": "standard",
+            "outputPolicyStatus": null,
+            "outputPolicyReadiness": null,
+            "initializationFailureStage": null,
+            "toneMapping": "aces-filmic",
+            "toneMappingActive": "true",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1805.092125,
+          "navigationToFirstVerifiedCaptureMs": 2386.631375,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 418,
+            "medianFrameIntervalMs": 13.300000000000182,
+            "p95FrameIntervalMs": 14.300000000000182,
+            "medianFramesPerSecond": 75.187969924811
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "webgl/initial",
+              "repeatedCaptureId": "webgl/initial/initial-repeat-1",
+              "repeatedFilename": "webgl-initial-repeat-1.png",
+              "sameOutputMode": "standard",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        },
+        "nativeStandard": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgpu-pilot",
+            "attempt": "webgpu",
+            "selectionReason": "webgpu-pilot-approved",
+            "family": "webgpu-renderer",
+            "executionBackend": "webgpu",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "available",
+            "initializationAttempts": "1",
+            "applicationFallback": "none",
+            "outputPolicySelected": "standard",
+            "outputPolicyStatus": null,
+            "outputPolicyReadiness": null,
+            "initializationFailureStage": null,
+            "toneMapping": "aces-filmic",
+            "toneMappingActive": "true",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1079.364583999999,
+          "navigationToFirstVerifiedCaptureMs": 1640.6074169999993,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 406,
+            "medianFrameIntervalMs": 13.399999999999636,
+            "p95FrameIntervalMs": 14.100000000000364,
+            "medianFramesPerSecond": 74.62686567164381
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "native-webgpu/initial",
+              "repeatedCaptureId": "native-webgpu/initial/initial-repeat-1",
+              "repeatedFilename": "native-webgpu-initial-repeat-1.png",
+              "sameOutputMode": "standard",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        },
+        "nativeMaterialAware": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgpu-pilot",
+            "attempt": "webgpu",
+            "selectionReason": "webgpu-pilot-approved",
+            "family": "webgpu-renderer",
+            "executionBackend": "webgpu",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "available",
+            "initializationAttempts": "1",
+            "applicationFallback": "none",
+            "outputPolicySelected": "material-aware",
+            "outputPolicyStatus": "active",
+            "outputPolicyReadiness": "ready",
+            "initializationFailureStage": null,
+            "toneMapping": "none",
+            "toneMappingActive": "false",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb-linear",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1933.1189169999998,
+          "navigationToFirstVerifiedCaptureMs": 2604.2649170000004,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 427,
+            "medianFrameIntervalMs": 13.399999999999636,
+            "p95FrameIntervalMs": 14.300000000000182,
+            "medianFramesPerSecond": 74.62686567164381
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "native-webgpu-material-aware/initial",
+              "repeatedCaptureId": "native-webgpu-material-aware/initial/initial-repeat-1",
+              "repeatedFilename": "native-webgpu-material-aware-initial-repeat-1.png",
+              "sameOutputMode": "material-aware",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        }
+      },
+      "candidateReadiness": {
+        "totalMeshAssignments": 47,
+        "distinctMaterialInstances": 35,
+        "adaptedMaterialInstances": 35,
+        "unsupportedMaterialInstances": 0,
+        "readinessEvidence": {
+          "registeredSubjectRenderables": 17,
+          "expectedSubjectRenderables": 17,
+          "conceptualCameraRenderables": 30,
+          "materialAssignments": 47,
+          "trackedAttachments": 47
+        }
+      },
+      "visualComparisons": {
+        "webglVsNativeStandard": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 19.75133972611286,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 99.80790697674419,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 5.38616467658272
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 4.311518342072917
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 32.47411235169646
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 32.47420887009465
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 32.47418601911363
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 6.82644663512371
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 29.153719501332994
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 28.50416162679886
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 11.914107809394457
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 34.59059386738388
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 8.552508928527004
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 32.811849949817436
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 5.912415528209207
+            }
+          ]
+        },
+        "webglVsNativeMaterialAware": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 33.353425916647225,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 114.10760538896132,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 0.25684918114127847
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 0.4107292319468617
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 30.62652919952113
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 52.181325584170516
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 74.06399185525527
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 59.40371618242965
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 62.14411856901931
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 77.32524945288621
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 70.55201910927671
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 66.48240597927636
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 0.6352924882189638
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 26.508372984163827
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 0.815110504650321
+            }
+          ]
+        },
+        "nativeStandardVsNativeMaterialAware": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 51.57628212189635,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 157.66501291989664,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 5.282423987355231
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 4.187568362562308
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 62.11302160171461
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 83.5649328266053
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 105.38900344590533
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 62.816821908403526
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 90.72600924452803
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 104.97813538872242
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 81.56790437338701
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 99.99461332936765
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 8.107741570664198
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 55.419412586792134
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 5.282423987355231
+            }
+          ]
+        }
+      },
+      "groundGlass": {
+        "allThirteenCapturesContentful": true,
+        "sharedResourceIdentity": {
+          "captureCount": 13,
+          "sourceMaterialsMatchGroundGlassEveryCapture": true,
+          "sourceGeometryMatchesGroundGlassEveryCapture": true,
+          "outputMaterialsDistinctFromGroundGlassEveryCapture": true,
+          "observerBackend": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          }
+        },
+        "crossOutputPixelComparisons": {
+          "webglVsNativeStandard": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          },
+          "webglVsNativeMaterialAware": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          },
+          "nativeStandardVsNativeMaterialAware": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          }
+        }
+      },
+      "resourceLifecycle": {
+        "instrumentation": "Development-only CPU callback instrumentation; browser scheduling and GPU execution are not measured here.",
+        "frameCount": 439,
+        "readinessWaitMs": 8.600000023841858,
+        "managedMaterialCount": 35,
+        "peakManagedMaterialCount": 51,
+        "attachmentCount": 47,
+        "peakAttachmentCount": 63,
+        "trackedRenderableCount": 47,
+        "peakTrackedRenderableCount": 63,
+        "adaptedMaterialCreations": 62,
+        "disposedNodeMaterials": 27,
+        "endStateLiveMaterialCopies": 35,
+        "creationMinusDisposalMatchesLiveCopies": true,
+        "controllerCallback": {
+          "sampleCount": 439,
+          "rollingSampleCount": 439,
+          "cumulativeMeanMs": 0.4781321164958841,
+          "cumulativeMaxMs": 3.700000047683716,
+          "rollingMedianMs": 0.40000009536743164,
+          "rollingP95Ms": 0.6000000238418579
+        }
+      },
+      "negativeControls": {
+        "registeredTargetHidden": {
+          "method": "actual Observer framebuffer visibility differential",
+          "objectName": "view-camera-anatomy-subject",
+          "normalizedProjectedRegion": {
+            "left": 0.2514483981145747,
+            "top": 0.2655230139640524,
+            "right": 0.7688385240792364,
+            "bottom": 0.8009820169061348
+          },
+          "pixelRegion": {
+            "left": 129,
+            "top": 109,
+            "right": 396,
+            "bottom": 330
+          },
+          "regionDifference": {
+            "meanAbsoluteRgbDifference": 110.809107394038,
+            "changedPixelCount": 27317,
+            "changedPixelFraction": 0.4629450743132171,
+            "meanSignedLuminanceDifference": 111.07314175950587
+          },
+          "fullCanvasDifference": {
+            "meanAbsoluteRgbDifference": 30.950954774820833,
+            "changedPixelCount": 27317,
+            "changedPixelFraction": 0.1293087941530101,
+            "meanSignedLuminanceDifference": 31.02470426975661
+          },
+          "changedPixelFractionLocalizedToRegion": 1,
+          "minimumChangedPixels": 64,
+          "hiddenCanvasContentful": true,
+          "restorationDifference": {
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "frontStandardHidden": {
+          "method": "actual Observer framebuffer visibility differential",
+          "objectName": "camera-anatomy-front-standard",
+          "normalizedProjectedRegion": {
+            "left": 0.27192061569546644,
+            "top": 0.38451824827479,
+            "right": 0.5312858880215737,
+            "bottom": 0.7379999685331904
+          },
+          "pixelRegion": {
+            "left": 139,
+            "top": 158,
+            "right": 274,
+            "bottom": 304
+          },
+          "regionDifference": {
+            "meanAbsoluteRgbDifference": 83.80590224928125,
+            "changedPixelCount": 9866,
+            "changedPixelFraction": 0.5005580923389142,
+            "meanSignedLuminanceDifference": 80.87451518010931
+          },
+          "fullCanvasDifference": {
+            "meanAbsoluteRgbDifference": 7.819091393930213,
+            "changedPixelCount": 9866,
+            "changedPixelFraction": 0.04670207428025031,
+            "meanSignedLuminanceDifference": 7.545592955399446
+          },
+          "changedPixelFractionLocalizedToRegion": 1,
+          "minimumChangedPixels": 64,
+          "hiddenCanvasContentful": true,
+          "restorationDifference": {
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        }
+      },
+      "pageErrors": {
+        "webgl": [],
+        "nativeStandard": [],
+        "nativeMaterialAware": []
+      }
+    },
+    {
+      "id": "trial-3",
+      "reportSource": "test-results/anatomy-material-aware-trial-3/anatomy-material-compatibi-b245c-WebGPU-and-candidate-states-chrome-native-webgpu/view-camera-anatomy-material-aware-integration.json",
+      "rawReportSha256": "542cdaa667818540e21cddea9840c6c2f5401b3200a492faaaffd4f645b907fb",
+      "nativeQualification": {
+        "rendererGeneration": "1",
+        "rendererRequest": "webgpu-pilot",
+        "rendererAttempt": "webgpu",
+        "selectionReason": "webgpu-pilot-approved",
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "webgpuApiPresent": "true",
+        "adapterAvailability": "available",
+        "initializationAttempts": "1",
+        "applicationFallback": "none",
+        "outputPolicyRequested": "material-aware",
+        "outputPolicySelected": "material-aware",
+        "outputPolicySelectionReason": "material-aware-selected",
+        "outputPolicyInstalled": "material-aware",
+        "outputPolicyStatus": "active",
+        "outputPolicyReadiness": "ready",
+        "outputPolicyReadinessEvidence": {
+          "registeredSubjectRenderables": 17,
+          "expectedSubjectRenderables": 17,
+          "conceptualCameraRenderables": 30,
+          "materialAssignments": 47,
+          "trackedAttachments": 47
+        },
+        "unsupportedMaterialCount": "0",
+        "initializationFailureStage": null,
+        "toneMapping": "none",
+        "toneMappingActive": "false",
+        "toneMappingExposure": "1.000000",
+        "outputColorSpace": "srgb-linear",
+        "shadowMapStatus": "active",
+        "shadowMapType": "pcf"
+      },
+      "runtimeModes": {
+        "webgl": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgl",
+            "attempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "family": "webgl-renderer",
+            "executionBackend": "webgl2",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "not-requested",
+            "initializationAttempts": null,
+            "applicationFallback": "none",
+            "outputPolicySelected": "standard",
+            "outputPolicyStatus": null,
+            "outputPolicyReadiness": null,
+            "initializationFailureStage": null,
+            "toneMapping": "aces-filmic",
+            "toneMappingActive": "true",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1138.604125,
+          "navigationToFirstVerifiedCaptureMs": 1686.4497910000002,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 407,
+            "medianFrameIntervalMs": 13.399999999999636,
+            "p95FrameIntervalMs": 14.100000000000136,
+            "medianFramesPerSecond": 74.62686567164381
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "webgl/initial",
+              "repeatedCaptureId": "webgl/initial/initial-repeat-1",
+              "repeatedFilename": "webgl-initial-repeat-1.png",
+              "sameOutputMode": "standard",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        },
+        "nativeStandard": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgpu-pilot",
+            "attempt": "webgpu",
+            "selectionReason": "webgpu-pilot-approved",
+            "family": "webgpu-renderer",
+            "executionBackend": "webgpu",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "available",
+            "initializationAttempts": "1",
+            "applicationFallback": "none",
+            "outputPolicySelected": "standard",
+            "outputPolicyStatus": null,
+            "outputPolicyReadiness": null,
+            "initializationFailureStage": null,
+            "toneMapping": "aces-filmic",
+            "toneMappingActive": "true",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1212.5289169999996,
+          "navigationToFirstVerifiedCaptureMs": 1776.6635420000002,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 413,
+            "medianFrameIntervalMs": 13.399999999999636,
+            "p95FrameIntervalMs": 14.100000000000364,
+            "medianFramesPerSecond": 74.62686567164381
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "native-webgpu/initial",
+              "repeatedCaptureId": "native-webgpu/initial/initial-repeat-1",
+              "repeatedFilename": "native-webgpu-initial-repeat-1.png",
+              "sameOutputMode": "standard",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        },
+        "nativeMaterialAware": {
+          "renderer": {
+            "generation": "1",
+            "request": "webgpu-pilot",
+            "attempt": "webgpu",
+            "selectionReason": "webgpu-pilot-approved",
+            "family": "webgpu-renderer",
+            "executionBackend": "webgpu",
+            "webgpuApiPresent": "true",
+            "adapterAvailability": "available",
+            "initializationAttempts": "1",
+            "applicationFallback": "none",
+            "outputPolicySelected": "material-aware",
+            "outputPolicyStatus": "active",
+            "outputPolicyReadiness": "ready",
+            "initializationFailureStage": null,
+            "toneMapping": "none",
+            "toneMappingActive": "false",
+            "toneMappingExposure": "1.000000",
+            "outputColorSpace": "srgb-linear",
+            "shadowMapStatus": "active",
+            "shadowMapType": "pcf"
+          },
+          "navigationToRendererReadyMs": 1235.7017080000005,
+          "navigationToFirstVerifiedCaptureMs": 1851.1432920000007,
+          "frameCadenceDuringTeachingStates": {
+            "sampleCount": 427,
+            "medianFrameIntervalMs": 13.399999999999636,
+            "p95FrameIntervalMs": 14.300000000000182,
+            "medianFramesPerSecond": 74.62686567164381
+          },
+          "repeatCaptureConsistency": {
+            "initial": {
+              "firstCaptureId": "native-webgpu-material-aware/initial",
+              "repeatedCaptureId": "native-webgpu-material-aware/initial/initial-repeat-1",
+              "repeatedFilename": "native-webgpu-material-aware-initial-repeat-1.png",
+              "sameOutputMode": "material-aware",
+              "sameSceneState": "initial",
+              "cameraPose": [
+                0.4455740000000001,
+                0.22278699999999993,
+                0.43816599999999994
+              ],
+              "orbitTarget": [
+                0,
+                0,
+                -0.08167
+              ],
+              "viewport": [
+                514,
+                411
+              ],
+              "devicePixelRatio": 1,
+              "metrics": {
+                "meanAbsoluteRgbDifference": 0,
+                "changedPixelCount": 0,
+                "changedPixelFraction": 0,
+                "meanSignedLuminanceDifference": 0
+              }
+            }
+          }
+        }
+      },
+      "candidateReadiness": {
+        "totalMeshAssignments": 47,
+        "distinctMaterialInstances": 35,
+        "adaptedMaterialInstances": 35,
+        "unsupportedMaterialInstances": 0,
+        "readinessEvidence": {
+          "registeredSubjectRenderables": 17,
+          "expectedSubjectRenderables": 17,
+          "conceptualCameraRenderables": 30,
+          "materialAssignments": 47,
+          "trackedAttachments": 47
+        }
+      },
+      "visualComparisons": {
+        "webglVsNativeStandard": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 19.75133972611286,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 99.80790697674419,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 5.38616467658272
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 4.311518342072917
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 32.47411235169646
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 32.47420887009465
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 32.47418601911363
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 6.82644663512371
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 29.153719501332994
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 28.50416162679886
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 11.914107809394457
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 34.59059386738388
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 8.552508928527004
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 32.811849949817436
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 5.912415528209207
+            }
+          ]
+        },
+        "webglVsNativeMaterialAware": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 33.353425916647225,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 114.10760538896132,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 0.25684918114127847
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 0.4107292319468617
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 30.62652919952113
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 52.181325584170516
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 74.06399185525527
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 59.40371618242965
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 62.14411856901931
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 77.32524945288621
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 70.55201910927671
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 66.48240597927636
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 0.6352924882189638
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 26.508372984163827
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 0.815110504650321
+            }
+          ]
+        },
+        "nativeStandardVsNativeMaterialAware": {
+          "stateCount": 13,
+          "roiCount": 138,
+          "meanRoiRgbMae": 51.57628212189635,
+          "minimumRoiRgbMae": 0,
+          "maximumRoiRgbMae": 157.66501291989664,
+          "perStateMeanRoiRgbMae": [
+            {
+              "state": "initial",
+              "meanRoiRgbMae": 5.282423987355231
+            },
+            {
+              "state": "registered-target-subject",
+              "meanRoiRgbMae": 4.187568362562308
+            },
+            {
+              "state": "highlighted-front-standard",
+              "meanRoiRgbMae": 62.11302160171461
+            },
+            {
+              "state": "highlighted-lens-and-board",
+              "meanRoiRgbMae": 83.5649328266053
+            },
+            {
+              "state": "aperture-small-opening",
+              "meanRoiRgbMae": 105.38900344590533
+            },
+            {
+              "state": "bellows-highlighted",
+              "meanRoiRgbMae": 62.816821908403526
+            },
+            {
+              "state": "rear-standard-highlighted",
+              "meanRoiRgbMae": 90.72600924452803
+            },
+            {
+              "state": "ground-glass-back",
+              "meanRoiRgbMae": 104.97813538872242
+            },
+            {
+              "state": "film-holder",
+              "meanRoiRgbMae": 81.56790437338701
+            },
+            {
+              "state": "camera-support-highlighted",
+              "meanRoiRgbMae": 99.99461332936765
+            },
+            {
+              "state": "image-circle-lesson",
+              "meanRoiRgbMae": 8.107741570664198
+            },
+            {
+              "state": "front-rise-adjusted",
+              "meanRoiRgbMae": 55.419412586792134
+            },
+            {
+              "state": "after-reset",
+              "meanRoiRgbMae": 5.282423987355231
+            }
+          ]
+        }
+      },
+      "groundGlass": {
+        "allThirteenCapturesContentful": true,
+        "sharedResourceIdentity": {
+          "captureCount": 13,
+          "sourceMaterialsMatchGroundGlassEveryCapture": true,
+          "sourceGeometryMatchesGroundGlassEveryCapture": true,
+          "outputMaterialsDistinctFromGroundGlassEveryCapture": true,
+          "observerBackend": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          }
+        },
+        "crossOutputPixelComparisons": {
+          "webglVsNativeStandard": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          },
+          "webglVsNativeMaterialAware": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          },
+          "nativeStandardVsNativeMaterialAware": {
+            "stateCount": 13,
+            "allBackendsWebGL2": true,
+            "sampleCountPerState": 211768,
+            "distinctColorBucketsPerState": 124,
+            "meanRgbMae": 0,
+            "maximumRgbMae": 0,
+            "changedPixelCount": 0,
+            "allPixelsIdentical": true
+          }
+        }
+      },
+      "resourceLifecycle": {
+        "instrumentation": "Development-only CPU callback instrumentation; browser scheduling and GPU execution are not measured here.",
+        "frameCount": 439,
+        "readinessWaitMs": 8.399999976158142,
+        "managedMaterialCount": 35,
+        "peakManagedMaterialCount": 51,
+        "attachmentCount": 47,
+        "peakAttachmentCount": 63,
+        "trackedRenderableCount": 47,
+        "peakTrackedRenderableCount": 63,
+        "adaptedMaterialCreations": 62,
+        "disposedNodeMaterials": 27,
+        "endStateLiveMaterialCopies": 35,
+        "creationMinusDisposalMatchesLiveCopies": true,
+        "controllerCallback": {
+          "sampleCount": 439,
+          "rollingSampleCount": 439,
+          "cumulativeMeanMs": 0.4633257416223339,
+          "cumulativeMaxMs": 3.899999976158142,
+          "rollingMedianMs": 0.40000009536743164,
+          "rollingP95Ms": 0.6000000238418579
+        }
+      },
+      "negativeControls": {
+        "registeredTargetHidden": {
+          "method": "actual Observer framebuffer visibility differential",
+          "objectName": "view-camera-anatomy-subject",
+          "normalizedProjectedRegion": {
+            "left": 0.2514483981145747,
+            "top": 0.2655230139640524,
+            "right": 0.7688385240792364,
+            "bottom": 0.8009820169061348
+          },
+          "pixelRegion": {
+            "left": 129,
+            "top": 109,
+            "right": 396,
+            "bottom": 330
+          },
+          "regionDifference": {
+            "meanAbsoluteRgbDifference": 110.809107394038,
+            "changedPixelCount": 27317,
+            "changedPixelFraction": 0.4629450743132171,
+            "meanSignedLuminanceDifference": 111.07314175950587
+          },
+          "fullCanvasDifference": {
+            "meanAbsoluteRgbDifference": 30.950954774820833,
+            "changedPixelCount": 27317,
+            "changedPixelFraction": 0.1293087941530101,
+            "meanSignedLuminanceDifference": 31.02470426975661
+          },
+          "changedPixelFractionLocalizedToRegion": 1,
+          "minimumChangedPixels": 64,
+          "hiddenCanvasContentful": true,
+          "restorationDifference": {
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "frontStandardHidden": {
+          "method": "actual Observer framebuffer visibility differential",
+          "objectName": "camera-anatomy-front-standard",
+          "normalizedProjectedRegion": {
+            "left": 0.27192061569546644,
+            "top": 0.38451824827479,
+            "right": 0.5312858880215737,
+            "bottom": 0.7379999685331904
+          },
+          "pixelRegion": {
+            "left": 139,
+            "top": 158,
+            "right": 274,
+            "bottom": 304
+          },
+          "regionDifference": {
+            "meanAbsoluteRgbDifference": 83.80590224928125,
+            "changedPixelCount": 9866,
+            "changedPixelFraction": 0.5005580923389142,
+            "meanSignedLuminanceDifference": 80.87451518010931
+          },
+          "fullCanvasDifference": {
+            "meanAbsoluteRgbDifference": 7.819091393930213,
+            "changedPixelCount": 9866,
+            "changedPixelFraction": 0.04670207428025031,
+            "meanSignedLuminanceDifference": 7.545592955399446
+          },
+          "changedPixelFractionLocalizedToRegion": 1,
+          "minimumChangedPixels": 64,
+          "hiddenCanvasContentful": true,
+          "restorationDifference": {
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        }
+      },
+      "pageErrors": {
+        "webgl": [],
+        "nativeStandard": [],
+        "nativeMaterialAware": []
+      }
+    }
+  ],
+  "aggregate": {
+    "rendererTimingRangesMs": {
+      "webgl": {
+        "navigationToRendererReady": {
+          "mean": 1345.767125,
+          "min": 1093.6051250000003,
+          "max": 1805.092125
+        },
+        "navigationToFirstVerifiedCapture": {
+          "mean": 1945.044083,
+          "min": 1686.4497910000002,
+          "max": 2386.631375
+        },
+        "frameCadenceP95Ms": {
+          "min": 14.100000000000136,
+          "max": 17.300000000000182
+        }
+      },
+      "nativeStandard": {
+        "navigationToRendererReady": {
+          "mean": 1128.2965559999993,
+          "min": 1079.364583999999,
+          "max": 1212.5289169999996
+        },
+        "navigationToFirstVerifiedCapture": {
+          "mean": 1725.7676529999997,
+          "min": 1640.6074169999993,
+          "max": 1776.6635420000002
+        },
+        "frameCadenceP95Ms": {
+          "min": 14.100000000000364,
+          "max": 17.5
+        }
+      },
+      "nativeMaterialAware": {
+        "navigationToRendererReady": {
+          "mean": 1464.59425,
+          "min": 1224.962125,
+          "max": 1933.1189169999998
+        },
+        "navigationToFirstVerifiedCapture": {
+          "mean": 2116.509278000001,
+          "min": 1851.1432920000007,
+          "max": 2604.2649170000004
+        },
+        "frameCadenceP95Ms": {
+          "min": 14.300000000000182,
+          "max": 17.5
+        }
+      }
+    },
+    "parityMeanRgbMaeRanges": {
+      "webglVsNativeStandard": {
+        "meanAcrossTrials": 19.75133972611286,
+        "minimum": 19.75133972611286,
+        "maximum": 19.75133972611286
+      },
+      "webglVsNativeMaterialAware": {
+        "meanAcrossTrials": 33.353425916647225,
+        "minimum": 33.353425916647225,
+        "maximum": 33.353425916647225
+      },
+      "nativeStandardVsNativeMaterialAware": {
+        "meanAcrossTrials": 51.57628212189635,
+        "minimum": 51.57628212189635,
+        "maximum": 51.57628212189635
+      }
+    },
+    "repeatNoiseMaximumRgbMae": {
+      "webgl": 0,
+      "nativeStandard": 0,
+      "nativeMaterialAware": 0
+    },
+    "groundGlassAllCrossOutputComparisonsIdentical": true
+  }
+}
