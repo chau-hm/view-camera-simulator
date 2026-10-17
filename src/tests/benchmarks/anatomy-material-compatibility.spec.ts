@@ -2937,6 +2937,11 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
   });
   const contributionReportPath = testInfo.outputPath("anatomy-renderable-contribution-investigation.json");
   await mkdir(dirname(contributionReportPath), { recursive: true });
+  const presentationRuns: ReadonlyArray<readonly [string, CapturedBackendRun]> = [
+    ["webgl", webgl],
+    ["nativeStandard", nativeStandard],
+    ["nativeMaterialAware", nativeCandidate],
+  ];
   const contributionReport = {
     schemaVersion: 1,
     audit: "view-camera-anatomy-renderable-contribution-isolation",
@@ -2950,6 +2955,45 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       renderableExclusionTransactionCountPerMode: webgl.renderableContributionFrames.length,
       captureStability: "Same-mode unchanged and repeated aperture exclusion/restoration captures measured zero RGB MAE in this run.",
       backgroundProbeRegion: contributionBackgroundProbeRegion,
+    },
+    reviewFixRound1: {
+      finding: "Front Standard structural highlights were included in a dimmed-parts inverse selection.",
+      status: "corrected",
+      previousEvidence: {
+        classification: "superseded-mixed-selection-evidence",
+        measurementCommit: "bccddef1788a01afa48ad384ad18e84f2abbc046",
+        selector: { kind: "dimmed-camera-parts", selectedCameraParts: ["front-standard"] },
+        targetCount: 26,
+        highlightedPartsIncorrectlyIncluded: ["lens", "lens-board"],
+        webglVsNativeMaterialAware: {
+          fullFrameMeanAbsoluteRgbDifference: 6.0819108750603545,
+          excludedSetMeanAbsoluteRgbDifference: 0.0179452223389853,
+          differentialRenderableResponseMeanAbsoluteRgbDifference: 6.0765981551434125,
+        },
+        limitation: "These historical values describe the mixed inverse selection and are not a corrected dimmed-only measurement.",
+      },
+      correctedEvidence: {
+        classificationSource: "Mounted ConceptualCameraAnatomyPresentation from SimulatorWorkspace, interpreted by resolveConceptualAnatomyPartState and joined to current visible renderable IDs.",
+        presentationByRun: Object.fromEntries(presentationRuns.map(([name, run]) => {
+          const frontStandard = captureForState(run.captures, "highlighted-front-standard");
+          return [name, {
+            targets: frontStandard.presentationClassification.targets,
+            highlightedParts: frontStandard.presentationClassification.highlightedParts,
+            dimmedParts: frontStandard.presentationClassification.dimmedParts,
+            highlightedRenderableIds: frontStandard.presentationClassification.highlightedRenderableIds,
+            dimmedRenderableIds: frontStandard.presentationClassification.dimmedRenderableIds,
+          }];
+        })),
+        crossBackendComparisonsByPair: Object.fromEntries(
+          Object.entries(renderableContributionComparisonsByPair).map(([pair, comparison]) => [
+            pair,
+            comparison.comparisons.filter(({ state, condition, trial }) =>
+              state === "highlighted-front-standard" &&
+              (condition === "selected-part" || condition === "dimmed-parts") &&
+              trial === 1),
+          ]),
+        ),
+      },
     },
     provenance: {
       measurementCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
