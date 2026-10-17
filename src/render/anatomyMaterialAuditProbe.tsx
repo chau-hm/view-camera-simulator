@@ -58,6 +58,7 @@ const getMaterialProperties = (material: THREE.Material) => {
   const materialWithSceneProperties = material as THREE.Material & {
     color?: THREE.Color;
     emissive?: THREE.Color;
+    emissiveIntensity?: number;
     roughness?: number;
     metalness?: number;
     map?: THREE.Texture | null;
@@ -73,10 +74,12 @@ const getMaterialProperties = (material: THREE.Material) => {
     family: material.constructor.name,
     color: materialWithSceneProperties.color?.getHexString() ?? null,
     emissive: materialWithSceneProperties.emissive?.getHexString() ?? null,
+    emissiveIntensity: materialWithSceneProperties.emissiveIntensity ?? null,
     toneMapped: material.toneMapped,
     opacity: material.opacity,
     transparent: material.transparent,
     blending: material.blending,
+    premultipliedAlpha: material.premultipliedAlpha,
     depthTest: material.depthTest,
     depthWrite: material.depthWrite,
     side,
@@ -152,6 +155,7 @@ export const collectAnatomyMaterialAuditSnapshot = (
   const projectedRegions: Record<string, AnatomyProjectedRegion | null> = {};
   const worldBounds: Record<string, AnatomyWorldBounds | null> = {};
   const lights: Array<Readonly<Record<string, unknown>>> = [];
+  const renderableSnapshots: Array<Readonly<Record<string, unknown>>> = [];
   let renderableObjectCount = 0;
   let materialAssignmentCount = 0;
 
@@ -256,6 +260,29 @@ export const collectAnatomyMaterialAuditSnapshot = (
     geometryGroups.set(geometryKey, geometryEntry);
 
     const materials = Array.isArray(object.material) ? object.material : [object.material];
+    const materialAssignments = materials.map((material, slot) => {
+      const sourceMaterial = readObserverOutputSourceMaterial(material) ?? material;
+      return {
+        slot,
+        adapted: material !== sourceMaterial,
+        source: getMaterialProperties(sourceMaterial),
+        output: getMaterialProperties(material),
+      };
+    });
+    renderableSnapshots.push({
+      name: objectName,
+      type: object.type,
+      role: category,
+      cameraPart: classification.cameraPart,
+      localPosition: object.position.toArray(),
+      worldPosition: object.getWorldPosition(new THREE.Vector3()).toArray(),
+      renderOrder: object.renderOrder,
+      visible: effectiveVisible,
+      castShadow: object.castShadow,
+      receiveShadow: object.receiveShadow,
+      geometry,
+      materialAssignments,
+    });
     materials.forEach((material) => {
       materialAssignmentCount += 1;
       const sourceMaterial = readObserverOutputSourceMaterial(material) ?? material;
@@ -323,6 +350,7 @@ export const collectAnatomyMaterialAuditSnapshot = (
       ? { assigned: true, type: environment.type, colorSpace: environment.colorSpace }
       : { assigned: false, type: null, colorSpace: null },
     lights,
+      renderables: renderableSnapshots,
     counts: {
       renderableObjects: renderableObjectCount,
       materialAssignments: materialAssignmentCount,

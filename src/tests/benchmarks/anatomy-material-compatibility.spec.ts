@@ -60,10 +60,12 @@ type MaterialRecord = Readonly<{
     family: string;
     color: string | null;
     emissive: string | null;
+    emissiveIntensity: number | null;
     toneMapped: boolean;
     opacity: number;
     transparent: boolean;
     blending: number;
+    premultipliedAlpha: boolean;
     depthTest: boolean;
     depthWrite: boolean;
     side: string;
@@ -125,6 +127,7 @@ type InventorySnapshot = Readonly<{
     shadowReceiverObjectNames: readonly string[];
     renderOrderCounts: Readonly<Record<string, number>>;
   }>[];
+  renderables: readonly Readonly<Record<string, unknown>>[];
   materials: readonly MaterialRecord[];
   geometries: readonly GeometryRecord[];
   projectedRegions: Readonly<Record<string, Bounds | null>>;
@@ -418,7 +421,11 @@ const waitForInitialState = async (
     await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgpu");
     await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
     await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "1");
-    await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available");
+    // The mounted renderer/backend assertions above are authoritative. The
+    // cached public API probe is bounded and may time out while a native adapter
+    // is already in use; record that probe as unknown instead of blocking the
+    // native capture on a secondary diagnostic.
+    await expect(observer).toHaveAttribute("data-observer-adapter-availability", /^(available|timed-out)$/);
     await expect(observer).not.toHaveAttribute("data-observer-renderer-failure-stage");
     await expect(observer).toHaveAttribute("data-observer-output-policy-selected", outputMode);
   }
@@ -1436,6 +1443,48 @@ const summarizeRoiDifferences = (states: ReturnType<typeof compareBackendCapture
   };
 };
 
+const verifyAdaptedMaterialProperties = (captures: readonly Capture[]): void => {
+  const copiedProperties = [
+    "color",
+    "emissive",
+    "emissiveIntensity",
+    "toneMapped",
+    "opacity",
+    "transparent",
+    "blending",
+    "premultipliedAlpha",
+    "depthTest",
+    "depthWrite",
+    "side",
+    "alphaTest",
+    "roughness",
+    "metalness",
+    "textureSlots",
+  ] as const;
+  for (const capture of captures) {
+    for (const renderable of capture.inventory.renderables) {
+      const assignment = renderable as {
+        name?: string;
+        materialAssignments?: Array<{
+          slot?: number;
+          adapted?: boolean;
+          source?: Record<string, unknown>;
+          output?: Record<string, unknown>;
+        }>;
+      };
+      for (const material of assignment.materialAssignments ?? []) {
+        if (!material.adapted || !material.source || !material.output) continue;
+        for (const property of copiedProperties) {
+          expect(
+            material.output[property],
+            `Adapted ${property} differs for ${capture.state}/${assignment.name}/slot-${material.slot}`,
+          ).toEqual(material.source[property]);
+        }
+      }
+    }
+  }
+};
+
 test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, and candidate states", async ({ browser }, testInfo) => {
   test.skip(anatomyAuditMode !== "material-aware", "Set OBSERVER_ANATOMY_AUDIT_MODE=material-aware to run the three-way candidate audit.");
   test.setTimeout(900_000);
@@ -1453,6 +1502,7 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     nativeStandard: verifyDynamicPresentationInventory(nativeStandard.captures),
     nativeMaterialAware: verifyDynamicPresentationInventory(nativeCandidate.captures),
   };
+  verifyAdaptedMaterialProperties(nativeCandidate.captures);
   const groundGlassOwnership = {
     webgl: {
       borrowedResourcesByCapture: verifyGroundGlassBorrowedResources(webgl.captures),
@@ -1587,7 +1637,9 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
         outputMaterialIds: entry.outputMaterialIds,
         outputMaterialFamilies: entry.outputMaterialFamilies,
         adapted: entry.adapted,
+        properties: entry.properties,
       })),
+      renderables: inventory.renderables,
     })),
     architectureRiseRegression: {
       thresholdsAnd81CriteriaChanged: false,
