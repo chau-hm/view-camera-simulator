@@ -1911,3 +1911,28 @@ Architecture Rise parity, Architecture Rise native validation, and production
 preview validation passed. **Decision: M2 — OPT-IN IMPLEMENTATION INCOMPLETE**
 remains unchanged; this lifecycle correction does not resolve the measured
 Anatomy output differences or authorize promotion.
+
+### PR M-INV — Anatomy transparency and material-output root-cause investigation
+
+A native, isolated WebGL / standard WebGPU / material-aware WebGPU fixture
+confirmed that output-transform placement can change RGB for transparent Basic,
+Standard, and Line materials while measured alpha remains matched. In the
+controlled fixture, material-aware output stayed within one RGB code value of
+WebGL. The real 13-state Anatomy audit still showed substantial candidate error
+in highlighted, dimmed, aperture, bellows, and rear-assembly states; the
+candidate remained worse than standard WebGPU in most high-error states.
+
+The real audit also found an unresolved panel-background patch difference:
+WebGL and the material-aware candidate matched, while standard WebGPU differed
+by RGB MAE 24.67 in the sampled patch. The cause was not isolated. Ground Glass
+remained exact and contentful through its independent WebGL2 RTT. View pose,
+source material properties, and normalized renderable inputs matched; no
+complete Anatomy root cause was established. Hardware acceleration remains
+unconfirmed.
+
+**Decision: I2 — PARTIAL ROOT CAUSE.** Keep PR M at **M2 — OPT-IN
+IMPLEMENTATION INCOMPLETE**. Continue with a bounded real-scene material and
+overlap contribution study before changing the shared output core. The normal
+Observer remains WebGL; material-aware Anatomy remains explicit development
+opt-in; production remains WebGL-only. See the [full investigation](architecture/VIEW_CAMERA_ANATOMY_TRANSPARENCY_INVESTIGATION.md)
+and [machine-readable evidence](architecture/anatomy-transparency-investigation/report.json).
