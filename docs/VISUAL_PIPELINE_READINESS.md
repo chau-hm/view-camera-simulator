@@ -1957,12 +1957,19 @@ the measured whole-frame RGB MAE contributions were 0.1394, 0.0995, and
 no pairwise transparency interaction mask was generated. These results confirm
 visible contributions, not an alpha-blending defect.
 
-Excluding dimmed camera-part groups reduced the matched WebGL-versus-candidate
-whole-frame MAE from 6.082 to 0.018 (Front Standard), 9.046 to 0.013 (Lens and
-Board), 11.029 to 0.011 (Smaller Aperture), and 9.222 to 1.054 (Bellows
-Highlighted). This associates those differences with the changed renderable
-sets but does not isolate material output, transparency, depth, or shadow
-causality.
+The Front Standard contribution result was corrected in review-fix round 1.
+The earlier 26-target inverse selection included the structurally highlighted
+lens and lens board, so its 6.082-to-0.018 result is superseded mixed-selection
+evidence. The mounted presentation resolves 17 highlighted renderables and 13
+dimmed renderables. Hiding the corrected dimmed group changes the matched
+WebGL-versus-candidate whole-frame MAE from 6.082 to 0.023 (DResponse 6.066);
+hiding the highlighted group changes it to 7.289 (DResponse 1.240). The other
+dimmed-group results remain 9.046 to 0.013 (Lens and Board), 11.029 to 0.011
+(Smaller Aperture), and 9.222 to 1.054 (Bellows Highlighted). These
+visibility differentials associate differences with the tested renderable
+sets but do not isolate material output, transparency, depth, or shadow
+causality. The corrected values and superseded history are in the
+[machine-readable report](architecture/anatomy-renderable-contribution-investigation/report.json).
 
 A fixed 32×32 top-left probe was unchanged within each mode after all audited
 renderables were hidden. Its mean RGB was `[244.50, 246.90, 249.11]` for

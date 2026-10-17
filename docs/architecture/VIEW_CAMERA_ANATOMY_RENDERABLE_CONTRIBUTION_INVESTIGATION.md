@@ -141,10 +141,41 @@ the two backends' visible-minus-hidden framebuffer response.
 
 | State and excluded set | Targets | WebGL vs material-aware: DFull → DExcluded | DResponse MAE | Material-aware observed contribution |
 | --- | ---: | ---: | ---: | ---: |
-| Front Standard — dimmed parts | 26 | 6.082 → 0.018 | 6.077 | 17,244 changed pixels; within-renderer contribution MAE 8.5071 |
+| Front Standard — highlighted group | 17 | 6.082 → 7.289 | 1.240 | 9,877 changed pixels; within-renderer contribution MAE 7.8191 |
+| Front Standard — dimmed group | 13 | 6.082 → 0.023 | 6.066 | 12,287 changed pixels; within-renderer contribution MAE 3.8844 |
 | Lens and Lens Board — dimmed parts | 17 | 9.046 → 0.013 | 9.040 | 16,900 changed pixels; within-renderer contribution MAE 5.8632 |
 | Smaller Aperture — dimmed parts | 18 | 11.029 → 0.011 | 11.024 | 20,105 changed pixels; within-renderer contribution MAE 7.0634 |
 | Bellows Highlighted — dimmed parts | 29 | 9.222 → 1.054 | 9.178 | 16,373 changed pixels; within-renderer contribution MAE 4.2538 |
+
+### Review-Fix Round 1 — Front Standard presentation classification
+
+The previous Front Standard dimmed measurement is superseded. Its inverse
+selector excluded only `front-standard`, so it also targeted the structurally
+highlighted `lens-board` and `lens`. The old 26-target result (WebGL versus
+material-aware DFull 6.08191, DExcluded 0.01795, DResponse 6.07660) is retained
+as historical mixed-selection evidence in the machine-readable report; it is
+not a dimmed-only measurement.
+
+The corrected audit snapshots the actual mounted Lesson 0 presentation and
+resolves every camera part with `resolveConceptualAnatomyPartState`. In all
+three runs, Front Standard classifies `front-standard`, `lens-board`, and
+`lens` as highlighted (17 visible renderables), and `bellows`, `rear-standard`,
+`ground-glass-back`, `film-holder`, and `camera-support` as dimmed (13 visible
+renderables). The test joins the visibility response IDs back to that same
+mounted inventory and verifies the selected group contains no dimmed objects
+and the dimmed group contains no highlighted objects.
+
+For WebGL versus material-aware WebGPU, hiding the corrected highlighted group
+changes DExcluded to 7.28888 (DResponse 1.23993); hiding only the corrected
+dimmed group changes DExcluded to 0.02297 (DResponse 6.06563). The full-frame
+MAE is 6.08191 in both comparisons because they share the same visible frame.
+The updated selected/dimmed screenshots and M3/D masks are from the corrected
+native run. This remains contribution evidence, not a complete rendering
+mechanism diagnosis.
+
+![Corrected Front Standard presentation in the material-aware native WebGPU run](anatomy-renderable-contribution-investigation/native-webgpu-material-aware-highlighted-front-standard.png)
+
+![M3 differential mask for the corrected dimmed Front Standard group](anatomy-renderable-contribution-investigation/masks/M3-native-material-aware-front-standard-dimmed-group.png)
 
 These matched exclusions associate much of the tested candidate/WebGL
 disagreement in these states with the dimmed camera-part set. The result does
@@ -153,12 +184,13 @@ interaction, depth/sorting, or another effect. The standard-WebGPU comparison
 remains substantially different in the same states; the report includes its
 matched full, excluded, and response metrics as well.
 
-The aperture control is especially discriminating: hiding the selected
-aperture meshes barely changes the WebGL-versus-material-aware full-frame MAE
-(11.029 to 11.035; DResponse 0.012), while hiding the dimmed parts reduces it
-to 0.011. This makes the selected aperture geometry an unlikely explanation
-for that measured full-frame difference by itself; it does not establish a
-general material cause.
+The aperture control is especially discriminating: the selected set is now the
+mounted highlighted `lens-aperture-iris` element under its parent `lens`, not
+a name-prefix approximation. Hiding it barely changes the
+WebGL-versus-material-aware full-frame MAE (11.029 to 11.035; DResponse 0.012),
+while hiding the dimmed parts reduces it to 0.011. This makes the selected
+aperture element an unlikely explanation for that measured full-frame
+difference by itself; it does not establish a general material cause.
 
 ## 6. Masks, candidate overlap, and limitations
 
@@ -241,12 +273,18 @@ PR N.
 
 ## 9. Validation provenance
 
-- Measurement/source commit: `bccddef` (see full SHA in `report.json`).
-- Measurement run: `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1 --grep "candidate captures matched"` — 1 passed; this produced the committed report and selected images, with 13 captures per mode.
-- Full audit file: `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1` — 2 passed, 1 expected skip. The legacy two-way audit is skipped in explicit material-aware mode; the three-way matched experiment and normal-route hook-absence check passed.
-- Full unit suite: 254 files, 2,364 tests passed.
-- Typecheck, lint, CSS structure check, and build are recorded in the PR handoff after final validation.
-- Architecture Rise native strict parity and production-preview WebGL denial are separate regression gates; their final-head results are recorded in the PR handoff.
+- Measurement/source commit: `c6c4a3c8710ca5ac84de67402151994d3b5c1038` (also recorded in `report.json`).
+- Native-required full audit: `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1` — 2 passed, 1 expected skip; the matched experiment completed all 13 states in WebGL, standard native WebGPU, and material-aware native WebGPU. The three-way run and normal-route hook-absence check passed; the legacy two-way audit is skipped in explicit material-aware mode.
+- `npm test` — 254 files, 2,368 tests passed; `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, and `git diff --check` passed.
+- Architecture Rise strict native parity: `OBSERVER_VISUAL_PARITY_REQUIRED=1 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_OUTPUT_POLICY=material-aware npx playwright test --config=playwright.observer-backend-benchmark.config.ts src/tests/benchmarks/observer-visual-parity.bench.ts --workers=1` — 1 passed; strict parity passed with zero failing criteria.
+- Production preview: `npx playwright test --config=playwright.production.config.ts src/tests/e2e/architecture-rise-webgpu-production.spec.ts` — 2 passed; production WebGL-only assertions remained intact.
+- Production bundle isolation — passed; all 10 JS assets were checked for the four Anatomy audit event identifiers, none were present.
+
+The machine-readable report, all mask/heatmap artifacts, and Front Standard
+visible/excluded/restored screenshots are from the measurement run above. The
+previously selected initial-state display screenshots remain from the earlier
+run because this correction changes only audit classification and probe data;
+those reused images are not evidence for the corrected Front Standard numbers.
 
 The committed report and selected evidence images are copied from that successful
 native run. The remaining Playwright output stays under ignored `test-results/`.
