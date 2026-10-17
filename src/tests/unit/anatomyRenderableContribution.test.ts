@@ -7,6 +7,7 @@ import {
   compareAnatomyImages,
   complementAnatomyMask,
   countAnatomyMaskPixels,
+  deriveAnatomyDifferenceHeatmap,
   deriveAnatomyDifferentialResponseMask,
   deriveAnatomyObservedDifferentialMask,
   excludeAnatomyRenderables,
@@ -173,6 +174,23 @@ describe("Anatomy renderable contribution evidence", () => {
       changedPixelFraction: 0,
     });
     expect(countAnatomyMaskPixels(sameMask)).toBe(0);
+  });
+
+  it("creates a reproducible per-pixel RGB difference heatmap and rejects incompatible frames", () => {
+    const first = image([10, 20, 30, 40, 50, 60]);
+    const changed = image([10, 20, 30, 90, 50, 60]);
+
+    expect(deriveAnatomyDifferenceHeatmap(first, first)).toMatchObject({
+      width: 2,
+      height: 1,
+      channels: 4,
+      pixels: new Uint8Array([0, 0, 0, 255, 0, 0, 0, 255]),
+    });
+    expect(deriveAnatomyDifferenceHeatmap(first, changed).pixels).toEqual(
+      new Uint8Array([0, 0, 0, 255, 50, 50, 50, 255]),
+    );
+    expect(() => deriveAnatomyDifferenceHeatmap(first, image([0, 0, 0], 1, 1)))
+      .toThrow("incompatible dimensions or channels");
   });
 
   it("keeps foreground and background masks disjoint and reports mask sample counts", () => {

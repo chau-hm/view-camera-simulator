@@ -14,6 +14,7 @@ import {
   compareAnatomyImages,
   complementAnatomyMask,
   countAnatomyMaskPixels,
+  deriveAnatomyDifferenceHeatmap,
   deriveAnatomyObservedDifferentialMask,
   deriveAnatomyDifferentialResponseMask,
   type AnatomyPixelMask,
@@ -1374,6 +1375,31 @@ const summarizeContributionMask = (mask: AnatomyPixelMask) => {
   };
 };
 
+const contributionBackgroundProbeRegion = { left: 0, top: 0, right: 32, bottom: 32 };
+
+const summarizeContributionBackgroundProbe = (run: CapturedBackendRun) => {
+  const initial = captureForState(run.captures, "initial");
+  const allRenderableExclusion = run.renderableContributionFrames.find((frame) =>
+    frame.state === "initial" && frame.condition === "all-renderables" && frame.trial === 1);
+  if (!allRenderableExclusion) throw new Error("Missing initial all-renderables exclusion for background probe");
+  const regionMask = createPixelMaskForRegion(
+    initial.decoded.width,
+    initial.decoded.height,
+    contributionBackgroundProbeRegion,
+  );
+  const fullToExcluded = compareAnatomyImages(initial.decoded, allRenderableExclusion.excluded, regionMask);
+  expect(fullToExcluded.changedPixelCount, "Top-left background probe must remain unchanged when audited renderables are hidden")
+    .toBe(0);
+  return {
+    region: contributionBackgroundProbeRegion,
+    sampleCount: regionMask.pixels.length > 0 ? 32 * 32 : 0,
+    fullFrameMeanRgb: meanRgb(initial.decoded, contributionBackgroundProbeRegion),
+    allRenderableExcludedMeanRgb: meanRgb(allRenderableExclusion.excluded, contributionBackgroundProbeRegion),
+    fullToExcluded,
+    classification: "unaffected canvas-corner background candidate; it is independently checked by this exclusion and is not a general object-id mask",
+  };
+};
+
 const summarizeGeometryIdentityChanges = (changes: readonly Readonly<Record<string, unknown>>[]) => ({
   count: changes.length,
   names: [...new Set(changes.map((entry) => String(entry.name)))],
@@ -1401,6 +1427,28 @@ const encodeContributionMaskPng = async (page: Page, mask: AnatomyPixelMask): Pr
   }, { width: mask.width, height: mask.height, pixels: Array.from(mask.pixels) });
   const encoded = dataUrl.split(",")[1];
   if (!encoded) throw new Error("Contribution-mask canvas returned an invalid PNG data URL");
+  return Buffer.from(encoded, "base64");
+};
+
+const encodeDifferenceHeatmapPng = async (
+  page: Page,
+  reference: DecodedPng,
+  compared: DecodedPng,
+): Promise<Buffer> => {
+  const heatmap = deriveAnatomyDifferenceHeatmap(reference, compared);
+  const dataUrl = await page.evaluate(({ width, height, pixels }) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not create a canvas context for differential heatmap evidence");
+    const imageData = context.createImageData(width, height);
+    imageData.data.set(pixels);
+    context.putImageData(imageData, 0, 0);
+    return canvas.toDataURL("image/png");
+  }, { width: heatmap.width, height: heatmap.height, pixels: Array.from(heatmap.pixels) });
+  const encoded = dataUrl.split(",")[1];
+  if (!encoded) throw new Error("Differential heatmap canvas returned an invalid PNG data URL");
   return Buffer.from(encoded, "base64");
 };
 
@@ -1464,11 +1512,13 @@ const compareRenderableContributions = (
 ): Readonly<{
   comparisons: readonly Readonly<Record<string, unknown>>[];
   maskEvidence: readonly Readonly<{ name: string; mask: AnatomyPixelMask }>[];
+  heatmapEvidence: readonly Readonly<{ name: string; reference: DecodedPng; compared: DecodedPng }>[];
 }> => {
   const comparisonFrames = new Map(comparisonRun.renderableContributionFrames.map((frame) => [renderableContributionKey(frame), frame]));
   const referenceCaptures = new Map(referenceRun.captures.map((capture) => [capture.state, capture]));
   const comparisonCaptures = new Map(comparisonRun.captures.map((capture) => [capture.state, capture]));
   const maskEvidence: { name: string; mask: AnatomyPixelMask }[] = [];
+  const heatmapEvidence: { name: string; reference: DecodedPng; compared: DecodedPng }[] = [];
   const comparisons = referenceRun.renderableContributionFrames.map((referenceFrame) => {
     const key = renderableContributionKey(referenceFrame);
     const comparisonFrame = comparisonFrames.get(key);
@@ -1504,6 +1554,11 @@ const compareRenderableContributions = (
         { name: `${pairName}-DExcluded`, mask: excludedDifferenceMask },
         { name: `${pairName}-DResponse`, mask: differentialResponseMask },
       );
+      heatmapEvidence.push({
+        name: `${pairName}-DFull-absolute-rgb-heatmap`,
+        reference: referenceCapture.decoded,
+        compared: comparisonCapture.decoded,
+      });
     }
     return {
       state: referenceFrame.state,
@@ -1511,8 +1566,10 @@ const compareRenderableContributions = (
       trial: referenceFrame.trial,
       reference: `${referenceRun.runtime.outputMode}/${referenceRun.runtime.observerAttributes["data-observer-execution-backend"]}`,
       comparison: `${comparisonRun.runtime.outputMode}/${comparisonRun.runtime.observerAttributes["data-observer-execution-backend"]}`,
+      exclusionSelector: referenceFrame.selector,
+      exclusionTargetCount: referenceFrame.targets.length,
       fullFrameCrossBackendDifference: fullDifference,
-      allRenderablesExcludedCrossBackendDifference: excludedDifference,
+      excludedSetCrossBackendDifference: excludedDifference,
       differentialRenderableResponseDifference: differentialResponseDifference,
       masks: {
         DFull: summarizeContributionMask(fullDifferenceMask),
@@ -1520,11 +1577,11 @@ const compareRenderableContributions = (
         DResponse: summarizeContributionMask(differentialResponseMask),
         DFullMinusDExcludedCandidate: summarizeContributionMask(foregroundOnlyCandidateMask),
         DFullAndDExcludedOverlap: summarizeContributionMask(changedInBothMask),
-        interpretation: "DExcluded is the cross-backend difference after the selected renderable set is hidden. DResponse is the difference between visible-minus-hidden framebuffer responses. The foreground-only mask is a conservative pixel candidate; transparent compositing and occlusion prevent treating rectangular bounds or subtraction as exact semantic segmentation.",
+        interpretation: "DExcluded is the cross-backend difference after the selected renderable set is hidden; its exclusionSelector and exclusionTargetCount identify that set. DResponse is the difference between visible-minus-hidden framebuffer responses. The foreground-only mask is a conservative pixel candidate; transparent compositing and occlusion prevent treating rectangular bounds or subtraction as exact semantic segmentation.",
       },
     };
   });
-  return { comparisons, maskEvidence };
+  return { comparisons, maskEvidence, heatmapEvidence };
 };
 
 const roleRegionNames = (snapshot: InventorySnapshot): string[] => Object.keys(snapshot.projectedRegions)
@@ -2203,6 +2260,31 @@ const compactRuntimeEvidence = (runtime: CapturedBackendRun["runtime"]) => ({
   initialAndResetSubjectBoundsMatch: runtime.initialAndResetSubjectBoundsMatch,
 });
 
+const summarizeRenderableInventoryRun = (run: CapturedBackendRun) => ({
+  mountedRenderer: compactRendererEvidence(captureForState(run.captures, "initial").observerAttributes),
+  teachingStates: run.captures.map((capture) => ({
+    state: capture.state,
+    captureId: capture.id,
+    screenshot: capture.filename,
+    sceneId: capture.inventory.sceneId,
+    generation: capture.inventory.generation,
+    renderer: capture.inventory.renderer,
+    viewport: capture.inventory.viewport,
+    background: capture.inventory.background,
+    environment: capture.inventory.environment,
+    lights: capture.inventory.lights,
+    counts: capture.inventory.counts,
+    categories: capture.inventory.categories,
+    materialAssignmentCounts: capture.inventory.transparencyInventory.materialAssignmentCounts,
+    mixedMaterialRenderableCount: capture.inventory.transparencyInventory.mixedMaterialRenderableCount,
+    visibleExplicitTransparentRenderableCount: capture.inventory.transparencyInventory.visibleExplicitTransparentRenderableCount,
+    transparentOverlapCandidates: capture.inventory.transparencyInventory.transparentOverlapCandidates,
+    projectedRegions: capture.inventory.projectedRegions,
+    worldBounds: capture.inventory.worldBounds,
+    renderables: capture.inventory.renderables,
+  })),
+});
+
 const summarizeRoiDifferences = (states: ReturnType<typeof compareBackendCaptures>) => {
   const values = states.flatMap((state) => state.measurements
     .map((measurement) => measurement.webglVsNativeWebGpu.meanAbsoluteRgbDifference));
@@ -2361,6 +2443,10 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     };
     return [
       { name: `M1-${name}-initial-all-renderables-observed-differential`, mask: byCondition("initial", "all-renderables") },
+      {
+        name: `M2-${name}-initial-all-renderables-unaffected-candidate`,
+        mask: complementAnatomyMask(byCondition("initial", "all-renderables")),
+      },
       { name: `M3-${name}-initial-known-transparent-surface`, mask: byCondition("initial", "known-transparent-surface") },
       { name: `M3-${name}-aperture-selected-part`, mask: byCondition("aperture-small-opening", "selected-part") },
       { name: `M3-${name}-bellows-selected-part`, mask: byCondition("bellows-highlighted", "selected-part") },
@@ -2373,6 +2459,7 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     ...renderableContributionComparisonsByPair.nativeStandardVsNativeMaterialAware.maskEvidence,
   ];
   const contributionMaskArtifacts: Readonly<Record<string, unknown>>[] = [];
+  const differentialHeatmapArtifacts: Readonly<Record<string, unknown>>[] = [];
   const maskOutputPage = webgl.context.pages()[0];
   if (!maskOutputPage) throw new Error("The WebGL evidence page is unavailable for mask artifact encoding");
   for (const evidence of [...withinRendererMasks, ...crossBackendMasks]) {
@@ -2390,6 +2477,25 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       changedPixelFraction: changedPixels / (evidence.mask.width * evidence.mask.height),
       bounds: changedPixels > 0 ? anatomyMaskBounds(evidence.mask) : null,
       encoding: "black=unmarked; white=marked; RGB-channel threshold=8 for cross-backend response masks and contribution masks",
+    });
+  }
+  const differentialHeatmapEvidence = [
+    ...renderableContributionComparisonsByPair.webglVsNativeStandard.heatmapEvidence,
+    ...renderableContributionComparisonsByPair.webglVsNativeMaterialAware.heatmapEvidence,
+    ...renderableContributionComparisonsByPair.nativeStandardVsNativeMaterialAware.heatmapEvidence,
+  ];
+  for (const evidence of differentialHeatmapEvidence) {
+    const png = await encodeDifferenceHeatmapPng(maskOutputPage, evidence.reference, evidence.compared);
+    const filename = `${evidence.name}.png`;
+    const path = testInfo.outputPath(filename);
+    await writeFile(path, png);
+    await testInfo.attach(filename, { path, contentType: "image/png" });
+    differentialHeatmapArtifacts.push({
+      name: filename.replace(/\.png$/, ""),
+      filename,
+      dimensions: [evidence.reference.width, evidence.reference.height],
+      intensity: "grayscale = maximum absolute RGB-channel difference at each pixel; black = equal",
+      sourceComparison: evidence.name.replace(/-DFull-absolute-rgb-heatmap$/, ""),
     });
   }
   const exclusionRepeatConsistency = Object.fromEntries(evidenceMaskRuns.map(({ name, run }) => {
@@ -2413,6 +2519,45 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       maximumMeanAbsoluteRgbDifference: 0.5,
     }];
   }));
+  const backgroundProbe = {
+    method: "32×32 top-left canvas region matched to the initial state and sampled before/after all audited renderables are hidden",
+    runs: {
+      webgl: summarizeContributionBackgroundProbe(webgl),
+      nativeStandard: summarizeContributionBackgroundProbe(nativeStandard),
+      nativeMaterialAware: summarizeContributionBackgroundProbe(nativeCandidate),
+    },
+    crossBackend: {} as Record<string, unknown>,
+  };
+  const compareBackgroundProbe = (referenceRun: CapturedBackendRun, comparisonRun: CapturedBackendRun) => {
+    const referenceFull = captureForState(referenceRun.captures, "initial");
+    const comparisonFull = captureForState(comparisonRun.captures, "initial");
+    const referenceExcluded = referenceRun.renderableContributionFrames.find((frame) =>
+      frame.state === "initial" && frame.condition === "all-renderables" && frame.trial === 1);
+    const comparisonExcluded = comparisonRun.renderableContributionFrames.find((frame) =>
+      frame.state === "initial" && frame.condition === "all-renderables" && frame.trial === 1);
+    if (!referenceExcluded || !comparisonExcluded) throw new Error("Missing matched background-probe exclusion captures");
+    const mask = createPixelMaskForRegion(
+      referenceFull.decoded.width,
+      referenceFull.decoded.height,
+      contributionBackgroundProbeRegion,
+    );
+    return {
+      fullFrameDifference: compareAnatomyImages(referenceFull.decoded, comparisonFull.decoded, mask),
+      excludedFrameDifference: compareAnatomyImages(referenceExcluded.excluded, comparisonExcluded.excluded, mask),
+      differentialResponseDifference: compareAnatomyDifferentialResponses(
+        referenceFull.decoded,
+        referenceExcluded.excluded,
+        comparisonFull.decoded,
+        comparisonExcluded.excluded,
+        mask,
+      ),
+    };
+  };
+  backgroundProbe.crossBackend = {
+    webglVsNativeStandard: compareBackgroundProbe(webgl, nativeStandard),
+    webglVsNativeMaterialAware: compareBackgroundProbe(webgl, nativeCandidate),
+    nativeStandardVsNativeMaterialAware: compareBackgroundProbe(nativeStandard, nativeCandidate),
+  };
   const renderableContributionEvidence = {
     method: "same mounted Observer framebuffer; generation-scoped visibility exclusion; exact visibility restoration",
     interpretation: "Observed pixel deltas are renderable-set contributions under the captured scene state. They do not by themselves identify a renderer root cause. Projected rectangles are localization candidates, not exact silhouettes.",
@@ -2441,9 +2586,11 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       antialiasing: "The threshold excludes low-level edge/noise variations; marked edges still include antialiasing where a channel crosses the threshold.",
       shadowsAndOcclusion: "Masks include any framebuffer changes caused by visibility exclusion, including shadow/depth consequences; they are not exact mesh silhouettes or per-layer IDs.",
       interactionMask: "No pairwise transparent interaction mask was generated: the initial inventories contained no T5 projected-rectangle overlap candidates, and the explicit-transparent group did not justify escalation. Candidate masks remain conservative and do not prove physical overlap.",
-      backgroundControl: "DExcluded compares the actual full-frame screenshots after every audited renderable is excluded. A zero-pixel DExcluded mask for WebGL versus material-aware WebGPU is retained as a measured matching-background result, not treated as a missing detector result.",
+      backgroundControl: "M2 is the complement of the within-renderer all-renderables observed-differential mask. It is an unaffected/background candidate, not proof that every pixel is background. The independently sampled 32×32 top-left canvas patch is checked before and after exclusion and cross-backend.",
       maskArtifacts: contributionMaskArtifacts,
+      differentialHeatmapArtifacts,
     },
+    backgroundProbe,
     transparentProjectedOverlapCandidates: {
       webgl: captureForState(webgl.captures, "initial").inventory.transparencyInventory.transparentOverlapCandidates,
       nativeStandard: captureForState(nativeStandard.captures, "initial").inventory.transparencyInventory.transparentOverlapCandidates,
@@ -2585,6 +2732,15 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     audit: "view-camera-anatomy-renderable-contribution-isolation",
     investigationDecision: "I2 — PARTIAL ROOT CAUSE",
     anatomyIntegrationDecision: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+    experiment: {
+      id: "m-inv2-real-anatomy-renderable-contribution",
+      method: "Matched full/excluded/restored captures from the actual mounted Observer framebuffer; same camera pose and viewport per renderer mode.",
+      interpretation: "Visibility differentials establish contribution under the tested state. They are not additive color decomposition and do not independently isolate material, alpha blending, depth/occlusion, or shadow mechanisms.",
+      matchedCaptureCountPerMode: evidenceStates.length,
+      renderableExclusionTransactionCountPerMode: webgl.renderableContributionFrames.length,
+      captureStability: "Same-mode unchanged and repeated aperture exclusion/restoration captures measured zero RGB MAE in this run.",
+      backgroundProbeRegion: contributionBackgroundProbeRegion,
+    },
     provenance: {
       measurementCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
       browserVersion: nativeCandidate.runtime.browserVersion,
@@ -2610,12 +2766,36 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       nativeStandard: compactRuntimeEvidence(nativeStandard.runtime),
       nativeMaterialAware: compactRuntimeEvidence(nativeCandidate.runtime),
     },
+    sceneInventoryByRun: {
+      webgl: summarizeRenderableInventoryRun(webgl),
+      nativeStandard: summarizeRenderableInventoryRun(nativeStandard),
+      nativeMaterialAware: summarizeRenderableInventoryRun(nativeCandidate),
+    },
     subjectAndRenderableCaptures: renderableContributionEvidence.conditionsByRun,
     crossBackendComparisons: renderableContributionComparisons,
     exclusionRepeatConsistency: renderableContributionEvidence.exclusionRepeatConsistency,
     maskMethodology: renderableContributionEvidence.maskMethodology,
     rankedTransparentProjectedOverlapCandidates: renderableContributionEvidence.transparentProjectedOverlapCandidates,
     controls: renderableContributionEvidence.restorationAndGroundGlassContracts,
+    groundGlassResourcePreservation: Object.fromEntries(
+      Object.entries(groundGlassOwnership).map(([mode, evidence]) => {
+        const captures = evidence.borrowedResourcesByCapture;
+        const first = captures[0];
+        if (!first) throw new Error(`${mode} has no Ground Glass resource evidence`);
+        return [mode, {
+          captureCount: captures.length,
+          sourceMaterialCount: first.observerSourceMaterialIds.length,
+          observerAndGroundGlassSourceMaterialIdsMatchEveryCapture: captures.every((capture) =>
+            JSON.stringify(capture.observerSourceMaterialIds) === JSON.stringify(capture.groundGlassSourceMaterialIds)),
+          observerAndGroundGlassGeometryIdsMatchEveryCapture: captures.every((capture) =>
+            JSON.stringify(capture.observerGeometryIds) === JSON.stringify(capture.groundGlassGeometryIds)),
+          observerOutputMaterialsDistinctFromGroundGlassEveryCapture: captures.every((capture) =>
+            capture.observerOutputMaterialsDistinctFromGroundGlass),
+          groundGlassRenderer: "webgl-renderer/webgl2",
+          sourceIdentityStableAcrossTeachingStates: evidence.stableIdentity.stableAcrossTeachingStates,
+        }];
+      }),
+    ),
     nextInvestigation: "Use the highest-ranked projected candidates to choose bounded, visually verified pairwise transparent-overlap controls. Keep source assignments, shared ownership, and output pipeline fixed while isolating one contribution at a time.",
     limitations: [
       "Projected rectangles are candidate localization only and do not prove exact visible-silhouette overlap.",

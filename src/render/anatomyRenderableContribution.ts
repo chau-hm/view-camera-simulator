@@ -283,6 +283,33 @@ export const deriveAnatomyObservedDifferentialMask = (
   return { width: reference.width, height: reference.height, pixels };
 };
 
+/**
+ * Creates a per-pixel grayscale RGB-difference image for visual inspection.
+ * Each pixel is the maximum absolute RGB-channel difference; alpha is opaque.
+ */
+export const deriveAnatomyDifferenceHeatmap = (
+  reference: AnatomyPixelImage,
+  compared: AnatomyPixelImage,
+): AnatomyPixelImage => {
+  validateCompatibleImages(reference, compared);
+  const pixels = new Uint8Array(reference.width * reference.height * 4);
+  for (let pixel = 0; pixel < reference.width * reference.height; pixel += 1) {
+    let intensity = 0;
+    for (let channel = 0; channel < 3; channel += 1) {
+      intensity = Math.max(intensity, Math.abs(
+        (reference.pixels[rgbOffset(reference, pixel, channel)] ?? 0) -
+        (compared.pixels[rgbOffset(compared, pixel, channel)] ?? 0),
+      ));
+    }
+    const offset = pixel * 4;
+    pixels[offset] = intensity;
+    pixels[offset + 1] = intensity;
+    pixels[offset + 2] = intensity;
+    pixels[offset + 3] = 255;
+  }
+  return { width: reference.width, height: reference.height, channels: 4, pixels };
+};
+
 export const countAnatomyMaskPixels = (mask: AnatomyPixelMask): number =>
   mask.pixels.reduce((total, value) => total + (value > 0 ? 1 : 0), 0);
 
