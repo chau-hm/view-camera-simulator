@@ -220,6 +220,7 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
   await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
+  await expect(observer).not.toHaveAttribute("data-observer-anatomy-output-intervention-hook");
   const observerScreenshot = await observer.locator("canvas").screenshot();
   const groundGlassScreenshot = await groundGlass.screenshot();
   const observerPixels = await analyzeScreenshot(page, observerScreenshot);
@@ -229,6 +230,30 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
   expect(webgpuModuleRequests).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
+
+  const loadedJavaScript = await page.evaluate(async () => {
+    const urls = new Set<string>(Array.from(document.scripts)
+      .map((script) => script.src)
+      .filter(Boolean));
+    performance.getEntriesByType("resource").forEach((entry) => {
+      if (/\.m?js(?:$|\?)/i.test(entry.name)) urls.add(entry.name);
+    });
+    const assets = await Promise.all([...urls].map(async (url) => {
+      try {
+        const response = await fetch(url, { credentials: "same-origin" });
+        return { url, body: response.ok ? await response.text() : "" };
+      } catch {
+        return { url, body: "" };
+      }
+    }));
+    return {
+      urls: assets.map(({ url }) => url),
+      interventionEventPresent: assets.some(({ body }) =>
+        body.includes("vcs:observer-verification:anatomy-output-intervention")),
+    };
+  });
+  expect(loadedJavaScript.interventionEventPresent,
+    "Production JavaScript assets loaded by the Anatomy route must not contain the test-only intervention event").toBe(false);
 
   const evidence = await observer.evaluate((element) => ({
     rendererRequest: element.getAttribute("data-observer-renderer-request"),
@@ -245,15 +270,18 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
     ].some((name) => element.hasAttribute(name)),
     developmentVerificationHookPresent: element.hasAttribute("data-observer-verification-scene") ||
       Array.from(element.attributes).some((attribute) => attribute.name.startsWith("data-observer-test-")),
+    anatomyOutputInterventionHookPresent: element.hasAttribute("data-observer-anatomy-output-intervention-hook"),
   }));
   expect(evidence.candidatePolicyAttributesPresent).toBe(false);
   expect(evidence.developmentVerificationHookPresent).toBe(false);
+  expect(evidence.anatomyOutputInterventionHookPresent).toBe(false);
   await testInfo.attach("view-camera-anatomy-production-webgl-denial.json", {
     body: JSON.stringify({
       browserVersion: page.context().browser()?.version() ?? "unknown",
       threeRevision: REVISION,
       route: new URL(page.url()).pathname + new URL(page.url()).search,
       evidence,
+      loadedJavaScript,
       observerPixels,
       groundGlassPixels,
       webgpuModuleRequests,

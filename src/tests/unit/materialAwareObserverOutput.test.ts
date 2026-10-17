@@ -214,6 +214,63 @@ describe("material-aware Observer NodeMaterial adaptation", () => {
     standard.dispose();
   });
 
+  it("builds distinct RGB output graphs and compile identities for B1-B3 without changing alpha", () => {
+    const source = new THREE.MeshStandardMaterial({
+      color: "#d7c19c",
+      toneMapped: true,
+      transparent: true,
+      opacity: 0.25,
+      premultipliedAlpha: false,
+      depthWrite: false,
+    });
+    const input = vec4(0.8, 0.6, 0.4, 0.37);
+    const transforms = [
+      "bypass-rgb-transform",
+      "bypass-tone-mapping",
+      "bypass-color-space",
+    ] as const;
+    const outputs = transforms.map((transform, index) => {
+      const output = adaptObserverMaterialForOutput(
+        source,
+        transform,
+        (["B1", "B2", "B3"] as const)[index],
+      ) as MaterialAwareStandardNodeMaterial | null;
+      if (!output) throw new Error("Expected an adapted standard material");
+      output.fog = false;
+      const graph = output.setupOutput({} as never, input as never) as OutputGraphNode;
+      expect(output.outputGraphBuildCount).toBe(1);
+      expect(output.version).toBeGreaterThan(0);
+      expect(output.outputTransform).toBe(transform);
+      expect(output).toMatchObject({
+        outputInterventionId: ["B1", "B2", "B3"][index],
+        transparent: source.transparent,
+        opacity: source.opacity,
+        premultipliedAlpha: source.premultipliedAlpha,
+        depthWrite: source.depthWrite,
+        toneMapped: source.toneMapped,
+      });
+      return { output, graph };
+    });
+
+    expect(outputs[0]?.graph).toBe(input);
+    expect(outputs[1]?.graph.type).toBe("ColorSpaceNode");
+    expect(outputs[1]?.graph.target).toBe(THREE.SRGBColorSpace);
+    expect(outputs[1]?.graph.colorNode).toBe(input);
+    expect(outputs[2]?.graph.type).toBe("ToneMappingNode");
+    expect(outputs[2]?.graph.getToneMapping?.()).toBe(THREE.ACESFilmicToneMapping);
+    expect(new Set(outputs.map(({ output }) => output.customProgramCacheKey())).size).toBe(3);
+    expect(source).toMatchObject({
+      transparent: true,
+      opacity: 0.25,
+      premultipliedAlpha: false,
+      depthWrite: false,
+      toneMapped: true,
+    });
+
+    outputs.forEach(({ output }) => output.dispose());
+    source.dispose();
+  });
+
   it("fails closed for a material family outside the audited set", () => {
     const unsupported = new THREE.MeshPhysicalMaterial({ clearcoat: 0.5 });
     expect(adaptObserverMaterialForOutput(unsupported)).toBeNull();

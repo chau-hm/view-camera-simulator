@@ -5,6 +5,10 @@ import {
   type MaterialOutputOwner,
   type UnsupportedMaterialAssignment,
 } from "./materialAwareMaterialTracker";
+import type {
+  MaterialAwareOutputInterventionId,
+  MaterialAwareOutputTransform,
+} from "./materialAwareNodeMaterials";
 
 const countRenderables = (root: THREE.Object3D): number => {
   let count = 0;
@@ -34,6 +38,24 @@ export const resolveAnatomyMaterialOutputOwner = (
   _object: THREE.Object3D,
   controllerOwner: MaterialOutputOwner,
 ): MaterialOutputOwner => controllerOwner;
+
+/**
+ * Creates a second output-graph scope under the same controller-owned lifetime.
+ * Source materials and disposal authority remain with the controller owner.
+ */
+export const createAnatomyMaterialOutputVariantOwner = (
+  controllerOwner: MaterialOutputOwner,
+  identity: object,
+  outputTransform: MaterialAwareOutputTransform,
+  outputInterventionId: MaterialAwareOutputInterventionId,
+): MaterialOutputOwner => ({
+  identity,
+  kind: controllerOwner.kind,
+  outputTransform,
+  outputInterventionId,
+  retain: controllerOwner.retain,
+  release: controllerOwner.release,
+});
 
 /**
  * Readiness is based on the actual mounted Anatomy target and camera renderables,

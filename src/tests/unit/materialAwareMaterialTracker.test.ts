@@ -7,6 +7,7 @@ import {
   type MaterialAwareRenderable,
   type MaterialOutputOwner,
 } from "../../render/backend/materialAwareMaterialTracker";
+import { createAnatomyMaterialOutputVariantOwner } from "../../render/backend/anatomyMaterialOutputAdapter";
 import { resolveArchitectureRiseMaterialOutputOwner } from "../../render/backend/architectureRiseMaterialOutputAdapter";
 import {
   MaterialAwareBasicNodeMaterial,
@@ -82,6 +83,77 @@ const createOwner = (
 };
 
 describe("material-aware Observer output tracking", () => {
+  it("isolates shared source assignments across a scoped Anatomy output intervention", () => {
+    const source = new THREE.MeshStandardMaterial({
+      color: "#d7c19c",
+      transparent: true,
+      opacity: 0.25,
+      premultipliedAlpha: true,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: true,
+    });
+    const sourceDispose = vi.spyOn(source, "dispose");
+    const dimmed = new THREE.Mesh(new THREE.BoxGeometry(), source);
+    const highlighted = new THREE.Mesh(new THREE.BoxGeometry(), source);
+    const tracker = new MaterialAwareMaterialTracker(42);
+    const owner = createOwner("observer-controller");
+    const dimmedOwner = createAnatomyMaterialOutputVariantOwner(
+      owner.owner,
+      {},
+      "bypass-rgb-transform",
+      "B1",
+    );
+    const dimmedOutput = reconcile(tracker, dimmed, dimmedOwner).materials[0]!;
+    const highlightedOutput = reconcile(tracker, highlighted, owner.owner).materials[0]!;
+
+    expect(dimmedOutput).not.toBe(highlightedOutput);
+    expect(dimmed.material).toBe(dimmedOutput);
+    expect(highlighted.material).toBe(highlightedOutput);
+    expect(dimmedOutput).toMatchObject({
+      outputTransform: "bypass-rgb-transform",
+      outputInterventionId: "B1",
+      transparent: true,
+      opacity: 0.25,
+      premultipliedAlpha: true,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: true,
+    });
+    expect(highlightedOutput).toMatchObject({
+      outputTransform: "material-aware",
+      outputInterventionId: "B0",
+      transparent: true,
+      opacity: 0.25,
+      premultipliedAlpha: true,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: true,
+    });
+    expect(source).toMatchObject({
+      transparent: true,
+      opacity: 0.25,
+      premultipliedAlpha: true,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: true,
+    });
+    expect(owner.outputs.size).toBe(2);
+
+    tracker.dispose();
+    expect(dimmed.material).toBe(source);
+    expect(highlighted.material).toBe(source);
+    expect(owner.outputs.size).toBe(0);
+    expect(sourceDispose).not.toHaveBeenCalled();
+    source.dispose();
+    dimmed.geometry.dispose();
+    highlighted.geometry.dispose();
+  });
+
   it("releases one missing shared-source attachment while keeping the active sibling output", () => {
     const source = new THREE.MeshStandardMaterial();
     const sourceDispose = vi.spyOn(source, "dispose");

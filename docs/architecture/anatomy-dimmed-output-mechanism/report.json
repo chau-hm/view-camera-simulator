@@ -1,0 +1,5602 @@
+{
+  "schemaVersion": 1,
+  "audit": "view-camera-anatomy-dimmed-output-mechanism",
+  "repository": "chau-hm/view-camera-simulator",
+  "decision": "D2",
+  "decisionBasis": {
+    "contributingModes": [
+      "B1",
+      "B3"
+    ],
+    "requiredConsistency": "A tested output intervention lowers dimmed-response-mask MAE against matched WebGL by more than repeat-capture noise plus 0.5 RGB levels in every priority state.",
+    "perStateDimmedRegionComparisons": {
+      "B1": {
+        "highlighted-front-standard": {
+          "baselineDimmedRegionMae": 104.1276959387971,
+          "interventionDimmedRegionMae": 103.11901467675864,
+          "maeReduction": 1.0086812620384649,
+          "repeatCaptureNoise": 0
+        },
+        "highlighted-lens-and-board": {
+          "baselineDimmedRegionMae": 112.84846153846154,
+          "interventionDimmedRegionMae": 110.38615384615385,
+          "maeReduction": 2.4623076923076894,
+          "repeatCaptureNoise": 0
+        },
+        "aperture-small-opening": {
+          "baselineDimmedRegionMae": 115.71294039625302,
+          "interventionDimmedRegionMae": 112.1784133300174,
+          "maeReduction": 3.5345270662356114,
+          "repeatCaptureNoise": 0
+        },
+        "bellows-highlighted": {
+          "baselineDimmedRegionMae": 116.50770577576905,
+          "interventionDimmedRegionMae": 113.13546692725829,
+          "maeReduction": 3.3722388485107615,
+          "repeatCaptureNoise": 0
+        }
+      },
+      "B2": {
+        "highlighted-front-standard": {
+          "baselineDimmedRegionMae": 104.1276959387971,
+          "interventionDimmedRegionMae": 108.1248745286346,
+          "maeReduction": -3.997178589837503,
+          "repeatCaptureNoise": 0
+        },
+        "highlighted-lens-and-board": {
+          "baselineDimmedRegionMae": 112.84846153846154,
+          "interventionDimmedRegionMae": 117.48493096646943,
+          "maeReduction": -4.636469428007899,
+          "repeatCaptureNoise": 0
+        },
+        "aperture-small-opening": {
+          "baselineDimmedRegionMae": 115.71294039625302,
+          "interventionDimmedRegionMae": 120.42888170438532,
+          "maeReduction": -4.715941308132301,
+          "repeatCaptureNoise": 0
+        },
+        "bellows-highlighted": {
+          "baselineDimmedRegionMae": 116.50770577576905,
+          "interventionDimmedRegionMae": 120.72128911419206,
+          "maeReduction": -4.213583338423007,
+          "repeatCaptureNoise": 0
+        }
+      },
+      "B3": {
+        "highlighted-front-standard": {
+          "baselineDimmedRegionMae": 104.1276959387971,
+          "interventionDimmedRegionMae": 102.76256748324788,
+          "maeReduction": 1.3651284555492254,
+          "repeatCaptureNoise": 0
+        },
+        "highlighted-lens-and-board": {
+          "baselineDimmedRegionMae": 112.84846153846154,
+          "interventionDimmedRegionMae": 109.83670611439841,
+          "maeReduction": 3.011755424063125,
+          "repeatCaptureNoise": 0
+        },
+        "aperture-small-opening": {
+          "baselineDimmedRegionMae": 115.71294039625302,
+          "interventionDimmedRegionMae": 111.52587250269418,
+          "maeReduction": 4.187067893558833,
+          "repeatCaptureNoise": 0
+        },
+        "bellows-highlighted": {
+          "baselineDimmedRegionMae": 116.50770577576905,
+          "interventionDimmedRegionMae": 112.52163114069913,
+          "maeReduction": 3.986074635069926,
+          "repeatCaptureNoise": 0
+        }
+      }
+    },
+    "interpretation": "At least one isolated output-stage intervention contributes consistently to the dimmed-region discrepancy, while the measured residual remains much larger than repeat noise. This does not establish a complete cause or authorize a correction/promotion."
+  },
+  "promotionBoundary": "Anatomy remains M2 \u2014 OPT-IN IMPLEMENTATION INCOMPLETE.",
+  "provenance": {
+    "measurementCommit": "16823df1fe625be3fed1fc03a104b2e693655619",
+    "workingTreeStatus": "?? node_modules",
+    "baseCommit": "a4255e904ada29dad2c0ae640d582bb042e1ad7f",
+    "browserVersion": "155.0.8059.84",
+    "nodeVersion": "v24.19.0",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64"
+    },
+    "threeRevision": "186",
+    "nativeQualification": {
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "adapterAvailability": "available",
+      "rendererAttempt": "webgpu",
+      "initializationAttempts": "1",
+      "initializationFailure": null,
+      "applicationFallback": "none",
+      "outputPolicy": "material-aware",
+      "outputPolicyStatus": "active",
+      "readiness": "ready",
+      "hardwareAcceleration": "unconfirmed"
+    },
+    "viewport": [
+      1440,
+      1000
+    ],
+    "devicePixelRatio": 1,
+    "cameraPosition": [
+      0.4455739783837988,
+      0.22278698919189935,
+      0.4381663213814697
+    ],
+    "orbitTarget": [
+      0,
+      0,
+      -0.08167
+    ],
+    "priorityStates": [
+      "highlighted-front-standard",
+      "highlighted-lens-and-board",
+      "aperture-small-opening",
+      "bellows-highlighted"
+    ],
+    "repeatedCapturesPerModeAndState": 2,
+    "workingTreeStatusExplanation": "The only porcelain status item was the environment-provided node_modules symlink to the primary checkout; the measured source revision is the committed measurementCommit."
+  },
+  "priorBaselineReference": {
+    "report": "../anatomy-renderable-contribution-investigation/report.json",
+    "purpose": "Full 13-state PR #262 matched WebGL, native standard WebGPU, and native material-aware baseline. The native-required 13-state audit passed in this task (2 passed, 1 expected skip)."
+  },
+  "interventionMatrix": {
+    "B0": "Unchanged material-aware output baseline.",
+    "B1": "Bypass custom per-material RGB tone-map and display-color conversion for dimmed targets only.",
+    "B2": "Bypass tone mapping for dimmed targets while retaining sRGB conversion.",
+    "B3": "Bypass sRGB conversion for dimmed targets while retaining authored tone-mapping behavior.",
+    "B4": "Bypass custom per-material RGB output transform for highlighted targets only."
+  },
+  "visibilityPolicies": {
+    "C1": "Keep 1 explicitly identified dimmed renderable(s) visible; exclude the rest of the current dimmed group. Keep every non-dimmed renderable at baseline visibility.",
+    "C2": "Keep 2 explicitly identified dimmed renderable(s) visible; exclude the rest of the current dimmed group. Keep every non-dimmed renderable at baseline visibility.",
+    "C4": "Exclude every currently visible dimmed semantic camera renderable; keep highlighted, normal, registered-target, overlay, and other renderables at their baseline visibility.",
+    "C3": "Full current dimmed group remains visible with every other renderable at baseline visibility."
+  },
+  "masks": {
+    "method": "Within-renderer B0 framebuffer differences from excluding current presentation-group renderable IDs, with an RGB per-channel threshold of 8.",
+    "limitation": "Masks are observed visibility responses, not exact silhouettes or additive color decomposition. The complement is an unaffected/background candidate.",
+    "bothGroupIntersectionMeaning": "A non-empty intersection means pixels changed when either group was excluded; it does not prove simultaneous visible-surface overlap."
+  },
+  "targetSelection": {
+    "source": "Mounted ConceptualCameraAnatomyPresentation resolved with the same resolveConceptualAnatomyPartState contract and joined to current visible renderable UUIDs.",
+    "frontStandardHighlightedCount": 17,
+    "frontStandardDimmedCount": 13,
+    "pairwiseUntestedStates": []
+  },
+  "runtime": {
+    "webgl": {
+      "rendererFamily": "webgl-renderer",
+      "executionBackend": "webgl2",
+      "rendererRequest": "webgl",
+      "rendererAttempt": "webgl",
+      "selectionReason": "default-webgl-request",
+      "applicationFallback": "none",
+      "adapterAvailability": "not-requested",
+      "outputPolicyRequested": "standard",
+      "outputPolicySelected": "standard",
+      "outputPolicyInstalled": "standard",
+      "toneMapping": "aces-filmic",
+      "outputColorSpace": "srgb"
+    },
+    "nativeStandardWebgpu": {
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "rendererRequest": "webgpu-pilot",
+      "rendererAttempt": "webgpu",
+      "selectionReason": "webgpu-pilot-approved",
+      "applicationFallback": "none",
+      "adapterAvailability": "available",
+      "initializationAttempts": "1",
+      "outputPolicyRequested": "standard",
+      "outputPolicySelected": "standard",
+      "outputPolicyInstalled": "standard",
+      "toneMapping": "aces-filmic",
+      "outputColorSpace": "srgb",
+      "hardwareAcceleration": "unconfirmed"
+    },
+    "nativeMaterialAware": {
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu",
+      "rendererRequest": "webgpu-pilot",
+      "rendererAttempt": "webgpu",
+      "selectionReason": "webgpu-pilot-approved",
+      "applicationFallback": "none",
+      "adapterAvailability": "available",
+      "initializationAttempts": "1",
+      "outputPolicyRequested": "material-aware",
+      "outputPolicySelected": "material-aware",
+      "outputPolicyInstalled": "material-aware",
+      "outputPolicyStatus": "active",
+      "readiness": "ready",
+      "toneMapping": "none",
+      "outputColorSpace": "srgb-linear",
+      "hardwareAcceleration": "unconfirmed"
+    }
+  },
+  "materialSources": {
+    "dd4260bf-de4b-458f-bdfc-36617979dfbf": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "334155",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "b67aa9d9-dcb9-4441-943b-f993cdff3d6c",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "3eec66a5-2d74-4ca9-9cf2-122325334aa1",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "8f022785-d184-4b42-8d96-2e05c486ac69",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "fe05f42c-7d24-4f44-a634-58186feeb014",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "3c682e41-04e8-4fb7-a597-6ad56b0a7830": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "475569",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "4fa3c83d-3695-426e-b70d-a088828d36ad",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "f8197b9a-e71f-4b67-947f-1dd1c7eeb854",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "12346cc9-ca7f-4601-90ac-c032b57ffe25",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "6426ca61-9fc1-48d4-8127-800904cab904",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "2f7042e3-ff8d-444c-9bff-1cc15ea8e576": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "475569",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "3fd7400f-8802-4c9e-a8fd-f12e9b75f74b",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "431fa45a-b291-466a-a241-71b139aaf090",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "eeacceba-0689-47bc-8be1-b088e17e2049",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "5941d53c-ae7b-463e-be9d-95ac3d2a16e6",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "7ff22b42-0e00-485f-b763-105da34c18f4": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "111827",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.16,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.88,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "6a81b878-52af-4488-b860-42cbfd0c5275",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 3
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "73c64b0d-b393-4e97-8461-d943834fda89",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "179c8ef8-ce64-49ff-8ff9-38fbb5f1eea1",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "070b487a-2be3-4ac8-b62e-4bdaff444967",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 3
+          }
+        ]
+      }
+    },
+    "21af2a93-ce81-4e4a-a44f-5fc68317e260": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "4b5563",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "cc867967-c111-4f79-b02d-f97b0273fce1",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "cc440ce2-5ed9-47eb-a3da-519a4eea2f3e",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "d14abce7-4245-47a4-94bf-7923fee60920",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "aa85bc8f-aed4-4a49-a58e-1c8f583f488d",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "aaf482d9-c788-47d4-9ed5-e951f369cbe0": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "4b5563",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "16deae2d-92f5-41ca-b994-73938d5f6d8e",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "285685d1-1757-48a8-afc8-3c32938afc55",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "dc2524f2-d58d-4a4d-a41d-740f06fa0cf7",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "6b080a0f-d2c8-4135-a119-f94b1134f484",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "874e9865-de8e-4517-87f6-393ecfd4e6b6": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "4b5563",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "5e215ac0-3ef2-48ea-bedf-b6994b04564f",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "5678c07b-eeec-45db-9a07-686c77c44138",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "84f84955-35b2-456a-be6f-6e569bda870d",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "7374298e-f1ed-4af4-b674-4834c432fa46",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ]
+      }
+    },
+    "6a2ef27d-bf5f-4d8c-8aa4-3ad89b3bd5eb": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "4b5563",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "fce93695-2fb9-4223-8d6e-81a86462d13b",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "dc5c2b4e-2be0-473a-a436-fc78d8325724",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "44a0a3f6-dfbc-43ac-afa6-72d415381558",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "82314457-1058-4abb-a312-09a290021f1e",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "c53d8723-2003-4efc-b62b-d9ed51d6a774": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "64748b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "3e61247c-12cc-446e-abfa-1499c91cba32",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "cab4539b-aa40-4d43-8b2e-c54dfc34274f",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "6c50d5de-ab0a-4423-8717-c9fd375ed57f",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "87acd320-050a-4d39-b38e-8b4c7f945b10",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "99bd755b-aec0-4a24-8525-2e2e1308b6f0": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "64748b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "47059cff-526f-4366-831c-9703d0809402",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "52b21af8-a5b9-4b2a-ba21-0c1c38328b9e",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "19f556dd-b807-4141-b494-6af1d00977ca",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "9ba5ec29-b765-4d5b-8814-145e36d7cde7",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "eacfec7a-8f8d-4b1c-9926-80703c84cf8b": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "64748b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "b9fbcb00-0aca-4895-b646-4a7460c9e6b8",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "7d0af184-afda-45cb-bbd3-e68510f15f62",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "fc271d40-440b-4b0c-a5f8-aecef8b67ae4",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "7f031e56-4cc8-4aca-8b55-6434d350a8b4",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "80df9a84-cae5-479e-ab20-a259937d5cd5": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "64748b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.25,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "1cabf929-5328-4301-ab1d-1c4ebbd35884",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "ac7e2ac3-c31f-46d9-a925-8dcfb2e367d4",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "eb3a240b-2d57-4da3-87c0-6f29cc92201d",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "8501528a-43c7-4b37-bf7c-3f6c5a18709a",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "f6a976b4-e844-440e-80e5-703fe8c2c5bd": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "bae6fd",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.1,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "69fa6869-f18a-4f42-a127-e1ca4d642bad",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 4
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "789d2aca-b88d-49cc-a314-9f2d7b46c7e8",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "71c285ef-055c-466c-9090-a13107b2abc9",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "35ae518e-0d0a-4dbf-ad1b-eb97a17120e1",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ]
+      }
+    },
+    "8d4693d7-23f2-4b3d-854f-ab8ed96b6163": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "1bcda0b0-2759-4735-b04f-1b1c5461427a",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "6e901fcd-32a3-4a06-ac4e-eef0a679b053",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "dc979d9a-c524-4de4-9071-0f3bc2abbef1",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "87df5546-c8b1-40cc-b978-524abcd36c26",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "2d2b62f5-c59a-49e6-b94d-6068f7e682de": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "b0bb8955-2ae4-48c6-856e-1ca8b10cb39c",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "1375072d-06e9-408c-90bb-0de54c0890e4",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "f827d02e-2a6e-44da-b605-9eacc912f9e7",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "30853cfc-6f5a-40f4-a3d2-d170abf5a423",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "06715002-7702-4511-807a-6c927714bca5": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "4f15a799-4991-46d1-8554-3ca0ec422173",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "73f24190-f417-43e2-805d-c49ba2583eb4",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "c43ea81f-f00a-4192-9ca1-a9d29f4901c6",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "0974dad8-1e06-4dae-99e5-77da2a03c63b",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "b7997c22-b0bc-4c54-a5ea-9f705a2808e4": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 0,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "fa0dc1cf-a5ac-42c6-86ad-74ec3e4285b9",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "3b1f0fb8-3652-4d31-8be3-14d8959b07bb",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "95dbe660-f52f-4f4b-8fa5-0ab50259b964",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "4c25a452-04a5-4600-905b-a90471a2ad85",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "86ed0a5c-a06d-44e3-a5c6-5f6c40981459": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "5afd23e9-7580-4025-8da8-6be7e263ab16",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "c478a488-7514-41e4-90d5-bb312e269491",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "fe747dfb-b248-4597-90a0-481b33e98e6d",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "af5e16c9-8f6c-4e98-8c61-1f67684d0517",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "e71adcc9-d156-4ea1-84da-4d238e85de30": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "83e3def6-1579-4a4d-9979-ad18796a2350",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "d581c337-e871-4dfe-a4a6-ccdd688d18b2",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "50af0b6a-bba5-4d8e-8ec4-d27d321d5a15",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "98d4de6f-d434-4e3b-8ef0-1658eba16d91",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "f08153c5-dd9f-4fba-966d-9afed54ade52": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "8af467ca-abae-41a7-8500-401794cbff9c",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "efb8c0e5-681f-40ca-994b-96fd82a45ca9",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "73a9d06e-f7ef-4ff2-8927-385218af346b",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "f420c812-24a0-476f-b4e2-a0c57e6acc68",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "58a3d529-dffb-46d7-9a4f-335262cada6a": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "f59e0b",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 1,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "front",
+        "alphaTest": 0,
+        "roughness": 1,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "d10931a5-5201-49ef-b46d-7243f5479a1e",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "661aea82-f530-499b-8ef7-37e48f965cc5",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "87d9f15b-27ba-4c7c-b29c-506455643adc",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "29e9917d-0ed8-4fd4-ac0d-bd1f00420d44",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 1
+          }
+        ]
+      }
+    },
+    "c6e5a5dd-ce06-46df-bcd0-04dfec22f259": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "7dd3fc",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.08,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.18,
+        "metalness": 0.15,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "62184b1d-4894-4201-ae89-07a73827e7ca",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "0fe654c9-0793-454b-ab76-838af28885ca",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "7ea8398e-c36f-4dcb-9ca7-e96769e4e9ba",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "8eabebf5-1ff4-4db1-84dc-18737aef82d1",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 2
+          }
+        ]
+      }
+    },
+    "73ab5717-6b4f-4c0b-8174-4d42ad04c9fc": {
+      "sourceProperties": {
+        "type": "MeshBasicMaterial",
+        "family": "MeshBasicMaterial",
+        "color": "020617",
+        "emissive": null,
+        "emissiveIntensity": null,
+        "toneMapped": true,
+        "opacity": 0.92,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": null,
+        "metalness": null,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareBasicNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "f2d315ab-9da7-42fe-a70d-7f4d82bb0a9e",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "a2e6081e-c2c1-4bce-acd0-b082db0e4dd5",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "e4fc8501-6cd9-450c-a444-9075296dc3be",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "acf90fb9-23a1-4727-8764-29e8e3b2326e",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 3
+          }
+        ]
+      }
+    },
+    "b12ed43f-85b8-4f15-8b1f-286d33530592": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "fef3c7",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.98,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.76,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "788950fe-5dc4-439a-8d72-66e67b0a2a4f",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "bd63bbc8-5ffb-4098-8b9d-5baebd4b78c5",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "3fe67313-19d6-43e9-9262-b4c947a4cee4",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "4d5b15a2-121f-4c25-8098-c228f8321e8c",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 2
+          }
+        ]
+      }
+    },
+    "bc552dab-03c3-46b2-99bf-f767e2514433": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "fef3c7",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.98,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.76,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "d94bfea1-e03b-4c8d-a7c5-31bec60797c1",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "c7cc3d55-206b-4c6e-9d49-2d6d7f024190",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "29d9c289-aaae-4780-9ff4-296446eae33d",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "235b1203-ee2c-41fa-9958-cc895f0cb226",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "32a9dc8a-845d-48bc-b254-cb4661db074a": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "fef3c7",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.98,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.76,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "7bca28af-12dc-43ef-b34d-e202f5d01821",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "000c3694-4385-44c4-80fd-6830042f1aca",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "41a1ec29-0b41-410b-99f8-2343481edead",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "46bff7f1-a3e8-4abb-96f3-f2ac698dc93f",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "9a72adb3-1930-4ecf-aee4-2c4ab1a5b871": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "fef3c7",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.98,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.76,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "45fa9cfe-1f7e-4a60-bca6-c185a9569333",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "ab3663f9-a9e1-49b1-a4be-3806d5430377",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "5c8795d9-83e6-4dc3-8736-06183e31e992",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "689c8fc7-6f7c-4a42-91e2-b5bfdf02ccc4",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "6512e2e4-5197-48e6-a4bf-df341263ac16": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "fef3c7",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.98,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.76,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "2ad42607-e41f-4b70-a846-5f54f75d2ed2",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "f90d856e-61e6-4cea-a1ce-ef74c53b4c7b",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "d7018f6f-6bc7-4a7c-9188-7d284be75b66",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "22324a2e-0a1e-4b19-a73a-15d9b093a5ac",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "06a51046-ab69-48b6-b3f8-16f0f99d9803": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "fef3c7",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.98,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.76,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "c2aea4f4-5200-402b-8298-ba945b273251",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "4c51f5d2-2fb1-4c3a-b43b-f441fc044a6f",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "59973036-af4d-4f35-9c93-5d5d350b1c5f",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 0
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "ec82b407-efb9-4f32-bcdf-1740f3ba1a96",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 0
+          }
+        ]
+      }
+    },
+    "92854616-f8c0-43a7-a756-795813a935fd": {
+      "sourceProperties": {
+        "type": "MeshStandardMaterial",
+        "family": "MeshStandardMaterial",
+        "color": "111827",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.96,
+        "transparent": false,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": true,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.82,
+        "metalness": 0.08,
+        "textureSlots": {}
+      },
+      "adaptedFamily": "MaterialAwareStandardNodeMaterial",
+      "outputTransform": "material-aware",
+      "outputInterventionId": "B0",
+      "adaptedOutputsByState": {
+        "highlighted-front-standard": [
+          {
+            "id": "cf2421de-8d3a-4eda-8525-a9645d6fa542",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "highlighted-lens-and-board": [
+          {
+            "id": "3035d047-7e16-465a-87d3-7f7a006ac1df",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "aperture-small-opening": [
+          {
+            "id": "46842012-eb22-4452-8eda-d1d8821babe0",
+            "materialVersion": 0,
+            "outputGraphBuildCount": 1
+          }
+        ],
+        "bellows-highlighted": [
+          {
+            "id": "bccd7057-3749-494b-9d49-2b9a231de4b2",
+            "materialVersion": 1,
+            "outputGraphBuildCount": 2
+          }
+        ]
+      }
+    }
+  },
+  "renderables": {
+    "d99c5c36-2b71-4874-9167-26e78e84560c": {
+      "name": "conceptual-camera/camera-support#70",
+      "role": "conceptual-camera/camera-support",
+      "cameraPart": "camera-support",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "dd4260bf-de4b-458f-bdfc-36617979dfbf"
+        }
+      ]
+    },
+    "6e9a9559-d370-4dd5-8da9-71332120fed3": {
+      "name": "conceptual-camera/camera-support#72",
+      "role": "conceptual-camera/camera-support",
+      "cameraPart": "camera-support",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "3c682e41-04e8-4fb7-a597-6ad56b0a7830"
+        }
+      ]
+    },
+    "10e51d31-3fdd-4879-ad63-ead060d183f7": {
+      "name": "conceptual-camera/camera-support#74",
+      "role": "conceptual-camera/camera-support",
+      "cameraPart": "camera-support",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "2f7042e3-ff8d-444c-9bff-1cc15ea8e576"
+        }
+      ]
+    },
+    "b3190991-6a88-4d63-a224-cab86ced2da9": {
+      "name": "bellows-folded-surface",
+      "role": "conceptual-camera/bellows",
+      "cameraPart": "bellows",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "7ff22b42-0e00-485f-b763-105da34c18f4"
+        }
+      ]
+    },
+    "433cc7d4-43fd-42d8-af22-7421f68d7ceb": {
+      "name": "rear-standard-frame-top",
+      "role": "conceptual-camera/rear-standard",
+      "cameraPart": "rear-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "21af2a93-ce81-4e4a-a44f-5fc68317e260"
+        }
+      ]
+    },
+    "79fac423-dcd5-4aeb-a755-56049b0a7e4b": {
+      "name": "rear-standard-frame-bottom",
+      "role": "conceptual-camera/rear-standard",
+      "cameraPart": "rear-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "aaf482d9-c788-47d4-9ed5-e951f369cbe0"
+        }
+      ]
+    },
+    "7c3c4df1-f162-407e-a578-af4946abd144": {
+      "name": "rear-standard-frame-left-upright",
+      "role": "conceptual-camera/rear-standard",
+      "cameraPart": "rear-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "874e9865-de8e-4517-87f6-393ecfd4e6b6"
+        }
+      ]
+    },
+    "35738292-78c9-40d8-84e3-1f6a0ddb30d1": {
+      "name": "rear-standard-frame-right-upright",
+      "role": "conceptual-camera/rear-standard",
+      "cameraPart": "rear-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "6a2ef27d-bf5f-4d8c-8aa4-3ad89b3bd5eb"
+        }
+      ]
+    },
+    "3f3cc618-5668-4504-bd03-c0cac1e82531": {
+      "name": "ground-glass-frame-top",
+      "role": "conceptual-camera/ground-glass-back",
+      "cameraPart": "ground-glass-back",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "c53d8723-2003-4efc-b62b-d9ed51d6a774"
+        }
+      ]
+    },
+    "a7f0aaa3-d8c3-4359-95b1-efe1ae0336b5": {
+      "name": "ground-glass-frame-bottom",
+      "role": "conceptual-camera/ground-glass-back",
+      "cameraPart": "ground-glass-back",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "99bd755b-aec0-4a24-8525-2e2e1308b6f0"
+        }
+      ]
+    },
+    "04d4ca5b-bf05-4006-b93f-05ad57a8a186": {
+      "name": "ground-glass-frame-left",
+      "role": "conceptual-camera/ground-glass-back",
+      "cameraPart": "ground-glass-back",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "eacfec7a-8f8d-4b1c-9926-80703c84cf8b"
+        }
+      ]
+    },
+    "5db5fb44-d8b2-491a-a777-ff050219607b": {
+      "name": "ground-glass-frame-right",
+      "role": "conceptual-camera/ground-glass-back",
+      "cameraPart": "ground-glass-back",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "80df9a84-cae5-479e-ab20-a259937d5cd5"
+        }
+      ]
+    },
+    "3d3244f0-4461-49d3-9788-51fc1ede598b": {
+      "name": "ground-glass-screen",
+      "role": "conceptual-camera/ground-glass-back",
+      "cameraPart": "ground-glass-back",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "f6a976b4-e844-440e-80e5-703fe8c2c5bd"
+        }
+      ]
+    },
+    "5a86f71f-eb93-4b47-a42a-d55a3b9bfa08": {
+      "name": "front-standard-frame-top",
+      "role": "conceptual-camera/front-standard",
+      "cameraPart": "front-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "8d4693d7-23f2-4b3d-854f-ab8ed96b6163"
+        }
+      ]
+    },
+    "f24fb534-9997-44c1-935d-420f1a389520": {
+      "name": "front-standard-frame-bottom",
+      "role": "conceptual-camera/front-standard",
+      "cameraPart": "front-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "2d2b62f5-c59a-49e6-b94d-6068f7e682de"
+        }
+      ]
+    },
+    "25930582-1767-48df-a735-b8c8371a987d": {
+      "name": "front-standard-frame-left-upright",
+      "role": "conceptual-camera/front-standard",
+      "cameraPart": "front-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "06715002-7702-4511-807a-6c927714bca5"
+        }
+      ]
+    },
+    "be9eab39-7d86-4090-9012-a3f5ffff5f26": {
+      "name": "front-standard-frame-right-upright",
+      "role": "conceptual-camera/front-standard",
+      "cameraPart": "front-standard",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "b7997c22-b0bc-4c54-a5ea-9f705a2808e4"
+        }
+      ]
+    },
+    "97775588-c9df-4357-89ed-5693779f4061": {
+      "name": "lens-board-plate",
+      "role": "conceptual-camera/lens-board",
+      "cameraPart": "lens-board",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "86ed0a5c-a06d-44e3-a5c6-5f6c40981459"
+        }
+      ]
+    },
+    "310672dc-36ec-4765-a69b-c5b61fe0c77e": {
+      "name": "lens-rear-mount",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "e71adcc9-d156-4ea1-84da-4d238e85de30"
+        }
+      ]
+    },
+    "28a40604-684c-4298-ae64-e9bf39139672": {
+      "name": "lens-shutter-housing",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "f08153c5-dd9f-4fba-966d-9afed54ade52"
+        }
+      ]
+    },
+    "991bc11e-b7a1-4e7b-9091-822721588b10": {
+      "name": "lens-front-barrel",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "58a3d529-dffb-46d7-9a4f-335262cada6a"
+        }
+      ]
+    },
+    "a5657477-6aba-4a0d-bf15-77c8fc87e398": {
+      "name": "lens-front-glass",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "c6e5a5dd-ce06-46df-bcd0-04dfec22f259"
+        }
+      ]
+    },
+    "cfcd24ab-1d36-4ba3-a0fb-b4e0bc3f3d0c": {
+      "name": "lens-aperture-interior",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 1,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "73ab5717-6b4f-4c0b-8174-4d42ad04c9fc"
+        }
+      ]
+    },
+    "9ce4dff1-d8aa-4a6a-9bda-ada5b83a480f": {
+      "name": "lens-aperture-blade-0-surface",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "b12ed43f-85b8-4f15-8b1f-286d33530592"
+        }
+      ]
+    },
+    "45ed809d-20f2-4e23-8d1d-122b62e395f7": {
+      "name": "lens-aperture-blade-1-surface",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "bc552dab-03c3-46b2-99bf-f767e2514433"
+        }
+      ]
+    },
+    "d40a4fcf-4fee-42c4-b5fd-c05fbbe6e8b3": {
+      "name": "lens-aperture-blade-2-surface",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "32a9dc8a-845d-48bc-b254-cb4661db074a"
+        }
+      ]
+    },
+    "2e938a3d-cf36-44d5-849e-1a4dd2d3cf0e": {
+      "name": "lens-aperture-blade-3-surface",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "9a72adb3-1930-4ecf-aee4-2c4ab1a5b871"
+        }
+      ]
+    },
+    "9f50f173-9e11-4de3-9eee-5ddf6d7238eb": {
+      "name": "lens-aperture-blade-4-surface",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "6512e2e4-5197-48e6-a4bf-df341263ac16"
+        }
+      ]
+    },
+    "0ccac381-719b-4c74-b9a0-69fd942fa1d1": {
+      "name": "lens-aperture-blade-5-surface",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 0,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "06a51046-ab69-48b6-b3f8-16f0f99d9803"
+        }
+      ]
+    },
+    "1ebc6062-b305-4386-87c9-36133eb64ca2": {
+      "name": "lens-aperture-housing-mask",
+      "role": "conceptual-camera/lens",
+      "cameraPart": "lens",
+      "renderOrder": 10,
+      "materialAssignments": [
+        {
+          "slot": 0,
+          "sourceId": "92854616-f8c0-43a7-a756-795813a935fd"
+        }
+      ]
+    }
+  },
+  "states": {
+    "highlighted-front-standard": {
+      "mountedPresentation": {
+        "highlightedParts": [
+          "lens",
+          "lens-board",
+          "front-standard"
+        ],
+        "dimmedParts": [
+          "bellows",
+          "rear-standard",
+          "ground-glass-back",
+          "film-holder",
+          "camera-support"
+        ],
+        "highlightedRenderableIds": [
+          "0ccac381-719b-4c74-b9a0-69fd942fa1d1",
+          "1ebc6062-b305-4386-87c9-36133eb64ca2",
+          "25930582-1767-48df-a735-b8c8371a987d",
+          "28a40604-684c-4298-ae64-e9bf39139672",
+          "2e938a3d-cf36-44d5-849e-1a4dd2d3cf0e",
+          "310672dc-36ec-4765-a69b-c5b61fe0c77e",
+          "45ed809d-20f2-4e23-8d1d-122b62e395f7",
+          "5a86f71f-eb93-4b47-a42a-d55a3b9bfa08",
+          "97775588-c9df-4357-89ed-5693779f4061",
+          "991bc11e-b7a1-4e7b-9091-822721588b10",
+          "9ce4dff1-d8aa-4a6a-9bda-ada5b83a480f",
+          "9f50f173-9e11-4de3-9eee-5ddf6d7238eb",
+          "a5657477-6aba-4a0d-bf15-77c8fc87e398",
+          "be9eab39-7d86-4090-9012-a3f5ffff5f26",
+          "cfcd24ab-1d36-4ba3-a0fb-b4e0bc3f3d0c",
+          "d40a4fcf-4fee-42c4-b5fd-c05fbbe6e8b3",
+          "f24fb534-9997-44c1-935d-420f1a389520"
+        ],
+        "dimmedRenderableIds": [
+          "04d4ca5b-bf05-4006-b93f-05ad57a8a186",
+          "10e51d31-3fdd-4879-ad63-ead060d183f7",
+          "35738292-78c9-40d8-84e3-1f6a0ddb30d1",
+          "3d3244f0-4461-49d3-9788-51fc1ede598b",
+          "3f3cc618-5668-4504-bd03-c0cac1e82531",
+          "433cc7d4-43fd-42d8-af22-7421f68d7ceb",
+          "5db5fb44-d8b2-491a-a777-ff050219607b",
+          "6e9a9559-d370-4dd5-8da9-71332120fed3",
+          "79fac423-dcd5-4aeb-a755-56049b0a7e4b",
+          "7c3c4df1-f162-407e-a578-af4946abd144",
+          "a7f0aaa3-d8c3-4359-95b1-efe1ae0336b5",
+          "b3190991-6a88-4d63-a224-cab86ced2da9",
+          "d99c5c36-2b71-4874-9167-26e78e84560c"
+        ],
+        "unclassifiedVisibleRenderableIds": []
+      },
+      "baseline": {
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "webglVsMaterialAwareB0WholeFrame": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 6.0819345432512515,
+          "changedPixelCount": 8648
+        },
+        "nativeStandardWebgpu": {
+          "webglVsStandardWholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 25.221015144486415,
+            "changedPixelCount": 194037
+          },
+          "standardVsB0WholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 31.13447319340699,
+            "changedPixelCount": 200669
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 55.22772035484658,
+            "changedPixelCount": 5402
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 9877,
+            "meanAbsoluteRgbDifference": 2.03590833923931,
+            "changedPixelCount": 568
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 24.496590705185714,
+            "changedPixelCount": 188271
+          }
+        },
+        "materialAwareB0": {
+          "wholeFrameVsWebgl": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 6.0819345432512515,
+            "changedPixelCount": 8648
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 104.1276959387971,
+            "changedPixelCount": 8409
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 9877,
+            "meanAbsoluteRgbDifference": 2.2731261179170468,
+            "changedPixelCount": 429
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.009075620199631979,
+            "changedPixelCount": 58
+          }
+        },
+        "maskPopulations": {
+          "dimmedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 12287,
+            "changedPixelFraction": 0.05816221231313963,
+            "bounds": {
+              "left": 177,
+              "top": 141,
+              "right": 346,
+              "bottom": 319
+            }
+          },
+          "highlightedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 9877,
+            "changedPixelFraction": 0.046754144300226265,
+            "bounds": {
+              "left": 167,
+              "top": 158,
+              "right": 274,
+              "bottom": 290
+            }
+          },
+          "unaffectedBackgroundCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 189482,
+            "changedPixelFraction": 0.8969392295530498,
+            "bounds": {
+              "left": 0,
+              "top": 0,
+              "right": 514,
+              "bottom": 411
+            }
+          },
+          "bothGroupsInfluenceCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 392,
+            "changedPixelFraction": 0.001855586166415784,
+            "bounds": {
+              "left": 201,
+              "top": 170,
+              "right": 274,
+              "bottom": 286
+            }
+          }
+        },
+        "visibilityLadder": {
+          "C1": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 12,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 12,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 12,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.423095736254307,
+                "changedPixelCount": 200859
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.09776225144454859,
+                "changedPixelCount": 358
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.478283645911244,
+                "changedPixelCount": 200802
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 12287,
+                "meanAbsoluteRgbDifference": 1.3869401264208785,
+                "changedPixelCount": 182
+              }
+            }
+          },
+          "C2": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 11,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 11,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 11,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 27.119374465493355,
+                "changedPixelCount": 199689
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.9712226356266234,
+                "changedPixelCount": 1422
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 28.02688233122213,
+                "changedPixelCount": 200625
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 12287,
+                "meanAbsoluteRgbDifference": 16.39331542823038,
+                "changedPixelCount": 1243
+              }
+            }
+          },
+          "C4": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 13,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 13,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 13,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.430260886578875,
+                "changedPixelCount": 200920
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.022988124879686697,
+                "changedPixelCount": 249
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.41920152991186,
+                "changedPixelCount": 200802
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 12287,
+                "meanAbsoluteRgbDifference": 0.10132660535525351,
+                "changedPixelCount": 73
+              }
+            }
+          },
+          "C3": {
+            "perBackend": {
+              "webgl": {},
+              "nativeStandard": {},
+              "materialAware": {}
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 25.221015144486415,
+                "changedPixelCount": 194037
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 6.0819345432512515,
+                "changedPixelCount": 8648
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 31.13447319340699,
+                "changedPixelCount": 200669
+              }
+            }
+          }
+        },
+        "visibilityRestoration": {
+          "dimmed": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "highlighted": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "interpretation": "Observed visibility-response masks include occlusion, reveal, depth, blending and shadow effects; the unaffected complement is a background/unaffected candidate, not an exact semantic decomposition."
+        },
+        "fixedBackgroundPatchRepeat": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "fixedBackgroundPatchB0VsWebgl": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "groundGlass": {
+          "contentful": "true",
+          "repeatDifference": {
+            "sampleCount": 211768,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          }
+        },
+        "baselineCaptureCount": 2
+      },
+      "interventions": {
+        "B1": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 13,
+          "assignments": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 6.0231664252511194,
+              "changedPixelCount": 8801
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 103.11901467675864,
+              "changedPixelCount": 8564
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 2.244304950896021,
+              "changedPixelCount": 426
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0.009001734553502004,
+              "changedPixelCount": 58
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.21920689470179658,
+              "changedPixelCount": 1708
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 3.7661213748948748,
+              "changedPixelCount": 1708
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 0.06682190948668625,
+              "changedPixelCount": 3
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 8.795910253568501e-05,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 1708,
+          "changedFractionAgainstB0": 0.008085054010811629,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-front-standard-trial-10.png",
+              "b0-highlighted-front-standard-trial-20.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B2": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-tone-mapping",
+          "targetRenderableCount": 13,
+          "assignments": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 6.314577080986237,
+              "changedPixelCount": 8665
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 108.1248745286346,
+              "changedPixelCount": 8426
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 2.359454625223584,
+              "changedPixelCount": 427
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0.009195244579080511,
+              "changedPixelCount": 58
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.23435611475601248,
+              "changedPixelCount": 280
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 4.026260817666368,
+              "changedPixelCount": 280
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 0.09159326381154871,
+              "changedPixelCount": 0
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0.00014425292815852341,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 280,
+          "changedFractionAgainstB0": 0.0013254186902969885,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-front-standard-trial-11.png",
+              "b0-highlighted-front-standard-trial-21.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B3": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-color-space",
+          "targetRenderableCount": 13,
+          "assignments": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 6.002417311230399,
+              "changedPixelCount": 9029
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 102.76256748324788,
+              "changedPixelCount": 8792
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 2.2403226350781273,
+              "changedPixelCount": 426
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0.008987661097096294,
+              "changedPixelCount": 58
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.2574894045398746,
+              "changedPixelCount": 3046
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 4.423916876915982,
+              "changedPixelCount": 3046
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 0.08119874455806418,
+              "changedPixelCount": 10
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0.00010555092304282202,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 3046,
+          "changedFractionAgainstB0": 0.014418661895159382,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-front-standard-trial-12.png",
+              "b0-highlighted-front-standard-trial-22.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B4": {
+          "targetGroup": "highlighted",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 17,
+          "assignments": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 7.314711200734661,
+              "changedPixelCount": 17907
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 104.1884647730664,
+              "changedPixelCount": 8542
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 28.641119098241703,
+              "changedPixelCount": 9688
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0.009075620199631979,
+              "changedPixelCount": 58
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 1.2746851341670846,
+              "changedPixelCount": 9662
+            },
+            "dimmedResponse": {
+              "sampleCount": 12287,
+              "meanAbsoluteRgbDifference": 0.5096443395458615,
+              "changedPixelCount": 359
+            },
+            "highlightedResponse": {
+              "sampleCount": 9877,
+              "meanAbsoluteRgbDifference": 27.262799095541826,
+              "changedPixelCount": 9662
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189482,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 9662,
+          "changedFractionAgainstB0": 0.045736412091605366,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-front-standard-trial-13.png",
+              "b0-highlighted-front-standard-trial-23.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        }
+      },
+      "pairwiseB1": {
+        "firstPart": "bellows",
+        "secondPart": "ground-glass-back",
+        "firstPartRenderableCount": 1,
+        "secondPartRenderableCount": 5,
+        "sharedResponseMask": {
+          "width": 514,
+          "height": 411,
+          "changedPixels": 3432,
+          "changedPixelFraction": 0.016245846232497373,
+          "bounds": {
+            "left": 258,
+            "top": 158,
+            "right": 324,
+            "bottom": 234
+          }
+        },
+        "interpretation": "Intersection of actual per-part visibility-exclusion response masks. This demonstrates that both tested part sets influence some measured output pixels; it is not an exact silhouette or an additive alpha decomposition.",
+        "shaderActivationEvidence": {
+          "outputGraphBuiltAssignmentCountForFullDimmedB1": 4,
+          "scopedPairCopiesCarryB1Identity": true,
+          "reasonPerCopyGraphCountMayBeZero": "Three may reuse the already compiled B1 program for a scoped copy with the same material family and output-transform cache key; the experiment therefore checks B1 graph activation in the same state, the pair's actual output-copy identity/version, and repeated framebuffer captures."
+        },
+        "controls": {
+          "neitherAltered": {
+            "changedPixelsInSharedMask": 0,
+            "meanAbsoluteRgbDifferenceInSharedMask": 0,
+            "baselineRepeatNoise": {
+              "sampleCount": 3432,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "first-part-only": {
+            "targetCount": 1,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 3432,
+              "meanAbsoluteRgbDifference": 0.6715229215229216,
+              "changedPixelCount": 0
+            }
+          },
+          "second-part-only": {
+            "targetCount": 5,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 5,
+              "outputGraphBuiltAssignmentCount": 2,
+              "baselineOutputIdentityChanges": 1,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 5,
+              "outputGraphBuiltAssignmentCount": 2,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 3432,
+              "meanAbsoluteRgbDifference": 4.397921522921522,
+              "changedPixelCount": 93
+            }
+          },
+          "both-parts": {
+            "targetCount": 6,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 6,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 6,
+              "outputGraphBuiltAssignmentCount": 3,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 3432,
+              "meanAbsoluteRgbDifference": 5.070124320124321,
+              "changedPixelCount": 280
+            }
+          },
+          "pairwiseNonAdditivity": {
+            "samplePixels": 3432,
+            "meanAbsoluteRgbNonAdditivity": 0.16695804195804195,
+            "changedPixelCountAtPerChannelThreshold8": 0,
+            "changedPixelFractionAtPerChannelThreshold8": 0,
+            "interpretation": "The residual compares simultaneous B1 output change against the sum of each part's separate B1 output change in the measured shared-response mask. It is evidence of non-additive framebuffer response under this setup, not a direct alpha-blending diagnosis."
+          }
+        },
+        "finalRestoration": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        }
+      }
+    },
+    "highlighted-lens-and-board": {
+      "mountedPresentation": {
+        "highlightedParts": [
+          "lens",
+          "lens-board"
+        ],
+        "dimmedParts": [
+          "front-standard",
+          "bellows",
+          "rear-standard",
+          "ground-glass-back",
+          "film-holder",
+          "camera-support"
+        ],
+        "highlightedRenderableIds": [
+          "0ccac381-719b-4c74-b9a0-69fd942fa1d1",
+          "1ebc6062-b305-4386-87c9-36133eb64ca2",
+          "28a40604-684c-4298-ae64-e9bf39139672",
+          "2e938a3d-cf36-44d5-849e-1a4dd2d3cf0e",
+          "310672dc-36ec-4765-a69b-c5b61fe0c77e",
+          "45ed809d-20f2-4e23-8d1d-122b62e395f7",
+          "97775588-c9df-4357-89ed-5693779f4061",
+          "991bc11e-b7a1-4e7b-9091-822721588b10",
+          "9ce4dff1-d8aa-4a6a-9bda-ada5b83a480f",
+          "9f50f173-9e11-4de3-9eee-5ddf6d7238eb",
+          "a5657477-6aba-4a0d-bf15-77c8fc87e398",
+          "cfcd24ab-1d36-4ba3-a0fb-b4e0bc3f3d0c",
+          "d40a4fcf-4fee-42c4-b5fd-c05fbbe6e8b3"
+        ],
+        "dimmedRenderableIds": [
+          "04d4ca5b-bf05-4006-b93f-05ad57a8a186",
+          "10e51d31-3fdd-4879-ad63-ead060d183f7",
+          "25930582-1767-48df-a735-b8c8371a987d",
+          "35738292-78c9-40d8-84e3-1f6a0ddb30d1",
+          "3d3244f0-4461-49d3-9788-51fc1ede598b",
+          "3f3cc618-5668-4504-bd03-c0cac1e82531",
+          "433cc7d4-43fd-42d8-af22-7421f68d7ceb",
+          "5a86f71f-eb93-4b47-a42a-d55a3b9bfa08",
+          "5db5fb44-d8b2-491a-a777-ff050219607b",
+          "6e9a9559-d370-4dd5-8da9-71332120fed3",
+          "79fac423-dcd5-4aeb-a755-56049b0a7e4b",
+          "7c3c4df1-f162-407e-a578-af4946abd144",
+          "a7f0aaa3-d8c3-4359-95b1-efe1ae0336b5",
+          "b3190991-6a88-4d63-a224-cab86ced2da9",
+          "be9eab39-7d86-4090-9012-a3f5ffff5f26",
+          "d99c5c36-2b71-4874-9167-26e78e84560c",
+          "f24fb534-9997-44c1-935d-420f1a389520"
+        ],
+        "unclassifiedVisibleRenderableIds": []
+      },
+      "baseline": {
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "webglVsMaterialAwareB0WholeFrame": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 9.04612614830173,
+          "changedPixelCount": 13246
+        },
+        "nativeStandardWebgpu": {
+          "webglVsStandardWholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 25.221499553460134,
+            "changedPixelCount": 193959
+          },
+          "standardVsB0WholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 34.07941940349847,
+            "changedPixelCount": 205101
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 16900,
+            "meanAbsoluteRgbDifference": 40.43773175542407,
+            "changedPixelCount": 5563
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 5093,
+            "meanAbsoluteRgbDifference": 1.2254074219516984,
+            "changedPixelCount": 182
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189510,
+            "meanAbsoluteRgbDifference": 24.494459395282572,
+            "changedPixelCount": 188289
+          }
+        },
+        "materialAwareB0": {
+          "wholeFrameVsWebgl": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 9.04612614830173,
+            "changedPixelCount": 13246
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 16900,
+            "meanAbsoluteRgbDifference": 112.84846153846154,
+            "changedPixelCount": 13099
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 5093,
+            "meanAbsoluteRgbDifference": 3.79023496302114,
+            "changedPixelCount": 254
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189510,
+            "meanAbsoluteRgbDifference": 0.011668689427119064,
+            "changedPixelCount": 81
+          }
+        },
+        "maskPopulations": {
+          "dimmedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 16900,
+            "changedPixelFraction": 0.07999848523578251,
+            "bounds": {
+              "left": 167,
+              "top": 141,
+              "right": 346,
+              "bottom": 319
+            }
+          },
+          "highlightedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 5093,
+            "changedPixelFraction": 0.024108419248866295,
+            "bounds": {
+              "left": 179,
+              "top": 175,
+              "right": 247,
+              "bottom": 270
+            }
+          },
+          "unaffectedBackgroundCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 189510,
+            "changedPixelFraction": 0.8970717714220796,
+            "bounds": {
+              "left": 0,
+              "top": 0,
+              "right": 514,
+              "bottom": 411
+            }
+          },
+          "bothGroupsInfluenceCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 249,
+            "changedPixelFraction": 0.0011786759067283932,
+            "bounds": {
+              "left": 179,
+              "top": 176,
+              "right": 247,
+              "bottom": 270
+            }
+          }
+        },
+        "visibilityLadder": {
+          "C1": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 16,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 16,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 16,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.936697056623775,
+                "changedPixelCount": 205122
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.2181654943022775,
+                "changedPixelCount": 414
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.10632382503211,
+                "changedPixelCount": 205225
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 16900,
+                "meanAbsoluteRgbDifference": 2.6394871794871797,
+                "changedPixelCount": 356
+              }
+            }
+          },
+          "C2": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 15,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 15,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 15,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 28.987335939990093,
+                "changedPixelCount": 204238
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.7571517383497275,
+                "changedPixelCount": 1091
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 29.707151896137663,
+                "changedPixelCount": 205068
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 16900,
+                "meanAbsoluteRgbDifference": 9.355936883629193,
+                "changedPixelCount": 1020
+              }
+            }
+          },
+          "C4": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 17,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 17,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 17,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.955085663072257,
+                "changedPixelCount": 205300
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.012738220341389985,
+                "changedPixelCount": 117
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.94964986856265,
+                "changedPixelCount": 205225
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 16900,
+                "meanAbsoluteRgbDifference": 0.07159763313609467,
+                "changedPixelCount": 59
+              }
+            }
+          },
+          "C3": {
+            "perBackend": {
+              "webgl": {},
+              "nativeStandard": {},
+              "materialAware": {}
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 25.221499553460134,
+                "changedPixelCount": 193959
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 9.04612614830173,
+                "changedPixelCount": 13246
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 34.07941940349847,
+                "changedPixelCount": 205101
+              }
+            }
+          }
+        },
+        "visibilityRestoration": {
+          "dimmed": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "highlighted": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "interpretation": "Observed visibility-response masks include occlusion, reveal, depth, blending and shadow effects; the unaffected complement is a background/unaffected candidate, not an exact semantic decomposition."
+        },
+        "fixedBackgroundPatchRepeat": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "fixedBackgroundPatchB0VsWebgl": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "groundGlass": {
+          "contentful": "true",
+          "repeatDifference": {
+            "sampleCount": 211768,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          }
+        },
+        "baselineCaptureCount": 2
+      },
+      "interventions": {
+        "B1": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 17,
+          "assignments": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 8.848913314461896,
+              "changedPixelCount": 13398
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 110.38615384615385,
+              "changedPixelCount": 13252
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 3.704300019634793,
+              "changedPixelCount": 253
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.01149455613599986,
+              "changedPixelCount": 81
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.3565186931371714,
+              "changedPixelCount": 3276
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 4.453392504930966,
+              "changedPixelCount": 3276
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 0.10975849204790888,
+              "changedPixelCount": 13
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.0001952403567094085,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 3276,
+          "changedFractionAgainstB0": 0.015507398676474765,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-lens-and-board-trial-10.png",
+              "b0-highlighted-lens-and-board-trial-20.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B2": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-tone-mapping",
+          "targetRenderableCount": 17,
+          "assignments": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 9.41722129127338,
+              "changedPixelCount": 13269
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 117.48493096646943,
+              "changedPixelCount": 13121
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 3.9177956672557106,
+              "changedPixelCount": 252
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.011830510263310645,
+              "changedPixelCount": 82
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.37266039932971684,
+              "changedPixelCount": 999
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 4.655719921104537,
+              "changedPixelCount": 999
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 0.13030957523398126,
+              "changedPixelCount": 1
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.0001899635903118569,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 999,
+          "changedFractionAgainstB0": 0.00472890454145247,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-lens-and-board-trial-11.png",
+              "b0-highlighted-lens-and-board-trial-21.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B3": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-color-space",
+          "targetRenderableCount": 17,
+          "assignments": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 17,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 8.80493150425554,
+              "changedPixelCount": 13626
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 109.83670611439841,
+              "changedPixelCount": 13480
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 3.6923227959945017,
+              "changedPixelCount": 253
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.011473449070409654,
+              "changedPixelCount": 81
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.41771516752345517,
+              "changedPixelCount": 4977
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 5.217948717948718,
+              "changedPixelCount": 4977
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 0.1280188494011388,
+              "changedPixelCount": 13
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.0002198652665646492,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 4977,
+          "changedFractionAgainstB0": 0.02355931722002897,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-lens-and-board-trial-12.png",
+              "b0-highlighted-lens-and-board-trial-22.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B4": {
+          "targetGroup": "highlighted",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 13,
+          "assignments": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 5,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 13,
+            "outputGraphBuiltAssignmentCount": 5,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 9.667913191387305,
+              "changedPixelCount": 17924
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 112.85086785009861,
+              "changedPixelCount": 13157
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 29.58544407356503,
+              "changedPixelCount": 4932
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0.011668689427119064,
+              "changedPixelCount": 81
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.6465029459008271,
+              "changedPixelCount": 4883
+            },
+            "dimmedResponse": {
+              "sampleCount": 16900,
+              "meanAbsoluteRgbDifference": 0.19944773175542407,
+              "changedPixelCount": 196
+            },
+            "highlightedResponse": {
+              "sampleCount": 5093,
+              "meanAbsoluteRgbDifference": 26.812553177563974,
+              "changedPixelCount": 4883
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189510,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 4883,
+          "changedFractionAgainstB0": 0.023114355231143552,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-highlighted-lens-and-board-trial-13.png",
+              "b0-highlighted-lens-and-board-trial-23.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        }
+      },
+      "pairwiseB1": {
+        "firstPart": "bellows",
+        "secondPart": "ground-glass-back",
+        "firstPartRenderableCount": 1,
+        "secondPartRenderableCount": 5,
+        "sharedResponseMask": {
+          "width": 514,
+          "height": 411,
+          "changedPixels": 4050,
+          "changedPixelFraction": 0.01917123462751001,
+          "bounds": {
+            "left": 258,
+            "top": 158,
+            "right": 324,
+            "bottom": 234
+          }
+        },
+        "interpretation": "Intersection of actual per-part visibility-exclusion response masks. This demonstrates that both tested part sets influence some measured output pixels; it is not an exact silhouette or an additive alpha decomposition.",
+        "shaderActivationEvidence": {
+          "outputGraphBuiltAssignmentCountForFullDimmedB1": 4,
+          "scopedPairCopiesCarryB1Identity": true,
+          "reasonPerCopyGraphCountMayBeZero": "Three may reuse the already compiled B1 program for a scoped copy with the same material family and output-transform cache key; the experiment therefore checks B1 graph activation in the same state, the pair's actual output-copy identity/version, and repeated framebuffer captures."
+        },
+        "controls": {
+          "neitherAltered": {
+            "changedPixelsInSharedMask": 0,
+            "meanAbsoluteRgbDifferenceInSharedMask": 0,
+            "baselineRepeatNoise": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "first-part-only": {
+            "targetCount": 1,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 0.631358024691358,
+              "changedPixelCount": 0
+            }
+          },
+          "second-part-only": {
+            "targetCount": 5,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 5,
+              "outputGraphBuiltAssignmentCount": 2,
+              "baselineOutputIdentityChanges": 1,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 5,
+              "outputGraphBuiltAssignmentCount": 2,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 4.233333333333333,
+              "changedPixelCount": 111
+            }
+          },
+          "both-parts": {
+            "targetCount": 6,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 6,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 6,
+              "outputGraphBuiltAssignmentCount": 3,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 4.860658436213992,
+              "changedPixelCount": 298
+            }
+          },
+          "pairwiseNonAdditivity": {
+            "samplePixels": 4050,
+            "meanAbsoluteRgbNonAdditivity": 0.17983539094650206,
+            "changedPixelCountAtPerChannelThreshold8": 0,
+            "changedPixelFractionAtPerChannelThreshold8": 0,
+            "interpretation": "The residual compares simultaneous B1 output change against the sum of each part's separate B1 output change in the measured shared-response mask. It is evidence of non-additive framebuffer response under this setup, not a direct alpha-blending diagnosis."
+          }
+        },
+        "finalRestoration": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        }
+      }
+    },
+    "aperture-small-opening": {
+      "mountedPresentation": {
+        "highlightedParts": [
+          "lens"
+        ],
+        "dimmedParts": [
+          "lens-board",
+          "front-standard",
+          "bellows",
+          "rear-standard",
+          "ground-glass-back",
+          "film-holder",
+          "camera-support"
+        ],
+        "highlightedRenderableIds": [
+          "0ccac381-719b-4c74-b9a0-69fd942fa1d1",
+          "1ebc6062-b305-4386-87c9-36133eb64ca2",
+          "28a40604-684c-4298-ae64-e9bf39139672",
+          "2e938a3d-cf36-44d5-849e-1a4dd2d3cf0e",
+          "310672dc-36ec-4765-a69b-c5b61fe0c77e",
+          "45ed809d-20f2-4e23-8d1d-122b62e395f7",
+          "991bc11e-b7a1-4e7b-9091-822721588b10",
+          "9ce4dff1-d8aa-4a6a-9bda-ada5b83a480f",
+          "9f50f173-9e11-4de3-9eee-5ddf6d7238eb",
+          "a5657477-6aba-4a0d-bf15-77c8fc87e398",
+          "cfcd24ab-1d36-4ba3-a0fb-b4e0bc3f3d0c",
+          "d40a4fcf-4fee-42c4-b5fd-c05fbbe6e8b3"
+        ],
+        "dimmedRenderableIds": [
+          "04d4ca5b-bf05-4006-b93f-05ad57a8a186",
+          "10e51d31-3fdd-4879-ad63-ead060d183f7",
+          "25930582-1767-48df-a735-b8c8371a987d",
+          "35738292-78c9-40d8-84e3-1f6a0ddb30d1",
+          "3d3244f0-4461-49d3-9788-51fc1ede598b",
+          "3f3cc618-5668-4504-bd03-c0cac1e82531",
+          "433cc7d4-43fd-42d8-af22-7421f68d7ceb",
+          "5a86f71f-eb93-4b47-a42a-d55a3b9bfa08",
+          "5db5fb44-d8b2-491a-a777-ff050219607b",
+          "6e9a9559-d370-4dd5-8da9-71332120fed3",
+          "79fac423-dcd5-4aeb-a755-56049b0a7e4b",
+          "7c3c4df1-f162-407e-a578-af4946abd144",
+          "97775588-c9df-4357-89ed-5693779f4061",
+          "a7f0aaa3-d8c3-4359-95b1-efe1ae0336b5",
+          "b3190991-6a88-4d63-a224-cab86ced2da9",
+          "be9eab39-7d86-4090-9012-a3f5ffff5f26",
+          "d99c5c36-2b71-4874-9167-26e78e84560c",
+          "f24fb534-9997-44c1-935d-420f1a389520"
+        ],
+        "unclassifiedVisibleRenderableIds": []
+      },
+      "baseline": {
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "webglVsMaterialAwareB0WholeFrame": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 11.028733183750367,
+          "changedPixelCount": 16487
+        },
+        "nativeStandardWebgpu": {
+          "webglVsStandardWholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 25.221417503731686,
+            "changedPixelCount": 193946
+          },
+          "standardVsB0WholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 36.05720759528024,
+            "changedPixelCount": 208291
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 20105,
+            "meanAbsoluteRgbDifference": 34.03194893475918,
+            "changedPixelCount": 5592
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 1810,
+            "meanAbsoluteRgbDifference": 1.2639042357274402,
+            "changedPixelCount": 81
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189515,
+            "meanAbsoluteRgbDifference": 24.494252873563216,
+            "changedPixelCount": 188294
+          }
+        },
+        "materialAwareB0": {
+          "wholeFrameVsWebgl": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 11.028733183750367,
+            "changedPixelCount": 16487
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 20105,
+            "meanAbsoluteRgbDifference": 115.71294039625302,
+            "changedPixelCount": 16358
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 1810,
+            "meanAbsoluteRgbDifference": 10.525966850828729,
+            "changedPixelCount": 222
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189515,
+            "meanAbsoluteRgbDifference": 0.011919900799409017,
+            "changedPixelCount": 83
+          }
+        },
+        "maskPopulations": {
+          "dimmedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 20105,
+            "changedPixelFraction": 0.0951697956015034,
+            "bounds": {
+              "left": 167,
+              "top": 141,
+              "right": 346,
+              "bottom": 319
+            }
+          },
+          "highlightedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 1810,
+            "changedPixelFraction": 0.008567885105134104,
+            "bounds": {
+              "left": 179,
+              "top": 200,
+              "right": 225,
+              "bottom": 251
+            }
+          },
+          "unaffectedBackgroundCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 189515,
+            "changedPixelFraction": 0.8970954396129778,
+            "bounds": {
+              "left": 0,
+              "top": 0,
+              "right": 514,
+              "bottom": 411
+            }
+          },
+          "bothGroupsInfluenceCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 176,
+            "changedPixelFraction": 0.0008331203196152499,
+            "bounds": {
+              "left": 179,
+              "top": 200,
+              "right": 225,
+              "bottom": 251
+            }
+          }
+        },
+        "visibilityLadder": {
+          "C1": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 17,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 17,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 17,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.30998702983139,
+                "changedPixelCount": 208272
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.2159517295136029,
+                "changedPixelCount": 407
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.480653620759842,
+                "changedPixelCount": 208397
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 20105,
+                "meanAbsoluteRgbDifference": 2.21714333084639,
+                "changedPixelCount": 365
+              }
+            }
+          },
+          "C2": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 16,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 16,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 16,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.853684821746967,
+                "changedPixelCount": 204410
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 3.1243179616322845,
+                "changedPixelCount": 4395
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 26.930625376718705,
+                "changedPixelCount": 208457
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 20105,
+                "meanAbsoluteRgbDifference": 32.75347757605902,
+                "changedPixelCount": 4334
+              }
+            }
+          },
+          "C4": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 18,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 18,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 18,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.32837563627987,
+                "changedPixelCount": 208450
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 0.010524455552715374,
+                "changedPixelCount": 110
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.32397966429038,
+                "changedPixelCount": 208397
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 20105,
+                "meanAbsoluteRgbDifference": 0.05860896957639061,
+                "changedPixelCount": 68
+              }
+            }
+          },
+          "C3": {
+            "perBackend": {
+              "webgl": {},
+              "nativeStandard": {},
+              "materialAware": {}
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 25.221417503731686,
+                "changedPixelCount": 193946
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 11.028733183750367,
+                "changedPixelCount": 16487
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 36.05720759528024,
+                "changedPixelCount": 208291
+              }
+            }
+          }
+        },
+        "visibilityRestoration": {
+          "dimmed": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "highlighted": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "interpretation": "Observed visibility-response masks include occlusion, reveal, depth, blending and shadow effects; the unaffected complement is a background/unaffected candidate, not an exact semantic decomposition."
+        },
+        "fixedBackgroundPatchRepeat": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "fixedBackgroundPatchB0VsWebgl": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "groundGlass": {
+          "contentful": "true",
+          "repeatDifference": {
+            "sampleCount": 211768,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          }
+        },
+        "baselineCaptureCount": 2
+      },
+      "interventions": {
+        "B1": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 18,
+          "assignments": {
+            "targetAssignmentCount": 18,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 18,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 10.692061057620998,
+              "changedPixelCount": 16632
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 112.1784133300174,
+              "changedPixelCount": 16504
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 10.101104972375692,
+              "changedPixelCount": 221
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.011673658197680042,
+              "changedPixelCount": 83
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.49541941612150936,
+              "changedPixelCount": 4789
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 5.202337726933599,
+              "changedPixelCount": 4789
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 0.4252302025782689,
+              "changedPixelCount": 14
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.0002673491104486012,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 4789,
+          "changedFractionAgainstB0": 0.022669393242258133,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-aperture-small-opening-trial-10.png",
+              "b0-aperture-small-opening-trial-20.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B2": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-tone-mapping",
+          "targetRenderableCount": 18,
+          "assignments": {
+            "targetAssignmentCount": 18,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 18,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 11.477726654485437,
+              "changedPixelCount": 16515
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 120.42888170438532,
+              "changedPixelCount": 16383
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 10.851933701657458,
+              "changedPixelCount": 224
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.012072922987626309,
+              "changedPixelCount": 84
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.45111729639833253,
+              "changedPixelCount": 1028
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 4.737793252093177,
+              "changedPixelCount": 1028
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 0.32633517495395953,
+              "changedPixelCount": 0
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.0001987529571098154,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 1028,
+          "changedFractionAgainstB0": 0.004866180048661801,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-aperture-small-opening-trial-11.png",
+              "b0-aperture-small-opening-trial-21.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B3": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-color-space",
+          "targetRenderableCount": 18,
+          "assignments": {
+            "targetAssignmentCount": 18,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 18,
+            "outputGraphBuiltAssignmentCount": 4,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 10.629932056513328,
+              "changedPixelCount": 16862
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 111.52587250269418,
+              "changedPixelCount": 16734
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 10.034990791896869,
+              "changedPixelCount": 221
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.011652551688960415,
+              "changedPixelCount": 83
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.574617916504934,
+              "changedPixelCount": 8178
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 6.034203763574567,
+              "changedPixelCount": 8178
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 0.4913443830570903,
+              "changedPixelCount": 21
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.0002919733706214988,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 8178,
+          "changedFractionAgainstB0": 0.038711693033031326,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-aperture-small-opening-trial-12.png",
+              "b0-aperture-small-opening-trial-22.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B4": {
+          "targetGroup": "highlighted",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 12,
+          "assignments": {
+            "targetAssignmentCount": 12,
+            "outputGraphBuiltAssignmentCount": 5,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 12,
+            "outputGraphBuiltAssignmentCount": 5,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 11.230408260514201,
+              "changedPixelCount": 17876
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 115.64358783055626,
+              "changedPixelCount": 16358
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 34.07403314917127,
+              "changedPixelCount": 1611
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0.011919900799409017,
+              "changedPixelCount": 83
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.22299538312489545,
+              "changedPixelCount": 1525
+            },
+            "dimmedResponse": {
+              "sampleCount": 20105,
+              "meanAbsoluteRgbDifference": 0.08749067396170107,
+              "changedPixelCount": 92
+            },
+            "highlightedResponse": {
+              "sampleCount": 1810,
+              "meanAbsoluteRgbDifference": 26.01731123388582,
+              "changedPixelCount": 1525
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189515,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 1525,
+          "changedFractionAgainstB0": 0.007218798223938955,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-aperture-small-opening-trial-13.png",
+              "b0-aperture-small-opening-trial-23.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        }
+      },
+      "pairwiseB1": {
+        "firstPart": "bellows",
+        "secondPart": "ground-glass-back",
+        "firstPartRenderableCount": 1,
+        "secondPartRenderableCount": 5,
+        "sharedResponseMask": {
+          "width": 514,
+          "height": 411,
+          "changedPixels": 4050,
+          "changedPixelFraction": 0.01917123462751001,
+          "bounds": {
+            "left": 258,
+            "top": 158,
+            "right": 324,
+            "bottom": 234
+          }
+        },
+        "interpretation": "Intersection of actual per-part visibility-exclusion response masks. This demonstrates that both tested part sets influence some measured output pixels; it is not an exact silhouette or an additive alpha decomposition.",
+        "shaderActivationEvidence": {
+          "outputGraphBuiltAssignmentCountForFullDimmedB1": 4,
+          "scopedPairCopiesCarryB1Identity": true,
+          "reasonPerCopyGraphCountMayBeZero": "Three may reuse the already compiled B1 program for a scoped copy with the same material family and output-transform cache key; the experiment therefore checks B1 graph activation in the same state, the pair's actual output-copy identity/version, and repeated framebuffer captures."
+        },
+        "controls": {
+          "neitherAltered": {
+            "changedPixelsInSharedMask": 0,
+            "meanAbsoluteRgbDifferenceInSharedMask": 0,
+            "baselineRepeatNoise": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "first-part-only": {
+            "targetCount": 1,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 0.631358024691358,
+              "changedPixelCount": 0
+            }
+          },
+          "second-part-only": {
+            "targetCount": 5,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 5,
+              "outputGraphBuiltAssignmentCount": 2,
+              "baselineOutputIdentityChanges": 1,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 5,
+              "outputGraphBuiltAssignmentCount": 2,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 4.233333333333333,
+              "changedPixelCount": 111
+            }
+          },
+          "both-parts": {
+            "targetCount": 6,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 6,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 6,
+              "outputGraphBuiltAssignmentCount": 3,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 4050,
+              "meanAbsoluteRgbDifference": 4.860658436213992,
+              "changedPixelCount": 298
+            }
+          },
+          "pairwiseNonAdditivity": {
+            "samplePixels": 4050,
+            "meanAbsoluteRgbNonAdditivity": 0.17983539094650206,
+            "changedPixelCountAtPerChannelThreshold8": 0,
+            "changedPixelFractionAtPerChannelThreshold8": 0,
+            "interpretation": "The residual compares simultaneous B1 output change against the sum of each part's separate B1 output change in the measured shared-response mask. It is evidence of non-additive framebuffer response under this setup, not a direct alpha-blending diagnosis."
+          }
+        },
+        "finalRestoration": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        }
+      }
+    },
+    "bellows-highlighted": {
+      "mountedPresentation": {
+        "highlightedParts": [
+          "bellows"
+        ],
+        "dimmedParts": [
+          "lens",
+          "lens-board",
+          "front-standard",
+          "rear-standard",
+          "ground-glass-back",
+          "film-holder",
+          "camera-support"
+        ],
+        "highlightedRenderableIds": [
+          "b3190991-6a88-4d63-a224-cab86ced2da9"
+        ],
+        "dimmedRenderableIds": [
+          "04d4ca5b-bf05-4006-b93f-05ad57a8a186",
+          "0ccac381-719b-4c74-b9a0-69fd942fa1d1",
+          "10e51d31-3fdd-4879-ad63-ead060d183f7",
+          "1ebc6062-b305-4386-87c9-36133eb64ca2",
+          "25930582-1767-48df-a735-b8c8371a987d",
+          "28a40604-684c-4298-ae64-e9bf39139672",
+          "2e938a3d-cf36-44d5-849e-1a4dd2d3cf0e",
+          "310672dc-36ec-4765-a69b-c5b61fe0c77e",
+          "35738292-78c9-40d8-84e3-1f6a0ddb30d1",
+          "3d3244f0-4461-49d3-9788-51fc1ede598b",
+          "3f3cc618-5668-4504-bd03-c0cac1e82531",
+          "433cc7d4-43fd-42d8-af22-7421f68d7ceb",
+          "45ed809d-20f2-4e23-8d1d-122b62e395f7",
+          "5a86f71f-eb93-4b47-a42a-d55a3b9bfa08",
+          "5db5fb44-d8b2-491a-a777-ff050219607b",
+          "6e9a9559-d370-4dd5-8da9-71332120fed3",
+          "79fac423-dcd5-4aeb-a755-56049b0a7e4b",
+          "7c3c4df1-f162-407e-a578-af4946abd144",
+          "97775588-c9df-4357-89ed-5693779f4061",
+          "991bc11e-b7a1-4e7b-9091-822721588b10",
+          "9ce4dff1-d8aa-4a6a-9bda-ada5b83a480f",
+          "9f50f173-9e11-4de3-9eee-5ddf6d7238eb",
+          "a5657477-6aba-4a0d-bf15-77c8fc87e398",
+          "a7f0aaa3-d8c3-4359-95b1-efe1ae0336b5",
+          "be9eab39-7d86-4090-9012-a3f5ffff5f26",
+          "cfcd24ab-1d36-4ba3-a0fb-b4e0bc3f3d0c",
+          "d40a4fcf-4fee-42c4-b5fd-c05fbbe6e8b3",
+          "d99c5c36-2b71-4874-9167-26e78e84560c",
+          "f24fb534-9997-44c1-935d-420f1a389520"
+        ],
+        "unclassifiedVisibleRenderableIds": []
+      },
+      "baseline": {
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "webglVsMaterialAwareB0WholeFrame": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 9.221834063891492,
+          "changedPixelCount": 16975
+        },
+        "nativeStandardWebgpu": {
+          "webglVsStandardWholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 22.270547934398085,
+            "changedPixelCount": 190102
+          },
+          "standardVsB0WholeFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 30.997751521864675,
+            "changedPixelCount": 205106
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 16373,
+            "meanAbsoluteRgbDifference": 1.6635721411266517,
+            "changedPixelCount": 1348
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 10464,
+            "meanAbsoluteRgbDifference": 3.9636850152905203,
+            "changedPixelCount": 793
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189513,
+            "meanAbsoluteRgbDifference": 24.494275678537445,
+            "changedPixelCount": 188292
+          }
+        },
+        "materialAwareB0": {
+          "wholeFrameVsWebgl": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 9.221834063891492,
+            "changedPixelCount": 16975
+          },
+          "dimmedResponseVsWebgl": {
+            "sampleCount": 16373,
+            "meanAbsoluteRgbDifference": 116.50770577576905,
+            "changedPixelCount": 16156
+          },
+          "highlightedResponseVsWebgl": {
+            "sampleCount": 10464,
+            "meanAbsoluteRgbDifference": 22.211104740061163,
+            "changedPixelCount": 5788
+          },
+          "unaffectedCandidateVsWebgl": {
+            "sampleCount": 189513,
+            "meanAbsoluteRgbDifference": 0.011916508805904258,
+            "changedPixelCount": 83
+          }
+        },
+        "maskPopulations": {
+          "dimmedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 16373,
+            "changedPixelFraction": 0.0775038579151164,
+            "bounds": {
+              "left": 167,
+              "top": 141,
+              "right": 346,
+              "bottom": 319
+            }
+          },
+          "highlightedResponse": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 10464,
+            "changedPixelFraction": 0.04953278991167031,
+            "bounds": {
+              "left": 191,
+              "top": 157,
+              "right": 324,
+              "bottom": 258
+            }
+          },
+          "unaffectedBackgroundCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 189513,
+            "changedPixelFraction": 0.8970859723366185,
+            "bounds": {
+              "left": 0,
+              "top": 0,
+              "right": 514,
+              "bottom": 411
+            }
+          },
+          "bothGroupsInfluenceCandidate": {
+            "width": 514,
+            "height": 411,
+            "changedPixels": 5096,
+            "changedPixelFraction": 0.02412262016340519,
+            "bounds": {
+              "left": 191,
+              "top": 157,
+              "right": 324,
+              "bottom": 258
+            }
+          }
+        },
+        "visibilityLadder": {
+          "C1": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 28,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 28,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 28,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.358702478217378,
+                "changedPixelCount": 203375
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 1.062561340061411,
+                "changedPixelCount": 3703
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.329232424790376,
+                "changedPixelCount": 199948
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 16373,
+                "meanAbsoluteRgbDifference": 11.5262932877298,
+                "changedPixelCount": 3278
+              }
+            }
+          },
+          "C2": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 27,
+                "resourceIdentityPreserved": false,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 27,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 27,
+                "resourceIdentityPreserved": false,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.333177123273405,
+                "changedPixelCount": 198797
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 1.9472199342971022,
+                "changedPixelCount": 5502
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.877394037509347,
+                "changedPixelCount": 203250
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 16373,
+                "meanAbsoluteRgbDifference": 22.957653861031375,
+                "changedPixelCount": 5059
+              }
+            }
+          },
+          "C4": {
+            "perBackend": {
+              "webgl": {
+                "excludedRenderableCount": 29,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "native-standard": {
+                "excludedRenderableCount": 29,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              },
+              "material-aware": {
+                "excludedRenderableCount": 29,
+                "resourceIdentityPreserved": true,
+                "restoration": {
+                  "sampleCount": 211254,
+                  "meanAbsoluteRgbDifference": 0,
+                  "changedPixelCount": 0
+                }
+              }
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 24.35965551737088,
+                "changedPixelCount": 203384
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 1.0537346827357903,
+                "changedPixelCount": 3685
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 23.322488568263797,
+                "changedPixelCount": 199947
+              },
+              "webglVsMaterialAwareDimmedResponseRegion": {
+                "sampleCount": 16373,
+                "meanAbsoluteRgbDifference": 11.413363464239907,
+                "changedPixelCount": 3261
+              }
+            }
+          },
+          "C3": {
+            "perBackend": {
+              "webgl": {},
+              "nativeStandard": {},
+              "materialAware": {}
+            },
+            "crossBackend": {
+              "webglVsNativeStandardWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 22.270547934398085,
+                "changedPixelCount": 190102
+              },
+              "webglVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 9.221834063891492,
+                "changedPixelCount": 16975
+              },
+              "nativeStandardVsMaterialAwareWholeFrame": {
+                "sampleCount": 211254,
+                "meanAbsoluteRgbDifference": 30.997751521864675,
+                "changedPixelCount": 205106
+              }
+            }
+          }
+        },
+        "visibilityRestoration": {
+          "dimmed": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "highlighted": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "interpretation": "Observed visibility-response masks include occlusion, reveal, depth, blending and shadow effects; the unaffected complement is a background/unaffected candidate, not an exact semantic decomposition."
+        },
+        "fixedBackgroundPatchRepeat": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "fixedBackgroundPatchB0VsWebgl": {
+          "sampleCount": 1024,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        },
+        "groundGlass": {
+          "contentful": "true",
+          "repeatDifference": {
+            "sampleCount": 211768,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          }
+        },
+        "baselineCaptureCount": 2
+      },
+      "interventions": {
+        "B1": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 29,
+          "assignments": {
+            "targetAssignmentCount": 29,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 29,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 8.961663842262553,
+              "changedPixelCount": 16974
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 113.13546692725829,
+              "changedPixelCount": 16150
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 21.86789627930683,
+              "changedPixelCount": 5792
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.01167202249977574,
+              "changedPixelCount": 83
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.40520889545286715,
+              "changedPixelCount": 3949
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 5.159775239723936,
+              "changedPixelCount": 3949
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 3.115061162079511,
+              "changedPixelCount": 1238
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.00026207524901545893,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 3949,
+          "changedFractionAgainstB0": 0.01869313717136717,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-bellows-highlighted-trial-10.png",
+              "b0-bellows-highlighted-trial-20.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B2": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-tone-mapping",
+          "targetRenderableCount": 29,
+          "assignments": {
+            "targetAssignmentCount": 29,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 29,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 9.54979787364973,
+              "changedPixelCount": 16980
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 120.72128911419206,
+              "changedPixelCount": 16160
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 23.484327217125383,
+              "changedPixelCount": 5789
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.012069532609020666,
+              "changedPixelCount": 84
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.38752875685194127,
+              "changedPixelCount": 1427
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 4.921822512673304,
+              "changedPixelCount": 1427
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 2.463971712538226,
+              "changedPixelCount": 886
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.00019875505462246213,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 1427,
+          "changedFractionAgainstB0": 0.0067549016823350095,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-bellows-highlighted-trial-11.png",
+              "b0-bellows-highlighted-trial-21.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B3": {
+          "targetGroup": "dimmed",
+          "outputTransform": "bypass-color-space",
+          "targetRenderableCount": 29,
+          "assignments": {
+            "targetAssignmentCount": 29,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 29,
+            "outputGraphBuiltAssignmentCount": 6,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 8.914068688245745,
+              "changedPixelCount": 16974
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 112.52163114069913,
+              "changedPixelCount": 16150
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 21.78778032619776,
+              "changedPixelCount": 5792
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.011650915768311407,
+              "changedPixelCount": 83
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0.47124314805873496,
+              "changedPixelCount": 7219
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 6.004560353427391,
+              "changedPixelCount": 7214
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 3.556670489296636,
+              "changedPixelCount": 2875
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.00028669976905717993,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 7219,
+          "changedFractionAgainstB0": 0.03417213401876414,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-bellows-highlighted-trial-12.png",
+              "b0-bellows-highlighted-trial-22.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        },
+        "B4": {
+          "targetGroup": "highlighted",
+          "outputTransform": "bypass-rgb-transform",
+          "targetRenderableCount": 1,
+          "assignments": {
+            "targetAssignmentCount": 1,
+            "outputGraphBuiltAssignmentCount": 1,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatAssignmentEvidence": {
+            "targetAssignmentCount": 1,
+            "outputGraphBuiltAssignmentCount": 1,
+            "baselineOutputIdentityChanges": 0,
+            "crossGroupSharedSourceCount": 0
+          },
+          "repeatNoise": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "vsWebgl": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 9.56303785963816,
+              "changedPixelCount": 21510
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 111.38999165292454,
+              "changedPixelCount": 16092
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 29.099961773700304,
+              "changedPixelCount": 10323
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0.011916508805904258,
+              "changedPixelCount": 83
+            }
+          },
+          "vsB0": {
+            "fullFrame": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 1.5888361877171555,
+              "changedPixelCount": 10388
+            },
+            "dimmedResponse": {
+              "sampleCount": 16373,
+              "meanAbsoluteRgbDifference": 8.613062155174168,
+              "changedPixelCount": 5022
+            },
+            "highlightedResponse": {
+              "sampleCount": 10464,
+              "meanAbsoluteRgbDifference": 32.07603848114169,
+              "changedPixelCount": 10388
+            },
+            "unaffectedBackgroundCandidate": {
+              "sampleCount": 189513,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "changedPixelsAgainstB0": 10388,
+          "changedFractionAgainstB0": 0.049173033410018274,
+          "screenshotAlphaComparable": false,
+          "fixedBackgroundPatchAgainstB0": {
+            "sampleCount": 1024,
+            "meanAbsoluteRgbDifference": 0,
+            "changedPixelCount": 0
+          },
+          "lifecycle": {
+            "requestedAndRestored": true,
+            "b0RestorationCaptures": [
+              "b0-bellows-highlighted-trial-13.png",
+              "b0-bellows-highlighted-trial-23.png"
+            ],
+            "restoredMode": "B0"
+          },
+          "captureCount": 2
+        }
+      },
+      "pairwiseB1": {
+        "firstPart": "lens",
+        "secondPart": "lens-board",
+        "firstPartRenderableCount": 12,
+        "secondPartRenderableCount": 1,
+        "sharedResponseMask": {
+          "width": 514,
+          "height": 411,
+          "changedPixels": 1085,
+          "changedPixelFraction": 0.0051359974249008305,
+          "bounds": {
+            "left": 182,
+            "top": 202,
+            "right": 225,
+            "bottom": 250
+          }
+        },
+        "interpretation": "Intersection of actual per-part visibility-exclusion response masks. This demonstrates that both tested part sets influence some measured output pixels; it is not an exact silhouette or an additive alpha decomposition.",
+        "shaderActivationEvidence": {
+          "outputGraphBuiltAssignmentCountForFullDimmedB1": 6,
+          "scopedPairCopiesCarryB1Identity": true,
+          "reasonPerCopyGraphCountMayBeZero": "Three may reuse the already compiled B1 program for a scoped copy with the same material family and output-transform cache key; the experiment therefore checks B1 graph activation in the same state, the pair's actual output-copy identity/version, and repeated framebuffer captures."
+        },
+        "controls": {
+          "neitherAltered": {
+            "changedPixelsInSharedMask": 0,
+            "meanAbsoluteRgbDifferenceInSharedMask": 0,
+            "baselineRepeatNoise": {
+              "sampleCount": 1085,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            }
+          },
+          "first-part-only": {
+            "targetCount": 12,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 12,
+              "outputGraphBuiltAssignmentCount": 5,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 12,
+              "outputGraphBuiltAssignmentCount": 5,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 1085,
+              "meanAbsoluteRgbDifference": 2.5262672811059907,
+              "changedPixelCount": 367
+            }
+          },
+          "second-part-only": {
+            "targetCount": 1,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 0,
+              "baselineOutputIdentityChanges": 12,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 1,
+              "outputGraphBuiltAssignmentCount": 1,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 1085,
+              "meanAbsoluteRgbDifference": 3.774500768049155,
+              "changedPixelCount": 1
+            }
+          },
+          "both-parts": {
+            "targetCount": 13,
+            "assignmentEvidence": {
+              "targetAssignmentCount": 13,
+              "outputGraphBuiltAssignmentCount": 4,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatAssignmentEvidence": {
+              "targetAssignmentCount": 13,
+              "outputGraphBuiltAssignmentCount": 5,
+              "baselineOutputIdentityChanges": 0,
+              "crossGroupSharedSourceCount": 0
+            },
+            "repeatNoise": {
+              "sampleCount": 211254,
+              "meanAbsoluteRgbDifference": 0,
+              "changedPixelCount": 0
+            },
+            "sharedMaskDifference": {
+              "sampleCount": 1085,
+              "meanAbsoluteRgbDifference": 6.286328725038402,
+              "changedPixelCount": 419
+            }
+          },
+          "pairwiseNonAdditivity": {
+            "samplePixels": 1085,
+            "meanAbsoluteRgbNonAdditivity": 0.39969278033794164,
+            "changedPixelCountAtPerChannelThreshold8": 0,
+            "changedPixelFractionAtPerChannelThreshold8": 0,
+            "interpretation": "The residual compares simultaneous B1 output change against the sum of each part's separate B1 output change in the measured shared-response mask. It is evidence of non-additive framebuffer response under this setup, not a direct alpha-blending diagnosis."
+          }
+        },
+        "finalRestoration": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "changedPixelCount": 0
+        }
+      }
+    }
+  },
+  "controls": {
+    "rejectedStaleGeneration": true,
+    "rejectedHighlightedIdsAsDimmedSelection": true,
+    "sourcePropertiesEqualAcrossModes": true,
+    "sourceAndOutputMaterialIdentitySeparated": true,
+    "highlightedAssignmentsPreservedForB1B2B3": true,
+    "nonTargetAssignmentsPreserved": true,
+    "alphaAndTransparencyPropertiesPreserved": true,
+    "outputGraphBuildCountAndMaterialVersionRecorded": true,
+    "visibilityRestorationAndResourceIdentityVerified": true,
+    "groundGlassRemainedContentful": true
+  },
+  "spaTeardown": {
+    "sameDocumentTokenPreserved": true,
+    "previousRendererGeneration": 1,
+    "nextRendererGeneration": 2,
+    "interventionHookRemoved": true,
+    "interventionModeRemoved": true,
+    "normalRouteIgnoredInterventionEvent": true,
+    "ownedNodeMaterialsDisposed": 1363,
+    "remainingManagedMaterials": 0,
+    "remainingAttachments": 0,
+    "adaptedMaterialCreations": 1363
+  },
+  "remainingUnknowns": [
+    "The screenshot is a browser-composited canvas capture; unchanged screenshot alpha does not qualify renderer-context premultiplication.",
+    "A pixel-mask intersection records common measured response, not exact transparent surface overlap or additive layer contribution.",
+    "Hardware acceleration is unconfirmed; native WebGPU execution is qualified by the mounted renderer family/backend and no-fallback evidence."
+  ],
+  "recommendation": "Keep Anatomy M2. A later, separately reviewed proposal may test a narrow color-space/output-stage correction, but first measure the remaining dimmed error with a GPU blend-intermediate capture for the qualifying single-part and two-part visibility conditions. Do not start PR N from this evidence alone.",
+  "artifacts": {
+    "selectedCaptures": [
+      "selected-captures/webgl-standard-front-standard.png",
+      "selected-captures/webgpu-standard-front-standard.png",
+      "selected-captures/material-aware-b0-front-standard.png",
+      "selected-captures/material-aware-b1-front-standard.png",
+      "selected-captures/material-aware-b2-front-standard.png",
+      "selected-captures/material-aware-b3-front-standard.png",
+      "selected-captures/material-aware-b4-front-standard.png"
+    ],
+    "masks": [
+      "masks/front-standard-dimmed-response.png",
+      "masks/front-standard-highlighted-response.png",
+      "masks/front-standard-unaffected-candidate.png",
+      "masks/front-standard-both-groups-influence.png"
+    ],
+    "heatmaps": [
+      "heatmaps/front-standard-b1-vs-b0.png",
+      "heatmaps/front-standard-b2-vs-b0.png",
+      "heatmaps/front-standard-b3-vs-b0.png",
+      "heatmaps/front-standard-b4-vs-b0.png"
+    ],
+    "comprehensiveRawOutput": "Ignored test-results/anatomy-dimmed-output-mechanism Playwright output; raw repeated captures are not committed."
+  }
+}

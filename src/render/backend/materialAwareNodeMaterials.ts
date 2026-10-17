@@ -27,10 +27,29 @@ export const OBSERVER_MATERIAL_MAP_SLOTS = [
 
 export type MaterialAwareNode = THREE.Material & { copy: (source: THREE.Material) => unknown };
 
+export type MaterialAwareOutputTransform =
+  | "material-aware"
+  | "bypass-rgb-transform"
+  | "bypass-tone-mapping"
+  | "bypass-color-space";
+
+export type MaterialAwareOutputInterventionId = "B0" | "B1" | "B2" | "B3" | "B4";
+
 const toDisplayColor = (linearOutput: Node) =>
   workingToColorSpace(linearOutput, THREE.SRGBColorSpace);
 
-const toDisplayOutput = (linearOutput: Node, toneMapped: boolean) => {
+const toDisplayOutput = (
+  linearOutput: Node,
+  toneMapped: boolean,
+  transform: MaterialAwareOutputTransform,
+) => {
+  if (transform === "bypass-rgb-transform") return linearOutput;
+  if (transform === "bypass-tone-mapping") return toDisplayColor(linearOutput);
+  if (transform === "bypass-color-space") {
+    return toneMapped
+      ? toneMapping(THREE.ACESFilmicToneMapping, toneMappingExposure, linearOutput)
+      : linearOutput;
+  }
   const toneMappedOutput = toneMapped
     ? toneMapping(THREE.ACESFilmicToneMapping, toneMappingExposure, linearOutput)
     : linearOutput;
@@ -39,35 +58,64 @@ const toDisplayOutput = (linearOutput: Node, toneMapped: boolean) => {
 
 /** NodeMaterial output hooks verified by the PR #255 r186 fixture. */
 export class MaterialAwareStandardNodeMaterial extends MeshStandardNodeMaterial {
+  outputTransform: MaterialAwareOutputTransform = "material-aware";
+  outputInterventionId: MaterialAwareOutputInterventionId = "B0";
+  outputGraphBuildCount = 0;
+
+  override customProgramCacheKey(): string {
+    return `${super.customProgramCacheKey()}:observer-output:${this.outputTransform}`;
+  }
+
   override setupOutput(
     builder: Parameters<MeshStandardNodeMaterial["setupOutput"]>[0],
     outputNode: Parameters<MeshStandardNodeMaterial["setupOutput"]>[1],
   ) {
+    this.outputGraphBuildCount += 1;
     const typedOutput = outputNode as Node<"vec4">;
-    return super.setupOutput(builder, toDisplayOutput(typedOutput, this.toneMapped));
+    return super.setupOutput(builder, toDisplayOutput(typedOutput, this.toneMapped, this.outputTransform));
   }
 }
 
 export class MaterialAwareBasicNodeMaterial extends MeshBasicNodeMaterial {
+  outputTransform: MaterialAwareOutputTransform = "material-aware";
+  outputInterventionId: MaterialAwareOutputInterventionId = "B0";
+  outputGraphBuildCount = 0;
+
+  override customProgramCacheKey(): string {
+    return `${super.customProgramCacheKey()}:observer-output:${this.outputTransform}`;
+  }
+
   override setupOutput(
     builder: Parameters<MeshBasicNodeMaterial["setupOutput"]>[0],
     outputNode: Parameters<MeshBasicNodeMaterial["setupOutput"]>[1],
   ) {
-    return super.setupOutput(builder, toDisplayOutput(outputNode, this.toneMapped));
+    this.outputGraphBuildCount += 1;
+    return super.setupOutput(builder, toDisplayOutput(outputNode, this.toneMapped, this.outputTransform));
   }
 }
 
 export class MaterialAwareLineNodeMaterial extends LineBasicNodeMaterial {
+  outputTransform: MaterialAwareOutputTransform = "material-aware";
+  outputInterventionId: MaterialAwareOutputInterventionId = "B0";
+  outputGraphBuildCount = 0;
+
+  override customProgramCacheKey(): string {
+    return `${super.customProgramCacheKey()}:observer-output:${this.outputTransform}`;
+  }
+
   override setupOutput(
     builder: Parameters<LineBasicNodeMaterial["setupOutput"]>[0],
     outputNode: Parameters<LineBasicNodeMaterial["setupOutput"]>[1],
   ) {
-    return super.setupOutput(builder, toDisplayOutput(outputNode, this.toneMapped));
+    this.outputGraphBuildCount += 1;
+    return super.setupOutput(builder, toDisplayOutput(outputNode, this.toneMapped, this.outputTransform));
   }
 }
 
 export const adaptObserverMaterialForOutput = (
   source: THREE.Material,
+  outputTransform: MaterialAwareOutputTransform = "material-aware",
+  outputInterventionId: MaterialAwareOutputInterventionId = "B0",
 ): MaterialAwareNode | null => {
   let output: MaterialAwareNode | null = null;
   if (source.constructor === THREE.MeshStandardMaterial) {
@@ -78,7 +126,14 @@ export const adaptObserverMaterialForOutput = (
     output = new MaterialAwareLineNodeMaterial() as MaterialAwareNode;
   }
   if (!output) return null;
+  const experimentalOutput = output as MaterialAwareNode & {
+    outputTransform?: MaterialAwareOutputTransform;
+    outputInterventionId?: MaterialAwareOutputInterventionId;
+  };
+  experimentalOutput.outputTransform = outputTransform;
+  experimentalOutput.outputInterventionId = outputInterventionId;
   output.copy(source);
+  if (outputTransform !== "material-aware") output.needsUpdate = true;
   Object.defineProperty(output, observerOutputSourceMaterial, {
     configurable: false,
     enumerable: false,
