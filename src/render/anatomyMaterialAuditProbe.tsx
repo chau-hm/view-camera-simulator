@@ -69,6 +69,11 @@ type AnatomyVisibilityTransaction = Readonly<{
   generation: number;
   snapshots: readonly AnatomyVisibilitySnapshot[];
   targets: readonly AnatomyRenderableSelectionRecord<THREE.Object3D & { visible: boolean }>[];
+  sourceResourceReferences: readonly Readonly<{
+    id: string;
+    geometry: THREE.BufferGeometry;
+    material: THREE.Material | THREE.Material[];
+  }>[];
 }>;
 
 const isRenderable = (
@@ -662,6 +667,13 @@ export const AnatomyMaterialAuditProbe = ({
           fail(selection.reason);
           return;
         }
+        const sourceResourceReferences = selection.records.flatMap((record) => isRenderable(record.value)
+          ? [{ id: record.id, geometry: record.value.geometry, material: record.value.material }]
+          : []);
+        if (sourceResourceReferences.length !== selection.records.length) {
+          fail("selection-contains-unsupported-renderable");
+          return;
+        }
         try {
           const snapshots = excludeAnatomyRenderables(selection.records.map((record) => ({
             id: record.id,
@@ -672,6 +684,12 @@ export const AnatomyMaterialAuditProbe = ({
             generation,
             snapshots,
             targets: selection.records,
+            sourceResourceReferences,
+          });
+          const sourceResourceIdentityPreserved = sourceResourceReferences.every((reference) => {
+            const target = selection.records.find((record) => record.id === reference.id)?.value;
+            return target !== undefined && isRenderable(target) && target.geometry === reference.geometry &&
+              target.material === reference.material;
           });
           emitVisibilityResult({
             requestId: request.requestId,
@@ -681,6 +699,7 @@ export const AnatomyMaterialAuditProbe = ({
             transactionId: request.transactionId,
             selector: request.selector,
             targetCount: selection.records.length,
+            sourceResourceIdentityPreserved,
             targets: selection.records.map((record) => ({
               id: record.id,
               name: record.name,
@@ -714,6 +733,11 @@ export const AnatomyMaterialAuditProbe = ({
           return;
         }
         restoreAnatomyRenderables(transaction.snapshots);
+        const sourceResourceIdentityPreserved = transaction.sourceResourceReferences.every((reference) => {
+          const target = transaction.targets.find((record) => record.id === reference.id)?.value;
+          return target !== undefined && isRenderable(target) && target.geometry === reference.geometry &&
+            target.material === reference.material;
+        });
         visibilityTransactions.delete(request.transactionId);
         emitVisibilityResult({
           requestId: request.requestId,
@@ -722,6 +746,7 @@ export const AnatomyMaterialAuditProbe = ({
           operation: "restore",
           transactionId: request.transactionId,
           targetCount: transaction.snapshots.length,
+          sourceResourceIdentityPreserved,
           restored: transaction.snapshots.map((snapshot) => ({ id: snapshot.id, visible: snapshot.visible })),
         });
         return;
