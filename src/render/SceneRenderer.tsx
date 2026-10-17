@@ -82,6 +82,7 @@ import {
 import { resolveObserverCanvasInitialization } from "./backend/observerRendererInitialization";
 import type { ObserverSceneCompatibility } from "./backend/observerSceneCompatibility";
 import { AnatomyMaterialAuditProbe } from "./anatomyMaterialAuditProbe";
+import { AnatomyGpuBlendIntermediateProbe } from "./AnatomyGpuBlendIntermediateProbe";
 import { ObserverCanvasErrorBoundary } from "./backend/ObserverCanvasErrorBoundary";
 import {
   resolveObserverVisualPipelineCapabilities,
@@ -1433,10 +1434,16 @@ const SceneContent = ({
       architectureRiseVerificationHarness={architectureRiseVerificationHarness}
     />
     {anatomyMaterialAuditEnabled && scene.id === "view-camera-anatomy"
-      ? <AnatomyMaterialAuditProbe
-          generation={rendererMountGeneration}
-          anatomyPresentation={cameraPresentation?.anatomy ?? null}
-        />
+      ? <>
+          <AnatomyMaterialAuditProbe
+            generation={rendererMountGeneration}
+            anatomyPresentation={cameraPresentation?.anatomy ?? null}
+          />
+          <AnatomyGpuBlendIntermediateProbe
+            generation={rendererMountGeneration}
+            anatomyPresentation={cameraPresentation?.anatomy ?? null}
+          />
+        </>
       : null}
     {import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
       ? <ArchitectureRiseVerificationProbe />

@@ -246,14 +246,25 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
         return { url, body: "" };
       }
     }));
+    const forbiddenIdentifiers = [
+      "AnatomyGpuBlendIntermediateProbe",
+      "anatomy-gpu-blend-intermediate",
+      "GPU_BLEND_INTERMEDIATE",
+    ];
+    const bundleIdentifierMatches = forbiddenIdentifiers.filter((identifier) =>
+      assets.some(({ body }) => body.includes(identifier)),
+    );
     return {
       urls: assets.map(({ url }) => url),
       interventionEventPresent: assets.some(({ body }) =>
         body.includes("vcs:observer-verification:anatomy-output-intervention")),
+      bundleIdentifierMatches,
     };
   });
   expect(loadedJavaScript.interventionEventPresent,
     "Production JavaScript assets loaded by the Anatomy route must not contain the test-only intervention event").toBe(false);
+  expect(loadedJavaScript.bundleIdentifierMatches,
+    "Production JavaScript assets loaded by the Anatomy route must not contain the development-only GPU capture probe or events").toEqual([]);
 
   const evidence = await observer.evaluate((element) => ({
     rendererRequest: element.getAttribute("data-observer-renderer-request"),
@@ -271,10 +282,12 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
     developmentVerificationHookPresent: element.hasAttribute("data-observer-verification-scene") ||
       Array.from(element.attributes).some((attribute) => attribute.name.startsWith("data-observer-test-")),
     anatomyOutputInterventionHookPresent: element.hasAttribute("data-observer-anatomy-output-intervention-hook"),
+    anatomyGpuBlendProbeAttributePresent: element.hasAttribute("data-observer-anatomy-gpu-blend-probe"),
   }));
   expect(evidence.candidatePolicyAttributesPresent).toBe(false);
   expect(evidence.developmentVerificationHookPresent).toBe(false);
   expect(evidence.anatomyOutputInterventionHookPresent).toBe(false);
+  expect(evidence.anatomyGpuBlendProbeAttributePresent).toBe(false);
   await testInfo.attach("view-camera-anatomy-production-webgl-denial.json", {
     body: JSON.stringify({
       browserVersion: page.context().browser()?.version() ?? "unknown",

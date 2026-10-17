@@ -1,0 +1,1597 @@
+{
+  "schemaVersion": 1,
+  "audit": "anatomy-gpu-blend-intermediate",
+  "decision": "G2",
+  "decisionBasis": {
+    "confirmed": [
+      "The actual WebGL Bellows renderable contributes to the canvas drawing buffer in two selected drawElements calls under observed source-over RGB blending.",
+      "Same-material isolated B0 replays are repeatable on WebGL and native material-aware WebGPU; at five common covered samples their RGBA32F representation-matched proxy difference is small.",
+      "B3 remains a small improvement against the much larger four-state dimmed-response residual."
+    ],
+    "unresolved": [
+      "The dominant native residual cannot be decomposed among source, destination, and blend stages because the original native draw boundary is not publicly readable in Three r186.",
+      "F2 replay alters visibility, depth context, draw order, and blending, so it is not an unchanged production fragment."
+    ],
+    "promotionBoundary": "Anatomy remains M2 \u2014 OPT-IN IMPLEMENTATION INCOMPLETE. No PR N, default output correction, WebGPU promotion, or production change is authorized."
+  },
+  "provenance": {
+    "baseCommit": "02c5e774c47c0df29da20254e561fbaa222735e6",
+    "branch": "research/anatomy-gpu-blend-intermediate-isolation",
+    "threeRevision": "186",
+    "browserVersion": "155.0.8059.84",
+    "nodeVersion": "v24.19.0",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64"
+    },
+    "viewport": [
+      1440,
+      1000
+    ],
+    "devicePixelRatio": 1,
+    "webglRuntime": "webgl-renderer/webgl2",
+    "nativeRuntime": {
+      "rendererFamily": "webgpu-renderer",
+      "executionBackend": "webgpu"
+    },
+    "outputPolicy": "material-aware",
+    "hardwareAcceleration": "unconfirmed"
+  },
+  "captureFeasibility": {
+    "inspectedThreeSource": [
+      "WebGLRenderer.renderBufferDirect and WebGLIndexedBufferRenderer draw dispatch",
+      "WebGLState blend setup",
+      "WebGPUBackend render-pass and draw encoding",
+      "WebGPUPipelineUtils blend mapping",
+      "common Renderer readback API and WebGPUTextureUtils.copyTextureToBuffer"
+    ],
+    "F1": {
+      "webgl": "Actual default-framebuffer RGBA unsigned-byte values are read immediately before and after the selected real draw call; active GL blend/depth/framebuffer/context state is recorded.",
+      "sourceRgbAlpha": "Unavailable from readPixels; null, classification F3.",
+      "perturbation": "Synchronous full-frame readPixels can stall the GPU/CPU; it does not replace the original selected draw or change its material, geometry, depth, order, or blend state."
+    },
+    "F2": {
+      "method": "Selected real renderable and active output material are replayed to a separate RGBA32F target with blending disabled on owned material clones.",
+      "changes": [
+        "46 non-target renderables hidden",
+        "target and depth buffer cleared",
+        "original inter-object depth, occlusion, order, and output attachment not preserved"
+      ],
+      "validComparisons": [
+        "same-representation repeat capture",
+        "B0 WebGL versus native material-aware at common covered fixed points",
+        "B0 versus B3 only after IEC inverse sRGB transfer on RGB"
+      ],
+      "invalidComparisons": [
+        "B0 versus B1 without conversion",
+        "isolated replay as an unchanged production fragment",
+        "numerical cross-backend blend decomposition"
+      ]
+    },
+    "F3": {
+      "inference": "Final screenshots and masks can quantify visible response but do not reveal source fragment output.",
+      "browserComposition": "Canvas/browser composition after the drawing buffer was not isolated."
+    },
+    "F0": {
+      "nativeDrawBoundary": "Three r186 exposes no public readback boundary between encoded draws inside its active WebGPU render pass.",
+      "nativeSceneAttachmentFormat": "Not observed at the selected native scene draw.",
+      "nativeTwoRenderablePair": "Not run; visibility-response-mask overlap is not fragment overlap."
+    },
+    "readbackFormats": {
+      "webgl": "Default canvas drawing buffer read as RGBA unsigned-byte data.",
+      "replay": "RGBAFormat / FloatType (RGBA32F), 1028x820, straight alpha.",
+      "calibration": "RGBAFormat / UnsignedByteType fixture target.",
+      "webgpuRows": "Three r186 copyTextureToBuffer uses bytesPerRow aligned to 256; padding is removed before comparison."
+    },
+    "depthOrder": "Original WebGL draw order and LEQUAL depth test are observed; depth writes are false. F2 clears depth and hides other renderables. Per-fragment depth survival is not separately exposed.",
+    "shaderInstrumentation": "No shader rewrite or production behavior change. The replay uses the selected renderer material path on an owned clone."
+  },
+  "sampleSelection": {
+    "references": {
+      "dimmedMask": "anatomy-dimmed-output-mechanism/masks/front-standard-dimmed-response.png",
+      "bellowsResponseMask": "anatomy-renderable-contribution-investigation/masks/M3-webgl-bellows-selected-part.png",
+      "unaffectedCandidateMask": "anatomy-dimmed-output-mechanism/masks/front-standard-unaffected-candidate.png",
+      "webglImage": "anatomy-dimmed-output-mechanism/selected-captures/webgl-standard-front-standard.png",
+      "materialAwareB0Image": "anatomy-dimmed-output-mechanism/selected-captures/material-aware-b0-front-standard.png",
+      "rule": "intersection of the two previously committed masks; rank by B0-vs-WebGL RGB difference; fixed before M-INV4 captures; greedily retain points at least 8 pixels apart"
+    },
+    "rule": "intersection of the two previously committed masks; rank by B0-vs-WebGL RGB difference; fixed before M-INV4 captures; greedily retain points at least 8 pixels apart",
+    "screenshotDimensions": [
+      514,
+      411
+    ],
+    "framebufferDimensions": [
+      1028,
+      820
+    ],
+    "screenshotToFramebuffer": {
+      "scaleX": 2,
+      "scaleY": 1.9951338199513382,
+      "rule": "each screenshot pixel maps to the center pixel of its corresponding framebuffer cell; fixed indices were selected from previous M3 captures before M-INV4 measurements"
+    },
+    "maskPixels": {
+      "dimmed": 12287,
+      "bellows": 5477,
+      "intersection": 5444
+    },
+    "fixedPoints": [
+      {
+        "screenshot": {
+          "x": 256,
+          "y": 157,
+          "referenceB0VsWebglRgbMae": 178.66666666666666
+        },
+        "framebuffer": {
+          "x": 513,
+          "y": 314
+        }
+      },
+      {
+        "screenshot": {
+          "x": 248,
+          "y": 160,
+          "referenceB0VsWebglRgbMae": 167
+        },
+        "framebuffer": {
+          "x": 497,
+          "y": 320
+        }
+      },
+      {
+        "screenshot": {
+          "x": 247,
+          "y": 208,
+          "referenceB0VsWebglRgbMae": 153
+        },
+        "framebuffer": {
+          "x": 495,
+          "y": 415
+        }
+      },
+      {
+        "screenshot": {
+          "x": 247,
+          "y": 218,
+          "referenceB0VsWebglRgbMae": 153
+        },
+        "framebuffer": {
+          "x": 495,
+          "y": 435
+        }
+      },
+      {
+        "screenshot": {
+          "x": 247,
+          "y": 196,
+          "referenceB0VsWebglRgbMae": 152.66666666666666
+        },
+        "framebuffer": {
+          "x": 495,
+          "y": 392
+        }
+      },
+      {
+        "screenshot": {
+          "x": 312,
+          "y": 235,
+          "referenceB0VsWebglRgbMae": 152
+        },
+        "framebuffer": {
+          "x": 625,
+          "y": 469
+        }
+      },
+      {
+        "screenshot": {
+          "x": 259,
+          "y": 165,
+          "referenceB0VsWebglRgbMae": 146.33333333333334
+        },
+        "framebuffer": {
+          "x": 519,
+          "y": 330
+        }
+      },
+      {
+        "screenshot": {
+          "x": 252,
+          "y": 225,
+          "referenceB0VsWebglRgbMae": 146
+        },
+        "framebuffer": {
+          "x": 505,
+          "y": 449
+        }
+      }
+    ],
+    "qualification": "Visibility-response mask points, not exact fragment silhouettes; selected before M-INV4 captures."
+  },
+  "baseline": {
+    "M4FrontStandard": {
+      "A0": {
+        "backend": "WebGL2",
+        "output": "standard",
+        "repeatRgbMae": 0,
+        "sampleCount": 211254
+      },
+      "A1": {
+        "backend": "native WebGPU",
+        "output": "standard",
+        "repeatRgbMae": 0,
+        "fullFrameVsA0RgbMae": 25.221015144486415
+      },
+      "A2": {
+        "backend": "native WebGPU",
+        "output": "material-aware B0",
+        "repeatRgbMae": 0,
+        "fullFrameVsA0RgbMae": 6.081934543251252,
+        "dimmedResponseVsA0RgbMae": 104.1276959387971,
+        "unaffectedCandidateVsA0RgbMae": 0.009075620199631979
+      },
+      "priorM3Reference": {
+        "fullFrameMae": 6.0819345432512515,
+        "dimmedResponseMae": 104.1276959387971,
+        "unaffectedCandidateMae": 0.009075620199631979,
+        "standardWebgpuFullFrameMae": 25.221015144486415
+      },
+      "tolerances": {
+        "sameModeRepeatRgbMaeMax": 0.5,
+        "priorFullFrameRgbMaeAbsoluteTolerance": 1,
+        "priorDimmedResponseRgbMaeAbsoluteTolerance": 2,
+        "priorUnaffectedRgbMaeAbsoluteTolerance": 0.1,
+        "priorStandardWebgpuFullFrameRgbMaeAbsoluteTolerance": 2
+      },
+      "sceneBackgroundMetadata": {
+        "webgl": "#f8fafc",
+        "nativeStandard": "#f8fafc",
+        "nativeMaterialAware": null,
+        "interpretation": "The material-aware controller sets scene.background to null and installs its backgroundNode from the authored #f8fafc color; the independent rendered unaffected-candidate region is also measured."
+      },
+      "captures": [
+        "stage-captures/front-standard-webgl-a0.png",
+        "stage-captures/front-standard-native-standard-a1.png",
+        "stage-captures/front-standard-native-material-aware-a2.png"
+      ],
+      "measurementClassification": "F3 final screenshot output; mask MAE is not a stage decomposition."
+    },
+    "M3FourPriorityStates": {
+      "metric": "8-bit RGB MAE in existing dimmed visibility-response masks.",
+      "states": {
+        "Front Standard highlighted": {
+          "B0": 104.1276959387971,
+          "B1": 103.11901467675864,
+          "B2": 108.1248745286346,
+          "B3": 102.76256748324788
+        },
+        "Lens and Lens Board highlighted": {
+          "B0": 112.84846153846154,
+          "B1": 110.38615384615385,
+          "B2": 117.48493096646943,
+          "B3": 109.83670611439841
+        },
+        "Smaller Aperture": {
+          "B0": 115.71294039625302,
+          "B1": 112.1784133300174,
+          "B2": 120.42888170438532,
+          "B3": 111.52587250269418
+        },
+        "Bellows Highlighted": {
+          "B0": 116.50770577576905,
+          "B1": 113.13546692725829,
+          "B2": 120.72128911419206,
+          "B3": 112.52163114069913
+        }
+      },
+      "sameModeRepeatNoise": 0,
+      "nativeQualification": {
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "adapterAvailability": "available",
+        "rendererAttempt": "webgpu",
+        "initializationAttempts": "1",
+        "initializationFailure": null,
+        "applicationFallback": "none",
+        "outputPolicy": "material-aware",
+        "outputPolicyStatus": "active",
+        "readiness": "ready",
+        "hardwareAcceleration": "unconfirmed"
+      },
+      "measurementClassification": "F3 screenshot output inside visibility-response masks."
+    }
+  },
+  "sourceFragmentObservations": {
+    "selectedRenderable": {
+      "semanticPart": "bellows",
+      "name": "bellows-folded-surface",
+      "mountLocalIdentity": {
+        "webgl": {
+          "objectId": "f167ceb2-a056-4988-8881-5ccc6503c494",
+          "sourceMaterialId": "7370852d-e045-46e7-b31c-5514a25c891b"
+        },
+        "nativeStandard": {
+          "objectId": "7d077bd6-4dac-4ebc-8e48-d09e15f1b4fd",
+          "sourceMaterialId": "adc12e3c-e702-4fc3-83cb-86ba63b7976a"
+        },
+        "nativeMaterialAware": {
+          "objectId": "5a986914-4d54-48c5-b50f-e98cd82d21ae",
+          "sourceMaterialId": "347c41ba-7c6e-4320-b01e-b50bfe81aead"
+        }
+      },
+      "identityQualification": "Object/material UUIDs are mount-local and differ between the independent renderer trees; the semantic renderable, transform, geometry fingerprint, and authored source material properties were matched. No cross-mount object identity is claimed.",
+      "matchedInputs": true,
+      "sourceMaterial": {
+        "family": "MeshStandardMaterial",
+        "color": "111827",
+        "emissive": "000000",
+        "emissiveIntensity": 1,
+        "toneMapped": true,
+        "opacity": 0.16,
+        "transparent": true,
+        "blending": 1,
+        "premultipliedAlpha": false,
+        "depthTest": true,
+        "depthWrite": false,
+        "side": "double",
+        "alphaTest": 0,
+        "roughness": 0.88,
+        "metalness": 0,
+        "textureSlots": {}
+      },
+      "worldMatrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "renderOrder": 0,
+      "castShadow": false,
+      "receiveShadow": false
+    },
+    "webglDirectShaderOutput": {
+      "classification": "F3",
+      "rgb": null,
+      "alpha": null,
+      "reason": "WebGL readPixels exposes attachment output, not the source fragment before fixed-function blending."
+    },
+    "webglActualDraw": {
+      "classification": "F1 draw boundary, but source RGB and alpha unavailable; source values are null/F3.",
+      "drawCallCount": 2,
+      "sourceFragment": {
+        "rgb": null,
+        "alpha": null,
+        "classification": "F3",
+        "reason": "The unmodified fragment shader output is not exposed by WebGL readPixels; these are direct before/after attachment samples and a per-material RGB/alpha proxy is captured separately."
+      },
+      "drawStateAndFramebufferReadbackReference": "destinationObservations.webgl.draws"
+    },
+    "nativeActualDraw": {
+      "requestId": "anatomy-gpu-intermediate-12",
+      "status": "rejected",
+      "feasibility": "F0",
+      "reason": "Three r186 exposes no public readback boundary between encoded draws inside its active WebGPU render pass.",
+      "generation": 1
+    },
+    "webglB0ReplayProxy": {
+      "feasibility": "F2",
+      "runtime": {
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2"
+      },
+      "selectedRenderable": {
+        "id": "f167ceb2-a056-4988-8881-5ccc6503c494",
+        "name": "bellows-folded-surface",
+        "cameraPart": "bellows",
+        "geometryId": "b991de94-1874-4d27-96a8-497f8a82b663",
+        "worldMatrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "renderOrder": 0,
+        "castShadow": false,
+        "receiveShadow": false
+      },
+      "target": {
+        "format": "RGBAFormat",
+        "type": "FloatType",
+        "colorSpace": "srgb",
+        "width": 1028,
+        "height": 820,
+        "depthBuffer": true,
+        "samples": 0,
+        "blending": "disabled on owned material clones only"
+      },
+      "representation": "srgb-encoded-rgba32f-straight-alpha",
+      "alphaRepresentation": "straight shader alpha read from RGBA32F attachment; not browser canvas alpha",
+      "samples": [
+        {
+          "index": 323305,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "x": 513,
+          "y": 314
+        },
+        {
+          "index": 329457,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "x": 497,
+          "y": 320
+        },
+        {
+          "index": 427115,
+          "rgba": [
+            0.0018082536989822984,
+            0.002374932635575533,
+            0.004193876404315233,
+            0.1599999964237213
+          ],
+          "x": 495,
+          "y": 415
+        },
+        {
+          "index": 447675,
+          "rgba": [
+            0.006570165976881981,
+            0.007405493874102831,
+            0.010061332955956459,
+            0.1599999964237213
+          ],
+          "x": 495,
+          "y": 435
+        },
+        {
+          "index": 403471,
+          "rgba": [
+            0.0006383483996614814,
+            0.0010685814777389169,
+            0.0024850915651768446,
+            0.1599999964237213
+          ],
+          "x": 495,
+          "y": 392
+        },
+        {
+          "index": 482757,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "x": 625,
+          "y": 469
+        },
+        {
+          "index": 339759,
+          "rgba": [
+            0.024416407570242882,
+            0.025838809087872505,
+            0.030339283868670464,
+            0.1599999964237213
+          ],
+          "x": 519,
+          "y": 330
+        },
+        {
+          "index": 462077,
+          "rgba": [
+            0.000454947876278311,
+            0.0007845797226764262,
+            0.0019126397091895342,
+            0.1599999964237213
+          ],
+          "x": 505,
+          "y": 449
+        }
+      ],
+      "maskedCoverage": {
+        "sampleCount": 12287,
+        "nonzeroAlphaCount": 5356,
+        "meanAlpha": 0.06974525765813065
+      },
+      "caveats": [
+        "The selected renderable was replayed in isolation with other scene renderables hidden.",
+        "The target had a cleared depth buffer; original inter-object occlusion and draw ordering are not preserved.",
+        "The selected cloned material disabled blending to retain its shader RGBA output; output pixels are not an unchanged production draw.",
+        "The selected renderable does not receive shadows in the inventoried scene."
+      ],
+      "integrity": {
+        "sourcePropertiesPreserved": true,
+        "sourceAndOutputIdentitiesRecorded": true,
+        "originalRenderableMaterialAndGeometryRestored": true,
+        "targetDisposeCount": 1,
+        "temporaryMaterialDisposeCount": 1,
+        "noTextureOrGeometryDisposed": true
+      }
+    },
+    "nativeMaterialAwareB0ReplayProxy": {
+      "feasibility": "F2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu"
+      },
+      "selectedRenderable": {
+        "id": "5a986914-4d54-48c5-b50f-e98cd82d21ae",
+        "name": "bellows-folded-surface",
+        "cameraPart": "bellows",
+        "geometryId": "f3177dfb-405e-4208-921f-aa173529712d",
+        "worldMatrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "renderOrder": 0,
+        "castShadow": false,
+        "receiveShadow": false
+      },
+      "target": {
+        "format": "RGBAFormat",
+        "type": "FloatType",
+        "colorSpace": "srgb",
+        "width": 1028,
+        "height": 820,
+        "depthBuffer": true,
+        "samples": 0,
+        "blending": "disabled on owned material clones only"
+      },
+      "representation": "srgb-encoded-rgba32f-straight-alpha",
+      "alphaRepresentation": "straight shader alpha read from RGBA32F attachment; not browser canvas alpha",
+      "samples": [
+        {
+          "index": 323305,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "x": 513,
+          "y": 314
+        },
+        {
+          "index": 329457,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "x": 497,
+          "y": 320
+        },
+        {
+          "index": 427115,
+          "rgba": [
+            0,
+            0.0012060321168974042,
+            0.006284771487116814,
+            0.1599999964237213
+          ],
+          "x": 495,
+          "y": 415
+        },
+        {
+          "index": 447675,
+          "rgba": [
+            0.016154898330569267,
+            0.019371718168258667,
+            0.03025902435183525,
+            0.1599999964237213
+          ],
+          "x": 495,
+          "y": 435
+        },
+        {
+          "index": 403471,
+          "rgba": [
+            0,
+            0,
+            0.0010716512333601713,
+            0.1599999964237213
+          ],
+          "x": 495,
+          "y": 392
+        },
+        {
+          "index": 482757,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "x": 625,
+          "y": 469
+        },
+        {
+          "index": 339759,
+          "rgba": [
+            0.10027609020471573,
+            0.10569458454847336,
+            0.12198875844478607,
+            0.1599999964237213
+          ],
+          "x": 519,
+          "y": 330
+        },
+        {
+          "index": 462077,
+          "rgba": [
+            0,
+            0,
+            0,
+            0.1599999964237213
+          ],
+          "x": 505,
+          "y": 449
+        }
+      ],
+      "maskedCoverage": {
+        "sampleCount": 12287,
+        "nonzeroAlphaCount": 5356,
+        "meanAlpha": 0.06974525765813065
+      },
+      "caveats": [
+        "The selected renderable was replayed in isolation with other scene renderables hidden.",
+        "The target had a cleared depth buffer; original inter-object occlusion and draw ordering are not preserved.",
+        "The selected cloned material disabled blending to retain its shader RGBA output; output pixels are not an unchanged production draw.",
+        "The selected renderable does not receive shadows in the inventoried scene."
+      ],
+      "integrity": {
+        "sourcePropertiesPreserved": true,
+        "sourceAndOutputIdentitiesRecorded": true,
+        "originalRenderableMaterialAndGeometryRestored": true,
+        "targetDisposeCount": 1,
+        "temporaryMaterialDisposeCount": 1,
+        "noTextureOrGeometryDisposed": true
+      }
+    },
+    "repeatNoise": {
+      "webgl": {
+        "rgb": 0,
+        "alpha": 0
+      },
+      "nativeMaterialAware": {
+        "rgb": 0,
+        "alpha": 0
+      }
+    },
+    "B0ProxyComparison": {
+      "compatible": true,
+      "reason": null,
+      "sampleCount": 5,
+      "meanAbsoluteRgbDifference": 0.02003027783551564,
+      "meanAbsoluteAlphaDifference": 0,
+      "commonCoveredSampleCount": 5,
+      "commonCoverageRule": "fixed preselected sample positions with nonzero alpha in both isolated replay outputs",
+      "rgbMae8BitEquivalent": 5.107720848056488,
+      "classification": "F2 controlled replay proxy"
+    },
+    "B1": {
+      "comparisonWithB0": {
+        "comparison": {
+          "compatible": false,
+          "reason": "Representation mismatch: srgb-encoded-rgba32f-straight-alpha versus linear-working-rgba32f-straight-alpha.",
+          "sampleCount": 0,
+          "meanAbsoluteRgbDifference": null,
+          "meanAbsoluteAlphaDifference": null
+        },
+        "commonCoveredSampleCount": 5,
+        "commonCoverageRule": "fixed preselected sample positions with nonzero alpha in both isolated replay outputs",
+        "conversion": null
+      },
+      "interpretation": "Refused because sRGB-encoded and linear-working representations differ.",
+      "classification": "F2 controlled replay proxy"
+    },
+    "B3": {
+      "comparisonAfterSrgbDecode": {
+        "comparison": {
+          "compatible": true,
+          "reason": null,
+          "sampleCount": 5,
+          "meanAbsoluteRgbDifference": 1.6505577018056482e-07,
+          "meanAbsoluteAlphaDifference": 0
+        },
+        "commonCoveredSampleCount": 5,
+        "commonCoverageRule": "fixed preselected sample positions with nonzero alpha in both isolated replay outputs",
+        "conversion": "IEC 61966-2-1 inverse sRGB transfer on RGB; straight alpha retained"
+      },
+      "interpretation": "Proxy comparison after IEC inverse sRGB transfer on RGB; alpha retained straight.",
+      "classification": "F2 controlled replay proxy"
+    }
+  },
+  "destinationObservations": {
+    "webgl": {
+      "classification": "F1",
+      "boundary": "immediately before/after the actual selected WebGL draw call in the default canvas drawing buffer",
+      "draws": [
+        {
+          "call": "drawElements",
+          "materialId": "7370852d-e045-46e7-b31c-5514a25c891b",
+          "sourceMaterialId": "7370852d-e045-46e7-b31c-5514a25c891b",
+          "state": {
+            "blendEnabled": true,
+            "blendSourceRgb": "SRC_ALPHA",
+            "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+            "blendEquationRgb": "FUNC_ADD",
+            "blendSourceAlpha": "ONE",
+            "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+            "blendEquationAlpha": "FUNC_ADD",
+            "depthTest": true,
+            "depthWrite": false,
+            "depthFunction": "LEQUAL",
+            "stencilTest": false,
+            "framebufferReadBindingIsDefault": true,
+            "framebufferDrawBindingIsDefault": true,
+            "drawingBufferColorSpace": "srgb",
+            "framebufferColorEncoding": "LINEAR",
+            "contextAttributes": {
+              "alpha": true,
+              "antialias": true,
+              "depth": true,
+              "desynchronized": false,
+              "failIfMajorPerformanceCaveat": false,
+              "powerPreference": "high-performance",
+              "premultipliedAlpha": true,
+              "preserveDrawingBuffer": false,
+              "stencil": false,
+              "xrCompatible": false
+            }
+          },
+          "response": {
+            "sampleCount": 12287,
+            "changedPixelCount": 4910,
+            "thresholdPixelCount": 3747,
+            "meanAbsoluteRgbDifference": 10.406744255446135,
+            "meanAbsoluteAlphaDifference": 0,
+            "maxAbsoluteRgbChannelDifference": 49
+          },
+          "fixedSamples": [
+            {
+              "index": 323305,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                5,
+                8,
+                13,
+                255
+              ],
+              "x": 513,
+              "y": 314
+            },
+            {
+              "index": 329457,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                5,
+                8,
+                12,
+                255
+              ],
+              "x": 497,
+              "y": 320
+            },
+            {
+              "index": 427115,
+              "destination": [
+                3,
+                6,
+                10,
+                255
+              ],
+              "postDraw": [
+                3,
+                6,
+                10,
+                255
+              ],
+              "x": 495,
+              "y": 415
+            },
+            {
+              "index": 447675,
+              "destination": [
+                4,
+                7,
+                11,
+                255
+              ],
+              "postDraw": [
+                4,
+                7,
+                11,
+                255
+              ],
+              "x": 495,
+              "y": 435
+            },
+            {
+              "index": 403471,
+              "destination": [
+                3,
+                6,
+                10,
+                255
+              ],
+              "postDraw": [
+                3,
+                6,
+                10,
+                255
+              ],
+              "x": 495,
+              "y": 392
+            },
+            {
+              "index": 482757,
+              "destination": [
+                38,
+                45,
+                55,
+                255
+              ],
+              "postDraw": [
+                38,
+                45,
+                55,
+                255
+              ],
+              "x": 625,
+              "y": 469
+            },
+            {
+              "index": 339759,
+              "destination": [
+                11,
+                18,
+                28,
+                255
+              ],
+              "postDraw": [
+                13,
+                19,
+                28,
+                255
+              ],
+              "x": 519,
+              "y": 330
+            },
+            {
+              "index": 462077,
+              "destination": [
+                5,
+                8,
+                13,
+                255
+              ],
+              "postDraw": [
+                5,
+                8,
+                12,
+                255
+              ],
+              "x": 505,
+              "y": 449
+            }
+          ]
+        },
+        {
+          "call": "drawElements",
+          "materialId": "7370852d-e045-46e7-b31c-5514a25c891b",
+          "sourceMaterialId": "7370852d-e045-46e7-b31c-5514a25c891b",
+          "state": {
+            "blendEnabled": true,
+            "blendSourceRgb": "SRC_ALPHA",
+            "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+            "blendEquationRgb": "FUNC_ADD",
+            "blendSourceAlpha": "ONE",
+            "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+            "blendEquationAlpha": "FUNC_ADD",
+            "depthTest": true,
+            "depthWrite": false,
+            "depthFunction": "LEQUAL",
+            "stencilTest": false,
+            "framebufferReadBindingIsDefault": true,
+            "framebufferDrawBindingIsDefault": true,
+            "drawingBufferColorSpace": "srgb",
+            "framebufferColorEncoding": "LINEAR",
+            "contextAttributes": {
+              "alpha": true,
+              "antialias": true,
+              "depth": true,
+              "desynchronized": false,
+              "failIfMajorPerformanceCaveat": false,
+              "powerPreference": "high-performance",
+              "premultipliedAlpha": true,
+              "preserveDrawingBuffer": false,
+              "stencil": false,
+              "xrCompatible": false
+            }
+          },
+          "response": {
+            "sampleCount": 12287,
+            "changedPixelCount": 1904,
+            "thresholdPixelCount": 652,
+            "meanAbsoluteRgbDifference": 1.957868750169556,
+            "meanAbsoluteAlphaDifference": 0,
+            "maxAbsoluteRgbChannelDifference": 40
+          },
+          "fixedSamples": [
+            {
+              "index": 323305,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "x": 513,
+              "y": 314
+            },
+            {
+              "index": 329457,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "x": 497,
+              "y": 320
+            },
+            {
+              "index": 427115,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                3,
+                6,
+                10,
+                255
+              ],
+              "x": 495,
+              "y": 415
+            },
+            {
+              "index": 447675,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                4,
+                7,
+                11,
+                255
+              ],
+              "x": 495,
+              "y": 435
+            },
+            {
+              "index": 403471,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                3,
+                6,
+                10,
+                255
+              ],
+              "x": 495,
+              "y": 392
+            },
+            {
+              "index": 482757,
+              "destination": [
+                38,
+                45,
+                55,
+                255
+              ],
+              "postDraw": [
+                38,
+                45,
+                55,
+                255
+              ],
+              "x": 625,
+              "y": 469
+            },
+            {
+              "index": 339759,
+              "destination": [
+                11,
+                18,
+                28,
+                255
+              ],
+              "postDraw": [
+                11,
+                18,
+                28,
+                255
+              ],
+              "x": 519,
+              "y": 330
+            },
+            {
+              "index": 462077,
+              "destination": [
+                4,
+                7,
+                12,
+                255
+              ],
+              "postDraw": [
+                5,
+                8,
+                13,
+                255
+              ],
+              "x": 505,
+              "y": 449
+            }
+          ]
+        }
+      ]
+    },
+    "native": {
+      "classification": "F0",
+      "before": null,
+      "after": null,
+      "reason": "Three r186 exposes no public readback boundary between encoded draws inside its active WebGPU render pass."
+    }
+  },
+  "blendObservations": {
+    "classification": "F1 for the actual WebGL draw; F0 for the actual native WebGPU draw.",
+    "webglDrawReference": "destinationObservations.webgl.draws",
+    "webglSummary": [
+      {
+        "call": "drawElements",
+        "blendEnabled": true,
+        "blendSourceRgb": "SRC_ALPHA",
+        "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+        "blendEquationRgb": "FUNC_ADD",
+        "blendSourceAlpha": "ONE",
+        "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+        "blendEquationAlpha": "FUNC_ADD",
+        "response": {
+          "sampleCount": 12287,
+          "changedPixelCount": 4910,
+          "thresholdPixelCount": 3747,
+          "meanAbsoluteRgbDifference": 10.406744255446135,
+          "meanAbsoluteAlphaDifference": 0,
+          "maxAbsoluteRgbChannelDifference": 49
+        }
+      },
+      {
+        "call": "drawElements",
+        "blendEnabled": true,
+        "blendSourceRgb": "SRC_ALPHA",
+        "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+        "blendEquationRgb": "FUNC_ADD",
+        "blendSourceAlpha": "ONE",
+        "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+        "blendEquationAlpha": "FUNC_ADD",
+        "response": {
+          "sampleCount": 12287,
+          "changedPixelCount": 1904,
+          "thresholdPixelCount": 652,
+          "meanAbsoluteRgbDifference": 1.957868750169556,
+          "meanAbsoluteAlphaDifference": 0,
+          "maxAbsoluteRgbChannelDifference": 40
+        }
+      }
+    ],
+    "native": {
+      "classification": "F0",
+      "activeState": null,
+      "predictedComposite": null,
+      "reason": "The F2 source replay changes draw isolation and does not preserve the original shadow/occlusion context; its source sample is not a valid substitute for the exact fragment consumed by the F1 draw. No numeric blend decomposition is claimed."
+    },
+    "r186SourceMapping": "NormalBlending with premultipliedAlpha=false maps to SrcAlpha/OneMinusSrcAlpha RGB and One/OneMinusSrcAlpha alpha in WebGPUPipelineUtils; this is source inspection, not an active native-pass measurement."
+  },
+  "colorRepresentation": {
+    "webglDrawBoundary": "RGBA8 bytes from default WebGL canvas framebuffer; pre-browser composition; material and canvas premultiplication recorded in draw result.",
+    "webglProxy": "srgb-encoded-rgba32f-straight-alpha",
+    "nativeMaterialAwareProxy": "srgb-encoded-rgba32f-straight-alpha",
+    "alpha": "straight shader alpha read from the RGBA32F replay attachment; native baseline screenshots have RGB only.",
+    "webgpuReadback": "RGBA32F rows unpacked from Three r186 256-byte padded copyTextureToBuffer output; orientation checked by asymmetric quadrant fixture.",
+    "comparisonRule": "Only compare matching representation labels. B0/B3 conversion uses IEC inverse sRGB transfer on RGB; straight alpha is not transformed."
+  },
+  "pairwiseExperiments": {
+    "status": "not-run",
+    "reason": "The prior Bellows + Ground Glass Back response-mask intersection is not fragment overlap. The validated native method is a one-renderable replay, while WebGPU has no direct draw-boundary readback; no matched two-renderable native replay was implemented.",
+    "pairwiseOverlapClaimed": false,
+    "fragmentOverlapClaim": "None; prior candidate intersection was a visibility-response-mask intersection."
+  },
+  "negativeControls": {
+    "NC1": {
+      "active": true,
+      "webglBaselineRestorationMae": 0,
+      "nativeBaselineRestorationMae": 0
+    },
+    "NC2toNC5": {
+      "webgl": {
+        "status": "passed",
+        "runtime": {
+          "rendererFamily": "webgl-renderer",
+          "executionBackend": "webgl2"
+        },
+        "target": {
+          "format": "RGBAFormat",
+          "type": "UnsignedByteType",
+          "colorSpace": "srgb-linear",
+          "width": 1,
+          "height": 1
+        },
+        "orientation": {
+          "apiRowOrder": "bottom-up",
+          "asymmetricQuadrantControl": "passed",
+          "observedRgba": [
+            0,
+            0,
+            255,
+            255,
+            255,
+            255,
+            0,
+            255,
+            255,
+            0,
+            0,
+            255,
+            0,
+            255,
+            0,
+            255
+          ]
+        },
+        "controls": {
+          "opaqueSingleDraw": {
+            "active": true,
+            "pixel": [
+              191,
+              64,
+              26,
+              255
+            ],
+            "expected": [
+              191,
+              64,
+              26,
+              255
+            ],
+            "maxByteError": 0
+          },
+          "transparentSingleDraw": {
+            "active": true,
+            "pixel": [
+              48,
+              16,
+              6,
+              64
+            ],
+            "expected": [
+              48,
+              16,
+              6,
+              64
+            ],
+            "maxByteError": 0
+          },
+          "changedBlendState": {
+            "active": true,
+            "normalPixel": [
+              48,
+              16,
+              6,
+              64
+            ],
+            "disabledPixel": [
+              191,
+              64,
+              26,
+              64
+            ],
+            "rgbDifference": 70.33333333333333
+          },
+          "changedDrawOrder": {
+            "active": true,
+            "firstOrderPixel": [
+              37,
+              40,
+              99,
+              159
+            ],
+            "reversedOrderPixel": [
+              58,
+              40,
+              78,
+              160
+            ],
+            "rgbDifference": 14
+          }
+        },
+        "lifecycle": {
+          "targetDisposeCount": 2,
+          "geometryDisposeCount": 1,
+          "materialDisposeCount": 8
+        },
+        "classification": "F2 controlled calibration fixture; does not measure the actual Anatomy draw."
+      },
+      "nativeWebgpu": {
+        "status": "passed",
+        "runtime": {
+          "rendererFamily": "webgpu-renderer",
+          "executionBackend": "webgpu"
+        },
+        "target": {
+          "format": "RGBAFormat",
+          "type": "UnsignedByteType",
+          "colorSpace": "srgb-linear",
+          "width": 1,
+          "height": 1
+        },
+        "orientation": {
+          "apiRowOrder": "top-down",
+          "asymmetricQuadrantControl": "passed",
+          "observedRgba": [
+            255,
+            0,
+            0,
+            255,
+            0,
+            255,
+            0,
+            255,
+            0,
+            0,
+            255,
+            255,
+            255,
+            255,
+            0,
+            255
+          ]
+        },
+        "controls": {
+          "opaqueSingleDraw": {
+            "active": true,
+            "pixel": [
+              191,
+              64,
+              26,
+              255
+            ],
+            "expected": [
+              191,
+              64,
+              26,
+              255
+            ],
+            "maxByteError": 0
+          },
+          "transparentSingleDraw": {
+            "active": true,
+            "pixel": [
+              48,
+              16,
+              6,
+              64
+            ],
+            "expected": [
+              48,
+              16,
+              6,
+              64
+            ],
+            "maxByteError": 0
+          },
+          "changedBlendState": {
+            "active": true,
+            "normalPixel": [
+              48,
+              16,
+              6,
+              64
+            ],
+            "disabledPixel": [
+              191,
+              64,
+              26,
+              64
+            ],
+            "rgbDifference": 70.33333333333333
+          },
+          "changedDrawOrder": {
+            "active": true,
+            "firstOrderPixel": [
+              37,
+              40,
+              99,
+              159
+            ],
+            "reversedOrderPixel": [
+              58,
+              40,
+              78,
+              160
+            ],
+            "rgbDifference": 14
+          }
+        },
+        "lifecycle": {
+          "targetDisposeCount": 2,
+          "geometryDisposeCount": 1,
+          "materialDisposeCount": 8
+        },
+        "classification": "F2 controlled calibration fixture; does not measure the actual Anatomy draw."
+      }
+    },
+    "NC6": {
+      "staleGeneration": {
+        "requestId": "anatomy-gpu-intermediate-13",
+        "status": "rejected",
+        "feasibility": "F0",
+        "reason": "stale-renderer-generation",
+        "generation": 1
+      },
+      "wrongSemanticGroup": {
+        "requestId": "anatomy-gpu-intermediate-14",
+        "status": "rejected",
+        "feasibility": "F0",
+        "reason": "selection-outside-target-group",
+        "generation": 1
+      },
+      "staleRenderableId": {
+        "requestId": "anatomy-gpu-intermediate-15",
+        "status": "rejected",
+        "feasibility": "F0",
+        "reason": "stale-renderable-id",
+        "generation": 1
+      },
+      "nativeF1Unsupported": {
+        "requestId": "anatomy-gpu-intermediate-12",
+        "status": "rejected",
+        "feasibility": "F0",
+        "reason": "Three r186 exposes no public readback boundary between encoded draws inside its active WebGPU render pass.",
+        "generation": 1
+      }
+    },
+    "NC7": {
+      "originalMaterialAndGeometryRestored": true,
+      "sourcePropertiesPreserved": true
+    },
+    "NC8": {
+      "calibrationResourceCounts": {
+        "targetDisposeCount": 2,
+        "geometryDisposeCount": 1,
+        "materialDisposeCount": 8
+      },
+      "spaListenerResponseCountAfterTeardown": 0
+    }
+  },
+  "resourceLifecycle": {
+    "proxy": {
+      "webgl": {
+        "sourcePropertiesPreserved": true,
+        "sourceAndOutputIdentitiesRecorded": true,
+        "originalRenderableMaterialAndGeometryRestored": true,
+        "targetDisposeCount": 1,
+        "temporaryMaterialDisposeCount": 1,
+        "noTextureOrGeometryDisposed": true
+      },
+      "nativeWebgpu": {
+        "sourcePropertiesPreserved": true,
+        "sourceAndOutputIdentitiesRecorded": true,
+        "originalRenderableMaterialAndGeometryRestored": true,
+        "targetDisposeCount": 1,
+        "temporaryMaterialDisposeCount": 1,
+        "noTextureOrGeometryDisposed": true
+      }
+    },
+    "calibration": {
+      "targetDisposeCount": 2,
+      "geometryDisposeCount": 1,
+      "materialDisposeCount": 8
+    },
+    "rendererGenerationScoped": true
+  },
+  "asyncCaptureLifecycleReviewFix": {
+    "scope": "development-only capture lifecycle; M-INV4 measurement configuration and results were not refreshed",
+    "owner": "unique per-mount identity with an AbortController and one active-operation slot per probe",
+    "invalidatedBy": [
+      "probe unmount",
+      "renderer-generation retirement",
+      "WebGL context loss",
+      "WebGPU device loss"
+    ],
+    "overlapPolicy": {
+      "status": "rejected",
+      "reason": "capture-already-active",
+      "appliesTo": ["calibration", "single-renderable replay", "direct draw-boundary capture"]
+    },
+    "submittedReadbackPolicy": "The underlying readback is not cancelled or abandoned. The capture awaits resolution or rejection before releasing owned resources; invalidation prevents subsequent GPU submissions and result publication.",
+    "pendingReadbackQualification": "The browser test submits a native readback and holds the application's await boundary with a deterministic development-only gate through SPA retirement. This proves the handler remains suspended and cleanup/publication gates work; it does not claim the underlying WebGPU mapAsync promise stays unresolved while the gate is held.",
+    "tests": {
+      "nativeCalibrationPendingDuringSpaNavigation": {
+        "status": "passed",
+        "pendingBoundaryCount": 1,
+        "postRetirementCalibrationSubmissions": 0,
+        "captureResultAfterRetirement": false,
+        "cleanup": {
+          "targetDisposeCount": 2,
+          "geometryDisposeCount": 1,
+          "materialDisposeCount": 8
+        }
+      },
+      "nativeProxyPendingDuringSpaNavigation": {
+        "status": "passed",
+        "pendingBoundaryCount": 1,
+        "authoredStateRestoredBeforeAwait": true,
+        "captureResultAfterRetirement": false,
+        "cleanup": {
+          "temporaryTargetDisposeCount": 1,
+          "temporaryMaterialDisposeCount": 1,
+          "originalRenderableMaterialAndGeometryRestored": true,
+          "sourcePropertiesPreserved": true,
+          "noBorrowedResourceDisposed": true
+        }
+      },
+      "overlappingCapture": {
+        "status": "passed",
+        "secondRequestReason": "capture-already-active"
+      },
+      "calibrationReadbackResolutionAndRejectionAfterAbort": {
+        "status": "passed",
+        "postAbortFixtureSubmissions": 0,
+        "ownedResourcesReleasedAfterSettlement": true,
+        "originalCancellationReasonPreserved": true
+      }
+    },
+    "productionAssetIsolation": {
+      "status": "passed",
+      "loadedJavaScriptCaptureIdentifiers": []
+    }
+  },
+  "regressions": {
+    "focusedM4NativeExperiment": "passed; chrome-native-webgpu",
+    "PR263FourStateNativeExperiment": {
+      "status": "passed",
+      "states": [
+        "Front Standard highlighted",
+        "Lens and Lens Board highlighted",
+        "Smaller Aperture",
+        "Bellows Highlighted"
+      ]
+    },
+    "anatomy13StateNativeAudit": {
+      "status": "passed",
+      "runSummary": "2 passed, 1 skipped; matched material-aware candidate test captured all 13 states."
+    },
+    "architectureRiseStrictParity": {
+      "status": "passed",
+      "failingCriteria": 0,
+      "contractCriteria": 81,
+      "runtime": "chrome-native-webgpu"
+    },
+    "productionPreview": {
+      "status": "passed",
+      "testsPassed": 2,
+      "webgpuModuleRequests": [],
+      "developmentProbeAttributesPresent": false,
+      "bundleIdentifierScan": {
+        "patterns": [
+          "anatomy-gpu-blend-intermediate",
+          "AnatomyGpuBlendIntermediateProbe",
+          "GPU_BLEND_INTERMEDIATE"
+        ],
+        "matches": []
+      }
+    },
+    "groundGlass": {
+      "dataRttFinalContentful": true,
+      "distinctColorBuckets": 124,
+      "repeatNoiseMae": 0.0011112790097339226,
+      "postExperimentRestorationMae": 0,
+      "sourceResourceOwnership": "The probe creates no RTT resources and does not access or dispose source geometry, material, or texture; F2 uses owned target and material clones only."
+    },
+    "repositoryChecks": {
+      "npmTest": "passed: 256 files, 2381 tests",
+      "typecheck": "passed",
+      "lint": "passed",
+      "checkCss": "passed",
+      "build": "passed",
+      "diffCheck": "passed"
+    }
+  },
+  "remainingUnknowns": [
+    "Native actual-draw source fragments, destination values, and active attachment format remain unavailable through the inspected Three r186 public API.",
+    "F2 replay changes visibility, depth, order, blending, and target context; it is not an unchanged fragment.",
+    "Browser canvas composition after framebuffer output is not isolated.",
+    "True two-renderable native fragment overlap is untested.",
+    "Hardware acceleration is unconfirmed."
+  ],
+  "recommendedNextExperiment": "If attribution is still needed, evaluate one development-only hook at the Three r186 WebGPU pass-encoding boundary for the selected Bellows draw. Preserve order and depth, expose source and destination or fail closed, and first pass the existing opaque/blend/order calibration controls. No correction or PR N is authorized by this evidence."
+}
