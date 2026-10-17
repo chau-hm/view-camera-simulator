@@ -49,6 +49,12 @@ const readObserverAttributes = async (observer: Locator) => observer.evaluate((e
   ),
 );
 
+const readOutputPolicyPerformance = async (observer: Locator) => observer.evaluate((element) => {
+  window.dispatchEvent(new Event("vcs:observer-verification:read-output-policy-performance"));
+  const report = element.getAttribute("data-observer-output-policy-performance");
+  return report ? JSON.parse(report) as Record<string, unknown> : null;
+});
+
 const waitForActiveObserverGeneration = async (
   observer: Locator,
   previousGeneration: number,
@@ -2705,6 +2711,316 @@ test("explicit Anatomy material-aware output keeps source ownership and rendered
   expect(pageErrors).toEqual([]);
 });
 
+test("Anatomy material-aware readiness remains stable after a long active Lesson 0 transition", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired, "This lifecycle qualification requires the native-required headed Chrome runtime.");
+  test.setTimeout(120_000);
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&observerMaterialAudit=1&rttDiagnostics=1");
+
+  const observer = await waitForMountedObserver(page);
+  const groundGlass = page.getByTestId("ground-glass-rtt");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgpu");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready");
+  expectNativeWebGpuMount(await readObserverAttributes(observer));
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+
+  const generation = await observer.getAttribute("data-observer-renderer-generation");
+  const beforeAttributes = await readObserverAttributes(observer);
+  const beforePerformance = await readOutputPolicyPerformance(observer);
+  const beforeInventory = JSON.parse(
+    beforeAttributes["data-observer-material-inventory"] ?? "{}",
+  ) as { adaptedMaterialInstances?: number };
+  const beforeReadiness = JSON.parse(
+    beforeAttributes["data-observer-output-policy-readiness-evidence"] ?? "{}",
+  ) as { materialAssignments?: number; trackedAttachments?: number };
+
+  await observer.evaluate((element) => {
+    let lastReadiness = element.getAttribute("data-observer-output-policy-readiness") ?? "missing";
+    const transitions = [lastReadiness];
+    (window as Window & { __materialAwareReadinessTransitions?: string[] })
+      .__materialAwareReadinessTransitions = transitions;
+    const readinessObserver = new MutationObserver(() => {
+      const readiness = element.getAttribute("data-observer-output-policy-readiness") ?? "missing";
+      if (readiness !== lastReadiness) {
+        lastReadiness = readiness;
+        transitions.push(readiness);
+      }
+    });
+    readinessObserver.observe(element, {
+      attributes: true,
+      attributeFilter: ["data-observer-output-policy-readiness"],
+    });
+  });
+
+  const activeStartedAt = await page.evaluate(() => performance.now());
+  await page.waitForTimeout(12_100);
+  const activeElapsedMs = await page.evaluate(
+    (startedAt) => performance.now() - startedAt,
+    activeStartedAt,
+  );
+  expect(activeElapsedMs).toBeGreaterThanOrEqual(12_000);
+  const steadyBeforeTransitionPerformance = await readOutputPolicyPerformance(observer);
+  const panel = page.locator(".anatomy-lesson-panel");
+  const heading = panel.getByRole("heading", { level: 3 });
+  const next = panel.getByRole("button", { name: "Next", exact: true });
+  for (const title of [
+    "Front Standard",
+    "Lens and Lens Board",
+    "Aperture",
+    "Bellows",
+    "Rear Standard",
+    "Ground Glass",
+    "Film Holder",
+  ]) {
+    await next.click();
+    await expect(heading).toHaveText(title);
+    if (title === "Aperture") {
+      await panel.getByRole("button", { name: "Show a smaller opening", exact: true }).click();
+    }
+  }
+
+  await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready", { timeout: 30_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgpu");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-installed", "material-aware");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 30_000 });
+
+  const afterAttributes = await readObserverAttributes(observer);
+  const afterPerformance = await readOutputPolicyPerformance(observer);
+  const afterInventory = JSON.parse(
+    afterAttributes["data-observer-material-inventory"] ?? "{}",
+  ) as { adaptedMaterialInstances?: number };
+  const afterReadiness = JSON.parse(
+    afterAttributes["data-observer-output-policy-readiness-evidence"] ?? "{}",
+  ) as { materialAssignments?: number; trackedAttachments?: number };
+  const readinessTransitions = await page.evaluate(() =>
+    (window as Window & { __materialAwareReadinessTransitions?: string[] })
+      .__materialAwareReadinessTransitions ?? [],
+  );
+  expect(afterAttributes["data-observer-renderer-generation"]).toBe(generation);
+  expect(Number(afterInventory.adaptedMaterialInstances)).toBeGreaterThan(0);
+  expect(Number(afterReadiness.materialAssignments)).toBeGreaterThan(0);
+  expect(afterReadiness.trackedAttachments).toBe(afterReadiness.materialAssignments);
+  expect(Number(beforePerformance?.managedMaterialCount)).toBeGreaterThan(0);
+  expect(Number(beforePerformance?.attachmentCount)).toBeGreaterThan(0);
+  expect(Number(afterPerformance?.managedMaterialCount)).toBeGreaterThan(0);
+  expect(Number(afterPerformance?.attachmentCount)).toBeGreaterThan(0);
+  expect(pageErrors).toEqual([]);
+
+  console.info("ANATOMY_READINESS_TRANSITION_EVIDENCE " + JSON.stringify({
+    browserVersion: page.context().browser()?.version(),
+    threeRevision: REVISION,
+    activeElapsedMs,
+    rendererGeneration: generation,
+    before: {
+      materialAssignments: beforeReadiness.materialAssignments,
+      trackedAttachments: beforeReadiness.trackedAttachments,
+      managedMaterialCount: beforePerformance?.managedMaterialCount,
+      attachmentCount: beforePerformance?.attachmentCount,
+      adaptedMaterialInstances: beforeInventory.adaptedMaterialInstances,
+    },
+    steadyBeforeTransitionControllerCallbackTiming:
+      (steadyBeforeTransitionPerformance?.timing as Record<string, unknown> | undefined)?.controllerCallback,
+    after: {
+      materialAssignments: afterReadiness.materialAssignments,
+      trackedAttachments: afterReadiness.trackedAttachments,
+      managedMaterialCount: afterPerformance?.managedMaterialCount,
+      attachmentCount: afterPerformance?.attachmentCount,
+      adaptedMaterialInstances: afterInventory.adaptedMaterialInstances,
+      readinessTransitions,
+      controllerCallbackTiming: (afterPerformance?.timing as Record<string, unknown> | undefined)?.controllerCallback,
+      fallback: afterAttributes["data-observer-application-fallback"],
+      executionBackend: afterAttributes["data-observer-execution-backend"],
+    },
+    groundGlassReady: await groundGlass.getAttribute("data-rtt-final-contentful"),
+  }));
+
+  await testInfo.attach("anatomy-material-aware-delayed-transition.json", {
+    body: JSON.stringify({
+      route: page.url(),
+      nativeRequired: nativeWebGpuRequired,
+      browserVersion: page.context().browser()?.version(),
+      threeRevision: REVISION,
+      rendererGeneration: generation,
+      activeElapsedMs,
+      before: {
+        readiness: beforeAttributes["data-observer-output-policy-readiness"],
+        materialAssignments: beforeReadiness.materialAssignments,
+        trackedAttachments: beforeReadiness.trackedAttachments,
+        adaptedMaterialInstances: beforeInventory.adaptedMaterialInstances,
+        managedMaterialCount: beforePerformance?.managedMaterialCount,
+        attachmentCount: beforePerformance?.attachmentCount,
+      },
+      after: {
+        lesson: await heading.textContent(),
+        readiness: afterAttributes["data-observer-output-policy-readiness"],
+        readinessTransitions,
+        materialAssignments: afterReadiness.materialAssignments,
+        trackedAttachments: afterReadiness.trackedAttachments,
+        adaptedMaterialInstances: afterInventory.adaptedMaterialInstances,
+        managedMaterialCount: afterPerformance?.managedMaterialCount,
+        attachmentCount: afterPerformance?.attachmentCount,
+        fallback: afterAttributes["data-observer-application-fallback"],
+        executionBackend: afterAttributes["data-observer-execution-backend"],
+      },
+      groundGlassReady: await groundGlass.getAttribute("data-rtt-final-contentful"),
+      pageErrors,
+    }, null, 2),
+    contentType: "application/json",
+  });
+});
+
+test("persistent Anatomy material-aware readiness loss times out through one-shot WebGL fallback", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired, "The bounded recovery timeout is qualified in native-required headed Chrome.");
+  test.setTimeout(120_000);
+
+  const pageErrors: string[] = [];
+  await page.addInitScript(() => {
+    const target = window as Window & { __observerOutputLifecycle?: unknown[] };
+    target.__observerOutputLifecycle = [];
+    window.addEventListener("vcs:observer-output-policy-lifecycle", (event) => {
+      target.__observerOutputLifecycle?.push((event as CustomEvent<unknown>).detail);
+    });
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&observerMaterialAudit=1&rttDiagnostics=1");
+
+  const observer = await waitForMountedObserver(page);
+  const groundGlass = page.getByTestId("ground-glass-rtt");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-failure-hook", "ready");
+  const before = await readObserverAttributes(observer);
+  expectNativeWebGpuMount(before);
+  const generation = Number(before["data-observer-renderer-generation"]);
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  const rttSnapshot = await page.locator('[data-rtt-resource-channel="default"]')
+    .getAttribute("data-rtt-anatomy-resource-snapshot");
+  const failureStartedAt = await page.evaluate(() => performance.now());
+
+  await observer.evaluate((element) => element.dispatchEvent(new Event(
+    "vcs:observer-verification:inject-output-policy-readiness-failure",
+  )));
+  await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "pending");
+
+  const fallback = await waitForActiveObserverGeneration(observer, generation);
+  const elapsedMs = await page.evaluate((startedAt) => performance.now() - startedAt, failureStartedAt);
+  expect(elapsedMs).toBeGreaterThanOrEqual(12_000);
+  expect(fallback["data-observer-renderer-family"]).toBe("webgl-renderer");
+  expect(fallback["data-observer-execution-backend"]).toBe("webgl2");
+  expect(fallback["data-observer-application-fallback"]).toBe("app-webgl");
+  expect(fallback["data-observer-renderer-failure-stage"]).toBe("output-policy");
+  expect(fallback["data-observer-renderer-failure-reason"])
+    .toContain("scene readiness timed out: e2e-injected-persistent-readiness-failure");
+  expect(fallback["data-observer-output-policy-selected"]).toBe("standard");
+  expect(fallback["data-observer-output-policy-installed"]).toBe("standard");
+  expect(fallback["data-observer-webgpu-initialization-attempts"]).toBe("1");
+  const fallbackGeneration = fallback["data-observer-renderer-generation"];
+  await page.waitForTimeout(500);
+  expect(await observer.getAttribute("data-observer-renderer-generation")).toBe(fallbackGeneration);
+  expect(await observer.getAttribute("data-observer-application-fallback")).toBe("app-webgl");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  expect(await page.locator('[data-rtt-resource-channel="default"]')
+    .getAttribute("data-rtt-anatomy-resource-snapshot")).toBe(rttSnapshot);
+  expect(pageErrors).toEqual([]);
+
+  await expect.poll(async () => {
+    const lifecycle = await page.evaluate(() =>
+      (window as Window & { __observerOutputLifecycle?: unknown[] }).__observerOutputLifecycle ?? [],
+    );
+    return (lifecycle as Array<Record<string, unknown>>)
+      .some((entry) => entry.rendererGeneration === generation);
+  }).toBe(true);
+  const lifecycle = await page.evaluate(() =>
+    (window as Window & { __observerOutputLifecycle?: unknown[] }).__observerOutputLifecycle ?? [],
+  );
+  const disposedCandidate = (lifecycle as Array<Record<string, unknown>>)
+    .find((entry) => entry.rendererGeneration === generation);
+  expect(disposedCandidate).toBeTruthy();
+  expect(disposedCandidate?.disposedNodeMaterials).toBe(disposedCandidate?.adaptedMaterialCreations);
+  expect(disposedCandidate?.attachmentCount).toBe(0);
+
+  console.info("ANATOMY_READINESS_TIMEOUT_EVIDENCE " + JSON.stringify({
+    elapsedMs,
+    previousRendererGeneration: generation,
+    fallbackGeneration,
+    fallback,
+    disposedCandidate,
+    groundGlassReady: await groundGlass.getAttribute("data-rtt-final-contentful"),
+  }));
+
+  await testInfo.attach("anatomy-material-aware-readiness-timeout.json", {
+    body: JSON.stringify({
+      elapsedMs,
+      previousRendererGeneration: generation,
+      fallback,
+      groundGlassReady: await groundGlass.getAttribute("data-rtt-final-contentful"),
+      pageErrors,
+    }, null, 2),
+    contentType: "application/json",
+  });
+});
+
+test("unsupported Anatomy material fails immediately without a readiness grace period", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired, "The unsupported-material failure path is qualified in native-required headed Chrome.");
+  test.setTimeout(120_000);
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&observerMaterialAudit=1&rttDiagnostics=1");
+
+  const observer = await waitForMountedObserver(page);
+  const groundGlass = page.getByTestId("ground-glass-rtt");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-status", "active", { timeout: 60_000 });
+  await expect(observer).toHaveAttribute("data-observer-output-policy-failure-hook", "ready");
+  await expect(observer).toHaveAttribute("data-observer-output-policy-readiness", "ready");
+  const before = await readObserverAttributes(observer);
+  expectNativeWebGpuMount(before);
+  const generation = Number(before["data-observer-renderer-generation"]);
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  const rttSnapshot = await page.locator('[data-rtt-resource-channel="default"]')
+    .getAttribute("data-rtt-anatomy-resource-snapshot");
+  const injectedAt = await page.evaluate(() => performance.now());
+
+  await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
+    "vcs:observer-verification:inject-output-policy-failure",
+    { detail: "inject-unsupported-material" },
+  )));
+  const fallback = await waitForActiveObserverGeneration(observer, generation);
+  const elapsedMs = await page.evaluate((startedAt) => performance.now() - startedAt, injectedAt);
+
+  expect(elapsedMs).toBeLessThan(12_000);
+  expect(fallback["data-observer-renderer-family"]).toBe("webgl-renderer");
+  expect(fallback["data-observer-execution-backend"]).toBe("webgl2");
+  expect(fallback["data-observer-application-fallback"]).toBe("app-webgl");
+  expect(fallback["data-observer-renderer-failure-stage"]).toBe("output-policy");
+  expect(fallback["data-observer-renderer-failure-reason"])
+    .toContain("unsupported material family: e2e-injected-unsupported-material/MeshPhysicalMaterial");
+  expect(fallback["data-observer-webgpu-initialization-attempts"]).toBe("1");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  expect(await page.locator('[data-rtt-resource-channel="default"]')
+    .getAttribute("data-rtt-anatomy-resource-snapshot")).toBe(rttSnapshot);
+  expect(pageErrors).toEqual([]);
+
+  console.info("ANATOMY_UNSUPPORTED_MATERIAL_EVIDENCE " + JSON.stringify({
+    elapsedMs,
+    generation,
+    fallback,
+    groundGlassReady: await groundGlass.getAttribute("data-rtt-final-contentful"),
+  }));
+  await testInfo.attach("anatomy-material-aware-unsupported-failure.json", {
+    body: JSON.stringify({ elapsedMs, generation, fallback, pageErrors }, null, 2),
+    contentType: "application/json",
+  });
+});
+
 test("Anatomy material-aware output failure uses the existing one-shot standard WebGL fallback", async ({ page }) => {
   test.skip(!nativeWebGpuRequired, "The deterministic candidate failure is exercised with the native-required headed Chrome run.");
   test.setTimeout(180_000);
@@ -2728,11 +3044,14 @@ test("Anatomy material-aware output failure uses the existing one-shot standard 
   await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   const rttSnapshot = await rttChannel.getAttribute("data-rtt-anatomy-resource-snapshot");
 
+  const injectedAt = await page.evaluate(() => performance.now());
   await observer.evaluate((element) => element.dispatchEvent(new CustomEvent(
     "vcs:observer-verification:inject-output-policy-failure",
     { detail: "e2e-injected-anatomy-output-failure" },
   )));
   const fallback = await waitForActiveObserverGeneration(observer, generation);
+  const failureElapsedMs = await page.evaluate((startedAt) => performance.now() - startedAt, injectedAt);
+  expect(failureElapsedMs).toBeLessThan(12_000);
   expect(fallback["data-observer-renderer-family"]).toBe("webgl-renderer");
   expect(fallback["data-observer-execution-backend"]).toBe("webgl2");
   expect(fallback["data-observer-application-fallback"]).toBe("app-webgl");

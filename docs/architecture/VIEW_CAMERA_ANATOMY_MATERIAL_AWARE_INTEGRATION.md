@@ -322,3 +322,52 @@ reviewed Anatomy visual acceptance model, resolution of material-output and
 transparency differences, and repeated native verification of the full
 teaching-state sequence. PR M does not promote Anatomy material-aware output
 to the development default.
+
+## Review-Fix Round 1 — Post-Activation Readiness Timeout
+
+The original controller measured its 12-second deadline from renderer mount for
+both initial readiness and every later incomplete interval. Once the candidate
+had been active for more than 12 seconds, a temporary attachment gap could
+therefore trigger fallback immediately. This did not provide a fresh bounded
+recovery interval.
+
+The controller now tracks initial-pending, active, and recovery-pending phases
+per renderer generation. Initial readiness keeps its existing 12-second
+deadline. Each transition from active to incomplete starts a new fixed
+12-second recovery deadline; a return to ready clears that recovery interval,
+and a later incomplete transition starts another. A generation change starts
+fresh initial timing. The existing readinessWaitMs diagnostic still reports
+mount-to-first-ready time. Incomplete readiness continues to hide the scene,
+while unsupported material and fatal reconciliation failures still use the
+immediate one-shot application fallback.
+
+The pure timing helper has deterministic coverage for initial timeout, initial
+ready duration, a late transient loss after long active time, a persistent
+recovery timeout, repeated recovery intervals, generation changes, and the
+Architecture Rise timeout-disabled configuration. The native E2E keeps Anatomy
+active for more than 12 seconds, changes actual Lesson 0 presentation states,
+and observes ready → pending → ready on the same renderer generation without
+fallback. A separate real native run injects persistent incomplete readiness
+and confirms the recovery deadline falls back once; another injects an
+unsupported material and confirms immediate failure. The fault hooks are
+available only to the development audit route.
+
+On headed Chrome 155.0.8059.84, macOS Darwin 27.0 arm64, Three.js r186, the
+candidate mounted as webgpu-renderer / webgpu, with one initialization,
+available adapter, no initialization failure, and no application fallback in
+the transient-recovery case. The active interval was 12,103.2 ms; assignments
+and tracked attachments changed from 47 to 48, adapted materials from 35 to 36,
+the generation stayed 1, and Ground Glass remained contentful. Persistent
+readiness loss fell back after 13,015.7 ms; all 35 candidate NodeMaterials were
+disposed and attachment count reached zero. The unsupported-material path
+fell back after 166.1 ms. Ground Glass stayed contentful and page errors were
+empty in both failure cases. Hardware acceleration remains unconfirmed.
+
+The same-run controller-callback sample was 0.9297 ms mean / 1.6 ms p95 before
+the lesson transition and 0.9077 ms mean / 1.6 ms p95 afterward. This is a
+bounded controller callback measurement, not GPU render time or a comparison
+with the earlier benchmark workload. The active-ready path avoids an extra
+clock read and timing-object allocation each frame. The M2 visual result does
+not change: the candidate remains explicit and experimental because the
+measured material-aware output differences still exceed the accepted parity
+evidence.

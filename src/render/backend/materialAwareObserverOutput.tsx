@@ -26,6 +26,11 @@ import {
   resolveAnatomyMaterialOutputOwner,
 } from "./anatomyMaterialOutputAdapter";
 import { getObserverMaterialSignatures } from "./observerMaterialSignatures";
+import {
+  advanceMaterialAwareReadinessTiming,
+  startMaterialAwareReadinessTiming,
+  type MaterialAwareReadinessTiming,
+} from "./materialAwareReadinessTiming";
 
 type DurationWindow = {
   values: Float64Array;
@@ -239,6 +244,8 @@ const anatomyAdapter: MaterialAwareOutputSceneAdapter = {
 };
 
 const FAILURE_INJECTION_EVENT = "vcs:observer-verification:inject-output-policy-failure";
+const READINESS_FAILURE_INJECTION_EVENT =
+  "vcs:observer-verification:inject-output-policy-readiness-failure";
 
 const setDiagnosticAttributes = (
   container: HTMLElement | null,
@@ -299,7 +306,9 @@ const MaterialAwareOutputController = ({
   }> | null>(null);
   const lastInventoryRef = useRef<ObserverMaterialInventory | null>(null);
   const lastInventoryRefreshFrameRef = useRef(0);
-  const readinessStartedAtRef = useRef<number | null>(null);
+  const readinessTimingRef = useRef<MaterialAwareReadinessTiming | null>(null);
+  const injectedReadinessFailureRef = useRef<string | null>(null);
+  const injectedUnsupportedRenderableRef = useRef<THREE.Mesh | null>(null);
   const frameRef = useRef(0);
   const performanceRef = useMemo(
     () => createOutputPolicyPerformance(rendererGeneration),
@@ -350,6 +359,16 @@ const MaterialAwareOutputController = ({
     if (!container) return;
     const injectFailure = (event: Event) => {
       const detail = (event as CustomEvent<unknown>).detail;
+      if (detail === "inject-unsupported-material") {
+        const unsupported = new THREE.Mesh(
+          new THREE.BoxGeometry(1, 1, 1),
+          new THREE.MeshPhysicalMaterial({ clearcoat: 0.5 }),
+        );
+        unsupported.name = "e2e-injected-unsupported-material";
+        injectedUnsupportedRenderableRef.current = unsupported;
+        scene.add(unsupported);
+        return;
+      }
       const reason = typeof detail === "string" && detail.length > 0
         ? detail
         : "test-injected-material-aware-output-failure";
@@ -361,8 +380,35 @@ const MaterialAwareOutputController = ({
     return () => {
       container.removeEventListener(FAILURE_INJECTION_EVENT, injectFailure);
       container.removeAttribute("data-observer-output-policy-failure-hook");
+      const unsupported = injectedUnsupportedRenderableRef.current;
+      if (unsupported) {
+        scene.remove(unsupported);
+        unsupported.geometry.dispose();
+        const materials = Array.isArray(unsupported.material)
+          ? unsupported.material
+          : [unsupported.material];
+        materials.forEach((material) => material.dispose());
+        injectedUnsupportedRenderableRef.current = null;
+      }
     };
   }, [allowFailureInjection, gl, reportFailure, scene]);
+
+  useLayoutEffect(() => {
+    if (!allowFailureInjection || !import.meta.env.DEV) return;
+    const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
+    if (!container) return;
+    const injectPersistentReadinessFailure = () => {
+      injectedReadinessFailureRef.current = "e2e-injected-persistent-readiness-failure";
+    };
+    container.addEventListener(
+      READINESS_FAILURE_INJECTION_EVENT,
+      injectPersistentReadinessFailure,
+    );
+    return () => container.removeEventListener(
+      READINESS_FAILURE_INJECTION_EVENT,
+      injectPersistentReadinessFailure,
+    );
+  }, [allowFailureInjection, gl]);
 
   useLayoutEffect(() => {
     const runtime = resolveObserverRendererRuntime(gl);
@@ -388,7 +434,11 @@ const MaterialAwareOutputController = ({
     scene.background = null;
     scene.backgroundNode = backgroundNode;
     scene.visible = false;
-    readinessStartedAtRef.current = window.performance.now();
+    readinessTimingRef.current = startMaterialAwareReadinessTiming(
+      rendererGeneration,
+      window.performance.now(),
+    );
+    injectedReadinessFailureRef.current = null;
     lastStatusRef.current = "pending";
     container?.setAttribute("data-observer-output-policy-scene-adapter", adapter.sceneId);
     container?.setAttribute("data-observer-output-policy-readiness", "pending");
@@ -398,6 +448,8 @@ const MaterialAwareOutputController = ({
 
     return () => {
       materialTracker.dispose();
+      readinessTimingRef.current = null;
+      injectedReadinessFailureRef.current = null;
       const original = originalSettingsRef.current;
       if (original) {
         scene.background = original.sceneBackground;
@@ -548,29 +600,56 @@ const MaterialAwareOutputController = ({
         scene.backgroundNode === backgroundNode,
         unsupported,
       );
-      if (!readiness.ready) {
+      const injectedReadinessFailure = injectedReadinessFailureRef.current;
+      const effectiveReadiness = injectedReadinessFailure
+        ? { ...readiness, ready: false, reason: injectedReadinessFailure }
+        : readiness;
+      const currentReadinessTiming = readinessTimingRef.current ??
+        startMaterialAwareReadinessTiming(rendererGeneration, window.performance.now());
+      if (readinessTimingRef.current === null) {
+        readinessTimingRef.current = currentReadinessTiming;
+      }
+      const timingNeedsAdvance =
+        currentReadinessTiming.rendererGeneration !== rendererGeneration ||
+        (currentReadinessTiming.phase === "initial-pending" && effectiveReadiness.ready) ||
+        (adapter.readinessTimeoutMs > 0 &&
+          (!effectiveReadiness.ready || currentReadinessTiming.phase === "recovery-pending"));
+      let readinessTimedOut = false;
+      if (timingNeedsAdvance) {
+        const timingResult = advanceMaterialAwareReadinessTiming(
+          currentReadinessTiming,
+          rendererGeneration,
+          effectiveReadiness.ready,
+          window.performance.now(),
+          adapter.readinessTimeoutMs,
+        );
+        readinessTimingRef.current = timingResult.timing;
+        readinessTimedOut = timingResult.timedOut;
+        performance.readinessWaitMs ??= timingResult.timing.initialReadinessWaitMs;
+      }
+
+      if (!effectiveReadiness.ready) {
         scene.visible = false;
         performance.readinessFrameCount += 1;
         container?.setAttribute("data-observer-output-policy-readiness", "pending");
-        if (readiness.reason) {
-          container?.setAttribute("data-observer-output-policy-readiness-reason", readiness.reason);
+        if (effectiveReadiness.reason) {
+          container?.setAttribute("data-observer-output-policy-readiness-reason", effectiveReadiness.reason);
         }
-        if (readiness.evidence) {
-          container?.setAttribute("data-observer-output-policy-readiness-evidence", JSON.stringify(readiness.evidence));
+        if (effectiveReadiness.evidence) {
+          container?.setAttribute("data-observer-output-policy-readiness-evidence", JSON.stringify(effectiveReadiness.evidence));
         }
-        const startedAt = readinessStartedAtRef.current;
-        if (adapter.readinessTimeoutMs > 0 && startedAt !== null &&
-            window.performance.now() - startedAt >= adapter.readinessTimeoutMs) {
-          reportFailure(container, `scene readiness timed out: ${readiness.reason ?? "unknown"}`);
+        if (readinessTimedOut) {
+          reportFailure(
+            container,
+            "scene readiness timed out: " + (effectiveReadiness.reason ?? "unknown"),
+          );
         }
         return;
       }
 
       const original = originalSettingsRef.current;
       scene.visible = original?.sceneVisible ?? true;
-      performance.readinessWaitMs ??= readinessStartedAtRef.current === null
-        ? null
-        : window.performance.now() - readinessStartedAtRef.current;
+      performance.readinessWaitMs ??= readinessTimingRef.current?.initialReadinessWaitMs ?? null;
       container?.setAttribute("data-observer-output-policy-readiness", "ready");
       container?.removeAttribute("data-observer-output-policy-readiness-reason");
       if (readiness.evidence) {

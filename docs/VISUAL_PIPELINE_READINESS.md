@@ -1888,3 +1888,26 @@ Ground Glass, negative-control, and lifecycle evidence are in the
 [Anatomy material-aware integration report](architecture/VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_INTEGRATION.md)
 and its [machine-readable report](architecture/view-camera-anatomy-material-aware/report.json)
 and [three-trial summary](architecture/view-camera-anatomy-material-aware/repeat-trials.json).
+
+### PR #260 Review-Fix Round 1 — material-aware readiness recovery
+
+Anatomy keeps its initial 12-second material-aware readiness deadline. After
+first activation, every later incomplete attachment interval now receives its
+own fixed 12-second recovery window. Returning to ready clears that interval;
+the initial mount-to-ready readinessWaitMs diagnostic is unchanged. The
+Observer stays hidden while readiness is incomplete, and unsupported materials
+or fatal reconciliation errors still take the immediate one-shot fallback.
+
+Native headed Chrome 155.0.8059.84 on macOS Darwin 27.0 arm64, Three.js r186,
+verified the Anatomy candidate on webgpu-renderer / webgpu. After 12,103.2 ms
+of active time, an actual Lesson 0 transition produced ready → pending →
+ready on generation 1, with no fallback and contentful Ground Glass. A
+persistent-readiness negative control fell back after 13,015.7 ms, disposed all
+35 candidate NodeMaterials, and left zero candidate attachments. An unsupported
+material failed immediately after 166.1 ms. Hardware acceleration remains
+unconfirmed. Focused timing tests, full unit/static/build checks, ordinary
+Observer E2E, native-required Observer E2E, the 13-state Anatomy audit, strict
+Architecture Rise parity, Architecture Rise native validation, and production
+preview validation passed. **Decision: M2 — OPT-IN IMPLEMENTATION INCOMPLETE**
+remains unchanged; this lifecycle correction does not resolve the measured
+Anatomy output differences or authorize promotion.

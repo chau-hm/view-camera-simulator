@@ -401,3 +401,12 @@ The matched states, per-ROI values, renderer timing/cadence, source ownership,
 negative controls, and limitations are recorded in the
 [Anatomy integration report](VIEW_CAMERA_ANATOMY_MATERIAL_AWARE_INTEGRATION.md)
 and its [three-trial summary](view-camera-anatomy-material-aware/repeat-trials.json).
+
+## PR #260 Review-Fix Round 1 — readiness timing clarification
+
+The shared controller now distinguishes its initial readiness deadline from
+later recovery intervals. Anatomy uses a 12-second initial deadline and a
+fresh fixed 12-second deadline for each incomplete interval after activation.
+Architecture Rise retains its adapter configuration with readiness timeout
+disabled. This timing helper does not alter the shared material tracker,
+scene-specific readiness criteria, ownership, or output policy.
