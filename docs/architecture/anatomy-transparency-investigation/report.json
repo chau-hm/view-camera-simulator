@@ -2127,7 +2127,16 @@
         "result": "1 passed; 78 applicable criteria passed, 0 failed, 3 conditional not applicable; mounted webgpu-renderer / webgpu, adapter available, one initialization, no application fallback."
       }
     ],
-    "hostedCi": "pending PR publication"
+    "hostedCi": {
+      "result": "pass",
+      "commit": "3ca2547627c147b0ddd1f8dc4c392256d93f6f50",
+      "workflow": "CI and Deploy to GitHub Pages",
+      "runId": 38997969930,
+      "runUrl": "https://github.com/chau-hm/view-camera-simulator/actions/runs/38997969930",
+      "ciJob": "success",
+      "deployJob": "skipped",
+      "note": "This run covers the initial published PR head; checks rerun for the following documentation-only handoff commit."
+    }
   },
   "selectedArtifacts": [
     {

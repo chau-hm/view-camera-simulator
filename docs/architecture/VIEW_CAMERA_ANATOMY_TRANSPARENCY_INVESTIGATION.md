@@ -172,6 +172,7 @@ The following checks passed on the investigation branch:
 - Architecture Rise strict native visual parity — 1 passed; 78 applicable criteria passed, 0 failed, 3 conditional not applicable. Chrome reported an available adapter and mounted `webgpu-renderer / webgpu`, with one initialization and no application fallback.
 - Architecture Rise production preview — 2 passed.
 - Production bundle fixture-identifier exclusion — passed.
+- Hosted GitHub Actions CI — pass on initial PR head `3ca2547627c147b0ddd1f8dc4c392256d93f6f50` (CI job success; deploy job skipped); a documentation-only commit updates the handoff and triggers a final-head rerun.
 
 The initial strict-parity attempt used the shell default Node 16.5 and stopped before Playwright because that version is unsupported. It was rerun with the workspace Node `v24.19.0` runtime and passed. The final native fixture command was `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npx playwright test --config=playwright.anatomy-transparency-investigation.config.ts --workers=1`. The real audit command was `OBSERVER_NATIVE_WEBGPU_REQUIRED=1 OBSERVER_ANATOMY_AUDIT_MODE=material-aware npm run test:e2e -- --config=playwright.anatomy-material-audit.config.ts --workers=1`.
 
