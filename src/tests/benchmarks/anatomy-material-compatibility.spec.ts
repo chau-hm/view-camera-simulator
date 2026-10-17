@@ -2260,6 +2260,49 @@ const compactRuntimeEvidence = (runtime: CapturedBackendRun["runtime"]) => ({
   initialAndResetSubjectBoundsMatch: runtime.initialAndResetSubjectBoundsMatch,
 });
 
+const summarizeAuditMaterialProperties = (properties: MaterialRecord["properties"]) => ({
+  id: properties.id,
+  type: properties.type,
+  family: properties.family,
+  color: properties.color,
+  toneMapped: properties.toneMapped,
+  opacity: properties.opacity,
+  transparent: properties.transparent,
+  blending: properties.blending,
+  premultipliedAlpha: properties.premultipliedAlpha,
+  depthTest: properties.depthTest,
+  depthWrite: properties.depthWrite,
+  side: properties.side,
+  alphaTest: properties.alphaTest,
+  hasAlphaMap: Boolean(properties.textureSlots.alphaMap),
+  textureSlotNames: Object.keys(properties.textureSlots).sort(),
+});
+
+const summarizeAuditRenderable = (renderable: RenderableAuditRecord) => ({
+  objectId: renderable.objectId,
+  name: renderable.name,
+  type: renderable.type,
+  role: renderable.role,
+  cameraPart: renderable.cameraPart,
+  parentHierarchy: renderable.parentHierarchy,
+  worldMatrix: renderable.worldMatrix,
+  renderOrder: renderable.renderOrder,
+  visible: renderable.visible,
+  castShadow: renderable.castShadow,
+  receiveShadow: renderable.receiveShadow,
+  transparencyCategories: renderable.transparencyCategories,
+  projectedBounds: renderable.projectedBounds,
+  geometry: renderable.geometry,
+  materialAssignments: renderable.materialAssignments.map((assignment) => ({
+    slot: assignment.slot,
+    adapted: assignment.adapted,
+    transparencyCategories: assignment.transparencyCategories,
+    sourceTransparency: assignment.sourceTransparency,
+    source: summarizeAuditMaterialProperties(assignment.source),
+    output: summarizeAuditMaterialProperties(assignment.output),
+  })),
+});
+
 const summarizeRenderableInventoryRun = (run: CapturedBackendRun) => ({
   mountedRenderer: compactRendererEvidence(captureForState(run.captures, "initial").observerAttributes),
   teachingStates: run.captures.map((capture) => ({
@@ -2281,7 +2324,7 @@ const summarizeRenderableInventoryRun = (run: CapturedBackendRun) => ({
     transparentOverlapCandidates: capture.inventory.transparencyInventory.transparentOverlapCandidates,
     projectedRegions: capture.inventory.projectedRegions,
     worldBounds: capture.inventory.worldBounds,
-    renderables: capture.inventory.renderables,
+    renderables: capture.inventory.renderables.map(summarizeAuditRenderable),
   })),
 });
 
