@@ -5,6 +5,12 @@ import { performance } from "node:perf_hooks";
 import { dirname } from "node:path";
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
 import { REVISION } from "three";
+import {
+  LESSON_ZERO_STEPS,
+  resolveLessonZeroCameraPresentation,
+  type LessonZeroStepId,
+} from "../../app/anatomyLesson";
+import type { ConceptualCameraAnatomyPresentation } from "../../render/ConceptualViewCamera";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import { toWorld } from "../../render/rttUtils";
 import {
@@ -20,6 +26,7 @@ import {
   type AnatomyPixelMask,
   type AnatomyRenderableSelector,
 } from "../../render/anatomyRenderableContribution";
+import { resolveAnatomyPresentationClassification, type AnatomyPresentationClassification } from "./anatomyPresentationClassification";
 import {
   comparePixelRegions,
   decodePlaywrightPng,
@@ -51,6 +58,21 @@ const evidenceStates = [
   "front-rise-adjusted",
   "after-reset",
 ] as const;
+const lessonStepByEvidenceState: Readonly<Record<typeof evidenceStates[number], LessonZeroStepId>> = {
+  initial: "complete-camera",
+  "registered-target-subject": "complete-camera",
+  "highlighted-front-standard": "front-standard",
+  "highlighted-lens-and-board": "lens-and-board",
+  "aperture-small-opening": "aperture",
+  "bellows-highlighted": "bellows",
+  "rear-standard-highlighted": "rear-standard",
+  "ground-glass-back": "ground-glass",
+  "film-holder": "film-holder",
+  "camera-support-highlighted": "camera-support",
+  "image-circle-lesson": "image-circle",
+  "front-rise-adjusted": "front-rise-control",
+  "after-reset": "complete-camera",
+};
 
 type BackendName = "webgl" | "native-webgpu";
 type OutputMode = "standard" | "material-aware";
@@ -133,6 +155,7 @@ type InventorySnapshot = Readonly<{
   schemaVersion: number;
   sceneId: string;
   generation: number;
+  anatomyPresentation: ConceptualCameraAnatomyPresentation | null;
   renderer: Readonly<Record<string, unknown>>;
   browser: Readonly<Record<string, string | boolean>>;
   viewport: Readonly<{
@@ -205,6 +228,7 @@ type Capture = Readonly<{
   movementState: readonly Readonly<{ label: string; value: string }>[];
   inventory: InventorySnapshot;
   observerAttributes: Record<string, string>;
+  presentationClassification: AnatomyPresentationClassification;
   groundGlass: Readonly<{
     attributes: Record<string, string>;
     pixels: CanvasEvidence;
@@ -217,6 +241,7 @@ type RenderableContributionCondition =
   | "explicit-transparent"
   | "known-transparent-surface"
   | "selected-part"
+  | "selected-element"
   | "dimmed-parts"
   | "registered-target-subject"
   | "conceptual-camera"
@@ -227,6 +252,7 @@ type RenderableContributionFrame = Readonly<{
   condition: RenderableContributionCondition;
   trial: number;
   selector: AnatomyRenderableSelector;
+  presentationClassification: AnatomyPresentationClassification;
   evidenceArtifactPrefix: string;
   evidenceArtifactsRetained: boolean;
   targets: readonly Readonly<Record<string, unknown>>[];
@@ -408,6 +434,15 @@ const setCameraPose = async (
   await stabilizeFrame(page);
 };
 
+const expectedAnatomyPresentation = (state: typeof evidenceStates[number]): ConceptualCameraAnatomyPresentation => {
+  const stepId = lessonStepByEvidenceState[state];
+  const step = LESSON_ZERO_STEPS.find((candidate) => candidate.id === stepId);
+  if (!step) throw new Error(`Missing source Lesson 0 presentation step ${stepId}`);
+  const presentation = resolveLessonZeroCameraPresentation(step, state === "aperture-small-opening").anatomy;
+  if (!presentation) throw new Error(`Lesson 0 step ${stepId} did not resolve an Anatomy presentation`);
+  return presentation;
+};
+
 const captureState = async (
   page: Page,
   backend: BackendName,
@@ -415,7 +450,7 @@ const captureState = async (
   state: string,
   pose: Readonly<{ position: readonly number[]; target: readonly number[] }>,
   testInfo: TestInfo,
-): Promise<Capture> => {
+): Promise<Omit<Capture, "presentationClassification">> => {
   const observer = page.getByTestId("scene-canvas");
   await setCameraPose(page, pose.position, pose.target);
   const inventory = await readInventory(page, `${backend}-${state}`);
@@ -867,6 +902,44 @@ const captureBackend = async (
       const visibleBaselinePng = await observer.locator("canvas").screenshot({ animations: "disabled" });
       const visibleBaseline = decodePlaywrightPng(visibleBaselinePng);
       const visibleInventory = await readInventory(page, `${transactionId}-visible`);
+      expect(visibleInventory.anatomyPresentation).toEqual(reference.inventory.anatomyPresentation);
+      const presentationClassification = resolveAnatomyPresentationClassification(
+        visibleInventory.anatomyPresentation,
+        visibleInventory.renderables,
+      );
+      expect(presentationClassification).toEqual(reference.presentationClassification);
+      const selectedElement = presentationClassification.selectedElements.find(
+        ({ target }) => target.name === "lens-aperture-iris",
+      );
+      const expectedTargetIds = condition === "dimmed-parts"
+        ? presentationClassification.dimmedRenderableIds
+        : condition === "selected-part"
+          ? presentationClassification.highlightedRenderableIds
+          : condition === "selected-element"
+            ? selectedElement?.renderableIds ?? []
+            : null;
+      if (expectedTargetIds !== null) {
+        expect(expectedTargetIds.length,
+          `${backend}/${outputMode}/${reference.state}/${condition} must resolve actual mounted visible renderables`)
+          .toBeGreaterThan(0);
+        if (condition === "selected-element") {
+          expect(selector,
+            `${backend}/${outputMode}/${reference.state}/${condition} selector must derive from the mounted Lesson 0 presentation`)
+            .toEqual({ kind: "renderable-ids", renderableIds: expectedTargetIds });
+        } else {
+          const expectedParts = condition === "dimmed-parts"
+            ? presentationClassification.dimmedParts
+            : presentationClassification.highlightedParts;
+          const selectedParts = selector.kind === "camera-part"
+            ? [selector.cameraPart]
+            : selector.kind === "camera-parts"
+              ? selector.cameraParts
+              : null;
+          expect(selectedParts,
+            `${backend}/${outputMode}/${reference.state}/${condition} selector must derive from the mounted Lesson 0 presentation`)
+            .toEqual(expectedParts);
+        }
+      }
       const visibleObserverAttributes = await attributes(observer);
       const groundGlass = page.getByTestId("ground-glass-rtt");
       const visibleGroundGlassAttributes = await attributes(groundGlass);
@@ -907,6 +980,36 @@ const captureBackend = async (
           .toBe(true);
         applied = true;
         expect(exclusionResult.targetCount ?? 0).toBeGreaterThan(0);
+        if (expectedTargetIds !== null) {
+          const actualTargetIds = (exclusionResult.targets ?? []).map((target) => String(target.id)).sort();
+          expect(actualTargetIds,
+            `${backend}/${outputMode}/${reference.state}/${condition} IDs must match resolved visible membership`)
+            .toEqual(expectedTargetIds);
+          const targetRecords = exclusionResult.targets ?? [];
+          expect(targetRecords.every((target) => target.originalVisibility === true)).toBe(true);
+          if (condition === "dimmed-parts") {
+            expect(targetRecords.every((target) =>
+              typeof target.cameraPart === "string" &&
+              presentationClassification.dimmedParts.includes(target.cameraPart as typeof presentationClassification.dimmedParts[number]) &&
+              !presentationClassification.highlightedParts.includes(target.cameraPart as typeof presentationClassification.highlightedParts[number]),
+            ), "A dimmed exclusion must contain only effectively visible parts resolved as dimmed").toBe(true);
+          } else if (condition === "selected-part") {
+            expect(targetRecords.every((target) =>
+              typeof target.cameraPart === "string" &&
+              presentationClassification.highlightedParts.includes(target.cameraPart as typeof presentationClassification.highlightedParts[number]),
+            ), "A selected-part exclusion must contain only effectively visible highlighted parts").toBe(true);
+          } else if (condition === "selected-element") {
+            const visibleRenderableById = new Map(visibleInventory.renderables.map((renderable) => [
+              renderable.objectId,
+              renderable,
+            ]));
+            expect(targetRecords.every((target) => {
+              const renderable = visibleRenderableById.get(String(target.id));
+              return renderable?.parentHierarchy.some(({ name }) => name === selectedElement?.target.name) === true &&
+                renderable.cameraPart === selectedElement?.target.parentPart;
+            }), "A selected-element exclusion must stay within the actual iris element and parent lens").toBe(true);
+          }
+        }
         await stabilizeFrame(page);
         excludedPng = await observer.locator("canvas").screenshot({ animations: "disabled" });
         excluded = decodePlaywrightPng(excludedPng);
@@ -1029,7 +1132,7 @@ const captureBackend = async (
         expect(localizedFraction, "Known transparent surface changes should localize to its projected geometry")
           .toBeGreaterThanOrEqual(0.5);
       }
-      if (["all-renderables", "registered-target-subject", "conceptual-camera", "selected-part", "dimmed-parts"].includes(condition)) {
+      if (["all-renderables", "registered-target-subject", "conceptual-camera", "selected-part", "selected-element", "dimmed-parts"].includes(condition)) {
         expect(countAnatomyMaskPixels(observedDifferentialMask),
           `${backend}/${outputMode}/${reference.state}/${condition} must contribute pixels beyond same-mode frame noise`)
           .toBeGreaterThan(sameModeRepeatNoise.changedPixelCount);
@@ -1047,6 +1150,7 @@ const captureBackend = async (
         condition,
         trial,
         selector,
+        presentationClassification,
         targets: exclusionResult.targets ?? [],
         excludedPng,
         excluded,
@@ -1101,7 +1205,17 @@ const captureBackend = async (
         : state === "image-circle-lesson" ? "Understanding the Image Circle"
         : "Front Rise");
       await stabilizeFrame(page);
-      const result = await captureState(page, backend, outputMode, state, capturePose, testInfo);
+      const captured = await captureState(page, backend, outputMode, state, capturePose, testInfo);
+      expect(captured.inventory.anatomyPresentation,
+        `${backend}/${outputMode}/${state} inventory must include the mounted Lesson 0 presentation targets`)
+        .toEqual(expectedAnatomyPresentation(state));
+      const result: Capture = {
+        ...captured,
+        presentationClassification: resolveAnatomyPresentationClassification(
+          captured.inventory.anatomyPresentation,
+          captured.inventory.renderables,
+        ),
+      };
       const subjectSummary = result.subjectPixels;
       if (state === "registered-target-subject") {
         expect(subjectSummary, `${backend}/${state} must project the registered target subject into the Observer`).not.toBeNull();
@@ -1137,7 +1251,9 @@ const captureBackend = async (
             .replace(/[^a-zA-Z0-9-]/g, "-");
           const retainEvidenceImages = condition === "all-renderables" ||
             condition === "known-transparent-surface" ||
-            (condition === "selected-part" && state === "aperture-small-opening" && trial === 1);
+            (state === "highlighted-front-standard" &&
+              (condition === "selected-part" || condition === "dimmed-parts")) ||
+            (condition === "selected-element" && state === "aperture-small-opening" && trial === 1);
           const frame = {
             ...capturedFrame,
             evidenceArtifactPrefix: prefix,
@@ -1175,40 +1291,44 @@ const captureBackend = async (
             renderableIds: glass.map((renderable) => renderable.objectId),
           });
         }
+        const highlightedSelector = result.presentationClassification.highlightedParts.length > 0
+          ? { kind: "camera-parts" as const, cameraParts: result.presentationClassification.highlightedParts }
+          : null;
+        const dimmedSelector = result.presentationClassification.dimmedParts.length > 0
+          ? { kind: "camera-parts" as const, cameraParts: result.presentationClassification.dimmedParts }
+          : null;
         if (state === "highlighted-front-standard") {
-          await captureContribution("selected-part", { kind: "camera-part", cameraPart: "front-standard" });
-          await captureContribution("dimmed-parts", {
-            kind: "dimmed-camera-parts",
-            selectedCameraParts: ["front-standard"],
-          });
+          if (!highlightedSelector || !dimmedSelector) {
+            throw new Error(`${backend}/${outputMode}/${state} did not resolve highlighted and dimmed semantic groups`);
+          }
+          await captureContribution("selected-part", highlightedSelector);
+          await captureContribution("dimmed-parts", dimmedSelector);
         }
         if (state === "highlighted-lens-and-board") {
-          await captureContribution("selected-part", {
-            kind: "camera-parts",
-            cameraParts: ["lens", "lens-board"],
-          });
-          await captureContribution("dimmed-parts", {
-            kind: "dimmed-camera-parts",
-            selectedCameraParts: ["lens", "lens-board"],
-          });
+          if (!highlightedSelector || !dimmedSelector) {
+            throw new Error(`${backend}/${outputMode}/${state} did not resolve highlighted and dimmed semantic groups`);
+          }
+          await captureContribution("selected-part", highlightedSelector);
+          await captureContribution("dimmed-parts", dimmedSelector);
         }
         if (state === "aperture-small-opening") {
-          const apertureIds = result.inventory.renderables.filter((renderable) =>
-            renderable.name.startsWith("lens-aperture-") && renderable.visible,
-          ).map((renderable) => renderable.objectId);
-          await captureContribution("selected-part", { kind: "renderable-ids", renderableIds: apertureIds });
-          await captureContribution("dimmed-parts", {
-            kind: "dimmed-camera-parts",
-            selectedCameraParts: ["lens"],
-          });
-          await captureContribution("selected-part", { kind: "renderable-ids", renderableIds: apertureIds }, 2);
+          const iris = result.presentationClassification.selectedElements.find(
+            ({ target }) => target.name === "lens-aperture-iris",
+          );
+          if (!iris || iris.state !== "highlighted" || iris.renderableIds.length === 0 || !dimmedSelector) {
+            throw new Error(`${backend}/${outputMode}/${state} did not resolve the mounted highlighted iris element`);
+          }
+          const irisSelector = { kind: "renderable-ids" as const, renderableIds: iris.renderableIds };
+          await captureContribution("selected-element", irisSelector);
+          await captureContribution("dimmed-parts", dimmedSelector);
+          await captureContribution("selected-element", irisSelector, 2);
         }
         if (state === "bellows-highlighted") {
-          await captureContribution("selected-part", { kind: "camera-part", cameraPart: "bellows" });
-          await captureContribution("dimmed-parts", {
-            kind: "dimmed-camera-parts",
-            selectedCameraParts: ["bellows"],
-          });
+          if (!highlightedSelector || !dimmedSelector) {
+            throw new Error(`${backend}/${outputMode}/${state} did not resolve highlighted and dimmed semantic groups`);
+          }
+          await captureContribution("selected-part", highlightedSelector);
+          await captureContribution("dimmed-parts", dimmedSelector);
         }
         if (state === "ground-glass-back") {
           await captureContribution("selected-part", { kind: "camera-part", cameraPart: "ground-glass-back" });
@@ -1467,6 +1587,19 @@ const summarizeRenderableContributionFrame = (frame: RenderableContributionFrame
           restored: `${frame.evidenceArtifactPrefix}-restored.png`,
         }
       : null,
+    presentationClassification: {
+      targets: frame.presentationClassification.targets,
+      highlightedParts: frame.presentationClassification.highlightedParts,
+      dimmedParts: frame.presentationClassification.dimmedParts,
+      normalParts: frame.presentationClassification.normalParts,
+      mountedHighlightedRenderableIds: frame.presentationClassification.highlightedRenderableIds,
+      mountedDimmedRenderableIds: frame.presentationClassification.dimmedRenderableIds,
+      mountedNormalRenderableIds: frame.presentationClassification.normalRenderableIds,
+      selectedElements: frame.presentationClassification.selectedElements,
+      actualExclusionTargetIds: frame.targets.map((target) => String(target.id)).sort(),
+      actualExclusionTargetCount: frame.targets.length,
+      classificationSource: "mounted ConceptualCameraAnatomyPresentation passed from SimulatorWorkspace and resolved by resolveConceptualAnatomyPartState",
+    },
     targets: frame.targets,
     sameModeRepeatNoise: frame.sameModeRepeatNoise,
     visibleToExcluded: frame.visibleToExcluded,
@@ -1546,16 +1679,29 @@ const compareRenderableContributions = (
       comparisonFrame.excluded,
       8,
     );
-    if (referenceFrame.state === "initial" && referenceFrame.condition === "all-renderables" && referenceFrame.trial === 1) {
+    const initialBackgroundPair = referenceFrame.state === "initial" &&
+      referenceFrame.condition === "all-renderables" && referenceFrame.trial === 1;
+    const correctedFrontStandardPair = referenceFrame.state === "highlighted-front-standard" &&
+      (referenceFrame.condition === "selected-part" || referenceFrame.condition === "dimmed-parts") &&
+      referenceFrame.trial === 1;
+    if (initialBackgroundPair || correctedFrontStandardPair) {
       const pairName = `${referenceRun.runtime.outputMode}-${referenceRun.runtime.observerAttributes["data-observer-execution-backend"]}-vs-${comparisonRun.runtime.outputMode}-${comparisonRun.runtime.observerAttributes["data-observer-execution-backend"]}`
         .replace(/[^a-zA-Z0-9-]/g, "-");
+      const evidenceScope = initialBackgroundPair
+        ? ""
+        : `-${referenceFrame.state}-${referenceFrame.condition}`;
       maskEvidence.push(
-        { name: `${pairName}-DFull`, mask: fullDifferenceMask },
-        { name: `${pairName}-DExcluded`, mask: excludedDifferenceMask },
-        { name: `${pairName}-DResponse`, mask: differentialResponseMask },
+        { name: `${pairName}${evidenceScope}-DFull`, mask: fullDifferenceMask },
+        { name: `${pairName}${evidenceScope}-DExcluded`, mask: excludedDifferenceMask },
+        { name: `${pairName}${evidenceScope}-DResponse`, mask: differentialResponseMask },
       );
+    }
+    if (initialBackgroundPair || (correctedFrontStandardPair && referenceFrame.condition === "selected-part")) {
+      const pairName = `${referenceRun.runtime.outputMode}-${referenceRun.runtime.observerAttributes["data-observer-execution-backend"]}-vs-${comparisonRun.runtime.outputMode}-${comparisonRun.runtime.observerAttributes["data-observer-execution-backend"]}`
+        .replace(/[^a-zA-Z0-9-]/g, "-");
+      const evidenceScope = initialBackgroundPair ? "" : "-highlighted-front-standard";
       heatmapEvidence.push({
-        name: `${pairName}-DFull-absolute-rgb-heatmap`,
+        name: `${pairName}${evidenceScope}-DFull-absolute-rgb-heatmap`,
         reference: referenceCapture.decoded,
         compared: comparisonCapture.decoded,
       });
@@ -2491,8 +2637,10 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
         mask: complementAnatomyMask(byCondition("initial", "all-renderables")),
       },
       { name: `M3-${name}-initial-known-transparent-surface`, mask: byCondition("initial", "known-transparent-surface") },
-      { name: `M3-${name}-aperture-selected-part`, mask: byCondition("aperture-small-opening", "selected-part") },
+      { name: `M3-${name}-aperture-selected-element`, mask: byCondition("aperture-small-opening", "selected-element") },
       { name: `M3-${name}-bellows-selected-part`, mask: byCondition("bellows-highlighted", "selected-part") },
+      { name: `M3-${name}-front-standard-highlighted-group`, mask: byCondition("highlighted-front-standard", "selected-part") },
+      { name: `M3-${name}-front-standard-dimmed-group`, mask: byCondition("highlighted-front-standard", "dimmed-parts") },
       { name: `M3-${name}-registered-target-subject`, mask: byCondition("registered-target-subject", "registered-target-subject") },
     ];
   });
@@ -2543,7 +2691,7 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
   }
   const exclusionRepeatConsistency = Object.fromEntries(evidenceMaskRuns.map(({ name, run }) => {
     const apertureTrials = run.renderableContributionFrames.filter((frame) =>
-      frame.state === "aperture-small-opening" && frame.condition === "selected-part");
+      frame.state === "aperture-small-opening" && frame.condition === "selected-element");
     expect(apertureTrials, `${name} must independently capture both aperture exclusion trials`).toHaveLength(2);
     const first = apertureTrials[0]!;
     const second = apertureTrials[1]!;
@@ -2690,6 +2838,23 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     dynamicTeachingStates: {
       count: evidenceStates.length,
       states: evidenceStates,
+      presentationClassificationByRun: {
+        webgl: webgl.captures.map(({ state, inventory, presentationClassification }) => ({
+          state,
+          actualTargets: inventory.anatomyPresentation?.targets ?? null,
+          ...presentationClassification,
+        })),
+        nativeStandard: nativeStandard.captures.map(({ state, inventory, presentationClassification }) => ({
+          state,
+          actualTargets: inventory.anatomyPresentation?.targets ?? null,
+          ...presentationClassification,
+        })),
+        nativeMaterialAware: nativeCandidate.captures.map(({ state, inventory, presentationClassification }) => ({
+          state,
+          actualTargets: inventory.anatomyPresentation?.targets ?? null,
+          ...presentationClassification,
+        })),
+      },
       inventoryChecks: inventories,
       criteria: "registered target, highlight/dim state, aperture, rear-back, bellows deformation, optical helper, reset, and Ground Glass checks completed",
     },
@@ -2730,7 +2895,7 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       interpretation: "CPU controller callback, adaptation, inventory and cleanup counters; GPU timing is not inferred.",
     },
     compatibilityMatrix: createCompatibilityMatrix(allCaptures, true),
-    captureFiles: allCaptures.map(({ id, filename, state, backend, outputMode, inventory }) => ({
+    captureFiles: allCaptures.map(({ id, filename, state, backend, outputMode, inventory, presentationClassification }) => ({
       id,
       filename,
       state,
@@ -2739,6 +2904,8 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
       renderer: inventory.renderer,
       camera: inventory.viewport,
       projectedRegions: inventory.projectedRegions,
+      actualAnatomyPresentationTargets: inventory.anatomyPresentation?.targets ?? null,
+      presentationClassification,
       worldBounds: inventory.worldBounds,
       sourceMaterials: inventory.materials.map((entry) => ({
         role: entry.role,

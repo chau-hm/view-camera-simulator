@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  LESSON_ZERO_STEPS,
+  resolveLessonZeroCameraPresentation,
+} from "../../app/anatomyLesson";
+import { CONCEPTUAL_CAMERA_ANATOMY_PARTS } from "../../render/ConceptualViewCamera";
+import {
   anatomyMaskBounds,
   classifyAnatomyMaterialTransparency,
   combineAnatomyMasks,
@@ -18,6 +23,7 @@ import {
   restoreAnatomyRenderables,
   type AnatomyRenderableSelectionRecord,
 } from "../../render/anatomyRenderableContribution";
+import { resolveAnatomyPresentationClassification } from "../benchmarks/anatomyPresentationClassification";
 
 const opaque = { transparent: false, opacity: 1, alphaTest: 0, hasAlphaMap: false };
 const partialOpaquePath = { ...opaque, opacity: 0.25 };
@@ -46,6 +52,29 @@ const image = (pixels: readonly number[], width = 2, height = 1) => ({
   channels: 3,
   pixels,
 });
+
+const lessonPresentation = (stepId: string, showSmallAperture = false) => {
+  const step = LESSON_ZERO_STEPS.find((candidate) => candidate.id === stepId);
+  if (!step) throw new Error(`Missing Lesson 0 step ${stepId}`);
+  return resolveLessonZeroCameraPresentation(step, showSmallAperture).anatomy;
+};
+
+const semanticRenderables = () => [
+  ...CONCEPTUAL_CAMERA_ANATOMY_PARTS.map((cameraPart) => ({
+    objectId: `renderable:${cameraPart}`,
+    role: `conceptual-camera/${cameraPart}`,
+    cameraPart,
+    visible: true,
+    parentHierarchy: [],
+  })),
+  {
+    objectId: "renderable:registered-target",
+    role: "registered-target-subject",
+    cameraPart: null,
+    visible: true,
+    parentHierarchy: [],
+  },
+];
 
 describe("Anatomy renderable contribution evidence", () => {
   it("classifies opacity and alpha flags without equating partial opacity with transparent blending", () => {
@@ -92,19 +121,141 @@ describe("Anatomy renderable contribution evidence", () => {
     expect(result.ok && result.records.map((record) => record.id)).toEqual(["transparent"]);
   });
 
-  it("supports role grouping and dimmed-part selection", () => {
-    const records = [
-      makeRecord("front", "front", "conceptual-camera/front-standard", "front-standard"),
-      makeRecord("lens", "lens", "conceptual-camera/lens", "lens"),
-      makeRecord("target", "target", "registered-target-subject", null),
-    ];
-    const conceptual = resolveAnatomyRenderableSelection(records, { kind: "conceptual-camera" });
-    const dimmed = resolveAnatomyRenderableSelection(records, {
-      kind: "dimmed-camera-parts",
-      selectedCameraParts: ["front-standard"],
+  it("uses the actual Front Standard presentation to keep structural children out of the dimmed set", () => {
+    const records = semanticRenderables().map((record) => record.cameraPart === "film-holder"
+      ? { ...record, visible: false }
+      : record);
+    const presentation = lessonPresentation("front-standard");
+    const classification = resolveAnatomyPresentationClassification(presentation, records);
+
+    expect(presentation?.targets).toEqual([{ kind: "part", part: "front-standard" }]);
+    expect(classification.highlightedParts).toEqual(["lens", "lens-board", "front-standard"]);
+    expect(classification.dimmedParts).toEqual([
+      "bellows", "rear-standard", "ground-glass-back", "film-holder", "camera-support",
+    ]);
+    expect(classification.normalParts).toEqual([]);
+    expect(classification.highlightedRenderableIds).toEqual([
+      "renderable:front-standard", "renderable:lens", "renderable:lens-board",
+    ]);
+    expect(classification.dimmedRenderableIds).toEqual([
+      "renderable:bellows", "renderable:camera-support",
+      "renderable:ground-glass-back", "renderable:rear-standard",
+    ]);
+    expect(classification.dimmedRenderableIds).not.toContain("renderable:registered-target");
+    expect(classification.dimmedRenderableIds).not.toContain("renderable:film-holder");
+    expect(classification.dimmedRenderableIds.filter((id) => classification.highlightedRenderableIds.includes(id)))
+      .toEqual([]);
+    const selectionRecords = records.map((record) => makeRecord(
+      record.objectId,
+      record.objectId,
+      record.role,
+      record.cameraPart,
+      [opaque],
+      record.visible,
+    ));
+    const actualDimmedSelection = resolveAnatomyRenderableSelection(selectionRecords, {
+      kind: "camera-parts",
+      cameraParts: classification.dimmedParts,
     });
-    expect(conceptual.ok && conceptual.records.map((record) => record.id)).toEqual(["front", "lens"]);
-    expect(dimmed.ok && dimmed.records.map((record) => record.id)).toEqual(["lens"]);
+    expect(actualDimmedSelection.ok && actualDimmedSelection.records.map(({ id }) => id).sort())
+      .toEqual(classification.dimmedRenderableIds);
+
+    // Reproduce the prior inverse selection to show why it was contaminated.
+    const previousDimmedIds = records.filter((record) => record.visible &&
+      record.role.startsWith("conceptual-camera/") && record.cameraPart !== "front-standard")
+      .map((record) => record.objectId);
+    expect(previousDimmedIds.filter((id) => classification.highlightedRenderableIds.includes(id)))
+      .toEqual(["renderable:lens", "renderable:lens-board"]);
+  });
+
+  it("keeps selected and dimmed part groups disjoint for the real Lens and Lens Board lesson", () => {
+    const classification = resolveAnatomyPresentationClassification(
+      lessonPresentation("lens-and-board"),
+      semanticRenderables(),
+    );
+    expect(classification.highlightedParts).toEqual(["lens", "lens-board"]);
+    expect(classification.dimmedParts).toEqual([
+      "front-standard", "bellows", "rear-standard", "ground-glass-back", "film-holder", "camera-support",
+    ]);
+    expect(classification.highlightedRenderableIds.filter((id) => classification.dimmedRenderableIds.includes(id)))
+      .toEqual([]);
+  });
+
+  it("uses the resolver's Rear Standard structural children", () => {
+    const classification = resolveAnatomyPresentationClassification(
+      lessonPresentation("rear-standard"),
+      semanticRenderables(),
+    );
+    expect(classification.targets).toEqual([{ kind: "part", part: "rear-standard" }]);
+    expect(classification.highlightedParts).toEqual([
+      "rear-standard", "ground-glass-back", "film-holder",
+    ]);
+    expect(classification.dimmedParts).toEqual([
+      "lens", "lens-board", "front-standard", "bellows", "camera-support",
+    ]);
+  });
+
+  it("distinguishes the selected aperture iris element from its highlighted parent lens", () => {
+    const records = [
+      ...semanticRenderables(),
+      {
+        objectId: "iris-interior",
+        role: "conceptual-camera/lens",
+        cameraPart: "lens",
+        visible: true,
+        parentHierarchy: [{ name: "lens-aperture-iris" }],
+      },
+      {
+        objectId: "lens-glass",
+        role: "conceptual-camera/lens",
+        cameraPart: "lens",
+        visible: true,
+        parentHierarchy: [{ name: "lens-assembly" }],
+      },
+      {
+        objectId: "hidden-iris-blade",
+        role: "conceptual-camera/lens",
+        cameraPart: "lens",
+        visible: false,
+        parentHierarchy: [{ name: "lens-aperture-iris" }],
+      },
+      {
+        objectId: "misclassified-iris-descendant",
+        role: "conceptual-camera/bellows",
+        cameraPart: "bellows",
+        visible: true,
+        parentHierarchy: [{ name: "lens-aperture-iris" }],
+      },
+    ];
+    const classification = resolveAnatomyPresentationClassification(lessonPresentation("aperture", true), records);
+    expect(classification.targets).toEqual([
+      { kind: "element", name: "lens-aperture-iris", parentPart: "lens" },
+    ]);
+    expect(classification.highlightedParts).toEqual(["lens"]);
+    expect(classification.dimmedParts).toEqual([
+      "lens-board", "front-standard", "bellows", "rear-standard", "ground-glass-back", "film-holder", "camera-support",
+    ]);
+    expect(classification.selectedElements).toEqual([{
+      target: { kind: "element", name: "lens-aperture-iris", parentPart: "lens" },
+      state: "highlighted",
+      renderableIds: ["iris-interior"],
+    }]);
+    expect(classification.highlightedRenderableIds).toContain("renderable:lens");
+    expect(classification.highlightedRenderableIds).toContain("iris-interior");
+    expect(classification.dimmedRenderableIds).not.toContain("iris-interior");
+  });
+
+  it("keeps no-target presentations normal and rejects unknown presentation targets", () => {
+    const noTargets = resolveAnatomyPresentationClassification({ targets: [] }, semanticRenderables());
+    expect(noTargets.highlightedParts).toEqual([]);
+    expect(noTargets.dimmedParts).toEqual([]);
+    expect(noTargets.normalParts).toEqual([...CONCEPTUAL_CAMERA_ANATOMY_PARTS]);
+    expect(noTargets.normalRenderableIds).toHaveLength(CONCEPTUAL_CAMERA_ANATOMY_PARTS.length);
+
+    expect(() => resolveAnatomyPresentationClassification(
+      { targets: [{ kind: "part", part: "unknown" } as never] },
+      semanticRenderables(),
+    )).toThrow("unknown presentation target");
   });
 
   it("fails closed for empty, ambiguous, stale, or malformed selections", () => {

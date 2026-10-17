@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { resolveObserverVisualPipelineCapabilities } from "./backend/observerVisualPipelineCapabilities";
@@ -23,6 +23,7 @@ import {
 } from "./anatomyRenderableContribution";
 import { classifyAnatomyMaterialRole } from "./anatomyMaterialRoles";
 import { readObserverOutputSourceMaterial } from "./backend/observerMaterialOutputIdentity";
+import type { ConceptualCameraAnatomyPresentation } from "./ConceptualViewCamera";
 
 export const ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT =
   "vcs:observer-verification:anatomy-material-audit";
@@ -203,6 +204,7 @@ export const collectAnatomyMaterialAuditSnapshot = (
   renderer: unknown,
   generation: number,
   container: HTMLElement,
+  anatomyPresentation: ConceptualCameraAnatomyPresentation | null,
 ) => {
   scene.updateMatrixWorld(true);
   camera.updateMatrixWorld(true);
@@ -479,6 +481,7 @@ export const collectAnatomyMaterialAuditSnapshot = (
     schemaVersion: 1,
     sceneId: "view-camera-anatomy",
     generation,
+    anatomyPresentation,
     renderer: resolveObserverVisualPipelineCapabilities(renderer),
     browser: {
       webgpuApiPresent: container.dataset.observerWebgpuApiPresent === "true",
@@ -569,8 +572,14 @@ export const collectAnatomyMaterialAuditSnapshot = (
 
 export const AnatomyMaterialAuditProbe = ({
   generation,
-}: Readonly<{ generation: number }>) => {
+  anatomyPresentation,
+}: Readonly<{
+  generation: number;
+  anatomyPresentation: ConceptualCameraAnatomyPresentation | null;
+}>) => {
   const { camera, gl, scene } = useThree();
+  const anatomyPresentationRef = useRef(anatomyPresentation);
+  anatomyPresentationRef.current = anatomyPresentation;
 
   useEffect(() => {
     if (!import.meta.env.DEV || typeof window === "undefined") return;
@@ -580,7 +589,14 @@ export const AnatomyMaterialAuditProbe = ({
     const handleRequest = (event: Event) => {
       const request = (event as CustomEvent<unknown>).detail as AnatomyMaterialAuditRequest | null;
       if (!request || typeof request.requestId !== "string") return;
-      const snapshot = collectAnatomyMaterialAuditSnapshot(scene, camera, gl, generation, container);
+      const snapshot = collectAnatomyMaterialAuditSnapshot(
+        scene,
+        camera,
+        gl,
+        generation,
+        container,
+        anatomyPresentationRef.current,
+      );
       container.dispatchEvent(new CustomEvent(ANATOMY_MATERIAL_AUDIT_RESULT_EVENT, {
         detail: { requestId: request.requestId, snapshot },
       }));
@@ -601,8 +617,6 @@ export const AnatomyMaterialAuditProbe = ({
       if (selector.kind === "camera-part") return typeof selector.cameraPart === "string";
       if (selector.kind === "camera-parts") return Array.isArray(selector.cameraParts) &&
         selector.cameraParts.every((part) => typeof part === "string");
-      if (selector.kind === "dimmed-camera-parts") return Array.isArray(selector.selectedCameraParts) &&
-        selector.selectedCameraParts.every((part) => typeof part === "string");
       return selector.kind === "renderable-ids" && Array.isArray(selector.renderableIds) &&
         selector.renderableIds.every((id) => typeof id === "string");
     };

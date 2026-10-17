@@ -40,7 +40,6 @@ export type AnatomyRenderableSelector =
   | Readonly<{ kind: "semantic-role"; role: string }>
   | Readonly<{ kind: "camera-part"; cameraPart: string }>
   | Readonly<{ kind: "camera-parts"; cameraParts: readonly string[] }>
-  | Readonly<{ kind: "dimmed-camera-parts"; selectedCameraParts: readonly string[] }>
   | Readonly<{ kind: "renderable-ids"; renderableIds: readonly string[] }>;
 
 export type AnatomyRenderableSelectionRecord<T> = Readonly<{
@@ -96,13 +95,6 @@ export const resolveAnatomyRenderableSelection = <T>(
   if (selector.kind === "camera-parts" && selector.cameraParts.some((part) => part.trim().length === 0)) {
     return { ok: false, reason: "invalid-selector" };
   }
-  if (selector.kind === "dimmed-camera-parts" && selector.selectedCameraParts.length === 0) {
-    return { ok: false, reason: "invalid-selector" };
-  }
-  if (selector.kind === "dimmed-camera-parts" && selector.selectedCameraParts.some((part) => part.trim().length === 0)) {
-    return { ok: false, reason: "invalid-selector" };
-  }
-
   const selected = records.filter((record) => {
     if (!record.visible) return false;
     switch (selector.kind) {
@@ -119,9 +111,6 @@ export const resolveAnatomyRenderableSelection = <T>(
       case "camera-parts":
         return isConceptualCamera(record.role) && record.cameraPart !== null &&
           selector.cameraParts.includes(record.cameraPart);
-      case "dimmed-camera-parts":
-        return isConceptualCamera(record.role) && record.cameraPart !== null &&
-          !selector.selectedCameraParts.includes(record.cameraPart);
       default:
         return false;
     }
