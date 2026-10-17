@@ -110,6 +110,7 @@ type NativeRenderer = Readonly<{
   outputColorSpace?: string;
   toneMapping?: number;
   getRenderTarget?: () => THREE.RenderTarget | null;
+  getScissorTest?: () => boolean;
   getDrawingBufferSize?: (target: THREE.Vector2) => THREE.Vector2;
   copyFramebufferToTexture?: (texture: THREE.FramebufferTexture, rectangle: THREE.Vector4) => void;
 }>;
@@ -532,6 +533,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       sourceMaterial: ReturnType<typeof materialMetadata>;
       passStateBeforeSplit: ReturnType<typeof passMetadata>;
       drawPassState: ReturnType<typeof passMetadata>;
+      viewport: Readonly<Record<string, number>> | null;
+      scissor: Readonly<Record<string, number>> | null;
+      scissorTest: boolean | null;
       before: Snapshot;
       after: Snapshot | null;
     };
@@ -739,8 +743,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
                 stencilEnabled: renderContext.stencil ?? false,
                 depthStencilFormat: backend.utils?.getCurrentDepthStencilFormat?.(renderContext) ?? null,
               },
-              viewport: renderContext.viewportValue ?? null,
-              scissor: renderContext.scissorValue ?? null,
+              viewport: draft.viewport,
+              scissor: draft.scissor,
+              scissorTest: draft.scissorTest,
             },
             pipeline: {
               id: draft.pipelineId,
@@ -963,6 +968,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         sourceMaterial: materialMetadata(options.resolveSourceMaterial(renderObject.material), backend),
         passStateBeforeSplit,
         drawPassState: passMetadata(contextData),
+        viewport: context.viewportValue ? { ...context.viewportValue } : null,
+        scissor: context.scissorValue ? { ...context.scissorValue } : null,
+        scissorTest: renderer.getScissorTest?.() ?? null,
         before: { texture: beforeTexture, order: ownedTextures.indexOf(beforeTexture), region },
         after: null,
       };

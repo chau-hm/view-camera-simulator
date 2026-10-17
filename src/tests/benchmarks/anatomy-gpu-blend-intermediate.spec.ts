@@ -532,9 +532,16 @@ test("native calibration stops after SPA retirement while its readback boundary 
     });
     const finalState = await backend.page.evaluate(() => {
       const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
-      return { pendingCount: state?.pendingCount, results: state?.results };
+      return {
+        pendingCount: state?.pendingCount,
+        mapAsyncCount: state?.mapAsyncCount,
+        results: state?.results,
+      };
     });
     expect(finalState.pendingCount).toBe(1);
+    // Each calibration fixture submits one readback. Only the first fixture
+    // may have reached mapAsync when this one was retired while pending.
+    expect(finalState.mapAsyncCount).toBe(1);
     expect(finalState.results).toHaveLength(1);
     expect(finalState.results?.[0]).toMatchObject({ requestId: overlapRequestId, reason: "capture-already-active" });
     expect(pageErrors).toEqual([]);
@@ -1871,6 +1878,7 @@ test("M-INV5 qualifies real Anatomy native WebGPU draw-boundary samples", async 
         selectedFixedFramebufferSamples: samplePixelIndices,
         negativeControlFramebufferSample: samplePixelIndices.at(-1),
       },
+      attachment: nativeBoundary.attachment,
       feasibilityByMeasurement: {
         actualNativeDestinationAndPostDrawSamples: nativeBoundary.feasibility,
         actualNativeDrawIdentityAndPassMetadata: "F1",
