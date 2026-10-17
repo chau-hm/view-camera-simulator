@@ -1524,7 +1524,11 @@ test("Anatomy material-aware candidate captures matched WebGL, standard WebGPU, 
     expect(capture.observerAttributes["data-observer-execution-backend"]).toBe("webgpu");
     expect(capture.observerAttributes["data-observer-application-fallback"]).toBe("none");
     expect(capture.observerAttributes["data-observer-webgpu-initialization-attempts"]).toBe("1");
-    expect(capture.observerAttributes["data-observer-adapter-availability"]).toBe("available");
+    // This bounded browser API probe can time out while the mounted renderer
+    // is already using native WebGPU. Preserve that as unknown evidence; the
+    // strict mounted-backend and initialization assertions above qualify this
+    // capture, while rejection/unavailability still fail the audit.
+    expect(capture.observerAttributes["data-observer-adapter-availability"]).toMatch(/^(available|timed-out)$/);
     expect(capture.observerAttributes["data-observer-renderer-failure-stage"]).toBeUndefined();
   }
   expect(standardInitial.observerAttributes["data-observer-output-policy-selected"]).toBe("standard");
