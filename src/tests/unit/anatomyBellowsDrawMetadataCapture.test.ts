@@ -1,7 +1,11 @@
 import * as THREE from "three";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAnatomyBellowsDrawMetadataCapture } from "../../render/backend/anatomyBellowsDrawMetadataCapture";
 import { linkObserverOutputSourceMaterial } from "../../render/backend/observerMaterialOutputIdentity";
+import {
+  installMInv8NativePipelineObserverInRealm,
+  M_INV8_NATIVE_PIPELINE_OBSERVER_KEY,
+} from "../../render/backend/anatomyBellowsNativePipelineEvidence";
 
 const runtime = {
   rendererFamily: "webgl-renderer",
@@ -14,6 +18,7 @@ const makeCapture = (renderer: unknown, selected: THREE.Mesh, isCaptureActive = 
     renderer: renderer as never,
     runtime,
     generation: 3,
+    generationIdentity: {},
     selected,
     sourceMaterialId: (selected.material as THREE.Material).uuid,
     isCaptureActive,
@@ -50,6 +55,66 @@ const makeFakeGl = () => {
   };
   return gl;
 };
+
+const makeNativePipelineFixture = async (generation: number, descriptor: Readonly<Record<string, unknown>>) => {
+  const gpuPipeline = {};
+  const pipelineKey = {};
+  const device = {
+    createRenderPipeline: vi.fn((...args: unknown[]) => { void args; return gpuPipeline; }),
+    createRenderPipelineAsync: vi.fn(async (...args: unknown[]) => { void args; return gpuPipeline; }),
+    lost: new Promise<never>(() => undefined),
+  };
+  const adapter = { requestDevice: vi.fn(async () => device) };
+  const gpu = { requestAdapter: vi.fn(async () => adapter) };
+  const realm = { navigator: { gpu } };
+  const generationIdentity = {};
+  const observer = installMInv8NativePipelineObserverInRealm(realm as never);
+  if (!observer) throw new Error("Native pipeline observer did not install in the test realm");
+  await gpu.requestAdapter();
+  await adapter.requestDevice();
+  if (!observer.attachDevice(device, generation, generationIdentity)) throw new Error("Native pipeline observer did not attach to the test device");
+  Object.defineProperty(window, M_INV8_NATIVE_PIPELINE_OBSERVER_KEY, { configurable: true, value: observer });
+  nativeObservers.push({ observer, device, generation, generationIdentity });
+  device.createRenderPipeline(descriptor);
+  const data = new WeakMap<object, Readonly<{ pipeline?: object; error?: boolean }>>();
+  data.set(pipelineKey, { pipeline: gpuPipeline, error: false });
+  const backend = {
+    device,
+    data,
+    utils: {
+      getCurrentColorFormats: vi.fn(() => ["bgra8unorm"]),
+      getCurrentDepthStencilFormat: vi.fn(() => undefined),
+      getSampleCountRenderContext: vi.fn(() => 1),
+    },
+    draw: vi.fn((_renderObject: unknown, info: { render: { drawCalls: number }; [key: string]: unknown }) => {
+      info.render.drawCalls += 1;
+      return "draw-complete";
+    }),
+    finishRender: vi.fn(),
+  };
+  return { backend, pipelineKey, observer, device, gpuPipeline, data, generationIdentity };
+};
+
+const pipelineDescriptor = (blend?: Readonly<Record<string, unknown>>) => ({
+  fragment: { targets: [{ format: "bgra8unorm", ...(blend ? { blend } : {}), writeMask: 15 }] },
+  multisample: { count: 1, alphaToCoverageEnabled: false, mask: 0xffffffff },
+  primitive: { topology: "triangle-list", frontFace: "ccw", cullMode: "back" },
+});
+
+const nativeObservers: Array<Readonly<{
+  observer: { restoreDevice: (device: object, generation: number, generationIdentity: object) => boolean; restoreAll: () => void };
+  device: object;
+  generation: number;
+  generationIdentity: object;
+}>> = [];
+
+afterEach(() => {
+  for (const { observer, device, generation, generationIdentity } of nativeObservers.splice(0)) {
+    observer.restoreDevice(device, generation, generationIdentity);
+    observer.restoreAll();
+  }
+  delete (window as unknown as Record<string, unknown>)[M_INV8_NATIVE_PIPELINE_OBSERVER_KEY];
+});
 
 describe("Anatomy Bellows metadata-only draw capture", () => {
   it("records both actual WebGL face passes and restores wrappers without framebuffer reads", async () => {
@@ -92,20 +157,19 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     selected.geometry.dispose();
   });
 
-  it("records native selected draws and effective pipeline descriptors without copying or readback", async () => {
+  it("records actual native pipeline blend state without copying or readback", async () => {
     const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16, side: THREE.DoubleSide });
     const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16, side: THREE.BackSide });
     linkObserverOutputSourceMaterial(activeOutput, source);
     const selected = new THREE.Mesh(new THREE.BufferGeometry(), activeOutput);
     const context = {};
-    const backend = {
-      draw: vi.fn((...args: unknown[]) => { void args; return "draw-complete"; }),
-      finishRender: vi.fn((...args: unknown[]) => { void args; return "finish-complete"; }),
-      pipelineUtils: {
-        _getBlending: vi.fn(() => ({ color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" } })),
-        _getDepthCompare: vi.fn(() => "less-equal"),
-      },
-    };
+    const fixture = await makeNativePipelineFixture(7, pipelineDescriptor({
+      color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha", operation: "add" },
+      alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" },
+    }));
+    const { backend } = fixture;
+    expect(fixture.observer.read(fixture.device, fixture.gpuPipeline, 7, fixture.generationIdentity)).toMatchObject({ status: "observed" });
+    backend.finishRender.mockReturnValue("finish-complete");
     const renderer = { backend };
     const originalDraw = backend.draw;
     const originalFinish = backend.finishRender;
@@ -113,6 +177,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
       renderer: renderer as never,
       runtime: { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" },
       generation: 7,
+      generationIdentity: fixture.generationIdentity,
       selected,
       sourceMaterialId: source.uuid,
       isCaptureActive: () => true,
@@ -124,9 +189,9 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
       context,
       getIndex: () => ({ count: 240 }),
       getDrawParameters: () => ({ indexCount: 240, firstIndex: 0, instanceCount: 1 }),
-      pipeline: { id: 4 },
+      pipeline: fixture.pipelineKey,
       passId: "front",
-    }, { count: 240 });
+    }, { count: 240, render: { drawCalls: 0 } });
     backend.finishRender(context);
 
     const result = await capture;
@@ -138,8 +203,17 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
       sourceMaterialId: source.uuid,
       material: { id: activeOutput.uuid, side: THREE.BackSide, opacity: 0.16 },
       drawParameters: { indexCount: 240, instanceCount: 1 },
-      gpuBlendDescriptor: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" } },
-      gpuDepthCompare: "less-equal",
+      gpuBlendEnabled: true,
+      gpuBlendDescriptor: {
+        color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha", operation: "add" },
+        alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" },
+      },
+      nativePipelineBlendQualification: {
+        status: "qualified",
+        evidence: "bound-pipeline-creation-descriptor",
+        bindingProvenance: "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+      },
+      nativeDrawExecution: { backendDrawReturned: true, completed: true },
     }]);
     expect(backend.draw).toBe(originalDraw);
     expect(backend.finishRender).toBe(originalFinish);
@@ -148,7 +222,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     selected.geometry.dispose();
   });
 
-  it("records native NoBlending as a disabled pipeline blend without calling the blend mapper", async () => {
+  it("fails closed when a native pipeline creation descriptor was not observed", async () => {
     const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     activeOutput.blending = THREE.NoBlending;
@@ -158,15 +232,12 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     const backend = {
       draw: vi.fn((...args: unknown[]) => { void args; }),
       finishRender: vi.fn((...args: unknown[]) => { void args; }),
-      pipelineUtils: {
-        _getBlending: vi.fn(() => { throw new Error("NoBlending has no blend descriptor"); }),
-        _getDepthCompare: vi.fn(() => "less-equal"),
-      },
     };
     const capture = runAnatomyBellowsDrawMetadataCapture({
       renderer: { backend } as never,
       runtime: { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" },
       generation: 8,
+      generationIdentity: {},
       selected,
       sourceMaterialId: source.uuid,
       isCaptureActive: () => true,
@@ -176,13 +247,86 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     backend.finishRender(context);
 
     const result = await capture;
-    expect(result).toMatchObject({ status: "ok", drawCount: 1 });
+    expect(result).toMatchObject({ status: "ok", feasibility: "F0", drawCount: 1 });
     expect(result.drawObservations).toMatchObject([{
       material: { blending: THREE.NoBlending },
-      gpuBlendEnabled: false,
-      gpuBlendDescriptor: null,
+      gpuBlendEnabled: null,
+      nativePipelineBlendQualification: {
+        status: "unsupported",
+        reason: "native-gpu-pipeline-unavailable",
+      },
     }]);
-    expect(backend.pipelineUtils._getBlending).not.toHaveBeenCalled();
+    source.dispose();
+    activeOutput.dispose();
+    selected.geometry.dispose();
+  });
+
+  it("reports actual pipeline blending when it contradicts material flags", async () => {
+    const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
+    const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16, blending: THREE.NoBlending });
+    linkObserverOutputSourceMaterial(activeOutput, source);
+    const selected = new THREE.Mesh(new THREE.BufferGeometry(), activeOutput);
+    const context = {};
+    const fixture = await makeNativePipelineFixture(9, pipelineDescriptor({
+      color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha", operation: "add" },
+      alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" },
+    }));
+    const capture = runAnatomyBellowsDrawMetadataCapture({
+      renderer: { backend: fixture.backend } as never,
+      runtime: { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" },
+      generation: 9,
+      generationIdentity: fixture.generationIdentity,
+      selected,
+      sourceMaterialId: source.uuid,
+      isCaptureActive: () => true,
+      registerCleanup: () => () => undefined,
+    });
+    fixture.backend.draw({ object: selected, material: activeOutput, context, pipeline: fixture.pipelineKey }, { render: { drawCalls: 0 } });
+    fixture.backend.finishRender(context);
+    const result = await capture;
+    expect(result).toMatchObject({ status: "ok", feasibility: "F1" });
+    expect(result.drawObservations).toMatchObject([{
+      gpuBlendEnabled: true,
+      inferredMaterialBlendEnabled: false,
+      inferredMaterialBlendEvidence: "material-flags-inference-F3",
+    }]);
+    source.dispose();
+    activeOutput.dispose();
+    selected.geometry.dispose();
+  });
+
+  it("does not reuse a recorded descriptor for a different backend pipeline association", async () => {
+    const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
+    const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
+    linkObserverOutputSourceMaterial(activeOutput, source);
+    const selected = new THREE.Mesh(new THREE.BufferGeometry(), activeOutput);
+    const context = {};
+    const fixture = await makeNativePipelineFixture(10, pipelineDescriptor({
+      color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha", operation: "add" },
+      alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" },
+    }));
+    fixture.data.set(fixture.pipelineKey, { pipeline: {}, error: false });
+    const capture = runAnatomyBellowsDrawMetadataCapture({
+      renderer: { backend: fixture.backend } as never,
+      runtime: { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" },
+      generation: 10,
+      generationIdentity: fixture.generationIdentity,
+      selected,
+      sourceMaterialId: source.uuid,
+      isCaptureActive: () => true,
+      registerCleanup: () => () => undefined,
+    });
+    fixture.backend.draw({ object: selected, material: activeOutput, context, pipeline: fixture.pipelineKey }, { render: { drawCalls: 0 } });
+    fixture.backend.finishRender(context);
+    const result = await capture;
+    expect(result).toMatchObject({ status: "ok", feasibility: "F0" });
+    expect(result.drawObservations).toMatchObject([{
+      nativePipelineBlendQualification: {
+        status: "unsupported",
+        reason: "pipeline-creation-descriptor-not-observed",
+      },
+      gpuBlendEnabled: null,
+    }]);
     source.dispose();
     activeOutput.dispose();
     selected.geometry.dispose();
@@ -228,6 +372,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
       renderer: renderer as never,
       runtime: { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" },
       generation: 11,
+      generationIdentity: {},
       selected,
       sourceMaterialId: source.uuid,
       isCaptureActive: () => false,

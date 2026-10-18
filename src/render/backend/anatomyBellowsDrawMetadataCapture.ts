@@ -1,6 +1,12 @@
 import * as THREE from "three";
 import type { AnatomyGpuCaptureRuntime } from "./anatomyGpuBlendIntermediate";
 import { readObserverOutputSourceMaterial } from "./observerMaterialOutputIdentity";
+import {
+  qualifyMInv8NativePipelineEvidence,
+  readMInv8NativePipelineObserver,
+  type MInv8NativePipelineBlendQualification,
+  type MInv8NativePipelineLookup,
+} from "./anatomyBellowsNativePipelineEvidence";
 
 type SelectedRenderable = THREE.Object3D & {
   geometry: THREE.BufferGeometry;
@@ -11,7 +17,7 @@ type NativeRenderObject = Readonly<{
   object?: THREE.Object3D;
   material?: THREE.Material;
   context?: object | null;
-  pipeline?: Readonly<{ id?: number }>;
+  pipeline?: object;
   passId?: string | null;
   getDrawParameters?: () => unknown;
   getIndex?: () => unknown;
@@ -20,9 +26,12 @@ type NativeRenderObject = Readonly<{
 type NativeBackend = {
   draw: (renderObject: NativeRenderObject, info: unknown) => unknown;
   finishRender: (context: object) => unknown;
-  pipelineUtils?: Readonly<{
-    _getBlending?: (material: THREE.Material) => unknown;
-    _getDepthCompare?: (material: THREE.Material) => unknown;
+  device?: object;
+  data?: WeakMap<object, Readonly<{ pipeline?: object; error?: boolean }>>;
+  utils?: Readonly<{
+    getCurrentColorFormats?: (context: object) => readonly string[];
+    getCurrentDepthStencilFormat?: (context: object) => string | null | undefined;
+    getSampleCountRenderContext?: (context: object) => number;
   }>;
 };
 
@@ -37,6 +46,7 @@ export type AnatomyBellowsDrawMetadataCaptureOptions = Readonly<{
   renderer: CaptureRenderer;
   runtime: AnatomyGpuCaptureRuntime;
   generation: number;
+  generationIdentity: object;
   selected: SelectedRenderable;
   sourceMaterialId: string;
   isCaptureActive: () => boolean;
@@ -111,6 +121,8 @@ const plainDrawParameters = (value: unknown): Readonly<Record<string, unknown>> 
   return Object.fromEntries(names.filter((name) => name in record).map((name) => [name, record[name]]));
 };
 
+const unsupportedNativePipeline = (reason: string): MInv8NativePipelineBlendQualification => ({ status: "unsupported", reason });
+
 /** Records real Bellows draw metadata without copies, readbacks, or extra render calls. */
 export const runAnatomyBellowsDrawMetadataCapture = (
   options: AnatomyBellowsDrawMetadataCaptureOptions,
@@ -138,9 +150,15 @@ export const runAnatomyBellowsDrawMetadataCapture = (
       cleanupFailure ??= cause instanceof Error ? cause.message : String(cause);
     }
     const active = options.isCaptureActive();
+    const nativeEvidenceQualified = runtime.rendererFamily !== "webgpu-renderer" ||
+      (records.length > 0 && records.every((record) => {
+        const qualification = record.nativePipelineBlendQualification as MInv8NativePipelineBlendQualification | undefined;
+        const execution = record.nativeDrawExecution as Readonly<{ completed?: boolean }> | undefined;
+        return qualification?.status === "qualified" && execution?.completed === true;
+      }));
     resolve({
       status: active ? (cleanupFailure ? "unsupported" : status) : "cancelled",
-      feasibility: status === "ok" && active && cleanupFailure === null ? "F1" : "F0",
+      feasibility: status === "ok" && active && cleanupFailure === null && nativeEvidenceQualified ? "F1" : "F0",
       method: "bellows-draw-metadata",
       generation: options.generation,
       rendererRuntime: runtime,
@@ -293,47 +311,146 @@ export const runAnatomyBellowsDrawMetadataCapture = (
       const originalDraw = backend.draw;
       const originalFinish = backend.finishRender;
       let selectedContext: object | null = null;
+      const collectPipelineEvidence = (renderObject: NativeRenderObject, material: THREE.Material) => {
+        try {
+          const context = renderObject.context;
+          const pipelineKey = renderObject.pipeline;
+          const pipelineData = pipelineKey ? backend.data?.get(pipelineKey) : undefined;
+          const pipeline = pipelineData?.pipeline;
+          const device = backend.device;
+          const utils = backend.utils;
+          const colorTargetFormats = context ? utils?.getCurrentColorFormats?.(context) ?? null : null;
+          const sampleCount = context ? utils?.getSampleCountRenderContext?.(context) ?? null : null;
+          const contextRecord = context as (Record<string, unknown> | null | undefined);
+          const hasDepthOrStencil = contextRecord?.depth === true || contextRecord?.stencil === true;
+          const rawDepthStencilFormat = context ? utils?.getCurrentDepthStencilFormat?.(context) : undefined;
+          const depthStencilFormat = typeof rawDepthStencilFormat === "string" ? rawDepthStencilFormat : null;
+          let lookup: MInv8NativePipelineLookup | null = null;
+          const observer = readMInv8NativePipelineObserver();
+          if (observer && device && pipeline) {
+            lookup = observer.read(device, pipeline, options.generation, options.generationIdentity);
+          }
+          const qualification = qualifyMInv8NativePipelineEvidence({
+            lookup: lookup ?? { status: "unsupported", reason: "native-pipeline-observer-unavailable" },
+            generation: options.generation,
+            threeRevision: THREE.REVISION,
+            pipelineAvailable: Boolean(pipeline),
+            pipelineHasError: pipelineData?.error === true,
+            selectedDrawAssociationVerified: Boolean(pipelineKey && pipeline && pipelineData?.pipeline === pipeline),
+            colorTargetFormats,
+            depthStencilFormat: hasDepthOrStencil ? depthStencilFormat : null,
+            expectedSampleCount: sampleCount,
+          });
+          if (hasDepthOrStencil && typeof rawDepthStencilFormat !== "string") {
+            return { qualification: unsupportedNativePipeline("render-context-depth-stencil-format-unavailable"), pipelineIdentity: null };
+          }
+          const inferredMaterialBlendEnabled = material.blending !== THREE.NoBlending &&
+            !(material.blending === THREE.NormalBlending && material.transparent === false);
+          return {
+            qualification,
+            pipelineIdentity: qualification.pipelineIdentity ?? null,
+            inferredMaterialBlendEnabled,
+            colorTargetFormats,
+            depthStencilFormat,
+            sampleCount,
+          };
+        } catch (cause) {
+          return {
+            qualification: unsupportedNativePipeline(`native-pipeline-observation-failed:${cause instanceof Error ? cause.message : String(cause)}`),
+            pipelineIdentity: null,
+            inferredMaterialBlendEnabled: null,
+            colorTargetFormats: null,
+            depthStencilFormat: null,
+            sampleCount: null,
+          };
+        }
+      };
       const wrappedDraw = function (this: NativeBackend, renderObject: NativeRenderObject, info: unknown) {
         const isSelected = renderObject.object === selected && selectedSourceMatches(renderObject.material);
+        let observation: Readonly<Record<string, unknown>> | null = null;
+        let drawCallsBefore: number | null = null;
         if (isSelected && options.isCaptureActive()) {
+          selectedContext = renderObject.context ?? null;
+          const renderCalls = (info as { render?: { drawCalls?: unknown } } | null)?.render?.drawCalls;
+          drawCallsBefore = typeof renderCalls === "number" ? renderCalls : null;
           try {
-            selectedContext = renderObject.context ?? null;
             const material = renderObject.material!;
             const source = readObserverOutputSourceMaterial(material) ?? material;
-            records.push({
+            const native = collectPipelineEvidence(renderObject, material);
+            observation = {
               order: records.length,
               command: renderObject.getIndex?.() ? "drawIndexed" : "draw",
               objectId: renderObject.object?.uuid ?? null,
               renderOrder: renderObject.object?.renderOrder ?? null,
               material: materialMetadata(material),
+              effectiveMaterialState: {
+                blending: material.blending,
+                transparent: material.transparent,
+                forceSinglePass: (material as THREE.Material & { forceSinglePass?: boolean }).forceSinglePass ?? null,
+              },
               sourceMaterialId: source.uuid,
-              pipelineId: renderObject.pipeline?.id ?? null,
+              pipelineId: native.pipelineIdentity,
               passId: renderObject.passId ?? null,
               drawParameters: plainDrawParameters(renderObject.getDrawParameters?.()),
-              // r186 represents NoBlending as an omitted pipeline `blend` descriptor.
-              // Calling the private _getBlending helper for NoBlending is invalid and logs
-              // an error; record the effective disabled state without invoking it.
-              gpuBlendEnabled: material.blending !== THREE.NoBlending &&
-                !(material.blending === THREE.NormalBlending && material.transparent === false),
-              gpuBlendDescriptor: material.blending === THREE.NoBlending ||
-                (material.blending === THREE.NormalBlending && material.transparent === false)
-                ? null
-                : backend.pipelineUtils?._getBlending?.(material) ?? null,
-              gpuDepthCompare: backend.pipelineUtils?._getDepthCompare?.(material) ?? null,
+              gpuBlendEnabled: native.qualification.status === "qualified" ? native.qualification.blendEnabled ?? null : null,
+              gpuBlendDescriptor: native.qualification.status === "qualified" ? native.qualification.blendDescriptor ?? null : null,
+              gpuDepthCompare: native.qualification.status === "qualified" ? native.qualification.depthStencil?.depthCompare ?? null : null,
+              inferredMaterialBlendEnabled: native.inferredMaterialBlendEnabled,
+              inferredMaterialBlendEvidence: "material-flags-inference-F3",
+              nativePipelineBlendQualification: native.qualification,
+              nativePipelineRenderContext: {
+                colorTargetFormats: native.colorTargetFormats,
+                depthStencilFormat: native.depthStencilFormat,
+                sampleCount: native.sampleCount,
+              },
               info: info && typeof info === "object" ? Object.fromEntries(
                 Object.entries(info as Record<string, unknown>).filter(([, value]) =>
                   typeof value === "string" || typeof value === "number" || typeof value === "boolean"),
               ) : null,
-            });
+            };
           } catch (cause) {
-            finish("unsupported", `native-draw-state-unavailable:${cause instanceof Error ? cause.message : String(cause)}`);
+            observation = {
+              order: records.length,
+              command: "draw",
+              objectId: selected.uuid,
+              sourceMaterialId: options.sourceMaterialId,
+              gpuBlendEnabled: null,
+              gpuBlendDescriptor: null,
+              nativePipelineBlendQualification: unsupportedNativePipeline(
+                `native-pipeline-observation-failed:${cause instanceof Error ? cause.message : String(cause)}`,
+              ),
+            };
           }
         }
+        let result: unknown;
         try {
-          return originalDraw.call(this, renderObject, info);
+          result = originalDraw.call(this, renderObject, info);
         } catch (cause) {
           return failAndRethrow(cause);
         }
+        if (observation) {
+          try {
+            const renderCallsAfter = (info as { render?: { drawCalls?: unknown } } | null)?.render?.drawCalls;
+            const drawCallsAfter = typeof renderCallsAfter === "number" ? renderCallsAfter : null;
+            records.push({
+              ...observation,
+              order: records.length,
+              nativeDrawExecution: {
+                backendDrawReturned: true,
+                drawCallsBefore: drawCallsBefore,
+                drawCallsAfter,
+                completed: drawCallsBefore !== null && drawCallsAfter !== null && drawCallsAfter > drawCallsBefore,
+              },
+            });
+          } catch {
+            records.push({
+              ...observation,
+              order: records.length,
+              nativeDrawExecution: { backendDrawReturned: true, completed: false, reason: "r186-draw-completion-counter-unavailable" },
+            });
+          }
+        }
+        return result;
       };
       const wrappedFinish = function (this: NativeBackend, context: object) {
         try {

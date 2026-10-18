@@ -254,6 +254,9 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
       "AnatomyBellowsDrawMetadataCapture",
       "anatomy-bellows-compositing-intervention",
       "bellows-draw-metadata",
+      "anatomyBellowsNativePipelineEvidence",
+      "__vcsMInv8NativePipelineObserver",
+      "three-r186-m-inv8-pipeline-v1",
     ];
     const bundleIdentifierMatches = forbiddenIdentifiers.filter((identifier) =>
       assets.some(({ body }) => body.includes(identifier)),
