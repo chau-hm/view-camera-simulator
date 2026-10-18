@@ -61,7 +61,9 @@ No production rendering correction, native WebGPU eligibility change, F1 promoti
 
 The complete compact report is in [the M-INV8 report](anatomy-bellows-compositing-causal/report.json). It includes provenance, source/output state, draw metadata, fixed and observed masks, signed responses, difference-of-responses, factorial interaction, the unsupported D1 result, restoration, resource ownership, Ground Glass checks, and retained classifications. Raw pixel arrays are not committed.
 
-## Validation
+## Pre-review validation (historical)
+
+The checks below were recorded before the PR #268 review fix. For final-head validation, use the later **Review-Fix validation** section; the pre-review run did not independently qualify native pipeline descriptors.
 
 - M-INV8 native WebGPU browser experiment: **1 passed**, required native backend, no fallback, no page errors, and no native console blend diagnostics.
 - Focused M-INV8 unit tests and material-tracker regressions: **31 passed**.
@@ -72,7 +74,7 @@ The complete compact report is in [the M-INV8 report](anatomy-bellows-compositin
 - Production preview/isolation: **2 passed**. The production test checked loaded JavaScript for the M-INV8 intervention event, compositing module, metadata capture, and existing GPU capture identifiers; `dist` also contains no matching experimental identifiers.
 - The native run preserved Ground Glass content and exact final restoration; repeat MAE was 0.00111. No rendering measurements or historical research classifications were changed by these validation runs.
 
-## Review-fix update — Native pipeline and trial qualification
+## Review-Fix — Native Pipeline and Trial Qualification
 
 PR #268 review round 1 addresses the P1 pipeline-evidence and P2 trial-qualification findings. The reviewed starting HEAD was `18a94bb798b97934a0c1efdac044fb9e6f0bd877`; the M-INV8 rerun was captured from measurement commit `1527bb7ed8d5e1c748907342549f00fdba2c9a46`, based on `111890173c92106c63f23eda09fbde6ce695a39e` (`main`).
 
@@ -84,7 +86,7 @@ The benchmark now computes a single structured qualification for each trial and 
 
 The independently qualified rerun retains **TCI-3 — PARTIAL CONTRIBUTION ONLY** and reproduces the same four dimmed-group cross-renderer MAEs: C0 104.1277, C1 104.1282, C2 88.8707, and C3 88.8730. The Bellows response remains 35.3978 for C0 and 0.8472 for C2. This lifecycle/evidence repair does not infer source-alpha or destination contributions and does not change the scientific conclusion. Q2, PBI-3, N2, G2, and M2 remain unchanged; M-INV5 native intermediate destination/post-draw pixel evidence remains F2.
 
-The browser exposed Chrome 155.0.8059.84 and Three.js r186, but hardware acceleration remains unconfirmed. The pipeline claim is based on the recorded API creation descriptor associated with the exact r186 pipeline object selected for the draw, not an API readback of the driver's compiled state. The image comparison remains browser-presentation screenshot evidence, not a raw framebuffer comparison. No F1 promotion, production rendering correction, renderer-eligibility change, or PR N work follows from this review fix.
+The remaining evidence tiers are distinct. For this M-INV8 run, selected draw identity and its exact r186 pipeline-object/creation-descriptor association are qualified F1-style metadata evidence. That establishes the descriptor supplied for the pipeline object used by the draw; it is not a readback of the driver's compiled pipeline state, and hardware acceleration remains unconfirmed. Native intermediate destination/post-draw pixel measurements remain F2. Final screenshots/masks and material-flag inference remain F3 and cannot establish the executed pipeline state. Native source-fragment RGB/alpha and a numeric source-versus-destination blend decomposition remain unavailable at F0. The image comparison is browser-presentation screenshot evidence, not a raw framebuffer comparison. This does not promote M-INV5 pixel measurements beyond F2 or authorize a rendering correction, renderer-eligibility change, or PR N work.
 
 ### Review-fix validation
 
