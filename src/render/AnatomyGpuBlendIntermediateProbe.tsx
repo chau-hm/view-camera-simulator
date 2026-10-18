@@ -12,6 +12,7 @@ import {
   type AnatomyGpuCaptureMethod,
 } from "./backend/anatomyGpuBlendIntermediate";
 import { runAnatomyGpuBlendCalibration } from "./backend/anatomyGpuBlendCalibration";
+import { runAnatomyNativeWebGpuDrawBoundaryCapture } from "./backend/anatomyNativeWebGpuDrawBoundaryCapture";
 import {
   resolveAnatomyOutputIntervention,
   type AnatomyOutputInterventionRenderable,
@@ -30,6 +31,12 @@ type AnatomyGpuCaptureRequest = Readonly<{
   sourceMaterialId?: string;
   maskPixelIndices?: readonly number[];
   samplePixelIndices?: readonly number[];
+  baselineCanvas?: Readonly<{
+    width: number;
+    height: number;
+    rgbaBase64: string;
+    repeatNoiseMae: number;
+  }>;
 }>;
 
 type ActiveAnatomyGpuCapture = {
@@ -500,6 +507,37 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       return readbackResult.pixels;
     };
 
+    const awaitCaptureReadbacks = async (
+      operation: ActiveAnatomyGpuCapture,
+      readbacks: readonly Promise<ArrayBufferView>[],
+    ): Promise<readonly ArrayBufferView[]> => {
+      const waits: Promise<unknown>[] = [];
+      if (import.meta.env.DEV) {
+        container.dispatchEvent(new CustomEvent(anatomyGpuCaptureReadbackPendingEvent, {
+          detail: {
+            requestId: operation.requestId,
+            method: operation.method,
+            readbackCount: readbacks.length,
+            defer: (wait: Promise<unknown>) => { waits.push(wait); },
+          },
+        }));
+      }
+      const settledReadbacks = Promise.all(readbacks.map((readback) => readback.then(
+        (pixels) => ({ ok: true as const, pixels }),
+        (error: unknown) => ({ ok: false as const, error }),
+      )));
+      const settledWaits = Promise.all(waits).then(
+        () => ({ ok: true as const }),
+        (error: unknown) => ({ ok: false as const, error }),
+      );
+      const [readbackResults, waitsResult] = await Promise.all([settledReadbacks, settledWaits]);
+      assertCaptureActive(operation);
+      const failedReadback = readbackResults.find((result) => !result.ok);
+      if (failedReadback && !failedReadback.ok) throw failedReadback.error;
+      if (!waitsResult.ok) throw waitsResult.error;
+      return readbackResults.flatMap((result) => result.ok ? [result.pixels] : []);
+    };
+
     const reject = (requestId: string, reason: string, feasibility = "F0") =>
       {
         if (!ownsDestination() || lifetimeController.signal.aborted || !rendererContextAvailable()) return;
@@ -833,11 +871,13 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       const drawNames = ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"] as const;
       const originalDrawMethods = new Map<string, (...args: unknown[]) => unknown>();
       const drawRecords: Array<Readonly<{
+        captureOrder: number;
         call: string;
         state: DrawState;
         materialId: string;
         sourceMaterialId: string;
         material: ReturnType<typeof sourceMaterialSnapshot>;
+        sourceMaterial: ReturnType<typeof sourceMaterialSnapshot>;
         response: ReturnType<typeof summarizeAnatomyGpuDrawResponse>;
         samples: readonly Readonly<{
           index: number;
@@ -914,11 +954,13 @@ export const AnatomyGpuBlendIntermediateProbe = ({
             },
           },
           drawObservations: ordered.map((record) => ({
+            captureOrder: record.captureOrder,
             call: record.call,
             state: record.state,
             materialId: record.materialId,
             sourceMaterialId: record.sourceMaterialId,
             material: record.material,
+            sourceMaterial: record.sourceMaterial,
             destinationAndPostDrawSamples: record.samples.map((sample) => ({
               ...sample,
               x: sample.index % context.drawingBufferWidth,
@@ -980,11 +1022,13 @@ export const AnatomyGpuBlendIntermediateProbe = ({
                 };
               });
               drawRecords.push({
+                captureOrder: drawRecords.length,
                 call: name,
                 state,
                 materialId: currentMaterial.uuid,
                 sourceMaterialId: sourceMaterialFor(currentMaterial).uuid,
                 material: sourceMaterialSnapshot(currentMaterial),
+                sourceMaterial: sourceMaterialSnapshot(sourceMaterialFor(currentMaterial)),
                 response: summarizeAnatomyGpuDrawResponse(
                   before,
                   after,
@@ -1041,6 +1085,43 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       }
     };
 
+    const handleNativeDrawBoundaryCapture = (request: AnatomyGpuCaptureRequest) => runCapture(
+      request,
+      async (operation) => {
+        assertCaptureActive(operation);
+        const runtime = resolveObserverRendererRuntime(gl);
+        const selection = resolveTarget(request);
+        if ("error" in selection) return rejectionDetail(selection.error ?? "invalid-renderable-selection");
+        assertCaptureActive(operation);
+        const result = await runAnatomyNativeWebGpuDrawBoundaryCapture({
+          renderer: gl as unknown as Parameters<typeof runAnatomyNativeWebGpuDrawBoundaryCapture>[0]["renderer"],
+          runtime,
+          threeRevision: THREE.REVISION,
+          generation,
+          selected: selection.target,
+          ...(request.sourceMaterialId ? { sourceMaterialId: request.sourceMaterialId } : {}),
+          samplePixelIndices: request.samplePixelIndices ?? [],
+          ...(request.baselineCanvas ? { baselineCanvas: request.baselineCanvas } : {}),
+          resolveSourceMaterial: sourceMaterialFor,
+          isCaptureActive: () => captureIsActive(operation),
+          awaitReadbacks: (readbacks) => awaitCaptureReadbacks(operation, readbacks),
+          registerCleanup: (cleanup) => {
+            const registeredCleanup = () => {
+              cleanup();
+              if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
+            };
+            directCaptureCleanup = registeredCleanup;
+            return () => {
+              if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
+            };
+          },
+          onResourcesReleased: (lifecycle) => Object.assign(operation.resourceCleanup, lifecycle),
+        });
+        assertCaptureActive(operation);
+        return result;
+      },
+    );
+
     const handleCapture = (event: Event) => {
       const request = (event as CustomEvent<unknown>).detail as AnatomyGpuCaptureRequest | null;
       if (!request || typeof request.requestId !== "string" || request.requestId.length === 0) return;
@@ -1061,6 +1142,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
             );
           }
         }
+      } else if (request.method === "native-draw-boundary") {
+        void handleNativeDrawBoundaryCapture(request).catch((error: unknown) => {
+          reject(request.requestId, error instanceof Error ? error.message : String(error));
+        });
       } else if (request.method === "single-renderable-replay") {
         void handleProxy(request).catch((error: unknown) => {
           reject(request.requestId, error instanceof Error ? error.message : String(error));
