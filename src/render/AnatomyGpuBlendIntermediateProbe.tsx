@@ -349,6 +349,7 @@ export const AnatomyGpuBlendIntermediateProbe = ({
     let lifetimeActive = true;
     let activeCapture: ActiveAnatomyGpuCapture | null = null;
     let directCaptureCleanup: (() => void) | null = null;
+    const nativeCaptureCleanups = new Set<() => void>();
 
     anatomyGpuCaptureProbeOwners.set(container, mountIdentity);
 
@@ -363,6 +364,13 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       lifetimeController.abort(new AnatomyGpuCaptureCancelledError(reason));
       activeCapture = null;
       directCaptureCleanup?.();
+      for (const cleanup of [...nativeCaptureCleanups]) {
+        try {
+          cleanup();
+        } catch {
+          // One retiring capture must not prevent other native resources from cleaning up.
+        }
+      }
     };
 
     const rendererContextAvailable = (): boolean => {
@@ -1093,13 +1101,11 @@ export const AnatomyGpuBlendIntermediateProbe = ({
 
     const registerNativeCaptureCleanup = (cleanup: () => void): (() => void) => {
       const registeredCleanup = () => {
+        nativeCaptureCleanups.delete(registeredCleanup);
         cleanup();
-        if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
       };
-      directCaptureCleanup = registeredCleanup;
-      return () => {
-        if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
-      };
+      nativeCaptureCleanups.add(registeredCleanup);
+      return () => nativeCaptureCleanups.delete(registeredCleanup);
     };
 
     const handleNativeDrawBoundaryCapture = (request: AnatomyGpuCaptureRequest) => runCapture(

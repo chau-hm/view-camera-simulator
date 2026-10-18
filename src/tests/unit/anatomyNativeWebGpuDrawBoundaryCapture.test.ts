@@ -30,8 +30,6 @@ const createFixture = (options: Readonly<{
   const resourceRelease = deferred<Readonly<Record<string, unknown>>>();
   const releasedDetails: Readonly<Record<string, unknown>>[] = [];
   let finishRenderImplementation = options.finishRender;
-  const originalFinishRender = vi.fn(() => finishRenderImplementation?.());
-  const originalDraw = vi.fn(() => undefined);
   const deviceLost = deferred<unknown>();
   const contextData: {
     currentPass: { end: () => void };
@@ -42,6 +40,13 @@ const createFixture = (options: Readonly<{
     descriptor: { colorAttachments: [{ loadOp: "load", storeOp: "store", resolveTarget: null }] },
     encoder: {},
   };
+  const originalBeginRender = vi.fn(() => {
+    contextData.encoder = {};
+    contextData.currentPass = { end: vi.fn() };
+    contextData.descriptor = { colorAttachments: [{ loadOp: "load", storeOp: "store", resolveTarget: null }] };
+  });
+  const originalFinishRender = vi.fn(() => finishRenderImplementation?.());
+  const originalDraw = vi.fn(() => undefined);
   const renderContext = {
     id: 1,
     renderTarget: null,
@@ -54,6 +59,7 @@ const createFixture = (options: Readonly<{
   };
   const pipeline = { id: 3 };
   const backend = {
+    beginRender: originalBeginRender,
     draw: originalDraw,
     finishRender: originalFinishRender,
     get: (value: object) => {
@@ -134,6 +140,7 @@ const createFixture = (options: Readonly<{
     resourceRelease,
     releasedDetails,
     callbacks,
+    originalBeginRender,
     originalFinishRender,
     originalDraw,
     setFinishRender: (implementation: (() => unknown) | undefined) => {
@@ -194,6 +201,21 @@ const stubReadbackApi = () => {
   vi.stubGlobal("GPUMapMode", { READ: 1 });
 };
 
+const selectedRenderObject = (
+  fixture: ReturnType<typeof createFixture>,
+  selected: THREE.Object3D,
+  id: number,
+  passId = id === 8 ? "backSide" : "frontSide",
+) => ({
+  id,
+  object: selected,
+  material: (selected as THREE.Mesh).material as THREE.Material,
+  context: fixture.renderContext,
+  pipeline: fixture.pipeline,
+  passId,
+  getDrawParameters: () => ({ vertexCount: 240, firstVertex: 0, instanceCount: 1, firstInstance: 0 }),
+});
+
 const invokeTwoSelectedDraws = (
   fixture: ReturnType<typeof createFixture>,
   selected: THREE.Object3D,
@@ -202,24 +224,283 @@ const invokeTwoSelectedDraws = (
     draw: (renderObject: object, info: unknown) => unknown;
     finishRender: (context: object) => unknown;
   };
-  const material = (selected as THREE.Mesh).material as THREE.Material;
-  const renderObject = (id: number, passId: string) => ({
-    id,
-    object: selected,
-    material,
-    context: fixture.renderContext,
-    pipeline: fixture.pipeline,
-    passId,
-    getDrawParameters: () => ({ vertexCount: 240, firstVertex: 0, instanceCount: 1, firstInstance: 0 }),
-  });
-  backend.draw(renderObject(8, "backSide"), {});
-  backend.draw(renderObject(9, "frontSide"), {});
+  backend.draw(selectedRenderObject(fixture, selected, 8, "backSide"), {});
+  backend.draw(selectedRenderObject(fixture, selected, 9, "frontSide"), {});
   return backend;
 };
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe("native WebGPU selected draw failure settlement", () => {
+  it("settles P0 when the first selected draw throws before any snapshot exists", async () => {
+    vi.useFakeTimers();
+    const failure = new Error("injected selected native draw failure");
+    const fixture = createFixture();
+    const clearTimeout = vi.spyOn(window, "clearTimeout");
+    const { selected, options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: false,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    let settled = false;
+    let outcome: Readonly<Record<string, unknown>> | null = null;
+    void capture.then(
+      (result) => { settled = true; outcome = result; },
+      (cause) => { settled = true; outcome = { error: cause }; },
+    );
+    const backend = fixture.backend as unknown as {
+      draw: (renderObject: object, info: unknown) => unknown;
+      finishRender: (context: object) => unknown;
+    };
+    fixture.originalDraw.mockImplementationOnce(() => { throw failure; });
+
+    expect(() => backend.draw(selectedRenderObject(fixture, selected, 8), {})).toThrow(failure);
+    await vi.advanceTimersByTimeAsync(10_001);
+    await Promise.resolve();
+
+    expect(settled).toBe(true);
+    expect(outcome).toMatchObject({
+      status: "unsupported",
+      feasibility: "F0",
+      reason: "native-selected-draw-failed",
+      selectedDrawFailure: { name: "Error", message: failure.message },
+      selectedDrawProgress: { attempted: 1, completed: 0 },
+      captureLifecycle: {
+        copyAttemptCount: 0,
+        submissionState: "not-submitted",
+        readbackState: "not-started",
+        encoderRetirementOutcome: "not-required",
+      },
+    });
+    expect(fixture.renderer.copyFramebufferToTexture).not.toHaveBeenCalled();
+    expect(fixture.backend.device.createBuffer).not.toHaveBeenCalled();
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.unregisterCount).toBe(1);
+    expect(clearTimeout).toHaveBeenCalled();
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+    expect(fixture.releasedDetails[0]).toMatchObject({
+      temporaryFramebufferTextureCount: 0,
+      temporaryFramebufferTextureDisposeCount: 0,
+      submissionState: "not-submitted",
+      readbackState: "not-started",
+      noBorrowedResourceDisposed: true,
+    });
+
+    stubReadbackApi();
+    const healthy = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    const nextBackend = invokeTwoSelectedDraws(fixture, selected);
+    expect(() => nextBackend.finishRender(fixture.renderContext)).not.toThrow();
+    expect(await healthy).toMatchObject({ status: "ok", nativeDrawCount: 2, feasibility: "F1" });
+    expect(nextBackend.draw).toBe(fixture.originalDraw);
+    expect(nextBackend.finishRender).toBe(fixture.originalFinishRender);
+  });
+
+  it("keeps the timeout active after one completed P0 draw of a required two-draw capture", async () => {
+    vi.useFakeTimers();
+    const fixture = createFixture();
+    const { selected, options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: false,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    const backend = fixture.backend as unknown as {
+      draw: (renderObject: object, info: unknown) => unknown;
+      finishRender: (context: object) => unknown;
+    };
+
+    expect(() => backend.draw(selectedRenderObject(fixture, selected, 8), {})).not.toThrow();
+    await vi.advanceTimersByTimeAsync(10_001);
+
+    expect(await capture).toMatchObject({
+      status: "unsupported",
+      reason: "boundary-selection-requires-two-completed-selected-native-draws-before-timeout",
+    });
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+  });
+
+  it("settles a capture when no selected native draw arrives before the timeout", async () => {
+    vi.useFakeTimers();
+    const fixture = createFixture();
+    const { options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: false,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+
+    await vi.advanceTimersByTimeAsync(10_001);
+
+    expect(await capture).toMatchObject({
+      status: "unsupported",
+      reason: "selected-renderable-did-not-issue-a-qualifiable-native-draw-before-timeout",
+    });
+    expect(fixture.backend.draw).toBe(fixture.originalDraw);
+    expect(fixture.backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.unregisterCount).toBe(1);
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps timeout settlement available for a deferred encoded-copy failure", async () => {
+    vi.useFakeTimers();
+    const failure = new Error("injected S1 framebuffer copy failure");
+    const fixture = createFixture();
+    const { selected, options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: true,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    let rejection: unknown;
+    void capture.catch((cause) => { rejection = cause; });
+    const backend = fixture.backend as unknown as {
+      beginRender: (context: object) => unknown;
+      draw: (renderObject: object, info: unknown) => unknown;
+      finishRender: (context: object) => unknown;
+    };
+    fixture.renderer.copyFramebufferToTexture.mockImplementationOnce(() => { throw failure; });
+
+    expect(() => backend.draw(selectedRenderObject(fixture, selected, 8), {})).not.toThrow();
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).not.toBe(fixture.originalFinishRender);
+    expect(fixture.callbacks.onResourcesReleased).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(10_001);
+    await Promise.resolve();
+
+    expect(rejection).toBe(failure);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.backend.device.createBuffer).not.toHaveBeenCalled();
+    expect(fixture.backend.device.queue.onSubmittedWorkDone).not.toHaveBeenCalled();
+    expect(fixture.callbacks.onResourcesReleased).not.toHaveBeenCalled();
+
+    expect(() => backend.beginRender(fixture.renderContext)).not.toThrow();
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+    expect(fixture.releasedDetails[0]).toMatchObject({
+      copyState: "unknown",
+      submissionState: "not-submitted",
+      encoderRetirementOutcome: "encoder-replaced",
+      noBorrowedResourceDisposed: true,
+    });
+  });
+
+  it("retires an encoded S1 snapshot only after r186 replaces the abandoned encoder", async () => {
+    const failure = new Error("injected P1 selected native draw failure");
+    const fixture = createFixture();
+    const { selected, options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: true,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    const backend = fixture.backend as unknown as {
+      beginRender: (context: object) => unknown;
+      draw: (renderObject: object, info: unknown) => unknown;
+      finishRender: (context: object) => unknown;
+    };
+    fixture.originalDraw.mockImplementationOnce(() => { throw failure; });
+
+    expect(() => backend.draw(selectedRenderObject(fixture, selected, 8), {})).toThrow(failure);
+    expect(await capture).toMatchObject({
+      status: "unsupported",
+      feasibility: "F0",
+      reason: "native-selected-draw-failed",
+      selectedDrawProgress: { attempted: 1, completed: 0 },
+      captureLifecycle: {
+        copyState: "encoded",
+        copyAttemptCount: 1,
+        submissionState: "not-submitted",
+        readbackState: "not-started",
+        encoderRetirementOutcome: "pending",
+      },
+    });
+    expect(fixture.renderer.copyFramebufferToTexture).toHaveBeenCalledTimes(1);
+    expect(fixture.backend.device.createBuffer).not.toHaveBeenCalled();
+    expect(fixture.backend.device.queue.onSubmittedWorkDone).not.toHaveBeenCalled();
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(backend.beginRender).not.toBe(fixture.originalBeginRender);
+    expect(fixture.callbacks.onResourcesReleased).not.toHaveBeenCalled();
+
+    expect(() => backend.beginRender(fixture.renderContext)).not.toThrow();
+    expect(backend.beginRender).toBe(fixture.originalBeginRender);
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+    expect(fixture.releasedDetails[0]).toMatchObject({
+      temporaryFramebufferTextureCount: 1,
+      temporaryFramebufferTextureDisposeCount: 1,
+      copyState: "encoded",
+      submissionState: "not-submitted",
+      readbackState: "not-started",
+      queueFenceOutcome: "not-required",
+      encoderRetirementOutcome: "encoder-replaced",
+      noBorrowedResourceDisposed: true,
+    });
+  });
+
+  it("keeps the first completed draw distinct when the second selected draw throws", async () => {
+    const failure = new Error("injected second selected native draw failure");
+    const fixture = createFixture();
+    const { selected, options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: true,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    const backend = fixture.backend as unknown as {
+      beginRender: (context: object) => unknown;
+      draw: (renderObject: object, info: unknown) => unknown;
+      finishRender: (context: object) => unknown;
+    };
+    fixture.originalDraw
+      .mockImplementationOnce(() => undefined)
+      .mockImplementationOnce(() => { throw failure; });
+
+    expect(() => backend.draw(selectedRenderObject(fixture, selected, 8), {})).not.toThrow();
+    expect(() => backend.draw(selectedRenderObject(fixture, selected, 9), {})).toThrow(failure);
+    expect(await capture).toMatchObject({
+      status: "unsupported",
+      feasibility: "F0",
+      reason: "native-selected-draw-failed",
+      selectedDrawFailure: { message: failure.message },
+      selectedDrawProgress: { attempted: 2, completed: 1 },
+      captureLifecycle: {
+        copyState: "encoded",
+        submissionState: "not-submitted",
+        readbackState: "not-started",
+        encoderRetirementOutcome: "pending",
+      },
+    });
+    expect(fixture.renderer.copyFramebufferToTexture).toHaveBeenCalledTimes(1);
+    expect(fixture.backend.device.createBuffer).not.toHaveBeenCalled();
+    expect(fixture.backend.device.queue.onSubmittedWorkDone).not.toHaveBeenCalled();
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.callbacks.onResourcesReleased).not.toHaveBeenCalled();
+
+    fixture.registeredCleanup?.();
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+    expect(fixture.releasedDetails[0]).toMatchObject({
+      temporaryFramebufferTextureCount: 1,
+      temporaryFramebufferTextureDisposeCount: 1,
+      submissionState: "not-submitted",
+      encoderRetirementOutcome: "renderer-generation-retired",
+      noBorrowedResourceDisposed: true,
+    });
+    expect(fixture.backend.device.queue.onSubmittedWorkDone).not.toHaveBeenCalled();
+  });
 });
 
 describe("native WebGPU finishRender failure settlement", () => {

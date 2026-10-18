@@ -88,6 +88,7 @@ type NativeDevice = {
 };
 
 type NativeBackend = {
+  beginRender?: (renderContext: NativeRenderContext) => unknown;
   draw: (renderObject: NativeRenderObject, info: unknown) => unknown;
   finishRender: (renderContext: NativeRenderContext) => unknown;
   get: (object: object) => NativeRenderContextData & Readonly<Record<string, unknown>>;
@@ -123,6 +124,8 @@ type NativeRenderer = Readonly<{
 type NativeCaptureSubmissionState = "not-submitted" | "confirmed" | "unknown";
 type NativeCaptureReadbackState = "not-started" | "started" | "settled";
 type NativeCaptureCopyState = "not-started" | "encoding" | "encoded" | "unknown";
+type NativeCaptureEncoderRetirementOutcome =
+  "not-required" | "pending" | "encoder-replaced" | "renderer-generation-retired" | "device-lost";
 
 /**
  * Waits for the native queue before disposing capture-owned textures whose
@@ -171,6 +174,23 @@ const nativeFinishRenderFailure = (
   finishRenderError: cause instanceof Error
     ? { name: cause.name, message: cause.message }
     : String(cause),
+});
+
+const nativeSelectedDrawFailure = (
+  generation: number,
+  cause: unknown,
+  attemptedDrawCount: number,
+  completedDrawCount: number,
+): Readonly<Record<string, unknown>> => ({
+  ...unsupportedResult(generation, "native-selected-draw-failed"),
+  method: "native-draw-boundary",
+  selectedDrawFailure: cause instanceof Error
+    ? { name: cause.name, message: cause.message }
+    : String(cause),
+  selectedDrawProgress: {
+    attempted: attemptedDrawCount,
+    completed: completedDrawCount,
+  },
 });
 
 export type AnatomyNativeDrawBoundaryCaptureResult = Readonly<Record<string, unknown> & {
@@ -667,15 +687,20 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     let resourcesReleased = false;
     let queueFenceStarted = false;
     let queueFenceOutcome: "not-required" | "pending" | "queue-completed" | "device-lost" = "not-required";
+    let encoderRetirementOutcome: NativeCaptureEncoderRetirementOutcome = "not-required";
+    let encoderRetirementWatchStarted = false;
     let readbackBufferCount = 0;
     let readbackBufferDestroyCount = 0;
     let readbackBufferDisposalFailures = 0;
     let timeoutId = 0;
     let actualSampleCount = 0;
     let captureContext: NativeRenderContext | null = null;
+    let captureEncoder: object | null = null;
     let passOrder = 0;
     let drawOrder = 0;
-    let selectedDrawCount = 0;
+    let attemptedSelectedDrawCount = 0;
+    let completedSelectedDrawCount = 0;
+    let captureAbortedBeforeFinish = false;
     let unregisterCleanup: (() => void) | null = null;
     const passIds = new WeakMap<object, number>();
     const ownedTextures: THREE.FramebufferTexture[] = [];
@@ -686,12 +711,15 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     let finalFrameSnapshot: Snapshot | null = null;
     const textureDisposeCounts = new Map<THREE.FramebufferTexture, number>();
 
+    const originalBeginRender = backend.beginRender;
     const originalDraw = backend.draw;
     const originalFinishRender = backend.finishRender;
+    const hadOwnBeginRender = Object.prototype.hasOwnProperty.call(backend, "beginRender");
     const hadOwnDraw = Object.prototype.hasOwnProperty.call(backend, "draw");
     const hadOwnFinishRender = Object.prototype.hasOwnProperty.call(backend, "finishRender");
     const nativeBackend = backend as NativeBackend & { draw: NativeBackend["draw"]; finishRender: NativeBackend["finishRender"] };
     const wrappers: {
+      beginRender?: NativeBackend["beginRender"];
       draw?: NativeBackend["draw"];
       finishRender?: NativeBackend["finishRender"];
     } = {};
@@ -717,6 +745,12 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       else delete (nativeBackend as unknown as Record<string, unknown>).finishRender;
     };
 
+    const restoreBeginRenderHook = () => {
+      if (!wrappers.beginRender || nativeBackend.beginRender !== wrappers.beginRender) return;
+      if (hadOwnBeginRender) nativeBackend.beginRender = originalBeginRender;
+      else delete (nativeBackend as unknown as Record<string, unknown>).beginRender;
+    };
+
     const unregisterCancellation = () => {
       unregisterCleanup?.();
       unregisterCleanup = null;
@@ -732,6 +766,8 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     const releaseOwnedTextures = () => {
       if (resourcesReleased) return;
       resourcesReleased = true;
+      restoreBeginRenderHook();
+      unregisterCancellation();
       let disposalFailureCount = 0;
       ownedTextures.forEach((texture) => {
         try {
@@ -740,25 +776,98 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           disposalFailureCount += 1;
         }
       });
-      options.onResourcesReleased({
-        temporaryFramebufferTextureCount: ownedTextures.length,
-        temporaryFramebufferTextureDisposeCount: [...textureDisposeCounts.values()].reduce((sum, count) => sum + count, 0),
-        temporaryFramebufferTextureDisposeEventsPerResource: [...textureDisposeCounts.values()],
-        temporaryFramebufferTextureDisposalFailures: disposalFailureCount,
-        readbackBufferCount,
-        readbackBufferDestroyCount,
-        readbackBufferDisposalFailures,
-        copyState,
-        copyAttemptCount,
-        copyEncodedCount,
-        submissionState,
-        readbackState,
-        cancelled,
-        queueFenceOutcome,
-        captureSettled: true,
-        resourcesReleased: true,
-        noBorrowedResourceDisposed: true,
-      });
+      try {
+        options.onResourcesReleased({
+          temporaryFramebufferTextureCount: ownedTextures.length,
+          temporaryFramebufferTextureDisposeCount: [...textureDisposeCounts.values()].reduce((sum, count) => sum + count, 0),
+          temporaryFramebufferTextureDisposeEventsPerResource: [...textureDisposeCounts.values()],
+          temporaryFramebufferTextureDisposalFailures: disposalFailureCount,
+          readbackBufferCount,
+          readbackBufferDestroyCount,
+          readbackBufferDisposalFailures,
+          copyState,
+          copyAttemptCount,
+          copyEncodedCount,
+          submissionState,
+          readbackState,
+          cancelled,
+          queueFenceOutcome,
+          encoderRetirementOutcome,
+          captureSettled: true,
+          resourcesReleased: true,
+          noBorrowedResourceDisposed: true,
+        });
+      } catch {
+        // A diagnostic callback must not interfere with renderer or teardown behavior.
+      }
+    };
+
+    const releaseAfterEncoderRetirement = (outcome: "encoder-replaced" | "renderer-generation-retired" | "device-lost") => {
+      if (resourcesReleased) return;
+      encoderRetirementOutcome = outcome;
+      releaseOwnedTextures();
+    };
+
+    // In r186, Renderer._renderScene() calls finishRender only after all draws
+    // return, without a finally block. A draw exception therefore leaves the
+    // encoder stored in renderContextData. A queue fence cannot cover a later
+    // submission of that still-open encoder, so retain encoded-copy textures
+    // until beginRender replaces the encoder or the owning generation is lost.
+    const waitForAbandonedEncoderRetirement = () => {
+      if (resourcesReleased || encoderRetirementWatchStarted) return;
+      encoderRetirementWatchStarted = true;
+      encoderRetirementOutcome = "pending";
+
+      const deviceLost = backend.device?.lost;
+      if (deviceLost) {
+        void Promise.resolve(deviceLost).then(
+          () => releaseAfterEncoderRetirement("device-lost"),
+          () => releaseAfterEncoderRetirement("device-lost"),
+        ).catch(() => undefined);
+      }
+
+      const context = captureContext;
+      const encoder = captureEncoder;
+      let contextData: NativeRenderContextData | null = null;
+      if (context) {
+        try {
+          contextData = backend.get(context) as NativeRenderContextData;
+        } catch {
+          // Device loss still provides the remaining safe release boundary.
+        }
+      }
+      if (contextData && encoder && contextData.encoder !== encoder) {
+        releaseAfterEncoderRetirement("encoder-replaced");
+        return;
+      }
+
+      if (context && encoder && originalBeginRender) {
+        const beginRenderWrapper = function (this: unknown, renderContext: NativeRenderContext) {
+          let result: unknown;
+          try {
+            result = originalBeginRender.call(this, renderContext);
+          } catch (cause) {
+            if (renderContext === context) {
+              try {
+                if (backend.get(context).encoder !== encoder) releaseAfterEncoderRetirement("encoder-replaced");
+              } catch {
+                // Preserve beginRender's original exception if backend state is already unavailable.
+              }
+            }
+            throw cause;
+          }
+          if (renderContext === context) {
+            try {
+              if (backend.get(context).encoder !== encoder) releaseAfterEncoderRetirement("encoder-replaced");
+            } catch {
+              // A later generation/device-loss signal remains responsible for release.
+            }
+          }
+          return result;
+        } as NonNullable<NativeBackend["beginRender"]>;
+        wrappers.beginRender = beginRenderWrapper;
+        nativeBackend.beginRender = beginRenderWrapper;
+      }
     };
 
     const releaseOwnedTexturesWhenSafe = () => {
@@ -767,7 +876,10 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         releaseOwnedTextures();
         return;
       }
-      if (submissionState === "not-submitted") return;
+      if (submissionState === "not-submitted") {
+        if (captureAbortedBeforeFinish) waitForAbandonedEncoderRetirement();
+        return;
+      }
       if (queueFenceStarted) return;
       queueFenceStarted = true;
       queueFenceOutcome = "pending";
@@ -795,9 +907,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       if (copyAttemptCount > 0 && submissionState === "not-submitted") {
         cleanupRequested = true;
         if (!pendingOutcome) pendingOutcome = outcome;
-        window.clearTimeout(timeoutId);
         restoreDrawHook();
-        unregisterCancellation();
         return;
       }
       settled = true;
@@ -805,6 +915,50 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       releaseOwnedTexturesWhenSafe();
       if (outcome.error !== undefined) reject(outcome.error);
       else resolve(outcome.result ?? unsupportedResult(options.generation, "native-capture-settled-without-a-result"));
+    };
+
+    const settleAbandonedEncoderOutcome = (
+      outcome: Readonly<{ result?: Readonly<Record<string, unknown>>; error?: unknown }>,
+    ) => {
+      if (settled) return;
+      settled = true;
+      cleanupRequested = true;
+      captureAbortedBeforeFinish = copyAttemptCount > 0 && submissionState === "not-submitted";
+      window.clearTimeout(timeoutId);
+      restoreDrawHook();
+      restoreFinishHook();
+      if (!captureAbortedBeforeFinish) unregisterCancellation();
+      try {
+        releaseOwnedTexturesWhenSafe();
+      } catch {
+        // Cleanup must not replace the renderer's original draw exception.
+      }
+      if (outcome.error !== undefined) reject(outcome.error);
+      else resolve(outcome.result ?? unsupportedResult(options.generation, "native-capture-settled-without-a-result"));
+    };
+
+    const failSelectedDraw = (cause: unknown) => {
+      const detail = nativeSelectedDrawFailure(
+        options.generation,
+        cause,
+        attemptedSelectedDrawCount,
+        completedSelectedDrawCount,
+      );
+      settleAbandonedEncoderOutcome({
+        result: {
+          ...detail,
+          captureLifecycle: {
+            copyState,
+            copyAttemptCount,
+            copyEncodedCount,
+            submissionState,
+            readbackState,
+            encoderRetirementOutcome: copyAttemptCount > 0 && submissionState === "not-submitted"
+              ? "pending"
+              : "not-required",
+          },
+        },
+      });
     };
 
     const finishWithResult = (result: Readonly<Record<string, unknown>>) => settleOutcome({ result });
@@ -1131,13 +1285,28 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     };
 
     const onCancel = () => {
+      if (settled) {
+        if (encoderRetirementOutcome === "pending") {
+          releaseAfterEncoderRetirement("renderer-generation-retired");
+        }
+        return;
+      }
       cancelled = true;
       cleanupRequested = true;
       window.clearTimeout(timeoutId);
       restoreDrawHook();
-      unregisterCancellation();
-      if (!readbackStarted) fail(new AnatomyGpuCaptureCancelledError("renderer-generation-retired"));
-      else restoreFinishHook();
+      if (!readbackStarted) {
+        const cancellation = new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
+        if (copyAttemptCount > 0 && submissionState === "not-submitted") {
+          settleAbandonedEncoderOutcome(pendingOutcome ?? { error: cancellation });
+        } else {
+          unregisterCancellation();
+          fail(cancellation);
+        }
+      } else {
+        unregisterCancellation();
+        restoreFinishHook();
+      }
     };
 
     unregisterCleanup = options.registerCleanup(onCancel);
@@ -1197,8 +1366,8 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         return originalDraw.call(this, renderObject, info);
       }
       const selectedDrawOrder = drawOrder;
-      const selectedInvocationIndex = selectedDrawCount;
-      selectedDrawCount += 1;
+      const selectedInvocationIndex = attemptedSelectedDrawCount;
+      attemptedSelectedDrawCount += 1;
       if (customBoundarySelection && selectedInvocationIndex > 1) {
         rejectUnsupported("boundary-selection-requires-exactly-two-selected-native-draws");
         return originalDraw.call(this, renderObject, info);
@@ -1214,6 +1383,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       }
 
       captureContext = context;
+      captureEncoder ??= contextData.encoder ?? null;
       const beforeBoundaryId = selectedInvocationIndex === 0 ? "S1" :
         selectedInvocationIndex === 1 ? "S3" : `legacy-draw-${selectedInvocationIndex + 1}-before`;
       const afterBoundaryId = selectedInvocationIndex === 0 ? "S2" :
@@ -1269,7 +1439,14 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         after: null,
       };
 
-      const result = originalDraw.call(this, renderObject, info);
+      let result: unknown;
+      try {
+        result = originalDraw.call(this, renderObject, info);
+      } catch (cause) {
+        failSelectedDraw(cause);
+        throw cause;
+      }
+      completedSelectedDrawCount += 1;
       if (settled) {
         return result;
       }
@@ -1291,10 +1468,11 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
 
     wrappers.draw = drawWrapperImplementation as NativeBackend["draw"];
     const finishWrapperImplementation = function (this: unknown, renderContext: NativeRenderContext) {
-      if (captureContext === renderContext && selectedDrawCount > 0 && !settled && !cleanupRequested) {
+      if (captureContext === renderContext && attemptedSelectedDrawCount > 0 && !settled && !cleanupRequested) {
         if (!options.isCaptureActive()) {
           onCancel();
-        } else if (customBoundarySelection && (selectedDrawCount !== 2 || selectedDraws.length !== 2)) {
+        } else if (customBoundarySelection &&
+            (attemptedSelectedDrawCount !== 2 || completedSelectedDrawCount !== 2 || selectedDraws.length !== 2)) {
           rejectUnsupported("boundary-selection-requires-exactly-two-selected-native-draws");
         } else {
           const contextData = backend.get(renderContext) as NativeRenderContextData;
@@ -1364,7 +1542,20 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     nativeBackend.draw = wrappers.draw;
     nativeBackend.finishRender = wrappers.finishRender;
     timeoutId = window.setTimeout(() => {
-      if (selectedDrawCount === 0) rejectUnsupported("selected-renderable-did-not-issue-a-qualifiable-native-draw-before-timeout");
+      if (settled || readbackStarted) return;
+      if (pendingOutcome) {
+        settleAbandonedEncoderOutcome(pendingOutcome);
+        return;
+      }
+      if (cleanupRequested) return;
+      const reason = attemptedSelectedDrawCount === 0
+        ? "selected-renderable-did-not-issue-a-qualifiable-native-draw-before-timeout"
+        : attemptedSelectedDrawCount > completedSelectedDrawCount
+          ? "native-selected-draw-did-not-complete-before-timeout"
+          : customBoundarySelection && (completedSelectedDrawCount !== 2 || selectedDraws.length !== 2)
+            ? "boundary-selection-requires-two-completed-selected-native-draws-before-timeout"
+            : "native-draw-boundary-capture-did-not-reach-finish-render-before-timeout";
+      settleAbandonedEncoderOutcome({ result: unsupportedResult(options.generation, reason) });
     }, 10_000);
 
     // Keep the chosen canvas format in the lexical scope used when decoding readbacks.
