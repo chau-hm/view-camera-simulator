@@ -15,6 +15,11 @@ import {
   type AnatomyBellowsInterventionCondition,
 } from "../../render/backend/anatomyBellowsCompositingIntervention";
 import {
+  ANATOMY_BELLOWS_DISPOSAL_WITNESS_WINDOW_KEY,
+  qualifyAnatomyBellowsDisposalWitness,
+  type AnatomyBellowsDisposalWitnessRecord,
+} from "../../render/backend/anatomyBellowsDisposalWitness";
+import {
   ANATOMY_OUTPUT_INTERVENTION_EVENT,
   ANATOMY_OUTPUT_INTERVENTION_RESULT_EVENT,
   type AnatomyOutputInterventionMode,
@@ -371,8 +376,9 @@ const requestBellowsIntervention = async (
   page: Page,
   request: Readonly<{
     generation: number;
-    operation: "apply" | "restore";
+    operation: "apply" | "restore" | "arm-disposal-witness";
     transactionId: string;
+    witnessToken?: string;
     condition?: AnatomyBellowsInterventionCondition;
     renderableId?: string;
     sourceMaterialId?: string;
@@ -401,6 +407,33 @@ const requestBellowsIntervention = async (
     eventName: ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
     resultEvent: ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT,
   });
+};
+
+const readAnatomyBellowsDisposalWitness = async (
+  page: Page,
+  token: string,
+): Promise<AnatomyBellowsDisposalWitnessRecord | null> => page.evaluate((payload) => {
+  const browserWindow = window as unknown as Record<string, unknown>;
+  const registry = browserWindow[payload.registryKey] as Readonly<{
+    records: Record<string, AnatomyBellowsDisposalWitnessRecord>;
+  }> | undefined;
+  return registry?.records[payload.token] ?? null;
+}, { registryKey: ANATOMY_BELLOWS_DISPOSAL_WITNESS_WINDOW_KEY, token });
+
+const clearAnatomyBellowsDisposalWitness = async (page: Page, token: string): Promise<void> => {
+  await page.evaluate((payload) => {
+    const browserWindow = window as unknown as Record<string, unknown>;
+    const registry = browserWindow[payload.registryKey] as {
+      records: Record<string, AnatomyBellowsDisposalWitnessRecord>;
+      clearers: Record<string, () => void>;
+    } | undefined;
+    registry?.clearers[payload.token]?.();
+    if (registry) {
+      delete registry.records[payload.token];
+      delete registry.clearers[payload.token];
+      if (Object.keys(registry.records).length === 0) delete browserWindow[payload.registryKey];
+    }
+  }, { registryKey: ANATOMY_BELLOWS_DISPOSAL_WITNESS_WINDOW_KEY, token });
 };
 
 const requestVisibilityTransaction = async (
@@ -5973,12 +6006,14 @@ test("M-INV9 measures in-situ Anatomy Bellows opacity response", async ({ browse
   }
 });
 
-test("M-INV9 releases active opacity interventions when the Anatomy probe retires in the SPA", async ({ browser }) => {
+test("M-INV9 releases active opacity interventions when the Anatomy probe retires in the SPA", async ({ browser }, testInfo) => {
   test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
   test.setTimeout(180_000);
   for (const backendName of ["webgl", "native-webgpu-material-aware"] as const) {
     const backend = await openBackend(browser, backendName);
     const pageErrors: string[] = [];
+    const witnessToken = `m-inv9-retirement-witness-${backendName}-${++requestCounter}`;
+    let witnessArmed = false;
     backend.page.on("pageerror", (error) => { pageErrors.push(error.message); });
     try {
       await advanceToFrontStandard(backend.page);
@@ -6006,6 +6041,45 @@ test("M-INV9 releases active opacity interventions when the Anatomy probe retire
       const activeBellows = active.renderables.find((candidate) => candidate.name === "bellows-folded-surface");
       expect(activeBellows?.materialAssignments[0]?.source.opacity).toBe(0.16);
       expect(activeBellows?.materialAssignments[0]?.output.opacity).toBe(0.5);
+      const activeOutputId = String(activeBellows?.materialAssignments[0]?.output.id);
+      const baselineOutputId = String(bellows?.materialAssignments[0]?.output.id);
+      const armedWitness = await requestBellowsIntervention(backend.page, {
+        generation: before.generation,
+        operation: "arm-disposal-witness",
+        transactionId,
+        witnessToken,
+        condition: "O1",
+      });
+      expect(armedWitness.ok, JSON.stringify(armedWitness)).toBe(true);
+      witnessArmed = true;
+      const initialWitness = armedWitness.witness as AnatomyBellowsDisposalWitnessRecord;
+      expect(initialWitness).toMatchObject({
+        token: witnessToken,
+        backend: backendName === "webgl" ? "webgl2" : "webgpu",
+        rendererGeneration: before.generation,
+        transactionId,
+        renderableId: bellows!.objectId,
+        sourceMaterialId: String(source!.id),
+        baselineOutputMaterialId: baselineOutputId,
+        activeOutputMaterialId: activeOutputId,
+        activeOutputOpacity: 0.5,
+        ownedOutputDisposeEventCount: 0,
+        nativeOverrideRegistrationReleaseCount: 0,
+      });
+      expect(initialWitness.activeOutputMaterialId).not.toBe(initialWitness.sourceMaterialId);
+      expect(initialWitness.activeOutputMaterialId).not.toBe(initialWitness.baselineOutputMaterialId);
+      if (backendName === "webgl") {
+        expect(initialWitness).toMatchObject({ outputOwnerKind: "probe-diagnostic-clone", outputOwnerToken: transactionId });
+        expect(initialWitness.outputTrackerToken).toBeNull();
+      } else {
+        expect(initialWitness.outputOwnerKind).toBe("observer-controller");
+        expect(initialWitness.outputOwnerToken).toMatch(/^output-owner-\d+$/);
+        expect(initialWitness.outputTrackerToken).toMatch(/^output-owner-\d+$/);
+      }
+      expect(initialWitness.borrowedResources.some((resource) =>
+        resource.kind === "source-material" && resource.identity === initialWitness.sourceMaterialId)).toBe(true);
+      expect(initialWitness.borrowedResources.some((resource) =>
+        resource.kind === "geometry" && resource.identity === String(bellows!.geometry.id))).toBe(true);
 
       await backend.page.locator(canvasSelector).evaluate((element, resultEvent) => {
         const browserWindow = window as Window & {
@@ -6032,6 +6106,57 @@ test("M-INV9 releases active opacity interventions when the Anatomy probe retire
       await expect.poll(async () => Number(await nextCanvas.getAttribute("data-observer-renderer-generation")))
         .toBeGreaterThan(before.generation);
       await expect(nextCanvas).not.toHaveAttribute("data-observer-test-renderable-contribution-hook", "ready");
+      const nextCanvasSize = await nextCanvas.locator("canvas").evaluate((element) => ({
+        width: (element as HTMLCanvasElement).width,
+        height: (element as HTMLCanvasElement).height,
+      }));
+      expect(nextCanvasSize.width).toBeGreaterThan(0);
+      expect(nextCanvasSize.height).toBeGreaterThan(0);
+
+      await expect.poll(async () =>
+        (await readAnatomyBellowsDisposalWitness(backend.page, witnessToken))?.ownedOutputDisposeEventCount ?? 0,
+      ).toBe(1);
+      if (backendName === "native-webgpu-material-aware") {
+        await expect.poll(async () =>
+          (await readAnatomyBellowsDisposalWitness(backend.page, witnessToken))?.nativeOverrideRegistrationReleaseCount ?? 0,
+        ).toBe(1);
+      }
+      const retiredWitness = await readAnatomyBellowsDisposalWitness(backend.page, witnessToken);
+      expect(retiredWitness).not.toBeNull();
+      expect(retiredWitness).toMatchObject({
+        token: witnessToken,
+        backend: backendName === "webgl" ? "webgl2" : "webgpu",
+        rendererGeneration: before.generation,
+        transactionId,
+        renderableId: bellows!.objectId,
+        sourceMaterialId: String(source!.id),
+        baselineOutputMaterialId: baselineOutputId,
+        activeOutputMaterialId: activeOutputId,
+        activeOutputOpacity: 0.5,
+        ownedOutputDisposeEventCount: 1,
+        nativeOverrideRegistrationReleaseCount: backendName === "webgl" ? 0 : 1,
+        interventionCleanupStarted: true,
+        interventionCleanupCompleted: true,
+      });
+      expect(retiredWitness?.borrowedResources.length).toBeGreaterThanOrEqual(2);
+      expect(retiredWitness?.borrowedResources.every((resource) =>
+        resource.disposeEventsDuringInterventionCleanup === 0),
+        JSON.stringify(retiredWitness?.borrowedResources)).toBe(true);
+      expect(qualifyAnatomyBellowsDisposalWitness(retiredWitness!)).toMatchObject({
+        ownedOutputDisposedExactlyOnce: true,
+        nativeRegistrationReleasedExactlyOnce: true,
+        borrowedResourcesUndisposedByIntervention: true,
+        qualified: true,
+      });
+      await testInfo.attach(`m-inv9-${backendName}-spa-retirement-disposal-witness.json`, {
+        body: JSON.stringify({ witness: retiredWitness, qualification: qualifyAnatomyBellowsDisposalWitness(retiredWitness!) }, null, 2),
+        contentType: "application/json",
+      });
+      console.info("M_INV9_SPA_RETIREMENT_DISPOSAL_WITNESS " + JSON.stringify({
+        backend: backendName,
+        witness: retiredWitness,
+        qualification: qualifyAnatomyBellowsDisposalWitness(retiredWitness!),
+      }));
 
       const lateRestoreResultCount = await backend.page.evaluate((payload) => {
         const browserWindow = window as Window & {
@@ -6055,6 +6180,7 @@ test("M-INV9 releases active opacity interventions when the Anatomy probe retire
       expect(lateRestoreResultCount).toBe(0);
       expect(pageErrors).toEqual([]);
     } finally {
+      if (witnessArmed) await clearAnatomyBellowsDisposalWitness(backend.page, witnessToken);
       await backend.context.close();
     }
   }

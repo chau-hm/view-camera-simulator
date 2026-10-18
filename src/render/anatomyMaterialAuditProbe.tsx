@@ -25,7 +25,11 @@ import {
   type AnatomyVisibilitySnapshot,
 } from "./anatomyRenderableContribution";
 import { classifyAnatomyMaterialRole } from "./anatomyMaterialRoles";
-import { readObserverOutputSourceMaterial } from "./backend/observerMaterialOutputIdentity";
+import {
+  observerOutputOwnerIdentity,
+  observerOutputTrackerIdentity,
+  readObserverOutputSourceMaterial,
+} from "./backend/observerMaterialOutputIdentity";
 import {
   ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
   ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT,
@@ -38,6 +42,12 @@ import {
   type AnatomyBellowsCompositingCandidate,
   type AnatomyBellowsInterventionCondition,
 } from "./backend/anatomyBellowsCompositingIntervention";
+import {
+  ANATOMY_BELLOWS_DISPOSAL_WITNESS_WINDOW_KEY,
+  observeAnatomyBellowsDisposals,
+  type AnatomyBellowsDisposalWitnessHandle,
+  type AnatomyBellowsDisposalWitnessRecord,
+} from "./backend/anatomyBellowsDisposalWitness";
 import type { ConceptualCameraAnatomyPresentation } from "./ConceptualViewCamera";
 
 export const ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT =
@@ -54,8 +64,9 @@ type AnatomyMaterialAuditRequest = Readonly<{ requestId: string }>;
 type AnatomyBellowsCompositingRequest = Readonly<{
   requestId: string;
   generation: number;
-  operation: "apply" | "restore";
+  operation: "apply" | "restore" | "arm-disposal-witness";
   transactionId: string;
+  witnessToken?: string;
   condition?: AnatomyBellowsInterventionCondition;
   renderableId?: string;
   sourceMaterialId?: string;
@@ -74,10 +85,28 @@ type ActiveBellowsCompositingTransaction = Readonly<{
   visible: boolean;
   diagnosticClone: THREE.Material | null;
   releaseNativeOverride: (() => void) | null;
+  disposalWitness: { current: AnatomyBellowsDisposalWitnessHandle | null };
   diagnosticCloneDisposeCount: number;
   readBorrowedDisposeCounts: () => Readonly<{ sourceMaterial: number; geometry: number; textures: number }>;
   releaseBorrowedDisposalGuards: () => void;
 }>;
+
+type AnatomyBellowsDisposalWitnessRegistry = Readonly<{
+  records: Record<string, AnatomyBellowsDisposalWitnessRecord>;
+  clearers: Record<string, () => void>;
+}>;
+
+const outputIdentityTokens = new WeakMap<object, string>();
+let nextOutputIdentityToken = 0;
+
+const getOutputIdentityToken = (identity: object): string => {
+  let token = outputIdentityTokens.get(identity);
+  if (!token) {
+    token = `output-owner-${++nextOutputIdentityToken}`;
+    outputIdentityTokens.set(identity, token);
+  }
+  return token;
+};
 
 type AnatomyRenderableVisibilityRequest = Readonly<{
   requestId: string;
@@ -695,7 +724,11 @@ export const AnatomyMaterialAuditProbe = ({
     const restoreBellowsCompositingTransaction = (
       transaction: ActiveBellowsCompositingTransaction,
     ): Readonly<Record<string, unknown>> => {
-      transaction.releaseNativeOverride?.();
+      transaction.disposalWitness.current?.markInterventionCleanupStarted();
+      if (transaction.releaseNativeOverride) {
+        transaction.releaseNativeOverride();
+        transaction.disposalWitness.current?.markNativeOverrideRegistrationReleased();
+      }
       let renderableMaterialIdentityRestored = false;
       if (transaction.diagnosticClone) {
         if (transaction.renderable.material === transaction.diagnosticClone) {
@@ -708,6 +741,7 @@ export const AnatomyMaterialAuditProbe = ({
       transaction.releaseBorrowedDisposalGuards();
       const sourcePropertiesPreserved = JSON.stringify(getMaterialProperties(transaction.sourceMaterial)) ===
         JSON.stringify(transaction.sourceMaterialSnapshot);
+      transaction.disposalWitness.current?.markInterventionCleanupCompleted();
       return {
         operation: "restore",
         transactionId: transaction.transactionId,
@@ -740,6 +774,148 @@ export const AnatomyMaterialAuditProbe = ({
       }
       if (typeof request.transactionId !== "string" || request.transactionId.length === 0) {
         fail("invalid-transaction-id");
+        return;
+      }
+      if (request.operation === "arm-disposal-witness") {
+        const transaction = activeBellowsCompositingTransaction;
+        if (!transaction || transaction.transactionId !== request.transactionId || transaction.generation !== generation) {
+          fail("unknown-or-stale-compositing-transaction");
+          return;
+        }
+        if (typeof request.witnessToken !== "string" || request.witnessToken.length === 0 ||
+            request.condition !== undefined && request.condition !== "O1") {
+          fail("invalid-disposal-witness-request");
+          return;
+        }
+        if (transaction.disposalWitness.current) {
+          fail("disposal-witness-already-armed");
+          return;
+        }
+        const activeOutputMaterial = Array.isArray(transaction.renderable.material)
+          ? null
+          : transaction.renderable.material;
+        const baselineOutputMaterial = Array.isArray(transaction.originalRenderableMaterial)
+          ? null
+          : transaction.originalRenderableMaterial;
+        if (!activeOutputMaterial || !baselineOutputMaterial || activeOutputMaterial === transaction.sourceMaterial ||
+            activeOutputMaterial === baselineOutputMaterial || activeOutputMaterial.opacity !== 0.5) {
+          fail("active-o1-output-material-not-mounted");
+          return;
+        }
+
+        const runtime = resolveObserverRendererRuntime(gl);
+        const activeOutputWithOwnership = activeOutputMaterial as THREE.Material & {
+          [observerOutputOwnerIdentity]?: object;
+          [observerOutputTrackerIdentity]?: object;
+          outputTransform?: string;
+        };
+        let backend: AnatomyBellowsDisposalWitnessRecord["backend"];
+        let outputOwnerKind: AnatomyBellowsDisposalWitnessRecord["outputOwnerKind"];
+        let outputOwnerToken: string | null = null;
+        let outputTrackerToken: string | null = null;
+        if (runtime.executionBackend === "webgl2" && runtime.rendererFamily === "webgl-renderer") {
+          if (transaction.diagnosticClone !== activeOutputMaterial) {
+            fail("active-webgl-output-is-not-the-owned-diagnostic-clone");
+            return;
+          }
+          backend = "webgl2";
+          outputOwnerKind = "probe-diagnostic-clone";
+          outputOwnerToken = transaction.transactionId;
+        } else if (runtime.executionBackend === "webgpu" && runtime.rendererFamily === "webgpu-renderer") {
+          if (readObserverOutputSourceMaterial(activeOutputMaterial) !== transaction.sourceMaterial ||
+              activeOutputWithOwnership.outputTransform !== "material-aware" ||
+              !activeOutputWithOwnership[observerOutputOwnerIdentity] ||
+              !activeOutputWithOwnership[observerOutputTrackerIdentity]) {
+            fail("active-native-output-owner-identity-missing");
+            return;
+          }
+          backend = "webgpu";
+          outputOwnerKind = "observer-controller";
+          outputOwnerToken = getOutputIdentityToken(activeOutputWithOwnership[observerOutputOwnerIdentity]);
+          outputTrackerToken = getOutputIdentityToken(activeOutputWithOwnership[observerOutputTrackerIdentity]);
+        } else {
+          fail(`unqualified-renderer:${runtime.rendererFamily}/${runtime.executionBackend}`);
+          return;
+        }
+
+        const borrowedResources: Array<Readonly<{
+          resource: THREE.Material | THREE.BufferGeometry | THREE.Texture;
+          witness: AnatomyBellowsDisposalWitnessRecord["borrowedResources"][number];
+        }>> = [
+          {
+            resource: transaction.sourceMaterial,
+            witness: {
+              kind: "source-material",
+              identity: transaction.sourceMaterial.uuid,
+              disposeEventCount: 0,
+              disposeEventsDuringInterventionCleanup: 0,
+            },
+          },
+          {
+            resource: transaction.geometry,
+            witness: {
+              kind: "geometry",
+              identity: transaction.geometry.uuid,
+              disposeEventCount: 0,
+              disposeEventsDuringInterventionCleanup: 0,
+            },
+          },
+        ];
+        const textures = new Set(Object.values(transaction.sourceMaterial).filter((value): value is THREE.Texture =>
+          typeof value === "object" && value !== null && (value as THREE.Texture).isTexture === true,
+        ));
+        textures.forEach((texture) => borrowedResources.push({
+          resource: texture,
+          witness: {
+            kind: "texture",
+            identity: texture.uuid,
+            disposeEventCount: 0,
+            disposeEventsDuringInterventionCleanup: 0,
+          },
+        }));
+
+        const browserWindow = window as Window & {
+          __vcsMInv9BellowsDisposalWitnesses?: AnatomyBellowsDisposalWitnessRegistry;
+        };
+        const registry = browserWindow[ANATOMY_BELLOWS_DISPOSAL_WITNESS_WINDOW_KEY] ?? {
+          records: {},
+          clearers: {},
+        };
+        if (registry.records[request.witnessToken]) {
+          fail("disposal-witness-token-already-exists");
+          return;
+        }
+        const record: AnatomyBellowsDisposalWitnessRecord = {
+          token: request.witnessToken,
+          backend,
+          rendererGeneration: generation,
+          transactionId: transaction.transactionId,
+          renderableId: transaction.renderable.uuid,
+          sourceMaterialId: transaction.sourceMaterial.uuid,
+          baselineOutputMaterialId: baselineOutputMaterial.uuid,
+          activeOutputMaterialId: activeOutputMaterial.uuid,
+          outputOwnerKind,
+          outputOwnerToken,
+          outputTrackerToken,
+          activeOutputOpacity: activeOutputMaterial.opacity,
+          ownedOutputDisposeEventCount: 0,
+          nativeOverrideRegistrationReleaseCount: 0,
+          interventionCleanupStarted: false,
+          interventionCleanupCompleted: false,
+          borrowedResources: borrowedResources.map(({ witness }) => witness),
+        };
+        const witness = observeAnatomyBellowsDisposals(record, activeOutputMaterial, borrowedResources);
+        registry.records[request.witnessToken] = record;
+        registry.clearers[request.witnessToken] = witness.clear;
+        browserWindow[ANATOMY_BELLOWS_DISPOSAL_WITNESS_WINDOW_KEY] = registry;
+        transaction.disposalWitness.current = witness;
+        emitBellowsCompositingResult({
+          requestId,
+          generation,
+          ok: true,
+          operation: "arm-disposal-witness",
+          witness: record,
+        });
         return;
       }
       if (request.operation === "restore") {
@@ -851,6 +1027,7 @@ export const AnatomyMaterialAuditProbe = ({
         visible: getAncestors(renderable, scene).every((ancestor) => ancestor.visible),
         diagnosticClone,
         releaseNativeOverride,
+        disposalWitness: { current: null },
         get diagnosticCloneDisposeCount() { return diagnosticCloneDisposeCount; },
         readBorrowedDisposeCounts: () => ({
           sourceMaterial: sourceMaterialDisposeCount,
