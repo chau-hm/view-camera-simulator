@@ -114,7 +114,7 @@ The fixed sample values, per-channel cross-renderer differences, all region metr
 
 The measured maximum same-condition screenshot repeat noise was 0, with a 0.5 RGB-MAE minimum noise gate. Both WebGL and native O1/O2 had qualified positive-control responses. The complete six-trial matrix qualified with no failed checks. Requested opacity matched effective output opacity for every trial; only opacity changed in the output state.
 
-After each intervention, the exact baseline output material identity, visible state, geometry identity, and screenshot were restored. WebGL diagnostic clones and native output variants were released exactly once. Authored materials, geometry, textures, renderer/device, and Ground Glass resources remained borrowed and undisposed. The visibility exclusion control restored Bellows visibility, and a stale generation request was rejected. Baseline and final screenshots were exact in every fixed region.
+After each explicit intervention restore, the exact baseline output material identity, visible state, geometry identity, and screenshot were restored. WebGL diagnostic clones and native output variants were released exactly once. Authored resources were borrowed by the intervention; their normal scene owners may dispose scene-owned material or geometry during SPA unmount. The visibility exclusion control restored Bellows visibility, and a stale generation request was rejected. Baseline and final screenshots were exact in every fixed region.
 
 An additional SPA-retirement regression applies O1 and navigates away while the intervention is active on both WebGL and native WebGPU. The renderer generation advances, the Anatomy probe hook is absent on the destination scene, and a late restore sent to the retired container receives no response. This exercises the probe's unmount cleanup path; exact owned-resource disposal counts are independently asserted by the successful O1/O2 restoration trials.
 
@@ -160,3 +160,27 @@ The browser ran on Chrome 155.0.8059.84 with `navigator.gpu.requestAdapter()` su
 - **M2 — OPT-IN IMPLEMENTATION INCOMPLETE** remains unchanged.
 - M-INV5 native intermediate destination/post-draw pixel evidence remains **F2**.
 - Production renderer behavior and native WebGPU eligibility are unchanged.
+
+
+## Review-Fix — SPA Retirement Resource Ownership Evidence
+
+**Previous reviewed HEAD:** `ed988ebb40567baba061378665c46b26dd84e35b`
+
+**Fixing implementation commit:** `0f5f90a` (exact-material disposal witness and teardown regressions)
+
+The original SPA-retirement test proved that the route changed, the renderer generation advanced, the Anatomy hook disappeared, and a late request to the retired container received no response. Those checks would still pass if unmount removed the listener but skipped disposal of the active O1 output. Explicit O1/O2 restore tests exercise a different cleanup path and could not close that gap.
+
+The development-only witness is armed while O1 is active and subscribes to the actual active output material's Three.js `dispose` event. The browser ledger retains primitive identities and event counts after Anatomy unmount; subscriptions use weak resource references and are removed in the Playwright `finally` cleanup. It records the backend, renderer generation, transaction, selected Bellows renderable, authored source and baseline output identities, active O1 material identity, opacity, owner kind/tokens, actual output disposal count, native registration-release count, and borrowed-resource disposal observations. Arming the witness does not mutate resources or initiate cleanup.
+
+During real same-document SPA navigation from Anatomy to Architecture Rise:
+
+- **WebGL:** The active O1 output was the intervention-owned diagnostic clone, distinct from both the authored source and baseline output. That exact material emitted one `dispose` event. Its owner kind was `probe-diagnostic-clone`, and its owner token matched the transaction ID. No native registration-release event was expected.
+- **Native WebGPU material-aware:** The active O1 output was the controller-owned adapted material, distinct from the authored source and baseline output. That exact output emitted one `dispose` event, and the separately tracked O1 override registration was released once. The witness records opaque controller-owner and material-tracker identity tokens. The tracker releases and disposes its owned output during renderer-generation teardown; removing the override registration alone does not qualify as disposal.
+- **Borrowed resources:** The selected authored material and geometry each emitted a dispose event later in full Anatomy unmount, from their normal scene owners (R3F material ownership and the Bellows geometry component cleanup). The witness observed zero borrowed-resource dispose events inside the intervention cleanup window. There were no direct textures on the selected source material in these captures. This distinguishes intervention ownership from the separate scene-owner teardown lifecycle.
+- The old request hook was absent, a stale restore request received no response, the destination renderer generation became active with a nonzero canvas, and no page errors occurred. The navigation uses the SPA router and does not reload the page.
+
+Six focused unit negative/positive controls cover omitted output disposal, native registration release without output disposal, unrelated material disposal, borrowed-resource disposal, duplicate disposal, and a healthy exact native output disposal. The missing-disposal case remains unqualified even when cleanup markers are completed and the listener is cleared; the browser regression independently observes the exact owned resource in the real retirement path. Existing explicit O1/O2 restoration tests remain separate and unchanged.
+
+The focused browser verification reran the existing O0/O1/O2 experiment with report writing disabled. Its OAR-1 metrics matched the committed historical report; the original report and measurement provenance were not replaced. The SPA retirement test passed on both backends. Unit, repository, native lifecycle, 13-state Anatomy, Architecture Rise strict parity, Ground Glass, and production-isolation outcomes are summarized in the PR's `Since previous review` handoff.
+
+The witness is available only through the development Anatomy audit probe's explicit request and is absent from the production bundle. The disposal event proves Three.js ownership disposal for the exact observed material; it does not claim independent physical GPU-memory reclamation. Browser evidence is recorded in the attached Playwright JSON artifacts and console records, rather than storing runtime UUIDs as historical research measurements.
