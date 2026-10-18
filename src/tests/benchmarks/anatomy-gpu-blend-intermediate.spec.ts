@@ -5972,3 +5972,90 @@ test("M-INV9 measures in-situ Anatomy Bellows opacity response", async ({ browse
     await Promise.all(pages.map(({ context }) => context.close()));
   }
 });
+
+test("M-INV9 releases active opacity interventions when the Anatomy probe retires in the SPA", async ({ browser }) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
+  test.setTimeout(180_000);
+  for (const backendName of ["webgl", "native-webgpu-material-aware"] as const) {
+    const backend = await openBackend(browser, backendName);
+    const pageErrors: string[] = [];
+    backend.page.on("pageerror", (error) => { pageErrors.push(error.message); });
+    try {
+      await advanceToFrontStandard(backend.page);
+      if (backendName === "native-webgpu-material-aware") {
+        expect((await requestOutputMode(backend.page, backend.initial.generation, "B0")).ok).toBe(true);
+      }
+      const before = await readAuditSnapshot(backend.page, `m-inv9-retirement-${backendName}-before`);
+      const bellows = before.renderables.find((candidate) => candidate.name === "bellows-folded-surface");
+      const source = bellows?.materialAssignments[0]?.source;
+      expect(bellows?.role).toBe("conceptual-camera/bellows");
+      expect(source?.opacity).toBe(0.16);
+      const transactionId = `m-inv9-retirement-${backendName}-${++requestCounter}`;
+      const applied = await requestBellowsIntervention(backend.page, {
+        generation: before.generation,
+        operation: "apply",
+        transactionId,
+        condition: "O1",
+        renderableId: bellows!.objectId,
+        sourceMaterialId: String(source!.id),
+      });
+      expect(applied.ok).toBe(true);
+      await stabilizeFrame(backend.page);
+      await stabilizeFrame(backend.page);
+      const active = await readAuditSnapshot(backend.page, `m-inv9-retirement-${backendName}-active`);
+      const activeBellows = active.renderables.find((candidate) => candidate.name === "bellows-folded-surface");
+      expect(activeBellows?.materialAssignments[0]?.source.opacity).toBe(0.16);
+      expect(activeBellows?.materialAssignments[0]?.output.opacity).toBe(0.5);
+
+      await backend.page.locator(canvasSelector).evaluate((element, resultEvent) => {
+        const browserWindow = window as Window & {
+          __mInv9RetiredContainer?: Element;
+          __mInv9RetiredResultCount?: number;
+        };
+        browserWindow.__mInv9RetiredContainer = element;
+        browserWindow.__mInv9RetiredResultCount = 0;
+        element.addEventListener(resultEvent, () => {
+          browserWindow.__mInv9RetiredResultCount = (browserWindow.__mInv9RetiredResultCount ?? 0) + 1;
+        });
+      }, ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT);
+
+      const nextPath = backendName === "webgl"
+        ? "/simulator/free/architecture-rise?rttDiagnostics=1"
+        : "/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1";
+      await backend.page.evaluate((path) => {
+        window.history.pushState(window.history.state, "", path);
+        window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+      }, nextPath);
+      await expect(backend.page).toHaveURL(/\/simulator\/free\/architecture-rise/);
+      const nextCanvas = backend.page.locator(canvasSelector);
+      await expect(nextCanvas).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+      await expect.poll(async () => Number(await nextCanvas.getAttribute("data-observer-renderer-generation")))
+        .toBeGreaterThan(before.generation);
+      await expect(nextCanvas).not.toHaveAttribute("data-observer-test-renderable-contribution-hook", "ready");
+
+      const lateRestoreResultCount = await backend.page.evaluate((payload) => {
+        const browserWindow = window as Window & {
+          __mInv9RetiredContainer?: Element;
+          __mInv9RetiredResultCount?: number;
+        };
+        browserWindow.__mInv9RetiredContainer?.dispatchEvent(new CustomEvent(payload.requestEvent, {
+          detail: {
+            requestId: "m-inv9-retired-opacity-restore",
+            generation: payload.generation,
+            operation: "restore",
+            transactionId: payload.transactionId,
+          },
+        }));
+        return browserWindow.__mInv9RetiredResultCount ?? 0;
+      }, {
+        requestEvent: ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
+        generation: before.generation,
+        transactionId,
+      });
+      expect(lateRestoreResultCount).toBe(0);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await backend.context.close();
+    }
+  }
+});
