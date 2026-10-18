@@ -74,3 +74,15 @@ Preserve:
 - Native M-INV5 destination/post-draw pixel observations remain **F2**.
 
 Do not promote intermediate observations to F1 based on the final-frame experiment. Given the five one-LSB changes, stable controls, and unresolved distinction between S2 and S3 for four pixels, further optimization of these diagnostic copies is not justified unless a later measurement requires it. Return research effort to the original semi-transparent Anatomy rendering discrepancy using independently qualified evidence.
+
+## Validation
+
+- Focused native WebGPU Anatomy config: **8 passed**, including M-INV4 calibration/proxy, M-INV5 draw-boundary capture, M-INV6 raw-framebuffer parity, pending-readback lifecycle regressions, overlap rejection, and M-INV7. A separate M-INV7 rerun with full source provenance passed.
+- M-INV7 measurements: **22 captures** (A1/A2 and P0–P4/I1–I4, each repeated twice); P0/A1 and P4/A2 matched exactly in both pairs.
+- Native PR #263 four-state output study: **1 passed**.
+- Native-required 13-state Anatomy audit: **2 passed, 1 existing mode-specific skip**. The standard WebGL/native comparison captured all 13 states; the skipped material-aware candidate mode is not counted as passed.
+- Architecture Rise strict visual parity: **1 passed**, all 81 criteria retained, zero failing criteria.
+- Production preview/isolation: **2 passed**. Architecture Rise stayed on WebGL for default and explicit WebGPU requests; production-loaded JavaScript contained no progressive capture probe or event identifiers. Ground Glass remained contentful.
+- Unit suite: **260 files, 2,417 tests passed**. Typecheck, lint, CSS check, production build, and `git diff --check` passed.
+
+The browser reported Chrome 155 on Darwin arm64 with Three.js r186 and the native `webgpu-renderer/webgpu` backend. Hardware acceleration remains unconfirmed because adapter diagnostics are not exposed by this renderer path.
