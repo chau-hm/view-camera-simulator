@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {
   runAnatomyNativeWebGpuDrawBoundaryCapture,
   runAnatomyNativeWebGpuFinalFrameCapture,
+  type AnatomyNativeBoundarySelection,
 } from "../../render/backend/anatomyNativeWebGpuDrawBoundaryCapture";
 
 type Deferred<T> = Readonly<{ promise: Promise<T>; resolve: (value: T) => void; reject: (cause: unknown) => void }>;
@@ -23,6 +24,7 @@ const format = "rgba8unorm";
 const createFixture = (options: Readonly<{
   finishRender?: () => unknown;
   afterFramebufferCopy?: () => void;
+  mapAsync?: () => Promise<void>;
 }> = {}) => {
   const queueFence = deferred<unknown>();
   const resourceRelease = deferred<Readonly<Record<string, unknown>>>();
@@ -64,7 +66,7 @@ const createFixture = (options: Readonly<{
     },
     device: {
       createBuffer: vi.fn(() => ({
-        mapAsync: vi.fn().mockResolvedValue(undefined),
+        mapAsync: vi.fn(() => options.mapAsync?.() ?? Promise.resolve()),
         getMappedRange: () => new Uint8Array([0, 0, 0, 255]).buffer,
         destroy: vi.fn(),
       })),
@@ -155,7 +157,10 @@ const finalFrameOptions = (fixture: ReturnType<typeof createFixture>, callbacks 
   onResourcesReleased: callbacks.onResourcesReleased,
 });
 
-const drawBoundaryOptions = (fixture: ReturnType<typeof createFixture>) => {
+const drawBoundaryOptions = (
+  fixture: ReturnType<typeof createFixture>,
+  boundarySelection?: AnatomyNativeBoundarySelection,
+) => {
   const material = new THREE.MeshBasicMaterial();
   const selected = new THREE.Mesh(new THREE.BufferGeometry(), material);
   selected.name = "selected-test-renderable";
@@ -167,6 +172,7 @@ const drawBoundaryOptions = (fixture: ReturnType<typeof createFixture>) => {
       threeRevision: "186",
       generation: 12,
       selected,
+      ...(boundarySelection ? { boundarySelection } : {}),
       samplePixelIndices: [0],
       baselineCanvas: {
         width: 1,
@@ -181,6 +187,34 @@ const drawBoundaryOptions = (fixture: ReturnType<typeof createFixture>) => {
       onResourcesReleased: fixture.callbacks.onResourcesReleased,
     } satisfies Parameters<typeof runAnatomyNativeWebGpuDrawBoundaryCapture>[0],
   };
+};
+
+const stubReadbackApi = () => {
+  vi.stubGlobal("GPUBufferUsage", { COPY_DST: 1, MAP_READ: 2 });
+  vi.stubGlobal("GPUMapMode", { READ: 1 });
+};
+
+const invokeTwoSelectedDraws = (
+  fixture: ReturnType<typeof createFixture>,
+  selected: THREE.Object3D,
+) => {
+  const backend = fixture.backend as unknown as {
+    draw: (renderObject: object, info: unknown) => unknown;
+    finishRender: (context: object) => unknown;
+  };
+  const material = (selected as THREE.Mesh).material as THREE.Material;
+  const renderObject = (id: number, passId: string) => ({
+    id,
+    object: selected,
+    material,
+    context: fixture.renderContext,
+    pipeline: fixture.pipeline,
+    passId,
+    getDrawParameters: () => ({ vertexCount: 240, firstVertex: 0, instanceCount: 1, firstInstance: 0 }),
+  });
+  backend.draw(renderObject(8, "backSide"), {});
+  backend.draw(renderObject(9, "frontSide"), {});
+  return backend;
 };
 
 afterEach(() => {
@@ -362,6 +396,153 @@ describe("native WebGPU finishRender failure settlement", () => {
       noBorrowedResourceDisposed: true,
     });
     expect(fixture.releasedDetails).toHaveLength(1);
+  });
+
+  it("executes only the enabled progressive and isolated boundary copies", async () => {
+    stubReadbackApi();
+    const modes: Readonly<{ name: string; selection: AnatomyNativeBoundarySelection; expectedBoundaries: string[] }>[] = [
+      { name: "P0", selection: { beforeFirstDraw: false, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: false }, expectedBoundaries: [] },
+      { name: "P1", selection: { beforeFirstDraw: true, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: false }, expectedBoundaries: ["S1"] },
+      { name: "P2", selection: { beforeFirstDraw: true, afterFirstDraw: true, beforeSecondDraw: false, afterSecondDraw: false }, expectedBoundaries: ["S1", "S2"] },
+      { name: "P3", selection: { beforeFirstDraw: true, afterFirstDraw: true, beforeSecondDraw: true, afterSecondDraw: false }, expectedBoundaries: ["S1", "S2", "S3"] },
+      { name: "P4", selection: { beforeFirstDraw: true, afterFirstDraw: true, beforeSecondDraw: true, afterSecondDraw: true }, expectedBoundaries: ["S1", "S2", "S3", "S4"] },
+      { name: "I1", selection: { beforeFirstDraw: true, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: false }, expectedBoundaries: ["S1"] },
+      { name: "I2", selection: { beforeFirstDraw: false, afterFirstDraw: true, beforeSecondDraw: false, afterSecondDraw: false }, expectedBoundaries: ["S2"] },
+      { name: "I3", selection: { beforeFirstDraw: false, afterFirstDraw: false, beforeSecondDraw: true, afterSecondDraw: false }, expectedBoundaries: ["S3"] },
+      { name: "I4", selection: { beforeFirstDraw: false, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: true }, expectedBoundaries: ["S4"] },
+    ];
+
+    for (const mode of modes) {
+      const fixture = createFixture();
+      const { selected, options } = drawBoundaryOptions(fixture, mode.selection);
+      const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+      const backend = invokeTwoSelectedDraws(fixture, selected);
+      const expectedCopyCount = mode.expectedBoundaries.length + 1;
+      expect(fixture.renderer.copyFramebufferToTexture, mode.name).toHaveBeenCalledTimes(mode.expectedBoundaries.length);
+      expect(() => backend.finishRender(fixture.renderContext)).not.toThrow();
+      expect(fixture.renderer.copyFramebufferToTexture, mode.name).toHaveBeenCalledTimes(expectedCopyCount);
+
+      const result = await capture;
+      expect(result, mode.name).toMatchObject({
+        status: "ok",
+        method: "native-draw-boundary",
+        nativeDrawCount: 2,
+        framebufferCopyCount: expectedCopyCount,
+        nativeDrawObservations: [
+          { drawOrder: 0, passId: "backSide", commandCount: 1, drawParameters: { vertexCount: 240 } },
+          { drawOrder: 1, passId: "frontSide", commandCount: 1, drawParameters: { vertexCount: 240 } },
+        ],
+        boundarySnapshots: mode.expectedBoundaries.map((boundaryId) => ({ boundaryId })),
+        finalFrame: { rawFramebufferSamples: [{ index: 0, rgba: [0, 0, 0, 255] }] },
+      });
+      expect(fixture.callbacks.awaitReadbacks).toHaveBeenCalledTimes(1);
+      expect(fixture.callbacks.awaitReadbacks.mock.calls[0]?.[0]).toHaveLength(expectedCopyCount);
+      expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+      expect(fixture.releasedDetails[0]).toMatchObject({
+        temporaryFramebufferTextureCount: expectedCopyCount,
+        temporaryFramebufferTextureDisposeCount: expectedCopyCount,
+        temporaryFramebufferTextureDisposeEventsPerResource: Array(expectedCopyCount).fill(1),
+        submissionState: "confirmed",
+        readbackState: "settled",
+        noBorrowedResourceDisposed: true,
+      });
+    }
+  });
+
+  it("rejects malformed boundary selection before installing backend hooks", async () => {
+    const fixture = createFixture();
+    const { options } = drawBoundaryOptions(fixture);
+    const malformed = {
+      ...options,
+      boundarySelection: {
+        beforeFirstDraw: true,
+        afterFirstDraw: "yes",
+        beforeSecondDraw: false,
+        afterSecondDraw: false,
+      },
+    } as unknown as Parameters<typeof runAnatomyNativeWebGpuDrawBoundaryCapture>[0];
+
+    expect(await runAnatomyNativeWebGpuDrawBoundaryCapture(malformed)).toMatchObject({
+      status: "unsupported",
+      reason: "invalid-native-boundary-selection",
+    });
+    expect(fixture.backend.draw).toBe(fixture.originalDraw);
+    expect(fixture.backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.renderer.copyFramebufferToTexture).not.toHaveBeenCalled();
+  });
+
+  it("keeps partial-boundary finishRender failure terminal and fences all encoded snapshots", async () => {
+    const failure = new Error("partial boundary finishRender failure");
+    const fixture = createFixture({ finishRender: () => { throw failure; } });
+    const selection: AnatomyNativeBoundarySelection = {
+      beforeFirstDraw: false,
+      afterFirstDraw: true,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    };
+    const { selected, options } = drawBoundaryOptions(fixture, selection);
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture(options);
+    const backend = invokeTwoSelectedDraws(fixture, selected);
+
+    expect(fixture.renderer.copyFramebufferToTexture).toHaveBeenCalledTimes(1);
+    expect(() => backend.finishRender(fixture.renderContext)).toThrow(failure);
+    expect(fixture.renderer.copyFramebufferToTexture).toHaveBeenCalledTimes(2);
+    expect(await capture).toMatchObject({ reason: "native-finish-render-failed", finishRenderError: { message: failure.message } });
+    expect(fixture.callbacks.awaitReadbacks).not.toHaveBeenCalled();
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+
+    fixture.queueFence.resolve(undefined);
+    expect(await fixture.resourceRelease.promise).toMatchObject({
+      temporaryFramebufferTextureCount: 2,
+      temporaryFramebufferTextureDisposeCount: 2,
+      temporaryFramebufferTextureDisposeEventsPerResource: [1, 1],
+      copyState: "encoded",
+      submissionState: "unknown",
+      readbackState: "not-started",
+      queueFenceOutcome: "queue-completed",
+      noBorrowedResourceDisposed: true,
+    });
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for selected partial snapshots to settle before cancellation cleanup", async () => {
+    stubReadbackApi();
+    const map = deferred<void>();
+    let active = true;
+    const fixture = createFixture({ mapAsync: () => map.promise });
+    const { selected, options } = drawBoundaryOptions(fixture, {
+      beforeFirstDraw: true,
+      afterFirstDraw: false,
+      beforeSecondDraw: false,
+      afterSecondDraw: false,
+    });
+    const capture = runAnatomyNativeWebGpuDrawBoundaryCapture({
+      ...options,
+      isCaptureActive: () => active,
+    });
+    const backend = invokeTwoSelectedDraws(fixture, selected);
+    expect(() => backend.finishRender(fixture.renderContext)).not.toThrow();
+    expect(fixture.renderer.copyFramebufferToTexture).toHaveBeenCalledTimes(2);
+    expect(backend.draw).toBe(fixture.originalDraw);
+    expect(backend.finishRender).toBe(fixture.originalFinishRender);
+    expect(fixture.backend.device.createBuffer).toHaveBeenCalledTimes(2);
+    expect(fixture.callbacks.onResourcesReleased).not.toHaveBeenCalled();
+
+    active = false;
+    map.resolve(undefined);
+    await expect(capture).rejects.toThrow("renderer-generation-retired");
+    expect(await fixture.resourceRelease.promise).toMatchObject({
+      temporaryFramebufferTextureCount: 2,
+      temporaryFramebufferTextureDisposeCount: 2,
+      temporaryFramebufferTextureDisposeEventsPerResource: [1, 1],
+      readbackBufferCount: 2,
+      readbackBufferDestroyCount: 2,
+      submissionState: "confirmed",
+      readbackState: "settled",
+      noBorrowedResourceDisposed: true,
+    });
+    expect(fixture.callbacks.onResourcesReleased).toHaveBeenCalledTimes(1);
   });
 
   it("waits for confirmed device loss if the queue fence rejects", async () => {

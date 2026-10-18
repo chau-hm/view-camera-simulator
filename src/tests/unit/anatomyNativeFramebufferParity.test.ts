@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareAnatomyNativeFramebufferSignedDifferences,
   compareAnatomyNativeFramebuffers,
   mapAnatomyScreenshotPixelsToFramebuffer,
   normalizeAnatomyNativeFramebufferRgba,
@@ -55,6 +56,24 @@ describe("native framebuffer parity normalization", () => {
 });
 
 describe("native framebuffer raw comparison", () => {
+  it("reports stable signed RGBA pixel differences and rejects incompatible metadata", () => {
+    const first = { metadata: metadata(), rgba: new Uint8Array([100, 20, 30, 255, 10, 20, 30, 40]) };
+    const second = { metadata: metadata(), rgba: new Uint8Array([99, 20, 30, 255, 10, 21, 30, 40]) };
+    const result = compareAnatomyNativeFramebufferSignedDifferences(first, second);
+    expect(result).toEqual({
+      compatible: true,
+      mismatches: [],
+      changedPixels: [
+        { index: 0, x: 0, y: 0, first: [100, 20, 30, 255], second: [99, 20, 30, 255], signedDelta: [-1, 0, 0, 0] },
+        { index: 1, x: 1, y: 0, first: [10, 20, 30, 40], second: [10, 21, 30, 40], signedDelta: [0, 1, 0, 0] },
+      ],
+    });
+    expect(compareAnatomyNativeFramebufferSignedDifferences(
+      first,
+      { metadata: metadata({ sampleCount: 1, resolveTarget: false }), rgba: second.rgba },
+    )).toMatchObject({ compatible: false, mismatches: ["sampleCount", "resolveTarget"], changedPixels: [] });
+  });
+
   it("reports RGBA, alpha, changed-pixel, exact-match, maxima, and per-channel distributions", () => {
     const result = compareAnatomyNativeFramebuffers(
       { metadata: metadata(), rgba: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]) },

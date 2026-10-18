@@ -179,6 +179,20 @@ export type AnatomyNativeDrawBoundaryCaptureResult = Readonly<Record<string, unk
   method: "native-draw-boundary";
 }>;
 
+export type AnatomyNativeBoundarySelection = Readonly<{
+  beforeFirstDraw: boolean;
+  afterFirstDraw: boolean;
+  beforeSecondDraw: boolean;
+  afterSecondDraw: boolean;
+}>;
+
+const ALL_NATIVE_BOUNDARIES: AnatomyNativeBoundarySelection = Object.freeze({
+  beforeFirstDraw: true,
+  afterFirstDraw: true,
+  beforeSecondDraw: true,
+  afterSecondDraw: true,
+});
+
 export type AnatomyNativeDrawBoundaryCaptureOptions = Readonly<{
   renderer: NativeRenderer;
   runtime: AnatomyGpuCaptureRuntime;
@@ -186,6 +200,8 @@ export type AnatomyNativeDrawBoundaryCaptureOptions = Readonly<{
   generation: number;
   selected: SelectedRenderable;
   sourceMaterialId?: string;
+  /** Optional M-INV7 selection. Omission retains the original full A2 behavior. */
+  boundarySelection?: AnatomyNativeBoundarySelection;
   samplePixelIndices: readonly number[];
   baselineCanvas?: Readonly<{
     width: number;
@@ -554,6 +570,14 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
   if (options.samplePixelIndices.length < 1 || options.samplePixelIndices.length > 32) {
     return Promise.resolve(unsupportedResult(options.generation, "invalid-or-excessive-fixed-sample-selection"));
   }
+  const boundarySelection = options.boundarySelection ?? ALL_NATIVE_BOUNDARIES;
+  const customBoundarySelection = options.boundarySelection !== undefined;
+  if (typeof boundarySelection.beforeFirstDraw !== "boolean" ||
+      typeof boundarySelection.afterFirstDraw !== "boolean" ||
+      typeof boundarySelection.beforeSecondDraw !== "boolean" ||
+      typeof boundarySelection.afterSecondDraw !== "boolean") {
+    return Promise.resolve(unsupportedResult(options.generation, "invalid-native-boundary-selection"));
+  }
 
   const dimensions = renderer.getDrawingBufferSize(new THREE.Vector2());
   const fullWidth = Math.floor(dimensions.x);
@@ -599,6 +623,8 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       texture: THREE.FramebufferTexture;
       order: number;
       region: Readonly<{ x: number; y: number; width: number; height: number }>;
+      boundaryId?: string;
+      selectedDrawOrder?: number;
       passBoundary?: Readonly<{
         before: ReturnType<typeof passMetadata>;
         after: ReturnType<typeof passMetadata>;
@@ -624,7 +650,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       viewport: Readonly<Record<string, number>> | null;
       scissor: Readonly<Record<string, number>> | null;
       scissorTest: boolean | null;
-      before: Snapshot;
+      before: Snapshot | null;
       after: Snapshot | null;
     };
 
@@ -649,11 +675,14 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     let captureContext: NativeRenderContext | null = null;
     let passOrder = 0;
     let drawOrder = 0;
+    let selectedDrawCount = 0;
     let unregisterCleanup: (() => void) | null = null;
     const passIds = new WeakMap<object, number>();
     const ownedTextures: THREE.FramebufferTexture[] = [];
     const textureRegions = new Map<THREE.FramebufferTexture, Snapshot["region"]>();
     const drafts: DrawDraft[] = [];
+    const selectedDraws: DrawDraft[] = [];
+    const boundarySnapshots: Snapshot[] = [];
     let finalFrameSnapshot: Snapshot | null = null;
     const textureDisposeCounts = new Map<THREE.FramebufferTexture, number>();
 
@@ -805,6 +834,48 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       finishWithResult(unsupportedResult(options.generation, reason));
     };
 
+    const captureBoundary = (
+      boundaryId: string,
+      selectedDrawOrder: number,
+      context: NativeRenderContext,
+      contextData: NativeRenderContextData,
+      sourceFormat: string,
+    ): Snapshot | null => {
+      const passBeforeCopy = contextData.currentPass;
+      const descriptorBeforeCopy = contextData.descriptor;
+      if (!passBeforeCopy || !descriptorBeforeCopy) {
+        rejectUnsupported(`r186-${boundaryId.toLowerCase()}-pass-state-unavailable-before-copy`);
+        return null;
+      }
+      const passStateBeforeCopy = passMetadata(contextData);
+      const resolveTarget = (descriptorBeforeCopy.colorAttachments?.[0]?.resolveTarget ?? null) !== null;
+      const depthFormat = backend.utils?.getCurrentDepthStencilFormat?.(context) ?? null;
+      const texture = createTexture(sourceFormat);
+      encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(texture, rectangle));
+      const resumedPass = contextData.currentPass;
+      const descriptorAfterCopy = contextData.descriptor;
+      if (!resumedPass || resumedPass === passBeforeCopy || !descriptorAfterCopy ||
+          !isLoadPreservingState(context, descriptorAfterCopy)) {
+        rejectUnsupported(`r186-${boundaryId.toLowerCase()}-copy-did-not-resume-color-depth-stencil-with-load`);
+        return null;
+      }
+      const snapshot: Snapshot = {
+        texture,
+        order: ownedTextures.indexOf(texture),
+        region,
+        boundaryId,
+        selectedDrawOrder,
+        passBoundary: {
+          before: passStateBeforeCopy,
+          after: passMetadata(contextData),
+          resolveTarget,
+          depthFormat,
+        },
+      };
+      boundarySnapshots.push(snapshot);
+      return snapshot;
+    };
+
     const readSnapshots = async (renderContext: NativeRenderContext) => {
       try {
         if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
@@ -842,7 +913,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           return unpackAnatomyGpuRgbaReadbackRows(readback as Uint8Array, textureRegion.width, textureRegion.height);
         });
         const observations = drafts.map((draft) => {
-          if (!draft.after) throw new Error("A native selected draw has no post-draw framebuffer snapshot");
+          if (!draft.before || !draft.after) throw new Error("A paired native draw observation is missing one of its framebuffer snapshots");
           const beforePixels = packedReadbacks[draft.before.order];
           const afterPixels = packedReadbacks[draft.after.order];
           if (!beforePixels || !afterPixels) throw new Error("Native framebuffer snapshot readback is missing");
@@ -902,7 +973,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
             response: drawResponse(destination, postDraw),
           };
         });
-        if (observations.length === 0) {
+        if (selectedDraws.length === 0) {
           rejectUnsupported("selected-renderable-issued-no-qualifiable-native-draw");
           return;
         }
@@ -919,6 +990,23 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           sourceFormat,
           options.samplePixelIndices,
         );
+        const capturedBoundaries = boundarySnapshots.map((snapshot) => {
+          const pixels = packedReadbacks[snapshot.order];
+          if (!pixels) throw new Error(`Native ${snapshot.boundaryId ?? "selected"} boundary readback is missing`);
+          return {
+            boundaryId: snapshot.boundaryId ?? null,
+            selectedDrawOrder: snapshot.selectedDrawOrder ?? null,
+            region: snapshot.region,
+            passBoundary: snapshot.passBoundary ?? null,
+            rawFramebufferSamples: anatomyNativeFramebufferSamples(
+              pixels,
+              fullWidth,
+              snapshot.region,
+              sourceFormat,
+              options.samplePixelIndices,
+            ),
+          };
+        });
         const normalizedFinalFrame = options.includeRawFramebuffer
           ? normalizeAnatomyNativeFramebufferRgba(finalFramePixels, fullWidth, fullHeight, sourceFormat)
           : null;
@@ -973,6 +1061,31 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
             sampledRegion: region,
             sampleCountInSelectedSet: options.samplePixelIndices.length,
           },
+          boundarySelection,
+          nativeDrawCount: selectedDraws.length,
+          framebufferCopyCount: ownedTextures.length,
+          nativeDrawObservations: selectedDraws.map((draft) => ({
+            call: `native-${draft.nativeCommand}`,
+            drawOrder: draft.order,
+            renderObjectId: draft.renderObjectId,
+            renderPassId: draft.renderPassId,
+            passId: draft.passId,
+            commandCount: draft.commandCount,
+            drawParameters: draft.drawParameters,
+            pipelineId: draft.pipelineId,
+            materialId: draft.materialId,
+            sourceMaterialId: draft.sourceMaterialId,
+            material: draft.material,
+            sourceMaterial: draft.sourceMaterial,
+            state: {
+              passStateBeforeSplit: draft.passStateBeforeSplit,
+              drawPassState: draft.drawPassState,
+              viewport: draft.viewport,
+              scissor: draft.scissor,
+              scissorTest: draft.scissorTest,
+            },
+          })),
+          boundarySnapshots: capturedBoundaries,
           drawObservations: observations,
           finalFrame: {
             classification: baselineParity.qualified ? "F1" : "F2",
@@ -989,7 +1102,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           },
           measurement: {
             directDestinationAndPostDrawAttachmentSamples: true,
-            actualDrawCommandBoundary: observations.every((observation) => observation.commandCount === 1),
+            actualDrawCommandBoundary: selectedDraws.every((observation) => observation.commandCount === 1),
             changedAtLeastOneFixedSample: changed,
             colorRepresentationCompatibleWithWebGlRgba8AfterChannelNormalization: true,
             browserCompositionIncluded: false,
@@ -1000,7 +1113,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
             resumedColorLoadOp: "load",
             resumedDepthLoadOp: renderContext.depth ? "load" : null,
             resumedStencilLoadOp: renderContext.stencil ? "load" : null,
-            renderPassCountAdded: observations.length * 2,
+            renderPassCountAdded: boundarySnapshots.length,
+            selectedBoundaryCopyCount: boundarySnapshots.length,
+            framebufferCopyCount: ownedTextures.length,
             finalFramePassCountAdded: 1,
             finalFramePassBoundary: finalFrameSnapshot.passBoundary ?? null,
             finalFrameParity: baselineParity,
@@ -1081,6 +1196,13 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         rejectUnsupported("native-render-pass-state-unavailable-before-selected-draw");
         return originalDraw.call(this, renderObject, info);
       }
+      const selectedDrawOrder = drawOrder;
+      const selectedInvocationIndex = selectedDrawCount;
+      selectedDrawCount += 1;
+      if (customBoundarySelection && selectedInvocationIndex > 1) {
+        rejectUnsupported("boundary-selection-requires-exactly-two-selected-native-draws");
+        return originalDraw.call(this, renderObject, info);
+      }
       const passStateBeforeSplit = passMetadata(contextData);
       const effectiveSampleCount = backend.utils?.getSampleCountRenderContext?.(context) ?? 1;
       actualSampleCount = effectiveSampleCount;
@@ -1091,25 +1213,36 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         return originalDraw.call(this, renderObject, info);
       }
 
-      let beforeTexture: THREE.FramebufferTexture;
       captureContext = context;
+      const beforeBoundaryId = selectedInvocationIndex === 0 ? "S1" :
+        selectedInvocationIndex === 1 ? "S3" : `legacy-draw-${selectedInvocationIndex + 1}-before`;
+      const afterBoundaryId = selectedInvocationIndex === 0 ? "S2" :
+        selectedInvocationIndex === 1 ? "S4" : `legacy-draw-${selectedInvocationIndex + 1}-after`;
+      const captureBefore = !customBoundarySelection || (selectedInvocationIndex === 0
+        ? boundarySelection.beforeFirstDraw
+        : boundarySelection.beforeSecondDraw);
+      const captureAfter = !customBoundarySelection || (selectedInvocationIndex === 0
+        ? boundarySelection.afterFirstDraw
+        : boundarySelection.afterSecondDraw);
+      let beforeSnapshot: Snapshot | null = null;
       try {
-        beforeTexture = createTexture(sourceFormat);
-        encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(beforeTexture, rectangle));
+        if (captureBefore) {
+          beforeSnapshot = captureBoundary(beforeBoundaryId, selectedDrawOrder, context, contextData, sourceFormat);
+        }
       } catch (cause) {
         fail(cause);
         return originalDraw.call(this, renderObject, info);
       }
+      if (settled || cleanupRequested) return originalDraw.call(this, renderObject, info);
 
       const drawPass = contextData.currentPass;
       const descriptorDuringDraw = contextData.descriptor;
-      if (!drawPass || drawPass === passBeforeSplit || !descriptorDuringDraw ||
-          !isLoadPreservingState(context, descriptorDuringDraw)) {
-        rejectUnsupported("r186-framebuffer-copy-did-not-resume-color-depth-stencil-with-load");
+      if (!drawPass || !descriptorDuringDraw ||
+          (captureBefore && !isLoadPreservingState(context, descriptorDuringDraw))) {
+        rejectUnsupported("native-selected-draw-pass-state-unavailable-after-pre-draw-boundary");
         return originalDraw.call(this, renderObject, info);
       }
 
-      captureContext = context;
       const draft: DrawDraft = {
         order: drawOrder++,
         renderObjectId: typeof renderObject.id === "number" ? renderObject.id : null,
@@ -1132,7 +1265,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         viewport: context.viewportValue ? { ...context.viewportValue } : null,
         scissor: context.scissorValue ? { ...context.scissorValue } : null,
         scissorTest: renderer.getScissorTest?.() ?? null,
-        before: { texture: beforeTexture, order: ownedTextures.indexOf(beforeTexture), region },
+        before: beforeSnapshot,
         after: null,
       };
 
@@ -1145,18 +1278,11 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         return result;
       }
       try {
-        const beforePostSplit = contextData.currentPass;
-        const afterTexture = createTexture(sourceFormat);
-        encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(afterTexture, rectangle));
-        const resumedAfterPost = contextData.currentPass;
-        const descriptorAfterPost = contextData.descriptor;
-        if (!resumedAfterPost || resumedAfterPost === beforePostSplit || !descriptorAfterPost ||
-            !isLoadPreservingState(context, descriptorAfterPost)) {
-          rejectUnsupported("r186-post-draw-copy-did-not-resume-color-depth-stencil-with-load");
-          return result;
+        if (captureAfter) {
+          draft.after = captureBoundary(afterBoundaryId, selectedDrawOrder, context, contextData, sourceFormat);
         }
-        draft.after = { texture: afterTexture, order: ownedTextures.indexOf(afterTexture), region };
-        drafts.push(draft);
+        selectedDraws.push(draft);
+        if (draft.before && draft.after) drafts.push(draft);
       } catch (cause) {
         fail(cause);
       }
@@ -1165,9 +1291,11 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
 
     wrappers.draw = drawWrapperImplementation as NativeBackend["draw"];
     const finishWrapperImplementation = function (this: unknown, renderContext: NativeRenderContext) {
-      if (captureContext === renderContext && drafts.length > 0 && !settled && !cleanupRequested) {
+      if (captureContext === renderContext && selectedDrawCount > 0 && !settled && !cleanupRequested) {
         if (!options.isCaptureActive()) {
           onCancel();
+        } else if (customBoundarySelection && (selectedDrawCount !== 2 || selectedDraws.length !== 2)) {
+          rejectUnsupported("boundary-selection-requires-exactly-two-selected-native-draws");
         } else {
           const contextData = backend.get(renderContext) as NativeRenderContextData;
           const currentSourceFormat = backend.context?.getCurrentTexture?.()?.format;
@@ -1224,7 +1352,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         submissionState = "confirmed";
         if (pendingOutcome) {
           settleOutcome(pendingOutcome);
-        } else if (!settled && !cleanupRequested && drafts.length > 0) {
+        } else if (!settled && !cleanupRequested && selectedDraws.length > 0) {
           readbackStarted = true;
           restoreHooks();
           void readSnapshots(renderContext);
@@ -1236,7 +1364,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     nativeBackend.draw = wrappers.draw;
     nativeBackend.finishRender = wrappers.finishRender;
     timeoutId = window.setTimeout(() => {
-      if (drafts.length === 0) rejectUnsupported("selected-renderable-did-not-issue-a-qualifiable-native-draw-before-timeout");
+      if (selectedDrawCount === 0) rejectUnsupported("selected-renderable-did-not-issue-a-qualifiable-native-draw-before-timeout");
     }, 10_000);
 
     // Keep the chosen canvas format in the lexical scope used when decoding readbacks.

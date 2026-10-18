@@ -15,6 +15,7 @@ import { runAnatomyGpuBlendCalibration } from "./backend/anatomyGpuBlendCalibrat
 import {
   runAnatomyNativeWebGpuDrawBoundaryCapture,
   runAnatomyNativeWebGpuFinalFrameCapture,
+  type AnatomyNativeBoundarySelection,
 } from "./backend/anatomyNativeWebGpuDrawBoundaryCapture";
 import {
   resolveAnatomyOutputIntervention,
@@ -32,6 +33,7 @@ type AnatomyGpuCaptureRequest = Readonly<{
   method: AnatomyGpuCaptureMethod | "calibration";
   renderableId?: string;
   sourceMaterialId?: string;
+  boundarySelection?: AnatomyNativeBoundarySelection;
   maskPixelIndices?: readonly number[];
   samplePixelIndices?: readonly number[];
   baselineCanvas?: Readonly<{
@@ -1115,6 +1117,7 @@ export const AnatomyGpuBlendIntermediateProbe = ({
           generation,
           selected: selection.target,
           ...(request.sourceMaterialId ? { sourceMaterialId: request.sourceMaterialId } : {}),
+          ...(request.boundarySelection ? { boundarySelection: request.boundarySelection } : {}),
           samplePixelIndices: request.samplePixelIndices ?? [],
           ...(request.baselineCanvas ? { baselineCanvas: request.baselineCanvas } : {}),
           ...(request.includeRawFramebuffer === true ? { includeRawFramebuffer: true } : {}),
