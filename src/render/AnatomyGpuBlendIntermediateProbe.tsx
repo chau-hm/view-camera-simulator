@@ -12,7 +12,10 @@ import {
   type AnatomyGpuCaptureMethod,
 } from "./backend/anatomyGpuBlendIntermediate";
 import { runAnatomyGpuBlendCalibration } from "./backend/anatomyGpuBlendCalibration";
-import { runAnatomyNativeWebGpuDrawBoundaryCapture } from "./backend/anatomyNativeWebGpuDrawBoundaryCapture";
+import {
+  runAnatomyNativeWebGpuDrawBoundaryCapture,
+  runAnatomyNativeWebGpuFinalFrameCapture,
+} from "./backend/anatomyNativeWebGpuDrawBoundaryCapture";
 import {
   resolveAnatomyOutputIntervention,
   type AnatomyOutputInterventionRenderable,
@@ -37,6 +40,7 @@ type AnatomyGpuCaptureRequest = Readonly<{
     rgbaBase64: string;
     repeatNoiseMae: number;
   }>;
+  includeRawFramebuffer?: boolean;
 }>;
 
 type ActiveAnatomyGpuCapture = {
@@ -1085,6 +1089,17 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       }
     };
 
+    const registerNativeCaptureCleanup = (cleanup: () => void): (() => void) => {
+      const registeredCleanup = () => {
+        cleanup();
+        if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
+      };
+      directCaptureCleanup = registeredCleanup;
+      return () => {
+        if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
+      };
+    };
+
     const handleNativeDrawBoundaryCapture = (request: AnatomyGpuCaptureRequest) => runCapture(
       request,
       async (operation) => {
@@ -1102,19 +1117,33 @@ export const AnatomyGpuBlendIntermediateProbe = ({
           ...(request.sourceMaterialId ? { sourceMaterialId: request.sourceMaterialId } : {}),
           samplePixelIndices: request.samplePixelIndices ?? [],
           ...(request.baselineCanvas ? { baselineCanvas: request.baselineCanvas } : {}),
+          ...(request.includeRawFramebuffer === true ? { includeRawFramebuffer: true } : {}),
           resolveSourceMaterial: sourceMaterialFor,
           isCaptureActive: () => captureIsActive(operation),
           awaitReadbacks: (readbacks) => awaitCaptureReadbacks(operation, readbacks),
-          registerCleanup: (cleanup) => {
-            const registeredCleanup = () => {
-              cleanup();
-              if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
-            };
-            directCaptureCleanup = registeredCleanup;
-            return () => {
-              if (directCaptureCleanup === registeredCleanup) directCaptureCleanup = null;
-            };
-          },
+          registerCleanup: registerNativeCaptureCleanup,
+          onResourcesReleased: (lifecycle) => Object.assign(operation.resourceCleanup, lifecycle),
+        });
+        assertCaptureActive(operation);
+        return result;
+      },
+    );
+
+    const handleNativeFinalFrameCapture = (request: AnatomyGpuCaptureRequest) => runCapture(
+      request,
+      async (operation) => {
+        assertCaptureActive(operation);
+        const runtime = resolveObserverRendererRuntime(gl);
+        const result = await runAnatomyNativeWebGpuFinalFrameCapture({
+          renderer: gl as unknown as Parameters<typeof runAnatomyNativeWebGpuFinalFrameCapture>[0]["renderer"],
+          runtime,
+          threeRevision: THREE.REVISION,
+          generation,
+          samplePixelIndices: request.samplePixelIndices ?? [],
+          includeRawFramebuffer: request.includeRawFramebuffer === true,
+          isCaptureActive: () => captureIsActive(operation),
+          awaitReadbacks: (readbacks) => awaitCaptureReadbacks(operation, readbacks),
+          registerCleanup: registerNativeCaptureCleanup,
           onResourcesReleased: (lifecycle) => Object.assign(operation.resourceCleanup, lifecycle),
         });
         assertCaptureActive(operation);
@@ -1144,6 +1173,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         }
       } else if (request.method === "native-draw-boundary") {
         void handleNativeDrawBoundaryCapture(request).catch((error: unknown) => {
+          reject(request.requestId, error instanceof Error ? error.message : String(error));
+        });
+      } else if (request.method === "native-final-frame") {
+        void handleNativeFinalFrameCapture(request).catch((error: unknown) => {
           reject(request.requestId, error instanceof Error ? error.message : String(error));
         });
       } else if (request.method === "single-renderable-replay") {
