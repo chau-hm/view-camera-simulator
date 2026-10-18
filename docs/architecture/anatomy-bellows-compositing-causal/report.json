@@ -1,0 +1,4907 @@
+{
+  "schemaVersion": 1,
+  "investigation": "anatomy-bellows-compositing-causal",
+  "outcome": "TCI-3",
+  "provenance": {
+    "baseSha": "111890173c92106c63f23eda09fbde6ce695a39e",
+    "measurementSha": "5fbe82d517eaffe231a6bdc8272dfaff82f05461",
+    "browserVersion": "155.0.8059.84",
+    "browserUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "platform": {
+      "os": "darwin",
+      "architecture": "arm64"
+    },
+    "threeRevision": "186",
+    "hardwareAcceleration": "unconfirmed; pinned Three.js r186 does not expose adapter details in this capture",
+    "captureRepresentation": "same-resolution Playwright screenshots of the canvas browser presentation; not compared to raw framebuffer bytes"
+  },
+  "state": {
+    "sceneId": "view-camera-anatomy",
+    "teachingState": "Anatomy \u2014 Front Standard highlighted, Bellows dimmed",
+    "viewport": {
+      "css": [
+        1440,
+        1000
+      ],
+      "dpr": 1,
+      "backing": [
+        1028,
+        820
+      ]
+    },
+    "camera": {
+      "position": [
+        0.4455739783837988,
+        0.22278698919189935,
+        0.4381663213814697
+      ],
+      "quaternion": [
+        -0.14691691922855168,
+        0.34266306810514197,
+        0.05434810457292045,
+        0.9263064957833843
+      ],
+      "orbitTarget": [
+        0,
+        0,
+        -0.08167
+      ],
+      "matchedBetweenRenderers": true
+    },
+    "runtime": {
+      "webgl": {
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "outputPolicy": "standard"
+      },
+      "native": {
+        "rendererFamily": "webgpu-renderer",
+        "executionBackend": "webgpu",
+        "applicationFallback": "none",
+        "outputPolicy": "material-aware",
+        "outputStatus": "active"
+      }
+    },
+    "sourceMaterial": {
+      "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+      "type": "MeshStandardMaterial",
+      "family": "MeshStandardMaterial",
+      "color": "111827",
+      "emissive": "000000",
+      "emissiveIntensity": 1,
+      "toneMapped": true,
+      "opacity": 0.16,
+      "transparent": true,
+      "blending": 1,
+      "premultipliedAlpha": false,
+      "depthTest": true,
+      "depthWrite": false,
+      "side": "double",
+      "alphaTest": 0,
+      "roughness": 0.88,
+      "metalness": 0,
+      "outputTransform": null,
+      "outputInterventionId": null,
+      "outputGraphBuildCount": null,
+      "forceSinglePass": false,
+      "alphaWrite": null,
+      "materialVersion": 0,
+      "textureSlots": {}
+    },
+    "outputMaterialIds": {
+      "webgl": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+      "nativeB0": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7"
+    },
+    "selectedRenderable": {
+      "semanticId": "bellows-folded-surface",
+      "webglObjectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+      "nativeObjectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+      "webglGeometry": {
+        "id": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
+        "type": "BufferGeometry",
+        "vertexCount": 44,
+        "positionAttributeVersion": 2,
+        "indexCount": 240,
+        "indexVersion": 2,
+        "contentFingerprint": "f5234645",
+        "cachedBoundingBox": null
+      },
+      "nativeGeometry": {
+        "id": "db1fc352-a02d-4397-8d2e-b406eccd943f",
+        "type": "BufferGeometry",
+        "vertexCount": 44,
+        "positionAttributeVersion": 2,
+        "indexCount": 240,
+        "indexVersion": 2,
+        "contentFingerprint": "f5234645",
+        "cachedBoundingBox": null
+      }
+    }
+  },
+  "masks": {
+    "staticDimmedGroup": {
+      "source": "docs/architecture/anatomy-dimmed-output-mechanism/masks/front-standard-dimmed-response.png",
+      "pixelCount": 12287,
+      "fixedBeforeIntervention": true
+    },
+    "selectedBellowsVisibilityResponse": {
+      "source": "native C0 image versus same-generation C0 with only Bellows hidden; per-channel threshold 8",
+      "pixelCount": 5421,
+      "interpretation": "observed visibility response, not an exact mesh silhouette or fragment-coverage mask"
+    },
+    "selectedBellowsDimmedIntersection": {
+      "pixelCount": 5421
+    },
+    "historicalM3BellowsResponse": {
+      "source": "docs/architecture/anatomy-renderable-contribution-investigation/masks/M3-webgl-bellows-selected-part.png",
+      "pixelCount": 5477,
+      "historicalIntersectionPixelCount": 5444
+    },
+    "unaffectedBackgroundCandidate": {
+      "source": "docs/architecture/anatomy-dimmed-output-mechanism/masks/front-standard-unaffected-candidate.png",
+      "pixelCount": 189482
+    },
+    "historicalHighErrorSelectedSamples": [
+      {
+        "index": 80954,
+        "x": 256,
+        "y": 157,
+        "referenceB0VsWebglRgbMae": 178.66666666666666
+      },
+      {
+        "index": 82488,
+        "x": 248,
+        "y": 160,
+        "referenceB0VsWebglRgbMae": 167
+      },
+      {
+        "index": 107159,
+        "x": 247,
+        "y": 208,
+        "referenceB0VsWebglRgbMae": 153
+      },
+      {
+        "index": 112299,
+        "x": 247,
+        "y": 218,
+        "referenceB0VsWebglRgbMae": 153
+      },
+      {
+        "index": 100991,
+        "x": 247,
+        "y": 196,
+        "referenceB0VsWebglRgbMae": 152.66666666666666
+      },
+      {
+        "index": 121102,
+        "x": 312,
+        "y": 235,
+        "referenceB0VsWebglRgbMae": 152
+      },
+      {
+        "index": 85069,
+        "x": 259,
+        "y": 165,
+        "referenceB0VsWebglRgbMae": 146.33333333333334
+      },
+      {
+        "index": 115902,
+        "x": 252,
+        "y": 225,
+        "referenceB0VsWebglRgbMae": 146
+      }
+    ],
+    "fixedMInv5Samples": {
+      "framebufferIndices": [
+        323305,
+        329457,
+        427115,
+        447675,
+        403471,
+        482757,
+        339759,
+        462077,
+        323279
+      ],
+      "screenshotIndices": [
+        80954,
+        82488,
+        107159,
+        112299,
+        100991,
+        121102,
+        85069,
+        115902,
+        80941
+      ],
+      "originalAttachmentSize": [
+        1028,
+        820
+      ]
+    },
+    "coverage": "Visibility-response changes can include revealed background, occlusion, or face-coverage changes; these pixels remain included and are not interpreted as exact Bellows fragments."
+  },
+  "baseline": {
+    "reproducedDimmedMaskMeanAbsoluteRgbDifference": 104.1276959387971,
+    "historicalDimmedMaskReference": 104.1276959387971,
+    "reproductionGate": {
+      "minimumMae": 50,
+      "passed": true
+    },
+    "fullFrameCrossRendererDifference": {
+      "sampleCount": 211254,
+      "meanAbsoluteRgbDifference": 6.0819345432512515,
+      "perChannelMeanAbsoluteDifference": [
+        6.166046560065135,
+        6.103193312315979,
+        5.976563757372642
+      ],
+      "changedPixelCount": 8648,
+      "changedPixelFraction": 0.04093650297745841,
+      "meanSignedLuminanceDifference": 6.087259470589575
+    },
+    "regions": {
+      "fullFrame": {
+        "sampleCount": 211254,
+        "meanAbsoluteRgbDifference": 6.0819345432512515,
+        "perChannelMeanAbsoluteDifference": [
+          6.166046560065135,
+          6.103193312315979,
+          5.976563757372642
+        ],
+        "changedPixelCount": 8648,
+        "changedPixelFraction": 0.04093650297745841,
+        "meanSignedLuminanceDifference": 6.087259470589575
+      },
+      "dimmedGroup": {
+        "sampleCount": 12287,
+        "meanAbsoluteRgbDifference": 104.1276959387971,
+        "perChannelMeanAbsoluteDifference": [
+          105.48669325303166,
+          104.49173923659151,
+          102.40465532676812
+        ],
+        "changedPixelCount": 8409,
+        "changedPixelFraction": 0.6843818670139171,
+        "meanSignedLuminanceDifference": 104.49874057132932
+      },
+      "selectedBellowsVisibilityResponse": {
+        "sampleCount": 5421,
+        "meanAbsoluteRgbDifference": 35.397835577691694,
+        "perChannelMeanAbsoluteDifference": [
+          36.01641763512267,
+          35.52204390333887,
+          34.65504519461354
+        ],
+        "changedPixelCount": 1734,
+        "changedPixelFraction": 0.3198671831765357,
+        "meanSignedLuminanceDifference": 35.444367312303896
+      },
+      "selectedBellowsDimmedIntersection": {
+        "sampleCount": 5421,
+        "meanAbsoluteRgbDifference": 35.397835577691694,
+        "perChannelMeanAbsoluteDifference": [
+          36.01641763512267,
+          35.52204390333887,
+          34.65504519461354
+        ],
+        "changedPixelCount": 1734,
+        "changedPixelFraction": 0.3198671831765357,
+        "meanSignedLuminanceDifference": 35.444367312303896
+      },
+      "historicalBellowsResponse": {
+        "sampleCount": 5477,
+        "meanAbsoluteRgbDifference": 35.11015762887225,
+        "perChannelMeanAbsoluteDifference": [
+          35.72083257257623,
+          35.231331020631735,
+          34.3783092934088
+        ],
+        "changedPixelCount": 1741,
+        "changedPixelFraction": 0.3178747489501552,
+        "meanSignedLuminanceDifference": 35.14472386342877
+      },
+      "historicalBellowsDimmedIntersection": {
+        "sampleCount": 5444,
+        "meanAbsoluteRgbDifference": 35.31416850355131,
+        "perChannelMeanAbsoluteDifference": [
+          35.93038207200588,
+          35.437362233651726,
+          34.57476120499633
+        ],
+        "changedPixelCount": 1739,
+        "changedPixelFraction": 0.3194342395297575,
+        "meanSignedLuminanceDifference": 35.35985569434228
+      },
+      "unaffectedBackgroundCandidate": {
+        "sampleCount": 189482,
+        "meanAbsoluteRgbDifference": 0.009075620199631979,
+        "perChannelMeanAbsoluteDifference": [
+          0.009135432389356246,
+          0.009087934473986975,
+          0.009003493735552717
+        ],
+        "changedPixelCount": 58,
+        "changedPixelFraction": 0.00030609767682418385,
+        "meanSignedLuminanceDifference": 0.008659177125003957
+      },
+      "historicalHighErrorSelectedSamples": {
+        "sampleCount": 8,
+        "meanAbsoluteRgbDifference": 156.08333333333334,
+        "perChannelMeanAbsoluteDifference": [
+          157.875,
+          156.25,
+          154.125
+        ],
+        "changedPixelCount": 8,
+        "changedPixelFraction": 1,
+        "meanSignedLuminanceDifference": 156.44205
+      },
+      "fixedMInv5Samples": {
+        "sampleCount": 9,
+        "meanAbsoluteRgbDifference": 138.74074074074073,
+        "perChannelMeanAbsoluteDifference": [
+          140.33333333333334,
+          138.88888888888889,
+          137
+        ],
+        "changedPixelCount": 8,
+        "changedPixelFraction": 0.8888888888888888,
+        "meanSignedLuminanceDifference": 139.0596
+      }
+    },
+    "repeatNoise": {
+      "webgl": {
+        "sampleCount": 211254,
+        "meanAbsoluteRgbDifference": 0,
+        "perChannelMeanAbsoluteDifference": [
+          0,
+          0,
+          0
+        ],
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "native": {
+        "sampleCount": 211254,
+        "meanAbsoluteRgbDifference": 0,
+        "perChannelMeanAbsoluteDifference": [
+          0,
+          0,
+          0
+        ],
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    },
+    "sameRendererRestorationAfterVisibilityMaskCapture": {
+      "sampleCount": 211254,
+      "meanAbsoluteRgbDifference": 0,
+      "perChannelMeanAbsoluteDifference": [
+        0,
+        0,
+        0
+      ],
+      "changedPixelCount": 0,
+      "changedPixelFraction": 0,
+      "meanSignedLuminanceDifference": 0
+    },
+    "drawMetadata": {
+      "webgl": {
+        "requestId": "anatomy-gpu-intermediate-73",
+        "status": "ok",
+        "feasibility": "F1",
+        "method": "bellows-draw-metadata",
+        "generation": 1,
+        "rendererRuntime": {
+          "rendererFamily": "webgl-renderer",
+          "executionBackend": "webgl2"
+        },
+        "selectedRenderable": {
+          "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "name": "bellows-folded-surface",
+          "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
+          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+        },
+        "drawObservations": [
+          {
+            "order": 0,
+            "command": "drawElements",
+            "commandArguments": [
+              4,
+              240,
+              5123,
+              0
+            ],
+            "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "renderOrder": 0,
+            "material": {
+              "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+              "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+              "type": "MeshStandardMaterial",
+              "color": "111827",
+              "opacity": 0.16,
+              "transparent": true,
+              "blending": 1,
+              "premultipliedAlpha": false,
+              "alphaWrite": null,
+              "side": 1,
+              "forceSinglePass": false,
+              "depthTest": true,
+              "depthWrite": false,
+              "depthFunction": 3,
+              "toneMapped": true,
+              "roughness": 0.88,
+              "metalness": 0,
+              "outputTransform": null,
+              "outputInterventionId": null
+            },
+            "state": {
+              "blendEnabled": true,
+              "blendSourceRgb": "SRC_ALPHA",
+              "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+              "blendEquationRgb": "FUNC_ADD",
+              "blendSourceAlpha": "ONE",
+              "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+              "blendEquationAlpha": "FUNC_ADD",
+              "depthTest": true,
+              "depthWrite": false,
+              "depthFunction": "LEQUAL",
+              "stencilTest": false
+            }
+          },
+          {
+            "order": 1,
+            "command": "drawElements",
+            "commandArguments": [
+              4,
+              240,
+              5123,
+              0
+            ],
+            "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "renderOrder": 0,
+            "material": {
+              "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+              "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+              "type": "MeshStandardMaterial",
+              "color": "111827",
+              "opacity": 0.16,
+              "transparent": true,
+              "blending": 1,
+              "premultipliedAlpha": false,
+              "alphaWrite": null,
+              "side": 0,
+              "forceSinglePass": false,
+              "depthTest": true,
+              "depthWrite": false,
+              "depthFunction": 3,
+              "toneMapped": true,
+              "roughness": 0.88,
+              "metalness": 0,
+              "outputTransform": null,
+              "outputInterventionId": null
+            },
+            "state": {
+              "blendEnabled": true,
+              "blendSourceRgb": "SRC_ALPHA",
+              "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+              "blendEquationRgb": "FUNC_ADD",
+              "blendSourceAlpha": "ONE",
+              "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+              "blendEquationAlpha": "FUNC_ADD",
+              "depthTest": true,
+              "depthWrite": false,
+              "depthFunction": "LEQUAL",
+              "stencilTest": false
+            }
+          }
+        ],
+        "drawCount": 2,
+        "readbackStarted": false,
+        "framebufferCopyStarted": false
+      },
+      "native": {
+        "requestId": "anatomy-gpu-intermediate-74",
+        "status": "ok",
+        "feasibility": "F1",
+        "method": "bellows-draw-metadata",
+        "generation": 1,
+        "rendererRuntime": {
+          "rendererFamily": "webgpu-renderer",
+          "executionBackend": "webgpu"
+        },
+        "selectedRenderable": {
+          "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "name": "bellows-folded-surface",
+          "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
+          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+        },
+        "drawObservations": [
+          {
+            "order": 0,
+            "command": "drawIndexed",
+            "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "renderOrder": 0,
+            "material": {
+              "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "type": "MeshStandardNodeMaterial",
+              "color": "111827",
+              "opacity": 0.16,
+              "transparent": true,
+              "blending": 1,
+              "premultipliedAlpha": false,
+              "alphaWrite": null,
+              "side": 1,
+              "forceSinglePass": false,
+              "depthTest": true,
+              "depthWrite": false,
+              "depthFunction": 3,
+              "toneMapped": true,
+              "roughness": 0.88,
+              "metalness": 0,
+              "outputTransform": "material-aware",
+              "outputInterventionId": "B0"
+            },
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "pipelineId": null,
+            "passId": null,
+            "drawParameters": {
+              "vertexCount": 240,
+              "firstVertex": 0,
+              "instanceCount": 1,
+              "firstInstance": 0
+            },
+            "gpuBlendEnabled": true,
+            "gpuBlendDescriptor": {
+              "color": {
+                "srcFactor": "src-alpha",
+                "dstFactor": "one-minus-src-alpha",
+                "operation": "add"
+              },
+              "alpha": {
+                "srcFactor": "one",
+                "dstFactor": "one-minus-src-alpha",
+                "operation": "add"
+              }
+            },
+            "gpuDepthCompare": "less-equal",
+            "info": {
+              "autoReset": true,
+              "frame": 110,
+              "calls": 95
+            }
+          },
+          {
+            "order": 1,
+            "command": "drawIndexed",
+            "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "renderOrder": 0,
+            "material": {
+              "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "type": "MeshStandardNodeMaterial",
+              "color": "111827",
+              "opacity": 0.16,
+              "transparent": true,
+              "blending": 1,
+              "premultipliedAlpha": false,
+              "alphaWrite": null,
+              "side": 0,
+              "forceSinglePass": false,
+              "depthTest": true,
+              "depthWrite": false,
+              "depthFunction": 3,
+              "toneMapped": true,
+              "roughness": 0.88,
+              "metalness": 0,
+              "outputTransform": "material-aware",
+              "outputInterventionId": "B0"
+            },
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "pipelineId": null,
+            "passId": null,
+            "drawParameters": {
+              "vertexCount": 240,
+              "firstVertex": 0,
+              "instanceCount": 1,
+              "firstInstance": 0
+            },
+            "gpuBlendEnabled": true,
+            "gpuBlendDescriptor": {
+              "color": {
+                "srcFactor": "src-alpha",
+                "dstFactor": "one-minus-src-alpha",
+                "operation": "add"
+              },
+              "alpha": {
+                "srcFactor": "one",
+                "dstFactor": "one-minus-src-alpha",
+                "operation": "add"
+              }
+            },
+            "gpuDepthCompare": "less-equal",
+            "info": {
+              "autoReset": true,
+              "frame": 110,
+              "calls": 95
+            }
+          }
+        ],
+        "drawCount": 2,
+        "readbackStarted": false,
+        "framebufferCopyStarted": false
+      }
+    },
+    "twoDrawBaselineQualified": true,
+    "rendererOrdering": [
+      "webgl",
+      "native"
+    ]
+  },
+  "conditionMatrix": {
+    "definitions": {
+      "C0": {
+        "forceSinglePass": false,
+        "blending": "NormalBlending",
+        "authoredReference": true
+      },
+      "C1": {
+        "forceSinglePass": true,
+        "blending": "NormalBlending"
+      },
+      "C2": {
+        "forceSinglePass": false,
+        "blending": "NoBlending"
+      },
+      "C3": {
+        "forceSinglePass": true,
+        "blending": "NoBlending"
+      }
+    },
+    "captures": [
+      {
+        "backend": "webgl",
+        "condition": "C1",
+        "qualified": true,
+        "sourceMaterial": {
+          "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 176,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "10561623-9b2a-4727-9bd3-890c6039341f",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": true,
+          "alphaWrite": null,
+          "materialVersion": 1,
+          "textureSlots": {}
+        },
+        "applyResult": {
+          "requestId": "anatomy-bellows-condition-76",
+          "generation": 1,
+          "ok": true,
+          "operation": "apply",
+          "condition": "C1",
+          "transactionId": "m-inv8-webgl-C1-75",
+          "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "renderableName": "bellows-folded-surface",
+          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "originalOutputMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "activeOutputMaterialId": "10561623-9b2a-4727-9bd3-890c6039341f",
+          "sourcePropertiesPreserved": true,
+          "baselineSourceProperties": {
+            "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 176,
+            "textureSlots": {}
+          },
+          "requestedOverrides": {
+            "forceSinglePass": true
+          },
+          "effectiveMaterialProperties": {
+            "id": "10561623-9b2a-4727-9bd3-890c6039341f",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": true,
+            "alphaWrite": null,
+            "materialVersion": 1,
+            "textureSlots": {}
+          },
+          "executionBackend": "webgl2",
+          "outputVariantUpdatePendingFrame": false
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-77",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          },
+          "selectedRenderable": {
+            "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "name": "bellows-folded-surface",
+            "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
+            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawElements",
+              "commandArguments": [
+                4,
+                240,
+                5123,
+                0
+              ],
+              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "renderOrder": 0,
+              "material": {
+                "id": "10561623-9b2a-4727-9bd3-890c6039341f",
+                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "type": "MeshStandardMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 1,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 2,
+                "forceSinglePass": true,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": null,
+                "outputInterventionId": null
+              },
+              "state": {
+                "blendEnabled": true,
+                "blendSourceRgb": "SRC_ALPHA",
+                "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationRgb": "FUNC_ADD",
+                "blendSourceAlpha": "ONE",
+                "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationAlpha": "FUNC_ADD",
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": "LEQUAL",
+                "stencilTest": false
+              }
+            }
+          ],
+          "drawCount": 1,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoredC0Metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "diagnosticCloneDisposeCount": 1,
+          "borrowedDisposeCounts": {
+            "sourceMaterial": 0,
+            "geometry": 0,
+            "textures": 0
+          },
+          "borrowedResourcesPreserved": true,
+          "restoreResponse": {
+            "requestId": "anatomy-bellows-condition-78",
+            "generation": 1,
+            "ok": true,
+            "operation": "restore",
+            "transactionId": "m-inv8-webgl-C1-75",
+            "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "renderableMaterialIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "originalVisibilityPreserved": true,
+            "sourcePropertiesPreserved": true,
+            "diagnosticCloneDisposeCount": 1,
+            "borrowedDisposeCounts": {
+              "sourceMaterial": 0,
+              "geometry": 0,
+              "textures": 0
+            },
+            "borrowedResourceDisposed": false,
+            "nativeOutputRestoration": null
+          }
+        },
+        "stateQualification": {
+          "sourceMaterialPreserved": true,
+          "comparisonExcludesRendererManagedMaterialVersion": true,
+          "outputStateQualified": true,
+          "actualDrawStateQualified": true,
+          "actualDrawCount": 1,
+          "expectedDrawCount": 1,
+          "drawSides": [
+            2
+          ],
+          "expectedSides": [
+            2
+          ],
+          "actualBlendEnabled": [
+            true
+          ],
+          "expectedBlendEnabled": true,
+          "transparentListClassificationRetained": true,
+          "renderOrderPreserved": true,
+          "outputPolicyQualified": true
+        },
+        "withinRendererResponse": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.00015305430114143797,
+            "perChannelMeanAbsoluteDifference": [
+              0.00011834095449080254,
+              0.00014674278356859515,
+              0.00019407916536491617
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00011834095449080254,
+              -0.00014674278356859515,
+              -0.00019407916536491617
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0.002577249667670438,
+            "perChannelMeanAbsoluteDifference": [
+              0.002034670790266135,
+              0.0025229917799300073,
+              0.0031740864328151704
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.002034670790266135,
+              -0.0025229917799300073,
+              -0.0031740864328151704
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.005841480661624546,
+            "perChannelMeanAbsoluteDifference": [
+              0.004611695259177273,
+              0.005718502121379819,
+              0.007194244604316547
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.004611695259177273,
+              -0.005718502121379819,
+              -0.007194244604316547
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.005841480661624546,
+            "perChannelMeanAbsoluteDifference": [
+              0.004611695259177273,
+              0.005718502121379819,
+              0.007194244604316547
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.004611695259177273,
+              -0.005718502121379819,
+              -0.007194244604316547
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.005816801371540534,
+            "perChannelMeanAbsoluteDifference": [
+              0.004592211609110948,
+              0.005694342395297576,
+              0.0071638501102130785
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.004592211609110948,
+              -0.005694342395297576,
+              -0.0071638501102130785
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "backend": "native",
+        "condition": "C1",
+        "qualified": true,
+        "sourceMaterial": {
+          "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 0,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "bb0c0193-d499-4ced-af6f-b7383f41e955",
+          "type": "MeshStandardNodeMaterial",
+          "family": "MaterialAwareStandardNodeMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": "material-aware",
+          "outputInterventionId": "B0",
+          "outputGraphBuildCount": 1,
+          "forceSinglePass": true,
+          "alphaWrite": null,
+          "materialVersion": 1,
+          "textureSlots": {}
+        },
+        "applyResult": {
+          "requestId": "anatomy-bellows-condition-80",
+          "generation": 1,
+          "ok": true,
+          "operation": "apply",
+          "condition": "C1",
+          "transactionId": "m-inv8-native-C1-79",
+          "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "renderableName": "bellows-folded-surface",
+          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "originalOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "activeOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "sourcePropertiesPreserved": true,
+          "baselineSourceProperties": {
+            "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 0,
+            "textureSlots": {}
+          },
+          "requestedOverrides": {
+            "forceSinglePass": true
+          },
+          "effectiveMaterialProperties": {
+            "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+            "type": "MeshStandardNodeMaterial",
+            "family": "MaterialAwareStandardNodeMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": "material-aware",
+            "outputInterventionId": "B0",
+            "outputGraphBuildCount": 3,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 1,
+            "textureSlots": {}
+          },
+          "executionBackend": "webgpu",
+          "outputVariantUpdatePendingFrame": true
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-81",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgpu-renderer",
+            "executionBackend": "webgpu"
+          },
+          "selectedRenderable": {
+            "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "name": "bellows-folded-surface",
+            "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawIndexed",
+              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "renderOrder": 0,
+              "material": {
+                "id": "bb0c0193-d499-4ced-af6f-b7383f41e955",
+                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "type": "MeshStandardNodeMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 1,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 2,
+                "forceSinglePass": true,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": "material-aware",
+                "outputInterventionId": "B0"
+              },
+              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "pipelineId": null,
+              "passId": null,
+              "drawParameters": {
+                "vertexCount": 240,
+                "firstVertex": 0,
+                "instanceCount": 1,
+                "firstInstance": 0
+              },
+              "gpuBlendEnabled": true,
+              "gpuBlendDescriptor": {
+                "color": {
+                  "srcFactor": "src-alpha",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                },
+                "alpha": {
+                  "srcFactor": "one",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                }
+              },
+              "gpuDepthCompare": "less-equal",
+              "info": {
+                "autoReset": true,
+                "frame": 180,
+                "calls": 165
+              }
+            }
+          ],
+          "drawCount": 1,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoredC0Metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "diagnosticCloneDisposeCount": 0,
+          "borrowedDisposeCounts": {
+            "sourceMaterial": 0,
+            "geometry": 0,
+            "textures": 0
+          },
+          "borrowedResourcesPreserved": true,
+          "restoreResponse": {
+            "requestId": "anatomy-bellows-condition-82",
+            "generation": 1,
+            "ok": true,
+            "operation": "restore",
+            "transactionId": "m-inv8-native-C1-79",
+            "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "renderableMaterialIdentityRestored": false,
+            "geometryIdentityPreserved": true,
+            "originalVisibilityPreserved": true,
+            "sourcePropertiesPreserved": true,
+            "diagnosticCloneDisposeCount": 0,
+            "borrowedDisposeCounts": {
+              "sourceMaterial": 0,
+              "geometry": 0,
+              "textures": 0
+            },
+            "borrowedResourceDisposed": false,
+            "nativeOutputRestoration": "controller-restores-on-next-frame"
+          }
+        },
+        "stateQualification": {
+          "sourceMaterialPreserved": true,
+          "comparisonExcludesRendererManagedMaterialVersion": true,
+          "outputStateQualified": true,
+          "actualDrawStateQualified": true,
+          "actualDrawCount": 1,
+          "expectedDrawCount": 1,
+          "drawSides": [
+            2
+          ],
+          "expectedSides": [
+            2
+          ],
+          "actualBlendEnabled": [
+            true
+          ],
+          "expectedBlendEnabled": true,
+          "transparentListClassificationRetained": true,
+          "renderOrderPreserved": true,
+          "outputPolicyQualified": true
+        },
+        "withinRendererResponse": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.00013411974842290954,
+            "perChannelMeanAbsoluteDifference": [
+              0.00014674278356859515,
+              0.00013254186902969883,
+              0.00012307459267043466
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00014674278356859515,
+              -0.00013254186902969883,
+              -0.00012307459267043466
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0.002278831285098071,
+            "perChannelMeanAbsoluteDifference": [
+              0.0025229917799300073,
+              0.0022788312850980713,
+              0.002034670790266135
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.0025229917799300073,
+              -0.0022788312850980713,
+              -0.002034670790266135
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.005165098690278546,
+            "perChannelMeanAbsoluteDifference": [
+              0.005718502121379819,
+              0.005165098690278546,
+              0.004611695259177273
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.005718502121379819,
+              -0.005165098690278546,
+              -0.004611695259177273
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.005165098690278546,
+            "perChannelMeanAbsoluteDifference": [
+              0.005718502121379819,
+              0.005165098690278546,
+              0.004611695259177273
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.005718502121379819,
+              -0.005165098690278546,
+              -0.004611695259177273
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.005143277002204262,
+            "perChannelMeanAbsoluteDifference": [
+              0.005694342395297576,
+              0.005143277002204262,
+              0.004592211609110948
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.005694342395297576,
+              -0.005143277002204262,
+              -0.004592211609110948
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 1.7591820507137004e-06,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              5.277546152141101e-06
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              -5.277546152141101e-06
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "backend": "native",
+        "condition": "C2",
+        "qualified": true,
+        "sourceMaterial": {
+          "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 0,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "a9c1dd01-c5a2-49d2-b172-67f597a6938d",
+          "type": "MeshStandardNodeMaterial",
+          "family": "MaterialAwareStandardNodeMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 0,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": "material-aware",
+          "outputInterventionId": "B0",
+          "outputGraphBuildCount": 2,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 1,
+          "textureSlots": {}
+        },
+        "applyResult": {
+          "requestId": "anatomy-bellows-condition-84",
+          "generation": 1,
+          "ok": true,
+          "operation": "apply",
+          "condition": "C2",
+          "transactionId": "m-inv8-native-C2-83",
+          "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "renderableName": "bellows-folded-surface",
+          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "originalOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "activeOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "sourcePropertiesPreserved": true,
+          "baselineSourceProperties": {
+            "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 0,
+            "textureSlots": {}
+          },
+          "requestedOverrides": {
+            "blending": 0
+          },
+          "effectiveMaterialProperties": {
+            "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+            "type": "MeshStandardNodeMaterial",
+            "family": "MaterialAwareStandardNodeMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": "material-aware",
+            "outputInterventionId": "B0",
+            "outputGraphBuildCount": 3,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 1,
+            "textureSlots": {}
+          },
+          "executionBackend": "webgpu",
+          "outputVariantUpdatePendingFrame": true
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-85",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgpu-renderer",
+            "executionBackend": "webgpu"
+          },
+          "selectedRenderable": {
+            "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "name": "bellows-folded-surface",
+            "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawIndexed",
+              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "renderOrder": 0,
+              "material": {
+                "id": "a9c1dd01-c5a2-49d2-b172-67f597a6938d",
+                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "type": "MeshStandardNodeMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 0,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 1,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": "material-aware",
+                "outputInterventionId": "B0"
+              },
+              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "pipelineId": null,
+              "passId": null,
+              "drawParameters": {
+                "vertexCount": 240,
+                "firstVertex": 0,
+                "instanceCount": 1,
+                "firstInstance": 0
+              },
+              "gpuBlendEnabled": false,
+              "gpuBlendDescriptor": null,
+              "gpuDepthCompare": "less-equal",
+              "info": {
+                "autoReset": true,
+                "frame": 225,
+                "calls": 210
+              }
+            },
+            {
+              "order": 1,
+              "command": "drawIndexed",
+              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "renderOrder": 0,
+              "material": {
+                "id": "a9c1dd01-c5a2-49d2-b172-67f597a6938d",
+                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "type": "MeshStandardNodeMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 0,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 0,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": "material-aware",
+                "outputInterventionId": "B0"
+              },
+              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "pipelineId": null,
+              "passId": null,
+              "drawParameters": {
+                "vertexCount": 240,
+                "firstVertex": 0,
+                "instanceCount": 1,
+                "firstInstance": 0
+              },
+              "gpuBlendEnabled": false,
+              "gpuBlendDescriptor": null,
+              "gpuDepthCompare": "less-equal",
+              "info": {
+                "autoReset": true,
+                "frame": 225,
+                "calls": 210
+              }
+            }
+          ],
+          "drawCount": 2,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoredC0Metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "diagnosticCloneDisposeCount": 0,
+          "borrowedDisposeCounts": {
+            "sourceMaterial": 0,
+            "geometry": 0,
+            "textures": 0
+          },
+          "borrowedResourcesPreserved": true,
+          "restoreResponse": {
+            "requestId": "anatomy-bellows-condition-86",
+            "generation": 1,
+            "ok": true,
+            "operation": "restore",
+            "transactionId": "m-inv8-native-C2-83",
+            "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "renderableMaterialIdentityRestored": false,
+            "geometryIdentityPreserved": true,
+            "originalVisibilityPreserved": true,
+            "sourcePropertiesPreserved": true,
+            "diagnosticCloneDisposeCount": 0,
+            "borrowedDisposeCounts": {
+              "sourceMaterial": 0,
+              "geometry": 0,
+              "textures": 0
+            },
+            "borrowedResourceDisposed": false,
+            "nativeOutputRestoration": "controller-restores-on-next-frame"
+          }
+        },
+        "stateQualification": {
+          "sourceMaterialPreserved": true,
+          "comparisonExcludesRendererManagedMaterialVersion": true,
+          "outputStateQualified": true,
+          "actualDrawStateQualified": true,
+          "actualDrawCount": 2,
+          "expectedDrawCount": 2,
+          "drawSides": [
+            1,
+            0
+          ],
+          "expectedSides": [
+            1,
+            0
+          ],
+          "actualBlendEnabled": [
+            false,
+            false
+          ],
+          "expectedBlendEnabled": false,
+          "transparentListClassificationRetained": true,
+          "renderOrderPreserved": true,
+          "outputPolicyQualified": true
+        },
+        "withinRendererResponse": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 3.8075286937367654,
+            "perChannelMeanAbsoluteDifference": [
+              3.985032236076003,
+              3.8210258740662897,
+              3.6165279710680034
+            ],
+            "perChannelMeanSignedDifference": [
+              -3.985032236076003,
+              -3.8210258740662897,
+              -3.6165279710680034
+            ],
+            "changedPixelCount": 5473,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 65.42823037899134,
+            "perChannelMeanAbsoluteDifference": [
+              68.4786359567022,
+              65.66037275168878,
+              62.14568242858306
+            ],
+            "perChannelMeanSignedDifference": [
+              -68.4786359567022,
+              -65.66037275168878,
+              -62.14568242858306
+            ],
+            "changedPixelCount": 5450,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 148.19123163008055,
+            "perChannelMeanAbsoluteDifference": [
+              155.10071942446044,
+              148.71721084670725,
+              140.75576461907397
+            ],
+            "perChannelMeanSignedDifference": [
+              -155.10071942446044,
+              -148.71721084670725,
+              -140.75576461907397
+            ],
+            "changedPixelCount": 5421,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 148.19123163008055,
+            "perChannelMeanAbsoluteDifference": [
+              155.10071942446044,
+              148.71721084670725,
+              140.75576461907397
+            ],
+            "perChannelMeanSignedDifference": [
+              -155.10071942446044,
+              -148.71721084670725,
+              -140.75576461907397
+            ],
+            "changedPixelCount": 5421,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 147.63605192260593,
+            "perChannelMeanAbsoluteDifference": [
+              154.5191036002939,
+              148.1601763409258,
+              140.22887582659808
+            ],
+            "perChannelMeanSignedDifference": [
+              -154.5191036002939,
+              -148.1601763409258,
+              -140.22887582659808
+            ],
+            "changedPixelCount": 5442,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.00013193865380352752,
+            "perChannelMeanAbsoluteDifference": [
+              0.00013721619995566862,
+              0.00013721619995566862,
+              0.0001213835614992453
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00013721619995566862,
+              -0.00013721619995566862,
+              -0.0001213835614992453
+            ],
+            "changedPixelCount": 2,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 91.95833333333333,
+            "perChannelMeanAbsoluteDifference": [
+              97.625,
+              92.375,
+              85.875
+            ],
+            "perChannelMeanSignedDifference": [
+              -97.625,
+              -92.375,
+              -85.875
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 81.74074074074075,
+            "perChannelMeanAbsoluteDifference": [
+              86.77777777777777,
+              82.11111111111111,
+              76.33333333333333
+            ],
+            "perChannelMeanSignedDifference": [
+              -86.77777777777777,
+              -82.11111111111111,
+              -76.33333333333333
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "backend": "webgl",
+        "condition": "C2",
+        "qualified": true,
+        "sourceMaterial": {
+          "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 396,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 0,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 15,
+          "textureSlots": {}
+        },
+        "applyResult": {
+          "requestId": "anatomy-bellows-condition-88",
+          "generation": 1,
+          "ok": true,
+          "operation": "apply",
+          "condition": "C2",
+          "transactionId": "m-inv8-webgl-C2-87",
+          "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "renderableName": "bellows-folded-surface",
+          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "originalOutputMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "activeOutputMaterialId": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+          "sourcePropertiesPreserved": true,
+          "baselineSourceProperties": {
+            "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 396,
+            "textureSlots": {}
+          },
+          "requestedOverrides": {
+            "blending": 0
+          },
+          "effectiveMaterialProperties": {
+            "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 0,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 1,
+            "textureSlots": {}
+          },
+          "executionBackend": "webgl2",
+          "outputVariantUpdatePendingFrame": false
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-89",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          },
+          "selectedRenderable": {
+            "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "name": "bellows-folded-surface",
+            "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
+            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawElements",
+              "commandArguments": [
+                4,
+                240,
+                5123,
+                0
+              ],
+              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "renderOrder": 0,
+              "material": {
+                "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "type": "MeshStandardMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 0,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 1,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": null,
+                "outputInterventionId": null
+              },
+              "state": {
+                "blendEnabled": false,
+                "blendSourceRgb": "SRC_ALPHA",
+                "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationRgb": "FUNC_ADD",
+                "blendSourceAlpha": "ONE",
+                "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationAlpha": "FUNC_ADD",
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": "LEQUAL",
+                "stencilTest": false
+              }
+            },
+            {
+              "order": 1,
+              "command": "drawElements",
+              "commandArguments": [
+                4,
+                240,
+                5123,
+                0
+              ],
+              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "renderOrder": 0,
+              "material": {
+                "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "type": "MeshStandardMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 0,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 0,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": null,
+                "outputInterventionId": null
+              },
+              "state": {
+                "blendEnabled": false,
+                "blendSourceRgb": "SRC_ALPHA",
+                "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationRgb": "FUNC_ADD",
+                "blendSourceAlpha": "ONE",
+                "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationAlpha": "FUNC_ADD",
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": "LEQUAL",
+                "stencilTest": false
+              }
+            }
+          ],
+          "drawCount": 2,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoredC0Metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "diagnosticCloneDisposeCount": 1,
+          "borrowedDisposeCounts": {
+            "sourceMaterial": 0,
+            "geometry": 0,
+            "textures": 0
+          },
+          "borrowedResourcesPreserved": true,
+          "restoreResponse": {
+            "requestId": "anatomy-bellows-condition-90",
+            "generation": 1,
+            "ok": true,
+            "operation": "restore",
+            "transactionId": "m-inv8-webgl-C2-87",
+            "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "renderableMaterialIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "originalVisibilityPreserved": true,
+            "sourcePropertiesPreserved": true,
+            "diagnosticCloneDisposeCount": 1,
+            "borrowedDisposeCounts": {
+              "sourceMaterial": 0,
+              "geometry": 0,
+              "textures": 0
+            },
+            "borrowedResourceDisposed": false,
+            "nativeOutputRestoration": null
+          }
+        },
+        "stateQualification": {
+          "sourceMaterialPreserved": true,
+          "comparisonExcludesRendererManagedMaterialVersion": true,
+          "outputStateQualified": true,
+          "actualDrawStateQualified": true,
+          "actualDrawCount": 2,
+          "expectedDrawCount": 2,
+          "drawSides": [
+            1,
+            0
+          ],
+          "expectedSides": [
+            1,
+            0
+          ],
+          "actualBlendEnabled": [
+            false,
+            false
+          ],
+          "expectedBlendEnabled": false,
+          "transparentListClassificationRetained": true,
+          "renderOrderPreserved": true,
+          "outputPolicyQualified": true
+        },
+        "withinRendererResponse": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 3.04774347467977,
+            "perChannelMeanAbsoluteDifference": [
+              3.149952190254386,
+              3.05584272960512,
+              2.9374355041798026
+            ],
+            "perChannelMeanSignedDifference": [
+              -3.079837541537675,
+              -2.928394255256705,
+              -2.7464426709080065
+            ],
+            "changedPixelCount": 5194,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 52.36336507419767,
+            "perChannelMeanAbsoluteDifference": [
+              54.11915032147798,
+              52.50280784569057,
+              50.468137055424435
+            ],
+            "perChannelMeanSignedDifference": [
+              -52.91413689265077,
+              -50.31236265972166,
+              -47.18531781557744
+            ],
+            "changedPixelCount": 5171,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 118.60966611326323,
+            "perChannelMeanAbsoluteDifference": [
+              122.58679210477771,
+              118.92621287585317,
+              114.31599335915882
+            ],
+            "perChannelMeanSignedDifference": [
+              -119.85851318944844,
+              -113.96439771259915,
+              -106.88046485888212
+            ],
+            "changedPixelCount": 5152,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 118.60966611326323,
+            "perChannelMeanAbsoluteDifference": [
+              122.58679210477771,
+              118.92621287585317,
+              114.31599335915882
+            ],
+            "perChannelMeanSignedDifference": [
+              -119.85851318944844,
+              -113.96439771259915,
+              -106.88046485888212
+            ],
+            "changedPixelCount": 5152,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 118.18025961302963,
+            "perChannelMeanAbsoluteDifference": [
+              122.14290962527554,
+              118.49540778839089,
+              113.90246142542249
+            ],
+            "perChannelMeanSignedDifference": [
+              -119.42321822189567,
+              -113.55198383541513,
+              -106.49393828067598
+            ],
+            "changedPixelCount": 5171,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.0001284202897021001,
+            "perChannelMeanAbsoluteDifference": [
+              0.00013193865380352752,
+              0.00013721619995566862,
+              0.0001161060153471042
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00013193865380352752,
+              -0.00013721619995566862,
+              -0.0001161060153471042
+            ],
+            "changedPixelCount": 2,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 11.291666666666666,
+            "perChannelMeanAbsoluteDifference": [
+              7.125,
+              11,
+              15.75
+            ],
+            "perChannelMeanSignedDifference": [
+              5.875,
+              10,
+              15
+            ],
+            "changedPixelCount": 5,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 10.037037037037036,
+            "perChannelMeanAbsoluteDifference": [
+              6.333333333333333,
+              9.777777777777779,
+              14
+            ],
+            "perChannelMeanSignedDifference": [
+              5.222222222222222,
+              8.88888888888889,
+              13.333333333333334
+            ],
+            "changedPixelCount": 5,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "backend": "webgl",
+        "condition": "C3",
+        "qualified": true,
+        "sourceMaterial": {
+          "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 436,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 0,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": true,
+          "alphaWrite": null,
+          "materialVersion": 1,
+          "textureSlots": {}
+        },
+        "applyResult": {
+          "requestId": "anatomy-bellows-condition-92",
+          "generation": 1,
+          "ok": true,
+          "operation": "apply",
+          "condition": "C3",
+          "transactionId": "m-inv8-webgl-C3-91",
+          "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "renderableName": "bellows-folded-surface",
+          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "originalOutputMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "activeOutputMaterialId": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+          "sourcePropertiesPreserved": true,
+          "baselineSourceProperties": {
+            "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 436,
+            "textureSlots": {}
+          },
+          "requestedOverrides": {
+            "forceSinglePass": true,
+            "blending": 0
+          },
+          "effectiveMaterialProperties": {
+            "id": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 0,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": true,
+            "alphaWrite": null,
+            "materialVersion": 1,
+            "textureSlots": {}
+          },
+          "executionBackend": "webgl2",
+          "outputVariantUpdatePendingFrame": false
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-93",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          },
+          "selectedRenderable": {
+            "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "name": "bellows-folded-surface",
+            "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
+            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawElements",
+              "commandArguments": [
+                4,
+                240,
+                5123,
+                0
+              ],
+              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "renderOrder": 0,
+              "material": {
+                "id": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "type": "MeshStandardMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 0,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 2,
+                "forceSinglePass": true,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": null,
+                "outputInterventionId": null
+              },
+              "state": {
+                "blendEnabled": false,
+                "blendSourceRgb": "SRC_ALPHA",
+                "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationRgb": "FUNC_ADD",
+                "blendSourceAlpha": "ONE",
+                "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationAlpha": "FUNC_ADD",
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": "LEQUAL",
+                "stencilTest": false
+              }
+            }
+          ],
+          "drawCount": 1,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoredC0Metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "diagnosticCloneDisposeCount": 1,
+          "borrowedDisposeCounts": {
+            "sourceMaterial": 0,
+            "geometry": 0,
+            "textures": 0
+          },
+          "borrowedResourcesPreserved": true,
+          "restoreResponse": {
+            "requestId": "anatomy-bellows-condition-94",
+            "generation": 1,
+            "ok": true,
+            "operation": "restore",
+            "transactionId": "m-inv8-webgl-C3-91",
+            "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "renderableMaterialIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "originalVisibilityPreserved": true,
+            "sourcePropertiesPreserved": true,
+            "diagnosticCloneDisposeCount": 1,
+            "borrowedDisposeCounts": {
+              "sourceMaterial": 0,
+              "geometry": 0,
+              "textures": 0
+            },
+            "borrowedResourceDisposed": false,
+            "nativeOutputRestoration": null
+          }
+        },
+        "stateQualification": {
+          "sourceMaterialPreserved": true,
+          "comparisonExcludesRendererManagedMaterialVersion": true,
+          "outputStateQualified": true,
+          "actualDrawStateQualified": true,
+          "actualDrawCount": 1,
+          "expectedDrawCount": 1,
+          "drawSides": [
+            2
+          ],
+          "expectedSides": [
+            2
+          ],
+          "actualBlendEnabled": [
+            false
+          ],
+          "expectedBlendEnabled": false,
+          "transparentListClassificationRetained": true,
+          "renderOrderPreserved": true,
+          "outputPolicyQualified": true
+        },
+        "withinRendererResponse": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 3.0493765798517423,
+            "perChannelMeanAbsoluteDifference": [
+              3.151405417175533,
+              3.057423764757117,
+              2.9393005576225777
+            ],
+            "perChannelMeanSignedDifference": [
+              -3.082928607268975,
+              -2.9316983347060885,
+              -2.750362123320742
+            ],
+            "changedPixelCount": 5195,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 52.39114511272076,
+            "perChannelMeanAbsoluteDifference": [
+              54.14389191828762,
+              52.52966550012208,
+              50.499877919752585
+            ],
+            "perChannelMeanSignedDifference": [
+              -52.967038333197685,
+              -50.36884512085945,
+              -47.25238056482461
+            ],
+            "changedPixelCount": 5171,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 118.67293857221915,
+            "perChannelMeanAbsoluteDifference": [
+              122.64305478693969,
+              118.98745618889504,
+              114.38830474082273
+            ],
+            "perChannelMeanSignedDifference": [
+              -119.97823279837668,
+              -114.09204943737318,
+              -107.03209739900387
+            ],
+            "changedPixelCount": 5152,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 118.67293857221915,
+            "perChannelMeanAbsoluteDifference": [
+              122.64305478693969,
+              118.98745618889504,
+              114.38830474082273
+            ],
+            "perChannelMeanSignedDifference": [
+              -119.97823279837668,
+              -114.09204943737318,
+              -107.03209739900387
+            ],
+            "changedPixelCount": 5152,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 118.24295860886603,
+            "perChannelMeanAbsoluteDifference": [
+              122.19875091844233,
+              118.55602498163115,
+              113.97409992652462
+            ],
+            "perChannelMeanSignedDifference": [
+              -119.54261572373255,
+              -113.67946362968405,
+              -106.64529757531227
+            ],
+            "changedPixelCount": 5171,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.0001284202897021001,
+            "perChannelMeanAbsoluteDifference": [
+              0.00013193865380352752,
+              0.00013721619995566862,
+              0.0001161060153471042
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00013193865380352752,
+              -0.00013721619995566862,
+              -0.0001161060153471042
+            ],
+            "changedPixelCount": 2,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 11.291666666666666,
+            "perChannelMeanAbsoluteDifference": [
+              7.125,
+              11,
+              15.75
+            ],
+            "perChannelMeanSignedDifference": [
+              5.875,
+              10,
+              15
+            ],
+            "changedPixelCount": 5,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 10.037037037037036,
+            "perChannelMeanAbsoluteDifference": [
+              6.333333333333333,
+              9.777777777777779,
+              14
+            ],
+            "perChannelMeanSignedDifference": [
+              5.222222222222222,
+              8.88888888888889,
+              13.333333333333334
+            ],
+            "changedPixelCount": 5,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "backend": "native",
+        "condition": "C3",
+        "qualified": true,
+        "sourceMaterial": {
+          "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 0,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "545694a0-8659-45e9-b1c7-956b15eda746",
+          "type": "MeshStandardNodeMaterial",
+          "family": "MaterialAwareStandardNodeMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 0,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": "material-aware",
+          "outputInterventionId": "B0",
+          "outputGraphBuildCount": 1,
+          "forceSinglePass": true,
+          "alphaWrite": null,
+          "materialVersion": 1,
+          "textureSlots": {}
+        },
+        "applyResult": {
+          "requestId": "anatomy-bellows-condition-96",
+          "generation": 1,
+          "ok": true,
+          "operation": "apply",
+          "condition": "C3",
+          "transactionId": "m-inv8-native-C3-95",
+          "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "renderableName": "bellows-folded-surface",
+          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "originalOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "activeOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "sourcePropertiesPreserved": true,
+          "baselineSourceProperties": {
+            "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "type": "MeshStandardMaterial",
+            "family": "MeshStandardMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": null,
+            "outputInterventionId": null,
+            "outputGraphBuildCount": null,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 0,
+            "textureSlots": {}
+          },
+          "requestedOverrides": {
+            "forceSinglePass": true,
+            "blending": 0
+          },
+          "effectiveMaterialProperties": {
+            "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+            "type": "MeshStandardNodeMaterial",
+            "family": "MaterialAwareStandardNodeMaterial",
+            "color": "111827",
+            "emissive": "000000",
+            "emissiveIntensity": 1,
+            "toneMapped": true,
+            "opacity": 0.16,
+            "transparent": true,
+            "blending": 1,
+            "premultipliedAlpha": false,
+            "depthTest": true,
+            "depthWrite": false,
+            "side": "double",
+            "alphaTest": 0,
+            "roughness": 0.88,
+            "metalness": 0,
+            "outputTransform": "material-aware",
+            "outputInterventionId": "B0",
+            "outputGraphBuildCount": 3,
+            "forceSinglePass": false,
+            "alphaWrite": null,
+            "materialVersion": 1,
+            "textureSlots": {}
+          },
+          "executionBackend": "webgpu",
+          "outputVariantUpdatePendingFrame": true
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-97",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgpu-renderer",
+            "executionBackend": "webgpu"
+          },
+          "selectedRenderable": {
+            "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "name": "bellows-folded-surface",
+            "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawIndexed",
+              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "renderOrder": 0,
+              "material": {
+                "id": "545694a0-8659-45e9-b1c7-956b15eda746",
+                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "type": "MeshStandardNodeMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 0,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 2,
+                "forceSinglePass": true,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": "material-aware",
+                "outputInterventionId": "B0"
+              },
+              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "pipelineId": null,
+              "passId": null,
+              "drawParameters": {
+                "vertexCount": 240,
+                "firstVertex": 0,
+                "instanceCount": 1,
+                "firstInstance": 0
+              },
+              "gpuBlendEnabled": false,
+              "gpuBlendDescriptor": null,
+              "gpuDepthCompare": "less-equal",
+              "info": {
+                "autoReset": true,
+                "frame": 357,
+                "calls": 342
+              }
+            }
+          ],
+          "drawCount": 1,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoredC0Metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "changedPixelFraction": 0,
+            "meanSignedLuminanceDifference": 0
+          }
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "diagnosticCloneDisposeCount": 0,
+          "borrowedDisposeCounts": {
+            "sourceMaterial": 0,
+            "geometry": 0,
+            "textures": 0
+          },
+          "borrowedResourcesPreserved": true,
+          "restoreResponse": {
+            "requestId": "anatomy-bellows-condition-98",
+            "generation": 1,
+            "ok": true,
+            "operation": "restore",
+            "transactionId": "m-inv8-native-C3-95",
+            "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "renderableMaterialIdentityRestored": false,
+            "geometryIdentityPreserved": true,
+            "originalVisibilityPreserved": true,
+            "sourcePropertiesPreserved": true,
+            "diagnosticCloneDisposeCount": 0,
+            "borrowedDisposeCounts": {
+              "sourceMaterial": 0,
+              "geometry": 0,
+              "textures": 0
+            },
+            "borrowedResourceDisposed": false,
+            "nativeOutputRestoration": "controller-restores-on-next-frame"
+          }
+        },
+        "stateQualification": {
+          "sourceMaterialPreserved": true,
+          "comparisonExcludesRendererManagedMaterialVersion": true,
+          "outputStateQualified": true,
+          "actualDrawStateQualified": true,
+          "actualDrawCount": 1,
+          "expectedDrawCount": 1,
+          "drawSides": [
+            2
+          ],
+          "expectedSides": [
+            2
+          ],
+          "actualBlendEnabled": [
+            false
+          ],
+          "expectedBlendEnabled": false,
+          "transparentListClassificationRetained": true,
+          "renderOrderPreserved": true,
+          "outputPolicyQualified": true
+        },
+        "withinRendererResponse": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 3.8109716265727513,
+            "perChannelMeanAbsoluteDifference": [
+              3.9880996336164047,
+              3.824315752601134,
+              3.6204994935007146
+            ],
+            "perChannelMeanSignedDifference": [
+              -3.9880996336164047,
+              -3.824315752601134,
+              -3.6204994935007146
+            ],
+            "changedPixelCount": 5473,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 65.4871273161336,
+            "perChannelMeanAbsoluteDifference": [
+              68.53113046309107,
+              65.71669243916334,
+              62.21355904614634
+            ],
+            "perChannelMeanSignedDifference": [
+              -68.53113046309107,
+              -65.71669243916334,
+              -62.21355904614634
+            ],
+            "changedPixelCount": 5450,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 148.3243558998955,
+            "perChannelMeanAbsoluteDifference": [
+              155.21933222652646,
+              148.84449363586054,
+              140.9092418372994
+            ],
+            "perChannelMeanSignedDifference": [
+              -155.21933222652646,
+              -148.84449363586054,
+              -140.9092418372994
+            ],
+            "changedPixelCount": 5421,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 148.3243558998955,
+            "perChannelMeanAbsoluteDifference": [
+              155.21933222652646,
+              148.84449363586054,
+              140.9092418372994
+            ],
+            "perChannelMeanSignedDifference": [
+              -155.21933222652646,
+              -148.84449363586054,
+              -140.9092418372994
+            ],
+            "changedPixelCount": 5421,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 147.76898114131768,
+            "perChannelMeanAbsoluteDifference": [
+              154.63758265980897,
+              148.287288758266,
+              140.38207200587803
+            ],
+            "perChannelMeanSignedDifference": [
+              -154.63758265980897,
+              -148.287288758266,
+              -140.38207200587803
+            ],
+            "changedPixelCount": 5442,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.00014073456405709603,
+            "perChannelMeanAbsoluteDifference": [
+              0.00014249374610780972,
+              0.00014249374610780972,
+              0.00013721619995566862
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00014249374610780972,
+              -0.00014249374610780972,
+              -0.00013721619995566862
+            ],
+            "changedPixelCount": 2,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 91.95833333333333,
+            "perChannelMeanAbsoluteDifference": [
+              97.625,
+              92.375,
+              85.875
+            ],
+            "perChannelMeanSignedDifference": [
+              -97.625,
+              -92.375,
+              -85.875
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 81.74074074074075,
+            "perChannelMeanAbsoluteDifference": [
+              86.77777777777777,
+              82.11111111111111,
+              76.33333333333333
+            ],
+            "perChannelMeanSignedDifference": [
+              -86.77777777777777,
+              -82.11111111111111,
+              -76.33333333333333
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          }
+        }
+      }
+    ],
+    "crossRendererByCondition": [
+      {
+        "condition": "C0",
+        "qualified": true,
+        "crossRendererDifference": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 6.0819345432512515,
+            "perChannelMeanAbsoluteDifference": [
+              6.166046560065135,
+              6.103193312315979,
+              5.976563757372642
+            ],
+            "changedPixelCount": 8648,
+            "changedPixelFraction": 0.04093650297745841,
+            "meanSignedLuminanceDifference": 6.087259470589575
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 104.1276959387971,
+            "perChannelMeanAbsoluteDifference": [
+              105.48669325303166,
+              104.49173923659151,
+              102.40465532676812
+            ],
+            "changedPixelCount": 8409,
+            "changedPixelFraction": 0.6843818670139171,
+            "meanSignedLuminanceDifference": 104.49874057132932
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 35.397835577691694,
+            "perChannelMeanAbsoluteDifference": [
+              36.01641763512267,
+              35.52204390333887,
+              34.65504519461354
+            ],
+            "changedPixelCount": 1734,
+            "changedPixelFraction": 0.3198671831765357,
+            "meanSignedLuminanceDifference": 35.444367312303896
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 35.397835577691694,
+            "perChannelMeanAbsoluteDifference": [
+              36.01641763512267,
+              35.52204390333887,
+              34.65504519461354
+            ],
+            "changedPixelCount": 1734,
+            "changedPixelFraction": 0.3198671831765357,
+            "meanSignedLuminanceDifference": 35.444367312303896
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 35.31416850355131,
+            "perChannelMeanAbsoluteDifference": [
+              35.93038207200588,
+              35.437362233651726,
+              34.57476120499633
+            ],
+            "changedPixelCount": 1739,
+            "changedPixelFraction": 0.3194342395297575,
+            "meanSignedLuminanceDifference": 35.35985569434228
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.009075620199631979,
+            "perChannelMeanAbsoluteDifference": [
+              0.009135432389356246,
+              0.009087934473986975,
+              0.009003493735552717
+            ],
+            "changedPixelCount": 58,
+            "changedPixelFraction": 0.00030609767682418385,
+            "meanSignedLuminanceDifference": 0.008659177125003957
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 156.08333333333334,
+            "perChannelMeanAbsoluteDifference": [
+              157.875,
+              156.25,
+              154.125
+            ],
+            "changedPixelCount": 8,
+            "changedPixelFraction": 1,
+            "meanSignedLuminanceDifference": 156.44205
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 138.74074074074073,
+            "perChannelMeanAbsoluteDifference": [
+              140.33333333333334,
+              138.88888888888889,
+              137
+            ],
+            "changedPixelCount": 8,
+            "changedPixelFraction": 0.8888888888888888,
+            "meanSignedLuminanceDifference": 139.0596
+          }
+        }
+      },
+      {
+        "condition": "C1",
+        "qualified": true,
+        "crossRendererDifference": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 6.081959789321544,
+            "perChannelMeanAbsoluteDifference": [
+              6.166037092788776,
+              6.103235915059597,
+              5.976606360116258
+            ],
+            "changedPixelCount": 8648,
+            "changedPixelFraction": 0.04093650297745841,
+            "meanSignedLuminanceDifference": 6.087268715384939
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 104.1281571308429,
+            "perChannelMeanAbsoluteDifference": [
+              105.48653047936844,
+              104.49247171807602,
+              102.40546919508424
+            ],
+            "changedPixelCount": 8409,
+            "changedPixelFraction": 0.6843818670139171,
+            "meanSignedLuminanceDifference": 104.49889364368218
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 35.398880895283774,
+            "perChannelMeanAbsoluteDifference": [
+              36.01604869950194,
+              35.52370411363217,
+              34.65688987271721
+            ],
+            "changedPixelCount": 1734,
+            "changedPixelFraction": 0.3198671831765357,
+            "meanSignedLuminanceDifference": 35.44471425936163
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 35.398880895283774,
+            "perChannelMeanAbsoluteDifference": [
+              36.01604869950194,
+              35.52370411363217,
+              34.65688987271721
+            ],
+            "changedPixelCount": 1734,
+            "changedPixelFraction": 0.3198671831765357,
+            "meanSignedLuminanceDifference": 35.44471425936163
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 35.31520940484938,
+            "perChannelMeanAbsoluteDifference": [
+              35.93001469507715,
+              35.43901542983101,
+              34.57659808963997
+            ],
+            "changedPixelCount": 1739,
+            "changedPixelFraction": 0.3194342395297575,
+            "meanSignedLuminanceDifference": 35.36020117560606
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.009073861017581265,
+            "perChannelMeanAbsoluteDifference": [
+              0.009135432389356246,
+              0.009087934473986975,
+              0.008998216189400577
+            ],
+            "changedPixelCount": 58,
+            "changedPixelFraction": 0.00030609767682418385,
+            "meanSignedLuminanceDifference": 0.008658796086171773
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 156.08333333333334,
+            "perChannelMeanAbsoluteDifference": [
+              157.875,
+              156.25,
+              154.125
+            ],
+            "changedPixelCount": 8,
+            "changedPixelFraction": 1,
+            "meanSignedLuminanceDifference": 156.44205
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 138.74074074074073,
+            "perChannelMeanAbsoluteDifference": [
+              140.33333333333334,
+              138.88888888888889,
+              137
+            ],
+            "changedPixelCount": 8,
+            "changedPixelFraction": 0.8888888888888888,
+            "meanSignedLuminanceDifference": 139.0596
+          }
+        }
+      },
+      {
+        "condition": "C2",
+        "qualified": true,
+        "crossRendererDifference": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 5.194461012178073,
+            "perChannelMeanAbsoluteDifference": [
+              5.264089674041675,
+              5.212332074185578,
+              5.106961288306967
+            ],
+            "changedPixelCount": 7038,
+            "changedPixelFraction": 0.03331534550825073,
+            "meanSignedLuminanceDifference": 5.193584786086463
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 88.87070345351457,
+            "perChannelMeanAbsoluteDifference": [
+              89.97770000813868,
+              89.1766094245951,
+              87.45780092780988
+            ],
+            "changedPixelCount": 6800,
+            "changedPixelFraction": 0.5534304549523887,
+            "meanSignedLuminanceDifference": 89.13269292747653
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.8471991637459263,
+            "perChannelMeanAbsoluteDifference": [
+              0.8948533480907581,
+              0.8396974727909979,
+              0.8070466703560228
+            ],
+            "changedPixelCount": 125,
+            "changedPixelFraction": 0.02305847629588637,
+            "meanSignedLuminanceDifference": 0.6508656705404916
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.8471991637459263,
+            "perChannelMeanAbsoluteDifference": [
+              0.8948533480907581,
+              0.8396974727909979,
+              0.8070466703560228
+            ],
+            "changedPixelCount": 125,
+            "changedPixelFraction": 0.02305847629588637,
+            "meanSignedLuminanceDifference": 0.6508656705404916
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.9111560127357335,
+            "perChannelMeanAbsoluteDifference": [
+              0.9597722263041881,
+              0.9033798677443057,
+              0.8703159441587068
+            ],
+            "changedPixelCount": 130,
+            "changedPixelFraction": 0.02387950036737693,
+            "meanSignedLuminanceDifference": 0.711028692138135
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.009072101835530552,
+            "perChannelMeanAbsoluteDifference": [
+              0.009130154843204103,
+              0.009087934473986975,
+              0.008998216189400577
+            ],
+            "changedPixelCount": 58,
+            "changedPixelFraction": 0.00030609767682418385,
+            "meanSignedLuminanceDifference": 0.008657674079859828
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 53.833333333333336,
+            "perChannelMeanAbsoluteDifference": [
+              54.375,
+              53.875,
+              53.25
+            ],
+            "changedPixelCount": 3,
+            "changedPixelFraction": 0.375,
+            "meanSignedLuminanceDifference": 53.936175
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 47.851851851851855,
+            "perChannelMeanAbsoluteDifference": [
+              48.333333333333336,
+              47.888888888888886,
+              47.333333333333336
+            ],
+            "changedPixelCount": 3,
+            "changedPixelFraction": 0.3333333333333333,
+            "meanSignedLuminanceDifference": 47.943266666666666
+          }
+        }
+      },
+      {
+        "condition": "C3",
+        "qualified": true,
+        "crossRendererDifference": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 5.194610910720429,
+            "perChannelMeanAbsoluteDifference": [
+              5.264226949548885,
+              5.212488284245506,
+              5.107117498366895
+            ],
+            "changedPixelCount": 7043,
+            "changedPixelFraction": 0.03333901369914889,
+            "meanSignedLuminanceDifference": 5.193596214982485
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 88.87300941374353,
+            "perChannelMeanAbsoluteDifference": [
+              89.97973467892895,
+              89.1788882558802,
+              87.46040530642142
+            ],
+            "changedPixelCount": 6805,
+            "changedPixelFraction": 0.5538373891104419,
+            "meanSignedLuminanceDifference": 89.13283709611004
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.8524872409764498,
+            "perChannelMeanAbsoluteDifference": [
+              0.8996495111603026,
+              0.8448625714812765,
+              0.8129496402877698
+            ],
+            "changedPixelCount": 130,
+            "changedPixelFraction": 0.023980815347721823,
+            "meanSignedLuminanceDifference": 0.65123165467626
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.8524872409764498,
+            "perChannelMeanAbsoluteDifference": [
+              0.8996495111603026,
+              0.8448625714812765,
+              0.8129496402877698
+            ],
+            "changedPixelCount": 130,
+            "changedPixelFraction": 0.023980815347721823,
+            "meanSignedLuminanceDifference": 0.65123165467626
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.9163605192260592,
+            "perChannelMeanAbsoluteDifference": [
+              0.9643644379132991,
+              0.90852314474651,
+              0.8761939750183688
+            ],
+            "changedPixelCount": 135,
+            "changedPixelFraction": 0.024797942689199118,
+            "meanSignedLuminanceDifference": 0.7113540778839101
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0.009080897745784121,
+            "perChannelMeanAbsoluteDifference": [
+              0.009135432389356246,
+              0.009093212020139116,
+              0.009014048827857
+            ],
+            "changedPixelCount": 58,
+            "changedPixelFraction": 0.00030609767682418385,
+            "meanSignedLuminanceDifference": 0.008651634456043316
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 53.833333333333336,
+            "perChannelMeanAbsoluteDifference": [
+              54.375,
+              53.875,
+              53.25
+            ],
+            "changedPixelCount": 3,
+            "changedPixelFraction": 0.375,
+            "meanSignedLuminanceDifference": 53.936175
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 47.851851851851855,
+            "perChannelMeanAbsoluteDifference": [
+              48.333333333333336,
+              47.888888888888886,
+              47.333333333333336
+            ],
+            "changedPixelCount": 3,
+            "changedPixelFraction": 0.3333333333333333,
+            "meanSignedLuminanceDifference": 47.943266666666666
+          }
+        }
+      }
+    ],
+    "differenceOfResponses": [
+      {
+        "condition": "C1",
+        "differenceOfResponses": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.00012623035145685607,
+            "perChannelMeanAbsoluteDifference": [
+              0.00013254186902969883,
+              0.00012780823085006674,
+              0.00011834095449080254
+            ],
+            "perChannelMeanSignedDifference": [
+              -2.840182907779261e-05,
+              1.4200914538896305e-05,
+              7.100457269448152e-05
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0.002088928678006565,
+            "perChannelMeanAbsoluteDifference": [
+              0.0022788312850980713,
+              0.0021974444534874258,
+              0.0017905102954341987
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.0004883209896638724,
+              0.0002441604948319362,
+              0.0011394156425490356
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.004734673799422001,
+            "perChannelMeanAbsoluteDifference": [
+              0.005165098690278546,
+              0.004980630879911455,
+              0.0040582918280760005
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.0011068068622025456,
+              0.0005534034311012728,
+              0.002582549345139273
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.004734673799422001,
+            "perChannelMeanAbsoluteDifference": [
+              0.005165098690278546,
+              0.004980630879911455,
+              0.0040582918280760005
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.0011068068622025456,
+              0.0005534034311012728,
+              0.002582549345139273
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.004714670585353906,
+            "perChannelMeanAbsoluteDifference": [
+              0.005143277002204262,
+              0.004959588537839824,
+              0.004041146216017634
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.0011021307861866275,
+              0.0005510653930933138,
+              0.002571638501102131
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 1.7591820507137004e-06,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              5.277546152141101e-06
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              -5.277546152141101e-06
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "condition": "C2",
+        "differenceOfResponses": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.8954134201798151,
+            "perChannelMeanAbsoluteDifference": [
+              0.9115188351463167,
+              0.8985770683632026,
+              0.8761443570299261
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.9051946945383282,
+              -0.8926316188095846,
+              -0.870085300159997
+            ],
+            "changedPixelCount": 1774,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 15.389110441930496,
+            "perChannelMeanAbsoluteDifference": [
+              15.6659070562383,
+              15.443395458614797,
+              15.05802881093839
+            ],
+            "perChannelMeanSignedDifference": [
+              -15.564499064051436,
+              -15.34801009196712,
+              -14.960364613005616
+            ],
+            "changedPixelCount": 1770,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 34.834347906290354,
+            "perChannelMeanAbsoluteDifference": [
+              35.46061612248663,
+              34.95757240361557,
+              34.08485519276886
+            ],
+            "perChannelMeanSignedDifference": [
+              -35.24220623501199,
+              -34.752813134108095,
+              -33.875299760191844
+            ],
+            "changedPixelCount": 1754,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 34.834347906290354,
+            "perChannelMeanAbsoluteDifference": [
+              35.46061612248663,
+              34.95757240361557,
+              34.08485519276886
+            ],
+            "perChannelMeanSignedDifference": [
+              -35.24220623501199,
+              -34.752813134108095,
+              -33.875299760191844
+            ],
+            "changedPixelCount": 1754,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 34.70083272103845,
+            "perChannelMeanAbsoluteDifference": [
+              35.3243938280676,
+              34.823108008817044,
+              33.95499632623071
+            ],
+            "perChannelMeanSignedDifference": [
+              -35.095885378398236,
+              -34.60819250551065,
+              -33.734937545922115
+            ],
+            "changedPixelCount": 1762,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 3.5183641014274007e-06,
+            "perChannelMeanAbsoluteDifference": [
+              5.277546152141101e-06,
+              0,
+              5.277546152141101e-06
+            ],
+            "perChannelMeanSignedDifference": [
+              -5.277546152141101e-06,
+              0,
+              -5.277546152141101e-06
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 102.25,
+            "perChannelMeanAbsoluteDifference": [
+              103.5,
+              102.375,
+              100.875
+            ],
+            "perChannelMeanSignedDifference": [
+              -103.5,
+              -102.375,
+              -100.875
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 90.8888888888889,
+            "perChannelMeanAbsoluteDifference": [
+              92,
+              91,
+              89.66666666666667
+            ],
+            "perChannelMeanSignedDifference": [
+              -92,
+              -91,
+              -89.66666666666667
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      {
+        "condition": "C3",
+        "differenceOfResponses": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.8955412284106652,
+            "perChannelMeanAbsoluteDifference": [
+              0.9116087742717298,
+              0.8987048765940526,
+              0.8763100343662131
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.9051710263474301,
+              -0.8926174178950458,
+              -0.870137370179973
+            ],
+            "changedPixelCount": 1776,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 15.390873823282059,
+            "perChannelMeanAbsoluteDifference": [
+              15.66712785871246,
+              15.44518596891023,
+              15.060307642223489
+            ],
+            "perChannelMeanSignedDifference": [
+              -15.564092129893384,
+              -15.347847318303899,
+              -14.961178481321722
+            ],
+            "changedPixelCount": 1771,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 34.83828321957818,
+            "perChannelMeanAbsoluteDifference": [
+              35.46319867183176,
+              34.961630695443645,
+              34.09002029145914
+            ],
+            "perChannelMeanSignedDifference": [
+              -35.24109942814979,
+              -34.75244419848736,
+              -33.87714443829552
+            ],
+            "changedPixelCount": 1755,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 34.83828321957818,
+            "perChannelMeanAbsoluteDifference": [
+              35.46319867183176,
+              34.961630695443645,
+              34.09002029145914
+            ],
+            "perChannelMeanSignedDifference": [
+              -35.24109942814979,
+              -34.75244419848736,
+              -33.87714443829552
+            ],
+            "changedPixelCount": 1755,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 34.704812637766345,
+            "perChannelMeanAbsoluteDifference": [
+              35.32714915503306,
+              34.82714915503306,
+              33.96013960323292
+            ],
+            "perChannelMeanSignedDifference": [
+              -35.09496693607642,
+              -34.60782512858192,
+              -33.73677443056576
+            ],
+            "changedPixelCount": 1763,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 1.2314274354995901e-05,
+            "perChannelMeanAbsoluteDifference": [
+              1.0555092304282202e-05,
+              5.277546152141101e-06,
+              2.1110184608564403e-05
+            ],
+            "perChannelMeanSignedDifference": [
+              -1.0555092304282202e-05,
+              -5.277546152141101e-06,
+              -2.1110184608564403e-05
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 102.25,
+            "perChannelMeanAbsoluteDifference": [
+              103.5,
+              102.375,
+              100.875
+            ],
+            "perChannelMeanSignedDifference": [
+              -103.5,
+              -102.375,
+              -100.875
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 90.8888888888889,
+            "perChannelMeanAbsoluteDifference": [
+              92,
+              91,
+              89.66666666666667
+            ],
+            "perChannelMeanSignedDifference": [
+              -92,
+              -91,
+              -89.66666666666667
+            ],
+            "changedPixelCount": 8,
+            "thresholdPerChannel": 8
+          }
+        }
+      }
+    ],
+    "factorialInteraction": {
+      "webgl": {
+        "qualified": true,
+        "metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.0034019079717622705,
+            "perChannelMeanAbsoluteDifference": [
+              0.003105266645838659,
+              0.00335614946935916,
+              0.0037443078000889926
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.00297272477680896,
+              -0.003157336665814612,
+              -0.003725373247370464
+            ],
+            "changedPixelCount": 35,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0.058245842489351884,
+            "perChannelMeanAbsoluteDifference": [
+              0.05314560104175144,
+              0.057377716285505004,
+              0.06421421014079921
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.05086676975665337,
+              -0.0539594693578579,
+              -0.06388866281435664
+            ],
+            "changedPixelCount": 35,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.13171001660210294,
+            "perChannelMeanAbsoluteDifference": [
+              0.12027301235934329,
+              0.12968087068806494,
+              0.14517616675890058
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.11510791366906475,
+              -0.12193322265264711,
+              -0.1444382955174322
+            ],
+            "changedPixelCount": 35,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.13171001660210294,
+            "perChannelMeanAbsoluteDifference": [
+              0.12027301235934329,
+              0.12968087068806494,
+              0.14517616675890058
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.11510791366906475,
+              -0.12193322265264711,
+              -0.1444382955174322
+            ],
+            "changedPixelCount": 35,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.13145971099681605,
+            "perChannelMeanAbsoluteDifference": [
+              0.11994856722997796,
+              0.12950036737692872,
+              0.14493019838354151
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.1148052902277737,
+              -0.12178545187362233,
+              -0.14419544452608377
+            ],
+            "changedPixelCount": 35,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          }
+        }
+      },
+      "native": {
+        "qualified": true,
+        "metrics": {
+          "fullFrame": {
+            "sampleCount": 211254,
+            "meanAbsoluteRgbDifference": 0.003419264645087588,
+            "perChannelMeanAbsoluteDifference": [
+              0.0031005330076590266,
+              0.0032898785348443108,
+              0.003867382392759427
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.002920654756833007,
+              -0.003157336665814612,
+              -0.0038484478400408985
+            ],
+            "changedPixelCount": 37,
+            "thresholdPerChannel": 8
+          },
+          "dimmedGroup": {
+            "sampleCount": 12287,
+            "meanAbsoluteRgbDifference": 0.05851713192805404,
+            "perChannelMeanAbsoluteDifference": [
+              0.0530642142101408,
+              0.056319687474566615,
+              0.0661674940994547
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.04997151460893627,
+              -0.05404085618946854,
+              -0.06584194677301212
+            ],
+            "changedPixelCount": 37,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsVisibilityResponse": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.1322634200332042,
+            "perChannelMeanAbsoluteDifference": [
+              0.11990407673860912,
+              0.12728278915329275,
+              0.14960339420771077
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.11289429994465966,
+              -0.1221176904630142,
+              -0.1488655229662424
+            ],
+            "changedPixelCount": 37,
+            "thresholdPerChannel": 8
+          },
+          "selectedBellowsDimmedIntersection": {
+            "sampleCount": 5421,
+            "meanAbsoluteRgbDifference": 0.1322634200332042,
+            "perChannelMeanAbsoluteDifference": [
+              0.11990407673860912,
+              0.12728278915329275,
+              0.14960339420771077
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.11289429994465966,
+              -0.1221176904630142,
+              -0.1488655229662424
+            ],
+            "changedPixelCount": 37,
+            "thresholdPerChannel": 8
+          },
+          "historicalBellowsDimmedIntersection": {
+            "sampleCount": 5444,
+            "meanAbsoluteRgbDifference": 0.13207200587803086,
+            "perChannelMeanAbsoluteDifference": [
+              0.11976487876561352,
+              0.12711241734019105,
+              0.14933872152828803
+            ],
+            "perChannelMeanSignedDifference": [
+              -0.11278471711976489,
+              -0.12196914033798678,
+              -0.14860396767083028
+            ],
+            "changedPixelCount": 37,
+            "thresholdPerChannel": 8
+          },
+          "unaffectedBackgroundCandidate": {
+            "sampleCount": 189482,
+            "meanAbsoluteRgbDifference": 7.0367282028548014e-06,
+            "perChannelMeanAbsoluteDifference": [
+              5.277546152141101e-06,
+              5.277546152141101e-06,
+              1.0555092304282202e-05
+            ],
+            "perChannelMeanSignedDifference": [
+              -5.277546152141101e-06,
+              -5.277546152141101e-06,
+              -1.0555092304282202e-05
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "historicalHighErrorSelectedSamples": {
+            "sampleCount": 8,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          },
+          "fixedMInv5Samples": {
+            "sampleCount": 9,
+            "meanAbsoluteRgbDifference": 0,
+            "perChannelMeanAbsoluteDifference": [
+              0,
+              0,
+              0
+            ],
+            "perChannelMeanSignedDifference": [
+              0,
+              0,
+              0
+            ],
+            "changedPixelCount": 0,
+            "thresholdPerChannel": 8
+          }
+        }
+      }
+    },
+    "allPrimaryConditionsQualified": true
+  },
+  "contextControl": {
+    "D0": "Original surrounding scene, all authored Anatomy renderables visible.",
+    "D1": {
+      "candidateSelection": "Current mounted visible dimmed transparent Anatomy renderables whose live projected bounds intersect the mounted Bellows projected bounds; the Bellows itself remains visible.",
+      "candidates": [],
+      "excludedCount": 0,
+      "captures": [],
+      "crossRendererDifference": null,
+      "limitation": "This changes destination color, depth visibility, overlap, and occlusion. It is a context-dependence control, not an isolated destination-RGB measurement.",
+      "unsupportedReason": "no current dimmed transparent projected-overlap candidates"
+    }
+  },
+  "negativeControls": {
+    "sourcePropertiesAndGeometry": true,
+    "temporaryCloneDisposeOnce": true,
+    "borrowedResourcesPreserved": true,
+    "c0RestorationWithinOneLevelMae": {
+      "webgl": {
+        "sampleCount": 211254,
+        "meanAbsoluteRgbDifference": 0,
+        "perChannelMeanAbsoluteDifference": [
+          0,
+          0,
+          0
+        ],
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      },
+      "native": {
+        "sampleCount": 211254,
+        "meanAbsoluteRgbDifference": 0,
+        "perChannelMeanAbsoluteDifference": [
+          0,
+          0,
+          0
+        ],
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    },
+    "groundGlass": {
+      "contentfulBeforeAndAfter": true,
+      "repeatNoise": {
+        "sampleCount": 211768,
+        "meanAbsoluteRgbDifference": 0.0011112790097339226,
+        "perChannelMeanAbsoluteDifference": [
+          0.0012183143817762834,
+          0.0010766499187790412,
+          0.0010388727286464432
+        ],
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": -0.0006997941143137759
+      },
+      "finalRestoration": {
+        "sampleCount": 211768,
+        "meanAbsoluteRgbDifference": 0,
+        "perChannelMeanAbsoluteDifference": [
+          0,
+          0,
+          0
+        ],
+        "changedPixelCount": 0,
+        "changedPixelFraction": 0,
+        "meanSignedLuminanceDifference": 0
+      }
+    },
+    "nativeConsoleErrors": [],
+    "noInvalidNativeBlendDiagnostics": true,
+    "noPageErrors": true,
+    "productionIsolationPendingBuildVerification": false,
+    "productionIsolationVerification": {
+      "status": "passed",
+      "productionBuild": "npm run build passed",
+      "productionPreviewTest": "2 passed: Architecture Rise stays WebGL and Anatomy denies the material-aware WebGPU candidate",
+      "loadedJavaScriptExcludedIdentifiers": [
+        "AnatomyBellowsCompositingIntervention",
+        "AnatomyBellowsDrawMetadataCapture",
+        "anatomy-bellows-compositing-intervention",
+        "bellows-draw-metadata",
+        "AnatomyGpuBlendIntermediateProbe",
+        "anatomy-gpu-blend-intermediate",
+        "GPU_BLEND_INTERMEDIATE"
+      ],
+      "applicationBuildSourceSha": "5fbe82d517eaffe231a6bdc8272dfaff82f05461",
+      "verifiedAtUtc": "2026-10-18T15:31:57Z"
+    }
+  },
+  "interpretation": {
+    "outcome": "TCI-3",
+    "candidateRules": {
+      "TCI1": "requires at least 50% reproducible dimmed-mask cross-renderer MAE reduction from one qualified intervention; this remains a dominant-mechanism candidate",
+      "TCI2": "requires a >3x-noise factorial interaction plus C3-only improvement of at least 25% while isolated C1/C2 stay below 25%",
+      "TCI3": "one or more interventions cause measurable selected Bellows response above repeat noise, but no dominant/interaction rule is met",
+      "TCI0": "baseline, repeatability, runtime, or intervention qualification failed, or no intervention response exceeded noise"
+    },
+    "noSourceFragmentReconstruction": true,
+    "noRawFramebufferScreenshotMixing": true
+  },
+  "retainedClassifications": {
+    "Q2": "MEASURABLE INSTRUMENTATION PERTURBATION",
+    "PBI3": "PERTURBATION REPRODUCED BUT NOT UNIQUELY LOCALIZED",
+    "N2": "CONTROLLED PROXY IMPROVEMENT",
+    "G2": "PARTIAL STAGE ATTRIBUTION",
+    "M2": "OPT-IN IMPLEMENTATION INCOMPLETE",
+    "nativeIntermediateDestinationPostDrawPixels": "F2; no promotion"
+  },
+  "recommendation": "Use the smallest follow-up experiment justified by the signed Bellows-ROI response and its interaction/context controls; do not implement a production correction or promote native WebGPU eligibility from this study alone."
+}

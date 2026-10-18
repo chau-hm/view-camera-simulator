@@ -250,6 +250,10 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
       "AnatomyGpuBlendIntermediateProbe",
       "anatomy-gpu-blend-intermediate",
       "GPU_BLEND_INTERMEDIATE",
+      "AnatomyBellowsCompositingIntervention",
+      "AnatomyBellowsDrawMetadataCapture",
+      "anatomy-bellows-compositing-intervention",
+      "bellows-draw-metadata",
     ];
     const bundleIdentifierMatches = forbiddenIdentifiers.filter((identifier) =>
       assets.some(({ body }) => body.includes(identifier)),
