@@ -4211,6 +4211,9 @@ test("M-INV8 isolates in-situ Anatomy Bellows compositing sensitivities", async 
         transparent: activeProperties(snapshots[qualification.backend]).transparent,
         forceSinglePass: activeProperties(snapshots[qualification.backend]).forceSinglePass,
       },
+      actualPipelineBlendEnabledByDraw: drawRecordsFrom(c0Metadata[qualification.backend]).map((draw) =>
+        qualification.backend === "native" ? draw.gpuBlendEnabled : (draw.state as Record<string, unknown>).blendEnabled,
+      ),
       repeatNoise: repeatNoise[qualification.backend],
       restoration: {
         sourcePropertiesPreserved: qualification.checks.sourceMaterialPreserved,
