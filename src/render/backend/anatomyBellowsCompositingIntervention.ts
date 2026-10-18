@@ -8,7 +8,12 @@ export const ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT =
   "vcs:observer-verification:anatomy-bellows-compositing-intervention-result";
 
 export type AnatomyBellowsCompositingCondition = "C0" | "C1" | "C2" | "C3";
+export type AnatomyBellowsOpacityCondition = "O1" | "O2";
+export type AnatomyBellowsInterventionCondition =
+  | Exclude<AnatomyBellowsCompositingCondition, "C0">
+  | AnatomyBellowsOpacityCondition;
 export type AnatomyBellowsCompositingOverrides = Readonly<{
+  opacity?: number;
   forceSinglePass?: boolean;
   blending?: THREE.Material["blending"];
 }>;
@@ -63,6 +68,19 @@ export const anatomyBellowsCompositingOverrides = (
   }
 };
 
+export const isAnatomyBellowsInterventionCondition = (
+  value: unknown,
+): value is AnatomyBellowsInterventionCondition =>
+  value === "C1" || value === "C2" || value === "C3" || value === "O1" || value === "O2";
+
+export const anatomyBellowsInterventionOverrides = (
+  condition: AnatomyBellowsInterventionCondition,
+): AnatomyBellowsCompositingOverrides => {
+  if (condition === "O1") return { opacity: 0.5 };
+  if (condition === "O2") return { opacity: 1 };
+  return anatomyBellowsCompositingOverrides(condition);
+};
+
 const isConceptualBellowsRole = (role: string): boolean => role === "conceptual-camera/bellows";
 
 /** Validates the current mounted object and authored source before permitting a trial. */
@@ -112,9 +130,23 @@ export const createAnatomyBellowsCompositingMaterialClone = (
   return clone;
 };
 
+/** Clone the selected WebGL source material and change only its opacity. */
+export const createAnatomyBellowsOpacityMaterialClone = (
+  source: THREE.Material,
+  condition: AnatomyBellowsOpacityCondition,
+): THREE.Material => {
+  if (source.type !== "MeshStandardMaterial" || !("forceSinglePass" in source)) {
+    throw new Error("unsupported-bellows-source-material-family");
+  }
+  const clone = source.clone();
+  clone.opacity = anatomyBellowsInterventionOverrides(condition).opacity!;
+  linkObserverOutputSourceMaterial(clone, source);
+  return clone;
+};
+
 export type AnatomyBellowsCompositingOverrideRegistration = Readonly<{
   generation: number;
-  condition: Exclude<AnatomyBellowsCompositingCondition, "C0">;
+  condition: AnatomyBellowsInterventionCondition;
   identity: object;
   overrides: AnatomyBellowsCompositingOverrides;
 }>;
@@ -125,13 +157,13 @@ const activeOverrides = new WeakMap<THREE.Object3D, AnatomyBellowsCompositingOve
 export const registerAnatomyBellowsCompositingOverride = (
   renderable: THREE.Object3D,
   generation: number,
-  condition: Exclude<AnatomyBellowsCompositingCondition, "C0">,
+  condition: AnatomyBellowsInterventionCondition,
 ): Readonly<{ registration: AnatomyBellowsCompositingOverrideRegistration; release: () => void }> => {
   const registration = {
     generation,
     condition,
     identity: {},
-    overrides: anatomyBellowsCompositingOverrides(condition),
+    overrides: anatomyBellowsInterventionOverrides(condition),
   } as const;
   activeOverrides.set(renderable, registration);
   return {

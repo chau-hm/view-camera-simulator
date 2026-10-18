@@ -29,12 +29,14 @@ import { readObserverOutputSourceMaterial } from "./backend/observerMaterialOutp
 import {
   ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
   ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT,
+  anatomyBellowsInterventionOverrides,
   createAnatomyBellowsCompositingMaterialClone,
-  isAnatomyBellowsCompositingCondition,
+  createAnatomyBellowsOpacityMaterialClone,
+  isAnatomyBellowsInterventionCondition,
   registerAnatomyBellowsCompositingOverride,
   resolveAnatomyBellowsCompositingTarget,
   type AnatomyBellowsCompositingCandidate,
-  type AnatomyBellowsCompositingCondition,
+  type AnatomyBellowsInterventionCondition,
 } from "./backend/anatomyBellowsCompositingIntervention";
 import type { ConceptualCameraAnatomyPresentation } from "./ConceptualViewCamera";
 
@@ -54,7 +56,7 @@ type AnatomyBellowsCompositingRequest = Readonly<{
   generation: number;
   operation: "apply" | "restore";
   transactionId: string;
-  condition?: AnatomyBellowsCompositingCondition;
+  condition?: AnatomyBellowsInterventionCondition;
   renderableId?: string;
   sourceMaterialId?: string;
 }>;
@@ -63,7 +65,7 @@ type ActiveBellowsCompositingTransaction = Readonly<{
   requestId: string;
   generation: number;
   transactionId: string;
-  condition: Exclude<AnatomyBellowsCompositingCondition, "C0">;
+  condition: AnatomyBellowsInterventionCondition;
   renderable: THREE.Object3D & { material: THREE.Material | THREE.Material[]; geometry: THREE.BufferGeometry };
   originalRenderableMaterial: THREE.Material | THREE.Material[];
   sourceMaterial: THREE.Material;
@@ -751,7 +753,7 @@ export const AnatomyMaterialAuditProbe = ({
         emitBellowsCompositingResult({ requestId, generation, ok: true, ...restored });
         return;
       }
-      if (request.operation !== "apply" || !isAnatomyBellowsCompositingCondition(request.condition) || request.condition === "C0") {
+      if (request.operation !== "apply" || !isAnatomyBellowsInterventionCondition(request.condition)) {
         fail("invalid-compositing-intervention");
         return;
       }
@@ -794,10 +796,9 @@ export const AnatomyMaterialAuditProbe = ({
           return;
         }
         try {
-          diagnosticClone = createAnatomyBellowsCompositingMaterialClone(
-            sourceMaterial,
-            request.condition,
-          );
+          diagnosticClone = request.condition === "O1" || request.condition === "O2"
+            ? createAnatomyBellowsOpacityMaterialClone(sourceMaterial, request.condition)
+            : createAnatomyBellowsCompositingMaterialClone(sourceMaterial, request.condition);
           diagnosticClone.addEventListener("dispose", () => { diagnosticCloneDisposeCount += 1; });
           renderable.material = diagnosticClone;
         } catch (error) {
@@ -878,11 +879,7 @@ export const AnatomyMaterialAuditProbe = ({
         sourcePropertiesPreserved: JSON.stringify(getMaterialProperties(sourceMaterial)) ===
           JSON.stringify(sourceMaterialSnapshot),
         baselineSourceProperties: transaction.sourceMaterialSnapshot,
-        requestedOverrides: request.condition === "C1"
-          ? { forceSinglePass: true }
-        : request.condition === "C2"
-            ? { blending: THREE.NoBlending }
-            : { forceSinglePass: true, blending: THREE.NoBlending },
+        requestedOverrides: anatomyBellowsInterventionOverrides(request.condition),
         effectiveMaterialProperties: getMaterialProperties(diagnosticClone ?? originalRenderableMaterial),
         executionBackend: runtime.executionBackend,
         outputVariantUpdatePendingFrame: releaseNativeOverride !== null,
