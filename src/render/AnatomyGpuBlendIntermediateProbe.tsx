@@ -12,6 +12,7 @@ import {
   type AnatomyGpuCaptureMethod,
 } from "./backend/anatomyGpuBlendIntermediate";
 import { runAnatomyGpuBlendCalibration } from "./backend/anatomyGpuBlendCalibration";
+import { runAnatomyBellowsDrawMetadataCapture } from "./backend/anatomyBellowsDrawMetadataCapture";
 import {
   runAnatomyNativeWebGpuDrawBoundaryCapture,
   runAnatomyNativeWebGpuFinalFrameCapture,
@@ -30,7 +31,7 @@ import type { ConceptualCameraAnatomyPresentation } from "./ConceptualViewCamera
 type AnatomyGpuCaptureRequest = Readonly<{
   requestId: string;
   generation: number;
-  method: AnatomyGpuCaptureMethod | "calibration";
+  method: AnatomyGpuCaptureMethod | "calibration" | "bellows-draw-metadata";
   renderableId?: string;
   sourceMaterialId?: string;
   boundarySelection?: AnatomyNativeBoundarySelection;
@@ -1160,6 +1161,31 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       },
     );
 
+    const handleBellowsDrawMetadataCapture = (request: AnatomyGpuCaptureRequest) => runCapture(
+      request,
+      async (operation) => {
+        assertCaptureActive(operation);
+        const runtime = resolveObserverRendererRuntime(gl);
+        const selection = resolveTarget(request);
+        if ("error" in selection) return rejectionDetail(selection.error ?? "invalid-renderable-selection");
+        const { target } = selection;
+        const role = classifyAnatomyMaterialRole(target, scene);
+        if (target.name !== "bellows-folded-surface" || role.role !== "conceptual-camera/bellows" ||
+            role.cameraPart !== "bellows" || !request.sourceMaterialId) {
+          return rejectionDetail("selected-renderable-is-not-mounted-bellows");
+        }
+        return runAnatomyBellowsDrawMetadataCapture({
+          renderer: gl as unknown as Parameters<typeof runAnatomyBellowsDrawMetadataCapture>[0]["renderer"],
+          runtime,
+          generation,
+          selected: target,
+          sourceMaterialId: request.sourceMaterialId,
+          isCaptureActive: () => captureIsActive(operation),
+          registerCleanup: registerNativeCaptureCleanup,
+        });
+      },
+    );
+
     const handleCapture = (event: Event) => {
       const request = (event as CustomEvent<unknown>).detail as AnatomyGpuCaptureRequest | null;
       if (!request || typeof request.requestId !== "string" || request.requestId.length === 0) return;
@@ -1186,6 +1212,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         });
       } else if (request.method === "native-final-frame") {
         void handleNativeFinalFrameCapture(request).catch((error: unknown) => {
+          reject(request.requestId, error instanceof Error ? error.message : String(error));
+        });
+      } else if (request.method === "bellows-draw-metadata") {
+        void handleBellowsDrawMetadataCapture(request).catch((error: unknown) => {
           reject(request.requestId, error instanceof Error ? error.message : String(error));
         });
       } else if (request.method === "single-renderable-replay") {

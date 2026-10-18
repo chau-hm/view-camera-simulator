@@ -36,6 +36,8 @@ import {
   type AnatomyOutputInterventionSelection,
 } from "./anatomyMaterialOutputIntervention";
 import { classifyAnatomyMaterialRole } from "../anatomyMaterialRoles";
+import { readObserverOutputSourceMaterial } from "./observerMaterialOutputIdentity";
+import { readAnatomyBellowsCompositingOverride } from "./anatomyBellowsCompositingIntervention";
 import { isAnatomyRendererGenerationCurrent } from "../anatomyRenderableContribution";
 import type { ConceptualCameraAnatomyPresentation } from "../ConceptualViewCamera";
 import { getObserverMaterialSignatures } from "./observerMaterialSignatures";
@@ -368,6 +370,11 @@ const MaterialAwareOutputController = ({
   anatomyPresentationRef.current = anatomyPresentation;
   const anatomyOutputInterventionRef = useRef<ActiveAnatomyOutputIntervention | null>(null);
   const scopedAnatomyOwnersRef = useRef(new Map<string, MaterialOutputOwner>());
+  const scopedBellowsCompositingOwnersRef = useRef(new Map<string, MaterialOutputOwner>());
+  const retainedBellowsBaseOutputsRef = useRef(new Map<object, Readonly<{
+    renderable: THREE.Object3D;
+    release: () => void;
+  }>>());
   const backgroundNode = useMemo(() => workingToColorSpace(
     vec4(color(new THREE.Color("#f8fafc")), 1),
     THREE.SRGBColorSpace,
@@ -591,6 +598,7 @@ const MaterialAwareOutputController = ({
     injectedReadinessFailureRef.current = null;
     lastStatusRef.current = "pending";
     const scopedAnatomyOwners = scopedAnatomyOwnersRef.current;
+    const retainedBellowsBaseOutputs = retainedBellowsBaseOutputsRef.current;
     container?.setAttribute("data-observer-output-policy-scene-adapter", adapter.sceneId);
     container?.setAttribute("data-observer-output-policy-readiness", "pending");
     container?.removeAttribute("data-observer-output-policy-readiness-reason");
@@ -598,6 +606,8 @@ const MaterialAwareOutputController = ({
     setDiagnosticAttributes(container, "pending");
 
     return () => {
+      retainedBellowsBaseOutputs.forEach(({ release }) => release());
+      retainedBellowsBaseOutputs.clear();
       materialTracker.dispose();
       anatomyOutputInterventionRef.current = null;
       scopedAnatomyOwners.clear();
@@ -738,6 +748,30 @@ const MaterialAwareOutputController = ({
             );
           scopedAnatomyOwnersRef.current.set(variantKey, outputOwner);
         }
+        const bellowsCompositingOverride = import.meta.env.DEV && adapter.sceneId === "view-camera-anatomy"
+          ? readAnatomyBellowsCompositingOverride(object, rendererGeneration)
+          : null;
+        if (bellowsCompositingOverride) {
+          const overrideKey = `${bellowsCompositingOverride.condition}/${object.uuid}`;
+          if (!retainedBellowsBaseOutputsRef.current.has(bellowsCompositingOverride.identity)) {
+            const attached = sourceMaterials[0];
+            const source = attached ? readObserverOutputSourceMaterial(attached) ?? attached : null;
+            if (!source) throw new Error("Anatomy Bellows source output disappeared before its scoped override attached");
+            retainedBellowsBaseOutputsRef.current.set(bellowsCompositingOverride.identity, {
+              renderable: object,
+              release: materialTracker.retainOutput(source, baseOwner),
+            });
+          }
+          outputOwner = scopedBellowsCompositingOwnersRef.current.get(overrideKey) ??
+            createAnatomyMaterialOutputVariantOwner(
+              baseOwner,
+              bellowsCompositingOverride.identity,
+              baseOwner.outputTransform ?? "material-aware",
+              baseOwner.outputInterventionId ?? "B0",
+              bellowsCompositingOverride.overrides,
+            );
+          scopedBellowsCompositingOwnersRef.current.set(overrideKey, outputOwner);
+        }
         const reconciliation = materialTracker.reconcileRenderable(
           object,
           outputOwner,
@@ -751,6 +785,13 @@ const MaterialAwareOutputController = ({
         const nextMaterials = reconciliation.materials;
         if (nextMaterials.some((material, index) => material !== sourceMaterials[index])) {
           object.material = Array.isArray(object.material) ? nextMaterials : nextMaterials[0]!;
+        }
+        if (!bellowsCompositingOverride) {
+          for (const [identity, retained] of retainedBellowsBaseOutputsRef.current) {
+            if (retained.renderable !== object) continue;
+            retained.release();
+            retainedBellowsBaseOutputsRef.current.delete(identity);
+          }
         }
       });
       if (collectDetailedSample) {

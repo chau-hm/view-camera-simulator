@@ -3,6 +3,7 @@ import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/view
 import type { ObserverMaterialInventory } from "./architectureRiseMaterialInventory";
 import {
   type MaterialOutputOwner,
+  type MaterialOutputRenderStateOverride,
   type UnsupportedMaterialAssignment,
 } from "./materialAwareMaterialTracker";
 import type {
@@ -48,11 +49,13 @@ export const createAnatomyMaterialOutputVariantOwner = (
   identity: object,
   outputTransform: MaterialAwareOutputTransform,
   outputInterventionId: MaterialAwareOutputInterventionId,
+  renderStateOverride?: MaterialOutputRenderStateOverride,
 ): MaterialOutputOwner => ({
   identity,
   kind: controllerOwner.kind,
   outputTransform,
   outputInterventionId,
+  ...(renderStateOverride ? { renderStateOverride } : {}),
   retain: controllerOwner.retain,
   release: controllerOwner.release,
 });

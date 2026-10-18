@@ -16,6 +16,31 @@ export { readObserverOutputSourceMaterial } from "./observerMaterialOutputIdenti
 
 export type MaterialOutputOwnerKind = "observer-controller" | "registered-subject";
 
+export type MaterialOutputRenderStateOverride = Readonly<{
+  forceSinglePass?: boolean;
+  blending?: THREE.Material["blending"];
+}>;
+
+const applyMaterialOutputRenderStateOverride = (
+  output: MaterialAwareNode,
+  owner: MaterialOutputOwner,
+): boolean => {
+  const override = owner.renderStateOverride;
+  if (!override) return false;
+  let changed = false;
+  const outputWithRenderState = output as THREE.Material & { forceSinglePass?: boolean };
+  if (override.forceSinglePass !== undefined && outputWithRenderState.forceSinglePass !== override.forceSinglePass) {
+    outputWithRenderState.forceSinglePass = override.forceSinglePass;
+    changed = true;
+  }
+  if (override.blending !== undefined && output.blending !== override.blending) {
+    output.blending = override.blending;
+    changed = true;
+  }
+  if (changed) output.needsUpdate = true;
+  return changed;
+};
+
 /**
  * Disposal authority for adapted NodeMaterials. `identity` is the cache
  * boundary: one source material may have separate adapted copies for separate
@@ -28,6 +53,8 @@ export type MaterialOutputOwner = Readonly<{
   outputTransform?: MaterialAwareOutputTransform;
   /** Experimental mode identity recorded on adapted copies for audit evidence. */
   outputInterventionId?: MaterialAwareOutputInterventionId;
+  /** Development-only, renderable-scoped state override for Anatomy mechanism experiments. */
+  renderStateOverride?: MaterialOutputRenderStateOverride;
   retain: (output: MaterialAwareNode) => void;
   release: (output: MaterialAwareNode) => void;
 }>;
@@ -58,6 +85,7 @@ type ManagedMaterial = {
   signature: string;
   shaderSignature: string;
   attachments: Set<MaterialAttachment>;
+  retainedCount: number;
   released: boolean;
 };
 
@@ -130,6 +158,23 @@ export class MaterialAwareMaterialTracker {
     return this.attachmentsByRenderable.size;
   }
 
+  /**
+   * Temporarily retains an owner's detached output while a scoped variant is
+   * attached to the same source. The returned release is idempotent.
+   */
+  retainOutput(sourceMaterial: THREE.Material, owner: MaterialOutputOwner): () => void {
+    const source = readObserverOutputSourceMaterial(sourceMaterial) ?? sourceMaterial;
+    const record = this.getRecord(source, owner);
+    if (!record || record.released) throw new Error("Cannot retain a missing material-aware output record");
+    record.retainedCount += 1;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      record.retainedCount = Math.max(0, record.retainedCount - 1);
+    };
+  }
+
   reconcileRenderable(
     renderable: MaterialAwareRenderable,
     owner: MaterialOutputOwner,
@@ -165,6 +210,7 @@ export class MaterialAwareMaterialTracker {
             if (signatures.shaderSignature !== currentRecord.shaderSignature) {
               currentRecord.output.needsUpdate = true;
             }
+            applyMaterialOutputRenderStateOverride(currentRecord.output, currentRecord.owner);
           });
           currentRecord.signature = signatures.signature;
           currentRecord.shaderSignature = signatures.shaderSignature;
@@ -184,6 +230,7 @@ export class MaterialAwareMaterialTracker {
           nextMaterials.push(attached);
           return;
         }
+        applyMaterialOutputRenderStateOverride(output, owner);
         const signatures = getSignatures(source);
 
         Object.defineProperties(output, {
@@ -207,6 +254,7 @@ export class MaterialAwareMaterialTracker {
           signature: signatures.signature,
           shaderSignature: signatures.shaderSignature,
           attachments: new Set(),
+          retainedCount: 0,
           released: false,
         };
         let retained = false;
@@ -278,7 +326,7 @@ export class MaterialAwareMaterialTracker {
     const stale: ManagedMaterial[] = [];
     this.records.forEach((byOwner) => {
       byOwner.forEach((record) => {
-        if (frame - record.lastSeenFrame >= 2 && record.attachments.size === 0) stale.push(record);
+        if (frame - record.lastSeenFrame >= 2 && record.attachments.size === 0 && record.retainedCount === 0) stale.push(record);
       });
     });
     stale.forEach((record) => this.releaseRecord(record, true));
