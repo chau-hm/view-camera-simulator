@@ -17,6 +17,7 @@ export { readObserverOutputSourceMaterial } from "./observerMaterialOutputIdenti
 export type MaterialOutputOwnerKind = "observer-controller" | "registered-subject";
 
 export type MaterialOutputRenderStateOverride = Readonly<{
+  opacity?: number;
   forceSinglePass?: boolean;
   blending?: THREE.Material["blending"];
 }>;
@@ -28,16 +29,23 @@ const applyMaterialOutputRenderStateOverride = (
   const override = owner.renderStateOverride;
   if (!override) return false;
   let changed = false;
+  let needsPipelineUpdate = false;
   const outputWithRenderState = output as THREE.Material & { forceSinglePass?: boolean };
   if (override.forceSinglePass !== undefined && outputWithRenderState.forceSinglePass !== override.forceSinglePass) {
     outputWithRenderState.forceSinglePass = override.forceSinglePass;
     changed = true;
+    needsPipelineUpdate = true;
   }
   if (override.blending !== undefined && output.blending !== override.blending) {
     output.blending = override.blending;
     changed = true;
+    needsPipelineUpdate = true;
   }
-  if (changed) output.needsUpdate = true;
+  if (override.opacity !== undefined && output.opacity !== override.opacity) {
+    output.opacity = override.opacity;
+    changed = true;
+  }
+  if (needsPipelineUpdate) output.needsUpdate = true;
   return changed;
 };
 

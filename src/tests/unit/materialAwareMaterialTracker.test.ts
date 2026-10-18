@@ -83,6 +83,62 @@ const createOwner = (
 };
 
 describe("material-aware Observer output tracking", () => {
+  it("applies opacity to the native output variant without changing or disposing authored resources", () => {
+    const texture = new THREE.Texture();
+    const source = new THREE.MeshStandardMaterial({
+      map: texture,
+      opacity: 0.16,
+      transparent: true,
+      blending: THREE.NormalBlending,
+      premultipliedAlpha: false,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const sourceDispose = vi.spyOn(source, "dispose");
+    const textureDispose = vi.spyOn(texture, "dispose");
+    const geometry = new THREE.BufferGeometry();
+    const geometryDispose = vi.spyOn(geometry, "dispose");
+    const mesh = new THREE.Mesh(geometry, source);
+    const tracker = new MaterialAwareMaterialTracker(16);
+    const baseOutput = reconcile(tracker, mesh).materials[0]!;
+    const releaseBaseOutput = tracker.retainOutput(source, tracker.controllerOwner);
+    const opacityOwner = createAnatomyMaterialOutputVariantOwner(
+      tracker.controllerOwner,
+      {},
+      "material-aware",
+      "B0",
+      { opacity: 0.5 },
+    );
+
+    const output = reconcile(tracker, mesh, opacityOwner, 2).materials[0]!;
+    expect(output).not.toBe(baseOutput);
+    expect(output).toMatchObject({
+      opacity: 0.5,
+      transparent: true,
+      blending: THREE.NormalBlending,
+      premultipliedAlpha: false,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    expect(mesh.material).toBe(output);
+    expect(source.opacity).toBe(0.16);
+    expect((output as THREE.MeshStandardMaterial).map).toBe(texture);
+
+    const restored = reconcile(tracker, mesh, tracker.controllerOwner, 3).materials[0]!;
+    releaseBaseOutput();
+    expect(restored).toBe(baseOutput);
+    expect(restored.opacity).toBe(0.16);
+    tracker.dispose();
+    expect(sourceDispose).not.toHaveBeenCalled();
+    expect(textureDispose).not.toHaveBeenCalled();
+    expect(geometryDispose).not.toHaveBeenCalled();
+    source.dispose();
+    texture.dispose();
+    geometry.dispose();
+  });
+
   it("applies Bellows render-state overrides to an owned output and releases it on restoration", () => {
     const texture = new THREE.Texture();
     const source = new THREE.MeshStandardMaterial({

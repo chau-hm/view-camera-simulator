@@ -1,8 +1,11 @@
 import * as THREE from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   anatomyBellowsCompositingOverrides,
+  anatomyBellowsInterventionOverrides,
   createAnatomyBellowsCompositingMaterialClone,
+  createAnatomyBellowsOpacityMaterialClone,
+  isAnatomyBellowsInterventionCondition,
   registerAnatomyBellowsCompositingOverride,
   resolveAnatomyBellowsCompositingTarget,
   readAnatomyBellowsCompositingOverride,
@@ -42,6 +45,52 @@ describe("in-situ Anatomy Bellows compositing interventions", () => {
       forceSinglePass: true,
       blending: THREE.NoBlending,
     });
+  });
+
+  it("validates O1/O2 and varies only opacity while retaining transparent blend state", () => {
+    expect(isAnatomyBellowsInterventionCondition("O1")).toBe(true);
+    expect(isAnatomyBellowsInterventionCondition("O2")).toBe(true);
+    expect(isAnatomyBellowsInterventionCondition("O3")).toBe(false);
+    expect(anatomyBellowsInterventionOverrides("O1")).toEqual({ opacity: 0.5 });
+    expect(anatomyBellowsInterventionOverrides("O2")).toEqual({ opacity: 1 });
+
+    const texture = new THREE.Texture();
+    const source = new THREE.MeshStandardMaterial({
+      color: "#111827",
+      map: texture,
+      opacity: 0.16,
+      transparent: true,
+      blending: THREE.NormalBlending,
+      premultipliedAlpha: false,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const sourceDispose = vi.fn();
+    const textureDispose = vi.fn();
+    source.addEventListener("dispose", sourceDispose);
+    texture.addEventListener("dispose", textureDispose);
+    const clone = createAnatomyBellowsOpacityMaterialClone(source, "O1");
+
+    expect(clone).not.toBe(source);
+    expect(readObserverOutputSourceMaterial(clone)).toBe(source);
+    expect(clone).toMatchObject({
+      opacity: 0.5,
+      transparent: true,
+      blending: THREE.NormalBlending,
+      premultipliedAlpha: false,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      forceSinglePass: false,
+    });
+    expect((clone as THREE.MeshStandardMaterial).map).toBe(texture);
+    expect(source.opacity).toBe(0.16);
+    clone.dispose();
+    expect(sourceDispose).not.toHaveBeenCalled();
+    expect(textureDispose).not.toHaveBeenCalled();
+    source.dispose();
+    texture.dispose();
   });
 
   it("rejects stale, semantically different, hidden, and non-baseline mounted sources", () => {
