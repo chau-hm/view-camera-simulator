@@ -83,6 +83,103 @@ const createOwner = (
 };
 
 describe("material-aware Observer output tracking", () => {
+  it("applies Bellows render-state overrides to an owned output and releases it on restoration", () => {
+    const texture = new THREE.Texture();
+    const source = new THREE.MeshStandardMaterial({
+      map: texture,
+      transparent: true,
+      opacity: 0.16,
+      blending: THREE.NormalBlending,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const sourceDispose = vi.spyOn(source, "dispose");
+    const textureDispose = vi.spyOn(texture, "dispose");
+    const mesh = new THREE.Mesh(new THREE.BufferGeometry(), source);
+    const tracker = new MaterialAwareMaterialTracker(17);
+    const variantOwner = createAnatomyMaterialOutputVariantOwner(
+      tracker.controllerOwner,
+      {},
+      "material-aware",
+      "B0",
+      { forceSinglePass: true, blending: THREE.NoBlending },
+    );
+
+    const interventionOutput = reconcile(tracker, mesh, variantOwner).materials[0]!;
+    const outputDispose = vi.spyOn(interventionOutput, "dispose");
+    expect(interventionOutput).toMatchObject({
+      transparent: true,
+      opacity: 0.16,
+      blending: THREE.NoBlending,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      forceSinglePass: true,
+    });
+    expect(source).toMatchObject({
+      transparent: true,
+      opacity: 0.16,
+      blending: THREE.NormalBlending,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      forceSinglePass: false,
+    });
+    expect((source as THREE.MeshStandardMaterial).map).toBe(texture);
+    expect((interventionOutput as THREE.Material & { map?: THREE.Texture | null }).map).toBe(texture);
+
+    reconcile(tracker, mesh, tracker.controllerOwner, 2);
+    expect(mesh.material).not.toBe(interventionOutput);
+    tracker.releaseStaleMaterials(3);
+    expect(outputDispose).toHaveBeenCalledTimes(1);
+    tracker.dispose();
+    expect(sourceDispose).not.toHaveBeenCalled();
+    expect(textureDispose).not.toHaveBeenCalled();
+    source.dispose();
+    texture.dispose();
+    mesh.geometry.dispose();
+  });
+
+  it("retains the exact base output while a per-renderable native variant is attached", () => {
+    const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
+    const sourceDispose = vi.spyOn(source, "dispose");
+    const mesh = new THREE.Mesh(new THREE.BufferGeometry(), source) as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+    const tracker = new MaterialAwareMaterialTracker(18);
+    const baseOutput = reconcile(tracker, mesh, tracker.controllerOwner, 1).materials[0]!;
+    const baseDispose = vi.spyOn(baseOutput, "dispose");
+    const releaseBaseOutput = tracker.retainOutput(source, tracker.controllerOwner);
+    const variantOwner = createAnatomyMaterialOutputVariantOwner(
+      tracker.controllerOwner,
+      {},
+      "material-aware",
+      "B0",
+      { forceSinglePass: true },
+    );
+    const variantOutput = reconcile(tracker, mesh, variantOwner, 2).materials[0]!;
+    const variantDispose = vi.spyOn(variantOutput, "dispose");
+
+    expect(variantOutput).not.toBe(baseOutput);
+    // The controller reconciles active renderables every frame before stale cleanup.
+    reconcile(tracker, mesh, variantOwner, 3);
+    tracker.releaseStaleMaterials(4);
+    expect(baseDispose).not.toHaveBeenCalled();
+    expect(mesh.material).toBe(variantOutput);
+
+    const restored = reconcile(tracker, mesh, tracker.controllerOwner, 5).materials[0]!;
+    releaseBaseOutput();
+    expect(restored).toBe(baseOutput);
+    reconcile(tracker, mesh, tracker.controllerOwner, 6);
+    tracker.releaseStaleMaterials(7);
+    expect(variantDispose).toHaveBeenCalledTimes(1);
+    expect(baseDispose).not.toHaveBeenCalled();
+    tracker.dispose();
+    expect(baseDispose).toHaveBeenCalledTimes(1);
+    expect(sourceDispose).not.toHaveBeenCalled();
+    source.dispose();
+    mesh.geometry.dispose();
+  });
+
   it("isolates shared source assignments across a scoped Anatomy output intervention", () => {
     const source = new THREE.MeshStandardMaterial({
       color: "#d7c19c",

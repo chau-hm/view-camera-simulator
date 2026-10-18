@@ -6,7 +6,13 @@ import {
   LESSON_ZERO_STEPS,
   resolveLessonZeroCameraPresentation,
 } from "../../app/anatomyLesson";
+import { resolveConceptualAnatomyPartState } from "../../render/ConceptualViewCamera";
 import type { ConceptualCameraAnatomyPresentation } from "../../render/ConceptualViewCamera";
+import {
+  ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
+  ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT,
+  type AnatomyBellowsCompositingCondition,
+} from "../../render/backend/anatomyBellowsCompositingIntervention";
 import {
   ANATOMY_OUTPUT_INTERVENTION_EVENT,
   ANATOMY_OUTPUT_INTERVENTION_RESULT_EVENT,
@@ -30,11 +36,40 @@ import {
 } from "../../render/backend/anatomyNativeFramebufferParity";
 import type { AnatomyNativeBoundarySelection } from "../../render/backend/anatomyNativeWebGpuDrawBoundaryCapture";
 import {
+  installMInv8NativePipelineObserverInRealm,
+  M_INV8_NATIVE_PIPELINE_OBSERVER_KEY,
+} from "../../render/backend/anatomyBellowsNativePipelineEvidence";
+import {
+  ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT,
+  ANATOMY_RENDER_OBJECT_VISIBILITY_RESULT_EVENT,
+} from "../../render/anatomyMaterialAuditProbe";
+import {
   anatomyMaskBounds,
+  combineAnatomyMasks,
   compareAnatomyImages,
+  countAnatomyMaskPixels,
+  deriveAnatomyObservedDifferentialMask,
   type AnatomyPixelMask,
 } from "../../render/anatomyRenderableContribution";
+import {
+  summarizeAnatomyDifferenceOfResponses,
+  summarizeAnatomyFactorialInteraction,
+  summarizeSignedAnatomyImageResponse,
+} from "../../render/backend/anatomyBellowsCompositingIntervention";
 import { decodePlaywrightPng } from "./observerBackendBenchmark";
+import {
+  areMInv8GeometryContentsCompatible,
+  areMInv8ObservedBlendStatesQualified,
+  areMInv8ScreenshotRepresentationsCompatible,
+  qualifyMInv8ConditionPair,
+  qualifyMInv8DifferenceOfResponses,
+  qualifyMInv8FactorialInteraction,
+  qualifyMInv8Matrix,
+  qualifyMInv8Trial,
+  type MInv8Backend,
+  type MInv8Condition,
+  type MInv8TrialQualification,
+} from "./anatomyBellowsCompositingQualification";
 
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 const auditMode = process.env.OBSERVER_ANATOMY_AUDIT_MODE ?? "standard";
@@ -57,7 +92,12 @@ type AuditRenderable = Readonly<{
   castShadow: boolean;
   receiveShadow: boolean;
   geometry: Readonly<Record<string, unknown>>;
-  materialAssignments: readonly Readonly<{ source: Readonly<Record<string, unknown>> }>[];
+  projectedBounds: Readonly<{ left: number; top: number; right: number; bottom: number }> | null;
+  materialAssignments: readonly Readonly<{
+    source: Readonly<Record<string, unknown>>;
+    output: Readonly<Record<string, unknown>>;
+    adapted: boolean;
+  }>[];
 }>;
 type AuditSnapshot = Readonly<{
   generation: number;
@@ -82,7 +122,7 @@ type BackendName = "webgl" | "native-webgpu-standard" | "native-webgpu-material-
 type BackendPage = Readonly<{ context: Awaited<ReturnType<Browser["newContext"]>>; page: Page; initial: AuditSnapshot }>;
 type ProbeRequest = Readonly<{
   generation: number;
-  method: AnatomyGpuCaptureMethod | "calibration";
+  method: AnatomyGpuCaptureMethod | "calibration" | "bellows-draw-metadata";
   renderableId?: string;
   sourceMaterialId?: string;
   boundarySelection?: AnatomyNativeBoundarySelection;
@@ -312,6 +352,109 @@ const requestOutputMode = async (
   });
 };
 
+type TransactionResponse = Readonly<Record<string, unknown> & {
+  requestId: string;
+  generation: number;
+  ok: boolean;
+  reason?: string;
+}>;
+
+const requestBellowsIntervention = async (
+  page: Page,
+  request: Readonly<{
+    generation: number;
+    operation: "apply" | "restore";
+    transactionId: string;
+    condition?: Exclude<AnatomyBellowsCompositingCondition, "C0">;
+    renderableId?: string;
+    sourceMaterialId?: string;
+  }>,
+): Promise<TransactionResponse> => {
+  const requestId = `anatomy-bellows-condition-${++requestCounter}`;
+  return page.locator(canvasSelector).evaluate((element, payload) => new Promise((resolveResult, reject) => {
+    const timeout = window.setTimeout(() => {
+      element.removeEventListener(payload.resultEvent, onResult);
+      reject(new Error(`Timed out waiting for Bellows ${payload.request.operation} result`));
+    }, 15_000);
+    const onResult = (event: Event) => {
+      const detail = (event as CustomEvent<TransactionResponse>).detail;
+      if (detail?.requestId !== payload.requestId) return;
+      window.clearTimeout(timeout);
+      element.removeEventListener(payload.resultEvent, onResult);
+      resolveResult(detail);
+    };
+    element.addEventListener(payload.resultEvent, onResult);
+    element.dispatchEvent(new CustomEvent(payload.eventName, {
+      detail: { ...payload.request, requestId: payload.requestId },
+    }));
+  }), {
+    requestId,
+    request,
+    eventName: ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
+    resultEvent: ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT,
+  });
+};
+
+const requestVisibilityTransaction = async (
+  page: Page,
+  request: Readonly<{
+    generation: number;
+    operation: "exclude" | "restore";
+    transactionId: string;
+    renderableIds?: readonly string[];
+  }>,
+): Promise<TransactionResponse> => {
+  const requestId = `anatomy-bellows-context-${++requestCounter}`;
+  return page.locator(canvasSelector).evaluate((element, payload) => new Promise((resolveResult, reject) => {
+    const timeout = window.setTimeout(() => {
+      element.removeEventListener(payload.resultEvent, onResult);
+      reject(new Error(`Timed out waiting for visibility ${payload.request.operation} result`));
+    }, 15_000);
+    const onResult = (event: Event) => {
+      const detail = (event as CustomEvent<TransactionResponse>).detail;
+      if (detail?.requestId !== payload.requestId) return;
+      window.clearTimeout(timeout);
+      element.removeEventListener(payload.resultEvent, onResult);
+      resolveResult(detail);
+    };
+    element.addEventListener(payload.resultEvent, onResult);
+    const detail = payload.request.operation === "exclude"
+      ? {
+          ...payload.request,
+          requestId: payload.requestId,
+          selector: { kind: "renderable-ids", renderableIds: payload.request.renderableIds ?? [] },
+        }
+      : { ...payload.request, requestId: payload.requestId };
+    element.dispatchEvent(new CustomEvent(payload.eventName, { detail }));
+  }), {
+    requestId,
+    request,
+    eventName: ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT,
+    resultEvent: ANATOMY_RENDER_OBJECT_VISIBILITY_RESULT_EVENT,
+  });
+};
+
+const maskFromDecodedImage = (image: Image, threshold = 127): AnatomyPixelMask => ({
+  width: image.width,
+  height: image.height,
+  pixels: Uint8Array.from({ length: image.width * image.height }, (_, index) =>
+    Number((image.pixels[index * image.channels] ?? 0) > threshold)),
+});
+
+const maskFromIndices = (width: number, height: number, indices: readonly number[]): AnatomyPixelMask => {
+  const pixels = new Uint8Array(width * height);
+  for (const index of indices) {
+    if (Number.isInteger(index) && index >= 0 && index < pixels.length) pixels[index] = 1;
+  }
+  return { width, height, pixels };
+};
+
+const fullImageMask = (width: number, height: number): AnatomyPixelMask => ({
+  width,
+  height,
+  pixels: new Uint8Array(width * height).fill(1),
+});
+
 const requestProbe = async (
   page: Page,
   request: ProbeRequest,
@@ -513,7 +656,11 @@ const holdCaptureAtNativeReadback = async (
   ), { timeout: 30_000 }).toBeGreaterThan(0);
 };
 
-const openBackend = async (browser: Browser, backend: BackendName): Promise<BackendPage> => {
+const openBackend = async (
+  browser: Browser,
+  backend: BackendName,
+  options: Readonly<{ observeNativePipelineDescriptors?: boolean }> = {},
+): Promise<BackendPage> => {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
     deviceScaleFactor: 1,
@@ -521,6 +668,11 @@ const openBackend = async (browser: Browser, backend: BackendName): Promise<Back
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  if (options.observeNativePipelineDescriptors) {
+    await context.addInitScript({
+      content: `(${installMInv8NativePipelineObserverInRealm.toString()})(window);`,
+    });
+  }
   const params = new URLSearchParams({
     lesson: "1",
     observerMaterialAudit: "1",
@@ -3651,5 +3803,1072 @@ test("M-INV7 localizes native Anatomy final-frame differences across progressive
     await testInfo.attach("anatomy-progressive-pass-boundary-ground-glass-after.png", { body: finalGroundGlassPng, contentType: "image/png" });
   } finally {
     await native.context.close();
+  }
+});
+
+test("M-INV8 isolates in-situ Anatomy Bellows compositing sensitivities", async ({ browser }, testInfo: TestInfo) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires native WebGPU with the material-aware Anatomy B0 output policy.");
+  test.setTimeout(25 * 60 * 1000);
+  expect(nativeRequired, "M-INV8 requires native WebGPU and does not accept application fallback").toBe(true);
+
+  const selection = await preselectEvidencePixels();
+  const historicalPriorReport = JSON.parse(await readFile(
+    resolve(referenceRoot, "anatomy-bellows-compositing-causal/report.json"),
+    "utf8",
+  )) as Readonly<{
+    provenance?: Readonly<{ baseSha?: string; measurementSha?: string }>;
+    outcome?: string;
+    conditionMatrix?: Readonly<{ crossRendererByCondition?: readonly Readonly<{
+      condition?: string;
+      crossRendererDifference?: Readonly<Record<string, Readonly<{ meanAbsoluteRgbDifference?: number }>>>;
+    }>[] }>;
+  }>;
+  const historicalPriorRun = {
+    baseSha: historicalPriorReport.provenance?.baseSha ?? null,
+    measurementSha: historicalPriorReport.provenance?.measurementSha ?? null,
+    outcome: historicalPriorReport.outcome ?? null,
+    dimmedGroupMaeByCondition: Object.fromEntries((historicalPriorReport.conditionMatrix?.crossRendererByCondition ?? []).map((item) => [
+      item.condition ?? "unknown",
+      item.crossRendererDifference?.dimmedGroup?.meanAbsoluteRgbDifference ?? null,
+    ])),
+    nativePipelineEvidence: "The prior run recorded material-derived blend state; pipelineId was null and no GPUDevice creation descriptor was observed. Its image measurements are retained as historical evidence but are not qualified by the review-fix contract.",
+  };
+  const [webgl, native] = await Promise.all([
+    openBackend(browser, "webgl"),
+    openBackend(browser, "native-webgpu-material-aware", { observeNativePipelineDescriptors: true }),
+  ]);
+  const backends = { webgl, native } as const;
+  const pages = [webgl, native];
+  const pageErrors: string[] = [];
+  const nativeConsoleErrors: string[] = [];
+  pages.forEach(({ page }) => page.on("pageerror", (error) => { pageErrors.push(error.message); }));
+  native.page.on("console", (message) => {
+    if (message.type() === "error") nativeConsoleErrors.push(message.text());
+  });
+  const reportPath = testInfo.outputPath("anatomy-bellows-compositing-causal-report.json");
+  const nativeMethod = "bellows-draw-metadata" as const;
+
+  const renderableFor = (snapshot: AuditSnapshot): AuditRenderable => {
+    const bellows = snapshot.renderables.find((candidate) =>
+      candidate.name === "bellows-folded-surface" &&
+      candidate.role === "conceptual-camera/bellows" &&
+      candidate.cameraPart === "bellows",
+    );
+    if (!bellows) throw new Error("The mounted Front Standard scene did not contain the semantic Bellows renderable");
+    if (bellows.materialAssignments.length !== 1) throw new Error("The Bellows no longer has exactly one material slot");
+    return bellows;
+  };
+  const sourceProperties = (snapshot: AuditSnapshot) => renderableFor(snapshot).materialAssignments[0]!.source;
+  const activeProperties = (snapshot: AuditSnapshot) => renderableFor(snapshot).materialAssignments[0]!.output;
+  const cameraAndViewportMatch = (left: AuditSnapshot, right: AuditSnapshot) =>
+    left.viewport.width === right.viewport.width && left.viewport.height === right.viewport.height &&
+    left.viewport.devicePixelRatio === right.viewport.devicePixelRatio &&
+    left.viewport.canvasBackingWidth === right.viewport.canvasBackingWidth &&
+    left.viewport.canvasBackingHeight === right.viewport.canvasBackingHeight &&
+    JSON.stringify(left.viewport.cameraPosition) === JSON.stringify(right.viewport.cameraPosition) &&
+    JSON.stringify(left.viewport.cameraQuaternion) === JSON.stringify(right.viewport.cameraQuaternion) &&
+    JSON.stringify(left.viewport.orbitTarget) === JSON.stringify(right.viewport.orbitTarget);
+  const authoredSourceState = (properties: Readonly<Record<string, unknown>>) => {
+    const authoredProperties = { ...properties };
+    delete authoredProperties.materialVersion;
+    return authoredProperties;
+  };
+  const matchesExpectedAuthoredSource = (
+    properties: Readonly<Record<string, unknown>>,
+    expected: Readonly<Record<string, unknown>>,
+  ) => Object.entries(expected).every(([key, value]) => properties[key] === value);
+  const metadataFor = async (page: Page, snapshot: AuditSnapshot): Promise<ProbeResult> => {
+    const bellows = renderableFor(snapshot);
+    const source = bellows.materialAssignments[0]!.source;
+    return requestProbe(page, {
+      generation: snapshot.generation,
+      method: nativeMethod,
+      renderableId: bellows.objectId,
+      sourceMaterialId: String(source.id),
+    });
+  };
+  const captureMetrics = (first: Image, second: Image, masks: Readonly<Record<string, AnatomyPixelMask>>) =>
+    Object.fromEntries(Object.entries(masks).map(([name, mask]) => [name, compareAnatomyImages(first, second, mask)]));
+  const signedResponseMetrics = (reference: Image, candidate: Image, masks: Readonly<Record<string, AnatomyPixelMask>>) =>
+    Object.fromEntries(Object.entries(masks).map(([name, mask]) => [
+      name,
+      summarizeSignedAnatomyImageResponse(reference, candidate, mask, 8),
+    ]));
+  const attachPng = async (name: string, png: Buffer) => {
+    await testInfo.attach(name, { body: png, contentType: "image/png" });
+  };
+
+  try {
+    const cameraPose = {
+      position: webgl.initial.viewport.cameraPosition,
+      target: webgl.initial.viewport.orbitTarget ?? [0, 0, 0],
+    };
+    for (const backend of pages) {
+      await advanceToFrontStandard(backend.page);
+      await setCameraPose(backend.page, cameraPose.position, cameraPose.target);
+    }
+    const expectedStep = LESSON_ZERO_STEPS.find((step) => step.id === "front-standard");
+    if (!expectedStep) throw new Error("The Front Standard lesson step is unavailable");
+    const expectedPresentation = resolveLessonZeroCameraPresentation(expectedStep, false).anatomy;
+    if (!expectedPresentation) throw new Error("The Front Standard Anatomy presentation is unavailable");
+    expect((await requestOutputMode(native.page, native.initial.generation, "B0")).ok).toBe(true);
+    await Promise.all(pages.map(({ page }) => stabilizeFrame(page)));
+    const snapshots = {
+      webgl: await readAuditSnapshot(webgl.page, "m-inv8-webgl-c0-initial"),
+      native: await readAuditSnapshot(native.page, "m-inv8-native-c0-initial"),
+    };
+    for (const snapshot of Object.values(snapshots)) {
+      expect(snapshot.sceneId).toBe("view-camera-anatomy");
+      expect(snapshot.anatomyPresentation).toEqual(expectedPresentation);
+      expect(renderableFor(snapshot).visible).toBe(true);
+    }
+    const baselineCameraAndViewportCompatible =
+      cameraAndViewportMatch(snapshots.webgl, snapshots.native) &&
+      snapshots.webgl.viewport.devicePixelRatio === 1 &&
+      JSON.stringify(snapshots.webgl.viewport.cameraPosition) === JSON.stringify(cameraPose.position) &&
+      JSON.stringify(snapshots.webgl.viewport.orbitTarget) === JSON.stringify(cameraPose.target);
+    const expectedSource = {
+      type: "MeshStandardMaterial",
+      color: "111827",
+      opacity: 0.16,
+      transparent: true,
+      blending: THREE.NormalBlending,
+      premultipliedAlpha: false,
+      depthTest: true,
+      depthWrite: false,
+      side: "double",
+      forceSinglePass: false,
+    };
+    expect(sourceProperties(snapshots.webgl)).toMatchObject(expectedSource);
+    expect(sourceProperties(snapshots.native)).toMatchObject(expectedSource);
+    const nativeCanvas = native.page.locator(canvasSelector);
+    const nativeRuntimeAttributesQualified =
+      await nativeCanvas.getAttribute("data-observer-renderer-family") === "webgpu-renderer" &&
+      await nativeCanvas.getAttribute("data-observer-execution-backend") === "webgpu" &&
+      await nativeCanvas.getAttribute("data-observer-application-fallback") === "none" &&
+      await nativeCanvas.getAttribute("data-observer-output-policy-installed") === "material-aware" &&
+      await nativeCanvas.getAttribute("data-observer-output-policy-status") === "active";
+
+    const baseline = {
+      webgl: await captureCanvas(webgl.page),
+      native: await captureCanvas(native.page),
+    };
+    const baselineRepeat = {
+      webgl: await captureCanvas(webgl.page),
+      native: await captureCanvas(native.page),
+    };
+    const repeatNoise = {
+      webgl: compareAnatomyImages(baseline.webgl.image, baselineRepeat.webgl.image),
+      native: compareAnatomyImages(baseline.native.image, baselineRepeat.native.image),
+    };
+    expect(baseline.webgl.image.width).toBe(selection.width);
+    expect(baseline.webgl.image.height).toBe(selection.height);
+    expect(baseline.native.image.width).toBe(selection.width);
+    expect(baseline.native.image.height).toBe(selection.height);
+    expect(repeatNoise.webgl.meanAbsoluteRgbDifference).toBeLessThanOrEqual(0.5);
+    expect(repeatNoise.native.meanAbsoluteRgbDifference).toBeLessThanOrEqual(0.5);
+
+    const dimmedMaskImage = await readPng("anatomy-dimmed-output-mechanism/masks/front-standard-dimmed-response.png");
+    const unaffectedMaskImage = await readPng("anatomy-dimmed-output-mechanism/masks/front-standard-unaffected-candidate.png");
+    const historicalBellowsMaskImage = await readPng("anatomy-renderable-contribution-investigation/masks/M3-webgl-bellows-selected-part.png");
+    const broadDimmedMask = maskFromDecodedImage(dimmedMaskImage);
+    const unaffectedMask = maskFromDecodedImage(unaffectedMaskImage);
+    const historicalBellowsMask = maskFromDecodedImage(historicalBellowsMaskImage);
+    expect(broadDimmedMask.width).toBe(baseline.native.image.width);
+    expect(broadDimmedMask.height).toBe(baseline.native.image.height);
+
+    const nativeBellows = renderableFor(snapshots.native);
+    const visibilityId = `m-inv8-bellows-mask-${++requestCounter}`;
+    const hideBellows = await requestVisibilityTransaction(native.page, {
+      generation: snapshots.native.generation,
+      operation: "exclude",
+      transactionId: visibilityId,
+      renderableIds: [nativeBellows.objectId],
+    });
+    expect(hideBellows.ok).toBe(true);
+    const bellowsHiddenImage = await captureCanvas(native.page);
+    const restoreBellows = await requestVisibilityTransaction(native.page, {
+      generation: snapshots.native.generation,
+      operation: "restore",
+      transactionId: visibilityId,
+    });
+    expect(restoreBellows).toMatchObject({ ok: true, sourceResourceIdentityPreserved: true, sourceResourceIdentityMatchesInitialExclusion: true });
+    const bellowsMaskRestoredSnapshot = await readAuditSnapshot(native.page, "m-inv8-native-c0-after-visibility-restore");
+    const bellowsMaskRestoredImage = await captureCanvas(native.page);
+    const bellowsVisibilityResponseMask = deriveAnatomyObservedDifferentialMask(
+      baseline.native.image,
+      bellowsHiddenImage.image,
+      8,
+    );
+    expect(countAnatomyMaskPixels(bellowsVisibilityResponseMask)).toBeGreaterThan(0);
+    const selectedBellowsDimmedIntersection = combineAnatomyMasks(
+      bellowsVisibilityResponseMask,
+      broadDimmedMask,
+      "intersection",
+    );
+    expect(countAnatomyMaskPixels(selectedBellowsDimmedIntersection)).toBeGreaterThan(0);
+    const historicalBellowsDimmedIntersection = combineAnatomyMasks(
+      historicalBellowsMask,
+      broadDimmedMask,
+      "intersection",
+    );
+    const screenshotWidth = baseline.native.image.width;
+    const screenshotHeight = baseline.native.image.height;
+    const highErrorSampleMask = maskFromIndices(screenshotWidth, screenshotHeight, selection.samplePixelIndices);
+    const fixedMInv5Record = JSON.parse(await readFile(
+      resolve(referenceRoot, "anatomy-raw-framebuffer-parity/report.json"),
+      "utf8",
+    )) as { attachment?: { width?: number; height?: number }; rawToRawParity?: { fixedMInv5Samples?: { indices?: number[] } } };
+    const fixedIndices = fixedMInv5Record.rawToRawParity?.fixedMInv5Samples?.indices ?? [];
+    expect(fixedIndices).toHaveLength(9);
+    const fixedSourceWidth = fixedMInv5Record.attachment?.width ?? snapshots.native.viewport.canvasBackingWidth;
+    const fixedSourceHeight = fixedMInv5Record.attachment?.height ?? snapshots.native.viewport.canvasBackingHeight;
+    const fixedScreenshotIndices = fixedIndices.map((index) => {
+      const x = index % fixedSourceWidth;
+      const y = Math.floor(index / fixedSourceWidth);
+      const screenshotX = Math.min(screenshotWidth - 1, Math.floor((x + 0.5) * screenshotWidth / fixedSourceWidth));
+      const screenshotY = Math.min(screenshotHeight - 1, Math.floor((y + 0.5) * screenshotHeight / fixedSourceHeight));
+      return screenshotY * screenshotWidth + screenshotX;
+    });
+    const fixedMInv5Mask = maskFromIndices(screenshotWidth, screenshotHeight, fixedScreenshotIndices);
+    const regions: Readonly<Record<string, AnatomyPixelMask>> = {
+      fullFrame: fullImageMask(screenshotWidth, screenshotHeight),
+      dimmedGroup: broadDimmedMask,
+      selectedBellowsVisibilityResponse: bellowsVisibilityResponseMask,
+      selectedBellowsDimmedIntersection,
+      historicalBellowsResponse: historicalBellowsMask,
+      historicalBellowsDimmedIntersection,
+      unaffectedBackgroundCandidate: unaffectedMask,
+      historicalHighErrorSelectedSamples: highErrorSampleMask,
+      fixedMInv5Samples: fixedMInv5Mask,
+    };
+    const baselineCrossRenderer = captureMetrics(baseline.webgl.image, baseline.native.image, regions);
+    const baselineGap = (baselineCrossRenderer.dimmedGroup as ReturnType<typeof compareAnatomyImages>)
+      .meanAbsoluteRgbDifference;
+    const baselineReproduced = baselineGap >= 50;
+    const masks = {
+      fullFrame: regions.fullFrame,
+      dimmedGroup: regions.dimmedGroup,
+      selectedBellowsVisibilityResponse: regions.selectedBellowsVisibilityResponse,
+      selectedBellowsDimmedIntersection: regions.selectedBellowsDimmedIntersection,
+      historicalBellowsDimmedIntersection: regions.historicalBellowsDimmedIntersection,
+      unaffectedBackgroundCandidate: regions.unaffectedBackgroundCandidate,
+      historicalHighErrorSelectedSamples: regions.historicalHighErrorSelectedSamples,
+      fixedMInv5Samples: regions.fixedMInv5Samples,
+    };
+    const groundGlassBaseline = await captureGroundGlass(native.page);
+    const groundGlassBaselineRepeat = await captureGroundGlass(native.page);
+    const groundGlassRepeatNoise = compareAnatomyImages(groundGlassBaseline, groundGlassBaselineRepeat);
+    await expect(native.page.getByTestId("ground-glass-rtt")).toHaveAttribute("data-rtt-final-contentful", "true");
+
+    const c0Metadata = {
+      webgl: await metadataFor(webgl.page, snapshots.webgl),
+      native: await metadataFor(native.page, snapshots.native),
+    };
+    const drawCountFrom = (result: ProbeResult) => Number(result.drawCount ?? 0);
+    const drawRecordsFrom = (result: ProbeResult) => (result.drawObservations ?? []) as readonly Readonly<Record<string, unknown>>[];
+    const rendererRuntimeQualified = (result: ProbeResult, backend: MInv8Backend) => {
+      const runtime = result.rendererRuntime as Readonly<{ rendererFamily?: unknown; executionBackend?: unknown }> | undefined;
+      return backend === "native"
+        ? runtime?.rendererFamily === "webgpu-renderer" && runtime.executionBackend === "webgpu"
+        : runtime?.rendererFamily === "webgl-renderer" && runtime.executionBackend === "webgl2";
+    };
+    const nativePipelineQualified = (result: ProbeResult, backend: MInv8Backend) => backend === "webgl" ||
+      (result.feasibility === "F1" && drawRecordsFrom(result).length > 0 && drawRecordsFrom(result).every((draw) =>
+        (draw.nativePipelineBlendQualification as { status?: unknown } | undefined)?.status === "qualified" &&
+        (draw.nativeDrawExecution as { completed?: unknown } | undefined)?.completed === true,
+      ));
+    const drawStateMatches = (
+      result: ProbeResult,
+      backend: MInv8Backend,
+      expectedDrawCount: number,
+      expectedSides: readonly number[],
+      expectedBlendEnabled: boolean,
+      sourceMaterialId: string,
+    ) => {
+      const draws = drawRecordsFrom(result);
+      const drawSides = draws.map((draw) => (draw.material as Record<string, unknown> | undefined)?.side);
+      const actualBlendEnabled = draws.map((draw) => backend === "webgl"
+        ? (draw.state as Record<string, unknown> | undefined)?.blendEnabled
+        : draw.gpuBlendEnabled);
+      return result.status === "ok" && result.feasibility === "F1" && drawCountFrom(result) === expectedDrawCount &&
+        JSON.stringify(drawSides) === JSON.stringify(expectedSides) &&
+        areMInv8ObservedBlendStatesQualified(actualBlendEnabled, expectedBlendEnabled) &&
+        draws.every((draw) => (draw.material as Record<string, unknown> | undefined)?.sourceMaterialId === sourceMaterialId) &&
+        nativePipelineQualified(result, backend);
+    };
+    const c0RuntimeQualified = {
+      webgl: rendererRuntimeQualified(c0Metadata.webgl, "webgl"),
+      native: rendererRuntimeQualified(c0Metadata.native, "native") && nativeRuntimeAttributesQualified,
+    };
+    const c0GenerationQualified = {
+      webgl: c0Metadata.webgl.generation === snapshots.webgl.generation,
+      native: c0Metadata.native.generation === snapshots.native.generation,
+    };
+    const baselineDrawsQualified = drawStateMatches(c0Metadata.webgl, "webgl", 2, [THREE.BackSide, THREE.FrontSide], true,
+      String(sourceProperties(snapshots.webgl).id)) &&
+      drawStateMatches(c0Metadata.native, "native", 2, [THREE.BackSide, THREE.FrontSide], true,
+        String(sourceProperties(snapshots.native).id)) &&
+      c0RuntimeQualified.webgl && c0RuntimeQualified.native && c0GenerationQualified.webgl && c0GenerationQualified.native;
+
+    const c0Images: Record<"webgl" | "native", Image> = {
+      webgl: baseline.webgl.image,
+      native: baseline.native.image,
+    };
+    const conditionImages: Record<"webgl" | "native", Partial<Record<AnatomyBellowsCompositingCondition, Image>>> = {
+      webgl: { C0: baseline.webgl.image },
+      native: { C0: baseline.native.image },
+    };
+    const trialRecords: Array<Readonly<Record<string, unknown>>> = [];
+    const trialQualifications = new Map<string, MInv8TrialQualification>();
+    const qualificationKey = (backend: MInv8Backend, condition: MInv8Condition) => `${backend}:${condition}`;
+    const registerTrialQualification = (qualification: MInv8TrialQualification) => {
+      trialQualifications.set(qualificationKey(qualification.backend, qualification.condition), qualification);
+      return qualification;
+    };
+    const trialInternals: Array<{
+      backend: "webgl" | "native";
+      condition: Exclude<AnatomyBellowsCompositingCondition, "C0">;
+      first: Image;
+      repeat: Image;
+      restored: Image;
+      activeSnapshot: AuditSnapshot;
+      metadata: ProbeResult;
+      apply: TransactionResponse;
+      restore: TransactionResponse;
+      repeatMetric: ReturnType<typeof compareAnatomyImages>;
+      restoredMetrics: ReturnType<typeof captureMetrics>;
+      sourcePreserved: boolean;
+      outputStateQualified: boolean;
+      drawStateQualified: boolean;
+      qualification: MInv8TrialQualification;
+    }> = [];
+    const c0OutputStateQualified = (["webgl", "native"] as const).every((backend) => {
+      const snapshot = snapshots[backend];
+      const source = sourceProperties(snapshot);
+      const output = activeProperties(snapshot);
+      const selected = renderableFor(snapshot);
+      return matchesExpectedAuthoredSource(source, expectedSource) &&
+        selected.visible &&
+        source.opacity === 0.16 && source.transparent === true && source.blending === THREE.NormalBlending &&
+        output.opacity === 0.16 && output.transparent === true && output.blending === THREE.NormalBlending &&
+        output.forceSinglePass === false;
+    });
+    const c0OutputIdentityRestored = activeProperties(bellowsMaskRestoredSnapshot).id === activeProperties(snapshots.native).id &&
+      renderableFor(bellowsMaskRestoredSnapshot).geometry.id === renderableFor(snapshots.native).geometry.id;
+    const c0VisibilityRestored = renderableFor(bellowsMaskRestoredSnapshot).visible &&
+      restoreBellows.sourceResourceIdentityPreserved === true &&
+      restoreBellows.sourceResourceIdentityMatchesInitialExclusion === true &&
+      (restoreBellows.restored as readonly Readonly<{ id?: string; visible?: boolean }>[])?.some((item) =>
+        item.id === nativeBellows.objectId && item.visible === true,
+      ) === true;
+    const c0RepeatabilityWithinTolerance = repeatNoise.webgl.meanAbsoluteRgbDifference <= 0.5 &&
+      repeatNoise.native.meanAbsoluteRgbDifference <= 0.5;
+    const c0RestorationMetric = compareAnatomyImages(baseline.native.image, bellowsMaskRestoredImage.image);
+    const c0ImageDimensionsCompatible = baseline.webgl.image.width === baseline.native.image.width &&
+      baseline.webgl.image.height === baseline.native.image.height &&
+      baselineRepeat.webgl.image.width === baseline.webgl.image.width &&
+      baselineRepeat.native.image.width === baseline.native.image.width;
+    const c0QualificationByBackend = (backend: MInv8Backend) => registerTrialQualification(qualifyMInv8Trial(backend, "C0", {
+      captureCompleted: c0Metadata[backend].status === "ok" && baselineDrawsQualified,
+      rendererRuntimeQualified: c0RuntimeQualified[backend],
+      rendererGenerationQualified: c0GenerationQualified[backend],
+      cameraAndViewportCompatible: baselineCameraAndViewportCompatible,
+      sourceMaterialPreserved: matchesExpectedAuthoredSource(sourceProperties(snapshots[backend]), expectedSource),
+      effectiveOutputStateQualified: c0OutputStateQualified,
+      drawStateQualified: drawStateMatches(c0Metadata[backend], backend, 2, [THREE.BackSide, THREE.FrontSide], true,
+        String(sourceProperties(snapshots[backend]).id)),
+      nativePipelineQualified: nativePipelineQualified(c0Metadata[backend], backend),
+      outputPolicyQualified: backend === "webgl" || nativeRuntimeAttributesQualified,
+      interventionAppliedOrBaseline: true,
+      originalOutputIdentityRestored: backend === "webgl" || c0OutputIdentityRestored,
+      geometryIdentityPreserved: backend === "webgl" || c0OutputIdentityRestored,
+      visibilityRestored: backend === "webgl" || c0VisibilityRestored,
+      ownedResourcesReleased: true,
+      borrowedResourcesPreserved: backend === "webgl" || c0VisibilityRestored,
+      repeatabilityWithinTolerance: c0RepeatabilityWithinTolerance,
+      restoredBaselineWithinTolerance: backend === "webgl" || c0RestorationMetric.meanAbsoluteRgbDifference <= 1,
+      imageAvailable: Boolean(baseline[backend].image && baselineRepeat[backend].image),
+      imageDimensionsCompatible: c0ImageDimensionsCompatible,
+    }));
+    const c0TrialQualifications = (["webgl", "native"] as const).map(c0QualificationByBackend);
+    trialRecords.push(...c0TrialQualifications.map((qualification) => ({
+      backend: qualification.backend,
+      condition: qualification.condition,
+      qualified: qualification.qualified,
+      qualification,
+      drawMetadata: c0Metadata[qualification.backend],
+      sourceMaterial: sourceProperties(snapshots[qualification.backend]),
+      effectiveOutputMaterial: activeProperties(snapshots[qualification.backend]),
+      requestedState: {
+        condition: "C0",
+        blending: THREE.NormalBlending,
+        blendEnabled: true,
+        forceSinglePass: false,
+      },
+      effectiveMaterialState: {
+        blending: activeProperties(snapshots[qualification.backend]).blending,
+        transparent: activeProperties(snapshots[qualification.backend]).transparent,
+        forceSinglePass: activeProperties(snapshots[qualification.backend]).forceSinglePass,
+      },
+      actualPipelineBlendEnabledByDraw: drawRecordsFrom(c0Metadata[qualification.backend]).map((draw) =>
+        qualification.backend === "native" ? draw.gpuBlendEnabled : (draw.state as Record<string, unknown>).blendEnabled,
+      ),
+      repeatNoise: repeatNoise[qualification.backend],
+      restoration: {
+        sourcePropertiesPreserved: qualification.checks.sourceMaterialPreserved,
+        geometryIdentityPreserved: qualification.checks.geometryIdentityPreserved,
+        originalVisibilityPreserved: qualification.checks.visibilityRestored,
+        originalOutputIdentityRestored: qualification.checks.originalOutputIdentityRestored,
+        borrowedResourcesPreserved: qualification.checks.borrowedResourcesPreserved,
+        borrowedResourceDisposed: false,
+      },
+    })));
+    const plan: readonly Readonly<{ backend: "webgl" | "native"; condition: "C1" | "C2" | "C3" }>[] = [
+      { backend: "webgl", condition: "C1" },
+      { backend: "native", condition: "C1" },
+      { backend: "native", condition: "C2" },
+      { backend: "webgl", condition: "C2" },
+      { backend: "webgl", condition: "C3" },
+      { backend: "native", condition: "C3" },
+    ];
+    const regionRecord = (metrics: ReturnType<typeof captureMetrics>) => metrics;
+    for (const item of plan) {
+      const backend = backends[item.backend];
+      const beforeSnapshot = await readAuditSnapshot(backend.page, `m-inv8-${item.backend}-${item.condition}-before`);
+      const beforeBellows = renderableFor(beforeSnapshot);
+      const transactionId = `m-inv8-${item.backend}-${item.condition}-${++requestCounter}`;
+      const apply = await requestBellowsIntervention(backend.page, {
+        generation: beforeSnapshot.generation,
+        operation: "apply",
+        transactionId,
+        condition: item.condition,
+        renderableId: beforeBellows.objectId,
+        sourceMaterialId: String(beforeBellows.materialAssignments[0]!.source.id),
+      });
+      if (!apply.ok) {
+        const qualification = registerTrialQualification(qualifyMInv8Trial(item.backend, item.condition, {
+          interventionAppliedOrBaseline: false,
+        }));
+        trialRecords.push({
+          backend: item.backend,
+          condition: item.condition,
+          qualified: qualification.qualified,
+          qualification,
+          reason: apply.reason ?? "intervention-rejected",
+        });
+        continue;
+      }
+      let restore: TransactionResponse | null = null;
+      try {
+        await stabilizeFrame(backend.page);
+        await stabilizeFrame(backend.page);
+        const activeSnapshot = await readAuditSnapshot(backend.page, `m-inv8-${item.backend}-${item.condition}-active`);
+        const activeBellows = renderableFor(activeSnapshot);
+        const activeSource = activeBellows.materialAssignments[0]!.source;
+        const activeOutput = activeBellows.materialAssignments[0]!.output;
+        const sourcePreserved = JSON.stringify(authoredSourceState(activeSource)) ===
+          JSON.stringify(authoredSourceState(sourceProperties(snapshots[item.backend])));
+        const baselineOutput = activeProperties(snapshots[item.backend]);
+        const expectedBlending = item.condition === "C2" || item.condition === "C3" ? THREE.NoBlending : THREE.NormalBlending;
+        const expectedSinglePass = item.condition === "C1" || item.condition === "C3";
+        const outputStateQualified = activeBellows.geometry.id === renderableFor(snapshots[item.backend]).geometry.id &&
+          activeBellows.renderOrder === renderableFor(snapshots[item.backend]).renderOrder &&
+          activeSource.opacity === 0.16 && activeSource.transparent === true &&
+          activeSource.blending === THREE.NormalBlending && activeSource.depthTest === true &&
+          activeSource.depthWrite === false && activeSource.side === "double" &&
+          activeOutput.opacity === baselineOutput.opacity && activeOutput.transparent === baselineOutput.transparent &&
+          activeOutput.blending === expectedBlending && activeOutput.depthTest === baselineOutput.depthTest &&
+          activeOutput.depthWrite === baselineOutput.depthWrite && activeOutput.side === baselineOutput.side &&
+          activeOutput.forceSinglePass === expectedSinglePass;
+        const first = await captureCanvas(backend.page);
+        const repeated = await captureCanvas(backend.page);
+        const metadata = await metadataFor(backend.page, activeSnapshot);
+        const restoreResponse = await requestBellowsIntervention(backend.page, {
+          generation: activeSnapshot.generation,
+          operation: "restore",
+          transactionId,
+        });
+        restore = restoreResponse;
+        expect(restoreResponse.ok).toBe(true);
+        await stabilizeFrame(backend.page);
+        await stabilizeFrame(backend.page);
+        const restoredSnapshot = await readAuditSnapshot(backend.page, `m-inv8-${item.backend}-${item.condition}-restored`);
+        const restoredBellows = renderableFor(restoredSnapshot);
+        const restored = await captureCanvas(backend.page);
+        const sameOutputIdentity = restoredBellows.materialAssignments[0]!.output.id ===
+          renderableFor(snapshots[item.backend]).materialAssignments[0]!.output.id;
+        const originalOutputIdentityRestored = item.backend === "webgl"
+          ? restoreResponse.renderableMaterialIdentityRestored === true
+          : sameOutputIdentity;
+        const borrowedResourcesPreserved = restoreResponse.borrowedResourceDisposed === false &&
+          restoreResponse.geometryIdentityPreserved === true && restoreResponse.sourcePropertiesPreserved === true;
+        const repeatMetric = compareAnatomyImages(first.image, repeated.image);
+        const restoredMetrics = captureMetrics(c0Images[item.backend], restored.image, masks);
+        const expectedDrawCount = expectedSinglePass ? 1 : 2;
+        const draws = (metadata.drawObservations ?? []) as readonly Readonly<Record<string, unknown>>[];
+        const drawSides = draws.map((draw) => (draw.material as Record<string, unknown> | undefined)?.side);
+        const expectedSides = expectedSinglePass ? [THREE.DoubleSide] : [THREE.BackSide, THREE.FrontSide];
+        const expectedBlendEnabled = expectedBlending !== THREE.NoBlending;
+        const actualBlendEnabled = draws.map((draw) => item.backend === "webgl"
+          ? (draw.state as Record<string, unknown> | undefined)?.blendEnabled
+          : draw.gpuBlendEnabled);
+        const drawStateQualified = drawStateMatches(metadata, item.backend, expectedDrawCount, expectedSides,
+          expectedBlendEnabled, String(activeSource.id));
+        const outputPolicyQualified = item.backend === "webgl" || (
+          await backend.page.locator(canvasSelector).getAttribute("data-observer-output-policy-installed") === "material-aware" &&
+          await backend.page.locator(canvasSelector).getAttribute("data-observer-output-policy-status") === "active" &&
+          await backend.page.locator(canvasSelector).getAttribute("data-observer-application-fallback") === "none"
+        );
+        const ownedResourcesReleased = item.backend === "native" || restoreResponse.diagnosticCloneDisposeCount === 1;
+        const imageDimensionsCompatible = first.image.width === c0Images[item.backend].width &&
+          first.image.height === c0Images[item.backend].height &&
+          repeated.image.width === first.image.width && repeated.image.height === first.image.height &&
+          restored.image.width === first.image.width && restored.image.height === first.image.height;
+        const restoredBaselineWithinTolerance = Object.values(restoredMetrics).every((metric) =>
+          metric.meanAbsoluteRgbDifference <= 1,
+        );
+        const actualNativePipelineQualified = nativePipelineQualified(metadata, item.backend);
+        const qualification = registerTrialQualification(qualifyMInv8Trial(item.backend, item.condition, {
+          captureCompleted: metadata.status === "ok" && drawCountFrom(metadata) === expectedDrawCount,
+          rendererRuntimeQualified: rendererRuntimeQualified(metadata, item.backend),
+          rendererGenerationQualified: metadata.generation === activeSnapshot.generation &&
+            restoredSnapshot.generation === activeSnapshot.generation,
+          cameraAndViewportCompatible: cameraAndViewportMatch(activeSnapshot, snapshots[item.backend]) &&
+            cameraAndViewportMatch(restoredSnapshot, snapshots[item.backend]),
+          sourceMaterialPreserved: sourcePreserved,
+          effectiveOutputStateQualified: outputStateQualified,
+          drawStateQualified,
+          nativePipelineQualified: actualNativePipelineQualified,
+          outputPolicyQualified,
+          interventionAppliedOrBaseline: apply.ok,
+          originalOutputIdentityRestored,
+          geometryIdentityPreserved: restoreResponse.geometryIdentityPreserved === true,
+          visibilityRestored: restoreResponse.originalVisibilityPreserved === true,
+          ownedResourcesReleased,
+          borrowedResourcesPreserved,
+          repeatabilityWithinTolerance: repeatMetric.meanAbsoluteRgbDifference <= 0.5,
+          restoredBaselineWithinTolerance,
+          imageAvailable: true,
+          imageDimensionsCompatible,
+        }));
+        const trial = {
+          backend: item.backend,
+          condition: item.condition,
+          first: first.image,
+          repeat: repeated.image,
+          restored: restored.image,
+          activeSnapshot,
+          metadata,
+          apply,
+          restore: restoreResponse,
+          repeatMetric,
+          restoredMetrics,
+          sourcePreserved,
+          outputStateQualified,
+          drawStateQualified,
+          qualification,
+        };
+        trialInternals.push(trial);
+        conditionImages[item.backend][item.condition] = first.image;
+        trialRecords.push({
+          backend: item.backend,
+          condition: item.condition,
+          qualified: qualification.qualified,
+          qualification,
+          sourceMaterial: activeSource,
+          effectiveOutputMaterial: activeOutput,
+          requestedState: {
+            condition: item.condition,
+            blending: expectedBlending,
+            blendEnabled: expectedBlendEnabled,
+            forceSinglePass: expectedSinglePass,
+          },
+          effectiveMaterialState: {
+            blending: activeOutput.blending,
+            transparent: activeOutput.transparent,
+            forceSinglePass: activeOutput.forceSinglePass,
+          },
+          actualPipelineBlendEnabledByDraw: actualBlendEnabled,
+          applyResult: apply,
+          drawMetadata: metadata,
+          repeatNoise: repeatMetric,
+          restoredC0Metrics: regionRecord(restoredMetrics),
+          restoration: {
+            sourcePropertiesPreserved: sourcePreserved,
+            geometryIdentityPreserved: restoreResponse.geometryIdentityPreserved,
+            originalVisibilityPreserved: restoreResponse.originalVisibilityPreserved,
+            originalOutputIdentityRestored,
+            diagnosticCloneDisposeCount: restoreResponse.diagnosticCloneDisposeCount ?? 0,
+            ownedResourcesReleased,
+            borrowedDisposeCounts: restoreResponse.borrowedDisposeCounts ?? null,
+            borrowedResourcesPreserved,
+            restoreResponse,
+          },
+          stateQualification: {
+            sourceMaterialPreserved: sourcePreserved,
+            comparisonExcludesRendererManagedMaterialVersion: true,
+            outputStateQualified,
+            actualDrawStateQualified: drawStateQualified,
+            actualDrawCount: drawCountFrom(metadata),
+            expectedDrawCount,
+            drawSides,
+            expectedSides,
+            actualBlendEnabled,
+            expectedBlendEnabled,
+            transparentListClassificationRetained: activeOutput.transparent === true,
+            renderOrderPreserved: activeBellows.renderOrder === renderableFor(snapshots[item.backend]).renderOrder,
+            outputPolicyQualified,
+            nativePipelineQualified: actualNativePipelineQualified,
+            originalOutputIdentityRestored,
+            geometryIdentityPreserved: restoreResponse.geometryIdentityPreserved === true,
+            visibilityRestored: restoreResponse.originalVisibilityPreserved === true,
+            borrowedResourcesPreserved,
+            restoredBaselineWithinTolerance,
+            imageDimensionsCompatible,
+          },
+          withinRendererResponse: signedResponseMetrics(c0Images[item.backend], first.image, masks),
+        });
+        await attachPng(`m-inv8-${item.backend}-${item.condition}.png`, first.png);
+        await attachPng(`m-inv8-${item.backend}-${item.condition}-repeat.png`, repeated.png);
+        await attachPng(`m-inv8-${item.backend}-${item.condition}-restored-c0.png`, restored.png);
+      } finally {
+        if (!restore?.ok) {
+          const restoreResponse = await requestBellowsIntervention(backend.page, {
+            generation: beforeSnapshot.generation,
+            operation: "restore",
+            transactionId,
+          });
+          expect(restoreResponse.ok).toBe(true);
+          await stabilizeFrame(backend.page);
+          await stabilizeFrame(backend.page);
+        }
+      }
+    }
+
+    const conditions: readonly AnatomyBellowsCompositingCondition[] = ["C0", "C1", "C2", "C3"];
+    const getTrialQualification = (backend: MInv8Backend, condition: MInv8Condition) =>
+      trialQualifications.get(qualificationKey(backend, condition));
+    const conditionPairQualifications = new Map<MInv8Condition, ReturnType<typeof qualifyMInv8ConditionPair>>();
+    const conditionSummary = conditions.map((condition) => {
+      const webglImage = conditionImages.webgl[condition];
+      const nativeImage = conditionImages.native[condition];
+      const imagesAvailable = Boolean(webglImage && nativeImage);
+      const images = webglImage && nativeImage ? [webglImage, nativeImage] : [];
+      const masksCompatible = images.length === 2 && Object.values(masks).every((mask) =>
+        images.every((image) => image.width === mask.width && image.height === mask.height),
+      );
+      const imageDimensionsMatch = images.length === 2 && webglImage!.width === nativeImage!.width &&
+        webglImage!.height === nativeImage!.height;
+      const representationCompatible = images.length === 2 &&
+        areMInv8ScreenshotRepresentationsCompatible(images);
+      const geometryCompatible = areMInv8GeometryContentsCompatible(
+        renderableFor(snapshots.webgl).geometry,
+        renderableFor(snapshots.native).geometry,
+      );
+      const qualification = qualifyMInv8ConditionPair({
+        webglTrialQualified: getTrialQualification("webgl", condition)?.qualified === true,
+        nativeTrialQualified: getTrialQualification("native", condition)?.qualified === true,
+        imagesAvailable,
+        representationCompatible,
+        geometryCompatible,
+        maskCompatible: masksCompatible && imageDimensionsMatch,
+      });
+      conditionPairQualifications.set(condition, qualification);
+      const crossRendererDifference = webglImage && nativeImage ? captureMetrics(webglImage, nativeImage, masks) : null;
+      return {
+        condition,
+        qualified: qualification.qualified,
+        qualification,
+        metricUse: qualification.qualified ? "qualified" : "diagnostic-only",
+        ...(crossRendererDifference ? { crossRendererDifference } : {}),
+      };
+    });
+    const responseDifferenceByCondition = (["C1", "C2", "C3"] as const).map((condition) => {
+      const webglImage = conditionImages.webgl[condition];
+      const nativeImage = conditionImages.native[condition];
+      const baselinePair = conditionPairQualifications.get("C0");
+      const interventionPair = conditionPairQualifications.get(condition);
+      const qualification = qualifyMInv8DifferenceOfResponses({
+        baselineConditionPairQualified: baselinePair?.qualified === true,
+        interventionConditionPairQualified: interventionPair?.qualified === true,
+        maskCompatible: Object.values(masks).every((mask) => mask.width === screenshotWidth && mask.height === screenshotHeight),
+      });
+      const differenceOfResponses = webglImage && nativeImage ? Object.fromEntries(Object.entries(masks).map(([name, mask]) => [
+        name,
+        summarizeAnatomyDifferenceOfResponses(
+          c0Images.webgl,
+          webglImage,
+          c0Images.native,
+          nativeImage,
+          mask,
+          8,
+        ),
+      ])) : null;
+      return {
+        condition,
+        qualified: qualification.qualified,
+        qualification,
+        metricUse: qualification.qualified ? "qualified" : "diagnostic-only",
+        ...(differenceOfResponses ? { differenceOfResponses } : {}),
+      };
+    });
+    const factorialInteraction = Object.fromEntries((["webgl", "native"] as const).map((backend) => {
+      const images = conditionImages[backend];
+      const c0 = images.C0;
+      const c1 = images.C1;
+      const c2 = images.C2;
+      const c3 = images.C3;
+      const allImages = [c0, c1, c2, c3];
+      const imagesAvailable = allImages.every((image) => Boolean(image));
+      const representationCompatible = imagesAvailable &&
+        areMInv8ScreenshotRepresentationsCompatible(allImages as Image[]);
+      const maskCompatible = imagesAvailable && allImages.every((image) => image!.width === screenshotWidth &&
+        image!.height === screenshotHeight) && Object.values(masks).every((mask) =>
+        mask.width === screenshotWidth && mask.height === screenshotHeight,
+      );
+      const qualification = qualifyMInv8FactorialInteraction({
+        c0TrialQualified: getTrialQualification(backend, "C0")?.qualified === true,
+        c1TrialQualified: getTrialQualification(backend, "C1")?.qualified === true,
+        c2TrialQualified: getTrialQualification(backend, "C2")?.qualified === true,
+        c3TrialQualified: getTrialQualification(backend, "C3")?.qualified === true,
+        imagesAvailable,
+        representationCompatible,
+        maskCompatible,
+      });
+      const metrics = imagesAvailable ? Object.fromEntries(Object.entries(masks).map(([name, mask]) => [
+        name,
+        summarizeAnatomyFactorialInteraction(c0!, c1!, c2!, c3!, mask, 8),
+      ])) : null;
+      return [backend, {
+        qualified: qualification.qualified,
+        qualification,
+        metricUse: qualification.qualified ? "qualified" : "diagnostic-only",
+        ...(metrics ? { metrics } : {}),
+      }];
+    }));
+
+    const dimmedParts = new Set((snapshots.native.anatomyPresentation?.targets ?? []).flatMap((target) =>
+      target.kind === "part" && resolveConceptualAnatomyPartState(target.part, snapshots.native.anatomyPresentation!) === "dimmed"
+        ? [target.part]
+        : [],
+    ));
+    const bellowsBounds = renderableFor(snapshots.native).projectedBounds;
+    const projectedIntersectionArea = (first: NonNullable<AuditRenderable["projectedBounds"]>, second: NonNullable<AuditRenderable["projectedBounds"]>) =>
+      Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left)) *
+      Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top));
+    const contextualCandidates = bellowsBounds ? snapshots.native.renderables.flatMap((candidate) => {
+      if (!candidate.visible || candidate.objectId === nativeBellows.objectId || !candidate.cameraPart ||
+          !dimmedParts.has(candidate.cameraPart as never) || !candidate.projectedBounds ||
+          !candidate.materialAssignments.some(({ source }) => source.transparent === true && Number(source.opacity) < 1)) return [];
+      const area = projectedIntersectionArea(bellowsBounds, candidate.projectedBounds);
+      return area > 0 ? [{ name: candidate.name, cameraPart: candidate.cameraPart, overlapArea: area }] : [];
+    }) : [];
+    const d1Records: Array<Readonly<Record<string, unknown>>> = [];
+    if (contextualCandidates.length > 0) {
+      for (const backendName of ["native", "webgl"] as const) {
+        const backend = backends[backendName];
+        const current = await readAuditSnapshot(backend.page, `m-inv8-${backendName}-d1-before`);
+        const ids = contextualCandidates.map((candidate) => {
+          const match = current.renderables.find((item) => item.name === candidate.name && item.cameraPart === candidate.cameraPart);
+          if (!match) throw new Error(`Context candidate ${candidate.name} did not resolve in ${backendName}`);
+          return match.objectId;
+        });
+        const transactionId = `m-inv8-d1-${backendName}-${++requestCounter}`;
+        const excluded = await requestVisibilityTransaction(backend.page, {
+          generation: current.generation,
+          operation: "exclude",
+          transactionId,
+          renderableIds: ids,
+        });
+        expect(excluded).toMatchObject({ ok: true, sourceResourceIdentityPreserved: true });
+        try {
+          const d1Image = await captureCanvas(backend.page);
+          const d1Metadata = await metadataFor(backend.page, current);
+          d1Records.push({
+            backend: backendName,
+            capture: d1Image,
+            drawMetadata: d1Metadata,
+            exclusion: excluded,
+            responseAgainstD0: captureMetrics(c0Images[backendName], d1Image.image, masks),
+          });
+          await attachPng(`m-inv8-${backendName}-d1.png`, d1Image.png);
+        } finally {
+          const restored = await requestVisibilityTransaction(backend.page, {
+            generation: current.generation,
+            operation: "restore",
+            transactionId,
+          });
+          expect(restored).toMatchObject({ ok: true, sourceResourceIdentityPreserved: true, sourceResourceIdentityMatchesInitialExclusion: true });
+          await stabilizeFrame(backend.page);
+        }
+      }
+    }
+
+    const d1NativeCapture = d1Records.find((item) => item.backend === "native")?.capture as { image: Image } | undefined;
+    const d1WebglCapture = d1Records.find((item) => item.backend === "webgl")?.capture as { image: Image } | undefined;
+    const d1CrossRenderer = d1NativeCapture && d1WebglCapture
+      ? captureMetrics(d1WebglCapture.image, d1NativeCapture.image, masks)
+      : null;
+    const finalSnapshots = {
+      webgl: await readAuditSnapshot(webgl.page, "m-inv8-webgl-final-restored"),
+      native: await readAuditSnapshot(native.page, "m-inv8-native-final-restored"),
+    };
+    expect(activeProperties(finalSnapshots.webgl).id).toBe(activeProperties(snapshots.webgl).id);
+    expect(activeProperties(finalSnapshots.native).id).toBe(activeProperties(snapshots.native).id);
+    const finalImages = {
+      webgl: await captureCanvas(webgl.page),
+      native: await captureCanvas(native.page),
+    };
+    const groundGlassFinal = await captureGroundGlass(native.page);
+    const groundGlassRestoration = compareAnatomyImages(groundGlassBaseline, groundGlassFinal);
+    const groundGlassContentfulBeforeAndAfter =
+      await native.page.getByTestId("ground-glass-rtt").getAttribute("data-rtt-final-contentful") === "true";
+    const finalRestoration = {
+      webgl: compareAnatomyImages(baseline.webgl.image, finalImages.webgl.image),
+      native: compareAnatomyImages(baseline.native.image, finalImages.native.image),
+    };
+    const finalSceneStateRestored = (["webgl", "native"] as const).every((backend) =>
+      activeProperties(finalSnapshots[backend]).id === activeProperties(snapshots[backend]).id &&
+      renderableFor(finalSnapshots[backend]).geometry.id === renderableFor(snapshots[backend]).geometry.id &&
+      renderableFor(finalSnapshots[backend]).visible &&
+      JSON.stringify(authoredSourceState(sourceProperties(finalSnapshots[backend]))) ===
+        JSON.stringify(authoredSourceState(sourceProperties(snapshots[backend]))),
+    );
+    const groundGlassRestorationQualified = groundGlassContentfulBeforeAndAfter &&
+      groundGlassRestoration.meanAbsoluteRgbDifference <= groundGlassRepeatNoise.meanAbsoluteRgbDifference + 0.5;
+    const matrixQualification = qualifyMInv8Matrix({
+      trials: [...trialQualifications.values()],
+      conditionPairs: conditionSummary.map(({ condition, qualified }) => ({ condition, qualified })),
+      differenceOfResponses: responseDifferenceByCondition.map(({ condition, qualified }) => ({ condition, qualified })),
+      factorialInteractions: (["webgl", "native"] as const).map((backend) => ({
+        backend,
+        qualified: (factorialInteraction[backend] as { qualified: boolean }).qualified,
+      })),
+      baselineReproduced,
+      baselineRepeatability: c0RepeatabilityWithinTolerance,
+      finalRestoration: finalSceneStateRestored && finalRestoration.webgl.meanAbsoluteRgbDifference <= 1 &&
+        finalRestoration.native.meanAbsoluteRgbDifference <= 1,
+      groundGlassRestoration: groundGlassRestorationQualified,
+      runtimeHealthy: pageErrors.length === 0 && nativeConsoleErrors.every((message) => !/Invalid blending:/i.test(message)),
+    });
+    const allPrimaryConditionsQualified = matrixQualification.qualified;
+    const outcome = !matrixQualification.qualified
+      ? "TCI-0"
+      : (() => {
+          const base = baselineGap;
+          const byCondition = new Map(conditionSummary.filter((item) => item.qualified).map((item) => [
+            item.condition,
+            Number((item.crossRendererDifference as Record<string, { meanAbsoluteRgbDifference: number }>).dimmedGroup?.meanAbsoluteRgbDifference),
+          ]));
+          const c1Reduction = byCondition.has("C1") ? 1 - (byCondition.get("C1")! / base) : 0;
+          const c2Reduction = byCondition.has("C2") ? 1 - (byCondition.get("C2")! / base) : 0;
+          const c3Reduction = byCondition.has("C3") ? 1 - (byCondition.get("C3")! / base) : 0;
+          const nativeInteraction = (factorialInteraction.native as { metrics?: Record<string, { meanAbsoluteRgbDifference: number }> }).metrics?.selectedBellowsDimmedIntersection?.meanAbsoluteRgbDifference ?? 0;
+          const webglInteraction = (factorialInteraction.webgl as { metrics?: Record<string, { meanAbsoluteRgbDifference: number }> }).metrics?.selectedBellowsDimmedIntersection?.meanAbsoluteRgbDifference ?? 0;
+          const measuredNoise = Math.max(repeatNoise.webgl.meanAbsoluteRgbDifference, repeatNoise.native.meanAbsoluteRgbDifference,
+            ...trialInternals.filter((trial) => trial.qualification.qualified).map((trial) => trial.repeatMetric.meanAbsoluteRgbDifference));
+          if (c3Reduction >= 0.25 && c1Reduction < 0.25 && c2Reduction < 0.25 &&
+              Math.max(nativeInteraction, webglInteraction) > Math.max(1, measuredNoise * 3)) return "TCI-2";
+          if (Math.max(c1Reduction, c2Reduction, c3Reduction) >= 0.5) return "TCI-1";
+          const interventionSensitivity = trialInternals.filter((trial) => trial.qualification.qualified).some((trial) =>
+            compareAnatomyImages(c0Images[trial.backend], trial.first, selectedBellowsDimmedIntersection).meanAbsoluteRgbDifference > measuredNoise * 3,
+          );
+          return interventionSensitivity ? "TCI-3" : "TCI-0";
+        })();
+    const report = {
+      schemaVersion: 1,
+      investigation: "anatomy-bellows-compositing-causal",
+      outcome,
+      provenance: {
+        baseSha: process.env.M_INV8_BASE_SHA ?? null,
+        measurementSha: process.env.M_INV8_MEASUREMENT_COMMIT ?? null,
+        browserVersion: browser.version(),
+        browserUserAgent: await native.page.evaluate(() => navigator.userAgent),
+        platform: { os: process.platform, architecture: process.arch },
+        threeRevision: THREE.REVISION,
+        nativePipelineEvidence: "test-realm GPUDevice.createRenderPipeline/createRenderPipelineAsync argument, associated to the exact r186 WebGPUBackend.draw pipeline object and current renderer mount identity",
+        hardwareAcceleration: "unconfirmed; pinned Three.js r186 does not expose adapter details in this capture",
+        captureRepresentation: "same-resolution Playwright screenshots of the canvas browser presentation; not compared to raw framebuffer bytes",
+      },
+      historicalPriorRun,
+      state: {
+        sceneId: snapshots.native.sceneId,
+        teachingState: "Anatomy — Front Standard highlighted, Bellows dimmed",
+        viewport: {
+          css: [snapshots.native.viewport.width, snapshots.native.viewport.height],
+          dpr: snapshots.native.viewport.devicePixelRatio,
+          backing: [snapshots.native.viewport.canvasBackingWidth, snapshots.native.viewport.canvasBackingHeight],
+        },
+        camera: {
+          position: snapshots.native.viewport.cameraPosition,
+          quaternion: snapshots.native.viewport.cameraQuaternion,
+          orbitTarget: snapshots.native.viewport.orbitTarget,
+          matchedBetweenRenderers: JSON.stringify(snapshots.webgl.viewport.cameraPosition) === JSON.stringify(snapshots.native.viewport.cameraPosition) &&
+            JSON.stringify(snapshots.webgl.viewport.cameraQuaternion) === JSON.stringify(snapshots.native.viewport.cameraQuaternion),
+        },
+        runtime: {
+          webgl: { rendererFamily: "webgl-renderer", executionBackend: "webgl2", outputPolicy: "standard" },
+          native: {
+            rendererFamily: await native.page.locator(canvasSelector).getAttribute("data-observer-renderer-family"),
+            executionBackend: await native.page.locator(canvasSelector).getAttribute("data-observer-execution-backend"),
+            applicationFallback: await native.page.locator(canvasSelector).getAttribute("data-observer-application-fallback"),
+            outputPolicy: await native.page.locator(canvasSelector).getAttribute("data-observer-output-policy-installed"),
+            outputStatus: await native.page.locator(canvasSelector).getAttribute("data-observer-output-policy-status"),
+          },
+        },
+        sourceMaterial: sourceProperties(snapshots.native),
+        outputMaterialIds: {
+          webgl: activeProperties(snapshots.webgl).id,
+          nativeB0: activeProperties(snapshots.native).id,
+        },
+        selectedRenderable: {
+          semanticId: "bellows-folded-surface",
+          webglObjectId: renderableFor(snapshots.webgl).objectId,
+          nativeObjectId: renderableFor(snapshots.native).objectId,
+          webglGeometry: renderableFor(snapshots.webgl).geometry,
+          nativeGeometry: renderableFor(snapshots.native).geometry,
+        },
+      },
+      masks: {
+        staticDimmedGroup: {
+          source: "docs/architecture/anatomy-dimmed-output-mechanism/masks/front-standard-dimmed-response.png",
+          pixelCount: countAnatomyMaskPixels(broadDimmedMask),
+          fixedBeforeIntervention: true,
+        },
+        selectedBellowsVisibilityResponse: {
+          source: "native C0 image versus same-generation C0 with only Bellows hidden; per-channel threshold 8",
+          pixelCount: countAnatomyMaskPixels(bellowsVisibilityResponseMask),
+          interpretation: "observed visibility response, not an exact mesh silhouette or fragment-coverage mask",
+        },
+        selectedBellowsDimmedIntersection: { pixelCount: countAnatomyMaskPixels(selectedBellowsDimmedIntersection) },
+        historicalM3BellowsResponse: {
+          source: "docs/architecture/anatomy-renderable-contribution-investigation/masks/M3-webgl-bellows-selected-part.png",
+          pixelCount: countAnatomyMaskPixels(historicalBellowsMask),
+          historicalIntersectionPixelCount: countAnatomyMaskPixels(historicalBellowsDimmedIntersection),
+        },
+        unaffectedBackgroundCandidate: {
+          source: "docs/architecture/anatomy-dimmed-output-mechanism/masks/front-standard-unaffected-candidate.png",
+          pixelCount: countAnatomyMaskPixels(unaffectedMask),
+        },
+        historicalHighErrorSelectedSamples: selection.selectedCoordinates,
+        fixedMInv5Samples: {
+          framebufferIndices: fixedIndices,
+          screenshotIndices: fixedScreenshotIndices,
+          originalAttachmentSize: [fixedSourceWidth, fixedSourceHeight],
+        },
+        coverage: "Visibility-response changes can include revealed background, occlusion, or face-coverage changes; these pixels remain included and are not interpreted as exact Bellows fragments.",
+      },
+      baseline: {
+        reproducedDimmedMaskMeanAbsoluteRgbDifference: baselineGap,
+        historicalDimmedMaskReference: 104.1276959387971,
+        reproductionGate: { minimumMae: 50, passed: baselineReproduced },
+        fullFrameCrossRendererDifference: baselineCrossRenderer.fullFrame,
+        regions: baselineCrossRenderer,
+        repeatNoise: repeatNoise,
+        sameRendererRestorationAfterVisibilityMaskCapture: compareAnatomyImages(baseline.native.image, bellowsMaskRestoredImage.image),
+        drawMetadata: c0Metadata,
+        twoDrawBaselineQualified: baselineDrawsQualified,
+        trialQualification: c0TrialQualifications,
+        rendererOrdering: ["webgl", "native"],
+      },
+      conditionMatrix: {
+        definitions: {
+          C0: { forceSinglePass: false, blending: "NormalBlending", authoredReference: true },
+          C1: { forceSinglePass: true, blending: "NormalBlending" },
+          C2: { forceSinglePass: false, blending: "NoBlending" },
+          C3: { forceSinglePass: true, blending: "NoBlending" },
+        },
+        captures: trialRecords,
+        crossRendererByCondition: conditionSummary,
+        differenceOfResponses: responseDifferenceByCondition,
+        factorialInteraction: factorialInteraction,
+        allPrimaryConditionsQualified,
+        qualification: matrixQualification,
+      },
+      contextControl: {
+        D0: "Original surrounding scene, all authored Anatomy renderables visible.",
+        D1: {
+          candidateSelection: "Current mounted visible dimmed transparent Anatomy renderables whose live projected bounds intersect the mounted Bellows projected bounds; the Bellows itself remains visible.",
+          candidates: contextualCandidates,
+          excludedCount: contextualCandidates.length,
+          captures: d1Records.map((record) => Object.fromEntries(
+            Object.entries(record).filter(([key]) => key !== "capture"),
+          )),
+          crossRendererDifference: d1CrossRenderer,
+          limitation: "This changes destination color, depth visibility, overlap, and occlusion. It is a context-dependence control, not an isolated destination-RGB measurement.",
+          unsupportedReason: contextualCandidates.length === 0 ? "no current dimmed transparent projected-overlap candidates" : null,
+        },
+      },
+      negativeControls: {
+        sourcePropertiesAndGeometry: trialInternals.every((trial) => trial.sourcePreserved && trial.restore.geometryIdentityPreserved === true),
+        temporaryCloneDisposeOnce: trialInternals.every((trial) => trial.backend === "native" || trial.restore.diagnosticCloneDisposeCount === 1),
+        borrowedResourcesPreserved: trialInternals.every((trial) => trial.restore.borrowedResourceDisposed === false),
+        c0RestorationWithinOneLevelMae: finalRestoration,
+        finalSceneStateRestored,
+        groundGlass: {
+          contentfulBeforeAndAfter: groundGlassContentfulBeforeAndAfter,
+          repeatNoise: groundGlassRepeatNoise,
+          finalRestoration: groundGlassRestoration,
+          qualified: groundGlassRestorationQualified,
+        },
+        nativeConsoleErrors,
+        noInvalidNativeBlendDiagnostics: nativeConsoleErrors.every((message) => !/Invalid blending:/i.test(message)),
+        noPageErrors: pageErrors.length === 0,
+        productionIsolationPendingBuildVerification: true,
+      },
+      interpretation: {
+        outcome,
+        candidateRules: {
+          TCI1: "requires at least 50% reproducible dimmed-mask cross-renderer MAE reduction from one qualified intervention; this remains a dominant-mechanism candidate",
+          TCI2: "requires a >3x-noise factorial interaction plus C3-only improvement of at least 25% while isolated C1/C2 stay below 25%",
+          TCI3: "one or more interventions cause measurable selected Bellows response above repeat noise, but no dominant/interaction rule is met",
+          TCI0: "baseline, repeatability, runtime, or intervention qualification failed, or no intervention response exceeded noise",
+        },
+        noSourceFragmentReconstruction: true,
+        noRawFramebufferScreenshotMixing: true,
+      },
+      retainedClassifications: {
+        Q2: "MEASURABLE INSTRUMENTATION PERTURBATION",
+        PBI3: "PERTURBATION REPRODUCED BUT NOT UNIQUELY LOCALIZED",
+        N2: "CONTROLLED PROXY IMPROVEMENT",
+        G2: "PARTIAL STAGE ATTRIBUTION",
+        M2: "OPT-IN IMPLEMENTATION INCOMPLETE",
+        nativeIntermediateDestinationPostDrawPixels: "F2; no promotion",
+      },
+      recommendation: "Use the smallest follow-up experiment justified by the signed Bellows-ROI response and its interaction/context controls; do not implement a production correction or promote native WebGPU eligibility from this study alone.",
+    };
+    await mkdir(dirname(reportPath), { recursive: true });
+    await writeFile(reportPath, JSON.stringify(report, null, 2));
+    await testInfo.attach("anatomy-bellows-compositing-causal-report.json", {
+      path: reportPath,
+      contentType: "application/json",
+    });
+    if (process.env.M_INV8_WRITE_REPORT === "1") {
+      const committedPath = resolve(referenceRoot, "anatomy-bellows-compositing-causal/report.json");
+      await mkdir(dirname(committedPath), { recursive: true });
+      await writeFile(committedPath, JSON.stringify(report, null, 2));
+    }
+    await attachPng("m-inv8-c0-webgl.png", baseline.webgl.png);
+    await attachPng("m-inv8-c0-native.png", baseline.native.png);
+    await attachPng("m-inv8-bellows-hidden-mask-capture.png", bellowsHiddenImage.png);
+    await attachPng("m-inv8-c0-webgl-repeat.png", baselineRepeat.webgl.png);
+    await attachPng("m-inv8-c0-native-repeat.png", baselineRepeat.native.png);
+
+    expect(baselineReproduced, "M-INV8 must reproduce the large Front Standard dimmed-response discrepancy before intervention attribution").toBe(true);
+    expect(baselineDrawsQualified).toBe(true);
+    expect(allPrimaryConditionsQualified, "Every C0-C3 trial, pair, response, interaction, restoration, and runtime check must qualify before TCI classification").toBe(true);
+    expect(finalRestoration.webgl.meanAbsoluteRgbDifference).toBeLessThanOrEqual(1);
+    expect(finalRestoration.native.meanAbsoluteRgbDifference).toBeLessThanOrEqual(1);
+    expect(groundGlassRestoration.meanAbsoluteRgbDifference).toBeLessThanOrEqual(groundGlassRepeatNoise.meanAbsoluteRgbDifference + 0.5);
+    expect(pageErrors).toEqual([]);
+    expect(nativeConsoleErrors.filter((message) => /Invalid blending:/i.test(message))).toEqual([]);
+    expect(outcome).not.toBe("TCI-0");
+  } finally {
+    await native.page.evaluate((key) => {
+      const observer = (window as unknown as Record<string, { restoreAll?: () => void } | undefined>)[key];
+      observer?.restoreAll?.();
+    }, M_INV8_NATIVE_PIPELINE_OBSERVER_KEY);
+    await Promise.all(pages.map(({ context }) => context.close()));
   }
 });

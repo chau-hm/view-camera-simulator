@@ -18,3 +18,15 @@ export const readObserverOutputSourceMaterial = (
   material: THREE.Material,
 ): THREE.Material | null =>
   (material as AdaptedObserverMaterial)[observerOutputSourceMaterial] ?? null;
+
+/** Records an owned diagnostic output's borrowed source without changing either material. */
+export const linkObserverOutputSourceMaterial = (
+  output: THREE.Material,
+  source: THREE.Material,
+): void => {
+  Object.defineProperty(output, observerOutputSourceMaterial, {
+    configurable: false,
+    enumerable: false,
+    value: source,
+  });
+};

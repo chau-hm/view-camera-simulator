@@ -12,6 +12,8 @@ import {
   type AnatomyGpuCaptureMethod,
 } from "./backend/anatomyGpuBlendIntermediate";
 import { runAnatomyGpuBlendCalibration } from "./backend/anatomyGpuBlendCalibration";
+import { runAnatomyBellowsDrawMetadataCapture } from "./backend/anatomyBellowsDrawMetadataCapture";
+import { readMInv8NativePipelineObserver } from "./backend/anatomyBellowsNativePipelineEvidence";
 import {
   runAnatomyNativeWebGpuDrawBoundaryCapture,
   runAnatomyNativeWebGpuFinalFrameCapture,
@@ -30,7 +32,7 @@ import type { ConceptualCameraAnatomyPresentation } from "./ConceptualViewCamera
 type AnatomyGpuCaptureRequest = Readonly<{
   requestId: string;
   generation: number;
-  method: AnatomyGpuCaptureMethod | "calibration";
+  method: AnatomyGpuCaptureMethod | "calibration" | "bellows-draw-metadata";
   renderableId?: string;
   sourceMaterialId?: string;
   boundarySelection?: AnatomyNativeBoundarySelection;
@@ -346,6 +348,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
     if (!container) return;
     const mountIdentity = {};
     const lifetimeController = new AbortController();
+    const nativeBackend = (gl as unknown as { backend?: { device?: object } }).backend;
+    const nativeDevice = nativeBackend?.device ?? null;
+    const nativePipelineObserver = nativeDevice ? readMInv8NativePipelineObserver() : null;
+    if (nativeDevice) nativePipelineObserver?.attachDevice(nativeDevice, generation, mountIdentity);
     let lifetimeActive = true;
     let activeCapture: ActiveAnatomyGpuCapture | null = null;
     let directCaptureCleanup: (() => void) | null = null;
@@ -362,6 +368,11 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       if (!lifetimeActive) return;
       lifetimeActive = false;
       lifetimeController.abort(new AnatomyGpuCaptureCancelledError(reason));
+      try {
+        if (nativeDevice) nativePipelineObserver?.restoreDevice(nativeDevice, generation, mountIdentity);
+      } catch {
+        // A diagnostic observer must never prevent the retiring capture from cleaning up.
+      }
       activeCapture = null;
       directCaptureCleanup?.();
       for (const cleanup of [...nativeCaptureCleanups]) {
@@ -1160,6 +1171,32 @@ export const AnatomyGpuBlendIntermediateProbe = ({
       },
     );
 
+    const handleBellowsDrawMetadataCapture = (request: AnatomyGpuCaptureRequest) => runCapture(
+      request,
+      async (operation) => {
+        assertCaptureActive(operation);
+        const runtime = resolveObserverRendererRuntime(gl);
+        const selection = resolveTarget(request);
+        if ("error" in selection) return rejectionDetail(selection.error ?? "invalid-renderable-selection");
+        const { target } = selection;
+        const role = classifyAnatomyMaterialRole(target, scene);
+        if (target.name !== "bellows-folded-surface" || role.role !== "conceptual-camera/bellows" ||
+            role.cameraPart !== "bellows" || !request.sourceMaterialId) {
+          return rejectionDetail("selected-renderable-is-not-mounted-bellows");
+        }
+        return runAnatomyBellowsDrawMetadataCapture({
+          renderer: gl as unknown as Parameters<typeof runAnatomyBellowsDrawMetadataCapture>[0]["renderer"],
+          runtime,
+          generation,
+          generationIdentity: mountIdentity,
+          selected: target,
+          sourceMaterialId: request.sourceMaterialId,
+          isCaptureActive: () => captureIsActive(operation),
+          registerCleanup: registerNativeCaptureCleanup,
+        });
+      },
+    );
+
     const handleCapture = (event: Event) => {
       const request = (event as CustomEvent<unknown>).detail as AnatomyGpuCaptureRequest | null;
       if (!request || typeof request.requestId !== "string" || request.requestId.length === 0) return;
@@ -1186,6 +1223,10 @@ export const AnatomyGpuBlendIntermediateProbe = ({
         });
       } else if (request.method === "native-final-frame") {
         void handleNativeFinalFrameCapture(request).catch((error: unknown) => {
+          reject(request.requestId, error instanceof Error ? error.message : String(error));
+        });
+      } else if (request.method === "bellows-draw-metadata") {
+        void handleBellowsDrawMetadataCapture(request).catch((error: unknown) => {
           reject(request.requestId, error instanceof Error ? error.message : String(error));
         });
       } else if (request.method === "single-renderable-replay") {

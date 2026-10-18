@@ -2,7 +2,10 @@
 import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { resolveObserverVisualPipelineCapabilities } from "./backend/observerVisualPipelineCapabilities";
+import {
+  resolveObserverRendererRuntime,
+  resolveObserverVisualPipelineCapabilities,
+} from "./backend/observerVisualPipelineCapabilities";
 import {
   calculateAnatomyProjectedBounds,
   type AnatomyProjectedRegion,
@@ -23,6 +26,16 @@ import {
 } from "./anatomyRenderableContribution";
 import { classifyAnatomyMaterialRole } from "./anatomyMaterialRoles";
 import { readObserverOutputSourceMaterial } from "./backend/observerMaterialOutputIdentity";
+import {
+  ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT,
+  ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT,
+  createAnatomyBellowsCompositingMaterialClone,
+  isAnatomyBellowsCompositingCondition,
+  registerAnatomyBellowsCompositingOverride,
+  resolveAnatomyBellowsCompositingTarget,
+  type AnatomyBellowsCompositingCandidate,
+  type AnatomyBellowsCompositingCondition,
+} from "./backend/anatomyBellowsCompositingIntervention";
 import type { ConceptualCameraAnatomyPresentation } from "./ConceptualViewCamera";
 
 export const ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT =
@@ -35,6 +48,34 @@ export const ANATOMY_RENDER_OBJECT_VISIBILITY_RESULT_EVENT =
   "vcs:observer-verification:anatomy-object-visibility-result";
 
 type AnatomyMaterialAuditRequest = Readonly<{ requestId: string }>;
+
+type AnatomyBellowsCompositingRequest = Readonly<{
+  requestId: string;
+  generation: number;
+  operation: "apply" | "restore";
+  transactionId: string;
+  condition?: AnatomyBellowsCompositingCondition;
+  renderableId?: string;
+  sourceMaterialId?: string;
+}>;
+
+type ActiveBellowsCompositingTransaction = Readonly<{
+  requestId: string;
+  generation: number;
+  transactionId: string;
+  condition: Exclude<AnatomyBellowsCompositingCondition, "C0">;
+  renderable: THREE.Object3D & { material: THREE.Material | THREE.Material[]; geometry: THREE.BufferGeometry };
+  originalRenderableMaterial: THREE.Material | THREE.Material[];
+  sourceMaterial: THREE.Material;
+  sourceMaterialSnapshot: ReturnType<typeof getMaterialProperties>;
+  geometry: THREE.BufferGeometry;
+  visible: boolean;
+  diagnosticClone: THREE.Material | null;
+  releaseNativeOverride: (() => void) | null;
+  diagnosticCloneDisposeCount: number;
+  readBorrowedDisposeCounts: () => Readonly<{ sourceMaterial: number; geometry: number; textures: number }>;
+  releaseBorrowedDisposalGuards: () => void;
+}>;
 
 type AnatomyRenderableVisibilityRequest = Readonly<{
   requestId: string;
@@ -149,6 +190,8 @@ const getMaterialProperties = (material: THREE.Material) => {
     outputTransform: materialWithSceneProperties.outputTransform ?? null,
     outputInterventionId: materialWithSceneProperties.outputInterventionId ?? null,
     outputGraphBuildCount: materialWithSceneProperties.outputGraphBuildCount ?? null,
+    forceSinglePass: (material as THREE.Material & { forceSinglePass?: boolean }).forceSinglePass ?? null,
+    alphaWrite: (material as THREE.Material & { alphaWrite?: boolean }).alphaWrite ?? null,
     materialVersion: material.version,
     textureSlots: textureSlots(material),
   };
@@ -610,6 +653,241 @@ export const AnatomyMaterialAuditProbe = ({
     };
     const visibilityBeforeTest = new Map<THREE.Object3D, boolean>();
     const visibilityTransactions = new Map<string, AnatomyVisibilityTransaction>();
+    let activeBellowsCompositingTransaction: ActiveBellowsCompositingTransaction | null = null;
+    const emitBellowsCompositingResult = (result: Readonly<Record<string, unknown>>) => {
+      container.dispatchEvent(new CustomEvent(ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_RESULT_EVENT, {
+        detail: result,
+      }));
+    };
+    const collectBellowsCompositingCandidates = (): AnatomyBellowsCompositingCandidate[] => {
+      const candidates: AnatomyBellowsCompositingCandidate[] = [];
+      scene.traverse((object) => {
+        if (!isRenderable(object)) return;
+        const classification = classifyAnatomyMaterialRole(object, scene);
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        if (materials.length !== 1) return;
+        const source = readObserverOutputSourceMaterial(materials[0]!) ?? materials[0]!;
+        const renderState = source as THREE.Material & { forceSinglePass?: boolean };
+        candidates.push({
+          id: object.uuid,
+          name: object.name,
+          role: classification.role,
+          cameraPart: classification.cameraPart,
+          visible: getAncestors(object, scene).every((ancestor) => ancestor.visible),
+          source: {
+            id: source.uuid,
+            type: source.type,
+            opacity: source.opacity,
+            transparent: source.transparent,
+            blending: source.blending,
+            premultipliedAlpha: source.premultipliedAlpha,
+            depthTest: source.depthTest,
+            depthWrite: source.depthWrite,
+            side: source.side,
+            forceSinglePass: renderState.forceSinglePass ?? false,
+          },
+        });
+      });
+      return candidates;
+    };
+    const restoreBellowsCompositingTransaction = (
+      transaction: ActiveBellowsCompositingTransaction,
+    ): Readonly<Record<string, unknown>> => {
+      transaction.releaseNativeOverride?.();
+      let renderableMaterialIdentityRestored = false;
+      if (transaction.diagnosticClone) {
+        if (transaction.renderable.material === transaction.diagnosticClone) {
+          transaction.renderable.material = transaction.originalRenderableMaterial;
+        }
+        transaction.diagnosticClone.dispose();
+        renderableMaterialIdentityRestored = transaction.renderable.material === transaction.originalRenderableMaterial;
+      }
+      const borrowedDisposeCounts = transaction.readBorrowedDisposeCounts();
+      transaction.releaseBorrowedDisposalGuards();
+      const sourcePropertiesPreserved = JSON.stringify(getMaterialProperties(transaction.sourceMaterial)) ===
+        JSON.stringify(transaction.sourceMaterialSnapshot);
+      return {
+        operation: "restore",
+        transactionId: transaction.transactionId,
+        renderableId: transaction.renderable.uuid,
+        sourceMaterialId: transaction.sourceMaterial.uuid,
+        renderableMaterialIdentityRestored,
+        geometryIdentityPreserved: transaction.renderable.geometry === transaction.geometry,
+        originalVisibilityPreserved: getAncestors(transaction.renderable, scene).every((ancestor) => ancestor.visible) ===
+          transaction.visible,
+        sourcePropertiesPreserved,
+        diagnosticCloneDisposeCount: transaction.diagnosticCloneDisposeCount,
+        borrowedDisposeCounts,
+        borrowedResourceDisposed: borrowedDisposeCounts.sourceMaterial > 0 || borrowedDisposeCounts.geometry > 0 ||
+          borrowedDisposeCounts.textures > 0,
+        nativeOutputRestoration: transaction.releaseNativeOverride ? "controller-restores-on-next-frame" : null,
+      };
+    };
+    const handleBellowsCompositingIntervention = (event: Event) => {
+      const request = (event as CustomEvent<unknown>).detail as AnatomyBellowsCompositingRequest | null;
+      const requestId = typeof request?.requestId === "string" ? request.requestId : "";
+      const fail = (reason: string) => emitBellowsCompositingResult({
+        requestId,
+        generation,
+        ok: false,
+        reason,
+      });
+      if (!request || requestId.length === 0 || !isAnatomyRendererGenerationCurrent(request.generation, generation)) {
+        fail("stale-renderer-generation");
+        return;
+      }
+      if (typeof request.transactionId !== "string" || request.transactionId.length === 0) {
+        fail("invalid-transaction-id");
+        return;
+      }
+      if (request.operation === "restore") {
+        const transaction = activeBellowsCompositingTransaction;
+        if (!transaction || transaction.transactionId !== request.transactionId || transaction.generation !== generation) {
+          fail("unknown-or-stale-compositing-transaction");
+          return;
+        }
+        const restored = restoreBellowsCompositingTransaction(transaction);
+        activeBellowsCompositingTransaction = null;
+        emitBellowsCompositingResult({ requestId, generation, ok: true, ...restored });
+        return;
+      }
+      if (request.operation !== "apply" || !isAnatomyBellowsCompositingCondition(request.condition) || request.condition === "C0") {
+        fail("invalid-compositing-intervention");
+        return;
+      }
+      if (activeBellowsCompositingTransaction) {
+        fail("compositing-intervention-already-active");
+        return;
+      }
+      const targetResolution = resolveAnatomyBellowsCompositingTarget(
+        request.renderableId,
+        request.sourceMaterialId,
+        collectBellowsCompositingCandidates(),
+      );
+      if (!targetResolution.ok) {
+        fail(targetResolution.reason);
+        return;
+      }
+      const renderable = scene.getObjectByProperty("uuid", targetResolution.target.id);
+      if (!renderable || !isRenderable(renderable)) {
+        fail("stale-renderable-id");
+        return;
+      }
+      if (Array.isArray(renderable.material)) {
+        fail("unsupported-material-slot-count");
+        return;
+      }
+      const originalRenderableMaterial = renderable.material;
+      const sourceMaterial = readObserverOutputSourceMaterial(originalRenderableMaterial) ?? originalRenderableMaterial;
+      if (sourceMaterial.uuid !== targetResolution.target.source.id) {
+        fail("source-material-mismatch");
+        return;
+      }
+      const sourceMaterialSnapshot = getMaterialProperties(sourceMaterial);
+      const runtime = resolveObserverRendererRuntime(gl);
+      let diagnosticClone: THREE.Material | null = null;
+      let releaseNativeOverride: (() => void) | null = null;
+      let diagnosticCloneDisposeCount = 0;
+      if (runtime.executionBackend === "webgl2" && runtime.rendererFamily === "webgl-renderer") {
+        if (sourceMaterial !== originalRenderableMaterial) {
+          fail("webgl-authored-source-material-not-active");
+          return;
+        }
+        try {
+          diagnosticClone = createAnatomyBellowsCompositingMaterialClone(
+            sourceMaterial,
+            request.condition,
+          );
+          diagnosticClone.addEventListener("dispose", () => { diagnosticCloneDisposeCount += 1; });
+          renderable.material = diagnosticClone;
+        } catch (error) {
+          diagnosticClone?.dispose();
+          fail(error instanceof Error ? error.message : String(error));
+          return;
+        }
+      } else if (runtime.executionBackend === "webgpu" && runtime.rendererFamily === "webgpu-renderer") {
+        const output = originalRenderableMaterial as THREE.Material & {
+          outputTransform?: string;
+          outputInterventionId?: string;
+        };
+        if (readObserverOutputSourceMaterial(originalRenderableMaterial) !== sourceMaterial ||
+            output.outputTransform !== "material-aware" || output.outputInterventionId !== "B0") {
+          fail("native-material-aware-b0-output-not-active");
+          return;
+        }
+        const registration = registerAnatomyBellowsCompositingOverride(
+          renderable,
+          generation,
+          request.condition,
+        );
+        releaseNativeOverride = registration.release;
+      } else {
+        fail(`unqualified-renderer:${runtime.rendererFamily}/${runtime.executionBackend}`);
+        return;
+      }
+      let sourceMaterialDisposeCount = 0;
+      let geometryDisposeCount = 0;
+      let textureDisposeCount = 0;
+      const onSourceMaterialDispose = () => { sourceMaterialDisposeCount += 1; };
+      const onGeometryDispose = () => { geometryDisposeCount += 1; };
+      const onTextureDispose = () => { textureDisposeCount += 1; };
+      const borrowedTextures = [...new Set(Object.values(sourceMaterial).filter((value): value is THREE.Texture =>
+        typeof value === "object" && value !== null && (value as THREE.Texture).isTexture === true,
+      ))];
+      sourceMaterial.addEventListener("dispose", onSourceMaterialDispose);
+      renderable.geometry.addEventListener("dispose", onGeometryDispose);
+      borrowedTextures.forEach((texture) => texture.addEventListener("dispose", onTextureDispose));
+      const transaction: ActiveBellowsCompositingTransaction = {
+        requestId,
+        generation,
+        transactionId: request.transactionId,
+        condition: request.condition,
+        renderable,
+        originalRenderableMaterial,
+        sourceMaterial,
+        sourceMaterialSnapshot,
+        geometry: renderable.geometry,
+        visible: getAncestors(renderable, scene).every((ancestor) => ancestor.visible),
+        diagnosticClone,
+        releaseNativeOverride,
+        get diagnosticCloneDisposeCount() { return diagnosticCloneDisposeCount; },
+        readBorrowedDisposeCounts: () => ({
+          sourceMaterial: sourceMaterialDisposeCount,
+          geometry: geometryDisposeCount,
+          textures: textureDisposeCount,
+        }),
+        releaseBorrowedDisposalGuards: () => {
+          sourceMaterial.removeEventListener("dispose", onSourceMaterialDispose);
+          renderable.geometry.removeEventListener("dispose", onGeometryDispose);
+          borrowedTextures.forEach((texture) => texture.removeEventListener("dispose", onTextureDispose));
+        },
+      };
+      activeBellowsCompositingTransaction = transaction;
+      emitBellowsCompositingResult({
+        requestId,
+        generation,
+        ok: true,
+        operation: "apply",
+        condition: request.condition,
+        transactionId: request.transactionId,
+        renderableId: renderable.uuid,
+        renderableName: renderable.name,
+        sourceMaterialId: sourceMaterial.uuid,
+        originalOutputMaterialId: originalRenderableMaterial.uuid,
+        activeOutputMaterialId: diagnosticClone?.uuid ?? originalRenderableMaterial.uuid,
+        sourcePropertiesPreserved: JSON.stringify(getMaterialProperties(sourceMaterial)) ===
+          JSON.stringify(sourceMaterialSnapshot),
+        baselineSourceProperties: transaction.sourceMaterialSnapshot,
+        requestedOverrides: request.condition === "C1"
+          ? { forceSinglePass: true }
+        : request.condition === "C2"
+            ? { blending: THREE.NoBlending }
+            : { forceSinglePass: true, blending: THREE.NoBlending },
+        effectiveMaterialProperties: getMaterialProperties(diagnosticClone ?? originalRenderableMaterial),
+        executionBackend: runtime.executionBackend,
+        outputVariantUpdatePendingFrame: releaseNativeOverride !== null,
+      });
+    };
     const emitVisibilityResult = (result: Readonly<Record<string, unknown>>) => {
       container.dispatchEvent(new CustomEvent(ANATOMY_RENDER_OBJECT_VISIBILITY_RESULT_EVENT, {
         detail: result,
@@ -807,13 +1085,19 @@ export const AnatomyMaterialAuditProbe = ({
     };
     container.addEventListener(ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT, handleRequest);
     container.addEventListener(ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT, handleVisibilityRequest);
+    container.addEventListener(ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT, handleBellowsCompositingIntervention);
     container.setAttribute("data-observer-test-renderable-contribution-hook", "ready");
     return () => {
       visibilityBeforeTest.forEach((visible, object) => { object.visible = visible; });
       visibilityTransactions.forEach((transaction) => restoreAnatomyRenderables(transaction.snapshots));
       visibilityTransactions.clear();
+      if (activeBellowsCompositingTransaction) {
+        restoreBellowsCompositingTransaction(activeBellowsCompositingTransaction);
+        activeBellowsCompositingTransaction = null;
+      }
       container.removeEventListener(ANATOMY_MATERIAL_AUDIT_REQUEST_EVENT, handleRequest);
       container.removeEventListener(ANATOMY_RENDER_OBJECT_VISIBILITY_EVENT, handleVisibilityRequest);
+      container.removeEventListener(ANATOMY_BELLOWS_COMPOSITING_INTERVENTION_EVENT, handleBellowsCompositingIntervention);
       container.removeAttribute("data-observer-test-renderable-contribution-hook");
       container.removeAttribute("data-observer-test-object-visibility");
       container.removeAttribute("data-observer-test-object-visibility-error");
