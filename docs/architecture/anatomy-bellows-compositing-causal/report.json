@@ -4,7 +4,7 @@
   "outcome": "TCI-3",
   "provenance": {
     "baseSha": "111890173c92106c63f23eda09fbde6ce695a39e",
-    "measurementSha": "5fbe82d517eaffe231a6bdc8272dfaff82f05461",
+    "measurementSha": "1527bb7ed8d5e1c748907342549f00fdba2c9a46",
     "browserVersion": "155.0.8059.84",
     "browserUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
     "platform": {
@@ -12,12 +12,25 @@
       "architecture": "arm64"
     },
     "threeRevision": "186",
+    "nativePipelineEvidence": "test-realm GPUDevice.createRenderPipeline/createRenderPipelineAsync argument, associated to the exact r186 WebGPUBackend.draw pipeline object and current renderer mount identity",
     "hardwareAcceleration": "unconfirmed; pinned Three.js r186 does not expose adapter details in this capture",
     "captureRepresentation": "same-resolution Playwright screenshots of the canvas browser presentation; not compared to raw framebuffer bytes"
   },
+  "historicalPriorRun": {
+    "baseSha": "111890173c92106c63f23eda09fbde6ce695a39e",
+    "measurementSha": "580de8c329ace123609937a44c0e35e093884cd2",
+    "outcome": "TCI-3",
+    "dimmedGroupMaeByCondition": {
+      "C0": 104.1276959387971,
+      "C1": 104.1281571308429,
+      "C2": 88.87070345351457,
+      "C3": 88.87300941374353
+    },
+    "nativePipelineEvidence": "The prior run recorded material-derived blend state; pipelineId was null and no GPUDevice creation descriptor was observed. Its image measurements are retained as historical evidence but are not qualified by the review-fix contract."
+  },
   "state": {
     "sceneId": "view-camera-anatomy",
-    "teachingState": "Anatomy \u2014 Front Standard highlighted, Bellows dimmed",
+    "teachingState": "Anatomy — Front Standard highlighted, Bellows dimmed",
     "viewport": {
       "css": [
         1440,
@@ -63,7 +76,7 @@
       }
     },
     "sourceMaterial": {
-      "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+      "id": "1db71c70-6813-4c1a-85cb-105a23498782",
       "type": "MeshStandardMaterial",
       "family": "MeshStandardMaterial",
       "color": "111827",
@@ -89,15 +102,15 @@
       "textureSlots": {}
     },
     "outputMaterialIds": {
-      "webgl": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-      "nativeB0": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7"
+      "webgl": "6116f625-714c-4697-880e-bd50b9b430fd",
+      "nativeB0": "2b4d995c-67f1-4572-ad57-1cc0b8726419"
     },
     "selectedRenderable": {
       "semanticId": "bellows-folded-surface",
-      "webglObjectId": "f2db4f89-c4ce-4896-9609-a60793802014",
-      "nativeObjectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+      "webglObjectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+      "nativeObjectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
       "webglGeometry": {
-        "id": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
+        "id": "61ee745f-f342-4a76-92e2-30e7e6d68fe4",
         "type": "BufferGeometry",
         "vertexCount": 44,
         "positionAttributeVersion": 2,
@@ -107,7 +120,7 @@
         "cachedBoundingBox": null
       },
       "nativeGeometry": {
-        "id": "db1fc352-a02d-4397-8d2e-b406eccd943f",
+        "id": "aa6d7bbf-9695-4f09-ac28-4060ecf2ffcb",
         "type": "BufferGeometry",
         "vertexCount": 44,
         "positionAttributeVersion": 2,
@@ -390,7 +403,7 @@
     },
     "drawMetadata": {
       "webgl": {
-        "requestId": "anatomy-gpu-intermediate-73",
+        "requestId": "anatomy-gpu-intermediate-5",
         "status": "ok",
         "feasibility": "F1",
         "method": "bellows-draw-metadata",
@@ -400,10 +413,10 @@
           "executionBackend": "webgl2"
         },
         "selectedRenderable": {
-          "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "id": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
           "name": "bellows-folded-surface",
-          "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
-          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+          "geometryId": "61ee745f-f342-4a76-92e2-30e7e6d68fe4",
+          "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd"
         },
         "drawObservations": [
           {
@@ -415,11 +428,11 @@
               5123,
               0
             ],
-            "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
             "renderOrder": 0,
             "material": {
-              "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-              "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+              "id": "6116f625-714c-4697-880e-bd50b9b430fd",
+              "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
               "type": "MeshStandardMaterial",
               "color": "111827",
               "opacity": 0.16,
@@ -461,11 +474,11 @@
               5123,
               0
             ],
-            "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
             "renderOrder": 0,
             "material": {
-              "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-              "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+              "id": "6116f625-714c-4697-880e-bd50b9b430fd",
+              "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
               "type": "MeshStandardMaterial",
               "color": "111827",
               "opacity": 0.16,
@@ -504,7 +517,7 @@
         "framebufferCopyStarted": false
       },
       "native": {
-        "requestId": "anatomy-gpu-intermediate-74",
+        "requestId": "anatomy-gpu-intermediate-6",
         "status": "ok",
         "feasibility": "F1",
         "method": "bellows-draw-metadata",
@@ -514,20 +527,20 @@
           "executionBackend": "webgpu"
         },
         "selectedRenderable": {
-          "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "id": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
           "name": "bellows-folded-surface",
-          "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
-          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+          "geometryId": "aa6d7bbf-9695-4f09-ac28-4060ecf2ffcb",
+          "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782"
         },
         "drawObservations": [
           {
             "order": 0,
             "command": "drawIndexed",
-            "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
             "renderOrder": 0,
             "material": {
-              "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
-              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
               "type": "MeshStandardNodeMaterial",
               "color": "111827",
               "opacity": 0.16,
@@ -546,8 +559,13 @@
               "outputTransform": "material-aware",
               "outputInterventionId": "B0"
             },
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-            "pipelineId": null,
+            "effectiveMaterialState": {
+              "blending": 1,
+              "transparent": true,
+              "forceSinglePass": false
+            },
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+            "pipelineId": "device-1-pipeline-10",
             "passId": null,
             "drawParameters": {
               "vertexCount": 240,
@@ -569,20 +587,81 @@
               }
             },
             "gpuDepthCompare": "less-equal",
+            "inferredMaterialBlendEnabled": true,
+            "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+            "nativePipelineBlendQualification": {
+              "status": "qualified",
+              "evidence": "bound-pipeline-creation-descriptor",
+              "pipelineIdentity": "device-1-pipeline-10",
+              "deviceIdentity": "device-1",
+              "createdBy": "GPUDevice.createRenderPipeline",
+              "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+              "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+              "targetCount": 1,
+              "colorTargetFormat": "bgra8unorm",
+              "colorTargetWriteMask": 15,
+              "blendEnabled": true,
+              "blendDescriptor": {
+                "color": {
+                  "srcFactor": "src-alpha",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                },
+                "alpha": {
+                  "srcFactor": "one",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                }
+              },
+              "depthStencil": {
+                "format": "depth24plus",
+                "depthWriteEnabled": false,
+                "depthCompare": "less-equal",
+                "stencilReadMask": null,
+                "stencilWriteMask": null,
+                "stencilFront": null,
+                "stencilBack": null
+              },
+              "multisample": {
+                "count": 4,
+                "alphaToCoverageEnabled": false,
+                "mask": 4294967295
+              },
+              "primitive": {
+                "topology": "triangle-list",
+                "frontFace": "cw",
+                "cullMode": "back",
+                "stripIndexFormat": null
+              },
+              "creationGeneration": 1
+            },
+            "nativePipelineRenderContext": {
+              "colorTargetFormats": [
+                "bgra8unorm"
+              ],
+              "depthStencilFormat": "depth24plus",
+              "sampleCount": 4
+            },
             "info": {
               "autoReset": true,
-              "frame": 110,
-              "calls": 95
+              "frame": 139,
+              "calls": 130
+            },
+            "nativeDrawExecution": {
+              "backendDrawReturned": true,
+              "drawCallsBefore": 29,
+              "drawCallsAfter": 30,
+              "completed": true
             }
           },
           {
             "order": 1,
             "command": "drawIndexed",
-            "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
             "renderOrder": 0,
             "material": {
-              "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
-              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+              "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
               "type": "MeshStandardNodeMaterial",
               "color": "111827",
               "opacity": 0.16,
@@ -601,8 +680,13 @@
               "outputTransform": "material-aware",
               "outputInterventionId": "B0"
             },
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-            "pipelineId": null,
+            "effectiveMaterialState": {
+              "blending": 1,
+              "transparent": true,
+              "forceSinglePass": false
+            },
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+            "pipelineId": "device-1-pipeline-11",
             "passId": null,
             "drawParameters": {
               "vertexCount": 240,
@@ -624,10 +708,71 @@
               }
             },
             "gpuDepthCompare": "less-equal",
+            "inferredMaterialBlendEnabled": true,
+            "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+            "nativePipelineBlendQualification": {
+              "status": "qualified",
+              "evidence": "bound-pipeline-creation-descriptor",
+              "pipelineIdentity": "device-1-pipeline-11",
+              "deviceIdentity": "device-1",
+              "createdBy": "GPUDevice.createRenderPipeline",
+              "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+              "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+              "targetCount": 1,
+              "colorTargetFormat": "bgra8unorm",
+              "colorTargetWriteMask": 15,
+              "blendEnabled": true,
+              "blendDescriptor": {
+                "color": {
+                  "srcFactor": "src-alpha",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                },
+                "alpha": {
+                  "srcFactor": "one",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                }
+              },
+              "depthStencil": {
+                "format": "depth24plus",
+                "depthWriteEnabled": false,
+                "depthCompare": "less-equal",
+                "stencilReadMask": null,
+                "stencilWriteMask": null,
+                "stencilFront": null,
+                "stencilBack": null
+              },
+              "multisample": {
+                "count": 4,
+                "alphaToCoverageEnabled": false,
+                "mask": 4294967295
+              },
+              "primitive": {
+                "topology": "triangle-list",
+                "frontFace": "ccw",
+                "cullMode": "back",
+                "stripIndexFormat": null
+              },
+              "creationGeneration": 1
+            },
+            "nativePipelineRenderContext": {
+              "colorTargetFormats": [
+                "bgra8unorm"
+              ],
+              "depthStencilFormat": "depth24plus",
+              "sampleCount": 4
+            },
             "info": {
               "autoReset": true,
-              "frame": 110,
-              "calls": 95
+              "frame": 139,
+              "calls": 130
+            },
+            "nativeDrawExecution": {
+              "backendDrawReturned": true,
+              "drawCallsBefore": 30,
+              "drawCallsAfter": 31,
+              "completed": true
             }
           }
         ],
@@ -637,6 +782,62 @@
       }
     },
     "twoDrawBaselineQualified": true,
+    "trialQualification": [
+      {
+        "backend": "webgl",
+        "condition": "C0",
+        "qualified": true,
+        "checks": {
+          "captureCompleted": true,
+          "rendererRuntimeQualified": true,
+          "rendererGenerationQualified": true,
+          "cameraAndViewportCompatible": true,
+          "sourceMaterialPreserved": true,
+          "effectiveOutputStateQualified": true,
+          "drawStateQualified": true,
+          "nativePipelineQualified": true,
+          "outputPolicyQualified": true,
+          "interventionAppliedOrBaseline": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "ownedResourcesReleased": true,
+          "borrowedResourcesPreserved": true,
+          "repeatabilityWithinTolerance": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageAvailable": true,
+          "imageDimensionsCompatible": true
+        },
+        "failedChecks": []
+      },
+      {
+        "backend": "native",
+        "condition": "C0",
+        "qualified": true,
+        "checks": {
+          "captureCompleted": true,
+          "rendererRuntimeQualified": true,
+          "rendererGenerationQualified": true,
+          "cameraAndViewportCompatible": true,
+          "sourceMaterialPreserved": true,
+          "effectiveOutputStateQualified": true,
+          "drawStateQualified": true,
+          "nativePipelineQualified": true,
+          "outputPolicyQualified": true,
+          "interventionAppliedOrBaseline": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "ownedResourcesReleased": true,
+          "borrowedResourcesPreserved": true,
+          "repeatabilityWithinTolerance": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageAvailable": true,
+          "imageDimensionsCompatible": true
+        },
+        "failedChecks": []
+      }
+    ],
     "rendererOrdering": [
       "webgl",
       "native"
@@ -665,10 +866,151 @@
     "captures": [
       {
         "backend": "webgl",
-        "condition": "C1",
+        "condition": "C0",
         "qualified": true,
+        "qualification": {
+          "backend": "webgl",
+          "condition": "C0",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-5",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          },
+          "selectedRenderable": {
+            "id": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+            "name": "bellows-folded-surface",
+            "geometryId": "61ee745f-f342-4a76-92e2-30e7e6d68fe4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawElements",
+              "commandArguments": [
+                4,
+                240,
+                5123,
+                0
+              ],
+              "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+              "renderOrder": 0,
+              "material": {
+                "id": "6116f625-714c-4697-880e-bd50b9b430fd",
+                "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+                "type": "MeshStandardMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 1,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 1,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": null,
+                "outputInterventionId": null
+              },
+              "state": {
+                "blendEnabled": true,
+                "blendSourceRgb": "SRC_ALPHA",
+                "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationRgb": "FUNC_ADD",
+                "blendSourceAlpha": "ONE",
+                "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationAlpha": "FUNC_ADD",
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": "LEQUAL",
+                "stencilTest": false
+              }
+            },
+            {
+              "order": 1,
+              "command": "drawElements",
+              "commandArguments": [
+                4,
+                240,
+                5123,
+                0
+              ],
+              "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+              "renderOrder": 0,
+              "material": {
+                "id": "6116f625-714c-4697-880e-bd50b9b430fd",
+                "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+                "type": "MeshStandardMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 1,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 0,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": null,
+                "outputInterventionId": null
+              },
+              "state": {
+                "blendEnabled": true,
+                "blendSourceRgb": "SRC_ALPHA",
+                "blendDestinationRgb": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationRgb": "FUNC_ADD",
+                "blendSourceAlpha": "ONE",
+                "blendDestinationAlpha": "ONE_MINUS_SRC_ALPHA",
+                "blendEquationAlpha": "FUNC_ADD",
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": "LEQUAL",
+                "stencilTest": false
+              }
+            }
+          ],
+          "drawCount": 2,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
         "sourceMaterial": {
-          "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "id": "6116f625-714c-4697-880e-bd50b9b430fd",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -690,11 +1032,513 @@
           "outputGraphBuildCount": null,
           "forceSinglePass": false,
           "alphaWrite": null,
-          "materialVersion": 176,
+          "materialVersion": 28,
           "textureSlots": {}
         },
         "effectiveOutputMaterial": {
-          "id": "10561623-9b2a-4727-9bd3-890c6039341f",
+          "id": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 28,
+          "textureSlots": {}
+        },
+        "requestedState": {
+          "condition": "C0",
+          "blending": 1,
+          "blendEnabled": true,
+          "forceSinglePass": false
+        },
+        "effectiveMaterialState": {
+          "blending": 1,
+          "transparent": true,
+          "forceSinglePass": false
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          true,
+          true
+        ],
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "borrowedResourceDisposed": false
+        }
+      },
+      {
+        "backend": "native",
+        "condition": "C0",
+        "qualified": true,
+        "qualification": {
+          "backend": "native",
+          "condition": "C0",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
+        "drawMetadata": {
+          "requestId": "anatomy-gpu-intermediate-6",
+          "status": "ok",
+          "feasibility": "F1",
+          "method": "bellows-draw-metadata",
+          "generation": 1,
+          "rendererRuntime": {
+            "rendererFamily": "webgpu-renderer",
+            "executionBackend": "webgpu"
+          },
+          "selectedRenderable": {
+            "id": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
+            "name": "bellows-folded-surface",
+            "geometryId": "aa6d7bbf-9695-4f09-ac28-4060ecf2ffcb",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782"
+          },
+          "drawObservations": [
+            {
+              "order": 0,
+              "command": "drawIndexed",
+              "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
+              "renderOrder": 0,
+              "material": {
+                "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+                "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+                "type": "MeshStandardNodeMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 1,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 1,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": "material-aware",
+                "outputInterventionId": "B0"
+              },
+              "effectiveMaterialState": {
+                "blending": 1,
+                "transparent": true,
+                "forceSinglePass": false
+              },
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+              "pipelineId": "device-1-pipeline-10",
+              "passId": null,
+              "drawParameters": {
+                "vertexCount": 240,
+                "firstVertex": 0,
+                "instanceCount": 1,
+                "firstInstance": 0
+              },
+              "gpuBlendEnabled": true,
+              "gpuBlendDescriptor": {
+                "color": {
+                  "srcFactor": "src-alpha",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                },
+                "alpha": {
+                  "srcFactor": "one",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                }
+              },
+              "gpuDepthCompare": "less-equal",
+              "inferredMaterialBlendEnabled": true,
+              "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+              "nativePipelineBlendQualification": {
+                "status": "qualified",
+                "evidence": "bound-pipeline-creation-descriptor",
+                "pipelineIdentity": "device-1-pipeline-10",
+                "deviceIdentity": "device-1",
+                "createdBy": "GPUDevice.createRenderPipeline",
+                "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+                "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+                "targetCount": 1,
+                "colorTargetFormat": "bgra8unorm",
+                "colorTargetWriteMask": 15,
+                "blendEnabled": true,
+                "blendDescriptor": {
+                  "color": {
+                    "srcFactor": "src-alpha",
+                    "dstFactor": "one-minus-src-alpha",
+                    "operation": "add"
+                  },
+                  "alpha": {
+                    "srcFactor": "one",
+                    "dstFactor": "one-minus-src-alpha",
+                    "operation": "add"
+                  }
+                },
+                "depthStencil": {
+                  "format": "depth24plus",
+                  "depthWriteEnabled": false,
+                  "depthCompare": "less-equal",
+                  "stencilReadMask": null,
+                  "stencilWriteMask": null,
+                  "stencilFront": null,
+                  "stencilBack": null
+                },
+                "multisample": {
+                  "count": 4,
+                  "alphaToCoverageEnabled": false,
+                  "mask": 4294967295
+                },
+                "primitive": {
+                  "topology": "triangle-list",
+                  "frontFace": "cw",
+                  "cullMode": "back",
+                  "stripIndexFormat": null
+                },
+                "creationGeneration": 1
+              },
+              "nativePipelineRenderContext": {
+                "colorTargetFormats": [
+                  "bgra8unorm"
+                ],
+                "depthStencilFormat": "depth24plus",
+                "sampleCount": 4
+              },
+              "info": {
+                "autoReset": true,
+                "frame": 139,
+                "calls": 130
+              },
+              "nativeDrawExecution": {
+                "backendDrawReturned": true,
+                "drawCallsBefore": 29,
+                "drawCallsAfter": 30,
+                "completed": true
+              }
+            },
+            {
+              "order": 1,
+              "command": "drawIndexed",
+              "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
+              "renderOrder": 0,
+              "material": {
+                "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+                "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+                "type": "MeshStandardNodeMaterial",
+                "color": "111827",
+                "opacity": 0.16,
+                "transparent": true,
+                "blending": 1,
+                "premultipliedAlpha": false,
+                "alphaWrite": null,
+                "side": 0,
+                "forceSinglePass": false,
+                "depthTest": true,
+                "depthWrite": false,
+                "depthFunction": 3,
+                "toneMapped": true,
+                "roughness": 0.88,
+                "metalness": 0,
+                "outputTransform": "material-aware",
+                "outputInterventionId": "B0"
+              },
+              "effectiveMaterialState": {
+                "blending": 1,
+                "transparent": true,
+                "forceSinglePass": false
+              },
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+              "pipelineId": "device-1-pipeline-11",
+              "passId": null,
+              "drawParameters": {
+                "vertexCount": 240,
+                "firstVertex": 0,
+                "instanceCount": 1,
+                "firstInstance": 0
+              },
+              "gpuBlendEnabled": true,
+              "gpuBlendDescriptor": {
+                "color": {
+                  "srcFactor": "src-alpha",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                },
+                "alpha": {
+                  "srcFactor": "one",
+                  "dstFactor": "one-minus-src-alpha",
+                  "operation": "add"
+                }
+              },
+              "gpuDepthCompare": "less-equal",
+              "inferredMaterialBlendEnabled": true,
+              "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+              "nativePipelineBlendQualification": {
+                "status": "qualified",
+                "evidence": "bound-pipeline-creation-descriptor",
+                "pipelineIdentity": "device-1-pipeline-11",
+                "deviceIdentity": "device-1",
+                "createdBy": "GPUDevice.createRenderPipeline",
+                "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+                "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+                "targetCount": 1,
+                "colorTargetFormat": "bgra8unorm",
+                "colorTargetWriteMask": 15,
+                "blendEnabled": true,
+                "blendDescriptor": {
+                  "color": {
+                    "srcFactor": "src-alpha",
+                    "dstFactor": "one-minus-src-alpha",
+                    "operation": "add"
+                  },
+                  "alpha": {
+                    "srcFactor": "one",
+                    "dstFactor": "one-minus-src-alpha",
+                    "operation": "add"
+                  }
+                },
+                "depthStencil": {
+                  "format": "depth24plus",
+                  "depthWriteEnabled": false,
+                  "depthCompare": "less-equal",
+                  "stencilReadMask": null,
+                  "stencilWriteMask": null,
+                  "stencilFront": null,
+                  "stencilBack": null
+                },
+                "multisample": {
+                  "count": 4,
+                  "alphaToCoverageEnabled": false,
+                  "mask": 4294967295
+                },
+                "primitive": {
+                  "topology": "triangle-list",
+                  "frontFace": "ccw",
+                  "cullMode": "back",
+                  "stripIndexFormat": null
+                },
+                "creationGeneration": 1
+              },
+              "nativePipelineRenderContext": {
+                "colorTargetFormats": [
+                  "bgra8unorm"
+                ],
+                "depthStencilFormat": "depth24plus",
+                "sampleCount": 4
+              },
+              "info": {
+                "autoReset": true,
+                "frame": 139,
+                "calls": 130
+              },
+              "nativeDrawExecution": {
+                "backendDrawReturned": true,
+                "drawCallsBefore": 30,
+                "drawCallsAfter": 31,
+                "completed": true
+              }
+            }
+          ],
+          "drawCount": 2,
+          "readbackStarted": false,
+          "framebufferCopyStarted": false
+        },
+        "sourceMaterial": {
+          "id": "1db71c70-6813-4c1a-85cb-105a23498782",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 0,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+          "type": "MeshStandardNodeMaterial",
+          "family": "MaterialAwareStandardNodeMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": "material-aware",
+          "outputInterventionId": "B0",
+          "outputGraphBuildCount": 3,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 1,
+          "textureSlots": {}
+        },
+        "requestedState": {
+          "condition": "C0",
+          "blending": 1,
+          "blendEnabled": true,
+          "forceSinglePass": false
+        },
+        "effectiveMaterialState": {
+          "blending": 1,
+          "transparent": true,
+          "forceSinglePass": false
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          true,
+          true
+        ],
+        "repeatNoise": {
+          "sampleCount": 211254,
+          "meanAbsoluteRgbDifference": 0,
+          "perChannelMeanAbsoluteDifference": [
+            0,
+            0,
+            0
+          ],
+          "changedPixelCount": 0,
+          "changedPixelFraction": 0,
+          "meanSignedLuminanceDifference": 0
+        },
+        "restoration": {
+          "sourcePropertiesPreserved": true,
+          "geometryIdentityPreserved": true,
+          "originalVisibilityPreserved": true,
+          "originalOutputIdentityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "borrowedResourceDisposed": false
+        }
+      },
+      {
+        "backend": "webgl",
+        "condition": "C1",
+        "qualified": true,
+        "qualification": {
+          "backend": "webgl",
+          "condition": "C1",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
+        "sourceMaterial": {
+          "id": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "type": "MeshStandardMaterial",
+          "family": "MeshStandardMaterial",
+          "color": "111827",
+          "emissive": "000000",
+          "emissiveIntensity": 1,
+          "toneMapped": true,
+          "opacity": 0.16,
+          "transparent": true,
+          "blending": 1,
+          "premultipliedAlpha": false,
+          "depthTest": true,
+          "depthWrite": false,
+          "side": "double",
+          "alphaTest": 0,
+          "roughness": 0.88,
+          "metalness": 0,
+          "outputTransform": null,
+          "outputInterventionId": null,
+          "outputGraphBuildCount": null,
+          "forceSinglePass": false,
+          "alphaWrite": null,
+          "materialVersion": 216,
+          "textureSlots": {}
+        },
+        "effectiveOutputMaterial": {
+          "id": "c08a4083-8fff-4df4-b41b-33103f8eb9f3",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -719,21 +1563,35 @@
           "materialVersion": 1,
           "textureSlots": {}
         },
+        "requestedState": {
+          "condition": "C1",
+          "blending": 1,
+          "blendEnabled": true,
+          "forceSinglePass": true
+        },
+        "effectiveMaterialState": {
+          "blending": 1,
+          "transparent": true,
+          "forceSinglePass": true
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          true
+        ],
         "applyResult": {
-          "requestId": "anatomy-bellows-condition-76",
+          "requestId": "anatomy-bellows-condition-8",
           "generation": 1,
           "ok": true,
           "operation": "apply",
           "condition": "C1",
-          "transactionId": "m-inv8-webgl-C1-75",
-          "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "transactionId": "m-inv8-webgl-C1-7",
+          "renderableId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
           "renderableName": "bellows-folded-surface",
-          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-          "originalOutputMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-          "activeOutputMaterialId": "10561623-9b2a-4727-9bd3-890c6039341f",
+          "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "originalOutputMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "activeOutputMaterialId": "c08a4083-8fff-4df4-b41b-33103f8eb9f3",
           "sourcePropertiesPreserved": true,
           "baselineSourceProperties": {
-            "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "id": "6116f625-714c-4697-880e-bd50b9b430fd",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -755,14 +1613,14 @@
             "outputGraphBuildCount": null,
             "forceSinglePass": false,
             "alphaWrite": null,
-            "materialVersion": 176,
+            "materialVersion": 216,
             "textureSlots": {}
           },
           "requestedOverrides": {
             "forceSinglePass": true
           },
           "effectiveMaterialProperties": {
-            "id": "10561623-9b2a-4727-9bd3-890c6039341f",
+            "id": "c08a4083-8fff-4df4-b41b-33103f8eb9f3",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -791,7 +1649,7 @@
           "outputVariantUpdatePendingFrame": false
         },
         "drawMetadata": {
-          "requestId": "anatomy-gpu-intermediate-77",
+          "requestId": "anatomy-gpu-intermediate-9",
           "status": "ok",
           "feasibility": "F1",
           "method": "bellows-draw-metadata",
@@ -801,10 +1659,10 @@
             "executionBackend": "webgl2"
           },
           "selectedRenderable": {
-            "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "id": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
             "name": "bellows-folded-surface",
-            "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
-            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+            "geometryId": "61ee745f-f342-4a76-92e2-30e7e6d68fe4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd"
           },
           "drawObservations": [
             {
@@ -816,11 +1674,11 @@
                 5123,
                 0
               ],
-              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
               "renderOrder": 0,
               "material": {
-                "id": "10561623-9b2a-4727-9bd3-890c6039341f",
-                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "id": "c08a4083-8fff-4df4-b41b-33103f8eb9f3",
+                "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
                 "type": "MeshStandardMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -974,6 +1832,7 @@
           "originalVisibilityPreserved": true,
           "originalOutputIdentityRestored": true,
           "diagnosticCloneDisposeCount": 1,
+          "ownedResourcesReleased": true,
           "borrowedDisposeCounts": {
             "sourceMaterial": 0,
             "geometry": 0,
@@ -981,13 +1840,13 @@
           },
           "borrowedResourcesPreserved": true,
           "restoreResponse": {
-            "requestId": "anatomy-bellows-condition-78",
+            "requestId": "anatomy-bellows-condition-10",
             "generation": 1,
             "ok": true,
             "operation": "restore",
-            "transactionId": "m-inv8-webgl-C1-75",
-            "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
-            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "transactionId": "m-inv8-webgl-C1-7",
+            "renderableId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
             "renderableMaterialIdentityRestored": true,
             "geometryIdentityPreserved": true,
             "originalVisibilityPreserved": true,
@@ -1021,7 +1880,14 @@
           "expectedBlendEnabled": true,
           "transparentListClassificationRetained": true,
           "renderOrderPreserved": true,
-          "outputPolicyQualified": true
+          "outputPolicyQualified": true,
+          "nativePipelineQualified": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageDimensionsCompatible": true
         },
         "withinRendererResponse": {
           "fullFrame": {
@@ -1158,8 +2024,35 @@
         "backend": "native",
         "condition": "C1",
         "qualified": true,
+        "qualification": {
+          "backend": "native",
+          "condition": "C1",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
         "sourceMaterial": {
-          "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "id": "1db71c70-6813-4c1a-85cb-105a23498782",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -1185,7 +2078,7 @@
           "textureSlots": {}
         },
         "effectiveOutputMaterial": {
-          "id": "bb0c0193-d499-4ced-af6f-b7383f41e955",
+          "id": "b795daa3-6737-4098-af4d-bcc8975c425c",
           "type": "MeshStandardNodeMaterial",
           "family": "MaterialAwareStandardNodeMaterial",
           "color": "111827",
@@ -1210,21 +2103,35 @@
           "materialVersion": 1,
           "textureSlots": {}
         },
+        "requestedState": {
+          "condition": "C1",
+          "blending": 1,
+          "blendEnabled": true,
+          "forceSinglePass": true
+        },
+        "effectiveMaterialState": {
+          "blending": 1,
+          "transparent": true,
+          "forceSinglePass": true
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          true
+        ],
         "applyResult": {
-          "requestId": "anatomy-bellows-condition-80",
+          "requestId": "anatomy-bellows-condition-12",
           "generation": 1,
           "ok": true,
           "operation": "apply",
           "condition": "C1",
-          "transactionId": "m-inv8-native-C1-79",
-          "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "transactionId": "m-inv8-native-C1-11",
+          "renderableId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
           "renderableName": "bellows-folded-surface",
-          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-          "originalOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
-          "activeOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+          "originalOutputMaterialId": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+          "activeOutputMaterialId": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
           "sourcePropertiesPreserved": true,
           "baselineSourceProperties": {
-            "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "id": "1db71c70-6813-4c1a-85cb-105a23498782",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -1253,7 +2160,7 @@
             "forceSinglePass": true
           },
           "effectiveMaterialProperties": {
-            "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+            "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
             "type": "MeshStandardNodeMaterial",
             "family": "MaterialAwareStandardNodeMaterial",
             "color": "111827",
@@ -1282,7 +2189,7 @@
           "outputVariantUpdatePendingFrame": true
         },
         "drawMetadata": {
-          "requestId": "anatomy-gpu-intermediate-81",
+          "requestId": "anatomy-gpu-intermediate-13",
           "status": "ok",
           "feasibility": "F1",
           "method": "bellows-draw-metadata",
@@ -1292,20 +2199,20 @@
             "executionBackend": "webgpu"
           },
           "selectedRenderable": {
-            "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "id": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
             "name": "bellows-folded-surface",
-            "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+            "geometryId": "aa6d7bbf-9695-4f09-ac28-4060ecf2ffcb",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782"
           },
           "drawObservations": [
             {
               "order": 0,
               "command": "drawIndexed",
-              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
               "renderOrder": 0,
               "material": {
-                "id": "bb0c0193-d499-4ced-af6f-b7383f41e955",
-                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "id": "b795daa3-6737-4098-af4d-bcc8975c425c",
+                "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
                 "type": "MeshStandardNodeMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -1324,8 +2231,13 @@
                 "outputTransform": "material-aware",
                 "outputInterventionId": "B0"
               },
-              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-              "pipelineId": null,
+              "effectiveMaterialState": {
+                "blending": 1,
+                "transparent": true,
+                "forceSinglePass": true
+              },
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+              "pipelineId": "device-1-pipeline-12",
               "passId": null,
               "drawParameters": {
                 "vertexCount": 240,
@@ -1347,10 +2259,71 @@
                 }
               },
               "gpuDepthCompare": "less-equal",
+              "inferredMaterialBlendEnabled": true,
+              "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+              "nativePipelineBlendQualification": {
+                "status": "qualified",
+                "evidence": "bound-pipeline-creation-descriptor",
+                "pipelineIdentity": "device-1-pipeline-12",
+                "deviceIdentity": "device-1",
+                "createdBy": "GPUDevice.createRenderPipeline",
+                "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+                "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+                "targetCount": 1,
+                "colorTargetFormat": "bgra8unorm",
+                "colorTargetWriteMask": 15,
+                "blendEnabled": true,
+                "blendDescriptor": {
+                  "color": {
+                    "srcFactor": "src-alpha",
+                    "dstFactor": "one-minus-src-alpha",
+                    "operation": "add"
+                  },
+                  "alpha": {
+                    "srcFactor": "one",
+                    "dstFactor": "one-minus-src-alpha",
+                    "operation": "add"
+                  }
+                },
+                "depthStencil": {
+                  "format": "depth24plus",
+                  "depthWriteEnabled": false,
+                  "depthCompare": "less-equal",
+                  "stencilReadMask": null,
+                  "stencilWriteMask": null,
+                  "stencilFront": null,
+                  "stencilBack": null
+                },
+                "multisample": {
+                  "count": 4,
+                  "alphaToCoverageEnabled": false,
+                  "mask": 4294967295
+                },
+                "primitive": {
+                  "topology": "triangle-list",
+                  "frontFace": "ccw",
+                  "cullMode": "none",
+                  "stripIndexFormat": null
+                },
+                "creationGeneration": 1
+              },
+              "nativePipelineRenderContext": {
+                "colorTargetFormats": [
+                  "bgra8unorm"
+                ],
+                "depthStencilFormat": "depth24plus",
+                "sampleCount": 4
+              },
               "info": {
                 "autoReset": true,
-                "frame": 180,
-                "calls": 165
+                "frame": 229,
+                "calls": 220
+              },
+              "nativeDrawExecution": {
+                "backendDrawReturned": true,
+                "drawCallsBefore": 29,
+                "drawCallsAfter": 30,
+                "completed": true
               }
             }
           ],
@@ -1474,6 +2447,7 @@
           "originalVisibilityPreserved": true,
           "originalOutputIdentityRestored": true,
           "diagnosticCloneDisposeCount": 0,
+          "ownedResourcesReleased": true,
           "borrowedDisposeCounts": {
             "sourceMaterial": 0,
             "geometry": 0,
@@ -1481,13 +2455,13 @@
           },
           "borrowedResourcesPreserved": true,
           "restoreResponse": {
-            "requestId": "anatomy-bellows-condition-82",
+            "requestId": "anatomy-bellows-condition-14",
             "generation": 1,
             "ok": true,
             "operation": "restore",
-            "transactionId": "m-inv8-native-C1-79",
-            "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "transactionId": "m-inv8-native-C1-11",
+            "renderableId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
             "renderableMaterialIdentityRestored": false,
             "geometryIdentityPreserved": true,
             "originalVisibilityPreserved": true,
@@ -1521,7 +2495,14 @@
           "expectedBlendEnabled": true,
           "transparentListClassificationRetained": true,
           "renderOrderPreserved": true,
-          "outputPolicyQualified": true
+          "outputPolicyQualified": true,
+          "nativePipelineQualified": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageDimensionsCompatible": true
         },
         "withinRendererResponse": {
           "fullFrame": {
@@ -1606,16 +2587,16 @@
           },
           "unaffectedBackgroundCandidate": {
             "sampleCount": 189482,
-            "meanAbsoluteRgbDifference": 1.7591820507137004e-06,
+            "meanAbsoluteRgbDifference": 0.0000017591820507137004,
             "perChannelMeanAbsoluteDifference": [
               0,
               0,
-              5.277546152141101e-06
+              0.000005277546152141101
             ],
             "perChannelMeanSignedDifference": [
               0,
               0,
-              -5.277546152141101e-06
+              -0.000005277546152141101
             ],
             "changedPixelCount": 0,
             "thresholdPerChannel": 8
@@ -1658,8 +2639,35 @@
         "backend": "native",
         "condition": "C2",
         "qualified": true,
+        "qualification": {
+          "backend": "native",
+          "condition": "C2",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
         "sourceMaterial": {
-          "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "id": "1db71c70-6813-4c1a-85cb-105a23498782",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -1685,7 +2693,7 @@
           "textureSlots": {}
         },
         "effectiveOutputMaterial": {
-          "id": "a9c1dd01-c5a2-49d2-b172-67f597a6938d",
+          "id": "5c51d5dd-cd45-4817-942d-a66889bfd948",
           "type": "MeshStandardNodeMaterial",
           "family": "MaterialAwareStandardNodeMaterial",
           "color": "111827",
@@ -1710,21 +2718,36 @@
           "materialVersion": 1,
           "textureSlots": {}
         },
+        "requestedState": {
+          "condition": "C2",
+          "blending": 0,
+          "blendEnabled": false,
+          "forceSinglePass": false
+        },
+        "effectiveMaterialState": {
+          "blending": 0,
+          "transparent": true,
+          "forceSinglePass": false
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          false,
+          false
+        ],
         "applyResult": {
-          "requestId": "anatomy-bellows-condition-84",
+          "requestId": "anatomy-bellows-condition-16",
           "generation": 1,
           "ok": true,
           "operation": "apply",
           "condition": "C2",
-          "transactionId": "m-inv8-native-C2-83",
-          "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "transactionId": "m-inv8-native-C2-15",
+          "renderableId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
           "renderableName": "bellows-folded-surface",
-          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-          "originalOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
-          "activeOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+          "originalOutputMaterialId": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+          "activeOutputMaterialId": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
           "sourcePropertiesPreserved": true,
           "baselineSourceProperties": {
-            "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "id": "1db71c70-6813-4c1a-85cb-105a23498782",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -1753,7 +2776,7 @@
             "blending": 0
           },
           "effectiveMaterialProperties": {
-            "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+            "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
             "type": "MeshStandardNodeMaterial",
             "family": "MaterialAwareStandardNodeMaterial",
             "color": "111827",
@@ -1782,7 +2805,7 @@
           "outputVariantUpdatePendingFrame": true
         },
         "drawMetadata": {
-          "requestId": "anatomy-gpu-intermediate-85",
+          "requestId": "anatomy-gpu-intermediate-17",
           "status": "ok",
           "feasibility": "F1",
           "method": "bellows-draw-metadata",
@@ -1792,20 +2815,20 @@
             "executionBackend": "webgpu"
           },
           "selectedRenderable": {
-            "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "id": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
             "name": "bellows-folded-surface",
-            "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+            "geometryId": "aa6d7bbf-9695-4f09-ac28-4060ecf2ffcb",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782"
           },
           "drawObservations": [
             {
               "order": 0,
               "command": "drawIndexed",
-              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
               "renderOrder": 0,
               "material": {
-                "id": "a9c1dd01-c5a2-49d2-b172-67f597a6938d",
-                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "id": "5c51d5dd-cd45-4817-942d-a66889bfd948",
+                "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
                 "type": "MeshStandardNodeMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -1824,8 +2847,13 @@
                 "outputTransform": "material-aware",
                 "outputInterventionId": "B0"
               },
-              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-              "pipelineId": null,
+              "effectiveMaterialState": {
+                "blending": 0,
+                "transparent": true,
+                "forceSinglePass": false
+              },
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+              "pipelineId": "device-1-pipeline-13",
               "passId": null,
               "drawParameters": {
                 "vertexCount": 240,
@@ -1836,20 +2864,70 @@
               "gpuBlendEnabled": false,
               "gpuBlendDescriptor": null,
               "gpuDepthCompare": "less-equal",
+              "inferredMaterialBlendEnabled": false,
+              "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+              "nativePipelineBlendQualification": {
+                "status": "qualified",
+                "evidence": "bound-pipeline-creation-descriptor",
+                "pipelineIdentity": "device-1-pipeline-13",
+                "deviceIdentity": "device-1",
+                "createdBy": "GPUDevice.createRenderPipeline",
+                "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+                "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+                "targetCount": 1,
+                "colorTargetFormat": "bgra8unorm",
+                "colorTargetWriteMask": 15,
+                "blendEnabled": false,
+                "blendDescriptor": null,
+                "depthStencil": {
+                  "format": "depth24plus",
+                  "depthWriteEnabled": false,
+                  "depthCompare": "less-equal",
+                  "stencilReadMask": null,
+                  "stencilWriteMask": null,
+                  "stencilFront": null,
+                  "stencilBack": null
+                },
+                "multisample": {
+                  "count": 4,
+                  "alphaToCoverageEnabled": false,
+                  "mask": 4294967295
+                },
+                "primitive": {
+                  "topology": "triangle-list",
+                  "frontFace": "cw",
+                  "cullMode": "back",
+                  "stripIndexFormat": null
+                },
+                "creationGeneration": 1
+              },
+              "nativePipelineRenderContext": {
+                "colorTargetFormats": [
+                  "bgra8unorm"
+                ],
+                "depthStencilFormat": "depth24plus",
+                "sampleCount": 4
+              },
               "info": {
                 "autoReset": true,
-                "frame": 225,
-                "calls": 210
+                "frame": 277,
+                "calls": 268
+              },
+              "nativeDrawExecution": {
+                "backendDrawReturned": true,
+                "drawCallsBefore": 29,
+                "drawCallsAfter": 30,
+                "completed": true
               }
             },
             {
               "order": 1,
               "command": "drawIndexed",
-              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
               "renderOrder": 0,
               "material": {
-                "id": "a9c1dd01-c5a2-49d2-b172-67f597a6938d",
-                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "id": "5c51d5dd-cd45-4817-942d-a66889bfd948",
+                "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
                 "type": "MeshStandardNodeMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -1868,8 +2946,13 @@
                 "outputTransform": "material-aware",
                 "outputInterventionId": "B0"
               },
-              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-              "pipelineId": null,
+              "effectiveMaterialState": {
+                "blending": 0,
+                "transparent": true,
+                "forceSinglePass": false
+              },
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+              "pipelineId": "device-1-pipeline-14",
               "passId": null,
               "drawParameters": {
                 "vertexCount": 240,
@@ -1880,10 +2963,60 @@
               "gpuBlendEnabled": false,
               "gpuBlendDescriptor": null,
               "gpuDepthCompare": "less-equal",
+              "inferredMaterialBlendEnabled": false,
+              "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+              "nativePipelineBlendQualification": {
+                "status": "qualified",
+                "evidence": "bound-pipeline-creation-descriptor",
+                "pipelineIdentity": "device-1-pipeline-14",
+                "deviceIdentity": "device-1",
+                "createdBy": "GPUDevice.createRenderPipeline",
+                "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+                "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+                "targetCount": 1,
+                "colorTargetFormat": "bgra8unorm",
+                "colorTargetWriteMask": 15,
+                "blendEnabled": false,
+                "blendDescriptor": null,
+                "depthStencil": {
+                  "format": "depth24plus",
+                  "depthWriteEnabled": false,
+                  "depthCompare": "less-equal",
+                  "stencilReadMask": null,
+                  "stencilWriteMask": null,
+                  "stencilFront": null,
+                  "stencilBack": null
+                },
+                "multisample": {
+                  "count": 4,
+                  "alphaToCoverageEnabled": false,
+                  "mask": 4294967295
+                },
+                "primitive": {
+                  "topology": "triangle-list",
+                  "frontFace": "ccw",
+                  "cullMode": "back",
+                  "stripIndexFormat": null
+                },
+                "creationGeneration": 1
+              },
+              "nativePipelineRenderContext": {
+                "colorTargetFormats": [
+                  "bgra8unorm"
+                ],
+                "depthStencilFormat": "depth24plus",
+                "sampleCount": 4
+              },
               "info": {
                 "autoReset": true,
-                "frame": 225,
-                "calls": 210
+                "frame": 277,
+                "calls": 268
+              },
+              "nativeDrawExecution": {
+                "backendDrawReturned": true,
+                "drawCallsBefore": 30,
+                "drawCallsAfter": 31,
+                "completed": true
               }
             }
           ],
@@ -2007,6 +3140,7 @@
           "originalVisibilityPreserved": true,
           "originalOutputIdentityRestored": true,
           "diagnosticCloneDisposeCount": 0,
+          "ownedResourcesReleased": true,
           "borrowedDisposeCounts": {
             "sourceMaterial": 0,
             "geometry": 0,
@@ -2014,13 +3148,13 @@
           },
           "borrowedResourcesPreserved": true,
           "restoreResponse": {
-            "requestId": "anatomy-bellows-condition-86",
+            "requestId": "anatomy-bellows-condition-18",
             "generation": 1,
             "ok": true,
             "operation": "restore",
-            "transactionId": "m-inv8-native-C2-83",
-            "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "transactionId": "m-inv8-native-C2-15",
+            "renderableId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
             "renderableMaterialIdentityRestored": false,
             "geometryIdentityPreserved": true,
             "originalVisibilityPreserved": true,
@@ -2057,7 +3191,14 @@
           "expectedBlendEnabled": false,
           "transparentListClassificationRetained": true,
           "renderOrderPreserved": true,
-          "outputPolicyQualified": true
+          "outputPolicyQualified": true,
+          "nativePipelineQualified": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageDimensionsCompatible": true
         },
         "withinRendererResponse": {
           "fullFrame": {
@@ -2194,8 +3335,35 @@
         "backend": "webgl",
         "condition": "C2",
         "qualified": true,
+        "qualification": {
+          "backend": "webgl",
+          "condition": "C2",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
         "sourceMaterial": {
-          "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "id": "6116f625-714c-4697-880e-bd50b9b430fd",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -2217,11 +3385,11 @@
           "outputGraphBuildCount": null,
           "forceSinglePass": false,
           "alphaWrite": null,
-          "materialVersion": 396,
+          "materialVersion": 460,
           "textureSlots": {}
         },
         "effectiveOutputMaterial": {
-          "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+          "id": "b5f922c3-c4e2-494b-902d-c64c525f6b62",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -2243,24 +3411,39 @@
           "outputGraphBuildCount": null,
           "forceSinglePass": false,
           "alphaWrite": null,
-          "materialVersion": 15,
+          "materialVersion": 13,
           "textureSlots": {}
         },
+        "requestedState": {
+          "condition": "C2",
+          "blending": 0,
+          "blendEnabled": false,
+          "forceSinglePass": false
+        },
+        "effectiveMaterialState": {
+          "blending": 0,
+          "transparent": true,
+          "forceSinglePass": false
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          false,
+          false
+        ],
         "applyResult": {
-          "requestId": "anatomy-bellows-condition-88",
+          "requestId": "anatomy-bellows-condition-20",
           "generation": 1,
           "ok": true,
           "operation": "apply",
           "condition": "C2",
-          "transactionId": "m-inv8-webgl-C2-87",
-          "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "transactionId": "m-inv8-webgl-C2-19",
+          "renderableId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
           "renderableName": "bellows-folded-surface",
-          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-          "originalOutputMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-          "activeOutputMaterialId": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+          "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "originalOutputMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "activeOutputMaterialId": "b5f922c3-c4e2-494b-902d-c64c525f6b62",
           "sourcePropertiesPreserved": true,
           "baselineSourceProperties": {
-            "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "id": "6116f625-714c-4697-880e-bd50b9b430fd",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -2282,14 +3465,14 @@
             "outputGraphBuildCount": null,
             "forceSinglePass": false,
             "alphaWrite": null,
-            "materialVersion": 396,
+            "materialVersion": 460,
             "textureSlots": {}
           },
           "requestedOverrides": {
             "blending": 0
           },
           "effectiveMaterialProperties": {
-            "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
+            "id": "b5f922c3-c4e2-494b-902d-c64c525f6b62",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -2318,7 +3501,7 @@
           "outputVariantUpdatePendingFrame": false
         },
         "drawMetadata": {
-          "requestId": "anatomy-gpu-intermediate-89",
+          "requestId": "anatomy-gpu-intermediate-21",
           "status": "ok",
           "feasibility": "F1",
           "method": "bellows-draw-metadata",
@@ -2328,10 +3511,10 @@
             "executionBackend": "webgl2"
           },
           "selectedRenderable": {
-            "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "id": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
             "name": "bellows-folded-surface",
-            "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
-            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+            "geometryId": "61ee745f-f342-4a76-92e2-30e7e6d68fe4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd"
           },
           "drawObservations": [
             {
@@ -2343,11 +3526,11 @@
                 5123,
                 0
               ],
-              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
               "renderOrder": 0,
               "material": {
-                "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
-                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "id": "b5f922c3-c4e2-494b-902d-c64c525f6b62",
+                "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
                 "type": "MeshStandardMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -2389,11 +3572,11 @@
                 5123,
                 0
               ],
-              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
               "renderOrder": 0,
               "material": {
-                "id": "88ac2ea4-8069-4e8d-aac6-c9a91dc0c55f",
-                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "id": "b5f922c3-c4e2-494b-902d-c64c525f6b62",
+                "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
                 "type": "MeshStandardMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -2547,6 +3730,7 @@
           "originalVisibilityPreserved": true,
           "originalOutputIdentityRestored": true,
           "diagnosticCloneDisposeCount": 1,
+          "ownedResourcesReleased": true,
           "borrowedDisposeCounts": {
             "sourceMaterial": 0,
             "geometry": 0,
@@ -2554,13 +3738,13 @@
           },
           "borrowedResourcesPreserved": true,
           "restoreResponse": {
-            "requestId": "anatomy-bellows-condition-90",
+            "requestId": "anatomy-bellows-condition-22",
             "generation": 1,
             "ok": true,
             "operation": "restore",
-            "transactionId": "m-inv8-webgl-C2-87",
-            "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
-            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "transactionId": "m-inv8-webgl-C2-19",
+            "renderableId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
             "renderableMaterialIdentityRestored": true,
             "geometryIdentityPreserved": true,
             "originalVisibilityPreserved": true,
@@ -2597,7 +3781,14 @@
           "expectedBlendEnabled": false,
           "transparentListClassificationRetained": true,
           "renderOrderPreserved": true,
-          "outputPolicyQualified": true
+          "outputPolicyQualified": true,
+          "nativePipelineQualified": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageDimensionsCompatible": true
         },
         "withinRendererResponse": {
           "fullFrame": {
@@ -2734,8 +3925,35 @@
         "backend": "webgl",
         "condition": "C3",
         "qualified": true,
+        "qualification": {
+          "backend": "webgl",
+          "condition": "C3",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
         "sourceMaterial": {
-          "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+          "id": "6116f625-714c-4697-880e-bd50b9b430fd",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -2757,11 +3975,11 @@
           "outputGraphBuildCount": null,
           "forceSinglePass": false,
           "alphaWrite": null,
-          "materialVersion": 436,
+          "materialVersion": 492,
           "textureSlots": {}
         },
         "effectiveOutputMaterial": {
-          "id": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+          "id": "fb0f123f-c5ff-4dc8-8cfb-0c877796b7a9",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -2786,21 +4004,35 @@
           "materialVersion": 1,
           "textureSlots": {}
         },
+        "requestedState": {
+          "condition": "C3",
+          "blending": 0,
+          "blendEnabled": false,
+          "forceSinglePass": true
+        },
+        "effectiveMaterialState": {
+          "blending": 0,
+          "transparent": true,
+          "forceSinglePass": true
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          false
+        ],
         "applyResult": {
-          "requestId": "anatomy-bellows-condition-92",
+          "requestId": "anatomy-bellows-condition-24",
           "generation": 1,
           "ok": true,
           "operation": "apply",
           "condition": "C3",
-          "transactionId": "m-inv8-webgl-C3-91",
-          "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
+          "transactionId": "m-inv8-webgl-C3-23",
+          "renderableId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
           "renderableName": "bellows-folded-surface",
-          "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-          "originalOutputMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
-          "activeOutputMaterialId": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+          "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "originalOutputMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
+          "activeOutputMaterialId": "fb0f123f-c5ff-4dc8-8cfb-0c877796b7a9",
           "sourcePropertiesPreserved": true,
           "baselineSourceProperties": {
-            "id": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "id": "6116f625-714c-4697-880e-bd50b9b430fd",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -2822,7 +4054,7 @@
             "outputGraphBuildCount": null,
             "forceSinglePass": false,
             "alphaWrite": null,
-            "materialVersion": 436,
+            "materialVersion": 492,
             "textureSlots": {}
           },
           "requestedOverrides": {
@@ -2830,7 +4062,7 @@
             "blending": 0
           },
           "effectiveMaterialProperties": {
-            "id": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
+            "id": "fb0f123f-c5ff-4dc8-8cfb-0c877796b7a9",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -2859,7 +4091,7 @@
           "outputVariantUpdatePendingFrame": false
         },
         "drawMetadata": {
-          "requestId": "anatomy-gpu-intermediate-93",
+          "requestId": "anatomy-gpu-intermediate-25",
           "status": "ok",
           "feasibility": "F1",
           "method": "bellows-draw-metadata",
@@ -2869,10 +4101,10 @@
             "executionBackend": "webgl2"
           },
           "selectedRenderable": {
-            "id": "f2db4f89-c4ce-4896-9609-a60793802014",
+            "id": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
             "name": "bellows-folded-surface",
-            "geometryId": "532ca9a1-568d-4bd1-8c26-3ccad670e723",
-            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f"
+            "geometryId": "61ee745f-f342-4a76-92e2-30e7e6d68fe4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd"
           },
           "drawObservations": [
             {
@@ -2884,11 +4116,11 @@
                 5123,
                 0
               ],
-              "objectId": "f2db4f89-c4ce-4896-9609-a60793802014",
+              "objectId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
               "renderOrder": 0,
               "material": {
-                "id": "c9cb58aa-10f7-403d-b7a3-bd9a911b5587",
-                "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+                "id": "fb0f123f-c5ff-4dc8-8cfb-0c877796b7a9",
+                "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
                 "type": "MeshStandardMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -3042,6 +4274,7 @@
           "originalVisibilityPreserved": true,
           "originalOutputIdentityRestored": true,
           "diagnosticCloneDisposeCount": 1,
+          "ownedResourcesReleased": true,
           "borrowedDisposeCounts": {
             "sourceMaterial": 0,
             "geometry": 0,
@@ -3049,13 +4282,13 @@
           },
           "borrowedResourcesPreserved": true,
           "restoreResponse": {
-            "requestId": "anatomy-bellows-condition-94",
+            "requestId": "anatomy-bellows-condition-26",
             "generation": 1,
             "ok": true,
             "operation": "restore",
-            "transactionId": "m-inv8-webgl-C3-91",
-            "renderableId": "f2db4f89-c4ce-4896-9609-a60793802014",
-            "sourceMaterialId": "cb1f01f9-813e-4b9f-b06b-f37f93dee29f",
+            "transactionId": "m-inv8-webgl-C3-23",
+            "renderableId": "0ab3f9bb-5a12-42ab-a943-80718a1db7c4",
+            "sourceMaterialId": "6116f625-714c-4697-880e-bd50b9b430fd",
             "renderableMaterialIdentityRestored": true,
             "geometryIdentityPreserved": true,
             "originalVisibilityPreserved": true,
@@ -3089,7 +4322,14 @@
           "expectedBlendEnabled": false,
           "transparentListClassificationRetained": true,
           "renderOrderPreserved": true,
-          "outputPolicyQualified": true
+          "outputPolicyQualified": true,
+          "nativePipelineQualified": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageDimensionsCompatible": true
         },
         "withinRendererResponse": {
           "fullFrame": {
@@ -3226,8 +4466,35 @@
         "backend": "native",
         "condition": "C3",
         "qualified": true,
+        "qualification": {
+          "backend": "native",
+          "condition": "C3",
+          "qualified": true,
+          "checks": {
+            "captureCompleted": true,
+            "rendererRuntimeQualified": true,
+            "rendererGenerationQualified": true,
+            "cameraAndViewportCompatible": true,
+            "sourceMaterialPreserved": true,
+            "effectiveOutputStateQualified": true,
+            "drawStateQualified": true,
+            "nativePipelineQualified": true,
+            "outputPolicyQualified": true,
+            "interventionAppliedOrBaseline": true,
+            "originalOutputIdentityRestored": true,
+            "geometryIdentityPreserved": true,
+            "visibilityRestored": true,
+            "ownedResourcesReleased": true,
+            "borrowedResourcesPreserved": true,
+            "repeatabilityWithinTolerance": true,
+            "restoredBaselineWithinTolerance": true,
+            "imageAvailable": true,
+            "imageDimensionsCompatible": true
+          },
+          "failedChecks": []
+        },
         "sourceMaterial": {
-          "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+          "id": "1db71c70-6813-4c1a-85cb-105a23498782",
           "type": "MeshStandardMaterial",
           "family": "MeshStandardMaterial",
           "color": "111827",
@@ -3253,7 +4520,7 @@
           "textureSlots": {}
         },
         "effectiveOutputMaterial": {
-          "id": "545694a0-8659-45e9-b1c7-956b15eda746",
+          "id": "c5bf35a5-3fac-43ee-b45d-a8299187495c",
           "type": "MeshStandardNodeMaterial",
           "family": "MaterialAwareStandardNodeMaterial",
           "color": "111827",
@@ -3278,21 +4545,35 @@
           "materialVersion": 1,
           "textureSlots": {}
         },
+        "requestedState": {
+          "condition": "C3",
+          "blending": 0,
+          "blendEnabled": false,
+          "forceSinglePass": true
+        },
+        "effectiveMaterialState": {
+          "blending": 0,
+          "transparent": true,
+          "forceSinglePass": true
+        },
+        "actualPipelineBlendEnabledByDraw": [
+          false
+        ],
         "applyResult": {
-          "requestId": "anatomy-bellows-condition-96",
+          "requestId": "anatomy-bellows-condition-28",
           "generation": 1,
           "ok": true,
           "operation": "apply",
           "condition": "C3",
-          "transactionId": "m-inv8-native-C3-95",
-          "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+          "transactionId": "m-inv8-native-C3-27",
+          "renderableId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
           "renderableName": "bellows-folded-surface",
-          "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-          "originalOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
-          "activeOutputMaterialId": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+          "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+          "originalOutputMaterialId": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
+          "activeOutputMaterialId": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
           "sourcePropertiesPreserved": true,
           "baselineSourceProperties": {
-            "id": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "id": "1db71c70-6813-4c1a-85cb-105a23498782",
             "type": "MeshStandardMaterial",
             "family": "MeshStandardMaterial",
             "color": "111827",
@@ -3322,7 +4603,7 @@
             "blending": 0
           },
           "effectiveMaterialProperties": {
-            "id": "3bf5a216-2ef2-4664-8cc0-42f4e63938b7",
+            "id": "2b4d995c-67f1-4572-ad57-1cc0b8726419",
             "type": "MeshStandardNodeMaterial",
             "family": "MaterialAwareStandardNodeMaterial",
             "color": "111827",
@@ -3351,7 +4632,7 @@
           "outputVariantUpdatePendingFrame": true
         },
         "drawMetadata": {
-          "requestId": "anatomy-gpu-intermediate-97",
+          "requestId": "anatomy-gpu-intermediate-29",
           "status": "ok",
           "feasibility": "F1",
           "method": "bellows-draw-metadata",
@@ -3361,20 +4642,20 @@
             "executionBackend": "webgpu"
           },
           "selectedRenderable": {
-            "id": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+            "id": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
             "name": "bellows-folded-surface",
-            "geometryId": "db1fc352-a02d-4397-8d2e-b406eccd943f",
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502"
+            "geometryId": "aa6d7bbf-9695-4f09-ac28-4060ecf2ffcb",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782"
           },
           "drawObservations": [
             {
               "order": 0,
               "command": "drawIndexed",
-              "objectId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
+              "objectId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
               "renderOrder": 0,
               "material": {
-                "id": "545694a0-8659-45e9-b1c7-956b15eda746",
-                "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+                "id": "c5bf35a5-3fac-43ee-b45d-a8299187495c",
+                "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
                 "type": "MeshStandardNodeMaterial",
                 "color": "111827",
                 "opacity": 0.16,
@@ -3393,8 +4674,13 @@
                 "outputTransform": "material-aware",
                 "outputInterventionId": "B0"
               },
-              "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
-              "pipelineId": null,
+              "effectiveMaterialState": {
+                "blending": 0,
+                "transparent": true,
+                "forceSinglePass": true
+              },
+              "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
+              "pipelineId": "device-1-pipeline-15",
               "passId": null,
               "drawParameters": {
                 "vertexCount": 240,
@@ -3405,10 +4691,60 @@
               "gpuBlendEnabled": false,
               "gpuBlendDescriptor": null,
               "gpuDepthCompare": "less-equal",
+              "inferredMaterialBlendEnabled": false,
+              "inferredMaterialBlendEvidence": "material-flags-inference-F3",
+              "nativePipelineBlendQualification": {
+                "status": "qualified",
+                "evidence": "bound-pipeline-creation-descriptor",
+                "pipelineIdentity": "device-1-pipeline-15",
+                "deviceIdentity": "device-1",
+                "createdBy": "GPUDevice.createRenderPipeline",
+                "descriptorProvenance": "gpu-device-create-render-pipeline-argument",
+                "bindingProvenance": "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
+                "targetCount": 1,
+                "colorTargetFormat": "bgra8unorm",
+                "colorTargetWriteMask": 15,
+                "blendEnabled": false,
+                "blendDescriptor": null,
+                "depthStencil": {
+                  "format": "depth24plus",
+                  "depthWriteEnabled": false,
+                  "depthCompare": "less-equal",
+                  "stencilReadMask": null,
+                  "stencilWriteMask": null,
+                  "stencilFront": null,
+                  "stencilBack": null
+                },
+                "multisample": {
+                  "count": 4,
+                  "alphaToCoverageEnabled": false,
+                  "mask": 4294967295
+                },
+                "primitive": {
+                  "topology": "triangle-list",
+                  "frontFace": "ccw",
+                  "cullMode": "none",
+                  "stripIndexFormat": null
+                },
+                "creationGeneration": 1
+              },
+              "nativePipelineRenderContext": {
+                "colorTargetFormats": [
+                  "bgra8unorm"
+                ],
+                "depthStencilFormat": "depth24plus",
+                "sampleCount": 4
+              },
               "info": {
                 "autoReset": true,
-                "frame": 357,
-                "calls": 342
+                "frame": 443,
+                "calls": 434
+              },
+              "nativeDrawExecution": {
+                "backendDrawReturned": true,
+                "drawCallsBefore": 29,
+                "drawCallsAfter": 30,
+                "completed": true
               }
             }
           ],
@@ -3532,6 +4868,7 @@
           "originalVisibilityPreserved": true,
           "originalOutputIdentityRestored": true,
           "diagnosticCloneDisposeCount": 0,
+          "ownedResourcesReleased": true,
           "borrowedDisposeCounts": {
             "sourceMaterial": 0,
             "geometry": 0,
@@ -3539,13 +4876,13 @@
           },
           "borrowedResourcesPreserved": true,
           "restoreResponse": {
-            "requestId": "anatomy-bellows-condition-98",
+            "requestId": "anatomy-bellows-condition-30",
             "generation": 1,
             "ok": true,
             "operation": "restore",
-            "transactionId": "m-inv8-native-C3-95",
-            "renderableId": "446d7486-3c1c-4847-bd32-0adfb290cd3a",
-            "sourceMaterialId": "3e2aa3b8-4100-4cd5-8d9b-06fd11207502",
+            "transactionId": "m-inv8-native-C3-27",
+            "renderableId": "003f2910-3b20-43ad-801c-0d1d4da1c88d",
+            "sourceMaterialId": "1db71c70-6813-4c1a-85cb-105a23498782",
             "renderableMaterialIdentityRestored": false,
             "geometryIdentityPreserved": true,
             "originalVisibilityPreserved": true,
@@ -3579,7 +4916,14 @@
           "expectedBlendEnabled": false,
           "transparentListClassificationRetained": true,
           "renderOrderPreserved": true,
-          "outputPolicyQualified": true
+          "outputPolicyQualified": true,
+          "nativePipelineQualified": true,
+          "originalOutputIdentityRestored": true,
+          "geometryIdentityPreserved": true,
+          "visibilityRestored": true,
+          "borrowedResourcesPreserved": true,
+          "restoredBaselineWithinTolerance": true,
+          "imageDimensionsCompatible": true
         },
         "withinRendererResponse": {
           "fullFrame": {
@@ -3717,6 +5061,19 @@
       {
         "condition": "C0",
         "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "webglTrialQualified": true,
+            "nativeTrialQualified": true,
+            "imagesAvailable": true,
+            "representationCompatible": true,
+            "geometryCompatible": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "crossRendererDifference": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -3819,6 +5176,19 @@
       {
         "condition": "C1",
         "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "webglTrialQualified": true,
+            "nativeTrialQualified": true,
+            "imagesAvailable": true,
+            "representationCompatible": true,
+            "geometryCompatible": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "crossRendererDifference": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -3921,6 +5291,19 @@
       {
         "condition": "C2",
         "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "webglTrialQualified": true,
+            "nativeTrialQualified": true,
+            "imagesAvailable": true,
+            "representationCompatible": true,
+            "geometryCompatible": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "crossRendererDifference": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4023,6 +5406,19 @@
       {
         "condition": "C3",
         "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "webglTrialQualified": true,
+            "nativeTrialQualified": true,
+            "imagesAvailable": true,
+            "representationCompatible": true,
+            "geometryCompatible": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "crossRendererDifference": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4126,6 +5522,17 @@
     "differenceOfResponses": [
       {
         "condition": "C1",
+        "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "baselineConditionPairQualified": true,
+            "interventionConditionPairQualified": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "differenceOfResponses": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4136,9 +5543,9 @@
               0.00011834095449080254
             ],
             "perChannelMeanSignedDifference": [
-              -2.840182907779261e-05,
-              1.4200914538896305e-05,
-              7.100457269448152e-05
+              -0.00002840182907779261,
+              0.000014200914538896305,
+              0.00007100457269448152
             ],
             "changedPixelCount": 0,
             "thresholdPerChannel": 8
@@ -4209,16 +5616,16 @@
           },
           "unaffectedBackgroundCandidate": {
             "sampleCount": 189482,
-            "meanAbsoluteRgbDifference": 1.7591820507137004e-06,
+            "meanAbsoluteRgbDifference": 0.0000017591820507137004,
             "perChannelMeanAbsoluteDifference": [
               0,
               0,
-              5.277546152141101e-06
+              0.000005277546152141101
             ],
             "perChannelMeanSignedDifference": [
               0,
               0,
-              -5.277546152141101e-06
+              -0.000005277546152141101
             ],
             "changedPixelCount": 0,
             "thresholdPerChannel": 8
@@ -4259,6 +5666,17 @@
       },
       {
         "condition": "C2",
+        "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "baselineConditionPairQualified": true,
+            "interventionConditionPairQualified": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "differenceOfResponses": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4342,16 +5760,16 @@
           },
           "unaffectedBackgroundCandidate": {
             "sampleCount": 189482,
-            "meanAbsoluteRgbDifference": 3.5183641014274007e-06,
+            "meanAbsoluteRgbDifference": 0.0000035183641014274007,
             "perChannelMeanAbsoluteDifference": [
-              5.277546152141101e-06,
+              0.000005277546152141101,
               0,
-              5.277546152141101e-06
+              0.000005277546152141101
             ],
             "perChannelMeanSignedDifference": [
-              -5.277546152141101e-06,
+              -0.000005277546152141101,
               0,
-              -5.277546152141101e-06
+              -0.000005277546152141101
             ],
             "changedPixelCount": 0,
             "thresholdPerChannel": 8
@@ -4392,6 +5810,17 @@
       },
       {
         "condition": "C3",
+        "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "baselineConditionPairQualified": true,
+            "interventionConditionPairQualified": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "differenceOfResponses": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4475,16 +5904,16 @@
           },
           "unaffectedBackgroundCandidate": {
             "sampleCount": 189482,
-            "meanAbsoluteRgbDifference": 1.2314274354995901e-05,
+            "meanAbsoluteRgbDifference": 0.000012314274354995901,
             "perChannelMeanAbsoluteDifference": [
-              1.0555092304282202e-05,
-              5.277546152141101e-06,
-              2.1110184608564403e-05
+              0.000010555092304282202,
+              0.000005277546152141101,
+              0.000021110184608564403
             ],
             "perChannelMeanSignedDifference": [
-              -1.0555092304282202e-05,
-              -5.277546152141101e-06,
-              -2.1110184608564403e-05
+              -0.000010555092304282202,
+              -0.000005277546152141101,
+              -0.000021110184608564403
             ],
             "changedPixelCount": 0,
             "thresholdPerChannel": 8
@@ -4527,6 +5956,20 @@
     "factorialInteraction": {
       "webgl": {
         "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "c0TrialQualified": true,
+            "c1TrialQualified": true,
+            "c2TrialQualified": true,
+            "c3TrialQualified": true,
+            "imagesAvailable": true,
+            "representationCompatible": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "metrics": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4660,6 +6103,20 @@
       },
       "native": {
         "qualified": true,
+        "qualification": {
+          "qualified": true,
+          "checks": {
+            "c0TrialQualified": true,
+            "c1TrialQualified": true,
+            "c2TrialQualified": true,
+            "c3TrialQualified": true,
+            "imagesAvailable": true,
+            "representationCompatible": true,
+            "maskCompatible": true
+          },
+          "failedChecks": []
+        },
+        "metricUse": "qualified",
         "metrics": {
           "fullFrame": {
             "sampleCount": 211254,
@@ -4743,16 +6200,16 @@
           },
           "unaffectedBackgroundCandidate": {
             "sampleCount": 189482,
-            "meanAbsoluteRgbDifference": 7.0367282028548014e-06,
+            "meanAbsoluteRgbDifference": 0.0000070367282028548014,
             "perChannelMeanAbsoluteDifference": [
-              5.277546152141101e-06,
-              5.277546152141101e-06,
-              1.0555092304282202e-05
+              0.000005277546152141101,
+              0.000005277546152141101,
+              0.000010555092304282202
             ],
             "perChannelMeanSignedDifference": [
-              -5.277546152141101e-06,
-              -5.277546152141101e-06,
-              -1.0555092304282202e-05
+              -0.000005277546152141101,
+              -0.000005277546152141101,
+              -0.000010555092304282202
             ],
             "changedPixelCount": 0,
             "thresholdPerChannel": 8
@@ -4792,7 +6249,23 @@
         }
       }
     },
-    "allPrimaryConditionsQualified": true
+    "allPrimaryConditionsQualified": true,
+    "qualification": {
+      "qualified": true,
+      "checks": {
+        "baselineReproduced": true,
+        "baselineRepeatability": true,
+        "completeTrialSet": true,
+        "allTrialsQualified": true,
+        "allConditionPairsQualified": true,
+        "allDifferenceOfResponsesQualified": true,
+        "allFactorialInteractionsQualified": true,
+        "finalRestoration": true,
+        "groundGlassRestoration": true,
+        "runtimeHealthy": true
+      },
+      "failedChecks": []
+    }
   },
   "contextControl": {
     "D0": "Original surrounding scene, all authored Anatomy renderables visible.",
@@ -4836,6 +6309,7 @@
         "meanSignedLuminanceDifference": 0
       }
     },
+    "finalSceneStateRestored": true,
     "groundGlass": {
       "contentfulBeforeAndAfter": true,
       "repeatNoise": {
@@ -4852,37 +6326,22 @@
       },
       "finalRestoration": {
         "sampleCount": 211768,
-        "meanAbsoluteRgbDifference": 0,
+        "meanAbsoluteRgbDifference": 0.000890912067293768,
         "perChannelMeanAbsoluteDifference": [
-          0,
-          0,
-          0
+          0.000897208265649201,
+          0.0009066525631823505,
+          0.0008688753730497525
         ],
         "changedPixelCount": 0,
         "changedPixelFraction": 0,
-        "meanSignedLuminanceDifference": 0
-      }
+        "meanSignedLuminanceDifference": -0.0009019171923992295
+      },
+      "qualified": true
     },
     "nativeConsoleErrors": [],
     "noInvalidNativeBlendDiagnostics": true,
     "noPageErrors": true,
-    "productionIsolationPendingBuildVerification": false,
-    "productionIsolationVerification": {
-      "status": "passed",
-      "productionBuild": "npm run build passed",
-      "productionPreviewTest": "2 passed: Architecture Rise stays WebGL and Anatomy denies the material-aware WebGPU candidate",
-      "loadedJavaScriptExcludedIdentifiers": [
-        "AnatomyBellowsCompositingIntervention",
-        "AnatomyBellowsDrawMetadataCapture",
-        "anatomy-bellows-compositing-intervention",
-        "bellows-draw-metadata",
-        "AnatomyGpuBlendIntermediateProbe",
-        "anatomy-gpu-blend-intermediate",
-        "GPU_BLEND_INTERMEDIATE"
-      ],
-      "applicationBuildSourceSha": "5fbe82d517eaffe231a6bdc8272dfaff82f05461",
-      "verifiedAtUtc": "2026-10-18T15:31:57Z"
-    }
+    "productionIsolationPendingBuildVerification": true
   },
   "interpretation": {
     "outcome": "TCI-3",
