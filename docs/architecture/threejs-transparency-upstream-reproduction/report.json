@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "study": "M-INV10",
+  "title": "Three.js transparency upstream reproduction and version regression",
+  "base": {
+    "target": "main",
+    "sha": "5d88d8f629b062bb1177b68616b86204d5dc152f",
+    "requiredPr269Ancestor": "5d88d8f629b062bb1177b68616b86204d5dc152f",
+    "productionThreeDependencyUnchanged": "0.186.0"
+  },
+  "classification": {
+    "code": "UPR-3",
+    "label": "DOCUMENTED COMPOSITING/OUTPUT DIFFERENCE",
+    "confidence": "moderate for the output-stage explanation; high for the fixture results and repeatability; limited for exact real-Anatomy causality",
+    "upstreamIssueDraftPrepared": false,
+    "upstreamIssueDraftReason": "The stock modes do not share an identical output contract, the transparent-canvas evidence is browser presentation rather than target-alpha readback, and the opaque-background differences follow the documented WebGL/WebGPU output-stage split."
+  },
+  "provenance": {
+    "versions": {
+      "r184": {
+        "packageVersion": "0.184.0",
+        "runtimeRevision": "184",
+        "lockfileResolution": true
+      },
+      "r185": {
+        "packageVersion": "0.185.0",
+        "runtimeRevision": "185",
+        "lockfileResolution": true
+      },
+      "r186": {
+        "packageVersion": "0.186.0",
+        "runtimeRevision": "186",
+        "lockfileResolution": true
+      }
+    },
+    "browser": {
+      "name": "chromium",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
+    },
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64"
+    },
+    "hardwareAccelerationIndependentlyVerified": false,
+    "viewport": {
+      "width": 320,
+      "height": 320
+    },
+    "deviceScaleFactor": 1,
+    "nativeWebGpuCaptureCount": 65,
+    "webglCaptureCount": 33,
+    "allRequestedRevisionsMatchedRuntimeAndLock": true,
+    "expandedRunEvidence": "test-results/threejs-transparency-upstream-reproduction/evidence.json (ignored)",
+    "retainedScreenshots": [
+      "test-results/threejs-transparency-upstream-reproduction/r184-G-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-G-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-W-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-W-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-A-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-A-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-G-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-G-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-W-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-W-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-A-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-A-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F2-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F2-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F0-transparent-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F2-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-light-o1.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-light-o1.png"
+    ]
+  },
+  "method": {
+    "fixtureIndependence": "Standalone Vite/Playwright fixture; no React Three Fiber, app routes, scene/task code, material tracker, Ground Glass, capture events, or production renderer changes.",
+    "fixtures": {
+      "F0": "One transparent plane over a controlled background.",
+      "F1": "Two depth-separated, projected-overlapping transparent planes with controlled render order.",
+      "F2": "One BufferGeometry mesh containing angled overlapping pleat quads; center Raycaster reports at least two surface intersections."
+    },
+    "families": [
+      "MeshBasicMaterial / MeshBasicNodeMaterial",
+      "MeshStandardMaterial / MeshStandardNodeMaterial"
+    ],
+    "modes": {
+      "G": "WebGLRenderer with stock material/output.",
+      "W": "WebGPURenderer with stock material/output; native WebGPU was required and fallback rejected.",
+      "A": "WebGPURenderer with a separate minimal copy of the app material-aware NodeMaterial setupOutput transform."
+    },
+    "opacities": [
+      0.16,
+      0.5,
+      1.0
+    ],
+    "materialState": {
+      "transparent": true,
+      "blending": "NormalBlending",
+      "depthTest": true,
+      "depthWrite": false,
+      "side": "DoubleSide",
+      "premultipliedAlpha": false,
+      "forceSinglePass": false,
+      "toneMapped": true
+    },
+    "backgrounds": {
+      "B0": "Opaque light/dark background. Includes a green HTML sentinel to distinguish an opaque canvas presentation from visible page bleed-through.",
+      "B1": "Transparent canvas control over an HTML checkerboard.",
+      "B2": "r186 F0 scene background versus explicit renderer clear."
+    },
+    "representation": "Browser viewport PNG presentation screenshot including page compositor contribution. It is not a raw framebuffer or fragment-alpha readback.",
+    "captureMeasurement": "RGBA8 browser viewport PNG screenshot decoded locally; numeric differences use matching RGB screenshots/ROIs. The PNG alpha describes the browser screenshot and is not an independent GPU canvas-alpha or fragment-alpha readback.",
+    "rendererCounters": "Three.js renderer.info.autoReset was disabled for measurement counters only. Each capture stores counter before/after and per-capture deltas. Counter field names differ by backend/version; fixture object draw identity/order is separately recorded through onBeforeRender callbacks."
+  },
+  "evidenceSummary": {
+    "captureConditions": 98,
+    "sameConditionRepeatCaptures": 98,
+    "pairComparisons": 130,
+    "sameConditionPixelIdenticalRepeats": 98,
+    "repeatNoiseRgbMaeMinMax": [
+      0,
+      0
+    ],
+    "rendererResourceCleanupSets": 27,
+    "ownedResourceRecords": 584,
+    "allOwnedMaterialAndGeometryResourcesDisposedExactlyOnce": true,
+    "negativeControlAssertions": [
+      {
+        "name": "wrong-version",
+        "status": "guarded-by-runtime-revision-and-lockfile-equality-assertions"
+      },
+      {
+        "name": "native-fallback",
+        "status": "guarded-by-GPUCanvasContext-method-and-backend-assertions"
+      },
+      {
+        "name": "wrong-material-family",
+        "status": "guarded-by-recorded-constructor-name-and-family"
+      },
+      {
+        "name": "wrong-opacity-or-transparent-classification",
+        "status": "guarded-by-exact-values-at-0.16-0.50-1.00-and-transparent-true"
+      },
+      {
+        "name": "blend-depth-side-pipeline-state",
+        "status": "guarded-by-per-capture-material-state-assertions"
+      },
+      {
+        "name": "draw-count-order-and-projected-overlap",
+        "status": "guarded-by-observed-render-callback-order-and-raycaster-intersection-count"
+      },
+      {
+        "name": "viewport-camera-dpr-color-and-tone-policy",
+        "status": "recorded-and-asserted-per-capture"
+      },
+      {
+        "name": "background-alpha-and-page-compositor",
+        "status": "opaque-background-page-sentinel-and-transparent-canvas-checkerboard-presentation-checked; target-alpha-not-claimed"
+      },
+      {
+        "name": "same-condition-repeatability",
+        "status": "every-condition-repeated-with-pixel-difference-metrics"
+      },
+      {
+        "name": "incompatible-image-representations",
+        "status": "all-numeric-comparisons-use-the-same-browser-presentation-PNG-representation"
+      },
+      {
+        "name": "resource-leak-and-double-dispose",
+        "status": "owned-material-and-geometry-dispose-events-counted-exactly-once"
+      }
+    ]
+  },
+  "r186OpaqueB0StandardStockWebglVsWebgpu": {
+    "F0": {
+      "0.16": {
+        "rgbMae": 6.333333,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 18.364583,
+        "changedRgbPixels": 102400
+      },
+      "0.5": {
+        "rgbMae": 34.333333,
+        "maxChannelDifference": 56,
+        "fullFrameRgbMae": 27.989583,
+        "changedRgbPixels": 102400
+      },
+      "1": {
+        "rgbMae": 0.333333,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 16.302083,
+        "changedRgbPixels": 102400
+      }
+    },
+    "F1": {
+      "0.16": {
+        "rgbMae": 12,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 18.447917,
+        "changedRgbPixels": 102400
+      },
+      "0.5": {
+        "rgbMae": 45,
+        "maxChannelDifference": 60,
+        "fullFrameRgbMae": 31.869792,
+        "changedRgbPixels": 102400
+      },
+      "1": {
+        "rgbMae": 0.333333,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 14.020833,
+        "changedRgbPixels": 102400
+      }
+    },
+    "F2": {
+      "0.16": {
+        "rgbMae": 17.375962,
+        "maxChannelDifference": 29,
+        "fullFrameRgbMae": 21.378385,
+        "changedRgbPixels": 102400
+      },
+      "0.5": {
+        "rgbMae": 43.631346,
+        "maxChannelDifference": 75,
+        "fullFrameRgbMae": 32.595677,
+        "changedRgbPixels": 102400
+      },
+      "1": {
+        "rgbMae": 2.004295,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 15.019844,
+        "changedRgbPixels": 67072
+      }
+    }
+  },
+  "r186OpaqueB0StandardStockWebglVsMaterialAwareAdapter": {
+    "F0": {
+      "0.16": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      },
+      "0.5": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      },
+      "1": {
+        "rgbMae": 0.333333,
+        "maxChannelDifference": 1,
+        "fullFrameRgbMae": 0.114583,
+        "changedRgbPixels": 35200
+      }
+    },
+    "F1": {
+      "0.16": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      },
+      "0.5": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      },
+      "1": {
+        "rgbMae": 0.333333,
+        "maxChannelDifference": 1,
+        "fullFrameRgbMae": 0.145833,
+        "changedRgbPixels": 44800
+      }
+    },
+    "F2": {
+      "0.16": {
+        "rgbMae": 0.030962,
+        "maxChannelDifference": 1,
+        "fullFrameRgbMae": 0.015573,
+        "changedRgbPixels": 4784
+      },
+      "0.5": {
+        "rgbMae": 0.275705,
+        "maxChannelDifference": 1,
+        "fullFrameRgbMae": 0.115,
+        "changedRgbPixels": 35328
+      },
+      "1": {
+        "rgbMae": 0.030962,
+        "maxChannelDifference": 1,
+        "fullFrameRgbMae": 0.015573,
+        "changedRgbPixels": 4784
+      }
+    }
+  },
+  "r186F1StandardOpacityResponseSubjectRgbMae": {
+    "G": {
+      "o0ToO1SubjectRgbMae": 72.666667,
+      "o0ToO2SubjectRgbMae": 111.333333,
+      "transparentRemainedTrueAtAllOpacities": true
+    },
+    "W": {
+      "o0ToO1SubjectRgbMae": 39.666667,
+      "o0ToO2SubjectRgbMae": 123,
+      "transparentRemainedTrueAtAllOpacities": true
+    },
+    "A": {
+      "o0ToO1SubjectRgbMae": 72.666667,
+      "o0ToO2SubjectRgbMae": 111,
+      "transparentRemainedTrueAtAllOpacities": true
+    }
+  },
+  "versionControls": {
+    "b0F1StockWebglAndWebgpuR184ToR185": {
+      "allTestedOpacitiesPixelIdentical": true,
+      "testedOpacities": [
+        0.16,
+        0.5,
+        1.0
+      ]
+    },
+    "b1TransparentCanvasWebgpu": {
+      "r184ToR185": {
+        "rgbMae": 13.333333,
+        "maxChannelDifference": 30,
+        "fullFrameRgbMae": 4.583333,
+        "changedRgbPixels": 35200
+      },
+      "r185ToR186": {
+        "rgbMae": 1,
+        "maxChannelDifference": 2,
+        "fullFrameRgbMae": 0.34375,
+        "changedRgbPixels": 35200
+      },
+      "r184ToR186": {
+        "rgbMae": 14.333333,
+        "maxChannelDifference": 32,
+        "fullFrameRgbMae": 4.927083,
+        "changedRgbPixels": 35200
+      },
+      "qualification": "Screenshots include the browser compositor; canvas target alpha was not independently read."
+    },
+    "b2SceneBackgroundVersusExplicitClearR186": {
+      "webgl": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      },
+      "webgpu": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      }
+    }
+  },
+  "upstreamReconnaissance": [
+    {
+      "issue": "https://github.com/mrdoob/three.js/issues/33104",
+      "title": "Renderer: Blending with transparent background is incorrect",
+      "reportedVersion": "r183; associated with r184",
+      "mechanism": "WebGPURenderer transparent-background/premultiplied-alpha blending and browser compositor interaction.",
+      "fixOrRelatedReference": "https://github.com/mrdoob/three.js/issues/33369",
+      "r186Relevance": "Transparent-canvas control only; this does not prove the same mechanism explains the application’s opaque Anatomy scene.",
+      "evidenceGap": "No raw render-target alpha or source-fragment readback."
+    },
+    {
+      "issue": "https://github.com/mrdoob/three.js/issues/33369",
+      "title": "WebGPURenderer Must Honor the Compositor Contract",
+      "reportedVersion": "r184; addressed in r185 via https://github.com/mrdoob/three.js/pull/33457",
+      "mechanism": "Ordering of premultiplication, tone mapping, color-space conversion, and browser composition.",
+      "r186Relevance": "The r184-to-r185 native WebGPU B1 presentation delta is consistent with a transition in this contract; r185-to-r186 is small. B0 opaque results are not explained by this transparent-canvas fix alone.",
+      "evidenceGap": "Presentation screenshot only; no target-alpha qualification."
+    },
+    {
+      "issue": "https://github.com/mrdoob/three.js/issues/34837",
+      "title": "convertToTexture after renderOutput does not preserve alpha",
+      "reportedVersion": "r186; fix PR https://github.com/mrdoob/three.js/pull/34855 targets the subsequent development line.",
+      "mechanism": "Specific postprocessing flow using output rendering and texture conversion.",
+      "r186Relevance": "Not reproduced or invoked by the Anatomy on-screen path; this standalone fixture does not use that postprocessing operation chain.",
+      "evidenceGap": "No application call site for the implicated path; no conclusion about that issue from this fixture."
+    }
+  ],
+  "retainedResearchDecisions": {
+    "M_INV8": "TCI-3 — PARTIAL CONTRIBUTION ONLY",
+    "M_INV9": "OAR-1 — QUALIFIED OPACITY-DEPENDENT CROSS-RENDERER RESPONSE",
+    "Q2": "MEASURABLE INSTRUMENTATION PERTURBATION",
+    "PBI_3": "PERTURBATION REPRODUCED BUT NOT UNIQUELY LOCALIZED",
+    "N2": "CONTROLLED PROXY IMPROVEMENT",
+    "G2": "PARTIAL STAGE ATTRIBUTION",
+    "M2": "OPT-IN IMPLEMENTATION INCOMPLETE",
+    "M_INV5IntermediatePixels": "F2 evidence tier; not promoted.",
+    "productionCorrectionOrUpstreamIssue": "Not authorized or proposed by this research result."
+  },
+  "nextAction": "Make an explicit application-level output contract decision before any separate opt-in implementation work; keep production behavior and Three.js dependency unchanged.",
+  "limitations": [
+    "Browser-presentation screenshots include browser composition and do not reveal actual canvas target alpha or fragment alpha.",
+    "The orthographic F2 geometry is a small folded-pleat analogue, not the authored Bellows mesh, Anatomy lighting, or full scene occlusion.",
+    "Hardware acceleration was not independently verified despite actual WebGPU API/context qualification.",
+    "The cross-renderer stock output configurations are not output-contract equivalent; their difference alone is not an upstream defect proof.",
+    "The adapter comparison demonstrates a bounded output-stage effect, not that the adapter alone explains the complete real-scene response."
+  ],
+  "validation": {
+    "standaloneVersionMatrix": {
+      "command": "experiments/threejs-transparency-upstream-reproduction/node_modules/.bin/playwright test --config=experiments/threejs-transparency-upstream-reproduction/playwright.config.ts --workers=1",
+      "status": "passed",
+      "captures": 98,
+      "pairComparisons": 130,
+      "sameConditionPixelIdenticalRepeats": 98,
+      "nativeWebGpuFallback": "rejected; all requested WebGPU captures used native GPUCanvasContext APIs"
+    },
+    "standaloneHarnessTypecheck": {
+      "status": "passed",
+      "command": "tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --types node --typeRoots <primary-repo>/node_modules/@types --skipLibCheck --allowSyntheticDefaultImports experiments/threejs-transparency-upstream-reproduction/run.spec.ts"
+    },
+    "repositoryCiLocal": {
+      "status": "passed",
+      "steps": [
+        "check:css",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "testFilesPassed": 266,
+      "testsPassed": 2471
+    },
+    "productionPreviewIsolation": {
+      "status": "passed",
+      "testsPassed": 2,
+      "test": "src/tests/e2e/architecture-rise-webgpu-production.spec.ts"
+    },
+    "productionBundleScan": {
+      "status": "passed",
+      "searched": [
+        "threejs-transparency-upstream-reproduction",
+        "adapter-materials",
+        "Three.js 0.184.0/0.185.0 package identifiers",
+        "M-INV10 identifiers"
+      ],
+      "matches": 0
+    },
+    "rootDependencyLockfile": "unchanged"
+  }
+}

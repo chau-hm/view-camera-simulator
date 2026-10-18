@@ -1,0 +1,13 @@
+{
+  "name": "threejs-transparency-upstream-reproduction",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test --config ./playwright.config.ts",
+    "test:smoke": "THREE_TRANSPARENCY_SMOKE=1 playwright test --config ./playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "vite": "8.1.4"
+  }
+}
