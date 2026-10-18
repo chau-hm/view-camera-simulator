@@ -67,6 +67,22 @@ export type AnatomyNativeFramebufferComparison = Readonly<{
   }>[];
 }>;
 
+export type AnatomyNativeFramebufferSignedDifference = Readonly<{
+  index: number;
+  x: number;
+  y: number;
+  first: readonly [number, number, number, number];
+  second: readonly [number, number, number, number];
+  /** Signed channel delta, second minus first, in normalized RGBA byte order. */
+  signedDelta: readonly [number, number, number, number];
+}>;
+
+export type AnatomyNativeFramebufferSignedDifferenceResult = Readonly<{
+  compatible: boolean;
+  mismatches: readonly string[];
+  changedPixels: readonly AnatomyNativeFramebufferSignedDifference[];
+}>;
+
 const channelNames = ["red", "green", "blue", "alpha"] as const;
 
 /** Removes r186's 256-byte WebGPU row padding and normalizes supported BGRA attachments to RGBA. */
@@ -153,6 +169,41 @@ const metadataMismatches = (
 ): string[] => metadataFields.flatMap((field) =>
   JSON.stringify(first[field]) === JSON.stringify(second[field]) ? [] : [String(field)],
 );
+
+/** Produces a stable, full-frame list of signed byte changes after the same strict metadata gate as raw parity. */
+export const compareAnatomyNativeFramebufferSignedDifferences = (
+  first: AnatomyNativeFramebuffer,
+  second: AnatomyNativeFramebuffer,
+): AnatomyNativeFramebufferSignedDifferenceResult => {
+  const mismatches = metadataMismatches(first.metadata, second.metadata);
+  if (!Number.isInteger(first.metadata.width) || first.metadata.width < 1 ||
+      !Number.isInteger(first.metadata.height) || first.metadata.height < 1) mismatches.push("framebufferDimensions");
+  const expectedFirstBytes = first.metadata.width * first.metadata.height * 4;
+  const expectedSecondBytes = second.metadata.width * second.metadata.height * 4;
+  if (first.rgba.length !== expectedFirstBytes) mismatches.push("firstRGBAByteLength");
+  if (second.rgba.length !== expectedSecondBytes) mismatches.push("secondRGBAByteLength");
+  if (mismatches.length > 0) return { compatible: false, mismatches: [...new Set(mismatches)], changedPixels: [] };
+
+  const changedPixels: AnatomyNativeFramebufferSignedDifference[] = [];
+  const pixelCount = first.metadata.width * first.metadata.height;
+  for (let index = 0; index < pixelCount; index += 1) {
+    const offset = index * 4;
+    const firstRgba = [first.rgba[offset]!, first.rgba[offset + 1]!, first.rgba[offset + 2]!, first.rgba[offset + 3]!] as const;
+    const secondRgba = [second.rgba[offset]!, second.rgba[offset + 1]!, second.rgba[offset + 2]!, second.rgba[offset + 3]!] as const;
+    const signedDelta = secondRgba.map((value, channel) => value - firstRgba[channel]!) as unknown as readonly [number, number, number, number];
+    if (signedDelta.some((delta) => delta !== 0)) {
+      changedPixels.push({
+        index,
+        x: index % first.metadata.width,
+        y: Math.floor(index / first.metadata.width),
+        first: firstRgba,
+        second: secondRgba,
+        signedDelta,
+      });
+    }
+  }
+  return { compatible: true, mismatches: [], changedPixels };
+};
 
 const compareIndices = (
   first: Uint8Array,

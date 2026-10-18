@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
+import * as THREE from "three";
 import {
   LESSON_ZERO_STEPS,
   resolveLessonZeroCameraPresentation,
@@ -21,11 +22,13 @@ import {
   type AnatomyGpuRgbaSample,
 } from "../../render/backend/anatomyGpuBlendIntermediate";
 import {
+  compareAnatomyNativeFramebufferSignedDifferences,
   compareAnatomyNativeFramebuffers,
   mapAnatomyScreenshotPixelsToFramebuffer,
   type AnatomyNativeFramebuffer,
   type AnatomyNativeFramebufferMetadata,
 } from "../../render/backend/anatomyNativeFramebufferParity";
+import type { AnatomyNativeBoundarySelection } from "../../render/backend/anatomyNativeWebGpuDrawBoundaryCapture";
 import {
   anatomyMaskBounds,
   compareAnatomyImages,
@@ -82,6 +85,7 @@ type ProbeRequest = Readonly<{
   method: AnatomyGpuCaptureMethod | "calibration";
   renderableId?: string;
   sourceMaterialId?: string;
+  boundarySelection?: AnatomyNativeBoundarySelection;
   maskPixelIndices?: readonly number[];
   samplePixelIndices?: readonly number[];
   baselineCanvas?: Readonly<{
@@ -2921,6 +2925,730 @@ test("M-INV6 qualifies final-only and pass-segmented native Anatomy raw framebuf
       body: finalGroundGlassPng,
       contentType: "image/png",
     });
+  } finally {
+    await native.context.close();
+  }
+});
+
+test("M-INV7 localizes native Anatomy final-frame differences across progressive pass boundaries", async ({ browser }, testInfo: TestInfo) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
+  test.setTimeout(30 * 60 * 1000);
+  expect(nativeRequired, "This experiment requires native WebGPU with no application fallback").toBe(true);
+
+  type Mode = "A1" | "A2" | "P0" | "P1" | "P2" | "P3" | "P4" | "I1" | "I2" | "I3" | "I4";
+  type ProgressiveResult = RawFramebufferProbeResult & Readonly<{
+    nativeDrawCount?: number;
+    framebufferCopyCount?: number;
+    boundarySnapshots?: readonly Readonly<Record<string, unknown> & {
+      boundaryId: string;
+      selectedDrawOrder: number;
+      rawFramebufferSamples: readonly Readonly<{ index: number; x: number; y: number; rgba: readonly number[] }>[];
+    }>[];
+    nativeDrawObservations?: readonly Readonly<Record<string, unknown> & {
+      drawOrder: number;
+      call: string;
+      commandCount: number;
+      passId: string | null;
+      drawParameters: Readonly<Record<string, unknown>>;
+      sourceMaterialId: string;
+      material: Readonly<Record<string, unknown> & { side?: number }>;
+    }>[];
+  }>;
+  type Trial = Readonly<{
+    mode: Mode;
+    ordinal: number;
+    requestId: string;
+    result: ProgressiveResult;
+    settlement: Readonly<Record<string, unknown>>;
+    frame: AnatomyNativeFramebuffer | null;
+    screenshot: Readonly<{ png: Buffer; image: Image }>;
+    before: AuditSnapshot;
+    after: AuditSnapshot;
+  }>;
+  type BoundaryMode = Exclude<Mode, "A1" | "A2">;
+  const selections: Readonly<Record<BoundaryMode, AnatomyNativeBoundarySelection>> = {
+    P0: { beforeFirstDraw: false, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: false },
+    P1: { beforeFirstDraw: true, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: false },
+    P2: { beforeFirstDraw: true, afterFirstDraw: true, beforeSecondDraw: false, afterSecondDraw: false },
+    P3: { beforeFirstDraw: true, afterFirstDraw: true, beforeSecondDraw: true, afterSecondDraw: false },
+    P4: { beforeFirstDraw: true, afterFirstDraw: true, beforeSecondDraw: true, afterSecondDraw: true },
+    I1: { beforeFirstDraw: true, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: false },
+    I2: { beforeFirstDraw: false, afterFirstDraw: true, beforeSecondDraw: false, afterSecondDraw: false },
+    I3: { beforeFirstDraw: false, afterFirstDraw: false, beforeSecondDraw: true, afterSecondDraw: false },
+    I4: { beforeFirstDraw: false, afterFirstDraw: false, beforeSecondDraw: false, afterSecondDraw: true },
+  };
+  const expectedBoundaries: Readonly<Record<BoundaryMode, readonly string[]>> = {
+    P0: [], P1: ["S1"], P2: ["S1", "S2"], P3: ["S1", "S2", "S3"],
+    P4: ["S1", "S2", "S3", "S4"], I1: ["S1"], I2: ["S2"], I3: ["S3"], I4: ["S4"],
+  };
+  const historicalPixels = [
+    { x: 569, y: 330 }, { x: 570, y: 330 }, { x: 571, y: 331 },
+    { x: 639, y: 343 }, { x: 502, y: 513 },
+  ] as const;
+  const historicalCoordinates = [
+    { x: 569, y: 330, a1: [195, 198, 202, 255], a2: [194, 198, 202, 255] },
+    { x: 570, y: 330, a1: [195, 198, 202, 255], a2: [194, 198, 202, 255] },
+    { x: 571, y: 331, a1: [194, 198, 202, 255], a2: [195, 198, 202, 255] },
+    { x: 639, y: 343, a1: [193, 196, 200, 255], a2: [192, 196, 200, 255] },
+    { x: 502, y: 513, a1: [211, 212, 215, 255], a2: [210, 212, 215, 255] },
+  ] as const;
+  const native = await openBackend(browser, "native-webgpu-material-aware");
+  const trials: Trial[] = [];
+  const captureOrder: Array<Readonly<{ order: number; mode: Mode; ordinal: number; requestId: string }>> = [];
+  const pageErrors: string[] = [];
+  native.page.on("pageerror", (error) => { pageErrors.push(error.message); });
+  const reportPath = testInfo.outputPath("anatomy-progressive-pass-boundary-report.json");
+  const writeReport = async (report: Readonly<Record<string, unknown>>) => {
+    await mkdir(dirname(reportPath), { recursive: true });
+    await writeFile(reportPath, JSON.stringify(report, null, 2));
+    await testInfo.attach("anatomy-progressive-pass-boundary-report.json", {
+      path: reportPath,
+      contentType: "application/json",
+    });
+    if (process.env.M_INV7_WRITE_REPORT === "1") {
+      const committedReportPath = resolve(referenceRoot, "anatomy-progressive-pass-boundary/report.json");
+      await mkdir(dirname(committedReportPath), { recursive: true });
+      await writeFile(committedReportPath, JSON.stringify(report, null, 2));
+    }
+  };
+
+  try {
+    const cameraPose = {
+      position: native.initial.viewport.cameraPosition,
+      target: native.initial.viewport.orbitTarget ?? [0, 0, 0],
+    };
+    await advanceToFrontStandard(native.page);
+    await setCameraPose(native.page, cameraPose.position, cameraPose.target);
+    const generation = Number(await native.page.locator(canvasSelector).getAttribute("data-observer-renderer-generation"));
+    const outputMode = await requestOutputMode(native.page, generation, "B0");
+    expect(outputMode.ok).toBe(true);
+
+    const initial = await readAuditSnapshot(native.page, `m-inv7-initial-${++requestCounter}`);
+    expect(initial.generation).toBe(generation);
+    expect(initial.sceneId).toBe("view-camera-anatomy");
+    expect(initial.viewport.devicePixelRatio).toBe(1);
+    const bellows = initial.renderables.find((renderable) =>
+      renderable.visible && renderable.name === "bellows-folded-surface" && renderable.cameraPart === "bellows",
+    );
+    expect(bellows).toBeTruthy();
+    if (!bellows) throw new Error("The Front Standard Bellows renderable was not mounted");
+    const sourceMaterial = bellows.materialAssignments[0]?.source;
+    const sourceMaterialId = typeof sourceMaterial?.id === "string" ? sourceMaterial.id : undefined;
+    expect(sourceMaterial?.opacity).toBe(0.16);
+    expect(sourceMaterial?.transparent).toBe(true);
+
+    const mInv5Report = JSON.parse(await readFile(
+      resolve(referenceRoot, "anatomy-native-webgpu-draw-boundary/report.json"),
+      "utf8",
+    )) as { scope?: { selectedFixedFramebufferSamples?: unknown } };
+    const sampleIndices = mInv5Report.scope?.selectedFixedFramebufferSamples;
+    expect(Array.isArray(sampleIndices)).toBe(true);
+    expect(sampleIndices).toHaveLength(9);
+    if (!Array.isArray(sampleIndices) || sampleIndices.some((index) => typeof index !== "number")) {
+      throw new Error("M-INV5 did not provide the nine historical fixed framebuffer samples");
+    }
+    const fixedSamples = sampleIndices as number[];
+    const a0 = await captureCanvas(native.page);
+    const a0Repeat = await captureCanvas(native.page);
+    const a0ScreenshotRepeatMae = imageMae(a0.image, a0Repeat.image);
+    const baselineCanvas = baselineCanvasPayload(a0.image, a0ScreenshotRepeatMae);
+    const groundGlass = native.page.getByTestId("ground-glass-rtt");
+    await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+    const groundGlassBeforePng = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
+    const groundGlassBefore = decodePlaywrightPng(groundGlassBeforePng);
+    const groundGlassRepeat = await captureGroundGlass(native.page);
+    const groundGlassRepeatMae = imageMae(groundGlassBefore, groundGlassRepeat);
+
+    const evidencePixels = await preselectEvidencePixels();
+    const dimmedPixels = new Set(evidencePixels.dimmedMaskPixelIndices);
+    const bellowsRegion = mapAnatomyScreenshotPixelsToFramebuffer(
+      evidencePixels.bellowsResponseMaskPixelIndices.filter((index) => dimmedPixels.has(index)),
+      evidencePixels.width,
+      evidencePixels.height,
+      initial.viewport.canvasBackingWidth,
+      initial.viewport.canvasBackingHeight,
+    ).indices;
+    const unaffectedRegion = mapAnatomyScreenshotPixelsToFramebuffer(
+      evidencePixels.unaffectedCandidateMaskPixelIndices,
+      evidencePixels.width,
+      evidencePixels.height,
+      initial.viewport.canvasBackingWidth,
+      initial.viewport.canvasBackingHeight,
+    ).indices;
+    const regions = { bellowsDimmedResponse: bellowsRegion, unaffectedBackgroundControl: unaffectedRegion };
+    const initialSceneInputs = canonicalSceneInputs(initial);
+    const rawPath = testInfo.outputPath("raw-progressive-native-framebuffers");
+    await mkdir(rawPath, { recursive: true });
+    const ordinals = new Map<Mode, number>();
+
+    const captureMode = async (mode: Mode): Promise<Trial> => {
+      const ordinal = (ordinals.get(mode) ?? 0) + 1;
+      ordinals.set(mode, ordinal);
+      const before = await readAuditSnapshot(native.page, `m-inv7-${mode}-${ordinal}-before-${++requestCounter}`);
+      expect(before.generation).toBe(generation);
+      expect(before.sceneId).toBe(initial.sceneId);
+      expect(before.anatomyPresentation).toEqual(initial.anatomyPresentation);
+      expect(before.viewport.cameraPosition).toEqual(initial.viewport.cameraPosition);
+      expect(before.viewport.cameraQuaternion).toEqual(initial.viewport.cameraQuaternion);
+      expect(before.viewport.canvasBackingWidth).toBe(initial.viewport.canvasBackingWidth);
+      expect(before.viewport.canvasBackingHeight).toBe(initial.viewport.canvasBackingHeight);
+      expect(canonicalSceneInputs(before)).toEqual(initialSceneInputs);
+      const requestId = `anatomy-m-inv7-${mode.toLowerCase()}-${ordinal}-${++requestCounter}`;
+      const request: ProbeRequest = mode === "A1"
+        ? { generation, method: "native-final-frame", samplePixelIndices: fixedSamples, includeRawFramebuffer: true }
+        : {
+            generation,
+            method: "native-draw-boundary",
+            renderableId: bellows.objectId,
+            ...(sourceMaterialId ? { sourceMaterialId } : {}),
+            ...(mode === "A2" ? {} : { boundarySelection: selections[mode] }),
+            samplePixelIndices: fixedSamples,
+            baselineCanvas,
+            includeRawFramebuffer: true,
+          };
+      captureOrder.push({ order: captureOrder.length + 1, mode, ordinal, requestId });
+      const { result: rawResult, settlement } = await captureWithSettlement(native.page, request, requestId);
+      const result = rawResult as ProgressiveResult;
+      const screenshot = await captureCanvas(native.page);
+      const after = await readAuditSnapshot(native.page, `m-inv7-${mode}-${ordinal}-after-${++requestCounter}`);
+      expect(after.generation).toBe(generation);
+      expect(after.sceneId).toBe(initial.sceneId);
+      expect(after.anatomyPresentation).toEqual(initial.anatomyPresentation);
+      expect(after.viewport.cameraPosition).toEqual(initial.viewport.cameraPosition);
+      expect(after.viewport.cameraQuaternion).toEqual(initial.viewport.cameraQuaternion);
+      expect(after.viewport.canvasBackingWidth).toBe(initial.viewport.canvasBackingWidth);
+      expect(after.viewport.canvasBackingHeight).toBe(initial.viewport.canvasBackingHeight);
+      expect(canonicalSceneInputs(after)).toEqual(initialSceneInputs);
+      const frame = result.status === "ok" && result.finalFrame.rawFramebufferRgbaBase64
+        ? nativeFramebufferFromProbe(result, after)
+        : null;
+      if (frame) {
+        await writeFile(resolve(rawPath, `${mode}-${String(ordinal).padStart(2, "0")}.rgba`), Buffer.from(result.finalFrame.rawFramebufferRgbaBase64!, "base64"));
+        await testInfo.attach(`${mode}-${String(ordinal).padStart(2, "0")}-canvas.png`, { body: screenshot.png, contentType: "image/png" });
+      }
+      const trial = { mode, ordinal, requestId, result, settlement, frame, screenshot, before, after } as const;
+      trials.push(trial);
+      return trial;
+    };
+
+    const sequence: readonly Mode[] = [
+      "A1", "P0", "P1", "P2", "P3", "P4", "A2",
+      "A2", "P4", "P3", "P2", "P1", "P0", "A1",
+    ];
+    for (const mode of sequence) await captureMode(mode);
+
+    const mainModes: readonly Mode[] = ["A1", "A2", "P0", "P1", "P2", "P3", "P4"];
+    const missingTrial = trials.find(({ frame }) => !frame);
+    if (missingTrial) {
+      const failureReport = {
+        schemaVersion: 1,
+        audit: "anatomy-progressive-pass-boundary",
+        outcome: "PBI-0",
+        sourceBaseline: "M-INV6 A1/A2 raw framebuffer study",
+        provenance: {
+          baseCommit: process.env.M_INV7_BASE_COMMIT ?? "95c124cac4ad2e7ec7d2340d8ef166a65a6439f6",
+          measurementCommit: process.env.M_INV7_MEASUREMENT_COMMIT ?? null,
+          browserVersion: browser.version(),
+          operatingSystem: { platform: process.platform, architecture: process.arch },
+        },
+        unsupportedCapture: {
+          mode: missingTrial.mode,
+          ordinal: missingTrial.ordinal,
+          status: missingTrial.result.status,
+          reason: missingTrial.result.reason ?? null,
+          settlement: missingTrial.settlement,
+        },
+        captureOrder,
+        interpretation: "PBI-0: required native raw framebuffer evidence was unavailable; no boundary attribution was performed.",
+      };
+      await writeReport(failureReport);
+      throw new Error(`M-INV7 ${missingTrial.mode} capture was unqualified: ${String(missingTrial.result.reason ?? missingTrial.result.status)}`);
+    }
+
+    const frameOf = (trial: Trial): AnatomyNativeFramebuffer => {
+      if (!trial.frame) throw new Error(`M-INV7 ${trial.mode} ${trial.ordinal} has no raw framebuffer`);
+      return trial.frame;
+    };
+    const byMode = (mode: Mode) => trials.filter((trial) => trial.mode === mode).sort((a, b) => a.ordinal - b.ordinal);
+    const compareFrames = (first: AnatomyNativeFramebuffer, second: AnatomyNativeFramebuffer) =>
+      compareAnatomyNativeFramebuffers(first, second, regions, fixedSamples);
+    const pixelAt = (frame: AnatomyNativeFramebuffer, x: number, y: number): number[] => {
+      const offset = ((y * frame.metadata.width) + x) * 4;
+      return [frame.rgba[offset]!, frame.rgba[offset + 1]!, frame.rgba[offset + 2]!, frame.rgba[offset + 3]!];
+    };
+    const signedPixelDifferences = (first: AnatomyNativeFramebuffer, second: AnatomyNativeFramebuffer) => {
+      const result = compareAnatomyNativeFramebufferSignedDifferences(first, second);
+      if (!result.compatible) throw new Error(`M-INV7 rejected signed differences: ${result.mismatches.join(", ")}`);
+      return result.changedPixels.map(({ index, x, y, first: baselineRgba, second: comparedRgba, signedDelta }) => ({
+        index,
+        x,
+        y,
+        baselineRgba,
+        comparedRgba,
+        signedDelta,
+      }));
+    };
+    const summarizeComparison = (
+      label: string,
+      first: AnatomyNativeFramebuffer,
+      second: AnatomyNativeFramebuffer,
+    ) => {
+      const comparison = compareFrames(first, second);
+      const compactMetric = (metric: NonNullable<typeof comparison.fullFrame>) => ({
+        comparedPixelCount: metric.comparedPixelCount,
+        meanAbsoluteRgbError: metric.meanAbsoluteRgbError,
+        meanAbsoluteAlphaError: metric.meanAbsoluteAlphaError,
+        meanAbsoluteChannelError: metric.meanAbsoluteChannelError,
+        maxAbsoluteError: metric.maxAbsoluteError,
+        maxAbsoluteErrorByChannel: metric.maxAbsoluteErrorByChannel,
+        changedPixelCount: metric.changedPixelCount,
+        changedPixelPercentage: metric.changedPixelPercentage,
+        exactRgbaMatchPixelCount: metric.exactRgbaMatchPixelCount,
+      });
+      const regions = Object.fromEntries(Object.entries(comparison.regions ?? {}).map(([name, metric]) => [name, compactMetric(metric)]));
+      return {
+        label,
+        compatible: comparison.compatible,
+        metadataMismatches: comparison.mismatches,
+        fullFrame: comparison.fullFrame ? compactMetric(comparison.fullFrame) : null,
+        regions,
+        fixedSamples: comparison.fixedSamples,
+        changedPixels: comparison.compatible ? signedPixelDifferences(first, second) : [],
+      };
+    };
+    const baselineEquivalence = {
+      A1toP0: [0, 1].map((ordinal) => {
+        const a1 = byMode("A1")[ordinal]!;
+        const p0 = byMode("P0")[ordinal]!;
+        return summarizeComparison(`A1-${ordinal + 1}-to-P0-${ordinal + 1}`, frameOf(a1), frameOf(p0));
+      }),
+      A2toP4: [0, 1].map((ordinal) => {
+        const a2 = byMode("A2")[ordinal]!;
+        const p4 = byMode("P4")[ordinal]!;
+        return summarizeComparison(`A2-${ordinal + 1}-to-P4-${ordinal + 1}`, frameOf(a2), frameOf(p4));
+      }),
+    };
+    const isExactComparison = (comparison: Readonly<Record<string, unknown>>): boolean => {
+      const fullFrame = comparison.fullFrame as { changedPixelCount?: number; exactRgbaMatchPixelCount?: number } | null;
+      return comparison.compatible === true && fullFrame?.changedPixelCount === 0 &&
+        fullFrame.exactRgbaMatchPixelCount === frameOf(byMode("P0")[0]!).metadata.width * frameOf(byMode("P0")[0]!).metadata.height;
+    };
+    const baselineEquivalenceQualified = [...baselineEquivalence.A1toP0, ...baselineEquivalence.A2toP4].every(isExactComparison);
+    const baselineRepeatability = Object.fromEntries((["A1", "A2", "P0", "P4"] as const).map((mode) => {
+      const captures = byMode(mode);
+      return [mode, summarizeComparison(`${mode}-baseline-repeat`, frameOf(captures[0]!), frameOf(captures[1]!))];
+    }));
+    const baselineRepeatabilityQualified = Object.values(baselineRepeatability).every(isExactComparison);
+    if (!baselineEquivalenceQualified || !baselineRepeatabilityQualified) {
+      const invalidBaselineReport = {
+        schemaVersion: 1,
+        audit: "anatomy-progressive-pass-boundary",
+        outcome: "PBI-0",
+        provenance: { baseCommit: process.env.M_INV7_BASE_COMMIT ?? "95c124cac4ad2e7ec7d2340d8ef166a65a6439f6", measurementCommit: process.env.M_INV7_MEASUREMENT_COMMIT ?? null, browserVersion: browser.version(), operatingSystem: { platform: process.platform, architecture: process.arch } },
+        baselineEquivalence,
+        baselineRepeatability,
+        captureOrder,
+        interpretation: "PBI-0: A1/P0 or A2/P4 equivalence, or baseline repeatability, failed. Intermediate modes were not analyzed.",
+      };
+      await writeReport(invalidBaselineReport);
+      throw new Error("M-INV7 stopped attribution because A1/P0 or A2/P4 equivalence/repeatability failed");
+    }
+    const sameModeComparisons = Object.fromEntries(mainModes.map((mode) => {
+      const captures = byMode(mode);
+      return [mode, captures.length === 2
+        ? summarizeComparison(`${mode}-${captures[0]!.ordinal}-to-${captures[1]!.ordinal}`, frameOf(captures[0]!), frameOf(captures[1]!))
+        : null];
+    }));
+    const repeatabilityQualified = Object.values(sameModeComparisons).every((comparison) =>
+      comparison !== null && isExactComparison(comparison));
+    const progressiveComparisons = (["P1", "P2", "P3", "P4"] as const).flatMap((mode) =>
+      byMode(mode).map((trial) => {
+        const baseline = byMode("P0")[trial.ordinal - 1]!;
+        return summarizeComparison(`${baseline.mode}-${baseline.ordinal}-to-${mode}-${trial.ordinal}`, frameOf(baseline), frameOf(trial));
+      }),
+    );
+    const a1a2Comparisons = [0, 1].map((ordinal) => summarizeComparison(
+      `A1-${ordinal + 1}-to-A2-${ordinal + 1}`,
+      frameOf(byMode("A1")[ordinal]!),
+      frameOf(byMode("A2")[ordinal]!),
+    ));
+    const p0p4RepeatComparisons = [0, 1].map((ordinal) => summarizeComparison(
+      `P0-${ordinal + 1}-to-P4-${ordinal + 1}`,
+      frameOf(byMode("P0")[ordinal]!),
+      frameOf(byMode("P4")[ordinal]!),
+    ));
+    const p0p4HasDifference = p0p4RepeatComparisons.some((comparison) => {
+      const fullFrame = comparison.fullFrame as { changedPixelCount?: number } | null;
+      return comparison.compatible === true && (fullFrame?.changedPixelCount ?? 0) > 0;
+    });
+    const equivalenceValid = baselineEquivalenceQualified && baselineRepeatabilityQualified && repeatabilityQualified;
+
+    const firstChangedProgressive = (["P1", "P2", "P3", "P4"] as const).find((mode) =>
+      progressiveComparisons.some((comparison) => comparison.label.includes(`to-${mode}-`) &&
+        ((comparison.fullFrame as { changedPixelCount?: number } | null)?.changedPixelCount ?? 0) > 0),
+    ) ?? null;
+    const progressiveSignature = (mode: "P1" | "P2" | "P3" | "P4") =>
+      progressiveComparisons.find((comparison) => comparison.label.includes(`to-${mode}-`))?.changedPixels ?? [];
+    const p1Signature = JSON.stringify(progressiveSignature("P1"));
+    const laterProgressiveSignatureChanged = (["P2", "P3", "P4"] as const).some((mode) =>
+      JSON.stringify(progressiveSignature(mode)) !== p1Signature,
+    );
+    const isolatedControlsRequired = firstChangedProgressive !== null &&
+      (firstChangedProgressive !== "P1" || laterProgressiveSignatureChanged);
+    let isolatedComparisons: Array<ReturnType<typeof summarizeComparison>> = [];
+    if (equivalenceValid && p0p4HasDifference && isolatedControlsRequired) {
+      for (const mode of ["I1", "I2", "I3", "I4", "I4", "I3", "I2", "I1"] as const) await captureMode(mode);
+      isolatedComparisons = (["I1", "I2", "I3", "I4"] as const).flatMap((mode) =>
+        byMode(mode).map((trial) => {
+          const baseline = byMode("P0")[trial.ordinal - 1]!;
+          return summarizeComparison(`${baseline.mode}-${baseline.ordinal}-to-${mode}-${trial.ordinal}`, frameOf(baseline), frameOf(trial));
+        }),
+      );
+    }
+    const isolatedRepeatability = (["I1", "I2", "I3", "I4"] as const)
+      .filter((mode) => byMode(mode).length > 0)
+      .map((mode) => {
+        const captures = byMode(mode);
+        return captures.length === 2
+          ? summarizeComparison(`${mode}-repeat`, frameOf(captures[0]!), frameOf(captures[1]!))
+          : null;
+      });
+    const allModeRepeatabilityQualified = repeatabilityQualified && isolatedRepeatability.every((comparison) =>
+      comparison !== null && isExactComparison(comparison));
+
+    const firstAppearanceComparisons = firstChangedProgressive
+      ? progressiveComparisons.filter((comparison) => comparison.label.includes(`to-${firstChangedProgressive}-`))
+      : [];
+    const firstAppearanceSignaturesAgree = firstAppearanceComparisons.length === 2 &&
+      firstAppearanceComparisons.every((comparison) => JSON.stringify(comparison.changedPixels) ===
+        JSON.stringify(firstAppearanceComparisons[0]?.changedPixels));
+    const progressiveStageSignatures = (["P1", "P2", "P3", "P4"] as const).map((mode, index, modes) => {
+      const comparisons = progressiveComparisons.filter((comparison) => comparison.label.includes(`to-${mode}-`));
+      const current = new Map((comparisons[0]?.changedPixels ?? []).map((pixel) => {
+        const item = pixel as { x: number; y: number; signedDelta: readonly number[] };
+        return [`${item.x},${item.y}`, item];
+      }));
+      const previous = index === 0
+        ? new Map<string, unknown>()
+        : new Map((progressiveSignature(modes[index - 1] as "P1" | "P2" | "P3" | "P4")).map((pixel) => {
+            const item = pixel as { x: number; y: number; signedDelta: readonly number[] };
+            return [`${item.x},${item.y}`, item];
+          }));
+      return {
+        mode,
+        enabledBoundaries: expectedBoundaries[mode],
+        repeatSignaturesAgree: comparisons.length === 2 && JSON.stringify(comparisons[0]?.changedPixels) === JSON.stringify(comparisons[1]?.changedPixels),
+        changedFromP0: comparisons[0]?.changedPixels ?? [],
+        firstChangesAtThisStage: [...current.entries()].filter(([key, value]) => JSON.stringify(previous.get(key)) !== JSON.stringify(value)).map(([, value]) => value),
+      };
+    });
+    const isolatedSignatures = ( ["I1", "I2", "I3", "I4"] as const).map((mode) => {
+      const comparisons = isolatedComparisons.filter((comparison) => comparison.label.includes(`to-${mode}-`));
+      return { mode, comparisons, signature: comparisons[0]?.changedPixels ?? [], repeatsAgree: comparisons.length === 2 &&
+        JSON.stringify(comparisons[0]?.changedPixels) === JSON.stringify(comparisons[1]?.changedPixels) };
+    });
+    const isolatedBoundaryEffects = isolatedSignatures.filter(({ signature }) => signature.length > 0).map(({ mode }) => mode);
+    let outcome: "PBI-1" | "PBI-2" | "PBI-3" | "PBI-0" = "PBI-0";
+    let attribution: Readonly<Record<string, unknown>> = { status: "insufficient-evidence" };
+    if (equivalenceValid && allModeRepeatabilityQualified && p0p4HasDifference && firstChangedProgressive && firstAppearanceSignaturesAgree) {
+      const fullProgressiveSignature = progressiveSignature("P4");
+      const isolatedFullMatches = isolatedSignatures.filter(({ signature, repeatsAgree }) => repeatsAgree &&
+        JSON.stringify(signature) === JSON.stringify(fullProgressiveSignature));
+      if (!isolatedControlsRequired && firstChangedProgressive === "P1") {
+        outcome = "PBI-1";
+        attribution = { status: "unique-boundary-localized", boundary: "S1", evidence: "P1 enables only S1 and both repeats reproduce the same signed pixel signature." };
+      } else if (isolatedFullMatches.length === 1) {
+        const boundary = isolatedFullMatches[0]!.mode;
+        outcome = "PBI-1";
+        attribution = { status: "unique-boundary-localized", boundary: `S${boundary.slice(1)}`, evidence: `${boundary} alone reproduces the complete stable P4 signed pixel signature.` };
+      } else if (isolatedControlsRequired && isolatedComparisons.length > 0 && isolatedBoundaryEffects.length === 0 &&
+          isolatedSignatures.every(({ repeatsAgree }) => repeatsAgree)) {
+        outcome = "PBI-2";
+        attribution = {
+          status: "boundary-interaction-localized",
+          progressiveMode: firstChangedProgressive,
+          requiredBoundaries: firstChangedProgressive ? expectedBoundaries[firstChangedProgressive] : [],
+          evidence: "The cumulative progressive selection reproduces the stable change while no isolated boundary reproduces it.",
+        };
+      } else if (isolatedComparisons.length > 0) {
+        outcome = "PBI-3";
+        attribution = { status: "perturbation-reproduced-not-uniquely-localized", isolatedBoundaryEffects, firstChangedProgressive, isolatedSignatures };
+      }
+    }
+
+    const finalGroundGlassPng = await groundGlass.locator("canvas").first().screenshot({ animations: "disabled" });
+    const finalGroundGlass = decodePlaywrightPng(finalGroundGlassPng);
+    const groundGlassRestorationMae = imageMae(groundGlassBefore, finalGroundGlass);
+    const screenshotMetrics = trials.map((trial) => ({
+      mode: trial.mode,
+      ordinal: trial.ordinal,
+      maeFromA0: imageMae(a0.image, trial.screenshot.image),
+    }));
+    const maxScreenshotMae = Math.max(...screenshotMetrics.map(({ maeFromA0 }) => maeFromA0));
+    const screenshotRepeatNoiseMae = Math.max(...[...new Set(trials.map(({ mode }) => mode))].map((mode) => {
+      const images = byMode(mode).map(({ screenshot }) => screenshot.image);
+      return images.length > 1 ? Math.max(...images.slice(1).map((image) => imageMae(images[0]!, image))) : 0;
+    }));
+    const screenshotParityThreshold = Math.max(a0ScreenshotRepeatMae, screenshotRepeatNoiseMae);
+    const screenshotParityQualified = maxScreenshotMae <= screenshotParityThreshold;
+    const drawMetadataValid = [...trials.filter((trial) => trial.mode.startsWith("P") || trial.mode.startsWith("I")), ...byMode("A2")]
+      .every((trial) => {
+        const draws = trial.result.nativeDrawObservations ?? [];
+        return draws.length === 2 && draws.every((draw, index) => draw.drawOrder === index && draw.call === "native-drawIndexed" &&
+          draw.commandCount === 1 && draw.sourceMaterialId === sourceMaterialId && draw.drawParameters.vertexCount === 240) &&
+          draws[0]?.material.side === THREE.BackSide && draws[1]?.material.side === THREE.FrontSide &&
+          (trial.result.nativeDrawCount === 2);
+      });
+    const boundaryMetadataValid = trials.filter((trial): trial is Trial & { result: ProgressiveResult } =>
+      trial.mode !== "A1",
+    ).every((trial) => {
+      const required = trial.mode === "A2" ? ["S1", "S2", "S3", "S4"] : expectedBoundaries[trial.mode as BoundaryMode];
+      const snapshots = trial.result.boundarySnapshots ?? [];
+      const ids = snapshots.map(({ boundaryId }) => boundaryId);
+      return JSON.stringify(ids) === JSON.stringify(required) &&
+        (trial.result.framebufferCopyCount === required.length + 1) &&
+        snapshots.every((snapshot) => {
+          const boundary = snapshot.passBoundary as { after?: { colorAttachments?: readonly { loadOp?: unknown }[]; depthStencilAttachment?: { depthLoadOp?: unknown } | null } } | null;
+          return snapshot.rawFramebufferSamples.length === fixedSamples.length &&
+            boundary?.after?.colorAttachments?.every(({ loadOp }) => loadOp === "load") === true &&
+            (boundary.after.depthStencilAttachment?.depthLoadOp === null || boundary.after.depthStencilAttachment?.depthLoadOp === "load");
+        });
+    });
+    const cleanupEvidence = trials.map((trial) => {
+      const cleanup = trial.settlement.resourceCleanup as Readonly<Record<string, unknown> & { noBorrowedResourceDisposed?: boolean }>;
+      const expectedCopies = trial.mode === "A1" || trial.mode === "P0" ? 1 :
+        trial.mode === "A2" ? 5 : expectedBoundaries[trial.mode].length + 1;
+      return {
+        mode: trial.mode,
+        ordinal: trial.ordinal,
+        expectedCopies,
+        ...cleanup,
+        exactOwnedSnapshotDisposal: cleanup.temporaryFramebufferTextureCount === expectedCopies &&
+          cleanup.temporaryFramebufferTextureDisposeCount === expectedCopies &&
+          cleanup.readbackBufferCount === expectedCopies && cleanup.readbackBufferDestroyCount === expectedCopies &&
+          Array.isArray(cleanup.temporaryFramebufferTextureDisposeEventsPerResource) &&
+          (cleanup.temporaryFramebufferTextureDisposeEventsPerResource as number[]).every((count) => count === 1),
+      };
+    });
+    const historicalPixelSignatures = Object.fromEntries([...new Set(trials.map(({ mode }) => mode))].map((mode) => [mode, byMode(mode).map((trial) => ({
+      ordinal: trial.ordinal,
+      historicalPixels: historicalPixels.map(({ x, y }) => ({ x, y, rgba: pixelAt(frameOf(trial), x, y) })),
+      fixedSamples: trial.result.finalFrame.rawFramebufferSamples ?? [],
+    }))]));
+    const historicalPixelComparisons = trials.map((trial) => {
+      const baseline = byMode("P0")[trial.ordinal - 1]!;
+      return {
+        mode: trial.mode,
+        ordinal: trial.ordinal,
+        comparedWith: `P0-${baseline.ordinal}`,
+        pixels: historicalPixels.map(({ x, y }) => {
+          const baselineRgba = pixelAt(frameOf(baseline), x, y);
+          const comparedRgba = pixelAt(frameOf(trial), x, y);
+          return { x, y, baselineRgba, comparedRgba, signedDelta: comparedRgba.map((value, channel) => value - baselineRgba[channel]!) };
+        }),
+      };
+    });
+    const boundaryAttributionByHistoricalPixel = historicalPixels.map(({ x, y }) => {
+      const deltasFor = (mode: Mode, ordinal: number): number[] => {
+        const baseline = pixelAt(frameOf(byMode("P0")[ordinal - 1]!), x, y);
+        const compared = pixelAt(frameOf(byMode(mode)[ordinal - 1]!), x, y);
+        return compared.map((value, channel) => value - baseline[channel]!);
+      };
+      const progressive = (["P1", "P2", "P3", "P4"] as const).map((mode) => ({
+        mode,
+        ordinal1SignedDelta: deltasFor(mode, 1),
+        ordinal2SignedDelta: deltasFor(mode, 2),
+      }));
+      const isolated = (["I1", "I2", "I3", "I4"] as const)
+        .filter((mode) => byMode(mode).length === 2)
+        .map((mode) => ({
+          mode,
+          ordinal1SignedDelta: deltasFor(mode, 1),
+          ordinal2SignedDelta: deltasFor(mode, 2),
+        }));
+      return { x, y, progressive, isolated };
+    });
+    const allCleanupQualified = cleanupEvidence.every((entry) => entry.exactOwnedSnapshotDisposal === true &&
+      entry.noBorrowedResourceDisposed === true &&
+      Number((entry as Readonly<Record<string, unknown>>).readbackBufferDisposalFailures) === 0 &&
+      Number((entry as Readonly<Record<string, unknown>>).temporaryFramebufferTextureDisposalFailures) === 0);
+    const additionalControlsQualified = drawMetadataValid && boundaryMetadataValid && screenshotParityQualified &&
+      groundGlassRestorationMae <= groundGlassRepeatMae && pageErrors.length === 0 && allCleanupQualified;
+    if (!additionalControlsQualified) {
+      outcome = "PBI-0";
+      attribution = { status: "required-control-failed", drawMetadataValid, boundaryMetadataValid, screenshotParityQualified, allCleanupQualified, pageErrors };
+    }
+    const sourceThree = byMode("A1")[0]!.result.threeRevision;
+    const baseSha = process.env.M_INV7_BASE_COMMIT ?? "95c124cac4ad2e7ec7d2340d8ef166a65a6439f6";
+    const report = {
+      schemaVersion: 1,
+      audit: "anatomy-progressive-pass-boundary",
+      objective: "Isolate which additional selected Bellows framebuffer-copy boundaries reproduce M-INV6's five one-level red-channel raw framebuffer differences.",
+      sourceBaseline: {
+        mInv6Outcome: "Q2 — MEASURABLE INSTRUMENTATION PERTURBATION",
+        totalPixels: 842960,
+        a1A2ChangedPixels: 5,
+        maximumAbsoluteChannelDifference: 1,
+        changedChannel: "red",
+        historicalCoordinates,
+        sameModeRepeatNoise: "zero for four A1 and four A2 captures",
+        nineMInv5FixedSamples: "all exact in M-INV6",
+        preservedClassifications: { N2: "CONTROLLED PROXY IMPROVEMENT", G2: "PARTIAL STAGE ATTRIBUTION", M2: "OPT-IN IMPLEMENTATION INCOMPLETE", nativeIntermediatePixels: "F2" },
+      },
+      outcome,
+      attribution,
+      provenance: {
+        baseCommit: baseSha,
+        measurementCommit: process.env.M_INV7_MEASUREMENT_COMMIT ?? null,
+        browserVersion: browser.version(),
+        browserUserAgent: await native.page.evaluate(() => navigator.userAgent),
+        operatingSystem: { platform: process.platform, architecture: process.arch },
+        threeRevision: sourceThree,
+        nativeBackend: { rendererFamily: byMode("A1")[0]!.result.rendererRuntime.rendererFamily, executionBackend: byMode("A1")[0]!.result.rendererRuntime.executionBackend },
+        hardwareAcceleration: "unconfirmed; the pinned renderer exposes no adapter diagnostics in the capture result",
+      },
+      state: {
+        sceneId: initial.sceneId,
+        teachingState: "Anatomy — Front Standard highlighted, Bellows dimmed",
+        outputPolicy: "material-aware",
+        outputIntervention: "B0",
+        rendererGeneration: generation,
+        applicationFallback: await native.page.locator(canvasSelector).getAttribute("data-observer-application-fallback"),
+        selectedRenderable: { objectId: bellows.objectId, name: bellows.name, semanticPart: bellows.cameraPart, sourceMaterialId: sourceMaterialId ?? null, sourceMaterial, geometry: bellows.geometry },
+        cameraPose: { position: initial.viewport.cameraPosition, quaternion: initial.viewport.cameraQuaternion, orbitTarget: initial.viewport.orbitTarget },
+        viewport: { width: initial.viewport.width, height: initial.viewport.height, devicePixelRatio: initial.viewport.devicePixelRatio, backingWidth: initial.viewport.canvasBackingWidth, backingHeight: initial.viewport.canvasBackingHeight },
+        sceneInputsStableBeforeAndAfterEveryCapture: true,
+      },
+      boundaries: {
+        S1: "Immediately before the first selected Bellows native draw.",
+        S2: "Immediately after the first selected Bellows native draw.",
+        S3: "Immediately before the second selected Bellows native draw; independently copied even when adjacent to S2.",
+        S4: "Immediately after the second selected Bellows native draw.",
+        primaryModes: { P0: [], P1: ["S1"], P2: ["S1", "S2"], P3: ["S1", "S2", "S3"], P4: ["S1", "S2", "S3", "S4"] },
+        isolatedModesRun: isolatedComparisons.length > 0,
+        isolatedModes: isolatedComparisons.length > 0 ? { I1: ["S1"], I2: ["S2"], I3: ["S3"], I4: ["S4"] } : null,
+        actualCopySemantics: "Each enabled boundary calls r186 Renderer.copyFramebufferToTexture and splits/resumes the current native pass. Disabled boundaries issue no copy. Every mode uses the same one final-frame copy.",
+      },
+      captureDefinitions: {
+        A1: "Existing native final-frame-only capture; no selected draw hook or pass split.",
+        P0: "Explicit native selected-draw observation with all S1-S4 copies disabled and the unchanged final-frame copy.",
+        P1: "S1 only, plus unchanged final-frame copy.",
+        P2: "S1 and S2, each a distinct copy, plus unchanged final-frame copy.",
+        P3: "S1, S2 and S3, each a distinct copy, plus unchanged final-frame copy.",
+        P4: "S1-S4, each a distinct copy; A2-equivalent selected-draw instrumentation plus unchanged final-frame copy.",
+        A2: "Existing default full selected-draw capture.",
+        captureOrder,
+      },
+      captures: trials.map((trial) => ({
+        mode: trial.mode,
+        ordinal: trial.ordinal,
+        requestId: trial.requestId,
+        status: trial.result.status,
+        method: trial.result.method,
+        selectedBoundaries: trial.mode === "A1" ? [] : trial.mode === "A2" ? ["S1", "S2", "S3", "S4"] : expectedBoundaries[trial.mode],
+        boundarySelection: trial.result.boundarySelection ?? null,
+        nativeDrawCount: trial.result.nativeDrawCount ?? 0,
+        nativeDrawObservations: trial.result.nativeDrawObservations ?? [],
+        framebufferCopyCount: trial.result.framebufferCopyCount ?? 1,
+        boundarySnapshots: trial.result.boundarySnapshots ?? [],
+        attachment: trial.result.attachment,
+        finalFrame: {
+          classification: trial.result.finalFrame.classification ?? null,
+          samples: trial.result.finalFrame.rawFramebufferSamples ?? [],
+          screenshotParity: trial.result.finalFrame.screenshotParity ?? null,
+        },
+        settlement: trial.settlement,
+        screenshotMaeFromA0: imageMae(a0.image, trial.screenshot.image),
+      })),
+      baselineEquivalence: {
+        A1toP0: baselineEquivalence.A1toP0,
+        A2toP4: baselineEquivalence.A2toP4,
+        qualified: baselineEquivalenceQualified,
+        baselineRepeatability,
+        exactSameModeRepeatability: baselineRepeatabilityQualified,
+        p0A1AndP4A2MustBeExactBeforeAttribution: true,
+      },
+      drawIdentityAndPassMetadata: {
+        actualDrawCount: 2,
+        observations: byMode("P4")[0]!.result.nativeDrawObservations,
+        valid: drawMetadataValid,
+        copiedBoundaryMetadataValid: boundaryMetadataValid,
+      },
+      attachment: byMode("P0")[0]!.result.attachment,
+      progressiveComparisons,
+      progressiveP0toP4: p0p4RepeatComparisons,
+      a1ToA2: a1a2Comparisons,
+      firstAppearanceBoundaryAnalysis: {
+        firstModeWithDifferenceAgainstP0: firstChangedProgressive,
+        signaturesRepeatExactly: firstAppearanceSignaturesAgree,
+        progressiveBoundarySelection: firstChangedProgressive ? expectedBoundaries[firstChangedProgressive] : [],
+        progressiveStageSignatures,
+        isolatedBoundaryComparisons: isolatedComparisons,
+        isolatedBoundarySignatures: isolatedSignatures,
+        isolatedBoundaryRepeatability: isolatedRepeatability,
+        boundaryAttributionByHistoricalPixel,
+      },
+      historicalPixelSignatures,
+      historicalPixelComparisons,
+      sameModeRepeatability: sameModeComparisons,
+      negativeControls: {
+        uninstrumentedScreenshotRepeatMae: a0ScreenshotRepeatMae,
+        maxSameModeScreenshotRepeatMae: screenshotRepeatNoiseMae,
+        maxCaptureScreenshotMaeFromA0: maxScreenshotMae,
+        screenshotParityThreshold,
+        screenshotParityQualified,
+        screenshotMetrics,
+        bellowsRegionAndUnaffectedRegionMetrics: progressiveComparisons.map((comparison) => ({
+          label: comparison.label,
+          regions: comparison.regions,
+        })),
+        actualNativeDrawCountAndIdentity: drawMetadataValid,
+        GroundGlass: { contentfulBeforeAndAfter: true, repeatNoiseMae: groundGlassRepeatMae, restorationMae: groundGlassRestorationMae, withinRepeatNoise: groundGlassRestorationMae <= groundGlassRepeatMae },
+        noPageErrors: pageErrors.length === 0,
+        ownedResourcesDisposedExactlyOnce: allCleanupQualified,
+      },
+      resourceOwnership: {
+        captures: cleanupEvidence,
+        allOwnedResourcesDisposedExactlyOnce: allCleanupQualified,
+        borrowedResources: "renderer/device/context/canvas texture, source material, geometry, scene textures, and Ground Glass RTT remain borrowed and undisposed",
+        cancellationAndSubmission: "Reuses PR #266 settlement, renderer-generation cancellation, confirmed-submission/readback separation, queue-fence cleanup for unknown submission, and device-loss handling.",
+      },
+      captureOrder,
+      interpretation: outcome === "PBI-1"
+        ? "A stable unique boundary reproduced the final-frame signature. This localizes the instrumentation perturbation only; it does not establish that it dominates the original WebGL/native compositing discrepancy or promote native intermediate pixels from F2."
+        : outcome === "PBI-2"
+          ? "A stable cumulative boundary combination reproduced the signature while isolated controls did not. This supports a boundary interaction under the tested state, not a general physical cause."
+          : outcome === "PBI-3"
+            ? "The perturbation reproduced, but available isolated controls did not uniquely identify a boundary or minimal interaction. Further pass-boundary optimization should be weighed against the five one-LSB effect magnitude."
+            : "PBI-0: at least one required equivalence, repeatability, native backend, or effect reproduction control failed; no causal attribution is qualified.",
+      preservedDecisions: {
+        MInv6: "Q2 — MEASURABLE INSTRUMENTATION PERTURBATION",
+        MInv5: "N2 — CONTROLLED PROXY IMPROVEMENT",
+        overall: "G2 — PARTIAL STAGE ATTRIBUTION",
+        anatomy: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+        nativeDestinationAndPostDrawPixels: "F2",
+        noF1Promotion: true,
+      },
+      recommendedNextStep: outcome === "PBI-1" || outcome === "PBI-2" || outcome === "PBI-3"
+        ? "Stop optimizing these five one-LSB instrumentation differences unless a concrete future measurement requires it; return research effort to the original semi-transparent Anatomy rendering discrepancy through independently qualified measurements."
+        : "Resolve the specific invalid or insufficient control before interpreting any boundary effect; do not widen the experiment or promote intermediate pixel evidence.",
+    };
+
+    await writeReport(report);
+    expect(await native.page.locator(canvasSelector).getAttribute("data-observer-application-fallback")).toBe("none");
+    expect(equivalenceValid, "P0 must equal A1 and P4 must equal A2 under zero repeat noise before attribution").toBe(true);
+    expect(p0p4HasDifference, "M-INV6's instrumentation effect must reproduce between P0 and P4").toBe(true);
+    expect(drawMetadataValid).toBe(true);
+    expect(boundaryMetadataValid).toBe(true);
+    expect(allModeRepeatabilityQualified).toBe(true);
+    expect(allCleanupQualified).toBe(true);
+    expect(screenshotParityQualified).toBe(true);
+    expect(groundGlassRestorationMae).toBeLessThanOrEqual(groundGlassRepeatMae);
+    expect(pageErrors).toEqual([]);
+    expect(outcome).not.toBe("PBI-0");
+    await testInfo.attach("anatomy-progressive-pass-boundary-a0.png", { body: a0.png, contentType: "image/png" });
+    await testInfo.attach("anatomy-progressive-pass-boundary-ground-glass-before.png", { body: groundGlassBeforePng, contentType: "image/png" });
+    await testInfo.attach("anatomy-progressive-pass-boundary-ground-glass-after.png", { body: finalGroundGlassPng, contentType: "image/png" });
   } finally {
     await native.context.close();
   }
