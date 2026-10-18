@@ -8,6 +8,7 @@ import {
   classifyAnatomyNativeDrawBoundary,
   describeAnatomyNativeDrawCommands,
 } from "./anatomyNativeWebGpuDrawBoundary";
+import { normalizeAnatomyNativeFramebufferRgba } from "./anatomyNativeFramebufferParity";
 import type { AnatomyGpuCaptureRuntime } from "./anatomyGpuBlendIntermediate";
 
 type SelectedRenderable = THREE.Object3D & Readonly<{
@@ -135,7 +136,21 @@ export type AnatomyNativeDrawBoundaryCaptureOptions = Readonly<{
     rgbaBase64: string;
     repeatNoiseMae: number;
   }>;
+  includeRawFramebuffer?: boolean;
   resolveSourceMaterial: (material: THREE.Material) => THREE.Material;
+  isCaptureActive: () => boolean;
+  awaitReadbacks: (readbacks: readonly Promise<ArrayBufferView>[]) => Promise<readonly ArrayBufferView[]>;
+  registerCleanup: (cleanup: () => void) => () => void;
+  onResourcesReleased: (lifecycle: Readonly<Record<string, unknown>>) => void;
+}>;
+
+export type AnatomyNativeFinalFrameCaptureOptions = Readonly<{
+  renderer: NativeRenderer;
+  runtime: AnatomyGpuCaptureRuntime;
+  threeRevision: string;
+  generation: number;
+  samplePixelIndices: readonly number[];
+  includeRawFramebuffer: boolean;
   isCaptureActive: () => boolean;
   awaitReadbacks: (readbacks: readonly Promise<ArrayBufferView>[]) => Promise<readonly ArrayBufferView[]>;
   registerCleanup: (cleanup: () => void) => () => void;
@@ -152,6 +167,15 @@ const unsupportedResult = (
   feasibility: "F0",
   reason,
 });
+
+const bytesToBase64 = (bytes: Uint8Array): string => {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length)));
+  }
+  return window.btoa(binary);
+};
 
 const passLoadState = (descriptor: NativePassDescriptor) => {
   const colors = descriptor.colorAttachments ?? [];
@@ -517,6 +541,12 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       texture: THREE.FramebufferTexture;
       order: number;
       region: Readonly<{ x: number; y: number; width: number; height: number }>;
+      passBoundary?: Readonly<{
+        before: ReturnType<typeof passMetadata>;
+        after: ReturnType<typeof passMetadata>;
+        resolveTarget: boolean;
+        depthFormat: string | null;
+      }>;
     }>;
     type DrawDraft = {
       order: number;
@@ -783,6 +813,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           sourceFormat,
           options.samplePixelIndices,
         );
+        const normalizedFinalFrame = options.includeRawFramebuffer
+          ? normalizeAnatomyNativeFramebufferRgba(finalFramePixels, fullWidth, fullHeight, sourceFormat)
+          : null;
         const baselineParity = compareNativeFrameToBaseline(
           finalFramePixels,
           fullWidth,
@@ -812,12 +845,23 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
             width: fullWidth,
             height: fullHeight,
             format: sourceFormat,
+            nativeChannelOrder: sourceFormat.startsWith("bgra8") ? "BGRA" : "RGBA",
+            channelOrder: "RGBA",
+            rowOrder: "top-down",
+            colorRepresentation: "raw native 8-bit normalized attachment bytes; no color-space conversion",
             sampleCount: actualSampleCount,
+            resolveTarget: actualSampleCount > 1,
+            depthFormat: backend.utils?.getCurrentDepthStencilFormat?.(renderContext) ?? null,
             representation: "raw native canvas 8-bit normalized color bytes, reported in RGBA channel order; no browser canvas composition",
             premultiplication: {
               canvasAlphaMode: backend.context?.getConfiguration?.().alphaMode ?? null,
               interpretation: "raw attachment RGB and alpha bytes; browser canvas composition is not included",
             },
+            cameraState: renderContext.camera ? {
+              position: renderContext.camera.position.toArray(),
+              quaternion: renderContext.camera.quaternion.toArray(),
+              matrixWorld: renderContext.camera.matrixWorld.toArray(),
+            } : null,
             outputColorSpace: renderer.outputColorSpace ?? null,
             toneMapping: renderer.toneMapping ?? null,
             sampledRegion: region,
@@ -827,6 +871,13 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           finalFrame: {
             classification: baselineParity.qualified ? "F1" : "F2",
             rawFramebufferSamples: finalFrameSamples,
+            ...(normalizedFinalFrame ? { rawFramebufferRgbaBase64: bytesToBase64(normalizedFinalFrame) } : {}),
+            readback: {
+              channelOrder: "RGBA",
+              rowOrder: "top-down",
+              colorRepresentation: "raw native 8-bit normalized attachment bytes; no color-space conversion",
+            },
+            passBoundary: finalFrameSnapshot.passBoundary ?? null,
             screenshotParity: baselineParity,
             baselineComparisonRegion: "full native drawing buffer compared to the same-mode pre-instrumentation canvas screenshot by screenshot-pixel cell centers",
           },
@@ -845,6 +896,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
             resumedStencilLoadOp: renderContext.stencil ? "load" : null,
             renderPassCountAdded: observations.length * 2,
             finalFramePassCountAdded: 1,
+            finalFramePassBoundary: finalFrameSnapshot.passBoundary ?? null,
             finalFrameParity: baselineParity,
             finalFrameParityRequired: true,
           },
@@ -1020,6 +1072,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
               copiesEncoded = true;
               const texture = createTexture(sourceFormat, finalFrameRegion);
               const passBeforeCopy = contextData.currentPass;
+              const passStateBeforeCopy = passMetadata(contextData);
+              const resolveTarget = (contextData.descriptor?.colorAttachments?.[0]?.resolveTarget ?? null) !== null;
+              const depthFormat = backend.utils?.getCurrentDepthStencilFormat?.(renderContext) ?? null;
               renderer.copyFramebufferToTexture!(texture, finalFrameRectangle);
               const resumedPass = contextData.currentPass;
               const descriptor = contextData.descriptor;
@@ -1031,6 +1086,12 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
                   texture,
                   order: ownedTextures.indexOf(texture),
                   region: finalFrameRegion,
+                  passBoundary: {
+                    before: passStateBeforeCopy,
+                    after: passMetadata(contextData),
+                    resolveTarget,
+                    depthFormat,
+                  },
                 };
               }
             } catch (cause) {
@@ -1071,5 +1132,349 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     // Keep the chosen canvas format in the lexical scope used when decoding readbacks.
     const sourceFormat = backend.utils?.getPreferredCanvasFormat?.() ?? "";
     if (!sourceFormat) rejectUnsupported("r186-preferred-native-canvas-format-unavailable");
+  });
+};
+
+/**
+ * Captures only the completed default-framebuffer attachment at finishRender.
+ * It uses the same r186 copy/readback path as the draw-boundary capture, but
+ * never wraps backend.draw and inserts no boundary around the selected object.
+ */
+export const runAnatomyNativeWebGpuFinalFrameCapture = (
+  options: AnatomyNativeFinalFrameCaptureOptions,
+): Promise<Readonly<Record<string, unknown>>> => {
+  const candidate = classifyAnatomyNativeDrawBoundary(options.runtime, options.threeRevision);
+  if (candidate.classification !== "F1") {
+    return Promise.resolve({
+      ...unsupportedResult(options.generation, candidate.reason),
+      method: "native-final-frame",
+    });
+  }
+  const renderer = options.renderer;
+  const backend = renderer.backend;
+  if (!backend || typeof backend.finishRender !== "function" || typeof backend.get !== "function" ||
+      !backend.device?.queue || typeof backend.context?.getCurrentTexture !== "function" ||
+      typeof renderer.copyFramebufferToTexture !== "function" || typeof renderer.getDrawingBufferSize !== "function" ||
+      typeof backend.utils?.getPreferredCanvasFormat !== "function" ||
+      typeof backend.utils.getSampleCountRenderContext !== "function" ||
+      typeof backend.utils.getCurrentDepthStencilFormat !== "function") {
+    return Promise.resolve({
+      ...unsupportedResult(options.generation, "pinned-r186-native-final-frame-api-shape-unavailable"),
+      method: "native-final-frame",
+    });
+  }
+  if (options.samplePixelIndices.length < 1 || options.samplePixelIndices.length > 32) {
+    return Promise.resolve({
+      ...unsupportedResult(options.generation, "invalid-or-excessive-fixed-sample-selection"),
+      method: "native-final-frame",
+    });
+  }
+
+  const dimensions = renderer.getDrawingBufferSize(new THREE.Vector2());
+  const width = Math.floor(dimensions.x);
+  const height = Math.floor(dimensions.y);
+  if (width < 1 || height < 1 || options.samplePixelIndices.some((index) =>
+    !Number.isInteger(index) || index < 0 || index >= width * height)) {
+    return Promise.resolve({
+      ...unsupportedResult(options.generation, "fixed-sample-selection-outside-native-drawing-buffer"),
+      method: "native-final-frame",
+    });
+  }
+  const sourceFormat = backend.utils.getPreferredCanvasFormat();
+  const liveTexture = backend.context.getCurrentTexture();
+  if (!sourceFormat || !liveTexture?.format || liveTexture.format !== sourceFormat) {
+    return Promise.resolve({
+      ...unsupportedResult(options.generation, "native-canvas-format-does-not-match-r186-copy-format"),
+      method: "native-final-frame",
+    });
+  }
+  const rectangle = new THREE.Vector4(0, 0, width, height);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let cleanupRequested = false;
+    let copyEncoded = false;
+    let encoderSubmitted = false;
+    let readbackStarted = false;
+    let resourcesReleased = false;
+    let readbackBufferCount = 0;
+    let readbackBufferDestroyCount = 0;
+    let readbackBufferDisposalFailures = 0;
+    let textureDisposeCount = 0;
+    let timer = 0;
+    let captureContext: NativeRenderContext | null = null;
+    let texture: THREE.FramebufferTexture | null = null;
+    let pendingResult: Readonly<Record<string, unknown>> | null = null;
+    let unregisterCleanup: (() => void) | null = null;
+    let passBoundary: Readonly<{
+      before: ReturnType<typeof passMetadata>;
+      after: ReturnType<typeof passMetadata>;
+      resolveTarget: boolean;
+      depthFormat: string | null;
+    }> | null = null;
+    let sampleCount = 0;
+
+    const originalFinishRender = backend.finishRender;
+    const hadOwnFinishRender = Object.prototype.hasOwnProperty.call(backend, "finishRender");
+    const nativeBackend = backend as NativeBackend & { finishRender: NativeBackend["finishRender"] };
+    let finishWrapper: NativeBackend["finishRender"] | null = null;
+
+    const restoreFinishHook = () => {
+      if (!finishWrapper || nativeBackend.finishRender !== finishWrapper) return;
+      if (hadOwnFinishRender) nativeBackend.finishRender = originalFinishRender;
+      else delete (nativeBackend as unknown as Record<string, unknown>).finishRender;
+    };
+    const unregisterCancellation = () => {
+      unregisterCleanup?.();
+      unregisterCleanup = null;
+    };
+    const restoreHooks = () => {
+      window.clearTimeout(timer);
+      restoreFinishHook();
+      unregisterCancellation();
+    };
+    const releaseOwnedResources = () => {
+      if (resourcesReleased) return;
+      resourcesReleased = true;
+      let disposalFailureCount = 0;
+      if (texture) {
+        try {
+          texture.dispose();
+        } catch {
+          disposalFailureCount += 1;
+        }
+      }
+      options.onResourcesReleased({
+        captureMode: "final-frame-only",
+        temporaryFramebufferTextureCount: texture ? 1 : 0,
+        temporaryFramebufferTextureDisposeCount: textureDisposeCount,
+        temporaryFramebufferTextureDisposeEventsPerResource: texture ? [textureDisposeCount] : [],
+        temporaryFramebufferTextureDisposalFailures: disposalFailureCount,
+        readbackBufferCount,
+        readbackBufferDestroyCount,
+        readbackBufferDisposalFailures,
+        noBorrowedResourceDisposed: true,
+      });
+    };
+    const settle = (result: Readonly<Record<string, unknown>>) => {
+      if (settled) return;
+      if (copyEncoded && !encoderSubmitted) {
+        cleanupRequested = true;
+        pendingResult ??= result;
+        restoreHooks();
+        return;
+      }
+      settled = true;
+      restoreHooks();
+      releaseOwnedResources();
+      resolve(result);
+    };
+    const unsupported = (reason: string) => settle({
+      ...unsupportedResult(options.generation, reason),
+      method: "native-final-frame",
+    });
+    const onCancel = () => {
+      cleanupRequested = true;
+      restoreFinishHook();
+      unregisterCancellation();
+      if (!readbackStarted) {
+        settle({
+          ...unsupportedResult(options.generation, "renderer-generation-retired"),
+          method: "native-final-frame",
+        });
+      }
+    };
+    const createOwnedTexture = (): THREE.FramebufferTexture => {
+      const owned = new THREE.FramebufferTexture(width, height);
+      owned.internalFormat = sourceFormat as typeof owned.internalFormat;
+      owned.addEventListener("dispose", () => { textureDisposeCount += 1; });
+      texture = owned;
+      return owned;
+    };
+
+    const readSnapshot = async (renderContext: NativeRenderContext) => {
+      try {
+        if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
+        if (!texture) throw new Error("Final-frame framebuffer snapshot was not created");
+        readbackStarted = true;
+        const pendingReadback = copyNativeTextureToOwnedBuffer(
+          backend,
+          texture,
+          width,
+          height,
+          0,
+          () => { readbackBufferCount += 1; },
+          (failed) => {
+            readbackBufferDestroyCount += 1;
+            if (failed) readbackBufferDisposalFailures += 1;
+          },
+        );
+        const readbacks = await options.awaitReadbacks([pendingReadback]);
+        if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
+        if (readbacks.length !== 1 || !(readbacks[0] instanceof Uint8Array)) {
+          throw new Error("Native final-frame readback did not return the expected Uint8Array");
+        }
+        const packed = unpackAnatomyGpuRgbaReadbackRows(readbacks[0] as Uint8Array, width, height);
+        const normalized = normalizeAnatomyNativeFramebufferRgba(packed, width, height, sourceFormat);
+        const samples = anatomyNativeFramebufferSamples(
+          packed,
+          width,
+          { x: 0, y: 0, width, height },
+          sourceFormat,
+          options.samplePixelIndices,
+        );
+        const camera = renderContext.camera;
+        if (!camera) throw new Error("Final native framebuffer render context has no camera identity");
+        const finalResult = {
+          status: "ok",
+          generation: options.generation,
+          method: "native-final-frame",
+          feasibility: "F2",
+          rendererRuntime: options.runtime,
+          threeRevision: options.threeRevision,
+          attachment: {
+            width,
+            height,
+            format: sourceFormat,
+            nativeChannelOrder: sourceFormat.startsWith("bgra8") ? "BGRA" : "RGBA",
+            channelOrder: "RGBA",
+            rowOrder: "top-down",
+            colorRepresentation: "raw native 8-bit normalized attachment bytes; no color-space conversion",
+            sampleCount,
+            resolveTarget: passBoundary?.resolveTarget ?? false,
+            depthFormat: backend.utils?.getCurrentDepthStencilFormat?.(renderContext) ?? null,
+            outputColorSpace: renderer.outputColorSpace ?? null,
+            toneMapping: renderer.toneMapping ?? null,
+            canvasAlphaMode: backend.context?.getConfiguration?.().alphaMode ?? null,
+            representation: "raw native canvas 8-bit normalized color bytes, reported in RGBA channel order; no browser canvas composition",
+            premultiplication: {
+              canvasAlphaMode: backend.context?.getConfiguration?.().alphaMode ?? null,
+              interpretation: "raw attachment RGB and alpha bytes; browser canvas composition is not included",
+            },
+            cameraState: {
+              position: camera.position.toArray(),
+              quaternion: camera.quaternion.toArray(),
+              matrixWorld: camera.matrixWorld.toArray(),
+            },
+            viewport: renderContext.viewportValue ? { ...renderContext.viewportValue } : null,
+            scissor: renderContext.scissorValue ? { ...renderContext.scissorValue } : null,
+            scissorTest: renderer.getScissorTest?.() ?? null,
+          },
+          finalFrame: {
+            classification: "F2",
+            rawFramebufferSamples: samples,
+            ...(options.includeRawFramebuffer ? { rawFramebufferRgbaBase64: bytesToBase64(normalized) } : {}),
+            readback: {
+              channelOrder: "RGBA",
+              rowOrder: "top-down",
+              colorRepresentation: "raw native 8-bit normalized attachment bytes; no color-space conversion",
+            },
+            passBoundary,
+          },
+          captureIntervention: {
+            mode: "A1-final-frame-only",
+            selectedDrawHookInstalled: false,
+            selectedDrawSplits: 0,
+            finalFramebufferCopyCount: 1,
+            copySubmittedInOriginalCommandEncoder: true,
+            copyEndsAndResumesTheLiveRenderPass: true,
+            resumedColorDepthLoadOps: "load",
+            outputEquivalenceRequiresA0ScreenshotControl: true,
+          },
+        };
+        settle(finalResult);
+      } catch (cause) {
+        settle({
+          ...unsupportedResult(
+            options.generation,
+            cause instanceof Error ? cause.message : String(cause),
+          ),
+          method: "native-final-frame",
+        });
+      }
+    };
+
+    unregisterCleanup = options.registerCleanup(onCancel);
+    const finishWrapperImplementation = function (this: unknown, renderContext: NativeRenderContext) {
+      if (settled) return originalFinishRender.call(this, renderContext);
+      if (cleanupRequested || !options.isCaptureActive()) {
+        onCancel();
+        return originalFinishRender.call(this, renderContext);
+      }
+      if (captureContext === null && renderContext.renderTarget === null && renderContext.textures === null &&
+          renderer.getRenderTarget?.() === null) {
+        const contextData = backend.get(renderContext) as NativeRenderContextData;
+        const activeFormat = backend.context?.getCurrentTexture?.()?.format;
+        const unsupportedReason = activeFormat
+          ? passPreservingRuntimeReason(renderer, backend, renderContext, contextData, activeFormat)
+          : "live-webgpu-canvas-texture-format-unavailable-at-final-frame-boundary";
+        const attachment = contextData.descriptor?.colorAttachments?.[0];
+        sampleCount = backend.utils?.getSampleCountRenderContext?.(renderContext) ?? 1;
+        const hasResolveTarget = attachment?.resolveTarget !== undefined && attachment?.resolveTarget !== null;
+        if (unsupportedReason) {
+          unsupported(unsupportedReason);
+        } else if (activeFormat !== sourceFormat) {
+          unsupported("live-native-frame-format-changed-before-final-copy");
+        } else if ((sampleCount > 1) !== hasResolveTarget) {
+          unsupported("native-default-framebuffer-msaa-resolve-shape-is-inconsistent");
+        } else if (!contextData.currentPass || !contextData.descriptor || !renderContext.camera) {
+          unsupported("active-native-final-render-pass-or-camera-unavailable");
+        } else {
+          try {
+            if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
+            captureContext = renderContext;
+            const before = passMetadata(contextData);
+            const passBeforeCopy = contextData.currentPass;
+            const owned = createOwnedTexture();
+            copyEncoded = true;
+            renderer.copyFramebufferToTexture!(owned, rectangle);
+            if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
+            const resumed = contextData.currentPass;
+            const afterDescriptor = contextData.descriptor;
+            if (!resumed || resumed === passBeforeCopy || !afterDescriptor ||
+                !isLoadPreservingState(renderContext, afterDescriptor)) {
+              throw new Error("r186-final-copy-did-not-resume-color-depth-stencil-with-load");
+            }
+            passBoundary = {
+              before,
+              after: passMetadata(contextData),
+              resolveTarget: hasResolveTarget,
+              depthFormat: backend.utils?.getCurrentDepthStencilFormat?.(renderContext) ?? null,
+            };
+          } catch (cause) {
+            if (cause instanceof AnatomyGpuCaptureCancelledError) {
+              onCancel();
+            } else {
+              unsupported(cause instanceof Error ? cause.message : String(cause));
+            }
+          }
+        }
+      }
+
+      let result: unknown;
+      try {
+        result = originalFinishRender.call(this, renderContext);
+      } catch (cause) {
+        if (captureContext === renderContext) {
+          encoderSubmitted = true;
+          if (pendingResult) settle(pendingResult);
+        }
+        throw cause;
+      }
+      if (captureContext === renderContext) {
+        encoderSubmitted = true;
+        if (pendingResult) settle(pendingResult);
+        else if (!settled && !cleanupRequested && texture) {
+          restoreHooks();
+          void readSnapshot(renderContext);
+        }
+      }
+      return result;
+    };
+    finishWrapper = finishWrapperImplementation as NativeBackend["finishRender"];
+    nativeBackend.finishRender = finishWrapper;
+    timer = window.setTimeout(() => {
+      if (!captureContext) unsupported("default-native-render-pass-did-not-reach-final-frame-boundary-before-timeout");
+    }, 10_000);
   });
 };

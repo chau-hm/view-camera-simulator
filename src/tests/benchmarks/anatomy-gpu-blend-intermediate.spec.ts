@@ -21,6 +21,12 @@ import {
   type AnatomyGpuRgbaSample,
 } from "../../render/backend/anatomyGpuBlendIntermediate";
 import {
+  compareAnatomyNativeFramebuffers,
+  mapAnatomyScreenshotPixelsToFramebuffer,
+  type AnatomyNativeFramebuffer,
+  type AnatomyNativeFramebufferMetadata,
+} from "../../render/backend/anatomyNativeFramebufferParity";
+import {
   anatomyMaskBounds,
   compareAnatomyImages,
   type AnatomyPixelMask,
@@ -32,6 +38,7 @@ const auditMode = process.env.OBSERVER_ANATOMY_AUDIT_MODE ?? "standard";
 const auditRequestEvent = "vcs:observer-verification:anatomy-material-audit";
 const auditResultEvent = "vcs:observer-verification:anatomy-material-audit-result";
 const cameraPoseEvent = "vcs:observer-verification:anatomy-view";
+const captureSettledEvent = "vcs:observer-verification:anatomy-gpu-blend-intermediate-capture-settled";
 const canvasSelector = '[data-testid="scene-canvas"]';
 const referenceRoot = resolve(process.cwd(), "docs/architecture");
 let requestCounter = 0;
@@ -83,6 +90,7 @@ type ProbeRequest = Readonly<{
     rgbaBase64: string;
     repeatNoiseMae: number;
   }>;
+  includeRawFramebuffer?: boolean;
 }>;
 type ProbeResult = Readonly<Record<string, unknown> & { requestId: string }>;
 type ProxyProbeResult = ProbeResult & Readonly<{
@@ -161,6 +169,87 @@ type NativeBoundaryProbeResult = (ProbeResult & Readonly<{
   }>;
 }>);
 type Image = ReturnType<typeof decodePlaywrightPng>;
+type RawFramebufferProbeResult = ProbeResult & Readonly<{
+  status: string;
+  generation: number;
+  method: string;
+  rendererRuntime: Readonly<{ rendererFamily: string; executionBackend: string }>;
+  attachment: Readonly<Record<string, unknown>>;
+  finalFrame: Readonly<Record<string, unknown> & {
+    rawFramebufferRgbaBase64?: string;
+    rawFramebufferSamples?: readonly Readonly<{ index: number; x: number; y: number; rgba: readonly number[] }>[];
+  }>;
+}>;
+
+const captureWithSettlement = async (
+  page: Page,
+  request: ProbeRequest,
+  requestId: string,
+): Promise<Readonly<{ result: RawFramebufferProbeResult; settlement: Readonly<Record<string, unknown>> }>> => {
+  const settlementPromise = page.locator(canvasSelector).evaluate((element, payload) => new Promise<Readonly<Record<string, unknown>>>((resolveSettlement) => {
+    const onSettled = (event: Event) => {
+      const detail = (event as CustomEvent<Readonly<Record<string, unknown>> & { requestId: string }>).detail;
+      if (detail?.requestId !== payload.requestId) return;
+      element.removeEventListener(payload.eventName, onSettled);
+      resolveSettlement(detail);
+    };
+    element.addEventListener(payload.eventName, onSettled);
+  }), { requestId, eventName: captureSettledEvent });
+  const result = await requestProbe(page, request, requestId) as RawFramebufferProbeResult;
+  return { result, settlement: await settlementPromise };
+};
+
+const nativeFramebufferFromProbe = (
+  result: RawFramebufferProbeResult,
+  snapshot: AuditSnapshot,
+): AnatomyNativeFramebuffer => {
+  if (result.status !== "ok" || !result.finalFrame.rawFramebufferRgbaBase64) {
+    throw new Error(`Raw native capture ${result.requestId} did not return full RGBA bytes`);
+  }
+  const attachment = result.attachment as Record<string, unknown> & {
+    width: number;
+    height: number;
+    format: string;
+    channelOrder: string;
+    rowOrder: string;
+    colorRepresentation: string;
+    sampleCount: number;
+    resolveTarget: boolean;
+    depthFormat: string | null;
+    outputColorSpace: string | null;
+    toneMapping: number | null;
+    cameraState: { position: number[]; quaternion: number[]; matrixWorld: number[] };
+  };
+  const cameraState = attachment.cameraState;
+  if (!cameraState) throw new Error(`Raw native capture ${result.requestId} omitted its render camera state`);
+  const metadata: AnatomyNativeFramebufferMetadata = {
+    width: attachment.width,
+    height: attachment.height,
+    format: attachment.format,
+    channelOrder: attachment.channelOrder,
+    rowOrder: attachment.rowOrder,
+    colorRepresentation: attachment.colorRepresentation,
+    sampleCount: attachment.sampleCount,
+    resolveTarget: attachment.resolveTarget,
+    depthFormat: attachment.depthFormat,
+    rendererFamily: result.rendererRuntime.rendererFamily,
+    executionBackend: result.rendererRuntime.executionBackend,
+    outputColorSpace: attachment.outputColorSpace,
+    toneMapping: attachment.toneMapping,
+    outputPolicy: "material-aware",
+    sceneId: snapshot.sceneId,
+    teachingState: "Front Standard highlighted; Bellows dimmed",
+    anatomyPresentation: snapshot.anatomyPresentation,
+    cameraPosition: cameraState.position,
+    cameraQuaternion: cameraState.quaternion,
+    cameraMatrixWorld: cameraState.matrixWorld,
+    devicePixelRatio: snapshot.viewport.devicePixelRatio,
+    viewportWidth: snapshot.viewport.width,
+    viewportHeight: snapshot.viewport.height,
+  };
+  const rgba = Buffer.from(result.finalFrame.rawFramebufferRgbaBase64, "base64");
+  return { metadata, rgba: new Uint8Array(rgba) };
+};
 
 const readAuditSnapshot = async (page: Page, requestId: string): Promise<AuditSnapshot> =>
   page.locator(canvasSelector).evaluate((element, payload) => new Promise<AuditSnapshot>((resolveSnapshot, reject) => {
@@ -764,6 +853,114 @@ test("native draw-boundary readback rejection after SPA retirement is handled an
   }
 });
 
+test("native final-frame readback waits safely across probe retirement and blocks overlapping capture", async ({ browser }) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
+  test.setTimeout(240_000);
+  const native = await openBackend(browser, "native-webgpu-material-aware");
+  const pageErrors: string[] = [];
+  native.page.on("pageerror", (error) => { pageErrors.push(error.message); });
+  const canvas = native.page.locator(canvasSelector);
+  const generation = Number(await canvas.getAttribute("data-observer-renderer-generation"));
+  const requestId = `anatomy-native-final-frame-retire-${++requestCounter}`;
+  const overlapRequestId = `${requestId}-overlap`;
+
+  try {
+    await holdCaptureAtNativeReadback(native.page, requestId, {
+      generation,
+      method: "native-final-frame",
+      samplePixelIndices: [0],
+      includeRawFramebuffer: true,
+    });
+    const pending = await native.page.evaluate(() => {
+      const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
+      return { methods: state?.pendingMethods, readbackCounts: state?.pendingReadbackCounts };
+    });
+    expect(pending.methods).toEqual(["native-final-frame"]);
+    expect(pending.readbackCounts).toEqual([1]);
+
+    await canvas.evaluate((element, payload) => {
+      element.dispatchEvent(new CustomEvent(payload.eventName, { detail: payload.request }));
+    }, {
+      eventName: ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT,
+      request: { requestId: overlapRequestId, generation, method: "native-draw-boundary" },
+    });
+    await expect.poll(async () => native.page.evaluate((id) =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.results
+        .find((result) => result.requestId === id)?.reason ?? null,
+    overlapRequestId)).toBe("capture-already-active");
+
+    await native.page.evaluate(() => {
+      window.history.pushState(window.history.state, "", "/simulator/free/architecture-rise?observerRenderer=webgpu");
+      window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+    });
+    await expect(native.page).toHaveURL(/\/simulator\/free\/architecture-rise/);
+    const nextCanvas = native.page.locator(canvasSelector);
+    await expect(nextCanvas).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+    await expect.poll(async () => Number(await nextCanvas.getAttribute("data-observer-renderer-generation")))
+      .toBeGreaterThan(generation);
+    await expect(nextCanvas).not.toHaveAttribute("data-observer-anatomy-gpu-blend-probe", "ready");
+
+    const beforeStaleRequestCount = await native.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.results.length ?? 0,
+    );
+    await native.page.evaluate((payload) => {
+      (window as CaptureLifecycleWindow).__anatomyGpuOldProbeContainer?.dispatchEvent(new CustomEvent(payload.eventName, {
+        detail: { requestId: "retired-final-frame-request", generation: payload.generation, method: "native-final-frame" },
+      }));
+    }, { eventName: ANATOMY_GPU_BLEND_INTERMEDIATE_CAPTURE_EVENT, generation });
+    expect(await native.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.results.length ?? 0,
+    )).toBe(beforeStaleRequestCount);
+
+    await native.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
+    );
+    const settlement = await native.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settledPromise,
+    );
+    expect(settlement).toMatchObject({
+      requestId,
+      method: "native-final-frame",
+      generation,
+      status: "cancelled",
+      resourceCleanup: {
+        captureMode: "final-frame-only",
+        noBorrowedResourceDisposed: true,
+        temporaryFramebufferTextureCount: 1,
+        temporaryFramebufferTextureDisposeCount: 1,
+        temporaryFramebufferTextureDisposeEventsPerResource: [1],
+        temporaryFramebufferTextureDisposalFailures: 0,
+        readbackBufferCount: 1,
+        readbackBufferDestroyCount: 1,
+        readbackBufferDisposalFailures: 0,
+      },
+    });
+    const finalState = await native.page.evaluate((id) => {
+      const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
+      return {
+        pendingCount: state?.pendingCount,
+        pendingMapAsyncCount: state?.pendingMapAsyncCount,
+        mapAsyncCount: state?.mapAsyncCount,
+        mapAsyncRejectionCount: state?.mapAsyncRejectionCount,
+        primaryResults: state?.results.filter((result) => result.requestId === id),
+        overlapResults: state?.results.filter((result) => result.requestId === `${id}-overlap`),
+      };
+    }, requestId);
+    expect(finalState.pendingCount).toBe(1);
+    expect(finalState.pendingMapAsyncCount).toBe(0);
+    expect(finalState.mapAsyncCount).toBe(1);
+    expect(finalState.mapAsyncRejectionCount).toBe(0);
+    expect(finalState.primaryResults).toEqual([]);
+    expect(finalState.overlapResults).toHaveLength(1);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    await native.page.evaluate(() =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
+    ).catch(() => undefined);
+    await native.context.close();
+  }
+});
+
 const stabilizeFrame = async (page: Page): Promise<void> => page.evaluate(() => new Promise<void>((resolveFrame) => {
   requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame())));
 }));
@@ -896,6 +1093,7 @@ const preselectEvidencePixels = async () => {
     width,
     height: dimmedMaskImage.height,
     dimmedMaskPixelIndices: dimmedMask,
+    bellowsResponseMaskPixelIndices: bellowsMask,
     unaffectedCandidateMaskPixelIndices: unaffectedMask,
     bellowsResponseMaskPixelCount: bellowsMask.length,
     candidateIntersectionPixelCount: candidates.length,
@@ -1952,5 +2150,760 @@ test("M-INV5 qualifies real Anatomy native WebGPU draw-boundary samples", async 
     expect(report.preservedResearchDecisions.overall).toBe("G2 — PARTIAL STAGE ATTRIBUTION");
   } finally {
     await Promise.all(contexts.map((context) => context.close()));
+  }
+});
+
+test("M-INV6 qualifies final-only and pass-segmented native Anatomy raw framebuffer parity", async ({ browser }, testInfo: TestInfo) => {
+  test.skip(!nativeRequired || auditMode !== "material-aware", "Requires the native material-aware Anatomy audit configuration.");
+  test.setTimeout(20 * 60 * 1000);
+  expect(nativeRequired, "This experiment requires native WebGPU with no application fallback").toBe(true);
+
+  const native = await openBackend(browser, "native-webgpu-material-aware");
+  const writeReport = async (report: Readonly<Record<string, unknown>>) => {
+    const reportPath = testInfo.outputPath("anatomy-native-raw-framebuffer-parity-report.json");
+    await mkdir(dirname(reportPath), { recursive: true });
+    await writeFile(reportPath, JSON.stringify(report, null, 2));
+    await testInfo.attach("anatomy-native-raw-framebuffer-parity-report.json", {
+      path: reportPath,
+      contentType: "application/json",
+    });
+  };
+  const captureOrder: Array<Readonly<{ order: number; condition: "A1" | "A2"; ordinal: number; requestId: string }>> = [];
+  const trials: Array<Readonly<{
+    condition: "A1" | "A2";
+    ordinal: number;
+    requestId: string;
+    result: RawFramebufferProbeResult;
+    settlement: Readonly<Record<string, unknown>>;
+    frame: AnatomyNativeFramebuffer | null;
+    screenshot: Readonly<{ png: Buffer; image: Image }>;
+    before: AuditSnapshot;
+    after: AuditSnapshot;
+  }>> = [];
+  const pageErrors: string[] = [];
+  native.page.on("pageerror", (error) => { pageErrors.push(error.message); });
+
+  try {
+    const cameraPose = {
+      position: native.initial.viewport.cameraPosition,
+      target: native.initial.viewport.orbitTarget ?? [0, 0, 0],
+    };
+    await advanceToFrontStandard(native.page);
+    await setCameraPose(native.page, cameraPose.position, cameraPose.target);
+    const outputMode = await requestOutputMode(
+      native.page,
+      Number(await native.page.locator(canvasSelector).getAttribute("data-observer-renderer-generation")),
+      "B0",
+    );
+    expect(outputMode.ok).toBe(true);
+
+    const initialSnapshot = await readAuditSnapshot(native.page, `m-inv6-initial-${++requestCounter}`);
+    expect(initialSnapshot.sceneId).toBe("view-camera-anatomy");
+    expect(initialSnapshot.viewport.devicePixelRatio).toBe(1);
+    const bellows = initialSnapshot.renderables.find((renderable) =>
+      renderable.visible && renderable.name === "bellows-folded-surface" && renderable.cameraPart === "bellows",
+    );
+    expect(bellows).toBeTruthy();
+    if (!bellows) throw new Error("The Front Standard Bellows renderable was not mounted");
+    const sourceMaterial = bellows.materialAssignments[0]?.source;
+    const sourceMaterialId = typeof sourceMaterial?.id === "string" ? sourceMaterial.id : undefined;
+    expect(sourceMaterial?.opacity).toBe(0.16);
+    expect(sourceMaterial?.transparent).toBe(true);
+    const selectedSamplesReport = JSON.parse(await readFile(
+      resolve(referenceRoot, "anatomy-native-webgpu-draw-boundary/report.json"),
+      "utf8",
+    )) as { scope?: { selectedFixedFramebufferSamples?: unknown } };
+    const fixedSampleIndices = selectedSamplesReport.scope?.selectedFixedFramebufferSamples;
+    expect(Array.isArray(fixedSampleIndices)).toBe(true);
+    expect(fixedSampleIndices).toHaveLength(9);
+    if (!Array.isArray(fixedSampleIndices) || fixedSampleIndices.some((index) => typeof index !== "number")) {
+      throw new Error("M-INV5 did not provide the nine fixed native framebuffer positions");
+    }
+    const fixedSamples = fixedSampleIndices as number[];
+    expect(initialSnapshot.viewport.canvasBackingWidth).toBeGreaterThan(0);
+    expect(initialSnapshot.viewport.canvasBackingHeight).toBeGreaterThan(0);
+    expect(fixedSamples.every((index) => index >= 0 &&
+      index < initialSnapshot.viewport.canvasBackingWidth * initialSnapshot.viewport.canvasBackingHeight)).toBe(true);
+
+    const a0 = await captureCanvas(native.page);
+    const a0Repeat = await captureCanvas(native.page);
+    const a0RepeatNoiseMae = imageMae(a0.image, a0Repeat.image);
+    const a0GroundGlassPng = await native.page.getByTestId("ground-glass-rtt").locator("canvas").first()
+      .screenshot({ animations: "disabled" });
+    const a0GroundGlass = decodePlaywrightPng(a0GroundGlassPng);
+    const a0GroundGlassRepeat = await captureGroundGlass(native.page);
+    const groundGlassRepeatNoiseMae = imageMae(a0GroundGlass, a0GroundGlassRepeat);
+    const groundGlass = native.page.getByTestId("ground-glass-rtt");
+    await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+
+    const referencePixels = await preselectEvidencePixels();
+    expect(referencePixels.width).toBe(a0.image.width);
+    expect(referencePixels.height).toBe(a0.image.height);
+    const dimmedIndices = new Set(referencePixels.dimmedMaskPixelIndices);
+    const bellowsIndices = referencePixels.bellowsResponseMaskPixelIndices.filter((index) => dimmedIndices.has(index));
+    expect(bellowsIndices.length).toBeGreaterThan(0);
+    const bellowsRegionMapping = mapAnatomyScreenshotPixelsToFramebuffer(
+      bellowsIndices,
+      referencePixels.width,
+      referencePixels.height,
+      initialSnapshot.viewport.canvasBackingWidth,
+      initialSnapshot.viewport.canvasBackingHeight,
+    );
+    const unaffectedRegionMapping = mapAnatomyScreenshotPixelsToFramebuffer(
+      referencePixels.unaffectedCandidateMaskPixelIndices,
+      referencePixels.width,
+      referencePixels.height,
+      initialSnapshot.viewport.canvasBackingWidth,
+      initialSnapshot.viewport.canvasBackingHeight,
+    );
+    const regions = {
+      bellowsDimmedResponse: bellowsRegionMapping.indices,
+      unaffectedBackgroundControl: unaffectedRegionMapping.indices,
+    };
+    const baselineCanvas = baselineCanvasPayload(a0.image, a0RepeatNoiseMae);
+    const expectedGeneration = initialSnapshot.generation;
+    const sceneInputBaseline = canonicalSceneInputs(initialSnapshot);
+    const outputPath = testInfo.outputPath("raw-native-framebuffer-captures");
+    await mkdir(outputPath, { recursive: true });
+
+    let a1Ordinal = 0;
+    let a2Ordinal = 0;
+    const captureCondition = async (condition: "A1" | "A2") => {
+      const ordinal = condition === "A1" ? ++a1Ordinal : ++a2Ordinal;
+      const before = await readAuditSnapshot(native.page, `m-inv6-${condition}-${ordinal}-before-${++requestCounter}`);
+      expect(before.generation).toBe(expectedGeneration);
+      expect(before.sceneId).toBe(initialSnapshot.sceneId);
+      expect(before.anatomyPresentation).toEqual(initialSnapshot.anatomyPresentation);
+      expect(before.viewport.cameraPosition).toEqual(initialSnapshot.viewport.cameraPosition);
+      expect(before.viewport.cameraQuaternion).toEqual(initialSnapshot.viewport.cameraQuaternion);
+      expect(before.viewport.canvasBackingWidth).toBe(initialSnapshot.viewport.canvasBackingWidth);
+      expect(before.viewport.canvasBackingHeight).toBe(initialSnapshot.viewport.canvasBackingHeight);
+      expect(canonicalSceneInputs(before)).toEqual(sceneInputBaseline);
+      const requestId = `anatomy-m-inv6-${condition.toLowerCase()}-${ordinal}-${++requestCounter}`;
+      const request: ProbeRequest = condition === "A1"
+        ? {
+            generation: expectedGeneration,
+            method: "native-final-frame",
+            samplePixelIndices: fixedSamples,
+            includeRawFramebuffer: true,
+          }
+        : {
+            generation: expectedGeneration,
+            method: "native-draw-boundary",
+            renderableId: bellows.objectId,
+            ...(sourceMaterialId ? { sourceMaterialId } : {}),
+            samplePixelIndices: fixedSamples,
+            baselineCanvas,
+            includeRawFramebuffer: true,
+          };
+      captureOrder.push({ order: captureOrder.length + 1, condition, ordinal, requestId });
+      const { result, settlement } = await captureWithSettlement(native.page, request, requestId);
+      const screenshot = await captureCanvas(native.page);
+      const after = await readAuditSnapshot(native.page, `m-inv6-${condition}-${ordinal}-after-${++requestCounter}`);
+      expect(after.generation).toBe(expectedGeneration);
+      expect(after.sceneId).toBe(initialSnapshot.sceneId);
+      expect(after.anatomyPresentation).toEqual(initialSnapshot.anatomyPresentation);
+      expect(after.viewport.cameraPosition).toEqual(initialSnapshot.viewport.cameraPosition);
+      expect(after.viewport.cameraQuaternion).toEqual(initialSnapshot.viewport.cameraQuaternion);
+      expect(after.viewport.canvasBackingWidth).toBe(initialSnapshot.viewport.canvasBackingWidth);
+      expect(after.viewport.canvasBackingHeight).toBe(initialSnapshot.viewport.canvasBackingHeight);
+      expect(canonicalSceneInputs(after)).toEqual(sceneInputBaseline);
+      const frame = result.status === "ok" && result.finalFrame.rawFramebufferRgbaBase64
+        ? nativeFramebufferFromProbe(result, after)
+        : null;
+      if (frame) {
+        const rawPath = resolve(outputPath, `${condition}-${String(ordinal).padStart(2, "0")}.rgba`);
+        await writeFile(rawPath, Buffer.from(result.finalFrame.rawFramebufferRgbaBase64!, "base64"));
+        await testInfo.attach(`${condition}-${String(ordinal).padStart(2, "0")}-canvas.png`, {
+          body: screenshot.png,
+          contentType: "image/png",
+        });
+      }
+      const trial = { condition, ordinal, requestId, result, settlement, frame, screenshot, before, after } as const;
+      trials.push(trial);
+      return trial;
+    };
+
+    const sequence: readonly ("A1" | "A2")[] = ["A1", "A1", "A2", "A2", "A1", "A2", "A1", "A2"];
+    for (const condition of sequence) {
+      const trial = await captureCondition(condition);
+      if (!trial.frame) {
+        const unsupportedReport = {
+          schemaVersion: 1,
+          audit: "anatomy-native-raw-framebuffer-parity",
+          outcome: "Q3",
+          researchDecision: "N2",
+          preservedResearchDecisions: {
+            anatomy: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+            overall: "G2 — PARTIAL STAGE ATTRIBUTION",
+            mInv5: "N2 — CONTROLLED PROXY IMPROVEMENT",
+          },
+          provenance: {
+            baseCommit: process.env.M_INV6_BASE_COMMIT ?? null,
+            measurementCommit: process.env.M_INV6_MEASUREMENT_COMMIT ?? null,
+            browserVersion: browser.version(),
+            operatingSystem: { platform: process.platform, architecture: process.arch },
+            threeRevision: "186",
+            rendererFamily: trial.result.rendererRuntime.rendererFamily,
+            executionBackend: trial.result.rendererRuntime.executionBackend,
+            hardwareAcceleration: "unconfirmed",
+          },
+          captureDefinitions: {
+            A0: "Native material-aware Anatomy screenshot with no capture operation.",
+            A1: "Final-frame-only native attachment copy/readback; no selected draw hook or selected-draw pass splits.",
+            A2: "M-INV5 selected-draw segmentation plus the same final-frame attachment copy/readback.",
+          },
+          unsupported: {
+            condition: trial.condition,
+            ordinal: trial.ordinal,
+            status: trial.result.status,
+            reason: trial.result.reason ?? null,
+            settlement: trial.settlement,
+          },
+          captureOrder,
+          interpretation: "Native raw-to-raw parity was not qualified because a required capture condition could not produce a raw framebuffer attachment.",
+        };
+        await writeReport(unsupportedReport);
+        throw new Error(`M-INV6 ${trial.condition} capture was unqualified: ${String(trial.result.reason ?? trial.result.status)}`);
+      }
+    }
+
+    const a1Trials = trials.filter(({ condition }) => condition === "A1");
+    const a2Trials = trials.filter(({ condition }) => condition === "A2");
+    expect(a1Trials).toHaveLength(4);
+    expect(a2Trials).toHaveLength(4);
+    const a1Frames = a1Trials.map(({ frame }) => frame!);
+    const a2Frames = a2Trials.map(({ frame }) => frame!);
+    const pairwiseWithin = (frames: readonly AnatomyNativeFramebuffer[]) => {
+      const comparisons = [];
+      for (let first = 0; first < frames.length; first += 1) {
+        for (let second = first + 1; second < frames.length; second += 1) {
+          comparisons.push(compareAnatomyNativeFramebuffers(frames[first]!, frames[second]!, regions, fixedSamples));
+        }
+      }
+      return comparisons;
+    };
+    const a1RepeatComparisons = pairwiseWithin(a1Frames);
+    const a2RepeatComparisons = pairwiseWithin(a2Frames);
+    const incompatibleRepeat = [...a1RepeatComparisons, ...a2RepeatComparisons].find(({ compatible }) => !compatible);
+    if (incompatibleRepeat) {
+      const report = {
+        schemaVersion: 1,
+        audit: "anatomy-native-raw-framebuffer-parity",
+        outcome: "Q3",
+        researchDecision: "N2",
+        preservedResearchDecisions: {
+          anatomy: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+          overall: "G2 — PARTIAL STAGE ATTRIBUTION",
+          mInv5: "N2 — CONTROLLED PROXY IMPROVEMENT",
+        },
+        provenance: { baseCommit: process.env.M_INV6_BASE_COMMIT ?? null, measurementCommit: process.env.M_INV6_MEASUREMENT_COMMIT ?? null },
+        captureOrder,
+        incompatibility: incompatibleRepeat.mismatches,
+        interpretation: "Repeated captures did not preserve a required framebuffer or render-state metadata field; parity comparison was rejected.",
+      };
+      await writeReport(report);
+      throw new Error(`M-INV6 rejected repeated framebuffer comparisons: ${incompatibleRepeat.mismatches.join(", ")}`);
+    }
+
+    const summarizeNoise = (comparisons: readonly ReturnType<typeof compareAnatomyNativeFramebuffers>[]) => {
+      const compatible = comparisons.filter((comparison) => comparison.compatible);
+      const summarizeMetricList = (metrics: readonly NonNullable<ReturnType<typeof compareAnatomyNativeFramebuffers>["fullFrame"]>[]) => ({
+        maxObservedMeanAbsoluteRgbError: Math.max(...metrics.map((metric) => metric.meanAbsoluteRgbError)),
+        maxObservedMeanAbsoluteAlphaError: Math.max(...metrics.map((metric) => metric.meanAbsoluteAlphaError)),
+        maxObservedMeanAbsoluteChannelError: Math.max(...metrics.map((metric) => metric.meanAbsoluteChannelError)),
+        maxObservedAbsoluteError: Math.max(...metrics.map((metric) => metric.maxAbsoluteError)),
+        maxObservedChangedPixelPercentage: Math.max(...metrics.map((metric) => metric.changedPixelPercentage)),
+        maxObservedChangedPixelCount: Math.max(...metrics.map((metric) => metric.changedPixelCount)),
+        minObservedExactRgbaMatchPixelCount: Math.min(...metrics.map((metric) => metric.exactRgbaMatchPixelCount)),
+      });
+      const fullFrame = summarizeMetricList(compatible.map((comparison) => comparison.fullFrame!));
+      const regionNames = Object.keys(regions);
+      const regionNoise = Object.fromEntries(regionNames.map((name) => [
+        name,
+        summarizeMetricList(compatible.map((comparison) => comparison.regions![name]!)),
+      ]));
+      const fixedSampleNoise = fixedSamples.map((index, sampleIndex) => {
+        const errors = compatible.map((comparison) => comparison.fixedSamples![sampleIndex]!.absoluteError);
+        return {
+          index,
+          x: index % a1Frames[0]!.metadata.width,
+          y: Math.floor(index / a1Frames[0]!.metadata.width),
+          maxObservedAbsoluteErrorByChannel: [0, 1, 2, 3].map((channel) => Math.max(...errors.map((error) => error[channel]!))),
+          maxObservedAbsoluteError: Math.max(...errors.flatMap((error) => [...error])),
+        };
+      });
+      return {
+        pairCount: compatible.length,
+        criterion: "For each metric, use the maximum observed same-condition pairwise difference across all four captures. No additional parity tolerance is added; zero repeat noise requires exact byte equality.",
+        fullFrame,
+        regions: regionNoise,
+        fixedSamples: fixedSampleNoise,
+      };
+    };
+    const a1RepeatNoise = summarizeNoise(a1RepeatComparisons);
+    const a2RepeatNoise = summarizeNoise(a2RepeatComparisons);
+
+    const a1SecondHalf = a1Trials.slice(2);
+    const a2SecondHalf = a2Trials.slice(2);
+    const rawParityComparisons = a1SecondHalf.map((trial, index) => compareAnatomyNativeFramebuffers(
+      trial.frame!,
+      a2SecondHalf[index]!.frame!,
+      regions,
+      fixedSamples,
+    ));
+    const incompatibleParity = rawParityComparisons.find(({ compatible }) => !compatible);
+    if (incompatibleParity) {
+      const report = {
+        schemaVersion: 1,
+        audit: "anatomy-native-raw-framebuffer-parity",
+        outcome: "Q3",
+        researchDecision: "N2",
+        preservedResearchDecisions: {
+          anatomy: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+          overall: "G2 — PARTIAL STAGE ATTRIBUTION",
+          mInv5: "N2 — CONTROLLED PROXY IMPROVEMENT",
+        },
+        provenance: { baseCommit: process.env.M_INV6_BASE_COMMIT ?? null, measurementCommit: process.env.M_INV6_MEASUREMENT_COMMIT ?? null },
+        captureOrder,
+        incompatibleParityMetadata: incompatibleParity.mismatches,
+        interpretation: "A1/A2 metadata did not match exactly, so the raw-to-raw comparison was rejected without normalization across incompatible render states.",
+      };
+      await writeReport(report);
+      throw new Error(`M-INV6 rejected A1/A2 comparison: ${incompatibleParity.mismatches.join(", ")}`);
+    }
+
+    const metricWithinNoise = (
+      actual: NonNullable<ReturnType<typeof compareAnatomyNativeFramebuffers>["fullFrame"]>,
+      a1Noise: Record<string, number>,
+      a2Noise: Record<string, number>,
+    ): boolean => actual.meanAbsoluteRgbError <= Math.max(a1Noise.maxObservedMeanAbsoluteRgbError ?? 0, a2Noise.maxObservedMeanAbsoluteRgbError ?? 0) &&
+      actual.meanAbsoluteAlphaError <= Math.max(a1Noise.maxObservedMeanAbsoluteAlphaError ?? 0, a2Noise.maxObservedMeanAbsoluteAlphaError ?? 0) &&
+      actual.maxAbsoluteError <= Math.max(a1Noise.maxObservedAbsoluteError ?? 0, a2Noise.maxObservedAbsoluteError ?? 0) &&
+      actual.changedPixelPercentage <= Math.max(a1Noise.maxObservedChangedPixelPercentage ?? 0, a2Noise.maxObservedChangedPixelPercentage ?? 0);
+    const rawPairQualification = rawParityComparisons.map((comparison) => {
+      const fullFrame = metricWithinNoise(comparison.fullFrame!, a1RepeatNoise.fullFrame, a2RepeatNoise.fullFrame);
+      const regionChecks = Object.fromEntries(Object.keys(regions).map((name) => [
+        name,
+        metricWithinNoise(
+          comparison.regions![name]!,
+          a1RepeatNoise.regions[name] as Record<string, number>,
+          a2RepeatNoise.regions[name] as Record<string, number>,
+        ),
+      ]));
+      const fixedSampleChecks = comparison.fixedSamples!.map((sample, index) => {
+        const a1Maximum = a1RepeatNoise.fixedSamples[index]!.maxObservedAbsoluteErrorByChannel;
+        const a2Maximum = a2RepeatNoise.fixedSamples[index]!.maxObservedAbsoluteErrorByChannel;
+        return sample.absoluteError.every((error, channel) => error <= Math.max(
+          Number(a1Maximum[channel] ?? 0),
+          Number(a2Maximum[channel] ?? 0),
+        ));
+      });
+      return {
+        qualified: fullFrame && Object.values(regionChecks).every(Boolean) && fixedSampleChecks.every(Boolean),
+        fullFrame,
+        regions: regionChecks,
+        fixedSamples: fixedSampleChecks,
+      };
+    });
+    const rawParityQualified = rawPairQualification.every(({ qualified }) => qualified);
+
+    const describeChangedPixels = (first: AnatomyNativeFramebuffer, second: AnatomyNativeFramebuffer) => {
+      const firstInRegion = new Map<string, Set<number>>(
+        Object.entries(regions).map(([name, indices]) => [name, new Set(indices)]),
+      );
+      const examples: Array<Readonly<Record<string, unknown>>> = [];
+      let changedPixelCount = 0;
+      for (let index = 0; index < first.metadata.width * first.metadata.height; index += 1) {
+        const offset = index * 4;
+        const left = [first.rgba[offset]!, first.rgba[offset + 1]!, first.rgba[offset + 2]!, first.rgba[offset + 3]!];
+        const right = [second.rgba[offset]!, second.rgba[offset + 1]!, second.rgba[offset + 2]!, second.rgba[offset + 3]!];
+        const absoluteError = left.map((value, channel) => Math.abs(value - right[channel]!));
+        if (!absoluteError.some((error) => error > 0)) continue;
+        changedPixelCount += 1;
+        if (examples.length < 32) {
+          examples.push({
+            index,
+            x: index % first.metadata.width,
+            y: Math.floor(index / first.metadata.width),
+            first: left,
+            second: right,
+            absoluteError,
+            regions: [...firstInRegion].filter(([, indices]) => indices.has(index)).map(([name]) => name),
+          });
+        }
+      }
+      return { changedPixelCount, examples };
+    };
+
+    const screenshotPairs = (images: readonly Image[]) => {
+      const values: number[] = [];
+      for (let first = 0; first < images.length; first += 1) {
+        for (let second = first + 1; second < images.length; second += 1) {
+          values.push(imageMae(images[first]!, images[second]!));
+        }
+      }
+      return values;
+    };
+    const a1Screenshots = a1Trials.map(({ screenshot }) => screenshot.image);
+    const a2Screenshots = a2Trials.map(({ screenshot }) => screenshot.image);
+    const a1ScreenshotRepeatNoiseMae = Math.max(...screenshotPairs(a1Screenshots));
+    const a2ScreenshotRepeatNoiseMae = Math.max(...screenshotPairs(a2Screenshots));
+    const a0ToA1ScreenshotMae = Math.max(...a1Screenshots.map((image) => imageMae(a0.image, image)));
+    const a0ToA2ScreenshotMae = Math.max(...a2Screenshots.map((image) => imageMae(a0.image, image)));
+    const a0ToA1ScreenshotQualified = a0ToA1ScreenshotMae <= Math.max(a0RepeatNoiseMae, a1ScreenshotRepeatNoiseMae);
+    const a0ToA2ScreenshotQualified = a0ToA2ScreenshotMae <= Math.max(a0RepeatNoiseMae, a2ScreenshotRepeatNoiseMae);
+
+    const firstA1Result = a1Trials[0]!.result;
+    const firstA2Result = a2Trials[0]!.result;
+    const a1Intervention = firstA1Result.captureIntervention as Readonly<Record<string, unknown>>;
+    expect(a1Intervention.mode).toBe("A1-final-frame-only");
+    expect(a1Intervention.selectedDrawHookInstalled).toBe(false);
+    expect(a1Intervention.selectedDrawSplits).toBe(0);
+    const a1PassBoundary = firstA1Result.finalFrame.passBoundary as Readonly<Record<string, unknown>>;
+    expect(a1PassBoundary).toBeTruthy();
+    const a1PassAfter = a1PassBoundary.after as { colorAttachments?: readonly { loadOp?: unknown }[]; depthStencilAttachment?: { depthLoadOp?: unknown } | null };
+    expect(a1PassAfter.colorAttachments?.every(({ loadOp }) => loadOp === "load")).toBe(true);
+    expect(a1PassAfter.depthStencilAttachment?.depthLoadOp === null || a1PassAfter.depthStencilAttachment?.depthLoadOp === "load").toBe(true);
+
+    const a2DrawObservations = firstA2Result.drawObservations as readonly Readonly<Record<string, unknown>>[];
+    expect(a2DrawObservations).toHaveLength(2);
+    expect(a2DrawObservations.every((observation) => observation.commandCount === 1)).toBe(true);
+    expect(a2DrawObservations.every((observation) => observation.sourceMaterialId === sourceMaterialId)).toBe(true);
+    expect(a2DrawObservations.every((observation) => observation.call === "native-drawIndexed")).toBe(true);
+    expect(a2DrawObservations.every((observation) => {
+      const parameters = observation.drawParameters as { vertexCount?: number; instanceCount?: number } | undefined;
+      return parameters?.vertexCount === 240 && parameters.instanceCount === 1;
+    })).toBe(true);
+    const a2LoadsPreserved = a2DrawObservations.every((observation) => {
+      const state = observation.state as Readonly<Record<string, unknown>>;
+      const resumed = state.drawPassState as { colorAttachments?: readonly { loadOp?: unknown }[]; depthStencilAttachment?: { depthLoadOp?: unknown } | null };
+      return resumed.colorAttachments?.every(({ loadOp }) => loadOp === "load") === true &&
+        (resumed.depthStencilAttachment?.depthLoadOp === null || resumed.depthStencilAttachment?.depthLoadOp === "load");
+    });
+    expect(a2LoadsPreserved).toBe(true);
+    const negativeControlIndex = fixedSamples.at(-1)!;
+    const negativeControlUnchanged = a2DrawObservations.every((observation) => {
+      const samples = observation.destinationAndPostDrawSamples as readonly Readonly<{ index: number; destination: readonly number[]; postDraw: readonly number[] }>[];
+      const control = samples.find(({ index }) => index === negativeControlIndex);
+      return JSON.stringify(control?.destination) === JSON.stringify(control?.postDraw);
+    });
+    expect(negativeControlUnchanged).toBe(true);
+
+    const transparentDrawCalibration = await requestProbe(native.page, {
+      generation: expectedGeneration,
+      method: "calibration",
+    });
+    expect(transparentDrawCalibration.status).toBe("passed");
+    const transparentDrawCalibrationRecord = transparentDrawCalibration.calibration as Readonly<Record<string, unknown>>;
+    expect(transparentDrawCalibrationRecord).toMatchObject({
+      runtime: { rendererFamily: "webgpu-renderer", executionBackend: "webgpu" },
+      orientation: { apiRowOrder: "top-down", asymmetricQuadrantControl: "passed" },
+      lifecycle: { targetDisposeCount: 2, geometryDisposeCount: 1, materialDisposeCount: 8 },
+      controls: {
+        opaqueSingleDraw: { active: true, pixel: [191, 64, 26, 255] },
+        transparentSingleDraw: { active: true, pixel: [48, 16, 6, 64] },
+        changedBlendState: { active: true },
+        changedDrawOrder: { active: true },
+      },
+    });
+    const calibrationRestoredCanvas = await captureCanvas(native.page);
+    const calibrationRestorationMae = imageMae(a0.image, calibrationRestoredCanvas.image);
+    expect(calibrationRestorationMae).toBeLessThanOrEqual(Math.max(a0RepeatNoiseMae, a1ScreenshotRepeatNoiseMae));
+
+    const cleanupEvidence = trials.map(({ condition, ordinal, settlement }) => {
+      const cleanup = settlement.resourceCleanup as Readonly<Record<string, unknown>>;
+      const expectedTextures = condition === "A1" ? 1 : a2DrawObservations.length * 2 + 1;
+      expect(cleanup.noBorrowedResourceDisposed).toBe(true);
+      expect(cleanup.temporaryFramebufferTextureCount).toBe(expectedTextures);
+      expect(cleanup.temporaryFramebufferTextureDisposeCount).toBe(expectedTextures);
+      expect(cleanup.readbackBufferCount).toBe(expectedTextures);
+      expect(cleanup.readbackBufferDestroyCount).toBe(expectedTextures);
+      expect(cleanup.temporaryFramebufferTextureDisposalFailures).toBe(0);
+      expect(cleanup.readbackBufferDisposalFailures).toBe(0);
+      return { condition, ordinal, ...cleanup, noBorrowedResourceDisposed: cleanup.noBorrowedResourceDisposed === true };
+    });
+    const rawSyntheticBaseline = new Uint8Array(a1Frames[0]!.rgba);
+    const rawSyntheticChanged = new Uint8Array(rawSyntheticBaseline);
+    rawSyntheticChanged[0] = (rawSyntheticChanged[0] ?? 0) ^ 1;
+    const syntheticPerturbation = compareAnatomyNativeFramebuffers(
+      { metadata: a1Frames[0]!.metadata, rgba: rawSyntheticBaseline },
+      { metadata: a1Frames[0]!.metadata, rgba: rawSyntheticChanged },
+      { syntheticFixture: [0] },
+      [0],
+    );
+    expect(syntheticPerturbation.fullFrame?.changedPixelCount).toBe(1);
+    expect(syntheticPerturbation.fullFrame?.maxAbsoluteError).toBe(1);
+
+    const finalSnapshot = await readAuditSnapshot(native.page, `m-inv6-final-${++requestCounter}`);
+    expect(finalSnapshot.generation).toBe(expectedGeneration);
+    expect(finalSnapshot.anatomyPresentation).toEqual(initialSnapshot.anatomyPresentation);
+    expect(canonicalSceneInputs(finalSnapshot)).toEqual(sceneInputBaseline);
+    await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true");
+    const finalGroundGlassPng = await native.page.getByTestId("ground-glass-rtt").locator("canvas").first()
+      .screenshot({ animations: "disabled" });
+    const finalGroundGlass = decodePlaywrightPng(finalGroundGlassPng);
+    const groundGlassRestorationMae = imageMae(a0GroundGlass, finalGroundGlass);
+    expect(groundGlassRestorationMae).toBeLessThanOrEqual(groundGlassRepeatNoiseMae);
+    expect(pageErrors).toEqual([]);
+
+    const rawDifferencesExceededNoise = rawPairQualification.some(({ qualified }) => !qualified);
+    const outcome = rawParityQualified && a0ToA1ScreenshotQualified && a0ToA2ScreenshotQualified &&
+      a2LoadsPreserved && negativeControlUnchanged && groundGlassRestorationMae <= groundGlassRepeatNoiseMae
+      ? "Q1"
+      : rawDifferencesExceededNoise
+        ? "Q2"
+        : "Q3";
+    const researchDecision = "N2";
+    const report = {
+      schemaVersion: 1,
+      audit: "anatomy-native-raw-framebuffer-parity",
+      objective: "Compare the final native WebGPU attachment from minimal final-frame capture (A1) with the same attachment after M-INV5 selected-draw pass segmentation (A2).",
+      outcome,
+      researchDecision,
+      preservedResearchDecisions: {
+        anatomy: "M2 — OPT-IN IMPLEMENTATION INCOMPLETE",
+        overall: "G2 — PARTIAL STAGE ATTRIBUTION",
+        mInv5: "N2 — CONTROLLED PROXY IMPROVEMENT",
+      },
+      provenance: {
+        baseCommit: process.env.M_INV6_BASE_COMMIT ?? null,
+        measurementCommit: process.env.M_INV6_MEASUREMENT_COMMIT ?? null,
+        browserVersion: browser.version(),
+        browserUserAgent: await native.page.evaluate(() => navigator.userAgent),
+        operatingSystem: { platform: process.platform, architecture: process.arch },
+        threeRevision: firstA1Result.threeRevision,
+        gpuAdapterDetails: "Not exposed by the mounted Three r186 backend; no hardware acceleration claim is made.",
+        hardwareAcceleration: "unconfirmed",
+      },
+      scope: {
+        rendererFamily: firstA1Result.rendererRuntime.rendererFamily,
+        executionBackend: firstA1Result.rendererRuntime.executionBackend,
+        applicationFallback: await native.page.locator(canvasSelector).getAttribute("data-observer-application-fallback"),
+        outputPolicy: "material-aware",
+        outputIntervention: "B0",
+        sceneId: initialSnapshot.sceneId,
+        teachingState: "Anatomy — Front Standard highlighted, Bellows dimmed",
+        anatomyPresentation: initialSnapshot.anatomyPresentation,
+        selectedRenderable: { objectId: bellows.objectId, name: bellows.name, semanticPart: bellows.cameraPart },
+        sourceMaterialId: sourceMaterialId ?? null,
+        sourceMaterial: sourceMaterial,
+        geometry: bellows.geometry,
+        cameraPose: {
+          position: initialSnapshot.viewport.cameraPosition,
+          quaternion: initialSnapshot.viewport.cameraQuaternion,
+          orbitTarget: initialSnapshot.viewport.orbitTarget,
+        },
+        viewport: {
+          width: initialSnapshot.viewport.width,
+          height: initialSnapshot.viewport.height,
+          devicePixelRatio: initialSnapshot.viewport.devicePixelRatio,
+          backingWidth: initialSnapshot.viewport.canvasBackingWidth,
+          backingHeight: initialSnapshot.viewport.canvasBackingHeight,
+        },
+        rendererGeneration: expectedGeneration,
+        sceneInputsStableBeforeAndAfterEveryCapture: true,
+      },
+      captureDefinitions: {
+        A0: {
+          meaning: "Uninstrumented native material-aware Anatomy render; no GPU capture operation, draw hook, or copy boundary.",
+          evidence: "Browser canvas screenshot only; raw bytes are not claimed.",
+          repeatScreenshotNoiseMae: a0RepeatNoiseMae,
+        },
+        A1: {
+          meaning: "Normal scene draw order with one copy of the final resolved native framebuffer attachment at the finishRender boundary.",
+          minimumIntervention: true,
+          selectedDrawHookInstalled: false,
+          selectedDrawSplits: 0,
+          finalFramebufferCopyCount: 1,
+          passSplit: "The copy ends the active pass, resolves multisample color, copies the resolved canvas texture, then resumes color/depth with load in the same command encoder.",
+        },
+        A2: {
+          meaning: "M-INV5 two selected Bellows draw-boundary splits plus one final-frame copy, using the same snapshot and readback procedure as A1.",
+          selectedDrawSplits: a2DrawObservations.length * 2,
+          finalFramebufferCopyCount: 1,
+          nativeDrawInvocations: a2DrawObservations.map((observation) => ({
+            call: observation.call,
+            commandCount: observation.commandCount,
+            drawParameters: observation.drawParameters,
+          })),
+          finalCopyAfterAllSceneDraws: true,
+        },
+      },
+      attachment: {
+        width: a1Frames[0]!.metadata.width,
+        height: a1Frames[0]!.metadata.height,
+        format: a1Frames[0]!.metadata.format,
+        nativeChannelOrder: (firstA1Result.attachment.nativeChannelOrder as string | undefined) ?? null,
+        normalizedChannelOrder: "RGBA",
+        rowOrder: "top-down",
+        colorRepresentation: a1Frames[0]!.metadata.colorRepresentation,
+        outputColorSpace: a1Frames[0]!.metadata.outputColorSpace,
+        toneMapping: a1Frames[0]!.metadata.toneMapping,
+        sampleCount: a1Frames[0]!.metadata.sampleCount,
+        resolveTarget: a1Frames[0]!.metadata.resolveTarget,
+        depthFormat: a1Frames[0]!.metadata.depthFormat,
+        metadataEqualityGate: "Exact equality required for dimensions, source format, channel and row order, color representation, MSAA/resolve/depth settings, renderer backend, output state, scene/teaching state, camera state, DPR, and viewport before bytes are compared.",
+      },
+      captureSynchronization: {
+        raw: "The original render submission completes before the readback copy is submitted; GPUBuffer.mapAsync settlement provides completion for the readback buffer.",
+        screenshot: "Playwright canvas screenshot is the browser-composited presentation capture; requestAnimationFrame is used only to stabilize UI scheduling, not as GPU completion evidence.",
+        order: captureOrder,
+        sameRendererGeneration: trials.every(({ before, after }) => before.generation === expectedGeneration && after.generation === expectedGeneration),
+        backingDimensionsStable: trials.every(({ before, after }) =>
+          before.viewport.canvasBackingWidth === initialSnapshot.viewport.canvasBackingWidth &&
+          before.viewport.canvasBackingHeight === initialSnapshot.viewport.canvasBackingHeight &&
+          after.viewport.canvasBackingWidth === initialSnapshot.viewport.canvasBackingWidth &&
+          after.viewport.canvasBackingHeight === initialSnapshot.viewport.canvasBackingHeight),
+        rawCaptureFiles: trials.map(({ condition, ordinal }) => `test-results raw-native-framebuffer-captures/${condition}-${String(ordinal).padStart(2, "0")}.rgba (ignored)`),
+      },
+      screenshotParity: {
+        A0RepeatNoiseMae: a0RepeatNoiseMae,
+        A1RepeatNoiseMae: a1ScreenshotRepeatNoiseMae,
+        A2RepeatNoiseMae: a2ScreenshotRepeatNoiseMae,
+        A0AgainstA1Mae: a0ToA1ScreenshotMae,
+        A0AgainstA1NoiseThreshold: Math.max(a0RepeatNoiseMae, a1ScreenshotRepeatNoiseMae),
+        A0AgainstA1Qualified: a0ToA1ScreenshotQualified,
+        A0AgainstA2Mae: a0ToA2ScreenshotMae,
+        A0AgainstA2NoiseThreshold: Math.max(a0RepeatNoiseMae, a2ScreenshotRepeatNoiseMae),
+        A0AgainstA2Qualified: a0ToA2ScreenshotQualified,
+        comparison: "All operands are matching browser canvas screenshots at the same viewport/DPR; no raw GPU bytes are mixed into screenshot metrics.",
+      },
+      rawRepeatNoise: {
+        A1: a1RepeatNoise,
+        A2: a2RepeatNoise,
+        population: "All six pairwise comparisons among four independent captures for each condition; each includes full frame, Bellows/dimmed-response mapped-center region, unaffected-background mapped-center region, and nine fixed M-INV5 positions.",
+      },
+      rawToRawParity: {
+        A1AgainstA2: rawParityComparisons.map((comparison, index) => ({
+          ...comparison,
+          changedPixelDetails: describeChangedPixels(a1SecondHalf[index]!.frame!, a2SecondHalf[index]!.frame!),
+        })),
+        qualification: rawPairQualification,
+        qualified: rawParityQualified,
+        repeatNoiseRule: "Each A1/A2 RGB MAE, alpha MAE, maximum channel error, changed-pixel percentage, region metric, and fixed-sample channel error must be no greater than the maximum observed in same-condition repeats. If repeats are exact, every A1/A2 byte must match.",
+        resampling: "None.",
+        browserComposition: "Excluded.",
+        colorConversion: "Only native BGRA→RGBA channel-order normalization; no color-space conversion.",
+      },
+      regions: {
+        bellowsDimmedResponse: {
+          screenshotMaskSourcePixels: bellowsIndices.length,
+          mappedFramebufferPixels: bellowsRegionMapping.uniqueMappedPixelCount,
+          mapping: bellowsRegionMapping.mapping,
+          sourceMask: "intersection of committed Front Standard dimmed-response and selected Bellows visibility-response masks",
+        },
+        unaffectedBackgroundControl: {
+          screenshotMaskSourcePixels: referencePixels.unaffectedCandidateMaskPixelIndices.length,
+          mappedFramebufferPixels: unaffectedRegionMapping.uniqueMappedPixelCount,
+          mapping: unaffectedRegionMapping.mapping,
+          sourceMask: "committed Front Standard unaffected-candidate mask; mapped to native backing-buffer cell centers",
+        },
+      },
+      fixedBellowsSamples: {
+        source: "The nine exact framebuffer indices stored by the M-INV5 report; no CSS-to-backing remapping is applied to these indices.",
+        framebufferIndices: fixedSamples,
+        comparisons: rawParityComparisons.map((comparison, index) => ({
+          pair: `${a1SecondHalf[index]!.requestId} versus ${a2SecondHalf[index]!.requestId}`,
+          samples: comparison.fixedSamples,
+        })),
+      },
+      passState: {
+        A1FinalCopy: a1PassBoundary,
+        A2SelectedDraws: a2DrawObservations.map((observation) => ({
+          call: observation.call,
+          drawOrder: observation.drawOrder,
+          state: observation.state,
+        })),
+        A2FinalCopy: firstA2Result.finalFrame.passBoundary ?? null,
+        resumedLoadsPreserved: a2LoadsPreserved,
+        unaffectedNegativeControlUnchangedAcrossSelectedDraws: negativeControlUnchanged,
+      },
+      negativeControls: {
+        NC1A0ScreenshotRepeat: { mae: a0RepeatNoiseMae },
+        NC2A0A1ScreenshotParity: { mae: a0ToA1ScreenshotMae, threshold: Math.max(a0RepeatNoiseMae, a1ScreenshotRepeatNoiseMae), qualified: a0ToA1ScreenshotQualified },
+        NC3A1RawRepeatability: a1RepeatNoise,
+        NC4A2RawRepeatability: a2RepeatNoise,
+        NC5RegionParity: rawParityComparisons.map((comparison, index) => ({
+          pair: index,
+          regions: comparison.regions,
+          qualified: rawPairQualification[index]?.qualified ?? false,
+        })),
+        NC6SyntheticPerturbationDetected: {
+          status: syntheticPerturbation.compatible && syntheticPerturbation.fullFrame?.changedPixelCount === 1 && syntheticPerturbation.fullFrame.maxAbsoluteError === 1,
+          metrics: syntheticPerturbation.fullFrame,
+        },
+        NC7OrientationAndChannelNormalization: "Unit tests use an asymmetric 2x2 BGRA pattern with 256-byte padded rows and verify top-down RGBA output.",
+        NC8DrawIdentityAndPassState: {
+          twoRealBellowsBackendDraws: a2DrawObservations.length === 2,
+          oneCommandEach: a2DrawObservations.every((observation) => observation.commandCount === 1),
+          loadStatePreserved: a2LoadsPreserved,
+        },
+        NC9LifecycleAndCancellation: "A separate deterministic focused browser test holds native mapAsync pending across SPA navigation for A1 and the existing A2 teardown regression covers rejected readback.",
+        NC10GroundGlassIsolation: {
+          contentfulBeforeAndAfter: true,
+          repeatNoiseMae: groundGlassRepeatNoiseMae,
+          restorationMae: groundGlassRestorationMae,
+          withinRepeatNoise: groundGlassRestorationMae <= groundGlassRepeatNoiseMae,
+          ownership: "A1/A2 only own FramebufferTexture snapshots and readback buffers; Ground Glass resources are borrowed and untouched.",
+        },
+        NC11ProductionIsolation: "Verified by the production-preview/isolation checks reported in the PR handoff.",
+        NC12TransparentDrawCalibration: {
+          status: transparentDrawCalibration.status,
+          classification: "F2 controlled fixture; validates native readback and transparent-draw/blend/order controls, but does not measure the actual Anatomy draw.",
+          calibration: transparentDrawCalibrationRecord,
+          restoredCanvasMae: calibrationRestorationMae,
+          restorationNoiseThreshold: Math.max(a0RepeatNoiseMae, a1ScreenshotRepeatNoiseMae),
+        },
+      },
+      resourceOwnership: {
+        captureSettlement: cleanupEvidence,
+        A1OwnedResources: "one temporary FramebufferTexture and one native readback buffer per capture; disposed after mapAsync settles",
+        A2OwnedResources: "one FramebufferTexture/readback buffer per selected pre/post snapshot and one final snapshot; disposed after all mapAsync operations settle",
+        borrowedResources: "native renderer/device/context/canvas texture, scene geometry/materials/textures, and Ground Glass RTT",
+        noBorrowedResourceDisposed: cleanupEvidence.every((cleanup) => cleanup.noBorrowedResourceDisposed === true),
+      },
+      classifications: {
+        finalFrameEquivalence: rawParityQualified && a0ToA1ScreenshotQualified ? "F1 under the tested state and capture procedures" : "F2 or unqualified",
+        MInv5SelectedDrawBoundaryPixelValues: "F2; final-frame equality does not rule out transient intermediate differences that later draws overwrite",
+        MInv5SelectedDrawIdentityAndPassMetadata: "F1",
+        nativeBlendDescriptorMapping: "F3",
+        nativeSourceFragmentRgbAlpha: "F0",
+      },
+      interpretation: outcome === "Q1"
+        ? "A0/A1 screenshot parity and A1/A2 raw attachment parity qualified within measured same-condition repeat noise. This qualifies final-frame equivalence for this Front Standard/B0/native r186 state only; it does not promote selected intermediate destination/post-draw bytes because a later draw can overwrite a transient difference. Keep N2, G2, M2, and F2 for M-INV5 intermediate pixels."
+        : outcome === "Q2"
+          ? "A1/A2 raw output differences exceeded same-condition repeat noise or region-specific limits. This measures a final-frame instrumentation perturbation; selected native pixels remain F2 and the likely pass/resolve mechanism needs a narrower follow-up."
+          : "One or more required compatibility, visual, repeatability, pass-state, or lifecycle controls did not qualify. Do not promote any pixel evidence; document the failed control and smallest follow-up.",
+      smallestNextInvestigation: rawParityQualified
+        ? "If intermediate values need promotion, isolate whether an earlier draw-boundary difference is transiently overwritten using one selected pre/post split with a controlled transparent-draw negative control; retain F2 until that claim is independently qualified."
+        : "Repeat the same Front Standard/B0 run after fixing the specific failed metadata, repeatability, visual, or raw-region control; do not expand scene scope.",
+    };
+
+    await writeReport(report);
+    expect(report.provenance.baseCommit).toBe("a3c7703a9231bd0a3f75545daa52b678f5d4555d");
+    expect(report.provenance.measurementCommit).toBeTruthy();
+    expect(report.scope.applicationFallback).toBe("none");
+    expect(a1Frames.every((frame) => frame.metadata.width === a2Frames[0]!.metadata.width &&
+      frame.metadata.height === a2Frames[0]!.metadata.height && frame.metadata.format === a2Frames[0]!.metadata.format)).toBe(true);
+    expect(a1Frames[0]!.metadata.format).toBe("bgra8unorm");
+    expect(a1Frames[0]!.metadata.sampleCount).toBe(4);
+    expect(a1Frames[0]!.metadata.depthFormat).toBe("depth24plus");
+    expect(a0ToA1ScreenshotQualified).toBe(true);
+    expect(outcome).not.toBe("Q3");
+    if (outcome === "Q1") expect(rawParityQualified).toBe(true);
+    else expect(rawParityQualified).toBe(false);
+    await testInfo.attach("anatomy-native-raw-framebuffer-a0.png", { body: a0.png, contentType: "image/png" });
+    await testInfo.attach("anatomy-native-raw-framebuffer-a0-repeat.png", { body: a0Repeat.png, contentType: "image/png" });
+    await testInfo.attach("anatomy-native-raw-framebuffer-ground-glass-before.png", {
+      body: a0GroundGlassPng,
+      contentType: "image/png",
+    });
+    await testInfo.attach("anatomy-native-raw-framebuffer-ground-glass-after.png", {
+      body: finalGroundGlassPng,
+      contentType: "image/png",
+    });
+  } finally {
+    await native.context.close();
   }
 });
