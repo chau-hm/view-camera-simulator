@@ -810,9 +810,18 @@ test("native draw-boundary readback rejection after SPA retirement is handled an
     await native.page.evaluate(() =>
       (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.rejectPending(),
     );
-    const settlement = await native.page.evaluate(() =>
+    await native.page.evaluate(() =>
       (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settledPromise,
     );
+    await expect.poll(async () => native.page.evaluate((id) => {
+      const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
+      const settled = state?.settlements.find((candidate) => candidate.requestId === id);
+      return (settled?.resourceCleanup as Readonly<Record<string, unknown>> | undefined)?.resourcesReleased ?? false;
+    }, requestId), { timeout: 30_000 }).toBe(true);
+    const settlement = await native.page.evaluate((id) =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settlements
+        .find((candidate) => candidate.requestId === id) ?? null,
+    requestId);
     expect(settlement).toMatchObject({
       requestId,
       method: "native-draw-boundary",
@@ -915,9 +924,18 @@ test("native final-frame readback waits safely across probe retirement and block
     await native.page.evaluate(() =>
       (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.release(),
     );
-    const settlement = await native.page.evaluate(() =>
+    await native.page.evaluate(() =>
       (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settledPromise,
     );
+    await expect.poll(async () => native.page.evaluate((id) => {
+      const state = (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle;
+      const settled = state?.settlements.find((candidate) => candidate.requestId === id);
+      return (settled?.resourceCleanup as Readonly<Record<string, unknown>> | undefined)?.resourcesReleased ?? false;
+    }, requestId), { timeout: 30_000 }).toBe(true);
+    const settlement = await native.page.evaluate((id) =>
+      (window as CaptureLifecycleWindow).__anatomyGpuCaptureLifecycle?.settlements
+        .find((candidate) => candidate.requestId === id) ?? null,
+    requestId);
     expect(settlement).toMatchObject({
       requestId,
       method: "native-final-frame",

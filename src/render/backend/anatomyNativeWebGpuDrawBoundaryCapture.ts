@@ -80,7 +80,11 @@ type NativeCommandEncoder = {
 type NativeDevice = {
   createBuffer: (descriptor: Readonly<Record<string, unknown>>) => NativeReadbackBuffer;
   createCommandEncoder: () => NativeCommandEncoder;
-  queue?: { submit: (commands: readonly object[]) => void };
+  queue?: {
+    submit: (commands: readonly object[]) => void;
+    onSubmittedWorkDone?: () => Promise<unknown>;
+  };
+  lost?: PromiseLike<unknown>;
 };
 
 type NativeBackend = {
@@ -115,6 +119,59 @@ type NativeRenderer = Readonly<{
   getDrawingBufferSize?: (target: THREE.Vector2) => THREE.Vector2;
   copyFramebufferToTexture?: (texture: THREE.FramebufferTexture, rectangle: THREE.Vector4) => void;
 }>;
+
+type NativeCaptureSubmissionState = "not-submitted" | "confirmed" | "unknown";
+type NativeCaptureReadbackState = "not-started" | "started" | "settled";
+type NativeCaptureCopyState = "not-started" | "encoding" | "encoded" | "unknown";
+
+/**
+ * Waits for the native queue before disposing capture-owned textures whose
+ * submission state is uncertain. The queue fence is cleanup evidence only; it
+ * does not prove that this capture's command buffer was submitted.
+ */
+const afterNativeQueueCompletion = (
+  backend: NativeBackend,
+  release: (reason: "queue-completed" | "device-lost") => void,
+): void => {
+  const device = backend.device;
+  const waitForDeviceLoss = () => {
+    if (!device?.lost) return;
+    void Promise.resolve(device.lost).then(
+      () => release("device-lost"),
+      () => release("device-lost"),
+    );
+  };
+
+  if (!device?.queue?.onSubmittedWorkDone) {
+    waitForDeviceLoss();
+    return;
+  }
+
+  let queueFence: Promise<unknown>;
+  try {
+    queueFence = Promise.resolve(device.queue.onSubmittedWorkDone());
+  } catch {
+    waitForDeviceLoss();
+    return;
+  }
+
+  void queueFence.then(
+    () => release("queue-completed"),
+    () => waitForDeviceLoss(),
+  );
+};
+
+const nativeFinishRenderFailure = (
+  generation: number,
+  method: "native-draw-boundary" | "native-final-frame",
+  cause: unknown,
+): Readonly<Record<string, unknown>> => ({
+  ...unsupportedResult(generation, "native-finish-render-failed"),
+  method,
+  finishRenderError: cause instanceof Error
+    ? { name: cause.name, message: cause.message }
+    : String(cause),
+});
 
 export type AnatomyNativeDrawBoundaryCaptureResult = Readonly<Record<string, unknown> & {
   status: "ok" | "unsupported";
@@ -485,6 +542,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
   const backend = renderer.backend;
   if (!backend || typeof backend.draw !== "function" || typeof backend.finishRender !== "function" ||
       typeof backend.get !== "function" || !backend.device?.queue ||
+      typeof backend.device.queue.onSubmittedWorkDone !== "function" ||
       typeof backend.context?.getCurrentTexture !== "function" ||
       typeof renderer.copyFramebufferToTexture !== "function" ||
       typeof renderer.getDrawingBufferSize !== "function" ||
@@ -572,10 +630,17 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
 
     let settled = false;
     let readbackStarted = false;
+    let readbackState: NativeCaptureReadbackState = "not-started";
+    let readbackSucceeded = false;
     let cleanupRequested = false;
-    let copiesEncoded = false;
-    let encoderSubmitted = false;
+    let cancelled = false;
+    let copyState: NativeCaptureCopyState = "not-started";
+    let copyAttemptCount = 0;
+    let copyEncodedCount = 0;
+    let submissionState: NativeCaptureSubmissionState = "not-submitted";
     let resourcesReleased = false;
+    let queueFenceStarted = false;
+    let queueFenceOutcome: "not-required" | "pending" | "queue-completed" | "device-lost" = "not-required";
     let readbackBufferCount = 0;
     let readbackBufferDestroyCount = 0;
     let readbackBufferDisposalFailures = 0;
@@ -636,7 +701,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
     };
 
     const releaseOwnedTextures = () => {
-      if (resourcesReleased || (copiesEncoded && !encoderSubmitted)) return;
+      if (resourcesReleased) return;
       resourcesReleased = true;
       let disposalFailureCount = 0;
       ownedTextures.forEach((texture) => {
@@ -654,13 +719,51 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         readbackBufferCount,
         readbackBufferDestroyCount,
         readbackBufferDisposalFailures,
+        copyState,
+        copyAttemptCount,
+        copyEncodedCount,
+        submissionState,
+        readbackState,
+        cancelled,
+        queueFenceOutcome,
+        captureSettled: true,
+        resourcesReleased: true,
         noBorrowedResourceDisposed: true,
       });
     };
 
+    const releaseOwnedTexturesWhenSafe = () => {
+      if (resourcesReleased) return;
+      if (copyAttemptCount === 0 || readbackSucceeded) {
+        releaseOwnedTextures();
+        return;
+      }
+      if (submissionState === "not-submitted") return;
+      if (queueFenceStarted) return;
+      queueFenceStarted = true;
+      queueFenceOutcome = "pending";
+      afterNativeQueueCompletion(backend, (reason) => {
+        queueFenceOutcome = reason;
+        releaseOwnedTextures();
+      });
+    };
+
+    const encodeFramebufferCopy = (copy: () => void) => {
+      copyAttemptCount += 1;
+      copyState = "encoding";
+      try {
+        copy();
+        copyEncodedCount += 1;
+        copyState = "encoded";
+      } catch (cause) {
+        copyState = "unknown";
+        throw cause;
+      }
+    };
+
     const settleOutcome = (outcome: Readonly<{ result?: Readonly<Record<string, unknown>>; error?: unknown }>) => {
       if (settled) return;
-      if (copiesEncoded && !encoderSubmitted) {
+      if (copyAttemptCount > 0 && submissionState === "not-submitted") {
         cleanupRequested = true;
         if (!pendingOutcome) pendingOutcome = outcome;
         window.clearTimeout(timeoutId);
@@ -670,7 +773,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       }
       settled = true;
       restoreHooks();
-      releaseOwnedTextures();
+      releaseOwnedTexturesWhenSafe();
       if (outcome.error !== undefined) reject(outcome.error);
       else resolve(outcome.result ?? unsupportedResult(options.generation, "native-capture-settled-without-a-result"));
     };
@@ -706,6 +809,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       try {
         if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
         readbackStarted = true;
+        readbackState = "started";
         const pendingReadbacks: Promise<ArrayBufferView>[] = [];
         for (const texture of ownedTextures) {
           if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
@@ -725,6 +829,8 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
           ));
         }
         const rawReadbacks = await options.awaitReadbacks(pendingReadbacks);
+        readbackSucceeded = true;
+        readbackState = "settled";
         if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
         if (rawReadbacks.length !== ownedTextures.length || rawReadbacks.some((readback) => !(readback instanceof Uint8Array))) {
           throw new Error("Native normalized-color readback did not return the expected Uint8Array resources");
@@ -903,10 +1009,14 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         });
       } catch (cause) {
         fail(cause);
+      } finally {
+        readbackState = "settled";
+        releaseOwnedTexturesWhenSafe();
       }
     };
 
     const onCancel = () => {
+      cancelled = true;
       cleanupRequested = true;
       window.clearTimeout(timeoutId);
       restoreDrawHook();
@@ -983,10 +1093,9 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
 
       let beforeTexture: THREE.FramebufferTexture;
       captureContext = context;
-      copiesEncoded = true;
       try {
         beforeTexture = createTexture(sourceFormat);
-        renderer.copyFramebufferToTexture!(beforeTexture, rectangle);
+        encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(beforeTexture, rectangle));
       } catch (cause) {
         fail(cause);
         return originalDraw.call(this, renderObject, info);
@@ -1038,7 +1147,7 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
       try {
         const beforePostSplit = contextData.currentPass;
         const afterTexture = createTexture(sourceFormat);
-        renderer.copyFramebufferToTexture!(afterTexture, rectangle);
+        encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(afterTexture, rectangle));
         const resumedAfterPost = contextData.currentPass;
         const descriptorAfterPost = contextData.descriptor;
         if (!resumedAfterPost || resumedAfterPost === beforePostSplit || !descriptorAfterPost ||
@@ -1069,13 +1178,12 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
             fail(new Error(unsupportedReason));
           } else {
             try {
-              copiesEncoded = true;
               const texture = createTexture(sourceFormat, finalFrameRegion);
               const passBeforeCopy = contextData.currentPass;
               const passStateBeforeCopy = passMetadata(contextData);
               const resolveTarget = (contextData.descriptor?.colorAttachments?.[0]?.resolveTarget ?? null) !== null;
               const depthFormat = backend.utils?.getCurrentDepthStencilFormat?.(renderContext) ?? null;
-              renderer.copyFramebufferToTexture!(texture, finalFrameRectangle);
+              encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(texture, finalFrameRectangle));
               const resumedPass = contextData.currentPass;
               const descriptor = contextData.descriptor;
               if (!resumedPass || resumedPass === passBeforeCopy || !descriptor ||
@@ -1105,13 +1213,15 @@ export const runAnatomyNativeWebGpuDrawBoundaryCapture = (
         result = originalFinishRender.call(this, renderContext);
       } catch (cause) {
         if (captureContext === renderContext) {
-          encoderSubmitted = true;
-          if (pendingOutcome) settleOutcome(pendingOutcome);
+          submissionState = "unknown";
+          settleOutcome(pendingOutcome ?? {
+            result: nativeFinishRenderFailure(options.generation, "native-draw-boundary", cause),
+          });
         }
         throw cause;
       }
       if (captureContext === renderContext) {
-        encoderSubmitted = true;
+        submissionState = "confirmed";
         if (pendingOutcome) {
           settleOutcome(pendingOutcome);
         } else if (!settled && !cleanupRequested && drafts.length > 0) {
@@ -1153,7 +1263,8 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
   const renderer = options.renderer;
   const backend = renderer.backend;
   if (!backend || typeof backend.finishRender !== "function" || typeof backend.get !== "function" ||
-      !backend.device?.queue || typeof backend.context?.getCurrentTexture !== "function" ||
+      !backend.device?.queue || typeof backend.device.queue.onSubmittedWorkDone !== "function" ||
+      typeof backend.context?.getCurrentTexture !== "function" ||
       typeof renderer.copyFramebufferToTexture !== "function" || typeof renderer.getDrawingBufferSize !== "function" ||
       typeof backend.utils?.getPreferredCanvasFormat !== "function" ||
       typeof backend.utils.getSampleCountRenderContext !== "function" ||
@@ -1193,10 +1304,17 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
   return new Promise((resolve) => {
     let settled = false;
     let cleanupRequested = false;
-    let copyEncoded = false;
-    let encoderSubmitted = false;
+    let copyState: NativeCaptureCopyState = "not-started";
+    let copyAttemptCount = 0;
+    let copyEncodedCount = 0;
+    let submissionState: NativeCaptureSubmissionState = "not-submitted";
     let readbackStarted = false;
+    let readbackState: NativeCaptureReadbackState = "not-started";
+    let readbackSucceeded = false;
+    let cancelled = false;
     let resourcesReleased = false;
+    let queueFenceStarted = false;
+    let queueFenceOutcome: "not-required" | "pending" | "queue-completed" | "device-lost" = "not-required";
     let readbackBufferCount = 0;
     let readbackBufferDestroyCount = 0;
     let readbackBufferDisposalFailures = 0;
@@ -1253,20 +1371,57 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
         readbackBufferCount,
         readbackBufferDestroyCount,
         readbackBufferDisposalFailures,
+        copyState,
+        copyAttemptCount,
+        copyEncodedCount,
+        submissionState,
+        readbackState,
+        cancelled,
+        queueFenceOutcome,
+        captureSettled: true,
+        resourcesReleased: true,
         noBorrowedResourceDisposed: true,
       });
     };
+    const releaseOwnedResourcesWhenSafe = () => {
+      if (resourcesReleased) return;
+      if (copyAttemptCount === 0 || readbackSucceeded) {
+        releaseOwnedResources();
+        return;
+      }
+      if (submissionState === "not-submitted") return;
+      if (queueFenceStarted) return;
+      queueFenceStarted = true;
+      queueFenceOutcome = "pending";
+      afterNativeQueueCompletion(backend, (reason) => {
+        queueFenceOutcome = reason;
+        releaseOwnedResources();
+      });
+    };
+    const encodeFramebufferCopy = (copy: () => void) => {
+      copyAttemptCount += 1;
+      copyState = "encoding";
+      try {
+        copy();
+        copyEncodedCount += 1;
+        copyState = "encoded";
+      } catch (cause) {
+        copyState = "unknown";
+        throw cause;
+      }
+    };
     const settle = (result: Readonly<Record<string, unknown>>) => {
       if (settled) return;
-      if (copyEncoded && !encoderSubmitted) {
+      if (copyAttemptCount > 0 && submissionState === "not-submitted") {
         cleanupRequested = true;
         pendingResult ??= result;
-        restoreHooks();
+        window.clearTimeout(timer);
+        unregisterCancellation();
         return;
       }
       settled = true;
       restoreHooks();
-      releaseOwnedResources();
+      releaseOwnedResourcesWhenSafe();
       resolve(result);
     };
     const unsupported = (reason: string) => settle({
@@ -1274,14 +1429,16 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
       method: "native-final-frame",
     });
     const onCancel = () => {
+      cancelled = true;
       cleanupRequested = true;
-      restoreFinishHook();
       unregisterCancellation();
       if (!readbackStarted) {
         settle({
           ...unsupportedResult(options.generation, "renderer-generation-retired"),
           method: "native-final-frame",
         });
+      } else {
+        restoreFinishHook();
       }
     };
     const createOwnedTexture = (): THREE.FramebufferTexture => {
@@ -1297,6 +1454,7 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
         if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
         if (!texture) throw new Error("Final-frame framebuffer snapshot was not created");
         readbackStarted = true;
+        readbackState = "started";
         const pendingReadback = copyNativeTextureToOwnedBuffer(
           backend,
           texture,
@@ -1310,6 +1468,8 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
           },
         );
         const readbacks = await options.awaitReadbacks([pendingReadback]);
+        readbackSucceeded = true;
+        readbackState = "settled";
         if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
         if (readbacks.length !== 1 || !(readbacks[0] instanceof Uint8Array)) {
           throw new Error("Native final-frame readback did not return the expected Uint8Array");
@@ -1391,6 +1551,9 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
           ),
           method: "native-final-frame",
         });
+      } finally {
+        if (readbackStarted) readbackState = "settled";
+        releaseOwnedResourcesWhenSafe();
       }
     };
 
@@ -1399,9 +1562,7 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
       if (settled) return originalFinishRender.call(this, renderContext);
       if (cleanupRequested || !options.isCaptureActive()) {
         onCancel();
-        return originalFinishRender.call(this, renderContext);
-      }
-      if (captureContext === null && renderContext.renderTarget === null && renderContext.textures === null &&
+      } else if (captureContext === null && renderContext.renderTarget === null && renderContext.textures === null &&
           renderer.getRenderTarget?.() === null) {
         const contextData = backend.get(renderContext) as NativeRenderContextData;
         const activeFormat = backend.context?.getCurrentTexture?.()?.format;
@@ -1426,8 +1587,7 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
             const before = passMetadata(contextData);
             const passBeforeCopy = contextData.currentPass;
             const owned = createOwnedTexture();
-            copyEncoded = true;
-            renderer.copyFramebufferToTexture!(owned, rectangle);
+            encodeFramebufferCopy(() => renderer.copyFramebufferToTexture!(owned, rectangle));
             if (!options.isCaptureActive()) throw new AnatomyGpuCaptureCancelledError("renderer-generation-retired");
             const resumed = contextData.currentPass;
             const afterDescriptor = contextData.descriptor;
@@ -1456,13 +1616,13 @@ export const runAnatomyNativeWebGpuFinalFrameCapture = (
         result = originalFinishRender.call(this, renderContext);
       } catch (cause) {
         if (captureContext === renderContext) {
-          encoderSubmitted = true;
-          if (pendingResult) settle(pendingResult);
+          submissionState = "unknown";
+          settle(pendingResult ?? nativeFinishRenderFailure(options.generation, "native-final-frame", cause));
         }
         throw cause;
       }
       if (captureContext === renderContext) {
-        encoderSubmitted = true;
+        submissionState = "confirmed";
         if (pendingResult) settle(pendingResult);
         else if (!settled && !cleanupRequested && texture) {
           restoreHooks();
