@@ -54,6 +54,8 @@ const fiberTestState = vi.hoisted(() => ({
   renderEvents: [] as Array<{ scene: unknown; target: unknown }>,
   cocFramebufferStatuses: [] as number[],
   currentTarget: null as unknown,
+  clearColor: null as number | null,
+  clearAlpha: 1,
   gl: {
     isWebGLRenderer: true,
     getPixelRatio: () => 1,
@@ -67,7 +69,10 @@ const fiberTestState = vi.hoisted(() => ({
       checkFramebufferStatus: () =>
         fiberTestState.cocFramebufferStatuses.shift() ?? 0x8cd5,
     }),
-    setClearColor: () => undefined,
+    setClearColor: (color?: number, alpha = 1) => {
+      fiberTestState.clearColor = color ?? null;
+      fiberTestState.clearAlpha = alpha;
+    },
     clear: () => undefined,
     render: (scene: unknown) => {
       fiberTestState.renderedScenes.push(scene);
@@ -137,6 +142,8 @@ afterEach(() => {
   fiberTestState.renderEvents.length = 0;
   fiberTestState.cocFramebufferStatuses.length = 0;
   fiberTestState.currentTarget = null;
+  fiberTestState.clearColor = null;
+  fiberTestState.clearAlpha = 1;
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
@@ -973,6 +980,83 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     ]);
 
     view.unmount();
+  });
+
+  it("restores renderer state and invalidates profiling when a Ground Glass pass fails", () => {
+    window.history.replaceState({}, "", "/?dofProfiling=1");
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const diagnostics = createRuntimeInfoCollector();
+    const previousTarget = new THREE.WebGLRenderTarget(32, 24);
+    const disposePreviousTarget = vi.spyOn(previousTarget, "dispose");
+    fiberTestState.currentTarget = previousTarget;
+    const injectedFailure = new Error("injected near-gather renderer failure");
+    let targetAtFailure: unknown;
+    let clearColorAtFailure: number | null = null;
+    const setClearColor = vi
+      .spyOn(fiberTestState.gl, "setClearColor")
+      .mockImplementation((color, alpha = 1) => {
+        fiberTestState.clearColor = color ?? null;
+        fiberTestState.clearAlpha = alpha;
+        if (alpha === 0) {
+          targetAtFailure = fiberTestState.currentTarget;
+          clearColorAtFailure = color ?? null;
+          throw injectedFailure;
+        }
+      });
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        previewMode: "upright",
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+      }),
+    );
+
+    expect(fiberTestState.frameCallback).not.toBeNull();
+    let observedFailure: unknown;
+    try {
+      act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    } catch (error) {
+      observedFailure = error;
+    }
+
+    expect(observedFailure).toBe(injectedFailure);
+    expect(targetAtFailure).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(targetAtFailure).not.toBe(previousTarget);
+    expect(fiberTestState.currentTarget).toBe(previousTarget);
+    // Near gather deliberately clears transparent black; failed-frame cleanup
+    // restores the renderer's persistent Ground Glass sky clear state.
+    expect(fiberTestState.clearColor).toBe(clearColorAtFailure);
+    expect(fiberTestState.clearAlpha).toBe(1);
+
+    const failedInfo = diagnostics.get();
+    const failedProfile = failedInfo?.profilingSnapshot;
+    expect(failedInfo?.frameExecutionError).toBe(injectedFailure.message);
+    expect(failedInfo?.failedPass).toBe("nearGather");
+    expect(failedProfile?.profilingDiagnostics.framesAttempted).toBe(1);
+    expect(failedProfile?.profilingDiagnostics.framesInvalidated).toBe(1);
+    expect(failedProfile?.profilingDiagnostics.pendingFrames).toBe(0);
+    expect(failedProfile?.groundGlassCpuSubmit?.count).toBe(0);
+    expect(failedProfile?.physicalDofCpuSubmit?.count).toBe(0);
+    expect(failedProfile?.passes.sceneRenderMs?.count).toBe(0);
+    expect(failedProfile?.passes.cocFootprintMs?.count).toBe(0);
+    expect(failedProfile?.passes.farGatherMs?.count).toBe(0);
+    expect(failedProfile?.passes.nearGatherMs?.count).toBe(0);
+    expect(failedProfile?.passes.compositeMs?.count).toBe(0);
+
+    setClearColor.mockRestore();
+    view.unmount();
+    expect(diagnostics.get()).toBeNull();
+    expect(disposePreviousTarget).not.toHaveBeenCalled();
+    previousTarget.dispose();
   });
 
   it("executes the semantic scene, CoC, gather, composite, and output stages in order", () => {

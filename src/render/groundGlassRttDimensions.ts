@@ -7,6 +7,7 @@ import type {
 } from "./groundGlassProfiling";
 import type { SceneCapacityRuntimeDetails } from "./sceneCapacityProfiling";
 import type { GroundGlassVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
+import type { GroundGlassPassId } from "./groundGlassPassGraph";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -104,6 +105,10 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   renderSanityStateKey?: string;
   renderSanitySubjectIdentity?: string;
   renderSanityError?: string | null;
+  /** Last unexpected exception from the mounted Ground Glass frame callback. */
+  frameExecutionError?: string | null;
+  /** Semantic pass active when the last unexpected frame exception occurred. */
+  failedPass?: GroundGlassPassId;
   rendererStats?: Readonly<{
     calls: number;
     triangles: number;

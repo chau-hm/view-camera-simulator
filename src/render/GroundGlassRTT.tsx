@@ -66,6 +66,7 @@ import {
   resizeGroundGlassRttResources,
   type GroundGlassRttResources,
 } from "./groundGlassRttResources";
+import { withGroundGlassFrameState } from "./groundGlassFrameExecution";
 import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
@@ -269,6 +270,8 @@ function OffscreenRenderer({
         renderSanityStateKey: undefined,
         renderSanitySubjectIdentity: undefined,
         renderSanityError: undefined,
+        frameExecutionError: undefined,
+        failedPass: undefined,
         rendererStats: undefined,
         sceneCapacity: undefined,
         ...(clearLatticeRuntimeInfo
@@ -1042,8 +1045,15 @@ function OffscreenRenderer({
   ]);
 
   useFrame((_state, frameDelta) => {
-    if (!renderTarget.current || !offscreenScene.current) return;
+    const sourceRenderTarget = renderTarget.current;
+    if (!sourceRenderTarget || !offscreenScene.current) return;
     const renderer = gl as WebGLRenderer;
+    const profiler = groundGlassProfilerRef.current;
+    let failedPass: GroundGlassPassId | undefined;
+    withGroundGlassFrameState(
+      renderer,
+      SKY_COLOR.getHex(),
+      () => {
     if (rttRendererMetricsEnabled) renderer.info.reset();
     const imgDist = resolveGroundGlassImageDistanceMm(opticsState);
     const cam = groundGlassCamera.current;
@@ -1218,7 +1228,6 @@ function OffscreenRenderer({
       maximumBlurRadiusPx,
       currentQualitySettings.maximumCoCRadiusPx,
     );
-    const profiler = groundGlassProfilerRef.current;
     const profilingActive = profiler !== null && profiler.backend !== "disabled";
     if (profilingActive) {
       const profilingConfiguration: GroundGlassProfilingConfiguration = {
@@ -1258,23 +1267,37 @@ function OffscreenRenderer({
         Number.isFinite(frameDelta) ? (frameDelta as number) * 1000 : undefined,
       );
     }
-    const measurePass = profilingActive
-      ? (pass: GroundGlassPassId, renderPass: () => void): void => {
-          const scope = profiler.beginPass(pass);
-          try {
-            renderPass();
-          } finally {
-            scope.end();
-          }
+    const measurePass = (
+      pass: GroundGlassPassId,
+      renderPass: () => void,
+    ): void => {
+      let scope: ReturnType<GroundGlassProfiler["beginPass"]> | null = null;
+      let passFailed = false;
+      let passFailure: unknown;
+      try {
+        if (profilingActive) scope = profiler.beginPass(pass);
+        renderPass();
+      } catch (error) {
+        passFailed = true;
+        passFailure = error;
+      }
+      try {
+        scope?.end();
+      } catch (error) {
+        if (!passFailed) {
+          passFailed = true;
+          passFailure = error;
         }
-      : (_pass: GroundGlassPassId, renderPass: () => void): void => {
-          renderPass();
-        };
+      }
+      if (passFailed) {
+        failedPass = pass;
+        throw passFailure;
+      }
+    };
 
     // Semantic pass order: source scene, CoC classification, far gather,
     // near gather, composite. Raw RTT Debug intentionally skips the middle
     // three stages; optional diagnostic readback follows the composite.
-    const prev = gl.getRenderTarget();
     measurePass("sceneRender", () => {
       gl.setRenderTarget(renderTarget.current);
       gl.setClearColor(SKY_COLOR.getHex(), 1);
@@ -1590,7 +1613,7 @@ function OffscreenRenderer({
         const finalPixels = new Uint8Array(32 * 32 * 4);
         lastRenderSanityStateKeyRef.current = sanityStateKey;
         try {
-          copyMaterial.uniforms.tColor.value = renderTarget.current.texture;
+          copyMaterial.uniforms.tColor.value = sourceRenderTarget.texture;
           gl.setRenderTarget(rawDiagnosticRT);
           gl.setClearColor(SKY_COLOR.getHex(), 1);
           gl.clear(true, true, true);
@@ -1686,8 +1709,50 @@ function OffscreenRenderer({
       }
     }
 
-    if (profilingActive) profiler.endFrame();
-    gl.setRenderTarget(prev);
+      },
+      (error) => {
+        try {
+          profiler?.invalidateCurrentFrame();
+        } catch {
+          // Preserve the original renderer exception if diagnostic publication fails.
+        }
+        lastRenderSanityStateKeyRef.current = null;
+        const currentInfo = readRuntimeInfo();
+        if (currentInfo) {
+          setRuntimeInfo({
+            ...currentInfo,
+            rawColorVariance: undefined,
+            rawNonBackgroundPixelCount: undefined,
+            rawContentful: undefined,
+            finalColorVariance: undefined,
+            finalNonBackgroundPixelCount: undefined,
+            finalContentful: undefined,
+            renderSanitySampleCount: undefined,
+            renderSanitySubjectGeneration: undefined,
+            renderSanityStateKey: undefined,
+            renderSanitySubjectIdentity: undefined,
+            renderSanityError: undefined,
+            frameExecutionError:
+              error instanceof Error ? error.message : String(error),
+            failedPass,
+            rendererStats: undefined,
+          });
+        }
+      },
+    );
+    profiler?.endFrame();
+    const currentInfo = readRuntimeInfo();
+    if (
+      currentInfo &&
+      (currentInfo.frameExecutionError !== undefined ||
+        currentInfo.failedPass !== undefined)
+    ) {
+      setRuntimeInfo({
+        ...currentInfo,
+        frameExecutionError: undefined,
+        failedPass: undefined,
+      });
+    }
   }, 1);
 
   return null;
