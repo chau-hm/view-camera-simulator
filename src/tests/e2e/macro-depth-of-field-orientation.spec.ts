@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const TARGET_COLUMNS = {
@@ -27,10 +28,27 @@ const SPECIMEN_PROFILE_V = [
   0.42, 0.44, 0.46, 0.48, 0.50, 0.52, 0.54, 0.56, 0.58,
 ] as const;
 
+// These top-origin positions were selected against the actual Architecture
+// Rise Ground Glass raster. They cover its one-sided side return, open
+// street-side context, facade, and separately identifiable focus chart.
+const ARCHITECTURE_RASTER_POINTS = [
+  { id: "left-upper-context", u: 0.29, v: 0.48 },
+  { id: "left-upper-facade", u: 0.37, v: 0.32 },
+  { id: "facade-focus-chart", u: 0.51, v: 0.65 },
+  { id: "right-facade-window", u: 0.63, v: 0.34 },
+  { id: "left-side-context", u: 0.25, v: 0.54 },
+  { id: "right-side-return", u: 0.75, v: 0.54 },
+  { id: "left-lower-context", u: 0.29, v: 0.67 },
+  { id: "right-lower-return", u: 0.76, v: 0.69 },
+  { id: "lower-facade", u: 0.51, v: 0.81 },
+] as const;
+
 const captureGroundGlassOutput = async (page: Page, canvas: Locator, path: string) => {
   const hiddenSiblings = await canvas.evaluate((element) => {
     const imageLayer = document.querySelector('[data-testid="ground-glass-image-layer"]');
-    const captureRoot = imageLayer?.parentElement?.parentElement ?? imageLayer;
+    const captureRoot = element.closest(".groundglass-viewport-frame")
+      ?? imageLayer?.parentElement?.parentElement
+      ?? imageLayer;
     const changed: HTMLElement[] = [];
     let current: Element | null = element;
     while (current && current !== captureRoot) {
@@ -120,6 +138,21 @@ const readTargetMarkerOffset = async (page: Page, targetId: string) =>
       y: (element as HTMLElement).style.getPropertyValue("--focus-distribution-target-marker-y"),
     }));
 
+const meanPatchDifference = (
+  left: readonly { red: number; green: number; blue: number }[],
+  right: readonly { red: number; green: number; blue: number }[],
+) => {
+  if (left.length !== right.length || left.length === 0) throw new Error("Raster comparison needs paired patches");
+  const channelDifference = left.reduce((total, patch, index) => {
+    const counterpart = right[index];
+    if (!counterpart) throw new Error("Raster comparison patch is missing");
+    return total + Math.abs(patch.red - counterpart.red)
+      + Math.abs(patch.green - counterpart.green)
+      + Math.abs(patch.blue - counterpart.blue);
+  }, 0);
+  return channelDifference / (left.length * 3);
+};
+
 test("Macro depth targets, Focus Distribution, and Raw/Upright raster stay aligned", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/macro-depth-of-field");
@@ -199,4 +232,92 @@ test("Macro depth targets, Focus Distribution, and Raw/Upright raster stay align
     expect(Math.abs(raw!.blue - upright!.blue)).toBeLessThanOrEqual(8);
   }
   await page.screenshot({ path: testInfo.outputPath("macro-depth-of-field-upright.png") });
+});
+
+test("Architecture Rise WebGL raster distinguishes the Raw/Upright X and Y mapping", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+
+  const rtt = page.getByTestId("ground-glass-rtt").first();
+  const canvas = rtt.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 60_000 });
+  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+
+  const rawImage = await captureGroundGlassOutput(
+    page,
+    canvas,
+    testInfo.outputPath("architecture-rise-raw-webgl-raster.png"),
+  );
+  const rawPatches = await readCanvasPatches(
+    canvas,
+    rawImage.toString("base64"),
+    ARCHITECTURE_RASTER_POINTS,
+  );
+  await testInfo.attach("architecture-rise-raw-webgl-raster", { body: rawImage, contentType: "image/png" });
+
+  await page.getByRole("radio", { name: "Upright Assist" }).check();
+  await expect(page.getByTestId("focus-distribution-orientation")).toHaveText("Upright");
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  const uprightImage = await captureGroundGlassOutput(
+    page,
+    canvas,
+    testInfo.outputPath("architecture-rise-upright-webgl-raster.png"),
+  );
+  const uprightPoints = await readCanvasPatches(
+    canvas,
+    uprightImage.toString("base64"),
+    ARCHITECTURE_RASTER_POINTS.map(({ u, v }) => ({ u: 1 - u, v: 1 - v })),
+  );
+  const incorrectHorizontalPoints = await readCanvasPatches(
+    canvas,
+    uprightImage.toString("base64"),
+    ARCHITECTURE_RASTER_POINTS.map(({ u, v }) => ({ u, v: 1 - v })),
+  );
+  const incorrectVerticalPoints = await readCanvasPatches(
+    canvas,
+    uprightImage.toString("base64"),
+    ARCHITECTURE_RASTER_POINTS.map(({ u, v }) => ({ u: 1 - u, v })),
+  );
+  const correctDifference = meanPatchDifference(rawPatches, uprightPoints);
+  const incorrectHorizontalDifference = meanPatchDifference(rawPatches, incorrectHorizontalPoints);
+  const incorrectVerticalDifference = meanPatchDifference(rawPatches, incorrectVerticalPoints);
+  await testInfo.attach("architecture-rise-upright-webgl-raster", { body: uprightImage, contentType: "image/png" });
+  const rasterEvidence = JSON.stringify({
+    points: ARCHITECTURE_RASTER_POINTS,
+    rawPatches,
+    uprightPatches: uprightPoints,
+    incorrectHorizontalPoints,
+    incorrectVerticalPoints,
+    meanChannelDifference: {
+      correct: correctDifference,
+      incorrectHorizontal: incorrectHorizontalDifference,
+      incorrectVertical: incorrectVerticalDifference,
+    },
+  }, null, 2);
+  await testInfo.attach("architecture-rise-raster-mapping-differences", {
+    body: rasterEvidence,
+    contentType: "application/json",
+  });
+  await writeFile(testInfo.outputPath("architecture-rise-raster-mapping-differences.json"), rasterEvidence);
+  const luminance = ({ red, green, blue }: { red: number; green: number; blue: number }) =>
+    (red * 0.2126) + (green * 0.7152) + (blue * 0.0722);
+  const sideContextIndex = ARCHITECTURE_RASTER_POINTS.findIndex(({ id }) => id === "left-side-context");
+  const sideReturnIndex = ARCHITECTURE_RASTER_POINTS.findIndex(({ id }) => id === "right-side-return");
+  const rawSideContext = rawPatches[sideContextIndex];
+  const rawSideReturn = rawPatches[sideReturnIndex];
+  expect(rawSideContext).toBeDefined();
+  expect(rawSideReturn).toBeDefined();
+  // Architecture Rise has a one-sided side-return mass at +X (the subject
+  // factory places it at x=1900 mm). In Raw screen coordinates it occupies
+  // this independently selected right-side patch; the opposite patch is open
+  // context. This absolute landmark catches a shared wrong transform in both
+  // preview modes, which cross-mode comparison alone cannot expose.
+  expect(luminance(rawSideReturn!) + 20, "one-sided Architecture Rise return must occupy the fixed Raw-side patch").toBeLessThan(luminance(rawSideContext!));
+  expect(Math.max(...rawPatches.map(luminance)) - Math.min(...rawPatches.map(luminance)), "fixed samples must span real raster contrast").toBeGreaterThan(20);
+  expect(correctDifference, "Raw and Upright counterpart patches should match").toBeLessThan(8);
+  expect(incorrectHorizontalDifference, "omitting horizontal reflection must worsen raster agreement").toBeGreaterThan(correctDifference + 8);
+  expect(incorrectVerticalDifference, "omitting vertical reflection must worsen raster agreement").toBeGreaterThan(correctDifference + 8);
 });

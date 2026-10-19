@@ -36,6 +36,20 @@ const ZERO_PAN: PanOffset = { x: 0, y: 0 };
 const PANEL_WIDTH_PX = 500;
 const PANEL_HEIGHT_PX = 400;
 
+const getClientBoxRect = (element: HTMLDivElement) => {
+  const borderBox = element.getBoundingClientRect();
+  // Pointer events use viewport pixels, while clientLeft/clientWidth are in
+  // layout pixels. Keep them in the same space if this panel is CSS-scaled.
+  const scaleX = element.offsetWidth > 0 ? borderBox.width / element.offsetWidth : 1;
+  const scaleY = element.offsetHeight > 0 ? borderBox.height / element.offsetHeight : 1;
+  return {
+    left: borderBox.left + element.clientLeft * scaleX,
+    top: borderBox.top + element.clientTop * scaleY,
+    width: element.clientWidth * scaleX,
+    height: element.clientHeight * scaleY,
+  };
+};
+
 type DragState = {
   pointerId: number | null;
   pointerType: string;
@@ -236,7 +250,7 @@ export const GroundGlassStage = ({
     releaseCurrentPointerCapture();
     setIsDragging(false);
     if (anchor && panelRef.current) {
-      const rect = panelRef.current.getBoundingClientRect();
+      const rect = getClientBoxRect(panelRef.current);
       measureViewport();
       setNormalizedPan(calculateGroundGlassAnchoredPan(anchor.clientX, anchor.clientY, rect));
     } else {
