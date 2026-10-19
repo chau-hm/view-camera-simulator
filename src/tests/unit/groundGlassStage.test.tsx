@@ -29,9 +29,21 @@ const initialRect = {
   toJSON: () => ({}),
 };
 let currentRect = { ...initialRect };
+let currentClientWidth = 498;
+let currentClientHeight = 398;
+let currentClientLeft = 1;
+let currentClientTop = 1;
+let currentOffsetWidth = 500;
+let currentOffsetHeight = 400;
 
 beforeEach(() => {
   currentRect = { ...initialRect };
+  currentClientWidth = 498;
+  currentClientHeight = 398;
+  currentClientLeft = 1;
+  currentClientTop = 1;
+  currentOffsetWidth = 500;
+  currentOffsetHeight = 400;
 });
 
 const getStage = (getByRole: ReturnType<typeof render>["getByRole"]) =>
@@ -42,6 +54,12 @@ const configureStage = (stage: HTMLElement) => {
     configurable: true,
     value: () => currentRect,
   });
+  Object.defineProperty(stage, "clientWidth", { configurable: true, get: () => currentClientWidth });
+  Object.defineProperty(stage, "clientHeight", { configurable: true, get: () => currentClientHeight });
+  Object.defineProperty(stage, "clientLeft", { configurable: true, get: () => currentClientLeft });
+  Object.defineProperty(stage, "clientTop", { configurable: true, get: () => currentClientTop });
+  Object.defineProperty(stage, "offsetWidth", { configurable: true, get: () => currentOffsetWidth });
+  Object.defineProperty(stage, "offsetHeight", { configurable: true, get: () => currentOffsetHeight });
   Object.defineProperty(stage, "setPointerCapture", {
     configurable: true,
     value: vi.fn(),
@@ -106,9 +124,13 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     }
     vi.stubGlobal("ResizeObserver", ResizeObserverMock);
     currentRect = { ...currentRect, width: 641.4, height: 513.2, right: 741.4, bottom: 563.2 };
+    currentClientWidth = 639;
+    currentClientHeight = 511;
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
       () => currentRect,
     );
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(() => currentClientWidth);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(() => currentClientHeight);
     const onViewportSizeChange = vi.fn();
 
     render(
@@ -117,7 +139,7 @@ describe("GroundGlassStage explicit zoom interaction", () => {
         onViewportSizeChange={onViewportSizeChange}
       />,
     );
-    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 641, height: 513 });
+    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 639, height: 511 });
 
     act(() => resizeCallback?.([], {} as ResizeObserver));
     expect(onViewportSizeChange).toHaveBeenCalledTimes(1);
@@ -129,8 +151,10 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(onViewportSizeChange).toHaveBeenCalledTimes(1);
 
     currentRect = { ...currentRect, width: 800.2, height: 640.2, right: 900.2, bottom: 690.2 };
+    currentClientWidth = 798;
+    currentClientHeight = 638;
     act(() => resizeCallback?.([], {} as ResizeObserver));
-    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 800, height: 640 });
+    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 798, height: 638 });
     expect(onViewportSizeChange).toHaveBeenCalledTimes(2);
   });
 
@@ -149,6 +173,91 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(getGroundGlassPointerThresholdPx("pen")).toBe(10);
     expect(getGroundGlassPointerThresholdPx("touch")).toBe(12);
     expect(getGroundGlassPointerThresholdPx()).toBe(8);
+  });
+
+  it("anchors a center click to the center of the client box", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+
+    pointerGesture(stage, { pointerId: 70, startX: 350, startY: 250 });
+
+    expect(stage).toHaveAttribute("data-normalized-pan-x", "0");
+    expect(stage).toHaveAttribute("data-normalized-pan-y", "0");
+  });
+
+  it("maps an off-center click through the client-box origin and dimensions", () => {
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    const clientLeft = currentRect.left + currentClientLeft;
+    const clientTop = currentRect.top + currentClientTop;
+
+    pointerGesture(stage, {
+      pointerId: 71,
+      startX: clientLeft + currentClientWidth / 4,
+      startY: clientTop + (currentClientHeight * 3) / 4,
+    });
+
+    expect(Number(stage.getAttribute("data-normalized-pan-x"))).toBeCloseTo(0.5, 5);
+    expect(Number(stage.getAttribute("data-normalized-pan-y"))).toBeCloseTo(-0.5, 5);
+  });
+
+  it("uses measured client-box borders and clamps a near-edge anchor", () => {
+    currentClientLeft = 3;
+    currentClientTop = 5;
+    currentClientWidth = 494;
+    currentClientHeight = 390;
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+    const clientX = currentRect.left + currentClientLeft + 4;
+    const clientY = currentRect.top + currentClientTop + 6;
+
+    pointerGesture(stage, { pointerId: 72, startX: clientX, startY: clientY });
+
+    expect(Number(stage.getAttribute("data-normalized-pan-x"))).toBeCloseTo(1 - (8 / 494), 6);
+    expect(Number(stage.getAttribute("data-normalized-pan-y"))).toBeCloseTo(1 - (12 / 390), 6);
+  });
+
+  it("recomputes client-box anchoring after a resize", () => {
+    let resizeCallback: ResizeObserverCallback | undefined;
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+    const view = render(<ControlledGroundGlassStage />);
+    const stage = getStage(view.getByRole);
+    configureStage(stage);
+
+    currentRect = {
+      ...currentRect,
+      left: 200,
+      top: 80,
+      width: 320,
+      height: 256,
+      right: 520,
+      bottom: 336,
+    };
+    currentClientWidth = 318;
+    currentClientHeight = 254;
+    currentOffsetWidth = 320;
+    currentOffsetHeight = 256;
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+
+    pointerGesture(stage, {
+      pointerId: 73,
+      startX: currentRect.left + currentClientLeft + currentClientWidth * 0.3,
+      startY: currentRect.top + currentClientTop + currentClientHeight * 0.6,
+    });
+
+    expect(Number(stage.getAttribute("data-normalized-pan-x"))).toBeCloseTo(0.4, 5);
+    expect(Number(stage.getAttribute("data-normalized-pan-y"))).toBeCloseTo(-0.2, 5);
   });
 
   it("requests explicit zoom-in and ignores duplicate pointer/click activation", () => {
@@ -430,6 +539,10 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     pointerGesture(stage, { pointerId: 60, startX: 100, startY: 50 });
     pointerGesture(stage, { pointerId: 61, startX: 350, startY: 250, endX: 900, endY: 700 });
     currentRect = { ...currentRect, width: 200, height: 160, right: 300, bottom: 210 };
+    currentClientWidth = 198;
+    currentClientHeight = 158;
+    currentOffsetWidth = 200;
+    currentOffsetHeight = 160;
     act(() => resizeCallback?.([], {} as ResizeObserver));
     expect(Math.abs(Number(stage.getAttribute("data-pan-x")))).toBeLessThanOrEqual(300);
     expect(Math.abs(Number(stage.getAttribute("data-pan-y")))).toBeLessThanOrEqual(240);

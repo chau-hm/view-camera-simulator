@@ -319,6 +319,104 @@ describe("Ground Glass profiling pass contract", () => {
     "composite",
   ];
 
+  it("keeps frame cadence separate from completed CPU pass timings after invalidation", () => {
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => null },
+      undefined,
+      0,
+    );
+    const configuration = makeConfiguration();
+
+    expect(profiler.backend).toBe("cpu-fallback");
+    profiler.beginFrame(configuration, 16);
+    profiler.beginPass("sceneRender").end();
+    profiler.invalidateCurrentFrame();
+
+    const failedSnapshot = profiler.snapshot();
+    expect(failedSnapshot.profilingDiagnostics.framesAttempted).toBe(1);
+    expect(failedSnapshot.profilingDiagnostics.framesInvalidated).toBe(1);
+    expect(failedSnapshot.profilingDiagnostics.pendingFrames).toBe(0);
+    expect(failedSnapshot.frame.count).toBe(1);
+    expect(failedSnapshot.approxFps).toBe(62.5);
+    expect(failedSnapshot.groundGlassCpuSubmit?.count).toBe(0);
+    expect(failedSnapshot.physicalDofCpuSubmit?.count).toBe(0);
+    processedPasses.forEach((pass) => {
+      const key = `${pass}Ms` as const;
+      expect(failedSnapshot.passes[key]?.count).toBe(0);
+    });
+
+    profiler.beginFrame(configuration, 24);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+
+    const recoveredSnapshot = profiler.snapshot();
+    expect(recoveredSnapshot.profilingDiagnostics.framesAttempted).toBe(2);
+    expect(recoveredSnapshot.profilingDiagnostics.framesInvalidated).toBe(1);
+    expect(recoveredSnapshot.profilingDiagnostics.pendingFrames).toBe(0);
+    expect(recoveredSnapshot.frame.count).toBe(2);
+    expect(recoveredSnapshot.frame.averageMs).toBe(20);
+    expect(recoveredSnapshot.approxFps).toBe(50);
+    expect(recoveredSnapshot.groundGlassCpuSubmit?.count).toBe(1);
+    expect(recoveredSnapshot.physicalDofCpuSubmit?.count).toBe(1);
+    processedPasses.forEach((pass) => {
+      const key = `${pass}Ms` as const;
+      expect(recoveredSnapshot.passes[key]?.count).toBe(1);
+    });
+    profiler.dispose();
+  });
+
+  it("discards invalidated GPU query ownership and completes the next frame", () => {
+    const fake = makeFakeGpuContext();
+    const profiler = new GroundGlassProfiler(
+      true,
+      { getContext: () => fake.context },
+      undefined,
+      0,
+      6,
+    );
+    const configuration = makeConfiguration();
+
+    profiler.beginFrame(configuration, 16);
+    profiler.beginPass("sceneRender").end();
+    profiler.invalidateCurrentFrame();
+
+    const failedSnapshot = profiler.snapshot();
+    expect(failedSnapshot.profilingDiagnostics.framesAttempted).toBe(1);
+    expect(failedSnapshot.profilingDiagnostics.framesInvalidated).toBe(1);
+    expect(failedSnapshot.profilingDiagnostics.pendingFrames).toBe(0);
+    expect(failedSnapshot.profilingDiagnostics.pendingQueries).toBe(1);
+    expect(failedSnapshot.frame.count).toBe(1);
+    expect(failedSnapshot.groundGlassGpu?.count).toBe(0);
+    expect(failedSnapshot.physicalDofGpu?.count).toBe(0);
+    expect(failedSnapshot.passes.sceneRenderMs?.count).toBe(0);
+
+    // The orphaned query occupies a timer slot until a later poll, but its
+    // completion must not acquire timing ownership for the failed frame.
+    profiler.beginFrame(configuration, 16);
+    processedPasses.forEach((pass) => profiler.beginPass(pass).end());
+    profiler.endFrame();
+    fake.context.available = true;
+    profiler.pollGpuResults();
+
+    const recoveredSnapshot = profiler.snapshot();
+    expect(recoveredSnapshot.profilingDiagnostics.framesAttempted).toBe(2);
+    expect(recoveredSnapshot.profilingDiagnostics.framesInvalidated).toBe(1);
+    expect(recoveredSnapshot.profilingDiagnostics.framesCompletedGpu).toBe(1);
+    expect(recoveredSnapshot.profilingDiagnostics.pendingFrames).toBe(0);
+    expect(recoveredSnapshot.profilingDiagnostics.pendingQueries).toBe(0);
+    expect(recoveredSnapshot.profilingDiagnostics.queriesDroppedOwnership).toBe(0);
+    expect(recoveredSnapshot.frame.count).toBe(2);
+    expect(recoveredSnapshot.approxFps).toBe(62.5);
+    expect(recoveredSnapshot.groundGlassGpu?.count).toBe(1);
+    expect(recoveredSnapshot.physicalDofGpu?.count).toBe(1);
+    processedPasses.forEach((pass) => {
+      const key = `${pass}Ms` as const;
+      expect(recoveredSnapshot.passes[key]?.count).toBe(1);
+    });
+    profiler.dispose();
+  });
+
   it("admits a processed frame atomically before issuing GPU queries", () => {
     const fake = makeFakeGpuContext();
     const profiler = new GroundGlassProfiler(
