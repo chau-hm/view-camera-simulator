@@ -1,0 +1,8 @@
+{
+  "name": "threejs-transparency-r185-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "three": "0.185.0"
+  }
+}
