@@ -5,6 +5,48 @@ import { dirname } from "node:path";
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-raw-rtt.html";
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
 
+type LifecycleResource = {
+  role: string;
+  resourceId: string;
+  allocated: boolean;
+  disposalRequested: boolean;
+  disposalRequestCount: number;
+  disposalCompleted: boolean;
+  disposalCompletionCount: number;
+  disposalFailed: string | null;
+  disposeEventObserved?: boolean;
+  disposeEventCount: number;
+};
+
+type LifecycleOperation = {
+  operationId: string;
+  kind: "render" | "resize";
+  state: "queued" | "running" | "completed" | "failed" | "retired";
+  stage: string;
+  error: string | null;
+};
+
+type LifecycleHandle = {
+  backendKind: "webgl-reference" | "webgpu-candidate";
+  mountGeneration: number;
+  instanceId: string;
+  state: "initializing" | "active" | "retiring" | "disposed" | "failed";
+  runtime: null | {
+    rendererFamily: string;
+    executionBackend: string;
+    applicationFallback: boolean;
+    initialized: boolean;
+    targetKind: string;
+    targetTextureUuid: string;
+  };
+  resources: LifecycleResource[];
+  operations: LifecycleOperation[];
+  failedInitialization: boolean;
+  cleanupStartedAt: number | null;
+  cleanupCompletedAt: number | null;
+  cleanupError: string | null;
+};
+
 const ARCHITECTURE_RASTER_POINTS = [
   { id: "left-upper-context", u: 0.29, v: 0.48 },
   { id: "left-upper-facade", u: 0.37, v: 0.32 },
@@ -74,6 +116,7 @@ const readDiagnostics = async (page: Page) => {
         applicationFallback: boolean;
         initialized: boolean;
         targetKind: string;
+        targetTextureUuid: string;
       };
       render: null | Record<string, unknown>;
       error: string | null;
@@ -85,13 +128,85 @@ const readDiagnostics = async (page: Page) => {
         applicationFallback: boolean;
         initialized: boolean;
         targetKind: string;
+        targetTextureUuid: string;
       };
       render: null | Record<string, unknown>;
       error: string | null;
     };
-    lifecycle: Record<string, number>;
+    lifecycle: { handles: LifecycleHandle[] };
   };
 };
+
+const lifecycleHandle = (
+  diagnostics: Awaited<ReturnType<typeof readDiagnostics>>,
+  backendKind: LifecycleHandle["backendKind"],
+  instanceId?: string,
+) => diagnostics.lifecycle.handles.find((handle) =>
+  handle.backendKind === backendKind && (!instanceId || handle.instanceId === instanceId)
+);
+
+const activeLifecycleHandle = (
+  diagnostics: Awaited<ReturnType<typeof readDiagnostics>>,
+  backendKind: LifecycleHandle["backendKind"],
+) => [...diagnostics.lifecycle.handles].reverse().find((handle) =>
+  handle.backendKind === backendKind && handle.state === "active"
+);
+
+const resourceEvidence = (handle: LifecycleHandle, role: string) =>
+  handle.resources.filter((resource) => resource.role === role && resource.allocated);
+
+const nativeCleanupSatisfied = (handle: LifecycleHandle | undefined) => {
+  if (!handle || handle.backendKind !== "webgpu-candidate") return false;
+  if (handle.runtime?.executionBackend !== "webgpu" || handle.runtime.applicationFallback) return false;
+  if (handle.state !== "disposed" || !handle.cleanupStartedAt || !handle.cleanupCompletedAt || handle.cleanupError) {
+    return false;
+  }
+  const requiredRoles = [
+    "renderer",
+    "target",
+    "registeredSubject",
+    "presentationLighting",
+    "worldLighting",
+    "displayMaterial",
+    "displayGeometry",
+  ];
+  for (const role of requiredRoles) {
+    const resources = resourceEvidence(handle, role);
+    if (resources.length === 0 || resources.some((resource) =>
+      !resource.disposalCompleted
+      || resource.disposalRequestCount !== 1
+      || resource.disposalCompletionCount !== 1
+      || resource.disposalFailed
+    )) {
+      return false;
+    }
+  }
+  const target = resourceEvidence(handle, "target")[0];
+  if (
+    !target
+    || target.resourceId !== handle.runtime.targetTextureUuid
+    || !target.disposeEventObserved
+    || target.disposeEventCount !== 1
+  ) return false;
+  for (const resource of resourceEvidence(handle, "environmentRig")) {
+    if (!resource.disposalCompleted || resource.disposalRequestCount !== 1 || resource.disposalCompletionCount !== 1 || resource.disposalFailed) return false;
+  }
+  return true;
+};
+
+const allAllocatedResourcesReleased = (handle: LifecycleHandle | undefined) => Boolean(
+  handle
+  && handle.state === "disposed"
+  && handle.resources.length > 0
+  && handle.resources.every((resource) =>
+    !resource.allocated || (
+      resource.disposalCompleted
+      && resource.disposalRequestCount === 1
+      && resource.disposalCompletionCount === 1
+      && !resource.disposalFailed
+    )
+  ),
+);
 
 const captureCanvas = async (
   canvas: Locator,
@@ -632,26 +747,27 @@ test("native-required WebGPU Ground Glass RTT samples and presents an offscreen 
   expect(resized.webgpu.render?.resizeCount).toBe(1);
   expect(resized.webgpu.render?.targetResizeDisposeEvents).toBeGreaterThan(0);
 
+  const beforeRemount = await readDiagnostics(page);
+  const retiredCandidate = activeLifecycleHandle(beforeRemount, "webgpu-candidate");
+  expect(retiredCandidate?.runtime?.executionBackend).toBe("webgpu");
   const generation = Number(await fixture.getAttribute("data-generation"));
   await page.getByRole("button", { name: "Unmount and remount" }).click();
   await expect(fixture).toHaveAttribute("data-generation", String(generation + 1));
   await expect.poll(async () => (await readDiagnostics(page)).webgpu.runtime?.executionBackend).toBe("webgpu");
   const afterRemount = await readDiagnostics(page);
-  expect(afterRemount.lifecycle.subjectDisposeCount).toBeGreaterThanOrEqual(2);
-  expect(afterRemount.lifecycle.rendererDisposeCount).toBeGreaterThanOrEqual(1);
-
-  const remountedGeneration = Number(await fixture.getAttribute("data-generation"));
-  await page.getByRole("button", { name: "Remount during WebGPU readback" }).click();
-  await expect(fixture).toHaveAttribute("data-generation", String(remountedGeneration + 1));
-  await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
-  await expect.poll(async () => (await readDiagnostics(page)).lifecycle.staleReadbacksDiscarded)
+  const disposedCandidate = lifecycleHandle(afterRemount, "webgpu-candidate", retiredCandidate?.instanceId);
+  const newCandidate = activeLifecycleHandle(afterRemount, "webgpu-candidate");
+  expect(disposedCandidate?.instanceId).toBe(retiredCandidate?.instanceId);
+  expect(nativeCleanupSatisfied(disposedCandidate)).toBe(true);
+  expect(newCandidate?.instanceId).not.toBe(retiredCandidate?.instanceId);
+  expect(newCandidate?.runtime?.executionBackend).toBe("webgpu");
+  expect((afterRemount.webgpu.render?.targetReadback as { contentfulSampleCount: number }).contentfulSampleCount)
     .toBeGreaterThan(0);
-  const afterReadbackRemount = await readDiagnostics(page);
   await attachJson(testInfo, "native-webgpu-lifecycle-evidence", {
-    mountedExecutionBackend: afterReadbackRemount.webgpu.runtime?.executionBackend,
+    mountedExecutionBackend: afterRemount.webgpu.runtime?.executionBackend,
     resizedRender: resized.webgpu.render,
-    afterOrdinaryRemount: afterRemount.lifecycle,
-    afterReadbackRemount: afterReadbackRemount.lifecycle,
+    retiredHandle: disposedCandidate,
+    remountedHandle: newCandidate,
   });
 });
 
@@ -665,6 +781,7 @@ test("native-required WebGPU display failure stays observable and remounts clean
   expect(mounted.webgpu.runtime?.rendererFamily).toBe("webgpu-renderer");
   expect(mounted.webgpu.runtime?.executionBackend).toBe("webgpu");
   expect(mounted.webgpu.runtime?.applicationFallback).toBe(false);
+  const mountedCandidate = activeLifecycleHandle(mounted, "webgpu-candidate");
 
   await page.getByRole("button", { name: "Inject display failure" }).click();
   await expect(fixture).toHaveAttribute("data-status", "failed");
@@ -679,9 +796,136 @@ test("native-required WebGPU display failure stays observable and remounts clean
   await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 120_000 });
   const remounted = await readDiagnostics(page);
   expect(remounted.webgpu.runtime?.executionBackend).toBe("webgpu");
-  expect(remounted.lifecycle.rendererDisposeCount).toBeGreaterThan(0);
-  expect(remounted.lifecycle.targetDisposeEvents).toBeGreaterThan(0);
-  expect(remounted.lifecycle.subjectDisposeCount).toBeGreaterThan(0);
+  const disposedCandidate = lifecycleHandle(remounted, "webgpu-candidate", mountedCandidate?.instanceId);
+  const newCandidate = activeLifecycleHandle(remounted, "webgpu-candidate");
+  expect(nativeCleanupSatisfied(disposedCandidate)).toBe(true);
+  expect(newCandidate?.instanceId).not.toBe(mountedCandidate?.instanceId);
+  expect(newCandidate?.runtime?.executionBackend).toBe("webgpu");
+  expect((remounted.webgpu.render?.targetReadback as { contentfulSampleCount: number }).contentfulSampleCount)
+    .toBeGreaterThan(0);
+});
+
+test("native-required WebGPU SPA navigation drains the exact retired handle and remounts independently", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired, "Run with OBSERVER_NATIVE_WEBGPU_REQUIRED=1 for a native-only gate");
+  test.setTimeout(150_000);
+  await page.goto(FIXTURE_PATH);
+  const documentTimeOrigin = await page.evaluate(() => performance.timeOrigin);
+  const fixture = page.getByTestId("ground-glass-webgpu-fixture");
+  await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 120_000 });
+
+  let diagnostics = await readDiagnostics(page);
+  const firstCandidate = activeLifecycleHandle(diagnostics, "webgpu-candidate");
+  const sameGenerationWebgl = activeLifecycleHandle(diagnostics, "webgl-reference");
+  expect(firstCandidate?.instanceId).toBeTruthy();
+  expect(firstCandidate?.runtime?.executionBackend).toBe("webgpu");
+  expect(firstCandidate?.runtime?.rendererFamily).toBe("webgpu-renderer");
+  expect(firstCandidate?.runtime?.applicationFallback).toBe(false);
+  const firstTarget = resourceEvidence(firstCandidate!, "target")[0];
+  expect(firstTarget?.resourceId).toBe(firstCandidate?.runtime?.targetTextureUuid);
+  expect(firstCandidate?.resources.some((resource) => resource.role === "registeredSubject" && resource.allocated))
+    .toBe(true);
+
+  const operationCount = firstCandidate?.operations.length ?? 0;
+  await page.getByRole("button", { name: "Queue rapid operations and hold WebGPU readback" }).click();
+  await expect.poll(async () => {
+    const state = await readDiagnostics(page);
+    const handle = lifecycleHandle(state, "webgpu-candidate", firstCandidate?.instanceId);
+    const operations = handle?.operations.slice(operationCount) ?? [];
+    return operations.length === 4
+      && operations.slice(0, 3).every((operation) => operation.state === "completed")
+      && operations[3]?.stage === "readback-in-flight"
+      && operations[3]?.state === "running";
+  }).toBe(true);
+  diagnostics = await readDiagnostics(page);
+  const candidateWithPendingWork = lifecycleHandle(diagnostics, "webgpu-candidate", firstCandidate?.instanceId);
+  const rapidOperations = candidateWithPendingWork?.operations.slice(operationCount) ?? [];
+  expect(rapidOperations.map((operation) => operation.kind)).toEqual(["render", "resize", "render", "render"]);
+  expect(rapidOperations.slice(0, 3).every((operation) => operation.state === "completed")).toBe(true);
+  expect(rapidOperations[3]).toMatchObject({ state: "running", stage: "readback-in-flight" });
+
+  await page.getByRole("link", { name: "Navigate away" }).click();
+  await expect(page.getByTestId("ground-glass-away-route")).toBeVisible();
+  await expect(fixture).toHaveCount(0);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentTimeOrigin);
+  await expect.poll(async () => {
+    const state = await readDiagnostics(page);
+    return lifecycleHandle(state, "webgpu-candidate", firstCandidate?.instanceId)?.state;
+  }).toBe("retiring");
+
+  diagnostics = await readDiagnostics(page);
+  const retiringCandidate = lifecycleHandle(diagnostics, "webgpu-candidate", firstCandidate?.instanceId);
+  expect(retiringCandidate?.runtime?.executionBackend).toBe("webgpu");
+  expect(resourceEvidence(retiringCandidate!, "target")[0]?.disposalCompleted).toBe(false);
+  expect(resourceEvidence(retiringCandidate!, "renderer")[0]?.disposalCompleted).toBe(false);
+  await expect.poll(async () => {
+    const state = await readDiagnostics(page);
+    return allAllocatedResourcesReleased(lifecycleHandle(state, "webgl-reference", sameGenerationWebgl?.instanceId));
+  }).toBe(true);
+  diagnostics = await readDiagnostics(page);
+  const completedWebglCleanup = lifecycleHandle(diagnostics, "webgl-reference", sameGenerationWebgl?.instanceId);
+  expect(allAllocatedResourcesReleased(completedWebglCleanup)).toBe(true);
+  expect(nativeCleanupSatisfied(undefined)).toBe(false);
+  expect(nativeCleanupSatisfied(completedWebglCleanup)).toBe(false);
+
+  await page.getByRole("button", { name: "Release pending WebGPU readback" }).click();
+  await expect.poll(async () => {
+    const state = await readDiagnostics(page);
+    return nativeCleanupSatisfied(lifecycleHandle(state, "webgpu-candidate", firstCandidate?.instanceId));
+  }).toBe(true);
+  diagnostics = await readDiagnostics(page);
+  const disposedFirstCandidate = lifecycleHandle(diagnostics, "webgpu-candidate", firstCandidate?.instanceId);
+  expect(disposedFirstCandidate?.cleanupCompletedAt).toBeGreaterThanOrEqual(disposedFirstCandidate?.cleanupStartedAt ?? 0);
+  expect(disposedFirstCandidate?.operations.slice(operationCount).map((operation) => operation.state))
+    .toEqual(["completed", "completed", "completed", "retired"]);
+  expect(resourceEvidence(disposedFirstCandidate!, "target")[0]).toMatchObject({
+    disposalRequestCount: 1,
+    disposalCompletionCount: 1,
+    disposeEventObserved: true,
+    disposeEventCount: 1,
+  });
+  const withheldNativeTarget = {
+    ...disposedFirstCandidate!,
+    resources: disposedFirstCandidate!.resources.map((resource) => resource.role === "target"
+      ? {
+          ...resource,
+          disposalCompleted: false,
+          disposalCompletionCount: 0,
+          disposeEventObserved: false,
+          disposeEventCount: 0,
+        }
+      : resource),
+  };
+  expect(nativeCleanupSatisfied(withheldNativeTarget)).toBe(false);
+
+  await page.getByRole("link", { name: "Experiment route" }).click();
+  await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 120_000 });
+  diagnostics = await readDiagnostics(page);
+  const secondCandidate = activeLifecycleHandle(diagnostics, "webgpu-candidate");
+  expect(secondCandidate?.instanceId).not.toBe(firstCandidate?.instanceId);
+  expect(secondCandidate?.mountGeneration).not.toBe(firstCandidate?.mountGeneration);
+  expect(secondCandidate?.runtime?.executionBackend).toBe("webgpu");
+  expect((diagnostics.webgpu.render?.targetReadback as { contentfulSampleCount: number }).contentfulSampleCount)
+    .toBeGreaterThan(0);
+  await captureCanvas(page.getByTestId("webgpu-candidate-canvas"), testInfo, "spa-remounted-native-webgpu-output");
+
+  await page.getByRole("link", { name: "Navigate away" }).click();
+  await expect(page.getByTestId("ground-glass-away-route")).toBeVisible();
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentTimeOrigin);
+  await expect.poll(async () => {
+    const state = await readDiagnostics(page);
+    return nativeCleanupSatisfied(lifecycleHandle(state, "webgpu-candidate", secondCandidate?.instanceId));
+  }).toBe(true);
+  const finalDiagnostics = await readDiagnostics(page);
+  await attachJson(testInfo, "native-webgpu-spa-lifecycle-evidence", {
+    documentTimeOrigin,
+    firstCandidate: disposedFirstCandidate,
+    firstGenerationWebgl: completedWebglCleanup,
+    secondCandidate: lifecycleHandle(finalDiagnostics, "webgpu-candidate", secondCandidate?.instanceId),
+    negativeControls: {
+      webglCannotSatisfyNativeCleanup: nativeCleanupSatisfied(completedWebglCleanup),
+      withheldNativeTargetCannotSatisfyCleanup: nativeCleanupSatisfied(withheldNativeTarget),
+    },
+  });
 });
 
 test("fixture failure after target allocation disposes the registered subject and renderer", async ({ page }) => {
@@ -692,9 +936,13 @@ test("fixture failure after target allocation disposes the registered subject an
   const diagnostics = await readDiagnostics(page);
   expect(diagnostics.webgpu.runtime).toBeNull();
   expect(diagnostics.webgpu.error).toContain("Injected partial initialization failure");
-  expect(diagnostics.lifecycle.failedInitializationCleanupCount).toBeGreaterThan(0);
-  expect(diagnostics.lifecycle.subjectDisposeCount).toBeGreaterThan(0);
-  expect(diagnostics.lifecycle.rendererDisposeCount).toBeGreaterThan(0);
+  const failedCandidate = [...diagnostics.lifecycle.handles].reverse().find((handle) =>
+    handle.backendKind === "webgpu-candidate" && handle.failedInitialization
+  );
+  expect(failedCandidate?.state).toBe("failed");
+  expect(resourceEvidence(failedCandidate!, "registeredSubject")[0]?.disposalCompleted).toBe(true);
+  expect(resourceEvidence(failedCandidate!, "target")[0]?.disposalCompleted).toBe(true);
+  expect(resourceEvidence(failedCandidate!, "renderer")[0]?.disposalCompleted).toBe(true);
 });
 
 test("display failure remains visible and does not prevent a clean remount", async ({ page }) => {
@@ -702,6 +950,9 @@ test("display failure remains visible and does not prevent a clean remount", asy
   await page.goto(FIXTURE_PATH);
   const fixture = page.getByTestId("ground-glass-webgpu-fixture");
   await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
+  const beforeFailure = await readDiagnostics(page);
+  const previousWebgpu = activeLifecycleHandle(beforeFailure, "webgpu-candidate");
+  const previousWebgl = activeLifecycleHandle(beforeFailure, "webgl-reference");
   await page.getByRole("button", { name: "Inject display failure" }).click();
   await expect(fixture).toHaveAttribute("data-status", "failed");
   let diagnostics = await readDiagnostics(page);
@@ -712,13 +963,8 @@ test("display failure remains visible and does not prevent a clean remount", asy
   await expect(fixture).toHaveAttribute("data-generation", String(generation + 1));
   await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
   diagnostics = await readDiagnostics(page);
-  expect(diagnostics.lifecycle.subjectDisposeCount).toBeGreaterThan(0);
-  expect(diagnostics.lifecycle.rendererDisposeCount).toBeGreaterThan(0);
-
-  const remountedGeneration = Number(await fixture.getAttribute("data-generation"));
-  await page.getByRole("button", { name: "Remount during WebGPU readback" }).click();
-  await expect(fixture).toHaveAttribute("data-generation", String(remountedGeneration + 1));
-  await expect(fixture).toHaveAttribute("data-status", "ready", { timeout: 90_000 });
-  diagnostics = await readDiagnostics(page);
-  expect(diagnostics.lifecycle.staleReadbacksDiscarded).toBeGreaterThan(0);
+  expect(allAllocatedResourcesReleased(lifecycleHandle(diagnostics, "webgpu-candidate", previousWebgpu?.instanceId))).toBe(true);
+  expect(allAllocatedResourcesReleased(lifecycleHandle(diagnostics, "webgl-reference", previousWebgl?.instanceId))).toBe(true);
+  expect(activeLifecycleHandle(diagnostics, "webgpu-candidate")?.instanceId).not.toBe(previousWebgpu?.instanceId);
+  expect(activeLifecycleHandle(diagnostics, "webgl-reference")?.instanceId).not.toBe(previousWebgl?.instanceId);
 });

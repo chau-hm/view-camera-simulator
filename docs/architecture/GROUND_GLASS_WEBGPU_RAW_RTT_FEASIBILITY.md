@@ -2,9 +2,9 @@
 
 ## A. Executive conclusion
 
-**FEASIBLE** — The bounded native WebGPU Raw RTT path is demonstrated: the existing Architecture Rise registered subject was rendered through the canonical off-axis Ground Glass camera into a native WebGPU render target, then sampled by a separate TSL display operation. Raw/Upright orientation, an off-center 4× film crop, target resize, unmount/remount, a native display-pass failure, and a pending asynchronous readback during teardown were exercised on actual WebGPU execution.
+**FEASIBLE** — The bounded native WebGPU Raw RTT path is demonstrated: the existing Architecture Rise registered subject was rendered through the canonical off-axis Ground Glass camera into a native WebGPU render target, then sampled by a separate TSL display operation. Raw/Upright orientation, an off-center 4× film crop, target resize, native display-pass failure, and renderer cleanup across a real client-side route transition now have native-required browser evidence. A queued render/resize/readback sequence was also retired and drained before that exact renderer's resources were disposed.
 
-This conclusion applies only to the Raw RTT render-and-display path. It does not establish a production Ground Glass backend or full DOF, image-circle, or final-composite parity. Partial-initialization failure cleanup was exercised in Chromium's WebGL2 fallback environment; native WebGPU display-pass failure and remount are separately covered. CoC/footprint classification, far/near gathering, final DOF composition, and Image Circle/vignetting rendering remain unimplemented and untested here.
+This conclusion applies only to the Raw RTT render-and-display path. It does not establish a production Ground Glass backend or full DOF, image-circle, or final-composite parity. Native-specific SPA cleanup is proven only for this isolated test fixture; public simulator route integration remains unimplemented and untested. Partial-initialization failure cleanup was exercised in Chromium's WebGL2 fallback environment. CoC/footprint classification, far/near gathering, final DOF composition, and Image Circle/vignetting rendering remain unimplemented and untested here.
 
 No production source file was modified. The fixture and spec live under `src/tests/e2e/fixtures/` and `src/tests/e2e/`; the public Ground Glass route and production renderer remain WebGL-only.
 
@@ -71,18 +71,31 @@ Full-film-to-crop pixel patches were compared at independently mapped asymmetric
 
 ## E. Resource results
 
+- Lifecycle records identify backend, mount generation, unique handle, renderer execution backend, and each owned resource identity. Allocation, disposal request, successful disposal completion, and disposal failure are recorded separately. Repeated disposal reuses the same completion and does not emit a second successful disposal for an owned resource.
+- The following identities were captured in one passing headed Chrome/WebGPU run on 2026-10-20. UUIDs identify that run; subsequent runs allocate new target and subject UUIDs.
+
+| Backend | Handle / generation | Transition | Renderer | Target | Registered subject | Local rigs | Outcome |
+|---|---|---|---|---|---|---|---|
+| WebGPU candidate | `webgpu-candidate-g1-i2`, generation 1 | `/experiment` → `/away` with queued work | `webgpu-candidate-g1-i2:renderer` completed once | `adda9332-71ed-4176-925e-44fb07aa80bd` completed once; one dispose event | `8add0ea0-e935-4368-b943-ed11548cd294` completed once | presentation, world-lighting and environment-rig entries each completed once | Native cleanup completed without error; final held operation retired as stale |
+| WebGL reference | `webgl-reference-g1-i1`, generation 1 | same `/experiment` → `/away` | `webgl-reference-g1-i1:renderer` completed once | `b510c54f-3552-4c10-85a0-aa23e9ed2039` completed once | `cb760f20-98c6-45a2-8af3-19e8e9644309` completed once | presentation, world-lighting and environment-rig entries each completed once | Cleanup completed; this record does not satisfy the native WebGPU predicate |
+| WebGPU candidate | `webgpu-candidate-g2-i4`, generation 2 | remounted `/experiment` → `/away` | `webgpu-candidate-g2-i4:renderer` completed once | `f45760b6-3c19-4c92-801c-bbd64e65a322` completed once; one dispose event | `b933f0e3-64f0-4e30-9fa8-aad17d237052` completed once | presentation, world-lighting and environment-rig entries each completed once | New native handle rendered contentful output, then cleaned up independently |
+
+- The native cleanup assertion also passed two negative controls: a fully disposed WebGL reference returned false, and a copied native record with target-disposal evidence withheld returned false.
 - The fixture owns each renderer, render target, display geometry/material/scene, camera, and local lighting/environment rig it creates.
 - The Architecture Rise subject is created and disposed through `createRegisteredRttSubject()` / `disposeRegisteredRttSubject()`. Shared asset resources retain their registry ownership and are not disposed by the fixture as borrowed module resources.
-- Cleanup waits for pending render/readback work, disposes display resources and the target, releases the registered subject and local rigs, and then disposes the renderer. The cleanup path is idempotent.
+- All render, readback, and resize calls accepted by a handle enter one ordered queue. Retirement rejects new work, marks queued operations retired before they touch GPU state, waits for in-flight work, then disposes display resources and target, releases the subject and local rigs, and finally disposes the renderer.
 - On native WebGPU, `RenderTarget.setSize()` kept the same texture UUID and recorded one target-storage dispose event before rendering at 400×320.
-- Native remount evidence recorded renderer, target, subject, presentation, and environment disposal. Remount during an asynchronous target readback recorded one stale readback discarded, then reached ready state on a new native renderer.
+- The pending-operation test starts the real `readRenderTargetPixelsAsync()` call, holds its enclosing operation at an explicit test barrier, and navigates away while the operation remains accepted and unresolved. Cleanup stays in `retiring` with renderer and target still active until the barrier releases. The operation then restores the previous target, records a stale/retired outcome, and cannot publish success to the new route.
 - A native WebGPU display-pass failure remained visible as `failedPass: "textureDisplay"`; the error was reported and a subsequent remount returned to native WebGPU. Partial initialization failure after target allocation and disposal was tested in the ordinary Chromium run, where Three r186 used its WebGL2 fallback.
+- Successful `dispose()` completion and the target's disposal event demonstrate the Three.js owner-level disposal contract. They do not prove when or whether the GPU driver reclaims physical memory.
 
 ## F. Compatibility blockers and limits
 
 No incompatibility was observed in the tested Architecture Rise subject: its RTT factory uses built-in `MeshStandardMaterial` / `MeshBasicMaterial` and subject-owned procedural `DataTexture` maps; it does not require `ShaderMaterial` or `onBeforeCompile` conversion. The native scene render, target readback, texture sampling, and display completed without a reported render failure.
 
 This pilot intentionally does not implement or measure physical CoC/footprint classification, half-float or encoded-byte DOF storage, far/near gather, the production final composite, Image Circle/vignetting masks, or diagnostic parity. It therefore establishes no WebGPU DOF, image-circle, or complete Ground Glass visual parity. Pixel evidence covers selected stable patches and coordinate landmarks, not full-frame material/color equality. Hardware acceleration was not separately established, and only the recorded Chrome/macOS environment was qualified.
+
+The SPA route exists only inside the isolated feasibility fixture. It proves mount/unmount behavior for the fixture's WebGPU candidate and its paired WebGL control, not integration with the public simulator router. The test barrier verifies that the operation queue retains ownership after native readback has been started; it does not claim direct visibility into GPU-driver completion or prove absence of every possible driver-level memory leak. Native partial-initialization cleanup is not covered; the existing injected partial-init case runs in ordinary Chromium's WebGL2 fallback mode.
 
 ## G. Migration implications
 
@@ -91,8 +104,8 @@ The experiment supports continuing to a bounded physical-data/CoC representation
 ## Reproducible evidence
 
 ```bash
-npx playwright test src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts --project=chromium
-OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npx playwright test src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts --project=chrome-native-webgpu -g 'native-required WebGPU'
+PATH=/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npx playwright test src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts --project=chromium --output=/private/tmp/vcs-pr273-default
+OBSERVER_NATIVE_WEBGPU_REQUIRED=1 PATH=/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npx playwright test src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts --project=chrome-native-webgpu -g 'native-required WebGPU' --output=/private/tmp/vcs-pr273-native
 ```
 
 Playwright screenshots and JSON measurements are attached to the test run and remain under the ignored `test-results/` directory; bulky captures are not committed.
@@ -101,9 +114,11 @@ Playwright screenshots and JSON measurements are attached to the test run and re
 
 - `npm test`: passed, 268 files / 2,488 tests.
 - `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`: passed.
-- Fixture E2E in default Chromium: 3 passed, 2 native-only tests skipped. Three r186 reported WebGL2 fallback; this is not counted as native evidence.
-- Native-required Chrome E2E: 2 passed, including Raw/Upright and crop comparisons, native target resize, async readback remount, and injected display-pass failure/remount.
-- Production-preview E2E: the Anatomy material-aware denial test passed. The Architecture Rise isolation test passed its default and explicit WebGPU-request assertions, then timed out when its observer canvas detached during the final standard-output SPA screenshot at `architecture-rise-webgpu-production.spec.ts:131`. This test was not rerun on a separate clean base. No production source changed in this PR. The production build contained no fixture-specific heading or remount-control strings; the existing application may still contain its separately gated Observer WebGPU chunk.
-- `git diff --check`: passed. The full `ci:local:e2e` command was not run; the dedicated native/fallback fixture suites and production-preview regression were run directly.
+- Fixture E2E in default Chromium: 3 passed, 3 native-only tests skipped. Three r186 reported WebGL2 fallback; this is not counted as native evidence.
+- Native-required headed Chrome E2E: 3 passed, including Raw/Upright and crop comparisons, target resize, exact-instance SPA cleanup, held readback retirement, idempotent disposal, native display-pass failure/remount, and a second independent navigation cleanup.
+- Production-preview E2E on this branch: the Anatomy material-aware denial test passed. The Architecture Rise isolation test passed its backend-selection assertions, then timed out on the final standard-output Ground Glass screenshot at `architecture-rise-webgpu-production.spec.ts:132`.
+- The same production-preview suite on clean `origin/main` at `bcc12c12c109de7c53427a340f26ca7410b4a422`: Anatomy passed; Architecture Rise timed out in the same final standard-output screenshot phase, this time on the Observer canvas at line 131. The changing target indicates browser/render stability at that transition; no production source changed in this PR.
+- Production build passed and `dist` contained no fixture heading or test-control strings. The existing separately gated Observer WebGPU chunk remains part of the application build; no Ground Glass WebGPU selector or route was added.
+- `npm test`: passed, 268 files / 2,488 tests. Typecheck, lint, CSS structure, build, and `git diff --check` passed. Full `ci:local:e2e` was not run; fixture suites and production-preview isolation were run directly.
 
 See also [RENDERER_STABILIZATION_CONTRACT.md](RENDERER_STABILIZATION_CONTRACT.md), [ARCHITECTURE_DIAGNOSIS.md](../ARCHITECTURE_DIAGNOSIS.md), and [DOF_FOCUS_PHYSICS_CONVERGENCE.md](../DOF_FOCUS_PHYSICS_CONVERGENCE.md).
