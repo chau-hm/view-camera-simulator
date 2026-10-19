@@ -171,10 +171,24 @@ The experiment lives under `experiments/`, with separate exact-version packages 
 - The adapter explains this small fixture’s matching behavior but does not uniquely attribute all M-INV9 real-scene pixels.
 - The r187 postprocessing fix path was not run because no stable r187 release was available; it is not exercised by the Anatomy on-screen route in any case.
 
+## Review-Fix — Screenshot Evidence Integrity
+
+The previous review started from `f02ff9f7473771c3c72b8175d007f12294ce684d`. Its in-memory capture key distinguished version, backend/output, fixture, material family, opacity, and background, but the retained screenshot filename omitted material family and opacity. As a result, the r186 F1 light O0.50 Standard and Basic captures shared three paths across G/W/A, and the later Basic images replaced the Standard files.
+
+The corrected runner derives both the in-memory key and screenshot path from one capture identity. Filenames include version, renderer mode (G/W/A), fixture, family, background, and opacity formatted to two decimals. A path is claimed before writing; a second owner fails with both capture identities in the error. The end-of-run manifest checks unique paths, identity-to-path agreement, current-run file existence, and one provenance record per claimed path. Each retained PNG is the exact byte buffer from the measured screenshot capture; the runner decodes the written file and requires its RGBA pixels to equal the in-memory pixels used for measurement.
+
+The full matrix was regenerated from capture source revision `aeb0aba07f12af9e2b06f28a18b371a8183f653b`. It retained 24 screenshot entries at 24 unique paths; all 24 artifacts exist, map to a capture identity, and decode as 320×320 images. The six repaired r186 F1 light O0.50 artifacts are:
+
+- `r186-G-F1-standard-light-o0.50.png` and `r186-G-F1-basic-light-o0.50.png`
+- `r186-W-F1-standard-light-o0.50.png` and `r186-W-F1-basic-light-o0.50.png`
+- `r186-A-F1-standard-light-o0.50.png` and `r186-A-F1-basic-light-o0.50.png`
+
+The run again qualified 98 captures, 130 pair comparisons, 98/98 pixel-identical same-condition repeats, 65 native WebGPU captures, 27 cleanup sets, and 584 exactly-once owned-resource disposal records. The principal r186 G↔W and G↔A measurements match the historical table above exactly; no experiment condition or numerical result changed. Expanded per-capture identity and path records are in the ignored `test-results/threejs-transparency-upstream-reproduction/evidence.json`, and the committed report lists the same 24 paths and capture identities.
+
 ## Validation record
 
-- Standalone version matrix: **passed**, 98 captures, 130 pair comparisons, and 98/98 pixel-identical same-condition repeats; all requested WebGPU sessions were native.
-- Standalone TypeScript check for `run.spec.ts`: **passed**.
+- Standalone native version matrix from source revision `aeb0aba07f12af9e2b06f28a18b371a8183f653b`: **3 passed** (the full matrix plus two pure screenshot-identity tests), 98 captures, 130 pair comparisons, 98/98 pixel-identical same-condition repeats, 65 native WebGPU captures, and 24/24 unique retained screenshots verified against their measured pixels.
+- Standalone TypeScript check for `run.spec.ts`, `screenshotIdentity.ts`, and `screenshot-identity.spec.ts`: **passed**.
 - Repository `npm run ci:local`: **passed** (CSS, lint, typecheck, 266 test files / 2,471 tests, and production build).
 - Production-preview isolation: **2 passed** using `src/tests/e2e/architecture-rise-webgpu-production.spec.ts`.
 - Production asset scan: **passed**, with no M-INV10 identifiers, adapter entry names, or r184/r185 experiment package signatures in `dist`.

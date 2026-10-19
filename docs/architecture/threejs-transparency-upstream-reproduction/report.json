@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "study": "M-INV10",
   "title": "Three.js transparency upstream reproduction and version regression",
   "base": {
@@ -53,31 +53,160 @@
     "allRequestedRevisionsMatchedRuntimeAndLock": true,
     "expandedRunEvidence": "test-results/threejs-transparency-upstream-reproduction/evidence.json (ignored)",
     "retainedScreenshots": [
-      "test-results/threejs-transparency-upstream-reproduction/r184-G-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r184-G-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r184-W-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r184-W-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r184-A-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r184-A-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r185-G-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r185-G-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r185-W-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r185-W-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r185-A-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r185-A-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-G-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-G-F2-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-W-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-W-F2-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-A-F0-transparent-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-A-F2-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-light-o1.png",
-      "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-light-o1.png"
-    ]
+      "test-results/threejs-transparency-upstream-reproduction/r184-G-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-G-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-W-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-W-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-A-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r184-A-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-G-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-G-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-W-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-W-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-A-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r185-A-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F2-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F2-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F0-standard-transparent-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F2-standard-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-basic-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-basic-light-o0.50.png",
+      "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-basic-light-o0.50.png"
+    ],
+    "captureSourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b",
+    "screenshotIdentity": {
+      "captureKeyFields": [
+        "version",
+        "backend",
+        "output",
+        "fixture",
+        "family",
+        "opacity.toFixed(2)",
+        "background"
+      ],
+      "filenameTemplate": "<version>-<G|W|A>-<fixture>-<family>-<background>-o<opacity.toFixed(2)>.png",
+      "collisionPolicy": "Fail before writing when a retained relative path is already claimed; error includes both capture identities."
+    },
+    "retainedScreenshotCaptures": [
+      {
+        "captureKey": "r184/webgl/stock/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r184-G-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r184/webgl/stock/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r184-G-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r184/webgpu/stock/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r184-W-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r184/webgpu/stock/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r184-W-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r184/webgpu/material-aware/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r184-A-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r184/webgpu/material-aware/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r184-A-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r185/webgl/stock/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r185-G-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r185/webgl/stock/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r185-G-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r185/webgpu/stock/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r185-W-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r185/webgpu/stock/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r185-W-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r185/webgpu/material-aware/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r185-A-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r185/webgpu/material-aware/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r185-A-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgl/stock/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-G-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgl/stock/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgl/stock/F2/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-G-F2-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/stock/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-W-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/stock/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/stock/F2/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-W-F2-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/material-aware/F0/standard/0.50/transparent",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-A-F0-standard-transparent-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/material-aware/F1/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/material-aware/F2/standard/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-A-F2-standard-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgl/stock/F1/basic/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-basic-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/stock/F1/basic/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-basic-light-o0.50.png"
+      },
+      {
+        "captureKey": "r186/webgpu/material-aware/F1/basic/0.50/light",
+        "screenshotPath": "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-basic-light-o0.50.png"
+      }
+    ],
+    "screenshotIntegrity": {
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b",
+      "manifestEntries": 24,
+      "uniquePaths": 24,
+      "artifactsExist": true,
+      "eachPathMapsToCaptureIdentity": true,
+      "eachSavedPngDecodedToMeasuredCapturePixels": true,
+      "screenshotDimensions": "320x320",
+      "regeneratedR186F1LightOpacity050Paths": [
+        "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-standard-light-o0.50.png",
+        "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-standard-light-o0.50.png",
+        "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-standard-light-o0.50.png",
+        "test-results/threejs-transparency-upstream-reproduction/r186-G-F1-basic-light-o0.50.png",
+        "test-results/threejs-transparency-upstream-reproduction/r186-W-F1-basic-light-o0.50.png",
+        "test-results/threejs-transparency-upstream-reproduction/r186-A-F1-basic-light-o0.50.png"
+      ]
+    }
   },
   "method": {
     "fixtureIndependence": "Standalone Vite/Playwright fixture; no React Three Fiber, app routes, scene/task code, material tracker, Ground Glass, capture events, or production renderer changes.",
@@ -98,7 +227,7 @@
     "opacities": [
       0.16,
       0.5,
-      1.0
+      1
     ],
     "materialState": {
       "transparent": true,
@@ -175,11 +304,27 @@
       {
         "name": "resource-leak-and-double-dispose",
         "status": "owned-material-and-geometry-dispose-events-counted-exactly-once"
+      },
+      {
+        "name": "screenshot-identity-collision",
+        "status": "version-backend-output-fixture-family-opacity-background-path-identity-and-fail-closed-claims"
+      },
+      {
+        "name": "screenshot-artifact-integrity",
+        "status": "each-current-run-path-exists-and-decoded-retained-pixels-equal-the-measured-capture"
       }
-    ]
+    ],
+    "retainedScreenshotEntries": 24,
+    "uniqueRetainedScreenshotPaths": 24
   },
   "r186OpaqueB0StandardStockWebglVsWebgpu": {
     "F0": {
+      "1": {
+        "rgbMae": 0.333333,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 16.302083,
+        "changedRgbPixels": 102400
+      },
       "0.16": {
         "rgbMae": 6.333333,
         "maxChannelDifference": 26,
@@ -191,15 +336,15 @@
         "maxChannelDifference": 56,
         "fullFrameRgbMae": 27.989583,
         "changedRgbPixels": 102400
-      },
-      "1": {
-        "rgbMae": 0.333333,
-        "maxChannelDifference": 26,
-        "fullFrameRgbMae": 16.302083,
-        "changedRgbPixels": 102400
       }
     },
     "F1": {
+      "1": {
+        "rgbMae": 0.333333,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 14.020833,
+        "changedRgbPixels": 102400
+      },
       "0.16": {
         "rgbMae": 12,
         "maxChannelDifference": 26,
@@ -211,15 +356,15 @@
         "maxChannelDifference": 60,
         "fullFrameRgbMae": 31.869792,
         "changedRgbPixels": 102400
-      },
-      "1": {
-        "rgbMae": 0.333333,
-        "maxChannelDifference": 26,
-        "fullFrameRgbMae": 14.020833,
-        "changedRgbPixels": 102400
       }
     },
     "F2": {
+      "1": {
+        "rgbMae": 2.004295,
+        "maxChannelDifference": 26,
+        "fullFrameRgbMae": 15.019844,
+        "changedRgbPixels": 67072
+      },
       "0.16": {
         "rgbMae": 17.375962,
         "maxChannelDifference": 29,
@@ -231,37 +376,17 @@
         "maxChannelDifference": 75,
         "fullFrameRgbMae": 32.595677,
         "changedRgbPixels": 102400
-      },
-      "1": {
-        "rgbMae": 2.004295,
-        "maxChannelDifference": 26,
-        "fullFrameRgbMae": 15.019844,
-        "changedRgbPixels": 67072
       }
     }
   },
   "r186OpaqueB0StandardStockWebglVsMaterialAwareAdapter": {
     "F0": {
-      "0.16": {
-        "rgbMae": 0,
-        "maxChannelDifference": 0,
-        "fullFrameRgbMae": 0,
-        "changedRgbPixels": 0
-      },
-      "0.5": {
-        "rgbMae": 0,
-        "maxChannelDifference": 0,
-        "fullFrameRgbMae": 0,
-        "changedRgbPixels": 0
-      },
       "1": {
         "rgbMae": 0.333333,
         "maxChannelDifference": 1,
         "fullFrameRgbMae": 0.114583,
         "changedRgbPixels": 35200
-      }
-    },
-    "F1": {
+      },
       "0.16": {
         "rgbMae": 0,
         "maxChannelDifference": 0,
@@ -273,15 +398,35 @@
         "maxChannelDifference": 0,
         "fullFrameRgbMae": 0,
         "changedRgbPixels": 0
-      },
+      }
+    },
+    "F1": {
       "1": {
         "rgbMae": 0.333333,
         "maxChannelDifference": 1,
         "fullFrameRgbMae": 0.145833,
         "changedRgbPixels": 44800
+      },
+      "0.16": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
+      },
+      "0.5": {
+        "rgbMae": 0,
+        "maxChannelDifference": 0,
+        "fullFrameRgbMae": 0,
+        "changedRgbPixels": 0
       }
     },
     "F2": {
+      "1": {
+        "rgbMae": 0.030962,
+        "maxChannelDifference": 1,
+        "fullFrameRgbMae": 0.015573,
+        "changedRgbPixels": 4784
+      },
       "0.16": {
         "rgbMae": 0.030962,
         "maxChannelDifference": 1,
@@ -293,12 +438,6 @@
         "maxChannelDifference": 1,
         "fullFrameRgbMae": 0.115,
         "changedRgbPixels": 35328
-      },
-      "1": {
-        "rgbMae": 0.030962,
-        "maxChannelDifference": 1,
-        "fullFrameRgbMae": 0.015573,
-        "changedRgbPixels": 4784
       }
     }
   },
@@ -325,7 +464,7 @@
       "testedOpacities": [
         0.16,
         0.5,
-        1.0
+        1
       ]
     },
     "b1TransparentCanvasWebgpu": {
@@ -417,11 +556,19 @@
       "captures": 98,
       "pairComparisons": 130,
       "sameConditionPixelIdenticalRepeats": 98,
-      "nativeWebGpuFallback": "rejected; all requested WebGPU captures used native GPUCanvasContext APIs"
+      "nativeWebGpuFallback": "rejected; all requested WebGPU captures used native GPUCanvasContext APIs",
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b",
+      "nativeWebGpuCaptures": 65,
+      "cleanupSets": 27,
+      "ownedResourceDisposalRecords": 584,
+      "retainedScreenshotEntries": 24,
+      "uniqueRetainedScreenshotPaths": 24,
+      "allRetainedScreenshotArtifactsPresent": true,
+      "playwrightTestsPassed": 3
     },
     "standaloneHarnessTypecheck": {
       "status": "passed",
-      "command": "tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --types node --typeRoots <primary-repo>/node_modules/@types --skipLibCheck --allowSyntheticDefaultImports experiments/threejs-transparency-upstream-reproduction/run.spec.ts"
+      "command": "tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --types node --typeRoots <primary-repo>/node_modules/@types --skipLibCheck --allowSyntheticDefaultImports experiments/threejs-transparency-upstream-reproduction/run.spec.ts experiments/threejs-transparency-upstream-reproduction/screenshotIdentity.ts experiments/threejs-transparency-upstream-reproduction/screenshot-identity.spec.ts"
     },
     "repositoryCiLocal": {
       "status": "passed",
@@ -433,12 +580,14 @@
         "build"
       ],
       "testFilesPassed": 266,
-      "testsPassed": 2471
+      "testsPassed": 2471,
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b"
     },
     "productionPreviewIsolation": {
       "status": "passed",
       "testsPassed": 2,
-      "test": "src/tests/e2e/architecture-rise-webgpu-production.spec.ts"
+      "test": "src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b"
     },
     "productionBundleScan": {
       "status": "passed",
@@ -448,8 +597,35 @@
         "Three.js 0.184.0/0.185.0 package identifiers",
         "M-INV10 identifiers"
       ],
-      "matches": 0
+      "matches": 0,
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b"
     },
-    "rootDependencyLockfile": "unchanged"
+    "rootDependencyLockfile": "unchanged",
+    "screenshotIdentityRegression": {
+      "status": "passed",
+      "testsPassed": 2,
+      "testFile": "experiments/threejs-transparency-upstream-reproduction/screenshot-identity.spec.ts",
+      "checks": [
+        "Standard-versus-Basic identity",
+        "G/W/A renderer-mode separation",
+        "r184/r185/r186 version separation",
+        "0.16/0.50/1.00 opacity separation",
+        "light/dark/transparent/clear separation",
+        "duplicate-path collision rejection",
+        "deterministic same-identity path",
+        "missing current-run artifact rejection"
+      ],
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b"
+    },
+    "screenshotArtifactIntegrity": {
+      "status": "passed",
+      "sourceRevision": "aeb0aba07f12af9e2b06f28a18b371a8183f653b",
+      "manifestEntries": 24,
+      "uniquePaths": 24,
+      "artifactsPresent": true,
+      "screenshotCaptureRecords": 24,
+      "decodedPixelsEqualMeasuredCapture": true,
+      "dimensions": "320x320"
+    }
   }
 }
