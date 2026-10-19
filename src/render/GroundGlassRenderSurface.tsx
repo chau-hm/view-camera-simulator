@@ -121,6 +121,8 @@ export const GroundGlassRenderSurface = ({
         data-rtt-was-clamped={rttRuntimeInfo?.wasClamped === undefined ? undefined : String(rttRuntimeInfo.wasClamped)}
         data-rtt-sanity-state={rttRuntimeInfo?.renderSanityStateKey}
         data-rtt-sanity-error={rttRuntimeInfo?.renderSanityError ?? undefined}
+        data-rtt-frame-error={rttRuntimeInfo?.frameExecutionError ?? undefined}
+        data-rtt-failed-pass={rttRuntimeInfo?.failedPass}
         data-rtt-inspection-window-active={rttRuntimeInfo?.inspectionWindowActive === undefined ? undefined : String(rttRuntimeInfo.inspectionWindowActive)}
         data-rtt-inspection-center-u={rttRuntimeInfo?.inspectionCenterU}
         data-rtt-inspection-center-v={rttRuntimeInfo?.inspectionCenterV}
