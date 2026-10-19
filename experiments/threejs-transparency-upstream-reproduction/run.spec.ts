@@ -6,6 +6,14 @@ import path from "node:path";
 import os from "node:os";
 import { inflateSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
+import {
+  captureKey as makeCaptureKey,
+  claimScreenshotPath,
+  screenshotRelativePath,
+  verifyScreenshotManifest,
+  type CaptureIdentity,
+  type ScreenshotProvenance,
+} from "./screenshotIdentity.js";
 
 type Version = "r184" | "r185" | "r186";
 type Backend = "webgl" | "webgpu";
@@ -119,8 +127,9 @@ type ImageMetrics = {
   alphaMAE: number;
 };
 type RegionMetrics = Record<"full" | "background" | "subject" | "overlap" | "leftNonOverlap" | "rightNonOverlap", ImageMetrics>;
-type CapturePixels = Readonly<{ metadata: CaptureMetadata; pixels: Buffer }>;
-type Capture = CapturePixels & Readonly<{ repeated: ImageMetrics }>;
+type CapturePixels = Readonly<{ metadata: CaptureMetadata; pixels: Buffer; png: Buffer }>;
+type PixelCapture = Pick<CapturePixels, "metadata" | "pixels">;
+type Capture = PixelCapture & Readonly<{ repeated: ImageMetrics }>;
 type CleanupResult = {
   rendererDisposed: boolean;
   disposalEvents: Array<{ uuid: string; kind: "material" | "geometry"; count: number }>;
@@ -140,6 +149,7 @@ type Evidence = {
     deviceScaleFactor: number;
     imageRepresentation: string;
     screenshots: string[];
+    screenshotCaptures: ScreenshotProvenance[];
   };
   captures: Array<{ key: string; metadata: CaptureMetadata; repeat: ImageMetrics }>;
   comparisons: Array<{ name: string; fixture: Fixture; representation: string; metrics: RegionMetrics }>;
@@ -158,7 +168,7 @@ type Evidence = {
   negativeControls: Array<{ name: string; status: string }>;
 };
 const evidence: Evidence = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   provenance: {
     requiredBase: "5d88d8f629b062bb1177b68616b86204d5dc152f",
     versions: {},
@@ -169,6 +179,7 @@ const evidence: Evidence = {
     deviceScaleFactor: 1,
     imageRepresentation: "Browser viewport PNG presentation screenshot including page compositor contribution. It is not a raw framebuffer or fragment-alpha readback.",
     screenshots: [],
+    screenshotCaptures: [],
   },
   captures: [],
   comparisons: [],
@@ -194,6 +205,17 @@ const sharedRoot = path.join(experimentRoot, "shared");
 const versions: readonly Version[] = ["r184", "r185", "r186"];
 const opacities = [0.16, 0.5, 1] as const;
 const pixelsByKey = new Map<string, Capture>();
+const screenshotClaims = new Map<string, string>();
+
+const captureIdentity = (
+  version: Version,
+  backend: Backend,
+  output: Output,
+  fixture: Fixture,
+  family: Family,
+  opacity: number,
+  background: Background,
+): CaptureIdentity => ({ version, backend, output, fixture, family, opacity, background });
 
 const caseKey = (
   version: Version,
@@ -203,7 +225,7 @@ const caseKey = (
   family: Family,
   opacity: number,
   background: Background,
-) => [version, backend, output, fixture, family, opacity.toFixed(2), background].join("/");
+) => makeCaptureKey(captureIdentity(version, backend, output, fixture, family, opacity, background));
 
 const makeVersionServer = async (version: Version) => {
   const packageRoot = path.join(experimentRoot, "versions", version, "node_modules/three");
@@ -250,7 +272,7 @@ const capturePixels = async (page: Page, condition: Condition): Promise<CaptureP
     return window.__runCondition(nextCondition);
   }, condition);
   const png = await page.screenshot({ type: "png", animations: "disabled" });
-  return { metadata: result.metadata, pixels: decodePng(png) };
+  return { metadata: result.metadata, pixels: decodePng(png), png };
 };
 
 const decodePng = (png: Buffer): Buffer => {
@@ -381,7 +403,7 @@ const measure = (left: Buffer, right: Buffer, roi: { x: number; y: number; width
   };
 };
 
-const compareCaptures = (left: CapturePixels, right: CapturePixels, fixture: Fixture): RegionMetrics => {
+const compareCaptures = (left: PixelCapture, right: PixelCapture, fixture: Fixture): RegionMetrics => {
   const rois = roiDefinitions(fixture);
   return Object.fromEntries(Object.entries(rois).map(([name, roi]) => [name, measure(left.pixels, right.pixels, roi)])) as RegionMetrics;
 };
@@ -527,14 +549,30 @@ const runGroup = async (
       || (fixture === "F2" && condition.background === "light")
     );
     if (keepScreenshot) {
-      const screenshotPath = path.join(
-        repositoryRoot,
-        "test-results/threejs-transparency-upstream-reproduction",
-        `${version}-${summarizeMode(backend, output)}-${fixture}-${condition.background}-o1.png`,
-      );
+      const identity = captureIdentity(version, backend, output, fixture, family, condition.opacity, condition.background);
+      const relativeScreenshotPath = screenshotRelativePath(identity);
+      const claimedKey = claimScreenshotPath(screenshotClaims, relativeScreenshotPath, identity);
+      expect(claimedKey, `${relativeScreenshotPath} must be claimed by its in-memory capture`).toBe(key);
+      expect(second.metadata.revision, `${key} screenshot runtime revision`).toBe(version.slice(1));
+      expect(second.metadata.requestedBackend, `${key} screenshot backend`).toBe(backend);
+      expect(second.metadata.requestedOutput, `${key} screenshot output`).toBe(output);
+      expect(second.metadata.executionBackend, `${key} screenshot execution backend`).toBe(backend === "webgpu" ? "webgpu" : "webgl2");
+      expect(second.metadata.condition.fixture, `${key} screenshot fixture`).toBe(fixture);
+      expect(second.metadata.condition.family, `${key} screenshot material family`).toBe(family);
+      expect(second.metadata.condition.opacity, `${key} screenshot opacity`).toBe(condition.opacity);
+      expect(second.metadata.condition.requestedBackground, `${key} screenshot background`).toBe(condition.background);
+      expect(second.metadata.canvas, `${key} screenshot dimensions`).toEqual({ width: 320, height: 320 });
+      const screenshotPath = path.resolve(repositoryRoot, relativeScreenshotPath);
       await mkdir(path.dirname(screenshotPath), { recursive: true });
-      await page.screenshot({ path: screenshotPath });
-      evidence.provenance.screenshots.push(path.relative(repositoryRoot, screenshotPath));
+      await writeFile(screenshotPath, second.png);
+      const retainedPixels = decodePng(await readFile(screenshotPath));
+      expect(retainedPixels, `${relativeScreenshotPath} must contain the measured condition's exact screenshot pixels`).toEqual(second.pixels);
+      evidence.provenance.screenshots.push(relativeScreenshotPath);
+      evidence.provenance.screenshotCaptures.push({
+        captureKey: key,
+        screenshotPath: relativeScreenshotPath,
+        identity,
+      });
     }
   }
 
@@ -819,8 +857,15 @@ test("isolates stock Three.js transparency behavior across r184-r186", async ({ 
     { name: "same-condition-repeatability", status: "every-condition-repeated-with-pixel-difference-metrics" },
     { name: "incompatible-image-representations", status: "all-numeric-comparisons-use-the-same-browser-presentation-PNG-representation" },
     { name: "resource-leak-and-double-dispose", status: "owned-material-and-geometry-dispose-events-counted-exactly-once" },
+    { name: "screenshot-identity-collision", status: "version-backend-output-fixture-family-opacity-background-path-identity-and-fail-closed-claims" },
+    { name: "screenshot-artifact-integrity", status: "each-current-run-path-exists-and-decoded-retained-pixels-equal-the-measured-capture" },
   ];
   const outputPath = path.join(repositoryRoot, "test-results/threejs-transparency-upstream-reproduction/evidence.json");
+  await verifyScreenshotManifest(evidence.provenance.screenshotCaptures, screenshotClaims, repositoryRoot);
+  expect(new Set(evidence.provenance.screenshots).size, "retained screenshot paths must be unique").toBe(evidence.provenance.screenshots.length);
+  expect(evidence.provenance.screenshots).toEqual(evidence.provenance.screenshotCaptures.map((entry) => entry.screenshotPath));
+  if (!smokeOnly) expect(evidence.provenance.screenshots).toHaveLength(24);
+  else expect(evidence.provenance.screenshots).toHaveLength(3);
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(evidence, null, 2)}\n`);
   expect(evidence.captures.length).toBeGreaterThan(0);
