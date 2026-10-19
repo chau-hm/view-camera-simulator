@@ -1,5 +1,6 @@
 import { createServer } from "vite";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 import type { AddressInfo } from "node:net";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -141,6 +142,7 @@ type Evidence = {
   schemaVersion: number;
   provenance: {
     requiredBase: string;
+    captureSourceRevision: string | null;
     versions: Partial<Record<Version, VersionProvenance>>;
     browser: { name: string; userAgent: string } | null;
     operatingSystem: { platform: string; release: string; architecture: string };
@@ -171,6 +173,7 @@ const evidence: Evidence = {
   schemaVersion: 2,
   provenance: {
     requiredBase: "5d88d8f629b062bb1177b68616b86204d5dc152f",
+    captureSourceRevision: null,
     versions: {},
     browser: null,
     operatingSystem: { platform: process.platform, release: os.release(), architecture: os.arch() },
@@ -769,6 +772,10 @@ const makeConditions = (fixture: Fixture, entries: readonly (readonly [number, B
   entries.map(([opacity, background]) => ({ fixture, opacity, background }));
 
 test("isolates stock Three.js transparency behavior across r184-r186", async ({ browser, browserName }) => {
+  evidence.provenance.captureSourceRevision = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  }).trim();
   const browserContext = await browser.newContext();
   const userAgent = await browserContext.newPage().then(async (page) => {
     const value = await page.evaluate(() => navigator.userAgent);
