@@ -44,6 +44,10 @@ A Ground Glass frame temporarily changes the active render target while executin
 
 The prior render target is saved before frame work. On every exit, the guard attempts to restore that target and set the existing sky clear color with alpha 1. Clear color is intentionally persistent renderer configuration, not a value to restore to the incoming frame state. Profiling scopes close on pass failure, and an unsuccessful frame invalidates its profile and current-frame diagnostics rather than leaving stale output presented as a successful frame. If frame work fails, its original error remains observable and is rethrown after cleanup; a cleanup error is surfaced when there is no earlier frame error. Target-bundle cleanup remains safe after a frame failure.
 
+### Profiling interpretation
+
+`frame.count` is the number of retained frame-delta samples, and `approxFps` is derived from their average; neither represents successful rendered frames or completed-output FPS. A frame callback that fails after `beginFrame()` may still contribute its already-recorded delta as cadence evidence. Completed pass timing aggregates exclude invalidated frames: CPU measurements remain attached to the active frame until all expected passes complete, and late GPU query results are ignored after invalidated frame ownership is discarded. Consult `framesAttempted`, `framesInvalidated`, `framesCompletedGpu` and pending-query diagnostics when interpreting profiling reliability.
+
 ## Boundaries strengthened in this PR
 
 This PR adds a narrow WebGL-specific execution guard around the existing imperative executor. It attempts to restore the prior render target and intentional clear-color end state on every exit, invalidates profiling on failure, clears stale frame evidence, records the failed semantic pass when known and rethrows the original error. Regression evidence invokes the actual captured R3F frame callback and injects a renderer failure after target switching. Existing target-bundle construction rollback, in-place resize, idempotent disposal and borrowed-subject behavior are retained; they are changed only if a concrete defect is demonstrated.
@@ -58,4 +62,5 @@ Future Ground Glass backend work must first preserve the current physical-input 
 - [Architecture Diagnosis](../ARCHITECTURE_DIAGNOSIS.md) — current architecture and known investigations.
 - [DOF Focus Physics Convergence](../DOF_FOCUS_PHYSICS_CONVERGENCE.md) — canonical optical and physical-DOF dataflow.
 - [Scene Asset Resource Lifecycle](../SCENE_ASSET_RESOURCE_LIFECYCLE.md) — registered subject ownership and cleanup.
+- [Ground Glass Coordinate Contract](GROUND_GLASS_COORDINATE_CONTRACT.md) — physical film, RTT source, crop, display and overlay mappings.
 - `src/render/groundGlassPassGraph.ts` — current semantic pass names and order.
