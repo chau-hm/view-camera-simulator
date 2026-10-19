@@ -127,9 +127,12 @@ export const GroundGlassStage = ({
       return;
     }
 
+    // The image layer and its overlays fill the panel's content box. The
+    // border is outside that box, so using the border-box rect here would
+    // shift the physical grid phase and overstate the RTT display size.
     const nextSize = {
-      width: Math.max(1, Math.round(rect.width)),
-      height: Math.max(1, Math.round(rect.height)),
+      width: Math.max(1, Math.round(element.clientWidth)),
+      height: Math.max(1, Math.round(element.clientHeight)),
     };
     const previousSize = lastViewportSizeRef.current;
     if (previousSize?.width === nextSize.width && previousSize.height === nextSize.height) return;

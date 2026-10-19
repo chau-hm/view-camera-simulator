@@ -29,9 +29,13 @@ const initialRect = {
   toJSON: () => ({}),
 };
 let currentRect = { ...initialRect };
+let currentClientWidth = 498;
+let currentClientHeight = 398;
 
 beforeEach(() => {
   currentRect = { ...initialRect };
+  currentClientWidth = 498;
+  currentClientHeight = 398;
 });
 
 const getStage = (getByRole: ReturnType<typeof render>["getByRole"]) =>
@@ -106,9 +110,13 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     }
     vi.stubGlobal("ResizeObserver", ResizeObserverMock);
     currentRect = { ...currentRect, width: 641.4, height: 513.2, right: 741.4, bottom: 563.2 };
+    currentClientWidth = 639;
+    currentClientHeight = 511;
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
       () => currentRect,
     );
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(() => currentClientWidth);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(() => currentClientHeight);
     const onViewportSizeChange = vi.fn();
 
     render(
@@ -117,7 +125,7 @@ describe("GroundGlassStage explicit zoom interaction", () => {
         onViewportSizeChange={onViewportSizeChange}
       />,
     );
-    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 641, height: 513 });
+    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 639, height: 511 });
 
     act(() => resizeCallback?.([], {} as ResizeObserver));
     expect(onViewportSizeChange).toHaveBeenCalledTimes(1);
@@ -129,8 +137,10 @@ describe("GroundGlassStage explicit zoom interaction", () => {
     expect(onViewportSizeChange).toHaveBeenCalledTimes(1);
 
     currentRect = { ...currentRect, width: 800.2, height: 640.2, right: 900.2, bottom: 690.2 };
+    currentClientWidth = 798;
+    currentClientHeight = 638;
     act(() => resizeCallback?.([], {} as ResizeObserver));
-    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 800, height: 640 });
+    expect(onViewportSizeChange).toHaveBeenLastCalledWith({ width: 798, height: 638 });
     expect(onViewportSizeChange).toHaveBeenCalledTimes(2);
   });
 
