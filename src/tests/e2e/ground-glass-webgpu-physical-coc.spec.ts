@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import * as THREE from "three";
 import { planeFromPointNormal } from "../../core/math/plane";
 import { vec } from "../../core/math/vec";
 import { computePhysicalBlurFootprint } from "../../core/optics/computePhysicalBlurFootprint";
-import { PHYSICAL_CLASSIFICATION_CASES } from "./fixtures/ground-glass-webgpu-physical-coc-cases";
+import { decodeGroundGlassFootprintOrientation, encodeGroundGlassFootprintOrientation } from "../../render/groundGlassCocTarget";
+import { DEPTH_PROBE_CASES, PHYSICAL_CLASSIFICATION_CASES } from "./fixtures/ground-glass-webgpu-physical-coc-cases";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-physical-coc.html";
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -13,6 +15,7 @@ type Probe = {
   uvTopOrigin: [number, number];
   expectedSurfaceId: string;
   actualSurfaceId: string | null;
+  depthEvidence: "visible-geometry" | "clear-background" | "covered-clear-depth-ambiguous" | "depth-without-reference";
   occludedSurfaceIds: string[];
   gpuDepth: number;
   reconstructedWorldM: [number, number, number];
@@ -44,7 +47,12 @@ type PhysicalSample = {
   storedRgba16Float: [number, number, number, number];
   validityCode: number;
   storageRepresentable: boolean;
-  classification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable";
+  orientationUnwrappedAngleRad: number;
+  orientationRad: number;
+  orientationNormalized: number;
+  orientationDefined: boolean;
+  rawSignClassification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable";
+  nearFocusComparison: "within-tolerance" | "outside-tolerance" | "not-applicable";
 };
 type Diagnostics = {
   status: string;
@@ -87,6 +95,7 @@ type Diagnostics = {
       cropPixel: { x: number; y: number };
       expectedSurfaceId: string;
       actualSurfaceId: string | null;
+      depthEvidence: "visible-geometry" | "clear-background" | "covered-clear-depth-ambiguous" | "depth-without-reference";
       gpuDepth: number;
       expectedWorldMm: [number, number, number] | null;
       reconstructedWorldMm: [number, number, number];
@@ -173,7 +182,7 @@ test("native scene depth and TSL physical footprints match independent geometry 
     requestedType: "UnsignedIntType",
     width: 320,
     height: 240,
-    sampleCount: 6,
+    sampleCount: DEPTH_PROBE_CASES.length,
     clearDepth: 1,
   });
   if (nativeWebGpuRequired) expect(handle.depth?.actualGpuFormat).toBeTruthy();
@@ -183,20 +192,31 @@ test("native scene depth and TSL physical footprints match independent geometry 
   expect(handle.camera?.projectionMatrix).toHaveLength(16);
   expect(handle.camera?.projectionMatrixInverse).toHaveLength(16);
   expect(handle.camera?.worldMatrix).toHaveLength(16);
-  expect(handle.probes).toHaveLength(6);
+  expect(handle.probes).toHaveLength(DEPTH_PROBE_CASES.length);
 
   for (const probe of handle.probes.filter((entry) => entry.expectedSurfaceId !== "background")) {
     expect(probe.actualSurfaceId, `${probe.id} should hit its independently identified fixture surface`)
       .toBe(probe.expectedSurfaceId);
     expect(probe.valid, `${probe.id} should contain scene depth`).toBe(true);
+    expect(probe.depthEvidence, `${probe.id} should be GPU-observed geometry`).toBe("visible-geometry");
     expect(probe.gpuDepth, `${probe.id} should not be the depth clear value`).toBeLessThan(1);
     expect(probe.expectedWorldM, `${probe.id} should have an analytic ray/plane intersection`).not.toBeNull();
     expect(probe.errorMagnitudeM, `${probe.id} reconstruction error`).toBeLessThan(0.001);
   }
   const background = handle.probes.find((entry) => entry.expectedSurfaceId === "background");
   expect(background).toBeDefined();
-  expect(background?.gpuDepth).toBeGreaterThanOrEqual(0.999999);
+  expect(background?.gpuDepth).toBe(1);
+  expect(background?.depthEvidence).toBe("clear-background");
+  expect(background?.actualSurfaceId).toBeNull();
   expect(background?.valid).toBe(false);
+  const farClip = handle.probes.find((entry) => entry.id === "far-clip-upper-right");
+  expect(farClip?.expectedSurfaceId).toBe("far-depth-plane");
+  expect(farClip?.actualSurfaceId).toBe("far-depth-plane");
+  expect(farClip?.depthEvidence).toBe("visible-geometry");
+  expect(farClip?.gpuDepth).toBeGreaterThan(0.999999);
+  expect(farClip?.gpuDepth).toBeLessThan(1);
+  expect(farClip?.valid).toBe(true);
+  expect(handle.probes.filter((entry) => entry.depthEvidence === "covered-clear-depth-ambiguous")).toHaveLength(0);
   const overlap = handle.probes.find((entry) => entry.id === "occluded-front-marker");
   expect(overlap?.actualSurfaceId).toBe("occlusion-marker");
   expect(overlap?.occludedSurfaceIds).toContain("far-front-plane");
@@ -222,6 +242,7 @@ test("native scene depth and TSL physical footprints match independent geometry 
   expect(crop?.cropFilmUv).not.toEqual(crop?.fullFilmUv);
   expect(crop?.actualSurfaceId).toBe(crop?.expectedSurfaceId);
   expect(crop?.expectedSurfaceId).toBe("tilted-plane");
+  expect(crop?.depthEvidence).toBe("visible-geometry");
   expect(crop?.gpuDepth).toBeLessThan(1);
   expect(crop?.worldErrorMm).not.toBeNull();
   expect(crop?.worldErrorMm).toBeLessThan(0.01);
@@ -274,16 +295,35 @@ test("native scene depth and TSL physical footprints match independent geometry 
       const tolerance = Math.max(0.02, Math.abs(expected) * 0.003);
       expect(Math.abs(actual - expected), `${sample.id} physical channel ${channel}`).toBeLessThan(tolerance);
     }
-    const angleDifference = Math.abs(sample.storedRgba16Float[3] - reference.orientationRad) % Math.PI;
-    expect(Math.min(angleDifference, Math.PI - angleDifference), `${sample.id} periodic ellipse angle`)
+    const expectedOrientationNormalized = encodeGroundGlassFootprintOrientation(reference.orientationRad);
+    const expectedHalfNormalized = THREE.DataUtils.fromHalfFloat(
+      THREE.DataUtils.toHalfFloat(expectedOrientationNormalized),
+    );
+    const storedOrientationNormalized = sample.storedRgba16Float[3];
+    expect(storedOrientationNormalized, `${sample.id} normalized stored orientation`)
+      .toBeGreaterThanOrEqual(0);
+    expect(storedOrientationNormalized, `${sample.id} normalized stored orientation`)
+      .toBeLessThan(1);
+    expect(Math.abs(storedOrientationNormalized - expectedHalfNormalized), `${sample.id} binary16 normalized orientation`)
+      .toBeLessThan(0.001);
+    expect(Math.abs(sample.orientationNormalized - expectedOrientationNormalized), `${sample.id} GPU normalized orientation diagnostic`)
+      .toBeLessThan(0.001);
+    const decodedOrientationRad = decodeGroundGlassFootprintOrientation(storedOrientationNormalized, "half-float-mm");
+    const angleDifference = Math.abs(decodedOrientationRad - reference.orientationRad) % Math.PI;
+    expect(Math.min(angleDifference, Math.PI - angleDifference), `${sample.id} decoded periodic ellipse angle`)
       .toBeLessThan(0.01);
-    if (Math.abs(reference.signedCoCDiameterMm) <= 0.0001) {
-      expect(Math.abs(sample.storedRgba16Float[0]), `${sample.id} neutral CoC classification`)
-        .toBeLessThan(0.0001);
-    } else {
-      expect(Math.sign(sample.storedRgba16Float[0]), `${sample.id} near/focus/far sign`)
-        .toBe(Math.sign(reference.signedCoCDiameterMm));
-    }
+    // The exact geometric focus point is zero in the CPU oracle, while this
+    // native GPU evaluation has a measured negative arithmetic residue. Keep
+    // that signed result distinct from the separate numerical focus tolerance.
+    const expectedRawSign = sample.id === "in-focus"
+      ? "near"
+      : reference.signedCoCDiameterMm < 0
+        ? "near"
+        : reference.signedCoCDiameterMm > 0 ? "far" : "neutral";
+    expect(sample.rawSignClassification, `${sample.id} exact signed CoC classification`)
+      .toBe(expectedRawSign);
+    expect(sample.nearFocusComparison, `${sample.id} independent numeric focus tolerance`)
+      .toBe(Math.abs(sample.storedRgba16Float[0]) <= 0.0001 ? "within-tolerance" : "outside-tolerance");
     expect(sample.storedRgba16Float[1]).toBeGreaterThanOrEqual(sample.storedRgba16Float[2]);
     expect(sample.storedRgba16Float[2]).toBeGreaterThanOrEqual(0);
   }
@@ -292,10 +332,15 @@ test("native scene depth and TSL physical footprints match independent geometry 
   const nearStoppedDown = physicalById.get("near-side-stopped-down");
   const inFocus = physicalById.get("in-focus");
   const farSide = physicalById.get("far-side");
+  const farClipPhysical = physicalById.get("far-clip-visible-surface");
   expect(nearWideOpen).toBeDefined();
   expect(nearStoppedDown).toBeDefined();
   expect(inFocus).toBeDefined();
   expect(farSide).toBeDefined();
+  expect(farClipPhysical).toBeDefined();
+  expect(farClipPhysical?.validityCode).toBe(1);
+  expect(farClipPhysical?.rawSignClassification).toBe("far");
+  expect(farClipPhysical?.storedRgba16Float[0]).toBeGreaterThan(0);
   if (nearWideOpen && nearStoppedDown) {
     expect(Math.sign(nearWideOpen.storedRgba16Float[0])).toBe(-1);
     expect(Math.sign(nearStoppedDown.storedRgba16Float[0])).toBe(-1);
@@ -304,17 +349,41 @@ test("native scene depth and TSL physical footprints match independent geometry 
   }
   if (inFocus) {
     expect(Math.abs(inFocus.storedRgba16Float[0])).toBeLessThan(0.02);
-    expect(inFocus.classification).toBe("neutral");
+    expect(inFocus.rawSignClassification).toBe("near");
+    expect(inFocus.nearFocusComparison).toBe("within-tolerance");
   }
-  expect(nearWideOpen?.classification).toBe("near");
-  expect(nearStoppedDown?.classification).toBe("near");
-  expect(farSide?.classification).toBe("far");
-  expect(physicalById.get("invalid-lens-basis")?.classification).toBe("invalid-geometry");
-  expect(physicalById.get("outside-binary16-range")?.classification).toBe("unrepresentable");
-  expect(physicalById.get("background-no-depth")?.classification).toBe("no-depth");
-  const cropPhysicalCase = handle.physical?.samples.find((sample) => sample.id === "off-axis-tilted-surface");
+  expect(nearWideOpen?.rawSignClassification).toBe("near");
+  expect(nearStoppedDown?.rawSignClassification).toBe("near");
+  expect(farSide?.rawSignClassification).toBe("far");
+  expect(physicalById.get("occlusion-near-marker")?.rawSignClassification).toBe("far");
+  expect(physicalById.get("invalid-lens-basis")?.rawSignClassification).toBe("invalid-geometry");
+  expect(physicalById.get("outside-binary16-range")?.rawSignClassification).toBe("unrepresentable");
+  expect(physicalById.get("background-no-depth")?.rawSignClassification).toBe("no-depth");
+  expect(nearWideOpen?.orientationDefined).toBe(false);
+  expect(nearWideOpen?.storedRgba16Float[3]).toBe(0);
+  for (const id of ["film-tilt", "film-swing", "compound-lens-film"]) {
+    const oriented = physicalById.get(id);
+    expect(oriented, `${id} sample`).toBeDefined();
+    expect(oriented?.orientationDefined, `${id} has a defined ellipse orientation`).toBe(true);
+    expect(oriented?.storedRgba16Float[3], `${id} stores normalized nonzero orientation`).toBeGreaterThan(0);
+  }
+  const nearPi = physicalById.get("film-tilt-near-pi");
+  const negativeUnwrapped = physicalById.get("film-negative-unwrapped-orientation");
+  expect(nearPi?.orientationDefined).toBe(true);
+  expect(nearPi?.orientationUnwrappedAngleRad).toBeLessThan(0);
+  expect(nearPi?.orientationRad).toBeGreaterThan(3.0);
+  expect(nearPi?.orientationNormalized).toBeGreaterThan(0.95);
+  expect(negativeUnwrapped?.orientationDefined).toBe(true);
+  expect(negativeUnwrapped?.orientationUnwrappedAngleRad).toBeLessThan(0);
+  expect(negativeUnwrapped?.orientationRad).toBeGreaterThan(0);
+  if (negativeUnwrapped) {
+    expect(negativeUnwrapped.orientationNormalized).toBeCloseTo(negativeUnwrapped.orientationRad / Math.PI, 3);
+  }
+  const cropPhysicalCase = handle.physical?.samples.find((sample) => sample.id === "crop-film-tilt-near-pi");
   expect(cropPhysicalCase).toBeDefined();
   expect(crop?.expectedWorldMm).not.toBeNull();
+  expect(cropPhysicalCase?.orientationRad).toBeGreaterThan(3.0);
+  expect(crop?.cropPhysicalRgba16Float[3]).toBeGreaterThan(0.95);
   if (cropPhysicalCase && crop?.expectedWorldMm) {
     const input = cropPhysicalCase.input;
     const cropReference = computePhysicalBlurFootprint({
@@ -333,11 +402,30 @@ test("native scene depth and TSL physical footprints match independent geometry 
     expect(Math.abs(crop.cropPhysicalRgba16Float[0] - cropReference.signedCoCDiameterMm)).toBeLessThan(0.02);
     expect(Math.abs(crop.cropPhysicalRgba16Float[1] - cropReference.majorRadiusMm)).toBeLessThan(0.02);
     expect(Math.abs(crop.cropPhysicalRgba16Float[2] - cropReference.minorRadiusMm)).toBeLessThan(0.02);
+    const expectedCropOrientation = encodeGroundGlassFootprintOrientation(cropReference.orientationRad);
+    const expectedCropHalfOrientation = THREE.DataUtils.fromHalfFloat(THREE.DataUtils.toHalfFloat(expectedCropOrientation));
+    expect(Math.abs(crop.cropPhysicalRgba16Float[3] - expectedCropHalfOrientation)).toBeLessThan(0.001);
+    const decodedCropOrientation = decodeGroundGlassFootprintOrientation(crop.cropPhysicalRgba16Float[3], "half-float-mm");
+    const cropAngleDifference = Math.abs(decodedCropOrientation - cropReference.orientationRad) % Math.PI;
+    expect(Math.min(cropAngleDifference, Math.PI - cropAngleDifference)).toBeLessThan(0.01);
+    const fullDecodedOrientation = decodeGroundGlassFootprintOrientation(
+      cropPhysicalCase.storedRgba16Float[3],
+      "half-float-mm",
+    );
+    const cropConsistencyDifference = Math.abs(decodedCropOrientation - fullDecodedOrientation) % Math.PI;
+    expect(Math.min(cropConsistencyDifference, Math.PI - cropConsistencyDifference))
+      .toBeLessThan(0.01);
   }
   const cpuReferenceMeasurements = handle.physical?.samples.map((sample) => {
     const source = probeById.get(sample.sourceProbeId);
     if (!source?.expectedWorldM) {
-      return { id: sample.id, classification: sample.classification, validityCode: sample.validityCode, cpuReference: null };
+      return {
+        id: sample.id,
+        rawSignClassification: sample.rawSignClassification,
+        nearFocusComparison: sample.nearFocusComparison,
+        validityCode: sample.validityCode,
+        cpuReference: null,
+      };
     }
     const input = sample.input;
     const reference = computePhysicalBlurFootprint({
@@ -354,7 +442,8 @@ test("native scene depth and TSL physical footprints match independent geometry 
     });
     return {
       id: sample.id,
-      classification: sample.classification,
+      rawSignClassification: sample.rawSignClassification,
+      nearFocusComparison: sample.nearFocusComparison,
       validityCode: sample.validityCode,
       cpuReference: reference,
       gpuRgba16Float: sample.storedRgba16Float,
@@ -363,7 +452,8 @@ test("native scene depth and TSL physical footprints match independent geometry 
         majorRadiusMm: sample.storedRgba16Float[1] - reference.majorRadiusMm,
         minorRadiusMm: sample.storedRgba16Float[2] - reference.minorRadiusMm,
         orientationPeriodicRad: (() => {
-          const difference = Math.abs(sample.storedRgba16Float[3] - reference.orientationRad) % Math.PI;
+          const decoded = decodeGroundGlassFootprintOrientation(sample.storedRgba16Float[3], "half-float-mm");
+          const difference = Math.abs(decoded - reference.orientationRad) % Math.PI;
           return Math.min(difference, Math.PI - difference);
         })(),
       } : null,

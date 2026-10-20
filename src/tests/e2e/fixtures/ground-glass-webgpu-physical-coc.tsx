@@ -35,7 +35,9 @@ const HEIGHT = 240;
 const FULL_FILM_WIDTH_MM = 36;
 const FULL_FILM_HEIGHT_MM = 24;
 const DEPTH_PROBE_COUNT = DEPTH_PROBE_CASES.length;
+const NEAR_FOCUS_NUMERICAL_TOLERANCE_MM = 0.0001;
 const CHANGE_EVENT = "ground-glass-webgpu-physical-coc-change";
+type DepthEvidence = "visible-geometry" | "clear-background" | "covered-clear-depth-ambiguous" | "depth-without-reference";
 
 type ProbeResult = {
   id: string;
@@ -43,6 +45,7 @@ type ProbeResult = {
   uvTopOrigin: [number, number];
   expectedSurfaceId: string;
   actualSurfaceId: string | null;
+  depthEvidence: DepthEvidence;
   occludedSurfaceIds: string[];
   gpuDepth: number;
   reconstructedWorldM: [number, number, number];
@@ -74,6 +77,7 @@ type CropEvidence = {
   cropPixel: { x: number; y: number };
   expectedSurfaceId: string;
   actualSurfaceId: string | null;
+  depthEvidence: DepthEvidence;
   gpuDepth: number;
   expectedWorldMm: [number, number, number] | null;
   reconstructedWorldMm: [number, number, number];
@@ -133,7 +137,12 @@ type HandleEvidence = {
       storedRgba16Float: [number, number, number, number];
       validityCode: number;
       storageRepresentable: boolean;
-      classification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable";
+      orientationUnwrappedAngleRad: number;
+      orientationRad: number;
+      orientationNormalized: number;
+      orientationDefined: boolean;
+      rawSignClassification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable";
+      nearFocusComparison: "within-tolerance" | "outside-tolerance" | "not-applicable";
     }>;
   } | null;
   resources: Array<{ id: string; role: string; state: "active" | "disposed" | "failed"; error: string | null }>;
@@ -197,6 +206,7 @@ const createSceneSurfaces = (scene: THREE.Scene): Surface[] => {
     { id: "far-front-plane", size: [0.20, 0.22] as const, position: [-0.22, 0.1, 0.55] as const, rotation: [0, 0, 0] as const, color: 0x44aa66 },
     { id: "occlusion-marker", size: [0.055, 0.055] as const, position: [-0.1, 0.1, 0.72] as const, rotation: [0, 0, 0] as const, color: 0xffff44 },
     { id: "tilted-plane", size: [0.20, 0.20] as const, position: [0.17, 0, 0.45] as const, rotation: [0.12, 0.28, 0] as const, color: 0x4477dd },
+    { id: "far-depth-plane", size: [0.36, 0.3] as const, position: [1.2, 0.12, -1.0498] as const, rotation: [0, 0, 0] as const, color: 0xddaa44 },
   ];
   return definitions.map((definition) => {
     const geometry = new THREE.PlaneGeometry(definition.size[0], definition.size[1]);
@@ -330,12 +340,17 @@ const makeDepthAndFootprintNodes = (input: {
   const discriminant = length(vec2(covariance00.sub(covariance11).mul(0.5), covariance01));
   const majorRadiusMm = sqrt(max(0, traceHalf.add(discriminant)));
   const minorRadiusMm = sqrt(max(0, traceHalf.sub(discriminant)));
-  const angle = atan(covariance01.mul(2), covariance00.sub(covariance11)).mul(0.5);
-  const orientationRad = select(
-    majorRadiusMm.sub(minorRadiusMm).greaterThan(1e-7),
-    fract(angle.div(Math.PI)).mul(Math.PI),
-    0,
-  );
+  const orientationVector = vec2(covariance01.mul(2), covariance00.sub(covariance11));
+  const orientationVectorDefined = length(orientationVector).greaterThan(1e-12);
+  const orientationPrincipalAngleRad = atan(
+    select(orientationVectorDefined, orientationVector.x, 0),
+    select(orientationVectorDefined, orientationVector.y, 1),
+  ).mul(0.5);
+  const orientationDefined = majorRadiusMm.sub(minorRadiusMm).greaterThan(1e-7)
+    .and(orientationVectorDefined);
+  const orientationUnwrappedAngleRad = select(orientationDefined, orientationPrincipalAngleRad, 0);
+  const orientationNormalized = select(orientationDefined, fract(orientationUnwrappedAngleRad.div(Math.PI)), 0);
+  const orientationRad = orientationNormalized.mul(Math.PI);
   const imagePlaneDeltaMm = dot(imagePoint.sub(filmPlanePointMm), film.normal);
   const finiteSide = select(
     abs(imagePlaneDeltaMm).greaterThan(1e-7),
@@ -344,7 +359,9 @@ const makeDepthAndFootprintNodes = (input: {
   );
   const signedSide = select(finiteImage, finiteSide, -1);
   const signedCoCDiameterMm = signedSide.mul(2).mul(sqrt(max(0, majorRadiusMm.mul(minorRadiusMm))));
-  const depthValid = sampledDepth.lessThan(0.999999);
+  // Three's cleared depth is exactly 1 for this target. A measured visible
+  // surface remains valid until that clear value, including values near 1.
+  const depthValid = sampledDepth.lessThan(1);
   const geometryValid = lens.valid
     .and(film.valid)
     .and(objectDistanceMm.greaterThan(1e-7))
@@ -358,13 +375,20 @@ const makeDepthAndFootprintNodes = (input: {
   const storageRepresentable = abs(signedCoCDiameterMm).lessThanEqual(65504)
     .and(majorRadiusMm.lessThanEqual(65504))
     .and(minorRadiusMm.lessThanEqual(65504))
-    .and(orientationRad.lessThanEqual(65504));
+    .and(orientationNormalized.greaterThanEqual(0))
+    .and(orientationNormalized.lessThanEqual(1));
   const storeValid = physicalValid.and(storageRepresentable);
   const storedFootprint = vec4(
     select(storeValid, signedCoCDiameterMm, 0),
     select(storeValid, majorRadiusMm, 0),
     select(storeValid, minorRadiusMm, 0),
-    select(storeValid, orientationRad, 0),
+    select(storeValid, orientationNormalized, 0),
+  );
+  const orientationDiagnostics = vec4(
+    orientationUnwrappedAngleRad,
+    orientationRad,
+    orientationNormalized,
+    select(orientationDefined, 1, 0),
   );
   const validityCode = select(
     depthValid,
@@ -376,6 +400,7 @@ const makeDepthAndFootprintNodes = (input: {
     worldPositionM,
     sampledDepth,
     storedFootprint,
+    orientationDiagnostics,
     validityCode,
   };
 };
@@ -461,7 +486,12 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       .map((surface) => rayPlaneIntersection(ray, surface))
       .filter((hit): hit is NonNullable<typeof hit> => hit !== null)
       .sort((a, b) => a.distance - b.distance);
-    return { probe, hit: intersections[0] ?? null, occludedSurfaceIds: intersections.slice(1).map((entry) => entry.surfaceId) };
+    return {
+      probe,
+      intersections,
+      hit: intersections[0] ?? null,
+      occludedSurfaceIds: intersections.slice(1).map((entry) => entry.surfaceId),
+    };
   });
   const cropProbeIndex = DEPTH_PROBE_CASES.findIndex((entry) => entry.id === "tilted-plane-right-edge");
   const cropReference = analyticReferences[cropProbeIndex]?.hit;
@@ -557,6 +587,18 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   physicalTarget.texture.minFilter = THREE.NearestFilter;
   physicalTarget.texture.magFilter = THREE.NearestFilter;
   physicalTarget.texture.generateMipmaps = false;
+  const orientationDiagnosticsTarget = new THREE.RenderTarget(PHYSICAL_CLASSIFICATION_CASES.length, 1, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
+    depthBuffer: false,
+    stencilBuffer: false,
+    samples: 0,
+    generateMipmaps: false,
+  });
+  orientationDiagnosticsTarget.texture.colorSpace = THREE.NoColorSpace;
+  orientationDiagnosticsTarget.texture.minFilter = THREE.NearestFilter;
+  orientationDiagnosticsTarget.texture.magFilter = THREE.NearestFilter;
+  orientationDiagnosticsTarget.texture.generateMipmaps = false;
   const validityTarget = new THREE.RenderTarget(PHYSICAL_CLASSIFICATION_CASES.length, 1, {
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
@@ -650,9 +692,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   });
   const physicalMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
   physicalMaterial.outputNode = physicalNodes.storedFootprint;
+  const orientationDiagnosticsMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
+  orientationDiagnosticsMaterial.outputNode = physicalNodes.orientationDiagnostics;
   const validityMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
   validityMaterial.outputNode = vec4(physicalNodes.validityCode.div(255), 0, 0, 1);
-  const cropSubjectIndex = PHYSICAL_CLASSIFICATION_CASES.findIndex((entry) => entry.id === "off-axis-tilted-surface");
+  const cropSubjectIndex = PHYSICAL_CLASSIFICATION_CASES.findIndex((entry) => entry.id === "crop-film-tilt-near-pi");
   const cropSubject = resolvedPhysicalCases[cropSubjectIndex];
   if (!cropSubject) throw new Error("The fixed off-center crop physical case is unavailable");
   const cropProjected = cropReference.point.clone().project(cropCamera);
@@ -663,10 +707,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   const cropUv: [number, number] = [(cropPixel.x + 0.5) / WIDTH, (cropPixel.y + 0.5) / HEIGHT];
   const cropRayPoint = new THREE.Vector3(cropUv[0] * 2 - 1, 1 - cropUv[1] * 2, 0.5).unproject(cropCamera);
   const cropRay = new THREE.Ray(cropCamera.position.clone(), cropRayPoint.sub(cropCamera.position).normalize());
-  const cropExpectedHit = surfaces
+  const cropIntersectionCandidates = surfaces
     .map((surface) => rayPlaneIntersection(cropRay, surface))
     .filter((hit): hit is NonNullable<typeof hit> => hit !== null)
-    .sort((a, b) => a.distance - b.distance)[0] ?? null;
+    .sort((a, b) => a.distance - b.distance);
+  const cropExpectedHit = cropIntersectionCandidates[0] ?? null;
   const cropDepthMaterial = createDepthProbeMaterial({
     depthTexture: cropSceneTarget.depthTexture,
     projectionInverse: cropCamera.projectionMatrixInverse.clone(),
@@ -685,12 +730,14 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   cropValidityMaterial.outputNode = vec4(cropPhysicalNodes.validityCode.div(255), 0, 0, 1);
   const postScene = new THREE.Scene();
   const physicalScene = new THREE.Scene();
+  const orientationDiagnosticsScene = new THREE.Scene();
   const validityScene = new THREE.Scene();
   const cropDiagnosticScene = new THREE.Scene();
   const cropPhysicalScene = new THREE.Scene();
   const cropValidityScene = new THREE.Scene();
   postScene.add(new THREE.Mesh(postGeometry, postMaterial));
   physicalScene.add(new THREE.Mesh(postGeometry, physicalMaterial));
+  orientationDiagnosticsScene.add(new THREE.Mesh(postGeometry, orientationDiagnosticsMaterial));
   validityScene.add(new THREE.Mesh(postGeometry, validityMaterial));
   cropDiagnosticScene.add(new THREE.Mesh(postGeometry, cropDepthMaterial.material));
   cropPhysicalScene.add(new THREE.Mesh(postGeometry, cropPhysicalMaterial));
@@ -701,6 +748,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     { id: `${evidence.instanceId}:scene-target`, role: "scene-color-depth-target", dispose: () => sceneTarget.dispose() },
     { id: `${evidence.instanceId}:diagnostic-target`, role: "world-position-diagnostic-target", dispose: () => diagnosticTarget.dispose() },
     { id: `${evidence.instanceId}:physical-target`, role: "physical-rgba16float-target", dispose: () => physicalTarget.dispose() },
+    { id: `${evidence.instanceId}:orientation-diagnostic-target`, role: "orientation-angle-diagnostic-target", dispose: () => orientationDiagnosticsTarget.dispose() },
     { id: `${evidence.instanceId}:validity-target`, role: "physical-validity-target", dispose: () => validityTarget.dispose() },
     { id: `${evidence.instanceId}:crop-scene-target`, role: "off-center-crop-color-depth-target", dispose: () => cropSceneTarget.dispose() },
     { id: `${evidence.instanceId}:crop-diagnostic-target`, role: "off-center-crop-position-target", dispose: () => cropDiagnosticTarget.dispose() },
@@ -708,6 +756,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     { id: `${evidence.instanceId}:crop-validity-target`, role: "off-center-crop-validity-target", dispose: () => cropValidityTarget.dispose() },
     { id: `${evidence.instanceId}:post-material`, role: "depth-reconstruction-material", dispose: () => postMaterial.dispose() },
     { id: `${evidence.instanceId}:physical-material`, role: "physical-footprint-material", dispose: () => physicalMaterial.dispose() },
+    { id: `${evidence.instanceId}:orientation-diagnostic-material`, role: "orientation-angle-diagnostic-material", dispose: () => orientationDiagnosticsMaterial.dispose() },
     { id: `${evidence.instanceId}:validity-material`, role: "physical-validity-material", dispose: () => validityMaterial.dispose() },
     { id: `${evidence.instanceId}:crop-depth-material`, role: "off-center-crop-depth-reconstruction-material", dispose: () => cropDepthMaterial.material.dispose() },
     { id: `${evidence.instanceId}:crop-physical-material`, role: "off-center-crop-footprint-material", dispose: () => cropPhysicalMaterial.dispose() },
@@ -949,6 +998,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     renderer.setRenderTarget(physicalTarget);
     renderer.clear(true, false, false);
     renderer.render(physicalScene, postCamera);
+    renderer.setRenderTarget(orientationDiagnosticsTarget);
+    renderer.clear(true, false, false);
+    renderer.render(orientationDiagnosticsScene, postCamera);
     renderer.setRenderTarget(validityTarget);
     renderer.clear(true, false, false);
     renderer.render(validityScene, postCamera);
@@ -968,21 +1020,35 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       const gpuDepth = pixels[index * 4 + 3]!;
       const [uvX, uvY] = probeUvs[index]!;
       const pixel = probePixels[index]!;
-      const expected = analyticReferences[index]?.hit ?? null;
+      const analytic = analyticReferences[index];
+      const expected = analytic?.hit ?? null;
       const error = expected ? gpu.clone().sub(expected.point) : null;
+      const depthEvidence: DepthEvidence = expected
+        ? gpuDepth < 1 ? "visible-geometry" : "covered-clear-depth-ambiguous"
+        : gpuDepth === 1 ? "clear-background" : "depth-without-reference";
+      const actualSurfaceId = gpuDepth < 1
+        ? analytic?.intersections
+          .map((intersection) => ({
+            surfaceId: intersection.surfaceId,
+            errorM: gpu.distanceTo(intersection.point),
+          }))
+          .sort((left, right) => left.errorM - right.errorM)
+          .find((candidate) => candidate.errorM < 0.001)?.surfaceId ?? null
+        : null;
       return {
         id: probe.id,
         pixel,
         uvTopOrigin: [uvX, uvY] as [number, number],
         expectedSurfaceId: probe.expectedSurfaceId,
-        actualSurfaceId: expected?.surfaceId ?? null,
-        occludedSurfaceIds: analyticReferences[index]?.occludedSurfaceIds ?? [],
+        actualSurfaceId,
+        depthEvidence,
+        occludedSurfaceIds: analytic?.occludedSurfaceIds ?? [],
         gpuDepth,
         reconstructedWorldM: vec3Array(gpu),
         expectedWorldM: expected ? vec3Array(expected.point) : null,
         absoluteErrorM: error ? [Math.abs(error.x), Math.abs(error.y), Math.abs(error.z)] as [number, number, number] : null,
         errorMagnitudeM: error?.length() ?? null,
-        valid: gpuDepth < 0.999999 && Boolean(expected),
+        valid: depthEvidence === "visible-geometry" && actualSurfaceId === probe.expectedSurfaceId,
       };
     });
     evidence.probes = probeResults;
@@ -1000,11 +1066,21 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       PHYSICAL_CLASSIFICATION_CASES.length,
       1,
     );
+    const orientationDiagnosticsReadback = await renderer.readRenderTargetPixelsAsync(
+      orientationDiagnosticsTarget,
+      0,
+      0,
+      PHYSICAL_CLASSIFICATION_CASES.length,
+      1,
+    );
     if (!(physicalReadback instanceof Uint16Array)) {
       throw new Error(`Expected RGBA16F physical readback, received ${physicalReadback.constructor.name}`);
     }
     if (!(validityReadback instanceof Uint8Array)) {
       throw new Error(`Expected byte validity readback, received ${validityReadback.constructor.name}`);
+    }
+    if (!(orientationDiagnosticsReadback instanceof Float32Array)) {
+      throw new Error(`Expected Float32 orientation diagnostics, received ${orientationDiagnosticsReadback.constructor.name}`);
     }
     const probeById = new Map(probeResults.map((probe) => [probe.id, probe]));
     evidence.physical = {
@@ -1029,15 +1105,22 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           storedRgba16Float: stored,
           validityCode,
           storageRepresentable: validityCode === 1,
-          classification: validityCode === 0
+          orientationUnwrappedAngleRad: orientationDiagnosticsReadback[offset]!,
+          orientationRad: orientationDiagnosticsReadback[offset + 1]!,
+          orientationNormalized: orientationDiagnosticsReadback[offset + 2]!,
+          orientationDefined: orientationDiagnosticsReadback[offset + 3]! > 0.5,
+          rawSignClassification: validityCode === 0
             ? "no-depth"
             : validityCode === 2
               ? "unrepresentable"
               : validityCode === 3
                 ? "invalid-geometry"
-                : Math.abs(stored[0]) <= 0.0001
-                  ? "neutral"
-                  : stored[0] < 0 ? "near" : "far",
+                : stored[0] < 0 ? "near" : stored[0] > 0 ? "far" : "neutral",
+          nearFocusComparison: validityCode !== 1
+            ? "not-applicable"
+            : Math.abs(stored[0]) <= NEAR_FOCUS_NUMERICAL_TOLERANCE_MM
+              ? "within-tolerance"
+              : "outside-tolerance",
         };
       }),
     };
@@ -1048,6 +1131,19 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       throw new Error("Expected native half-float and byte reads for the off-center crop");
     }
     const cropWorld = new THREE.Vector3(cropPositionPixels[0]!, cropPositionPixels[1]!, cropPositionPixels[2]!);
+    const cropGpuDepth = cropPositionPixels[3]!;
+    const cropDepthEvidence: DepthEvidence = cropExpectedHit
+      ? cropGpuDepth < 1 ? "visible-geometry" : "covered-clear-depth-ambiguous"
+      : cropGpuDepth === 1 ? "clear-background" : "depth-without-reference";
+    const cropActualSurfaceId = cropGpuDepth < 1
+      ? cropIntersectionCandidates
+        .map((intersection) => ({
+          surfaceId: intersection.surfaceId,
+          errorM: cropWorld.distanceTo(intersection.point),
+        }))
+        .sort((left, right) => left.errorM - right.errorM)
+        .find((candidate) => candidate.errorM < 0.001)?.surfaceId ?? null
+      : null;
     const cropWorldErrorMm = cropExpectedHit
       ? cropWorld.clone().sub(cropExpectedHit.point).length() * 1000
       : null;
@@ -1068,8 +1164,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       cropFilmUv: cropUv,
       cropPixel,
       expectedSurfaceId: cropReference.surfaceId,
-      actualSurfaceId: cropExpectedHit?.surfaceId ?? null,
-      gpuDepth: cropPositionPixels[3]!,
+      actualSurfaceId: cropActualSurfaceId,
+      depthEvidence: cropDepthEvidence,
+      gpuDepth: cropGpuDepth,
       expectedWorldMm: cropExpectedHit ? vec3Array(cropExpectedHit.point.clone().multiplyScalar(1000)) : null,
       reconstructedWorldMm: vec3Array(cropWorld.clone().multiplyScalar(1000)),
       worldErrorMm: cropWorldErrorMm,

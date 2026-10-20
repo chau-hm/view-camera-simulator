@@ -36,6 +36,11 @@ export const DEPTH_PROBE_CASES: readonly DepthProbeCase[] = [
     expectedSurfaceId: "background",
     pointWorldM: [-1.2, 0.9, 0.4],
   },
+  {
+    id: "far-clip-upper-right",
+    expectedSurfaceId: "far-depth-plane",
+    pointWorldM: [1.2, 0.12, -1.0498],
+  },
 ];
 
 export type PhysicalClassificationCase = Readonly<{
@@ -76,6 +81,24 @@ const baseline = {
   filmPlaneBasisX: [1, 0, 0] as const,
   filmPlaneBasisY: [0, 1, 0] as const,
 };
+
+const tiltedFilmNormal = rotateX(baseline.filmPlaneNormal, 18 * Math.PI / 180);
+const tiltedFilmBasisY = rotateX(baseline.filmPlaneBasisY, 18 * Math.PI / 180);
+const rotateFilmAxes = (
+  x: readonly [number, number, number],
+  y: readonly [number, number, number],
+  angle: number,
+) => {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return {
+    x: x.map((value, index) => value * cosine + y[index]! * sine) as [number, number, number],
+    y: x.map((value, index) => -value * sine + y[index]! * cosine) as [number, number, number],
+  };
+};
+const nearPiFilmAxes = rotateFilmAxes(baseline.filmPlaneBasisX, tiltedFilmBasisY, 0.95);
+const cropNearPiFilmAxes = rotateFilmAxes(baseline.filmPlaneBasisX, tiltedFilmBasisY, 0.99);
+const negativeUnwrappedFilmAxes = rotateFilmAxes(baseline.filmPlaneBasisX, tiltedFilmBasisY, 1.5);
 
 /**
  * Fixed physical kernel vectors. Geometry comes from the rendered depth
@@ -129,4 +152,38 @@ export const PHYSICAL_CLASSIFICATION_CASES: readonly PhysicalClassificationCase[
   },
   { id: "occlusion-near-marker", sourceProbeId: "occluded-front-marker", ...baseline },
   { id: "background-no-depth", sourceProbeId: "empty-background-corner", ...baseline },
+  {
+    id: "far-clip-visible-surface",
+    sourceProbeId: "far-clip-upper-right",
+    ...baseline,
+    lensPlaneNormal: [0, 0, -1],
+    lensPlaneBasisY: [0, -1, 0],
+    filmPlanePointMm: [0, 0, 55.55555555555556],
+    filmPlaneNormal: [0, 0, -1],
+    filmPlaneBasisY: [0, -1, 0],
+  },
+  {
+    id: "film-tilt-near-pi",
+    sourceProbeId: "tilted-plane-left-edge",
+    ...baseline,
+    filmPlaneNormal: tiltedFilmNormal,
+    filmPlaneBasisX: nearPiFilmAxes.x,
+    filmPlaneBasisY: nearPiFilmAxes.y,
+  },
+  {
+    id: "film-negative-unwrapped-orientation",
+    sourceProbeId: "tilted-plane-left-edge",
+    ...baseline,
+    filmPlaneNormal: tiltedFilmNormal,
+    filmPlaneBasisX: negativeUnwrappedFilmAxes.x,
+    filmPlaneBasisY: negativeUnwrappedFilmAxes.y,
+  },
+  {
+    id: "crop-film-tilt-near-pi",
+    sourceProbeId: "tilted-plane-right-edge",
+    ...baseline,
+    filmPlaneNormal: tiltedFilmNormal,
+    filmPlaneBasisX: cropNearPiFilmAxes.x,
+    filmPlaneBasisY: cropNearPiFilmAxes.y,
+  },
 ];
