@@ -74,6 +74,7 @@ type RenderTargetLike = THREE.WebGLRenderTarget | THREE.RenderTarget;
 type RendererLike = THREE.WebGLRenderer | InstanceType<typeof WebGPURenderer>;
 
 type RenderEvidence = {
+  operationId: string | null;
   targetWidth: number;
   targetHeight: number;
   targetReadback: {
@@ -117,9 +118,17 @@ type ExperimentHandle = {
     mode: PreviewMode,
     crop: CropChoice,
     failDisplay?: boolean,
-    options?: { holdAfterReadbackStarts?: Promise<void> },
+    options?: {
+      holdAfterReadbackStarts?: Promise<void>;
+      rejectReadbackAfterRetirement?: boolean;
+    },
   ) => Promise<RenderEvidence>;
-  resize: (width: number, height: number) => Promise<RenderEvidence>;
+  resize: (
+    width: number,
+    height: number,
+    mode: PreviewMode,
+    crop: CropChoice,
+  ) => Promise<RenderEvidence>;
   getEvidence: () => RenderEvidence;
   dispose: () => Promise<void>;
 };
@@ -156,9 +165,16 @@ type ResourceLifecycleEvidence = {
 type OperationLifecycleEvidence = {
   operationId: string;
   kind: "render" | "resize";
+  mode: PreviewMode;
+  crop: CropChoice;
   state: "queued" | "running" | "completed" | "failed" | "retired";
   stage: string;
   error: string | null;
+  failureKind: "render" | "readback" | "display" | null;
+  cleanupError: string | null;
+  readbackOutcome: "not-started" | "in-flight" | "succeeded" | "failed";
+  displayCompleted: boolean;
+  resultPublished: boolean;
 };
 
 type HandleLifecycleEvidence = {
@@ -499,6 +515,17 @@ const renderTargetReadback = async (
   return readbackSummary(pixels);
 };
 
+const waitForDisplaySubmission = async (kind: BackendKind, renderer: RendererLike) => {
+  if (kind !== "webgpu-candidate") return;
+  const backend = (renderer as InstanceType<typeof WebGPURenderer>).backend as {
+    isWebGPUBackend?: boolean;
+    device?: GPUDevice;
+  };
+  if (!backend.isWebGPUBackend) return;
+  if (!backend.device) throw new Error("Native WebGPU display submission has no GPU device");
+  await backend.device.queue.onSubmittedWorkDone();
+};
+
 const createExperimentHandle = async (input: {
   kind: BackendKind;
   mountGeneration: number;
@@ -579,7 +606,8 @@ const createExperimentHandle = async (input: {
     await disposeLifecycleResource(resources.geometry, () => resources.display.geometry.dispose(), errors);
   };
 
-  const evidence = (): RenderEvidence => ({
+  const evidence = (operationId: string | null = null): RenderEvidence => ({
+    operationId,
     targetWidth: target?.width ?? 0,
     targetHeight: target?.height ?? 0,
     targetReadback: latestReadback,
@@ -683,15 +711,23 @@ const createExperimentHandle = async (input: {
 
   const enqueueOperation = <T,>(
     kind: OperationLifecycleEvidence["kind"],
+    request: { mode: PreviewMode; crop: CropChoice },
     run: (operation: OperationLifecycleEvidence) => Promise<T>,
   ): Promise<T> => {
     if (retired) return Promise.reject(new Error("Experiment handle is retired"));
     const operation: OperationLifecycleEvidence = {
       operationId: `${instanceId}-op${++operationSequence}`,
       kind,
+      mode: request.mode,
+      crop: request.crop,
       state: "queued",
       stage: "queued",
       error: null,
+      failureKind: null,
+      cleanupError: null,
+      readbackOutcome: "not-started",
+      displayCompleted: false,
+      resultPublished: false,
     };
     lifecycle.operations.push(operation);
     signalLifecycleChange();
@@ -709,13 +745,18 @@ const createExperimentHandle = async (input: {
         const value = await run(operation);
         if (operation.state === "running") {
           operation.state = retired ? "retired" : "completed";
-          operation.stage = retired ? "retired" : "completed";
+          if (!retired) operation.stage = "display-completed";
         }
         signalLifecycleChange();
         return value;
       } catch (error) {
-        if (operation.state === "running") operation.state = retired ? "retired" : "failed";
-        operation.stage = operation.state;
+        operation.state = "failed";
+        operation.failureKind = operation.readbackOutcome === "failed"
+          ? "readback"
+          : operation.stage === "texture-display" ? "display" : "render";
+        operation.stage = operation.failureKind === "readback"
+          ? "readback-failed"
+          : operation.failureKind === "display" ? "display-failed" : "render-failed";
         operation.error = errorMessage(error);
         signalLifecycleChange();
         throw error;
@@ -730,7 +771,10 @@ const createExperimentHandle = async (input: {
     crop: CropChoice,
     failDisplay: boolean,
     operation: OperationLifecycleEvidence,
-    holdAfterReadbackStarts?: Promise<void>,
+    options?: {
+      holdAfterReadbackStarts?: Promise<void>;
+      rejectReadbackAfterRetirement?: boolean;
+    },
   ): Promise<RenderEvidence> => {
     if (retired || !renderer || !target || !scene || !subject || !display) {
       throw new Error("Experiment resources are not mounted");
@@ -745,8 +789,11 @@ const createExperimentHandle = async (input: {
     const previousTarget = renderer.getRenderTarget() as RenderTargetLike | null;
     let targetBindingAttempted = false;
     let primaryFailure: unknown;
+    let targetRestoreFailure: unknown;
     try {
       failedPass = "sceneRender";
+      operation.stage = "scene-render";
+      signalLifecycleChange();
       targetBindingAttempted = true;
       if (kind === "webgl-reference") {
         (renderer as THREE.WebGLRenderer).setRenderTarget(target as THREE.WebGLRenderTarget);
@@ -756,15 +803,38 @@ const createExperimentHandle = async (input: {
       renderer.clear(true, true, true);
       renderer.render(scene, configuredCamera.camera);
       sceneRenderCount += 1;
+      operation.readbackOutcome = "in-flight";
       const readbackResult = renderTargetReadback(kind, renderer, target).then(
-        (value) => ({ value }),
-        (error: unknown) => ({ error }),
+        async (value) => {
+          if (options?.holdAfterReadbackStarts) await options.holdAfterReadbackStarts;
+          if (options?.rejectReadbackAfterRetirement) {
+            if (!retired) throw new Error("Injected readback rejection requires a retired WebGPU handle");
+            throw new Error("Injected WebGPU readback rejection after retirement");
+          }
+          return { value };
+        },
+        async (error: unknown) => {
+          if (options?.holdAfterReadbackStarts) await options.holdAfterReadbackStarts;
+          return { error };
+        },
       );
       operation.stage = "readback-in-flight";
       signalLifecycleChange();
-      if (holdAfterReadbackStarts) await holdAfterReadbackStarts;
-      const settledReadback = await readbackResult;
-      if ("error" in settledReadback) throw settledReadback.error;
+      let settledReadback: Awaited<typeof readbackResult>;
+      try {
+        settledReadback = await readbackResult;
+      } catch (error) {
+        operation.readbackOutcome = "failed";
+        operation.stage = "readback-failed";
+        throw error;
+      }
+      if ("error" in settledReadback) {
+        operation.readbackOutcome = "failed";
+        operation.stage = "readback-failed";
+        throw settledReadback.error;
+      }
+      operation.readbackOutcome = "succeeded";
+      operation.stage = "readback-completed";
       latestReadback = settledReadback.value;
     } catch (error) {
       primaryFailure = error;
@@ -779,13 +849,14 @@ const createExperimentHandle = async (input: {
           (renderer as InstanceType<typeof WebGPURenderer>).setRenderTarget(previousTarget);
         }
       } catch (cleanupError) {
+        targetRestoreFailure = cleanupError;
         primaryFailure ??= cleanupError;
-        lastError = "Render-target restoration failed: " + errorMessage(cleanupError);
       }
     }
     if (primaryFailure !== undefined) {
       failedPass = failedPass ?? "sceneRender";
-      lastError ??= errorMessage(primaryFailure);
+      operation.cleanupError = targetRestoreFailure ? errorMessage(targetRestoreFailure) : null;
+      lastError = errorMessage(primaryFailure);
       throw primaryFailure;
     }
     if (retired || !isCurrent()) {
@@ -793,9 +864,11 @@ const createExperimentHandle = async (input: {
       operation.state = "retired";
       operation.stage = "stale-readback-discarded";
       signalLifecycleChange();
-      return evidence();
+      return evidence(operation.operationId);
     }
     failedPass = "textureDisplay";
+    operation.stage = "texture-display";
+    signalLifecycleChange();
     if (failDisplay) throw new Error("Injected texture-display operation failure");
     const replacement = createDisplayOperation(kind, target, mode);
     recordDisplay(replacement);
@@ -809,11 +882,13 @@ const createExperimentHandle = async (input: {
     renderer.setRenderTarget(null);
     renderer.clear(true, true, true);
     renderer.render(display.scene, display.camera);
+    await waitForDisplaySubmission(kind, renderer);
     displayRenderCount += 1;
+    operation.displayCompleted = true;
     failedPass = null;
     operation.stage = "display-completed";
     signalLifecycleChange();
-    return evidence();
+    return evidence(operation.operationId);
   };
 
   try {
@@ -933,12 +1008,13 @@ const createExperimentHandle = async (input: {
       getEvidence: evidence,
       render: (mode, crop, failDisplay = false, options) => enqueueOperation(
         "render",
-        (operation) => renderNow(mode, crop, failDisplay, operation, options?.holdAfterReadbackStarts),
+        { mode, crop },
+        (operation) => renderNow(mode, crop, failDisplay, operation, options),
       ).catch((error: unknown) => {
         lastError = errorMessage(error);
         throw error;
       }),
-      resize: (width, height) => enqueueOperation("resize", async (operation) => {
+      resize: (width, height, mode, crop) => enqueueOperation("resize", { mode, crop }, async (operation) => {
         if (retired || !renderer || !target) throw new Error("Experiment resources are not mounted");
         const beforeTextureUuid = target.texture.uuid;
         const disposalCountBeforeResize = targetDisposeEvents;
@@ -949,7 +1025,7 @@ const createExperimentHandle = async (input: {
         if (target.texture.uuid !== beforeTextureUuid) {
           throw new Error("RenderTarget.setSize unexpectedly replaced its owned texture");
         }
-        return renderNow("raw", "full", false, operation);
+        return renderNow(mode, crop, false, operation);
       }),
       dispose: disposeOwned,
     };
@@ -1048,6 +1124,14 @@ const Fixture = ({
     setDiagnostic(next);
     onDiagnosticChange(next);
   }, [generation, onDiagnosticChange]);
+  const markOperationPublished = useCallback((handle: ExperimentHandle, render: RenderEvidence) => {
+    if (!render.operationId) return;
+    const owner = lifecycleStore.handles.find((item) => item.instanceId === handle.instanceId);
+    const operation = owner?.operations.find((item) => item.operationId === render.operationId);
+    if (owner?.state !== "active" || operation?.state !== "completed") return;
+    operation.resultPublished = true;
+    signalLifecycleChange();
+  }, []);
   const failure = new URLSearchParams(window.location.search).get("fixtureFailure") as FixtureFailure | null;
 
   useEffect(() => {
@@ -1107,6 +1191,7 @@ const Fixture = ({
         let webgpuRenderError: string | null = null;
         try {
           webgpuResult = await webgpu.render("raw", "full", failedDisplay);
+          markOperationPublished(webgpu, webgpuResult);
         } catch (error) {
           webgpuResult = webgpu.getEvidence();
           webgpuRenderError = errorMessage(error);
@@ -1138,6 +1223,7 @@ const Fixture = ({
         if (webgl) {
           try {
             const result = await webgl.render("raw", "full");
+            markOperationPublished(webgl, result);
             publishIfCurrent({ webgl: { runtime: webgl.runtime, render: result, error: null } });
           } catch (error) {
             publishIfCurrent({ webgl: { runtime: webgl.runtime, render: webgl.getEvidence(), error: errorMessage(error) } });
@@ -1170,7 +1256,7 @@ const Fixture = ({
         }
       }
     };
-  }, [generation, failure, onDiagnosticChange, publish]);
+  }, [generation, failure, onDiagnosticChange, publish, markOperationPublished]);
 
   const renderCurrent = async (
     nextMode: PreviewMode,
@@ -1183,6 +1269,7 @@ const Fixture = ({
     const updates = await Promise.all(entries.map(async ([kind, handle]) => {
       try {
         const render = await handle.render(nextMode, nextCrop, failDisplay && kind === "webgpu-candidate");
+        markOperationPublished(handle, render);
         return [
           kind === "webgpu-candidate" ? "webgpu" : "webgl",
           { runtime: handle.runtime, render, error: null },
@@ -1217,7 +1304,8 @@ const Fixture = ({
     const dimensions = next ? RESIZED_FIXTURE_SIZE : FIXTURE_SIZE;
     const updates = await Promise.all(
       (Object.entries(handlesRef.current) as [BackendKind, ExperimentHandle][]).map(async ([kind, handle]) => {
-        const render = await handle.resize(dimensions.width, dimensions.height);
+        const render = await handle.resize(dimensions.width, dimensions.height, mode, crop);
+        markOperationPublished(handle, render);
         return [
           kind === "webgpu-candidate" ? "webgpu" : "webgl",
           { runtime: handle.runtime, render, error: null },
@@ -1231,7 +1319,7 @@ const Fixture = ({
     });
   };
 
-  const queueRapidOperationsAndHoldReadback = () => {
+  const queueRapidOperationsAndHoldReadback = (rejectAfterRetirement = false) => {
     const handle = handlesRef.current["webgpu-candidate"];
     if (!handle) return;
     const release = createDeferred();
@@ -1240,13 +1328,15 @@ const Fixture = ({
       void operation.catch(() => undefined);
     };
     consume(handle.render("raw", "full"));
-    consume(handle.resize(RESIZED_FIXTURE_SIZE.width, RESIZED_FIXTURE_SIZE.height));
+    consume(handle.resize(RESIZED_FIXTURE_SIZE.width, RESIZED_FIXTURE_SIZE.height, "raw", "full"));
     consume(handle.render("upright", "off-center-4x"));
     const heldOperation = handle.render("raw", "off-center-4x", false, {
       holdAfterReadbackStarts: release.promise,
+      rejectReadbackAfterRetirement: rejectAfterRetirement,
     });
     void heldOperation.then((render) => {
       if (activeRoute.current && diagnosticRef.current.generation === handle.mountGeneration) {
+        markOperationPublished(handle, render);
         publish({ webgpu: { runtime: handle.runtime, render, error: null } });
       }
     }).catch((error: unknown) => {
@@ -1275,8 +1365,11 @@ const Fixture = ({
         <button type="button" onClick={() => void resize()}>Resize targets</button>
         <button type="button" onClick={() => void renderCurrent(mode, crop, true)}>Inject display failure</button>
         <button type="button" onClick={remount}>Unmount and remount</button>
-        <button type="button" onClick={queueRapidOperationsAndHoldReadback}>
+        <button type="button" onClick={() => queueRapidOperationsAndHoldReadback()}>
           Queue rapid operations and hold WebGPU readback
+        </button>
+        <button type="button" onClick={() => queueRapidOperationsAndHoldReadback(true)}>
+          Queue and reject WebGPU readback after retirement
         </button>
       </div>
       <div className="gg-canvases">
