@@ -27,7 +27,7 @@ The final native-required run used the repository's headed Chrome Playwright pro
 | Half-float physical | `RGBAFormat` + `HalfFloatType` | `rgba16float` | `Uint16Array` half-float bit patterns | Passed |
 | Encoded byte | `RGBAFormat` + `UnsignedByteType` | `rgba8unorm` | `Uint8Array` integer code values | Passed |
 
-Both targets initialized, accepted a GPU writer pass, were sampled by a separate GPU consumer, were read back, and retained their requested native format after resizing from `17×1` to `18×1`. The observed backend texture usage value was `23` for both targets. Format and usage were read from Three r186's runtime backend texture metadata; that observation does not guarantee driver-level physical memory behavior or support on every adapter.
+Both targets initialized, accepted a GPU writer pass, were sampled by a separate GPU consumer, and were read back. The 23-sample physical matrix allocated `23×1` targets; resizing retained each requested native format at `24×1` and completed a 24-sample readback. The observed backend texture usage value was `23` for both targets. Format and usage were read from Three r186's runtime backend texture metadata; that observation does not guarantee driver-level physical memory behavior or support on every adapter.
 
 Ordinary Chromium was also run separately. It reported Three's `WebGPURenderer` WebGL2 fallback and is compatibility/control evidence only, not native feasibility evidence.
 
@@ -128,13 +128,21 @@ The GPU filter probe stores adjacent `-8 mm` and `+8 mm` signed values, then sam
 
 ## H. Resource and browser results
 
-The native-required storage suite passed all four tests. It checks the actual `webgpu-renderer` / `webgpu` / no-fallback runtime, formats, GPU round trips, numerical semantics, target resize, held readback retirement, injected readback rejection, failure cleanup, SPA navigation, and remount.
+The native-required storage suite passed all five Phase D tests:
+
+- `GPU CoC/footprint writers and TSL consumers match the CPU codec contract`
+- `native binary16 range probe records finite and saturated storage separately`
+- `successful readback retirement and handle-owned resource cleanup survive SPA remount`
+- `a rejected accepted readback remains a failure while SPA cleanup succeeds`
+- `post-writer failure is explicit and does not prevent resource cleanup`
+
+Together they check the actual `webgpu-renderer` / `webgpu` / no-fallback runtime, formats, GPU round trips, numerical semantics, binary16 range, target resize, held readback retirement, injected readback rejection, failure cleanup, SPA navigation, and remount. Ordinary Chromium separately passed four tests and skipped the native-only binary16 range probe; its WebGL2 fallback is not native evidence.
 
 The final native lifecycle attachment recorded `webgpu-coc-storage-g1-i1` (generation 1) on `/experiment → /away`. Its held operation `webgpu-coc-storage-g1-i1-op3` completed its accepted readback successfully, then ended `retired / stale-readback-discarded`, with `error: null` and no published result. Its renderer, both storage targets, all six diagnostic targets, writer/consumer geometry, materials, and other owned fixture resources each recorded one successful disposal completion. The same document remounted `webgpu-coc-storage-g2-i2` (generation 2), whose completed half-float and byte roundtrips were followed by a separate successful cleanup.
 
 In the negative control, generation 1's `webgpu-coc-storage-g1-i1-op3` was rejected at the test-only Promise boundary after the real native readback settled and the handle began retirement. It remained `failed / readback-failed` with the injected error text. The exact handle's cleanup still completed with no cleanup error and every owned resource recorded one disposal completion; generation 2 mounted as a distinct native WebGPU handle. This is a deterministic Promise-level rejection test, not device loss or a hardware readback failure.
 
-The post-writer failure test also remained observable and disposed the fixture's owned resources. Resize changed each target from `17×1` to `18×1`, recorded one target-storage disposal event during reallocation, retained `rgba16float` or `rgba8unorm`, and successfully read back 18 samples. These disposal records establish the Three.js ownership/dispose call contract, not immediate GPU-driver reclamation or absence of every possible driver memory leak.
+The post-writer failure test also remained observable and disposed the fixture's owned resources. Resize changed each target from `23×1` to `24×1`, recorded one target-storage disposal event during reallocation, retained `rgba16float` or `rgba8unorm`, and successfully read back 24 samples. These disposal records establish the Three.js ownership/dispose call contract, not immediate GPU-driver reclamation or absence of every possible driver memory leak.
 
 The dedicated binary16 range test allocates separate storage/decode/classification targets on the exact native handle, captures the range evidence, then navigates through the fixture's SPA route and verifies every handle-owned resource is disposed. The probe does not alter the normal physical-matrix metrics or the Phase C production routes.
 
