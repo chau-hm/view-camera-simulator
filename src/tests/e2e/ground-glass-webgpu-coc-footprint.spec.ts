@@ -1,6 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import * as THREE from "three";
 import {
+  ACCEPTABLE_COC_DIAMETER_MM,
+} from "../../core/optics/physicalSharpness";
+import {
   decodeGroundGlassFootprintAxesMm,
   decodeGroundGlassFootprintOrientation,
   decodeGroundGlassSignedCoC,
@@ -11,7 +14,9 @@ import {
   quantizeGroundGlassSignedCoCByte,
 } from "../../render/groundGlassCocTarget";
 import {
+  BINARY16_RANGE_PROBE_SAMPLES,
   FOOTPRINT_STORAGE_MAX_MM,
+  MAX_FINITE_BINARY16,
   PHYSICAL_STORAGE_SAMPLES,
   SIGNED_COC_STORAGE_MAX_MM,
 } from "./fixtures/ground-glass-webgpu-coc-footprint-cases";
@@ -25,12 +30,13 @@ type Candidate = "half-float-mm" | "encoded-byte";
 type Operation = {
   operationId: string;
   candidate: Candidate | "lifecycle";
-  kind: "roundtrip" | "held-readback" | "injected-failure";
+  kind: "roundtrip" | "binary16-range-probe" | "held-readback" | "injected-failure";
   state: "queued" | "running" | "completed" | "failed" | "retired";
   stage: string;
   failureClassification: "readback" | "execution" | null;
   error: string | null;
   writerCompleted: boolean;
+  consumerCompleted: boolean;
   readbackStarted: boolean;
   readbackOutcome: "not-started" | "pending" | "succeeded" | "failed";
   readbackError: string | null;
@@ -113,6 +119,34 @@ type CandidateEvidence = {
     saturatedFootprintAxisCount: number;
   };
 };
+type SerializableFloat = number | "Infinity" | "-Infinity" | "NaN";
+type Binary16RangeProbeEvidence = {
+  maxFiniteBinary16: number;
+  actualGpuFormat: string | null;
+  policy: string;
+  storageReadback: { status: "completed"; typedArray: string; sampleCount: number };
+  metrics: {
+    unsupportedPhysicalSampleCount: number;
+    unrepresentableChannelCount: number;
+    channelsSaturatedToMaxFinite: number;
+  };
+  samples: Array<{
+    id: string;
+    input: {
+      signedCoCDiameterMm: number;
+      majorRadiusMm: number;
+      minorRadiusMm: number;
+      orientationRad: number;
+    };
+    representableChannels: [boolean, boolean, boolean, boolean];
+    storedHalfBits: number[];
+    storedValues: SerializableFloat[];
+    gpuDecodedValues: SerializableFloat[];
+    absolutePhysicalChannelErrorMm: [SerializableFloat, SerializableFloat, SerializableFloat];
+    gpuClassification: number;
+    physicalInterpretation: "supported-binary16-range" | "unsupported-binary16-range";
+  }>;
+};
 type Handle = {
   instanceId: string;
   generation: number;
@@ -127,6 +161,7 @@ type Handle = {
   };
   operations: Operation[];
   candidates: CandidateEvidence[];
+  binary16RangeProbe: Binary16RangeProbeEvidence | null;
   resources: Resource[];
   cleanupStartedAt: number | null;
   cleanupCompletedAt: number | null;
@@ -220,6 +255,11 @@ const allOwnedResourcesDisposed = (handle: Handle): boolean => Boolean(
 );
 
 const half = (value: number): number => THREE.DataUtils.fromHalfFloat(THREE.DataUtils.toHalfFloat(value));
+const sampleById = (id: string): (typeof PHYSICAL_STORAGE_SAMPLES)[number] => {
+  const sample = PHYSICAL_STORAGE_SAMPLES.find((entry) => entry.id === id);
+  if (!sample) throw new Error(`Missing fixed physical storage sample ${id}`);
+  return sample;
+};
 const periodicError = (a: number, b: number): number => {
   const raw = Math.abs(a - b) % Math.PI;
   return Math.min(raw, Math.PI - raw);
@@ -272,8 +312,8 @@ const cpuExpected = (candidate: Candidate, sample: (typeof PHYSICAL_STORAGE_SAMP
 
 const expectPhysicalConformance = (candidate: CandidateEvidence) => {
   expect(candidate.samples.map((sample) => sample.id)).toEqual(PHYSICAL_STORAGE_SAMPLES.map((sample) => sample.id));
-  for (const [index, sample] of candidate.samples.entries()) {
-    const expected = cpuExpected(candidate.candidate, PHYSICAL_STORAGE_SAMPLES[index]);
+  for (const sample of candidate.samples) {
+    const expected = cpuExpected(candidate.candidate, sampleById(sample.id));
     if (candidate.candidate === "half-float-mm") {
       for (const [channel, value] of sample.storedRaw.entries()) {
         expect(
@@ -306,7 +346,7 @@ const expectPhysicalConformance = (candidate: CandidateEvidence) => {
   }
 
   const knownEllipse = candidate.samples.find((sample) => sample.id === "in-range-channel-layout");
-  const knownEllipseExpected = cpuExpected(candidate.candidate, PHYSICAL_STORAGE_SAMPLES[12]);
+  const knownEllipseExpected = cpuExpected(candidate.candidate, sampleById("in-range-channel-layout"));
   expect(knownEllipse?.input.majorRadiusMm).toBe(2.5);
   expect(knownEllipse?.input.minorRadiusMm).toBe(1);
   expect(Math.abs((knownEllipse?.gpuDecoded[1] ?? 0) - knownEllipseExpected.decoded[1])).toBeLessThan(halfFloatTolerance(knownEllipseExpected.decoded[1]));
@@ -353,12 +393,15 @@ const expectPhysicalConformance = (candidate: CandidateEvidence) => {
     expect(candidate.metrics.maximumUnsaturatedMajorRadiusErrorMm).toBeLessThan(axisQuantizationBound);
     expect(candidate.metrics.maximumUnsaturatedMinorRadiusErrorMm).toBeLessThan(axisQuantizationBound);
     expect(candidate.metrics.maximumOrientationPeriodicErrorRad).toBeLessThan(orientationQuantizationBound);
-    expect(candidate.metrics.signPreservedCount).toBe(candidate.metrics.nonzeroCoCCount - 2);
+    expect(candidate.metrics.signPreservedCount).toBe(candidate.metrics.nonzeroCoCCount - 6);
     const pairScaled = candidate.samples.find((sample) => sample.id === "over-range-pair-scale");
     expect((pairScaled?.gpuDecoded[1] ?? 0) / (pairScaled?.gpuDecoded[2] ?? 1)).toBeCloseTo(4, 1);
   }
   if (candidate.candidate === "encoded-byte") {
-    expect(candidate.metrics.neutralByteCount).toBe(4);
+    expect(candidate.metrics.neutralByteCount).toBe(
+      candidate.samples.filter((sample) => sample.storedRaw[0] === 128).length,
+    );
+    expect(candidate.metrics.neutralByteCount).toBe(8);
     expect(candidate.metrics.saturatedSignedCoCCount).toBe(2);
     expect(candidate.metrics.saturatedFootprintAxisCount).toBeGreaterThanOrEqual(3);
   } else {
@@ -369,6 +412,37 @@ const expectPhysicalConformance = (candidate: CandidateEvidence) => {
   const invalidAxes = candidate.samples.find((sample) => sample.id === "invalid-axis-ordering");
   expect(invalidAxes?.gpuDecoded[1]).toBe(0);
   expect(invalidAxes?.gpuDecoded[2]).toBe(0);
+
+  expect(ACCEPTABLE_COC_DIAMETER_MM).toBe(0.1);
+  const sharpnessNegative = candidate.samples.find((sample) => sample.id === "sharpness-boundary-negative");
+  const sharpnessPositive = candidate.samples.find((sample) => sample.id === "sharpness-boundary-positive");
+  expect(sharpnessNegative?.input.signedCoCDiameterMm).toBe(-ACCEPTABLE_COC_DIAMETER_MM);
+  expect(sharpnessPositive?.input.signedCoCDiameterMm).toBe(ACCEPTABLE_COC_DIAMETER_MM);
+  const negativeNeutralEdge = candidate.samples.find((sample) => sample.id === "byte-neutral-transition-negative");
+  const positiveNeutralEdge = candidate.samples.find((sample) => sample.id === "byte-neutral-transition-positive");
+  const negativeSignedEdge = candidate.samples.find((sample) => sample.id === "byte-sign-transition-negative");
+  const positiveSignedEdge = candidate.samples.find((sample) => sample.id === "byte-sign-transition-positive");
+  expect(negativeNeutralEdge?.input.signedCoCDiameterMm).toBe(-0.14);
+  expect(positiveNeutralEdge?.input.signedCoCDiameterMm).toBe(0.14);
+  expect(negativeSignedEdge?.input.signedCoCDiameterMm).toBe(-0.15);
+  expect(positiveSignedEdge?.input.signedCoCDiameterMm).toBe(0.15);
+  if (candidate.candidate === "half-float-mm") {
+    for (const sample of [sharpnessNegative, sharpnessPositive, negativeNeutralEdge, positiveNeutralEdge, negativeSignedEdge, positiveSignedEdge]) {
+      expect(sample?.gpuClassification, `half-float ${sample?.id} retains its nonzero physical CoC sign`).toBe(
+        Math.sign(sample?.input.signedCoCDiameterMm ?? 0),
+      );
+    }
+  } else {
+    for (const sample of [sharpnessNegative, sharpnessPositive, negativeNeutralEdge, positiveNeutralEdge]) {
+      expect(sample?.storedRaw[0], `encoded-byte ${sample?.id} falls in the neutral code`).toBe(128);
+      expect(sample?.gpuDecoded[0]).toBe(0);
+      expect(sample?.gpuClassification).toBe(0);
+    }
+    expect(negativeSignedEdge?.storedRaw[0]).toBe(127);
+    expect(negativeSignedEdge?.gpuClassification).toBe(-1);
+    expect(positiveSignedEdge?.storedRaw[0]).toBe(129);
+    expect(positiveSignedEdge?.gpuClassification).toBe(1);
+  }
 };
 
 const assertNativeExecutionWhenRequired = (handle: Handle) => {
@@ -427,7 +501,6 @@ test("GPU CoC/footprint writers and TSL consumers match the CPU codec contract",
       expect(candidate.storageReadback.typedArray).toBe(candidateName === "half-float-mm" ? "Uint16Array" : "Uint8Array");
     }
   }
-
   const scale = diagnostics.filmScale;
   expect(scale).not.toBeNull();
   if (!scale) throw new Error("Physical full-film and Loupe scale evidence is missing");
@@ -450,6 +523,125 @@ test("GPU CoC/footprint writers and TSL consumers match the CPU codec contract",
     body: Buffer.from(JSON.stringify({ runtime: handle.runtime, candidates: handle.candidates, filmScale: scale }, null, 2)),
     contentType: "application/json",
   });
+});
+
+test("native binary16 range probe records finite and saturated storage separately", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired, "Binary16 overflow measurements require the native WebGPU renderer");
+  test.setTimeout(150_000);
+  await page.goto(FIXTURE_PATH);
+  const ready = await waitForDiagnostics(page, (diagnostics) => {
+    const handle = diagnostics.handles.at(-1);
+    return Boolean(diagnostics.status === "ready" && handle?.state === "active" && handle.candidates.length === 2);
+  }, "ordinary storage round trips before the isolated binary16 range probe");
+  const handle = lastHandle(ready);
+  assertNativeExecutionWhenRequired(handle);
+
+  await page.getByTestId("coc-storage-run-binary16-range-probe").click();
+  const completed = await waitForDiagnostics(page, (diagnostics) => {
+    const current = handleById(diagnostics, handle.instanceId);
+    const operation = current?.operations.find((entry) => entry.kind === "binary16-range-probe");
+    return Boolean(operation?.state === "completed" && operation.stage === "binary16-range-probe-published" && current?.binary16RangeProbe);
+  }, "the dedicated binary16 range storage and sampling probe");
+  const probedHandle = handleById(completed, handle.instanceId);
+  const operation = probedHandle?.operations.find((entry) => entry.kind === "binary16-range-probe");
+  const range = probedHandle?.binary16RangeProbe;
+  expect(operation?.operationId).toBe(`${handle.instanceId}-op3`);
+  expect(operation?.writerCompleted).toBe(true);
+  expect(operation?.consumerCompleted).toBe(true);
+  expect(operation?.readbackOutcome).toBe("succeeded");
+  expect(range?.maxFiniteBinary16).toBe(MAX_FINITE_BINARY16);
+  if (nativeWebGpuRequired) expect(range?.actualGpuFormat).toBe("rgba16float");
+  else expect(range?.actualGpuFormat).toBeNull();
+  expect(range?.storageReadback.status).toBe("completed");
+  expect(range?.storageReadback.typedArray).toBe("Uint16Array");
+  expect(range?.storageReadback.sampleCount).toBe(BINARY16_RANGE_PROBE_SAMPLES.length);
+  expect(range?.samples.map((sample) => sample.id)).toEqual(BINARY16_RANGE_PROBE_SAMPLES.map((sample) => sample.id));
+  expect(range?.policy).toContain("explicitly unsupported physical data");
+
+  for (const sample of range?.samples ?? []) {
+    const input = BINARY16_RANGE_PROBE_SAMPLES.find((entry) => entry.id === sample.id);
+    expect(input, `fixed boundary input ${sample.id}`).toBeDefined();
+    if (!input) continue;
+    expect(sample.input.signedCoCDiameterMm).toBe(input.signedCoCDiameterMm);
+    expect(sample.input.majorRadiusMm).toBe(input.majorRadiusMm);
+    expect(sample.input.minorRadiusMm).toBe(input.minorRadiusMm);
+    expect(sample.representableChannels).toEqual([
+      Math.abs(input.signedCoCDiameterMm) <= MAX_FINITE_BINARY16,
+      input.majorRadiusMm <= MAX_FINITE_BINARY16,
+      input.minorRadiusMm <= MAX_FINITE_BINARY16,
+      Math.abs(input.orientationRad / Math.PI) <= 1,
+    ]);
+    expect(sample.physicalInterpretation).toBe(
+      Math.max(Math.abs(input.signedCoCDiameterMm), input.majorRadiusMm, input.minorRadiusMm) <= MAX_FINITE_BINARY16
+        ? "supported-binary16-range"
+        : "unsupported-binary16-range",
+    );
+    expect(sample.storedHalfBits).toHaveLength(4);
+    expect(sample.storedValues).toHaveLength(4);
+    expect(sample.gpuDecodedValues).toHaveLength(4);
+    expect(sample.absolutePhysicalChannelErrorMm).toHaveLength(3);
+    expect(sample.gpuDecodedValues).toEqual(sample.storedValues);
+    const physicalInputs = [input.signedCoCDiameterMm, input.majorRadiusMm, input.minorRadiusMm];
+    for (const [channel, physicalInput] of physicalInputs.entries()) {
+      const decodedValue = sample.gpuDecodedValues[channel];
+      expect(sample.absolutePhysicalChannelErrorMm[channel]).toBe(
+        typeof decodedValue === "number" ? Math.abs(decodedValue - physicalInput) : "Infinity",
+      );
+    }
+    expect(sample.gpuClassification).toBe(Math.sign(input.signedCoCDiameterMm));
+    if (sample.physicalInterpretation === "supported-binary16-range") {
+      const expectedChannels = [
+        input.signedCoCDiameterMm,
+        input.majorRadiusMm,
+        input.minorRadiusMm,
+        ((input.orientationRad / Math.PI) % 1 + 1) % 1,
+      ];
+      for (const [channel, value] of expectedChannels.entries()) {
+        expect(typeof sample.storedValues[channel], `${sample.id} supported channel ${channel} stays finite`).toBe("number");
+        if (nativeWebGpuRequired) {
+          expect(sample.storedValues[channel], `${sample.id} native channel ${channel} matches binary16 rounding`).toBe(half(value));
+        } else {
+          expect(Number.isFinite(sample.storedValues[channel]), `${sample.id} fallback channel ${channel} remains finite`).toBe(true);
+        }
+      }
+    }
+  }
+  const rangeSampleById = (id: string) => {
+    const sample = range?.samples.find((entry) => entry.id === id);
+    if (!sample) throw new Error(`Missing GPU binary16 range sample ${id}`);
+    return sample;
+  };
+  if (nativeWebGpuRequired) {
+    expect(range?.metrics.unsupportedPhysicalSampleCount).toBe(7);
+    expect(range?.metrics.unrepresentableChannelCount).toBe(14);
+    expect(range?.metrics.channelsSaturatedToMaxFinite).toBe(14);
+    expect(rangeSampleById("maximum-finite-positive").storedHalfBits[0]).toBe(0x7bff);
+    expect(rangeSampleById("maximum-finite-negative").storedHalfBits[0]).toBe(0xfbff);
+    for (const id of [
+      "slightly-above-maximum-positive",
+      "binary16-overflow-edge-positive",
+      "clearly-overflow-positive",
+    ]) {
+      expect(rangeSampleById(id).storedValues[0], `${id} is observed as finite-range saturation`).toBe(MAX_FINITE_BINARY16);
+    }
+    for (const id of [
+      "slightly-above-maximum-negative",
+      "binary16-overflow-edge-negative",
+      "clearly-overflow-negative",
+    ]) {
+      expect(rangeSampleById(id).storedValues[0], `${id} preserves sign at finite-range saturation`).toBe(-MAX_FINITE_BINARY16);
+    }
+    expect(rangeSampleById("clearly-overflow-positive").storedValues.slice(0, 3)).toEqual([65504, 65504, 49984]);
+    expect(rangeSampleById("clearly-overflow-negative").storedValues.slice(0, 3)).toEqual([-65504, 65504, 49984]);
+    expect(rangeSampleById("oversized-ellipse-axes").storedValues.slice(0, 3)).toEqual([1, 65504, 65504]);
+  }
+
+  await testInfo.attach("binary16-range-probe.json", {
+    body: Buffer.from(JSON.stringify({ runtime: probedHandle?.runtime, probe: range }, null, 2)),
+    contentType: "application/json",
+  });
+  const disposed = await navigateAwayAndWait(page, handle.instanceId);
+  expect(allOwnedResourcesDisposed(handleById(disposed, handle.instanceId)!)).toBe(true);
 });
 
 test("successful readback retirement and handle-owned resource cleanup survive SPA remount", async ({ page }, testInfo) => {

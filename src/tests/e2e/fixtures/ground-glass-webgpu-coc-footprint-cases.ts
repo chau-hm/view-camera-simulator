@@ -1,6 +1,7 @@
 import { planeFromPointNormal } from "../../../core/math/plane";
 import { rotateAroundX, vec } from "../../../core/math/vec";
 import { computePhysicalBlurFootprint, deriveOrthonormalPlaneBasis } from "../../../core/optics/computePhysicalBlurFootprint";
+import { ACCEPTABLE_COC_DIAMETER_MM } from "../../../core/optics/physicalSharpness";
 import { resolveGroundGlassCocStorageMaxMm } from "../../../render/groundGlassCocTarget";
 
 export type PhysicalStorageSample = Readonly<{
@@ -11,6 +12,16 @@ export type PhysicalStorageSample = Readonly<{
   minorRadiusMm: number;
   orientationRad: number;
 }>;
+
+export type Binary16RangeProbeSample = Readonly<{
+  id: string;
+  signedCoCDiameterMm: number;
+  majorRadiusMm: number;
+  minorRadiusMm: number;
+  orientationRad: number;
+}>;
+
+export const MAX_FINITE_BINARY16 = 65504;
 
 export const STORAGE_TEST_RENDER_WIDTH_PX = 425;
 export const STORAGE_TEST_FILM_WIDTH_MM = 127;
@@ -212,4 +223,72 @@ export const PHYSICAL_STORAGE_SAMPLES: readonly PhysicalStorageSample[] = [
     minorRadiusMm: 2,
     orientationRad: 0,
   },
+  {
+    id: "sharpness-boundary-negative",
+    source: "synthetic-storage-vector",
+    signedCoCDiameterMm: -ACCEPTABLE_COC_DIAMETER_MM,
+    majorRadiusMm: 0.05,
+    minorRadiusMm: 0.025,
+    orientationRad: 0.41,
+  },
+  {
+    id: "sharpness-boundary-positive",
+    source: "synthetic-storage-vector",
+    signedCoCDiameterMm: ACCEPTABLE_COC_DIAMETER_MM,
+    majorRadiusMm: 0.05,
+    minorRadiusMm: 0.025,
+    orientationRad: 1.17,
+  },
+  {
+    id: "byte-neutral-transition-negative",
+    source: "synthetic-storage-vector",
+    signedCoCDiameterMm: -0.14,
+    majorRadiusMm: 0.07,
+    minorRadiusMm: 0.035,
+    orientationRad: 0.63,
+  },
+  {
+    id: "byte-neutral-transition-positive",
+    source: "synthetic-storage-vector",
+    signedCoCDiameterMm: 0.14,
+    majorRadiusMm: 0.07,
+    minorRadiusMm: 0.035,
+    orientationRad: 0.91,
+  },
+  {
+    id: "byte-sign-transition-negative",
+    source: "synthetic-storage-vector",
+    signedCoCDiameterMm: -0.15,
+    majorRadiusMm: 0.075,
+    minorRadiusMm: 0.0375,
+    orientationRad: 0.73,
+  },
+  {
+    id: "byte-sign-transition-positive",
+    source: "synthetic-storage-vector",
+    signedCoCDiameterMm: 0.15,
+    majorRadiusMm: 0.075,
+    minorRadiusMm: 0.0375,
+    orientationRad: 1.03,
+  },
+];
+
+/**
+ * Synthetic finite float32 values that probe the native rgba16float boundary.
+ * These are representation tests, not realistic optical scene outputs.
+ */
+export const BINARY16_RANGE_PROBE_SAMPLES: readonly Binary16RangeProbeSample[] = [
+  { id: "zero", signedCoCDiameterMm: 0, majorRadiusMm: 0, minorRadiusMm: 0, orientationRad: 0 },
+  { id: "small-0.01-mm", signedCoCDiameterMm: 0.01, majorRadiusMm: 0.01, minorRadiusMm: 0.005, orientationRad: 0.4 },
+  { id: "ordinary-1-mm", signedCoCDiameterMm: 1, majorRadiusMm: 1, minorRadiusMm: 0.5, orientationRad: 0.7 },
+  { id: "large-1000-mm", signedCoCDiameterMm: 1000, majorRadiusMm: 1000, minorRadiusMm: 500, orientationRad: 1.1 },
+  { id: "maximum-finite-positive", signedCoCDiameterMm: MAX_FINITE_BINARY16, majorRadiusMm: MAX_FINITE_BINARY16, minorRadiusMm: 32752, orientationRad: 0.5 },
+  { id: "slightly-above-maximum-positive", signedCoCDiameterMm: 65505, majorRadiusMm: 65505, minorRadiusMm: 32752, orientationRad: 0.5 },
+  { id: "binary16-overflow-edge-positive", signedCoCDiameterMm: 65520, majorRadiusMm: 65520, minorRadiusMm: 32760, orientationRad: 0.5 },
+  { id: "clearly-overflow-positive", signedCoCDiameterMm: 100000, majorRadiusMm: 100000, minorRadiusMm: 50000, orientationRad: 0.5 },
+  { id: "maximum-finite-negative", signedCoCDiameterMm: -MAX_FINITE_BINARY16, majorRadiusMm: MAX_FINITE_BINARY16, minorRadiusMm: 32752, orientationRad: 0.5 },
+  { id: "slightly-above-maximum-negative", signedCoCDiameterMm: -65505, majorRadiusMm: 65505, minorRadiusMm: 32752, orientationRad: 0.5 },
+  { id: "binary16-overflow-edge-negative", signedCoCDiameterMm: -65520, majorRadiusMm: 65520, minorRadiusMm: 32760, orientationRad: 0.5 },
+  { id: "clearly-overflow-negative", signedCoCDiameterMm: -100000, majorRadiusMm: 100000, minorRadiusMm: 50000, orientationRad: 0.5 },
+  { id: "oversized-ellipse-axes", signedCoCDiameterMm: 1, majorRadiusMm: 100000, minorRadiusMm: 65520, orientationRad: 0.7 },
 ];

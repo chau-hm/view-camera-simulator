@@ -32,7 +32,9 @@ import {
   decodeGroundGlassSignedCoC,
 } from "../../../render/groundGlassCocTarget";
 import {
+  BINARY16_RANGE_PROBE_SAMPLES,
   FOOTPRINT_STORAGE_MAX_MM,
+  MAX_FINITE_BINARY16,
   PHYSICAL_STORAGE_SAMPLES,
   SIGNED_COC_STORAGE_MAX_MM,
 } from "./ground-glass-webgpu-coc-footprint-cases";
@@ -43,7 +45,7 @@ type OperationState = "queued" | "running" | "completed" | "failed" | "retired";
 type OperationEvidence = {
   operationId: string;
   candidate: StorageCandidate | "lifecycle";
-  kind: "roundtrip" | "held-readback" | "injected-failure";
+  kind: "roundtrip" | "binary16-range-probe" | "held-readback" | "injected-failure";
   state: OperationState;
   stage: string;
   failureClassification: "readback" | "execution" | null;
@@ -83,6 +85,35 @@ type StoredSampleEvidence = {
   storedPhysical: number[];
   gpuDecoded: number[];
   gpuClassification: number;
+};
+
+type SerializableFloat = number | "Infinity" | "-Infinity" | "NaN";
+type Binary16RangeProbeEvidence = {
+  maxFiniteBinary16: number;
+  actualGpuFormat: string | null;
+  policy: string;
+  storageReadback: { status: "completed"; typedArray: string; sampleCount: number };
+  metrics: {
+    unsupportedPhysicalSampleCount: number;
+    unrepresentableChannelCount: number;
+    channelsSaturatedToMaxFinite: number;
+  };
+  samples: Array<{
+    id: string;
+    input: {
+      signedCoCDiameterMm: number;
+      majorRadiusMm: number;
+      minorRadiusMm: number;
+      orientationRad: number;
+    };
+    representableChannels: [boolean, boolean, boolean, boolean];
+    storedHalfBits: number[];
+    storedValues: SerializableFloat[];
+    gpuDecodedValues: SerializableFloat[];
+    absolutePhysicalChannelErrorMm: [SerializableFloat, SerializableFloat, SerializableFloat];
+    gpuClassification: number;
+    physicalInterpretation: "supported-binary16-range" | "unsupported-binary16-range";
+  }>;
 };
 
 type CandidateEvidence = {
@@ -154,6 +185,7 @@ type HandleEvidence = {
   } | null;
   operations: OperationEvidence[];
   candidates: CandidateEvidence[];
+  binary16RangeProbe: Binary16RangeProbeEvidence | null;
   resources: ResourceEvidence[];
   cleanupStartedAt: number | null;
   cleanupCompletedAt: number | null;
@@ -208,7 +240,7 @@ const store = (window as WindowWithFixtureStore).__groundGlassCocFootprintStore 
 };
 
 const FIXTURE_SIZE = { width: 256, height: 64 };
-const HALF_FLOAT_MAX = 3.402823e38;
+const MAX_FINITE_FLOAT32 = 3.4028234663852886e38;
 const CANDIDATES: readonly StorageCandidate[] = ["half-float-mm", "encoded-byte"];
 const eventName = "ground-glass-webgpu-coc-footprint-change";
 const publish = () => window.dispatchEvent(new Event(eventName));
@@ -268,6 +300,13 @@ const resolveFilmScaleEvidence = () => {
 
 const halfFloatDecoded = (data: Uint16Array, channel: number): number =>
   THREE.DataUtils.fromHalfFloat(data[channel]);
+
+const serializeDiagnosticFloat = (value: number): SerializableFloat => {
+  if (Number.isNaN(value)) return "NaN";
+  if (value === Number.POSITIVE_INFINITY) return "Infinity";
+  if (value === Number.NEGATIVE_INFINITY) return "-Infinity";
+  return value;
+};
 
 type NativeBackendEvidence = {
   get?: (resource: unknown) => unknown;
@@ -350,6 +389,7 @@ type StorageExperimentHandle = {
   instanceId: string;
   lifecycle: HandleEvidence;
   runCandidate: (candidate: StorageCandidate) => Promise<void>;
+  runBinary16RangeProbe: () => Promise<void>;
   startHeldReadback: () => Promise<void>;
   injectWriterFailure: () => Promise<void>;
   dispose: () => Promise<void>;
@@ -391,10 +431,10 @@ const buildStorageWriterNode = (candidate: StorageCandidate) => {
   const sampleMajor = input.major.element(index);
   const sampleMinor = input.minor.element(index);
   const sampleOrientation = input.orientation.element(index);
-  const finiteCoC = abs(sampleCoC).lessThan(float(HALF_FLOAT_MAX));
+  const finiteCoC = abs(sampleCoC).lessThanEqual(float(MAX_FINITE_FLOAT32));
   const cocMm = select(finiteCoC, sampleCoC, float(0));
-  const finiteMajor = abs(sampleMajor).lessThan(float(HALF_FLOAT_MAX));
-  const finiteMinor = abs(sampleMinor).lessThan(float(HALF_FLOAT_MAX));
+  const finiteMajor = abs(sampleMajor).lessThanEqual(float(MAX_FINITE_FLOAT32));
+  const finiteMinor = abs(sampleMinor).lessThanEqual(float(MAX_FINITE_FLOAT32));
   const positiveMajor = sampleMajor.greaterThan(0);
   const positiveMinor = sampleMinor.greaterThan(0);
   const sanitizedMajor = select(finiteMajor.and(positiveMajor), sampleMajor, float(0));
@@ -402,7 +442,7 @@ const buildStorageWriterNode = (candidate: StorageCandidate) => {
   const orderedAxes = sanitizedMinor.lessThanEqual(sanitizedMajor);
   const majorMm = select(orderedAxes, sanitizedMajor, float(0));
   const minorMm = select(orderedAxes, sanitizedMinor, float(0));
-  const finiteOrientation = abs(sampleOrientation).lessThan(float(HALF_FLOAT_MAX));
+  const finiteOrientation = abs(sampleOrientation).lessThanEqual(float(MAX_FINITE_FLOAT32));
   const angle = select(finiteOrientation, sampleOrientation, float(0));
   const orientationNormalized = fract(angle.div(float(Math.PI)));
 
@@ -437,6 +477,31 @@ const buildStorageWriterNode = (candidate: StorageCandidate) => {
     round(minorNormalized.mul(255)).div(255),
     round(orientationByteNormalized.mul(255)).div(255),
   );
+};
+
+const buildBinary16RangeWriterNode = () => {
+  const input = {
+    coc: uniformArray<"float">(BINARY16_RANGE_PROBE_SAMPLES.map((sample) => sample.signedCoCDiameterMm), "float"),
+    major: uniformArray<"float">(BINARY16_RANGE_PROBE_SAMPLES.map((sample) => sample.majorRadiusMm), "float"),
+    minor: uniformArray<"float">(BINARY16_RANGE_PROBE_SAMPLES.map((sample) => sample.minorRadiusMm), "float"),
+    orientation: uniformArray<"float">(BINARY16_RANGE_PROBE_SAMPLES.map((sample) => sample.orientationRad), "float"),
+  };
+  const index = int(floor(uv().x.mul(BINARY16_RANGE_PROBE_SAMPLES.length)));
+  const sampleCoC = input.coc.element(index);
+  const sampleMajor = input.major.element(index);
+  const sampleMinor = input.minor.element(index);
+  const sampleOrientation = input.orientation.element(index);
+  // This is input-finiteness validation in float32. It deliberately does not
+  // constrain values to the binary16 range being measured by this probe.
+  const finiteCoC = abs(sampleCoC).lessThanEqual(float(MAX_FINITE_FLOAT32));
+  const finiteMajor = abs(sampleMajor).lessThanEqual(float(MAX_FINITE_FLOAT32));
+  const finiteMinor = abs(sampleMinor).lessThanEqual(float(MAX_FINITE_FLOAT32));
+  const finiteOrientation = abs(sampleOrientation).lessThanEqual(float(MAX_FINITE_FLOAT32));
+  const cocMm = select(finiteCoC, sampleCoC, float(0));
+  const majorMm = select(finiteMajor.and(sampleMajor.greaterThan(0)), sampleMajor, float(0));
+  const minorMm = select(finiteMinor.and(sampleMinor.greaterThan(0)), sampleMinor, float(0));
+  const orientationRad = select(finiteOrientation, sampleOrientation, float(0));
+  return vec4(cocMm, majorMm, minorMm, fract(orientationRad.div(float(Math.PI))));
 };
 
 const decodeStoredSample = (candidate: StorageCandidate, sampled: ReturnType<typeof texture>) => {
@@ -522,6 +587,7 @@ const createStorageHandle = async (
     runtime: null,
     operations: [],
     candidates: [],
+    binary16RangeProbe: null,
     resources: [],
     cleanupStartedAt: null,
     cleanupCompletedAt: null,
@@ -711,10 +777,17 @@ const createStorageHandle = async (
       );
       classificationPasses.set(candidate, makePass(geometry, classifier));
 
+      const adjacentSourceIndex = (id: string) => {
+        const index = PHYSICAL_STORAGE_SAMPLES.findIndex((sample) => sample.id === id);
+        if (index < 0) throw new Error(`Missing nearest-filter source sample ${id}`);
+        return index;
+      };
+      const negativeSourceIndex = adjacentSourceIndex("adjacent-negative");
+      const positiveSourceIndex = adjacentSourceIndex("adjacent-positive");
       const filterUvs = uniformArray([
-        new THREE.Vector2(0.5 / PHYSICAL_STORAGE_SAMPLES.length, 0.5),
-        new THREE.Vector2(1.5 / PHYSICAL_STORAGE_SAMPLES.length, 0.5),
-        new THREE.Vector2(1 / PHYSICAL_STORAGE_SAMPLES.length, 0.5),
+        new THREE.Vector2((negativeSourceIndex + 0.5) / PHYSICAL_STORAGE_SAMPLES.length, 0.5),
+        new THREE.Vector2((positiveSourceIndex + 0.5) / PHYSICAL_STORAGE_SAMPLES.length, 0.5),
+        new THREE.Vector2(((negativeSourceIndex + positiveSourceIndex + 1) / 2) / PHYSICAL_STORAGE_SAMPLES.length, 0.5),
       ], "vec2");
       const probeIndex = int(floor(uv().x.mul(3)));
       const probeStored = texture(storageAllocation.target.texture, filterUvs.element(probeIndex));
@@ -731,6 +804,175 @@ const createStorageHandle = async (
     store.status = "running";
     store.error = null;
     publish();
+
+    const runBinary16RangeProbe = () => enqueueOperation(
+      "half-float-mm",
+      "binary16-range-probe",
+      async (operation) => {
+        if (!renderer) throw new Error("Renderer is unavailable for binary16 range probe");
+        const sampleCount = BINARY16_RANGE_PROBE_SAMPLES.length;
+        const storage = allocateTarget(
+          "half-float-mm",
+          "binary16-range-storage-target",
+          sampleCount,
+          1,
+          THREE.HalfFloatType,
+        ).target;
+        const decoded = allocateTarget(
+          "half-float-mm",
+          "binary16-range-decoded-target",
+          sampleCount,
+          1,
+          THREE.HalfFloatType,
+        ).target;
+        const classification = allocateTarget(
+          "half-float-mm",
+          "binary16-range-classification-target",
+          sampleCount,
+          1,
+          THREE.HalfFloatType,
+        ).target;
+        const writer = makePass(geometry, createPassMaterial(
+          "half-float-mm:binary16-range-writer-material",
+          buildBinary16RangeWriterNode(),
+        ));
+        const sampled = texture(storage.texture, uv());
+        const decoder = makePass(geometry, createPassMaterial(
+          "half-float-mm:binary16-range-decoder-material",
+          vec4(sampled.r, sampled.g, sampled.b, sampled.a),
+        ));
+        const classificationNode = select(
+          sampled.r.lessThan(0),
+          float(-1),
+          select(sampled.r.greaterThan(0), float(1), float(0)),
+        );
+        const classifier = makePass(geometry, createPassMaterial(
+          "half-float-mm:binary16-range-classifier-material",
+          vec4(classificationNode, float(0), float(0), float(1)),
+        ));
+        const readProbeTarget = async (target: THREE.RenderTarget) => {
+          operation.readbackStarted = true;
+          operation.readbackOutcome = "pending";
+          try {
+            const result = await readTarget(renderer!, target);
+            operation.readbackOutcome = "succeeded";
+            return result;
+          } catch (error) {
+            operation.readbackOutcome = "failed";
+            operation.readbackError = messageOf(error);
+            operation.failureClassification = "readback";
+            throw error;
+          }
+        };
+
+        operation.stage = "binary16-range-writer";
+        await renderTargetPass(renderer, storage, writer);
+        operation.writerCompleted = true;
+        const storedReadback = await readProbeTarget(storage);
+        if (!(storedReadback instanceof Uint16Array)) {
+          throw new Error(`Expected binary16 storage readback, received ${storedReadback.constructor.name}`);
+        }
+
+        operation.stage = "binary16-range-consumer";
+        await renderTargetPass(renderer, decoded, decoder);
+        const decodedReadback = await readProbeTarget(decoded);
+        if (!(decodedReadback instanceof Uint16Array)) {
+          throw new Error(`Expected binary16 decoded readback, received ${decodedReadback.constructor.name}`);
+        }
+        operation.consumerCompleted = true;
+
+        operation.stage = "binary16-range-classification";
+        await renderTargetPass(renderer, classification, classifier);
+        const classificationReadback = await readProbeTarget(classification);
+        if (!(classificationReadback instanceof Uint16Array)) {
+          throw new Error(`Expected binary16 classification readback, received ${classificationReadback.constructor.name}`);
+        }
+
+        const storageGpuEvidence = getNativeTextureEvidence(renderer, storage.texture);
+        const samples = BINARY16_RANGE_PROBE_SAMPLES.map((sample, index) => {
+          const offset = index * 4;
+          const storedHalfBits = [0, 1, 2, 3].map((channel) => storedReadback[offset + channel]);
+          const storedValues = storedHalfBits.map((bits) => serializeDiagnosticFloat(THREE.DataUtils.fromHalfFloat(bits)));
+          const gpuDecodedValues = [0, 1, 2, 3].map((channel) =>
+            serializeDiagnosticFloat(halfFloatDecoded(decodedReadback, offset + channel)),
+          );
+          const physicalInputs = [sample.signedCoCDiameterMm, sample.majorRadiusMm, sample.minorRadiusMm];
+          const absolutePhysicalChannelErrorMm = physicalInputs.map((inputValue, channel) => {
+            const decodedValue = gpuDecodedValues[channel];
+            return typeof decodedValue === "number"
+              ? serializeDiagnosticFloat(Math.abs(decodedValue - inputValue))
+              : "Infinity";
+          }) as [SerializableFloat, SerializableFloat, SerializableFloat];
+          const cocRepresentable = Math.abs(sample.signedCoCDiameterMm) <= MAX_FINITE_BINARY16;
+          const majorRepresentable = sample.majorRadiusMm <= MAX_FINITE_BINARY16;
+          const minorRepresentable = sample.minorRadiusMm <= MAX_FINITE_BINARY16;
+          const orientationRepresentable = Math.abs(sample.orientationRad / Math.PI) <= 1;
+          const representableChannels: [boolean, boolean, boolean, boolean] = [
+            cocRepresentable,
+            majorRepresentable,
+            minorRepresentable,
+            orientationRepresentable,
+          ];
+          const physicallyRepresentable = representableChannels.every(Boolean);
+          return {
+            id: sample.id,
+            input: {
+              signedCoCDiameterMm: sample.signedCoCDiameterMm,
+              majorRadiusMm: sample.majorRadiusMm,
+              minorRadiusMm: sample.minorRadiusMm,
+              orientationRad: sample.orientationRad,
+            },
+            representableChannels,
+            storedHalfBits,
+            storedValues,
+            gpuDecodedValues,
+            absolutePhysicalChannelErrorMm,
+            gpuClassification: halfFloatDecoded(classificationReadback, offset),
+            physicalInterpretation: physicallyRepresentable
+              ? "supported-binary16-range" as const
+              : "unsupported-binary16-range" as const,
+          };
+        });
+        const unrepresentableChannelCount = samples.reduce(
+          (count, sample) => count + sample.representableChannels.filter((representable) => !representable).length,
+          0,
+        );
+        const channelsSaturatedToMaxFinite = samples.reduce((count, sample) => {
+          const physicalChannels = [
+            sample.input.signedCoCDiameterMm,
+            sample.input.majorRadiusMm,
+            sample.input.minorRadiusMm,
+          ];
+          return count + physicalChannels.reduce((channelCount, inputValue, channel) => {
+            if (sample.representableChannels[channel]) return channelCount;
+            const expectedSaturatedValue = channel === 0 && inputValue < 0
+              ? -MAX_FINITE_BINARY16
+              : MAX_FINITE_BINARY16;
+            return channelCount + (sample.storedValues[channel] === expectedSaturatedValue ? 1 : 0);
+          }, 0);
+        }, 0);
+        lifecycle.binary16RangeProbe = {
+          maxFiniteBinary16: MAX_FINITE_BINARY16,
+          actualGpuFormat: storageGpuEvidence.format,
+          policy: "Out-of-range values are probe evidence only; max-finite storage is explicitly unsupported physical data, not a valid clamped CoC or footprint.",
+          storageReadback: {
+            status: "completed",
+            typedArray: storedReadback.constructor.name,
+            sampleCount,
+          },
+          metrics: {
+            unsupportedPhysicalSampleCount: samples.filter((sample) =>
+              sample.physicalInterpretation === "unsupported-binary16-range",
+            ).length,
+            unrepresentableChannelCount,
+            channelsSaturatedToMaxFinite,
+          },
+          samples,
+        };
+        operation.stage = "binary16-range-probe-published";
+        publish();
+      },
+    );
 
     const handle: StorageExperimentHandle = {
       instanceId,
@@ -951,6 +1193,7 @@ const createStorageHandle = async (
           renderer.setRenderTarget(priorTarget);
         }
       }),
+      runBinary16RangeProbe,
       startHeldReadback: () => enqueueOperation("lifecycle", "held-readback", async (operation) => {
         if (!renderer) throw new Error("Renderer is unavailable for held readback");
         const candidateTargets = targets.get("half-float-mm");
@@ -1183,6 +1426,10 @@ const ExperimentRoute = () => {
           const handle = handleRef.current;
           if (handle) void handle.startHeldReadback().catch((error: unknown) => setLocalError(messageOf(error)));
         }}>Start held readback</button>
+        <button type="button" data-testid="coc-storage-run-binary16-range-probe" onClick={() => {
+          const handle = handleRef.current;
+          if (handle) void handle.runBinary16RangeProbe().catch((error: unknown) => setLocalError(messageOf(error)));
+        }}>Run binary16 range probe</button>
         <button type="button" onClick={() => {
           const handle = handleRef.current;
           if (handle) void handle.injectWriterFailure();
