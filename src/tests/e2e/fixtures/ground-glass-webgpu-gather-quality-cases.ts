@@ -2,10 +2,10 @@ import type { PixelAxis } from "./ground-glass-webgpu-aperture-gather-cases";
 
 export const GATHER_QUALITY_MATRIX = [
   { id: "full-16", gatherScale: 1, sampleCount: 16 },
-  { id: "full-32", gatherScale: 1, sampleCount: 32 },
-  { id: "full-64", gatherScale: 1, sampleCount: 64 },
   { id: "half-16", gatherScale: 0.5, sampleCount: 16 },
+  { id: "full-32", gatherScale: 1, sampleCount: 32 },
   { id: "half-32", gatherScale: 0.5, sampleCount: 32 },
+  { id: "full-64", gatherScale: 1, sampleCount: 64 },
   { id: "half-64", gatherScale: 0.5, sampleCount: 64 },
 ] as const;
 

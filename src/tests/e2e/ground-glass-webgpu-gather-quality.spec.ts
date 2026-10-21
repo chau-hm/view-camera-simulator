@@ -469,8 +469,8 @@ test("native Phase G factorial gather-quality study, scaling, caps, scene proxie
     let scalingPhysical: [number, number, number, number] | null = null;
     for (const size of [
       { label: "Source 128 × 96", width: 128, height: 96 },
-      { label: "Source 256 × 192", width: 256, height: 192 },
       { label: "Source 512 × 384", width: 512, height: 384 },
+      { label: "Source 256 × 192", width: 256, height: 192 },
     ]) {
       const measured: Handle[] = [];
       const warmups: Handle[] = [];
@@ -501,42 +501,45 @@ test("native Phase G factorial gather-quality study, scaling, caps, scene proxie
       });
       artifact.configuration = { factorial, sourceScaling: [...sourceScaling], radiusCaps: [], representativeScenes: [] };
     }
-    const scalingRadii = sourceScaling.map((entry) => (entry.pixelFootprintScaling as Array<{ maximumTransformedEllipseRadiusPx: number }>)[0]!.maximumTransformedEllipseRadiusPx);
-    expect(scalingRadii[1]! / scalingRadii[0]!).toBeGreaterThan(1.7);
-    expect(scalingRadii[1]! / scalingRadii[0]!).toBeLessThan(2.3);
-    expect(scalingRadii[2]! / scalingRadii[0]!).toBeGreaterThan(3.4);
-    expect(scalingRadii[2]! / scalingRadii[0]!).toBeLessThan(4.6);
+    const scalingRadiusByWidth = new Map(sourceScaling.map((entry) => [
+      (entry.resolution as number[])[0]!,
+      (entry.pixelFootprintScaling as Array<{ maximumTransformedEllipseRadiusPx: number }>)[0]!.maximumTransformedEllipseRadiusPx,
+    ]));
+    expect(scalingRadiusByWidth.get(256)! / scalingRadiusByWidth.get(128)!).toBeGreaterThan(1.7);
+    expect(scalingRadiusByWidth.get(256)! / scalingRadiusByWidth.get(128)!).toBeLessThan(2.3);
+    expect(scalingRadiusByWidth.get(512)! / scalingRadiusByWidth.get(128)!).toBeGreaterThan(3.4);
+    expect(scalingRadiusByWidth.get(512)! / scalingRadiusByWidth.get(128)!).toBeLessThan(4.6);
 
     const radiusCaps: Array<Record<string, unknown>> = [];
-    let physicalAtCap24: [number, number, number, number] | null = null;
-    for (const cap of [24, 60]) {
-      const label = `512 crop / cap ${cap}`;
-      const warmups: Handle[] = [];
-      const measured: Handle[] = [];
-      for (let iteration = 0; iteration < 7; iteration += 1) {
-        const handle = await runButton(page, label, initial.instanceId, 240_000);
+    const capRuns = new Map<number, { warmups: Handle[]; measured: Handle[] }>([
+      [24, { warmups: [], measured: [] }],
+      [60, { warmups: [], measured: [] }],
+    ]);
+    for (let iteration = 0; iteration < 7; iteration += 1) {
+      const capOrder = iteration % 2 === 0 ? [24, 60] : [60, 24];
+      for (const cap of capOrder) {
+        const handle = await runButton(page, `512 crop / cap ${cap}`, initial.instanceId, 240_000);
         expect(handle.dimensions).toMatchObject({ sourceWidthPx: 512, sourceHeightPx: 384, sampledFilmWidthMm: 9, sampledFilmHeightMm: 6, sampleCount: 64, maximumCoCRadiusPx: cap });
         const yellow = handle.pointProbes.find((probe) => probe.id === "far-yellow-feature");
         expect(yellow?.validityCode).toBe(1);
-        if (iteration < 2) warmups.push(handle);
-        else measured.push(handle);
+        const current = capRuns.get(cap)!;
+        if (iteration < 2) current.warmups.push(handle);
+        else current.measured.push(handle);
         if (iteration === 6) await captureCanvas(page, test.info(), `phase-g-cap-${cap}.png`);
       }
+    }
+    const physicalByCap = new Map<number, [number, number, number, number]>();
+    for (const cap of [24, 60]) {
+      const { warmups, measured } = capRuns.get(cap)!;
       const last = measured.at(-1)!;
       const diagnostics = last.sampleDiagnostics!;
       expect(diagnostics.gpu.rendererMaximumRadiusPx).toBe(cap);
       expect(diagnostics.gpu.maximumClampedEllipseRadiusPx).toBeLessThanOrEqual(cap + 0.02);
-      if (cap === 24) {
-        expect(diagnostics.gpu.clampScale).toBeLessThan(0.999);
-        const yellow = last.pointProbes.find((probe) => probe.id === "far-yellow-feature");
-        if (!yellow) throw new Error("Missing physical point at the cap-24 case");
-        physicalAtCap24 = [...yellow.physicalRgba16Float];
-      } else {
-        expect(diagnostics.gpu.clampScale).toBeGreaterThanOrEqual(0.999);
-        const yellow = last.pointProbes.find((probe) => probe.id === "far-yellow-feature");
-        if (!yellow || !physicalAtCap24) throw new Error("Missing physical point for cap comparison");
-        yellow.physicalRgba16Float.forEach((value, index) => expect(value, `physical channel ${index} is independent of the radius cap`).toBeCloseTo(physicalAtCap24![index]!, 4));
-      }
+      if (cap === 24) expect(diagnostics.gpu.clampScale).toBeLessThan(0.999);
+      else expect(diagnostics.gpu.clampScale).toBeGreaterThanOrEqual(0.999);
+      const yellow = last.pointProbes.find((probe) => probe.id === "far-yellow-feature");
+      if (!yellow) throw new Error(`Missing physical point for cap-${cap} comparison`);
+      physicalByCap.set(cap, [...yellow.physicalRgba16Float]);
       radiusCaps.push({
         cap,
         warmupOperationIds: warmups.map((handle) => handle.operations.at(-1)?.operationId),
@@ -547,6 +550,10 @@ test("native Phase G factorial gather-quality study, scaling, caps, scene proxie
       });
       artifact.configuration = { factorial, sourceScaling, radiusCaps: [...radiusCaps], representativeScenes: [] };
     }
+    const physicalAtCap24 = physicalByCap.get(24);
+    const physicalAtCap60 = physicalByCap.get(60);
+    if (!physicalAtCap24 || !physicalAtCap60) throw new Error("Missing physical point for cap comparison");
+    physicalAtCap60.forEach((value, index) => expect(value, `physical channel ${index} is independent of the radius cap`).toBeCloseTo(physicalAtCap24[index]!, 4));
 
     const representativeScenes: Array<Record<string, unknown>> = [];
     for (const sceneCase of [
