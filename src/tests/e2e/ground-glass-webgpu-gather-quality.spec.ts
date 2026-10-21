@@ -562,19 +562,38 @@ test("native Phase G factorial gather-quality study, scaling, caps, scene proxie
       { scene: "architecture-rise-geometry-proxy", button: "Architecture Rise geometry proxy" },
       { scene: "interior-corner-geometry-proxy", button: "Interior Corner geometry proxy" },
     ]) {
-      const handle = await runButton(page, sceneCase.button, initial.instanceId, 240_000);
-      expect(handle.dimensions?.scene).toBe(sceneCase.scene);
-      expect(handle.sceneProvenance).toMatchObject({ placementAdaptation: "uniform-scale-and-recenter", canonicalOpticsReused: false });
-      expect(handle.metrics?.validPhysicalPixelCount).toBeGreaterThan(0);
-      expect((handle.metrics?.nearSidePixelCount ?? 0) + (handle.metrics?.farSidePixelCount ?? 0)).toBeGreaterThan(0);
-      expect(handle.formats?.sceneDepth?.actual).toBeTruthy();
-      await captureCanvas(page, test.info(), `phase-g-${sceneCase.scene}.png`);
+      const warmups: Handle[] = [];
+      const measured: Handle[] = [];
+      for (let iteration = 0; iteration < 7; iteration += 1) {
+        const handle = await runButton(page, sceneCase.button, initial.instanceId, 240_000);
+        expect(handle.dimensions?.scene).toBe(sceneCase.scene);
+        expect(handle.dimensions).toMatchObject({ sourceWidthPx: 256, sourceHeightPx: 192, gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 12 });
+        expect(handle.sceneProvenance).toMatchObject({ placementAdaptation: "uniform-scale-and-recenter", canonicalOpticsReused: false });
+        expect(handle.metrics?.validPhysicalPixelCount).toBeGreaterThan(0);
+        expect((handle.metrics?.nearSidePixelCount ?? 0) + (handle.metrics?.farSidePixelCount ?? 0)).toBeGreaterThan(0);
+        expect(handle.formats?.sceneDepth?.actual).toBeTruthy();
+        if (iteration < 2) warmups.push(handle);
+        else measured.push(handle);
+        if (iteration === 6) await captureCanvas(page, test.info(), `phase-g-${sceneCase.scene}.png`);
+      }
+      const handle = measured.at(-1)!;
+      const metricValues = (select: (sample: Handle) => number) => summarizeMeasurements(measured.map(select));
       representativeScenes.push({
         scene: sceneCase.scene,
         provenance: handle.sceneProvenance,
         dimensions: handle.dimensions,
-        metrics: handle.metrics,
-        timing: handle.operations.at(-1)?.timing,
+        warmupOperationIds: warmups.map((sample) => sample.operations.at(-1)?.operationId),
+        measured: measured.map(metricsSnapshot),
+        performance: summarizeStageTimings(measured),
+        qualitySummary: {
+          validPhysicalPixels: metricValues((sample) => sample.metrics!.validPhysicalPixelCount),
+          nearSidePixels: metricValues((sample) => sample.metrics!.nearSidePixelCount),
+          farSidePixels: metricValues((sample) => sample.metrics!.farSidePixelCount),
+          farForegroundLeakPixels: metricValues((sample) => sample.metrics!.farRedForegroundLeakPixelCount),
+          farForegroundLeakEnergy: metricValues((sample) => sample.metrics!.farRedForegroundLeakEnergy),
+          nearBlueLeakPixels: metricValues((sample) => sample.metrics!.nearBlueBackgroundLeakPixelCount),
+          nearForegroundSpreadPixels: metricValues((sample) => sample.metrics!.nearRedSpreadOutsideSharpPixelCount),
+        },
         targetMemoryEstimate: handle.targetMemoryEstimate,
       });
       artifact.configuration = { factorial, sourceScaling, radiusCaps, representativeScenes: [...representativeScenes] };
