@@ -101,10 +101,10 @@ The half ×32 A/B timing used two warm-ups per path and five measured operations
 
 | Path | Measured operation wall times (ms) | Median |
 |---|---|---:|
-| Baseline | 27.5, 24.8, 27.2, 31.5, 28.7 | 27.5 |
-| Candidate | 43.2, 26.4, 47.1, 29.0, 76.2 | 43.2 |
+| Baseline | 29.1, 32.3, 25.3, 21.3, 24.7 | 25.3 |
+| Candidate | 37.1, 34.9, 33.8, 35.8, 34.0 | 34.9 |
 
-The candidate median was 15.7 ms (57.1%) higher in this run. The sample ranges overlap substantially, the candidate adds two diagnostic/render passes, and no isolated GPU timestamp was available. The previous local run produced different medians, so timing should be treated as noisy browser/queue evidence rather than a stable performance estimate. This is not a production performance conclusion.
+The candidate median was 9.6 ms (38.0%) higher in this run; the five measured ranges did not overlap. Earlier native runs produced materially different medians, so timing remains noisy browser/queue evidence rather than a stable performance estimate. The candidate adds two diagnostic/render passes, and no isolated GPU timestamp was available. This is not a production performance conclusion.
 
 ## L. Memory and lifecycle
 
