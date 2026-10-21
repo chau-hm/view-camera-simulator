@@ -34,6 +34,16 @@ import {
   vec4,
 } from "three/tsl";
 import { getRenderQualitySettings } from "../../../render/renderQuality";
+import {
+  createArchitectureRiseGroup,
+  disposeArchitectureRiseGroup,
+} from "../../../render/ArchitectureRiseSubjectFactory";
+import {
+  createInteriorCornerGroup,
+  disposeInteriorCornerGroup,
+} from "../../../render/InteriorCornerSubjectFactory";
+import { ARCHITECTURE_RISE_PRESENTATION } from "../../../scenes/presentation/architectureRise";
+import { INTERIOR_CORNER_PRESENTATION } from "../../../scenes/presentation/interiorCorner";
 import { resolveObserverRendererRuntime } from "../../../render/backend/observerVisualPipelineCapabilities";
 import {
   APERTURE_GATHER_CASES,
@@ -44,13 +54,33 @@ import {
   orientedSampleOffsetPx,
   type GatherReferenceProbe,
 } from "./ground-glass-webgpu-aperture-gather-cases";
+import {
+  createSourceToGatherPixelCenterLookup,
+  estimateGatherTargetMemory,
+  gatherTexelAtSourcePixelCenter,
+} from "./ground-glass-webgpu-gather-quality-cases";
 
 const WIDTH = APERTURE_GATHER_CASES.sourceWidthPx;
 const HEIGHT = APERTURE_GATHER_CASES.sourceHeightPx;
+const phaseGStudyEnabled = new URLSearchParams(window.location.search).get("phaseG") === "1";
 const CHANGE_EVENT = "ground-glass-webgpu-aperture-gather-change";
 const GOLDEN_ANGLE = APERTURE_GATHER_CASES.goldenAngleRad;
 type FailureStage = "physical-coc" | "far-gather" | "near-gather" | "composite" | "readback";
-type QualityMode = "standard" | "low" | "stress-64";
+type QualityMode = "standard" | "low" | "stress-64" | "study";
+type StudyScene = "phase-f-controlled" | "architecture-rise-geometry-proxy" | "interior-corner-geometry-proxy";
+type StageTiming = {
+  stage: string;
+  cpuSubmissionTimeMs: number;
+  observedQueueCompletionMs: number | null;
+  queueWaitAfterSubmissionMs: number | null;
+};
+type OperationTiming = {
+  operationWallTimeMs: number;
+  readbackWallTimeMs: number | null;
+  renderTargetResizeWallTimeMs: number;
+  stages: StageTiming[];
+  gpuTimestampDurationMs: null;
+};
 type ResourceEvidence = {
   id: string;
   role: string;
@@ -69,6 +99,7 @@ type OperationEvidence = {
   readbackStarted: boolean;
   readbackOutcome: "not-started" | "pending" | "succeeded" | "failed";
   error: string | null;
+  timing: OperationTiming | null;
 };
 type FixtureHandleEvidence = {
   instanceId: string;
@@ -98,6 +129,8 @@ type FixtureHandleEvidence = {
     quality: QualityMode;
     sampleCount: number;
     maximumCoCRadiusPx: number;
+    gatherScale: number;
+    scene: StudyScene;
   } | null;
   formats: Record<string, { requested: string; actual: string | null }> | null;
   passes: Array<{ id: string; state: "completed" | "failed"; error: string | null }>;
@@ -113,6 +146,15 @@ type FixtureHandleEvidence = {
     nearRedSpreadOutsideSharpPixelCount: number;
     nearBlueBackgroundLeakPixelCount: number;
     farRedForegroundLeakPixelCount: number;
+    farRedForegroundLeakEnergy: number;
+    farNativeTargetRedForegroundLeakPixelCount: number;
+    farNativeTargetRedForegroundLeakEnergy: number;
+    compositeRedForegroundLeakPixelCount: number;
+    compositeRedForegroundLeakEnergy: number;
+    blueBackgroundPixelCount: number;
+    farRedForegroundLeakFraction: number;
+    meanFarLeakDistanceToForegroundPx: number;
+    maximumFarLeakDistanceToForegroundPx: number;
     nonzeroNearAlphaPixels: number;
     validPhysicalPixelCount: number;
     noDepthPixelCount: number;
@@ -170,6 +212,21 @@ type FixtureHandleEvidence = {
     };
   };
   operations: OperationEvidence[];
+  targetResizeCount: number;
+  sceneProvenance: {
+    scenarioId: StudyScene;
+    geometrySource: string;
+    placementAdaptation: "none" | "uniform-scale-and-recenter";
+    proxyScale: number;
+    canonicalOpticsReused: boolean;
+  } | null;
+  targetMemoryEstimate: {
+    sourcePixels: number;
+    gatherPixels: number;
+    estimatedBytes: number;
+    estimatedMiB: number;
+    includes: string[];
+  } | null;
   resources: ResourceEvidence[];
   error: string | null;
   cleanupError: string | null;
@@ -177,7 +234,20 @@ type FixtureHandleEvidence = {
 };
 type MountedHandle = {
   evidence: FixtureHandleEvidence;
-  render: (input?: { quality?: QualityMode; apertureFNumber?: number; filmTiltDeg?: number; focusOffsetMm?: number; crop?: boolean; forceUnresolved?: boolean }) => Promise<string>;
+  render: (input?: {
+    quality?: QualityMode;
+    apertureFNumber?: number;
+    filmTiltDeg?: number;
+    focusOffsetMm?: number;
+    crop?: boolean;
+    forceUnresolved?: boolean;
+    gatherScale?: number;
+    sampleCount?: number;
+    maximumCoCRadiusPx?: number;
+    sourceWidthPx?: number;
+    sourceHeightPx?: number;
+    scene?: StudyScene;
+  }) => Promise<string>;
   startHeldReadback: () => string;
   injectFailure: (stage: FailureStage) => Promise<string>;
   dispose: () => Promise<void>;
@@ -272,6 +342,11 @@ const makeBasis = (
 
 const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> => {
   const generation = store.nextGeneration++;
+  let sourceWidthPx: number = WIDTH;
+  let sourceHeightPx: number = HEIGHT;
+  let currentStudyScene: StudyScene = "phase-f-controlled";
+  let architectureProxyScale = 0;
+  let interiorProxyScale = 0;
   const evidence: FixtureHandleEvidence = {
     instanceId: `aperture-g${generation}-${crypto.randomUUID()}`,
     generation,
@@ -286,6 +361,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     unresolvedSample: null,
     sampleDiagnostics: null,
     operations: [],
+    targetResizeCount: 0,
+    sceneProvenance: null,
+    targetMemoryEstimate: null,
     resources: [],
     error: null,
     cleanupError: null,
@@ -345,6 +423,39 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       register(`${evidence.instanceId}:${object.id}:material`, "owned-scene-material", () => object.material.dispose());
     }
 
+    let architectureProxy: THREE.Group | null = null;
+    let interiorProxy: THREE.Group | null = null;
+    if (phaseGStudyEnabled) {
+      architectureProxy = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
+      architectureProxy.visible = false;
+      architectureProxy.updateMatrixWorld(true);
+      const architectureBounds = new THREE.Box3().setFromObject(architectureProxy);
+      const architectureSize = architectureBounds.getSize(new THREE.Vector3());
+      const architectureCenter = architectureBounds.getCenter(new THREE.Vector3());
+      architectureProxyScale = Math.min(0.58 / architectureSize.x, 0.42 / architectureSize.y, 0.58 / architectureSize.z);
+      architectureProxy.scale.setScalar(architectureProxyScale);
+      architectureProxy.position.set(-architectureCenter.x * architectureProxyScale, -architectureCenter.y * architectureProxyScale, 0.58 - architectureCenter.z * architectureProxyScale);
+      scene.add(architectureProxy);
+      register(`${evidence.instanceId}:architecture-rise-geometry-proxy`, "owned-canonical-architecture-rise-geometry-proxy", () => disposeArchitectureRiseGroup(architectureProxy!));
+
+      interiorProxy = createInteriorCornerGroup({ presentation: INTERIOR_CORNER_PRESENTATION });
+      interiorProxy.visible = false;
+      interiorProxy.updateMatrixWorld(true);
+      const interiorBounds = new THREE.Box3().setFromObject(interiorProxy);
+      const interiorSize = interiorBounds.getSize(new THREE.Vector3());
+      const interiorCenter = interiorBounds.getCenter(new THREE.Vector3());
+      interiorProxyScale = Math.min(0.58 / interiorSize.x, 0.42 / interiorSize.y, 0.58 / interiorSize.z);
+      interiorProxy.scale.setScalar(interiorProxyScale);
+      interiorProxy.position.set(-interiorCenter.x * interiorProxyScale, -interiorCenter.y * interiorProxyScale, 0.58 - interiorCenter.z * interiorProxyScale);
+      scene.add(interiorProxy);
+      register(`${evidence.instanceId}:interior-corner-geometry-proxy`, "owned-canonical-interior-corner-geometry-proxy", () => disposeInteriorCornerGroup(interiorProxy!));
+
+      const studyAmbient = new THREE.AmbientLight(0xffffff, 1.3);
+      const studyKey = new THREE.DirectionalLight(0xffffff, 2.2);
+      studyKey.position.set(-1, 2, -1);
+      scene.add(studyAmbient, studyKey);
+    }
+
     const camera = new THREE.PerspectiveCamera(40, WIDTH / HEIGHT, 0.01, 2);
     camera.position.set(0, 0, -0.12);
     camera.lookAt(0, 0, 0.5);
@@ -381,6 +492,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     const sampledFilmWidthMm = uniform(APERTURE_GATHER_CASES.fullFilmWidthMm);
     const sampledFilmHeightMm = uniform(APERTURE_GATHER_CASES.fullFilmHeightMm);
     const forceUnresolvedMask = uniform(0);
+    const sourceWidthUniform = uniform(WIDTH);
+    const sourceHeightUniform = uniform(HEIGHT);
 
     const sourceUvTop = vec2(uv().x, uv().y.oneMinus());
     const sampledDepth = texture(sourceTarget.depthTexture!, sourceUvTop).r;
@@ -523,12 +636,12 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       const safeFilmWidthMm = max(sampledFilmWidthMm, 1e-6);
       const safeFilmHeightMm = max(sampledFilmHeightMm, 1e-6);
       const major = vec2(
-        cos(angle).mul(physical.g).mul(WIDTH).div(safeFilmWidthMm),
-        sin(angle).mul(-1).mul(physical.g).mul(HEIGHT).div(safeFilmHeightMm),
+        cos(angle).mul(physical.g).mul(sourceWidthUniform).div(safeFilmWidthMm),
+        sin(angle).mul(-1).mul(physical.g).mul(sourceHeightUniform).div(safeFilmHeightMm),
       );
       const minor = vec2(
-        sin(angle).mul(-1).mul(physical.b).mul(WIDTH).div(safeFilmWidthMm),
-        cos(angle).mul(-1).mul(physical.b).mul(HEIGHT).div(safeFilmHeightMm),
+        sin(angle).mul(-1).mul(physical.b).mul(sourceWidthUniform).div(safeFilmWidthMm),
+        cos(angle).mul(-1).mul(physical.b).mul(sourceHeightUniform).div(safeFilmHeightMm),
       );
       const gramA = dot(major, major);
       const gramB = dot(minor, minor);
@@ -615,7 +728,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const disk = radial.mul(vec2(cos(angle), sin(angle)));
             const offsetPx = centerMajor.mul(disk.x).add(centerMinor.mul(disk.y));
             const sampleUv = clamp(
-              sourceUv.add(vec2(offsetPx.x.div(WIDTH), offsetPx.y.div(HEIGHT))),
+              sourceUv.add(vec2(offsetPx.x.div(sourceWidthUniform), offsetPx.y.div(sourceHeightUniform))),
               vec2(0),
               vec2(1),
             );
@@ -649,7 +762,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           const disk = radial.mul(vec2(cos(angle), sin(angle)));
           const proposalOffsetPx = disk.mul(maximumRadiusPx);
           const sampleUv = clamp(
-            sourceUv.add(vec2(proposalOffsetPx.x.div(WIDTH), proposalOffsetPx.y.div(HEIGHT))),
+            sourceUv.add(vec2(proposalOffsetPx.x.div(sourceWidthUniform), proposalOffsetPx.y.div(sourceHeightUniform))),
             vec2(0),
             vec2(1),
           );
@@ -735,6 +848,24 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       evidence.passes.push({ id, state: error ? "failed" : "completed", error: error ? errorMessage(error) : null });
       signal();
     };
+    const waitForPassCompletion = async (
+      id: string,
+      startedAt: number,
+      submittedAt: number,
+      stageTimings: StageTiming[],
+    ) => {
+      const queue = backend.device?.queue;
+      if (queue) await queue.onSubmittedWorkDone();
+      const completedAt = performance.now();
+      stageTimings.push({
+        stage: id,
+        cpuSubmissionTimeMs: submittedAt - startedAt,
+        observedQueueCompletionMs: queue ? completedAt - startedAt : null,
+        queueWaitAfterSubmissionMs: queue ? completedAt - submittedAt : null,
+      });
+      recordPass(id);
+      return completedAt;
+    };
     const renderScene = () => {
       renderer.setRenderTarget(sourceTarget);
       renderer.setClearColor(0x000000, 1);
@@ -753,12 +884,16 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       renderer.clear(true, false, false);
       renderer.render(worldScene, postCamera);
     };
-    const qualitySettings = (mode: QualityMode) => {
+    const qualitySettings = (mode: QualityMode, input: {
+      gatherScale?: number;
+      sampleCount?: number;
+      maximumCoCRadiusPx?: number;
+    }) => {
       const profile = getRenderQualitySettings(mode === "low" ? "low" : "standard");
       return {
-        gatherScale: mode === "stress-64" ? 1 : profile.gatherScale,
-        sampleCount: mode === "stress-64" ? APERTURE_GATHER_CASES.maxApertureSamples : profile.sampleCount,
-        maximumCoCRadiusPx: Math.min(profile.maximumCoCRadiusPx, 12),
+        gatherScale: input.gatherScale ?? (mode === "stress-64" ? 1 : profile.gatherScale),
+        sampleCount: input.sampleCount ?? (mode === "stress-64" ? APERTURE_GATHER_CASES.maxApertureSamples : profile.sampleCount),
+        maximumCoCRadiusPx: input.maximumCoCRadiusPx ?? Math.min(profile.maximumCoCRadiusPx, 12),
       };
     };
     let currentApertureFNumber: number = APERTURE_GATHER_CASES.apertureFNumber;
@@ -773,6 +908,12 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       focusOffsetMm?: number;
       crop?: boolean;
       forceUnresolved?: boolean;
+      gatherScale?: number;
+      sampleCount?: number;
+      maximumCoCRadiusPx?: number;
+      sourceWidthPx?: number;
+      sourceHeightPx?: number;
+      scene?: StudyScene;
       holdReadback?: boolean;
       failureStage?: FailureStage;
     } = { operationKind: "render" }) => {
@@ -788,6 +929,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
         readbackStarted: false,
         readbackOutcome: "not-started",
         error: null,
+        timing: null,
       };
       evidence.operations.push(operation);
       signal();
@@ -801,17 +943,95 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
         }
         operation.state = "running";
         operation.stage = "scene-color-depth";
+        const operationStartedAt = performance.now();
+        const stageTimings: StageTiming[] = [];
+        let readbackWallTimeMs: number | null = null;
+        let renderTargetResizeWallTimeMs = 0;
         signal();
         try {
           evidence.passes = [];
-          const settings = qualitySettings(input.quality ?? "standard");
+          const settings = qualitySettings(input.quality ?? "standard", input);
+          if (![0.5, 1].includes(settings.gatherScale)
+              || !Number.isInteger(settings.sampleCount)
+              || settings.sampleCount < 1
+              || settings.sampleCount > APERTURE_GATHER_CASES.maxApertureSamples
+              || !Number.isFinite(settings.maximumCoCRadiusPx)
+              || settings.maximumCoCRadiusPx <= 0
+              || settings.maximumCoCRadiusPx > 64) {
+            throw new RangeError("Phase G gather settings are outside the bounded study matrix");
+          }
+          const previousSourceSize = `${sourceWidthPx}x${sourceHeightPx}`;
+          sourceWidthPx = input.sourceWidthPx ?? sourceWidthPx;
+          sourceHeightPx = input.sourceHeightPx ?? sourceHeightPx;
+          if (!Number.isInteger(sourceWidthPx) || !Number.isInteger(sourceHeightPx)
+              || sourceWidthPx < WIDTH || sourceHeightPx < HEIGHT
+              || sourceWidthPx > 512 || sourceHeightPx > 384
+              || sourceWidthPx / sourceHeightPx !== WIDTH / HEIGHT) {
+            throw new RangeError("Phase G source dimensions must be 4:3 integer sizes from 128×96 through 512×384");
+          }
+          currentStudyScene = input.scene ?? currentStudyScene;
+          const controlledSceneVisible = currentStudyScene === "phase-f-controlled";
+          for (const object of sceneObjects) object.mesh.visible = controlledSceneVisible;
+          if (architectureProxy) architectureProxy.visible = currentStudyScene === "architecture-rise-geometry-proxy";
+          if (interiorProxy) interiorProxy.visible = currentStudyScene === "interior-corner-geometry-proxy";
+          evidence.sceneProvenance = currentStudyScene === "phase-f-controlled"
+            ? { scenarioId: currentStudyScene, geometrySource: "Phase F four-plane controlled scene", placementAdaptation: "none", proxyScale: 1, canonicalOpticsReused: false }
+            : currentStudyScene === "architecture-rise-geometry-proxy"
+              ? { scenarioId: currentStudyScene, geometrySource: "createArchitectureRiseGroup + ARCHITECTURE_RISE_PRESENTATION", placementAdaptation: "uniform-scale-and-recenter", proxyScale: architectureProxyScale, canonicalOpticsReused: false }
+              : { scenarioId: currentStudyScene, geometrySource: "createInteriorCornerGroup + INTERIOR_CORNER_PRESENTATION", placementAdaptation: "uniform-scale-and-recenter", proxyScale: interiorProxyScale, canonicalOpticsReused: false };
+          const resizeStartedAt = performance.now();
+          const setTargetSize = (target: THREE.RenderTarget, width: number, height: number) => {
+            if (target.width === width && target.height === height) return;
+            target.setSize(width, height);
+            evidence.targetResizeCount += 1;
+          };
+          if (previousSourceSize !== `${sourceWidthPx}x${sourceHeightPx}`) {
+            renderer.setSize(sourceWidthPx, sourceHeightPx, false);
+            setTargetSize(sourceTarget, sourceWidthPx, sourceHeightPx);
+            setTargetSize(cocTarget, sourceWidthPx, sourceHeightPx);
+            setTargetSize(validityTarget, sourceWidthPx, sourceHeightPx);
+            setTargetSize(worldTarget, sourceWidthPx, sourceHeightPx);
+            setTargetSize(gatherRadiusDiagnosticsTarget, sourceWidthPx, sourceHeightPx);
+            setTargetSize(compositeTarget, sourceWidthPx, sourceHeightPx);
+            sourceWidthUniform.value = sourceWidthPx;
+            sourceHeightUniform.value = sourceHeightPx;
+          }
+          const gatherWidth = Math.max(1, Math.floor(sourceWidthPx * settings.gatherScale));
+          const gatherHeight = Math.max(1, Math.floor(sourceHeightPx * settings.gatherScale));
+          setTargetSize(farTarget, gatherWidth, gatherHeight);
+          setTargetSize(nearTarget, gatherWidth, gatherHeight);
+          renderTargetResizeWallTimeMs = performance.now() - resizeStartedAt;
+          const memoryEstimate = estimateGatherTargetMemory(
+            { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+            { widthPx: gatherWidth, heightPx: gatherHeight },
+          );
+          evidence.targetMemoryEstimate = {
+            ...memoryEstimate,
+            includes: [
+              "source RGBA16F color",
+              "depth estimate at 4 bytes per pixel",
+              "physical RGBA16F CoC/ellipse",
+              "RGBA8 validity",
+              "RGBA32F world-position diagnostic",
+              "RGBA16F gather-radius diagnostic",
+              "RGBA16F composite",
+              "RGBA16F far and near gather targets",
+            ],
+          };
           if (input.apertureFNumber !== undefined) currentApertureFNumber = input.apertureFNumber;
           if (input.filmTiltDeg !== undefined) currentFilmTiltDeg = input.filmTiltDeg;
           if (input.focusOffsetMm !== undefined) currentFocusOffsetMm = input.focusOffsetMm;
           if (input.crop !== undefined) currentCrop = input.crop;
           const crop = currentCrop;
           camera.clearViewOffset();
-          if (crop) camera.setViewOffset(WIDTH, HEIGHT, 40, 22, WIDTH / 4, HEIGHT / 4);
+          if (crop) camera.setViewOffset(
+            sourceWidthPx,
+            sourceHeightPx,
+            sourceWidthPx * 40 / WIDTH,
+            sourceHeightPx * 22 / HEIGHT,
+            sourceWidthPx / 4,
+            sourceHeightPx / 4,
+          );
           camera.coordinateSystem = renderer.coordinateSystem;
           camera.updateProjectionMatrix();
           camera.updateMatrixWorld(true);
@@ -833,74 +1053,76 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           filmBasisYInput.value.set(0, Math.cos(tilt), Math.sin(tilt));
           maximumRadiusPx.value = settings.maximumCoCRadiusPx;
           sampleCount.value = settings.sampleCount;
+          let stageStartedAt = performance.now();
           renderScene();
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("scene-color-depth");
+          let stageSubmittedAt = performance.now();
+          await waitForPassCompletion("scene-color-depth", stageStartedAt, stageSubmittedAt, stageTimings);
           operation.stage = "physical-coc";
+          stageStartedAt = performance.now();
           renderer.setRenderTarget(cocTarget);
           renderPhysical();
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("physical-coc-and-validity");
+          stageSubmittedAt = performance.now();
+          await waitForPassCompletion("physical-coc-and-validity", stageStartedAt, stageSubmittedAt, stageTimings);
           failAt(input.failureStage, "physical-coc");
           operation.stage = "gather-radius-diagnostics";
+          stageStartedAt = performance.now();
           renderer.setRenderTarget(gatherRadiusDiagnosticsTarget);
-          renderer.setViewport(0, 0, WIDTH, HEIGHT);
+          renderer.setViewport(0, 0, sourceWidthPx, sourceHeightPx);
           renderer.setScissorTest(false);
           renderer.clear(true, false, false);
           renderer.render(gatherRadiusDiagnosticsScene, postCamera);
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("gather-radius-diagnostics");
+          stageSubmittedAt = performance.now();
+          await waitForPassCompletion("gather-radius-diagnostics", stageStartedAt, stageSubmittedAt, stageTimings);
           operation.stage = "far-gather";
-          farTarget.setSize(
-            Math.max(1, Math.floor(WIDTH * settings.gatherScale)),
-            Math.max(1, Math.floor(HEIGHT * settings.gatherScale)),
-          );
-          nearTarget.setSize(farTarget.width, farTarget.height);
+          stageStartedAt = performance.now();
           renderer.setRenderTarget(farTarget);
           renderer.setViewport(0, 0, farTarget.width, farTarget.height);
           renderer.setScissorTest(false);
           renderer.clear(true, false, false);
           renderer.render(farScene, postCamera);
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("far-gather");
+          stageSubmittedAt = performance.now();
+          await waitForPassCompletion("far-gather", stageStartedAt, stageSubmittedAt, stageTimings);
           failAt(input.failureStage, "far-gather");
           operation.stage = "near-gather";
+          stageStartedAt = performance.now();
           renderer.setRenderTarget(nearTarget);
           renderer.setViewport(0, 0, nearTarget.width, nearTarget.height);
           renderer.clear(true, false, false);
           renderer.render(nearScene, postCamera);
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("near-gather");
+          stageSubmittedAt = performance.now();
+          await waitForPassCompletion("near-gather", stageStartedAt, stageSubmittedAt, stageTimings);
           failAt(input.failureStage, "near-gather");
           operation.stage = "research-composite";
-          compositeTarget.setSize(WIDTH, HEIGHT);
+          stageStartedAt = performance.now();
           renderer.setRenderTarget(compositeTarget);
-          renderer.setViewport(0, 0, WIDTH, HEIGHT);
+          renderer.setViewport(0, 0, sourceWidthPx, sourceHeightPx);
           renderer.clear(true, false, false);
           renderer.render(compositeScene, postCamera);
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("research-composite");
+          stageSubmittedAt = performance.now();
+          await waitForPassCompletion("research-composite", stageStartedAt, stageSubmittedAt, stageTimings);
           failAt(input.failureStage, "composite");
           operation.stage = "display-pass";
+          stageStartedAt = performance.now();
           renderer.setRenderTarget(null);
-          renderer.setViewport(0, 0, WIDTH, HEIGHT);
+          renderer.setViewport(0, 0, sourceWidthPx, sourceHeightPx);
           renderer.clear(true, false, false);
           renderer.render(displayScene, postCamera);
-          await backend.device?.queue.onSubmittedWorkDone();
-          recordPass("display-pass");
+          stageSubmittedAt = performance.now();
+          await waitForPassCompletion("display-pass", stageStartedAt, stageSubmittedAt, stageTimings);
           failAt(input.failureStage, "readback");
           operation.stage = "native-readback";
           operation.readbackStarted = true;
           operation.readbackOutcome = "pending";
           signal();
-          const colorPromise = renderer.readRenderTargetPixelsAsync(sourceTarget, 0, 0, WIDTH, HEIGHT);
-          const physicalPromise = renderer.readRenderTargetPixelsAsync(cocTarget, 0, 0, WIDTH, HEIGHT);
-          const validityPromise = renderer.readRenderTargetPixelsAsync(validityTarget, 0, 0, WIDTH, HEIGHT);
+          const readbackStartedAt = performance.now();
+          const colorPromise = renderer.readRenderTargetPixelsAsync(sourceTarget, 0, 0, sourceWidthPx, sourceHeightPx);
+          const physicalPromise = renderer.readRenderTargetPixelsAsync(cocTarget, 0, 0, sourceWidthPx, sourceHeightPx);
+          const validityPromise = renderer.readRenderTargetPixelsAsync(validityTarget, 0, 0, sourceWidthPx, sourceHeightPx);
           const farPromise = renderer.readRenderTargetPixelsAsync(farTarget, 0, 0, farTarget.width, farTarget.height);
           const nearPromise = renderer.readRenderTargetPixelsAsync(nearTarget, 0, 0, nearTarget.width, nearTarget.height);
-          const compositePromise = renderer.readRenderTargetPixelsAsync(compositeTarget, 0, 0, WIDTH, HEIGHT);
-          const worldPromise = renderer.readRenderTargetPixelsAsync(worldTarget, 0, 0, WIDTH, HEIGHT);
-          const gatherRadiusDiagnosticsPromise = renderer.readRenderTargetPixelsAsync(gatherRadiusDiagnosticsTarget, 0, 0, WIDTH, HEIGHT);
+          const compositePromise = renderer.readRenderTargetPixelsAsync(compositeTarget, 0, 0, sourceWidthPx, sourceHeightPx);
+          const worldPromise = renderer.readRenderTargetPixelsAsync(worldTarget, 0, 0, sourceWidthPx, sourceHeightPx);
+          const gatherRadiusDiagnosticsPromise = renderer.readRenderTargetPixelsAsync(gatherRadiusDiagnosticsTarget, 0, 0, sourceWidthPx, sourceHeightPx);
           let releaseHeld: (() => void) | null = null;
           const gate = input.holdReadback
             ? new Promise<void>((resolve) => { releaseHeld = resolve; store.releaseReadback = resolve; })
@@ -915,6 +1137,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             worldPromise,
             gatherRadiusDiagnosticsPromise,
           ]);
+          readbackWallTimeMs = performance.now() - readbackStartedAt;
           if (releaseHeld && retired) {
             operation.readbackOutcome = "succeeded";
             operation.state = "retired";
@@ -956,10 +1179,20 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           let nearRedSpreadOutsideSharpPixelCount = 0;
           let nearBlueBackgroundLeakPixelCount = 0;
           let farRedForegroundLeakPixelCount = 0;
+          let compositeRedForegroundLeakPixelCount = 0;
+          let compositeRedForegroundLeakEnergy = 0;
+          let blueBackgroundPixelCount = 0;
+          const foregroundMask = new Uint8Array(sourceWidthPx * sourceHeightPx);
+          const farLeakMask = new Uint8Array(sourceWidthPx * sourceHeightPx);
+          let farLeakEnergy = 0;
           let farReferenceProbeIndex: number | null = null;
           let nearReferenceProbeIndex: number | null = null;
+          const gatherLookup = createSourceToGatherPixelCenterLookup(
+            { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+            { widthPx: farTarget.width, heightPx: farTarget.height },
+          );
           let unresolvedSampleIndex: number | null = null;
-          for (let index = 0; index < WIDTH * HEIGHT; index += 1) {
+          for (let index = 0; index < sourceWidthPx * sourceHeightPx; index += 1) {
             const offset = index * 4;
             const code = validityReadback[offset] ?? 0;
             const cocMm = half(physicalReadback, offset);
@@ -977,11 +1210,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               unresolvedSampleIndex ??= index;
             }
             else invalidPhysicalPixelCount += 1;
-            const sourceX = index % WIDTH;
-            const sourceY = Math.floor(index / WIDTH);
-            const gatherXFar = Math.min(farTarget.width - 1, Math.floor((sourceX + 0.5) * farTarget.width / WIDTH));
-            const gatherYFar = Math.min(farTarget.height - 1, Math.floor((sourceY + 0.5) * farTarget.height / HEIGHT));
-            const farOffset = (gatherYFar * farTarget.width + gatherXFar) * 4;
+            const sourceX = index % sourceWidthPx;
+            const sourceY = Math.floor(index / sourceWidthPx);
+            const farOffset = (gatherLookup.y[sourceY]! * farTarget.width + gatherLookup.x[sourceX]!) * 4;
             const sourceR = half(colorReadback, offset);
             const sourceG = half(colorReadback, offset + 1);
             const sourceB = half(colorReadback, offset + 2);
@@ -989,6 +1220,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const farG = half(farReadback, farOffset + 1);
             const farB = half(farReadback, farOffset + 2);
             const sourceIsBlue = sourceB > 0.5 && sourceR < 0.15 && sourceG < 0.2;
+            const sourceIsForegroundRed = red(sourceR, sourceG, sourceB);
+            foregroundMask[index] = sourceIsForegroundRed ? 1 : 0;
+            if (sourceIsBlue) blueBackgroundPixelCount += 1;
             const yellowSignal = Math.max(
               0,
               (farR - 0.025) * 0.925 + (farG - 0.08) * 0.54 + (farB - 0.85) * -0.825,
@@ -998,14 +1232,23 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               farYellowSignalOutsideBlueEnergy += yellowSignal;
               farReferenceProbeIndex ??= index;
             }
-            const gatherXNear = Math.min(nearTarget.width - 1, Math.floor((sourceX + 0.5) * nearTarget.width / WIDTH));
-            const gatherYNear = Math.min(nearTarget.height - 1, Math.floor((sourceY + 0.5) * nearTarget.height / HEIGHT));
-            const nearOffset = (gatherYNear * nearTarget.width + gatherXNear) * 4;
+            const nearOffset = (gatherLookup.y[sourceY]! * nearTarget.width + gatherLookup.x[sourceX]!) * 4;
             const nearR = half(nearReadback, nearOffset);
             const nearG = half(nearReadback, nearOffset + 1);
             const nearB = half(nearReadback, nearOffset + 2);
             const nearA = half(nearReadback, nearOffset + 3);
-            if (sourceIsBlue && red(farR, farG, farB)) farRedForegroundLeakPixelCount += 1;
+            if (sourceIsBlue && red(farR, farG, farB)) {
+              farRedForegroundLeakPixelCount += 1;
+              farLeakMask[index] = 1;
+              farLeakEnergy += Math.max(0, farR - sourceR);
+            }
+            const compositeR = half(compositeReadback, offset);
+            const compositeG = half(compositeReadback, offset + 1);
+            const compositeB = half(compositeReadback, offset + 2);
+            if (sourceIsBlue && red(compositeR, compositeG, compositeB)) {
+              compositeRedForegroundLeakPixelCount += 1;
+              compositeRedForegroundLeakEnergy += Math.max(0, compositeR - sourceR);
+            }
             if (sourceIsBlue && nearA > 0.02 && nearB > 0.5 && nearR < 0.15 && nearG < 0.2) {
               nearBlueBackgroundLeakPixelCount += 1;
             }
@@ -1016,27 +1259,75 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               nearReferenceProbeIndex ??= index;
             }
           }
+          const distanceToForeground = new Uint32Array(sourceWidthPx * sourceHeightPx);
+          distanceToForeground.fill(0xffffffff);
+          for (let index = 0; index < foregroundMask.length; index += 1) {
+            if (foregroundMask[index] === 1) distanceToForeground[index] = 0;
+          }
+          for (let y = 0; y < sourceHeightPx; y += 1) {
+            for (let x = 0; x < sourceWidthPx; x += 1) {
+              const index = y * sourceWidthPx + x;
+              if (x > 0) distanceToForeground[index] = Math.min(distanceToForeground[index]!, distanceToForeground[index - 1]! + 1);
+              if (y > 0) distanceToForeground[index] = Math.min(distanceToForeground[index]!, distanceToForeground[index - sourceWidthPx]! + 1);
+            }
+          }
+          let farLeakDistanceSum = 0;
+          let maximumFarLeakDistanceToForegroundPx = 0;
+          for (let y = sourceHeightPx - 1; y >= 0; y -= 1) {
+            for (let x = sourceWidthPx - 1; x >= 0; x -= 1) {
+              const index = y * sourceWidthPx + x;
+              if (x + 1 < sourceWidthPx) distanceToForeground[index] = Math.min(distanceToForeground[index]!, distanceToForeground[index + 1]! + 1);
+              if (y + 1 < sourceHeightPx) distanceToForeground[index] = Math.min(distanceToForeground[index]!, distanceToForeground[index + sourceWidthPx]! + 1);
+              if (farLeakMask[index] === 1) {
+                farLeakDistanceSum += distanceToForeground[index]!;
+                maximumFarLeakDistanceToForegroundPx = Math.max(maximumFarLeakDistanceToForegroundPx, distanceToForeground[index]!);
+              }
+            }
+          }
+          let farNativeTargetRedForegroundLeakPixelCount = 0;
+          let farNativeTargetRedForegroundLeakEnergy = 0;
+          for (let y = 0; y < farTarget.height; y += 1) {
+            for (let x = 0; x < farTarget.width; x += 1) {
+              const sourceX = Math.min(sourceWidthPx - 1, Math.floor((x + 0.5) * sourceWidthPx / farTarget.width));
+              const sourceY = Math.min(sourceHeightPx - 1, Math.floor((y + 0.5) * sourceHeightPx / farTarget.height));
+              const sourceOffset = (sourceY * sourceWidthPx + sourceX) * 4;
+              const farOffset = (y * farTarget.width + x) * 4;
+              const sourceColor = [
+                half(colorReadback, sourceOffset),
+                half(colorReadback, sourceOffset + 1),
+                half(colorReadback, sourceOffset + 2),
+              ];
+              const farColor = [half(farReadback, farOffset), half(farReadback, farOffset + 1), half(farReadback, farOffset + 2)];
+              if (sourceColor[2]! > 0.5 && sourceColor[0]! < 0.15 && sourceColor[1]! < 0.2
+                  && red(farColor[0]!, farColor[1]!, farColor[2]!)) {
+                farNativeTargetRedForegroundLeakPixelCount += 1;
+                farNativeTargetRedForegroundLeakEnergy += Math.max(0, farColor[0]! - sourceColor[0]!);
+              }
+            }
+          }
           for (let offset = 3; offset < nearReadback.length; offset += 4) {
             if (half(nearReadback, offset) > 0.02) nonzeroNearAlphaPixels += 1;
           }
-          const quality = qualitySettings(input.quality ?? "standard");
+          const quality = settings;
           evidence.dimensions = {
-            sourceWidthPx: WIDTH,
-            sourceHeightPx: HEIGHT,
-            physicalCocWidthPx: WIDTH,
-            physicalCocHeightPx: HEIGHT,
+            sourceWidthPx,
+            sourceHeightPx,
+            physicalCocWidthPx: sourceWidthPx,
+            physicalCocHeightPx: sourceHeightPx,
             farGatherWidthPx: farTarget.width,
             farGatherHeightPx: farTarget.height,
             nearGatherWidthPx: nearTarget.width,
             nearGatherHeightPx: nearTarget.height,
-            compositeWidthPx: WIDTH,
-            compositeHeightPx: HEIGHT,
+            compositeWidthPx: sourceWidthPx,
+            compositeHeightPx: sourceHeightPx,
             sampledFilmWidthMm: sampledFilmWidthMm.value,
             sampledFilmHeightMm: sampledFilmHeightMm.value,
             focusOffsetMm: currentFocusOffsetMm,
             quality: input.quality ?? "standard",
             sampleCount: quality.sampleCount,
             maximumCoCRadiusPx: quality.maximumCoCRadiusPx,
+            gatherScale: quality.gatherScale,
+            scene: currentStudyScene,
           };
           evidence.metrics = {
             rawRedPixelCount,
@@ -1050,6 +1341,15 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             nearRedSpreadOutsideSharpPixelCount,
             nearBlueBackgroundLeakPixelCount,
             farRedForegroundLeakPixelCount,
+            farRedForegroundLeakEnergy: farLeakEnergy,
+            farNativeTargetRedForegroundLeakPixelCount,
+            farNativeTargetRedForegroundLeakEnergy,
+            compositeRedForegroundLeakPixelCount,
+            compositeRedForegroundLeakEnergy,
+            blueBackgroundPixelCount,
+            farRedForegroundLeakFraction: blueBackgroundPixelCount > 0 ? farRedForegroundLeakPixelCount / blueBackgroundPixelCount : 0,
+            meanFarLeakDistanceToForegroundPx: farRedForegroundLeakPixelCount > 0 ? farLeakDistanceSum / farRedForegroundLeakPixelCount : 0,
+            maximumFarLeakDistanceToForegroundPx,
             nonzeroNearAlphaPixels,
             validPhysicalPixelCount,
             noDepthPixelCount,
@@ -1067,14 +1367,12 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           ];
           evidence.pointProbes = objectDefinitions.map((definition) => {
             const ndc = new THREE.Vector3(...definition.worldPointM).project(camera);
-            const x = Math.max(0, Math.min(WIDTH - 1, Math.floor((ndc.x + 1) * 0.5 * WIDTH)));
-            const y = Math.max(0, Math.min(HEIGHT - 1, Math.floor((1 - ndc.y) * 0.5 * HEIGHT)));
+            const x = Math.max(0, Math.min(sourceWidthPx - 1, Math.floor((ndc.x + 1) * 0.5 * sourceWidthPx)));
+            const y = Math.max(0, Math.min(sourceHeightPx - 1, Math.floor((1 - ndc.y) * 0.5 * sourceHeightPx)));
             const read = (readbackY: number) => {
-              const index = readbackY * WIDTH + x;
+              const index = readbackY * sourceWidthPx + x;
               const offset = index * 4;
-              const gatherX = Math.min(farTarget.width - 1, Math.floor((x + 0.5) * farTarget.width / WIDTH));
-              const gatherY = Math.min(farTarget.height - 1, Math.floor((readbackY + 0.5) * farTarget.height / HEIGHT));
-              const gatherOffset = (gatherY * farTarget.width + gatherX) * 4;
+              const gatherOffset = (gatherLookup.y[readbackY]! * farTarget.width + gatherLookup.x[x]!) * 4;
               return {
                 gpuDepth: worldReadback[offset + 3]!,
                 worldPositionMm: [worldReadback[offset]!, worldReadback[offset + 1]!, worldReadback[offset + 2]!] as [number, number, number],
@@ -1087,13 +1385,13 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               };
             };
             const top = read(y);
-            const bottom = read(HEIGHT - 1 - y);
+            const bottom = read(sourceHeightPx - 1 - y);
             const expectedPointMm = new THREE.Vector3(...definition.worldPointM).multiplyScalar(1000);
             const topErrorMm = new THREE.Vector3(...top.worldPositionMm).distanceTo(expectedPointMm);
             const bottomErrorMm = new THREE.Vector3(...bottom.worldPositionMm).distanceTo(expectedPointMm);
             const selected = topErrorMm <= bottomErrorMm
               ? { value: top, row: y, origin: "top" as const, errorMm: topErrorMm }
-              : { value: bottom, row: HEIGHT - 1 - y, origin: "bottom" as const, errorMm: bottomErrorMm };
+              : { value: bottom, row: sourceHeightPx - 1 - y, origin: "bottom" as const, errorMm: bottomErrorMm };
             return {
               id: definition.id,
               worldPointM: definition.worldPointM,
@@ -1109,14 +1407,14 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             layer: "far" | "near",
             readbackIndex: number | null,
           ): GatherReferenceProbe | null => {
-            if (readbackIndex === null || farTarget.width !== WIDTH || nearTarget.width !== WIDTH) return null;
-            const readbackY = Math.floor(readbackIndex / WIDTH);
-            const x = readbackIndex % WIDTH;
-            const y = readbackOrigin === "top" ? readbackY : HEIGHT - 1 - readbackY;
+            if (readbackIndex === null || farTarget.width !== sourceWidthPx || nearTarget.width !== sourceWidthPx) return null;
+            const readbackY = Math.floor(readbackIndex / sourceWidthPx);
+            const x = readbackIndex % sourceWidthPx;
+            const y = readbackOrigin === "top" ? readbackY : sourceHeightPx - 1 - readbackY;
             const left = Math.max(0, x - patchRadius);
             const top = Math.max(0, y - patchRadius);
-            const right = Math.min(WIDTH - 1, x + patchRadius);
-            const bottom = Math.min(HEIGHT - 1, y + patchRadius);
+            const right = Math.min(sourceWidthPx - 1, x + patchRadius);
+            const bottom = Math.min(sourceHeightPx - 1, y + patchRadius);
             const patchWidth = right - left + 1;
             const patchHeight = bottom - top + 1;
             const colors: Array<[number, number, number]> = [];
@@ -1124,9 +1422,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const validity: number[] = [];
             const worldAndDepth: Array<[number, number, number, number]> = [];
             for (let patchY = top; patchY <= bottom; patchY += 1) {
-              const sourceReadbackY = readbackOrigin === "top" ? patchY : HEIGHT - 1 - patchY;
+              const sourceReadbackY = readbackOrigin === "top" ? patchY : sourceHeightPx - 1 - patchY;
               for (let patchX = left; patchX <= right; patchX += 1) {
-                const index = sourceReadbackY * WIDTH + patchX;
+                const index = sourceReadbackY * sourceWidthPx + patchX;
                 const offset = index * 4;
                 colors.push([
                   half(colorReadback, offset),
@@ -1149,13 +1447,13 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               }
             }
             const output = layer === "far" ? farReadback : nearReadback;
-            const outputY = readbackOrigin === "top" ? y : HEIGHT - 1 - y;
-            const outputOffset = (outputY * WIDTH + x) * 4;
+            const outputY = readbackOrigin === "top" ? y : sourceHeightPx - 1 - y;
+            const outputOffset = (outputY * sourceWidthPx + x) * 4;
             return {
               layer,
               x,
               y,
-              source: { widthPx: WIDTH, heightPx: HEIGHT },
+              source: { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
               film: { widthMm: sampledFilmWidthMm.value, heightMm: sampledFilmHeightMm.value },
               sampleCount: settings.sampleCount,
               maximumCoCRadiusPx: settings.maximumCoCRadiusPx,
@@ -1178,7 +1476,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             buildGatherReferenceProbe("near", nearReferenceProbeIndex),
           ].filter((probe): probe is GatherReferenceProbe => probe !== null);
           const diagnosticPixelReadbackIndex = farReferenceProbeIndex
-            ?? (Math.floor(HEIGHT / 2) * WIDTH + Math.floor(WIDTH / 2));
+            ?? (Math.floor(sourceHeightPx / 2) * sourceWidthPx + Math.floor(sourceWidthPx / 2));
           const diagnosticOffset = diagnosticPixelReadbackIndex * 4;
           const physicalMajorRadiusMm = half(physicalReadback, diagnosticOffset + 1);
           const physicalMinorRadiusMm = half(physicalReadback, diagnosticOffset + 2);
@@ -1188,7 +1486,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             physicalMinorRadiusMm,
             physicalOrientationRad,
             { widthMm: sampledFilmWidthMm.value, heightMm: sampledFilmHeightMm.value },
-            { widthPx: WIDTH, heightPx: HEIGHT },
+            { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
           );
           const cpuMaximumRadiusPx = maximumPixelEllipseRadius(physicalEllipse);
           const cpuClampedEllipse = clampPixelEllipse(physicalEllipse, quality.maximumCoCRadiusPx);
@@ -1219,12 +1517,18 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           };
           if (unresolvedSampleIndex !== null) {
             const offset = unresolvedSampleIndex * 4;
-            const readbackY = Math.floor(unresolvedSampleIndex / WIDTH);
-            const x = unresolvedSampleIndex % WIDTH;
-            const farX = Math.min(farTarget.width - 1, Math.floor((x + 0.5) * farTarget.width / WIDTH));
-            const farY = Math.min(farTarget.height - 1, Math.floor((readbackY + 0.5) * farTarget.height / HEIGHT));
-            const nearX = Math.min(nearTarget.width - 1, Math.floor((x + 0.5) * nearTarget.width / WIDTH));
-            const nearY = Math.min(nearTarget.height - 1, Math.floor((readbackY + 0.5) * nearTarget.height / HEIGHT));
+            const readbackY = Math.floor(unresolvedSampleIndex / sourceWidthPx);
+            const x = unresolvedSampleIndex % sourceWidthPx;
+            const [farX, farY] = gatherTexelAtSourcePixelCenter(
+              [x, readbackY],
+              { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+              { widthPx: farTarget.width, heightPx: farTarget.height },
+            );
+            const [nearX, nearY] = gatherTexelAtSourcePixelCenter(
+              [x, readbackY],
+              { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+              { widthPx: nearTarget.width, heightPx: nearTarget.height },
+            );
             const farOffset = (farY * farTarget.width + farX) * 4;
             const nearOffset = (nearY * nearTarget.width + nearX) * 4;
             evidence.unresolvedSample = {
@@ -1249,6 +1553,13 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           operation.resultPublished = true;
           operation.state = "completed";
           operation.completedAt = performance.now();
+          operation.timing = {
+            operationWallTimeMs: operation.completedAt - operationStartedAt,
+            readbackWallTimeMs,
+            renderTargetResizeWallTimeMs,
+            stages: [...stageTimings],
+            gpuTimestampDurationMs: null,
+          };
           signal();
         } catch (error) {
           operation.state = "failed";
@@ -1257,6 +1568,13 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           evidence.error = operation.error;
           if (operation.readbackStarted) operation.readbackOutcome = "failed";
           operation.completedAt = performance.now();
+          operation.timing = {
+            operationWallTimeMs: operation.completedAt - operationStartedAt,
+            readbackWallTimeMs,
+            renderTargetResizeWallTimeMs,
+            stages: [...stageTimings],
+            gpuTimestampDurationMs: null,
+          };
           signal();
         }
       };
@@ -1410,6 +1728,23 @@ const Experiment = () => {
           <button type="button" onClick={() => void handle?.injectFailure("near-gather")}>Fail after near gather</button>
           <button type="button" onClick={() => void handle?.injectFailure("composite")}>Fail after composite</button>
           <button type="button" onClick={() => void handle?.injectFailure("readback")}>Fail before readback</button>
+          {phaseGStudyEnabled && <fieldset data-testid="phase-g-controls">
+            <legend>Phase G independent study controls</legend>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 16 })}>Full gather × 16</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 32 })}>Full gather × 32</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 64 })}>Full gather × 64</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 0.5, sampleCount: 16 })}>Half gather × 16</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 0.5, sampleCount: 32 })}>Half gather × 32</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 0.5, sampleCount: 64 })}>Half gather × 64</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 60, sourceWidthPx: 128, sourceHeightPx: 96, crop: false })}>Source 128 × 96</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 60, sourceWidthPx: 256, sourceHeightPx: 192, crop: false })}>Source 256 × 192</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 60, sourceWidthPx: 512, sourceHeightPx: 384, crop: false })}>Source 512 × 384</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 64, sourceWidthPx: 512, sourceHeightPx: 384, crop: true, apertureFNumber: 2, maximumCoCRadiusPx: 24 })}>512 crop / cap 24</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", gatherScale: 1, sampleCount: 64, sourceWidthPx: 512, sourceHeightPx: 384, crop: true, apertureFNumber: 2, maximumCoCRadiusPx: 60 })}>512 crop / cap 60</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", sourceWidthPx: 256, sourceHeightPx: 192, crop: false, scene: "architecture-rise-geometry-proxy" })}>Architecture Rise geometry proxy</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", sourceWidthPx: 256, sourceHeightPx: 192, crop: false, scene: "interior-corner-geometry-proxy" })}>Interior Corner geometry proxy</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", sourceWidthPx: 128, sourceHeightPx: 96, crop: false, scene: "phase-f-controlled" })}>Controlled planes</button>
+          </fieldset>}
         </section>
       </div>
       <pre data-testid="fixture-diagnostics" data-version={diagnosticsVersion}>{JSON.stringify({
