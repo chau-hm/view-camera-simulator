@@ -463,7 +463,7 @@ test("native Phase G factorial gather-quality study, scaling, caps, scene proxie
     expect(new Set(baseResources).size).toBe(baseResources.length);
     const currentAfterMatrix = await activeHandle(page);
     expect(currentAfterMatrix.resources.map((resource) => resource.id)).toEqual(baseResources);
-    expect(currentAfterMatrix.targetResizeCount).toBe(6); // f/2 Low, then half/full factorial target transitions
+    expect(currentAfterMatrix.targetResizeCount).toBe(14); // Seven half/full switches × two gather targets; resource identities remain stable.
 
     const sourceScaling: Array<Record<string, unknown>> = [];
     let scalingPhysical: [number, number, number, number] | null = null;
