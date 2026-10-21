@@ -8,10 +8,28 @@ import {
   farDepthSampleWeight,
   goldenAngleDiskSample,
   mapPhysicalEllipseToSourcePixels,
+  maximumPixelEllipseRadius,
   nearDepthSampleWeight,
   orientedSampleOffsetPx,
+  requireGatherReferenceProbePair,
   referenceGatherProbe,
 } from "../e2e/fixtures/ground-glass-webgpu-aperture-gather-cases";
+
+const denseMaximumRadius = (
+  ellipse: { major: readonly [number, number]; minor: readonly [number, number]; clampScale: number },
+  steps = 32_768,
+): number => {
+  let maximum = 0;
+  for (let index = 0; index < steps; index += 1) {
+    const angle = index * Math.PI * 2 / steps;
+    const u = Math.cos(angle);
+    const v = Math.sin(angle);
+    const x = (ellipse.major[0] * u + ellipse.minor[0] * v) * ellipse.clampScale;
+    const y = (ellipse.major[1] * u + ellipse.minor[1] * v) * ellipse.clampScale;
+    maximum = Math.max(maximum, Math.hypot(x, y));
+  }
+  return maximum;
+};
 
 describe("Phase F independent aperture-gather reference", () => {
   it("maps physical ellipse axes through a non-square source and film", () => {
@@ -112,7 +130,7 @@ describe("Phase F independent aperture-gather reference", () => {
     )).toThrow(RangeError);
   });
 
-  it("applies the renderer cap after physical mapping without changing source millimetres", () => {
+  it("caps the true maximum radius of a rotated anisotropic pixel ellipse", () => {
     const ellipse = mapPhysicalEllipseToSourcePixels(
       8,
       4,
@@ -121,13 +139,23 @@ describe("Phase F independent aperture-gather reference", () => {
       { widthPx: 128, heightPx: 96 },
     );
     const capped = clampPixelEllipse(ellipse, 12);
+    const analyticRadius = maximumPixelEllipseRadius(ellipse);
+    const denseRadius = denseMaximumRadius(ellipse);
+    const legacyAxisMaximum = Math.max(
+      Math.hypot(...ellipse.major),
+      Math.hypot(...ellipse.minor),
+    );
+    const legacyScale = Math.min(1, 12 / legacyAxisMaximum);
+    const legacyEllipse = { ...ellipse, clampScale: legacyScale };
 
     expect(capped.clampScale).toBeLessThan(1);
     expect(capped.clampScale).toBeGreaterThan(0);
-    expect(Math.max(
-      Math.hypot(capped.major[0] * capped.clampScale, capped.major[1] * capped.clampScale),
-      Math.hypot(capped.minor[0] * capped.clampScale, capped.minor[1] * capped.clampScale),
-    )).toBeCloseTo(12, 10);
+    expect(analyticRadius).toBeCloseTo(denseRadius, 6);
+    expect(analyticRadius).toBeGreaterThan(legacyAxisMaximum);
+    expect(denseMaximumRadius(capped)).toBeLessThanOrEqual(12 + 1e-9);
+    expect(denseMaximumRadius(capped)).toBeCloseTo(12, 6);
+    // Demonstrates that the pre-fix max-axis approximation exceeds the declared cap.
+    expect(denseMaximumRadius(legacyEllipse)).toBeGreaterThan(12.02);
     expect(ellipse.major).toEqual(mapPhysicalEllipseToSourcePixels(
       8,
       4,
@@ -135,6 +163,119 @@ describe("Phase F independent aperture-gather reference", () => {
       { widthMm: 36, heightMm: 24 },
       { widthPx: 128, heightPx: 96 },
     ).major);
+  });
+
+  it("matches a dense unit-circle sweep for several rotated and nearly degenerate ellipses", () => {
+    const cases = [
+      { majorRadius: 8, minorRadius: 4, angle: 0.37 },
+      { majorRadius: 8, minorRadius: 4, angle: Math.PI / 4 },
+      { majorRadius: 8, minorRadius: 4, angle: Math.PI / 2 },
+      { majorRadius: 8, minorRadius: 4, angle: Math.PI },
+      { majorRadius: 1000, minorRadius: 0.000001, angle: 0.93 },
+    ];
+    for (const current of cases) {
+      const ellipse = mapPhysicalEllipseToSourcePixels(
+        current.majorRadius,
+        current.minorRadius,
+        current.angle,
+        { widthMm: 36, heightMm: 24 },
+        { widthPx: 128, heightPx: 96 },
+      );
+      const capped = clampPixelEllipse(ellipse, 12);
+      expect(maximumPixelEllipseRadius(ellipse)).toBeCloseTo(denseMaximumRadius(ellipse), 5);
+      expect(denseMaximumRadius(capped)).toBeLessThanOrEqual(12 + 1e-8);
+      expect(Number.isFinite(capped.clampScale)).toBe(true);
+    }
+  });
+
+  it("reduces to the prior maximum-axis result for orthogonal pixel axes", () => {
+    const ellipse = mapPhysicalEllipseToSourcePixels(
+      8,
+      4,
+      0,
+      { widthMm: 36, heightMm: 24 },
+      { widthPx: 128, heightPx: 96 },
+    );
+    const expected = Math.max(Math.hypot(...ellipse.major), Math.hypot(...ellipse.minor));
+    expect(ellipse.major[0] * ellipse.minor[0] + ellipse.major[1] * ellipse.minor[1]).toBeCloseTo(0, 12);
+    expect(maximumPixelEllipseRadius(ellipse)).toBeCloseTo(expected, 12);
+  });
+
+  it("is orientation invariant under isotropic pixel scaling", () => {
+    const orientations = [0, 0.31, Math.PI / 4, Math.PI / 2, 2.7];
+    const results = orientations.map((orientation) => maximumPixelEllipseRadius(
+      mapPhysicalEllipseToSourcePixels(
+        8,
+        4,
+        orientation,
+        { widthMm: 36, heightMm: 24 },
+        { widthPx: 144, heightPx: 96 },
+      ),
+    ));
+    for (const radius of results) expect(radius).toBeCloseTo(32, 10);
+  });
+
+  it("uses the larger pixel scale for a circular physical footprint under anisotropic scaling", () => {
+    for (const orientation of [0, Math.PI / 4, Math.PI / 2, Math.PI]) {
+      const ellipse = mapPhysicalEllipseToSourcePixels(
+        4,
+        4,
+        orientation,
+        { widthMm: 36, heightMm: 24 },
+        { widthPx: 128, heightPx: 96 },
+      );
+      expect(maximumPixelEllipseRadius(ellipse)).toBeCloseTo(16, 10);
+    }
+  });
+
+  it("preserves the extent under π-periodic orientation and handles zero-size caps", () => {
+    const first = mapPhysicalEllipseToSourcePixels(
+      7,
+      2,
+      0.63,
+      { widthMm: 36, heightMm: 24 },
+      { widthPx: 128, heightPx: 96 },
+    );
+    const periodic = mapPhysicalEllipseToSourcePixels(
+      7,
+      2,
+      0.63 + Math.PI,
+      { widthMm: 36, heightMm: 24 },
+      { widthPx: 128, heightPx: 96 },
+    );
+    expect(maximumPixelEllipseRadius(periodic)).toBeCloseTo(maximumPixelEllipseRadius(first), 10);
+    expect(clampPixelEllipse(first, 12).clampScale).toBeCloseTo(clampPixelEllipse(periodic, 12).clampScale, 10);
+
+    const zero = mapPhysicalEllipseToSourcePixels(
+      0,
+      0,
+      0,
+      { widthMm: 36, heightMm: 24 },
+      { widthPx: 128, heightPx: 96 },
+    );
+    expect(maximumPixelEllipseRadius(zero)).toBe(0);
+    expect(clampPixelEllipse(zero, 0).clampScale).toBe(1);
+    expect(clampPixelEllipse(first, 0).clampScale).toBe(0);
+    expect(denseMaximumRadius(clampPixelEllipse(first, 0))).toBe(0);
+    expect(() => clampPixelEllipse(first, -1)).toThrow(RangeError);
+    expect(() => maximumPixelEllipseRadius({ major: [Number.NaN, 0], minor: [0, 1] })).toThrow(RangeError);
+  });
+
+  it("requires exactly one far and one near reference probe instead of passing vacuously", () => {
+    const pair = requireGatherReferenceProbePair([
+      { layer: "far", id: "far-probe" },
+      { layer: "near", id: "near-probe" },
+    ]);
+    expect(pair.far.id).toBe("far-probe");
+    expect(pair.near.id).toBe("near-probe");
+    expect(() => requireGatherReferenceProbePair([{ layer: "near" }])).toThrow("exactly one far");
+    expect(() => requireGatherReferenceProbePair([{ layer: "far" }])).toThrow("exactly one near");
+    expect(() => requireGatherReferenceProbePair([])).toThrow("exactly one far");
+    expect(() => requireGatherReferenceProbePair([
+      { layer: "far" },
+      { layer: "far" },
+      { layer: "near" },
+    ])).toThrow("exactly one far");
   });
 
   it("generates deterministic bounded golden-angle aperture proposals", () => {

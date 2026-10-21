@@ -37,8 +37,11 @@ import { getRenderQualitySettings } from "../../../render/renderQuality";
 import { resolveObserverRendererRuntime } from "../../../render/backend/observerVisualPipelineCapabilities";
 import {
   APERTURE_GATHER_CASES,
+  clampPixelEllipse,
   goldenAngleDiskSample,
   mapPhysicalEllipseToSourcePixels,
+  maximumPixelEllipseRadius,
+  orientedSampleOffsetPx,
   type GatherReferenceProbe,
 } from "./ground-glass-webgpu-aperture-gather-cases";
 
@@ -142,17 +145,30 @@ type FixtureHandleEvidence = {
     farGather: [number, number, number, number];
     nearGather: [number, number, number, number];
   };
-  sampleDiagnostics: {
-    majorAxisPx: [number, number];
-    minorAxisPx: [number, number];
-    clampedMajorAxisPx: [number, number];
-    clampedMinorAxisPx: [number, number];
-    clampScale: number;
-    firstGoldenDiskSample: [number, number];
-    firstFarSampleOffsetPx: [number, number];
-    sampleCount: number;
-    maximumCoCRadiusPx: number;
-  } | null;
+  sampleDiagnostics: null | {
+    referencePixelRole: "far-gather-probe" | "center-pixel-fallback";
+    pixelReadbackIndex: number;
+    physicalMajorRadiusMm: number;
+    physicalMinorRadiusMm: number;
+    physicalOrientationRad: number;
+    pixelMajorVectorPx: [number, number];
+    pixelMinorVectorPx: [number, number];
+    cpuReference: {
+      maximumTransformedEllipseRadiusPx: number;
+      rendererMaximumRadiusPx: number;
+      clampScale: number;
+      maximumClampedEllipseRadiusPx: number;
+      firstApertureProposal: [number, number];
+      firstTransformedFarSampleOffsetPx: [number, number];
+      sampleCount: number;
+    };
+    gpu: {
+      maximumTransformedEllipseRadiusPx: number;
+      rendererMaximumRadiusPx: number;
+      clampScale: number;
+      maximumClampedEllipseRadiusPx: number;
+    };
+  };
   operations: OperationEvidence[];
   resources: ResourceEvidence[];
   error: string | null;
@@ -514,14 +530,40 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
         sin(angle).mul(-1).mul(physical.b).mul(WIDTH).div(safeFilmWidthMm),
         cos(angle).mul(-1).mul(physical.b).mul(HEIGHT).div(safeFilmHeightMm),
       );
-      const extent = max(length(major), length(minor));
+      const gramA = dot(major, major);
+      const gramB = dot(minor, minor);
+      const gramC = dot(major, minor);
+      const traceHalf = gramA.add(gramB).mul(0.5);
+      const discriminant = length(vec2(gramA.sub(gramB).mul(0.5), gramC));
+      const maximumEllipseRadiusPx = sqrt(max(0, traceHalf.add(discriminant)));
       const scale = select(
-        extent.greaterThan(0),
-        min(1, maximumRadiusPx.div(max(extent, 1e-6))),
+        maximumEllipseRadiusPx.greaterThan(0),
+        min(1, max(0, maximumRadiusPx).div(max(maximumEllipseRadiusPx, 1e-12))),
         1,
       );
-      return { major, minor, scale, extent };
+      return {
+        major,
+        minor,
+        maximumEllipseRadiusPx,
+        scale,
+        maximumClampedEllipseRadiusPx: maximumEllipseRadiusPx.mul(scale),
+      };
     };
+    const gatherRadiusDiagnosticsTarget = makeTarget(WIDTH, HEIGHT, {});
+    register(`${evidence.instanceId}:gather-radius-diagnostics-target`, "rgba16float-gpu-gather-radius-diagnostics-target", () => gatherRadiusDiagnosticsTarget.dispose());
+    const gatherRadiusDiagnosticsMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
+    gatherRadiusDiagnosticsMaterial.outputNode = Fn(() => {
+      const axes = axesToPixels(physicalAt(textureUvTop));
+      return vec4(
+        axes.maximumEllipseRadiusPx,
+        axes.scale,
+        axes.maximumClampedEllipseRadiusPx,
+        maximumRadiusPx,
+      );
+    })();
+    const gatherRadiusDiagnosticsScene = new THREE.Scene();
+    gatherRadiusDiagnosticsScene.add(new THREE.Mesh(postGeometry, gatherRadiusDiagnosticsMaterial));
+    register(`${evidence.instanceId}:gather-radius-diagnostics-material`, "native-tsl-gather-radius-diagnostics-material", () => gatherRadiusDiagnosticsMaterial.dispose());
     const distanceMmAt = (sourceUv: Node<"vec2">, depth: Node<"float">) =>
       abs(getViewPosition(sourceUv, depth, projectionInverse).z).mul(1000);
     const depthToleranceAt = (distance: Node<"float">) => max(20, distance.mul(0.015));
@@ -800,6 +842,14 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           await backend.device?.queue.onSubmittedWorkDone();
           recordPass("physical-coc-and-validity");
           failAt(input.failureStage, "physical-coc");
+          operation.stage = "gather-radius-diagnostics";
+          renderer.setRenderTarget(gatherRadiusDiagnosticsTarget);
+          renderer.setViewport(0, 0, WIDTH, HEIGHT);
+          renderer.setScissorTest(false);
+          renderer.clear(true, false, false);
+          renderer.render(gatherRadiusDiagnosticsScene, postCamera);
+          await backend.device?.queue.onSubmittedWorkDone();
+          recordPass("gather-radius-diagnostics");
           operation.stage = "far-gather";
           farTarget.setSize(
             Math.max(1, Math.floor(WIDTH * settings.gatherScale)),
@@ -850,11 +900,12 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           const nearPromise = renderer.readRenderTargetPixelsAsync(nearTarget, 0, 0, nearTarget.width, nearTarget.height);
           const compositePromise = renderer.readRenderTargetPixelsAsync(compositeTarget, 0, 0, WIDTH, HEIGHT);
           const worldPromise = renderer.readRenderTargetPixelsAsync(worldTarget, 0, 0, WIDTH, HEIGHT);
+          const gatherRadiusDiagnosticsPromise = renderer.readRenderTargetPixelsAsync(gatherRadiusDiagnosticsTarget, 0, 0, WIDTH, HEIGHT);
           let releaseHeld: (() => void) | null = null;
           const gate = input.holdReadback
             ? new Promise<void>((resolve) => { releaseHeld = resolve; store.releaseReadback = resolve; })
             : Promise.resolve();
-          const [colorReadback, physicalReadback, validityReadback, farReadback, nearReadback, compositeReadback, worldReadback] = await Promise.all([
+          const [colorReadback, physicalReadback, validityReadback, farReadback, nearReadback, compositeReadback, worldReadback, gatherRadiusDiagnosticsReadback] = await Promise.all([
             Promise.all([colorPromise, gate]).then(([pixels]) => pixels),
             physicalPromise,
             validityPromise,
@@ -862,6 +913,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             nearPromise,
             compositePromise,
             worldPromise,
+            gatherRadiusDiagnosticsPromise,
           ]);
           if (releaseHeld && retired) {
             operation.readbackOutcome = "succeeded";
@@ -879,7 +931,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               || !(farReadback instanceof Uint16Array)
               || !(nearReadback instanceof Uint16Array)
               || !(compositeReadback instanceof Uint16Array)
-              || !(worldReadback instanceof Float32Array)) {
+              || !(worldReadback instanceof Float32Array)
+              || !(gatherRadiusDiagnosticsReadback instanceof Uint16Array)) {
             throw new Error("Native Phase F readback returned an unexpected typed-array representation");
           }
           operation.readbackOutcome = "succeeded";
@@ -967,34 +1020,6 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             if (half(nearReadback, offset) > 0.02) nonzeroNearAlphaPixels += 1;
           }
           const quality = qualitySettings(input.quality ?? "standard");
-          const centerFootprintOffset = Math.floor(HEIGHT / 2) * WIDTH * 4 + Math.floor(WIDTH / 2) * 4;
-          const centerFootprint = [0, 1, 2, 3].map((channel) => half(physicalReadback, centerFootprintOffset + channel)) as [number, number, number, number];
-          const physicalEllipse = mapPhysicalEllipseToSourcePixels(
-            centerFootprint[1],
-            centerFootprint[2],
-            centerFootprint[3] * Math.PI,
-            { widthMm: sampledFilmWidthMm.value, heightMm: sampledFilmHeightMm.value },
-            { widthPx: WIDTH, heightPx: HEIGHT },
-          );
-          const major = physicalEllipse.major;
-          const minor = physicalEllipse.minor;
-          const extent = Math.max(Math.hypot(...major), Math.hypot(...minor));
-          const clampScale = extent > 0 ? Math.min(1, quality.maximumCoCRadiusPx / extent) : 1;
-          const firstDisk = goldenAngleDiskSample(0, quality.sampleCount);
-          evidence.sampleDiagnostics = {
-            majorAxisPx: [...major],
-            minorAxisPx: [...minor],
-            clampedMajorAxisPx: [major[0] * clampScale, major[1] * clampScale],
-            clampedMinorAxisPx: [minor[0] * clampScale, minor[1] * clampScale],
-            clampScale,
-            firstGoldenDiskSample: [...firstDisk],
-            firstFarSampleOffsetPx: [
-              (major[0] * firstDisk[0] + minor[0] * firstDisk[1]) * clampScale,
-              (major[1] * firstDisk[0] + minor[1] * firstDisk[1]) * clampScale,
-            ],
-            sampleCount: quality.sampleCount,
-            maximumCoCRadiusPx: quality.maximumCoCRadiusPx,
-          };
           evidence.dimensions = {
             sourceWidthPx: WIDTH,
             sourceHeightPx: HEIGHT,
@@ -1152,6 +1177,46 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             buildGatherReferenceProbe("far", farReferenceProbeIndex),
             buildGatherReferenceProbe("near", nearReferenceProbeIndex),
           ].filter((probe): probe is GatherReferenceProbe => probe !== null);
+          const diagnosticPixelReadbackIndex = farReferenceProbeIndex
+            ?? (Math.floor(HEIGHT / 2) * WIDTH + Math.floor(WIDTH / 2));
+          const diagnosticOffset = diagnosticPixelReadbackIndex * 4;
+          const physicalMajorRadiusMm = half(physicalReadback, diagnosticOffset + 1);
+          const physicalMinorRadiusMm = half(physicalReadback, diagnosticOffset + 2);
+          const physicalOrientationRad = half(physicalReadback, diagnosticOffset + 3) * Math.PI;
+          const physicalEllipse = mapPhysicalEllipseToSourcePixels(
+            physicalMajorRadiusMm,
+            physicalMinorRadiusMm,
+            physicalOrientationRad,
+            { widthMm: sampledFilmWidthMm.value, heightMm: sampledFilmHeightMm.value },
+            { widthPx: WIDTH, heightPx: HEIGHT },
+          );
+          const cpuMaximumRadiusPx = maximumPixelEllipseRadius(physicalEllipse);
+          const cpuClampedEllipse = clampPixelEllipse(physicalEllipse, quality.maximumCoCRadiusPx);
+          const firstApertureProposal = goldenAngleDiskSample(0, quality.sampleCount);
+          evidence.sampleDiagnostics = {
+            referencePixelRole: farReferenceProbeIndex === null ? "center-pixel-fallback" : "far-gather-probe",
+            pixelReadbackIndex: diagnosticPixelReadbackIndex,
+            physicalMajorRadiusMm,
+            physicalMinorRadiusMm,
+            physicalOrientationRad,
+            pixelMajorVectorPx: [...physicalEllipse.major],
+            pixelMinorVectorPx: [...physicalEllipse.minor],
+            cpuReference: {
+              maximumTransformedEllipseRadiusPx: cpuMaximumRadiusPx,
+              rendererMaximumRadiusPx: quality.maximumCoCRadiusPx,
+              clampScale: cpuClampedEllipse.clampScale,
+              maximumClampedEllipseRadiusPx: cpuMaximumRadiusPx * cpuClampedEllipse.clampScale,
+              firstApertureProposal: [...firstApertureProposal],
+              firstTransformedFarSampleOffsetPx: [...orientedSampleOffsetPx(firstApertureProposal, cpuClampedEllipse)],
+              sampleCount: quality.sampleCount,
+            },
+            gpu: {
+              maximumTransformedEllipseRadiusPx: half(gatherRadiusDiagnosticsReadback, diagnosticOffset),
+              clampScale: half(gatherRadiusDiagnosticsReadback, diagnosticOffset + 1),
+              maximumClampedEllipseRadiusPx: half(gatherRadiusDiagnosticsReadback, diagnosticOffset + 2),
+              rendererMaximumRadiusPx: half(gatherRadiusDiagnosticsReadback, diagnosticOffset + 3),
+            },
+          };
           if (unresolvedSampleIndex !== null) {
             const offset = unresolvedSampleIndex * 4;
             const readbackY = Math.floor(unresolvedSampleIndex / WIDTH);
@@ -1177,6 +1242,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             validity: { requested: "rgba8unorm; 0 no depth, 1 valid, 2 unrepresentable, 3 invalid, 4 unresolved", actual: resourceFormat(validityTarget.texture) },
             farGather: { requested: "rgba16float; linear color", actual: resourceFormat(farTarget.texture) },
             nearGather: { requested: "rgba16float; linear RGB and coverage alpha", actual: resourceFormat(nearTarget.texture) },
+            gatherRadiusDiagnostics: { requested: "rgba16float; TSL max singular radius, clamp scale, clamped radius, radius cap", actual: resourceFormat(gatherRadiusDiagnosticsTarget.texture) },
             composite: { requested: "rgba16float; linear research composite", actual: resourceFormat(compositeTarget.texture) },
           };
           operation.stage = "readback-published";

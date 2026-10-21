@@ -4,7 +4,10 @@ import { vec } from "../../core/math/vec";
 import { computePhysicalBlurFootprint } from "../../core/optics/computePhysicalBlurFootprint";
 import {
   APERTURE_GATHER_CASES,
+  clampPixelEllipse,
   mapPhysicalEllipseToSourcePixels,
+  maximumPixelEllipseRadius,
+  requireGatherReferenceProbePair,
   referenceGatherProbe,
   type GatherReferenceProbe,
 } from "./fixtures/ground-glass-webgpu-aperture-gather-cases";
@@ -90,15 +93,28 @@ type Handle = {
     nearGather: [number, number, number, number];
   };
   sampleDiagnostics: null | {
-    majorAxisPx: [number, number];
-    minorAxisPx: [number, number];
-    clampedMajorAxisPx: [number, number];
-    clampedMinorAxisPx: [number, number];
-    clampScale: number;
-    firstGoldenDiskSample: [number, number];
-    firstFarSampleOffsetPx: [number, number];
-    sampleCount: number;
-    maximumCoCRadiusPx: number;
+    referencePixelRole: "far-gather-probe" | "center-pixel-fallback";
+    pixelReadbackIndex: number;
+    physicalMajorRadiusMm: number;
+    physicalMinorRadiusMm: number;
+    physicalOrientationRad: number;
+    pixelMajorVectorPx: [number, number];
+    pixelMinorVectorPx: [number, number];
+    cpuReference: {
+      maximumTransformedEllipseRadiusPx: number;
+      rendererMaximumRadiusPx: number;
+      clampScale: number;
+      maximumClampedEllipseRadiusPx: number;
+      firstApertureProposal: [number, number];
+      firstTransformedFarSampleOffsetPx: [number, number];
+      sampleCount: number;
+    };
+    gpu: {
+      maximumTransformedEllipseRadiusPx: number;
+      rendererMaximumRadiusPx: number;
+      clampScale: number;
+      maximumClampedEllipseRadiusPx: number;
+    };
   };
   operations: Array<{
     operationId: string;
@@ -174,8 +190,17 @@ const captureComposite = async (page: Page, handle: Handle, testInfo: TestInfo, 
   });
 };
 
-const cpuFootprintForProbe = (
-  probe: PointProbe,
+const centerColorForReferenceProbe = (probe: GatherReferenceProbe): [number, number, number] => {
+  const localX = probe.x - probe.patch.left;
+  const localY = probe.y - probe.patch.top;
+  const index = localY * probe.patch.width + localX;
+  const color = probe.patch.colors[index];
+  if (!color) throw new Error(`Missing captured source color for ${probe.layer} reference probe`);
+  return [...color];
+};
+
+const cpuFootprintAtWorldPosition = (
+  worldPositionMm: [number, number, number],
   apertureFNumber: number,
   filmTiltDeg = 0,
   focusOffsetMm = 0,
@@ -183,7 +208,7 @@ const cpuFootprintForProbe = (
   const tilt = filmTiltDeg * Math.PI / 180;
   const filmNormal = vec(0, -Math.sin(tilt), Math.cos(tilt));
   return computePhysicalBlurFootprint({
-    objectPoint: vec(...probe.worldPositionMm),
+    objectPoint: vec(...worldPositionMm),
     lensCenter: vec(...APERTURE_GATHER_CASES.lensCenterMm),
     lensPlaneNormal: vec(...APERTURE_GATHER_CASES.lensNormal),
     lensPlaneBasisX: vec(...APERTURE_GATHER_CASES.lensBasisX),
@@ -197,6 +222,47 @@ const cpuFootprintForProbe = (
     focalLengthMm: APERTURE_GATHER_CASES.focalLengthMm,
     apertureFNumber,
   });
+};
+
+const cpuFootprintForProbe = (
+  probe: PointProbe,
+  apertureFNumber: number,
+  filmTiltDeg = 0,
+  focusOffsetMm = 0,
+) => cpuFootprintAtWorldPosition(probe.worldPositionMm, apertureFNumber, filmTiltDeg, focusOffsetMm);
+
+const expectGatherProbePhysicalMatchesCpu = (
+  probe: GatherReferenceProbe,
+  apertureFNumber: number,
+  filmTiltDeg = 0,
+  focusOffsetMm = 0,
+) => {
+  const localX = probe.x - probe.patch.left;
+  const localY = probe.y - probe.patch.top;
+  const index = localY * probe.patch.width + localX;
+  const worldPosition = probe.patch.worldAndDepth[index];
+  const physical = probe.patch.physical[index];
+  if (!worldPosition || !physical) throw new Error(`Missing captured physical inputs for ${probe.layer} gather reference`);
+  const expected = cpuFootprintAtWorldPosition(
+    [worldPosition[0], worldPosition[1], worldPosition[2]],
+    apertureFNumber,
+    filmTiltDeg,
+    focusOffsetMm,
+  );
+  expect(expected.valid, `tilted/cropped ${probe.layer} CPU physical geometry`).toBe(true);
+  const actualChannels = physical.slice(0, 3);
+  const expectedChannels = [expected.signedCoCDiameterMm, expected.majorRadiusMm, expected.minorRadiusMm];
+  expectedChannels.forEach((value, channel) => {
+    expect(Math.abs(actualChannels[channel]! - value), `tilted/cropped ${probe.layer} physical channel ${channel}`).toBeLessThan(
+      Math.max(0.04, Math.abs(value) * 0.03),
+    );
+  });
+  if (expected.majorRadiusMm - expected.minorRadiusMm > 0.02) {
+    const normalizedExpected = ((expected.orientationRad % Math.PI) + Math.PI) % Math.PI / Math.PI;
+    const error = Math.abs(physical[3] - normalizedExpected);
+    expect(Math.min(error, 1 - error), `tilted/cropped ${probe.layer} normalized orientation`).toBeLessThan(0.025);
+  }
+  return expected;
 };
 
 const expectPhysicalChannelsMatchCpu = (
@@ -276,10 +342,12 @@ test("native r186 WebGPU performs scene depth, physical CoC, far/near gathers, c
   expect(handle.formats?.validity.actual).toContain("rgba8unorm");
   expect(handle.formats?.farGather.actual).toContain("rgba16float");
   expect(handle.formats?.nearGather.actual).toContain("rgba16float");
+  expect(handle.formats?.gatherRadiusDiagnostics.actual).toContain("rgba16float");
   expect(handle.formats?.composite.actual).toContain("rgba16float");
   expect(handle.passes.map((pass) => pass.id)).toEqual([
     "scene-color-depth",
     "physical-coc-and-validity",
+    "gather-radius-diagnostics",
     "far-gather",
     "near-gather",
     "research-composite",
@@ -300,13 +368,31 @@ test("native r186 WebGPU performs scene depth, physical CoC, far/near gathers, c
   expect(handle.metrics?.farYellowSignalOutsideBluePixelCount).toBeGreaterThan(0);
   expect(handle.metrics?.farYellowSignalOutsideBlueEnergy).toBeGreaterThan(0);
 
-  expect(handle.gatherReferenceProbes.map((probe) => probe.layer).sort()).toEqual(["far", "near"]);
-  const gatherReferences = handle.gatherReferenceProbes.map((probe) => {
+  const gatherProbePair = requireGatherReferenceProbePair(handle.gatherReferenceProbes);
+  expect(gatherProbePair.far.layer).toBe("far");
+  expect(gatherProbePair.near.layer).toBe("near");
+  const gatherReferences = [gatherProbePair.far, gatherProbePair.near].map((probe) => {
     const result = referenceGatherProbe(probe);
     expect(result.maxRgbError, `${probe.layer} gather CPU-reference RGB error`).toBeLessThan(0.04);
     expect(result.alphaError, `${probe.layer} gather CPU-reference coverage error`).toBeLessThan(0.025);
     return { layer: probe.layer, x: probe.x, y: probe.y, actualRgba: probe.actualRgba, ...result };
   });
+  const baselineFarCenter = centerColorForReferenceProbe(gatherProbePair.far);
+  expect(baselineFarCenter[2]).toBeGreaterThan(0.5);
+  expect(gatherProbePair.far.actualRgba[0] - baselineFarCenter[0]).toBeGreaterThan(0.02);
+  const baselineNearCenter = centerColorForReferenceProbe(gatherProbePair.near);
+  expect(baselineNearCenter[0] < 0.5 || baselineNearCenter[1] > 0.12 || baselineNearCenter[2] > 0.12).toBe(true);
+  expect(gatherProbePair.near.actualRgba[0]).toBeGreaterThan(0.5);
+  expect(gatherProbePair.near.actualRgba[3]).toBeGreaterThan(0.02);
+
+  const baselineDiagnostics = handle.sampleDiagnostics;
+  expect(baselineDiagnostics?.referencePixelRole).toBe("far-gather-probe");
+  expect(baselineDiagnostics?.gpu.rendererMaximumRadiusPx).toBe(12);
+  expect(Math.abs((baselineDiagnostics?.gpu.maximumTransformedEllipseRadiusPx ?? 0)
+    - (baselineDiagnostics?.cpuReference.maximumTransformedEllipseRadiusPx ?? 0))).toBeLessThan(0.05);
+  expect(Math.abs((baselineDiagnostics?.gpu.clampScale ?? 0)
+    - (baselineDiagnostics?.cpuReference.clampScale ?? 0))).toBeLessThan(0.005);
+  expect(baselineDiagnostics?.gpu.maximumClampedEllipseRadiusPx).toBeLessThanOrEqual(12.02);
 
   const near = handle.pointProbes.find((probe) => probe.id === "near-red-foreground");
   const far = handle.pointProbes.find((probe) => probe.id === "far-yellow-feature");
@@ -401,7 +487,8 @@ test("native quality, aperture, film tilt, and off-center crop preserve physical
   );
   expect(cropPixelEllipse.major[0] / fullPixelEllipse.major[0]).toBeCloseTo(4, 1);
   expect(cropPixelEllipse.minor[1] / fullPixelEllipse.minor[1]).toBeCloseTo(4, 1);
-  expect(crop.sampleDiagnostics?.clampedMajorAxisPx.some((axis) => Math.abs(axis) > 0)).toBe(true);
+  expect(crop.sampleDiagnostics?.referencePixelRole).toBe("far-gather-probe");
+  expect(crop.sampleDiagnostics?.pixelMajorVectorPx.some((axis) => Math.abs(axis) > 0)).toBe(true);
 
   const beforeTiltCount = crop.operations.length;
   await page.getByRole("button", { name: "Tilt film 12 degrees" }).click();
@@ -413,12 +500,63 @@ test("native quality, aperture, film tilt, and off-center crop preserve physical
   const tiltedCpu = expectPhysicalChannelsMatchCpu(tiltedYellow, 2, 12);
   expect(tiltedCpu.valid).toBe(true);
   expect(tiltedYellow.physicalRgba16Float[1] - tiltedYellow.physicalRgba16Float[2]).toBeGreaterThan(0.02);
-  const tiltedGatherComparisons = tilted.gatherReferenceProbes.map((probe) => {
-    const result = referenceGatherProbe(probe);
-    expect(result.maxRgbError, `tilted ${probe.layer} CPU-reference RGB error`).toBeLessThan(0.04);
-    expect(result.alphaError, `tilted ${probe.layer} CPU-reference coverage error`).toBeLessThan(0.025);
-    return { layer: probe.layer, actualRgba: probe.actualRgba, ...result };
-  });
+  const tiltedGatherProbePair = requireGatherReferenceProbePair(tilted.gatherReferenceProbes);
+  const tiltedFarPhysical = expectGatherProbePhysicalMatchesCpu(tiltedGatherProbePair.far, 2, 12);
+  const tiltedFarComparison = referenceGatherProbe(tiltedGatherProbePair.far);
+  expect(tiltedFarComparison.maxRgbError, "tilted/cropped far gather RGB mismatch").toBeLessThan(0.04);
+  expect(tiltedFarComparison.alphaError, "tilted/cropped far gather alpha mismatch").toBeLessThan(0.025);
+  const tiltedNearComparison = referenceGatherProbe(tiltedGatherProbePair.near);
+  expect(tiltedNearComparison.maxRgbError, "tilted/cropped near gather RGB mismatch").toBeLessThan(0.04);
+  expect(tiltedNearComparison.alphaError, "tilted/cropped near coverage mismatch").toBeLessThan(0.025);
+  const tiltedFarCenter = centerColorForReferenceProbe(tiltedGatherProbePair.far);
+  expect(tiltedFarCenter[2], "tilted far probe source is blue background").toBeGreaterThan(0.5);
+  expect(tiltedGatherProbePair.far.actualRgba[0] - tiltedFarCenter[0], "tilted far probe has a real yellow contribution").toBeGreaterThan(0.02);
+  const tiltedNearCenter = centerColorForReferenceProbe(tiltedGatherProbePair.near);
+  expect(tiltedNearCenter[0] < 0.5 || tiltedNearCenter[1] > 0.12 || tiltedNearCenter[2] > 0.12, "tilted near probe is outside the sharp red silhouette").toBe(true);
+  expect(tiltedGatherProbePair.near.actualRgba[0], "tilted near probe contains foreground red").toBeGreaterThan(0.5);
+  expect(tiltedGatherProbePair.near.actualRgba[3], "tilted near probe has measured coverage").toBeGreaterThan(0.02);
+  const tiltedSampleDiagnostics = tilted.sampleDiagnostics;
+  if (!tiltedSampleDiagnostics) throw new Error("Missing tilted native GPU radius diagnostics");
+  expect(tiltedSampleDiagnostics.referencePixelRole).toBe("far-gather-probe");
+  expect(tiltedSampleDiagnostics.physicalMajorRadiusMm - tiltedSampleDiagnostics.physicalMinorRadiusMm).toBeGreaterThan(0.02);
+  const normalizedTiltedOrientation = ((tiltedFarPhysical.orientationRad % Math.PI) + Math.PI) % Math.PI;
+  expect(Math.min(
+    Math.abs(tiltedSampleDiagnostics.physicalOrientationRad - normalizedTiltedOrientation),
+    Math.PI - Math.abs(tiltedSampleDiagnostics.physicalOrientationRad - normalizedTiltedOrientation),
+  )).toBeLessThan(0.08);
+  const tiltedFilm = tilted.dimensions;
+  if (!tiltedFilm) throw new Error("Missing tilted/cropped source dimensions");
+  const expectedTiltedPixelEllipse = mapPhysicalEllipseToSourcePixels(
+    tiltedFarPhysical.majorRadiusMm,
+    tiltedFarPhysical.minorRadiusMm,
+    normalizedTiltedOrientation,
+    { widthMm: tiltedFilm.sampledFilmWidthMm, heightMm: tiltedFilm.sampledFilmHeightMm },
+    { widthPx: tiltedFilm.sourceWidthPx, heightPx: tiltedFilm.sourceHeightPx },
+  );
+  const expectedTiltedMaximumRadiusPx = maximumPixelEllipseRadius(expectedTiltedPixelEllipse);
+  const expectedTiltedClamp = clampPixelEllipse(expectedTiltedPixelEllipse, 12);
+  expect(Math.abs(expectedTiltedPixelEllipse.major[0] - tiltedSampleDiagnostics.pixelMajorVectorPx[0])).toBeLessThan(0.4);
+  expect(Math.abs(expectedTiltedPixelEllipse.major[1] - tiltedSampleDiagnostics.pixelMajorVectorPx[1])).toBeLessThan(0.4);
+  expect(Math.abs(expectedTiltedPixelEllipse.minor[0] - tiltedSampleDiagnostics.pixelMinorVectorPx[0])).toBeLessThan(0.4);
+  expect(Math.abs(expectedTiltedPixelEllipse.minor[1] - tiltedSampleDiagnostics.pixelMinorVectorPx[1])).toBeLessThan(0.4);
+  expect(tiltedSampleDiagnostics.gpu.maximumTransformedEllipseRadiusPx).toBeCloseTo(expectedTiltedMaximumRadiusPx, 1);
+  expect(tiltedSampleDiagnostics.gpu.clampScale).toBeCloseTo(expectedTiltedClamp.clampScale, 2);
+  const tiltedPixelAxisDot = tiltedSampleDiagnostics.pixelMajorVectorPx[0] * tiltedSampleDiagnostics.pixelMinorVectorPx[0]
+    + tiltedSampleDiagnostics.pixelMajorVectorPx[1] * tiltedSampleDiagnostics.pixelMinorVectorPx[1];
+  expect(Math.abs(tiltedPixelAxisDot), "anisotropic pixel transform produces a nonorthogonal ellipse").toBeGreaterThan(0.1);
+  expect(tiltedSampleDiagnostics.cpuReference.maximumTransformedEllipseRadiusPx).toBeGreaterThan(12.02);
+  expect(tiltedSampleDiagnostics.gpu.maximumTransformedEllipseRadiusPx).toBeCloseTo(
+    tiltedSampleDiagnostics.cpuReference.maximumTransformedEllipseRadiusPx,
+    1,
+  );
+  expect(tiltedSampleDiagnostics.gpu.clampScale).toBeCloseTo(tiltedSampleDiagnostics.cpuReference.clampScale, 2);
+  expect(tiltedSampleDiagnostics.gpu.maximumClampedEllipseRadiusPx).toBeLessThanOrEqual(12.02);
+  expect(tiltedSampleDiagnostics.gpu.rendererMaximumRadiusPx).toBe(12);
+  expect(Math.hypot(...tiltedSampleDiagnostics.cpuReference.firstTransformedFarSampleOffsetPx)).toBeLessThanOrEqual(12 + 1e-8);
+  const tiltedGatherComparisons = [
+    { layer: "far" as const, actualRgba: tiltedGatherProbePair.far.actualRgba, ...tiltedFarComparison },
+    { layer: "near" as const, actualRgba: tiltedGatherProbePair.near.actualRgba, ...tiltedNearComparison },
+  ];
 
   const beforeStressCount = tilted.operations.length;
   await page.getByRole("button", { name: "64 sample gather" }).click();

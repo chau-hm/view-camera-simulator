@@ -25,6 +25,23 @@ export type SourceDimensions = Readonly<{ widthPx: number; heightPx: number }>;
 export type PixelAxis = readonly [number, number];
 export type PixelEllipse = Readonly<{ major: PixelAxis; minor: PixelAxis; clampScale: number }>;
 
+/** Largest radius of the complete two-axis pixel ellipse (the largest singular value). */
+export const maximumPixelEllipseRadius = (ellipse: Pick<PixelEllipse, "major" | "minor">): number => {
+  const components = [...ellipse.major, ...ellipse.minor];
+  if (!components.every(Number.isFinite)) {
+    throw new RangeError("Pixel ellipse axes must be finite");
+  }
+  const scale = Math.max(...components.map(Math.abs));
+  if (scale === 0) return 0;
+  const [mx, my, nx, ny] = components.map((value) => value / scale);
+  const a = mx! * mx! + my! * my!;
+  const b = nx! * nx! + ny! * ny!;
+  const c = mx! * nx! + my! * ny!;
+  const traceHalf = (a + b) / 2;
+  const discriminant = Math.hypot((a - b) / 2, c);
+  return scale * Math.sqrt(Math.max(0, traceHalf + discriminant));
+};
+
 /** Independent CPU equation reference for the physical-mm to source-pixel map. */
 export const mapPhysicalEllipseToSourcePixels = (
   majorRadiusMm: number,
@@ -63,11 +80,11 @@ export const mapPhysicalEllipseToSourcePixels = (
 
 /** Renderer cap is applied after physical source-pixel mapping. */
 export const clampPixelEllipse = (ellipse: PixelEllipse, maximumRadiusPx: number): PixelEllipse => {
-  const extent = Math.max(
-    Math.hypot(...ellipse.major),
-    Math.hypot(...ellipse.minor),
-  );
-  const clampScale = extent > 0 ? Math.min(1, maximumRadiusPx / extent) : 1;
+  if (!Number.isFinite(maximumRadiusPx) || maximumRadiusPx < 0) {
+    throw new RangeError("Maximum aperture-gather radius must be finite and non-negative");
+  }
+  const maximumRadius = maximumPixelEllipseRadius(ellipse);
+  const clampScale = maximumRadius > 0 ? Math.min(1, maximumRadiusPx / maximumRadius) : 1;
   return { ...ellipse, clampScale };
 };
 
@@ -181,6 +198,21 @@ export type GatherReferenceProbe = Readonly<{
   patch: GatherReferencePatch;
   actualRgba: readonly [number, number, number, number];
 }>;
+
+/** Require exactly one real reference probe for each gather layer. */
+export const requireGatherReferenceProbePair = <T extends Pick<GatherReferenceProbe, "layer">>(
+  probes: readonly T[],
+): { far: T; near: T } => {
+  const far = probes.filter((probe) => probe.layer === "far");
+  const near = probes.filter((probe) => probe.layer === "near");
+  if (far.length !== 1) {
+    throw new Error(`Expected exactly one far gather reference probe, got ${far.length}`);
+  }
+  if (near.length !== 1) {
+    throw new Error(`Expected exactly one near gather reference probe, got ${near.length}`);
+  }
+  return { far: far[0]!, near: near[0]! };
+};
 
 const patchIndexAt = (patch: GatherReferencePatch, x: number, y: number): number => {
   const localX = x - patch.left;
