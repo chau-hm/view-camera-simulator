@@ -141,7 +141,21 @@ type HandleEvidence = {
       orientationRad: number;
       orientationNormalized: number;
       orientationDefined: boolean;
-      rawSignClassification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable";
+      focalDistance: {
+        inputSource: "depth" | "controlled-world-point";
+        expectedRegime: "finite-virtual" | "parallel-limit" | "finite-real";
+        canonicalObjectDistanceMm: number;
+        gpuDepthReconstructedObjectDistanceMm: number | null;
+        kernelObjectDistanceMm: number;
+        canonicalObjectMinusFocalMm: number;
+        gpuDepthReconstructedObjectMinusFocalMm: number | null;
+        kernelObjectMinusFocalMm: number;
+        depthReconstructionErrorMm: number | null;
+        depthClassificationResolution: "resolved" | "depth-limited" | "explicit-limit" | "not-applicable";
+        explicitParallelLimitIdentity: boolean;
+        selectedPhysicalBranch: "finite-virtual" | "parallel-limit" | "finite-real" | "unresolved";
+      } | null;
+      rawSignClassification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable" | "unresolved-focal-boundary";
       nearFocusComparison: "within-tolerance" | "outside-tolerance" | "not-applicable";
     }>;
   } | null;
@@ -178,6 +192,7 @@ const messageOf = (error: unknown) => error instanceof Error ? error.message : S
 type Surface = { id: string; mesh: THREE.Mesh; geometry: THREE.BufferGeometry; material: THREE.Material };
 type ResolvedPhysicalCase = Omit<PhysicalClassificationCase, "focalLengthMm"> & {
   focalLengthMm: number;
+  canonicalObjectDistanceMm: number;
   sourceUv: [number, number];
 };
 
@@ -228,7 +243,7 @@ const makeDepthAndFootprintNodes = (input: {
   cases: readonly ResolvedPhysicalCase[];
 }) => {
   const count = input.cases.length;
-  const caseStride = 28;
+  const caseStride = 33;
   const physicalInput = uniformArray<"float">(input.cases.flatMap((entry) => [
     ...entry.sourceUv,
     ...entry.lensCenterMm,
@@ -241,6 +256,10 @@ const makeDepthAndFootprintNodes = (input: {
     ...entry.filmPlaneBasisY,
     entry.focalLengthMm,
     entry.apertureFNumber,
+    ...(entry.controlledObjectPointMm ?? [0, 0, 0]),
+    entry.focalBoundary?.expectedRegime === "parallel-limit"
+      && entry.focalBoundary.explicitParallelLimitIdentity !== false ? 1 : 0,
+    entry.focalBoundary?.inputSource === "controlled-world-point" ? 1 : 0,
   ]), "float");
   const projectionInverse = uniform(input.projectionInverse);
   const cameraWorld = uniform(input.cameraWorld);
@@ -258,7 +277,11 @@ const makeDepthAndFootprintNodes = (input: {
   const sampledDepth = texture(input.depthTexture, sourceUv).r;
   const viewPosition = getViewPosition(sourceUv, sampledDepth, projectionInverse);
   const worldPositionM = cameraWorld.mul(vec4(viewPosition, 1)).xyz;
-  const objectPointMm = worldPositionM.mul(1000);
+  const depthObjectPointMm = worldPositionM.mul(1000);
+  const controlledObjectPointMm = vec3At(28);
+  const parallelImageLimit = scalarAt(31).greaterThan(0.5);
+  const usesControlledObjectPoint = scalarAt(32).greaterThan(0.5);
+  const objectPointMm = select(usesControlledObjectPoint, controlledObjectPointMm, depthObjectPointMm);
 
   const makeBasis = (normalInput: ReturnType<typeof vec3At>, primaryInput: ReturnType<typeof vec3At>, secondaryInput: ReturnType<typeof vec3At>) => {
     const normalLength = length(normalInput);
@@ -288,11 +311,14 @@ const makeDepthAndFootprintNodes = (input: {
   const objectDelta = objectPointMm.sub(lensCenterMm);
   const objectDistanceMm = dot(objectDelta, lens.normal);
   const lateralOffsetMm = objectDelta.sub(lens.normal.mul(objectDistanceMm));
-  const focalPlaneToleranceMm = 0.002;
-  const finiteImage = abs(objectDistanceMm.sub(fMm)).greaterThan(focalPlaneToleranceMm);
-  const safeObjectDistance = select(abs(objectDistanceMm).greaterThan(1e-7), objectDistanceMm, 1);
   const imageDenominator = objectDistanceMm.sub(fMm);
-  const safeImageDenominator = select(abs(imageDenominator).greaterThan(1e-7), imageDenominator, 1);
+  const finiteDenominatorNonzero = abs(imageDenominator).greaterThan(0);
+  // Only the case explicitly identified from canonical fixture geometry uses
+  // the U = f limit. Every representable nonzero U-f remains a finite image.
+  const finiteImage = finiteDenominatorNonzero.and(scalarAt(31).lessThan(0.5));
+  const focalBranchResolved = finiteImage.or(parallelImageLimit);
+  const safeObjectDistance = select(abs(objectDistanceMm).greaterThan(1e-7), objectDistanceMm, 1);
+  const safeImageDenominator = select(finiteDenominatorNonzero, imageDenominator, 1);
   const idealImageDistanceMm = fMm.mul(objectDistanceMm).div(safeImageDenominator);
   const imagePoint = lensCenterMm
     .sub(lens.normal.mul(idealImageDistanceMm))
@@ -357,20 +383,29 @@ const makeDepthAndFootprintNodes = (input: {
     select(imagePlaneDeltaMm.lessThan(0), -1, 1),
     0,
   );
-  const signedSide = select(finiteImage, finiteSide, -1);
+  const signedSide = select(parallelImageLimit, -1, finiteSide);
   const signedCoCDiameterMm = signedSide.mul(2).mul(sqrt(max(0, majorRadiusMm.mul(minorRadiusMm))));
-  // Three's cleared depth is exactly 1 for this target. A measured visible
-  // surface remains valid until that clear value, including values near 1.
-  const depthValid = sampledDepth.lessThan(1);
-  const geometryValid = lens.valid
+  const finiteBranchCode = select(imageDenominator.lessThan(0), 1, 3);
+  const selectedBranchCode = select(
+    parallelImageLimit,
+    2,
+    select(finiteImage, finiteBranchCode, 0),
+  );
+  // Three's cleared depth is exactly 1 for scene-depth cases. Controlled
+  // kernel vectors are independent of scene depth but share this TSL kernel.
+  const depthValid = sampledDepth.lessThan(1).or(usesControlledObjectPoint);
+  const geometryBaseValid = lens.valid
     .and(film.valid)
     .and(objectDistanceMm.greaterThan(1e-7))
     .and(fMm.greaterThan(0))
     .and(number.greaterThan(0))
     .and(length(imageDirectionInput).greaterThan(1e-7))
     .and(centerDistance.greaterThan(1e-14))
-    .and(abs(filmDenominator).greaterThan(1e-7))
-    .and(abs(select(finiteImage, finiteDenominator, filmDenominator)).greaterThan(1e-7));
+    .and(abs(filmDenominator).greaterThan(1e-7));
+  const branchDenominatorValid = abs(select(finiteImage, finiteDenominator, filmDenominator)).greaterThan(1e-7);
+  const geometryValid = geometryBaseValid
+    .and(focalBranchResolved)
+    .and(branchDenominatorValid);
   const physicalValid = depthValid.and(geometryValid);
   const storageRepresentable = abs(signedCoCDiameterMm).lessThanEqual(65504)
     .and(majorRadiusMm.lessThanEqual(65504))
@@ -392,8 +427,22 @@ const makeDepthAndFootprintNodes = (input: {
   );
   const validityCode = select(
     depthValid,
-    select(geometryValid, select(storageRepresentable, 1, 2), 3),
+    select(
+      geometryBaseValid,
+      select(
+        focalBranchResolved,
+        select(geometryValid, select(storageRepresentable, 1, 2), 3),
+        4,
+      ),
+      3,
+    ),
     0,
+  );
+  const focalDistanceDiagnostics = vec4(
+    objectDistanceMm,
+    imageDenominator,
+    selectedBranchCode,
+    select(usesControlledObjectPoint, 1, 0),
   );
   return {
     sourceUv,
@@ -401,6 +450,7 @@ const makeDepthAndFootprintNodes = (input: {
     sampledDepth,
     storedFootprint,
     orientationDiagnostics,
+    focalDistanceDiagnostics,
     validityCode,
   };
 };
@@ -532,19 +582,28 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     if (probeIndex === undefined) throw new Error(`Physical case references missing probe ${entry.sourceProbeId}`);
     const reference = analyticReferences[probeIndex]?.hit?.point;
     const lensNormal = new THREE.Vector3(...entry.lensPlaneNormal).normalize();
-    const objectDistance = reference
-      ? reference.clone().multiplyScalar(1000).sub(new THREE.Vector3(...entry.lensCenterMm)).dot(lensNormal)
+    const canonicalObjectPointMm = entry.controlledObjectPointMm
+      ? new THREE.Vector3(...entry.controlledObjectPointMm)
+      : reference?.clone().multiplyScalar(1000) ?? null;
+    const canonicalObjectDistanceMm = canonicalObjectPointMm
+      ? canonicalObjectPointMm.clone().sub(new THREE.Vector3(...entry.lensCenterMm)).dot(lensNormal)
       : 0;
-    const focalLengthMm = entry.focalLengthMm === "object-distance" ? objectDistance : entry.focalLengthMm;
+    let focalLengthMm = entry.focalLengthMm === "object-distance"
+      ? canonicalObjectDistanceMm
+      : entry.focalLengthMm;
+    if (entry.focalBoundary) {
+      focalLengthMm = canonicalObjectDistanceMm - entry.focalBoundary.targetObjectMinusFocalMm;
+    }
     let filmPlanePointMm = entry.filmPlanePointMm;
-    if (entry.id === "in-focus" && objectDistance > focalLengthMm) {
-      const imageDistanceMm = focalLengthMm * objectDistance / (objectDistance - focalLengthMm);
+    if (entry.id === "in-focus" && canonicalObjectDistanceMm > focalLengthMm) {
+      const imageDistanceMm = focalLengthMm * canonicalObjectDistanceMm / (canonicalObjectDistanceMm - focalLengthMm);
       const lensCenterMm = new THREE.Vector3(...entry.lensCenterMm);
       filmPlanePointMm = lensCenterMm.sub(lensNormal.multiplyScalar(imageDistanceMm)).toArray() as [number, number, number];
     }
     return {
       ...entry,
       focalLengthMm,
+      canonicalObjectDistanceMm,
       filmPlanePointMm,
       sourceUv: probeUvs[probeIndex]!,
     };
@@ -599,6 +658,18 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   orientationDiagnosticsTarget.texture.minFilter = THREE.NearestFilter;
   orientationDiagnosticsTarget.texture.magFilter = THREE.NearestFilter;
   orientationDiagnosticsTarget.texture.generateMipmaps = false;
+  const focalDistanceDiagnosticsTarget = new THREE.RenderTarget(PHYSICAL_CLASSIFICATION_CASES.length, 1, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
+    depthBuffer: false,
+    stencilBuffer: false,
+    samples: 0,
+    generateMipmaps: false,
+  });
+  focalDistanceDiagnosticsTarget.texture.colorSpace = THREE.NoColorSpace;
+  focalDistanceDiagnosticsTarget.texture.minFilter = THREE.NearestFilter;
+  focalDistanceDiagnosticsTarget.texture.magFilter = THREE.NearestFilter;
+  focalDistanceDiagnosticsTarget.texture.generateMipmaps = false;
   const validityTarget = new THREE.RenderTarget(PHYSICAL_CLASSIFICATION_CASES.length, 1, {
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
@@ -694,6 +765,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   physicalMaterial.outputNode = physicalNodes.storedFootprint;
   const orientationDiagnosticsMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
   orientationDiagnosticsMaterial.outputNode = physicalNodes.orientationDiagnostics;
+  const focalDistanceDiagnosticsMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
+  focalDistanceDiagnosticsMaterial.outputNode = physicalNodes.focalDistanceDiagnostics;
   const validityMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
   validityMaterial.outputNode = vec4(physicalNodes.validityCode.div(255), 0, 0, 1);
   const cropSubjectIndex = PHYSICAL_CLASSIFICATION_CASES.findIndex((entry) => entry.id === "crop-film-tilt-near-pi");
@@ -731,6 +804,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   const postScene = new THREE.Scene();
   const physicalScene = new THREE.Scene();
   const orientationDiagnosticsScene = new THREE.Scene();
+  const focalDistanceDiagnosticsScene = new THREE.Scene();
   const validityScene = new THREE.Scene();
   const cropDiagnosticScene = new THREE.Scene();
   const cropPhysicalScene = new THREE.Scene();
@@ -738,6 +812,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
   postScene.add(new THREE.Mesh(postGeometry, postMaterial));
   physicalScene.add(new THREE.Mesh(postGeometry, physicalMaterial));
   orientationDiagnosticsScene.add(new THREE.Mesh(postGeometry, orientationDiagnosticsMaterial));
+  focalDistanceDiagnosticsScene.add(new THREE.Mesh(postGeometry, focalDistanceDiagnosticsMaterial));
   validityScene.add(new THREE.Mesh(postGeometry, validityMaterial));
   cropDiagnosticScene.add(new THREE.Mesh(postGeometry, cropDepthMaterial.material));
   cropPhysicalScene.add(new THREE.Mesh(postGeometry, cropPhysicalMaterial));
@@ -749,6 +824,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     { id: `${evidence.instanceId}:diagnostic-target`, role: "world-position-diagnostic-target", dispose: () => diagnosticTarget.dispose() },
     { id: `${evidence.instanceId}:physical-target`, role: "physical-rgba16float-target", dispose: () => physicalTarget.dispose() },
     { id: `${evidence.instanceId}:orientation-diagnostic-target`, role: "orientation-angle-diagnostic-target", dispose: () => orientationDiagnosticsTarget.dispose() },
+    { id: `${evidence.instanceId}:focal-distance-diagnostic-target`, role: "focal-distance-branch-diagnostic-target", dispose: () => focalDistanceDiagnosticsTarget.dispose() },
     { id: `${evidence.instanceId}:validity-target`, role: "physical-validity-target", dispose: () => validityTarget.dispose() },
     { id: `${evidence.instanceId}:crop-scene-target`, role: "off-center-crop-color-depth-target", dispose: () => cropSceneTarget.dispose() },
     { id: `${evidence.instanceId}:crop-diagnostic-target`, role: "off-center-crop-position-target", dispose: () => cropDiagnosticTarget.dispose() },
@@ -757,6 +833,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     { id: `${evidence.instanceId}:post-material`, role: "depth-reconstruction-material", dispose: () => postMaterial.dispose() },
     { id: `${evidence.instanceId}:physical-material`, role: "physical-footprint-material", dispose: () => physicalMaterial.dispose() },
     { id: `${evidence.instanceId}:orientation-diagnostic-material`, role: "orientation-angle-diagnostic-material", dispose: () => orientationDiagnosticsMaterial.dispose() },
+    { id: `${evidence.instanceId}:focal-distance-diagnostic-material`, role: "focal-distance-branch-diagnostic-material", dispose: () => focalDistanceDiagnosticsMaterial.dispose() },
     { id: `${evidence.instanceId}:validity-material`, role: "physical-validity-material", dispose: () => validityMaterial.dispose() },
     { id: `${evidence.instanceId}:crop-depth-material`, role: "off-center-crop-depth-reconstruction-material", dispose: () => cropDepthMaterial.material.dispose() },
     { id: `${evidence.instanceId}:crop-physical-material`, role: "off-center-crop-footprint-material", dispose: () => cropPhysicalMaterial.dispose() },
@@ -1001,6 +1078,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     renderer.setRenderTarget(orientationDiagnosticsTarget);
     renderer.clear(true, false, false);
     renderer.render(orientationDiagnosticsScene, postCamera);
+    renderer.setRenderTarget(focalDistanceDiagnosticsTarget);
+    renderer.clear(true, false, false);
+    renderer.render(focalDistanceDiagnosticsScene, postCamera);
     renderer.setRenderTarget(validityTarget);
     renderer.clear(true, false, false);
     renderer.render(validityScene, postCamera);
@@ -1073,6 +1153,13 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       PHYSICAL_CLASSIFICATION_CASES.length,
       1,
     );
+    const focalDistanceDiagnosticsReadback = await renderer.readRenderTargetPixelsAsync(
+      focalDistanceDiagnosticsTarget,
+      0,
+      0,
+      PHYSICAL_CLASSIFICATION_CASES.length,
+      1,
+    );
     if (!(physicalReadback instanceof Uint16Array)) {
       throw new Error(`Expected RGBA16F physical readback, received ${physicalReadback.constructor.name}`);
     }
@@ -1081,6 +1168,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     }
     if (!(orientationDiagnosticsReadback instanceof Float32Array)) {
       throw new Error(`Expected Float32 orientation diagnostics, received ${orientationDiagnosticsReadback.constructor.name}`);
+    }
+    if (!(focalDistanceDiagnosticsReadback instanceof Float32Array)) {
+      throw new Error(`Expected Float32 focal-distance diagnostics, received ${focalDistanceDiagnosticsReadback.constructor.name}`);
     }
     const probeById = new Map(probeResults.map((probe) => [probe.id, probe]));
     evidence.physical = {
@@ -1096,6 +1186,33 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
         const sourceProbe = probeById.get(entry.sourceProbeId);
         if (!sourceProbe) throw new Error(`Missing depth probe result ${entry.sourceProbeId}`);
         const validityCode = validityReadback[offset]!;
+        const focalDiagnosticsOffset = offset;
+        const kernelObjectDistanceMm = focalDistanceDiagnosticsReadback[focalDiagnosticsOffset]!;
+        const kernelObjectMinusFocalMm = focalDistanceDiagnosticsReadback[focalDiagnosticsOffset + 1]!;
+        const branchCode = Math.round(focalDistanceDiagnosticsReadback[focalDiagnosticsOffset + 2]!);
+        const selectedPhysicalBranch = branchCode === 1
+          ? "finite-virtual" as const
+          : branchCode === 2
+            ? "parallel-limit" as const
+            : branchCode === 3
+              ? "finite-real" as const
+              : "unresolved" as const;
+        const inputSource = entry.focalBoundary?.inputSource ?? "depth";
+        const depthMode = inputSource === "depth";
+        const gpuDepthReconstructedObjectDistanceMm = depthMode ? kernelObjectDistanceMm : null;
+        const depthReconstructionErrorMm = depthMode
+          ? kernelObjectDistanceMm - entry.canonicalObjectDistanceMm
+          : null;
+        const canonicalObjectMinusFocalMm = entry.canonicalObjectDistanceMm - entry.focalLengthMm;
+        const targetObjectMinusFocalMm = entry.focalBoundary?.targetObjectMinusFocalMm ?? canonicalObjectMinusFocalMm;
+        const depthClassificationResolution = !entry.focalBoundary || !depthMode
+          ? "not-applicable" as const
+          : entry.focalBoundary.expectedRegime === "parallel-limit"
+            ? "explicit-limit" as const
+            : Math.sign(targetObjectMinusFocalMm) === Math.sign(kernelObjectMinusFocalMm)
+                && Math.abs(targetObjectMinusFocalMm) > Math.abs(depthReconstructionErrorMm ?? 0)
+                ? "resolved" as const
+                : "depth-limited" as const;
         return {
           id: entry.id,
           sourceProbeId: entry.sourceProbeId,
@@ -1109,13 +1226,30 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           orientationRad: orientationDiagnosticsReadback[offset + 1]!,
           orientationNormalized: orientationDiagnosticsReadback[offset + 2]!,
           orientationDefined: orientationDiagnosticsReadback[offset + 3]! > 0.5,
+          focalDistance: entry.focalBoundary ? {
+            inputSource,
+            expectedRegime: entry.focalBoundary.expectedRegime,
+            canonicalObjectDistanceMm: entry.canonicalObjectDistanceMm,
+            gpuDepthReconstructedObjectDistanceMm,
+            kernelObjectDistanceMm,
+            canonicalObjectMinusFocalMm: entry.canonicalObjectDistanceMm - entry.focalLengthMm,
+            gpuDepthReconstructedObjectMinusFocalMm: depthMode ? kernelObjectMinusFocalMm : null,
+            kernelObjectMinusFocalMm,
+            depthReconstructionErrorMm,
+            depthClassificationResolution,
+            explicitParallelLimitIdentity: entry.focalBoundary.expectedRegime === "parallel-limit"
+              && entry.focalBoundary.explicitParallelLimitIdentity !== false,
+            selectedPhysicalBranch,
+          } : null,
           rawSignClassification: validityCode === 0
             ? "no-depth"
             : validityCode === 2
               ? "unrepresentable"
               : validityCode === 3
                 ? "invalid-geometry"
-                : stored[0] < 0 ? "near" : stored[0] > 0 ? "far" : "neutral",
+                : validityCode === 4
+                  ? "unresolved-focal-boundary"
+                  : stored[0] < 0 ? "near" : stored[0] > 0 ? "far" : "neutral",
           nearFocusComparison: validityCode !== 1
             ? "not-applicable"
             : Math.abs(stored[0]) <= NEAR_FOCUS_NUMERICAL_TOLERANCE_MM

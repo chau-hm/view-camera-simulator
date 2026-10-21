@@ -31,6 +31,14 @@ type PhysicalSample = {
     id: string;
     sourceProbeId: string;
     focalLengthMm: number;
+    canonicalObjectDistanceMm: number;
+    controlledObjectPointMm?: readonly [number, number, number];
+    focalBoundary?: {
+      targetObjectMinusFocalMm: number;
+      expectedRegime: "finite-virtual" | "parallel-limit" | "finite-real";
+      inputSource: "depth" | "controlled-world-point";
+      explicitParallelLimitIdentity?: boolean;
+    };
     apertureFNumber: number;
     lensCenterMm: readonly [number, number, number];
     lensPlaneNormal: readonly [number, number, number];
@@ -51,7 +59,21 @@ type PhysicalSample = {
   orientationRad: number;
   orientationNormalized: number;
   orientationDefined: boolean;
-  rawSignClassification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable";
+  focalDistance: null | {
+    inputSource: "depth" | "controlled-world-point";
+    expectedRegime: "finite-virtual" | "parallel-limit" | "finite-real";
+    canonicalObjectDistanceMm: number;
+    gpuDepthReconstructedObjectDistanceMm: number | null;
+    kernelObjectDistanceMm: number;
+    canonicalObjectMinusFocalMm: number;
+    gpuDepthReconstructedObjectMinusFocalMm: number | null;
+    kernelObjectMinusFocalMm: number;
+    depthReconstructionErrorMm: number | null;
+    depthClassificationResolution: "resolved" | "depth-limited" | "explicit-limit" | "not-applicable";
+    explicitParallelLimitIdentity: boolean;
+    selectedPhysicalBranch: "finite-virtual" | "parallel-limit" | "finite-real" | "unresolved";
+  };
+  rawSignClassification: "near" | "neutral" | "far" | "no-depth" | "invalid-geometry" | "unrepresentable" | "unresolved-focal-boundary";
   nearFocusComparison: "within-tolerance" | "outside-tolerance" | "not-applicable";
 };
 type Diagnostics = {
@@ -254,6 +276,7 @@ test("native scene depth and TSL physical footprints match independent geometry 
   expect(crop?.physicalCoCDifferenceMm).toBeLessThan(0.05);
   const probeById = new Map(handle.probes.map((probe) => [probe.id, probe]));
   for (const sample of handle.physical?.samples ?? []) {
+    if (sample.input.focalBoundary) continue;
     const source = probeById.get(sample.sourceProbeId);
     expect(source, `${sample.id} source probe`).toBeDefined();
     if (!source?.expectedWorldM) {
@@ -473,6 +496,188 @@ test("native scene depth and TSL physical footprints match independent geometry 
     contentType: "application/json",
   });
   expect(handle.resources.every((resource) => resource.state === "active")).toBe(true);
+});
+
+test("native focal-length boundary preserves finite virtual, exact-limit, and finite real branches", async ({ page }, testInfo) => {
+  await page.goto(FIXTURE_PATH);
+  await expect(page.getByTestId("physical-coc-experiment")).toBeVisible();
+  const { handle } = await waitForCompletedHandle(page);
+  expect(handle.error).toBeNull();
+  if (nativeWebGpuRequired) {
+    expect(handle.runtime?.rendererFamily).toBe("webgpu-renderer");
+    expect(handle.runtime?.executionBackend).toBe("webgpu");
+    expect(handle.runtime?.applicationFallback).toBe(false);
+  }
+
+  const probes = new Map(handle.probes.map((probe) => [probe.id, probe]));
+  const samples = new Map((handle.physical?.samples ?? []).map((sample) => [sample.id, sample]));
+  const boundarySamples = [...samples.values()].filter((sample) => sample.input.focalBoundary);
+  expect(boundarySamples).toHaveLength(12);
+
+  const measuredBoundary = boundarySamples.map((sample) => {
+    const boundary = sample.input.focalBoundary;
+    const source = probes.get(sample.sourceProbeId);
+    expect(boundary, sample.id).toBeDefined();
+    expect(source, sample.id).toBeDefined();
+    if (!boundary || !source?.expectedWorldM || !sample.focalDistance) {
+      throw new Error(`Missing focal-boundary evidence for ${sample.id}`);
+    }
+    const input = sample.input;
+    const canonicalObjectPointMm = input.controlledObjectPointMm
+      ? [...input.controlledObjectPointMm] as [number, number, number]
+      : source.expectedWorldM.map((coordinate) => coordinate * 1000) as [number, number, number];
+    const lensCenter = new THREE.Vector3(...input.lensCenterMm);
+    const lensNormal = new THREE.Vector3(...input.lensPlaneNormal).normalize();
+    const canonicalObjectDistanceMm = new THREE.Vector3(...canonicalObjectPointMm)
+      .sub(lensCenter)
+      .dot(lensNormal);
+    const canonicalObjectMinusFocalMm = canonicalObjectDistanceMm - input.focalLengthMm;
+    expect(canonicalObjectDistanceMm).toBeCloseTo(sample.focalDistance.canonicalObjectDistanceMm, 5);
+    expect(canonicalObjectMinusFocalMm)
+      .toBeCloseTo(boundary.targetObjectMinusFocalMm, 6);
+
+    const cpuFor = (pointMm: readonly [number, number, number]) => computePhysicalBlurFootprint({
+      objectPoint: vec(...pointMm),
+      lensCenter: vec(...input.lensCenterMm),
+      lensPlaneNormal: vec(...input.lensPlaneNormal),
+      lensPlaneBasisX: vec(...input.lensPlaneBasisX),
+      lensPlaneBasisY: vec(...input.lensPlaneBasisY),
+      filmPlane: planeFromPointNormal(vec(...input.filmPlanePointMm), vec(...input.filmPlaneNormal)),
+      filmPlaneBasisX: vec(...input.filmPlaneBasisX),
+      filmPlaneBasisY: vec(...input.filmPlaneBasisY),
+      focalLengthMm: input.focalLengthMm,
+      apertureFNumber: input.apertureFNumber,
+    });
+    const canonicalReference = cpuFor(canonicalObjectPointMm);
+    expect(canonicalReference.valid, `${sample.id} canonical CPU footprint`).toBe(true);
+    const canonicalExpectedSign = boundary.expectedRegime === "finite-virtual" ? 1 : -1;
+    expect(Math.sign(canonicalReference.signedCoCDiameterMm), `${sample.id} canonical regime sign`)
+      .toBe(canonicalExpectedSign);
+
+    const focal = sample.focalDistance;
+    expect(focal.expectedRegime).toBe(boundary.expectedRegime);
+    expect(focal.inputSource).toBe(boundary.inputSource);
+    const explicitParallelLimitIdentity = boundary.expectedRegime === "parallel-limit"
+      && boundary.explicitParallelLimitIdentity !== false;
+    expect(focal.explicitParallelLimitIdentity).toBe(explicitParallelLimitIdentity);
+    if (boundary.expectedRegime === "parallel-limit" && !explicitParallelLimitIdentity) {
+      expect(boundary.inputSource).toBe("controlled-world-point");
+      expect(sample.validityCode, `${sample.id} unresolved focal-boundary validity`).toBe(4);
+      expect(focal.selectedPhysicalBranch).toBe("unresolved");
+      expect(sample.rawSignClassification).toBe("unresolved-focal-boundary");
+      expect(sample.storedRgba16Float).toEqual([0, 0, 0, 0]);
+      expect(sample.storedRgba16Float.every(Number.isFinite)).toBe(true);
+      return {
+        id: sample.id,
+        focalLengthMm: input.focalLengthMm,
+        canonicalObjectDistanceMm,
+        gpuDepthReconstructedObjectDistanceMm: focal.gpuDepthReconstructedObjectDistanceMm,
+        kernelObjectDistanceMm: focal.kernelObjectDistanceMm,
+        canonicalUminusFMm: canonicalObjectMinusFocalMm,
+        gpuDepthReconstructedUminusFMm: focal.gpuDepthReconstructedObjectMinusFocalMm,
+        kernelUminusFMm: focal.kernelObjectMinusFocalMm,
+        depthReconstructionErrorMm: focal.depthReconstructionErrorMm,
+        selectedPhysicalBranch: focal.selectedPhysicalBranch,
+        depthClassificationResolution: focal.depthClassificationResolution,
+        explicitParallelLimitIdentity,
+        validityCode: sample.validityCode,
+        cpuCanonicalSignedCoCMm: canonicalReference.signedCoCDiameterMm,
+        gpuStoredSignedCoCMm: sample.storedRgba16Float[0],
+        cpuKernelInputSignedCoCMm: null,
+      };
+    }
+    expect(sample.validityCode, `${sample.id} GPU physical validity`).toBe(1);
+    if (boundary.inputSource === "controlled-world-point") {
+      expect(focal.gpuDepthReconstructedObjectDistanceMm).toBeNull();
+      expect(focal.depthReconstructionErrorMm).toBeNull();
+      expect(focal.depthClassificationResolution).toBe("not-applicable");
+      expect(focal.kernelObjectMinusFocalMm)
+        .toBeCloseTo(boundary.targetObjectMinusFocalMm, 5);
+      expect(focal.selectedPhysicalBranch).toBe(boundary.expectedRegime);
+      expect(Math.sign(sample.storedRgba16Float[0])).toBe(canonicalExpectedSign);
+    } else if (boundary.expectedRegime === "parallel-limit") {
+      expect(focal.depthClassificationResolution).toBe("explicit-limit");
+      expect(focal.selectedPhysicalBranch).toBe("parallel-limit");
+      expect(focal.kernelObjectMinusFocalMm).not.toBe(0);
+      expect(sample.storedRgba16Float.every(Number.isFinite)).toBe(true);
+      expect(Math.sign(sample.storedRgba16Float[0])).toBe(-1);
+    } else {
+      expect(focal.gpuDepthReconstructedObjectDistanceMm).not.toBeNull();
+      expect(focal.depthReconstructionErrorMm).not.toBeNull();
+      const targetDelta = boundary.targetObjectMinusFocalMm;
+      const depthError = focal.depthReconstructionErrorMm ?? 0;
+      const resolvedFromDepth =
+        Math.sign(targetDelta) === Math.sign(focal.kernelObjectMinusFocalMm)
+        && Math.abs(targetDelta) > Math.abs(depthError);
+      expect(focal.depthClassificationResolution)
+        .toBe(resolvedFromDepth ? "resolved" : "depth-limited");
+      if (resolvedFromDepth) {
+        expect(focal.selectedPhysicalBranch).toBe(boundary.expectedRegime);
+      } else {
+        expect(focal.depthClassificationResolution).toBe("depth-limited");
+      }
+    }
+
+    const comparisonPointMm = boundary.inputSource === "controlled-world-point"
+      ? canonicalObjectPointMm
+      : boundary.expectedRegime === "parallel-limit"
+        ? canonicalObjectPointMm
+        : sample.reconstructedWorldMm;
+    const gpuInputReference = cpuFor(comparisonPointMm);
+    expect(gpuInputReference.valid, `${sample.id} CPU oracle for GPU kernel input`).toBe(true);
+    const expected = [
+      gpuInputReference.signedCoCDiameterMm,
+      gpuInputReference.majorRadiusMm,
+      gpuInputReference.minorRadiusMm,
+    ];
+    for (let channel = 0; channel < expected.length; channel++) {
+      const tolerance = Math.max(0.02, Math.abs(expected[channel]!) * 0.003);
+      expect(
+        Math.abs(sample.storedRgba16Float[channel]! - expected[channel]!),
+        `${sample.id} GPU/CPU channel ${channel}`,
+      ).toBeLessThan(tolerance);
+    }
+    expect(sample.rawSignClassification).toBe(
+      sample.storedRgba16Float[0] < 0 ? "near" : sample.storedRgba16Float[0] > 0 ? "far" : "neutral",
+    );
+
+    if (boundary.expectedRegime === "parallel-limit") {
+      expect(sample.storedRgba16Float[0]).toBeLessThan(0);
+      expect(sample.storedRgba16Float.slice(0, 3).every(Number.isFinite)).toBe(true);
+      expect(Math.abs(sample.storedRgba16Float[0])).toBeGreaterThan(0);
+      expect(Math.abs(sample.storedRgba16Float[0])).toBeCloseTo(
+        input.focalLengthMm / input.apertureFNumber,
+        1,
+      );
+    }
+
+    return {
+      id: sample.id,
+      focalLengthMm: input.focalLengthMm,
+      canonicalObjectDistanceMm,
+      gpuDepthReconstructedObjectDistanceMm: focal.gpuDepthReconstructedObjectDistanceMm,
+      kernelObjectDistanceMm: focal.kernelObjectDistanceMm,
+      canonicalUminusFMm: canonicalObjectMinusFocalMm,
+      gpuDepthReconstructedUminusFMm: focal.gpuDepthReconstructedObjectMinusFocalMm,
+      kernelUminusFMm: focal.kernelObjectMinusFocalMm,
+      depthReconstructionErrorMm: focal.depthReconstructionErrorMm,
+      selectedPhysicalBranch: focal.selectedPhysicalBranch,
+      depthClassificationResolution: focal.depthClassificationResolution,
+      explicitParallelLimitIdentity,
+      validityCode: sample.validityCode,
+      cpuCanonicalSignedCoCMm: canonicalReference.signedCoCDiameterMm,
+      gpuStoredSignedCoCMm: sample.storedRgba16Float[0],
+      cpuKernelInputSignedCoCMm: gpuInputReference.signedCoCDiameterMm,
+    };
+  });
+  await testInfo.attach("phase-e-focal-boundary-results.json", {
+    body: Buffer.from(JSON.stringify({
+      runtime: handle.runtime,
+      depth: handle.depth,
+      measuredBoundary,
+    }, null, 2)),
+    contentType: "application/json",
+  });
 });
 
 test("native SPA retirement waits for held readbacks, rejects stale publication, and remounts independently", async ({ page }, testInfo) => {

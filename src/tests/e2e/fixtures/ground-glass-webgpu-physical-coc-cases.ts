@@ -43,10 +43,22 @@ export const DEPTH_PROBE_CASES: readonly DepthProbeCase[] = [
   },
 ];
 
+export type FocalBoundaryRegime = "finite-virtual" | "parallel-limit" | "finite-real";
+export type FocalBoundaryInputSource = "depth" | "controlled-world-point";
+
 export type PhysicalClassificationCase = Readonly<{
   id: string;
   sourceProbeId: string;
   focalLengthMm: number | "object-distance";
+  /** A test-only world point in mm; when present it replaces the depth point for this kernel sample. */
+  controlledObjectPointMm?: readonly [number, number, number];
+  focalBoundary?: Readonly<{
+    targetObjectMinusFocalMm: number;
+    expectedRegime: FocalBoundaryRegime;
+    inputSource: FocalBoundaryInputSource;
+    /** Omit exact-limit authority to verify unresolved-boundary fail-closed behavior. */
+    explicitParallelLimitIdentity?: boolean;
+  }>;
   apertureFNumber: number;
   lensCenterMm: readonly [number, number, number];
   lensPlaneNormal: readonly [number, number, number];
@@ -140,7 +152,60 @@ export const PHYSICAL_CLASSIFICATION_CASES: readonly PhysicalClassificationCase[
   {
     id: "focal-plane-parallel-limit", sourceProbeId: "near-front-center-left", ...baseline,
     focalLengthMm: "object-distance",
+    focalBoundary: {
+      targetObjectMinusFocalMm: 0,
+      expectedRegime: "parallel-limit",
+      inputSource: "depth",
+    },
     filmPlanePointMm: [0, 0, -250],
+  },
+  ...([
+    { suffix: "below-0.01mm", targetDeltaMm: -0.01, expectedRegime: "finite-virtual" as const },
+    { suffix: "below-0.001mm", targetDeltaMm: -0.001, expectedRegime: "finite-virtual" as const },
+    { suffix: "exact", targetDeltaMm: 0, expectedRegime: "parallel-limit" as const },
+    { suffix: "above-0.001mm", targetDeltaMm: 0.001, expectedRegime: "finite-real" as const },
+    { suffix: "above-0.01mm", targetDeltaMm: 0.01, expectedRegime: "finite-real" as const },
+  ] as const).map(({ suffix, targetDeltaMm, expectedRegime }) => ({
+    id: `focal-depth-${suffix}`,
+    sourceProbeId: "near-front-center-left",
+    ...baseline,
+    focalLengthMm: "object-distance" as const,
+    focalBoundary: {
+      targetObjectMinusFocalMm: targetDeltaMm,
+      expectedRegime,
+      inputSource: "depth" as const,
+    },
+  })),
+  ...([
+    { suffix: "below-0.01mm", objectDistanceMm: 49.99, targetDeltaMm: -0.01, expectedRegime: "finite-virtual" as const },
+    { suffix: "below-0.001mm", objectDistanceMm: 49.999, targetDeltaMm: -0.001, expectedRegime: "finite-virtual" as const },
+    { suffix: "exact", objectDistanceMm: 50, targetDeltaMm: 0, expectedRegime: "parallel-limit" as const },
+    { suffix: "above-0.001mm", objectDistanceMm: 50.001, targetDeltaMm: 0.001, expectedRegime: "finite-real" as const },
+    { suffix: "above-0.01mm", objectDistanceMm: 50.01, targetDeltaMm: 0.01, expectedRegime: "finite-real" as const },
+  ] as const).map(({ suffix, objectDistanceMm, targetDeltaMm, expectedRegime }) => ({
+    id: `focal-kernel-${suffix}`,
+    sourceProbeId: "near-front-center-left",
+    ...baseline,
+    focalLengthMm: "object-distance" as const,
+    controlledObjectPointMm: [0, 0, objectDistanceMm] as const,
+    focalBoundary: {
+      targetObjectMinusFocalMm: targetDeltaMm,
+      expectedRegime,
+      inputSource: "controlled-world-point" as const,
+    },
+  })),
+  {
+    id: "focal-kernel-exact-without-limit-identity",
+    sourceProbeId: "near-front-center-left",
+    ...baseline,
+    focalLengthMm: "object-distance",
+    controlledObjectPointMm: [0, 0, 50],
+    focalBoundary: {
+      targetObjectMinusFocalMm: 0,
+      expectedRegime: "parallel-limit",
+      inputSource: "controlled-world-point",
+      explicitParallelLimitIdentity: false,
+    },
   },
   {
     id: "invalid-lens-basis", sourceProbeId: "near-front-center-left", ...baseline,

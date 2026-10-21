@@ -8,7 +8,7 @@
 
 ## A. Executive conclusion
 
-**FEASIBLE — native WebGPU can reconstruct scene world positions from a GPU depth attachment, compute the existing physical CoC and local-affine footprint model in TSL, and store the result in `rgba16float` using the Phase D normalized orientation channel for the tested controlled geometry.**
+**FEASIBLE — native WebGPU can reconstruct scene world positions from a GPU depth attachment, compute the existing physical CoC and local-affine footprint model in TSL, and store the result in `rgba16float` using the Phase D normalized orientation channel for the tested controlled geometry.** The focal-distance branch now keeps every tested nonzero `U − f` input finite, including controlled virtual-image samples inside the former `0.002 mm` band. Depth-derived samples whose measured reconstruction error is as large as the requested offset are explicitly reported as depth-limited. Exact `U = f` depth cases use a fixture-only canonical limit identity because their reconstructed positions are not exactly on the focal plane.
 
 The native-required headed Chrome run reported `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, and `applicationFallback=false`. It reported `depth24plus` scene depth and `rgba16float` physical output with a separate `rgba8unorm` validity target. A native rasterized surface at depth `0.9999995232` remained distinguishable from the exact clear value `1.0` on this adapter. This does not establish hardware acceleration or universal depth precision.
 
@@ -17,6 +17,8 @@ The experiment verifies numerical and classification parity only. It does not im
 ## B. Existing physical authority
 
 The CPU authority remains [`computePhysicalBlurFootprint()`](../../src/core/optics/computePhysicalBlurFootprint.ts). It resolves orthonormal lens and film bases, projects object distance onto the lens normal, constructs the thin-lens image point, intersects the oriented film plane, maps local aperture offsets, and computes the covariance ellipse and signed equivalent CoC. The WebGL implementation in [`groundGlassDofShaders.ts`](../../src/render/groundGlassDofShaders.ts) uses an optimized local-affine derivative for the same physical contract.
+
+For positive object distance `U` along the lens normal and focal length `f`, the canonical thin-lens regimes are `U < f` (finite virtual image, `V < 0`), `U = f` (image at infinity), and `U > f` (finite real image, `V > 0`). Only exact equality is the parallel-image limit in the CPU authority. A nonzero distance from `f`, however small, remains a finite-image input; replacing a band around `f` with the limit changes the physical branch and can reverse signed CoC. The final signed CoC still comes from the ideal image's position relative to the actual oriented film plane, so `U` alone is not a general near/far sign rule.
 
 Physical ellipse orientation is calculated in radians by the CPU oracle and the TSL kernel. The RGBA16F storage contract normalizes the wrapped line angle over π into channel A; consumers recover radians with the existing orientation decoder. World positions are reconstructed in metres, converted explicitly to millimetres before the physical calculation, and stored physical channels R–G remain millimetres.
 
@@ -52,15 +54,19 @@ The GPU receives actual reconstructed world position and explicit lens/film para
 
 1. Orthonormal lens and film basis resolution.
 2. Optical-axis object distance and lateral object offset.
-3. Thin-lens image distance and image-point construction, including the finite limiting branch at object distance equal to focal length.
+3. Thin-lens image distance and image-point construction, including the parallel-image limit at object distance equal to focal length.
 4. Intersection with the oriented film plane.
 5. Local aperture-offset mapping into the film basis.
 6. Covariance eigenvalues, major/minor ellipse radii, physical orientation in radians modulo π, and signed equivalent CoC diameter.
-7. Separate depth, geometry, and binary16 representability classification.
+7. Separate depth, geometry, focal-boundary resolution, and binary16 representability classification.
+
+The TSL kernel no longer has a focal-distance tolerance. Every representable nonzero `U − f` uses the finite-image path. Division intermediates use a safe denominator only when `U − f` is exactly zero; a zero denominator without an authoritative limit identity is reported as fixture validity code `4` (`unresolved focal boundary`) and is not stored as a valid physical result. Existing fixture validity meanings remain `0` no depth, `1` valid/storable, `2` outside finite binary16 range, and `3` invalid physical geometry.
+
+Rasterized depth reconstruction is approximate: for the tested `depth24plus` probe, the observed focal-distance error was `−0.0014953613 mm` (`−1.495 μm`). The depth-driven `U = f` samples therefore do not reconstruct at exact equality. Those explicitly identified cases carry a test-only parallel-limit identity derived from their canonical ray/plane input; the fixture still checks and reports the GPU depth and reconstructed position. This metadata is used only for the canonical exact-limit test cases. It is not inferred from a proximity threshold and is not a production input contract. The controlled-world-point supplemental samples provide known physical coordinates directly to the same TSL optical kernel, without uploading CoC or ellipse results.
 
 Before storage, the kernel wraps the physical angle over π and writes `orientationNormalized = wrappedOrientationRad / π` into A. The native `rgba16float` channels are `R=signed CoC diameter (mm)`, `G=major semi-axis (mm)`, `B=minor semi-axis (mm)`, and `A=orientation normalized over π`. A separate diagnostic target exposes the principal angle, wrapped radians, normalized value, and whether an ellipse direction is defined. The storage target remains `NoColorSpace`, nearest-filtered, without tone mapping or mipmaps.
 
-A separate `rgba8unorm` target preserves code `0` for no depth, `1` for valid/storable values, `2` for valid physical values outside finite binary16 range, and `3` for invalid physical geometry. Unsupported values fail closed to zero in the data target while remaining distinguishable in the validity target.
+A separate `rgba8unorm` target preserves code `0` for no depth, `1` for valid/storable values, `2` for valid physical values outside finite binary16 range, `3` for invalid physical geometry, and `4` for a numerically unresolved exact focal boundary without the explicit canonical limit identity. Unsupported or unresolved values fail closed to zero in the data target while remaining distinguishable in the validity target.
 
 ## F. Numerical comparisons
 
@@ -79,6 +85,29 @@ The independent oracle is `computePhysicalBlurFootprint()` applied to the analyt
 | Object distance = focal length | -80.000000 | -80.000000 | 40.000000 / 40.000000 | 40.000000 / 40.000000 | near / outside tolerance |
 
 The existing focused-in-plane input has an exact-zero CPU result while native GPU arithmetic retains `-2.9206276e-6 mm`. Its raw sign is therefore near; its separate numerical comparison is within the fixture's `0.0001 mm` focus tolerance. The tolerance is a diagnostic only and is not a Phase F near/far gathering rule.
+
+### Focal-length boundary evidence
+
+The fixed boundary matrix includes five depth-driven samples at `f − 0.01`, `f − 0.001`, `f`, `f + 0.001`, and `f + 0.01 mm`, plus five controlled-world-point samples at the same offsets around `f = 50 mm`. The pre-existing `focal-plane-parallel-limit` depth case is retained as an additional exact-limit regression, and a sixth controlled sample omits the exact-limit identity to test unresolved fail-closed behavior. CPU values below are from `computePhysicalBlurFootprint()` on the canonical physical point; GPU values are read back from the actual `rgba16float` target. Controlled finite samples also compare the kernel's float32 input against the CPU oracle. CoC is in millimetres.
+
+| Case | Input | Canonical `U−f` | GPU kernel `U−f` | GPU branch / depth evidence | CPU canonical CoC | GPU stored CoC |
+|---|---|---:|---:|---|---:|---:|
+| `focal-plane-parallel-limit` | depth | 0 | −0.001495361 | parallel limit / explicit identity | −80.000000 | −80.000000 |
+| `focal-depth-below-0.01mm` | depth | −0.010000000 | −0.011505127 | finite virtual / resolved | +80.002934 | +80.000000 |
+| `focal-depth-below-0.001mm` | depth | −0.001000000 | −0.002502441 | finite virtual / depth-limited | +80.000293 | +80.000000 |
+| `focal-depth-exact` | depth | 0 | −0.001495361 | parallel limit / explicit identity | −80.000000 | −80.000000 |
+| `focal-depth-above-0.001mm` | depth | +0.001000000 | −0.000488281 | finite virtual / depth-limited | −79.999707 | +79.937500 |
+| `focal-depth-above-0.01mm` | depth | +0.010000000 | +0.008514404 | finite real / resolved | −79.997066 | −79.937500 |
+| `focal-kernel-below-0.01mm` | controlled point | −0.010000000 | −0.009998322 | finite virtual / direct input | +12.502778 | +12.500000 |
+| `focal-kernel-below-0.001mm` | controlled point | −0.001000000 | −0.000999451 | finite virtual / direct input | +12.500278 | +12.500000 |
+| `focal-kernel-exact` | controlled point | 0 | 0 | parallel limit / explicit identity | −12.500000 | −12.500000 |
+| `focal-kernel-exact-without-limit-identity` | controlled point | 0 | 0 | unresolved / validity code 4 | −12.500000 | 0 (fail closed) |
+| `focal-kernel-above-0.001mm` | controlled point | +0.001000000 | +0.000999451 | finite real / direct input | −12.499722 | −12.492188 |
+| `focal-kernel-above-0.01mm` | controlled point | +0.010000000 | +0.009998322 | finite real / direct input | −12.497223 | −12.492188 |
+
+The controlled `focal-kernel-below-0.001mm` case is the supplemental evidence within the former `0.002 mm` band: the actual TSL kernel selects a finite virtual image and stores positive signed CoC, matching the independent CPU sign. The positive `f + 0.001 mm` depth case is not reliably resolved by raster depth: its canonical point is a finite real image, but the reconstructed point is `0.000488281 mm` below `f`, so the GPU correctly follows the reconstructed finite virtual-image input and reports `depth-limited`. At that reconstructed point the CPU oracle is `+79.999772 mm`; the GPU stores `+79.937500 mm`, with the difference attributable to binary16 quantization at this magnitude. The canonical CPU value is `−79.999707 mm`; the opposite signs are a depth-reconstruction limitation, not evidence of canonical-input kernel parity for this ambiguous case.
+
+For the exact depth limit, the canonical CPU result is `−80 mm` and the GPU stores `−80 mm` even though reconstructed depth is `1.495 μm` below the focal plane. This is the intentionally explicit canonical-limit case, not a depth-only inference. The exact controlled point also stores the limit result when its identity is present. When the same exact controlled point omits that identity, the TSL diagnostic reports an unresolved branch and validity code `4`, and the physical target remains zero instead of fabricating a near/far sign. No broad equality tolerance is applied to finite inputs.
 
 The orientation storage contract was checked against the existing Phase D encoder/decoder after actual half-float readback. The unwrapped angle is a GPU diagnostic; A is the actual binary16 normalized value; decoded radians are compared modulo π with the CPU oracle.
 
@@ -101,6 +130,8 @@ Native binary16 readback was observed as `Uint16Array` values and decoded from t
 The `in-focus` sample retains its raw stored value `-2.9206276e-6 mm` and raw sign classification `near`; independently, it is within the numerical focus tolerance of `0.0001 mm`. That tolerance does not rewrite signed CoC or establish a production gather threshold.
 
 The `outside-binary16-range` vector is synthetic, not a realistic optical scene result. The CPU physical result is `-312500 mm` CoC with `156250 mm` axes. The GPU validity target reports code `2`; the `rgba16float` data target stores `[0,0,0,0]` to avoid presenting overflow as valid physical data. This demonstrates a storage representability boundary, not invalid lens geometry.
+
+The separate `0.0001 mm` near-focus comparison tolerance remains a numerical diagnostic only. It does not select the finite-image versus parallel-limit branch. Focal-boundary depth resolution is reported separately from raw signed CoC classification and binary16 storage validity.
 
 ## H. Failure and invalid samples
 
@@ -136,6 +167,8 @@ Verified:
 - Native GPU depth acquisition and TSL sampling, including a visible surface above the former `0.999999` cutoff.
 - WebGPU projection convention and independent world-position reconstruction.
 - GPU TSL physical CoC and oriented footprint calculation.
+- Finite virtual, exact parallel-limit, and finite real branches for the tested focal-boundary vectors. The controlled `f − 0.001 mm` result is positive and finite, rather than being forced to the negative parallel limit.
+- Explicit depth-limited reporting where focal-distance reconstruction uncertainty prevents a canonical-side claim; the tested depth probe error was `1.495 μm`.
 - Phase D-compatible normalized orientation storage and decoding through the existing codec.
 - `rgba16float` storage and GPU readback.
 - Raw near/neutral/far CoC sign semantics, with the fixture's numerical focus tolerance reported separately.
@@ -150,10 +183,12 @@ Not verified:
 - Far/near aperture gather, blur composition, Image Circle/vignetting, or visual DOF parity.
 - Other GPU adapters or hardware-acceleration status.
 - Transparent-object depth policy, antialiased edge coverage, or universal distinguishability at the far clip. The explicit ambiguous-depth diagnostic is present, but this run produced no ambiguous sample.
+- Canonical near/far parity for depth-derived `|U − f|` values at or below the measured focal-distance reconstruction uncertainty. The `f + 0.001 mm` test is explicitly depth-limited and its GPU branch follows its reconstructed finite virtual-image point.
+- A depth-only exact `U = f` classifier. The exact depth test uses explicit test metadata derived from the canonical point; it does not infer exact equality from reconstructed depth.
 
 ## K. Phase F decision
 
-**Phase F may begin as a separate bounded feasibility study** for physical footprint-to-pixel mapping and far/near gather/compositing. It should consume the Phase D-compatible normalized orientation contract and add explicit occlusion, edge, range, and storage diagnostics.
+After this Phase E review gate, a separate bounded Phase F feasibility study may be considered for physical footprint-to-pixel mapping and far/near gather/compositing. It should consume the Phase D-compatible normalized orientation contract and add explicit occlusion, edge, range, and storage diagnostics. Its input contract must carry an authoritative exact-limit identity when exact `U = f` is known from canonical physical state, or preserve an unresolved diagnostic if only depth-reconstructed position is available and equality cannot be established. It must not widen a finite-image branch with a distance tolerance.
 
 This result does not justify enabling a production WebGPU backend. Production Ground Glass, complete DOF behavior, Image Circle parity, and all public scene camera contracts remain future work.
 
@@ -188,12 +223,13 @@ npm run test:e2e -- --config=playwright.production.config.ts \
 
 Validation executed for this review-fix round:
 
-- Native-required headed Chrome Phase E suite: **4/4 passed**. Runtime evidence reported `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and `depth24plus`. This included native surface reconstruction, normalized orientation, crop, and SPA/resource failure cases.
-- Ordinary Chromium Phase E control: **1 passed, 3 native-only cases skipped**. The runtime reported WebGL2 fallback; this is compatibility evidence, not native WebGPU evidence.
+- Focal-boundary test on native-required headed Chrome: **1/1 passed**. The browser reported `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and `depth24plus`; the attached measurements include the actual GPU depth reconstruction, selected branch, RGBA16F CoC, and CPU comparisons.
+- Full native-required Phase E suite: **5/5 passed**, including native depth/TSL conformance, finite/parallel/unresolved focal-boundary cases, SPA/resource lifecycle, and both failure-cleanup tests.
+- Ordinary Chromium Phase E control: **2 passed, 3 native-only cases skipped**. The runtime used the WebGL2 fallback; these passes are compatibility evidence, not native WebGPU evidence.
 - Phase C/D native Raw RTT and CoC/footprint regressions: **13/13 passed**.
-- Production-preview isolation: **2/2 passed**.
-- `npm test`: **2,488/2,488 passed** across 268 files. `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build` all passed.
-- A temporary raw-radians A-channel mutation failed at the Phase D normalized-orientation assertion; the original fixture was restored and the native Phase E suite passed again.
-- `git diff --check` passed after the final documentation and assertion edits.
+- Production-preview isolation: **2/2 passed**. The current run generated contentful Architecture Rise Observer and Ground Glass evidence, denied production WebGPU initialization, and requested no WebGPU modules.
+- Focused CPU physical-footprint/storage and film/orientation/crop unit suites: **44/44 passed** across 6 files.
+- The old `0.002 mm` tolerance was temporarily restored as a mutation. The focused native test failed because a finite `f + 0.001 mm` reconstructed virtual-image input no longer matched the CPU physical result; the mutation was then removed, and the focused test and full native Phase E suite passed on the restored source.
+- Full `npm test`: **2,488/2,488 passed** across 268 files. `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, and final `git diff --check` passed.
 
-The complete repository E2E suite was not run; the focused native, fallback, Phase C/D, and production-preview suites above are the executed browser coverage. Prior branch results are not counted as newly executed here.
+The boundary measurements in Section F were newly captured on the native adapter during this round. Existing non-boundary depth, physical-footprint, orientation, and lifecycle tables above retain the prior Phase E baseline measurements. The complete repository E2E suite was not run; only the focused native, fallback, Phase C/D, and production-preview suites above are reported.
