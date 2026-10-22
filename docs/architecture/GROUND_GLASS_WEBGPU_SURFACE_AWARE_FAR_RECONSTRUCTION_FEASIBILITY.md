@@ -17,6 +17,8 @@ C1 uses a 3 × 3 surface-aware neighborhood, rejects invalid/unresolved/non-far 
 
 **Outcome I-A:** B1 is the stronger reference match in this fixture. A separately scoped B1 validation/optimization study is the next useful step. C1 remains a test-only feasibility result; it does not justify production integration or a more general renderer abstraction.
 
+The corrected native run rechecked the fixed Half ×32 quality evidence after adding benchmark state resets: B0 remained at 36 leaks / 132.042 thresholded energy, B1 at 0 / 24.379, and C1 at 0 / 42.092. B1's measured Full ×32 RGB RMSE and radial-profile error remained lower than C1's. This fix changes benchmark configuration control and diagnostics, not the B0/B1/C1 reconstruction algorithms.
+
 ## B. Phase H baseline and merge ancestry
 
 This work is based on Phase H merge `7766b83e6193f28945fcb4a0294ec5e7a91cad94`. It preserves B0, B1, native source/gather provenance, the near gather, Phase D RGBA16F physical footprint storage, and fixture lifecycle behavior. The Phase I controls are behind the fixture-only `?phaseI=1` query and are not added to public simulator routes or settings.
@@ -163,21 +165,47 @@ The multiple-depth plane uses a test-only linear-color mesh. It is not a public 
 
 ## N. Performance and resource costs
 
-The Phase I native test serializes B0/B1/C1 at Half ×32, with two warm-ups and five measured operations per path, interleaved in one browser. It records operation wall time, readback wall time, pass submission/observed queue completion, and queue wait. `gpuTimestampDurationMs` remains null; the values include browser scheduling and synchronization and are not GPU frame time or production FPS.
+The previous timing run was contaminated by persistent optical state. It followed the tilted 4× crop operation, and neither the unresolved case nor the benchmark buttons reset those values. The recorded 44.7 / 53.1 / 54.6 ms B0/B1/C1 medians (with ranges 39.3–52.4 / 47.8–62.5 / 47.6–56.2 ms) were therefore measured with 12° film tilt and a 9 × 6 mm sampled crop. They are invalid as the intended axis-aligned full-film benchmark and are retained here only as historical observations.
 
-| Path | Operation wall time, median (range), ms | Readback wall time, median (range), ms |
+The corrected B0/B1/C1 operations each establish this complete state immediately before rendering:
+
+| Setting | Applied value |
+|---|---:|
+| Scene / edge case | `phase-f-controlled` / axis-aligned |
+| Film tilt / crop / focus offset | 0° / disabled / 0 mm |
+| Sampled film | 36 × 24 mm |
+| Source and physical CoC | 128 × 96 px |
+| Far/near gather | 64 × 48 px (`gatherScale=0.5`) |
+| Aperture / proposals | f/2 / 32 |
+| Maximum CoC radius | 12 px |
+| Runtime | Three.js r186 native `webgpu-renderer`; `executionBackend=webgpu`; no application fallback |
+
+Every operation publishes its applied state from the camera view-offset state, film normal/basis uniforms, physical film/focus/aperture uniforms, and resized render targets. The native test asserts those values for all 21 benchmark operations and requires B0/B1/C1 to share the same optical fingerprint. It runs two warm-ups and five measured operations per variant in the same balanced serial order. The first B0 after the crop/unresolved sequence also matches the direct normal full-film control's physical point-probe fingerprint.
+
+| Path | Extra passes | Operation wall median (range), ms | Readback median (range), ms | CPU submission sum median (range), ms | Queue completion sum median (range), ms | Queue wait sum median (range), ms |
+|---|---:|---:|---:|---:|---:|---:|
+| B0 | 0 | 348.7 (294.9–580.0) | 2.7 (1.8–65.8) | 1.3 (0.9–1.7) | 244.5 (217.6–464.5) | 242.9 (216.7–463.2) |
+| B1 | 2 | 443.5 (303.2–522.9) | 2.4 (1.7–9.8) | 1.7 (1.4–1.9) | 350.9 (213.9–432.9) | 349.1 (212.2–431.0) |
+| C1 | 2 | 436.7 (339.9–649.4) | 38.3 (1.9–59.3) | 1.6 (1.4–1.8) | 321.1 (240.6–502.1) | 319.4 (239.0–500.3) |
+
+The queue-completion and queue-wait columns are sums of per-stage observations made around `queue.onSubmittedWorkDone()`. For the two additional passes, measured medians (ranges) were:
+
+| Variant stage | CPU submission median (range), ms | Observed queue completion median (range), ms |
 |---|---:|---:|
-| B0 | 44.7 (39.3–52.4) | 0.8 (0.8–5.6) |
-| B1 | 53.1 (47.8–62.5) | 2.6 (0.8–8.5) |
-| C1 | 54.6 (47.6–56.2) | 1.0 (0.9–5.4) |
+| B1 compatible-far reconstruction | 0.0 (0.0–0.1) | 0.8 (0.4–56.2) |
+| B1 candidate composite | 0.1 (0.1–0.2) | 41.5 (0.4–47.3) |
+| C1 surface-aware far reconstruction | 0.1 (0.0–0.1) | 42.3 (3.2–59.6) |
+| C1 candidate composite | 0.1 (0.0–0.2) | 9.9 (2.6–66.0) |
 
-Across the five C1 measurements, the observed queue-completion values for the additional surface-aware far pass ranged from 0.2 to 4.7 ms (median 0.9 ms); the candidate composite ranged from 0.4 to 5.2 ms (median 4.1 ms). These are synchronization-instrumented queue observations, not GPU timestamp durations. The sample is small and noisy; it is useful only as a bounded cost observation for this fixture.
+These five-sample medians and observed ranges were remeasured on 2026-10-22 from the benchmark source snapshot committed as `d47933e07c6f19a1203271f4ddbd51004eb3ce46`. The native run completed with `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js r186. These are browser/queue/readback observations with substantial run-to-run variability, not isolated GPU shader timings or production frame rates. `gpuTimestampDurationMs` remains `null`; timing results do not change the separate quality finding that B1 is closer to the tested Full ×32/×64 references than B0 or C1.
 
-C1 adds two full-source-grid passes (surface-aware far reconstruction and candidate composite), one candidate TSL material, and at most nine gather-neighbor evaluations per source pixel. It reuses the Phase H candidate far/composite targets; it introduces no additional render-target allocation beyond the targets already allocated for the Phase H research diagnostics. Phase H's RGBA32F provenance targets and other diagnostic readbacks are fixture infrastructure, not a proposed production memory budget. A future implementation would need to choose a compact, production-owned source/gather provenance representation and measure its cost separately.
+B1 and C1 each execute two extra full-source-grid passes in the fixture. The two shared RGBA16F candidate far/composite targets are 128 × 96 px each, an estimated 196,608 bytes / 0.1875 MiB combined at 8 bytes per pixel. Those targets are allocated by the shared Phase H research fixture for all variants, so this is their storage estimate, not an incremental allocation difference between measured B0/B1/C1 operations. Existing Phase H provenance and diagnostic targets remain test infrastructure and are not included in that two-target estimate or a proposed production memory budget.
 
 ## O. Lifecycle and regression results
 
 The fixture retains per-handle resource ownership, serialized operations, stale-readback suppression, failure injection, and client-side SPA route transitions. The Phase I controls do not alter public routing or production backend selection. The native lifecycle sequence navigates away, verifies owned resources are disposed, returns to a distinct native handle, renders C1, and retires the remounted handle. Successful `dispose()` evidence proves the fixture's disposal calls and ownership lifecycle; it does not prove immediate GPU-driver memory reclamation.
+
+The new order-dependence regression runs a normal full-film control, a 12° tilted 4× crop, the unresolved case, then B0, B1, and C1. Diagnostics show the unresolved case still inherits the preceding tilted/cropped state, reproducing the fixture's persistent-state behavior; each subsequent benchmark operation independently restores and verifies 0° tilt, crop disabled, 36 × 24 mm film, and zero focus offset. The normal benchmark's GPU physical point probes match the pre-crop control. A temporary mutation omitting both reset fields made the regression fail at B0 with the observed stale 12° tilt, active crop, and 9 × 6 mm film, confirming that the assertion detects the reviewed defect.
 
 ## P. Known limitations
 
@@ -256,4 +284,4 @@ Ordinary Chromium is a separate fallback-only control. A WebGL2 fallback is not 
 
 Playwright writes the run summary, reference audit, edge/depth diagnostics, timing records, and PNG attachments under ignored `test-results/`. The artifacts include source, Full ×32/×64, Half ×32 B0/B1/C1, difference maps, far signal/leakage maps, near alpha, edge crops, neighbor coverage, fallback regions, and the multiple-depth audit. No generated images or full target arrays are committed.
 
-**Validation provenance:** the latest native Phase I matrix, CPU sensitivity controls, radial-profile checks, and SPA lifecycle case passed in headed Chrome (`1 passed`), with mounted runtime `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, and `applicationFallback=false`. The ordinary Chromium control passed (`1 passed, 1 native-only skipped`) and logged the expected WebGL2 fallback; it is not counted as native evidence. The focused CPU reference suite passed (`10 passed`), and the complete unit suite passed (`2524 passed across 272 files`). Typecheck, lint, CSS structure, and production build passed. The final Phase C–H native regression run passed (`24 passed`); three ordinary-Chromium control cases were skipped under the native project. Production-preview isolation passed (`2 passed`).
+**Validation provenance (2026-10-22):** At source HEAD `d47933e07c6f19a1203271f4ddbd51004eb3ce46`, the native Phase I suite passed (`2 passed, 1 native-only skip`) including the ordered state-contamination regression and the full balanced benchmark/lifecycle case. All 21 measured operations reported the required full-film state; the run used headed Chrome with `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js r186. The ordinary Chromium fallback control passed (`1 passed, 2 native-only skipped`) and logged the expected WebGL2 fallback; it is not native evidence. A deliberate omission of `filmTiltDeg: 0` and `crop: false` failed the state regression with observed 12° tilt, active crop, and 9 × 6 mm film; those fields were restored before the passing native run. The Phase C–H native regression set passed (`24 passed, 3 ordinary-control skips`). Production-preview isolation passed (`2 passed`), including the public Ground Glass WebGL-only check. The complete unit suite passed (`2524 tests across 272 files`), and typecheck, lint, CSS check, and production build passed. These checks were run against the same tracked source content now committed at the stated HEAD; no production source files changed. `git diff --check` passed after this report update.
