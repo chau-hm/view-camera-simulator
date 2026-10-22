@@ -10,6 +10,7 @@ type Operation = {
   state: string;
   stage: string;
   resultPublished: boolean;
+  appliedState: JsonRecord | null;
   timing: JsonRecord | null;
 };
 type Handle = {
@@ -24,6 +25,7 @@ type Handle = {
     threeRevision: string;
   };
   dimensions: JsonRecord | null;
+  targetMemoryEstimate: JsonRecord | null;
   operations: Operation[];
   pointProbes: Array<{
     id: string;
@@ -110,6 +112,127 @@ const assertNative = (handle: Handle) => {
   });
 };
 
+const assertBenchmarkAppliedState = (operation: Operation, variant: "B0" | "B1" | "C1") => {
+  const applied = operation.appliedState;
+  expect(applied, `${operation.operationId} published applied renderer state`).not.toBeNull();
+  expect(applied).toMatchObject({
+    reconstructionVariant: variant,
+    scene: "phase-f-controlled",
+    edgeCase: "axis-aligned",
+    filmTiltDeg: 0,
+    crop: false,
+    sampledFilmWidthMm: 36,
+    sampledFilmHeightMm: 24,
+    focusOffsetMm: 0,
+    apertureFNumber: 2,
+    sourceWidthPx: 128,
+    sourceHeightPx: 96,
+    farGatherWidthPx: 64,
+    farGatherHeightPx: 48,
+    gatherScale: 0.5,
+    quality: "study",
+    sampleCount: 32,
+    maximumCoCRadiusPx: 12,
+    forceUnresolved: false,
+  });
+  expect(applied!.filmNormal).toEqual([0, 0, 1]);
+  expect(applied!.filmBasisX).toEqual([1, 0, 0]);
+  expect(applied!.filmBasisY).toEqual([0, 1, 0]);
+  expect(at(applied, "cameraView", "enabled") ?? false).toBe(false);
+};
+
+const benchmarkOpticalState = (operation: Operation) => {
+  const state = record(operation.appliedState);
+  return {
+    scene: state.scene,
+    edgeCase: state.edgeCase,
+    filmTiltDeg: state.filmTiltDeg,
+    filmNormal: state.filmNormal,
+    filmBasisX: state.filmBasisX,
+    filmBasisY: state.filmBasisY,
+    crop: state.crop,
+    cameraViewEnabled: Boolean(at(state, "cameraView", "enabled")),
+    sampledFilmWidthMm: state.sampledFilmWidthMm,
+    sampledFilmHeightMm: state.sampledFilmHeightMm,
+    focusOffsetMm: state.focusOffsetMm,
+    apertureFNumber: state.apertureFNumber,
+    sourceWidthPx: state.sourceWidthPx,
+    sourceHeightPx: state.sourceHeightPx,
+    farGatherWidthPx: state.farGatherWidthPx,
+    farGatherHeightPx: state.farGatherHeightPx,
+    gatherScale: state.gatherScale,
+    quality: state.quality,
+    sampleCount: state.sampleCount,
+    maximumCoCRadiusPx: state.maximumCoCRadiusPx,
+    forceUnresolved: state.forceUnresolved,
+  };
+};
+
+const assertTiltedCropAppliedState = (operation: Operation) => {
+  const applied = operation.appliedState;
+  expect(applied).not.toBeNull();
+  expect(applied).toMatchObject({
+    scene: "phase-f-controlled",
+    crop: true,
+    sampledFilmWidthMm: 9,
+    sampledFilmHeightMm: 6,
+  });
+  expect(number(applied!.filmTiltDeg)).toBeCloseTo(12, 10);
+  const filmNormal = applied!.filmNormal as number[];
+  expect(filmNormal).toHaveLength(3);
+  expect(filmNormal[0]!).toBeCloseTo(0, 7);
+  expect(filmNormal[1]!).toBeCloseTo(-Math.sin(12 * Math.PI / 180), 7);
+  expect(filmNormal[2]!).toBeCloseTo(Math.cos(12 * Math.PI / 180), 7);
+  expect(at(applied, "cameraView", "enabled")).toBe(true);
+};
+
+const physicalFingerprint = (handle: Handle) => handle.pointProbes.map((probe) => ({
+  id: probe.id,
+  gpuDepth: probe.gpuDepth,
+  worldPositionMm: probe.worldPositionMm,
+  physicalRgba16Float: probe.physicalRgba16Float,
+  validityCode: probe.validityCode,
+}));
+
+const benchmarkTimingRecord = (operation: Operation, handle: Handle, variant: "B0" | "B1" | "C1") => {
+  const timing = record(operation.timing);
+  const stages = Array.isArray(timing.stages) ? timing.stages.map(record) : [];
+  const sum = (rows: JsonRecord[], key: string) => {
+    const values = rows.map((row) => number(row[key])).filter((value): value is number => value !== null);
+    return values.length ? values.reduce((total, value) => total + value, 0) : null;
+  };
+  const variantStagePrefix = variant === "B1" ? "phase-h-compatible-far-reconstruction" : "phase-i-surface-aware-far-reconstruction";
+  const variantCompositeStage = variant === "B1" ? "phase-h-candidate-composite" : "phase-i-surface-aware-composite";
+  const reconstructionStage = variant === "B0" ? null : stages.find((stage) => stage.stage === variantStagePrefix) ?? null;
+  const candidateStages = variant === "B0"
+    ? []
+    : stages.filter((stage) => stage.stage === variantStagePrefix || stage.stage === variantCompositeStage);
+  const sourcePixels = 128 * 96;
+  const additionalCandidateTargetBytes = sourcePixels * 2 * 8;
+  return {
+    operationWallTimeMs: timing.operationWallTimeMs,
+    readbackWallTimeMs: timing.readbackWallTimeMs,
+    cpuSubmissionTimeMs: sum(stages, "cpuSubmissionTimeMs"),
+    observedQueueCompletionMs: sum(stages, "observedQueueCompletionMs"),
+    queueWaitAfterSubmissionMs: sum(stages, "queueWaitAfterSubmissionMs"),
+    reconstructionStageSubmissionTimeMs: reconstructionStage ? number(reconstructionStage.cpuSubmissionTimeMs) : null,
+    reconstructionStageObservedCompletionMs: reconstructionStage ? number(reconstructionStage.observedQueueCompletionMs) : null,
+    additionalPassCount: candidateStages.length,
+    additionalTargetMemoryEstimate: {
+      description: "two full-source RGBA16F candidate far/composite targets; fixture allocation is shared across measured variants",
+      widthPx: 128,
+      heightPx: 96,
+      targetCount: 2,
+      bytesPerPixelPerTarget: 8,
+      estimatedBytes: additionalCandidateTargetBytes,
+      estimatedMiB: additionalCandidateTargetBytes / (1024 * 1024),
+      usedByVariant: variant !== "B0",
+    },
+    fixtureTargetMemoryEstimate: handle.targetMemoryEstimate,
+    gpuTimestampDurationMs: timing.gpuTimestampDurationMs,
+  };
+};
+
 const assertFiniteSignal = (phaseI: JsonRecord, path: string[]) => {
   const target = at(phaseI, ...path);
   for (const key of ["signalEnergy", "thresholdedSignalEnergy", "normalizedSignalEnergy", "peakSignal", "thresholdClassifiedPixelCount"]) {
@@ -157,6 +280,52 @@ test("ordinary Chromium Phase I fixture remains a fallback-only control", async 
   expect(handle.runtime?.executionBackend).not.toBe("webgpu");
 });
 
+test("native Phase I benchmark state is isolated after a tilted 4× crop", async ({ page }) => {
+  test.skip(!nativeRequired, "State-contamination regression requires headed native WebGPU");
+  test.setTimeout(300_000);
+  await page.goto(FIXTURE_PATH);
+  await expect(page.getByTestId("phase-i-controls")).toBeVisible();
+  const initial = await waitForInitial(page);
+  assertNative(initial);
+
+  const normalControl = await run(page, "Phase I half ×32 B0");
+  assertNative(normalControl.handle);
+  assertBenchmarkAppliedState(normalControl.operation, "B0");
+  const controlOpticalState = benchmarkOpticalState(normalControl.operation);
+  const controlPhysicalFingerprint = physicalFingerprint(normalControl.handle);
+
+  const tilted = await run(page, "Phase I tilted 4× crop C1");
+  assertNative(tilted.handle);
+  assertTiltedCropAppliedState(tilted.operation);
+
+  const unresolved = await run(page, "Phase I unresolved exclusion C1");
+  assertNative(unresolved.handle);
+  expect(unresolved.operation.appliedState).toMatchObject({
+    crop: true,
+    sampledFilmWidthMm: 9,
+    sampledFilmHeightMm: 6,
+    forceUnresolved: true,
+  });
+  expect(number(unresolved.operation.appliedState!.filmTiltDeg)).toBeCloseTo(12, 10);
+
+  const variants = [
+    { key: "B0", button: "Phase I half ×32 B0" },
+    { key: "B1", button: "Phase I half ×32 B1" },
+    { key: "C1", button: "Phase I half ×32 C1" },
+  ] as const;
+  const benchmarkOperations: Operation[] = [];
+  for (const variant of variants) {
+    const result = await run(page, variant.button);
+    assertNative(result.handle);
+    assertBenchmarkAppliedState(result.operation, variant.key);
+    expect(benchmarkOpticalState(result.operation)).toEqual(controlOpticalState);
+    expect(physicalFingerprint(result.handle)).toEqual(controlPhysicalFingerprint);
+    benchmarkOperations.push(result.operation);
+  }
+  expect(benchmarkOperations.map((operation) => operation.appliedState?.reconstructionVariant))
+    .toEqual(["B0", "B1", "C1"]);
+});
+
 test("native Phase I measures matched references, B0/B1/C1 quality, coverage, performance and lifecycle", async ({ page }, testInfo) => {
   test.skip(!nativeRequired, "Native WebGPU evidence requires headed Chrome");
   test.setTimeout(1_200_000);
@@ -165,20 +334,13 @@ test("native Phase I measures matched references, B0/B1/C1 quality, coverage, pe
   const initial = await waitForInitial(page);
   assertNative(initial);
 
-  const results: Array<{ label: string; operationId: string; phaseI: JsonRecord; phaseH: JsonRecord; dimensions: JsonRecord | null }> = [];
-  const physicalFingerprint = (handle: Handle) => handle.pointProbes.map((probe) => ({
-    id: probe.id,
-    gpuDepth: probe.gpuDepth,
-    worldPositionMm: probe.worldPositionMm,
-    physicalRgba16Float: probe.physicalRgba16Float,
-    validityCode: probe.validityCode,
-  }));
+  const results: Array<{ label: string; operationId: string; phaseI: JsonRecord; phaseH: JsonRecord; dimensions: JsonRecord | null; appliedState: JsonRecord | null }> = [];
   const capture = async (label: string, button: string) => {
     const { handle, operation } = await run(page, button);
     assertNative(handle);
     const phaseI = record(handle.phaseI);
     const phaseH = record(handle.phaseH);
-    results.push({ label, operationId: operation.operationId, phaseI, phaseH, dimensions: handle.dimensions });
+    results.push({ label, operationId: operation.operationId, phaseI, phaseH, dimensions: handle.dimensions, appliedState: operation.appliedState });
     return { handle, operation, phaseI, phaseH, physicalFingerprint: physicalFingerprint(handle) };
   };
 
@@ -291,14 +453,12 @@ test("native Phase I measures matched references, B0/B1/C1 quality, coverage, pe
     half32: { b0: half32B0, b1: half32B1, c1: half32C1, coverage: half32Coverage },
   };
 
-  const edgeResults: Array<{ label: string; operationId: string; phaseI: JsonRecord }> = [];
+  const edgeResults: Array<{ label: string; operationId: string; phaseI: JsonRecord; appliedState: JsonRecord | null }> = [];
   for (const [label, button] of [
     ["vertical", "Phase I vertical edge C1"],
     ["diagonal", "Phase I diagonal edge C1"],
     ["thin", "Phase I thin foreground C1"],
     ["multiple-far-depths", "Phase I multiple far depths C1"],
-    ["tilted-4x-crop", "Phase I tilted 4× crop C1"],
-    ["unresolved-exclusion", "Phase I unresolved exclusion C1"],
   ] as const) {
     const { handle, operation, phaseI } = await capture(label, button);
     expect(at(phaseI, "phaseIC1", "available")).toBe(true);
@@ -307,14 +467,6 @@ test("native Phase I measures matched references, B0/B1/C1 quality, coverage, pe
     expect(number(at(phaseI, "phaseIC1", "nativePathVsCpu", "fallbackMismatch"))).toBe(0);
     expect(number(at(phaseI, "phaseIC1", "nativePathVsCpu", "fallbackReasonMismatch"))).toBe(0);
     expect(handle.runtime?.executionBackend).toBe("webgpu");
-    if (label === "tilted-4x-crop") {
-      expect(number(handle.dimensions?.sampledFilmWidthMm)).toBeCloseTo(9, 5);
-      expect(number(handle.dimensions?.sampledFilmHeightMm)).toBeCloseTo(6, 5);
-    }
-    if (label === "unresolved-exclusion") {
-      expect(handle.unresolvedSample?.validityCode).toBe(4);
-      expect(handle.unresolvedSample?.storedFootprint).toEqual([0, 0, 0, 0]);
-    }
     if (label === "multiple-far-depths") {
       await testInfo.attach("phase-i-multiple-depth-rendered-composite.png", {
         body: await page.locator('canvas[aria-label="Native WebGPU aperture gather composite"]').screenshot(),
@@ -326,8 +478,30 @@ test("native Phase I measures matched references, B0/B1/C1 quality, coverage, pe
       expect(number(at(phaseI, "surfaceDepthAudit", "distinctRoundedFarDepthCount"))).toBeGreaterThanOrEqual(2);
       expect(number(at(phaseI, "surfaceDepthAudit", "incompatibleFarNeighborObservationCount"))).toBeGreaterThan(0);
     }
-    edgeResults.push({ label, operationId: operation.operationId, phaseI });
+    edgeResults.push({ label, operationId: operation.operationId, phaseI, appliedState: operation.appliedState });
   }
+
+  // Re-establish and fingerprint the normal full-film state, then deliberately contaminate it before timing.
+  const normalControl = await capture("normal-full-film-control-before-tilt", "Phase I half ×32 B0");
+  assertBenchmarkAppliedState(normalControl.operation, "B0");
+  const normalControlState = benchmarkOpticalState(normalControl.operation);
+  const normalControlPhysicalFingerprint = normalControl.physicalFingerprint;
+  const tilted = await capture("tilted-4x-crop", "Phase I tilted 4× crop C1");
+  assertTiltedCropAppliedState(tilted.operation);
+  expect(number(tilted.handle.dimensions?.sampledFilmWidthMm)).toBeCloseTo(9, 5);
+  expect(number(tilted.handle.dimensions?.sampledFilmHeightMm)).toBeCloseTo(6, 5);
+  edgeResults.push({ label: "tilted-4x-crop", operationId: tilted.operation.operationId, phaseI: tilted.phaseI, appliedState: tilted.operation.appliedState });
+  const unresolved = await capture("unresolved-exclusion", "Phase I unresolved exclusion C1");
+  expect(unresolved.operation.appliedState).toMatchObject({
+    crop: true,
+    sampledFilmWidthMm: 9,
+    sampledFilmHeightMm: 6,
+    forceUnresolved: true,
+  });
+  expect(number(unresolved.operation.appliedState!.filmTiltDeg)).toBeCloseTo(12, 10);
+  expect(unresolved.handle.unresolvedSample?.validityCode).toBe(4);
+  expect(unresolved.handle.unresolvedSample?.storedFootprint).toEqual([0, 0, 0, 0]);
+  edgeResults.push({ label: "unresolved-exclusion", operationId: unresolved.operation.operationId, phaseI: unresolved.phaseI, appliedState: unresolved.operation.appliedState });
 
   // Balanced serial operation order: two warmups, then five samples per variant.
   const variants = [
@@ -338,23 +512,75 @@ test("native Phase I measures matched references, B0/B1/C1 quality, coverage, pe
   const order = [
     ["B0", "B1", "C1"], ["B1", "C1", "B0"], ["C1", "B0", "B1"],
     ["C1", "B1", "B0"], ["B0", "C1", "B1"], ["B1", "B0", "C1"], ["B0", "B1", "C1"],
-  ].flat();
-  const timings: Array<{ variant: string; warmup: boolean; operationId: string; timing: JsonRecord }> = [];
+  ] as const;
+  const timings: Array<{ variant: string; warmup: boolean; operationId: string; appliedState: JsonRecord | null; timing: JsonRecord; measurements: JsonRecord }> = [];
   const counts: Record<string, number> = { B0: 0, B1: 0, C1: 0 };
-  for (const variantKey of order) {
+  for (const variantKey of order.flat()) {
     const variant = variants.find((entry) => entry.key === variantKey)!;
-    const { operation } = await run(page, variant.button);
+    const { handle, operation } = await run(page, variant.button);
+    assertNative(handle);
+    assertBenchmarkAppliedState(operation, variantKey);
+    expect(benchmarkOpticalState(operation)).toEqual(normalControlState);
+    if (variantKey === "B0" && counts.B0 === 0) {
+      expect(physicalFingerprint(handle)).toEqual(normalControlPhysicalFingerprint);
+    }
     const timing = record(operation.timing);
     expect(number(timing.operationWallTimeMs)).not.toBeNull();
-    timings.push({ variant: variantKey, warmup: counts[variantKey]! < 2, operationId: operation.operationId, timing });
+    const measurements = benchmarkTimingRecord(operation, handle, variantKey);
+    expect(number(measurements.additionalPassCount)).toBe(variantKey === "B0" ? 0 : 2);
+    expect(measurements.gpuTimestampDurationMs).toBeNull();
+    timings.push({
+      variant: variantKey,
+      warmup: counts[variantKey]! < 2,
+      operationId: operation.operationId,
+      appliedState: operation.appliedState,
+      timing,
+      measurements,
+    });
     counts[variantKey] = counts[variantKey]! + 1;
   }
   expect(counts).toEqual({ B0: 7, B1: 7, C1: 7 });
 
+  const summarizeSamples = (samples: number[]) => {
+    if (samples.length === 0) return null;
+    const ordered = [...samples].sort((a, b) => a - b);
+    return {
+      count: ordered.length,
+      median: ordered[Math.floor(ordered.length / 2)]!,
+      min: ordered[0]!,
+      max: ordered.at(-1)!,
+      range: ordered.at(-1)! - ordered[0]!,
+      samples: ordered,
+    };
+  };
+  const timingMetrics = [
+    "operationWallTimeMs",
+    "readbackWallTimeMs",
+    "cpuSubmissionTimeMs",
+    "observedQueueCompletionMs",
+    "queueWaitAfterSubmissionMs",
+    "reconstructionStageSubmissionTimeMs",
+    "reconstructionStageObservedCompletionMs",
+  ] as const;
+  const timingSummary = Object.fromEntries(variants.map(({ key }) => {
+    const measured = timings.filter((entry) => entry.variant === key && !entry.warmup);
+    return [key, {
+      warmupCount: timings.filter((entry) => entry.variant === key && entry.warmup).length,
+      measuredCount: measured.length,
+      metrics: Object.fromEntries(timingMetrics.map((metric) => [metric, summarizeSamples(
+        measured.map((entry) => number(entry.measurements[metric])).filter((value): value is number => value !== null),
+      )])),
+      additionalPassCount: measured[0]?.measurements.additionalPassCount,
+      additionalTargetMemoryEstimate: measured[0]?.measurements.additionalTargetMemoryEstimate,
+      fixtureTargetMemoryEstimate: measured[0]?.measurements.fixtureTargetMemoryEstimate,
+      gpuTimestampDurationMs: null,
+    }];
+  }));
+
   const imageNames = await attachFixtureImages(page, testInfo);
   await attachJson(testInfo, "phase-i-reference-audit.json", qualityAudit);
   await attachJson(testInfo, "phase-i-edge-and-depth-cases.json", edgeResults);
-  await attachJson(testInfo, "phase-i-timing.json", timings);
+  await attachJson(testInfo, "phase-i-timing.json", { operations: timings, summary: timingSummary });
 
   // The same fixture route unmounts the exact renderer host; return creates an independent native handle.
   const oldId = (await activeHandle(page)).instanceId;
@@ -391,9 +617,9 @@ test("native Phase I measures matched references, B0/B1/C1 quality, coverage, pe
       full32: full32.operation.operationId,
       full64: full64.operation.operationId,
     },
-    matrix: results.map(({ label, operationId, phaseI, dimensions }) => ({ label, operationId, dimensions, phaseI })),
+    matrix: results.map(({ label, operationId, phaseI, dimensions, appliedState }) => ({ label, operationId, dimensions, appliedState, phaseI })),
     qualityAudit,
-    timingSummary: timings,
+    timingSummary,
     edgeResults,
     imageNames,
   });

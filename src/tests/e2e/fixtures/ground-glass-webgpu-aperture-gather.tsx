@@ -89,6 +89,7 @@ type FailureStage = "physical-coc" | "far-gather" | "near-gather" | "composite" 
 type QualityMode = "standard" | "low" | "stress-64" | "study";
 type StudyScene = "phase-f-controlled" | "architecture-rise-geometry-proxy" | "interior-corner-geometry-proxy";
 type PhaseHEdgeCase = "axis-aligned" | "vertical" | "diagonal" | "thin" | "multiple-far-depths";
+type PhaseIBenchmarkVariant = "B0" | "B1" | "C1";
 type StageTiming = {
   stage: string;
   cpuSubmissionTimeMs: number;
@@ -120,6 +121,30 @@ type OperationEvidence = {
   readbackStarted: boolean;
   readbackOutcome: "not-started" | "pending" | "succeeded" | "failed";
   error: string | null;
+  appliedState: {
+    reconstructionVariant: "B0" | "B1" | "C1";
+    scene: StudyScene;
+    edgeCase: PhaseHEdgeCase;
+    filmTiltDeg: number;
+    filmNormal: [number, number, number];
+    filmBasisX: [number, number, number];
+    filmBasisY: [number, number, number];
+    crop: boolean;
+    cameraView: null | { enabled: boolean; fullWidth: number; fullHeight: number; offsetX: number; offsetY: number; width: number; height: number };
+    sampledFilmWidthMm: number;
+    sampledFilmHeightMm: number;
+    focusOffsetMm: number;
+    apertureFNumber: number;
+    sourceWidthPx: number;
+    sourceHeightPx: number;
+    farGatherWidthPx: number;
+    farGatherHeightPx: number;
+    gatherScale: number;
+    quality: QualityMode;
+    sampleCount: number;
+    maximumCoCRadiusPx: number;
+    forceUnresolved: boolean;
+  } | null;
   timing: OperationTiming | null;
 };
 type FixtureHandleEvidence = {
@@ -2385,6 +2410,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
         readbackStarted: false,
         readbackOutcome: "not-started",
         error: null,
+        appliedState: null,
         timing: null,
       };
       evidence.operations.push(operation);
@@ -2531,6 +2557,42 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           filmBasisYInput.value.set(0, Math.cos(tilt), Math.sin(tilt));
           maximumRadiusPx.value = settings.maximumCoCRadiusPx;
           sampleCount.value = settings.sampleCount;
+          const appliedFilmNormal = filmNormalInput.value.toArray() as [number, number, number];
+          const appliedFilmBasisX = filmBasisXInput.value.toArray() as [number, number, number];
+          const appliedFilmBasisY = filmBasisYInput.value.toArray() as [number, number, number];
+          const cameraView = camera.view;
+          operation.appliedState = {
+            reconstructionVariant: input.phaseI ? "C1" : input.candidate ? "B1" : "B0",
+            scene: currentStudyScene,
+            edgeCase: currentEdgeCase,
+            filmTiltDeg: Math.atan2(-appliedFilmNormal[1], appliedFilmNormal[2]) * 180 / Math.PI,
+            filmNormal: appliedFilmNormal,
+            filmBasisX: appliedFilmBasisX,
+            filmBasisY: appliedFilmBasisY,
+            crop: cameraView?.enabled === true,
+            cameraView: cameraView ? {
+              enabled: cameraView.enabled,
+              fullWidth: cameraView.fullWidth,
+              fullHeight: cameraView.fullHeight,
+              offsetX: cameraView.offsetX,
+              offsetY: cameraView.offsetY,
+              width: cameraView.width,
+              height: cameraView.height,
+            } : null,
+            sampledFilmWidthMm: sampledFilmWidthMm.value,
+            sampledFilmHeightMm: sampledFilmHeightMm.value,
+            focusOffsetMm: filmPointMm.value.z - APERTURE_GATHER_CASES.filmPointMm[2],
+            apertureFNumber: apertureFNumber.value,
+            sourceWidthPx: sourceTarget.width,
+            sourceHeightPx: sourceTarget.height,
+            farGatherWidthPx: farTarget.width,
+            farGatherHeightPx: farTarget.height,
+            gatherScale: farTarget.width / sourceTarget.width,
+            quality: input.quality ?? "standard",
+            sampleCount: sampleCount.value,
+            maximumCoCRadiusPx: maximumRadiusPx.value,
+            forceUnresolved: forceUnresolvedMask.value > 0,
+          };
           let stageStartedAt = performance.now();
           renderScene();
           let stageSubmittedAt = performance.now();
@@ -3328,6 +3390,28 @@ const Experiment = () => {
     await handle.render(input);
     setStatus(handle.evidence.operations.at(-1)?.state ?? "render complete");
   };
+  const phaseIBenchmarkBase = {
+    quality: "study",
+    scene: "phase-f-controlled",
+    apertureFNumber: 2,
+    gatherScale: 0.5,
+    sampleCount: 32,
+    maximumCoCRadiusPx: 12,
+    sourceWidthPx: WIDTH,
+    sourceHeightPx: HEIGHT,
+    edgeCase: "axis-aligned",
+    filmTiltDeg: 0,
+    crop: false,
+    focusOffsetMm: 0,
+    forceUnresolved: false,
+    displayCandidate: false,
+    displayPhaseI: false,
+  } satisfies NonNullable<Parameters<MountedHandle["render"]>[0]>;
+  const queuePhaseIBenchmark = (variant: PhaseIBenchmarkVariant) => queueRender({
+    ...phaseIBenchmarkBase,
+    candidate: variant === "B1",
+    phaseI: variant === "C1",
+  });
   return (
     <main>
       <h1>Native WebGPU physical aperture gather</h1>
@@ -3400,9 +3484,9 @@ const Experiment = () => {
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I half ×16 B0</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I half ×16 B1</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I half ×16 C1</button>
-            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I half ×32 B0</button>
-            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I half ×32 B1</button>
-            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I half ×32 C1</button>
+            <button type="button" onClick={() => void queuePhaseIBenchmark("B0")}>Phase I half ×32 B0</button>
+            <button type="button" onClick={() => void queuePhaseIBenchmark("B1")}>Phase I half ×32 B1</button>
+            <button type="button" onClick={() => void queuePhaseIBenchmark("C1")}>Phase I half ×32 C1</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true, displayPhaseI: true })}>Phase I show C1 half ×32</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I half ×64 B0</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I half ×64 B1</button>
