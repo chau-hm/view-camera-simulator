@@ -521,6 +521,50 @@ export const compareRgbaOnMask = (
   };
 };
 
+/** Compares the complete Near Gather RGBA target without changing RGB-only image metrics. */
+export const compareNearTargetRgba = (
+  expected: Float32Array,
+  actual: Float32Array,
+) => {
+  if (expected.length === 0
+      || expected.length !== actual.length
+      || expected.length % 4 !== 0) {
+    throw new RangeError("Near-target RGBA comparisons require matching, non-empty complete pixels");
+  }
+
+  let squaredRgbError = 0;
+  let maxRgbError = 0;
+  let squaredAlphaError = 0;
+  let maxAlphaError = 0;
+  const pixelCount = expected.length / 4;
+
+  for (let offset = 0; offset < expected.length; offset += 4) {
+    for (let channel = 0; channel < 4; channel += 1) {
+      const expectedValue = expected[offset + channel]!;
+      const actualValue = actual[offset + channel]!;
+      if (!Number.isFinite(expectedValue) || !Number.isFinite(actualValue)) {
+        throw new RangeError("Near-target RGBA comparisons require finite channel values");
+      }
+      const error = Math.abs(expectedValue - actualValue);
+      if (channel === 3) {
+        squaredAlphaError += error * error;
+        maxAlphaError = Math.max(maxAlphaError, error);
+      } else {
+        squaredRgbError += error * error;
+        maxRgbError = Math.max(maxRgbError, error);
+      }
+    }
+  }
+
+  return {
+    pixelCount,
+    rootMeanSquareRgbError: Math.sqrt(squaredRgbError / (pixelCount * 3)),
+    maxRgbError,
+    rootMeanSquareAlphaError: Math.sqrt(squaredAlphaError / pixelCount),
+    maxAlphaError,
+  };
+};
+
 export type SurfaceAwareFarInput = Readonly<{
   source: SourceDimensions;
   gather: SourceDimensions;

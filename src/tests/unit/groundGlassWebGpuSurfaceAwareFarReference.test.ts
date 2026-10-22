@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   auditCompatibleFarNeighbors,
+  compareNearTargetRgba,
   compareRadialEnergyProfiles,
   compareRgbaOnMask,
   measureFarSignalMetrics,
@@ -79,6 +80,51 @@ const setCenterState = (
 };
 
 describe("Ground Glass WebGPU surface-aware far reconstruction oracle", () => {
+  it("compares complete Near Target RGBA while keeping alpha errors independent from RGB", () => {
+    const expected = new Float32Array([
+      0.1, 0.2, 0.3, 0.4,
+      0.5, 0.6, 0.7, 0.8,
+    ]);
+    const identical = compareNearTargetRgba(expected, expected.slice());
+    expect(identical).toEqual({
+      pixelCount: 2,
+      rootMeanSquareRgbError: 0,
+      maxRgbError: 0,
+      rootMeanSquareAlphaError: 0,
+      maxAlphaError: 0,
+    });
+
+    const alphaChanged = expected.slice();
+    alphaChanged[7] = 0.55;
+    const alphaDifference = compareNearTargetRgba(expected, alphaChanged);
+    expect(alphaDifference.rootMeanSquareRgbError).toBe(0);
+    expect(alphaDifference.maxRgbError).toBe(0);
+    expect(alphaDifference.rootMeanSquareAlphaError).toBeGreaterThan(0);
+    expect(alphaDifference.maxAlphaError).toBeCloseTo(0.25, 7);
+    expect(() => expect(alphaDifference.rootMeanSquareAlphaError).toBeLessThan(1e-6)).toThrow();
+
+    const rgbChanged = expected.slice();
+    rgbChanged[2] = 0.9;
+    const rgbDifference = compareNearTargetRgba(expected, rgbChanged);
+    expect(rgbDifference.rootMeanSquareRgbError).toBeGreaterThan(0);
+    expect(rgbDifference.maxRgbError).toBeCloseTo(0.6, 7);
+    expect(rgbDifference.rootMeanSquareAlphaError).toBe(0);
+    expect(rgbDifference.maxAlphaError).toBe(0);
+  });
+
+  it("rejects incomplete, mismatched, and non-finite Near Target RGBA buffers", () => {
+    const complete = new Float32Array([0.1, 0.2, 0.3, 0.4]);
+    expect(() => compareNearTargetRgba(complete, new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])))
+      .toThrow(/matching/);
+    expect(() => compareNearTargetRgba(new Float32Array([0.1, 0.2, 0.3]), new Float32Array([0.1, 0.2, 0.3])))
+      .toThrow(/complete pixels/);
+    const nonFinite = complete.slice();
+    nonFinite[3] = Number.NaN;
+    expect(() => compareNearTargetRgba(complete, nonFinite)).toThrow(/finite/);
+    nonFinite[3] = Number.POSITIVE_INFINITY;
+    expect(() => compareNearTargetRgba(complete, nonFinite)).toThrow(/finite/);
+  });
+
   it("uses one compatible neighbor and records the actual selected gather coordinates", () => {
     const input = makeInput();
     // Keep the selected center near and every neighbor invalid except the right neighbor.
