@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { CameraState } from "../../../types/camera";
+import type { ApertureValue, CameraState } from "../../../types/camera";
 import type { SceneDefinition } from "../../../types/scene";
 import type { DerivedOpticsState, Vec3 } from "../../../types/optics";
 import { deriveOpticsState } from "../../../core/optics/deriveOpticsState";
@@ -12,6 +12,7 @@ import { DEFAULT_CAMERA_STATE, CAMERA_CONSTANTS } from "../../../utils/constants
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../../core/optics/physicalSharpness";
 import { createGroundGlassDofRenderState, type GroundGlassDofRenderState } from "../../../render/groundGlassDofRenderState";
 import { configureGroundGlassCamera } from "../../../render/configureGroundGlassCamera";
+import { FULL_GROUND_GLASS_INSPECTION_WINDOW, resolveGroundGlassInspectionWindow, type GroundGlassInspectionWindow } from "../../../render/groundGlassInspectionWindow";
 import { getGroundGlassClipRangeWorld } from "../../../render/groundGlassRttScenes";
 
 export type PhaseJOpticalCaseId =
@@ -145,6 +146,7 @@ export type PhaseJOpticalState = Readonly<{
     farM: number;
   }>;
   captureCameraCoordinateSystem: number;
+  inspectionWindow: GroundGlassInspectionWindow;
   canonicalCameraFingerprint: Readonly<{
     projectionMatrixElements: readonly number[];
     worldMatrixElements: readonly number[];
@@ -164,6 +166,7 @@ export function createPhaseJOpticalState(
   heightPx: number,
   maximumBlurRadiusPx: number,
   captureCoordinateSystem: THREE.Camera["coordinateSystem"] = THREE.WebGPUCoordinateSystem,
+  options: Readonly<{ apertureFNumber?: ApertureValue; focusDistanceMm?: number; cropMagnification?: number; cropPan?: { x: number; y: number } }> = {},
 ): PhaseJOpticalState {
   const opticalCase = getPhaseJOpticalCase(caseId);
   const cameraState: CameraState = {
@@ -174,15 +177,20 @@ export function createPhaseJOpticalState(
     activeTaskId: null,
     mode: "free",
     focusMode: "finite",
+    ...(options.apertureFNumber !== undefined ? { aperture: options.apertureFNumber } : {}),
+    ...(options.focusDistanceMm !== undefined ? { focusDistanceMm: options.focusDistanceMm } : {}),
   };
+  const cropMagnification = options.cropMagnification ?? 1;
+  const inspectionWindow = cropMagnification > 1
+    ? resolveGroundGlassInspectionWindow({ active: true, magnification: cropMagnification, normalizedPan: options.cropPan })
+    : FULL_GROUND_GLASS_INSPECTION_WINDOW;
   const opticsState = deriveOpticsState(cameraState, opticalCase.scene);
   if (opticsState.diagnostics.fallbackApplied) {
     throw new Error(`Canonical optics fallback for ${caseId}: ${opticsState.diagnostics.fallbackReason ?? "unknown reason"}`);
   }
 
-  // A capture camera can be reused by the test fixture after a cropped synthetic
-  // study operation. The canonical full-film projection must start with no
-  // residual view offset.
+  // A capture camera can be reused after a crop study. Clear prior view state,
+  // then apply this case’s canonical full-film or inspection-window projection.
   captureCamera.clearViewOffset();
   captureCamera.coordinateSystem = captureCoordinateSystem;
   let clip = getGroundGlassClipRangeWorld(opticalCase.scene, opticsState.lensCenterWorld);
@@ -193,6 +201,7 @@ export function createPhaseJOpticalState(
     opticsState,
     clip.near,
     clip.far,
+    inspectionWindow,
   );
   if (!cameraConfiguration.ok) {
     throw new Error(`Canonical camera configuration failed for ${caseId}: ${cameraConfiguration.reason}`);
@@ -210,6 +219,7 @@ export function createPhaseJOpticalState(
     opticsState,
     clip.near,
     clip.far,
+    inspectionWindow,
   );
   if (!cameraConfiguration.ok) {
     throw new Error(`Final canonical camera configuration failed for ${caseId}: ${cameraConfiguration.reason}`);
@@ -226,8 +236,8 @@ export function createPhaseJOpticalState(
     widthPx,
     heightPx,
     maximumBlurRadiusPx,
-    CAMERA_CONSTANTS.filmWidthMm,
-    CAMERA_CONSTANTS.filmHeightMm,
+    CAMERA_CONSTANTS.filmWidthMm * inspectionWindow.widthFraction,
+    CAMERA_CONSTANTS.filmHeightMm * inspectionWindow.heightFraction,
     widthPx,
   );
   return {
@@ -244,6 +254,7 @@ export function createPhaseJOpticalState(
       farM: captureCamera.far,
     },
     captureCameraCoordinateSystem: captureCamera.coordinateSystem,
+    inspectionWindow,
     canonicalCameraFingerprint: {
       projectionMatrixElements: Array.from(captureCamera.projectionMatrix.elements),
       worldMatrixElements: Array.from(captureCamera.matrixWorld.elements),
