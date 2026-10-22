@@ -77,6 +77,7 @@ import {
 import {
   auditCompatibleFarNeighbors,
   compareRadialEnergyProfiles,
+  compareNearTargetRgba,
   compareRgba,
   compareRgbaOnMask,
   compositeFarAndNear,
@@ -3444,6 +3445,13 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             let fallbackPixelCount = 0;
             let farFallbackPixelCount = 0;
             let fallbackSourceColorMismatchCount = 0;
+            let nearAlphaCoveragePixelCount = 0;
+            let maximumNearAlpha = 0;
+            for (let offset = 3; offset < nearTop.length; offset += 4) {
+              const alpha = nearTop[offset] ?? 0;
+              if (alpha > 0.02) nearAlphaCoveragePixelCount += 1;
+              maximumNearAlpha = Math.max(maximumNearAlpha, alpha);
+            }
             for (let pixel = 0; pixel < sourceWidthPx * sourceHeightPx; pixel += 1) {
               const offset = pixel * 4;
               const redValue = sourceTop[offset] ?? 0;
@@ -3504,7 +3512,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const priorSource = phaseJSourceRasters.get(pairedStudyKey);
             const priorNear = phaseJNearRasters.get(pairedStudyKey);
             const pairedSourceDifference = priorSource ? compareAllPixels(priorSource, sourceTop) : null;
-            const pairedNearDifference = priorNear && priorNear.length === nearTop.length ? compareAllPixels(priorNear, nearTop) : null;
+            const pairedNearDifference = priorNear ? compareNearTargetRgba(priorNear, nearTop) : null;
             if (!input.candidate && gatherWidth < sourceWidthPx) {
               phaseJSourceRasters.set(pairedStudyKey, sourceTop.slice());
               phaseJNearRasters.set(pairedStudyKey, nearTop.slice());
@@ -3587,6 +3595,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 comparisons: qualityComparisons,
                 pairedSourceDifferenceFromB0: input.candidate ? pairedSourceDifference : null,
                 pairedNearTargetDifferenceFromB0: input.candidate ? pairedNearDifference : null,
+                nearTarget: {
+                  pixelCount: nearTarget.width * nearTarget.height,
+                  alphaCoveragePixelCount: nearAlphaCoveragePixelCount,
+                  maximumAlpha: maximumNearAlpha,
+                },
                 fallbackPixelCount: candidateFar ? fallbackPixelCount : null,
                 validFarPixelsUsingSourceFallback: candidateFar ? farFallbackPixelCount : null,
                 fallbackSourceColorMismatchCount: candidateFar ? fallbackSourceColorMismatchCount : null,

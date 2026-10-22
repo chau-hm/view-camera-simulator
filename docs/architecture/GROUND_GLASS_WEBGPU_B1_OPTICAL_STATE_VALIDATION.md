@@ -101,6 +101,8 @@ The reference is a matched native Full ×32 far gather using the same source, ca
 
 B1 has lower full-frame RMSE than B0 for all 11 measured states. Macro 400 mm/f/5.6 B1 RMSE is `0.004879` against Full ×32 and `0.004877` against Full ×64. These are measured renderer comparisons, not perceptual acceptance thresholds. No C1 scene matrix was run.
 
+The native Phase J E2E now enforces `B1 Half ×32 RMSE < B0 Half ×32 RMSE` against the matched Full ×32 reference separately for each of the 11 fixed states above. The assertion rejects missing or non-finite metrics, checks the reference case and pixel count, and confirms identical camera optical state and paired B0/B1 applied state. A regression in any one state therefore fails the test instead of leaving the all-state conclusion dependent on this report table. The review-fix native rerun reproduced the measurements shown above to the reported six decimal places.
+
 ## K. Sharp-halo and fallback analysis
 
 The fixture records B1 fallback pixel count, valid far pixels using source fallback, a source-fallback mask, full-frame difference, and depth-edge difference. The valid-far fallback counts range from 92 to 1769 pixels across the 11 states; this is approximately 0.18%–4.46% of the valid far pixels in those states. `fallbackSourceColorMismatchCount` is zero in every B1 case. The largest measured valid-far fallback fraction occurs in the initial Architecture state (1769/39,661, 4.46%).
@@ -109,7 +111,23 @@ These diagnostics establish when and where the tested candidate selected its sou
 
 ## L. Near/far composite behavior
 
-Across the paired B0/B1 operations, source raster RGB difference is zero and the complete near-gather target difference (including its coverage alpha) is zero. This verifies that selecting B1 does not change the near gather. Near/far classifications are present in the native physical field for every selected case. B1 remains a far reconstruction experiment; it does not recover hidden background geometry or change the research composite contract.
+Across all 11 paired native B0/B1 operations, source raster RGB RMSE and maximum error are both zero. The Near Target comparison now uses a dedicated complete-RGBA metric; the existing RGB-only image-reference helper retains its original RGB semantics. Across the 49,152 Near Target pixels per state, Near RGB RMSE and maximum error are zero, and Near Alpha RMSE and maximum error are also zero. Thus the measured paired Near Target is exactly unchanged in all four channels for this run.
+
+The Near Target alpha is nontrivial in all 11 states: the number of pixels with coverage alpha greater than `0.02` ranges from 469 (Macro near focus, f/5.6) to 24,217 (Architecture rise plus focus), and maximum coverage is `1` in each state. This confirms the alpha comparison exercises coverage values rather than only an all-zero target. The dedicated comparator rejects mismatched or incomplete RGBA data and non-finite channels, and unit mutation coverage confirms an alpha-only change produces positive alpha error while leaving RGB error at zero. Near/far classifications are present in the native physical field for every selected case. B1 remains a far reconstruction experiment; it does not recover hidden background geometry or change the research composite contract.
+
+| State | Near Target pixels | Coverage pixels (alpha > 0.02) | Maximum alpha | Near RGB RMSE / max | Near alpha RMSE / max |
+|---|---:|---:|---:|---:|---:|
+| Macro near, f/5.6 | 49,152 | 469 | 1 | 0 / 0 | 0 / 0 |
+| Macro middle, f/5.6 | 49,152 | 939 | 1 | 0 / 0 | 0 / 0 |
+| Macro far, f/5.6 | 49,152 | 1,487 | 1 | 0 / 0 | 0 / 0 |
+| Macro middle, f/16 | 49,152 | 939 | 1 | 0 / 0 | 0 / 0 |
+| Interior initial | 49,152 | 21,093 | 1 | 0 / 0 | 0 / 0 |
+| Interior front swing | 49,152 | 21,849 | 1 | 0 / 0 | 0 / 0 |
+| Interior swing + focus | 49,152 | 22,479 | 1 | 0 / 0 | 0 / 0 |
+| Interior rise + swing | 49,152 | 19,295 | 1 | 0 / 0 | 0 / 0 |
+| Architecture initial | 49,152 | 23,206 | 1 | 0 / 0 | 0 / 0 |
+| Architecture rise | 49,152 | 15,705 | 1 | 0 / 0 | 0 / 0 |
+| Architecture rise + focus | 49,152 | 24,217 | 1 | 0 / 0 | 0 / 0 |
 
 ## M. Radius-cap sensitivity
 
@@ -136,13 +154,17 @@ The native Macro test uses the fixture's HashRouter to leave `/experiment` for `
 
 The unit adapter suite covers Macro conjugate geometry and focus stations, aperture scaling, Observer/capture-camera separation, movement geometry, and the Interior/Architecture state matrix. The final combined Phase C–J native run passed **28 tests**, with **5 ordinary-Chromium controls skipped by the native-only project**. This includes the Phase C Raw RTT path, Phase D storage, Phase E classification, Phase F aperture gather and crop, Phase G quality study, Phase H reconstruction, Phase I order-isolation benchmark, and both Phase J tests. Runtime assertions required `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js revision 186.
 
+For this review-fix round, the focused native Phase J spec passed **2 tests** with its ordinary-Chromium control skipped by the native-only project. Its 11-state quality assertions all passed, including all 7 Interior/Architecture B1-vs-B0 comparisons, and all 11 Near RGBA comparisons reported zero RGB and alpha error with 49,152 pixels each. The updated surface-aware reference unit suite passed **12 tests**, including identical RGBA, alpha-only mutation, RGB-only mutation, mismatched/incomplete dimensions, and non-finite input cases. A temporary native diagnostic alpha-only mutation also failed the Near alpha invariance assertion while RGB remained unchanged; it was removed before final validation.
+
+The current cross-phase rerun was executed as separate native invocations: Phase C–I passed **26 tests**, with **4 ordinary-only cases skipped**, and Phase J passed **2 tests**, with **1 ordinary-only case skipped**. Together these reruns cover the same 28 native tests and 5 native-project skips reported by the earlier combined C–J run, while the Phase J review-fix assertions were independently exercised at the current source state. Ordinary Chromium Phase J separately passed **1 compatibility test**, with **2 native-only tests skipped**; it reported WebGL2 fallback and is not native evidence.
+
 The first combined regression run exposed a real fixture regression: the Phase J extension read the crop flag before applying the current operation's `crop` input, so a newly requested crop rendered at full-film dimensions. The fixture now applies the operation input before selecting the camera view offset and sampled film size. The five affected native Phase F–I crop/order tests passed after the correction, and the complete combined suite passed on the corrected code.
 
 The separate ordinary Chromium Phase C–J controls passed **15 tests**, with **18 native-only tests skipped**. The fixture reported WebGL2 fallback and these runs are compatibility checks, not native execution evidence. The production-preview isolation suite passed **2 tests**; public routes continued to keep Ground Glass on WebGL and did not request the experimental WebGPU modules.
 
-Temporary mutation checks were run and reverted. Removing the millimetre-to-metre film-point conversion caused native output evidence to fail (valid far source-fallback pixels dropped to zero); reversing the applied lens normal produced zero valid depth pixels; displacing the applied film point by 1 mm produced a `0.109845 mm` reconstructed CoC error against the `0.001 mm` bound; removing the Macro near probe reduced the required probe count from three to two; and bypassing B1 source-color fallback produced 1,014 fallback/source mismatches. These failures show that the corresponding unit, orientation, focus, probe-presence, and fallback assertions detect the injected defects.
+Temporary mutation checks were run and reverted. Removing the millimetre-to-metre film-point conversion caused native output evidence to fail (valid far source-fallback pixels dropped to zero); reversing the applied lens normal produced zero valid depth pixels; displacing the applied film point by 1 mm produced a `0.109845 mm` reconstructed CoC error against the `0.001 mm` bound; removing the Macro near probe reduced the required probe count from three to two; and bypassing B1 source-color fallback produced 1,014 fallback/source mismatches. In this review-fix round, replacing the `interior-initial` B1 RMSE comparison value with the B0 value (`0.03625687`) failed the strict less-than assertion because the values were equal. A temporary `+0.01` Near alpha change failed the native alpha RMSE threshold (`0.00004511` observed) while RGB error remained zero. Both mutations were removed and the clean native suite passed again. These failures show that the corresponding unit, orientation, focus, probe-presence, fallback, B1-reference, and complete Near RGBA assertions detect the injected defects.
 
-Repository validation passed: `npm test` (**273 files / 2,528 tests**), `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`. The report and source diff also passed `git diff --check` before publication.
+Repository validation for this review-fix passed: `npm test` (**273 files / 2,530 tests**), `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`. The report and source diff also passed `git diff --check`.
 
 ## P. Known limitations
 
@@ -178,7 +200,10 @@ npm run test:e2e -- \
 # Canonical optical-state adapter tests
 npm test -- src/tests/unit/groundGlassWebGpuOpticalStateAdapter.test.ts
 
-# Phase C–J native regression set (28 passed; ordinary-only cases skip here)
+# Near Target RGBA comparison and surface-aware reference tests
+npm test -- src/tests/unit/groundGlassWebGpuSurfaceAwareFarReference.test.ts
+
+# Phase C–I native regression set in this review-fix run (26 passed; 4 ordinary-only skips)
 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
   src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts \
   src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts \
@@ -187,8 +212,9 @@ OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
   src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts \
   src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts \
   src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts \
-  src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts \
   --project=chrome-native-webgpu --workers=1
+
+# Phase J was rerun separately above (2 passed; 1 ordinary-only skip)
 
 # Public-route / production-bundle isolation
 npm run test:e2e -- --config=playwright.production.config.ts \

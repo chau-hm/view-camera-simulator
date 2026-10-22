@@ -179,6 +179,66 @@ const metric = (object: unknown, key: string) => {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 };
 
+const assertB1Full32RmseAdvantage = (
+  caseId: string,
+  full32: Operation,
+  halfB0: Operation,
+  halfB1: Operation,
+) => {
+  const full32PhaseJ = record(full32.phaseJ);
+  const b0PhaseJ = record(halfB0.phaseJ);
+  const b1PhaseJ = record(halfB1.phaseJ);
+  expect(full32PhaseJ.caseId, `${caseId} Full ×32 reference case`).toBe(caseId);
+  expect(b0PhaseJ.caseId, `${caseId} B0 case`).toBe(caseId);
+  expect(b1PhaseJ.caseId, `${caseId} B1 case`).toBe(caseId);
+
+  const fullCamera = record(record(full32PhaseJ.opticalState).cameraState);
+  expect(record(record(b0PhaseJ.opticalState).cameraState), `${caseId} B0 optical reference`).toEqual(fullCamera);
+  expect(record(record(b1PhaseJ.opticalState).cameraState), `${caseId} B1 optical reference`).toEqual(fullCamera);
+  const b0Applied = { ...record(halfB0.appliedState) };
+  const b1Applied = { ...record(halfB1.appliedState) };
+  delete b0Applied.reconstructionVariant;
+  delete b1Applied.reconstructionVariant;
+  expect(b1Applied, `${caseId} paired B0/B1 applied state`).toEqual(b0Applied);
+
+  const b0Reference = record(record(b0PhaseJ.quality).comparisons);
+  const b1Reference = record(record(b1PhaseJ.quality).comparisons);
+  expect(b0Reference.full32, `${caseId} B0 matched Full ×32 comparison`).not.toBeNull();
+  expect(b1Reference.full32, `${caseId} B1 matched Full ×32 comparison`).not.toBeNull();
+  expect(metric(b0Reference.full32, "pixelCount"), `${caseId} B0 Full ×32 pixel count`).toBe(512 * 384);
+  expect(metric(b1Reference.full32, "pixelCount"), `${caseId} B1 Full ×32 pixel count`).toBe(512 * 384);
+  const b0Rmse = metric(b0Reference.full32, "rootMeanSquareRgbError");
+  const b1Rmse = metric(b1Reference.full32, "rootMeanSquareRgbError");
+  expect(b0Rmse, `${caseId} finite B0 Full ×32 RMSE`).not.toBeNull();
+  expect(b1Rmse, `${caseId} finite B1 Full ×32 RMSE`).not.toBeNull();
+  if (b0Rmse === null || b1Rmse === null) {
+    throw new Error(`${caseId} must have finite B0 and B1 Full ×32 RMSE values`);
+  }
+  expect(b1Rmse, `${caseId}: B1 should improve on B0 against the matched Full ×32 reference`)
+    .toBeLessThan(b0Rmse);
+  return { b0Rmse, b1Rmse };
+};
+
+const assertNearRgbaInvariance = (caseId: string, qualityValue: unknown) => {
+  const quality = record(qualityValue);
+  const sourceDifference = record(quality.pairedSourceDifferenceFromB0);
+  expect(metric(sourceDifference, "rootMeanSquareRgbError"), `${caseId} source RGB RMSE`).toBe(0);
+  expect(metric(sourceDifference, "maxRgbError"), `${caseId} source RGB maximum error`).toBe(0);
+  expect(metric(sourceDifference, "pixelCount"), `${caseId} source pixel count`).toBe(512 * 384);
+
+  const nearDifference = record(quality.pairedNearTargetDifferenceFromB0);
+  expect(metric(nearDifference, "rootMeanSquareRgbError"), `${caseId} Near RGB RMSE`).not.toBeNull();
+  expect(metric(nearDifference, "maxRgbError"), `${caseId} Near RGB maximum error`).not.toBeNull();
+  expect(metric(nearDifference, "rootMeanSquareAlphaError"), `${caseId} Near alpha RMSE`).not.toBeNull();
+  expect(metric(nearDifference, "maxAlphaError"), `${caseId} Near alpha maximum error`).not.toBeNull();
+  expect(metric(nearDifference, "pixelCount"), `${caseId} Near Target pixel count`).toBe(256 * 192);
+  expect(metric(nearDifference, "rootMeanSquareRgbError")!, `${caseId} Near RGB RMSE`).toBeLessThan(1e-6);
+  expect(metric(nearDifference, "maxRgbError")!, `${caseId} Near RGB maximum error`).toBeLessThan(1e-5);
+  expect(metric(nearDifference, "rootMeanSquareAlphaError")!, `${caseId} Near alpha RMSE`).toBeLessThan(1e-6);
+  expect(metric(nearDifference, "maxAlphaError")!, `${caseId} Near alpha maximum error`).toBeLessThan(1e-5);
+  expect(metric(record(quality.nearTarget), "pixelCount"), `${caseId} actual Near Target dimensions`).toBe(256 * 192);
+};
+
 const attachEvidence = async (page: Page, testInfo: TestInfo, name: string, prefixes: string[]) => {
   const result = await page.evaluate((requestedPrefixes) => {
     const asRecord = (value: unknown): Record<string, unknown> =>
@@ -308,16 +368,8 @@ test("native Macro focus/aperture matrix preserves canonical state and compares 
     expect(metric(quality, "fallbackPixelCount") ?? 0).toBeGreaterThan(0);
     expect(metric(quality, "validFarPixelsUsingSourceFallback") ?? 0).toBeGreaterThan(0);
     expect(metric(quality, "fallbackSourceColorMismatchCount")).toBe(0);
-    const b0Comparisons = record(record(halfB0.operation.phaseJ).quality).comparisons;
-    expect(metric(comparisons.full32, "rootMeanSquareRgbError") ?? Infinity)
-      .toBeLessThan(metric(record(b0Comparisons).full32, "rootMeanSquareRgbError") ?? -Infinity);
-    const sourceDifference = record(quality.pairedSourceDifferenceFromB0);
-    expect(metric(sourceDifference, "rootMeanSquareRgbError")).toBe(0);
-    expect(metric(sourceDifference, "pixelCount")).toBe(512 * 384);
-    const nearDifference = record(quality.pairedNearTargetDifferenceFromB0);
-    expect(metric(nearDifference, "rootMeanSquareRgbError") ?? Infinity).toBeLessThan(1e-6);
-    expect(metric(nearDifference, "pixelCount")).toBe(256 * 192);
-    expect(metric(nearDifference, "maxRgbError") ?? 0).toBeLessThan(1e-5);
+    const referenceComparison = assertB1Full32RmseAdvantage(state.caseId, full32.operation, halfB0.operation, halfB1.operation);
+    assertNearRgbaInvariance(state.caseId, quality);
 
     const pointProbes = Array.isArray(quality.pointComparisons) ? quality.pointComparisons.map(record) : [];
     assertPointFootprintParity(quality, 3);
@@ -331,7 +383,7 @@ test("native Macro focus/aperture matrix preserves canonical state and compares 
     expect(Math.abs(metric(gpuMinusReconstructed, "signedCoCDiameterMm") ?? Infinity)).toBeLessThan(0.03);
     expect(Math.abs(metric(gpuMinusReconstructed, "majorRadiusMm") ?? Infinity)).toBeLessThan(0.04);
     expect(Math.abs(metric(gpuMinusReconstructed, "minorRadiusMm") ?? Infinity)).toBeLessThan(0.04);
-    focusDiagnostics.push({ caseId: state.caseId, operationId: halfB1.operation.operationId, phaseJ });
+    focusDiagnostics.push({ caseId: state.caseId, operationId: halfB1.operation.operationId, phaseJ, ...referenceComparison });
     macroPrefixes.push(`${state.caseId}-full32-`, `${state.caseId}-half32-B0-`, `${state.caseId}-half32-B1-`);
   }
 
@@ -347,6 +399,11 @@ test("native Macro focus/aperture matrix preserves canonical state and compares 
   expect(metric(middlePhysical, "farSidePixelCount")).toBeGreaterThan(0);
   expect(metric(farPhysical, "nearSidePixelCount")).toBeGreaterThan(0);
   expect(metric(farPhysical, "farSidePixelCount")).toBeGreaterThan(0);
+  for (const entry of [nearCase, middleCase, farCase]) {
+    const nearTarget = record(record(entry.phaseJ.quality).nearTarget);
+    expect(metric(nearTarget, "alphaCoveragePixelCount"), `${entry.caseId} nontrivial near alpha pixels`).toBeGreaterThan(0);
+    expect(metric(nearTarget, "maximumAlpha"), `${entry.caseId} nontrivial maximum near alpha`).toBeGreaterThan(0.02);
+  }
   const f16 = focusDiagnostics.find((entry) => entry.caseId === "macro-focus-middle-f16")!;
   expect(metric(record(f16.phaseJ.physical), "maximumAbsCoCMm")).toBeLessThan(metric(middlePhysical, "maximumAbsCoCMm") ?? 0);
 
@@ -370,7 +427,7 @@ test("native Macro focus/aperture matrix preserves canonical state and compares 
   expect(metric(capPhysical, "radiusCapPx")).toBe(32);
   expect(metric(capPhysical, "maximumAbsCoCMm")).toBe(metric(farPhysical, "maximumAbsCoCMm"));
   await attachEvidence(page, testInfo, "native-phase-j-macro", macroPrefixes.concat("macro-focus-far-f5_6-half32-B1-r32-"));
-  const focusSummary = JSON.stringify(focusDiagnostics.map(({ caseId, operationId, phaseJ }) => ({ caseId, operationId, phaseJ })), null, 2);
+  const focusSummary = JSON.stringify(focusDiagnostics, null, 2);
   await writeFile(join(PHASE_J_ARTIFACT_DIRECTORY, "native-phase-j-focus-summary.json"), focusSummary);
   await testInfo.attach("native-phase-j-focus-summary.json", {
     body: focusSummary,
@@ -502,28 +559,18 @@ test("native Interior and Architecture focus/movement states preserve canonical 
     } else {
       expect(record(record(optical.lens).planeNormal)).toEqual({ x: 0, y: 0, z: 1 });
     }
-    const comparisons = record(record(phaseJ.quality).comparisons);
-    expect(comparisons.full32).not.toBeNull();
-    expect(metric(comparisons.full32, "rootMeanSquareRgbError")).not.toBeNull();
-    const b0Comparisons = record(record(halfB0.operation.phaseJ).quality).comparisons;
-    expect(metric(record(b0Comparisons).full32, "rootMeanSquareRgbError")).not.toBeNull();
+    const referenceComparison = assertB1Full32RmseAdvantage(state.caseId, full32.operation, halfB0.operation, b1.operation);
     const quality = record(phaseJ.quality);
     expect(metric(quality, "fallbackPixelCount") ?? 0).toBeGreaterThan(0);
     expect(metric(quality, "validFarPixelsUsingSourceFallback") ?? 0).toBeGreaterThan(0);
     expect(metric(quality, "fallbackSourceColorMismatchCount")).toBe(0);
-    expect(metric(record(quality.pairedSourceDifferenceFromB0), "rootMeanSquareRgbError")).toBe(0);
-    expect(metric(record(quality.pairedNearTargetDifferenceFromB0), "rootMeanSquareRgbError") ?? Infinity).toBeLessThan(1e-6);
+    assertNearRgbaInvariance(state.caseId, quality);
     const points = Array.isArray(record(phaseJ.quality).pointComparisons)
       ? (record(phaseJ.quality).pointComparisons as unknown[]).map(record)
       : [];
     assertPointFootprintParity(quality, state.minimumPoints);
     expect(points.length).toBeGreaterThanOrEqual(state.minimumPoints);
-    const b0Applied = { ...record(halfB0.operation.appliedState) };
-    const b1Applied = { ...record(b1.operation.appliedState) };
-    delete b0Applied.reconstructionVariant;
-    delete b1Applied.reconstructionVariant;
-    expect(b1Applied).toEqual(b0Applied);
-    results.push({ caseId: state.caseId, operationId: b1.operation.operationId, phaseJ });
+    results.push({ caseId: state.caseId, operationId: b1.operation.operationId, ...referenceComparison, phaseJ });
     prefixes.push(`${state.caseId}-full32-`, `${state.caseId}-half32-B0-`, `${state.caseId}-half32-B1-`);
   }
   await attachEvidence(page, testInfo, "native-phase-j-movements", prefixes);
