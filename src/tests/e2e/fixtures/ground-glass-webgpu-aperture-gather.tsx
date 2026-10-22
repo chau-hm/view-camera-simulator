@@ -54,6 +54,7 @@ import {
   maximumPixelEllipseRadius,
   orientedSampleOffsetPx,
   type GatherReferenceProbe,
+  type SourceDimensions,
 } from "./ground-glass-webgpu-aperture-gather-cases";
 import {
   createSourceToGatherPixelCenterLookup,
@@ -61,10 +62,17 @@ import {
   gatherTexelAtSourcePixelCenter,
 } from "./ground-glass-webgpu-gather-quality-cases";
 import {
+  auditCompatibleFarNeighbors,
+  compareRadialEnergyProfiles,
   compareRgba,
+  compareRgbaOnMask,
   compositeFarAndNear,
   gatherTexelForSourcePixelCenter,
+  measureFarSignalMetrics,
+  phaseIFarDepthToleranceMm,
+  phaseISpatialWeight,
   reconstructFarToSourceGrid,
+  reconstructSurfaceAwareFar,
   referenceFarGatherTarget,
   sourcePixelAtGatherPixelCenter,
 } from "./ground-glass-webgpu-far-reconstruction-cases";
@@ -72,14 +80,15 @@ import {
 const WIDTH = APERTURE_GATHER_CASES.sourceWidthPx;
 const HEIGHT = APERTURE_GATHER_CASES.sourceHeightPx;
 const phaseGStudyEnabled = new URLSearchParams(window.location.search).get("phaseG") === "1";
-const phaseHStudyEnabled = new URLSearchParams(window.location.search).get("phaseH") === "1";
+const phaseIStudyEnabled = new URLSearchParams(window.location.search).get("phaseI") === "1";
+const phaseHStudyEnabled = phaseIStudyEnabled || new URLSearchParams(window.location.search).get("phaseH") === "1";
 const phaseResearchEnabled = phaseGStudyEnabled || phaseHStudyEnabled;
 const CHANGE_EVENT = "ground-glass-webgpu-aperture-gather-change";
 const GOLDEN_ANGLE = APERTURE_GATHER_CASES.goldenAngleRad;
 type FailureStage = "physical-coc" | "far-gather" | "near-gather" | "composite" | "far-reconstruction" | "readback";
 type QualityMode = "standard" | "low" | "stress-64" | "study";
 type StudyScene = "phase-f-controlled" | "architecture-rise-geometry-proxy" | "interior-corner-geometry-proxy";
-type PhaseHEdgeCase = "axis-aligned" | "diagonal" | "thin";
+type PhaseHEdgeCase = "axis-aligned" | "vertical" | "diagonal" | "thin" | "multiple-far-depths";
 type StageTiming = {
   stage: string;
   cpuSubmissionTimeMs: number;
@@ -240,6 +249,7 @@ type FixtureHandleEvidence = {
     includes: string[];
   } | null;
   phaseH: Record<string, unknown> | null;
+  phaseI: Record<string, unknown> | null;
   resources: ResourceEvidence[];
   error: string | null;
   cleanupError: string | null;
@@ -262,6 +272,8 @@ type MountedHandle = {
     scene?: StudyScene;
     candidate?: boolean;
     displayCandidate?: boolean;
+    phaseI?: boolean;
+    displayPhaseI?: boolean;
     edgeCase?: PhaseHEdgeCase;
   }) => Promise<string>;
   startHeldReadback: () => string;
@@ -276,7 +288,10 @@ type FixtureStore = {
   status: string;
   releaseReadback: (() => void) | null;
 };
-type WindowWithFixtureStore = Window & { __groundGlassWebGpuApertureGather?: FixtureStore };
+type WindowWithFixtureStore = Window & {
+  __groundGlassWebGpuApertureGather?: FixtureStore;
+  __groundGlassWebGpuFarReconstructionImages?: Record<string, string>;
+};
 const store = (window as WindowWithFixtureStore).__groundGlassWebGpuApertureGather ??= {
   revision: 0,
   nextGeneration: 1,
@@ -284,6 +299,125 @@ const store = (window as WindowWithFixtureStore).__groundGlassWebGpuApertureGath
   activeHandleId: null,
   status: "idle",
   releaseReadback: null,
+};
+const phaseIImageArtifacts = (window as WindowWithFixtureStore).__groundGlassWebGpuFarReconstructionImages ??= {};
+
+const linearToSrgbByte = (value: number) => {
+  const linear = Math.min(1, Math.max(0, value));
+  const srgb = linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.pow(linear, 1 / 2.4) - 0.055;
+  return Math.round(srgb * 255);
+};
+
+const rgbaToPngDataUrl = (rgba: Float32Array, width: number, height: number, scale = 1) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Phase I image evidence requires a 2D canvas context");
+  const image = context.createImageData(width, height);
+  for (let index = 0; index < width * height; index += 1) {
+    image.data[index * 4] = linearToSrgbByte(rgba[index * 4] ?? 0);
+    image.data[index * 4 + 1] = linearToSrgbByte(rgba[index * 4 + 1] ?? 0);
+    image.data[index * 4 + 2] = linearToSrgbByte(rgba[index * 4 + 2] ?? 0);
+    image.data[index * 4 + 3] = 255;
+  }
+  if (scale === 1) context.putImageData(image, 0, 0);
+  else {
+    const sourceCanvas = document.createElement("canvas");
+    sourceCanvas.width = width;
+    sourceCanvas.height = height;
+    sourceCanvas.getContext("2d")!.putImageData(image, 0, 0);
+    context.imageSmoothingEnabled = false;
+    context.drawImage(sourceCanvas, 0, 0, width * scale, height * scale);
+  }
+  return canvas.toDataURL("image/png");
+};
+
+const cropRgbaToPngDataUrl = (
+  rgba: Float32Array,
+  width: number,
+  height: number,
+  crop: { x: number; y: number; width: number; height: number },
+  scale = 4,
+) => {
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = width;
+  sourceCanvas.height = height;
+  const sourceContext = sourceCanvas.getContext("2d");
+  if (!sourceContext) throw new Error("Phase I edge evidence requires a 2D canvas context");
+  const image = sourceContext.createImageData(width, height);
+  for (let index = 0; index < width * height; index += 1) {
+    image.data[index * 4] = linearToSrgbByte(rgba[index * 4] ?? 0);
+    image.data[index * 4 + 1] = linearToSrgbByte(rgba[index * 4 + 1] ?? 0);
+    image.data[index * 4 + 2] = linearToSrgbByte(rgba[index * 4 + 2] ?? 0);
+    image.data[index * 4 + 3] = 255;
+  }
+  sourceContext.putImageData(image, 0, 0);
+  const output = document.createElement("canvas");
+  output.width = crop.width * scale;
+  output.height = crop.height * scale;
+  const context = output.getContext("2d");
+  if (!context) throw new Error("Phase I edge evidence requires a 2D canvas context");
+  context.imageSmoothingEnabled = false;
+  context.drawImage(sourceCanvas, crop.x, crop.y, crop.width, crop.height, 0, 0, output.width, output.height);
+  return output.toDataURL("image/png");
+};
+
+const differenceToPngDataUrl = (expected: Float32Array, actual: Float32Array, width: number, height: number) => {
+  const image = new Float32Array(width * height * 4);
+  const scale = 0.25;
+  for (let index = 0; index < width * height; index += 1) {
+    const offset = index * 4;
+    const difference = Math.max(
+      Math.abs((expected[offset] ?? 0) - (actual[offset] ?? 0)),
+      Math.abs((expected[offset + 1] ?? 0) - (actual[offset + 1] ?? 0)),
+      Math.abs((expected[offset + 2] ?? 0) - (actual[offset + 2] ?? 0)),
+    );
+    const normalized = Math.min(1, difference / scale);
+    image[offset] = normalized;
+    image[offset + 1] = 1 - normalized;
+    image[offset + 2] = 0;
+    image[offset + 3] = 1;
+  }
+  return rgbaToPngDataUrl(image, width, height);
+};
+
+const signalToPngDataUrl = (rgba: Float32Array, roiMask: Uint8Array, width: number, height: number) => {
+  const image = new Float32Array(width * height * 4);
+  const signalCap = 0.5;
+  for (let index = 0; index < width * height; index += 1) {
+    const offset = index * 4;
+    const signal = roiMask[index] === 1
+      ? Math.max(0,
+        ((rgba[offset] ?? 0) - 0.025) * 0.925
+        + ((rgba[offset + 1] ?? 0) - 0.08) * 0.54
+        - ((rgba[offset + 2] ?? 0) - 0.85) * 0.825,
+      )
+      : 0;
+    const amount = Math.min(1, signal / signalCap);
+    image[offset] = amount;
+    image[offset + 1] = amount * 0.8;
+    image[offset + 2] = 0;
+    image[offset + 3] = 1;
+  }
+  return rgbaToPngDataUrl(image, width, height);
+};
+
+const nearAlphaToPngDataUrl = (near: Float32Array, source: SourceDimensions, gather: SourceDimensions) => {
+  const expanded = new Float32Array(source.widthPx * source.heightPx * 4);
+  for (let y = 0; y < source.heightPx; y += 1) {
+    for (let x = 0; x < source.widthPx; x += 1) {
+      const gx = Math.min(gather.widthPx - 1, Math.floor((x + 0.5) * gather.widthPx / source.widthPx));
+      const gy = Math.min(gather.heightPx - 1, Math.floor((y + 0.5) * gather.heightPx / source.heightPx));
+      const alpha = near[(gy * gather.widthPx + gx) * 4 + 3] ?? 0;
+      const offset = (y * source.widthPx + x) * 4;
+      expanded[offset] = alpha;
+      expanded[offset + 1] = alpha;
+      expanded[offset + 2] = alpha;
+      expanded[offset + 3] = 1;
+    }
+  }
+  return rgbaToPngDataUrl(expanded, source.widthPx, source.heightPx);
 };
 const signal = () => {
   store.revision += 1;
@@ -366,6 +500,15 @@ const buildPhaseHDiagnostics = (input: {
   selectedProvenanceRaw: Float32Array;
   candidateFarRaw: Uint16Array | null;
   candidateCompositeRaw: Uint16Array | null;
+  phaseICandidateFarRaw: Uint16Array | null;
+  phaseICandidateCompositeRaw: Uint16Array | null;
+  phaseIEnabled: boolean;
+  phaseIReferenceFarRasters: Map<string, Float32Array>;
+  apertureFNumber: number;
+  filmTiltDeg: number;
+  focusOffsetMm: number;
+  crop: boolean;
+  scene: StudyScene;
   stageTimings: StageTiming[];
 }) => {
   const { source, gather, readbackOrigin } = input;
@@ -384,6 +527,12 @@ const buildPhaseHDiagnostics = (input: {
     : null;
   const candidateComposite = input.candidateCompositeRaw
     ? toTopOriginRgba(input.candidateCompositeRaw, source.widthPx, source.heightPx, readbackOrigin, true)
+    : null;
+  const phaseICandidateFar = input.phaseICandidateFarRaw
+    ? toTopOriginRgba(input.phaseICandidateFarRaw, source.widthPx, source.heightPx, readbackOrigin, true)
+    : null;
+  const phaseICandidateComposite = input.phaseICandidateCompositeRaw
+    ? toTopOriginRgba(input.phaseICandidateCompositeRaw, source.widthPx, source.heightPx, readbackOrigin, true)
     : null;
   const pixelCount = source.widthPx * source.heightPx;
   const gatherPixelCount = gather.widthPx * gather.heightPx;
@@ -541,6 +690,551 @@ const buildPhaseHDiagnostics = (input: {
     (data[offset] ?? 0) > 0.5 && (data[offset + 1] ?? 0) < 0.12 && (data[offset + 2] ?? 0) < 0.12;
   const isGreen = (data: Float32Array, offset: number) =>
     (data[offset + 1] ?? 0) > 0.5 && (data[offset] ?? 0) < 0.15 && (data[offset + 2] ?? 0) < 0.2;
+  const phaseI = input.phaseIEnabled ? (() => {
+    const blueRoiMask = new Uint8Array(pixelCount);
+    const nearForegroundMask = new Uint8Array(pixelCount);
+    const focusMask = new Uint8Array(pixelCount);
+    const featureMask = new Uint8Array(pixelCount);
+    let featureX = 0;
+    let featureY = 0;
+    let featurePixelCount = 0;
+    for (let index = 0; index < pixelCount; index += 1) {
+      const offset = index * 4;
+      blueRoiMask[index] = sourceIsBlue(offset) ? 1 : 0;
+      nearForegroundMask[index] = sourceIsRed(offset) ? 1 : 0;
+      focusMask[index] = isGreen(colors, offset) ? 1 : 0;
+      const yellowFeature = (colors[offset] ?? 0) > 0.8
+        && (colors[offset + 1] ?? 0) > 0.4
+        && (colors[offset + 2] ?? 0) < 0.12;
+      featureMask[index] = yellowFeature ? 1 : 0;
+      if (yellowFeature) {
+        featureX += index % source.widthPx;
+        featureY += Math.floor(index / source.widthPx);
+        featurePixelCount += 1;
+      }
+    }
+    const featureCenterPx: [number, number] = featurePixelCount > 0
+      ? [featureX / featurePixelCount, featureY / featurePixelCount]
+      : [source.widthPx * 0.5, source.heightPx * 0.5];
+    const edgeMask = new Uint8Array(pixelCount);
+    for (let y = 0; y < source.heightPx; y += 1) {
+      for (let x = 0; x < source.widthPx; x += 1) {
+        const index = y * source.widthPx + x;
+        let edge = nearForegroundMask[index] === 1;
+        for (let dy = -1; dy <= 1 && !edge; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && nx < source.widthPx && ny >= 0 && ny < source.heightPx
+                && nearForegroundMask[ny * source.widthPx + nx] === 1) {
+              edge = true;
+              break;
+            }
+          }
+        }
+        edgeMask[index] = edge ? 1 : 0;
+      }
+    }
+    const metricInput = (farRgba: Float32Array) => measureFarSignalMetrics({
+      source,
+      sourceColors: colors,
+      farRgba,
+      roiMask: blueRoiMask,
+      featureCenterPx,
+      backgroundRgb: [0.025, 0.08, 0.85],
+      signalWeights: [0.925, 0.54, -0.825],
+      threshold: 0.02,
+      radialBinWidthPx: 2,
+      radialBinCount: 24,
+    });
+    const cpuFullFar = reconstructFarToSourceGrid({
+      source,
+      gather,
+      gatherFar: cpuGather.rgba,
+      colors,
+      physical,
+      validity,
+      selectedGatherPixels,
+      centerSourcePixels: observedGatherCenterPixels,
+    }).baselineFar;
+    const phaseHCompatibleCpu = reconstructFarToSourceGrid({
+      source,
+      gather,
+      gatherFar: cpuGather.rgba,
+      colors,
+      physical,
+      validity,
+      selectedGatherPixels,
+      centerSourcePixels: observedGatherCenterPixels,
+    }).compatibleFar;
+    const c1Cpu = reconstructSurfaceAwareFar({
+      source,
+      gather,
+      gatherFar: cpuGather.rgba,
+      colors,
+      physical,
+      validity,
+      worldAndDepth,
+      selectedGatherPixels,
+      centerSourcePixels: observedGatherCenterPixels,
+      cameraZMm: input.cameraZMm,
+      depthTolerance: phaseIFarDepthToleranceMm,
+      spatialWeight: phaseISpatialWeight,
+    });
+    const allPixelsMask = new Uint8Array(pixelCount).fill(1);
+    const referenceComparable = input.scene === "phase-f-controlled"
+      && input.apertureFNumber === 2
+      && input.filmTiltDeg === 0
+      && input.focusOffsetMm === 0
+      && !input.crop
+      && input.edgeCase === "axis-aligned"
+      && source.widthPx === WIDTH
+      && source.heightPx === HEIGHT;
+    const full32 = referenceComparable ? input.phaseIReferenceFarRasters.get("full-32") ?? null : null;
+    const full64 = referenceComparable ? input.phaseIReferenceFarRasters.get("full-64") ?? null : null;
+    const full32Signal = full32 ? metricInput(full32) : null;
+    const full64Signal = full64 ? metricInput(full64) : null;
+    const rasterQuality = (farRgba: Float32Array) => {
+      const farSignal = metricInput(farRgba);
+      return {
+      farSignal,
+      radialEnergyProfileAgainstFull32: full32Signal
+        ? compareRadialEnergyProfiles(full32Signal, farSignal)
+        : null,
+      radialEnergyProfileAgainstFull64: full64Signal
+        ? compareRadialEnergyProfiles(full64Signal, farSignal)
+        : null,
+      rgbErrorAgainstFull32: full32 ? compareRgbaOnMask(full32, farRgba, allPixelsMask) : null,
+      rgbErrorAgainstFull64: full64 ? compareRgbaOnMask(full64, farRgba, allPixelsMask) : null,
+      edgeRgbErrorAgainstFull32: full32 ? compareRgbaOnMask(full32, farRgba, edgeMask) : null,
+      focusRgbErrorAgainstSource: compareRgbaOnMask(colors, farRgba, focusMask),
+      };
+    };
+    const b0 = rasterQuality(nativeFarReconstruction.baselineFar);
+    const b1Cpu = rasterQuality(phaseHCompatibleCpu);
+    const b1Gpu = candidateFar ? rasterQuality(candidateFar) : null;
+    const b1 = b1Gpu ?? b1Cpu;
+    const c1 = phaseICandidateFar ?? null;
+    const c1Quality = c1 ? rasterQuality(c1) : rasterQuality(c1Cpu.rgba);
+    const c1CpuComparison = phaseICandidateFar
+      ? compareRgba(c1Cpu.rgba, phaseICandidateFar)
+      : null;
+    const c1PathMismatch = phaseICandidateFar ? (() => {
+      let countMismatch = 0;
+      let fallbackMismatch = 0;
+      let fallbackReasonMismatch = 0;
+      let maximumWeightSumError = 0;
+      for (let index = 0; index < pixelCount; index += 1) {
+        const alpha = phaseICandidateFar[index * 4 + 3] ?? 0;
+        const expectedFallback = c1Cpu.fallbackReason[index] ?? 0;
+        const actualFallback = alpha <= -1.5 ? 3 : alpha <= -0.5 ? 2 : alpha < 1 ? 1 : 0;
+        if (actualFallback !== expectedFallback) fallbackReasonMismatch += 1;
+        if (gather.widthPx === source.widthPx && gather.heightPx === source.heightPx) {
+          if (alpha > -1.5) fallbackMismatch += 1;
+          continue;
+        }
+        if ((physical[index * 4] ?? 0) <= 0.00001 || validity[index] !== 1) {
+          if (alpha > -0.5) fallbackMismatch += 1;
+        } else {
+          if (alpha < -0.5) fallbackMismatch += 1;
+          else {
+            const actualCount = Math.floor(alpha + 1e-4);
+            if (actualCount !== (c1Cpu.acceptedNeighborCount[index] ?? 0)) countMismatch += 1;
+            const actualWeightSum = (alpha - actualCount) * 10;
+            maximumWeightSumError = Math.max(maximumWeightSumError,
+              Math.abs(actualWeightSum - (c1Cpu.acceptedWeightSum[index] ?? 0)));
+          }
+        }
+        if (expectedFallback === 1 && alpha < -0.5) fallbackMismatch += 1;
+      }
+      return { countMismatch, fallbackMismatch, fallbackReasonMismatch, maximumWeightSumError };
+    })() : null;
+    const candidateLeakage = (farRgba: Float32Array) => {
+      let pixels = 0;
+      let energy = 0;
+      for (let index = 0; index < pixelCount; index += 1) {
+        if (blueRoiMask[index] !== 1) continue;
+        const offset = index * 4;
+        const red = farRgba[offset] ?? 0;
+        if (red > 0.5 && (farRgba[offset + 1] ?? 0) < 0.12 && (farRgba[offset + 2] ?? 0) < 0.12) {
+          pixels += 1;
+          energy += Math.max(0, red - (colors[offset] ?? 0));
+        }
+      }
+      return { farRedLeakPixels: pixels, farRedLeakEnergy: energy };
+    };
+    const coverageAudit = auditCompatibleFarNeighbors({
+      source,
+      gather,
+      gatherFar: farNative,
+      colors,
+      physical,
+      validity,
+      worldAndDepth,
+      selectedGatherPixels,
+      centerSourcePixels: observedGatherCenterPixels,
+      cameraZMm: input.cameraZMm,
+      depthTolerance: phaseIFarDepthToleranceMm,
+      spatialWeight: phaseISpatialWeight,
+      baselineFar: nativeFarReconstruction.baselineFar,
+      blueRoiMask,
+      foregroundMask: nearForegroundMask,
+    });
+    const surfaceDepthAudit = (() => {
+      let secondFarSurfacePixelCount = 0;
+      let validSecondFarSurfacePixelCount = 0;
+      let incompatibleFarNeighborObservationCount = 0;
+      let compatibleFarNeighborObservationCount = 0;
+      let maximumObservedFarDepthSpanMm = 0;
+      const depthGroups = new Set<number>();
+      const examples: Array<Record<string, unknown>> = [];
+      for (let sourceIndex = 0; sourceIndex < pixelCount; sourceIndex += 1) {
+        const sourceOffset = sourceIndex * 4;
+        const worldXmm = worldAndDepth[sourceOffset] ?? 0;
+        const worldYmm = worldAndDepth[sourceOffset + 1] ?? 0;
+        const worldZmm = worldAndDepth[sourceOffset + 2] ?? 0;
+        const worldDepth = worldAndDepth[sourceOffset + 3] ?? 1;
+        const belongsToSecondFarPlane = worldDepth < 1
+        && Math.abs(worldZmm - 620) <= 5
+          && worldXmm >= 125 && worldXmm <= 255
+          && worldYmm >= -155 && worldYmm <= 95;
+        if (!belongsToSecondFarPlane) continue;
+        secondFarSurfacePixelCount += 1;
+        if (validity[sourceIndex] !== 1 || (physical[sourceOffset] ?? 0) <= 0.00001) continue;
+        validSecondFarSurfacePixelCount += 1;
+        const sourceX = sourceIndex % source.widthPx;
+        const sourceY = Math.floor(sourceIndex / source.widthPx);
+        const selectedOffset = sourceIndex * 2;
+        const selectedX = selectedGatherPixels[selectedOffset] ?? 0;
+        const selectedY = selectedGatherPixels[selectedOffset + 1] ?? 0;
+        const destinationDistance = Math.abs((worldAndDepth[sourceOffset + 2] ?? 0) - input.cameraZMm);
+        const observedDistances: number[] = [];
+        const neighbors: Array<Record<string, unknown>> = [];
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            const gx = selectedX + dx;
+            const gy = selectedY + dy;
+            if (gx < 0 || gx >= gather.widthPx || gy < 0 || gy >= gather.heightPx) continue;
+            const centerOffset = (gy * gather.widthPx + gx) * 2;
+            const centerX = observedGatherCenterPixels[centerOffset] ?? 0;
+            const centerY = observedGatherCenterPixels[centerOffset + 1] ?? 0;
+            const centerIndex = centerY * source.widthPx + centerX;
+            const neighborOffset = centerIndex * 4;
+            const centerDistanceMm = Math.abs((worldAndDepth[neighborOffset + 2] ?? 0) - input.cameraZMm);
+            const validFar = validity[centerIndex] === 1
+              && (worldAndDepth[neighborOffset + 3] ?? 1) < 1
+              && (physical[neighborOffset] ?? 0) > 0.00001;
+            if (!validFar) continue;
+            observedDistances.push(centerDistanceMm);
+            const depthDeltaMm = Math.abs(centerDistanceMm - destinationDistance);
+            const depthCompatible = depthDeltaMm <= phaseIFarDepthToleranceMm(destinationDistance);
+            if (depthCompatible) compatibleFarNeighborObservationCount += 1;
+            else incompatibleFarNeighborObservationCount += 1;
+            depthGroups.add(Math.round(centerDistanceMm));
+            neighbors.push({
+              gatherPixel: [gx, gy],
+              centerSourcePixel: [centerX, centerY],
+              centerDistanceMm,
+              destinationDistanceMm: destinationDistance,
+              signedCoCMm: physical[neighborOffset] ?? 0,
+              depthDeltaMm,
+              toleranceMm: phaseIFarDepthToleranceMm(destinationDistance),
+              depthCompatible,
+            });
+          }
+        }
+        if (observedDistances.length > 1) {
+          maximumObservedFarDepthSpanMm = Math.max(
+            maximumObservedFarDepthSpanMm,
+            Math.max(...observedDistances) - Math.min(...observedDistances),
+          );
+        }
+        if (examples.length < 12 && neighbors.some((neighbor) => neighbor.depthCompatible === false)) {
+          examples.push({ sourcePixel: [sourceX, sourceY], destinationDistanceMm: destinationDistance, neighbors });
+        }
+      }
+      return {
+        scene: input.edgeCase,
+        targetSurfaceDefinition: "native reconstructed world position lies on the test-only plane centered at [190,-30,620] mm with bounds x=[125,255], y=[-155,95], z=620±5 mm",
+        secondFarSurfacePixelCount,
+        validSecondFarSurfacePixelCount,
+        distinctRoundedFarDepthCount: depthGroups.size,
+        incompatibleFarNeighborObservationCount,
+        compatibleFarNeighborObservationCount,
+        maximumObservedFarDepthSpanMm,
+        examples,
+      };
+    })();
+    const leakMaskToPngDataUrl = (farRgba: Float32Array) => {
+      const image = new Float32Array(pixelCount * 4);
+      for (let index = 0; index < pixelCount; index += 1) {
+        const offset = index * 4;
+        const redLeak = blueRoiMask[index] === 1
+          && (farRgba[offset] ?? 0) > 0.5
+          && (farRgba[offset + 1] ?? 0) < 0.12
+          && (farRgba[offset + 2] ?? 0) < 0.12;
+        if (redLeak) image.set([1, 0.02, 0.02, 1], offset);
+        else if (blueRoiMask[index] === 1) image.set([0.02, 0.08, 0.32, 1], offset);
+        else image.set([0.08, 0.08, 0.08, 1], offset);
+      }
+      return rgbaToPngDataUrl(image, source.widthPx, source.heightPx);
+    };
+    const neighborCoverageToPngDataUrl = () => {
+      const image = new Float32Array(pixelCount * 4);
+      for (const record of coverageAudit.records) {
+        const [x, y] = record.sourcePixel as [number, number];
+        const count = record.compatibleNeighborCount as number;
+        const offset = (y * source.widthPx + x) * 4;
+        const color: [number, number, number, number] = count === 0
+          ? [1, 0, 0, 1]
+          : count === 1 ? [1, 0.72, 0, 1] : [0.04, 0.85, 0.16, 1];
+        image.set(color, offset);
+      }
+      return rgbaToPngDataUrl(image, source.widthPx, source.heightPx);
+    };
+    const fallbackToPngDataUrl = () => {
+      const image = new Float32Array(pixelCount * 4);
+      for (let index = 0; index < pixelCount; index += 1) {
+        const offset = index * 4;
+        const reason = c1Cpu.fallbackReason[index] ?? 0;
+        const color: [number, number, number, number] = reason === 1
+          ? [1, 0, 1, 1]
+          : reason === 2 ? [0.1, 0.3, 1, 1]
+            : reason === 3 ? [0, 0.8, 0.8, 1] : [0.03, 0.03, 0.03, 1];
+        image.set(color, offset);
+      }
+      return rgbaToPngDataUrl(image, source.widthPx, source.heightPx);
+    };
+    const nearAlphaCoverage = near.reduce((count, value, offset) => offset % 4 === 3 && value > 0.02 ? count + 1 : count, 0);
+    let nearLayerSignature = 2166136261;
+    let nearAlphaSum = 0;
+    let maximumNearAlpha = 0;
+    for (let offset = 0; offset < near.length; offset += 4) {
+      const alpha = near[offset + 3] ?? 0;
+      nearAlphaSum += alpha;
+      maximumNearAlpha = Math.max(maximumNearAlpha, alpha);
+      for (let channel = 0; channel < 4; channel += 1) {
+        nearLayerSignature = Math.imul(nearLayerSignature ^ Math.round((near[offset + channel] ?? 0) * 65536), 16777619);
+      }
+    }
+    const candidateCompositeCpu = compositeFarAndNear(c1Cpu.rgba, (() => {
+      const expandedNear = new Float32Array(pixelCount * 4);
+      for (let y = 0; y < source.heightPx; y += 1) {
+        for (let x = 0; x < source.widthPx; x += 1) {
+          const index = y * source.widthPx + x;
+          const [gx, gy] = [selectedGatherPixels[index * 2]!, selectedGatherPixels[index * 2 + 1]!];
+          expandedNear.set(near.subarray((gy * gather.widthPx + gx) * 4, (gy * gather.widthPx + gx) * 4 + 4), index * 4);
+        }
+      }
+      return expandedNear;
+    })());
+    let c1CompositeCpuComparison = null;
+    if (phaseICandidateComposite) c1CompositeCpuComparison = compareRgba(candidateCompositeCpu, phaseICandidateComposite);
+    const c1Output = phaseICandidateFar ?? c1Cpu.rgba;
+    const c1Leakage = candidateLeakage(c1Output);
+    const c1FallbackPixelCount = c1Cpu.fallbackReason.reduce((count, reason) => reason === 1 ? count + 1 : count, 0);
+    const c1FallbackReasonHistogram = [0, 1, 2, 3].map((reason) => ({
+      reason,
+      pixels: c1Cpu.fallbackReason.reduce((count, value) => value === reason ? count + 1 : count, 0),
+    }));
+    const c1MaximumAcceptedNeighborCount = c1Cpu.acceptedNeighborCount.reduce((maximum, value) => Math.max(maximum, value), 0);
+    const edgeCandidateDiagnostics = coverageAudit.records.map((record) => {
+      const sourcePixel = record.sourcePixel as [number, number];
+      const sourceIndex = sourcePixel[1] * source.widthPx + sourcePixel[0];
+      const offset = sourceIndex * 4;
+      const alpha = phaseICandidateFar?.[offset + 3] ?? c1Cpu.rgba[offset + 3] ?? 0;
+      const expectedReason = c1Cpu.fallbackReason[sourceIndex] ?? 0;
+      const reasonNames: Record<number, string> = {
+        0: "none",
+        1: "no-compatible-neighbor-source-color-fallback",
+        2: "destination-not-valid-far-baseline-far-fallback",
+        3: "full-resolution-baseline-passthrough",
+      };
+      const neighbors = c1Cpu.neighborRecords[sourceIndex] ?? [];
+      return {
+        sourcePixel,
+        selectedGatherCoordinates: record.selectedGatherPixel,
+        destinationSurfaceDepth: worldAndDepth[offset + 3] ?? 1,
+        destinationCameraDistanceMm: Math.abs((worldAndDepth[offset + 2] ?? 0) - input.cameraZMm),
+        destinationSignedCoC: physical[offset] ?? 0,
+        compatibleNeighborCount: c1Cpu.acceptedNeighborCount[sourceIndex] ?? 0,
+        acceptedWeightSum: c1Cpu.acceptedWeightSum[sourceIndex] ?? 0,
+        fallbackUsed: expectedReason !== 0,
+        fallbackReason: reasonNames[expectedReason] ?? "unknown",
+        selectedNeighborCoordinates: neighbors.filter((neighbor) => neighbor.accepted).map((neighbor) => neighbor.gatherPixel),
+        candidateCenterDepths: neighbors.map((neighbor) => ({
+          gatherPixel: neighbor.gatherPixel,
+          centerSourcePixel: neighbor.centerSourcePixel,
+          depth: neighbor.centerDepth,
+          cameraDistanceMm: neighbor.centerDistanceMm,
+          signedCoC: neighbor.centerSignedCoCMm,
+          validityCode: neighbor.validityCode,
+          depthCompatible: neighbor.depthCompatible,
+          spatialWeight: neighbor.spatialWeight,
+          accepted: neighbor.accepted,
+        })),
+        gpuPackedDiagnosticAlpha: phaseICandidateFar ? alpha : null,
+        gpuDecodedAcceptedNeighborCount: phaseICandidateFar && alpha >= 0 ? Math.floor(alpha + 1e-4) : null,
+        candidateFarRgb: Array.from(c1Output.subarray(offset, offset + 3)),
+      };
+    });
+    const referenceComparison = {
+      full32VsFull64: full32 && full64 ? compareRgbaOnMask(full32, full64, allPixelsMask) : null,
+      full32NativeVsCpu: input.gather.widthPx === source.widthPx && input.sampleCount === 32
+        ? compareRgbaOnMask(cpuFullFar, nativeFarReconstruction.baselineFar, allPixelsMask)
+        : null,
+      full64NativeVsCpu: input.gather.widthPx === source.widthPx && input.sampleCount === 64
+        ? compareRgbaOnMask(cpuFullFar, nativeFarReconstruction.baselineFar, allPixelsMask)
+        : null,
+    };
+    const eligibleReference = input.scene === "phase-f-controlled"
+      && input.apertureFNumber === 2
+      && input.filmTiltDeg === 0
+      && input.focusOffsetMm === 0
+      && !input.crop
+      && input.edgeCase === "axis-aligned"
+      && source.widthPx === WIDTH
+      && source.heightPx === HEIGHT;
+    if (eligibleReference && gather.widthPx === source.widthPx && input.sampleCount === 32) {
+      input.phaseIReferenceFarRasters.set("full-32", nativeFarReconstruction.baselineFar.slice());
+    }
+    if (eligibleReference && gather.widthPx === source.widthPx && input.sampleCount === 64) {
+      input.phaseIReferenceFarRasters.set("full-64", nativeFarReconstruction.baselineFar.slice());
+    }
+    if (eligibleReference) {
+      phaseIImageArtifacts["raw-source"] ??= rgbaToPngDataUrl(colors, source.widthPx, source.heightPx);
+      const gatherLabel = gather.widthPx === source.widthPx ? "full" : "half";
+      const variantKey = `${gatherLabel}-${input.sampleCount}`;
+      if (gatherLabel === "full" && input.sampleCount === 32) {
+        phaseIImageArtifacts["full32-far-B0"] = rgbaToPngDataUrl(nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx);
+        phaseIImageArtifacts["full32-composite-B0"] = rgbaToPngDataUrl(compositeNative, source.widthPx, source.heightPx);
+      }
+      if (gatherLabel === "full" && input.sampleCount === 64) {
+        phaseIImageArtifacts["full64-far-B0"] = rgbaToPngDataUrl(nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx);
+        phaseIImageArtifacts["full64-composite-B0"] = rgbaToPngDataUrl(compositeNative, source.widthPx, source.heightPx);
+      }
+      if (gatherLabel === "half" && input.sampleCount === 32) {
+        phaseIImageArtifacts["half32-far-B0"] = rgbaToPngDataUrl(nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx);
+        phaseIImageArtifacts["half32-composite-B0"] = rgbaToPngDataUrl(compositeNative, source.widthPx, source.heightPx);
+        phaseIImageArtifacts["half32-far-signal-B0"] = signalToPngDataUrl(nativeFarReconstruction.baselineFar, blueRoiMask, source.widthPx, source.heightPx);
+        phaseIImageArtifacts["half32-near-alpha"] = nearAlphaToPngDataUrl(near, source, gather);
+        phaseIImageArtifacts["half32-b0-red-leak-mask"] = leakMaskToPngDataUrl(nativeFarReconstruction.baselineFar);
+        phaseIImageArtifacts["half32-neighbor-coverage"] = neighborCoverageToPngDataUrl();
+        phaseIImageArtifacts["half32-c1-fallback-regions"] = fallbackToPngDataUrl();
+        if (full32) phaseIImageArtifacts["half32-difference-B0-full32"] = differenceToPngDataUrl(full32, nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx);
+        if (full64) phaseIImageArtifacts["half32-difference-B0-full64"] = differenceToPngDataUrl(full64, nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx);
+        if (candidateFar && candidateComposite) {
+          phaseIImageArtifacts["half32-far-B1"] = rgbaToPngDataUrl(candidateFar, source.widthPx, source.heightPx);
+          phaseIImageArtifacts["half32-composite-B1"] = rgbaToPngDataUrl(candidateComposite, source.widthPx, source.heightPx);
+          phaseIImageArtifacts["half32-far-signal-B1"] = signalToPngDataUrl(candidateFar, blueRoiMask, source.widthPx, source.heightPx);
+          phaseIImageArtifacts["half32-b1-red-leak-mask"] = leakMaskToPngDataUrl(candidateFar);
+          if (full32) phaseIImageArtifacts["half32-difference-B1-full32"] = differenceToPngDataUrl(full32, candidateFar, source.widthPx, source.heightPx);
+          if (full64) phaseIImageArtifacts["half32-difference-B1-full64"] = differenceToPngDataUrl(full64, candidateFar, source.widthPx, source.heightPx);
+        }
+        if (phaseICandidateFar && phaseICandidateComposite) {
+          phaseIImageArtifacts["half32-far-C1"] = rgbaToPngDataUrl(phaseICandidateFar, source.widthPx, source.heightPx);
+          phaseIImageArtifacts["half32-composite-C1"] = rgbaToPngDataUrl(phaseICandidateComposite, source.widthPx, source.heightPx);
+          phaseIImageArtifacts["half32-far-signal-C1"] = signalToPngDataUrl(phaseICandidateFar, blueRoiMask, source.widthPx, source.heightPx);
+          phaseIImageArtifacts["half32-c1-red-leak-mask"] = leakMaskToPngDataUrl(phaseICandidateFar);
+          if (full32) phaseIImageArtifacts["half32-difference-C1-full32"] = differenceToPngDataUrl(full32, phaseICandidateFar, source.widthPx, source.heightPx);
+          if (full64) phaseIImageArtifacts["half32-difference-C1-full64"] = differenceToPngDataUrl(full64, phaseICandidateFar, source.widthPx, source.heightPx);
+        }
+        let foregroundMinX = source.widthPx;
+        let foregroundMinY = source.heightPx;
+        let foregroundMaxX = -1;
+        let foregroundMaxY = -1;
+        for (let index = 0; index < nearForegroundMask.length; index += 1) {
+          if (nearForegroundMask[index] !== 1) continue;
+          const x = index % source.widthPx;
+          const y = Math.floor(index / source.widthPx);
+          foregroundMinX = Math.min(foregroundMinX, x);
+          foregroundMinY = Math.min(foregroundMinY, y);
+          foregroundMaxX = Math.max(foregroundMaxX, x);
+          foregroundMaxY = Math.max(foregroundMaxY, y);
+        }
+        if (foregroundMaxX >= 0) {
+          const cropSize = 32;
+          const crop = {
+            x: Math.max(0, Math.min(source.widthPx - cropSize, foregroundMaxX - 10)),
+            y: Math.max(0, Math.min(source.heightPx - cropSize, Math.floor((foregroundMinY + foregroundMaxY) / 2) - cropSize / 2)),
+            width: cropSize,
+            height: cropSize,
+          };
+          phaseIImageArtifacts["half32-edge-B0"] = cropRgbaToPngDataUrl(nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx, crop);
+          if (candidateFar) phaseIImageArtifacts["half32-edge-B1"] = cropRgbaToPngDataUrl(candidateFar, source.widthPx, source.heightPx, crop);
+          if (phaseICandidateFar) phaseIImageArtifacts["half32-edge-C1"] = cropRgbaToPngDataUrl(phaseICandidateFar, source.widthPx, source.heightPx, crop);
+        }
+      }
+      if (gatherLabel === "half" && input.sampleCount !== 32) {
+        phaseIImageArtifacts[`${variantKey}-far-B0`] = rgbaToPngDataUrl(nativeFarReconstruction.baselineFar, source.widthPx, source.heightPx);
+      }
+    }
+    return {
+      referenceClass: "R2-independent-CPU-aperture-sampling and R3-native-full-resolution-gather; both are finite-sample references, not ideal optical ground truth",
+      setup: {
+        sourceGridRoi: "pixels whose source readback matches the controlled linear blue background (R<0.15, G<0.2, B>0.5)",
+        roiPixelCount: blueRoiMask.reduce((count, value) => count + value, 0),
+        featureCenterPx: featureCenterPx,
+        featureCenterSourceYellowPixels: featurePixelCount,
+        signal: "max(0, 0.925*(far.r-0.025) + 0.54*(far.g-0.08) - 0.825*(far.b-0.85)); this reuses the Phase H yellow-signal projection",
+        threshold: 0.02,
+        signalColorSpace: "linear RGB from native half-float target readback; no per-image normalization",
+        apertureFNumber: input.apertureFNumber,
+        crop: input.crop,
+        edgeCase: input.edgeCase,
+        scene: input.scene,
+      },
+      baselineB0: { ...b0, leakage: candidateLeakage(nativeFarReconstruction.baselineFar) },
+      phaseHB1Cpu: { ...b1Cpu, leakage: candidateLeakage(phaseHCompatibleCpu) },
+      phaseHB1: {
+        available: Boolean(candidateFar),
+        ...(b1Gpu ?? {}),
+        leakage: candidateFar ? candidateLeakage(candidateFar) : null,
+        nativeGpuVsCpu: candidateFar ? compareRgba(phaseHCompatibleCpu, candidateFar) : null,
+      },
+      phaseIC1: {
+        ...c1Quality,
+        available: Boolean(phaseICandidateFar),
+        candidateExecution: phaseICandidateFar ? "native WebGPU surface-aware output target" : "CPU oracle only",
+        leakage: c1Leakage,
+        fallbackPixelCount: c1FallbackPixelCount,
+        fallbackReasonHistogram: c1FallbackReasonHistogram,
+        maximumAcceptedNeighborCount: c1MaximumAcceptedNeighborCount,
+        acceptedNeighborCountHistogram: Array.from({ length: 10 }, (_, count) => ({
+          count,
+          pixels: c1Cpu.acceptedNeighborCount.reduce((sum, value) => value === count ? sum + 1 : sum, 0),
+        })),
+        nativeGpuVsCpu: c1CpuComparison,
+        nativePathVsCpu: c1PathMismatch,
+        compositeGpuVsCpu: c1CompositeCpuComparison,
+        nearAlphaCoveragePixels: nearAlphaCoverage,
+        nearLayerSignature: {
+          rgbaHalfReadbackHash: nearLayerSignature >>> 0,
+          alphaSum: nearAlphaSum,
+          maximumAlpha: maximumNearAlpha,
+          coveredPixelCount: nearAlphaCoverage,
+          pixelCount: gatherPixelCount,
+        },
+        nearLayerReuse: "same native near target and alpha used by B0/B1; no Phase I near-gather pass",
+        affectedEdgeDiagnostics: edgeCandidateDiagnostics,
+      },
+      references: {
+        available: { full32: Boolean(full32), full64: Boolean(full64) },
+        agreement: referenceComparison,
+        full32B0: full32 ? rasterQuality(full32) : null,
+        full64B0: full64 ? rasterQuality(full64) : null,
+      },
+      comparisons: {
+        B0: { againstFull32: b0.rgbErrorAgainstFull32, againstFull64: b0.rgbErrorAgainstFull64 },
+        B1: { againstFull32: b1.rgbErrorAgainstFull32, againstFull64: b1.rgbErrorAgainstFull64 },
+        C1: { againstFull32: c1Quality.rgbErrorAgainstFull32, againstFull64: c1Quality.rgbErrorAgainstFull64 },
+      },
+      coverageAudit,
+      surfaceDepthAudit,
+      edgeRgbErrorAgainstFull32: b0.edgeRgbErrorAgainstFull32,
+      focusRgbErrorAgainstSource: b0.focusRgbErrorAgainstSource,
+    };
+  })() : null;
   const nearRedForeground = Array.from({ length: pixelCount }, (_, index) => sourceIsRed(index * 4));
   const distanceToForeground = (x: number, y: number) => {
     let minimum = Number.POSITIVE_INFINITY;
@@ -830,6 +1524,7 @@ const buildPhaseHDiagnostics = (input: {
           : null,
       } : null,
     },
+    phaseI,
     execution: {
       edgeCase: input.edgeCase,
       sampleCount: input.sampleCount,
@@ -840,7 +1535,7 @@ const buildPhaseHDiagnostics = (input: {
         "one gather-sized RGBA32F center-provenance target",
         "two source-sized RGBA16F candidate targets",
       ],
-      candidatePassTimings: input.stageTimings.filter((timing) => timing.stage.startsWith("phase-h-")),
+      candidatePassTimings: input.stageTimings.filter((timing) => timing.stage.startsWith("phase-h-") || timing.stage.startsWith("phase-i-")),
       gpuTimestampDurationMs: null,
     },
   };
@@ -922,6 +1617,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     sceneProvenance: null,
     targetMemoryEstimate: null,
     phaseH: null,
+    phaseI: null,
     resources: [],
     error: null,
     cleanupError: null,
@@ -979,6 +1675,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     addPlane({ id: "focused-green-target", worldPointM: [0.11, 0.015, 0.5], sizeM: [0.085, 0.085], linearColor: [0.03, 0.9, 0.04] });
     addPlane({ id: "far-yellow-feature", worldPointM: [0.07, 0.075, 0.7499], sizeM: [0.075, 0.065], linearColor: [0.95, 0.62, 0.025] });
     addPlane({ id: "near-red-foreground", worldPointM: [-0.075, -0.005, 0.32], sizeM: [0.12, 0.15], linearColor: [0.95, 0.015, 0.015] });
+    // Keep the second far surface in front of the blue background plane at z=0.75 m.
+    addPlane({ id: "second-far-depth-feature", worldPointM: [0.19, -0.03, 0.62], sizeM: [0.13, 0.25], linearColor: [0.7, 0.08, 0.75] });
     const nearForegroundMesh = sceneObjects.find((object) => object.id === "near-red-foreground")?.mesh;
     for (const object of sceneObjects) {
       register(`${evidence.instanceId}:${object.id}:geometry`, "owned-scene-geometry", () => object.geometry.dispose());
@@ -1479,6 +2177,76 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
         candidateFarScene.add(new THREE.Mesh(postGeometry, candidateFarMaterial));
         register(`${evidence.instanceId}:phase-h-compatible-far-material`, "native-tsl-phase-h-compatible-far-material", () => candidateFarMaterial.dispose());
 
+        let surfaceAwareFarScene: THREE.Scene | null = null;
+        if (phaseIStudyEnabled) {
+          const surfaceAwareFarNode = Fn(() => {
+            const sourceSelection = texture(phaseHSelectedProvenanceTarget.texture, textureUvTop);
+            const selectedGatherPixel = floor(sourceSelection.rg);
+            const destinationPhysical = physicalAt(textureUvTop);
+            const destinationDepth = depthAt(textureUvTop);
+            const destinationFar = validCodeAt(textureUvTop)
+              .and(destinationPhysical.r.greaterThan(0.00001))
+              .and(destinationDepth.lessThan(1));
+            const destinationDistance = distanceMmAt(textureUvTop, destinationDepth);
+            const accumulated = vec3(0).toVar();
+            const acceptedWeightSum = float(0).toVar();
+            const acceptedNeighborCount = float(0).toVar();
+
+            for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+              for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+                const neighborPixel = selectedGatherPixel.add(vec2(offsetX, offsetY));
+                const inBounds = neighborPixel.x.greaterThanEqual(0)
+                  .and(neighborPixel.y.greaterThanEqual(0))
+                  .and(neighborPixel.x.lessThan(phaseHGatherWidthUniform))
+                  .and(neighborPixel.y.lessThan(phaseHGatherHeightUniform));
+                const gatherUv = vec2(
+                  neighborPixel.x.add(0.5).div(phaseHGatherWidthUniform),
+                  neighborPixel.y.add(0.5).div(phaseHGatherHeightUniform),
+                );
+                const provenance = texture(phaseHGatherProvenanceTarget.texture, gatherUv);
+                const centerUv = vec2(
+                  provenance.b.add(0.5).div(sourceWidthUniform),
+                  provenance.a.add(0.5).div(sourceHeightUniform),
+                );
+                const centerPhysical = physicalAt(centerUv);
+                const centerDepth = depthAt(centerUv);
+                const centerValidFar = validCodeAt(centerUv)
+                  .and(centerPhysical.r.greaterThan(0.00001))
+                  .and(centerDepth.lessThan(1));
+                const centerDistance = distanceMmAt(centerUv, centerDepth);
+                const depthCompatible = abs(centerDistance.sub(destinationDistance))
+                  .lessThanEqual(depthToleranceAt(destinationDistance));
+                const eligible = destinationFar.and(inBounds).and(centerValidFar).and(depthCompatible);
+                const weight = select(eligible, float(phaseISpatialWeight(offsetX, offsetY)), 0);
+                const color = texture(farTarget.texture, gatherUv).rgb;
+                accumulated.addAssign(color.mul(weight));
+                acceptedWeightSum.addAssign(weight);
+                acceptedNeighborCount.addAssign(select(eligible, 1, 0));
+              }
+            }
+            const reconstructed = select(
+              acceptedWeightSum.greaterThan(0),
+              accumulated.div(max(acceptedWeightSum, 1e-6)),
+              colorAt(textureUvTop),
+            );
+            const baseline = texture(farTarget.texture, textureUvTop).rgb;
+            const halfResolution = phaseHGatherWidthUniform.lessThan(sourceWidthUniform);
+            const outputFar = select(halfResolution, select(destinationFar, reconstructed, baseline), baseline);
+            const packedDiagnostics = acceptedNeighborCount.add(acceptedWeightSum.div(10));
+            const diagnosticCode = select(
+              halfResolution,
+              select(destinationFar, packedDiagnostics, -1),
+              -2,
+            );
+            return vec4(outputFar, diagnosticCode);
+          })();
+          const surfaceAwareFarMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
+          surfaceAwareFarMaterial.outputNode = surfaceAwareFarNode;
+          surfaceAwareFarScene = new THREE.Scene();
+          surfaceAwareFarScene.add(new THREE.Mesh(postGeometry, surfaceAwareFarMaterial));
+          register(`${evidence.instanceId}:phase-i-surface-aware-far-material`, "native-tsl-phase-i-surface-aware-far-material", () => surfaceAwareFarMaterial.dispose());
+        }
+
         const candidateCompositeMaterial = new MeshBasicNodeMaterial({ toneMapped: false });
         const candidateNear = texture(nearTarget.texture, textureUvTop);
         const candidateFar = texture(phaseHCandidateFarTarget.texture, textureUvTop).rgb;
@@ -1502,6 +2270,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           gatherProvenanceScene,
           selectedProvenanceScene,
           candidateFarScene,
+          surfaceAwareFarScene,
           candidateCompositeScene,
           candidateDisplayScene,
           sourceIdentityTarget: phaseHSourceIdentityTarget,
@@ -1581,6 +2350,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     let currentCrop = false;
     let currentFocusOffsetMm = 0;
     let currentEdgeCase: PhaseHEdgeCase = "axis-aligned";
+    const phaseIReferenceFarRasters = new Map<string, Float32Array>();
     const render = (input: {
       operationKind: OperationEvidence["kind"];
       quality?: QualityMode;
@@ -1597,6 +2367,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       scene?: StudyScene;
       candidate?: boolean;
       displayCandidate?: boolean;
+      phaseI?: boolean;
+      displayPhaseI?: boolean;
       edgeCase?: PhaseHEdgeCase;
       holdReadback?: boolean;
       failureStage?: FailureStage;
@@ -1656,11 +2428,15 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           currentStudyScene = input.scene ?? currentStudyScene;
           currentEdgeCase = input.edgeCase ?? currentEdgeCase;
           if (nearForegroundMesh) {
-            nearForegroundMesh.rotation.z = currentEdgeCase === "diagonal" ? Math.PI / 4 : 0;
+            nearForegroundMesh.rotation.z = currentEdgeCase === "diagonal"
+              ? Math.PI / 4
+              : currentEdgeCase === "vertical" ? Math.PI / 2 : 0;
             nearForegroundMesh.scale.x = currentEdgeCase === "thin" ? 0.22 : 1;
           }
           const controlledSceneVisible = currentStudyScene === "phase-f-controlled";
           for (const object of sceneObjects) object.mesh.visible = controlledSceneVisible;
+          const multipleFarDepthMesh = sceneObjects.find((object) => object.id === "second-far-depth-feature")?.mesh;
+          if (multipleFarDepthMesh) multipleFarDepthMesh.visible = controlledSceneVisible && currentEdgeCase === "multiple-far-depths";
           if (architectureProxy) architectureProxy.visible = currentStudyScene === "architecture-rise-geometry-proxy";
           if (interiorProxy) interiorProxy.visible = currentStudyScene === "interior-corner-geometry-proxy";
           evidence.sceneProvenance = currentStudyScene === "phase-f-controlled"
@@ -1849,12 +2625,36 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             await waitForPassCompletion("phase-h-candidate-composite", stageStartedAt, stageSubmittedAt, stageTimings);
             failAt(input.failureStage, "far-reconstruction");
           }
+          if (phaseHResources && input.phaseI) {
+            if (!phaseHResources.surfaceAwareFarScene) {
+              throw new Error("Phase I surface-aware reconstruction resources were not allocated");
+            }
+            operation.stage = "phase-i-surface-aware-far-reconstruction";
+            stageStartedAt = performance.now();
+            renderer.setRenderTarget(phaseHResources.candidateFarTarget);
+            renderer.setViewport(0, 0, sourceWidthPx, sourceHeightPx);
+            renderer.clear(true, false, false);
+            renderer.render(phaseHResources.surfaceAwareFarScene, postCamera);
+            stageSubmittedAt = performance.now();
+            await waitForPassCompletion("phase-i-surface-aware-far-reconstruction", stageStartedAt, stageSubmittedAt, stageTimings);
+
+            stageStartedAt = performance.now();
+            renderer.setRenderTarget(phaseHResources.candidateCompositeTarget);
+            renderer.setViewport(0, 0, sourceWidthPx, sourceHeightPx);
+            renderer.clear(true, false, false);
+            renderer.render(phaseHResources.candidateCompositeScene, postCamera);
+            stageSubmittedAt = performance.now();
+            await waitForPassCompletion("phase-i-surface-aware-composite", stageStartedAt, stageSubmittedAt, stageTimings);
+          }
           operation.stage = "display-pass";
           stageStartedAt = performance.now();
           renderer.setRenderTarget(null);
           renderer.setViewport(0, 0, sourceWidthPx, sourceHeightPx);
           renderer.clear(true, false, false);
-          const displayCandidate = Boolean(input.displayCandidate && phaseHResources && input.candidate);
+          const displayCandidate = Boolean(
+            phaseHResources
+            && ((input.displayCandidate && input.candidate) || (input.displayPhaseI && input.phaseI)),
+          );
           renderer.render(displayCandidate ? phaseHResources!.candidateDisplayScene : displayScene, postCamera);
           stageSubmittedAt = performance.now();
           await waitForPassCompletion("display-pass", stageStartedAt, stageSubmittedAt, stageTimings);
@@ -1877,10 +2677,10 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               renderer.readRenderTargetPixelsAsync(phaseHResources.sourceIdentityTarget, 0, 0, sourceWidthPx, sourceHeightPx),
               renderer.readRenderTargetPixelsAsync(phaseHResources.gatherProvenanceTarget, 0, 0, farTarget.width, farTarget.height),
               renderer.readRenderTargetPixelsAsync(phaseHResources.selectedProvenanceTarget, 0, 0, sourceWidthPx, sourceHeightPx),
-              input.candidate
+              input.candidate || input.phaseI
                 ? renderer.readRenderTargetPixelsAsync(phaseHResources.candidateFarTarget, 0, 0, sourceWidthPx, sourceHeightPx)
                 : Promise.resolve(null),
-              input.candidate
+              input.candidate || input.phaseI
                 ? renderer.readRenderTargetPixelsAsync(phaseHResources.candidateCompositeTarget, 0, 0, sourceWidthPx, sourceHeightPx)
                 : Promise.resolve(null),
             ])
@@ -2184,11 +2984,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             if (!(sourceIdentityRaw instanceof Float32Array)
                 || !(gatherProvenanceRaw instanceof Float32Array)
                 || !(selectedProvenanceRaw instanceof Float32Array)
-                || (input.candidate && (!(candidateFarRaw instanceof Uint16Array)
+                || ((input.candidate || input.phaseI) && (!(candidateFarRaw instanceof Uint16Array)
                     || !(candidateCompositeRaw instanceof Uint16Array)))) {
-              throw new Error("Phase H GPU readbacks returned an unexpected diagnostic or candidate representation");
+              throw new Error("Phase H/I GPU readbacks returned an unexpected diagnostic or candidate representation");
             }
-            evidence.phaseH = buildPhaseHDiagnostics({
+            const phaseDiagnostics = buildPhaseHDiagnostics({
               source: { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
               gather: { widthPx: farTarget.width, heightPx: farTarget.height },
               film: { widthMm: sampledFilmWidthMm.value, heightMm: sampledFilmHeightMm.value },
@@ -2207,11 +3007,25 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               sourceIdentityRaw,
               gatherProvenanceRaw,
               selectedProvenanceRaw,
-              candidateFarRaw: candidateFarRaw instanceof Uint16Array ? candidateFarRaw : null,
-              candidateCompositeRaw: candidateCompositeRaw instanceof Uint16Array ? candidateCompositeRaw : null,
+              candidateFarRaw: input.candidate && candidateFarRaw instanceof Uint16Array ? candidateFarRaw : null,
+              candidateCompositeRaw: input.candidate && candidateCompositeRaw instanceof Uint16Array ? candidateCompositeRaw : null,
+              phaseICandidateFarRaw: input.phaseI && candidateFarRaw instanceof Uint16Array ? candidateFarRaw : null,
+              phaseICandidateCompositeRaw: input.phaseI && candidateCompositeRaw instanceof Uint16Array ? candidateCompositeRaw : null,
+              phaseIEnabled: phaseIStudyEnabled,
+              phaseIReferenceFarRasters,
+              apertureFNumber: currentApertureFNumber,
+              filmTiltDeg: currentFilmTiltDeg,
+              focusOffsetMm: currentFocusOffsetMm,
+              crop,
+              scene: currentStudyScene,
               stageTimings,
             });
-          } else evidence.phaseH = null;
+            evidence.phaseH = phaseDiagnostics;
+            evidence.phaseI = (phaseDiagnostics.phaseI as Record<string, unknown> | null) ?? null;
+          } else {
+            evidence.phaseH = null;
+            evidence.phaseI = null;
+          }
           const patchRadius = Math.ceil(settings.maximumCoCRadiusPx) + 2;
           const readbackOrigin = evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom";
           const buildGatherReferenceProbe = (
@@ -2573,6 +3387,32 @@ const Experiment = () => {
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, candidate: true, edgeCase: "thin" })}>Phase H thin foreground</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, candidate: true, edgeCase: "axis-aligned", filmTiltDeg: 12, crop: true })}>Phase H tilted off-center crop</button>
             <button type="button" onClick={() => void handle?.injectFailure("far-reconstruction")}>Phase H fail after reconstruction</button>
+          </fieldset>}
+          {phaseIStudyEnabled && <fieldset data-testid="phase-i-controls">
+            <legend>Phase I reference and surface-aware reconstruction study</legend>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I full ×16 CPU reference sensitivity</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I full ×32 B0 reference</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I full ×32 B1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I full ×32 C1 passthrough</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I full ×64 B0 reference</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I full ×64 B1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 1, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I full ×64 C1 passthrough</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I half ×16 B0</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I half ×16 B1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 16, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I half ×16 C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I half ×32 B0</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I half ×32 B1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I half ×32 C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true, displayPhaseI: true })}>Phase I show C1 half ×32</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned" })}>Phase I half ×64 B0</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", candidate: true })}>Phase I half ×64 B1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 64, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", phaseI: true })}>Phase I half ×64 C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "vertical", phaseI: true })}>Phase I vertical edge C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "diagonal", phaseI: true })}>Phase I diagonal edge C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "thin", phaseI: true })}>Phase I thin foreground C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "multiple-far-depths", phaseI: true })}>Phase I multiple far depths C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", filmTiltDeg: 12, crop: true, phaseI: true })}>Phase I tilted 4× crop C1</button>
+            <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", forceUnresolved: true, phaseI: true })}>Phase I unresolved exclusion C1</button>
           </fieldset>}
         </section>
       </div>
