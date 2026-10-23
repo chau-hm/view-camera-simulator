@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { assertB1LargeCocReferenceAdvantage } from "./fixtures/ground-glass-webgpu-correspondence-large-coc-cases";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseK=1";
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -201,6 +202,50 @@ const assertLargeState = (
   return { phaseJ, phaseK, physical: record(phaseK.physical), quality: record(phaseK.largeCocFarQuality) };
 };
 
+const qualityEvidence = (state: ReturnType<typeof assertLargeState>, operation: Operation, variant: string) => ({
+  variant,
+  opticalStateFingerprint: state.phaseK.opticalStateFingerprint,
+  physicalFingerprint: state.physical.physicalFingerprint,
+  inputFingerprints: state.phaseK.inputFingerprints,
+  appliedState: operation.appliedState,
+  quality: state.phaseK.largeCocFarQuality,
+});
+
+const assertCapOutputDelta = (operation: Operation, path: string) => {
+  const phaseK = record(record(operation.phaseJ).phaseK);
+  const delta = record(phaseK.capOutputDeltaFrom60);
+  expect(delta.fromCapPx, `${path} must compare the cap-60 raster`).toBe(60);
+  expect(delta.toCapPx, `${path} must compare the cap-12 raster`).toBe(12);
+  expect(delta.path).toBe(path);
+  expect(number(delta.physicalFootprintOver12PxPixelCount) ?? 0).toBeGreaterThan(0);
+  expect(number(delta.cappedNearDepthBoundaryPixelCount) ?? 0).toBeGreaterThan(0);
+  expect(number(delta.cappedAwayFromDepthBoundaryPixelCount) ?? 0).toBeGreaterThan(0);
+  expect(number(delta.uncappedValidControlPixelCount) ?? 0).toBeGreaterThan(0);
+  for (const outputName of ["farGather", "finalComposite"] as const) {
+    const output = record(delta[outputName]);
+    const fullFrame = record(output.fullSourceFrame);
+    const cappedFootprint = record(output.physicalFootprintOver12Px);
+    expect(number(fullFrame.changedPixelCount) ?? 0, `${path} ${outputName} must show an observed cap-dependent raster delta`).toBeGreaterThan(0);
+    expect(number(cappedFootprint.changedPixelCount) ?? 0, `${path} ${outputName} must show a delta over the physically capped footprint`).toBeGreaterThan(0);
+    for (const regionName of [
+      "fullSourceFrame", "physicalFootprintOver12Px", "cappedNearDepthBoundary",
+      "cappedAwayFromDepthBoundary", "uncappedValidControl",
+    ] as const) {
+      const region = record(output[regionName]);
+      expect(number(region.pixelCount) ?? 0, `${path} ${outputName}/${regionName} population`).toBeGreaterThan(0);
+      for (const metricName of [
+        "changedPixelCount", "rgbMeanAbsoluteError", "rgbRootMeanSquareError",
+        "maximumChannelDifference", "meanAbsoluteLumaDifference", "maximumAbsoluteLumaDifference",
+      ]) {
+        const value = region[metricName];
+        expect(typeof value, `${path} ${outputName}/${regionName} ${metricName}`).toBe("number");
+        expect(Number.isFinite(value), `${path} ${outputName}/${regionName} ${metricName}`).toBe(true);
+      }
+    }
+  }
+  return delta;
+};
+
 const readPointComparison = (operation: Operation, pointId: string) => {
   const quality = record(record(operation.phaseJ).quality);
   const comparisons = Array.isArray(quality.pointComparisons) ? quality.pointComparisons.map(record) : [];
@@ -340,7 +385,12 @@ test("native large-CoC crop activates and measures the real 12 px cap against ma
   expect(number(s1B1State.physical.capActivatedPixelCount) ?? 0).toBe(0);
   expect(record(s1B1State.phaseK).sourceIdentityOrientation).toBeDefined();
   expect(number(record(s1Full64State.phaseK.full32VsFull64Agreement).pixelCount)).toBe(512 * 384);
-  expect(number(record(s1B0State.quality.fullFrameRgbError).rgbRootMeanSquareError)).not.toBeNull();
+  const s1QualityAdvantage = assertB1LargeCocReferenceAdvantage({
+    caseId: "S1 cap 60",
+    reference: qualityEvidence(s1Full32State, s1Full32.operation, "Full32"),
+    b0: qualityEvidence(s1B0State, s1B0.operation, "B0"),
+    b1: qualityEvidence(s1B1State, s1B1.operation, "B1"),
+  });
 
   // This known focus point remains visible in the same optical state before
   // and after the film window is cropped. Its source pixel changes, but its
@@ -365,12 +415,25 @@ test("native large-CoC crop activates and measures the real 12 px cap against ma
   const s2FullState = assertLargeState(s2Full32.operation, 12, 512, false);
   const s2B0State = assertLargeState(s2B0.operation, 12, 256, false);
   const s2B1State = assertLargeState(s2B1.operation, 12, 256, true);
+  const s2QualityAdvantage = assertB1LargeCocReferenceAdvantage({
+    caseId: "S2 cap 12",
+    reference: qualityEvidence(s2FullState, s2Full32.operation, "Full32"),
+    b0: qualityEvidence(s2B0State, s2B0.operation, "B0"),
+    b1: qualityEvidence(s2B1State, s2B1.operation, "B1"),
+  });
+  const s2CapOutputDelta = {
+    full32: assertCapOutputDelta(s2Full32.operation, "full32"),
+    half32B0: assertCapOutputDelta(s2B0.operation, "half32-b0"),
+    half32B1: assertCapOutputDelta(s2B1.operation, "half32-b1"),
+  };
   await testInfo.attach("phase-k-s2-measurements.json", {
     body: JSON.stringify({
       configuration: { apertureFNumber: 5.6, focusDistanceMm: 400, cropMagnification: 16 },
       full32: s2FullState.physical,
       b0: s2B0State.physical,
       b1: s2B1State.physical,
+      qualityAdvantage: s2QualityAdvantage,
+      capOutputDeltaFrom60: s2CapOutputDelta,
       b1NearTarget: record(record(s2B1State.phaseJ.quality).nearTarget),
     }, null, 2),
     contentType: "application/json",
@@ -414,11 +477,8 @@ test("native large-CoC crop activates and measures the real 12 px cap against ma
   const nearRgba = record(s2B1State.phaseK.nearRgbaComparisonFromB0);
   expect(number(nearRgba.rootMeanSquareRgbError) ?? Infinity).toBeLessThan(1e-5);
   expect(number(nearRgba.rootMeanSquareAlphaError) ?? Infinity).toBeLessThan(1e-5);
-  const s2B0Quality = record(s2B0State.phaseK.largeCocFarQuality);
   const s2B1Quality = record(s2B1State.phaseK.largeCocFarQuality);
   const s2FullQuality = record(s2FullState.phaseK.largeCocFarQuality);
-  expect(number(record(s2B0Quality.fullFrameRgbError).rgbRootMeanSquareError)).not.toBeNull();
-  expect(number(record(s2B1Quality.validFarRgbError).rgbRootMeanSquareError)).not.toBeNull();
   expect(number(s2B1Quality.sourceFallbackFarPixelCount) ?? 0, "B1 must exercise its measured source-fallback path").toBeGreaterThan(0);
   expect(number(record(s2B1State.phaseJ.quality).fallbackSourceColorMismatchCount)).toBe(0);
   expect(number(s2B1Quality.farBlurSuppressionEnergy)).not.toBeNull();
@@ -464,11 +524,14 @@ test("native large-CoC crop activates and measures the real 12 px cap against ma
       {
         id: "S1", capPx: 60,
         full32: s1Full32.operation.phaseJ, full64: s1Full64.operation.phaseJ, halfB0: s1B0.operation.phaseJ, halfB1: s1B1.operation.phaseJ,
+        qualityAdvantage: s1QualityAdvantage,
         measurements: { full32: measurementEvidence(s1Full32.operation), full64: measurementEvidence(s1Full64.operation), halfB0: measurementEvidence(s1B0.operation), halfB1: measurementEvidence(s1B1.operation) },
       },
       {
         id: "S2", capPx: 12,
         full32: s2Full32.operation.phaseJ, halfB0: s2B0.operation.phaseJ, halfB1: s2B1.operation.phaseJ,
+        qualityAdvantage: s2QualityAdvantage,
+        capOutputDeltaFrom60: s2CapOutputDelta,
         measurements: { full32: measurementEvidence(s2Full32.operation), halfB0: measurementEvidence(s2B0.operation), halfB1: measurementEvidence(s2B1.operation) },
       },
       {

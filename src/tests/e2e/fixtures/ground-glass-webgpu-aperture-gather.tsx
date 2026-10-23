@@ -92,8 +92,10 @@ import {
   sourcePixelAtGatherPixelCenter,
 } from "./ground-glass-webgpu-far-reconstruction-cases";
 import {
+  compareLinearRgbaRasters,
   countSourceIdentityMismatches,
   countFallbackSourceColorMismatches,
+  depthBoundaryDistances,
   largestBinaryComponent,
   measureLargeCocFarQuality,
   PHASE_K_READBACK_ORIGIN,
@@ -372,6 +374,13 @@ const linearToSrgbByte = (value: number) => {
   const linear = Math.min(1, Math.max(0, value));
   const srgb = linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.pow(linear, 1 / 2.4) - 0.055;
   return Math.round(srgb * 255);
+};
+
+const fingerprintView = (values: ArrayBufferView) => {
+  const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength);
+  let hash = 2166136261;
+  for (const byte of bytes) hash = Math.imul(hash ^ byte, 16777619);
+  return (hash >>> 0).toString(16).padStart(8, "0");
 };
 
 const rgbaToPngDataUrl = (rgba: Float32Array, width: number, height: number, scale = 1) => {
@@ -2432,6 +2441,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     const phaseJReferenceFarRasters = new Map<string, Float32Array>();
     const phaseJNearRasters = new Map<string, Float32Array>();
     const phaseJSourceRasters = new Map<string, Float32Array>();
+    const phaseKCapReferenceRasters = new Map<string, {
+      far: Float32Array;
+      composite: Float32Array;
+      inputFingerprints: { sourceColor: string; worldPositionAndDepth: string; validity: string; physical: string };
+    }>();
     const render = (input: {
       operationKind: OperationEvidence["kind"];
       quality?: QualityMode;
@@ -3809,9 +3823,17 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               const worldPoint = new THREE.Vector3(worldTop[offset] ?? 0, worldTop[offset + 1] ?? 0, worldTop[offset + 2] ?? 0);
               depthAlongCameraMm[pixel] = worldPoint.sub(new THREE.Vector3(...phaseJState.captureCameraPose.positionWorldM)).dot(cameraForward) * 1000;
             }
+            const inputFingerprints = {
+              sourceColor: fingerprintView(sourceTop),
+              worldPositionAndDepth: fingerprintView(worldTop),
+              validity: fingerprintView(validityTop),
+              physical: physicalFingerprint,
+            };
+            const full32ReferenceIdentity = `${sourceKey}|f${phaseJState.cameraState.aperture}|full32`;
             const largeCocFarQuality = full32 ? measureLargeCocFarQuality({
               width: sourceWidthPx,
               height: sourceHeightPx,
+              referenceIdentity: full32ReferenceIdentity,
               sourceRgba: sourceTop,
               referenceRgba: full32,
               candidateRgba: selectedFar,
@@ -3820,6 +3842,62 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               depthMm: depthAlongCameraMm,
               sourceFallbackMask: largeCocFallbackMask,
             }) : null;
+            const finalComposite = candidateComposite
+              ?? toTopOriginRgba(compositeReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true);
+            let capOutputDeltaFrom60: Record<string, unknown> | null = null;
+            const capPair = input.phaseKCaseId?.match(/^(S1-large-uncapped|S2-large-cap12)-(full32|half32-b0|half32-b1)$/);
+            if (capPair) {
+              const [, capState, path] = capPair;
+              if (capState === "S1-large-uncapped") {
+                phaseKCapReferenceRasters.set(path!, {
+                  far: selectedFar.slice(),
+                  composite: finalComposite.slice(),
+                  inputFingerprints,
+                });
+              } else {
+                const cap60 = phaseKCapReferenceRasters.get(path!);
+                if (!cap60) throw new Error(`Missing S1 cap-60 reference raster for ${path}`);
+                for (const key of ["sourceColor", "worldPositionAndDepth", "validity", "physical"] as const) {
+                  if (cap60.inputFingerprints[key] !== inputFingerprints[key]) {
+                    throw new Error(`S1/S2 cap comparison input fingerprint changed for ${path}: ${key}`);
+                  }
+                }
+                const boundaryDistances = depthBoundaryDistances(validityTop, depthAlongCameraMm, sourceWidthPx, sourceHeightPx).distances;
+                const fullMask = new Uint8Array(sourceWidthPx * sourceHeightPx).fill(1);
+                const cappedBoundaryMask = new Uint8Array(fullMask.length);
+                const cappedAwayMask = new Uint8Array(fullMask.length);
+                const uncappedValidMask = new Uint8Array(fullMask.length);
+                for (let pixel = 0; pixel < fullMask.length; pixel += 1) {
+                  if (capActivatedMask[pixel]) {
+                    if (boundaryDistances[pixel]! <= 1) cappedBoundaryMask[pixel] = 1;
+                    else cappedAwayMask[pixel] = 1;
+                  } else if (validityTop[pixel] === 1) {
+                    uncappedValidMask[pixel] = 1;
+                  }
+                }
+                const compareRegions = (baseline: Float32Array, capped: Float32Array) => ({
+                  fullSourceFrame: compareLinearRgbaRasters(baseline, capped, fullMask),
+                  physicalFootprintOver12Px: compareLinearRgbaRasters(baseline, capped, capActivatedMask),
+                  cappedNearDepthBoundary: compareLinearRgbaRasters(baseline, capped, cappedBoundaryMask),
+                  cappedAwayFromDepthBoundary: compareLinearRgbaRasters(baseline, capped, cappedAwayMask),
+                  uncappedValidControl: compareLinearRgbaRasters(baseline, capped, uncappedValidMask),
+                });
+                capOutputDeltaFrom60 = {
+                  fromCapPx: 60,
+                  toCapPx: 12,
+                  path: path!,
+                  comparisonPrecision: "Linear Float32 readback of RGBA16F render-target values; changed pixel means maximum RGB channel difference > 0.00001 linear units.",
+                  matchedInputs: { ...inputFingerprints },
+                  physicalFootprintOver12PxPixelCount: capActivatedPixelCount,
+                  cappedNearDepthBoundaryPixelCount: cappedBoundaryMask.reduce((sum, value) => sum + value, 0),
+                  cappedAwayFromDepthBoundaryPixelCount: cappedAwayMask.reduce((sum, value) => sum + value, 0),
+                  uncappedValidControlPixelCount: uncappedValidMask.reduce((sum, value) => sum + value, 0),
+                  farGather: compareRegions(cap60.far, selectedFar),
+                  finalComposite: compareRegions(cap60.composite, finalComposite),
+                };
+                phaseKCapReferenceRasters.delete(path!);
+              }
+            }
             const fullResolutionReferenceAgreement = full32 && full64 ? compareAllPixels(full32, full64) : null;
             const qualityComparisons = {
               full32: full32 ? compareAllPixels(full32, selectedFar) : null,
@@ -3881,7 +3959,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             phaseJImageArtifacts[`${imagePrefix}-physical-coc`] = rgbaToPngDataUrl(cocImage, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-far`] = rgbaToPngDataUrl(selectedFar, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-near-alpha`] = nearAlphaToPngDataUrl(nearTop, sourceDimensions, gatherDimensions);
-            phaseJImageArtifacts[`${imagePrefix}-composite`] = rgbaToPngDataUrl(candidateComposite ?? toTopOriginRgba(compositeReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true), sourceWidthPx, sourceHeightPx);
+            phaseJImageArtifacts[`${imagePrefix}-composite`] = rgbaToPngDataUrl(finalComposite, sourceWidthPx, sourceHeightPx);
             if (candidateFar) phaseJImageArtifacts[`${imagePrefix}-source-fallback`] = rgbaToPngDataUrl(fallbackImage, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-radius-cap-map`] = rgbaToPngDataUrl(radiusCapImage, sourceWidthPx, sourceHeightPx);
             if (full32) phaseJImageArtifacts[`${imagePrefix}-far-quality-heatmap`] = rgbaToPngDataUrl(farHaloImage, sourceWidthPx, sourceHeightPx);
@@ -3979,6 +4057,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 gatherDimensionsPx: gatherDimensions,
                 radiusCapPx: settings.maximumCoCRadiusPx,
                 sourceIdentityOrientation,
+                inputFingerprints,
+                full32ReferenceIdentity,
                 correspondence: evidence.pointProbes.map((probe) => ({ id: probe.id, ...probe.correspondence })),
                 physical: {
                   signedCoCPixelCount: { near: nearCoCPixelCount, neutral: neutralCoCPixelCount, far: farCoCPixelCount },
@@ -3998,6 +4078,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                   physicalFingerprint,
                 },
                 largeCocFarQuality,
+                capOutputDeltaFrom60,
                 full32VsFull64Agreement: fullResolutionReferenceAgreement,
                 nearRgbaComparisonFromB0: input.candidate ? pairedNearDifference : null,
                 timing: operation.timing,

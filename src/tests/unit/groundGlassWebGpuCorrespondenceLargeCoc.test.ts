@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
+  absoluteLinearLumaDifference,
+  assertB1LargeCocReferenceAdvantage,
+  compareLinearRgbaRasters,
   countFallbackSourceColorMismatches,
   countSourceIdentityMismatches,
   largestBinaryComponent,
@@ -126,6 +129,7 @@ describe("Phase K native correspondence and large-CoC diagnostics", () => {
     const result = measureLargeCocFarQuality({
       width,
       height,
+      referenceIdentity: "fixture|f5.6|full32",
       sourceRgba: source,
       referenceRgba: reference,
       candidateRgba: candidate,
@@ -141,6 +145,150 @@ describe("Phase K native correspondence and large-CoC diagnostics", () => {
     expect(result.farBlurSuppressionEnergy).toBeGreaterThan(0);
     expect(result.blurSpread.candidateToReferenceSignalEnergyRatio).toBeLessThan(1);
     expect(result.fullFrameRgbError.rgbRootMeanSquareError).toBeGreaterThan(0);
+  });
+
+  it("measures absolute linear-luma delta after channel weighting, preserving chromatic cancellation", () => {
+    const redWeighted = new Float32Array([0.7152, 0, 0, 1]);
+    const greenWeighted = new Float32Array([0, 0.2126, 0, 1]);
+    expect(absoluteLinearLumaDifference(redWeighted, greenWeighted, 0)).toBeLessThan(1e-8);
+
+    const source = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1]);
+    const reference = new Float32Array([0.4, 0.4, 0.4, 1, 0.4, 0.4, 0.4, 1]);
+    const candidate = new Float32Array([0.4, 0.4, 0.4, 1, 0, 0, 0, 1]);
+    const result = measureLargeCocFarQuality({
+      width: 2,
+      height: 1,
+      referenceIdentity: "luma-test|full32",
+      sourceRgba: source,
+      referenceRgba: reference,
+      candidateRgba: candidate,
+      signedCocMm: new Float32Array([1, 1]),
+      validity: new Uint8Array([1, 1]),
+      depthMm: new Float32Array([100, 100]),
+      sourceFallbackMask: new Uint8Array([0, 0]),
+    });
+    expect(result.fullFrameAbsoluteLumaError.pixelCount).toBe(2);
+    expect(result.fullFrameAbsoluteLumaError.meanAbsoluteLumaDifference).toBeCloseTo(0.2, 6);
+    expect(result.fullFrameAbsoluteLumaError.maximumAbsoluteLumaDifference).toBeCloseTo(0.4, 6);
+    expect(result.blurSpread.candidate.signalEnergy).toBeCloseTo(0.4, 6);
+  });
+
+  it("separates generic depth edges from the valid-far subset", () => {
+    const width = 4;
+    const height = 2;
+    const rgba = new Float32Array(width * height * 4);
+    const depth = new Float32Array(width * height);
+    const coc = new Float32Array(width * height);
+    const validity = new Uint8Array(width * height).fill(1);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const pixel = y * width + x;
+        depth[pixel] = x < 2 ? 100 : 200;
+        coc[pixel] = x < 2 ? -1 : 1;
+        rgba[pixel * 4] = 0.25;
+        rgba[pixel * 4 + 1] = 0.25;
+        rgba[pixel * 4 + 2] = 0.25;
+        rgba[pixel * 4 + 3] = 1;
+      }
+    }
+    const result = measureLargeCocFarQuality({
+      width,
+      height,
+      referenceIdentity: "edge-test|full32",
+      sourceRgba: rgba,
+      referenceRgba: rgba,
+      candidateRgba: rgba,
+      signedCocMm: coc,
+      validity,
+      depthMm: depth,
+      sourceFallbackMask: new Uint8Array(width * height),
+    });
+    expect(result.depthBoundaryPixelCount).toBe(height * 2);
+    expect(result.depthEdgePixelCount).toBe(width * height);
+    expect(result.validFarDepthEdgePixelCount).toBe(height * 2);
+    expect(result.depthEdgeRgbError.pixelCount).toBe(width * height);
+    expect(result.validFarDepthEdgeRgbError.pixelCount).toBe(height * 2);
+  });
+
+  it("reports masked cap raster deltas and keeps empty-region metrics explicit", () => {
+    const baseline = new Float32Array([
+      0, 0, 0, 1,
+      0, 0, 0, 1,
+      0, 0, 0, 1,
+    ]);
+    const capped = new Float32Array([
+      0.01, 0, 0, 1,
+      0, 0.02, 0, 1,
+      0, 0, 0, 1,
+    ]);
+    const mask = new Uint8Array([1, 1, 0]);
+    const delta = compareLinearRgbaRasters(baseline, capped, mask, 0.005);
+    expect(delta.pixelCount).toBe(2);
+    expect(delta.changedPixelCount).toBe(2);
+    expect(delta.rgbRootMeanSquareError).toBeGreaterThan(0);
+    expect(delta.meanAbsoluteLumaDifference).toBeGreaterThan(0);
+    const empty = compareLinearRgbaRasters(baseline, capped, new Uint8Array([0, 0, 0]));
+    expect(empty.pixelCount).toBe(0);
+    expect(empty.rgbRootMeanSquareError).toBeNull();
+    expect(empty.meanAbsoluteLumaDifference).toBeNull();
+    expect(() => compareLinearRgbaRasters(baseline, new Float32Array([NaN, ...capped.slice(1)]), mask)).toThrow(/non-finite/);
+  });
+
+  it("requires strict B1 quality improvement against the same matched reference and applied state", () => {
+    const appliedState = {
+      scene: "macro-depth-of-field",
+      filmTiltDeg: 0,
+      filmNormal: [0, 0, 1],
+      filmBasisX: [1, 0, 0],
+      filmBasisY: [0, 1, 0],
+      crop: true,
+      sampledFilmWidthMm: 7.9375,
+      sampledFilmHeightMm: 6.35,
+      focusOffsetMm: 0,
+      apertureFNumber: 5.6,
+      sourceWidthPx: 512,
+      sourceHeightPx: 384,
+      farGatherWidthPx: 256,
+      farGatherHeightPx: 192,
+      gatherScale: 0.5,
+      sampleCount: 32,
+      maximumCoCRadiusPx: 12,
+    };
+    const inputFingerprints = {
+      sourceColor: "source",
+      worldPositionAndDepth: "world",
+      validity: "validity",
+      physical: "physical",
+    };
+    const roiDefinitions = { fullFrame: "all", validFar: "far", validFarDepthEdge: "edge and far" };
+    const quality = (rmse: number, identity = "matched-full32") => ({
+      referenceIdentity: identity,
+      roiDefinitions,
+      fullFrameRgbError: { pixelCount: 8, rgbRootMeanSquareError: rmse },
+      validFarRgbError: { pixelCount: 6, rgbRootMeanSquareError: rmse },
+      validFarDepthEdgeRgbError: { pixelCount: 2, rgbRootMeanSquareError: rmse },
+    });
+    const evidence = (variant: string, rmse: number) => ({
+      variant,
+      opticalStateFingerprint: "optics",
+      physicalFingerprint: "physical",
+      inputFingerprints,
+      appliedState,
+      quality: quality(rmse),
+    });
+    const matched = {
+      caseId: "S2 cap 12",
+      reference: evidence("Full32", 0),
+      b0: evidence("B0", 0.5),
+      b1: evidence("B1", 0.4),
+    };
+    expect(assertB1LargeCocReferenceAdvantage(matched).metrics.fullFrameRgbError.b1Rmse).toBe(0.4);
+    expect(() => assertB1LargeCocReferenceAdvantage({ ...matched, b1: evidence("B1", 0.5) })).toThrow(/must be lower than B0/);
+    expect(() => assertB1LargeCocReferenceAdvantage({ ...matched, reference: evidence("B0", 0) })).toThrow(/Full ×32 reference/);
+    expect(() => assertB1LargeCocReferenceAdvantage({
+      ...matched,
+      b1: { ...evidence("B1", 0.4), quality: quality(0.4, "different-reference") },
+    })).toThrow(/different Full ×32 reference/);
   });
 
   it("detects a B1 fallback pixel that is not copied from its source color", () => {

@@ -73,22 +73,52 @@ Across S1/S2/S3, the raw RGBA16F physical fingerprint is identical while only th
 
 All 218 S2 cap pixels contain nonblack scene color; 38 lie on detected depth boundaries and 112 are interior pixels. The largest connected component has 109 pixels over a 19 × 11 px bounding box at the lower-left raster edge; a mirrored component appears on the opposite side. This is more than an isolated pixel and includes scene/depth-edge content, but it is still a small edge strip rather than a large central capped surface. The cap therefore demonstrably executes, while stress coverage remains limited.
 
+### S1 cap 60 → S2 cap 12 output delta
+
+The fixture retains Float32 readbacks from the matched cap-60 and cap-12 operations and verifies identical source-color, world-position/depth, validity, and physical-storage fingerprints for each path. It compares both far-gather and final-composite outputs in linear RGB. A changed pixel has a maximum RGB-channel difference greater than `0.00001` linear units; the luma metric is the absolute difference after applying linear Rec. 709 weights to the signed RGB delta.
+
+| Path | Full-frame changed | >12 px physical footprint changed | Capped within 1 px of depth edge | Capped farther from edge | Uncapped valid control changed |
+|---|---:|---:|---:|---:|---:|
+| Full ×32 | 218 / 196,608 | 218 / 218 | 72 / 72 | 146 / 146 | 0 / 196,390 |
+| Half ×32 B0 | 244 / 196,608 | 215 / 218 | 69 / 72 | 146 / 146 | 29 / 196,390 |
+| Half ×32 B1 | 244 / 196,608 | 215 / 218 | 69 / 72 | 146 / 146 | 29 / 196,390 |
+
+The cap-dependent output delta is directly visible in every path and in both compared outputs. The full-resolution path's changed pixels are confined to the 218-pixel activated footprint. The half-resolution paths also show 29 low-level changed pixels in the valid, uncapped control (`maximum channel difference 0.0018921`); the comparison does not attribute those residual differences exclusively to the cap. In the B1 cap footprint, mean absolute linear-luma change is `0.00060575`; the full-frame mean is `0.0000006970`. These are measured output deltas, not a quality judgment or production-performance claim.
+
 ## L. B0/B1 reference quality
 
 The Full ×32/×64 comparison in S1 has 196,608 pixels, full-frame RGB RMSE 0.0001344 and maximum channel error 0.003174. This establishes close finite-sample agreement for the tested reference pair; neither reference is photographic ground truth.
 
-| State/path | Full-frame RGB RMSE | Valid far RGB RMSE | Depth-edge RGB RMSE |
+| State/path | Full-frame RGB RMSE | Valid far RGB RMSE | Valid-far depth-edge RGB RMSE |
 |---|---:|---:|---:|
-| S1 cap 60, B0 half ×32 vs Full ×32 | 0.061182 | 0.006642 | 0.092037 |
-| S1 cap 60, B1 half ×32 vs Full ×32 | 0.003389 | 0.005218 | 0.005104 |
-| S2 cap 12, B0 half ×32 vs Full ×32 | 0.061182 | 0.006642 | 0.092037 |
-| S2 cap 12, B1 half ×32 vs Full ×32 | 0.003389 | 0.005218 | 0.005104 |
+| S1 cap 60, B0 half ×32 vs Full ×32 | 0.061182 | 0.006642 | 0.018521 |
+| S1 cap 60, B1 half ×32 vs Full ×32 | 0.003389 | 0.005218 | 0.014547 |
+| S2 cap 12, B0 half ×32 vs Full ×32 | 0.061182 | 0.006642 | 0.018521 |
+| S2 cap 12, B1 half ×32 vs Full ×32 | 0.003389 | 0.005218 | 0.014547 |
 
-B1 is numerically closer than B0 in these matched metrics, including at the S2 cap. The source-to-output signal-weighted spatial spread proxy in S2 is 165.001 px for Full ×32, 158.222 px for B0, and 161.657 px for B1; B1's signal-energy ratio is 1.141 relative to Full ×32. This proxy describes image-space luma-change covariance, not an optical PSF. The result supports B1 over B0 for this controlled state, not a general quality guarantee.
+The revised edge ROI is the valid-far population intersected with the depth-edge mask; the prior broad depth-edge metric also contained near-side pixels and is not used for this claim. The native regression now enforces B1 < B0 for full-frame, valid-far, and valid-far depth-edge RGB RMSE independently in both S1 and S2. The matched full-frame, valid-far, and valid-far depth-edge populations are respectively 196,608, 21,914, and 2,816 pixels in both states.
+
+The absolute linear-luma metrics below are recomputed as `abs(0.2126·ΔR + 0.7152·ΔG + 0.0722·ΔB)` from linear readback values. They do not sum per-channel absolute differences; opposing channel deltas can cancel in luma.
+
+| State/path | Full-frame mean absolute luma | Valid-far mean absolute luma | Valid-far depth-edge mean absolute luma |
+|---|---:|---:|---:|
+| S1 cap 60, B0 | 0.010630 | 0.001289 | 0.009469 |
+| S1 cap 60, B1 | 0.000225 | 0.000896 | 0.006409 |
+| S2 cap 12, B0 | 0.010630 | 0.001290 | 0.009472 |
+| S2 cap 12, B1 | 0.000225 | 0.000896 | 0.006411 |
+
+B1 is numerically closer than B0 in all three enforced RGB RMSE comparisons, including at the S2 cap. The corrected source-to-output signal-weighted spatial spread proxy in S2 is 164.574 px for Full ×32, 157.916 px for B0, and 161.235 px for B1; B1's signal-energy ratio is 1.141 relative to Full ×32. These replace the prior-formula values of 165.001, 158.222, and 161.657 px respectively. This proxy describes image-space luma-change covariance, not an optical PSF. The result supports B1 over B0 for this controlled state, not a general quality guarantee.
 
 ## M. Sharp-halo and fallback behavior
 
-In S1/S2/S3, B1 uses source-color fallback on 331 far pixels. The independent source comparison finds zero RGB mismatches. All 331 are within the 0–1 px detected depth-boundary band; none are in the 2–4, 5–8, or 9+ px bands. Nineteen are classified as sharp background fallback by the test's explicit 0.01 luma-change threshold. `farFallbackBeyondBoundaryPx` is 0 and `farHaloWidthPx` is 0 under the documented distance/threshold definition. The total nonnegative blur-suppression sum and the 0–4 px boundary luma-discrepancy sum are each 0.983282 linear-luma units over the fallback pixels. These are unnormalized sums, not percentages; the boundary discrepancy is not by itself proof of foreground-color contamination. The maximum localized RGB error is retained in the JSON artifact. No broad halo away from the measured boundary is observed in this fixture, but natural-material and interior-boundary behavior remain untested.
+| State | B1 far fallback pixels | Sharp fallback pixels | Blur suppression sum | Boundary discrepancy sum | Halo width / beyond-boundary |
+|---|---:|---:|---:|---:|---:|
+| S0 | 148 | 1 | 0.033380 | 0.033380 | 0 px / 0 px |
+| S1 | 331 | 19 | 0.983282 | 0.983282 | 0 px / 0 px |
+| S2 | 331 | 19 | 0.983282 | 0.983282 | 0 px / 0 px |
+| S3 | 331 | 19 | 0.983282 | 0.983282 | 0 px / 0 px |
+
+The independent source comparison finds zero RGB mismatches. All S1/S2/S3 fallback pixels are within the 0–1 px detected depth-boundary band; none are in the 2–4, 5–8, or 9+ px bands. Sharp fallback uses the explicit 0.01 linear-luma-change threshold. The suppression and discrepancy values are unnormalized sums, not percentages; the boundary discrepancy is not by itself proof of foreground-color contamination. In this dataset the corrected calculation leaves the rounded S1/S2/S3 fallback counts, suppression sums, and halo widths unchanged, while the spatial-spread values above shift from the prior-formula measurements. The maximum localized RGB error is retained in the JSON artifact. No broad halo away from the measured boundary is observed in this fixture, but natural-material and interior-boundary behavior remain untested.
 
 ## N. Near RGBA preservation
 
@@ -121,6 +151,8 @@ Phase K adds no new GPU resource owner; it uses the Phase J serialized handle an
 
 All eight requested negative controls were checked. Temporary mutations were restored before final validation: changing the readback origin to bottom failed the top-origin contract; shifting projected X by one pixel failed the fixed projected-pixel expectation; passing millimetres as metres in the native point record failed the `worldM × 1000 = worldMm` assertion; selecting the second ray intersection caused `SURFACE_VERIFIED` to fail; doubling the sampled-film width in the pixel mapping failed its fixed `512/36` reference; doubling the cap denominator failed the 12 px scale expectation; ignoring alpha in the Near RGBA comparator failed the alpha-only control; and suppressing fallback mismatch counts failed the corrupted-source-pixel control. These mutations were not committed. The final unit/E2E runs use the restored implementations.
 
+The review-fix luma sensitivity check temporarily restored the former sum-of-absolute-channel-deltas formula. The chromatic-cancellation regression failed as intended (`0.304103` measured versus the `<1e-8` bound); the corrected formula was restored and all 12 focused tests passed. The B1 quality helper also rejects equal B0/B1 RMSE and mismatched Full ×32 reference identity.
+
 ## Q. Known limitations
 
 - Hidden/background pixels revealed by large blur are unavailable to the single-layer source and cannot be reconstructed by B1.
@@ -141,7 +173,7 @@ Correspondence is understood for the seven tested states, so K-A is **FEASIBLE**
 Focused native Phase K run:
 
 ```bash
-OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
+PLAYWRIGHT_WEB_SERVER_PORT=4193 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
   src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts \
   --project=chrome-native-webgpu --workers=1
 ```
@@ -149,17 +181,17 @@ OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
 Ordinary Chromium fallback control:
 
 ```bash
-env -u OBSERVER_NATIVE_WEBGPU_REQUIRED npm run test:e2e -- \
+env -u OBSERVER_NATIVE_WEBGPU_REQUIRED PLAYWRIGHT_WEB_SERVER_PORT=4194 npm run test:e2e -- \
   src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts \
   --project=chromium --workers=1 --grep 'ordinary Chromium'
 ```
 
-The current native Phase K run passed **2 native tests** (the ordinary-Chromium control was skipped in the native project); the separately run Chromium control passed **1 test** and reported the expected WebGL2 fallback. The native run reported `webgpu-renderer`, `webgpu`, `applicationFallback=false`, and Three.js `186`.
+In this review-fix round, the full native Phase K run passed **2 native tests** with the ordinary-Chromium control skipped; a focused rerun of the large-CoC test after its final raster-delta assertions passed **1 test**. The separate Chromium control passed **1 test** and reported the expected WebGL2 fallback. Native runtime diagnostics reported `webgpu-renderer`, `webgpu`, `applicationFallback=false`, and Three.js `186`.
 
 Phase C–J native regression command:
 
 ```bash
-OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
+PLAYWRIGHT_WEB_SERVER_PORT=4195 OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
   src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts \
   src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts \
   src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts \
@@ -171,7 +203,7 @@ OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
   --project=chrome-native-webgpu --workers=1
 ```
 
-The Phase C–J command completed with **28 passed, 5 skipped**. The skips are ordinary-Chromium compatibility controls excluded by the native-required project. Production-preview isolation ran separately with `--config=playwright.production.config.ts`; both Architecture Rise WebGL-isolation and Anatomy WebGPU-denial tests passed (2/2).
+The Phase C–J command was rerun in this review-fix round and completed with **28 passed, 5 skipped**. The skips are ordinary-Chromium compatibility controls excluded by the native-required project. Production-preview isolation ran separately with `--config=playwright.production.config.ts`; both Architecture Rise WebGL-isolation and Anatomy WebGPU-denial tests passed (2/2).
 
 The focused Phase K unit command is:
 
@@ -179,7 +211,9 @@ The focused Phase K unit command is:
 npm test -- src/tests/unit/groundGlassWebGpuCorrespondenceLargeCoc.test.ts
 ```
 
-It passed all 8 tests after the negative-control mutation checks were restored. Repository-wide unit/integration, typecheck, lint, CSS, and build results are recorded in the PR handoff.
+It passed all 12 tests in this review-fix round, including channel-weighted luma cancellation, near/far depth-edge separation, cap-raster delta metrics, and strict B1 quality comparison controls. Repository-wide unit/integration, typecheck, lint, CSS, and build results are recorded in the PR handoff.
+
+Repository checks in this review-fix round: `npm test` passed **274 files / 2,542 tests**; typecheck, lint, CSS structure, and production build passed. `git diff --check` passed. The production-preview command was `npm run test:e2e -- src/tests/e2e/architecture-rise-webgpu-production.spec.ts --config=playwright.production.config.ts --project=chromium-production-preview --workers=1`.
 
 The native run requires the repository's headed Chrome WebGPU setup and must report `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js revision `186`. Ordinary Chromium reported the expected WebGPU-unavailable/WebGL2 fallback warning and is not native evidence. JSON measurements, readback arrays, and PNGs are written under ignored `test-results/ground-glass-webgpu-phase-k/`; no generated raster collection is committed.
 
