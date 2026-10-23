@@ -104,12 +104,20 @@ import {
   PHASE_K_LARGE_COC_STATE,
   type ProjectedPixelCenter,
 } from "./ground-glass-webgpu-correspondence-large-coc-cases";
+import {
+  analyzeInteriorCocPreflight,
+  measurePhaseLQuality,
+  PHASE_L_CANDIDATES,
+  PHASE_L_INTERIOR_TARGETS,
+  type InteriorCocCandidate,
+} from "./ground-glass-webgpu-interior-coc-cases";
 
 const WIDTH = APERTURE_GATHER_CASES.sourceWidthPx;
 const HEIGHT = APERTURE_GATHER_CASES.sourceHeightPx;
 const phaseGStudyEnabled = new URLSearchParams(window.location.search).get("phaseG") === "1";
 const phaseIStudyEnabled = new URLSearchParams(window.location.search).get("phaseI") === "1";
-const phaseKStudyEnabled = new URLSearchParams(window.location.search).get("phaseK") === "1";
+const phaseLStudyEnabled = new URLSearchParams(window.location.search).get("phaseL") === "1";
+const phaseKStudyEnabled = new URLSearchParams(window.location.search).get("phaseK") === "1" || phaseLStudyEnabled;
 const phaseJStudyEnabled = phaseKStudyEnabled || new URLSearchParams(window.location.search).get("phaseJ") === "1";
 const phaseHStudyEnabled = phaseIStudyEnabled || phaseJStudyEnabled || new URLSearchParams(window.location.search).get("phaseH") === "1";
 const phaseResearchEnabled = phaseGStudyEnabled || phaseHStudyEnabled;
@@ -2446,6 +2454,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       composite: Float32Array;
       inputFingerprints: { sourceColor: string; worldPositionAndDepth: string; validity: string; physical: string };
     }>();
+    const phaseLHalfB0Rasters = new Map<string, {
+      far: Float32Array;
+      composite: Float32Array;
+      inputFingerprints: { sourceColor: string; worldPositionAndDepth: string; validity: string; physical: string };
+    }>();
     const render = (input: {
       operationKind: OperationEvidence["kind"];
       quality?: QualityMode;
@@ -2708,6 +2721,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               film: opticalState.film,
               focus: opticalState.focus,
               optics: opticalState.optics,
+              requestedCropMagnification: input.phaseJOverrides?.cropMagnification ?? 1,
+              requestedCropPan: input.phaseJOverrides?.cropPan ?? { x: 0, y: 0 },
               captureCamera: phaseJState.captureCameraPose,
               captureCameraCoordinateSystem: phaseJState.captureCameraCoordinateSystem,
               cameraMatrices: phaseJState.canonicalCameraFingerprint,
@@ -3829,6 +3844,48 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               validity: fingerprintView(validityTop),
               physical: physicalFingerprint,
             };
+            const phaseLPreflight = phaseLStudyEnabled && input.phaseKCaseId?.startsWith("phase-l-preflight:")
+              ? analyzeInteriorCocPreflight({
+                width: sourceWidthPx,
+                height: sourceHeightPx,
+                capPx: settings.maximumCoCRadiusPx,
+                sourceRgba: sourceTop,
+                worldPositionRgba: worldTop,
+                physicalRgba: physicalTop,
+                validity: validityTop,
+                radiusDiagnosticsRgba: radiusDiagnosticsTop,
+                cameraForwardWorld: phaseJState.captureCameraPose.forwardWorld,
+              })
+              : null;
+            const phaseLMacroSurfaceSamples = phaseLPreflight && macroSubject
+              ? phaseLPreflight.edgePairs.slice(0, 16).flatMap((pair) => [
+                { endpoint: "a" as const, point: pair.a },
+                { endpoint: "b" as const, point: pair.b },
+              ]).map((sample) => {
+                const pixelCenterNdc = new THREE.Vector2(
+                  2 * (sample.point.x + 0.5) / sourceWidthPx - 1,
+                  1 - 2 * (sample.point.y + 0.5) / sourceHeightPx,
+                );
+                const raycaster = new THREE.Raycaster();
+                raycaster.near = camera.near;
+                raycaster.far = camera.far;
+                raycaster.setFromCamera(pixelCenterNdc, camera);
+                const hit = raycaster.intersectObject(macroSubject!, true)[0] ?? null;
+                return {
+                  endpoint: sample.endpoint,
+                  pixelTopOrigin: [sample.point.x, sample.point.y],
+                  reconstructedDepthMm: sample.point.depthMm,
+                  signedCoCMm: sample.point.signedCoCMm,
+                  sourceRgb: sample.point.sourceRgb,
+                  firstVisibleSurface: hit ? {
+                    objectName: hit.object.name,
+                    objectType: hit.object.type,
+                    pointWorldMm: hit.point.clone().multiplyScalar(1000).toArray(),
+                    rayDistanceMm: hit.distance * 1000,
+                  } : null,
+                };
+              })
+              : [];
             const full32ReferenceIdentity = `${sourceKey}|f${phaseJState.cameraState.aperture}|full32`;
             const largeCocFarQuality = full32 ? measureLargeCocFarQuality({
               width: sourceWidthPx,
@@ -3844,7 +3901,92 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             }) : null;
             const finalComposite = candidateComposite
               ?? toTopOriginRgba(compositeReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true);
+            const phaseLNearFullResolution = phaseLStudyEnabled
+              ? (() => {
+                const expanded = new Float32Array(sourceWidthPx * sourceHeightPx * 4);
+                const sourceSize = { widthPx: sourceWidthPx, heightPx: sourceHeightPx };
+                const nearSize = { widthPx: nearTarget.width, heightPx: nearTarget.height };
+                for (let y = 0; y < sourceHeightPx; y += 1) {
+                  for (let x = 0; x < sourceWidthPx; x += 1) {
+                    const [nearX, nearY] = gatherTexelAtSourcePixelCenter([x, y], sourceSize, nearSize);
+                    const nearOffset = (nearY * nearTarget.width + nearX) * 4;
+                    expanded.set(nearTop.subarray(nearOffset, nearOffset + 4), (y * sourceWidthPx + x) * 4);
+                  }
+                }
+                return expanded;
+              })()
+              : null;
+            const phaseLFull32Composite = full32 && phaseLNearFullResolution
+              ? compositeFarAndNear(full32, phaseLNearFullResolution)
+              : null;
+            const phaseLMeasured = phaseLStudyEnabled && full32 && phaseLFull32Composite && phaseLNearFullResolution
+              ? measurePhaseLQuality({
+                width: sourceWidthPx,
+                height: sourceHeightPx,
+                capPx: PHASE_L_INTERIOR_TARGETS.radiusCapPx,
+                sourceRgba: sourceTop,
+                referenceFarRgba: full32,
+                candidateFarRgba: selectedFar,
+                referenceCompositeRgba: phaseLFull32Composite,
+                candidateCompositeRgba: finalComposite,
+                worldPositionRgba: worldTop,
+                physicalRgba: physicalTop,
+                validity: validityTop,
+                radiusDiagnosticsRgba: radiusDiagnosticsTop,
+                sourceFallbackMask: largeCocFallbackMask,
+                cameraForwardWorld: phaseJState.captureCameraPose.forwardWorld,
+              })
+              : null;
+            const phaseLQualityMetrics = phaseLMeasured;
             let capOutputDeltaFrom60: Record<string, unknown> | null = null;
+            let phaseLCapOutputDeltaFrom60: Record<string, unknown> | null = null;
+            let phaseLB0B1Comparison: Record<string, unknown> | null = null;
+            const phaseLVariantPair = phaseLStudyEnabled
+              ? input.phaseKCaseId?.match(/^(S1-large-uncapped|S2-large-cap12)-(half32-b0|half32-b1)$/)
+              : null;
+            if (phaseLVariantPair) {
+              const [, capState, variant] = phaseLVariantPair;
+              const pairKey = capState!;
+              if (variant === "half32-b0") {
+                phaseLHalfB0Rasters.set(pairKey, {
+                  far: selectedFar.slice(),
+                  composite: finalComposite.slice(),
+                  inputFingerprints,
+                });
+              } else {
+                const b0 = phaseLHalfB0Rasters.get(pairKey);
+                if (!b0) throw new Error(`Missing Phase L matched B0 raster for ${pairKey}`);
+                for (const key of ["sourceColor", "worldPositionAndDepth", "validity", "physical"] as const) {
+                  if (b0.inputFingerprints[key] !== inputFingerprints[key]) {
+                    throw new Error(`Phase L B0/B1 input fingerprint changed for ${pairKey}: ${key}`);
+                  }
+                }
+                const comparison = measurePhaseLQuality({
+                  width: sourceWidthPx,
+                  height: sourceHeightPx,
+                  capPx: PHASE_L_INTERIOR_TARGETS.radiusCapPx,
+                  sourceRgba: sourceTop,
+                  referenceFarRgba: b0.far,
+                  candidateFarRgba: selectedFar,
+                  referenceCompositeRgba: b0.composite,
+                  candidateCompositeRgba: finalComposite,
+                  worldPositionRgba: worldTop,
+                  physicalRgba: physicalTop,
+                  validity: validityTop,
+                  radiusDiagnosticsRgba: radiusDiagnosticsTop,
+                  sourceFallbackMask: largeCocFallbackMask,
+                  cameraForwardWorld: phaseJState.captureCameraPose.forwardWorld,
+                });
+                phaseLB0B1Comparison = {
+                  referenceVariant: "Half ×32 B0",
+                  candidateVariant: "Half ×32 B1",
+                  inputFingerprints: { ...inputFingerprints },
+                  farGather: comparison.farQuality,
+                  finalComposite: comparison.finalCompositeQuality,
+                };
+                phaseLHalfB0Rasters.delete(pairKey);
+              }
+            }
             const capPair = input.phaseKCaseId?.match(/^(S1-large-uncapped|S2-large-cap12)-(full32|half32-b0|half32-b1)$/);
             if (capPair) {
               const [, capState, path] = capPair;
@@ -3895,6 +4037,39 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                   farGather: compareRegions(cap60.far, selectedFar),
                   finalComposite: compareRegions(cap60.composite, finalComposite),
                 };
+                if (phaseLStudyEnabled && phaseLMeasured) {
+                  const phaseLDelta = measurePhaseLQuality({
+                    width: sourceWidthPx,
+                    height: sourceHeightPx,
+                    capPx: PHASE_L_INTERIOR_TARGETS.radiusCapPx,
+                    sourceRgba: sourceTop,
+                    referenceFarRgba: cap60.far,
+                    candidateFarRgba: selectedFar,
+                    referenceCompositeRgba: cap60.composite,
+                    candidateCompositeRgba: finalComposite,
+                    worldPositionRgba: worldTop,
+                    physicalRgba: physicalTop,
+                    validity: validityTop,
+                    radiusDiagnosticsRgba: radiusDiagnosticsTop,
+                    sourceFallbackMask: largeCocFallbackMask,
+                    cameraForwardWorld: phaseJState.captureCameraPose.forwardWorld,
+                  });
+                  phaseLCapOutputDeltaFrom60 = {
+                    fromCapPx: 60,
+                    toCapPx: 12,
+                    path: path!,
+                    matchedInputs: { ...inputFingerprints },
+                    interiorRegions: {
+                      capActivated: "Valid native physical radius > 12 px.",
+                      interiorCap12: `Cap-activated pixels at least ${PHASE_L_INTERIOR_TARGETS.cappedSupportMarginPx} px from the raster border.`,
+                      interiorCap12FarDepthEdge: "Interior cap-12 pixels with positive signed CoC adjacent to a valid reconstructed depth step of at least 1 mm.",
+                      cappedAwayFromDepthEdge: "Cap-activated pixels more than 1 px from a valid reconstructed depth boundary.",
+                      uncappedValidControl: "Valid pixels whose native uncapped physical radius is no greater than 12 px.",
+                    },
+                    farGather: phaseLDelta.farQuality,
+                    finalComposite: phaseLDelta.finalCompositeQuality,
+                  };
+                }
                 phaseKCapReferenceRasters.delete(path!);
               }
             }
@@ -4027,6 +4202,18 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 comparisons: qualityComparisons,
                 full32VsFull64Agreement: fullResolutionReferenceAgreement,
                 largeCocFarQuality,
+                phaseL: phaseLMeasured ? {
+                    selectedCandidateId: PHASE_L_CANDIDATES.find((candidate) =>
+                      candidate.magnification === input.phaseJOverrides?.cropMagnification
+                      && candidate.pan.x === input.phaseJOverrides?.cropPan?.x
+                      && candidate.pan.y === input.phaseJOverrides?.cropPan?.y)?.id ?? null,
+                    qualityMetrics: phaseLQualityMetrics,
+                    capOutputDeltaFrom60: phaseLCapOutputDeltaFrom60,
+                    b0ToB1Comparison: phaseLB0B1Comparison,
+                    referenceConvergence: full64 ? phaseLQualityMetrics?.farQuality : null,
+                    referenceIdentity: full32ReferenceIdentity,
+                    nearReferenceComposition: "Full ×32 far readback composited with the same GPU near-target readback sampled at the production source-pixel centers; comparison is finite-sample renderer evidence, not optical ground truth.",
+                  } : null,
                 heatmapDefinition: "Far-quality heatmap uses red for source-fallback pixels and green for absolute full32 luma difference scaled by ×4 and clamped to [0,1]; it is a visualization, while numeric metrics remain authoritative.",
                 pairedSourceDifferenceFromB0: input.candidate ? pairedSourceDifference : null,
                 pairedNearTargetDifferenceFromB0: input.candidate ? pairedNearDifference : null,
@@ -4084,6 +4271,36 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 timing: operation.timing,
                 targetMemoryEstimate: evidence.targetMemoryEstimate,
                 ownedResourceCount: evidence.resources.length,
+              } : null,
+              phaseL: phaseLStudyEnabled ? {
+                stage: phaseLPreflight ? "geometry-only candidate discovery" : "matched quality confirmation",
+                candidateId: input.phaseKCaseId?.startsWith("phase-l-preflight:")
+                  ? input.phaseKCaseId.slice("phase-l-preflight:".length)
+                  : PHASE_L_CANDIDATES.find((candidate) =>
+                    candidate.magnification === input.phaseJOverrides?.cropMagnification
+                    && candidate.pan.x === input.phaseJOverrides?.cropPan?.x
+                    && candidate.pan.y === input.phaseJOverrides?.cropPan?.y)?.id ?? null,
+                selectedCandidateConfiguration: {
+                  magnification: input.phaseJOverrides?.cropMagnification ?? 1,
+                  normalizedPan: input.phaseJOverrides?.cropPan ?? { x: 0, y: 0 },
+                  inspectionWindow: phaseJState.inspectionWindow,
+                  sampledFilmMm: { width: sampledFilmWidthMm.value, height: sampledFilmHeightMm.value },
+                  cameraMatrices: phaseJState.canonicalCameraFingerprint,
+                },
+                nativeRuntime: evidence.runtime,
+                sourceDepthPhysicalFingerprints: inputFingerprints,
+                firstVisibleMacroSurfaceSamples: phaseLMacroSurfaceSamples,
+                geometryOnlyPreflight: phaseLPreflight,
+                selectedCandidateId: PHASE_L_CANDIDATES.find((candidate) =>
+                  candidate.magnification === input.phaseJOverrides?.cropMagnification
+                  && candidate.pan.x === input.phaseJOverrides?.cropPan?.x
+                  && candidate.pan.y === input.phaseJOverrides?.cropPan?.y)?.id ?? null,
+                referenceIdentity: phaseLMeasured ? full32ReferenceIdentity : null,
+                qualityMetrics: phaseLQualityMetrics,
+                capOutputDeltaFrom60: phaseLCapOutputDeltaFrom60,
+                b0ToB1Comparison: phaseLB0B1Comparison,
+                qualityMetricsUsedForSelection: false,
+                reconstructionReferenceUsedForSelection: false,
               } : null,
               capturedArtifacts: Object.keys(phaseJImageArtifacts).filter((key) => key.startsWith(`${imagePrefix}-`)),
             } satisfies Record<string, unknown>;
@@ -4366,6 +4583,7 @@ const Experiment = () => {
   const handleRef = useRef<MountedHandle | null>(null);
   const [handle, setHandle] = useState<MountedHandle | null>(null);
   const [status, setStatus] = useState("initializing native renderer");
+  const [phaseLCandidateId, setPhaseLCandidateId] = useState(PHASE_L_CANDIDATES[0]!.id);
   useEffect(() => {
     let cancelled = false;
     const canvas = canvasRef.current;
@@ -4462,6 +4680,65 @@ const Experiment = () => {
       edgeCase: "axis-aligned",
       filmTiltDeg: 0,
       crop: stateId !== "S0-normal",
+      focusOffsetMm: 0,
+      forceUnresolved: false,
+      candidate: variant === "half32-b1",
+      displayCandidate: false,
+      phaseI: false,
+      displayPhaseI: false,
+    });
+  };
+  const queuePhaseLPreflight = (candidate: InteriorCocCandidate) => queueRender({
+    quality: "study",
+    phaseJCaseId: "macro-focus-middle-f5_6",
+    phaseJOverrides: {
+      apertureFNumber: 5.6,
+      focusDistanceMm: 400,
+      cropMagnification: candidate.magnification,
+      cropPan: candidate.pan,
+    },
+    phaseKCaseId: `phase-l-preflight:${candidate.id}`,
+    gatherScale: 0.5,
+    sampleCount: 4,
+    maximumCoCRadiusPx: 12,
+    sourceWidthPx: 512,
+    sourceHeightPx: 384,
+    edgeCase: "axis-aligned",
+    filmTiltDeg: 0,
+    crop: true,
+    focusOffsetMm: 0,
+    forceUnresolved: false,
+    candidate: false,
+    displayCandidate: false,
+    phaseI: false,
+    displayPhaseI: false,
+  });
+  const queuePhaseLMatrix = (
+    capPx: 12 | 60,
+    variant: "full32" | "full64" | "half32-b0" | "half32-b1",
+  ) => {
+    const candidate = PHASE_L_CANDIDATES.find((entry) => entry.id === phaseLCandidateId);
+    if (!candidate) throw new Error(`Unknown Phase L candidate ${phaseLCandidateId}`);
+    const full = variant.startsWith("full");
+    const capState = capPx === 60 ? "S1-large-uncapped" : "S2-large-cap12";
+    return queueRender({
+      quality: "study",
+      phaseJCaseId: "macro-focus-middle-f5_6",
+      phaseJOverrides: {
+        apertureFNumber: 5.6,
+        focusDistanceMm: 400,
+        cropMagnification: candidate.magnification,
+        cropPan: candidate.pan,
+      },
+      phaseKCaseId: `${capState}-${variant}`,
+      gatherScale: full ? 1 : 0.5,
+      sampleCount: variant === "full64" ? 64 : 32,
+      maximumCoCRadiusPx: capPx,
+      sourceWidthPx: 512,
+      sourceHeightPx: 384,
+      edgeCase: "axis-aligned",
+      filmTiltDeg: 0,
+      crop: true,
       focusOffsetMm: 0,
       forceUnresolved: false,
       candidate: variant === "half32-b1",
@@ -4609,7 +4886,42 @@ const Experiment = () => {
               </div>
             ))}
           </fieldset>}
-          {phaseKStudyEnabled && <fieldset data-testid="phase-k-controls">
+          {phaseLStudyEnabled && <fieldset data-testid="phase-l-controls">
+            <legend>Phase L geometry-only interior large-CoC crop/pan preflight</legend>
+            <p>Candidate ranking uses native source, depth, validity, physical CoC, and radius readbacks. No B0/B1 quality score is used.</p>
+            <div data-testid="phase-l-candidate-search">
+              {PHASE_L_CANDIDATES.map((candidate) => <button
+                key={candidate.id}
+                type="button"
+                data-testid={`phase-l-preflight-${candidate.id}`}
+                onClick={() => {
+                  setPhaseLCandidateId(candidate.id);
+                  void queuePhaseLPreflight(candidate);
+                }}
+              >
+                Preflight {candidate.magnification}× pan ({candidate.pan.x}, {candidate.pan.y})
+              </button>)}
+            </div>
+            <label>
+              Frozen candidate for quality matrix
+              <select data-testid="phase-l-selected-candidate" value={phaseLCandidateId} onChange={(event) => setPhaseLCandidateId(event.currentTarget.value)}>
+                {PHASE_L_CANDIDATES.map((candidate) => <option key={candidate.id} value={candidate.id}>
+                  {candidate.id} (m={candidate.magnification}, pan={candidate.pan.x},{candidate.pan.y})
+                </option>)}
+              </select>
+            </label>
+            <div>
+              <button type="button" data-testid="phase-l-cap60-full32" onClick={() => void queuePhaseLMatrix(60, "full32")}>Selected crop cap 60 Full ×32</button>
+              <button type="button" data-testid="phase-l-cap60-full64" onClick={() => void queuePhaseLMatrix(60, "full64")}>Selected crop cap 60 Full ×64</button>
+              <button type="button" data-testid="phase-l-cap60-half32-b0" onClick={() => void queuePhaseLMatrix(60, "half32-b0")}>Selected crop cap 60 Half ×32 B0</button>
+              <button type="button" data-testid="phase-l-cap60-half32-b1" onClick={() => void queuePhaseLMatrix(60, "half32-b1")}>Selected crop cap 60 Half ×32 B1</button>
+              <button type="button" data-testid="phase-l-cap12-full32" onClick={() => void queuePhaseLMatrix(12, "full32")}>Selected crop cap 12 Full ×32</button>
+              <button type="button" data-testid="phase-l-cap12-full64" onClick={() => void queuePhaseLMatrix(12, "full64")}>Selected crop cap 12 Full ×64</button>
+              <button type="button" data-testid="phase-l-cap12-half32-b0" onClick={() => void queuePhaseLMatrix(12, "half32-b0")}>Selected crop cap 12 Half ×32 B0</button>
+              <button type="button" data-testid="phase-l-cap12-half32-b1" onClick={() => void queuePhaseLMatrix(12, "half32-b1")}>Selected crop cap 12 Half ×32 B1</button>
+            </div>
+          </fieldset>}
+          {phaseKStudyEnabled && !phaseLStudyEnabled && <fieldset data-testid="phase-k-controls">
             <legend>Phase K scene-point correspondence and large-CoC evidence</legend>
             <div data-testid="phase-k-correspondence-cases">
               {([
