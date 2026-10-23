@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   analyzeInteriorCocPreflight,
+  buildPhaseLCandidateSearchArtifact,
+  buildPhaseLNoCandidateReport,
   evaluatePhaseLQualityDecision,
   measurePhaseLQuality,
+  passesPhaseLConfirmatoryAcceptance,
   PHASE_L_CANDIDATES,
   PHASE_L_INTERIOR_TARGETS,
+  PHASE_L_QUALITY_ACCEPTANCE,
   resolvePhaseLCandidateWindow,
+  selectPhaseLCandidates,
 } from "../e2e/fixtures/ground-glass-webgpu-interior-coc-cases";
 
 describe("Phase L interior large-CoC preflight", () => {
@@ -343,5 +348,119 @@ describe("Phase L frozen confirmatory quality decision", () => {
     const input = goodDecisionInput();
     input.candidateQualified = false;
     expect(evaluatePhaseLQualityDecision(input).outcome).toBe("L-D");
+  });
+
+  it("accepts only the fixed L-A baseline with every acceptance check passing", () => {
+    const evaluation = evaluatePhaseLQualityDecision(goodDecisionInput());
+    expect(evaluation.outcome).toBe("L-A");
+    expect(evaluation.failedCriteria).toEqual([]);
+    expect(passesPhaseLConfirmatoryAcceptance(evaluation)).toBe(true);
+  });
+
+  it("rejects L-B when measured B1 quality exceeds the fixed bound", () => {
+    const input = goodDecisionInput();
+    input.b1Quality.edgeRmse = PHASE_L_QUALITY_ACCEPTANCE.maximumCandidateEdgeRmse + 0.001;
+    const evaluation = evaluatePhaseLQualityDecision(input);
+    expect(evaluation.outcome).toBe("L-B");
+    expect(evaluation.failedCriteria).toContain("candidateWithinAbsoluteBounds");
+    expect(passesPhaseLConfirmatoryAcceptance(evaluation)).toBe(false);
+  });
+
+  it("rejects L-E when Full reference convergence exceeds the fixed bound", () => {
+    const input = goodDecisionInput();
+    input.referenceConvergence.edgeRmse = PHASE_L_QUALITY_ACCEPTANCE.maximumReferenceEdgeRmse + 0.001;
+    const evaluation = evaluatePhaseLQualityDecision(input);
+    expect(evaluation.outcome).toBe("L-E");
+    expect(evaluation.failedCriteria).toContain("referenceConverged");
+    expect(passesPhaseLConfirmatoryAcceptance(evaluation)).toBe(false);
+  });
+
+  it("rejects L-B when only Near alpha exceeds the fixed tolerance", () => {
+    const input = goodDecisionInput();
+    input.nearRgba.alphaMax = PHASE_L_QUALITY_ACCEPTANCE.maximumNearAlphaError + 0.001;
+    const evaluation = evaluatePhaseLQualityDecision(input);
+    expect(evaluation.outcome).toBe("L-B");
+    expect(evaluation.checks.nearRgbaInvariant).toBe(false);
+    expect(passesPhaseLConfirmatoryAcceptance(evaluation)).toBe(false);
+  });
+
+  it("rejects L-D for the fixed baseline while preserving L-D as a valid research classification", () => {
+    const input = goodDecisionInput();
+    input.candidateQualified = false;
+    const evaluation = evaluatePhaseLQualityDecision(input);
+    expect(evaluation.outcome).toBe("L-D");
+    expect(evaluation.failedCriteria).toContain("candidateQualified");
+    expect(passesPhaseLConfirmatoryAcceptance(evaluation)).toBe(false);
+  });
+});
+
+describe("Phase L candidate-search and no-candidate artifacts", () => {
+  it("serializes all 12 unqualified candidates and a complete L-D report with nullable selection", () => {
+    const candidates = Array.from({ length: 12 }, (_, index) => ({
+      id: `m${8 + (index % 3) * 4}-candidate-${index}`,
+      score: [12 - index, 0, 0],
+      qualified: false,
+      rejectionReasons: [`candidate ${index} failed interior support`],
+      counts: { interiorCapped: 0, interiorHighContrastPairs: 0 },
+    }));
+    const selection = selectPhaseLCandidates(candidates);
+    expect(selection.qualifiedCandidates).toHaveLength(0);
+    expect(selection.selectedCandidate).toBeNull();
+
+    const candidateSearch = buildPhaseLCandidateSearchArtifact({
+      candidates: selection.sortedCandidates,
+      selectedCandidateId: selection.selectedCandidate?.id ?? null,
+      bestUnqualifiedCandidateId: selection.bestUnqualifiedCandidate?.id ?? null,
+      predeclaredCriteria: PHASE_L_INTERIOR_TARGETS,
+      qualityAcceptance: PHASE_L_QUALITY_ACCEPTANCE,
+      nativeRuntime: {
+        rendererFamily: "webgpu-renderer",
+        executionBackend: "webgpu",
+        applicationFallback: false,
+        threeRevision: "186",
+      },
+      selectionPolicy: "Geometry-only score; unqualified candidates are never used for confirmatory quality.",
+    });
+    const report = buildPhaseLNoCandidateReport({
+      candidateSearch,
+      nativeRuntime: candidateSearch.nativeRuntime,
+    });
+
+    const serializedSearch = JSON.parse(JSON.stringify(candidateSearch)) as typeof candidateSearch;
+    const serializedReport = JSON.parse(JSON.stringify(report)) as typeof report;
+    expect(serializedSearch.discoveryCandidateCount).toBe(12);
+    expect(serializedSearch.qualifiedCandidateCount).toBe(0);
+    expect(serializedSearch.selectedForConfirmation).toBeNull();
+    expect(serializedSearch.bestUnqualifiedCandidateForExplorationOnly).toBe(candidates[0]!.id);
+    expect(serializedSearch.candidates).toHaveLength(12);
+    expect(serializedSearch.candidates.every((candidate) => candidate.rejectionReasons.length === 1)).toBe(true);
+    expect(serializedSearch.predeclaredCriteria).toEqual(PHASE_L_INTERIOR_TARGETS);
+    expect(serializedReport.decision).toBe("L-D");
+    expect(serializedReport.decisionReason).toBe("No candidate satisfies the frozen geometry qualification.");
+    expect(serializedReport.qualityMatrixStatus).toBe("not-run-no-qualified-candidate");
+    expect(serializedReport.qualityMatrix).toBeNull();
+    expect(serializedReport.selectedCandidate).toBeNull();
+    expect(serializedReport.bestUnqualifiedCandidate?.id).toBe(candidates[0]!.id);
+    expect(serializedReport.qualityDecisionEvidence.outcome).toBe("L-D");
+    expect(passesPhaseLConfirmatoryAcceptance(serializedReport.qualityDecisionEvidence)).toBe(false);
+    expect(serializedReport.qualityDecisionEvidence.measurements).toMatchObject({
+      referenceInteriorRmse: null,
+      referenceEdgeRmse: null,
+      b1InteriorRmse: null,
+      b1EdgeRmse: null,
+    });
+  });
+
+  it("refuses to publish an L-D report if a candidate is qualified", () => {
+    const candidateSearch = buildPhaseLCandidateSearchArtifact({
+      candidates: [{ id: "qualified", score: [1], qualified: true, rejectionReasons: [] }],
+      selectedCandidateId: "qualified",
+      bestUnqualifiedCandidateId: null,
+      predeclaredCriteria: PHASE_L_INTERIOR_TARGETS,
+      qualityAcceptance: PHASE_L_QUALITY_ACCEPTANCE,
+      nativeRuntime: null,
+      selectionPolicy: "geometry-only",
+    });
+    expect(() => buildPhaseLNoCandidateReport({ candidateSearch, nativeRuntime: null })).toThrow(/requires no qualified/);
   });
 });

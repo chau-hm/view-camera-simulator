@@ -2,10 +2,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import {
+  buildPhaseLCandidateSearchArtifact,
+  buildPhaseLNoCandidateReport,
   evaluatePhaseLQualityDecision,
   PHASE_L_CANDIDATES,
   PHASE_L_QUALITY_ACCEPTANCE,
   PHASE_L_INTERIOR_TARGETS,
+  passesPhaseLConfirmatoryAcceptance,
+  selectPhaseLCandidates,
 } from "./fixtures/ground-glass-webgpu-interior-coc-cases";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseL=1";
@@ -46,6 +50,8 @@ type CandidateEvidence = {
   phaseL: JsonRecord;
   geometry: JsonRecord;
   score: readonly number[];
+  qualified: boolean;
+  rejectionReasons: string[];
 };
 
 const record = (value: unknown): JsonRecord =>
@@ -134,14 +140,6 @@ const candidateRejectionReasons = (geometry: JsonRecord) => {
     .map(([label, value, minimum]) => `${label}: ${value ?? "missing"} < ${minimum}`);
 };
 
-const compareScore = (left: readonly number[], right: readonly number[]) => {
-  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
-    const delta = (right[index] ?? 0) - (left[index] ?? 0);
-    if (delta) return delta;
-  }
-  return 0;
-};
-
 const assertAppliedCandidateState = (operation: Operation, candidate: CandidateEvidence) => {
   const applied = record(operation.appliedState);
   expect(applied).toMatchObject({
@@ -220,6 +218,8 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       phaseL,
       geometry,
       score: candidateScore(geometry),
+      qualified: geometry.candidateQualified === true,
+      rejectionReasons: candidateRejectionReasons(geometry),
     };
     assertAppliedCandidateState(operation, entry);
     expect(record(phaseL.nativeRuntime)).toMatchObject({
@@ -251,41 +251,66 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     }
   }
 
-  const sortedCandidates = [...candidateResults].sort((a, b) => compareScore(a.score, b.score));
-  const qualifiedCandidates = sortedCandidates.filter((entry) => record(entry.geometry).candidateQualified === true);
-  const selected = qualifiedCandidates[0] ?? null;
-  const exploratoryCandidate = sortedCandidates[0] ?? null;
+  const selection = selectPhaseLCandidates(candidateResults);
+  const sortedCandidates = selection.sortedCandidates;
+  const qualifiedCandidates = selection.qualifiedCandidates;
+  const selected = selection.selectedCandidate;
+  const exploratoryCandidate = selection.bestUnqualifiedCandidate;
+  const candidateSearchRecords = sortedCandidates.map((entry) => ({
+    id: entry.id,
+    magnification: entry.magnification,
+    pan: entry.pan,
+    score: entry.score,
+    qualified: entry.qualified,
+    rejectionReasons: entry.rejectionReasons,
+    operationId: entry.operation.operationId,
+    operationState: entry.operation.state,
+    nativeRuntime: entry.phaseL.nativeRuntime,
+    inspectionWindow: record(record(entry.phaseL.selectedCandidateConfiguration).inspectionWindow),
+    sampledFilmMm: record(record(entry.phaseL.selectedCandidateConfiguration).sampledFilmMm),
+    counts: record(entry.geometry.counts),
+    borderClearance: record(entry.geometry.borderClearance),
+    largestInteriorCapComponent: entry.geometry.largestInteriorCapComponent,
+    edgePairs: Array.isArray(entry.geometry.edgePairs) ? entry.geometry.edgePairs : [],
+    surfaceSamples: entry.phaseL.firstVisibleMacroSurfaceSamples,
+  }));
+  const candidateSearchArtifact = buildPhaseLCandidateSearchArtifact({
+    candidates: candidateSearchRecords,
+    selectedCandidateId: selected?.id ?? null,
+    bestUnqualifiedCandidateId: selected ? null : exploratoryCandidate?.id ?? null,
+    predeclaredCriteria: candidateResults[0]?.geometry.thresholds ?? PHASE_L_INTERIOR_TARGETS,
+    qualityAcceptance: PHASE_L_QUALITY_ACCEPTANCE,
+    nativeRuntime: handle.runtime,
+    selectionPolicy: "Lexicographic geometry score: interior cap pixels, largest interior 4-connected component, interior cap/far edge pixels, interior-only high-contrast capped far-edge pairs, then local uncapped-reference-clear cap pixels. B0/B1 quality is not evaluated or consulted; no unqualified candidate is used for confirmatory quality.",
+  });
+  const candidateSearchJson = JSON.stringify(candidateSearchArtifact, null, 2);
   await testInfo.attach("candidate-search.json", {
-    body: Buffer.from(JSON.stringify({
-      predeclaredCriteria: record(candidateResults[0]!.geometry.thresholds),
-      qualityAcceptanceFrozenForConfirmatoryRun: PHASE_L_QUALITY_ACCEPTANCE,
-      candidates: sortedCandidates.map((entry) => ({
-        id: entry.id,
-        magnification: entry.magnification,
-        pan: entry.pan,
-        score: entry.score,
-        qualified: record(entry.geometry).candidateQualified,
-        rejectionReasons: candidateRejectionReasons(entry.geometry),
-        inspectionWindow: record(record(entry.phaseL.selectedCandidateConfiguration).inspectionWindow),
-        sampledFilmMm: record(record(entry.phaseL.selectedCandidateConfiguration).sampledFilmMm),
-        counts: record(entry.geometry.counts),
-        borderClearance: record(entry.geometry.borderClearance),
-        largestInteriorCapComponent: entry.geometry.largestInteriorCapComponent,
-        surfaceSamples: entry.phaseL.firstVisibleMacroSurfaceSamples,
-      })),
-      selectedForConfirmation: selected?.id ?? null,
-      bestUnqualifiedCandidateForExplorationOnly: selected ? null : exploratoryCandidate?.id ?? null,
-      selectionPolicy: "Lexicographic geometry score: interior cap pixels, largest interior 4-connected component, interior cap/far edge pixels, interior-only high-contrast capped far-edge pairs, then local uncapped-reference-clear cap pixels. B0/B1 quality is not evaluated or consulted; no unqualified candidate is used for confirmatory quality.",
-    }, null, 2)),
+    body: Buffer.from(candidateSearchJson),
     contentType: "application/json",
   });
   await mkdir(ARTIFACT_DIRECTORY, { recursive: true });
-  await writeFile(join(ARTIFACT_DIRECTORY, "candidate-search.json"), JSON.stringify({ candidates: candidateResults, selected: selected.id }, null, 2));
+  await writeFile(join(ARTIFACT_DIRECTORY, "candidate-search.json"), candidateSearchJson);
   await attachImages(page, testInfo, "macro-focus-middle-f5.6-");
 
   const matrix: Array<{ label: string; operation: Operation; handle: Handle }> = [];
+  let qualityValues: Array<JsonRecord> | null = null;
+  let b0ToB1EdgeBaseline: { changedPixelCount: number | null; rmse: number | null } | null = null;
   let decision: "L-A" | "L-B" | "L-D" | "L-E" = "L-D";
   let qualityDecisionEvidence: ReturnType<typeof evaluatePhaseLQualityDecision> | null = null;
+  const noCandidateReport = selected ? null : buildPhaseLNoCandidateReport({
+    candidateSearch: candidateSearchArtifact,
+    nativeRuntime: handle.runtime,
+  });
+  if (noCandidateReport) {
+    decision = noCandidateReport.decision;
+    qualityDecisionEvidence = noCandidateReport.qualityDecisionEvidence;
+    const qualityDecisionJson = JSON.stringify({ acceptance: PHASE_L_QUALITY_ACCEPTANCE, decision, qualityDecisionEvidence }, null, 2);
+    await testInfo.attach("phase-l-quality-decision.json", {
+      body: Buffer.from(qualityDecisionJson),
+      contentType: "application/json",
+    });
+    await writeFile(join(ARTIFACT_DIRECTORY, "phase-l-quality-decision.json"), qualityDecisionJson);
+  }
   if (selected) {
     await page.getByTestId("phase-l-selected-candidate").selectOption(selected.id);
     const sequence = [
@@ -310,6 +335,23 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       });
       matrix.push({ label, operation: result.operation, handle: result.handle });
     }
+    qualityValues = matrix.map((entry) => ({
+      label: entry.label,
+      operationId: entry.operation.operationId,
+      operationWallTimeMs: record(entry.operation.timing).operationWallTimeMs,
+      readbackWallTimeMs: record(entry.operation.timing).readbackWallTimeMs,
+      stageTiming: record(entry.operation.timing).stages,
+      phaseK: phaseKOf(entry.operation),
+      phaseL: phaseLOf(entry.operation),
+    }));
+    const rawQualityEvidenceJson = JSON.stringify({ selected, matrix: qualityValues }, null, 2);
+    await testInfo.attach("selected-state-quality-and-resource-evidence.json", {
+      body: Buffer.from(rawQualityEvidenceJson),
+      contentType: "application/json",
+    });
+    await writeFile(join(ARTIFACT_DIRECTORY, "selected-state-quality-and-resource-evidence.json"), rawQualityEvidenceJson);
+    await attachImages(page, testInfo, "macro-focus-middle-f5.6-");
+
     const operationFor = (label: string) => {
       const entry = matrix.find((item) => item.label === label);
       if (!entry) throw new Error(`Missing Phase L matrix operation: ${label}`);
@@ -336,7 +378,6 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       const phaseL = phaseLOf(entry.operation);
       expect(phaseL.stage, `${entry.label} Phase L stage`).toBe("matched quality confirmation");
       expect(phaseL.selectedCandidateId, `${entry.label} candidate identity`).toBe(selected.id);
-      expect(phaseL.qualityMetrics, `${entry.label} independent Phase L metrics`).not.toBeNull();
       expect(number(record(phaseKOf(entry.operation).physical).radiusDiagnosticMismatchCount), `${entry.label} GPU/CPU physical radius diagnostics`).toBe(0);
     }
     const referenceIdentityByCap = new Map<string, string>();
@@ -362,26 +403,13 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     const capDelta = record(phaseKOf(cap12B1).capOutputDeltaFrom60);
     expect(capDelta).toMatchObject({ fromCapPx: 60, toCapPx: 12, path: "half32-b1" });
     const near = record(phaseKOf(cap12B1).nearRgbaComparisonFromB0);
-    expect(number(near.rootMeanSquareRgbError) ?? Infinity).toBeLessThanOrEqual(0.0001);
-    expect(number(near.rootMeanSquareAlphaError) ?? Infinity).toBeLessThanOrEqual(0.0001);
-    expect(number(near.maxRgbError) ?? Infinity).toBeLessThanOrEqual(0.0001);
-    expect(number(near.maxAlphaError) ?? Infinity).toBeLessThanOrEqual(0.0001);
 
-    const cap12Full64PhaseL = record(phaseLOf(cap12Full64).qualityMetrics);
-    const full64Convergence = record(cap12Full64PhaseL.farQuality);
-    expect(number(record(record(full64Convergence.interiorCap12Far).rgb).pixelCount) ?? 0).toBeGreaterThan(0);
-    expect(number(record(record(full64Convergence.interiorCap12FarDepthEdge).rgb).pixelCount) ?? 0).toBeGreaterThan(0);
     for (const entry of [matrix.find((item) => item.label === "cap60-half32-b1")!, matrix.find((item) => item.label === "cap12-half32-b1")!]) {
       const phaseLQuality = record(phaseLOf(entry.operation).qualityMetrics);
-      const interiorFarEdge = record(record(record(phaseLQuality.farQuality).interiorCap12FarDepthEdge).rgb);
-      expect(number(interiorFarEdge.pixelCount) ?? 0, `${entry.label} interior cap/far edge population`).toBeGreaterThanOrEqual(32);
-      expect(number(interiorFarEdge.rgbRootMeanSquareError), `${entry.label} interior cap/far edge RMSE`).not.toBeNull();
       expect(record(phaseLQuality.fallback).depthBoundaryDistanceBands).toBeTruthy();
     }
     const interiorFallback = record(record(record(phaseLOf(cap12B1).qualityMetrics).fallback).interiorCap12Far);
-    expect(number(interiorFallback.fallbackPixelCount) ?? -1).toBeGreaterThanOrEqual(0);
     const selectedFallbackMetrics = record(record(phaseLOf(cap12B1).qualityMetrics).fallback);
-    expect(number(selectedFallbackMetrics.allFallbackSourceRgbMismatchCount) ?? Infinity).toBe(0);
     expect(Array.isArray(interiorFallback.sharpFallbackSamples)).toBe(true);
     const phaseLCapDelta = record(phaseLOf(cap12B1).capOutputDeltaFrom60);
     expect(phaseLCapDelta).toMatchObject({ fromCapPx: 60, toCapPx: 12, path: "half32-b1" });
@@ -393,11 +421,10 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     const b0ToB1 = record(phaseLOf(cap12B1).b0ToB1Comparison);
     expect(b0ToB1).toMatchObject({ referenceVariant: "Half ×32 B0", candidateVariant: "Half ×32 B1" });
     const b0ToB1Edge = record(record(record(b0ToB1.farGather).interiorCap12FarDepthEdge).rgb);
-    expect(number(b0ToB1Edge.pixelCount) ?? 0).toBeGreaterThanOrEqual(32);
-    expect(number(b0ToB1Edge.changedPixelCount)).toBe(0);
-    expect(number(b0ToB1Edge.rgbRootMeanSquareError)).toBe(0);
-    expect(number(interiorFallback.fallbackPixelCount)).toBe(0);
-    expect(number(interiorFallback.sharpFallbackPixelCount)).toBe(0);
+    b0ToB1EdgeBaseline = {
+      changedPixelCount: number(b0ToB1Edge.changedPixelCount),
+      rmse: number(b0ToB1Edge.rgbRootMeanSquareError),
+    };
 
     const selectedGeometry = record(selected.geometry);
     const eligibleInteriorPairs = Array.isArray(selectedGeometry.edgePairs)
@@ -422,21 +449,6 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       expect(farCappedInteriorEndpoint).toBe(true);
     }
 
-    const qualityValues = matrix.map((entry) => ({
-      label: entry.label,
-      operationId: entry.operation.operationId,
-      operationWallTimeMs: record(entry.operation.timing).operationWallTimeMs,
-      readbackWallTimeMs: record(entry.operation.timing).readbackWallTimeMs,
-      stageTiming: record(entry.operation.timing).stages,
-      phaseK: phaseKOf(entry.operation),
-      phaseL: phaseLOf(entry.operation),
-    }));
-    await testInfo.attach("selected-state-quality-and-resource-evidence.json", {
-      body: Buffer.from(JSON.stringify({ selected, matrix: qualityValues }, null, 2)),
-      contentType: "application/json",
-    });
-    await writeFile(join(ARTIFACT_DIRECTORY, "selected-state-quality-and-resource-evidence.json"), JSON.stringify({ selected, matrix: qualityValues }, null, 2));
-    await attachImages(page, testInfo, "macro-focus-middle-f5.6-");
     const metric = (operation: Operation, roi: "interiorCap12Far" | "interiorCap12FarDepthEdge") => {
       const quality = record(record(record(phaseLOf(operation).qualityMetrics).farQuality)[roi]);
       const rgb = record(quality.rgb);
@@ -503,13 +515,8 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       nearRgba,
       fallbackEvidence,
     });
-    expect(qualityDecisionEvidence.checks.candidateQualified).toBe(true);
-    expect(qualityDecisionEvidence.checks.matchedNativeProvenance).toBe(true);
-    expect(qualityDecisionEvidence.checks.measurementsFinite).toBe(true);
-    expect(qualityDecisionEvidence.checks.roiPopulationValid).toBe(true);
     decision = qualityDecisionEvidence.outcome;
     const publishedOutcome = { decision, qualityDecisionEvidence };
-    expect(publishedOutcome.decision).toBe(publishedOutcome.qualityDecisionEvidence.outcome);
     await testInfo.attach("phase-l-quality-decision.json", {
       body: Buffer.from(JSON.stringify({ acceptance: PHASE_L_QUALITY_ACCEPTANCE, ...publishedOutcome }, null, 2)),
       contentType: "application/json",
@@ -552,6 +559,14 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     nativeRuntime: handle.runtime,
     discoveryCandidateCount: candidateResults.length,
     qualifiedCandidateCount: qualifiedCandidates.length,
+    candidateSearch: {
+      artifact: "candidate-search.json",
+      selectedCandidateId: selected?.id ?? null,
+      bestUnqualifiedCandidateId: candidateSearchArtifact.bestUnqualifiedCandidateForExplorationOnly,
+      rejectionReasons: candidateSearchArtifact.bestUnqualifiedCandidateForExplorationOnly === null
+        ? []
+        : candidateSearchArtifact.candidates.find((candidate) => candidate.id === candidateSearchArtifact.bestUnqualifiedCandidateForExplorationOnly)?.rejectionReasons ?? [],
+    },
     selectedCandidate: {
       id: selected?.id ?? null,
       magnification: selected?.magnification ?? null,
@@ -569,6 +584,9 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       label: "unqualified exploratory candidate; not used for confirmatory quality",
     } : null,
     matrixOperationIds: matrix.map(({ label, operation }) => ({ label, operationId: operation.operationId })),
+    qualityMatrixStatus: selected ? "completed" : "not-run-no-qualified-candidate",
+    qualityMatrix: qualityValues,
+    noCandidateResearchOutcome: noCandidateReport,
     decision,
     qualityAcceptance: PHASE_L_QUALITY_ACCEPTANCE,
     qualityDecisionEvidence,
@@ -587,6 +605,17 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
   };
   await testInfo.attach("phase-l-summary.json", { body: Buffer.from(JSON.stringify(summary, null, 2)), contentType: "application/json" });
   await writeFile(join(ARTIFACT_DIRECTORY, "phase-l-summary.json"), JSON.stringify(summary, null, 2));
+
+  expect(qualityDecisionEvidence, "Fixed Phase L native quality evidence must be available").not.toBeNull();
+  if (!qualityDecisionEvidence) throw new Error("Fixed Phase L native quality evidence was not produced");
+  expect(
+    qualityDecisionEvidence.outcome,
+    `Fixed Phase L native quality baseline must remain L-A; failed criteria: ${qualityDecisionEvidence.failedCriteria.join(", ")}`,
+  ).toBe("L-A");
+  expect(qualityDecisionEvidence.failedCriteria).toEqual([]);
+  expect(passesPhaseLConfirmatoryAcceptance(qualityDecisionEvidence)).toBe(true);
+  expect(b0ToB1EdgeBaseline?.changedPixelCount).toBe(0);
+  expect(b0ToB1EdgeBaseline?.rmse).toBe(0);
 });
 
 test("ordinary Chromium Phase L route remains an isolated research fixture", async ({ page }) => {

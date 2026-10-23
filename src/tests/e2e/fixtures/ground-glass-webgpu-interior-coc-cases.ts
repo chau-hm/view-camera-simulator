@@ -182,6 +182,143 @@ export function evaluatePhaseLQualityDecision(input: PhaseLQualityDecisionInput)
   } as const;
 }
 
+export type PhaseLCandidateSelectionRecord = Readonly<{
+  id: string;
+  score: readonly number[];
+  qualified: boolean;
+  rejectionReasons: readonly string[];
+}>;
+
+export function selectPhaseLCandidates<T extends PhaseLCandidateSelectionRecord>(candidates: readonly T[]) {
+  const sortedCandidates = [...candidates].sort((left, right) => {
+    for (let index = 0; index < Math.max(left.score.length, right.score.length); index += 1) {
+      const delta = (right.score[index] ?? 0) - (left.score[index] ?? 0);
+      if (delta) return delta;
+    }
+    return 0;
+  });
+  const qualifiedCandidates = sortedCandidates.filter((candidate) => candidate.qualified);
+  const selectedCandidate = qualifiedCandidates[0] ?? null;
+  return {
+    sortedCandidates,
+    qualifiedCandidates,
+    selectedCandidate,
+    bestUnqualifiedCandidate: selectedCandidate ? null : sortedCandidates[0] ?? null,
+  } as const;
+}
+
+export type PhaseLCandidateSearchArtifact<T extends PhaseLCandidateSelectionRecord> = Readonly<{
+  discoveryCandidateCount: number;
+  qualifiedCandidateCount: number;
+  predeclaredCriteria: unknown;
+  qualityAcceptance: typeof PHASE_L_QUALITY_ACCEPTANCE;
+  candidates: readonly T[];
+  selectedForConfirmation: string | null;
+  bestUnqualifiedCandidateForExplorationOnly: string | null;
+  nativeRuntime: unknown;
+  selectionPolicy: string;
+}>;
+
+export function buildPhaseLCandidateSearchArtifact<T extends PhaseLCandidateSelectionRecord>(input: {
+  candidates: readonly T[];
+  selectedCandidateId: string | null;
+  bestUnqualifiedCandidateId: string | null;
+  predeclaredCriteria: unknown;
+  qualityAcceptance: typeof PHASE_L_QUALITY_ACCEPTANCE;
+  nativeRuntime: unknown;
+  selectionPolicy: string;
+}): PhaseLCandidateSearchArtifact<T> {
+  const qualifiedCandidateCount = input.candidates.filter((candidate) => candidate.qualified).length;
+  const selected = input.selectedCandidateId === null
+    ? null
+    : input.candidates.find((candidate) => candidate.id === input.selectedCandidateId) ?? null;
+  const bestUnqualified = input.bestUnqualifiedCandidateId === null
+    ? null
+    : input.candidates.find((candidate) => candidate.id === input.bestUnqualifiedCandidateId) ?? null;
+  if (input.selectedCandidateId !== null && (!selected || !selected.qualified)) {
+    throw new Error("Phase L selected candidate must exist and be geometry-qualified");
+  }
+  if (input.selectedCandidateId === null && qualifiedCandidateCount > 0) {
+    throw new Error("Phase L cannot omit selection when a qualified candidate exists");
+  }
+  if (input.bestUnqualifiedCandidateId !== null && (!bestUnqualified || bestUnqualified.qualified)) {
+    throw new Error("Phase L exploratory candidate must exist and remain unqualified");
+  }
+
+  return {
+    discoveryCandidateCount: input.candidates.length,
+    qualifiedCandidateCount,
+    predeclaredCriteria: input.predeclaredCriteria,
+    qualityAcceptance: input.qualityAcceptance,
+    candidates: input.candidates,
+    selectedForConfirmation: input.selectedCandidateId,
+    bestUnqualifiedCandidateForExplorationOnly: input.bestUnqualifiedCandidateId,
+    nativeRuntime: input.nativeRuntime,
+    selectionPolicy: input.selectionPolicy,
+  };
+}
+
+export function buildPhaseLNoCandidateReport<T extends PhaseLCandidateSelectionRecord>(input: {
+  candidateSearch: PhaseLCandidateSearchArtifact<T>;
+  nativeRuntime: unknown;
+}) {
+  if (input.candidateSearch.selectedForConfirmation !== null || input.candidateSearch.qualifiedCandidateCount !== 0) {
+    throw new Error("Phase L L-D report requires no qualified or selected candidate");
+  }
+
+  const noMeasurement: PhaseLRoiQuality = { interiorFarRmse: null, edgeRmse: null };
+  const noPopulation: PhaseLRoiPopulations[keyof PhaseLRoiPopulations] = {
+    full32: null,
+    full64: null,
+    b0: null,
+    b1: null,
+  };
+  const qualityDecisionEvidence = evaluatePhaseLQualityDecision({
+    candidateQualified: false,
+    matchedNativeProvenance: false,
+    referenceConvergence: noMeasurement,
+    b0Quality: noMeasurement,
+    b1Quality: noMeasurement,
+    roiPopulations: { interiorFar: noPopulation, edge: noPopulation },
+    nearRgba: { rgbRmse: null, rgbMax: null, alphaRmse: null, alphaMax: null },
+    fallbackEvidence: {
+      interiorFarFallbackPixels: null,
+      interiorFarSharpFallbackPixels: null,
+      sourceRgbMismatchPixels: null,
+    },
+  });
+  const bestUnqualified = input.candidateSearch.bestUnqualifiedCandidateForExplorationOnly === null
+    ? null
+    : input.candidateSearch.candidates.find((candidate) => candidate.id === input.candidateSearch.bestUnqualifiedCandidateForExplorationOnly) ?? null;
+
+  return {
+    discoveryCandidateCount: input.candidateSearch.discoveryCandidateCount,
+    qualifiedCandidateCount: 0,
+    selectedCandidate: null,
+    bestUnqualifiedCandidate: bestUnqualified ? {
+      id: bestUnqualified.id,
+      score: bestUnqualified.score,
+      rejectionReasons: bestUnqualified.rejectionReasons,
+    } : null,
+    decision: qualityDecisionEvidence.outcome,
+    decisionReason: "No candidate satisfies the frozen geometry qualification.",
+    qualityMatrixStatus: "not-run-no-qualified-candidate",
+    qualityMatrix: null,
+    nativeRuntime: input.nativeRuntime,
+    qualityAcceptance: input.candidateSearch.qualityAcceptance,
+    qualityDecisionEvidence,
+  } as const;
+}
+
+export function passesPhaseLConfirmatoryAcceptance(
+  evaluation: ReturnType<typeof evaluatePhaseLQualityDecision> | null,
+) {
+  return evaluation !== null
+    && evaluation.outcome === "L-A"
+    && evaluation.failedCriteria.length === 0
+    && Object.values(evaluation.checks).every((passed) => passed === true);
+}
+
 export const resolvePhaseLCandidateWindow = (candidate: InteriorCocCandidate) =>
   resolveGroundGlassInspectionWindow({
     active: true,
