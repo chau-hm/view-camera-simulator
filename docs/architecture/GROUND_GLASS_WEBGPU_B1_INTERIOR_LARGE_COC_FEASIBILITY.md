@@ -8,7 +8,7 @@
 
 The first native run found a physically coherent Macro crop with a large connected region of 12 px radius-cap activation. Its then-reported 78 high-contrast edge pairs used a global mask, so that run did not prove the pairs were in the declared interior support. Its unconditional `L-A` assignment was not gated by numerical error bounds and is withdrawn; those results remain exploratory observations only.
 
-The corrective run re-evaluated all 12 geometry-only candidates using the interior-support rule and ran the matched quality matrix for the sole qualified candidate. The measured result satisfies the fixed reference-convergence and candidate-error bounds, matched ROI populations, Near RGBA and fallback checks, so the evaluator returns `L-A`. No production-readiness or general B1 quality claim follows from this one bounded Phase L result.
+The corrective run re-evaluated all 12 geometry-only candidates using the interior-support rule and ran the matched quality matrix for the sole qualified candidate. The measured result satisfies the fixed reference-convergence and candidate-error bounds, matched ROI populations, Near RGBA and fallback checks, so the evaluator returns `L-A`. Round 2 hardening makes the native acceptance test require `L-A` and all nine evaluator checks to pass; it saves the candidate/matrix/decision diagnostics first and performs the SPA retirement/remount checks before the final strict acceptance assertions. An `L-B` or `L-E` result can no longer pass by being compared with itself. No production-readiness or general B1 quality claim follows from this one bounded Phase L result.
 
 ### Confirmatory acceptance contract frozen after exploration
 
@@ -61,6 +61,8 @@ Twelve bounded candidates were rerun: 8×, 12×, and 16× at normalized pan `(0,
 | `m16-yn1` | `(0, -1)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
 
 The `m8-y0` candidate has 32 fewer qualifying high-contrast pairs than its global count: 78 global pairs, of which 46 have a capped far-side endpoint inside the 16 px interior-support mask. `m12-y0` demonstrates why the distinction matters: it has enough interior cap pixels, component size, and cap/far edge pixels, but no pair exceeds the 0.05 contrast threshold. The ranking remains lexicographic over geometry/physical counts only; B0/B1 quality outputs were not consulted. `m8-y0` is the sole qualified candidate.
+
+Candidate search serialization now treats `selectedForConfirmation` as nullable. If no candidate qualifies, the fixture preserves every candidate's measured geometry and rejection reasons, emits an L-D research result with `qualityMatrixStatus: "not-run-no-qualified-candidate"` and `qualityMatrix: null`, and does not dereference a missing selection. Unit coverage serializes this complete no-candidate artifact path; the native rerun in this round selected `m8-y0`, so a zero-qualified native scene outcome was not observed.
 
 ## E. Interior-region qualification
 
@@ -142,7 +144,9 @@ The matrix ran on native handle `aperture-g1-57e62380-55d2-4955-89ea-54742850082
 
 ## P. Negative controls and test integrity
 
-The Phase L unit tests verify canonical pan direction, bounded candidate enumeration, border-only and mixed interior-low-contrast/border-high-contrast rejection, a positive interior high-contrast candidate, physical far-only depth-edge masks, separate near/far ROI metrics, and the computed quality decision. The identically wrong B0/B1 control returns L-B despite zero fallback; poor reference convergence, empty/mismatched ROIs, and missing/non-finite metrics return L-E; a candidate error over the fixed limit and invalid Near RGBA return L-B; no qualified candidate returns L-D. The native spec verifies all 12 candidate counts, corrected qualification, geometry-only selection, same-magnification pan invariance, source/depth/validity/physical fingerprints, cap-12 Full ×32 reference identity, cap-12 Full ×32/×64 convergence, B1 error bounds, CPU/GPU radius diagnostic agreement, B1 fallback source-color parity, and near RGB/alpha invariance.
+The Phase L unit tests verify canonical pan direction, bounded candidate enumeration, border-only and mixed interior-low-contrast/border-high-contrast rejection, a positive interior high-contrast candidate, physical far-only depth-edge masks, separate near/far ROI metrics, and the computed quality decision. The identically wrong B0/B1 control returns L-B despite zero fallback; poor reference convergence, empty/mismatched ROIs, and missing/non-finite metrics return L-E; a candidate error over the fixed limit and invalid Near RGBA return L-B; no qualified candidate returns L-D. Round 2 adds direct fixed-baseline controls: an over-limit B1 edge error, poor Full reference convergence, Near alpha-only regression, and L-D each fail confirmatory acceptance. The 12-candidate no-selection case is serialized and round-tripped with all candidate rejection reasons, a nullable selected ID, L-D, no quality matrix, and the best unqualified candidate retained. The native spec persists candidate and raw matrix evidence before strict acceptance, then requires exact L-A/all checks after exact-handle SPA cleanup. It verifies all 12 candidate counts, corrected qualification, geometry-only selection, same-magnification pan invariance, source/depth/validity/physical fingerprints, cap-12 Full ×32 reference identity, cap-12 Full ×32/×64 convergence, B1 error bounds, CPU/GPU radius diagnostic agreement, B1 fallback source-color parity, and near RGB/alpha invariance.
+
+A temporary native mutation that raised B1 edge RMSE above the frozen limit produced L-B, recorded `candidateWithinAbsoluteBounds` and `candidateWithinUncertaintyBounds` as failed, completed SPA disposal, and then failed the fixed L-A assertion with the computed L-B visible in the error. The mutation was removed and the native baseline passed again. A separate temporary native reference-RMSE mutation stalled before producing a test result and was interrupted; no native L-E mutation result is claimed. The focused unit control independently verifies poor reference convergence → L-E and fixed-baseline acceptance false. Near-alpha and L-D acceptance sensitivity are also covered by unit tests.
 
 No deliberate source mutation was left in the branch. A temporary restoration of the old global-only high-contrast qualification caused the mixed regression to fail because the invalid candidate became qualified; the corrected predicate was restored and the focused suite passed. The B1 quality negative control changes a good fixture candidate's measured edge RMSE to 0.006 (>0.005), and the evaluator returns L-B. A temporary normalized-pan mutation also caused the focused assertion to fail (`centerV` became `0.9375` instead of remaining above `0.5`); the helper was restored. A separate temporary mutation of the declared 16 px clearance threshold was not run because the approval gate rejected editing that predeclared threshold; threshold-mutation sensitivity for that threshold is not claimed. Phase K's pre-existing luma and B1 fixed-case assertions remain unchanged.
 
@@ -150,7 +154,7 @@ No deliberate source mutation was left in the branch. A temporary restoration of
 
 The Phase L fixture is enabled only by the research query `?phaseL=1` and lives in the existing test fixture. No production `GroundGlassRTT`, shader, optics calculation, public route, scene registration, backend policy, or product control is changed. Native evidence is distinct from the ordinary Chromium compatibility run, which may execute Three.js WebGPU code on a WebGL2 fallback.
 
-The focused Phase L native suite was rerun after implementation commit `ed0cbef6743ac435156820457986556d92d46d99`: 1 passed and 1 native-only skip. It asserted `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js r186. The ordinary Phase L control passed separately (1 passed, 1 native-only skip) under WebGL2 fallback. The Phase C–K native regression batch passed 28 tests with 5 ordinary-Chromium controls skipped; the separately run ordinary Chromium batch passed 15 controls with 18 native-only tests skipped. The production-preview isolation spec passed 2 tests. The full unit suite passed 2,556 tests across 275 files; typecheck, lint, CSS check, and production build passed. A first native C–K attempt used a restricted PATH that resolved an unusable system Git shim in two diagnostic specs; rerunning with the actual Homebrew Git on PATH passed those specs. The production-preview test used its `/` base-path configuration; no production renderer changes were needed.
+Round 2 validation ran on the existing PR worktree based on `d3f71646c0f91bd689f33eeb4bba5a51e70fd162`, with the review-fix source changes applied. The restored native Phase L spec passed (1 passed, 1 native-only skip) and asserted `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js r186. Its computed decision was L-A, all nine checks were true, and `failedCriteria` was empty. The ordinary Phase L control passed separately (1 passed, 1 native-only skip) while reporting the expected WebGL2 fallback. The Phase C–K native regression batch passed 30 tests with 6 ordinary-only skips; the separate ordinary Chromium batch passed 16 controls with 20 native-only skips. The dedicated production-preview isolation spec passed both tests. The full unit suite passed 2,563 tests across 275 files; typecheck, lint, CSS check, and production build passed. These native and ordinary results are separate; no fallback run is counted as native evidence. The production-preview test used its `/` base-path configuration; no production renderer changes were needed.
 
 ## R. Known limitations
 
@@ -194,4 +198,37 @@ Focused unit tests:
 npm test -- src/tests/unit/groundGlassWebGpuInteriorCoc.test.ts
 ```
 
+Phase C–K native renderer regressions and separate ordinary Chromium controls:
+
+```bash
+OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- \
+  src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts \
+  --project=chrome-native-webgpu --workers=1
+
+npm run test:e2e -- \
+  src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts \
+  src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts \
+  --project=chromium --workers=1
+
+npm run test:e2e -- --config=playwright.production.config.ts \
+  src/tests/e2e/architecture-rise-webgpu-production.spec.ts --workers=1
+```
+
 The corrective native measurement tree was rerun on implementation commit `ed0cbef6743ac435156820457986556d92d46d99`. It evaluated the 12 fixed candidates and froze `m8-y0` (8×, normalized pan `(0,0)`, inspection center `(0.5,0.5)`) before the eight-operation matrix. The frozen numerical acceptance contract is the table in Section A; it was set after the exploratory run and before the corrective rerun. The recorded matrix operation IDs are `aperture-g1-57e62380-55d2-4955-89ea-547428500824:op-14` through `:op-21`. The Playwright run emitted candidate, quality, and lifecycle JSON plus image attachments under ignored `test-results/`; later Playwright invocations replace that directory, so rerunning the native command regenerates these artifacts. They are runtime output, not committed golden images.
+
+The restored Round 2 native run used source changes based on reviewed commit `d3f71646c0f91bd689f33eeb4bba5a51e70fd162`, committed as `1ade10cd5138c5ae675f2920a95a4711538cbfb0`. It again selected `m8-y0` from 12 candidates, computed L-A with all nine checks true, and emitted the candidate-search, raw quality/resource evidence, quality decision, and summary artifacts before the final acceptance checks. Its handle was `aperture-g1-955f8c7f-e373-4c63-b9d6-2eafdf298c5e`, with the eight matrix operations `:op-14` through `:op-21`; SPA cleanup disposed 42/42 resources, and the separately remounted handle `aperture-g2-7788df33-8384-4bbc-a3b9-d3db84a25a93` also disposed 42/42. A native zero-qualified candidate did not occur in this run; that report path is covered by the focused unit tests.
