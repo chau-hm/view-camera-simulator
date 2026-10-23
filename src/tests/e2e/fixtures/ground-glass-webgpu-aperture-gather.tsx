@@ -5,6 +5,7 @@ import { HashRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 import * as THREE from "three";
 import { MeshBasicNodeMaterial, WebGPURenderer } from "three/webgpu";
 import type Node from "three/src/nodes/core/Node.js";
+import type { ApertureValue } from "../../../types/camera";
 import {
   Loop,
   abs,
@@ -90,12 +91,26 @@ import {
   referenceFarGatherTarget,
   sourcePixelAtGatherPixelCenter,
 } from "./ground-glass-webgpu-far-reconstruction-cases";
+import {
+  compareLinearRgbaRasters,
+  countSourceIdentityMismatches,
+  countFallbackSourceColorMismatches,
+  depthBoundaryDistances,
+  largestBinaryComponent,
+  measureLargeCocFarQuality,
+  PHASE_K_READBACK_ORIGIN,
+  projectWorldPointToPixelCenter,
+  readbackRowForTopOriginPixel,
+  PHASE_K_LARGE_COC_STATE,
+  type ProjectedPixelCenter,
+} from "./ground-glass-webgpu-correspondence-large-coc-cases";
 
 const WIDTH = APERTURE_GATHER_CASES.sourceWidthPx;
 const HEIGHT = APERTURE_GATHER_CASES.sourceHeightPx;
 const phaseGStudyEnabled = new URLSearchParams(window.location.search).get("phaseG") === "1";
 const phaseIStudyEnabled = new URLSearchParams(window.location.search).get("phaseI") === "1";
-const phaseJStudyEnabled = new URLSearchParams(window.location.search).get("phaseJ") === "1";
+const phaseKStudyEnabled = new URLSearchParams(window.location.search).get("phaseK") === "1";
+const phaseJStudyEnabled = phaseKStudyEnabled || new URLSearchParams(window.location.search).get("phaseJ") === "1";
 const phaseHStudyEnabled = phaseIStudyEnabled || phaseJStudyEnabled || new URLSearchParams(window.location.search).get("phaseH") === "1";
 const phaseResearchEnabled = phaseGStudyEnabled || phaseHStudyEnabled;
 const CHANGE_EVENT = "ground-glass-webgpu-aperture-gather-change";
@@ -245,6 +260,7 @@ type FixtureHandleEvidence = {
     compositeColor: [number, number, number];
     validityCode: number;
     phaseJComparison?: Record<string, unknown>;
+    correspondence?: Record<string, unknown>;
   }>;
   gatherReferenceProbes: GatherReferenceProbe[];
   unresolvedSample: null | {
@@ -323,6 +339,8 @@ type MountedHandle = {
     displayPhaseI?: boolean;
     edgeCase?: PhaseHEdgeCase;
     phaseJCaseId?: PhaseJOpticalCaseId;
+    phaseJOverrides?: Readonly<{ apertureFNumber?: ApertureValue; focusDistanceMm?: number; cropMagnification?: number; cropPan?: { x: number; y: number } }>;
+    phaseKCaseId?: string;
   }) => Promise<string>;
   startHeldReadback: () => string;
   injectFailure: (stage: FailureStage) => Promise<string>;
@@ -356,6 +374,13 @@ const linearToSrgbByte = (value: number) => {
   const linear = Math.min(1, Math.max(0, value));
   const srgb = linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.pow(linear, 1 / 2.4) - 0.055;
   return Math.round(srgb * 255);
+};
+
+const fingerprintView = (values: ArrayBufferView) => {
+  const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength);
+  let hash = 2166136261;
+  for (const byte of bytes) hash = Math.imul(hash ^ byte, 16777619);
+  return (hash >>> 0).toString(16).padStart(8, "0");
 };
 
 const rgbaToPngDataUrl = (rgba: Float32Array, width: number, height: number, scale = 1) => {
@@ -2416,6 +2441,11 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
     const phaseJReferenceFarRasters = new Map<string, Float32Array>();
     const phaseJNearRasters = new Map<string, Float32Array>();
     const phaseJSourceRasters = new Map<string, Float32Array>();
+    const phaseKCapReferenceRasters = new Map<string, {
+      far: Float32Array;
+      composite: Float32Array;
+      inputFingerprints: { sourceColor: string; worldPositionAndDepth: string; validity: string; physical: string };
+    }>();
     const render = (input: {
       operationKind: OperationEvidence["kind"];
       quality?: QualityMode;
@@ -2436,6 +2466,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
       displayPhaseI?: boolean;
       edgeCase?: PhaseHEdgeCase;
       phaseJCaseId?: PhaseJOpticalCaseId;
+      phaseJOverrides?: Readonly<{ apertureFNumber?: ApertureValue; focusDistanceMm?: number; cropMagnification?: number; cropPan?: { x: number; y: number } }>;
+      phaseKCaseId?: string;
       holdReadback?: boolean;
       failureStage?: FailureStage;
     } = { operationKind: "render" }) => {
@@ -2593,7 +2625,10 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             ],
           };
           if (input.phaseJCaseId && !phaseJStudyEnabled) {
-            throw new Error("Phase J canonical optical cases are available only on the phaseJ=1 research fixture route");
+            throw new Error("Phase J canonical optical cases are available only on a Phase J/K research fixture route");
+          }
+          if (input.phaseKCaseId && !phaseKStudyEnabled) {
+            throw new Error("Phase K controls are available only on the phaseK=1 research fixture route");
           }
           let crop: boolean;
           let appliedFilmNormal: [number, number, number];
@@ -2601,7 +2636,6 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           let appliedFilmBasisY: [number, number, number];
           let phaseJAppliedState: Record<string, unknown> | null = null;
           if (phaseJCase) {
-            crop = false;
             camera.clearViewOffset();
             phaseJState = createPhaseJOpticalState(
               phaseJCase.id,
@@ -2610,6 +2644,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               sourceHeightPx,
               settings.maximumCoCRadiusPx,
               renderer.coordinateSystem,
+              input.phaseJOverrides,
             );
             const opticalState = phaseJState.renderState;
             physicalProjectionInverse.value.fromArray([...opticalState.camera.inverseProjectionMatrixElements]);
@@ -2636,7 +2671,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             sampledFilmWidthMm.value = opticalState.film.sampledWidthMm;
             sampledFilmHeightMm.value = opticalState.film.sampledHeightMm;
             currentApertureFNumber = opticalState.optics.apertureFNumber;
-            currentCrop = false;
+            crop = phaseJState.inspectionWindow.active;
+            currentCrop = crop;
             currentFocusOffsetMm = 0;
             currentFilmTiltDeg = 0;
             forceUnresolvedMask.value = 0;
@@ -2677,7 +2713,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               cameraMatrices: phaseJState.canonicalCameraFingerprint,
               sourceDimensionsPx: { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
               gatherDimensionsPx: { widthPx: gatherWidth, heightPx: gatherHeight },
-              crop: false,
+              crop,
+              inspectionWindow: phaseJState.inspectionWindow,
               observerCameraPlacement: "not-used-for-photographic-capture",
             };
           } else {
@@ -2741,7 +2778,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             filmNormal: appliedFilmNormal,
             filmBasisX: appliedFilmBasisX,
             filmBasisY: appliedFilmBasisY,
-            crop: cameraView?.enabled === true,
+            crop: phaseJState ? phaseJState.inspectionWindow.active : cameraView?.enabled === true,
             cameraView: cameraView ? {
               enabled: cameraView.enabled,
               fullWidth: cameraView.fullWidth,
@@ -3162,19 +3199,35 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             maximumAbsSignedCoCMm,
             maximumPhysicalAxisMm,
           };
-          const objectDefinitions = phaseJState
+          const objectDefinitions: Array<{
+            id: string;
+            worldPointMm: [number, number, number];
+            worldPointM: [number, number, number];
+            pixelTopOrigin: { x: number; y: number };
+            projection?: ProjectedPixelCenter & { existingHelperAgreement: boolean };
+          }> = phaseJState
             ? getPhaseJOpticalCase(phaseJState.caseId).pointSamples.map((sample) => {
-              const projection = projectPhaseJKnownPointToSourcePixel(
-                phaseJState!,
-                sample.pointMm,
-                sourceWidthPx,
-                sourceHeightPx,
+              const worldPointM = [sample.pointMm.x * 0.001, sample.pointMm.y * 0.001, sample.pointMm.z * 0.001] as [number, number, number];
+              const projection = projectWorldPointToPixelCenter({
+                worldPointM,
+                worldMatrixElements: phaseJState!.canonicalCameraFingerprint.worldMatrixElements,
+                projectionMatrixElements: phaseJState!.canonicalCameraFingerprint.projectionMatrixElements,
+                width: sourceWidthPx,
+                height: sourceHeightPx,
+              });
+              const establishedProjection = projectPhaseJKnownPointToSourcePixel(
+                phaseJState!, sample.pointMm, sourceWidthPx, sourceHeightPx,
               );
               return {
                 id: sample.id,
                 worldPointMm: [sample.pointMm.x, sample.pointMm.y, sample.pointMm.z] as [number, number, number],
-                worldPointM: [sample.pointMm.x * 0.001, sample.pointMm.y * 0.001, sample.pointMm.z * 0.001] as [number, number, number],
-                pixelTopOrigin: { x: projection.x, y: projection.y },
+                worldPointM,
+                pixelTopOrigin: { x: projection.pixelTopOrigin[0], y: projection.pixelTopOrigin[1] },
+                projection: {
+                  ...projection,
+                  existingHelperAgreement: establishedProjection.x === projection.pixelTopOrigin[0]
+                    && establishedProjection.y === projection.pixelTopOrigin[1],
+                },
               };
             })
             : [
@@ -3210,14 +3263,185 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 validityCode: validityReadback[offset]!,
               };
             };
-            const top = read(y);
-            const bottom = read(sourceHeightPx - 1 - y);
+            const selectedReadbackY = phaseKStudyEnabled
+              ? readbackRowForTopOriginPixel(y, sourceHeightPx, PHASE_K_READBACK_ORIGIN)
+              : y;
+            const selectedValue = read(selectedReadbackY);
             const expectedPointMm = new THREE.Vector3(...definition.worldPointMm);
-            const topErrorMm = new THREE.Vector3(...top.worldPositionMm).distanceTo(expectedPointMm);
-            const bottomErrorMm = new THREE.Vector3(...bottom.worldPositionMm).distanceTo(expectedPointMm);
-            const selected = topErrorMm <= bottomErrorMm
-              ? { value: top, row: y, origin: "top" as const, errorMm: topErrorMm }
-              : { value: bottom, row: sourceHeightPx - 1 - y, origin: "bottom" as const, errorMm: bottomErrorMm };
+            const selectedErrorMm = new THREE.Vector3(...selectedValue.worldPositionMm).distanceTo(expectedPointMm);
+            const legacyBottom = read(sourceHeightPx - 1 - y);
+            const legacyBottomErrorMm = new THREE.Vector3(...legacyBottom.worldPositionMm).distanceTo(expectedPointMm);
+            const selected = phaseKStudyEnabled
+              ? {
+                value: selectedValue,
+                row: selectedReadbackY,
+                origin: PHASE_K_READBACK_ORIGIN,
+                errorMm: selectedErrorMm,
+              }
+              : selectedErrorMm <= legacyBottomErrorMm
+                ? { value: selectedValue, row: selectedReadbackY, origin: "top" as const, errorMm: selectedErrorMm }
+                : { value: legacyBottom, row: sourceHeightPx - 1 - y, origin: "bottom" as const, errorMm: legacyBottomErrorMm };
+            const correspondence = phaseJState && definition.projection
+              ? (() => {
+                const projection = definition.projection;
+                const pixelCenterNdc = new THREE.Vector2(
+                  2 * (x + 0.5) / sourceWidthPx - 1,
+                  1 - 2 * (y + 0.5) / sourceHeightPx,
+                );
+                const raycaster = new THREE.Raycaster();
+                raycaster.near = camera.near;
+                raycaster.far = camera.far;
+                raycaster.setFromCamera(pixelCenterNdc, camera);
+                const subject = phaseJState.sceneId === "interior-corner" ? interiorProxy : architectureProxy;
+                const intersections = subject ? raycaster.intersectObject(subject, true) : [];
+                const firstHit = intersections[0] ?? null;
+                const targetAlongRayM = expectedPointMm.clone().multiplyScalar(0.001)
+                  .sub(raycaster.ray.origin).dot(raycaster.ray.direction);
+                const closestRayPointM = raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, targetAlongRayM);
+                const targetToRayLateralMm = expectedPointMm.clone().multiplyScalar(0.001).distanceTo(closestRayPointM) * 1000;
+                const hitPointMm = firstHit?.point.clone().multiplyScalar(1000) ?? null;
+                const targetToIntersectionMm = hitPointMm ? expectedPointMm.distanceTo(hitPointMm) : null;
+                const gpuPositionMm = new THREE.Vector3(...selected.value.worldPositionMm);
+                const gpuPositionWorldM = gpuPositionMm.clone().multiplyScalar(0.001);
+                const gpuToIntersectionMm = hitPointMm ? gpuPositionMm.distanceTo(hitPointMm) : null;
+                const hitDistanceMm = firstHit ? firstHit.distance * 1000 : null;
+                const targetAlongRayMm = targetAlongRayM * 1000;
+                const gpuAlongRayMm = gpuPositionWorldM.clone().sub(raycaster.ray.origin).dot(raycaster.ray.direction) * 1000;
+                const targetPixelQuantizationPx = Math.hypot(
+                  projection.continuousPixelTopOrigin[0] - (x + 0.5),
+                  projection.continuousPixelTopOrigin[1] - (y + 0.5),
+                );
+                const hitCameraSpace = firstHit
+                  ? firstHit.point.clone().applyMatrix4(camera.matrixWorldInverse)
+                  : null;
+                const surfaceCpuFootprint = hitPointMm
+                  ? computePhaseJKnownPointFootprint(phaseJState!, {
+                    x: hitPointMm.x,
+                    y: hitPointMm.y,
+                    z: hitPointMm.z,
+                  })
+                  : null;
+                const gpuSignedCoCMm = selected.value.physicalRgba16Float[0];
+                const gpuPhysical = selected.value.physicalRgba16Float;
+                const surfacePhysicalDelta = surfaceCpuFootprint ? {
+                  signedCoCDiameterMm: gpuPhysical[0] - surfaceCpuFootprint.signedCoCDiameterMm,
+                  majorRadiusMm: gpuPhysical[1] - surfaceCpuFootprint.majorRadiusMm,
+                  minorRadiusMm: gpuPhysical[2] - surfaceCpuFootprint.minorRadiusMm,
+                } : null;
+                const intent = phaseJState.sceneId === "interior-corner"
+                  ? { documentedOffsetMm: 18, purpose: "focus target is intentionally 18 mm inward from the side-wall datum" }
+                  : { documentedOffsetMm: 10, purpose: "focus target is intentionally 10 mm in front of the façade to avoid z-fighting" };
+                const surfaceOffsetMatchesIntent = targetToIntersectionMm !== null
+                  && Math.abs(targetToIntersectionMm - intent.documentedOffsetMm) <= 3;
+                const occludedAlongPixelRay = hitDistanceMm !== null && hitDistanceMm + 2 < targetAlongRayMm
+                  && !surfaceOffsetMatchesIntent;
+                const gpuMatchesRayIntersection = gpuToIntersectionMm !== null && gpuToIntersectionMm <= 0.5;
+                const classification = targetToIntersectionMm !== null && targetToIntersectionMm <= 2 && gpuMatchesRayIntersection
+                  ? "A — On-surface visible target"
+                  : surfaceOffsetMatchesIntent && gpuMatchesRayIntersection
+                    ? "B — Deliberately offset teaching target"
+                    : occludedAlongPixelRay
+                      ? "C — Occluded target"
+                      : !projection.inBounds || !firstHit
+                        ? "D — Outside relevant visible geometry"
+                        : "E — Unresolved or ambiguous target";
+                const residualAttribution = classification.startsWith("A")
+                  ? "K5-A: selected pixel-center ray intersects the same visible surface; residual is bounded by raster pixel-center quantization"
+                  : classification.startsWith("B")
+                    ? "K5-B: target has the documented intentional surface offset; GPU world reconstruction agrees with the actual first visible mesh intersection"
+                    : classification.startsWith("C")
+                      ? "K5-C: an earlier mesh intersection occludes the canonical target along the selected pixel-center ray"
+                      : classification.startsWith("D")
+                        ? "K5-D: projected target is outside the frame or no relevant subject mesh intersects the pixel-center ray"
+                        : "K5-E/K5-F: projection, material visibility, geometry or reconstruction evidence remains ambiguous";
+                const materialValue = firstHit?.object instanceof THREE.Mesh ? firstHit.object.material : null;
+                const materials = Array.isArray(materialValue) ? materialValue : materialValue ? [materialValue] : [];
+                return {
+                  classification,
+                  classificationEvidence: {
+                    targetIntent: intent.purpose,
+                    documentedOffsetMm: intent.documentedOffsetMm,
+                    targetToIntersectionMm,
+                    targetMinusIntersectionMm: hitPointMm ? expectedPointMm.clone().sub(hitPointMm).toArray() : null,
+                    surfaceOffsetMatchesIntent,
+                    intendedSurfaceOffsetMm: intent.documentedOffsetMm,
+                    targetAlongRayMm,
+                    firstIntersectionAlongPixelRayMm: hitDistanceMm,
+                    targetToIntersectionAlongRayMm: hitDistanceMm === null ? null : targetAlongRayMm - hitDistanceMm,
+                    gpuAlongRayMm,
+                    gpuToIntersectionAlongRayMm: hitDistanceMm === null ? null : gpuAlongRayMm - hitDistanceMm,
+                    occludedAlongPixelRay,
+                    gpuMatchesRayIntersection,
+                    residualAttribution,
+                    pixelCenterQuantizationPx: targetPixelQuantizationPx,
+                  },
+                  projection: {
+                    worldPointMm: definition.worldPointMm,
+                    worldPointM: definition.worldPointM,
+                    cameraSpaceM: projection.cameraSpaceM,
+                    clipSpace: projection.clipSpace,
+                    ndc: projection.ndc,
+                    continuousPixelTopOrigin: projection.continuousPixelTopOrigin,
+                    selectedPixelTopOrigin: { x, y },
+                    selectedPixelCenterTopOrigin: [x + 0.5, y + 0.5],
+                    existingProjectionHelperAgreement: projection.existingHelperAgreement,
+                    cameraSpaceDepthM: -projection.cameraSpaceM[2],
+                    pixelCenterQuantizationPx: targetPixelQuantizationPx,
+                  },
+                  pixelCenterRay: {
+                    originM: raycaster.ray.origin.toArray(),
+                    directionWorld: raycaster.ray.direction.toArray(),
+                    targetToRayLateralMm,
+                  },
+                  firstEligibleIntersection: firstHit ? {
+                    objectName: firstHit.object.name,
+                    objectType: firstHit.object.type,
+                    objectId: firstHit.object.id,
+                    faceIndex: firstHit.faceIndex,
+                    pointMm: firstHit.point.clone().multiplyScalar(1000).toArray(),
+                    rayDistanceMm: hitDistanceMm,
+                    cameraSpaceDepthMm: hitCameraSpace ? -hitCameraSpace.z * 1000 : null,
+                    depthWrite: materials.every((material) => material.depthWrite),
+                    visible: firstHit.object.visible,
+                    transparent: materials.some((material) => material.transparent),
+                    alphaTest: materials.map((material) => material.alphaTest),
+                    side: materials.map((material) => material.side),
+                    renderOrder: firstHit.object.renderOrder,
+                  } : null,
+                  gpuDepth: selected.value.gpuDepth,
+                  gpuWorldPositionMm: selected.value.worldPositionMm,
+                  gpuToFirstIntersectionMm: gpuToIntersectionMm,
+                  targetToGpuResidualMm: selected.errorMm,
+                  targetToFirstIntersectionMm: targetToIntersectionMm,
+                  firstIntersectionToGpuMm: gpuToIntersectionMm,
+                  geometryTransformEvidence: { subjectScale: subject?.scale.toArray() ?? null, subjectPositionM: subject?.position.toArray() ?? null },
+                  gpuDepthConvention: "Three.js WebGPUCoordinateSystem; original native source depth readback",
+                  surfaceOptics: surfaceCpuFootprint ? {
+                    status: gpuMatchesRayIntersection && selected.value.validityCode === 1 ? "SURFACE_VERIFIED" : "UNVERIFIED",
+                    criterion: "GPU world point within 0.5 mm of the first CPU ray/mesh intersection; validity code 1; physical footprint compared to canonical CPU at that visible mesh point",
+                    surfaceWorldPointMm: hitPointMm!.toArray(),
+                    gpuWorldPointMm: selected.value.worldPositionMm,
+                    gpuToSurfaceMm: gpuToIntersectionMm,
+                    cpu: {
+                      valid: surfaceCpuFootprint.valid,
+                      signedCoCDiameterMm: surfaceCpuFootprint.signedCoCDiameterMm,
+                      majorRadiusMm: surfaceCpuFootprint.majorRadiusMm,
+                      minorRadiusMm: surfaceCpuFootprint.minorRadiusMm,
+                      orientationRad: surfaceCpuFootprint.orientationRad,
+                    },
+                    gpu: {
+                      validityCode: selected.value.validityCode,
+                      signedCoCDiameterMm: gpuPhysical[0],
+                      majorRadiusMm: gpuPhysical[1],
+                      minorRadiusMm: gpuPhysical[2],
+                      orientationRad: gpuPhysical[3] * Math.PI,
+                      cocClass: gpuSignedCoCMm < -1e-5 ? "near" : gpuSignedCoCMm > 1e-5 ? "far" : "neutral",
+                    },
+                    gpuMinusCpu: surfacePhysicalDelta,
+                  } : null,
+                };
+              })()
+              : null;
             const phaseJComparison = phaseJState
               ? (() => {
                 const canonicalCpu = computePhaseJKnownPointFootprint(phaseJState!, {
@@ -3284,6 +3508,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               pixelReadbackOrigin: selected.origin,
               worldPositionErrorMm: selected.errorMm,
               ...(phaseJComparison ? { phaseJComparison } : {}),
+              ...(correspondence ? { correspondence } : {}),
               ...selected.value,
             };
           });
@@ -3316,7 +3541,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               maximumCoCRadiusPx: settings.maximumCoCRadiusPx,
               cameraZMm: camera.position.z * 1000,
               edgeCase: currentEdgeCase,
-              readbackOrigin: evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom",
+              readbackOrigin: phaseKStudyEnabled
+                ? PHASE_K_READBACK_ORIGIN
+                : evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom",
               colorsRaw: colorReadback,
               physicalRaw: physicalReadback,
               validityRaw: validityReadback,
@@ -3349,14 +3576,33 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
           if (phaseJState) {
             const sourceDimensions = { widthPx: sourceWidthPx, heightPx: sourceHeightPx };
             const gatherDimensions = { widthPx: farTarget.width, heightPx: farTarget.height };
-            const phaseJReadbackOrigin = evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom";
+            const phaseJReadbacks = phaseHReadbacks as [
+              Uint8Array | Uint16Array | Float32Array,
+              Uint8Array | Uint16Array | Float32Array,
+              Uint8Array | Uint16Array | Float32Array,
+              Uint8Array | Uint16Array | Float32Array | null,
+              Uint8Array | Uint16Array | Float32Array | null,
+            ] | null;
+            const phaseJSourceIdentityRaw = phaseJReadbacks?.[0] instanceof Float32Array ? phaseJReadbacks[0] : null;
+            const phaseJReadbackOrigin: "top" | "bottom" = phaseKStudyEnabled
+              ? PHASE_K_READBACK_ORIGIN
+              : evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom";
+            const sourceIdentityOrientation = phaseJSourceIdentityRaw ? {
+              policy: "fixed-global-top-origin-readback-to-top-origin-array",
+              selectedOrigin: phaseJReadbackOrigin,
+              calibration: "GPU-authored source-identity pass storing integer top-origin texel coordinates",
+              bottomOriginMismatchCount: countSourceIdentityMismatches(phaseJSourceIdentityRaw, sourceWidthPx, sourceHeightPx, "bottom"),
+              topOriginMismatchCount: countSourceIdentityMismatches(phaseJSourceIdentityRaw, sourceWidthPx, sourceHeightPx, "top"),
+              pixelCount: sourceWidthPx * sourceHeightPx,
+            } : null;
             const sourceTop = toTopOriginRgba(colorReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true);
             const physicalTop = toTopOriginRgba(physicalReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true);
             const validityTop = toTopOriginValidity(validityReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin);
             const worldTop = toTopOriginRgba(worldReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, false);
+            const radiusDiagnosticsTop = toTopOriginRgba(gatherRadiusDiagnosticsReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true);
             const gatherFarTop = toTopOriginRgba(farReadback, farTarget.width, farTarget.height, phaseJReadbackOrigin, true);
             const nearTop = toTopOriginRgba(nearReadback, nearTarget.width, nearTarget.height, phaseJReadbackOrigin, true);
-            const sourceKey = `${phaseJState.caseId}|${sourceWidthPx}x${sourceHeightPx}|${settings.maximumCoCRadiusPx}`;
+            const sourceKey = `${phaseJState.caseId}|${sourceWidthPx}x${sourceHeightPx}|f${phaseJState.cameraState.aperture}|focus${phaseJState.cameraState.focusDistanceMm}|film${sampledFilmWidthMm.value}x${sampledFilmHeightMm.value}|${settings.maximumCoCRadiusPx}`;
             if (farTarget.width === sourceWidthPx && settings.sampleCount === 32) {
               phaseJReferenceFarRasters.set(`${sourceKey}|f${phaseJState.cameraState.aperture}|full32`, gatherFarTop.slice());
             }
@@ -3373,13 +3619,6 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 physical: physicalTop,
                 validity: validityTop,
               }).baselineFar;
-            const phaseJReadbacks = phaseHReadbacks as [
-              Uint8Array | Uint16Array | Float32Array,
-              Uint8Array | Uint16Array | Float32Array,
-              Uint8Array | Uint16Array | Float32Array,
-              Uint8Array | Uint16Array | Float32Array | null,
-              Uint8Array | Uint16Array | Float32Array | null,
-            ] | null;
             const candidateFarRaw = input.candidate ? phaseJReadbacks?.[3] : null;
             const candidateCompositeRaw = input.candidate ? phaseJReadbacks?.[4] : null;
             const candidateFar = candidateFarRaw instanceof Uint16Array
@@ -3441,10 +3680,24 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             let maximumClampedRadiusPx = 0;
             let maximumAbsCoCMm = 0;
             let maximumPhysicalAxisMm = 0;
+            let nearCoCPixelCount = 0;
+            let neutralCoCPixelCount = 0;
+            let farCoCPixelCount = 0;
+            let gpuCapActivatedPixelCount = 0;
+            let gpuCapActivatedNearPixelCount = 0;
+            let gpuCapActivatedFarPixelCount = 0;
+            let capActivatedNonBlackSourcePixelCount = 0;
+            let capActivatedDepthBoundaryPixelCount = 0;
+            let capActivatedInteriorPixelCount = 0;
+            let radiusDiagnosticMismatchCount = 0;
+            let maximumRadiusDiagnosticErrorPx = 0;
+            let maximumObservedCapScale = 1;
+            const capActivatedMask = new Uint8Array(sourceWidthPx * sourceHeightPx);
+            const capActivatedSamples: Array<Record<string, unknown>> = [];
             const distinctDepthBuckets = new Set<number>();
             let fallbackPixelCount = 0;
             let farFallbackPixelCount = 0;
-            let fallbackSourceColorMismatchCount = 0;
+            const sourceFallbackMask = new Uint8Array(sourceWidthPx * sourceHeightPx);
             let nearAlphaCoveragePixelCount = 0;
             let maximumNearAlpha = 0;
             for (let offset = 3; offset < nearTop.length; offset += 4) {
@@ -3467,6 +3720,9 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               }
               if (validityTop[pixel] === 1) {
                 const cocMm = physicalTop[offset] ?? 0;
+                if (cocMm < -0.00001) nearCoCPixelCount += 1;
+                else if (cocMm > 0.00001) farCoCPixelCount += 1;
+                else neutralCoCPixelCount += 1;
                 const majorMm = physicalTop[offset + 1] ?? 0;
                 const minorMm = physicalTop[offset + 2] ?? 0;
                 const orientationRad = (physicalTop[offset + 3] ?? 0) * Math.PI;
@@ -3478,9 +3734,69 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                   sourceDimensions,
                 );
                 const radiusPx = maximumPixelEllipseRadius(ellipse);
-                maximumUnclampedRadiusPx = Math.max(maximumUnclampedRadiusPx, radiusPx);
-                maximumClampedRadiusPx = Math.max(maximumClampedRadiusPx, Math.min(radiusPx, settings.maximumCoCRadiusPx));
-                if (radiusPx > settings.maximumCoCRadiusPx + 1e-4) capActivatedPixelCount += 1;
+                const cpuClampedEllipse = clampPixelEllipse(ellipse, settings.maximumCoCRadiusPx);
+                const expectedClampScale = cpuClampedEllipse.clampScale;
+                const gpuMaximumRadiusPx = radiusDiagnosticsTop[offset] ?? 0;
+                const gpuClampScale = radiusDiagnosticsTop[offset + 1] ?? 1;
+                const gpuClampedRadiusPx = radiusDiagnosticsTop[offset + 2] ?? 0;
+                const gpuConfiguredRadiusPx = radiusDiagnosticsTop[offset + 3] ?? settings.maximumCoCRadiusPx;
+                const radiusErrorPx = Math.abs(gpuMaximumRadiusPx - radiusPx);
+                maximumRadiusDiagnosticErrorPx = Math.max(maximumRadiusDiagnosticErrorPx, radiusErrorPx);
+                if (radiusErrorPx > Math.max(0.05, radiusPx * 0.005)
+                    || Math.abs(gpuClampScale - expectedClampScale) > 0.005
+                    || Math.abs(gpuConfiguredRadiusPx - settings.maximumCoCRadiusPx) > 0.05) {
+                  radiusDiagnosticMismatchCount += 1;
+                }
+                maximumUnclampedRadiusPx = Math.max(maximumUnclampedRadiusPx, gpuMaximumRadiusPx);
+                maximumClampedRadiusPx = Math.max(maximumClampedRadiusPx, gpuClampedRadiusPx);
+                maximumObservedCapScale = Math.min(maximumObservedCapScale, gpuClampScale);
+                const capActivated = gpuClampScale < 0.9999;
+                if (capActivated) {
+                  capActivatedPixelCount += 1;
+                  gpuCapActivatedPixelCount += 1;
+                  capActivatedMask[pixel] = 1;
+                  if (cocMm < -0.00001) gpuCapActivatedNearPixelCount += 1;
+                  if (cocMm > 0.00001) gpuCapActivatedFarPixelCount += 1;
+                  if (redValue + greenValue + blueValue > 0.015) capActivatedNonBlackSourcePixelCount += 1;
+                  if (edgeMask[pixel] === 1) capActivatedDepthBoundaryPixelCount += 1;
+                  const capX = pixel % sourceWidthPx;
+                  const capY = Math.floor(pixel / sourceWidthPx);
+                  if (capX > 1 && capY > 1 && capX < sourceWidthPx - 2 && capY < sourceHeightPx - 2) {
+                    capActivatedInteriorPixelCount += 1;
+                  }
+                  if (capActivatedSamples.length < 32) {
+                    const unclampedOrientation = Math.atan2(ellipse.major[1], ellipse.major[0]);
+                    const effectiveClampedMajor: [number, number] = [
+                      cpuClampedEllipse.major[0] * cpuClampedEllipse.clampScale,
+                      cpuClampedEllipse.major[1] * cpuClampedEllipse.clampScale,
+                    ];
+                    const effectiveClampedMinor: [number, number] = [
+                      cpuClampedEllipse.minor[0] * cpuClampedEllipse.clampScale,
+                      cpuClampedEllipse.minor[1] * cpuClampedEllipse.clampScale,
+                    ];
+                    const clampedOrientation = Math.atan2(effectiveClampedMajor[1], effectiveClampedMajor[0]);
+                    const orientationDelta = Math.abs(((unclampedOrientation - clampedOrientation + Math.PI / 2) % Math.PI + Math.PI) % Math.PI - Math.PI / 2);
+                    capActivatedSamples.push({
+                      pixelTopOrigin: [capX, capY],
+                      signedCoCDiameterMm: cocMm,
+                      sourceColor: [redValue, greenValue, blueValue],
+                      depthMm: depthAt(pixel),
+                      atDetectedDepthBoundary: edgeMask[pixel] === 1,
+                      sourceFallback: candidateFar ? (candidateFar[offset + 3] ?? 0) < 0.5 : null,
+                      physicalEllipseSemiAxesMm: [majorMm, minorMm],
+                      physicalOrientationRad: orientationRad,
+                      unclampedSourceEllipsePx: { major: ellipse.major, minor: ellipse.minor, maximumRadiusPx: radiusPx },
+                      gpuMaximumSingularRadiusPx: gpuMaximumRadiusPx,
+                      configuredRadiusCapPx: gpuConfiguredRadiusPx,
+                      gpuAppliedScale: gpuClampScale,
+                      expectedCpuScale: expectedClampScale,
+                      gpuClampedRadiusPx,
+                      effectiveCpuClampedAxesPx: { major: effectiveClampedMajor, minor: effectiveClampedMinor },
+                      cpuClampedMaximumRadiusPx: maximumPixelEllipseRadius(ellipse) * expectedClampScale,
+                      orientationPreservationErrorRadModuloPi: orientationDelta,
+                    });
+                  }
+                }
                 maximumAbsCoCMm = Math.max(maximumAbsCoCMm, Math.abs(cocMm));
                 maximumPhysicalAxisMm = Math.max(maximumPhysicalAxisMm, majorMm, minorMm);
               }
@@ -3488,19 +3804,101 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 const fallback = (candidateFar[offset + 3] ?? 0) < 0.5;
                 if (fallback) {
                   fallbackPixelCount += 1;
+                  sourceFallbackMask[pixel] = 1;
                   if (validityTop[pixel] === 1 && (physicalTop[offset] ?? 0) > 0.00001) farFallbackPixelCount += 1;
-                  const error = Math.max(
-                    Math.abs((candidateFar[offset] ?? 0) - redValue),
-                    Math.abs((candidateFar[offset + 1] ?? 0) - greenValue),
-                    Math.abs((candidateFar[offset + 2] ?? 0) - blueValue),
-                  );
-                  if (error > 0.002) fallbackSourceColorMismatchCount += 1;
                 }
               }
             }
+            const fallbackSourceColorMismatchCount = candidateFar
+              ? countFallbackSourceColorMismatches(sourceTop, candidateFar, sourceFallbackMask)
+              : 0;
             let physicalHash = 2166136261;
             for (const value of physicalReadback) physicalHash = Math.imul(physicalHash ^ value, 16777619);
             const physicalFingerprint = (physicalHash >>> 0).toString(16).padStart(8, "0");
+            const capConnectedComponent = largestBinaryComponent(capActivatedMask, sourceWidthPx, sourceHeightPx);
+            const largeCocFallbackMask = sourceFallbackMask;
+            const depthAlongCameraMm = new Float32Array(sourceWidthPx * sourceHeightPx);
+            for (let pixel = 0; pixel < sourceWidthPx * sourceHeightPx; pixel += 1) {
+              const offset = pixel * 4;
+              const worldPoint = new THREE.Vector3(worldTop[offset] ?? 0, worldTop[offset + 1] ?? 0, worldTop[offset + 2] ?? 0);
+              depthAlongCameraMm[pixel] = worldPoint.sub(new THREE.Vector3(...phaseJState.captureCameraPose.positionWorldM)).dot(cameraForward) * 1000;
+            }
+            const inputFingerprints = {
+              sourceColor: fingerprintView(sourceTop),
+              worldPositionAndDepth: fingerprintView(worldTop),
+              validity: fingerprintView(validityTop),
+              physical: physicalFingerprint,
+            };
+            const full32ReferenceIdentity = `${sourceKey}|f${phaseJState.cameraState.aperture}|full32`;
+            const largeCocFarQuality = full32 ? measureLargeCocFarQuality({
+              width: sourceWidthPx,
+              height: sourceHeightPx,
+              referenceIdentity: full32ReferenceIdentity,
+              sourceRgba: sourceTop,
+              referenceRgba: full32,
+              candidateRgba: selectedFar,
+              signedCocMm: Float32Array.from({ length: sourceWidthPx * sourceHeightPx }, (_, pixel) => physicalTop[pixel * 4] ?? 0),
+              validity: validityTop,
+              depthMm: depthAlongCameraMm,
+              sourceFallbackMask: largeCocFallbackMask,
+            }) : null;
+            const finalComposite = candidateComposite
+              ?? toTopOriginRgba(compositeReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true);
+            let capOutputDeltaFrom60: Record<string, unknown> | null = null;
+            const capPair = input.phaseKCaseId?.match(/^(S1-large-uncapped|S2-large-cap12)-(full32|half32-b0|half32-b1)$/);
+            if (capPair) {
+              const [, capState, path] = capPair;
+              if (capState === "S1-large-uncapped") {
+                phaseKCapReferenceRasters.set(path!, {
+                  far: selectedFar.slice(),
+                  composite: finalComposite.slice(),
+                  inputFingerprints,
+                });
+              } else {
+                const cap60 = phaseKCapReferenceRasters.get(path!);
+                if (!cap60) throw new Error(`Missing S1 cap-60 reference raster for ${path}`);
+                for (const key of ["sourceColor", "worldPositionAndDepth", "validity", "physical"] as const) {
+                  if (cap60.inputFingerprints[key] !== inputFingerprints[key]) {
+                    throw new Error(`S1/S2 cap comparison input fingerprint changed for ${path}: ${key}`);
+                  }
+                }
+                const boundaryDistances = depthBoundaryDistances(validityTop, depthAlongCameraMm, sourceWidthPx, sourceHeightPx).distances;
+                const fullMask = new Uint8Array(sourceWidthPx * sourceHeightPx).fill(1);
+                const cappedBoundaryMask = new Uint8Array(fullMask.length);
+                const cappedAwayMask = new Uint8Array(fullMask.length);
+                const uncappedValidMask = new Uint8Array(fullMask.length);
+                for (let pixel = 0; pixel < fullMask.length; pixel += 1) {
+                  if (capActivatedMask[pixel]) {
+                    if (boundaryDistances[pixel]! <= 1) cappedBoundaryMask[pixel] = 1;
+                    else cappedAwayMask[pixel] = 1;
+                  } else if (validityTop[pixel] === 1) {
+                    uncappedValidMask[pixel] = 1;
+                  }
+                }
+                const compareRegions = (baseline: Float32Array, capped: Float32Array) => ({
+                  fullSourceFrame: compareLinearRgbaRasters(baseline, capped, fullMask),
+                  physicalFootprintOver12Px: compareLinearRgbaRasters(baseline, capped, capActivatedMask),
+                  cappedNearDepthBoundary: compareLinearRgbaRasters(baseline, capped, cappedBoundaryMask),
+                  cappedAwayFromDepthBoundary: compareLinearRgbaRasters(baseline, capped, cappedAwayMask),
+                  uncappedValidControl: compareLinearRgbaRasters(baseline, capped, uncappedValidMask),
+                });
+                capOutputDeltaFrom60 = {
+                  fromCapPx: 60,
+                  toCapPx: 12,
+                  path: path!,
+                  comparisonPrecision: "Linear Float32 readback of RGBA16F render-target values; changed pixel means maximum RGB channel difference > 0.00001 linear units.",
+                  matchedInputs: { ...inputFingerprints },
+                  physicalFootprintOver12PxPixelCount: capActivatedPixelCount,
+                  cappedNearDepthBoundaryPixelCount: cappedBoundaryMask.reduce((sum, value) => sum + value, 0),
+                  cappedAwayFromDepthBoundaryPixelCount: cappedAwayMask.reduce((sum, value) => sum + value, 0),
+                  uncappedValidControlPixelCount: uncappedValidMask.reduce((sum, value) => sum + value, 0),
+                  farGather: compareRegions(cap60.far, selectedFar),
+                  finalComposite: compareRegions(cap60.composite, finalComposite),
+                };
+                phaseKCapReferenceRasters.delete(path!);
+              }
+            }
+            const fullResolutionReferenceAgreement = full32 && full64 ? compareAllPixels(full32, full64) : null;
             const qualityComparisons = {
               full32: full32 ? compareAllPixels(full32, selectedFar) : null,
               full64: full64 ? compareAllPixels(full64, selectedFar) : null,
@@ -3508,7 +3906,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               depthEdgesVsFull32: full32 && edgeMask.some((value) => value === 1) ? compareRgbaOnMask(full32, selectedFar, edgeMask) : null,
               depthEdgePixelCount: edgeMask.reduce((sum, value) => sum + value, 0),
             };
-            const pairedStudyKey = `${phaseJState.caseId}|half${settings.sampleCount}|r${settings.maximumCoCRadiusPx}`;
+            const pairedStudyKey = `${phaseJState.caseId}|half${settings.sampleCount}|f${phaseJState.cameraState.aperture}|focus${phaseJState.cameraState.focusDistanceMm}|film${sampledFilmWidthMm.value}x${sampledFilmHeightMm.value}|r${settings.maximumCoCRadiusPx}`;
             const priorSource = phaseJSourceRasters.get(pairedStudyKey);
             const priorNear = phaseJNearRasters.get(pairedStudyKey);
             const pairedSourceDifference = priorSource ? compareAllPixels(priorSource, sourceTop) : null;
@@ -3522,6 +3920,8 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const depthValidityImage = new Float32Array(sourceWidthPx * sourceHeightPx * 4);
             const cocImage = new Float32Array(sourceWidthPx * sourceHeightPx * 4);
             const fallbackImage = new Float32Array(sourceWidthPx * sourceHeightPx * 4);
+            const radiusCapImage = new Float32Array(sourceWidthPx * sourceHeightPx * 4);
+            const farHaloImage = new Float32Array(sourceWidthPx * sourceHeightPx * 4);
             for (let pixel = 0; pixel < sourceWidthPx * sourceHeightPx; pixel += 1) {
               const offset = pixel * 4;
               const validityCode = validityTop[pixel] ?? 0;
@@ -3541,14 +3941,28 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               fallbackImage[offset + 1] = fallback ? 0.15 : 0;
               fallbackImage[offset + 2] = 0;
               fallbackImage[offset + 3] = 1;
+              const capActive = capActivatedMask[pixel] === 1;
+              radiusCapImage[offset] = capActive ? 1 : 0;
+              radiusCapImage[offset + 1] = coc > 0 ? 0.85 : coc < 0 ? 0.15 : 0.5;
+              radiusCapImage[offset + 2] = validityCode === 1 ? 0.2 : 0;
+              radiusCapImage[offset + 3] = 1;
+              const referenceLuma = full32 ? full32[offset] * 0.2126 + full32[offset + 1] * 0.7152 + full32[offset + 2] * 0.0722 : 0;
+              const actualLuma = selectedFar[offset] * 0.2126 + selectedFar[offset + 1] * 0.7152 + selectedFar[offset + 2] * 0.0722;
+              const errorSignal = full32 ? Math.min(1, Math.abs(referenceLuma - actualLuma) * 4) : 0;
+              farHaloImage[offset] = fallback ? 1 : errorSignal;
+              farHaloImage[offset + 1] = errorSignal;
+              farHaloImage[offset + 2] = coc > 0.00001 ? 0.25 : 0;
+              farHaloImage[offset + 3] = 1;
             }
             phaseJImageArtifacts[`${imagePrefix}-source`] = rgbaToPngDataUrl(sourceTop, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-depth-validity`] = rgbaToPngDataUrl(depthValidityImage, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-physical-coc`] = rgbaToPngDataUrl(cocImage, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-far`] = rgbaToPngDataUrl(selectedFar, sourceWidthPx, sourceHeightPx);
             phaseJImageArtifacts[`${imagePrefix}-near-alpha`] = nearAlphaToPngDataUrl(nearTop, sourceDimensions, gatherDimensions);
-            phaseJImageArtifacts[`${imagePrefix}-composite`] = rgbaToPngDataUrl(candidateComposite ?? toTopOriginRgba(compositeReadback, sourceWidthPx, sourceHeightPx, phaseJReadbackOrigin, true), sourceWidthPx, sourceHeightPx);
+            phaseJImageArtifacts[`${imagePrefix}-composite`] = rgbaToPngDataUrl(finalComposite, sourceWidthPx, sourceHeightPx);
             if (candidateFar) phaseJImageArtifacts[`${imagePrefix}-source-fallback`] = rgbaToPngDataUrl(fallbackImage, sourceWidthPx, sourceHeightPx);
+            phaseJImageArtifacts[`${imagePrefix}-radius-cap-map`] = rgbaToPngDataUrl(radiusCapImage, sourceWidthPx, sourceHeightPx);
+            if (full32) phaseJImageArtifacts[`${imagePrefix}-far-quality-heatmap`] = rgbaToPngDataUrl(farHaloImage, sourceWidthPx, sourceHeightPx);
             if (full32 && gatherWidth < sourceWidthPx) phaseJImageArtifacts[`${imagePrefix}-difference-full32`] = differenceToPngDataUrl(full32, selectedFar, sourceWidthPx, sourceHeightPx);
             const maximumCpuCocError = evidence.pointProbes.reduce((maximum, probe) => {
               const comparison = probe.phaseJComparison?.gpuMinusReconstructedCpu as Record<string, unknown> | null | undefined;
@@ -3558,6 +3972,10 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const phaseJDiagnostic = {
               caseId: phaseJState.caseId,
               sceneId: phaseJState.sceneId,
+              readbackCoordinates: {
+                sourceIdentityOrientation,
+                policy: "one global readback-origin convention for all target samples; no per-target row selection",
+              },
               geometryEvidence: {
                 sourceNonBlackPixelCount,
                 depthOccupiedPixelCount,
@@ -3574,6 +3992,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 captureCamera: phaseJState.captureCameraPose,
                 captureCameraCoordinateSystem: phaseJState.captureCameraCoordinateSystem,
                 cameraMatrices: phaseJState.canonicalCameraFingerprint,
+                inspectionWindow: phaseJState.inspectionWindow,
                 observerCameraPlacementUsed: false,
               },
               physical: {
@@ -3587,12 +4006,28 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                 radiusCapPx: settings.maximumCoCRadiusPx,
                 capActivatedPixelCount,
                 capActivatedValidPixelFraction: validPhysicalPixelCount > 0 ? capActivatedPixelCount / validPhysicalPixelCount : 0,
+                signDistribution: { near: nearCoCPixelCount, neutral: neutralCoCPixelCount, far: farCoCPixelCount },
+                gpuCapActivation: {
+                  activePixelCount: gpuCapActivatedPixelCount,
+                  nearPixelCount: gpuCapActivatedNearPixelCount,
+                  farPixelCount: gpuCapActivatedFarPixelCount,
+                  validPixelFraction: validPhysicalPixelCount > 0 ? gpuCapActivatedPixelCount / validPhysicalPixelCount : 0,
+                  maximumAppliedScaleObserved: maximumObservedCapScale,
+                  maximumClampedRadiusPx,
+                  radiusDiagnosticMismatchCount,
+                  maximumCpuGpuRadiusDiagnosticErrorPx: maximumRadiusDiagnosticErrorPx,
+                  largestFourConnectedComponent: capConnectedComponent,
+                  samplePixels: capActivatedSamples,
+                },
                 rawRgba16FloatFingerprint: physicalFingerprint,
               },
               quality: {
                 variant: imageVariant,
                 referenceClass: "Matched native full-resolution aperture-gather readback under the same canonical optical state; finite-sample reference, not ideal optical ground truth",
                 comparisons: qualityComparisons,
+                full32VsFull64Agreement: fullResolutionReferenceAgreement,
+                largeCocFarQuality,
+                heatmapDefinition: "Far-quality heatmap uses red for source-fallback pixels and green for absolute full32 luma difference scaled by ×4 and clamped to [0,1]; it is a visualization, while numeric metrics remain authoritative.",
                 pairedSourceDifferenceFromB0: input.candidate ? pairedSourceDifference : null,
                 pairedNearTargetDifferenceFromB0: input.candidate ? pairedNearDifference : null,
                 nearTarget: {
@@ -3613,13 +4048,52 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
                   comparison: probe.phaseJComparison ?? null,
                 })),
               },
+              phaseK: input.phaseKCaseId ? {
+                caseId: input.phaseKCaseId,
+                nativeRuntime: evidence.runtime,
+                opticalStateFingerprint: `${phaseJState.caseId}|f${phaseJState.cameraState.aperture}|focus${phaseJState.cameraState.focusDistanceMm}|film${sampledFilmWidthMm.value}x${sampledFilmHeightMm.value}|${sourceWidthPx}x${sourceHeightPx}`,
+                sampledFilmMm: { width: sampledFilmWidthMm.value, height: sampledFilmHeightMm.value },
+                sourceDimensionsPx: sourceDimensions,
+                gatherDimensionsPx: gatherDimensions,
+                radiusCapPx: settings.maximumCoCRadiusPx,
+                sourceIdentityOrientation,
+                inputFingerprints,
+                full32ReferenceIdentity,
+                correspondence: evidence.pointProbes.map((probe) => ({ id: probe.id, ...probe.correspondence })),
+                physical: {
+                  signedCoCPixelCount: { near: nearCoCPixelCount, neutral: neutralCoCPixelCount, far: farCoCPixelCount },
+                  maximumAbsCoCMm,
+                  maximumUnclampedRadiusPx,
+                  maximumClampedRadiusPx,
+                  capActivatedPixelCount: gpuCapActivatedPixelCount,
+                  capActivatedValidPixelFraction: validPhysicalPixelCount > 0 ? gpuCapActivatedPixelCount / validPhysicalPixelCount : 0,
+                  capActivatedNearPixelCount: gpuCapActivatedNearPixelCount,
+                  capActivatedFarPixelCount: gpuCapActivatedFarPixelCount,
+                  capActivatedNonBlackSourcePixelCount,
+                  capActivatedDepthBoundaryPixelCount,
+                  capActivatedInteriorPixelCount,
+                  largestCapComponent: capConnectedComponent,
+                  radiusDiagnosticMismatchCount,
+                  capActivatedSamples,
+                  physicalFingerprint,
+                },
+                largeCocFarQuality,
+                capOutputDeltaFrom60,
+                full32VsFull64Agreement: fullResolutionReferenceAgreement,
+                nearRgbaComparisonFromB0: input.candidate ? pairedNearDifference : null,
+                timing: operation.timing,
+                targetMemoryEstimate: evidence.targetMemoryEstimate,
+                ownedResourceCount: evidence.resources.length,
+              } : null,
               capturedArtifacts: Object.keys(phaseJImageArtifacts).filter((key) => key.startsWith(`${imagePrefix}-`)),
             } satisfies Record<string, unknown>;
             operation.phaseJ = phaseJDiagnostic;
             evidence.phaseJ = phaseJDiagnostic;
           }
           const patchRadius = Math.ceil(settings.maximumCoCRadiusPx) + 2;
-          const readbackOrigin = evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom";
+          const gatherProbeReadbackOrigin = phaseKStudyEnabled
+            ? PHASE_K_READBACK_ORIGIN
+            : evidence.pointProbes[0]?.pixelReadbackOrigin ?? "bottom";
           const buildGatherReferenceProbe = (
             layer: "far" | "near",
             readbackIndex: number | null,
@@ -3627,7 +4101,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             if (readbackIndex === null || farTarget.width !== sourceWidthPx || nearTarget.width !== sourceWidthPx) return null;
             const readbackY = Math.floor(readbackIndex / sourceWidthPx);
             const x = readbackIndex % sourceWidthPx;
-            const y = readbackOrigin === "top" ? readbackY : sourceHeightPx - 1 - readbackY;
+            const y = gatherProbeReadbackOrigin === "top" ? readbackY : sourceHeightPx - 1 - readbackY;
             const left = Math.max(0, x - patchRadius);
             const top = Math.max(0, y - patchRadius);
             const right = Math.min(sourceWidthPx - 1, x + patchRadius);
@@ -3639,7 +4113,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
             const validity: number[] = [];
             const worldAndDepth: Array<[number, number, number, number]> = [];
             for (let patchY = top; patchY <= bottom; patchY += 1) {
-              const sourceReadbackY = readbackOrigin === "top" ? patchY : sourceHeightPx - 1 - patchY;
+              const sourceReadbackY = gatherProbeReadbackOrigin === "top" ? patchY : sourceHeightPx - 1 - patchY;
               for (let patchX = left; patchX <= right; patchX += 1) {
                 const index = sourceReadbackY * sourceWidthPx + patchX;
                 const offset = index * 4;
@@ -3664,7 +4138,7 @@ const buildHandle = async (canvas: HTMLCanvasElement): Promise<MountedHandle> =>
               }
             }
             const output = layer === "far" ? farReadback : nearReadback;
-            const outputY = readbackOrigin === "top" ? y : sourceHeightPx - 1 - y;
+            const outputY = gatherProbeReadbackOrigin === "top" ? y : sourceHeightPx - 1 - y;
             const outputOffset = (outputY * sourceWidthPx + x) * 4;
             return {
               layer,
@@ -3942,6 +4416,60 @@ const Experiment = () => {
     candidate: variant === "B1",
     phaseI: variant === "C1",
   });
+  const queuePhaseKPointCase = (caseId: PhaseJOpticalCaseId) => queueRender({
+    quality: "study",
+    scene: "phase-f-controlled",
+    phaseJCaseId: caseId,
+    phaseKCaseId: `correspondence-${caseId}`,
+    gatherScale: 1,
+    sampleCount: 32,
+    maximumCoCRadiusPx: 12,
+    sourceWidthPx: 512,
+    sourceHeightPx: 384,
+    edgeCase: "axis-aligned",
+    filmTiltDeg: 0,
+    crop: false,
+    focusOffsetMm: 0,
+    forceUnresolved: false,
+    candidate: false,
+    displayCandidate: false,
+    phaseI: false,
+    displayPhaseI: false,
+  });
+  const queuePhaseKLargeCoc = (
+    variant: "full32" | "full64" | "half32-b0" | "half32-b1",
+    maximumCoCRadiusPx: number,
+    stateId: string,
+  ) => {
+    const full = variant.startsWith("full");
+    return queueRender({
+      quality: "study",
+      phaseJCaseId: PHASE_K_LARGE_COC_STATE.opticalCaseId,
+      phaseJOverrides: stateId === "S0-normal" ? {
+        apertureFNumber: PHASE_K_LARGE_COC_STATE.apertureFNumber,
+        focusDistanceMm: 400,
+      } : {
+        apertureFNumber: PHASE_K_LARGE_COC_STATE.apertureFNumber,
+        focusDistanceMm: PHASE_K_LARGE_COC_STATE.focusDistanceMm,
+        cropMagnification: PHASE_K_LARGE_COC_STATE.cropMagnification,
+      },
+      phaseKCaseId: `${stateId}-${variant}`,
+      gatherScale: full ? 1 : 0.5,
+      sampleCount: variant === "full64" ? 64 : PHASE_K_LARGE_COC_STATE.sampleCount,
+      maximumCoCRadiusPx,
+      sourceWidthPx: PHASE_K_LARGE_COC_STATE.sourceWidthPx,
+      sourceHeightPx: PHASE_K_LARGE_COC_STATE.sourceHeightPx,
+      edgeCase: "axis-aligned",
+      filmTiltDeg: 0,
+      crop: stateId !== "S0-normal",
+      focusOffsetMm: 0,
+      forceUnresolved: false,
+      candidate: variant === "half32-b1",
+      displayCandidate: false,
+      phaseI: false,
+      displayPhaseI: false,
+    });
+  };
   const queuePhaseJ = (
     caseId: PhaseJOpticalCaseId,
     variant: "full32" | "full64" | "half32-b0" | "half32-b1",
@@ -4056,7 +4584,7 @@ const Experiment = () => {
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", filmTiltDeg: 12, crop: true, phaseI: true })}>Phase I tilted 4× crop C1</button>
             <button type="button" onClick={() => void queueRender({ quality: "study", apertureFNumber: 2, gatherScale: 0.5, sampleCount: 32, maximumCoCRadiusPx: 12, edgeCase: "axis-aligned", forceUnresolved: true, phaseI: true })}>Phase I unresolved exclusion C1</button>
           </fieldset>}
-          {phaseJStudyEnabled && <fieldset data-testid="phase-j-controls">
+          {phaseJStudyEnabled && !phaseKStudyEnabled && <fieldset data-testid="phase-j-controls">
             <legend>Phase J canonical optical-state B1 validation</legend>
             {([
               "macro-focus-near-f5_6",
@@ -4080,6 +4608,34 @@ const Experiment = () => {
                 {caseId === "macro-focus-far-f5_6" && <button type="button" data-testid={`phase-j-${caseId}-half32-b1-r32`} onClick={() => void queuePhaseJ(caseId, "half32-b1", 32)}>Phase J {caseId} Half ×32 B1 radius 32</button>}
               </div>
             ))}
+          </fieldset>}
+          {phaseKStudyEnabled && <fieldset data-testid="phase-k-controls">
+            <legend>Phase K scene-point correspondence and large-CoC evidence</legend>
+            <div data-testid="phase-k-correspondence-cases">
+              {([
+                "interior-initial",
+                "interior-front-swing",
+                "interior-front-swing-focus",
+                "interior-rise-swing",
+                "architecture-initial",
+                "architecture-rise",
+                "architecture-rise-focus",
+              ] as const).map((caseId) => <button key={caseId} type="button" data-testid={`phase-k-correspondence-${caseId}`} onClick={() => void queuePhaseKPointCase(caseId)}>
+                Phase K correspondence {caseId}
+              </button>)}
+            </div>
+            <button type="button" data-testid="phase-k-s0-full32" onClick={() => void queuePhaseKLargeCoc("full32", 12, "S0-normal")}>Phase K S0 macro full film Full ×32</button>
+            <button type="button" data-testid="phase-k-s0-half32-b0" onClick={() => void queuePhaseKLargeCoc("half32-b0", 12, "S0-normal")}>Phase K S0 macro full film Half ×32 B0</button>
+            <button type="button" data-testid="phase-k-s0-half32-b1" onClick={() => void queuePhaseKLargeCoc("half32-b1", 12, "S0-normal")}>Phase K S0 macro full film Half ×32 B1</button>
+            <button type="button" data-testid="phase-k-s1-full32" onClick={() => void queuePhaseKLargeCoc("full32", 60, "S1-large-uncapped")}>Phase K S1 large-CoC Full ×32 cap 60</button>
+            <button type="button" data-testid="phase-k-s1-full64" onClick={() => void queuePhaseKLargeCoc("full64", 60, "S1-large-uncapped")}>Phase K S1 large-CoC Full ×64 cap 60</button>
+            <button type="button" data-testid="phase-k-s1-half32-b0" onClick={() => void queuePhaseKLargeCoc("half32-b0", 60, "S1-large-uncapped")}>Phase K S1 large-CoC Half ×32 B0 cap 60</button>
+            <button type="button" data-testid="phase-k-s1-half32-b1" onClick={() => void queuePhaseKLargeCoc("half32-b1", 60, "S1-large-uncapped")}>Phase K S1 large-CoC Half ×32 B1 cap 60</button>
+            <button type="button" data-testid="phase-k-s2-full32" onClick={() => void queuePhaseKLargeCoc("full32", 12, "S2-large-cap12")}>Phase K S2 large-CoC Full ×32 cap 12</button>
+            <button type="button" data-testid="phase-k-s2-half32-b0" onClick={() => void queuePhaseKLargeCoc("half32-b0", 12, "S2-large-cap12")}>Phase K S2 large-CoC Half ×32 B0 cap 12</button>
+            <button type="button" data-testid="phase-k-s2-half32-b1" onClick={() => void queuePhaseKLargeCoc("half32-b1", 12, "S2-large-cap12")}>Phase K S2 large-CoC Half ×32 B1 cap 12</button>
+            <button type="button" data-testid="phase-k-s3-full32" onClick={() => void queuePhaseKLargeCoc("full32", 32, "S3-large-cap32")}>Phase K S3 large-CoC Full ×32 cap 32</button>
+            <button type="button" data-testid="phase-k-s3-half32-b1" onClick={() => void queuePhaseKLargeCoc("half32-b1", 32, "S3-large-cap32")}>Phase K S3 large-CoC Half ×32 B1 cap 32</button>
           </fieldset>}
         </section>
       </div>
