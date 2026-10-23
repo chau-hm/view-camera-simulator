@@ -2,15 +2,32 @@
 
 **Status:** bounded Phase L research; public Ground Glass remains WebGL-only.
 **Base:** Phase K merge `670fa7b168c2d1981f94f008b77d19bc94550489`.
-**Decision:** **L-A for the tested Macro crop and radius-cap state.** The selected native case has a qualified interior cap/far-depth-edge region, convergent full-resolution references, no measured B1 fallback or sharp-fallback pixels in that ROI, and B1 is no worse than B0 there. This does not establish general B1 quality or production readiness.
+**Decision:** The original run is exploratory; its unconditional L-A label is withdrawn. The corrected native confirmatory rerun qualifies one candidate (`m8-y0`) under the interior-only high-contrast rule and computes **L-A** from matched cap-12 references, bounded B1 error, valid ROI populations, Near RGBA invariance, and fallback diagnostics. This is a fixture-specific result, not production readiness or a general B1 quality claim.
 
 ## A. Executive decision
 
-The native WebGPU Phase L fixture found a physically coherent Macro crop with a large connected region of 12 px radius-cap activation and high-contrast depth boundaries inside the raster. In the selected stress ROI, Full ×32 and Full ×64 agree closely. Half ×32 B1 matches B0 exactly in the interior cap/far-edge ROI, remains close to Full ×32, and has no source-color fallback or classified sharp-fallback samples in that ROI. Across the broader valid-far image, B1 has lower Full ×32 error than B0.
+The first native run found a physically coherent Macro crop with a large connected region of 12 px radius-cap activation. Its then-reported 78 high-contrast edge pairs used a global mask, so that run did not prove the pairs were in the declared interior support. Its unconditional `L-A` assignment was not gated by numerical error bounds and is withdrawn; those results remain exploratory observations only.
 
-This is a bounded acceptable result, not proof that B1 wins every local metric. It did not improve B0 in the selected interior cap region, and the strongest candidate with larger uncapped radii failed the predeclared source-contrast qualification. The selected maximum uncapped radius is only 12.3359 px, 0.3359 px above the 12 px cap. The evidence therefore supports further **WebGPU Ground Glass architecture integration design**, with broader optical-state, material, adapter, and quality validation required before implementation or production promotion.
+The corrective run re-evaluated all 12 geometry-only candidates using the interior-support rule and ran the matched quality matrix for the sole qualified candidate. The measured result satisfies the fixed reference-convergence and candidate-error bounds, matched ROI populations, Near RGBA and fallback checks, so the evaluator returns `L-A`. No production-readiness or general B1 quality claim follows from this one bounded Phase L result.
 
-Native runtime evidence came from headed Chrome with Three.js r186 reporting `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and `threeRevision=186`. Adapter identity and hardware acceleration were not established.
+### Confirmatory acceptance contract frozen after exploration
+
+These bounded engineering thresholds were selected after the exploratory run and are prospectively fixed for the corrective confirmatory run. They were not predeclared before the original measurements and are not universal photographic quality standards. All RGB values and RMSEs are normalized linear values from native readbacks.
+
+| Criterion | Frozen limit | Rationale |
+|---|---:|---|
+| Interior cap/far ROI population | ≥200 pixels | Retains the existing geometry qualification minimum so an aggregate cannot be decided from a small accidental fragment. |
+| Interior cap/far depth-edge ROI population | ≥32 pixels | Retains the existing minimum paired-edge support for an edge-specific comparison. |
+| Full ×32 / Full ×64 RMSE, interior far | ≤0.001 | Requires the broad physically capped far reference region to agree within 0.1% of normalized RGB full scale. |
+| Full ×32 / Full ×64 RMSE, edge | ≤0.002 | Allows more edge-local finite-sample variation while requiring agreement within 0.2% of normalized RGB full scale. |
+| B1 / Full ×32 RMSE, interior far | ≤0.003 | Caps candidate error at 0.3% of full scale while accounting for half-resolution reconstruction. |
+| B1 / Full ×32 RMSE, edge | ≤0.005 | Caps edge-local candidate error at 0.5% of full scale. |
+| Candidate/reference uncertainty ratio | ≤3 | Requires candidate error to remain bounded by three times Full ×32/×64 disagreement, with a 0.0005 floor to avoid an unstable ratio near zero. The floor is an acceptance allowance, not measured reference noise. |
+| Near target RGB and alpha RMS/max error | ≤0.0001 each | Keeps the existing near-layer invariance requirement explicit in the computed decision. |
+
+The decision uses same-cap Full ×32/×64 reference convergence and same-cap B1/Full ×32 comparisons. The confirmatory run adds a cap-12 Full ×64 operation; no convergence conclusion is transferred from cap 60 to cap 12. Thresholds will not be adjusted after seeing confirmatory results without invalidating the confirmatory claim.
+
+Native runtime evidence came from the corrective headed-Chrome run with Three.js r186 reporting `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and `threeRevision=186`. Adapter identity and hardware acceleration were not established.
 
 ## B. Phase K baseline
 
@@ -26,22 +43,30 @@ Crop and pan change sampled film/projection, not lens pose, subject geometry, fo
 
 ## D. Candidate search
 
-Twelve bounded candidates were evaluated: 8×, 12×, and 16× at normalized pan `(0, 0)`, `(0, -0.5)`, `(0, -0.75)`, and `(0, -1)`. Predeclared qualification required at least 200 interior capped pixels, a 128-pixel largest 4-connected interior component, at least 32 interior cap/far-depth-edge pixels, at least 32 high-contrast far-edge pairs, and a 16 px capped-support border margin.
+Twelve bounded candidates were rerun: 8×, 12×, and 16× at normalized pan `(0, 0)`, `(0, -0.5)`, `(0, -0.75)`, and `(0, -1)`. Qualification required at least 200 interior capped pixels, a 128-pixel largest 4-connected interior component, at least 32 interior cap/far-depth-edge pixels, at least 32 **interior** high-contrast cap/far edge pairs, and a 16 px capped-support border margin. The global high-contrast count remains diagnostic only.
 
-| Candidate | Result | Reason |
-|---|---|---|
-| 8×, centered (`m8-y0`) | Qualified and selected | Satisfied all geometry/physical thresholds; richest high-contrast interior cap/far edge. |
-| 12×, centered (`m12-y0`) | Rejected | Larger radius (18.5 px) and interior cap population, but zero pairs at the predeclared 0.05 source-contrast threshold. |
-| 16×, centered (`m16-y0`) | Rejected | Maximum radius 24.6719 px but only 218 cap pixels and no qualifying interior cap region. |
-| 8×/12×/16×, negative Y pans | Rejected | No valid visible content for the required interior region in the tested windows. |
+| Candidate | Pan `(x, y)` | Total capped | Interior capped | Largest interior component | Interior cap/far edge pixels | Global high-contrast pairs | Interior high-contrast pairs | Interior clearance | Qualified / rejection reason |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `m8-y0` | `(0, 0)` | 61,394 | 47,058 | 47,058 | 530 | 78 | 46 | 16 px | Yes; sole qualified candidate, selected. |
+| `m8-yn0p5` | `(0, -0.5)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m8-yn0p75` | `(0, -0.75)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m8-yn1` | `(0, -1)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m12-y0` | `(0, 0)` | 17,816 | 8,780 | 4,390 | 276 | 0 | 0 | 16 px | No; zero interior high-contrast pairs, below 32. |
+| `m12-yn0p5` | `(0, -0.5)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m12-yn0p75` | `(0, -0.75)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m12-yn1` | `(0, -1)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m16-y0` | `(0, 0)` | 218 | 0 | 0 | 0 | 0 | 0 | — | No; no interior cap support, below 200 pixels. |
+| `m16-yn0p5` | `(0, -0.5)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m16-yn0p75` | `(0, -0.75)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
+| `m16-yn1` | `(0, -1)` | 0 | 0 | 0 | 0 | 0 | 0 | — | No valid visible content in the required interior window. |
 
-The ranking is lexicographic by interior cap population, largest component, interior cap/far-edge population, high-contrast edge pairs, and locally uncapped-reference-clear cap population. Quality outputs were not consulted. The 8× candidate was the only qualified candidate.
+The `m8-y0` candidate has 32 fewer qualifying high-contrast pairs than its global count: 78 global pairs, of which 46 have a capped far-side endpoint inside the 16 px interior-support mask. `m12-y0` demonstrates why the distinction matters: it has enough interior cap pixels, component size, and cap/far edge pixels, but no pair exceeds the 0.05 contrast threshold. The ranking remains lexicographic over geometry/physical counts only; B0/B1 quality outputs were not consulted. `m8-y0` is the sole qualified candidate.
 
 ## E. Interior-region qualification
 
-Selected candidate `m8-y0` has 191,946 valid pixels; 61,394 pixels activate the 12 px cap, all classified far-side. Of these, 47,058 are interior cap pixels; the largest connected component is 47,058 pixels. The interior cap/far-depth-edge mask contains 530 pixels, and the preflight found 78 high-contrast cap/far edge pairs above the declared source-contrast threshold.
+Selected candidate `m8-y0` has 191,946 valid pixels; 61,394 pixels activate the 12 px cap, all classified far-side. Of these, 47,058 are interior cap pixels; the largest connected component is 47,058 pixels. The preflight interior cap/far-depth-edge mask contains 530 pixels. There are 798 global cap/far depth-edge pairs and 766 interior cap/far pairs; 78 global pairs exceed the declared source-contrast threshold, and 46 of those also have a capped far-side endpoint at least 16 px from the raster border. Both edge endpoints are valid and their depth delta is at least 1 mm. Only this corrected interior count satisfies the 32-pair qualification requirement.
 
-The selected image has some cap-activated pixels touching the raster border (minimum global cap border distance 0 px), so the entire cap mask is not boundary-free. The independently measured interior component begins at the required 16 px margin. The stricter local uncapped-support criterion, `border distance >= ceil(local uncapped radius) + 2`, is met for 47,924 cap pixels; its minimum qualifying clearance is 15 px for the measured maximum local radius of 12.3359 px. These definitions are reported separately; the 16 px cap margin is not treated as proof that every uncapped footprint is unclipped. The geometry-only preflight counted 530 interior cap/far edge pixels; the later quality ROI marks both endpoints of paired valid depth edges and contains 1,058 pixels.
+The selected image has some cap-activated pixels touching the raster border (minimum global cap border distance 0 px), so the entire cap mask is not boundary-free. The independently measured interior component begins at the required 16 px margin. The stricter local uncapped-support criterion, `border distance >= ceil(local uncapped radius) + 2`, is met for 47,924 cap pixels; its minimum qualifying clearance is 15 px for the measured maximum local radius of 12.3359 px. These definitions are reported separately; the 16 px cap margin is not treated as proof that every uncapped footprint is unclipped. The later paired-endpoint quality ROI marks both endpoints of the interior qualifying depth edges and contains 1,058 pixels. The 530-pixel preflight mask and 1,058-pixel paired-endpoint quality ROI are different populations and are not interchanged.
 
 ## F. Optical-state fidelity
 
@@ -55,20 +80,24 @@ The actual registered Macro subject supplies the visible edge. Ray/surface diagn
 
 ## H. Reference convergence
 
-Full ×32 and Full ×64 are finite-sample native renderer references, not optical ground truth. In the interior cap/far ROI, their RGB RMSE is 0.00028815 and MAE is 0.00005073. In the interior cap/far depth-edge ROI, RMSE is 0.00107362, MAE 0.00040957, maximum channel error 0.0132446, mean absolute linear-luma error 0.00028662, and maximum absolute luma error 0.00499814. Full-frame agreement is RMSE 0.00048824, MAE 0.00005662, maximum channel error 0.0161743.
+Full ×32 and Full ×64 are finite-sample native renderer references, not optical ground truth. The corrected decision uses a **same-cap 12** Full ×32/×64 pair, not the cap-60 reference. In the 47,058-pixel interior cap/far ROI, their RGB RMSE is **0.00032565**, below the frozen 0.001 limit. In the matched 1,058-pixel interior cap/far depth-edge ROI, RMSE is **0.00106331**, below the 0.002 limit; MAE is 0.00039931, maximum channel error 0.01361084, mean absolute linear-luma error 0.00027966, and maximum absolute luma error 0.00515669. Thus the two numerical reference-convergence checks pass for this cap-12 ROI.
 
-These values support comparisons at the reported scale for this one ROI. They do not establish convergence for other crops, adapters, scenes, or optical states.
+The cap-60 matrix also contains a same-cap Full ×32/×64 pair, but its result is not transferred to cap 12. These values do not establish convergence for other crops, adapters, scenes, or optical states.
 
 ## I. B0/B1 quality
 
-Errors below are against the same-crop Full ×32 reference. RGB is measured from native readbacks in linear space.
+Errors below are against the same-crop, same-cap Full ×32 reference. RGB is measured from native readbacks in linear space. The 47,058-pixel interior cap/far and 1,058-pixel paired-endpoint edge populations match across Full ×32, Full ×64, B0, and B1.
 
 | Path | Full-frame RMSE / MAE | Valid-far RMSE / MAE | Interior cap/far RMSE / MAE | Interior cap/far edge RMSE / MAE |
 |---|---:|---:|---:|---:|
 | Half ×32 B0, cap 12 | 0.0362179 / 0.0068863 | 0.0061333 / 0.0006232 | 0.00038034 / 0.00005447 | 0.00137589 / 0.00050021 |
 | Half ×32 B1, cap 12 | 0.00390627 / 0.00033530 | 0.00317100 / 0.00033617 | 0.00038034 / 0.00005447 | 0.00137589 / 0.00050021 |
 
-In the interior cap/far and cap/far-edge ROI, B0 and B1 output are identical at measured precision (zero changed pixels and zero RGB error). B1 is substantially closer in full-frame and valid-far metrics, but this difference occurs outside the selected interior stress ROI; it must not be presented as local B1 superiority. The final composite's edge metric follows the far result here because the paired near contribution is unchanged.
+The frozen numerical criteria were fixed after the exploratory run and before this corrective rerun. For the interior far ROI, reference RMSE ≤0.001, B1 absolute RMSE ≤0.003, and B1 ≤`min(0.003, 3 × max(reference RMSE, 0.0005))` (measured upper bound 0.0015). For the edge ROI, the corresponding limits are 0.002, 0.005, and `min(0.005, 3 × max(reference RMSE, 0.0005))` (measured upper bound 0.00318992). Reference convergence passes both limits. B1 passes both absolute limits and both uncertainty-relative limits: interior 0.00038034 ≤0.0015, edge 0.00137589 ≤0.00318992. The B1/B0 equality is a separate observation, not an acceptance criterion.
+
+In the interior cap/far and cap/far-edge ROI, B0 and B1 output are identical at measured precision (zero changed pixels and zero RGB error), but both are also close to the matched Full ×32 reference and within the frozen B1 bounds. B1 is substantially closer in full-frame and valid-far metrics, but this difference occurs outside the selected interior stress ROI; it must not be presented as local B1 superiority. The final composite's edge metric follows the far result here because the paired near contribution is unchanged.
+
+The native evaluator computed `L-A`; all nine checks passed: candidate qualification, matched native provenance, finite measurements, matched nonempty ROI populations, reference convergence, B1 absolute and uncertainty-relative bounds, Near RGBA invariance, and fallback evidence. `failedCriteria` was empty. If any confidence or measurement check fails, the evaluator returns L-E; if the candidate or near/fallback quality contract fails, it returns L-B; no qualified geometry returns L-D.
 
 ## J. B1 fallback behavior
 
@@ -94,33 +123,34 @@ The Full ×32 cap comparison changes 22,928 full-frame pixels. Half ×32 B0 cap 
 
 ## O. Performance and resources
 
-The matrix is a serial one-off quality experiment, not a performance benchmark. The seven measured operations use source 512 × 384, half gather 256 × 192, 32 proposals, and 42 owned resources per active handle. Estimated target storage is 13.5 MiB for full gather and 11.25 MiB for half gather under the fixture's target inventory. The final native run is recorded below; operation IDs refer to the single native handle used for the matrix.
+The matrix is a serial one-off quality experiment, not a performance benchmark. The eight measured operations use source 512 × 384, half gather 256 × 192, 32 proposals, and 42 owned resources per active handle. Estimated target storage is 13.5 MiB for full gather and 11.25 MiB for half gather under the fixture's target inventory. The corrective native run is recorded below; operation IDs refer to the single native handle used for the matrix.
 
 | Operation | Operation ID | Wall / readback ms | CPU submission sum ms | Observed queue completion sum ms | Queue wait sum ms | Recorded stages | Target estimate |
 |---|---|---:|---:|---:|---:|---:|---:|
-| Cap 60 Full ×32 | `op-14` | 776.9 / 31.8 | 2.6 | 222.8 | 220.2 | 10 | 13.5 MiB |
-| Cap 60 Full ×64 | `op-15` | 823.9 / 31.3 | 2.1 | 276.5 | 274.4 | 10 | 13.5 MiB |
-| Cap 60 Half ×32 B0 | `op-16` | 723.5 / 32.3 | 1.8 | 261.2 | 259.4 | 10 | 11.25 MiB |
-| Cap 60 Half ×32 B1 | `op-17` | 948.0 / 32.1 | 4.3 | 356.8 | 352.5 | 12 | 11.25 MiB |
-| Cap 12 Full ×32 | `op-18` | 943.3 / 53.0 | 2.3 | 430.9 | 428.6 | 10 | 13.5 MiB |
-| Cap 12 Half ×32 B0 | `op-19` | 1,110.3 / 101.9 | 2.1 | 547.2 | 545.1 | 10 | 11.25 MiB |
-| Cap 12 Half ×32 B1 | `op-20` | 1,330.5 / 5.2 | 2.2 | 771.5 | 769.3 | 12 | 11.25 MiB |
+| Cap 60 Full ×32 | `op-14` | 862.7 / 27.5 | 2.9 | 272.1 | 269.2 | 10 | 13.5 MiB |
+| Cap 60 Full ×64 | `op-15` | 864.6 / 30.7 | 2.5 | 286.5 | 284.0 | 10 | 13.5 MiB |
+| Cap 60 Half ×32 B0 | `op-16` | 949.4 / 34.5 | 2.8 | 369.5 | 366.7 | 10 | 11.25 MiB |
+| Cap 60 Half ×32 B1 | `op-17` | 984.5 / 37.8 | 5.4 | 348.7 | 343.3 | 12 | 11.25 MiB |
+| Cap 12 Full ×32 | `op-18` | 1,277.5 / 92.6 | 2.6 | 648.8 | 646.2 | 10 | 13.5 MiB |
+| Cap 12 Full ×64 | `op-19` | 1,073.2 / 85.9 | 2.2 | 599.0 | 596.8 | 10 | 13.5 MiB |
+| Cap 12 Half ×32 B0 | `op-20` | 1,438.1 / 57.1 | 2.5 | 863.9 | 861.4 | 10 | 11.25 MiB |
+| Cap 12 Half ×32 B1 | `op-21` | 1,952.7 / 87.9 | 2.9 | 1,217.5 | 1,214.6 | 12 | 11.25 MiB |
 
-The B1 paths record two additional Phase H passes: compatible-far reconstruction and candidate composite. The submission, observed-queue, and queue-wait values are sums of per-stage browser measurements; they are not isolated shader durations or exclusive GPU time. Readback varied from 5.2 to 101.9 ms, further showing that these values are browser/queue/readback observations, not comparable GPU frame times. No validated GPU timestamp is available; `gpuTimestampDurationMs` remains null. Do not infer FPS.
+The B1 paths record two additional Phase H passes: compatible-far reconstruction and candidate composite. The submission, observed-queue, and queue-wait values are sums of per-stage browser measurements; they are not isolated shader durations or exclusive GPU time. Readback varied from 27.5 to 92.6 ms, further showing that these values are browser/queue/readback observations, not comparable GPU frame times. No validated GPU timestamp is available; `gpuTimestampDurationMs` remains null. Do not infer FPS.
 
-The matrix ran on native handle `aperture-g1-6a85cbd3-0946-4581-b433-5081fbbe1fdc`, with operation IDs `op-14` through `op-20`. The native SPA test retired that handle with all 42/42 owned resources disposed, returned to the route with distinct native handle `aperture-g2-369e6f62-4ec3-4eb3-8d8e-bc72041e1b94`, and independently disposed that handle's 42/42 resources. The document `performance.timeOrigin` remained unchanged through route navigation.
+The matrix ran on native handle `aperture-g1-57e62380-55d2-4955-89ea-547428500824`, with operation IDs `op-14` through `op-21`. The native SPA test retired that handle with all 42/42 owned resources disposed, returned to the route with distinct native handle `aperture-g2-7aa1be17-b52b-445a-80b0-9e945401bd5d`, and independently disposed that handle's 42/42 resources. The document `performance.timeOrigin` remained unchanged through route navigation.
 
 ## P. Negative controls and test integrity
 
-The Phase L unit tests verify canonical pan direction, bounded candidate enumeration, border-only cap rejection, physical far-only depth-edge masks, and separate near/far ROI metrics. The native spec verifies actual candidate state, same-magnification pan invariance, source/depth/validity/physical fingerprints, Full ×32 reference identity, CPU/GPU radius diagnostic agreement, B1 fallback source-color parity, and near RGB/alpha invariance. These checks are sensitive to the listed classes of bad state and data mismatch.
+The Phase L unit tests verify canonical pan direction, bounded candidate enumeration, border-only and mixed interior-low-contrast/border-high-contrast rejection, a positive interior high-contrast candidate, physical far-only depth-edge masks, separate near/far ROI metrics, and the computed quality decision. The identically wrong B0/B1 control returns L-B despite zero fallback; poor reference convergence, empty/mismatched ROIs, and missing/non-finite metrics return L-E; a candidate error over the fixed limit and invalid Near RGBA return L-B; no qualified candidate returns L-D. The native spec verifies all 12 candidate counts, corrected qualification, geometry-only selection, same-magnification pan invariance, source/depth/validity/physical fingerprints, cap-12 Full ×32 reference identity, cap-12 Full ×32/×64 convergence, B1 error bounds, CPU/GPU radius diagnostic agreement, B1 fallback source-color parity, and near RGB/alpha invariance.
 
-No deliberate source mutation was left in the branch. A temporary normalized-pan mutation caused the focused Phase L unit assertion to fail (`centerV` became `0.9375` instead of remaining above `0.5` for the same pan direction); the production helper was restored and the passing test rerun. The synthetic border-only cap fixture also remains an explicit negative control. A separate temporary mutation of the declared 16 px clearance threshold was not run because the approval gate rejected editing that predeclared threshold; therefore threshold-mutation sensitivity is not claimed. No separate mutation campaign was executed for every N1–N10 item. Phase K's pre-existing luma and B1 fixed-case assertions remain unchanged.
+No deliberate source mutation was left in the branch. A temporary restoration of the old global-only high-contrast qualification caused the mixed regression to fail because the invalid candidate became qualified; the corrected predicate was restored and the focused suite passed. The B1 quality negative control changes a good fixture candidate's measured edge RMSE to 0.006 (>0.005), and the evaluator returns L-B. A temporary normalized-pan mutation also caused the focused assertion to fail (`centerV` became `0.9375` instead of remaining above `0.5`); the helper was restored. A separate temporary mutation of the declared 16 px clearance threshold was not run because the approval gate rejected editing that predeclared threshold; threshold-mutation sensitivity for that threshold is not claimed. Phase K's pre-existing luma and B1 fixed-case assertions remain unchanged.
 
 ## Q. Regression and production isolation
 
 The Phase L fixture is enabled only by the research query `?phaseL=1` and lives in the existing test fixture. No production `GroundGlassRTT`, shader, optics calculation, public route, scene registration, backend policy, or product control is changed. Native evidence is distinct from the ordinary Chromium compatibility run, which may execute Three.js WebGPU code on a WebGL2 fallback.
 
-The focused Phase L native test passed in headed Chrome (1 passed, 1 native-only skip) and asserted native backend identity. The ordinary Chromium control passed separately (1 passed, 1 native-only skip) under WebGL2 fallback and is compatibility evidence only. The Phase C–K native regression run passed 30 tests with 6 ordinary-Chromium controls skipped in the native project. Focused Phase L and Phase K unit tests passed (16 tests); the full unit suite passed 2,546 tests across 275 files. Typecheck, lint, CSS check, and production build passed. The production-preview isolation spec passed 2 tests using the test's `/` base-path configuration. This was a corrected local preview configuration; no production renderer changes were needed.
+For this review-fix execution, the focused Phase L native suite passed (1 passed, 1 native-only skip) and asserted `rendererFamily=webgpu-renderer`, `executionBackend=webgpu`, `applicationFallback=false`, and Three.js r186. The ordinary Phase L control passed separately (1 passed, 1 native-only skip) under WebGL2 fallback. The Phase C–K native regression batch passed 28 tests with 5 ordinary-Chromium controls skipped; the separately run ordinary Chromium batch passed 15 controls with 18 native-only tests skipped. The production-preview isolation spec passed 2 tests. The full unit suite passed 2,556 tests across 275 files; typecheck, lint, CSS check, and production build passed. A first native C–K attempt used a restricted PATH that resolved an unusable system Git shim in two diagnostic specs; rerunning with the actual Homebrew Git on PATH passed those specs. The production-preview test used its `/` base-path configuration; no production renderer changes were needed.
 
 ## R. Known limitations
 
@@ -136,7 +166,7 @@ The focused Phase L native test passed in headed Chrome (1 passed, 1 native-only
 
 ## S. Next-phase decision
 
-The measured result supports proceeding to a bounded **WebGPU Ground Glass architecture integration design**: define backend boundaries, capability reporting, fallback semantics, resource ownership, and staged parity criteria before any production implementation. Preserve the stricter quality boundary as an explicit design input: this Phase L test demonstrates acceptable behavior at one interior cap/far edge, while B1 and B0 were identical in that ROI and the stronger-radius/high-contrast candidate did not qualify. Broader stress cases and production scene/material parity remain required before exposing a backend to users.
+The corrected measured result supports proceeding to a bounded **WebGPU Ground Glass architecture integration design**: define backend boundaries, capability reporting, fallback semantics, resource ownership, and staged parity criteria before any production implementation. The result is L-A only for this one interior cap/far state under the frozen fixture-specific acceptance contract. B1 and B0 were identical in that ROI, and the selected radius exceeds the 12 px cap by only 0.3359 px. The 12× candidate had more radius but no high-contrast interior edge support. Broader quality stress and production scene/material parity remain required before exposing a backend to users.
 
 ## T. Reproduction
 
@@ -164,4 +194,4 @@ Focused unit tests:
 npm test -- src/tests/unit/groundGlassWebGpuInteriorCoc.test.ts
 ```
 
-The native fixture evaluates the 12 candidates and freezes `m8-y0` (8×, normalized pan `(0,0)`, inspection center `(0.5,0.5)`) before the seven-operation matrix. The recorded matrix operation IDs are `aperture-g1-6a85cbd3-0946-4581-b433-5081fbbe1fdc:op-14` through `:op-20`. Playwright JSON and image attachments are stored in ignored `test-results/` output; they are runtime evidence, not committed golden images.
+The corrective native run evaluated the 12 fixed candidates and froze `m8-y0` (8×, normalized pan `(0,0)`, inspection center `(0.5,0.5)`) before the eight-operation matrix. The frozen numerical acceptance contract is the table in Section A; it was set after the exploratory run and before the corrective rerun. The recorded matrix operation IDs are `aperture-g1-57e62380-55d2-4955-89ea-547428500824:op-14` through `:op-21`. The Playwright run emitted candidate, quality, and lifecycle JSON plus image attachments under ignored `test-results/`; later Playwright invocations replace that directory, so rerunning the native command regenerates these artifacts. They are runtime output, not committed golden images.

@@ -4916,6 +4916,7 @@ const Experiment = () => {
               <button type="button" data-testid="phase-l-cap60-half32-b0" onClick={() => void queuePhaseLMatrix(60, "half32-b0")}>Selected crop cap 60 Half ×32 B0</button>
               <button type="button" data-testid="phase-l-cap60-half32-b1" onClick={() => void queuePhaseLMatrix(60, "half32-b1")}>Selected crop cap 60 Half ×32 B1</button>
               <button type="button" data-testid="phase-l-cap12-full32" onClick={() => void queuePhaseLMatrix(12, "full32")}>Selected crop cap 12 Full ×32</button>
+              <button type="button" data-testid="phase-l-cap12-full64" onClick={() => void queuePhaseLMatrix(12, "full64")}>Selected crop cap 12 Full ×64</button>
               <button type="button" data-testid="phase-l-cap12-half32-b0" onClick={() => void queuePhaseLMatrix(12, "half32-b0")}>Selected crop cap 12 Half ×32 B0</button>
               <button type="button" data-testid="phase-l-cap12-half32-b1" onClick={() => void queuePhaseLMatrix(12, "half32-b1")}>Selected crop cap 12 Half ×32 B1</button>
             </div>

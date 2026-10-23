@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   analyzeInteriorCocPreflight,
+  evaluatePhaseLQualityDecision,
   measurePhaseLQuality,
   PHASE_L_CANDIDATES,
   PHASE_L_INTERIOR_TARGETS,
@@ -65,6 +66,7 @@ describe("Phase L interior large-CoC preflight", () => {
     expect(result.counts.interiorCapFarDepthEdgePixels).toBe(32);
     expect(result.counts.capFarDepthEdgePairs).toBe(32);
     expect(result.counts.highContrastFarDepthEdgePairs).toBe(32);
+    expect(result.counts.interiorHighContrastFarDepthEdgePairs).toBe(32);
     expect(result.counts.capPixels).toBeGreaterThan(result.counts.interiorCapPixels);
     expect(result.borderClearance.minimumCapBorderDistancePx).toBe(0);
     expect(result.borderClearance.minimumInteriorCapBorderDistancePx).toBeGreaterThanOrEqual(16);
@@ -72,7 +74,99 @@ describe("Phase L interior large-CoC preflight", () => {
     expect(result.borderClearance.minimumUncappedClearCapBorderDistancePx).toBe(22);
     expect(result.largestInteriorCapComponent.bounds).toEqual({ left: 16, top: 16, right: 47, bottom: 47 });
     expect(result.edgePairs.every((pair) => pair.farSideCapPixel)).toBe(true);
+    expect(result.edgePairs.every((pair) => pair.interiorFarSideCapPixel && pair.interiorHighContrastEligible)).toBe(true);
+    expect(result.edgePairs.every((pair) => pair.a.valid && pair.b.valid && pair.cappedEndpointPresent)).toBe(true);
     expect(result.edgePairs.every((pair) => pair.a.signedCoCMm * pair.b.signedCoCMm <= 0)).toBe(true);
+    expect(result.candidateQualified).toBe(true);
+  });
+
+  it("rejects low-contrast interior edges when high-contrast capped far edges exist only at the raster border", () => {
+    const width = 96;
+    const height = 80;
+    const size = width * height;
+    const source = new Float32Array(size * 4);
+    const world = new Float32Array(size * 4);
+    const physical = new Float32Array(size * 4);
+    const validity = new Uint8Array(size).fill(1);
+    const radius = new Float32Array(size * 4);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const pixel = y * width + x;
+        const offset = pixel * 4;
+        const borderPair = y >= 20 && y <= 60 && x <= 10;
+        const interior = x >= 20 && x <= 60 && y >= 20 && y <= 60;
+        const capped = borderPair || interior;
+        const borderHighSide = borderPair && x >= 5;
+        const interiorHighSide = interior && x >= 40;
+        world[offset + 2] = borderPair
+          ? x < 5 ? 100 : 120
+          : interior ? x < 40 ? 200 : 220 : 0;
+        physical[offset] = 1;
+        const color = borderPair
+          ? borderHighSide ? 0.8 : 0.1
+          : interior ? interiorHighSide ? 0.11 : 0.1 : 0.1;
+        source[offset] = color;
+        source[offset + 1] = color;
+        source[offset + 2] = color;
+        radius[offset] = capped ? 20 : 4;
+        radius[offset + 1] = capped ? 0.6 : 1;
+      }
+    }
+    const result = analyzeInteriorCocPreflight({
+      width,
+      height,
+      capPx: 12,
+      sourceRgba: source,
+      worldPositionRgba: world,
+      physicalRgba: physical,
+      validity,
+      radiusDiagnosticsRgba: radius,
+      cameraForwardWorld: [0, 0, 1],
+    });
+    expect(result.counts.interiorCapPixels).toBeGreaterThanOrEqual(PHASE_L_INTERIOR_TARGETS.minimumInteriorCapPixels);
+    expect(result.counts.largestInteriorCapComponentPixels).toBeGreaterThanOrEqual(PHASE_L_INTERIOR_TARGETS.minimumLargestInteriorCapComponent);
+    expect(result.counts.interiorCapFarDepthEdgePixels).toBeGreaterThanOrEqual(PHASE_L_INTERIOR_TARGETS.minimumInteriorCapFarDepthEdgePixels);
+    expect(result.counts.highContrastFarDepthEdgePairs).toBeGreaterThanOrEqual(PHASE_L_INTERIOR_TARGETS.minimumHighContrastFarDepthEdgePairs);
+    expect(result.counts.interiorHighContrastFarDepthEdgePairs).toBeLessThan(PHASE_L_INTERIOR_TARGETS.minimumHighContrastFarDepthEdgePairs);
+    expect(result.candidateQualified).toBe(false);
+  });
+
+  it("qualifies a high-contrast far depth edge only when its capped far endpoint has interior support", () => {
+    const width = 64;
+    const height = 64;
+    const size = width * height;
+    const source = new Float32Array(size * 4);
+    const world = new Float32Array(size * 4);
+    const physical = new Float32Array(size * 4);
+    const validity = new Uint8Array(size).fill(1);
+    const radius = new Float32Array(size * 4);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const pixel = y * width + x;
+        const offset = pixel * 4;
+        const interiorCap = x >= 16 && x <= 47 && y >= 16 && y <= 47;
+        world[offset + 2] = x < 32 ? 100 : 120;
+        physical[offset] = x < 32 ? -1 : 1;
+        source[offset] = x < 32 ? 0.1 : 0.8;
+        source[offset + 1] = 0.2;
+        source[offset + 2] = x < 32 ? 0.3 : 0.9;
+        radius[offset] = interiorCap ? 20 : 4;
+        radius[offset + 1] = interiorCap ? 0.6 : 1;
+      }
+    }
+    const result = analyzeInteriorCocPreflight({
+      width,
+      height,
+      capPx: 12,
+      sourceRgba: source,
+      worldPositionRgba: world,
+      physicalRgba: physical,
+      validity,
+      radiusDiagnosticsRgba: radius,
+      cameraForwardWorld: [0, 0, 1],
+    });
+    expect(result.counts.interiorHighContrastFarDepthEdgePairs).toBeGreaterThanOrEqual(PHASE_L_INTERIOR_TARGETS.minimumHighContrastFarDepthEdgePairs);
+    expect(result.edgePairs.some((pair) => pair.interiorHighContrastEligible && Math.min(pair.a.borderClearancePx, pair.b.borderClearancePx) >= PHASE_L_INTERIOR_TARGETS.cappedSupportMarginPx)).toBe(true);
     expect(result.candidateQualified).toBe(true);
   });
 
@@ -110,6 +204,7 @@ describe("Phase L interior large-CoC preflight", () => {
     expect(result.counts.capPixels).toBeGreaterThan(0);
     expect(result.counts.interiorCapPixels).toBe(0);
     expect(result.counts.interiorCapFarDepthEdgePixels).toBe(0);
+    expect(result.counts.interiorHighContrastFarDepthEdgePairs).toBe(0);
     expect(result.candidateQualified).toBe(false);
   });
 
@@ -171,5 +266,82 @@ describe("Phase L interior large-CoC preflight", () => {
     expect(result.farQuality.interiorCap12FarDepthEdge.rgb.rgbRootMeanSquareError).toBeGreaterThan(0);
     expect(result.finalCompositeQuality.interiorCap12FarDepthEdge.rgb.pixelCount).toBe(64);
     expect(result.farQuality.cap12NearDepthEdge.rgb.pixelCount).toBe(64);
+  });
+});
+
+const goodDecisionInput = () => ({
+  candidateQualified: true,
+  matchedNativeProvenance: true,
+  referenceConvergence: { interiorFarRmse: 0.00028, edgeRmse: 0.00107 },
+  b0Quality: { interiorFarRmse: 0.00038, edgeRmse: 0.00138 },
+  b1Quality: { interiorFarRmse: 0.00038, edgeRmse: 0.00138 },
+  roiPopulations: {
+    interiorFar: { full32: 47058, full64: 47058, b0: 47058, b1: 47058 },
+    edge: { full32: 1058, full64: 1058, b0: 1058, b1: 1058 },
+  },
+  nearRgba: { rgbRmse: 0, rgbMax: 0, alphaRmse: 0, alphaMax: 0 },
+  fallbackEvidence: { interiorFarFallbackPixels: 0, interiorFarSharpFallbackPixels: 0, sourceRgbMismatchPixels: 0 },
+});
+
+describe("Phase L frozen confirmatory quality decision", () => {
+  it("accepts a valid bounded reference and candidate result", () => {
+    expect(evaluatePhaseLQualityDecision(goodDecisionInput()).outcome).toBe("L-A");
+  });
+
+  it("rejects identically wrong B0/B1 output even when both have zero fallback", () => {
+    const input = goodDecisionInput();
+    input.b0Quality.interiorFarRmse = 0.08;
+    input.b0Quality.edgeRmse = 0.08;
+    input.b1Quality.interiorFarRmse = 0.08;
+    input.b1Quality.edgeRmse = 0.08;
+    const result = evaluatePhaseLQualityDecision(input);
+    expect(result.checks.fallbackEvidenceValid).toBe(true);
+    expect(result.checks.candidateWithinAbsoluteBounds).toBe(false);
+    expect(result.outcome).toBe("L-B");
+  });
+
+  it("classifies poor Full ×32/×64 convergence as insufficient reference confidence", () => {
+    const input = goodDecisionInput();
+    input.referenceConvergence.edgeRmse = 0.01;
+    expect(evaluatePhaseLQualityDecision(input).outcome).toBe("L-E");
+  });
+
+  it("rejects an empty edge ROI instead of accepting a vacuous measurement", () => {
+    const input = goodDecisionInput();
+    input.roiPopulations.edge.b1 = 0;
+    expect(evaluatePhaseLQualityDecision(input).checks.roiPopulationValid).toBe(false);
+    expect(evaluatePhaseLQualityDecision(input).outcome).toBe("L-E");
+  });
+
+  it("rejects missing and non-finite metrics", () => {
+    for (const value of [null, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const input = goodDecisionInput();
+      (input.b1Quality as { interiorFarRmse: number | null; edgeRmse: number | null }).edgeRmse = value;
+      const result = evaluatePhaseLQualityDecision(input);
+      expect(result.checks.measurementsFinite).toBe(false);
+      expect(result.outcome).toBe("L-E");
+    }
+  });
+
+  it("fails the frozen candidate bound when a measured B1 edge error is too large", () => {
+    const input = goodDecisionInput();
+    input.b1Quality.edgeRmse = 0.006;
+    const result = evaluatePhaseLQualityDecision(input);
+    expect(result.checks.candidateWithinAbsoluteBounds).toBe(false);
+    expect(result.outcome).toBe("L-B");
+  });
+
+  it("rejects a candidate that changes Near RGBA despite acceptable far quality", () => {
+    const input = goodDecisionInput();
+    input.nearRgba.rgbMax = 0.0002;
+    const result = evaluatePhaseLQualityDecision(input);
+    expect(result.checks.nearRgbaInvariant).toBe(false);
+    expect(result.outcome).toBe("L-B");
+  });
+
+  it("reports L-D when no candidate satisfies geometry qualification", () => {
+    const input = goodDecisionInput();
+    input.candidateQualified = false;
+    expect(evaluatePhaseLQualityDecision(input).outcome).toBe("L-D");
   });
 });

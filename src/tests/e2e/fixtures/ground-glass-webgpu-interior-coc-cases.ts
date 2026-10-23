@@ -33,6 +33,155 @@ export const PHASE_L_INTERIOR_TARGETS = {
   edgeDepthDeltaMm: 1,
 } as const;
 
+/**
+ * Post-exploration engineering limits frozen prospectively for the corrective
+ * confirmatory run. These are fixture-specific normalized-linear-RGB bounds,
+ * not universal photographic quality standards.
+ */
+export const PHASE_L_QUALITY_ACCEPTANCE = {
+  minimumInteriorCapFarPixels: 200,
+  minimumInteriorCapFarDepthEdgePixels: 32,
+  maximumReferenceEdgeRmse: 0.002,
+  maximumReferenceInteriorFarRmse: 0.001,
+  maximumCandidateEdgeRmse: 0.005,
+  maximumCandidateInteriorFarRmse: 0.003,
+  maximumCandidateToReferenceUncertaintyRatio: 3,
+  referenceUncertaintyFloor: 0.0005,
+  maximumNearRgbError: 0.0001,
+  maximumNearAlphaError: 0.0001,
+} as const;
+
+type PhaseLRoiQuality = Readonly<{
+  interiorFarRmse: number | null;
+  edgeRmse: number | null;
+}>;
+
+type PhaseLRoiPopulations = Readonly<{
+  interiorFar: Readonly<{ full32: number | null; full64: number | null; b0: number | null; b1: number | null }>;
+  edge: Readonly<{ full32: number | null; full64: number | null; b0: number | null; b1: number | null }>;
+}>;
+
+export type PhaseLQualityDecisionInput = Readonly<{
+  candidateQualified: boolean;
+  matchedNativeProvenance: boolean;
+  referenceConvergence: PhaseLRoiQuality;
+  b0Quality: PhaseLRoiQuality;
+  b1Quality: PhaseLRoiQuality;
+  roiPopulations: PhaseLRoiPopulations;
+  nearRgba: Readonly<{ rgbRmse: number | null; rgbMax: number | null; alphaRmse: number | null; alphaMax: number | null }>;
+  fallbackEvidence: Readonly<{ interiorFarFallbackPixels: number | null; interiorFarSharpFallbackPixels: number | null; sourceRgbMismatchPixels: number | null }>;
+  acceptance?: typeof PHASE_L_QUALITY_ACCEPTANCE;
+}>;
+
+/** Pure, fail-closed decision over matched Phase L readback evidence. */
+export function evaluatePhaseLQualityDecision(input: PhaseLQualityDecisionInput) {
+  const acceptance = input.acceptance ?? PHASE_L_QUALITY_ACCEPTANCE;
+  const finite = (value: number | null): value is number => value !== null && Number.isFinite(value);
+  const finiteNonNegative = (value: number | null): value is number => finite(value) && value >= 0;
+  const populationValues = (values: PhaseLRoiPopulations[keyof PhaseLRoiPopulations]) =>
+    [values.full32, values.full64, values.b0, values.b1];
+  const roiPopulationValid = (values: PhaseLRoiPopulations[keyof PhaseLRoiPopulations], minimum: number) => {
+    const samples = populationValues(values);
+    return samples.every((value) => value !== null && Number.isInteger(value) && value >= minimum)
+      && samples.every((value) => value === samples[0]);
+  };
+  const roiPopulationsValid = roiPopulationValid(input.roiPopulations.interiorFar, acceptance.minimumInteriorCapFarPixels)
+    && roiPopulationValid(input.roiPopulations.edge, acceptance.minimumInteriorCapFarDepthEdgePixels);
+  const values = [
+    input.referenceConvergence.interiorFarRmse,
+    input.referenceConvergence.edgeRmse,
+    input.b0Quality.interiorFarRmse,
+    input.b0Quality.edgeRmse,
+    input.b1Quality.interiorFarRmse,
+    input.b1Quality.edgeRmse,
+    input.nearRgba.rgbRmse,
+    input.nearRgba.rgbMax,
+    input.nearRgba.alphaRmse,
+    input.nearRgba.alphaMax,
+    input.fallbackEvidence.interiorFarFallbackPixels,
+    input.fallbackEvidence.interiorFarSharpFallbackPixels,
+    input.fallbackEvidence.sourceRgbMismatchPixels,
+    ...populationValues(input.roiPopulations.interiorFar),
+    ...populationValues(input.roiPopulations.edge),
+  ];
+  const measurementsFinite = values.every(finiteNonNegative);
+  const referenceConverged = finiteNonNegative(input.referenceConvergence.interiorFarRmse)
+    && finiteNonNegative(input.referenceConvergence.edgeRmse)
+    && input.referenceConvergence.interiorFarRmse <= acceptance.maximumReferenceInteriorFarRmse
+    && input.referenceConvergence.edgeRmse <= acceptance.maximumReferenceEdgeRmse;
+  const candidateWithinAbsoluteBounds = finiteNonNegative(input.b1Quality.interiorFarRmse)
+    && finiteNonNegative(input.b1Quality.edgeRmse)
+    && input.b1Quality.interiorFarRmse <= acceptance.maximumCandidateInteriorFarRmse
+    && input.b1Quality.edgeRmse <= acceptance.maximumCandidateEdgeRmse;
+  const acceptableRelativeError = (candidate: number | null, reference: number | null, absoluteLimit: number) =>
+    finiteNonNegative(candidate) && finiteNonNegative(reference)
+      && candidate <= Math.min(
+        absoluteLimit,
+        acceptance.maximumCandidateToReferenceUncertaintyRatio * Math.max(reference, acceptance.referenceUncertaintyFloor),
+      );
+  const candidateWithinUncertaintyBounds = acceptableRelativeError(
+    input.b1Quality.interiorFarRmse,
+    input.referenceConvergence.interiorFarRmse,
+    acceptance.maximumCandidateInteriorFarRmse,
+  ) && acceptableRelativeError(
+    input.b1Quality.edgeRmse,
+    input.referenceConvergence.edgeRmse,
+    acceptance.maximumCandidateEdgeRmse,
+  );
+  const nearRgbaInvariant = finiteNonNegative(input.nearRgba.rgbRmse)
+    && finiteNonNegative(input.nearRgba.rgbMax)
+    && finiteNonNegative(input.nearRgba.alphaRmse)
+    && finiteNonNegative(input.nearRgba.alphaMax)
+    && input.nearRgba.rgbRmse <= acceptance.maximumNearRgbError
+    && input.nearRgba.rgbMax <= acceptance.maximumNearRgbError
+    && input.nearRgba.alphaRmse <= acceptance.maximumNearAlphaError
+    && input.nearRgba.alphaMax <= acceptance.maximumNearAlphaError;
+  const fallbackValues = [
+    input.fallbackEvidence.interiorFarFallbackPixels,
+    input.fallbackEvidence.interiorFarSharpFallbackPixels,
+    input.fallbackEvidence.sourceRgbMismatchPixels,
+  ];
+  const fallbackEvidenceValid = fallbackValues.every((value) => finite(value) && Number.isInteger(value) && value === 0);
+  const checks = {
+    candidateQualified: input.candidateQualified,
+    matchedNativeProvenance: input.matchedNativeProvenance,
+    measurementsFinite,
+    roiPopulationValid: roiPopulationsValid,
+    referenceConverged,
+    candidateWithinAbsoluteBounds,
+    candidateWithinUncertaintyBounds,
+    nearRgbaInvariant,
+    fallbackEvidenceValid,
+  };
+  const failedCriteria = Object.entries(checks).filter(([, passed]) => !passed).map(([name]) => name);
+  const outcome = !input.candidateQualified
+    ? "L-D"
+    : !input.matchedNativeProvenance || !measurementsFinite || !roiPopulationsValid || !referenceConverged
+      ? "L-E"
+      : !candidateWithinAbsoluteBounds || !candidateWithinUncertaintyBounds || !nearRgbaInvariant || !fallbackEvidenceValid
+        ? "L-B"
+        : "L-A";
+  return {
+    outcome,
+    checks,
+    measurements: {
+      referenceInteriorRmse: input.referenceConvergence.interiorFarRmse,
+      referenceEdgeRmse: input.referenceConvergence.edgeRmse,
+      b0InteriorRmse: input.b0Quality.interiorFarRmse,
+      b0EdgeRmse: input.b0Quality.edgeRmse,
+      b1InteriorRmse: input.b1Quality.interiorFarRmse,
+      b1EdgeRmse: input.b1Quality.edgeRmse,
+      acceptableB1InteriorRmse: finite(input.referenceConvergence.interiorFarRmse)
+        ? Math.min(acceptance.maximumCandidateInteriorFarRmse, acceptance.maximumCandidateToReferenceUncertaintyRatio * Math.max(input.referenceConvergence.interiorFarRmse, acceptance.referenceUncertaintyFloor))
+        : null,
+      acceptableB1EdgeRmse: finite(input.referenceConvergence.edgeRmse)
+        ? Math.min(acceptance.maximumCandidateEdgeRmse, acceptance.maximumCandidateToReferenceUncertaintyRatio * Math.max(input.referenceConvergence.edgeRmse, acceptance.referenceUncertaintyFloor))
+        : null,
+    },
+    failedCriteria,
+  } as const;
+}
+
 export const resolvePhaseLCandidateWindow = (candidate: InteriorCocCandidate) =>
   resolveGroundGlassInspectionWindow({
     active: true,
@@ -144,15 +293,21 @@ export function analyzeInteriorCocPreflight(input: {
   }
 
   const edgePairs: Array<{
-    a: { x: number; y: number; depthMm: number; signedCoCMm: number; sourceRgb: [number, number, number] };
-    b: { x: number; y: number; depthMm: number; signedCoCMm: number; sourceRgb: [number, number, number] };
+    a: { x: number; y: number; valid: boolean; depthMm: number; signedCoCMm: number; sourceRgb: [number, number, number]; capped: boolean; farCapped: boolean; borderClearancePx: number; insideInteriorSupport: boolean };
+    b: { x: number; y: number; valid: boolean; depthMm: number; signedCoCMm: number; sourceRgb: [number, number, number]; capped: boolean; farCapped: boolean; borderClearancePx: number; insideInteriorSupport: boolean };
     depthDeltaMm: number;
     sourceContrastRgb: number;
     farSideCapPixel: boolean;
+    interiorFarSideCapPixel: boolean;
+    cappedEndpointPresent: boolean;
+    globalHighContrastEligible: boolean;
+    interiorHighContrastEligible: boolean;
   }> = [];
   let highContrastFarDepthEdgePairCount = 0;
+  let interiorHighContrastFarDepthEdgePairCount = 0;
   let cappedDepthEdgePairCount = 0;
   let farDepthEdgePairCount = 0;
+  let interiorFarDepthEdgePairCount = 0;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const pixel = y * width + x;
@@ -166,22 +321,31 @@ export function analyzeInteriorCocPreflight(input: {
         edge[pixel] = 1;
         edge[neighbor] = 1;
         const farSideCapPixel = Boolean(capFar[pixel] || capFar[neighbor]);
+        const interiorFarSideCapPixel = Boolean((capFar[pixel] && interiorCap[pixel]) || (capFar[neighbor] && interiorCap[neighbor]));
         const hasCappedPixel = Boolean(capped[pixel] || capped[neighbor]);
         if (hasCappedPixel) cappedDepthEdgePairCount += 1;
         if (farSideCapPixel) farDepthEdgePairCount += 1;
+        if (interiorFarSideCapPixel) interiorFarDepthEdgePairCount += 1;
         const offset = pixel * 4;
         const otherOffset = neighbor * 4;
         const sourceRgb: [number, number, number] = [0, 1, 2].map((channel) => input.sourceRgba[offset + channel] ?? 0) as [number, number, number];
         const otherRgb: [number, number, number] = [0, 1, 2].map((channel) => input.sourceRgba[otherOffset + channel] ?? 0) as [number, number, number];
         const sourceContrastRgb = Math.hypot(...sourceRgb.map((value, channel) => value - otherRgb[channel]!));
-        if (farSideCapPixel && sourceContrastRgb > PHASE_L_INTERIOR_TARGETS.minimumSourceContrastRgb) highContrastFarDepthEdgePairCount += 1;
+        const globalHighContrastEligible = farSideCapPixel && sourceContrastRgb > PHASE_L_INTERIOR_TARGETS.minimumSourceContrastRgb;
+        const interiorHighContrastEligible = interiorFarSideCapPixel && sourceContrastRgb > PHASE_L_INTERIOR_TARGETS.minimumSourceContrastRgb;
+        if (globalHighContrastEligible) highContrastFarDepthEdgePairCount += 1;
+        if (interiorHighContrastEligible) interiorHighContrastFarDepthEdgePairCount += 1;
         if (farSideCapPixel && edgePairs.length < 256) {
           edgePairs.push({
-            a: { x, y, depthMm: depthMm[pixel]!, signedCoCMm: input.physicalRgba[offset] ?? 0, sourceRgb },
-            b: { x: nx, y: ny, depthMm: depthMm[neighbor]!, signedCoCMm: input.physicalRgba[otherOffset] ?? 0, sourceRgb: otherRgb },
+            a: { x, y, valid: Boolean(valid[pixel]), depthMm: depthMm[pixel]!, signedCoCMm: input.physicalRgba[offset] ?? 0, sourceRgb, capped: Boolean(capped[pixel]), farCapped: Boolean(capFar[pixel]), borderClearancePx: borderDistance[pixel]!, insideInteriorSupport: Boolean(interiorCap[pixel]) },
+            b: { x: nx, y: ny, valid: Boolean(valid[neighbor]), depthMm: depthMm[neighbor]!, signedCoCMm: input.physicalRgba[otherOffset] ?? 0, sourceRgb: otherRgb, capped: Boolean(capped[neighbor]), farCapped: Boolean(capFar[neighbor]), borderClearancePx: borderDistance[neighbor]!, insideInteriorSupport: Boolean(interiorCap[neighbor]) },
             depthDeltaMm: delta,
             sourceContrastRgb,
             farSideCapPixel,
+            interiorFarSideCapPixel,
+            cappedEndpointPresent: hasCappedPixel,
+            globalHighContrastEligible,
+            interiorHighContrastEligible,
           });
         }
       }
@@ -219,7 +383,9 @@ export function analyzeInteriorCocPreflight(input: {
       interiorCapFarDepthEdgePixels: count(interiorCapFarEdge),
       capDepthEdgePairs: cappedDepthEdgePairCount,
       capFarDepthEdgePairs: farDepthEdgePairCount,
+      interiorCapFarDepthEdgePairs: interiorFarDepthEdgePairCount,
       highContrastFarDepthEdgePairs: highContrastFarDepthEdgePairCount,
+      interiorHighContrastFarDepthEdgePairs: interiorHighContrastFarDepthEdgePairCount,
       nonBlackCapPixels,
       uncappedReferenceClearCapPixels: uncappedClearCapPixels,
       distinctTwoMillimeterDepthBucketsInCap: depthBuckets.size,
@@ -235,8 +401,8 @@ export function analyzeInteriorCocPreflight(input: {
     candidateQualified: interiorCapPixels >= PHASE_L_INTERIOR_TARGETS.minimumInteriorCapPixels
       && component.pixelCount >= PHASE_L_INTERIOR_TARGETS.minimumLargestInteriorCapComponent
       && count(interiorCapFarEdge) >= PHASE_L_INTERIOR_TARGETS.minimumInteriorCapFarDepthEdgePixels
-      && highContrastFarDepthEdgePairCount >= PHASE_L_INTERIOR_TARGETS.minimumHighContrastFarDepthEdgePairs,
-    selectionPolicy: "Geometry/physical readback only; no B0/B1 reference error or candidate output metric used.",
+      && interiorHighContrastFarDepthEdgePairCount >= PHASE_L_INTERIOR_TARGETS.minimumHighContrastFarDepthEdgePairs,
+    selectionPolicy: "Geometry/physical readback only; high-contrast qualification requires a capped far endpoint inside the 16 px interior-support mask; no B0/B1 quality metric is used.",
   };
 }
 

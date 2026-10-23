@@ -1,7 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { PHASE_L_CANDIDATES } from "./fixtures/ground-glass-webgpu-interior-coc-cases";
+import {
+  evaluatePhaseLQualityDecision,
+  PHASE_L_CANDIDATES,
+  PHASE_L_QUALITY_ACCEPTANCE,
+  PHASE_L_INTERIOR_TARGETS,
+} from "./fixtures/ground-glass-webgpu-interior-coc-cases";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseL=1";
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -109,9 +114,24 @@ const candidateScore = (geometry: JsonRecord): readonly number[] => {
     number(counts.interiorCapPixels) ?? 0,
     number(counts.largestInteriorCapComponentPixels) ?? 0,
     number(counts.interiorCapFarDepthEdgePixels) ?? 0,
-    number(counts.highContrastFarDepthEdgePairs) ?? 0,
+    number(counts.interiorHighContrastFarDepthEdgePairs) ?? 0,
     number(counts.uncappedReferenceClearCapPixels) ?? 0,
   ];
+};
+
+const candidateRejectionReasons = (geometry: JsonRecord) => {
+  const counts = record(geometry.counts);
+  const border = record(geometry.borderClearance);
+  const minimums = PHASE_L_INTERIOR_TARGETS;
+  const checks: Array<[string, number | null, number]> = [
+    ["interior cap pixels", number(counts.interiorCapPixels), minimums.minimumInteriorCapPixels],
+    ["largest interior cap component", number(counts.largestInteriorCapComponentPixels), minimums.minimumLargestInteriorCapComponent],
+    ["interior capped far-edge pixels", number(counts.interiorCapFarDepthEdgePixels), minimums.minimumInteriorCapFarDepthEdgePixels],
+    ["interior high-contrast capped far-edge pairs", number(counts.interiorHighContrastFarDepthEdgePairs), minimums.minimumHighContrastFarDepthEdgePairs],
+    ["minimum interior support border clearance", number(border.minimumInteriorCapBorderDistancePx), minimums.cappedSupportMarginPx],
+  ];
+  return checks.filter(([, value, minimum]) => value === null || value < minimum)
+    .map(([label, value, minimum]) => `${label}: ${value ?? "missing"} < ${minimum}`);
 };
 
 const compareScore = (left: readonly number[], right: readonly number[]) => {
@@ -178,6 +198,17 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     assertNative(current);
     const phaseL = phaseLOf(operation);
     const geometry = record(phaseL.geometryOnlyPreflight);
+    const counts = record(geometry.counts);
+    const borderClearance = record(geometry.borderClearance);
+    const expectedQualified = (number(counts.interiorCapPixels) ?? 0) >= PHASE_L_INTERIOR_TARGETS.minimumInteriorCapPixels
+      && (number(counts.largestInteriorCapComponentPixels) ?? 0) >= PHASE_L_INTERIOR_TARGETS.minimumLargestInteriorCapComponent
+      && (number(counts.interiorCapFarDepthEdgePixels) ?? 0) >= PHASE_L_INTERIOR_TARGETS.minimumInteriorCapFarDepthEdgePixels
+      && (number(counts.interiorHighContrastFarDepthEdgePairs) ?? 0) >= PHASE_L_INTERIOR_TARGETS.minimumHighContrastFarDepthEdgePairs
+      && (number(borderClearance.minimumInteriorCapBorderDistancePx) ?? 0) >= PHASE_L_INTERIOR_TARGETS.cappedSupportMarginPx;
+    expect(number(counts.highContrastFarDepthEdgePairs), `${candidate.id} global high-contrast count`).not.toBeNull();
+    expect(number(counts.interiorHighContrastFarDepthEdgePairs), `${candidate.id} interior high-contrast count`).not.toBeNull();
+    expect(number(counts.highContrastFarDepthEdgePairs) ?? 0).toBeGreaterThanOrEqual(number(counts.interiorHighContrastFarDepthEdgePairs) ?? 0);
+    expect(geometry.candidateQualified, `${candidate.id} corrected qualification from measured counts`).toBe(expectedQualified);
     expect(phaseL.qualityMetricsUsedForSelection).toBe(false);
     expect(phaseL.reconstructionReferenceUsedForSelection).toBe(false);
     expect(phaseKOf(operation).largeCocFarQuality).toBeNull();
@@ -222,16 +253,19 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
 
   const sortedCandidates = [...candidateResults].sort((a, b) => compareScore(a.score, b.score));
   const qualifiedCandidates = sortedCandidates.filter((entry) => record(entry.geometry).candidateQualified === true);
-  const selected = qualifiedCandidates[0] ?? sortedCandidates[0]!;
+  const selected = qualifiedCandidates[0] ?? null;
+  const exploratoryCandidate = sortedCandidates[0] ?? null;
   await testInfo.attach("candidate-search.json", {
     body: Buffer.from(JSON.stringify({
       predeclaredCriteria: record(candidateResults[0]!.geometry.thresholds),
+      qualityAcceptanceFrozenForConfirmatoryRun: PHASE_L_QUALITY_ACCEPTANCE,
       candidates: sortedCandidates.map((entry) => ({
         id: entry.id,
         magnification: entry.magnification,
         pan: entry.pan,
         score: entry.score,
         qualified: record(entry.geometry).candidateQualified,
+        rejectionReasons: candidateRejectionReasons(entry.geometry),
         inspectionWindow: record(record(entry.phaseL.selectedCandidateConfiguration).inspectionWindow),
         sampledFilmMm: record(record(entry.phaseL.selectedCandidateConfiguration).sampledFilmMm),
         counts: record(entry.geometry.counts),
@@ -239,8 +273,9 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
         largestInteriorCapComponent: entry.geometry.largestInteriorCapComponent,
         surfaceSamples: entry.phaseL.firstVisibleMacroSurfaceSamples,
       })),
-      selectedForConfirmation: selected.id,
-      selectionPolicy: "Lexicographic geometry score: interior cap pixels, largest interior 4-connected component, interior cap/far edge pixels, high-contrast cap/far edge pairs, then local uncapped-reference-clear cap pixels. B0/B1 quality is not evaluated or consulted.",
+      selectedForConfirmation: selected?.id ?? null,
+      bestUnqualifiedCandidateForExplorationOnly: selected ? null : exploratoryCandidate?.id ?? null,
+      selectionPolicy: "Lexicographic geometry score: interior cap pixels, largest interior 4-connected component, interior cap/far edge pixels, interior-only high-contrast capped far-edge pairs, then local uncapped-reference-clear cap pixels. B0/B1 quality is not evaluated or consulted; no unqualified candidate is used for confirmatory quality.",
     }, null, 2)),
     contentType: "application/json",
   });
@@ -249,8 +284,9 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
   await attachImages(page, testInfo, "macro-focus-middle-f5.6-");
 
   const matrix: Array<{ label: string; operation: Operation; handle: Handle }> = [];
-  let decision: "L-A" | "L-B" | "L-C" | "L-D" | "L-E" = "L-D";
-  if (qualifiedCandidates.length > 0) {
+  let decision: "L-A" | "L-B" | "L-D" | "L-E" = "L-D";
+  let qualityDecisionEvidence: ReturnType<typeof evaluatePhaseLQualityDecision> | null = null;
+  if (selected) {
     await page.getByTestId("phase-l-selected-candidate").selectOption(selected.id);
     const sequence = [
       ["cap60-full32", "phase-l-cap60-full32"],
@@ -258,6 +294,7 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       ["cap60-half32-b0", "phase-l-cap60-half32-b0"],
       ["cap60-half32-b1", "phase-l-cap60-half32-b1"],
       ["cap12-full32", "phase-l-cap12-full32"],
+      ["cap12-full64", "phase-l-cap12-full64"],
       ["cap12-half32-b0", "phase-l-cap12-half32-b0"],
       ["cap12-half32-b1", "phase-l-cap12-half32-b1"],
     ] as const;
@@ -273,7 +310,12 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       });
       matrix.push({ label, operation: result.operation, handle: result.handle });
     }
-    const reference = matrix[0]!.operation;
+    const operationFor = (label: string) => {
+      const entry = matrix.find((item) => item.label === label);
+      if (!entry) throw new Error(`Missing Phase L matrix operation: ${label}`);
+      return entry.operation;
+    };
+    const reference = operationFor("cap60-full32");
     const referenceK = phaseKOf(reference);
     const referenceFingerprints = record(referenceK.inputFingerprints);
     const referenceApplied = record(reference.appliedState);
@@ -307,44 +349,48 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
       else referenceIdentityByCap.set(capKey, identity);
     }
     expect(referenceIdentityByCap.get("cap60")).not.toBe(referenceIdentityByCap.get("cap12"));
-    const convergence = record(phaseKOf(matrix[1]!.operation).full32VsFull64Agreement);
+    const cap12Full64 = operationFor("cap12-full64");
+    const convergence = record(phaseKOf(cap12Full64).full32VsFull64Agreement);
     expect(number(convergence.pixelCount)).toBe(512 * 384);
-    for (const entry of [matrix[3]!, matrix[6]!]) {
+    for (const entry of [matrix.find((item) => item.label === "cap60-half32-b1")!, matrix.find((item) => item.label === "cap12-half32-b1")!]) {
       const quality = record(phaseKOf(entry.operation).largeCocFarQuality);
       expect(number(record(quality.validFarRgbError).pixelCount) ?? 0).toBeGreaterThan(0);
     }
-    const capDelta = record(phaseKOf(matrix[6]!.operation).capOutputDeltaFrom60);
+    const cap12B1 = operationFor("cap12-half32-b1");
+    const cap12B0 = operationFor("cap12-half32-b0");
+    const cap12Full32 = operationFor("cap12-full32");
+    const capDelta = record(phaseKOf(cap12B1).capOutputDeltaFrom60);
     expect(capDelta).toMatchObject({ fromCapPx: 60, toCapPx: 12, path: "half32-b1" });
-    const near = record(phaseKOf(matrix[6]!.operation).nearRgbaComparisonFromB0);
+    const near = record(phaseKOf(cap12B1).nearRgbaComparisonFromB0);
     expect(number(near.rootMeanSquareRgbError) ?? Infinity).toBeLessThanOrEqual(0.0001);
     expect(number(near.rootMeanSquareAlphaError) ?? Infinity).toBeLessThanOrEqual(0.0001);
     expect(number(near.maxRgbError) ?? Infinity).toBeLessThanOrEqual(0.0001);
     expect(number(near.maxAlphaError) ?? Infinity).toBeLessThanOrEqual(0.0001);
 
-    const full64PhaseL = record(phaseLOf(matrix[1]!.operation).qualityMetrics);
-    const full64Convergence = record(full64PhaseL.farQuality);
+    const cap12Full64PhaseL = record(phaseLOf(cap12Full64).qualityMetrics);
+    const full64Convergence = record(cap12Full64PhaseL.farQuality);
     expect(number(record(record(full64Convergence.interiorCap12Far).rgb).pixelCount) ?? 0).toBeGreaterThan(0);
     expect(number(record(record(full64Convergence.interiorCap12FarDepthEdge).rgb).pixelCount) ?? 0).toBeGreaterThan(0);
-    for (const entry of [matrix[3]!, matrix[6]!]) {
+    for (const entry of [matrix.find((item) => item.label === "cap60-half32-b1")!, matrix.find((item) => item.label === "cap12-half32-b1")!]) {
       const phaseLQuality = record(phaseLOf(entry.operation).qualityMetrics);
       const interiorFarEdge = record(record(record(phaseLQuality.farQuality).interiorCap12FarDepthEdge).rgb);
       expect(number(interiorFarEdge.pixelCount) ?? 0, `${entry.label} interior cap/far edge population`).toBeGreaterThanOrEqual(32);
       expect(number(interiorFarEdge.rgbRootMeanSquareError), `${entry.label} interior cap/far edge RMSE`).not.toBeNull();
       expect(record(phaseLQuality.fallback).depthBoundaryDistanceBands).toBeTruthy();
     }
-    const interiorFallback = record(record(record(phaseLOf(matrix[6]!.operation).qualityMetrics).fallback).interiorCap12Far);
+    const interiorFallback = record(record(record(phaseLOf(cap12B1).qualityMetrics).fallback).interiorCap12Far);
     expect(number(interiorFallback.fallbackPixelCount) ?? -1).toBeGreaterThanOrEqual(0);
-    const selectedFallbackMetrics = record(record(phaseLOf(matrix[6]!.operation).qualityMetrics).fallback);
+    const selectedFallbackMetrics = record(record(phaseLOf(cap12B1).qualityMetrics).fallback);
     expect(number(selectedFallbackMetrics.allFallbackSourceRgbMismatchCount) ?? Infinity).toBe(0);
     expect(Array.isArray(interiorFallback.sharpFallbackSamples)).toBe(true);
-    const phaseLCapDelta = record(phaseLOf(matrix[6]!.operation).capOutputDeltaFrom60);
+    const phaseLCapDelta = record(phaseLOf(cap12B1).capOutputDeltaFrom60);
     expect(phaseLCapDelta).toMatchObject({ fromCapPx: 60, toCapPx: 12, path: "half32-b1" });
     const phaseLCapInteriorEdge = record(record(phaseLCapDelta.farGather).interiorCap12FarDepthEdge);
     const phaseLCapInteriorEdgeRgb = record(phaseLCapInteriorEdge.rgb);
     expect(number(phaseLCapInteriorEdgeRgb.pixelCount) ?? 0).toBeGreaterThanOrEqual(32);
     expect(number(phaseLCapInteriorEdgeRgb.changedPixelCount) ?? -1).toBeGreaterThanOrEqual(0);
     expect(record(record(phaseLCapDelta.finalComposite).interiorCap12FarDepthEdge)).toBeTruthy();
-    const b0ToB1 = record(phaseLOf(matrix[6]!.operation).b0ToB1Comparison);
+    const b0ToB1 = record(phaseLOf(cap12B1).b0ToB1Comparison);
     expect(b0ToB1).toMatchObject({ referenceVariant: "Half ×32 B0", candidateVariant: "Half ×32 B1" });
     const b0ToB1Edge = record(record(record(b0ToB1.farGather).interiorCap12FarDepthEdge).rgb);
     expect(number(b0ToB1Edge.pixelCount) ?? 0).toBeGreaterThanOrEqual(32);
@@ -352,6 +398,29 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     expect(number(b0ToB1Edge.rgbRootMeanSquareError)).toBe(0);
     expect(number(interiorFallback.fallbackPixelCount)).toBe(0);
     expect(number(interiorFallback.sharpFallbackPixelCount)).toBe(0);
+
+    const selectedGeometry = record(selected.geometry);
+    const eligibleInteriorPairs = Array.isArray(selectedGeometry.edgePairs)
+      ? selectedGeometry.edgePairs.filter((value) => record(value).interiorHighContrastEligible === true).map(record)
+      : [];
+    expect(eligibleInteriorPairs.length).toBeGreaterThan(0);
+    for (const pair of eligibleInteriorPairs) {
+      expect(pair).toMatchObject({
+        farSideCapPixel: true,
+        interiorFarSideCapPixel: true,
+        cappedEndpointPresent: true,
+        globalHighContrastEligible: true,
+        interiorHighContrastEligible: true,
+      });
+      expect(number(pair.depthDeltaMm) ?? 0).toBeGreaterThanOrEqual(PHASE_L_INTERIOR_TARGETS.edgeDepthDeltaMm);
+      expect(number(pair.sourceContrastRgb) ?? 0).toBeGreaterThan(PHASE_L_INTERIOR_TARGETS.minimumSourceContrastRgb);
+      const endpoints = [record(pair.a), record(pair.b)];
+      expect(endpoints.every((endpoint) => endpoint.valid === true)).toBe(true);
+      const farCappedInteriorEndpoint = endpoints.some((endpoint) => endpoint.farCapped === true
+        && endpoint.insideInteriorSupport === true
+        && (number(endpoint.borderClearancePx) ?? 0) >= PHASE_L_INTERIOR_TARGETS.cappedSupportMarginPx);
+      expect(farCappedInteriorEndpoint).toBe(true);
+    }
 
     const qualityValues = matrix.map((entry) => ({
       label: entry.label,
@@ -368,10 +437,84 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     });
     await writeFile(join(ARTIFACT_DIRECTORY, "selected-state-quality-and-resource-evidence.json"), JSON.stringify({ selected, matrix: qualityValues }, null, 2));
     await attachImages(page, testInfo, "macro-focus-middle-f5.6-");
-    // Bounded L-A outcome: the qualified interior cap/far-edge ROI is reference-close,
-    // B1 is identical to B0 there, and this ROI contains no source-color or sharp fallback.
-    // This does not assert a general B1 advantage or extend beyond the selected state.
-    decision = "L-A";
+    const metric = (operation: Operation, roi: "interiorCap12Far" | "interiorCap12FarDepthEdge") => {
+      const quality = record(record(record(phaseLOf(operation).qualityMetrics).farQuality)[roi]);
+      const rgb = record(quality.rgb);
+      return {
+        rmse: number(rgb.rgbRootMeanSquareError),
+        pixelCount: number(rgb.pixelCount),
+      };
+    };
+    const full32Interior = metric(cap12Full32, "interiorCap12Far");
+    const full64Interior = metric(cap12Full64, "interiorCap12Far");
+    const b0Interior = metric(cap12B0, "interiorCap12Far");
+    const b1Interior = metric(cap12B1, "interiorCap12Far");
+    const full32Edge = metric(cap12Full32, "interiorCap12FarDepthEdge");
+    const full64Edge = metric(cap12Full64, "interiorCap12FarDepthEdge");
+    const b0Edge = metric(cap12B0, "interiorCap12FarDepthEdge");
+    const b1Edge = metric(cap12B1, "interiorCap12FarDepthEdge");
+    const nearRgba = {
+      rgbRmse: number(near.rootMeanSquareRgbError),
+      rgbMax: number(near.maxRgbError),
+      alphaRmse: number(near.rootMeanSquareAlphaError),
+      alphaMax: number(near.maxAlphaError),
+    };
+    const fallbackEvidence = {
+      interiorFarFallbackPixels: number(interiorFallback.fallbackPixelCount),
+      interiorFarSharpFallbackPixels: number(interiorFallback.sharpFallbackPixelCount),
+      sourceRgbMismatchPixels: number(selectedFallbackMetrics.allFallbackSourceRgbMismatchCount),
+    };
+    const cap12MatrixEntries = matrix.filter((entry) => entry.label.startsWith("cap12-"));
+    const expectedReferenceIdentity = String(phaseLOf(cap12Full32).referenceIdentity ?? "");
+    const cap12ReferenceFingerprints = record(phaseKOf(cap12Full32).inputFingerprints);
+    const matchedNativeProvenance = cap12MatrixEntries.every(({ operation: entryOperation, handle: entryHandle }) => {
+      const runtime = entryHandle.runtime;
+      const entryIdentity = String(phaseLOf(entryOperation).referenceIdentity ?? "");
+      const entryFingerprints = record(phaseKOf(entryOperation).inputFingerprints);
+      return runtime?.rendererFamily === "webgpu-renderer"
+        && runtime.executionBackend === "webgpu"
+        && runtime.applicationFallback === false
+        && runtime.threeRevision === "186"
+        && entryOperation.state === "completed"
+        && entryOperation.resultPublished
+        && entryIdentity === expectedReferenceIdentity
+        && ["sourceColor", "worldPositionAndDepth", "validity", "physical"].every((key) => entryFingerprints[key] === cap12ReferenceFingerprints[key]);
+    });
+    qualityDecisionEvidence = evaluatePhaseLQualityDecision({
+      candidateQualified: record(selected.geometry).candidateQualified === true,
+      matchedNativeProvenance,
+      referenceConvergence: { interiorFarRmse: full64Interior.rmse, edgeRmse: full64Edge.rmse },
+      b0Quality: { interiorFarRmse: b0Interior.rmse, edgeRmse: b0Edge.rmse },
+      b1Quality: { interiorFarRmse: b1Interior.rmse, edgeRmse: b1Edge.rmse },
+      roiPopulations: {
+        interiorFar: {
+          full32: full32Interior.pixelCount,
+          full64: full64Interior.pixelCount,
+          b0: b0Interior.pixelCount,
+          b1: b1Interior.pixelCount,
+        },
+        edge: {
+          full32: full32Edge.pixelCount,
+          full64: full64Edge.pixelCount,
+          b0: b0Edge.pixelCount,
+          b1: b1Edge.pixelCount,
+        },
+      },
+      nearRgba,
+      fallbackEvidence,
+    });
+    expect(qualityDecisionEvidence.checks.candidateQualified).toBe(true);
+    expect(qualityDecisionEvidence.checks.matchedNativeProvenance).toBe(true);
+    expect(qualityDecisionEvidence.checks.measurementsFinite).toBe(true);
+    expect(qualityDecisionEvidence.checks.roiPopulationValid).toBe(true);
+    decision = qualityDecisionEvidence.outcome;
+    const publishedOutcome = { decision, qualityDecisionEvidence };
+    expect(publishedOutcome.decision).toBe(publishedOutcome.qualityDecisionEvidence.outcome);
+    await testInfo.attach("phase-l-quality-decision.json", {
+      body: Buffer.from(JSON.stringify({ acceptance: PHASE_L_QUALITY_ACCEPTANCE, ...publishedOutcome }, null, 2)),
+      contentType: "application/json",
+    });
+    await writeFile(join(ARTIFACT_DIRECTORY, "phase-l-quality-decision.json"), JSON.stringify({ acceptance: PHASE_L_QUALITY_ACCEPTANCE, ...publishedOutcome }, null, 2));
   }
 
   handle = await readActiveHandle(page);
@@ -410,16 +553,25 @@ test("native Phase L crop search and matched B1 large-CoC quality matrix", async
     discoveryCandidateCount: candidateResults.length,
     qualifiedCandidateCount: qualifiedCandidates.length,
     selectedCandidate: {
-      id: selected.id,
-      magnification: selected.magnification,
-      pan: selected.pan,
-      inspectionWindow: record(record(selected.phaseL.selectedCandidateConfiguration).inspectionWindow),
-      sampledFilmMm: record(record(selected.phaseL.selectedCandidateConfiguration).sampledFilmMm),
-      geometry: selected.geometry,
-      surfaceSamples: selected.phaseL.firstVisibleMacroSurfaceSamples,
+      id: selected?.id ?? null,
+      magnification: selected?.magnification ?? null,
+      pan: selected?.pan ?? null,
+      inspectionWindow: selected ? record(record(selected.phaseL.selectedCandidateConfiguration).inspectionWindow) : null,
+      sampledFilmMm: selected ? record(record(selected.phaseL.selectedCandidateConfiguration).sampledFilmMm) : null,
+      geometry: selected?.geometry ?? null,
+      surfaceSamples: selected?.phaseL.firstVisibleMacroSurfaceSamples ?? null,
     },
+    exploratoryCandidate: selected ? null : exploratoryCandidate ? {
+      id: exploratoryCandidate.id,
+      magnification: exploratoryCandidate.magnification,
+      pan: exploratoryCandidate.pan,
+      geometry: exploratoryCandidate.geometry,
+      label: "unqualified exploratory candidate; not used for confirmatory quality",
+    } : null,
     matrixOperationIds: matrix.map(({ label, operation }) => ({ label, operationId: operation.operationId })),
     decision,
+    qualityAcceptance: PHASE_L_QUALITY_ACCEPTANCE,
+    qualityDecisionEvidence,
     lifecycle: {
       retiredHandleId: oldHandleId,
       retiredResourceCount: retiredHandle!.resources.length,
