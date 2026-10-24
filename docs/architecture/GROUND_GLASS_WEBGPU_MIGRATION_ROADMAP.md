@@ -50,6 +50,8 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 **Merge gate:** M1 can merge independently with production WebGL unchanged.
 
+**M1 implementation note:** The types expose `raw-rtt`, `physical-coc`, `aperture-gather`, `composite`, and `full-presentation` as provisional feature-gate vocabulary for M1 contract tests. M1 declares no verified scene records; M2 must map exact requests to actual Ground Glass consumers before any scene/feature pair is verified.
+
 **Open blockers:** Final names and capability granularity should be fixed from actual consumers, not copied from Observer types.
 
 ## M2 — Ground Glass Renderer Host and Lifecycle Seam
