@@ -41,6 +41,7 @@ export type GroundGlassFrameRequestInput = Readonly<{
   rawDebug: boolean;
   renderQuality: RenderQualityProfile;
   channel: GroundGlassRttChannel;
+  /** Source-space crop after GroundGlassRenderer maps the displayed Stage window for Raw/Upright. */
   inspectionWindow: GroundGlassDeepReadonly<GroundGlassInspectionWindow>;
   presentationRegion: CameraMovementPresentationRegion;
   effectiveCameraMovementCalibration: GroundGlassDeepReadonly<EffectiveCameraMovementCalibration> | undefined;

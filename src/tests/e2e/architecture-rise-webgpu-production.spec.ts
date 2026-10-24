@@ -49,21 +49,27 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("request", (request) => {
-    if (/three[/._-]webgpu|\/webgpu\//i.test(request.url())) {
+    if (/GroundGlassWebGPUAdapter|three[/._-]webgpu|\/webgpu\//i.test(request.url())) {
       webgpuModuleRequests.push(request.url());
     }
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+  // URL-shaped backend and raw-debug values are not trusted activation inputs.
+  await page.goto("/simulator/free/architecture-rise?groundGlassBackend=webgpu&rawDebug=true&rttDiagnostics=1");
 
   const observer = page.getByTestId("scene-canvas");
   const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  await expect(page.getByLabel("Raw RTT — bypass DOF")).not.toBeChecked();
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgl");
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "default-webgl-request");
   await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise");
+  await expect(groundGlass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 60_000 });
+  await expect(groundGlass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
+  await expect(groundGlass).toHaveAttribute("data-actual-execution-api", "webgl2");
+  await expect(page.getByTestId("ground-glass-webgpu-pilot")).toHaveCount(0);
   const defaultObserverScreenshot = await observer.locator("canvas").screenshot();
   const defaultGroundGlassScreenshot = await groundGlass.screenshot();
   const defaultObserverPixels = await analyzeScreenshot(page, defaultObserverScreenshot);
@@ -205,7 +211,7 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("request", (request) => {
-    if (/three[/._-]webgpu|\/webgpu\//i.test(request.url())) webgpuModuleRequests.push(request.url());
+    if (/GroundGlassWebGPUAdapter|three[/._-]webgpu|\/webgpu\//i.test(request.url())) webgpuModuleRequests.push(request.url());
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");

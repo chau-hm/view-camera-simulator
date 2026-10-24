@@ -11,6 +11,8 @@ import {
 } from "./backend/groundGlassBackendContracts";
 import type {
   GroundGlassBackendDiagnostics,
+  GroundGlassBackendDiagnosticDetails,
+  GroundGlassApplicationFallbackEvidence,
   GroundGlassCleanupEvidence,
   GroundGlassMountedRuntimeEvidence,
 } from "./backend/groundGlassBackendDiagnostics";
@@ -28,6 +30,7 @@ import {
 } from "./groundGlassFrameRequest";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 import type { GroundGlassCleanupOutcome } from "./groundGlassCleanupEvidence";
+import type { GroundGlassPassId } from "./groundGlassPassGraph";
 
 export type { GroundGlassCleanupOutcome } from "./groundGlassCleanupEvidence";
 
@@ -52,11 +55,19 @@ export type GroundGlassRenderHostChannelState = Readonly<{
   pendingRequest: GroundGlassFrameRequest | null;
   pendingRequestFingerprint: string | null;
   pendingSceneFingerprint: string | null;
+  pendingSelection: GroundGlassBackendSelection | null;
   requestFingerprint: string | null;
   sceneFingerprint: string | null;
   selection: GroundGlassBackendSelection | null;
   attemptedBackend: GroundGlassBackendDiagnostics["attemptedBackend"];
   mountedRuntime: GroundGlassMountedRuntimeEvidence;
+  backendDetails: GroundGlassBackendDiagnosticDetails | null;
+  applicationFallback: GroundGlassApplicationFallbackEvidence;
+  fallbackCause: Readonly<{
+    stage: GroundGlassPilotFailureStage;
+    reason: string;
+  }> | null;
+  lastFailure: GroundGlassBackendDiagnostics["lastFailure"];
   lifecycleStatus: GroundGlassBackendDiagnostics["lifecycleStatus"];
   frame: GroundGlassBackendDiagnostics["frame"];
   retryState: GroundGlassPilotRetryState | null;
@@ -83,11 +94,16 @@ const emptyChannelState = (channelId: GroundGlassRttChannel): GroundGlassRenderH
   pendingRequest: null,
   pendingRequestFingerprint: null,
   pendingSceneFingerprint: null,
+  pendingSelection: null,
   requestFingerprint: null,
   sceneFingerprint: null,
   selection: null,
   attemptedBackend: { status: "not-started" },
   mountedRuntime: unknownRuntime,
+  backendDetails: null,
+  applicationFallback: { status: "not-observed" },
+  fallbackCause: null,
+  lastFailure: null,
   lifecycleStatus: "idle",
   frame: { current: null, lastSuccessfullyCompleted: null },
   retryState: null,
@@ -182,6 +198,8 @@ export class GroundGlassRenderHostState {
     const generation = this.allocateGeneration(state.channelId);
     const activatingPendingHost = state.pendingHostId === hostId;
     const acceptedRequest = activatingPendingHost ? state.pendingRequest : null;
+    const selection = activatingPendingHost ? state.pendingSelection : null;
+    const selectedBackend = selection?.status === "selected" ? selection.selectedBackend : null;
     return {
       ...state,
       activeHostId: hostId,
@@ -200,6 +218,7 @@ export class GroundGlassRenderHostState {
       pendingRequest: null,
       pendingRequestFingerprint: null,
       pendingSceneFingerprint: null,
+      pendingSelection: null,
       requestFingerprint: acceptedRequest
         ? state.pendingRequestFingerprint
         : state.requestFingerprint,
@@ -207,11 +226,16 @@ export class GroundGlassRenderHostState {
         ? state.pendingSceneFingerprint
         : state.sceneFingerprint,
       selection: acceptedRequest
-        ? createDefaultWebGlSelection(state.channelId, acceptedRequest.scene.id)
+        ? selection ?? createDefaultWebGlSelection(state.channelId, acceptedRequest.scene.id)
         : null,
-      attemptedBackend: { status: "started", backend: "webgl" },
+      attemptedBackend: { status: "not-started" },
       mountedRuntime: unknownRuntime,
-      lifecycleStatus: acceptedRequest ? "initializing" : "idle",
+      backendDetails: null,
+      lifecycleStatus: !acceptedRequest
+        ? "idle"
+        : selection?.status === "unavailable" || selectedBackend === null
+          ? "unavailable"
+          : "initializing",
       frame: {
         current: acceptedRequest
           ? { status: "pending", generation, request: acceptedRequest.identity }
@@ -241,9 +265,12 @@ export class GroundGlassRenderHostState {
     channel: GroundGlassRttChannel,
     hostId: string,
     input: GroundGlassFrameRequestInput,
+    selectedPolicy?: GroundGlassBackendSelection,
   ): void => {
+    let shouldFinishUnstartedRetirement = false;
     this.update(channel, (state) => {
       if (state.activeHostId !== hostId && state.pendingHostId !== hostId) return state;
+      const selection = selectedPolicy ?? createDefaultWebGlSelection(channel, input.scene.id);
       const fingerprint = createGroundGlassFrameRequestFingerprint(input);
       const acceptedByActiveHost = state.activeHostId === hostId;
       const priorRequest = acceptedByActiveHost ? state.activeRequest : state.pendingRequest;
@@ -276,10 +303,45 @@ export class GroundGlassRenderHostState {
           pendingRequest: request,
           pendingRequestFingerprint: fingerprint,
           pendingSceneFingerprint: sceneFingerprint,
+          pendingSelection: selection,
+          selection,
         };
       }
-      const selection = createDefaultWebGlSelection(channel, input.scene.id);
       const activeGeneration = state.activeGeneration;
+      const activeBackend = state.selection?.status === "selected"
+        ? state.selection.selectedBackend
+        : null;
+      const requestedBackend = selection.status === "selected" ? selection.selectedBackend : null;
+
+      if (state.activeRequest && activeGeneration && activeBackend !== requestedBackend) {
+        shouldFinishUnstartedRetirement = !state.adapterStarted;
+        return {
+          ...state,
+          activeHostId: null,
+          pendingHostId: hostId,
+          latestRequest: request,
+          pendingRequest: request,
+          pendingRequestFingerprint: fingerprint,
+          pendingSceneFingerprint: sceneFingerprint,
+          pendingSelection: selection,
+          activeRequest: state.activeRequest,
+          activeRequestFingerprint: state.activeRequestFingerprint,
+          activeSceneFingerprint: state.activeSceneFingerprint,
+          requestFingerprint: fingerprint,
+          sceneFingerprint,
+          activeGeneration: null,
+          retiringGeneration: activeGeneration,
+          mounted: false,
+          cleanupStatus: state.adapterStarted ? "pending" : "confirmed",
+          cleanupFailureReason: null,
+          lifecycleStatus: "retiring",
+          frame: {
+            current: null,
+            lastSuccessfullyCompleted: state.frame.lastSuccessfullyCompleted,
+          },
+          ...(!state.adapterStarted ? { mountedRuntime: unknownRuntime, backendDetails: null } : {}),
+        };
+      }
       return {
         ...state,
         latestRequest: request,
@@ -290,7 +352,9 @@ export class GroundGlassRenderHostState {
         sceneFingerprint,
         selection,
         lifecycleStatus: activeGeneration
-          ? state.mounted ? "rendering" : "initializing"
+          ? selection.status === "unavailable"
+            ? "unavailable"
+            : state.mounted ? "rendering" : "initializing"
           : state.retiringGeneration || state.activeGeneration ? "retiring" : "idle",
         frame: {
           current: activeGeneration
@@ -300,6 +364,7 @@ export class GroundGlassRenderHostState {
         },
       };
     });
+    if (shouldFinishUnstartedRetirement) this.finishCleanup(channel, "confirmed");
   };
 
   markAdapterStarted = (
@@ -317,6 +382,9 @@ export class GroundGlassRenderHostState {
       return {
         ...state,
         adapterStarted: true,
+        attemptedBackend: state.selection?.status === "selected"
+          ? { status: "started", backend: state.selection.selectedBackend }
+          : { status: "not-started" },
         cleanupStatus: "none",
         cleanupFailureReason: null,
         lifecycleStatus: state.lifecycleStatus === "disposed" ? "initializing" : state.lifecycleStatus,
@@ -343,6 +411,16 @@ export class GroundGlassRenderHostState {
         adapterStarted: true,
         cleanupStatus: state.cleanupStatus === "confirmed" ? "none" : state.cleanupStatus,
         attemptedBackend: { status: "mounted", backend: "webgl" },
+        backendDetails: null,
+        applicationFallback: state.fallbackCause
+          ? {
+              status: "occurred",
+              failedBackend: "webgpu",
+              fallbackRendererFamily: "webgl-renderer",
+              failureStage: state.fallbackCause.stage,
+              reason: state.fallbackCause.reason,
+            }
+          : state.applicationFallback,
         mountedRuntime: {
           status: "mounted",
           generation,
@@ -355,24 +433,108 @@ export class GroundGlassRenderHostState {
     });
   };
 
+  reportWebGpuRendererMounted = (
+    channel: GroundGlassRttChannel,
+    hostId: string,
+    generation: GroundGlassRendererGenerationIdentity,
+    runtime: GroundGlassMountedRuntimeEvidence,
+    details: GroundGlassBackendDiagnosticDetails,
+  ): void => {
+    this.update(channel, (state) => {
+      if (
+        state.activeHostId !== hostId ||
+        state.activeGeneration?.generationId !== generation.generationId ||
+        runtime.status !== "mounted" ||
+        runtime.generation.generationId !== generation.generationId ||
+        runtime.rendererFamily !== "webgpu-renderer" ||
+        details.backend !== "webgpu" ||
+        state.selection?.status !== "selected" ||
+        state.selection.selectedBackend !== "webgpu" ||
+        state.cleanupStatus === "failed" ||
+        state.cleanupStatus === "uncertain"
+      ) return state;
+      return {
+        ...state,
+        mounted: true,
+        adapterStarted: true,
+        attemptedBackend: { status: "mounted", backend: "webgpu" },
+        mountedRuntime: runtime,
+        backendDetails: details,
+        lifecycleStatus: state.activeRequest ? "rendering" : "ready",
+      };
+    });
+  };
+
+  reportBackendDetails = (
+    channel: GroundGlassRttChannel,
+    hostId: string,
+    generation: GroundGlassRendererGenerationIdentity,
+    details: GroundGlassBackendDiagnosticDetails,
+  ): void => {
+    this.update(channel, (state) => {
+      if (
+        state.activeHostId !== hostId ||
+        state.activeGeneration?.generationId !== generation.generationId ||
+        state.mountedRuntime.status !== "mounted" ||
+        state.mountedRuntime.generation.generationId !== generation.generationId ||
+        details.backend !== "webgpu" ||
+        details.requestId !== state.activeRequest?.identity.requestId ||
+        details.sceneId !== state.activeRequest?.identity.sceneId
+      ) return state;
+      return { ...state, backendDetails: details };
+    });
+  };
+
   reportAdapterFailure = (
     channel: GroundGlassRttChannel,
     hostId: string,
     generation: GroundGlassRendererGenerationIdentity,
     failureReason: string,
-  ): void => {
+    explicitStage?: GroundGlassPilotFailureStage,
+    failedPass: GroundGlassPassId | null = null,
+  ): boolean => {
+    let accepted = false;
     this.update(channel, (state) => {
-      if (state.activeHostId !== hostId || state.activeGeneration?.generationId !== generation.generationId) return state;
-      const stage = state.mounted ? "runtime" : "initialization";
+      if (
+        state.activeHostId !== hostId ||
+        state.activeGeneration?.generationId !== generation.generationId ||
+        state.lifecycleStatus === "failed"
+      ) return state;
+      accepted = true;
+      const stage = explicitStage ?? (state.mounted ? "runtime" : "initialization");
+      const backend = state.selection?.status === "selected"
+        ? state.selection.selectedBackend
+        : "webgl";
       const request = state.activeRequest;
+      let retryState = state.retryState;
+      if (
+        backend === "webgpu" &&
+        state.selection?.status === "selected" &&
+        request &&
+        state.retryState
+      ) {
+        const consumed = consumeGroundGlassPilotRetry(
+          state.retryState,
+          state.selection,
+          request.scene.id,
+          stage,
+          failureReason,
+        );
+        if (consumed.status === "consumed") retryState = consumed.retryState;
+      }
       return {
         ...state,
         attemptedBackend: {
           status: "failed",
-          backend: "webgl",
+          backend,
           stage,
           failureReason,
         },
+        retryState,
+        fallbackCause: backend === "webgpu" ? { stage, reason: failureReason } : state.fallbackCause,
+        lastFailure: request
+          ? { generation, request: request.identity, backend, stage, failedPass, reason: failureReason }
+          : state.lastFailure,
         lifecycleStatus: "failed",
         frame: {
           current: request
@@ -380,7 +542,7 @@ export class GroundGlassRenderHostState {
                 status: "failed",
                 generation,
                 request: request.identity,
-                failedStage: null,
+                failedStage: failedPass,
                 failureReason,
               }
             : null,
@@ -388,6 +550,7 @@ export class GroundGlassRenderHostState {
         },
       };
     });
+    return accepted;
   };
 
   canReceiveRuntimeInfo = (
@@ -461,7 +624,10 @@ export class GroundGlassRenderHostState {
         return {
           ...state,
           lifecycleStatus: "ready",
-          attemptedBackend: { status: "mounted", backend: "webgl" },
+          attemptedBackend: {
+            status: "mounted",
+            backend: state.selection?.status === "selected" ? state.selection.selectedBackend : "webgl",
+          },
           frame: {
             current: result,
             lastSuccessfullyCompleted: {
@@ -486,7 +652,7 @@ export class GroundGlassRenderHostState {
         lifecycleStatus: "failed",
         attemptedBackend: {
           status: "failed",
-          backend: "webgl",
+          backend: state.selection?.status === "selected" ? state.selection.selectedBackend : "webgl",
           stage: "runtime",
           failureReason: result.failureReason,
         },
@@ -518,7 +684,11 @@ export class GroundGlassRenderHostState {
       });
   };
 
-  requestSafeReplacement = (channel: GroundGlassRttChannel, hostId: string): boolean => {
+  requestSafeReplacement = (
+    channel: GroundGlassRttChannel,
+    hostId: string,
+    replacementSelection?: GroundGlassBackendSelection,
+  ): boolean => {
     let requested = false;
     this.update(channel, (state) => {
       const generation = state.activeGeneration;
@@ -536,6 +706,8 @@ export class GroundGlassRenderHostState {
         pendingRequest: state.activeRequest,
         pendingRequestFingerprint: state.activeRequestFingerprint,
         pendingSceneFingerprint: state.activeSceneFingerprint,
+        pendingSelection: replacementSelection ?? state.selection,
+        selection: replacementSelection ?? state.selection,
         activeGeneration: null,
         retiringGeneration: generation,
         mounted: false,
@@ -549,7 +721,7 @@ export class GroundGlassRenderHostState {
           current: null,
           lastSuccessfullyCompleted: state.frame.lastSuccessfullyCompleted,
         },
-        ...(state.adapterStarted ? {} : { mountedRuntime: unknownRuntime }),
+        ...(state.adapterStarted ? {} : { mountedRuntime: unknownRuntime, backendDetails: null }),
       };
     });
     if (requested && !this.getSnapshot(channel).adapterStarted) {
@@ -571,6 +743,7 @@ export class GroundGlassRenderHostState {
         pendingRequest: null,
         pendingRequestFingerprint: null,
         pendingSceneFingerprint: null,
+        pendingSelection: null,
         latestRequest: state.activeRequest ?? state.latestRequest,
         requestFingerprint: state.activeRequestFingerprint ?? state.requestFingerprint,
         sceneFingerprint: state.activeSceneFingerprint ?? state.sceneFingerprint,
@@ -642,6 +815,7 @@ export class GroundGlassRenderHostState {
           mounted: false,
           runtimeOwnerId: null,
           mountedRuntime: unknownRuntime,
+          backendDetails: null,
           lifecycleStatus: state.lifecycleStatus === "failed"
             ? "failed"
             : stickyOutcome === "confirmed" ? "disposed" : "unavailable",
@@ -673,6 +847,7 @@ export class GroundGlassRenderHostState {
             : "adapter-cleanup-not-confirmed"),
           mounted: false,
           mountedRuntime: unknownRuntime,
+          backendDetails: null,
           lifecycleStatus: "unavailable",
         };
       }
@@ -691,6 +866,7 @@ export class GroundGlassRenderHostState {
         activeRequestFingerprint: state.pendingHostId ? state.activeRequestFingerprint : null,
         activeSceneFingerprint: state.pendingHostId ? state.activeSceneFingerprint : null,
         mountedRuntime: unknownRuntime,
+        backendDetails: null,
         lifecycleStatus: "disposed" as const,
       };
       return state.pendingHostId ? this.activateHost(cleaned, state.pendingHostId) : cleaned;
@@ -777,13 +953,14 @@ export class GroundGlassRenderHostState {
       policySelection: selection,
       attemptedBackend: state.attemptedBackend,
       mountedRuntime: state.mountedRuntime,
-      applicationFallback: { status: "not-observed" },
+      applicationFallback: state.applicationFallback,
       rendererGeneration: generation,
       lifecycleStatus: state.lifecycleStatus,
       cleanup,
       frame: state.frame,
       retryState: state.retryState,
-      backendDetails: null,
+      backendDetails: state.backendDetails,
+      lastFailure: state.lastFailure,
     };
     this.diagnosticsByState.set(state, diagnostics);
     return diagnostics;
