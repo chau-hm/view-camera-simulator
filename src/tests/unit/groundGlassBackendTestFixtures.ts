@@ -31,7 +31,7 @@ export const createVerifiedFeature = (
   testedContext: {
     rendererFamily: "webgpu-renderer",
     executionApi: "webgpu",
-    rendererRevision: "three-test-revision",
+    rendererRevision: "three-test-r186",
     runtimeDescription: "synthetic unit-test evidence only",
   },
   verificationEvidence: ["synthetic-unit-test-evidence"],
@@ -46,9 +46,10 @@ export const createVerifiedFeature = (
 export const createSyntheticCompatibility = (
   features: readonly GroundGlassFeatureCompatibility[] = [createVerifiedFeature()],
   sceneId = SYNTHETIC_SCENE_ID,
+  sourceRevision = "synthetic-scene-r1",
 ): GroundGlassSceneCompatibility => ({
   sceneId,
-  sourceRevision: "synthetic-scene-r1",
+  sourceRevision,
   features,
 });
 
@@ -69,6 +70,7 @@ export const createWebGpuPolicyInput = (
     sceneId: SYNTHETIC_SCENE_ID,
     requestedFeatures: ["raw-rtt"],
     sceneCompatibility: createSyntheticCompatibility(),
+    expectedCandidateRendererRevision: "three-test-r186",
     capabilityPreflight: completeCapabilityPreflight,
     retryState: createGroundGlassPilotRetryState(
       SYNTHETIC_CHANNEL_ID,

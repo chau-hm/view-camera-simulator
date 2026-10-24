@@ -51,7 +51,7 @@ const diagnostics = (
 });
 
 describe("Ground Glass runtime diagnostics contract", () => {
-  it("keeps reported WebGPU capability and a selected attempt separate from mounted execution", () => {
+  it("keeps a matching candidate revision and reported WebGPU capability separate from mounted execution", () => {
     const result = diagnostics();
     expect(result.policySelection).toMatchObject({
       selectedBackend: "webgpu",
@@ -59,7 +59,10 @@ describe("Ground Glass runtime diagnostics contract", () => {
     });
     expect(result.attemptedBackend).toEqual({ status: "not-started" });
     expect(result.mountedRuntime).toEqual({ status: "unknown" });
+    expect(result.rendererGeneration).toBeNull();
+    expect(result.frame).toEqual({ current: null, lastSuccessfullyCompleted: null });
     expect(result).not.toHaveProperty("navigator");
+    expect(result.policySelection).not.toHaveProperty("expectedCandidateRendererRevision");
   });
 
   it("does not place actual execution identity on a WebGPU policy selection", () => {

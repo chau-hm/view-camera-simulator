@@ -126,6 +126,8 @@ export type GroundGlassBackendPolicyInput = Readonly<{
   sceneId: string;
   requestedFeatures: readonly string[];
   sceneCompatibility: GroundGlassSceneCompatibility | null;
+  /** Trusted application/build candidate revision; never mounted-runtime evidence. */
+  expectedCandidateRendererRevision: string | null;
   capabilityPreflight: GroundGlassCapabilityPreflightEvidence;
   retryState: GroundGlassPilotRetryState | null;
   webglAvailable: boolean;
@@ -291,6 +293,7 @@ export const selectGroundGlassBackend = (
       input.sceneId,
       input.requestedFeatures,
       input.sceneCompatibility,
+      input.expectedCandidateRendererRevision,
     );
     if (sceneReasonsRequireDenial(sceneEligibility)) denialReasons.add("scene-ineligible");
 

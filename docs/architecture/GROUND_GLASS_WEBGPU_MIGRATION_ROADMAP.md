@@ -50,7 +50,7 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 **Merge gate:** M1 can merge independently with production WebGL unchanged.
 
-**M1 implementation note:** The types expose `raw-rtt`, `physical-coc`, `aperture-gather`, `composite`, and `full-presentation` as provisional feature-gate vocabulary for M1 contract tests. M1 declares no verified scene records; M2 must map exact requests to actual Ground Glass consumers before any scene/feature pair is verified.
+**M1 implementation note:** The types expose `raw-rtt`, `physical-coc`, `aperture-gather`, `composite`, and `full-presentation` as provisional feature-gate vocabulary for M1 contract tests. M1 declares no verified scene records; M2 must map exact requests to actual Ground Glass consumers before any scene/feature pair is verified. Every verified feature's source revision must exactly match the scene compatibility record's declared `sourceRevision`, and its tested renderer revision must exactly match the trusted expected candidate renderer revision. Missing or mismatched revisions deny WebGPU authorization. These equalities establish record consistency only: `compatibility.sourceRevision` is declared compatibility evidence, not a revision read from the currently mounted scene, and the candidate renderer revision does not prove the mounted renderer family or execution API. M2 must bind compatibility evidence to the trusted application-side request and actual scene source; M3+ must verify candidate execution and scene compatibility against mounted runtime evidence before claiming WebGPU execution.
 
 **Open blockers:** Final names and capability granularity should be fixed from actual consumers, not copied from Observer types.
 

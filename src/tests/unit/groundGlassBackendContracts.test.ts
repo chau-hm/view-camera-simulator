@@ -13,6 +13,8 @@ import type {
   GroundGlassRendererGenerationIdentity,
 } from "../../render/backend/groundGlassBackendContracts";
 import {
+  createSyntheticCompatibility,
+  createVerifiedFeature,
   createWebGpuPolicyInput,
   SYNTHETIC_CHANNEL_ID,
   SYNTHETIC_PILOT_SESSION_ID,
@@ -309,6 +311,75 @@ describe("Ground Glass pilot-session retry contract", () => {
       status: "rejected",
       reason: "policy-rejected",
       policySelection: { policyDecision: { status: "denied", reasons: ["scene-ineligible"] } },
+    });
+  });
+
+  it("rejects an explicit retry when verified renderer evidence is stale for the candidate revision", () => {
+    const failure = consumeFailure();
+    if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");
+    const originalState = failure.retryState;
+
+    const result = authorizeGroundGlassPilotRetry(
+      originalState,
+      createWebGpuPolicyInput({
+        retryState: originalState,
+        expectedCandidateRendererRevision: "three-test-r187",
+      }),
+      "explicit-retry",
+      "confirmed",
+    );
+
+    expect(result).toMatchObject({
+      status: "rejected",
+      reason: "policy-rejected",
+      policySelection: {
+        policyDecision: {
+          status: "denied",
+          reasons: ["scene-ineligible"],
+          sceneEligibility: { status: "denied", reasons: ["renderer-revision-mismatch"] },
+        },
+      },
+    });
+    expect(originalState).toMatchObject({
+      status: "consumed",
+      retryEpoch: 0,
+      failureHistory: [{ failedSceneId: SYNTHETIC_SCENE_ID }],
+    });
+  });
+
+  it("rejects an explicit retry when verified feature evidence belongs to another scene revision", () => {
+    const failure = consumeFailure();
+    if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");
+    const originalState = failure.retryState;
+    const staleSceneEvidence = createSyntheticCompatibility([
+      createVerifiedFeature("raw-rtt", { sourceRevision: "scene-r1" }),
+    ], SYNTHETIC_SCENE_ID, "scene-r2");
+
+    const result = authorizeGroundGlassPilotRetry(
+      originalState,
+      createWebGpuPolicyInput({
+        retryState: originalState,
+        sceneCompatibility: staleSceneEvidence,
+      }),
+      "explicit-retry",
+      "confirmed",
+    );
+
+    expect(result).toMatchObject({
+      status: "rejected",
+      reason: "policy-rejected",
+      policySelection: {
+        policyDecision: {
+          status: "denied",
+          reasons: ["scene-ineligible"],
+          sceneEligibility: { status: "denied", reasons: ["feature-source-revision-mismatch"] },
+        },
+      },
+    });
+    expect(originalState).toMatchObject({
+      status: "consumed",
+      retryEpoch: 0,
+      failureHistory: [{ failedSceneId: SYNTHETIC_SCENE_ID }],
     });
   });
 

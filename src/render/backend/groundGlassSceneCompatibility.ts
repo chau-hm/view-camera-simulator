@@ -51,6 +51,7 @@ export type GroundGlassFeatureCompatibility =
 
 export type GroundGlassSceneCompatibility = Readonly<{
   sceneId: string;
+  /** Declared revision paired with feature evidence; M1 cannot bind it to a mounted scene. */
   sourceRevision: string;
   features: readonly GroundGlassFeatureCompatibility[];
 }>;
@@ -59,6 +60,12 @@ export type GroundGlassSceneEligibilityReason =
   | "unknown-scene"
   | "scene-identity-mismatch"
   | "no-features-requested"
+  | "candidate-renderer-revision-missing"
+  | "scene-source-revision-missing"
+  | "feature-source-revision-missing"
+  | "feature-source-revision-mismatch"
+  | "feature-renderer-revision-missing"
+  | "renderer-revision-mismatch"
   | "unknown-feature"
   | "feature-not-declared"
   | "feature-not-evaluated"
@@ -110,8 +117,13 @@ export const resolveGroundGlassSceneEligibility = (
   sceneId: string,
   requestedFeatures: readonly string[],
   compatibility: GroundGlassSceneCompatibility | null,
+  expectedCandidateRendererRevision: string | null,
 ): GroundGlassSceneEligibility => {
   const reasons = new Set<GroundGlassSceneEligibilityReason>();
+
+  if (!expectedCandidateRendererRevision?.trim()) {
+    reasons.add("candidate-renderer-revision-missing");
+  }
 
   if (!compatibility) {
     reasons.add("unknown-scene");
@@ -147,11 +159,37 @@ export const resolveGroundGlassSceneEligibility = (
       reasons.add("feature-research-only");
       continue;
     }
+    let revisionsMatch = Boolean(expectedCandidateRendererRevision?.trim());
+    if (!compatibility.sourceRevision.trim()) {
+      reasons.add("scene-source-revision-missing");
+      revisionsMatch = false;
+    }
+    if (!feature.sourceRevision.trim()) {
+      reasons.add("feature-source-revision-missing");
+      revisionsMatch = false;
+    } else if (
+      compatibility.sourceRevision.trim() &&
+      feature.sourceRevision !== compatibility.sourceRevision
+    ) {
+      reasons.add("feature-source-revision-mismatch");
+      revisionsMatch = false;
+    }
+
+    if (!feature.testedContext.rendererRevision.trim()) {
+      reasons.add("feature-renderer-revision-missing");
+      revisionsMatch = false;
+    } else if (
+      expectedCandidateRendererRevision?.trim() &&
+      feature.testedContext.rendererRevision !== expectedCandidateRendererRevision
+    ) {
+      reasons.add("renderer-revision-mismatch");
+      revisionsMatch = false;
+    }
+
+    if (!revisionsMatch) continue;
+
     if (
-      !compatibility.sourceRevision.trim() ||
-      !feature.sourceRevision.trim() ||
       !feature.evidenceRevision.trim() ||
-      !feature.testedContext.rendererRevision.trim() ||
       !feature.testedContext.runtimeDescription.trim() ||
       feature.verificationEvidence.length === 0 ||
       feature.verificationEvidence.some((evidence) => !evidence.trim())

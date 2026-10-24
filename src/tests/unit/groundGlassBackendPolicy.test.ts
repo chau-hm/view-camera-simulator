@@ -17,7 +17,10 @@ const deniedReasons = (input: Parameters<typeof selectGroundGlassBackend>[0]) =>
 
 describe("Ground Glass backend policy", () => {
   it("selects WebGL by default", () => {
-    const result = selectGroundGlassBackend(createWebGpuPolicyInput({ requestedBackend: null }));
+    const result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      requestedBackend: null,
+      expectedCandidateRendererRevision: null,
+    }));
     expect(result).toMatchObject({
       status: "selected",
       selectedBackend: "webgl",
@@ -27,7 +30,10 @@ describe("Ground Glass backend policy", () => {
   });
 
   it("selects explicitly requested WebGL when available", () => {
-    const result = selectGroundGlassBackend(createWebGpuPolicyInput({ requestedBackend: "webgl" }));
+    const result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      requestedBackend: "webgl",
+      expectedCandidateRendererRevision: null,
+    }));
     expect(result).toMatchObject({
       status: "selected",
       selectedBackend: "webgl",
@@ -145,6 +151,172 @@ describe("Ground Glass backend policy", () => {
     expect(result.policyDecision).toMatchObject({
       status: "denied",
       sceneEligibility: { status: "denied", reasons: ["feature-not-declared"] },
+    });
+  });
+
+  it("accepts verified feature evidence when its source revision matches the scene revision", () => {
+    const feature = createVerifiedFeature("raw-rtt", { sourceRevision: "r2" });
+    const result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneCompatibility: createSyntheticCompatibility([feature], SYNTHETIC_SCENE_ID, "r2"),
+    }));
+
+    expect(result).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+  });
+
+  it("denies verified feature evidence from a different scene source revision", () => {
+    const feature = createVerifiedFeature("raw-rtt", { sourceRevision: "r1" });
+    const result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneCompatibility: createSyntheticCompatibility([feature], SYNTHETIC_SCENE_ID, "r2"),
+    }));
+
+    expect(result.selectedBackend).toBe("webgl");
+    expect(result.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["feature-source-revision-mismatch"] },
+    });
+  });
+
+  it("validates source revision consistency independently for every requested feature", () => {
+    const result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      requestedFeatures: ["raw-rtt", "physical-coc"],
+      sceneCompatibility: createSyntheticCompatibility([
+        createVerifiedFeature("raw-rtt", { sourceRevision: "r2" }),
+        createVerifiedFeature("physical-coc", { sourceRevision: "r1" }),
+      ], SYNTHETIC_SCENE_ID, "r2"),
+    }));
+
+    expect(result.selectedBackend).toBe("webgl");
+    expect(result.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["feature-source-revision-mismatch"] },
+    });
+  });
+
+  it("fails closed when the scene or verified feature source revision is blank", () => {
+    const blankSceneRevision = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneCompatibility: createSyntheticCompatibility(
+        [createVerifiedFeature()],
+        SYNTHETIC_SCENE_ID,
+        "  ",
+      ),
+    }));
+    const blankFeatureRevision = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneCompatibility: createSyntheticCompatibility([
+        createVerifiedFeature("raw-rtt", { sourceRevision: " " }),
+      ]),
+    }));
+
+    expect(blankSceneRevision.selectedBackend).toBe("webgl");
+    expect(blankSceneRevision.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["scene-source-revision-missing"] },
+    });
+    expect(blankFeatureRevision.selectedBackend).toBe("webgl");
+    expect(blankFeatureRevision.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["feature-source-revision-missing"] },
+    });
+  });
+
+  it("requires an exact candidate renderer revision match for every requested feature", () => {
+    const matching = selectGroundGlassBackend(createWebGpuPolicyInput({
+      expectedCandidateRendererRevision: "three-test-r186",
+      sceneCompatibility: createSyntheticCompatibility([
+        createVerifiedFeature("raw-rtt", {
+          testedContext: {
+            rendererFamily: "webgpu-renderer",
+            executionApi: "webgpu",
+            rendererRevision: "three-test-r186",
+            runtimeDescription: "synthetic unit-test evidence only",
+          },
+        }),
+      ]),
+    }));
+    const stale = selectGroundGlassBackend(createWebGpuPolicyInput({
+      expectedCandidateRendererRevision: "three-test-r186",
+      sceneCompatibility: createSyntheticCompatibility([
+        createVerifiedFeature("raw-rtt", {
+          testedContext: {
+            rendererFamily: "webgpu-renderer",
+            executionApi: "webgpu",
+            rendererRevision: "three-test-r185",
+            runtimeDescription: "synthetic unit-test evidence only",
+          },
+        }),
+      ]),
+    }));
+
+    expect(matching).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+    expect(stale.selectedBackend).toBe("webgl");
+    expect(stale.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["renderer-revision-mismatch"] },
+    });
+  });
+
+  it("denies missing candidate or verified renderer revisions", () => {
+    const missingCandidate = selectGroundGlassBackend(createWebGpuPolicyInput({
+      expectedCandidateRendererRevision: null,
+    }));
+    const blankCandidate = selectGroundGlassBackend(createWebGpuPolicyInput({
+      expectedCandidateRendererRevision: " ",
+    }));
+    const missingEvidenceRevision = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneCompatibility: createSyntheticCompatibility([
+        createVerifiedFeature("raw-rtt", {
+          testedContext: {
+            rendererFamily: "webgpu-renderer",
+            executionApi: "webgpu",
+            rendererRevision: " ",
+            runtimeDescription: "synthetic unit-test evidence only",
+          },
+        }),
+      ]),
+    }));
+
+    for (const result of [missingCandidate, blankCandidate, missingEvidenceRevision]) {
+      expect(result.selectedBackend).toBe("webgl");
+      expect(result.policyDecision.status).toBe("denied");
+    }
+    expect(missingCandidate.policyDecision).toMatchObject({
+      sceneEligibility: { status: "denied", reasons: ["candidate-renderer-revision-missing"] },
+    });
+    expect(blankCandidate.policyDecision).toMatchObject({
+      sceneEligibility: { status: "denied", reasons: ["candidate-renderer-revision-missing"] },
+    });
+    expect(missingEvidenceRevision.policyDecision).toMatchObject({
+      sceneEligibility: { status: "denied", reasons: ["feature-renderer-revision-missing"] },
+    });
+  });
+
+  it("denies the whole request when requested features were verified under different renderer revisions", () => {
+    const result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      requestedFeatures: ["raw-rtt", "physical-coc"],
+      expectedCandidateRendererRevision: "three-test-r186",
+      sceneCompatibility: createSyntheticCompatibility([
+        createVerifiedFeature("raw-rtt", {
+          testedContext: {
+            rendererFamily: "webgpu-renderer",
+            executionApi: "webgpu",
+            rendererRevision: "three-test-r186",
+            runtimeDescription: "synthetic unit-test evidence only",
+          },
+        }),
+        createVerifiedFeature("physical-coc", {
+          testedContext: {
+            rendererFamily: "webgpu-renderer",
+            executionApi: "webgpu",
+            rendererRevision: "three-test-r185",
+            runtimeDescription: "synthetic unit-test evidence only",
+          },
+        }),
+      ]),
+    }));
+
+    expect(result.selectedBackend).toBe("webgl");
+    expect(result.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["renderer-revision-mismatch"] },
     });
   });
 
