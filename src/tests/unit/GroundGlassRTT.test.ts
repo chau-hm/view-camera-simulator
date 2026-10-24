@@ -47,17 +47,29 @@ import type {
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
 import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInspectionWindow";
+import type { GroundGlassFrameResult } from "../../render/backend/groundGlassBackendContracts";
 
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
   renderedScenes: [] as unknown[],
   renderEvents: [] as Array<{ scene: unknown; target: unknown }>,
   cocFramebufferStatuses: [] as number[],
+  contextLost: false,
+  canvasListeners: new Map<string, Array<(event: Event) => void>>(),
+  canvasCreatedCallback: null as ((state: never) => void) | null,
   currentTarget: null as unknown,
   clearColor: null as number | null,
   clearAlpha: 1,
   gl: {
     isWebGLRenderer: true,
+    dispose: vi.fn(),
+    forceContextLoss: () => {
+      fiberTestState.contextLost = true;
+      const event = new Event("webglcontextlost", { cancelable: true });
+      for (const listener of fiberTestState.canvasListeners.get("webglcontextlost") ?? []) {
+        listener(event);
+      }
+    },
     getPixelRatio: () => 1,
     getRenderTarget: () => fiberTestState.currentTarget,
     setRenderTarget: (target: unknown) => {
@@ -66,6 +78,7 @@ const fiberTestState = vi.hoisted(() => ({
     getContext: () => ({
       FRAMEBUFFER: 0x8d40,
       FRAMEBUFFER_COMPLETE: 0x8cd5,
+      isContextLost: () => fiberTestState.contextLost,
       checkFramebufferStatus: () =>
         fiberTestState.cocFramebufferStatuses.shift() ?? 0x8cd5,
     }),
@@ -85,12 +98,32 @@ const fiberTestState = vi.hoisted(() => ({
       width: 500,
       height: 400,
       getBoundingClientRect: () => ({ width: 500, height: 400 }),
+      addEventListener: (type: string, listener: EventListenerOrEventListenerObject) => {
+        const callback = typeof listener === "function"
+          ? listener
+          : (event: Event) => listener.handleEvent(event);
+        const listeners = fiberTestState.canvasListeners.get(type) ?? [];
+        listeners.push(callback);
+        fiberTestState.canvasListeners.set(type, listeners);
+      },
+      removeEventListener: (type: string, listener: EventListenerOrEventListenerObject) => {
+        const callback = typeof listener === "function"
+          ? listener
+          : (event: Event) => listener.handleEvent(event);
+        const listeners = fiberTestState.canvasListeners.get(type) ?? [];
+        fiberTestState.canvasListeners.set(type, listeners.filter((candidate) => candidate !== callback));
+      },
     },
   },
 }));
 
 vi.mock("@react-three/fiber", () => ({
-  Canvas: (props: { children?: unknown }) => props.children,
+  Canvas: (props: { children?: unknown; onCreated?: (state: unknown) => void }) => {
+    fiberTestState.canvasCreatedCallback = props.onCreated
+      ? props.onCreated as unknown as (state: never) => void
+      : null;
+    return props.children;
+  },
   useFrame: (callback: (state?: unknown, delta?: number) => void) => {
     fiberTestState.frameCallback = callback;
   },
@@ -141,6 +174,9 @@ afterEach(() => {
   fiberTestState.renderedScenes.length = 0;
   fiberTestState.renderEvents.length = 0;
   fiberTestState.cocFramebufferStatuses.length = 0;
+  fiberTestState.contextLost = false;
+  fiberTestState.canvasListeners.clear();
+  fiberTestState.canvasCreatedCallback = null;
   fiberTestState.currentTarget = null;
   fiberTestState.clearColor = null;
   fiberTestState.clearAlpha = 1;
@@ -148,6 +184,12 @@ afterEach(() => {
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
 });
+
+const dispatchCanvasEvent = (type: string): Event => {
+  const event = new Event(type, { cancelable: true });
+  for (const listener of fiberTestState.canvasListeners.get(type) ?? []) listener(event);
+  return event;
+};
 
 const ConnectedGroundGlassRTT = (props: GroundGlassRTTProps) => {
   const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (
@@ -195,6 +237,71 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("waits for actual RTT owners and Canvas retirement before reporting failed cleanup", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const generation = { generationId: "rtt-generation-cleanup-owner", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-cleanup-owner",
+      channelId: "default",
+      sceneId: architectureRiseScene.id,
+    } as const;
+    const subject = new THREE.Group();
+    subject.name = "cleanup-evidence-subject";
+    const disposeFailure = new Error("injected subject cleanup failure");
+    const disposeSubject = vi.fn(() => {
+      subject.removeFromParent();
+      throw disposeFailure;
+    });
+    const developmentProfile: GroundGlassSceneProfile = {
+      configureRttShadowParticipation: vi.fn(),
+      mountSubject: vi.fn((scene: THREE.Scene) => {
+        scene.add(subject);
+        return { group: subject, dispose: disposeSubject };
+      }),
+      resolveRenderBounds: vi.fn(() => architectureRiseScene.bounds),
+    };
+    const onAdapterDisposed = vi.fn();
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureRiseScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onAdapterDisposed,
+        developmentSceneProfileOverride: developmentProfile,
+      }),
+    );
+
+    expect(fiberTestState.canvasCreatedCallback).not.toBeNull();
+    act(() => fiberTestState.canvasCreatedCallback?.({ gl: fiberTestState.gl } as never));
+    expect(onAdapterDisposed).not.toHaveBeenCalled();
+
+    view.unmount();
+
+    expect(disposeSubject).toHaveBeenCalledTimes(1);
+    expect(onAdapterDisposed).not.toHaveBeenCalled();
+    act(() => {
+      fiberTestState.gl.dispose();
+      fiberTestState.gl.forceContextLoss();
+    });
+
+    expect(onAdapterDisposed).toHaveBeenCalledTimes(1);
+    expect(onAdapterDisposed).toHaveBeenLastCalledWith(
+      generation,
+      "failed",
+      disposeFailure.message,
+    );
+    expect(subject.parent).toBeNull();
+  });
+
   it("uses and disposes the development-only scene profile through the RTT lifecycle", () => {
     const subject = new THREE.Group();
     subject.name = "development-profile-test-subject";
@@ -990,6 +1097,13 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       activeSceneId: architectureForegroundScene.id,
     };
     const diagnostics = createRuntimeInfoCollector();
+    const frameResults: Array<{ status: string; failedStage?: string | null }> = [];
+    const generation = { generationId: "rtt-generation-failure", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-failure",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
     const previousTarget = new THREE.WebGLRenderTarget(32, 24);
     const disposePreviousTarget = vi.spyOn(previousTarget, "dispose");
     fiberTestState.currentTarget = previousTarget;
@@ -1016,6 +1130,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         heightPx: 400,
         renderQuality: "standard",
         previewMode: "upright",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onFrameResult: (result) => frameResults.push(result),
         onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
@@ -1029,6 +1146,14 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     }
 
     expect(observedFailure).toBe(injectedFailure);
+    expect(frameResults).toHaveLength(1);
+    expect(frameResults[0]).toMatchObject({
+      status: "failed",
+      failedStage: "nearGather",
+      generation,
+      request,
+      failureReason: injectedFailure.message,
+    });
     expect(targetAtFailure).toBeInstanceOf(THREE.WebGLRenderTarget);
     expect(targetAtFailure).not.toBe(previousTarget);
     expect(fiberTestState.currentTarget).toBe(previousTarget);
@@ -1057,6 +1182,162 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(diagnostics.get()).toBeNull();
     expect(disposePreviousTarget).not.toHaveBeenCalled();
     previousTarget.dispose();
+  });
+
+  it("reports completion only after the final display output and renderer-state restoration", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const previousTarget = new THREE.WebGLRenderTarget(20, 16);
+    fiberTestState.currentTarget = previousTarget;
+    const generation = { generationId: "rtt-generation-success", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-success",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    let targetAtCompletion: unknown;
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => {
+          targetAtCompletion = fiberTestState.currentTarget;
+          results.push(result);
+        },
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    expect(fiberTestState.renderEvents).toHaveLength(6);
+    expect(results).toEqual([expect.objectContaining({
+      status: "completed",
+      generation,
+      request,
+      requiredOperations: "all-completed",
+    })]);
+    expect(targetAtCompletion).toBe(previousTarget);
+    expect(fiberTestState.currentTarget).toBe(previousTarget);
+
+    view.unmount();
+    previousTarget.dispose();
+  });
+
+  it("does not report a completed frame while WebGL context is lost", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const generation = { generationId: "rtt-generation-context-loss", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-context-loss",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => results.push(result),
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(results.at(-1)).toMatchObject({ status: "completed", generation, request });
+
+    fiberTestState.contextLost = true;
+    let lossEvent: Event;
+    act(() => {
+      lossEvent = dispatchCanvasEvent("webglcontextlost");
+    });
+    expect(lossEvent!.defaultPrevented).toBe(true);
+    expect(results.at(-1)).toMatchObject({
+      status: "failed",
+      generation,
+      request,
+      failureReason: "WebGL context lost",
+    });
+
+    const resultCountWhileLost = results.length;
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(results).toHaveLength(resultCountWhileLost);
+    expect(results.at(-1)).toMatchObject({ status: "failed", generation, request });
+
+    fiberTestState.contextLost = false;
+    act(() => dispatchCanvasEvent("webglcontextrestored"));
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(results.at(-1)).toMatchObject({ status: "completed", generation, request });
+
+    view.unmount();
+  });
+
+  it("does not publish a completed frame if context loss occurs during display submission", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const generation = { generationId: "rtt-generation-mid-frame-loss", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-mid-frame-loss",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const renderBeforeLoss = fiberTestState.gl.render;
+    vi.spyOn(fiberTestState.gl, "render").mockImplementation((scene) => {
+      renderBeforeLoss(scene);
+      if (fiberTestState.renderEvents.length === 6) {
+        fiberTestState.contextLost = true;
+        dispatchCanvasEvent("webglcontextlost");
+      }
+    });
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => results.push(result),
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    expect(fiberTestState.renderEvents).toHaveLength(6);
+    expect(results).toEqual([expect.objectContaining({
+      status: "failed",
+      generation,
+      request,
+      failureReason: "WebGL context lost",
+    })]);
+
+    view.unmount();
   });
 
   it("executes the semantic scene, CoC, gather, composite, and output stages in order", () => {

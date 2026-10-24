@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useLayoutEffect, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, type RootState } from "@react-three/fiber";
 import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
@@ -67,6 +67,18 @@ import {
   type GroundGlassRttResources,
 } from "./groundGlassRttResources";
 import { withGroundGlassFrameState } from "./groundGlassFrameExecution";
+import type {
+  GroundGlassAcceptedRequestIdentity,
+  GroundGlassFrameResult,
+  GroundGlassRendererGenerationIdentity,
+} from "./backend/groundGlassBackendContracts";
+import type { GroundGlassRuntimeInfoObservationHandler } from "./groundGlassRuntimeObservation";
+import type { GroundGlassCleanupOutcome } from "./groundGlassRenderHostState";
+import {
+  GroundGlassCleanupEvidenceCoordinator,
+  observeGroundGlassCanvasRetirement,
+  type GroundGlassCleanupOwner,
+} from "./groundGlassCleanupEvidence";
 import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
@@ -134,9 +146,34 @@ export type GroundGlassRTTProps = {
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   /** Application-owned diagnostics adapter. */
   onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
+  /** Internal request/generation attribution used only by the M2 host. */
+  onRuntimeObservation?: GroundGlassRuntimeInfoObservationHandler;
+  /** Host generation/request identity; absent for direct legacy/test mounts. */
+  rendererGeneration?: GroundGlassRendererGenerationIdentity;
+  acceptedRequestIdentity?: GroundGlassAcceptedRequestIdentity;
+  onAdapterStarted?: (generation: GroundGlassRendererGenerationIdentity) => void;
+  onRendererMounted?: (
+    generation: GroundGlassRendererGenerationIdentity,
+    actualExecutionApi: "webgl" | "webgl2",
+  ) => void;
+  onFrameResult?: (result: GroundGlassFrameResult) => void;
+  onAdapterDisposed?: (
+    generation: GroundGlassRendererGenerationIdentity,
+    outcome: GroundGlassCleanupOutcome,
+    reason?: string,
+  ) => void;
   /** Development fixture subject profile; ignored by production builds. */
   developmentSceneProfileOverride?: GroundGlassSceneProfile;
 };
+
+type GroundGlassCleanupOwnerCallbacks = Readonly<{
+  onCleanupOwnerAcquired: (owner: GroundGlassCleanupOwner) => void;
+  onCleanupOwnerCompleted: (
+    owner: GroundGlassCleanupOwner,
+    outcome: GroundGlassCleanupOutcome,
+    reason?: string,
+  ) => void;
+}>;
 
 const tupleMatches = (
   left: [number, number, number] | undefined,
@@ -159,8 +196,15 @@ function OffscreenRenderer({
   presentationRegion: explicitPresentationRegion,
   effectiveCameraMovementCalibration,
   onRuntimeInfoChange,
+  onRuntimeObservation,
+  rendererGeneration,
+  acceptedRequestIdentity,
+  onRendererMounted,
+  onFrameResult,
+  onCleanupOwnerAcquired,
+  onCleanupOwnerCompleted,
   developmentSceneProfileOverride,
-}: GroundGlassRTTProps) {
+}: GroundGlassRTTProps & GroundGlassCleanupOwnerCallbacks) {
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -176,9 +220,82 @@ function OffscreenRenderer({
   const presentationRegionRef = useRef<CameraMovementPresentationRegion>("middle");
   const runtimeInfoRef = useRef<GroundGlassRttRuntimeInfo | null>(null);
   const runtimeInfoChangeRef = useRef(onRuntimeInfoChange);
+  const runtimeObservationRef = useRef(onRuntimeObservation);
+  const onRendererMountedRef = useRef(onRendererMounted);
+  const onFrameResultRef = useRef(onFrameResult);
+  const onCleanupOwnerAcquiredRef = useRef(onCleanupOwnerAcquired);
+  const onCleanupOwnerCompletedRef = useRef(onCleanupOwnerCompleted);
+  const rendererGenerationRef = useRef(rendererGeneration);
+  const acceptedRequestIdentityRef = useRef(acceptedRequestIdentity);
+  const frameSequenceRef = useRef(0);
+  const webglContextLostRef = useRef(false);
+  const contextLossReportedRequestIdRef = useRef<string | null>(null);
   runtimeInfoChangeRef.current = onRuntimeInfoChange;
+  runtimeObservationRef.current = onRuntimeObservation;
+  onRendererMountedRef.current = onRendererMounted;
+  onFrameResultRef.current = onFrameResult;
+  onCleanupOwnerAcquiredRef.current = onCleanupOwnerAcquired;
+  onCleanupOwnerCompletedRef.current = onCleanupOwnerCompleted;
+  rendererGenerationRef.current = rendererGeneration;
+  acceptedRequestIdentityRef.current = acceptedRequestIdentity;
 
   const { gl } = useThree();
+  const reportCleanupOwnerAcquired = React.useCallback((owner: GroundGlassCleanupOwner) => {
+    onCleanupOwnerAcquiredRef.current?.(owner);
+  }, []);
+  const reportCleanupOwnerCompleted = React.useCallback((
+    owner: GroundGlassCleanupOwner,
+    outcome: GroundGlassCleanupOutcome,
+    reason?: string,
+  ) => {
+    onCleanupOwnerCompletedRef.current?.(owner, outcome, reason);
+  }, []);
+  const reportWebGlContextLost = React.useCallback(() => {
+    webglContextLostRef.current = true;
+    const currentGeneration = rendererGenerationRef.current;
+    const currentRequest = acceptedRequestIdentityRef.current;
+    if (
+      !currentGeneration ||
+      !currentRequest ||
+      contextLossReportedRequestIdRef.current === currentRequest.requestId
+    ) return;
+    contextLossReportedRequestIdRef.current = currentRequest.requestId;
+    onFrameResultRef.current?.({
+      status: "failed",
+      generation: currentGeneration,
+      request: currentRequest,
+      failedStage: null,
+      failureReason: "WebGL context lost",
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    frameSequenceRef.current = 0;
+    if (!rendererGeneration) return;
+    const context = gl.getContext();
+    const actualExecutionApi =
+      typeof WebGL2RenderingContext !== "undefined" &&
+      context instanceof WebGL2RenderingContext
+        ? "webgl2"
+        : "webgl";
+    onRendererMountedRef.current?.(rendererGeneration, actualExecutionApi);
+
+    const canvas = gl.domElement;
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      reportWebGlContextLost();
+    };
+    const handleContextRestored = () => {
+      webglContextLostRef.current = false;
+      contextLossReportedRequestIdRef.current = null;
+    };
+    canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
+    return () => {
+      canvas.removeEventListener("webglcontextlost", handleContextLost, false);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored, false);
+    };
+  }, [gl, rendererGeneration, reportWebGlContextLost]);
   const presentationRegion = explicitPresentationRegion ?? "middle";
   presentationRegionRef.current = presentationRegion;
   const cameraMovementPresentation = effectiveCameraMovementCalibration
@@ -243,17 +360,48 @@ function OffscreenRenderer({
 
   const readRuntimeInfo = React.useCallback(() => runtimeInfoRef.current, []);
   const setRuntimeInfo = React.useCallback(
-    (info: GroundGlassRttRuntimeInfo | null) => {
+    (
+      info: GroundGlassRttRuntimeInfo | null,
+      sourceRequestIdentity?: GroundGlassAcceptedRequestIdentity,
+    ) => {
       const enriched = info
         ? { ...info, channel, ownerId: runtimeOwnerId }
         : null;
       runtimeInfoRef.current = enriched;
-      runtimeInfoChangeRef.current?.(channel, enriched, runtimeOwnerId);
+      const generation = rendererGenerationRef.current;
+      const observationHandler = runtimeObservationRef.current;
+      if (!generation || !observationHandler) {
+        // Direct legacy mounts keep the historical callback. Host-managed mounts route through
+        // the request/generation guard before exposing observations to the application callback.
+        runtimeInfoChangeRef.current?.(channel, enriched, runtimeOwnerId);
+        return;
+      }
+      const observation = sourceRequestIdentity
+        ? {
+            scope: "request" as const,
+            channelId: channel,
+            generation,
+            requestIdentity: sourceRequestIdentity,
+            ownerId: runtimeOwnerId,
+            info: enriched,
+          }
+        : {
+            scope: "generation" as const,
+            channelId: channel,
+            generation,
+            requestIdentity: null,
+            ownerId: runtimeOwnerId,
+            info: enriched,
+          };
+      observationHandler(observation);
     },
     [channel, runtimeOwnerId],
   );
   const clearSubjectScopedDiagnostics = React.useCallback(
-    (clearLatticeRuntimeInfo = false) => {
+    (
+      clearLatticeRuntimeInfo = false,
+      sourceRequestIdentity?: GroundGlassAcceptedRequestIdentity,
+    ) => {
       const currentInfo = readRuntimeInfo();
       if (!currentInfo) return;
 
@@ -285,7 +433,7 @@ function OffscreenRenderer({
               latticeSubjectGeneration: undefined,
             }
           : {}),
-      });
+      }, sourceRequestIdentity);
     },
     [readRuntimeInfo, setRuntimeInfo],
   );
@@ -302,6 +450,55 @@ function OffscreenRenderer({
   // expose preview/ring hints on the function object so runtime code inside useFrame can access them
 
   useEffect(() => {
+    const cleanupEntries: Array<{
+      owner: GroundGlassCleanupOwner | null;
+      dispose: () => void;
+    }> = [];
+    const registerCleanup = (
+      owner: GroundGlassCleanupOwner | null,
+      dispose: () => void,
+    ) => {
+      if (owner) reportCleanupOwnerAcquired(owner);
+      cleanupEntries.push({ owner, dispose });
+    };
+    const reportUncertainOwnerInitializationFailure = (
+      owner: GroundGlassCleanupOwner,
+      error: unknown,
+    ) => {
+      reportCleanupOwnerAcquired(owner);
+      reportCleanupOwnerCompleted(
+        owner,
+        "uncertain",
+        `Initialization failed before ${owner} cleanup was available: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    };
+    const disposeOwnedResources = (): unknown[] => {
+      const ownerFailures = new Map<GroundGlassCleanupOwner, unknown[]>();
+      for (const entry of cleanupEntries) {
+        try {
+          entry.dispose();
+        } catch (error) {
+          if (!entry.owner) continue;
+          const failures = ownerFailures.get(entry.owner) ?? [];
+          failures.push(error);
+          ownerFailures.set(entry.owner, failures);
+        }
+      }
+      const acquiredOwners = [...new Set(cleanupEntries.flatMap(({ owner }) => owner ? [owner] : []))];
+      for (const owner of acquiredOwners) {
+        const failures = ownerFailures.get(owner) ?? [];
+        reportCleanupOwnerCompleted(
+          owner,
+          failures.length > 0 ? "failed" : "confirmed",
+          failures.length > 0
+            ? failures.map((error) => error instanceof Error ? error.message : String(error)).join("; ")
+            : undefined,
+        );
+      }
+      return [...ownerFailures.values()].flat();
+    };
+
+    try {
     const sizeInputs = sizeInputsRef.current;
     const initialQualitySettings = getRenderQualitySettings(
       sizeInputs.renderQuality || "standard",
@@ -330,11 +527,32 @@ function OffscreenRenderer({
     dimsRef.current = dims;
 
     // Create the concrete targets for the current semantic Ground Glass resource roles.
-    const rttResources = createGroundGlassRttResources({
-      renderer: gl as unknown as WebGLRenderer,
-      widthPx: dimsRef.current.internalWidthPx,
-      heightPx: dimsRef.current.internalHeightPx,
-      gatherScale: initialQualitySettings.gatherScale,
+    let rttResources: GroundGlassRttResources;
+    try {
+      rttResources = createGroundGlassRttResources({
+        renderer: gl as unknown as WebGLRenderer,
+        widthPx: dimsRef.current.internalWidthPx,
+        heightPx: dimsRef.current.internalHeightPx,
+        gatherScale: initialQualitySettings.gatherScale,
+      });
+    } catch (error) {
+      if (error instanceof AggregateError) {
+        reportCleanupOwnerAcquired("rtt-targets");
+        reportCleanupOwnerCompleted("rtt-targets", "failed", error.message);
+      }
+      throw error;
+    }
+    registerCleanup("rtt-targets", () => {
+      try {
+        rttResources.dispose();
+      } finally {
+        if (renderTarget.current === rttResources.scene.colorDepthTarget) {
+          renderTarget.current = null;
+        }
+        if (fallbackDepthRef.current === rttResources.scene.depthFallback) {
+          fallbackDepthRef.current = null;
+        }
+      }
     });
     const visualPipelineCapabilities = sceneCapacityProfilingEnabled
       ? resolveGroundGlassVisualPipelineCapabilities(
@@ -360,6 +578,11 @@ function OffscreenRenderer({
       100,
     );
     groundGlassCamera.current = camera;
+    registerCleanup(null, () => {
+      if (offscreenScene.current === scene) offscreenScene.current = null;
+      if (groundGlassCamera.current === camera) groundGlassCamera.current = null;
+      lastRenderSanityStateKeyRef.current = null;
+    });
 
     // set a light, sky and floor that match the studio look for Focus Fundamentals
     // We'll add a Hemisphere + key + fill lighting setup below so materials look natural;
@@ -367,13 +590,34 @@ function OffscreenRenderer({
 
     // No immediate lights added here; the standardized lighting is applied per-scene in the rendering pipeline below.
     // scene.add(...) will be done after subject group setup where appropriate.
-    
+
+    const postScenes = new Set<THREE.Scene>();
+    const postMaterials = new Set<THREE.Material>();
+    const postGeometries = new Set<THREE.BufferGeometry>();
+    let postResources: PostResources | null = null;
+    registerCleanup("post-processing", () => {
+      const failures: unknown[] = [];
+      for (const material of postMaterials) {
+        try { material.dispose(); } catch (error) { failures.push(error); }
+      }
+      for (const geometryResource of postGeometries) {
+        try { geometryResource.dispose(); } catch (error) { failures.push(error); }
+      }
+      postScenes.forEach((postScene) => postScene.clear());
+      if (postResourcesRef.current === postResources) postResourcesRef.current = null;
+      if (failures.length > 0) {
+        throw new AggregateError(failures, "Ground Glass post-processing cleanup failed");
+      }
+    });
 
     // The resource bundle names the implemented stages: full-resolution CoC,
     // independent far/near gathers, and the owned composite output.
     const postSceneCoc = new THREE.Scene();
     const postSceneGather = new THREE.Scene();
     const postSceneComposite = new THREE.Scene();
+    postScenes.add(postSceneCoc);
+    postScenes.add(postSceneGather);
+    postScenes.add(postSceneComposite);
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const cocRT = rttResources.coc.classificationTarget;
     const gatherRT = rttResources.gather.farTarget;
@@ -392,12 +636,14 @@ function OffscreenRenderer({
     });
     const initialFootprintStorageMaxMm = Math.max(1e-6, initialCocStorageMaxMm * 0.5);
     const displayScene = new THREE.Scene();
+    postScenes.add(displayScene);
 
 
     // set scene background to a neutral studio sky for better visibility
     scene.background = SKY_COLOR;
     // create full-screen quad geometry and placeholder materials
     const quadGeo = new THREE.PlaneGeometry(2, 2);
+    postGeometries.add(quadGeo);
 
     const vertexShader = groundGlassVertexShader;
 
@@ -442,6 +688,7 @@ function OffscreenRenderer({
         footprintStorageMaxMm: { value: initialFootprintStorageMaxMm },
       },
     });
+    postMaterials.add(cocMaterial);
 
     const gatherMaterial = new THREE.ShaderMaterial({
       vertexShader,
@@ -487,6 +734,7 @@ function OffscreenRenderer({
         gatherLayer: { value: 0.0 },
       },
     });
+    postMaterials.add(gatherMaterial);
 
     const compositeMaterial = new THREE.ShaderMaterial({
       vertexShader,
@@ -519,6 +767,7 @@ function OffscreenRenderer({
         groundGlassFilmWindowHeightMm: { value: initialSampledFilmDimensions.heightMm },
       },
     });
+    postMaterials.add(compositeMaterial);
 
     const cocQuad = new THREE.Mesh(quadGeo, cocMaterial);
     const gatherQuad = new THREE.Mesh(quadGeo, gatherMaterial);
@@ -530,6 +779,7 @@ function OffscreenRenderer({
       depthTest: false,
       depthWrite: false,
     });
+    postMaterials.add(copyMaterial);
     const displayQuad = new THREE.Mesh(quadGeo, copyMaterial);
     postSceneCoc.add(cocQuad);
     postSceneGather.add(gatherQuad);
@@ -537,7 +787,7 @@ function OffscreenRenderer({
     displayScene.add(displayQuad);
 
     // store post resources (per-instance ref)
-    const postResources: PostResources = {
+    postResources = {
       postSceneCoc,
       postSceneGather,
       postSceneComposite,
@@ -549,27 +799,42 @@ function OffscreenRenderer({
     };
     postResourcesRef.current = postResources;
 
-    const profiler = new GroundGlassProfiler(
-      profilingEnabled,
-      gl,
-      (snapshot) => {
-        const currentInfo = readRuntimeInfo();
-        if (!currentInfo) return;
-        setRuntimeInfo({
-          ...currentInfo,
-          profilingEnabled: true,
-          profilingBackend: snapshot.profilingBackend,
-          profilingSnapshot: snapshot,
-          sceneCapacity: sceneCapacityProfilingEnabled
-            ? {
-                rttSubject: currentInfo.sceneCapacity?.rttSubject ?? null,
-                rendererResources: readSceneCapacityRendererResources(gl),
-              }
-            : currentInfo.sceneCapacity,
-        });
-      },
-    );
+    let profiler: GroundGlassProfiler;
+    try {
+      profiler = new GroundGlassProfiler(
+        profilingEnabled,
+        gl,
+        (snapshot) => {
+          const currentInfo = readRuntimeInfo();
+          if (!currentInfo) return;
+          setRuntimeInfo({
+            ...currentInfo,
+            profilingEnabled: true,
+            profilingBackend: snapshot.profilingBackend,
+            profilingSnapshot: snapshot,
+            sceneCapacity: sceneCapacityProfilingEnabled
+              ? {
+                  rttSubject: currentInfo.sceneCapacity?.rttSubject ?? null,
+                  rendererResources: readSceneCapacityRendererResources(gl),
+                }
+              : currentInfo.sceneCapacity,
+          });
+        },
+      );
+    } catch (error) {
+      reportUncertainOwnerInitializationFailure("profiler", error);
+      throw error;
+    }
     groundGlassProfilerRef.current = profiler;
+    registerCleanup("profiler", () => {
+      try {
+        profiler.dispose();
+      } finally {
+        if (groundGlassProfilerRef.current === profiler) {
+          groundGlassProfilerRef.current = null;
+        }
+      }
+    });
 
     // After resources are created, update runtime info with actual resource sizes
     try {
@@ -655,73 +920,71 @@ function OffscreenRenderer({
     // restrained hemisphere/key-light baseline. Scene registrations may
     // resolve distinct real/virtual placements around their scene target.
     const worldIllumination = resolveSceneWorldIllumination(resolvedSceneId);
-    lightingRigRef.current = createPresentationLightingRig(scene);
-    worldIlluminationRigRef.current = createWorldIlluminationRig(
-      scene,
-      worldIllumination,
-    );
-    worldEnvironmentRigRef.current = worldIllumination.environment
-      ? createWorldEnvironmentRig(
-          scene,
-          gl as unknown as WebGLRenderer,
-          worldIllumination.environment,
-        )
-      : null;
+    let lightingRig: PresentationLightingRig | null;
+    try {
+      lightingRig = createPresentationLightingRig(scene);
+    } catch (error) {
+      reportUncertainOwnerInitializationFailure("presentation-lighting", error);
+      throw error;
+    }
+    lightingRigRef.current = lightingRig;
+    if (lightingRig) {
+      registerCleanup("presentation-lighting", () => {
+        try {
+          disposePresentationLightingRig(scene, lightingRig);
+        } finally {
+          if (lightingRigRef.current === lightingRig) lightingRigRef.current = null;
+        }
+      });
+    }
+    let worldIlluminationRig: WorldIlluminationRig | null;
+    try {
+      worldIlluminationRig = createWorldIlluminationRig(scene, worldIllumination);
+    } catch (error) {
+      reportUncertainOwnerInitializationFailure("world-illumination", error);
+      throw error;
+    }
+    worldIlluminationRigRef.current = worldIlluminationRig;
+    if (worldIlluminationRig) {
+      registerCleanup("world-illumination", () => {
+        try {
+          disposeWorldIlluminationRig(scene, worldIlluminationRig);
+        } finally {
+          if (worldIlluminationRigRef.current === worldIlluminationRig) {
+            worldIlluminationRigRef.current = null;
+          }
+        }
+      });
+    }
+    let worldEnvironmentRig: WorldEnvironmentRig | null;
+    try {
+      worldEnvironmentRig = worldIllumination.environment
+        ? createWorldEnvironmentRig(
+            scene,
+            gl as unknown as WebGLRenderer,
+            worldIllumination.environment,
+          )
+        : null;
+    } catch (error) {
+      reportUncertainOwnerInitializationFailure("world-environment", error);
+      throw error;
+    }
+    worldEnvironmentRigRef.current = worldEnvironmentRig;
+    if (worldEnvironmentRig) {
+      registerCleanup("world-environment", () => {
+        try {
+          disposeWorldEnvironmentRig(scene, worldEnvironmentRig);
+        } finally {
+          if (worldEnvironmentRigRef.current === worldEnvironmentRig) {
+            worldEnvironmentRigRef.current = null;
+          }
+        }
+      });
+    }
 
     return () => {
       try {
-        profiler.dispose();
-        if (groundGlassProfilerRef.current === profiler) {
-          groundGlassProfilerRef.current = null;
-        }
-        // The target bundle owns the source, pass, diagnostic, and fallback-depth targets.
-        rttResources.dispose();
-        if (renderTarget.current === rt) renderTarget.current = null;
-        if (fallbackDepthRef.current === fallbackDepth) fallbackDepthRef.current = null;
-
-        // remove and dispose post resources
-        const post = postResources;
-        if (postResourcesRef.current === post) {
-          try {
-            // dispose quad materials and geometry
-            const geometries = new Set<THREE.BufferGeometry>();
-            const materials = new Set<THREE.Material>();
-            [post.postSceneCoc, post.postSceneGather, post.postSceneComposite, post.displayScene].forEach((s) => {
-              s.children.forEach((c) => {
-                const m = c as THREE.Mesh;
-                if (m.material) materials.add(m.material as THREE.Material);
-                if (m.geometry) geometries.add(m.geometry as THREE.BufferGeometry);
-              });
-            });
-            materials.forEach((material) => material.dispose());
-            geometries.forEach((geometryResource) => geometryResource.dispose());
-            // remove scenes
-            post.postSceneCoc.clear();
-            post.postSceneGather.clear();
-            post.postSceneComposite.clear();
-            post.displayScene.clear();
-          } catch (err) { void err; }
-          postResourcesRef.current = null;
-        }
-
-        const lightingRig = lightingRigRef.current;
-        if (lightingRig) {
-          disposePresentationLightingRig(scene, lightingRig);
-          lightingRigRef.current = null;
-        }
-        const worldIlluminationRig = worldIlluminationRigRef.current;
-        if (worldIlluminationRig) {
-          disposeWorldIlluminationRig(scene, worldIlluminationRig);
-          worldIlluminationRigRef.current = null;
-        }
-        const worldEnvironmentRig = worldEnvironmentRigRef.current;
-        if (worldEnvironmentRig) {
-          disposeWorldEnvironmentRig(scene, worldEnvironmentRig);
-          worldEnvironmentRigRef.current = null;
-        }
-        if (offscreenScene.current === scene) offscreenScene.current = null;
-        if (groundGlassCamera.current === camera) groundGlassCamera.current = null;
-        lastRenderSanityStateKeyRef.current = null;
+        disposeOwnedResources();
       } finally {
         // update diagnostics to indicate resources cleared
         try {
@@ -729,11 +992,26 @@ function OffscreenRenderer({
         } catch (err) { void err; }
       }
     };
+    } catch (error) {
+      const cleanupFailures = disposeOwnedResources();
+      try {
+        setRuntimeInfo(null);
+      } catch { /* Cleanup status is reported separately from optional diagnostics. */ }
+      if (cleanupFailures.length > 0) {
+        throw new AggregateError(
+          [error, ...cleanupFailures],
+          "Ground Glass initialization failed and partial resource cleanup was incomplete",
+        );
+      }
+      throw error;
+    }
   }, [
     gl,
     maximumBlurRadiusPx,
     profilingEnabled,
     readRuntimeInfo,
+    reportCleanupOwnerAcquired,
+    reportCleanupOwnerCompleted,
     resolvedSceneId,
     sceneCapacityProfilingEnabled,
     setRuntimeInfo,
@@ -743,9 +1021,10 @@ function OffscreenRenderer({
     const scene = offscreenScene.current;
     if (!scene) return;
 
+    const subjectRequestIdentity = acceptedRequestIdentityRef.current;
     sceneSubjectGenerationRef.current = ++latestGroundGlassSubjectGeneration;
     lastRenderSanityStateKeyRef.current = null;
-    clearSubjectScopedDiagnostics();
+    clearSubjectScopedDiagnostics(false, subjectRequestIdentity);
 
     const profileContext: GroundGlassSceneProfileContext = {
       scene: sceneDefinition,
@@ -764,13 +1043,26 @@ function OffscreenRenderer({
       );
     }
 
-    const mounted = sceneProfile.mountSubject(scene, profileContext);
+    let mounted: MountedGroundGlassSceneSubject | null;
+    try {
+      mounted = sceneProfile.mountSubject(scene, profileContext);
+    } catch (error) {
+      reportCleanupOwnerAcquired("scene-subject");
+      reportCleanupOwnerCompleted(
+        "scene-subject",
+        "uncertain",
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
     if (!mounted) {
       return () => {
         lastRenderSanityStateKeyRef.current = null;
-        clearSubjectScopedDiagnostics();
+        clearSubjectScopedDiagnostics(false, subjectRequestIdentity);
       };
     }
+    reportCleanupOwnerAcquired("scene-subject");
+    try {
     sceneProfile.configureRttShadowParticipation(mounted.group);
     mountedSceneSubjectRef.current = mounted;
     const anatomyResourceChannel = import.meta.env.DEV &&
@@ -812,13 +1104,13 @@ function OffscreenRenderer({
       anatomyResourceChannel?.setAttribute("data-rtt-anatomy-resource-snapshot", anatomyResourceSnapshot);
     }
 
-    const runtimeInfo = mounted.runtimeInfo;
+      const runtimeInfo = mounted.runtimeInfo;
     const currentInfo = readRuntimeInfo();
     if (currentInfo) {
       setRuntimeInfo({
         ...currentInfo,
         renderSanitySubjectIdentity: sceneProfile.renderSanityIdentity,
-      });
+      }, subjectRequestIdentity);
     }
     if (runtimeInfo && currentInfo) {
       setRuntimeInfo({
@@ -836,7 +1128,7 @@ function OffscreenRenderer({
               rendererResources: readSceneCapacityRendererResources(gl),
             }
           : undefined,
-      });
+      }, subjectRequestIdentity);
     } else if (currentInfo && sceneCapacityProfilingEnabled) {
       setRuntimeInfo({
         ...currentInfo,
@@ -844,7 +1136,7 @@ function OffscreenRenderer({
           rttSubject: collectSceneGraphCapacity(mounted.group),
           rendererResources: readSceneCapacityRendererResources(gl),
         },
-      });
+      }, subjectRequestIdentity);
     }
 
     return () => {
@@ -855,15 +1147,40 @@ function OffscreenRenderer({
       if (mountedSceneSubjectRef.current === mounted) {
         mountedSceneSubjectRef.current = null;
       }
-      mounted.dispose();
-      const latestInfo = readRuntimeInfo();
-      const clearLatticeRuntimeInfo = Boolean(
-        runtimeInfo &&
-        latestInfo?.latticeSubjectGeneration === runtimeInfo.generation,
-      );
-      lastRenderSanityStateKeyRef.current = null;
-      clearSubjectScopedDiagnostics(clearLatticeRuntimeInfo);
+      let cleanupOutcome: GroundGlassCleanupOutcome = "confirmed";
+      let cleanupReason: string | undefined;
+      try {
+        mounted.dispose();
+      } catch (error) {
+        cleanupOutcome = "failed";
+        cleanupReason = error instanceof Error ? error.message : String(error);
+      }
+      try {
+        const latestInfo = readRuntimeInfo();
+        const clearLatticeRuntimeInfo = Boolean(
+          runtimeInfo &&
+          latestInfo?.latticeSubjectGeneration === runtimeInfo.generation,
+        );
+        lastRenderSanityStateKeyRef.current = null;
+        clearSubjectScopedDiagnostics(clearLatticeRuntimeInfo, subjectRequestIdentity);
+      } finally {
+        reportCleanupOwnerCompleted("scene-subject", cleanupOutcome, cleanupReason);
+      }
     };
+    } catch (error) {
+      let cleanupOutcome: GroundGlassCleanupOutcome = "confirmed";
+      let cleanupReason: string | undefined;
+      try {
+        mounted.dispose();
+      } catch (cleanupError) {
+        cleanupOutcome = "failed";
+        cleanupReason = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+      } finally {
+        if (mountedSceneSubjectRef.current === mounted) mountedSceneSubjectRef.current = null;
+        reportCleanupOwnerCompleted("scene-subject", cleanupOutcome, cleanupReason);
+      }
+      throw error;
+    }
   }, [
     cameraMovementPresentation,
     sceneDefinition,
@@ -873,6 +1190,8 @@ function OffscreenRenderer({
     setRuntimeInfo,
     clearSubjectScopedDiagnostics,
     gl,
+    reportCleanupOwnerAcquired,
+    reportCleanupOwnerCompleted,
   ]);
 
   // Scene profiles own any scene-specific mutation of their mounted subject.
@@ -899,7 +1218,7 @@ function OffscreenRenderer({
     setRuntimeInfo({
       ...currentInfo,
       latticePresentationRegion: presentationRegion,
-    });
+    }, acceptedRequestIdentityRef.current);
   }, [
     cameraMovementPresentation,
     opticsState,
@@ -1033,7 +1352,7 @@ function OffscreenRenderer({
       sampledFilmWidthMm: sampledFilmDimensions.widthMm,
       sampledFilmHeightMm: sampledFilmDimensions.heightMm,
       profilingSnapshot: undefined,
-    });
+    }, acceptedRequestIdentityRef.current);
   }, [
     gl,
     heightPx,
@@ -1047,9 +1366,16 @@ function OffscreenRenderer({
   useFrame((_state, frameDelta) => {
     const sourceRenderTarget = renderTarget.current;
     if (!sourceRenderTarget || !offscreenScene.current) return;
+    const frameGeneration = rendererGeneration;
+    const frameRequest = acceptedRequestIdentity;
     const renderer = gl as WebGLRenderer;
+    if (webglContextLostRef.current || renderer.getContext().isContextLost()) {
+      reportWebGlContextLost();
+      return;
+    }
     const profiler = groundGlassProfilerRef.current;
     let failedPass: GroundGlassPassId | undefined;
+    let displayOutputCompleted = false;
     withGroundGlassFrameState(
       renderer,
       SKY_COLOR.getHex(),
@@ -1192,7 +1518,7 @@ function OffscreenRenderer({
         inspectionCenterV: inspectionWindow.centerV,
         sampledFilmWidthMm: sampledFilmDimensions.widthMm,
         sampledFilmHeightMm: sampledFilmDimensions.heightMm,
-      });
+      }, frameRequest ?? undefined);
     }
 
 
@@ -1572,7 +1898,7 @@ function OffscreenRenderer({
               : undefined,
           groundGlassCoverageConicQuadratic: coverageConicQuadratic,
           groundGlassCoverageConicAxial: coverageConicAxial,
-        });
+        }, frameRequest ?? undefined);
       }
 
       // Keep the final DOF result in an owned target. Besides enabling a
@@ -1660,7 +1986,7 @@ function OffscreenRenderer({
               renderSanityStateKey: sanityStateKey,
               renderSanitySubjectIdentity: sceneProfile.renderSanityIdentity,
               renderSanityError: null,
-            });
+            }, frameRequest ?? undefined);
           }
         } catch (error) {
           const currentInfo = readRuntimeInfo();
@@ -1671,7 +1997,7 @@ function OffscreenRenderer({
               renderSanityStateKey: sanityStateKey,
               renderSanitySubjectIdentity: sceneProfile.renderSanityIdentity,
               renderSanityError: error instanceof Error ? error.message : String(error),
-            });
+            }, frameRequest ?? undefined);
           }
         }
         copyMaterial.uniforms.tColor.value = finalRT.texture;
@@ -1683,6 +2009,7 @@ function OffscreenRenderer({
       gl.setClearColor(SKY_COLOR.getHex(), 1);
       gl.clear(true, true, true);
       gl.render(displayScene, orthoCam);
+      displayOutputCompleted = true;
     } else {
       gl.setRenderTarget(null);
     }
@@ -1703,9 +2030,9 @@ function OffscreenRenderer({
             lines: renderer.info.render.lines,
             geometries: renderer.info.memory.geometries,
             textures: renderer.info.memory.textures,
-            sampledAtMs: performance.now(),
+          sampledAtMs: performance.now(),
           },
-        });
+        }, frameRequest ?? undefined);
       }
     }
 
@@ -1736,10 +2063,46 @@ function OffscreenRenderer({
               error instanceof Error ? error.message : String(error),
             failedPass,
             rendererStats: undefined,
-          });
+          }, frameRequest ?? undefined);
+        }
+        if (frameGeneration && frameRequest) {
+          try {
+            onFrameResultRef.current?.({
+              status: "failed",
+              generation: frameGeneration,
+              request: frameRequest,
+              failedStage: failedPass ?? null,
+              failureReason: error instanceof Error ? error.message : String(error),
+            });
+          } catch {
+            // Diagnostic/publication callbacks must not replace the original render failure.
+          }
         }
       },
     );
+    if (webglContextLostRef.current || renderer.getContext().isContextLost()) {
+      reportWebGlContextLost();
+    }
+    if (
+      displayOutputCompleted &&
+      frameGeneration &&
+      frameRequest &&
+      !webglContextLostRef.current &&
+      !renderer.getContext().isContextLost()
+    ) {
+      frameSequenceRef.current += 1;
+      try {
+        onFrameResultRef.current?.({
+          status: "completed",
+          generation: frameGeneration,
+          request: frameRequest,
+          frameId: `${frameGeneration.generationId}:frame:${frameSequenceRef.current}`,
+          requiredOperations: "all-completed",
+        });
+      } catch {
+        // Publication callbacks are observational and cannot invalidate rendered output.
+      }
+    }
     profiler?.endFrame();
     const currentInfo = readRuntimeInfo();
     if (
@@ -1751,7 +2114,7 @@ function OffscreenRenderer({
         ...currentInfo,
         frameExecutionError: undefined,
         failedPass: undefined,
-      });
+      }, frameRequest ?? undefined);
     }
   }, 1);
 
@@ -1773,8 +2136,55 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
   presentationRegion,
   effectiveCameraMovementCalibration,
   onRuntimeInfoChange,
+  onRuntimeObservation,
+  rendererGeneration,
+  acceptedRequestIdentity,
+  onAdapterStarted,
+  onRendererMounted,
+  onFrameResult,
+  onAdapterDisposed,
   developmentSceneProfileOverride,
 }) => {
+  const onAdapterStartedRef = useRef(onAdapterStarted);
+  const onAdapterDisposedRef = useRef(onAdapterDisposed);
+  onAdapterStartedRef.current = onAdapterStarted;
+  onAdapterDisposedRef.current = onAdapterDisposed;
+  const cleanupCoordinatorRef = useRef<Readonly<{
+    generationId: string;
+    coordinator: GroundGlassCleanupEvidenceCoordinator;
+  }> | null>(null);
+  if (!rendererGeneration) {
+    cleanupCoordinatorRef.current = null;
+  } else if (cleanupCoordinatorRef.current?.generationId !== rendererGeneration.generationId) {
+    const generation = rendererGeneration;
+    cleanupCoordinatorRef.current = {
+      generationId: generation.generationId,
+      coordinator: new GroundGlassCleanupEvidenceCoordinator((outcome, reason) => {
+        onAdapterDisposedRef.current?.(generation, outcome, reason);
+      }),
+    };
+  }
+  const reportCleanupOwnerAcquired = React.useCallback((owner: GroundGlassCleanupOwner) => {
+    cleanupCoordinatorRef.current?.coordinator.acquired(owner);
+  }, []);
+  const reportCleanupOwnerCompleted = React.useCallback((
+    owner: GroundGlassCleanupOwner,
+    outcome: GroundGlassCleanupOutcome,
+    reason?: string,
+  ) => {
+    cleanupCoordinatorRef.current?.coordinator.ownerCleanupCompleted(owner, outcome, reason);
+  }, []);
+  const handleCanvasCreated = React.useCallback((state: RootState) => {
+    if (!rendererGeneration) return;
+    onAdapterStartedRef.current?.(rendererGeneration);
+    const coordinator = cleanupCoordinatorRef.current?.coordinator;
+    if (!coordinator) return;
+    observeGroundGlassCanvasRetirement(
+      state.gl as unknown as WebGLRenderer,
+      coordinator,
+    );
+  }, [rendererGeneration]);
+
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1788,6 +2198,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
         gl={GROUND_GLASS_GL_OPTIONS}
         orthographic={false}
         shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
+        onCreated={handleCanvasCreated}
       >
         <OffscreenRenderer
           opticsState={opticsState}
@@ -1803,7 +2214,14 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
           inspectionWindow={inspectionWindow}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+          rendererGeneration={rendererGeneration}
+          acceptedRequestIdentity={acceptedRequestIdentity}
+          onRendererMounted={onRendererMounted}
+          onFrameResult={onFrameResult}
           onRuntimeInfoChange={onRuntimeInfoChange}
+          onRuntimeObservation={onRuntimeObservation}
+          onCleanupOwnerAcquired={reportCleanupOwnerAcquired}
+          onCleanupOwnerCompleted={reportCleanupOwnerCompleted}
           developmentSceneProfileOverride={developmentSceneProfileOverride}
         />
       </Canvas>

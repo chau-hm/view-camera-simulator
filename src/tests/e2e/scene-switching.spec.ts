@@ -83,6 +83,7 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   let previousSanityState: string | null = null;
   let previousSceneId: string | null = null;
   const seenRttOwnerIds = new Set<string>();
+  const seenRendererGenerationIds = new Set<string>();
   const visitedSceneIds = new Set<string>();
 
   for (const visit of visits) {
@@ -119,6 +120,13 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
       await expect(pane).toHaveAttribute("data-rtt-uniforms-finite", "true", { timeout: 60_000 });
       await expect(pane).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
       await expect(pane).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+      await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
+      await expect(pane).toHaveAttribute("data-actual-execution-api", /^webgl2?$/);
+      await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready");
+      await expect(pane).toHaveAttribute("data-frame-result-status", "completed");
+      const acceptedRequestId = await pane.getAttribute("data-frame-request-id");
+      expect(acceptedRequestId).toBeTruthy();
+      await expect(pane).toHaveAttribute("data-last-completed-request-id", acceptedRequestId!);
     }
     await expect(groundGlass).toHaveAttribute("data-rtt-owner-id", /^ground-glass-rtt-owner-/, { timeout: 60_000 });
     await expect(groundGlass).toHaveAttribute("data-rtt-resource-generation", /^[1-9]\d*$/, { timeout: 60_000 });
@@ -126,6 +134,10 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     expect(rttOwnerId).toBeTruthy();
     expect(seenRttOwnerIds.has(rttOwnerId!)).toBe(false);
     seenRttOwnerIds.add(rttOwnerId!);
+    const rendererGenerationId = await groundGlass.getAttribute("data-renderer-generation");
+    expect(rendererGenerationId).toBeTruthy();
+    expect(seenRendererGenerationIds.has(rendererGenerationId!)).toBe(false);
+    seenRendererGenerationIds.add(rendererGenerationId!);
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");
     expect(sanityState).toBeTruthy();
     if (previousSceneId && previousSceneId !== visit.sceneId) {

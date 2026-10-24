@@ -47,6 +47,16 @@ test.describe('Ground Glass interaction', () => {
       await expect(rtt).toHaveAttribute('data-rtt-final-contentful', 'true', { timeout: 120_000 });
       expect(await rtt.getAttribute('data-rtt-sanity-error')).toBeNull();
     };
+    const expectCurrentRequestPublished = async () => {
+      await expect.poll(async () => {
+        const requestId = await rtt.getAttribute('data-frame-request-id');
+        const completedRequestId = await rtt.getAttribute('data-last-completed-request-id');
+        const status = await rtt.getAttribute('data-frame-result-status');
+        return Boolean(requestId && requestId === completedRequestId && status === 'completed');
+      }, { timeout: 120_000 }).toBe(true);
+      await expect(rtt).toHaveAttribute('data-mounted-renderer-family', 'webgl-renderer');
+      await expect(rtt).toHaveAttribute('data-actual-execution-api', /^webgl2?$/);
+    };
     const expectSameCanvas = async (canvasHandle: NonNullable<Awaited<ReturnType<typeof canvas.elementHandle>>>) => {
       await expect
         .poll(() =>
@@ -63,11 +73,16 @@ test.describe('Ground Glass interaction', () => {
     await expect(viewport).toBeVisible();
     await expect(canvas).toHaveCount(1);
     await expectContentfulRtt();
+    await expectCurrentRequestPublished();
     const canvasHandle = await canvas.elementHandle();
     if (!canvasHandle) throw new Error('Ground Glass Canvas element was not mounted');
     const initialGeneration = await rtt.getAttribute('data-rtt-resource-generation');
+    const initialHostGeneration = await rtt.getAttribute('data-renderer-generation');
+    const initialRequestId = await rtt.getAttribute('data-frame-request-id');
     const initialSanityState = await rtt.getAttribute('data-rtt-sanity-state');
     expect(initialGeneration).toBeTruthy();
+    expect(initialHostGeneration).toBeTruthy();
+    expect(initialRequestId).toBeTruthy();
     expect(initialSanityState).toBeTruthy();
 
     await viewport
@@ -80,6 +95,9 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-focus-loupe-window-width', '0.25');
     await expect(stage).toHaveAttribute('data-focus-loupe-window-height', '0.25');
     await expect.poll(() => rtt.getAttribute('data-rtt-sampled-film-width-mm'), { timeout: 120_000 }).toBe('31.75');
+    await expect.poll(() => rtt.getAttribute('data-frame-request-id'), { timeout: 120_000 }).not.toBe(initialRequestId);
+    await expectCurrentRequestPublished();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
     await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(initialSanityState);
     await expectContentfulRtt();
     const stableLoupeSanityState = await rtt.getAttribute('data-rtt-sanity-state');
@@ -97,6 +115,8 @@ test.describe('Ground Glass interaction', () => {
       const panY = Number(await stage.getAttribute('data-inspection-pan-y'));
       return Math.abs(panX) > 0 || Math.abs(panY) > 0;
     }).toBe(true);
+    await expectCurrentRequestPublished();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
 
     await viewport
       .getByRole('button', { name: 'Reset Ground Glass view', exact: true })
@@ -111,6 +131,8 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-pointer-active', 'false');
     await expect(stage).toHaveAttribute('data-pointer-captured', 'false');
     await expect(transformedLayer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+    await expectCurrentRequestPublished();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
     await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
     expect(await rtt.getAttribute('data-rtt-resource-generation')).toBe(initialGeneration);
     await expectSameCanvas(canvasHandle);
@@ -151,6 +173,9 @@ test.describe('Ground Glass interaction', () => {
 
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
+    const rtt = viewport.getByTestId('ground-glass-rtt');
+    await expect(rtt).toHaveAttribute('data-renderer-generation', /generation-\d+$/, { timeout: 60_000 });
+    const initialHostGeneration = await rtt.getAttribute('data-renderer-generation');
 
     const stage = viewport.locator('[data-zoomed]');
     await expect(stage).toBeVisible();
@@ -232,6 +257,7 @@ test.describe('Ground Glass interaction', () => {
     // the same normalized pan using its new client-box dimensions.
     await page.setViewportSize({ width: 900, height: 900 });
     await expect(stage).toBeVisible();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
     await stage.scrollIntoViewIfNeeded();
     const resizedClientBox = await readStageClientBox(stage);
     await page.mouse.click(
