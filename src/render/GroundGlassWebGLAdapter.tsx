@@ -4,7 +4,7 @@ import type { GroundGlassFrameRequest } from "./groundGlassFrameRequest";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
-import type { GroundGlassRttRuntimeInfoChangeHandler } from "./groundGlassRttDimensions";
+import type { GroundGlassRuntimeInfoObservationHandler } from "./groundGlassRuntimeObservation";
 import type { GroundGlassCleanupOutcome } from "./groundGlassRenderHostState";
 import type { GroundGlassInspectionWindow } from "./groundGlassInspectionWindow";
 
@@ -17,10 +17,11 @@ export type GroundGlassWebGLAdapterProps = Readonly<{
     actualExecutionApi: "webgl" | "webgl2",
   ) => void;
   onFrameResult: (result: GroundGlassFrameResult) => void;
-  onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
+  onRuntimeObservation?: GroundGlassRuntimeInfoObservationHandler;
   onAdapterDisposed: (
     generation: GroundGlassRendererGenerationIdentity,
     outcome: GroundGlassCleanupOutcome,
+    reason?: string,
   ) => void;
 }>;
 
@@ -31,7 +32,7 @@ export const GroundGlassWebGLAdapter = ({
   onAdapterStarted,
   onRendererMounted,
   onFrameResult,
-  onRuntimeInfoChange,
+  onRuntimeObservation,
   onAdapterDisposed,
 }: GroundGlassWebGLAdapterProps) => (
   <GroundGlassRTT
@@ -56,6 +57,6 @@ export const GroundGlassWebGLAdapter = ({
     onRendererMounted={onRendererMounted}
     onFrameResult={onFrameResult}
     onAdapterDisposed={onAdapterDisposed}
-    onRuntimeInfoChange={onRuntimeInfoChange}
+    onRuntimeObservation={onRuntimeObservation}
   />
 );

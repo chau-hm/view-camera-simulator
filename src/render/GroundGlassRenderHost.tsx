@@ -20,6 +20,7 @@ import type { GroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { createGroundGlassFrameRequestFingerprint } from "./groundGlassFrameRequest";
 import { GroundGlassWebGLAdapter } from "./GroundGlassWebGLAdapter";
 import type { GroundGlassRttRuntimeInfoChangeHandler } from "./groundGlassRttDimensions";
+import type { GroundGlassRuntimeInfoObservation } from "./groundGlassRuntimeObservation";
 import {
   GroundGlassRenderHostState,
   type GroundGlassCleanupOutcome,
@@ -126,7 +127,7 @@ export const GroundGlassRenderHost = ({
 
   const generation = state.activeGeneration;
   const activeForThisHost = state.activeHostId === hostId && generation !== null;
-  const acceptedRequest = state.latestRequest;
+  const acceptedRequest = state.activeRequest;
   const shouldMountAdapter = activeForThisHost && acceptedRequest !== null;
 
   useEffect(() => {
@@ -156,19 +157,44 @@ export const GroundGlassRenderHost = ({
     }
   }, [channel, hostId, owner]);
 
-  const handleRuntimeInfoChange = useCallback<NonNullable<GroundGlassRttRuntimeInfoChangeHandler>>(
-    (runtimeChannel, info, ownerId) => {
-      if (generation && !owner.canReceiveRuntimeInfo(runtimeChannel, hostId, generation)) return;
-      runtimeInfoChangeRef.current?.(runtimeChannel, info, ownerId);
-    },
-    [generation, hostId, owner],
-  );
+  const handleRuntimeObservation = useCallback((observation: GroundGlassRuntimeInfoObservation) => {
+    if (
+      !observation ||
+      typeof observation !== "object" ||
+      observation.channelId !== channel ||
+      !observation.generation ||
+      typeof observation.generation.generationId !== "string" ||
+      typeof observation.generation.channelId !== "string" ||
+      typeof observation.ownerId !== "string" ||
+      !observation.ownerId.trim() ||
+      (observation.scope === "request" && !observation.requestIdentity) ||
+      (observation.scope === "generation" && observation.requestIdentity !== null) ||
+      (observation.scope !== "request" && observation.scope !== "generation") ||
+      (observation.info !== null && (
+        observation.info.channel !== observation.channelId ||
+        observation.info.ownerId !== observation.ownerId
+      )) ||
+      !owner.canReceiveRuntimeInfo(
+        observation.channelId,
+        hostId,
+        observation.generation,
+        observation.scope === "request" ? observation.requestIdentity : null,
+        observation.ownerId,
+      )
+    ) return;
+    runtimeInfoChangeRef.current?.(
+      observation.channelId,
+      observation.info,
+      observation.ownerId,
+    );
+  }, [channel, hostId, owner]);
 
   const handleAdapterDisposed = useCallback((
     retiredGeneration: GroundGlassRendererGenerationIdentity,
     outcome: GroundGlassCleanupOutcome,
+    reason?: string,
   ) => {
-    owner.reportAdapterDisposed(channel, retiredGeneration, outcome);
+    owner.reportAdapterDisposed(channel, retiredGeneration, outcome, reason);
   }, [channel, owner]);
 
   const handleAdapterFailure = useCallback((error: Error) => {
@@ -186,7 +212,7 @@ export const GroundGlassRenderHost = ({
         onAdapterStarted={handleAdapterStarted}
         onRendererMounted={handleRendererMounted}
         onFrameResult={handleFrameResult}
-        onRuntimeInfoChange={handleRuntimeInfoChange}
+        onRuntimeObservation={handleRuntimeObservation}
         onAdapterDisposed={handleAdapterDisposed}
       />
     </GroundGlassAdapterErrorBoundary>

@@ -27,8 +27,9 @@ import {
   createGroundGlassSceneFingerprint,
 } from "./groundGlassFrameRequest";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
+import type { GroundGlassCleanupOutcome } from "./groundGlassCleanupEvidence";
 
-export type GroundGlassCleanupOutcome = "confirmed" | "failed" | "uncertain";
+export type { GroundGlassCleanupOutcome } from "./groundGlassCleanupEvidence";
 
 export type GroundGlassRenderHostChannelState = Readonly<{
   channelId: GroundGlassRttChannel;
@@ -40,7 +41,17 @@ export type GroundGlassRenderHostChannelState = Readonly<{
   mounted: boolean;
   adapterStarted: boolean;
   cleanupStatus: "none" | "pending" | GroundGlassCleanupOutcome;
+  cleanupFailureReason: string | null;
+  runtimeOwnerId: string | null;
   latestRequest: GroundGlassFrameRequest | null;
+  /** Request owned by the active host and executable by its current generation. */
+  activeRequest: GroundGlassFrameRequest | null;
+  activeRequestFingerprint: string | null;
+  activeSceneFingerprint: string | null;
+  /** Latest request intent accepted by the pending replacement host. */
+  pendingRequest: GroundGlassFrameRequest | null;
+  pendingRequestFingerprint: string | null;
+  pendingSceneFingerprint: string | null;
   requestFingerprint: string | null;
   sceneFingerprint: string | null;
   selection: GroundGlassBackendSelection | null;
@@ -63,7 +74,15 @@ const emptyChannelState = (channelId: GroundGlassRttChannel): GroundGlassRenderH
   mounted: false,
   adapterStarted: false,
   cleanupStatus: "none",
+  cleanupFailureReason: null,
+  runtimeOwnerId: null,
   latestRequest: null,
+  activeRequest: null,
+  activeRequestFingerprint: null,
+  activeSceneFingerprint: null,
+  pendingRequest: null,
+  pendingRequestFingerprint: null,
+  pendingSceneFingerprint: null,
   requestFingerprint: null,
   sceneFingerprint: null,
   selection: null,
@@ -161,7 +180,8 @@ export class GroundGlassRenderHostState {
     hostId: string,
   ): GroundGlassRenderHostChannelState {
     const generation = this.allocateGeneration(state.channelId);
-    const latestRequest = state.latestRequest;
+    const activatingPendingHost = state.pendingHostId === hostId;
+    const acceptedRequest = activatingPendingHost ? state.pendingRequest : null;
     return {
       ...state,
       activeHostId: hostId,
@@ -170,16 +190,31 @@ export class GroundGlassRenderHostState {
       retiringGeneration: null,
       mounted: false,
       adapterStarted: false,
-      cleanupStatus: state.cleanupStatus === "confirmed" ? "confirmed" : "none",
-      selection: latestRequest
-        ? createDefaultWebGlSelection(state.channelId, latestRequest.scene.id)
+      cleanupStatus: "none",
+      cleanupFailureReason: null,
+      runtimeOwnerId: null,
+      latestRequest: acceptedRequest ?? state.latestRequest,
+      activeRequest: acceptedRequest,
+      activeRequestFingerprint: activatingPendingHost ? state.pendingRequestFingerprint : null,
+      activeSceneFingerprint: activatingPendingHost ? state.pendingSceneFingerprint : null,
+      pendingRequest: null,
+      pendingRequestFingerprint: null,
+      pendingSceneFingerprint: null,
+      requestFingerprint: acceptedRequest
+        ? state.pendingRequestFingerprint
+        : state.requestFingerprint,
+      sceneFingerprint: acceptedRequest
+        ? state.pendingSceneFingerprint
+        : state.sceneFingerprint,
+      selection: acceptedRequest
+        ? createDefaultWebGlSelection(state.channelId, acceptedRequest.scene.id)
         : null,
       attemptedBackend: { status: "started", backend: "webgl" },
       mountedRuntime: unknownRuntime,
-      lifecycleStatus: latestRequest ? "initializing" : "idle",
+      lifecycleStatus: acceptedRequest ? "initializing" : "idle",
       frame: {
-        current: latestRequest
-          ? { status: "pending", generation, request: latestRequest.identity }
+        current: acceptedRequest
+          ? { status: "pending", generation, request: acceptedRequest.identity }
           : null,
         lastSuccessfullyCompleted: state.frame.lastSuccessfullyCompleted,
       },
@@ -210,7 +245,12 @@ export class GroundGlassRenderHostState {
     this.update(channel, (state) => {
       if (state.activeHostId !== hostId && state.pendingHostId !== hostId) return state;
       const fingerprint = createGroundGlassFrameRequestFingerprint(input);
-      if (state.requestFingerprint === fingerprint && state.latestRequest) return state;
+      const acceptedByActiveHost = state.activeHostId === hostId;
+      const priorRequest = acceptedByActiveHost ? state.activeRequest : state.pendingRequest;
+      const priorFingerprint = acceptedByActiveHost
+        ? state.activeRequestFingerprint
+        : state.pendingRequestFingerprint;
+      if (priorFingerprint === fingerprint && priorRequest) return state;
       this.requestSequence += 1;
       const identity = Object.freeze({
         requestId: `gg-${this.instanceId}-${channel}-request-${this.requestSequence}`,
@@ -220,16 +260,32 @@ export class GroundGlassRenderHostState {
       const sceneFingerprint = createGroundGlassSceneFingerprint(input.scene);
       // A crop, resize, optics, or display update must retain the mounted scene subject. Reuse the
       // immutable scene snapshot while its Ground Glass identity/bounds remain unchanged.
-      const stableSceneSnapshot = state.sceneFingerprint === sceneFingerprint
-        ? state.latestRequest?.scene
+      const priorSceneFingerprint = acceptedByActiveHost
+        ? state.activeSceneFingerprint
+        : state.pendingSceneFingerprint;
+      const stableSceneSnapshot = priorSceneFingerprint === sceneFingerprint
+        ? priorRequest?.scene
         : undefined;
       const request = createGroundGlassFrameRequest(input, identity, stableSceneSnapshot);
+      if (!acceptedByActiveHost) {
+        return {
+          ...state,
+          latestRequest: request,
+          requestFingerprint: fingerprint,
+          sceneFingerprint,
+          pendingRequest: request,
+          pendingRequestFingerprint: fingerprint,
+          pendingSceneFingerprint: sceneFingerprint,
+        };
+      }
       const selection = createDefaultWebGlSelection(channel, input.scene.id);
-      const acceptedByActiveHost = state.activeHostId === hostId;
-      const activeGeneration = acceptedByActiveHost ? state.activeGeneration : null;
+      const activeGeneration = state.activeGeneration;
       return {
         ...state,
         latestRequest: request,
+        activeRequest: request,
+        activeRequestFingerprint: fingerprint,
+        activeSceneFingerprint: sceneFingerprint,
         requestFingerprint: fingerprint,
         sceneFingerprint,
         selection,
@@ -252,11 +308,17 @@ export class GroundGlassRenderHostState {
     generation: GroundGlassRendererGenerationIdentity,
   ): void => {
     this.update(channel, (state) => {
-      if (state.activeHostId !== hostId || state.activeGeneration?.generationId !== generation.generationId) return state;
+      if (
+        state.activeHostId !== hostId ||
+        state.activeGeneration?.generationId !== generation.generationId ||
+        state.cleanupStatus === "failed" ||
+        state.cleanupStatus === "uncertain"
+      ) return state;
       return {
         ...state,
         adapterStarted: true,
-        cleanupStatus: state.cleanupStatus === "confirmed" ? "none" : state.cleanupStatus,
+        cleanupStatus: "none",
+        cleanupFailureReason: null,
         lifecycleStatus: state.lifecycleStatus === "disposed" ? "initializing" : state.lifecycleStatus,
       };
     });
@@ -269,7 +331,12 @@ export class GroundGlassRenderHostState {
     actualExecutionApi: "webgl" | "webgl2",
   ): void => {
     this.update(channel, (state) => {
-      if (state.activeHostId !== hostId || state.activeGeneration?.generationId !== generation.generationId) return state;
+      if (
+        state.activeHostId !== hostId ||
+        state.activeGeneration?.generationId !== generation.generationId ||
+        state.cleanupStatus === "failed" ||
+        state.cleanupStatus === "uncertain"
+      ) return state;
       return {
         ...state,
         mounted: true,
@@ -283,7 +350,7 @@ export class GroundGlassRenderHostState {
           actualExecutionApi,
           internalFallback: "none",
         },
-        lifecycleStatus: state.latestRequest ? "rendering" : "ready",
+        lifecycleStatus: state.activeRequest ? "rendering" : "ready",
       };
     });
   };
@@ -297,7 +364,7 @@ export class GroundGlassRenderHostState {
     this.update(channel, (state) => {
       if (state.activeHostId !== hostId || state.activeGeneration?.generationId !== generation.generationId) return state;
       const stage = state.mounted ? "runtime" : "initialization";
-      const request = state.latestRequest;
+      const request = state.activeRequest;
       return {
         ...state,
         attemptedBackend: {
@@ -327,11 +394,40 @@ export class GroundGlassRenderHostState {
     channel: GroundGlassRttChannel,
     hostId: string,
     generation: GroundGlassRendererGenerationIdentity,
+    requestIdentity: GroundGlassFrameRequest["identity"] | null,
+    runtimeOwnerId: string,
   ): boolean => {
+    if (
+      !generation ||
+      typeof generation.generationId !== "string" ||
+      typeof generation.channelId !== "string" ||
+      typeof runtimeOwnerId !== "string" ||
+      !runtimeOwnerId.trim() ||
+      (requestIdentity !== null && (
+        typeof requestIdentity.requestId !== "string" ||
+        typeof requestIdentity.channelId !== "string" ||
+        typeof requestIdentity.sceneId !== "string"
+      ))
+    ) return false;
     const state = this.getSnapshot(channel);
-    return state.activeHostId === hostId &&
+    const current = state.activeHostId === hostId &&
       state.activeGeneration?.generationId === generation.generationId &&
-      state.retiringGeneration === null;
+      generation.channelId === channel &&
+      state.retiringGeneration === null &&
+      state.mounted &&
+      (requestIdentity === null || (
+        state.activeRequest?.identity.requestId === requestIdentity.requestId &&
+        state.activeRequest.identity.channelId === requestIdentity.channelId &&
+        state.activeRequest.identity.sceneId === requestIdentity.sceneId
+      ));
+    if (!current) return false;
+    if (state.runtimeOwnerId && state.runtimeOwnerId !== runtimeOwnerId) return false;
+    if (!state.runtimeOwnerId) {
+      this.update(channel, (latest) => latest === state
+        ? { ...latest, runtimeOwnerId }
+        : latest);
+    }
+    return true;
   };
 
   receiveFrameResult = (
@@ -346,13 +442,13 @@ export class GroundGlassRenderHostState {
         !state.mounted ||
         state.mountedRuntime.status !== "mounted" ||
         state.activeGeneration?.generationId !== result.generation.generationId ||
-        !state.latestRequest
+        !state.activeRequest
       ) return state;
 
       const mountedState = {
         mounted: true,
         activeGeneration: state.activeGeneration,
-        latestAcceptedRequest: state.latestRequest.identity,
+        latestAcceptedRequest: state.activeRequest.identity,
       } as const;
       if (result.status === "completed") {
         if (!canPublishGroundGlassFrame(result, mountedState)) return state;
@@ -380,9 +476,9 @@ export class GroundGlassRenderHostState {
       const matchesCurrent =
         result.generation.generationId === state.activeGeneration.generationId &&
         result.generation.channelId === channel &&
-        result.request.requestId === state.latestRequest.identity.requestId &&
+        result.request.requestId === state.activeRequest.identity.requestId &&
         result.request.channelId === channel &&
-        result.request.sceneId === state.latestRequest.identity.sceneId;
+        result.request.sceneId === state.activeRequest.identity.sceneId;
       if (!matchesCurrent || result.status !== "failed") return state;
       accepted = true;
       return {
@@ -413,11 +509,12 @@ export class GroundGlassRenderHostState {
       state.mounted &&
       state.mountedRuntime.status === "mounted" &&
       state.frame.current !== null &&
+      state.activeRequest !== null &&
       sameRequestResult(state.frame.current, result) &&
       canPublishGroundGlassFrame(result, {
         mounted: true,
         activeGeneration: state.activeGeneration,
-        latestAcceptedRequest: state.latestRequest?.identity ?? null,
+        latestAcceptedRequest: state.activeRequest.identity,
       });
   };
 
@@ -425,12 +522,20 @@ export class GroundGlassRenderHostState {
     let requested = false;
     this.update(channel, (state) => {
       const generation = state.activeGeneration;
-      if (state.activeHostId !== hostId || !generation || state.retiringGeneration) return state;
+      if (
+        state.activeHostId !== hostId ||
+        !generation ||
+        state.retiringGeneration ||
+        (state.pendingHostId !== null && state.pendingHostId !== hostId)
+      ) return state;
       requested = true;
       return {
         ...state,
         activeHostId: null,
         pendingHostId: hostId,
+        pendingRequest: state.activeRequest,
+        pendingRequestFingerprint: state.activeRequestFingerprint,
+        pendingSceneFingerprint: state.activeSceneFingerprint,
         activeGeneration: null,
         retiringGeneration: generation,
         mounted: false,
@@ -460,7 +565,16 @@ export class GroundGlassRenderHostState {
   detachHost = (channel: GroundGlassRttChannel, hostId: string): void => {
     const stateBefore = this.getSnapshot(channel);
     if (stateBefore.pendingHostId === hostId && stateBefore.activeHostId !== hostId) {
-      this.update(channel, (state) => ({ ...state, pendingHostId: null }));
+      this.update(channel, (state) => ({
+        ...state,
+        pendingHostId: null,
+        pendingRequest: null,
+        pendingRequestFingerprint: null,
+        pendingSceneFingerprint: null,
+        latestRequest: state.activeRequest ?? state.latestRequest,
+        requestFingerprint: state.activeRequestFingerprint ?? state.requestFingerprint,
+        sceneFingerprint: state.activeSceneFingerprint ?? state.sceneFingerprint,
+      }));
       return;
     }
     this.update(channel, (state) => {
@@ -503,38 +617,60 @@ export class GroundGlassRenderHostState {
     channel: GroundGlassRttChannel,
     generation: GroundGlassRendererGenerationIdentity,
     outcome: GroundGlassCleanupOutcome,
+    reason?: string,
   ): void => {
     this.update(channel, (state) => {
       if (state.retiringGeneration?.generationId === generation.generationId) {
-        return { ...state, cleanupStatus: outcome };
-      }
-      if (state.activeGeneration?.generationId === generation.generationId) {
+        const stickyOutcome = state.cleanupStatus === "failed" || state.cleanupStatus === "uncertain"
+          ? state.cleanupStatus
+          : outcome;
         return {
           ...state,
-          cleanupStatus: outcome,
+          cleanupStatus: stickyOutcome,
+          cleanupFailureReason: state.cleanupFailureReason ?? reason ?? null,
+        };
+      }
+      if (state.activeGeneration?.generationId === generation.generationId) {
+        const stickyOutcome = state.cleanupStatus === "failed" || state.cleanupStatus === "uncertain"
+          ? state.cleanupStatus
+          : outcome;
+        return {
+          ...state,
+          cleanupStatus: stickyOutcome,
+          cleanupFailureReason: state.cleanupFailureReason ?? reason ?? null,
           adapterStarted: false,
           mounted: false,
+          runtimeOwnerId: null,
           mountedRuntime: unknownRuntime,
           lifecycleStatus: state.lifecycleStatus === "failed"
             ? "failed"
-            : outcome === "confirmed" ? "disposed" : "unavailable",
+            : stickyOutcome === "confirmed" ? "disposed" : "unavailable",
         };
       }
       return state;
     });
     const state = this.getSnapshot(channel);
     if (state.retiringGeneration?.generationId === generation.generationId) {
-      this.finishCleanup(channel, outcome);
+      const finalOutcome = state.cleanupStatus === "failed" || state.cleanupStatus === "uncertain"
+        ? state.cleanupStatus
+        : outcome;
+      this.finishCleanup(channel, finalOutcome);
     }
   };
 
   private finishCleanup(channel: GroundGlassRttChannel, outcome: GroundGlassCleanupOutcome): void {
     this.update(channel, (state) => {
       if (!state.retiringGeneration) return state;
-      if (outcome !== "confirmed") {
+      const finalOutcome = state.cleanupStatus === "failed" || state.cleanupStatus === "uncertain"
+        ? state.cleanupStatus
+        : outcome;
+      if (finalOutcome !== "confirmed") {
         return {
           ...state,
-          cleanupStatus: outcome,
+          cleanupStatus: finalOutcome,
+          cleanupFailureReason: state.cleanupFailureReason ?? (finalOutcome === "failed"
+            ? "owned-resource-disposal-failed"
+            : "adapter-cleanup-not-confirmed"),
           mounted: false,
           mountedRuntime: unknownRuntime,
           lifecycleStatus: "unavailable",
@@ -549,6 +685,11 @@ export class GroundGlassRenderHostState {
         mounted: false,
         adapterStarted: false,
         cleanupStatus: "confirmed" as const,
+        cleanupFailureReason: null,
+        runtimeOwnerId: null,
+        activeRequest: state.pendingHostId ? state.activeRequest : null,
+        activeRequestFingerprint: state.pendingHostId ? state.activeRequestFingerprint : null,
+        activeSceneFingerprint: state.pendingHostId ? state.activeSceneFingerprint : null,
         mountedRuntime: unknownRuntime,
         lifecycleStatus: "disposed" as const,
       };
@@ -607,7 +748,7 @@ export class GroundGlassRenderHostState {
   getDiagnostics = (channel: GroundGlassRttChannel): GroundGlassBackendDiagnostics | null => {
     const state = this.getSnapshot(channel);
     if (this.diagnosticsByState.has(state)) return this.diagnosticsByState.get(state) ?? null;
-    const request = state.latestRequest;
+    const request = state.activeRequest ?? state.latestRequest;
     const selection = state.selection;
     if (!request || !selection) {
       this.diagnosticsByState.set(state, null);
@@ -626,8 +767,8 @@ export class GroundGlassRenderHostState {
                 status: state.cleanupStatus,
                 generation: cleanupGeneration,
                 reason: state.cleanupStatus === "failed"
-                  ? "owned-resource-disposal-failed"
-                  : "adapter-cleanup-not-confirmed",
+                  ? state.cleanupFailureReason ?? "owned-resource-disposal-failed"
+                  : state.cleanupFailureReason ?? "adapter-cleanup-not-confirmed",
               }
             : { status: "not-required" };
     const diagnostics: GroundGlassBackendDiagnostics = {

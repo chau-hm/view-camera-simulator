@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as groundGlassCocTarget from "../../render/groundGlassCocTarget";
+import { GroundGlassCleanupEvidenceCoordinator } from "../../render/groundGlassCleanupEvidence";
 import {
   createGroundGlassRttResources,
   resizeGroundGlassRttResources,
@@ -179,6 +180,80 @@ describe("Ground Glass RTT semantic resource ownership", () => {
     expect(depthFallbackDispose).toHaveBeenCalledTimes(1);
   });
 
+  it("retains target disposal failures while attempting every owned resource exactly once", () => {
+    const { renderer } = createRenderer();
+    const resources = createGroundGlassRttResources({
+      renderer,
+      widthPx: 100,
+      heightPx: 80,
+      gatherScale: 1,
+    });
+    const ownedTargets = [
+      resources.scene.colorDepthTarget,
+      resources.coc.classificationTarget,
+      resources.gather.farTarget,
+      resources.gather.nearTarget,
+      resources.composite.outputTarget,
+      resources.diagnostics.rawSceneTarget,
+      resources.diagnostics.compositeOutputTarget,
+    ];
+    const failures = ownedTargets.map((_, index) => new Error(`target ${index} disposal failed`));
+    const disposeSpies = ownedTargets.map((target, index) =>
+      vi.spyOn(target, "dispose").mockImplementation(() => {
+        throw failures[index];
+      }),
+    );
+
+    let firstFailure: unknown;
+    try {
+      resources.dispose();
+    } catch (error) {
+      firstFailure = error;
+    }
+
+    expect(firstFailure).toBeInstanceOf(AggregateError);
+    expect((firstFailure as AggregateError).errors).toEqual(failures);
+    expect(disposeSpies).toHaveLength(ownedTargets.length);
+    disposeSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    expect(() => resources.dispose()).toThrow(firstFailure as Error);
+    disposeSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it("passes actual target disposal failure evidence into the cleanup coordinator", () => {
+    const { renderer } = createRenderer();
+    const resources = createGroundGlassRttResources({
+      renderer,
+      widthPx: 100,
+      heightPx: 80,
+      gatherScale: 1,
+    });
+    const error = new Error("injected owned target disposal failure");
+    vi.spyOn(resources.scene.colorDepthTarget, "dispose").mockImplementation(() => {
+      throw error;
+    });
+    let outcome: string | undefined;
+    let reason: string | undefined;
+    const coordinator = new GroundGlassCleanupEvidenceCoordinator((nextOutcome, nextReason) => {
+      outcome = nextOutcome;
+      reason = nextReason;
+    });
+    coordinator.acquired("rtt-targets");
+
+    try {
+      resources.dispose();
+    } catch (disposeError) {
+      coordinator.ownerCleanupCompleted(
+        "rtt-targets",
+        "failed",
+        disposeError instanceof Error ? disposeError.message : String(disposeError),
+      );
+    }
+    coordinator.rendererRetired("confirmed");
+
+    expect(outcome).toBe("failed");
+    expect(reason).toContain("Ground Glass RTT target bundle cleanup failed");
+  });
+
   it("disposes already-owned resources once and rethrows the original failure when CoC creation fails", () => {
     const { renderer } = createRenderer();
     const constructionFailure = new Error("injected CoC target construction failure");
@@ -214,7 +289,9 @@ describe("Ground Glass RTT semantic resource ownership", () => {
       thrownError = error;
     }
 
-    expect(thrownError).toBe(constructionFailure);
+    expect(thrownError).toBeInstanceOf(AggregateError);
+    expect((thrownError as AggregateError).errors[0]).toBe(constructionFailure);
+    expect((thrownError as AggregateError).errors).toHaveLength(3);
     expect(cocFactory).toHaveBeenCalledTimes(1);
     expect(disposedTargets).toHaveLength(1);
     expect(disposedTargets[0]).toBeInstanceOf(THREE.WebGLRenderTarget);

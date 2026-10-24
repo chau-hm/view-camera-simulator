@@ -46,13 +46,19 @@ export type GroundGlassRttPassMaterials = {
   composite: THREE.ShaderMaterial;
 };
 
-const disposeQuietly = (resource: { dispose: () => void }): void => {
+const disposeAndCollectFailure = (
+  resource: { dispose: () => void },
+  failures: unknown[],
+): void => {
   try {
     resource.dispose();
-  } catch {
-    // Continue disposing the other resources owned by this Ground Glass bundle.
+  } catch (error) {
+    failures.push(error);
   }
 };
+
+const createCleanupAggregate = (failures: readonly unknown[], message: string): AggregateError =>
+  new AggregateError(failures, message);
 
 /** Creates the concrete Three.js resources for the current Ground Glass passes. */
 export const createGroundGlassRttResources = (input: {
@@ -128,6 +134,7 @@ export const createGroundGlassRttResources = (input: {
     ownedTargets.push(compositeOutputTarget);
 
     let disposed = false;
+    let disposalFailure: AggregateError | null = null;
     return {
       scene: { colorDepthTarget, depthFallback },
       coc: {
@@ -139,15 +146,35 @@ export const createGroundGlassRttResources = (input: {
       composite: { outputTarget },
       diagnostics: { rawSceneTarget, compositeOutputTarget },
       dispose: () => {
-        if (disposed) return;
+        if (disposed) {
+          if (disposalFailure) throw disposalFailure;
+          return;
+        }
         disposed = true;
-        ownedTargets.forEach(disposeQuietly);
-        if (depthFallback) disposeQuietly(depthFallback);
+        const failures: unknown[] = [];
+        ownedTargets.forEach((target) => disposeAndCollectFailure(target, failures));
+        if (depthFallback) disposeAndCollectFailure(depthFallback, failures);
+        if (failures.length > 0) {
+          disposalFailure = createCleanupAggregate(
+            failures,
+            "Ground Glass RTT target bundle cleanup failed",
+          );
+          throw disposalFailure;
+        }
       },
     };
   } catch (error) {
-    ownedTargets.forEach(disposeQuietly);
-    if (depthFallback) disposeQuietly(depthFallback);
+    const cleanupFailures: unknown[] = [];
+    ownedTargets.forEach((target) => disposeAndCollectFailure(target, cleanupFailures));
+    if (depthFallback) disposeAndCollectFailure(depthFallback, cleanupFailures);
+    if (cleanupFailures.length > 0) {
+      const aggregate = createCleanupAggregate(
+        [error, ...cleanupFailures],
+        "Ground Glass resource initialization failed and partial cleanup was incomplete",
+      );
+      (aggregate as Error & { cause?: unknown }).cause = error;
+      throw aggregate;
+    }
     throw error;
   }
 };

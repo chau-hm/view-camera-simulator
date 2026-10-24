@@ -2,8 +2,11 @@ import React from "react";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GroundGlassRenderHost, GroundGlassRenderHostStateProvider } from "../../render/GroundGlassRenderHost";
+import { GroundGlassCleanupEvidenceCoordinator } from "../../render/groundGlassCleanupEvidence";
 import type { GroundGlassWebGLAdapterProps } from "../../render/GroundGlassWebGLAdapter";
 import type { GroundGlassFrameResult } from "../../render/backend/groundGlassBackendContracts";
+import type { GroundGlassRuntimeInfoObservation } from "../../render/groundGlassRuntimeObservation";
+import type { GroundGlassRttRuntimeInfoChangeHandler } from "../../render/groundGlassRttDimensions";
 import { selectGroundGlassBackend } from "../../render/backend/groundGlassBackendPolicy";
 import { GroundGlassRenderHostState } from "../../render/groundGlassRenderHostState";
 import { createGroundGlassRequestInput } from "./groundGlassFrameRequestFixtures";
@@ -56,11 +59,24 @@ const completedFrame = (
   requiredOperations: "all-completed",
 });
 
+const requestObservation = (
+  props: GroundGlassWebGLAdapterProps,
+  requestIdentity = props.request.identity,
+  ownerId = "runtime-owner",
+): GroundGlassRuntimeInfoObservation => ({
+  scope: "request",
+  channelId: props.request.channel,
+  generation: props.generation,
+  requestIdentity,
+  ownerId,
+  info: null,
+});
+
 const hostTree = (
   owner: GroundGlassRenderHostState,
   request: ReturnType<typeof createGroundGlassRequestInput>,
   onFramePublished?: (result: Extract<GroundGlassFrameResult, { status: "completed" }>) => void,
-  onRuntimeInfoChange?: GroundGlassWebGLAdapterProps["onRuntimeInfoChange"],
+  onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler,
 ) => React.createElement(GroundGlassRenderHostStateProvider, {
   owner,
   children: React.createElement(GroundGlassRenderHost, { request, onFramePublished, onRuntimeInfoChange }),
@@ -74,6 +90,169 @@ afterEach(() => {
 });
 
 describe("GroundGlassRenderHost request and lifecycle authority", () => {
+  it("keeps a pending host request isolated from the active renderer generation", () => {
+    const owner = new GroundGlassRenderHostState();
+    const activeRequest = createGroundGlassRequestInput();
+    const pendingRequest = createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+      camera: { focusDistanceMm: 2400 },
+      aperture: 16,
+    });
+    const view = render(React.createElement(
+      GroundGlassRenderHostStateProvider,
+      {
+        owner,
+        children: React.createElement(React.Fragment, null,
+          React.createElement(GroundGlassRenderHost, { request: activeRequest }),
+          React.createElement(GroundGlassRenderHost, { request: pendingRequest }),
+        ),
+      },
+    ));
+
+    const state = owner.getSnapshot("default");
+    const activeGeneration = state.activeGeneration;
+    if (!activeGeneration || !state.activeRequest || !state.pendingRequest) {
+      throw new Error("Expected active and pending request ownership");
+    }
+    const activeAdapter = adapterProps(activeGeneration.generationId);
+    expect(activeAdapter.request.identity).toEqual(state.activeRequest.identity);
+    expect(activeAdapter.request.identity.sceneId).toBe(activeRequest.scene.id);
+    expect(state.pendingRequest.identity.sceneId).toBe(understandingCameraMovementsScene.id);
+    expect(adapterHarness.propsByGeneration.size).toBe(1);
+
+    act(() => activeAdapter.onRendererMounted(activeGeneration, "webgl2"));
+    const pendingResult: GroundGlassFrameResult = {
+      status: "completed",
+      generation: activeGeneration,
+      request: state.pendingRequest.identity,
+      frameId: "pending-host-must-not-publish",
+      requiredOperations: "all-completed",
+    };
+    expect(owner.receiveFrameResult("default", state.activeHostId!, pendingResult)).toBe(false);
+    expect(owner.canPublishFrameNow("default", state.activeHostId!, pendingResult)).toBe(false);
+    expect(owner.getSnapshot("default").frame.lastSuccessfullyCompleted).toBeNull();
+    view.unmount();
+  });
+
+  it("activates a replacement with only its latest request after confirmed cleanup", () => {
+    const owner = new GroundGlassRenderHostState();
+    const r1 = createGroundGlassRequestInput();
+    const r2 = createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+      camera: { focusDistanceMm: 1800 },
+    });
+    const r3 = createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+      camera: { focusDistanceMm: 2100 },
+    });
+    const r4 = createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+      camera: { focusDistanceMm: 2600 },
+      aperture: 16,
+    });
+
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", r1);
+    const retiringGeneration = owner.getSnapshot("default").activeGeneration;
+    if (!retiringGeneration) throw new Error("Expected active generation");
+    owner.markAdapterStarted("default", "host-a", retiringGeneration);
+    owner.detachHost("default", "host-a");
+    owner.attachHost("default", "host-b");
+    owner.acceptRequest("default", "host-b", r2);
+    owner.acceptRequest("default", "host-b", r3);
+    owner.acceptRequest("default", "host-b", r4);
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      pendingHostId: "host-b",
+      activeGeneration: null,
+      pendingRequest: { identity: { sceneId: understandingCameraMovementsScene.id } },
+      cleanupStatus: "pending",
+      frame: { current: null },
+    });
+    const latestPendingId = owner.getSnapshot("default").pendingRequest?.identity.requestId;
+    owner.reportAdapterDisposed("default", retiringGeneration, "confirmed");
+
+    const afterCleanup = owner.getSnapshot("default");
+    expect(afterCleanup.activeHostId).toBe("host-b");
+    expect(afterCleanup.activeGeneration?.generationId).not.toBe(retiringGeneration.generationId);
+    expect(afterCleanup.activeRequest?.identity.requestId).toBe(latestPendingId);
+    expect(afterCleanup.latestRequest?.identity.requestId).toBe(latestPendingId);
+    expect(afterCleanup.frame.current).toMatchObject({
+      status: "pending",
+      request: { requestId: latestPendingId, sceneId: understandingCameraMovementsScene.id },
+    });
+    expect(afterCleanup.frame.lastSuccessfullyCompleted).toBeNull();
+  });
+
+  it("drops a pending host and its request when it detaches before cleanup", () => {
+    const owner = new GroundGlassRenderHostState();
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", createGroundGlassRequestInput());
+    const generation = owner.getSnapshot("default").activeGeneration;
+    if (!generation) throw new Error("Expected active generation");
+    owner.markAdapterStarted("default", "host-a", generation);
+    owner.detachHost("default", "host-a");
+    owner.attachHost("default", "host-b");
+    owner.acceptRequest("default", "host-b", createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+    }));
+    owner.detachHost("default", "host-b");
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      pendingHostId: null,
+      pendingRequest: null,
+      retiringGeneration: generation,
+      cleanupStatus: "pending",
+      frame: { current: null },
+    });
+    owner.reportAdapterDisposed("default", generation, "confirmed");
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      pendingHostId: null,
+      activeGeneration: null,
+      pendingRequest: null,
+      retiringGeneration: null,
+      cleanupStatus: "confirmed",
+      frame: { current: null, lastSuccessfullyCompleted: null },
+    });
+  });
+
+  it("keeps concurrent host handovers independent across comparison channels", () => {
+    const owner = new GroundGlassRenderHostState();
+    const channels = ["camera-movement-original", "camera-movement-current"] as const;
+    for (const channel of channels) {
+      owner.attachHost(channel, channel + "-a");
+      owner.acceptRequest(channel, channel + "-a", createGroundGlassRequestInput({ channel }));
+      const generation = owner.getSnapshot(channel).activeGeneration;
+      if (!generation) throw new Error("Expected comparison channel generation");
+      owner.markAdapterStarted(channel, channel + "-a", generation);
+      owner.detachHost(channel, channel + "-a");
+      owner.attachHost(channel, channel + "-b");
+      owner.acceptRequest(channel, channel + "-b", createGroundGlassRequestInput({
+        channel,
+        scene: understandingCameraMovementsScene,
+      }));
+    }
+
+    const originalRetiring = owner.getSnapshot(channels[0]).retiringGeneration;
+    const currentBefore = owner.getSnapshot(channels[1]);
+    if (!originalRetiring) throw new Error("Expected original channel retirement");
+    owner.reportAdapterDisposed(channels[0], originalRetiring, "confirmed");
+
+    expect(owner.getSnapshot(channels[0]).activeRequest?.identity.sceneId)
+      .toBe(understandingCameraMovementsScene.id);
+    expect(owner.getSnapshot(channels[1])).toMatchObject({
+      activeHostId: null,
+      activeGeneration: null,
+      pendingHostId: "camera-movement-current-b",
+      pendingRequest: currentBefore.pendingRequest,
+      retiringGeneration: currentBefore.retiringGeneration,
+      cleanupStatus: "pending",
+    });
+  });
+
   it("retires one generation, accepts the latest replacement request, and rejects stale results", async () => {
     const owner = new GroundGlassRenderHostState();
     const r1 = createGroundGlassRequestInput();
@@ -117,7 +296,12 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     expect(owner.getSnapshot("default").frame.current?.status).toBe("failed");
 
     // Mount the next application host before the old channel's deferred detach/cleanup settles.
-    const second = render(hostTree(owner, r2, (result) => published.push(result.request.requestId)));
+    const second = render(hostTree(
+      owner,
+      r2,
+      (result) => published.push(result.request.requestId),
+      retiredRuntimeInfoChange,
+    ));
     first.unmount();
     await act(async () => { await Promise.resolve(); });
     expect(owner.getSnapshot("default")).toMatchObject({
@@ -138,12 +322,37 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
 
     const r2Props = adapterProps(secondGeneration.generationId);
     const acceptedR2Id = r2Props.request.identity.requestId;
-    act(() => r1Props.onRuntimeInfoChange?.("default", null, "retired-owner"));
+    act(() => r1Props.onRuntimeObservation?.(requestObservation(
+      r1Props,
+      r1Props.request.identity,
+      "retired-owner",
+    )));
     expect(retiredRuntimeInfoChange).not.toHaveBeenCalled();
-    second.rerender(hostTree(owner, r3, (result) => published.push(result.request.requestId)));
+    second.rerender(hostTree(
+      owner,
+      r3,
+      (result) => published.push(result.request.requestId),
+      retiredRuntimeInfoChange,
+    ));
     const r3Props = adapterProps(secondGeneration.generationId);
     expect(r3Props.request.identity.requestId).not.toBe(acceptedR2Id);
     expect(r3Props.generation.generationId).toBe(secondGeneration.generationId);
+
+    act(() => r2Props.onRuntimeObservation?.(requestObservation(r2Props)));
+    expect(retiredRuntimeInfoChange).not.toHaveBeenCalled();
+    act(() => r3Props.onRuntimeObservation?.(requestObservation(r3Props)));
+    expect(retiredRuntimeInfoChange).toHaveBeenCalledTimes(1);
+    expect(retiredRuntimeInfoChange).toHaveBeenLastCalledWith("default", null, "runtime-owner");
+
+    act(() => r3Props.onRuntimeObservation?.({
+      ...requestObservation(r3Props),
+      channelId: "camera-movement-current",
+    }));
+    act(() => r3Props.onRuntimeObservation?.({
+      ...requestObservation(r3Props),
+      generation: undefined,
+    } as unknown as GroundGlassRuntimeInfoObservation));
+    expect(retiredRuntimeInfoChange).toHaveBeenCalledTimes(1);
 
     act(() => r2Props.onFrameResult(completedFrame(r2Props, "late-r2")));
     expect(published).toEqual([]);
@@ -273,6 +482,7 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     expect(diagnostics?.mountedRuntime).toEqual({ status: "unknown" });
     expect(diagnostics?.frame.lastSuccessfullyCompleted).toBeNull();
     expect(diagnostics?.frame.current?.status).toBe("failed");
+    expect(diagnostics?.cleanup.status).toBe("not-required");
 
     view.unmount();
     consoleError.mockRestore();
@@ -301,6 +511,70 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
       lifecycleStatus: "unavailable",
     });
     expect(owner.getDiagnostics("default")?.rendererGeneration).toEqual(generation);
+  });
+
+  it("does not let a later confirmed notification erase failed cleanup or mount a replacement", () => {
+    const owner = new GroundGlassRenderHostState();
+    owner.attachHost("default", "retiring-host");
+    owner.acceptRequest("default", "retiring-host", createGroundGlassRequestInput());
+    const generation = owner.getSnapshot("default").activeGeneration;
+    if (!generation) throw new Error("Expected initial generation");
+    owner.markAdapterStarted("default", "retiring-host", generation);
+    owner.detachHost("default", "retiring-host");
+    owner.attachHost("default", "replacement-host");
+    owner.acceptRequest("default", "replacement-host", createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+    }));
+
+    owner.reportAdapterDisposed("default", generation, "failed", "subject dispose failed");
+    owner.reportAdapterDisposed("default", generation, "confirmed");
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      activeGeneration: null,
+      pendingHostId: "replacement-host",
+      retiringGeneration: generation,
+      cleanupStatus: "failed",
+      cleanupFailureReason: "subject dispose failed",
+      lifecycleStatus: "unavailable",
+    });
+  });
+
+  it("retires a partially initialized adapter only after acquired owners clean up", () => {
+    const owner = new GroundGlassRenderHostState();
+    owner.attachHost("default", "initializing-host");
+    owner.acceptRequest("default", "initializing-host", createGroundGlassRequestInput());
+    const firstGeneration = owner.getSnapshot("default").activeGeneration;
+    if (!firstGeneration) throw new Error("Expected initial generation");
+    owner.markAdapterStarted("default", "initializing-host", firstGeneration);
+    owner.reportAdapterFailure(
+      "default",
+      "initializing-host",
+      firstGeneration,
+      "controlled failure after RTT allocation",
+    );
+    owner.detachHost("default", "initializing-host");
+    owner.attachHost("default", "replacement-host");
+    owner.acceptRequest("default", "replacement-host", createGroundGlassRequestInput({
+      scene: understandingCameraMovementsScene,
+    }));
+
+    const coordinator = new GroundGlassCleanupEvidenceCoordinator((outcome, reason) => {
+      owner.reportAdapterDisposed("default", firstGeneration, outcome, reason);
+    });
+    coordinator.acquired("rtt-targets");
+    expect(owner.getSnapshot("default").activeGeneration).toBeNull();
+    coordinator.ownerCleanupCompleted("rtt-targets", "confirmed");
+    coordinator.rendererRetired("confirmed");
+
+    const state = owner.getSnapshot("default");
+    expect(state.activeHostId).toBe("replacement-host");
+    expect(state.activeGeneration?.generationId).not.toBe(firstGeneration.generationId);
+    expect(state.mountedRuntime).toEqual({ status: "unknown" });
+    expect(state.frame).toMatchObject({
+      current: { status: "pending" },
+      lastSuccessfullyCompleted: null,
+    });
   });
 
   it("keeps retry state per channel and sticky across request changes and replacement", async () => {
