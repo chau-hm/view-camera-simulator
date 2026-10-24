@@ -1,0 +1,116 @@
+import type {
+  GroundGlassAcceptedRequestIdentity,
+  GroundGlassFrameResult,
+  GroundGlassPilotRetryState,
+  GroundGlassRendererGenerationIdentity,
+} from "./groundGlassBackendContracts";
+import type { GroundGlassBackendSelection } from "./groundGlassBackendPolicy";
+
+export type GroundGlassMountedRuntimeEvidence =
+  | Readonly<{ status: "unknown" }>
+  | Readonly<{
+      status: "mounted";
+      generation: GroundGlassRendererGenerationIdentity;
+      rendererFamily: "webgl-renderer";
+      actualExecutionApi: "webgl" | "webgl2";
+      internalFallback: "none";
+    }>
+  | Readonly<{
+      status: "mounted";
+      generation: GroundGlassRendererGenerationIdentity;
+      rendererFamily: "webgpu-renderer";
+      actualExecutionApi: "webgpu";
+      internalFallback: "none";
+    }>
+  | Readonly<{
+      status: "mounted";
+      generation: GroundGlassRendererGenerationIdentity;
+      rendererFamily: "webgpu-renderer";
+      actualExecutionApi: "webgl2";
+      internalFallback: "webgl2-compatibility";
+    }>;
+
+export type GroundGlassAttemptEvidence =
+  | Readonly<{ status: "not-started" }>
+  | Readonly<{ status: "started"; backend: "webgl" | "webgpu" }>
+  | Readonly<{
+      status: "failed";
+      backend: "webgl" | "webgpu";
+      stage: "initialization" | "runtime";
+      failureReason: string;
+    }>
+  | Readonly<{ status: "mounted"; backend: "webgl" | "webgpu" }>;
+
+export type GroundGlassApplicationFallbackEvidence =
+  | Readonly<{ status: "not-observed" }>
+  | Readonly<{
+      status: "occurred";
+      failedBackend: "webgpu";
+      fallbackRendererFamily: "webgl-renderer";
+      failureStage: "initialization" | "runtime";
+      reason: string;
+    }>;
+
+export type GroundGlassWebGlDiagnosticDetails = Readonly<{
+  backend: "webgl";
+  contextApi: "webgl" | "webgl2";
+  rendererRevision: string;
+  enabledExtensions: readonly string[];
+}>;
+
+export type GroundGlassWebGpuDiagnosticDetails = Readonly<{
+  backend: "webgpu";
+  adapterFeatures: readonly string[];
+  deviceFeatures: readonly string[];
+  textureStorageFormats: readonly string[];
+  rendererRevision: string;
+}>;
+
+export type GroundGlassBackendDiagnosticDetails =
+  | GroundGlassWebGlDiagnosticDetails
+  | GroundGlassWebGpuDiagnosticDetails;
+
+export type GroundGlassFrameDiagnostics = Readonly<{
+  current: GroundGlassFrameResult | null;
+  lastSuccessfullyCompleted: Readonly<{
+    request: GroundGlassAcceptedRequestIdentity;
+    generation: GroundGlassRendererGenerationIdentity;
+    frameId: string;
+  }> | null;
+}>;
+
+export type GroundGlassLifecycleStatus =
+  | "idle"
+  | "initializing"
+  | "ready"
+  | "rendering"
+  | "failed"
+  | "retiring"
+  | "disposed"
+  | "unavailable";
+
+/**
+ * Common M2-facing diagnostic envelope. Runtime identity is populated only from mounted renderer
+ * evidence; policy selection and reported capability preflight remain separate fields.
+ */
+export type GroundGlassBackendDiagnostics = Readonly<{
+  requestIdentity: GroundGlassAcceptedRequestIdentity;
+  pilotSessionId: string | null;
+  policySelection: GroundGlassBackendSelection;
+  attemptedBackend: GroundGlassAttemptEvidence;
+  mountedRuntime: GroundGlassMountedRuntimeEvidence;
+  applicationFallback: GroundGlassApplicationFallbackEvidence;
+  rendererGeneration: GroundGlassRendererGenerationIdentity | null;
+  lifecycleStatus: GroundGlassLifecycleStatus;
+  frame: GroundGlassFrameDiagnostics;
+  retryState: GroundGlassPilotRetryState | null;
+  backendDetails: GroundGlassBackendDiagnosticDetails | null;
+}>;
+
+export const isGroundGlassNativeWebGpuRuntime = (
+  runtime: GroundGlassMountedRuntimeEvidence,
+): boolean =>
+  runtime.status === "mounted" &&
+  runtime.rendererFamily === "webgpu-renderer" &&
+  runtime.actualExecutionApi === "webgpu" &&
+  runtime.internalFallback === "none";
