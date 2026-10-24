@@ -4,6 +4,8 @@
 
 **Production invariant:** Ground Glass remains WebGL-only/default until an explicit later promotion decision.
 
+**Promotion sequence:** M1–M8 remain research/development-only with no public WebGPU activation, regardless of authorization associated with those stages. M9 records an evidence-based go/no-go only. A go decision still requires explicit product/release authorization, a separate production-promotion implementation PR, production validation and independent review, then a controlled rollout with WebGL rollback.
+
 **Architecture decision:** [ADR](GROUND_GLASS_WEBGPU_INTEGRATION_ADR.md) · [Blueprint](GROUND_GLASS_WEBGPU_INTEGRATION_BLUEPRINT.md)
 
 Each stage is a separate, reviewable PR. Unless called out otherwise, every stage must preserve the current WebGL path, have a feature-off rollback, and be safe to merge to `main` without exposing an incomplete WebGPU feature.
@@ -32,7 +34,7 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 **Dependencies:** None beyond current production WebGL policy and repository types.
 
-**Scope:** Request authorization; development/test gating; scene-feature eligibility; required capability preflight representation; fail-closed decisions; separation of requested/attempted/mounted family/execution API/application fallback; policy unit tests. No public UI selector.
+**Scope:** Request authorization; development/test gating; scene-feature eligibility; required capability preflight representation; fail-closed decisions; separation of requested/attempted/mounted family/execution API/application fallback; policy unit tests. Define immutable accepted-request identity (`requestId` for the complete frame-state snapshot), channel and scene identity, pilot-session identity, and per-session retry state. No public UI selector.
 
 **Explicit exclusions:** WebGPU rendering, Observer policy reuse, production route changes, `navigator.gpu` as execution proof, unqualified scene `webgpuSupported` flags.
 
@@ -52,19 +54,19 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 ## M2 — Ground Glass Renderer Host and Lifecycle Seam
 
-**Objective:** Place the existing WebGL implementation behind the smallest application-facing host and prove no visual or lifecycle change.
+**Objective:** Place the existing WebGL implementation behind the smallest application-facing host and prove no visual or lifecycle change, while separating renderer-generation authority from accepted-request publication authority.
 
 **Dependencies:** M1 policy and diagnostic semantics; if M1 changes only pure types, it remains production-dark.
 
-**Scope:** Introduce a host/adapter lifecycle boundary; make current `GroundGlassRTT` the WebGL adapter with minimal movement; assign generation/owner identities; route common frame request and diagnostics; preserve Stage, overlay, comparison channel, Raw/Upright and Raw Debug behavior.
+**Scope:** Introduce a host/adapter lifecycle boundary; make current `GroundGlassRTT` the WebGL adapter with minimal movement; assign generation/owner identities; accept immutable frame snapshots with new request IDs for every render-relevant canonical/view change; route common frame request and diagnostics; preserve Stage, overlay, comparison channel, Raw/Upright and Raw Debug behavior. A generation ID alone must never authorize a frame publication.
 
 **Explicit exclusions:** WebGPU implementation, shader move for cleanliness, render graph, generic renderer adapter framework, optics changes, public selector.
 
 **Expected touched subsystems:** `GroundGlassRenderSurface.tsx`, a small host module, adapter wrapper around `GroundGlassRTT`, typed diagnostics, focused Stage/RTT lifecycle E2E and unit tests.
 
-**Acceptance criteria:** Existing browser output and diagnostics remain equivalent; one generation owns the current renderer/resources; resize/remount/scene switch cleanup is attributable and idempotent; stale generation callbacks are rejected.
+**Acceptance criteria:** Existing browser output and diagnostics remain equivalent; one generation owns the current renderer/resources; resize/remount/scene switch cleanup is attributable and idempotent; stale generation callbacks and stale request completions are rejected both on completion and at the publication boundary. After fallback cleanup, the host rereads and renders the latest accepted request.
 
-**Negative controls:** Forced adapter init failure; scene switch during frame; old callback after remount; repeated dispose; resize while current; two channels have independent owner IDs.
+**Negative controls:** Forced adapter init failure; focus/aperture/crop/pan change during cleanup, WebGL initialization, and render; scene switch or unmount during cleanup; late WebGPU readback; old callback after remount; repeated dispose; resize while current; two channels have independent owner IDs; retry latch survives update/resize/remount and resets only after an explicit authorized retry/new pilot session.
 
 **Validation:** Ground Glass unit tests, representative Raw/Upright/DOF/scene-switch E2E, typecheck/lint/build, production-only route smoke test.
 
@@ -80,13 +82,13 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 **Dependencies:** M2 host/lifecycle seam; Phase C research reports as baseline.
 
-**Scope:** Separate WebGPU renderer/target ownership; actual mounted execution identity; canonical scene and off-axis camera inputs; color/depth render target; separate display operation; development/test allowlist; safe initialization rollback and one-shot authorized WebGL fallback.
+**Scope:** Separate WebGPU renderer/target ownership; actual mounted execution identity; canonical scene and off-axis camera inputs; color/depth render target; separate display operation; development/test allowlist; safe initialization rollback and at most one WebGL fallback attempt per explicit pilot session. Once an authorized WebGPU initialization/runtime attempt fails and cleanup permits fallback, keep that channel/session sticky on WebGL; do not retry automatically.
 
 **Explicit exclusions:** Physical CoC, footprint, gather, composite DOF, production selector/default, using Observer renderer, sharing GL textures or live scene/render-target resources.
 
 **Expected touched subsystems:** New `GroundGlassWebGPU` adapter area, Ground Glass-specific compatibility/policy data, host selection, asymmetric raw raster and lifecycle tests.
 
-**Acceptance criteria:** Native runtime identity verified after mount; actual production scene factory/subject is constructed or a precisely documented adapter is used; Raw output uses canonical camera/film geometry; asymmetric physical landmarks and target resize pass; cleanup/remount attributable; internal fallback is not counted as native; WebGL stays default.
+**Acceptance criteria:** Native runtime identity verified after mount; actual production scene factory/subject is constructed or a precisely documented adapter is used; Raw output uses canonical camera/film geometry; asymmetric physical landmarks and target resize pass; cleanup/remount attributable; internal fallback is not counted as native; WebGL stays default; runtime fallback uses the latest accepted immutable request and checks request, channel, scene, and generation before publication; automatic retry stays disabled for the failed pilot session.
 
 **Negative controls:** WebGL2 internal fallback; app fallback; missing adapter/format; wrong X/Y origin; partial initialization throw; stale frame after scene switch; scene not allowlisted.
 
@@ -124,19 +126,19 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 ## M5 — Far/Near Gather and B1 Integration
 
-**Objective:** Integrate far reconstruction and near gathering on WebGPU behind the development gate, with B1 limited to states that pass reference-quality gates.
+**Objective:** Integrate Phase H **B1 center-compatible far reconstruction** and the existing near gathering on WebGPU behind the development gate, with B1 limited to states that pass reference-quality gates. C1 remains a separate Phase I comparative algorithm and is not an M5 substitute.
 
 **Dependencies:** M4 physical CoC/footprint; Phases F–L evidence.
 
-**Scope:** GPU far/near gather passes; B1 center-compatible/surface-aware reconstruction contract as applicable; target resolutions; radius cap and fallback; physical CoC invariance; near RGB/alpha semantics; diagnostics.
+**Scope:** GPU far/near gather passes; the exact Phase H B1 selected reduced-resolution gather-center identity/provenance, Phase H center/source compatibility and signed-CoC/far-eligibility checks, declared full-resolution source-color fallback/reason, edge and validity behavior; target resolutions; radius cap; physical CoC invariance; unchanged near RGB/alpha semantics; diagnostics. Require a separate independent CPU B1 oracle. Do not use the Phase I C1 3×3 neighbor-search algorithm or its CPU oracle to implement or validate B1.
 
 **Explicit exclusions:** Broad production default, claiming L-A generality, loosening thresholds, changing B1 to hide poor output, image-circle composite or broad scene eligibility.
 
 **Expected touched subsystems:** WebGPU gather resources/passes, scene-feature capability records, native ROI/reference metrics and fallback/edge tests.
 
-**Acceptance criteria:** Matched Full references and independent CPU C1 oracle; near RGB/alpha checks; cap and overrun behavior; B1 fallback with meaningful expected blur; strong-CoC and signed near/far edges; quality profile dimensions; no false claim from a single ROI.
+**Acceptance criteria:** R1 canonical optical inputs remain independently checked; R2 independent CPU B1 oracle verifies center mapping/provenance, compatibility/validity, CoC sign and far eligibility, fallback selection/reason, far gather, edges, unchanged near RGB/alpha, and relevant composite semantics; R3 matched native Full ×32/×64 references verify bounded image quality through RGB MAE/RMSE, interior far/edge ROIs, spread, fallback halos, contamination and blur suppression; R4 production WebGL comparison establishes application-visible/teaching parity. Keep those evidence claims distinct. Run near RGB/alpha checks, cap and overrun behavior, B1 fallback with meaningful expected blur, strong-CoC and signed near/far edges, quality-profile dimensions; no false claim from a single ROI or finite-sample renderer reference as photographic truth.
 
-**Negative controls:** Force B1 fallback, exceed radius cap, move CoC sign boundary into interior, suppress blur, inject sharp halo, alter alpha independently.
+**Negative controls:** Wrong gather-center ID/provenance; invert signed CoC; select incorrect source fallback/reason; create foreground leak; force unjustified sharp fallback where defocus is expected; exceed radius cap; move CoC sign boundary into interior; suppress blur; inject sharp halo; mutate near alpha; mismatch reference provenance.
 
 **Validation:** Native gather quality matrix across Macro/Interior/Architecture where available; Phase J–L tests; crop and lifecycle cases; numerical reference report.
 
@@ -145,6 +147,8 @@ No circular dependency is intended. A stage may be split further if a discovered
 **Merge gate:** WebGL production remains unchanged; WebGPU DOF remains development-only.
 
 **Open blockers:** B1 quality across fallback, large overrun, materials, profiles and adapter matrix.
+
+**C1 boundary:** C1 remains a Phase I research comparison. Reconsider it only through a separate algorithm proposal/review that addresses the Phase I limitations, uses matched reference comparisons and its independent CPU oracle, and records a decision before changing M5 or this roadmap.
 
 ## M6 — Composite, Presentation and Image Circle
 
@@ -172,19 +176,19 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 ## M7 — Development Pilot and Failure Recovery
 
-**Objective:** Connect complete Raw/DOF/presentation WebGPU stages behind the development-only host with robust recovery and lifecycle behavior.
+**Objective:** Connect complete Raw/DOF/presentation WebGPU stages behind the development-only host with robust recovery, request-safe fallback and lifecycle behavior.
 
 **Dependencies:** M3–M6; M1/M2 policy and lifecycle contracts.
 
-**Scope:** Development UI/flag only if needed; scene-feature allowlist; generation retirement; init/runtime failure, device loss, resize, scene switch, async stale work, remount, one-shot fallback.
+**Scope:** Development-only authorization/session; scene-feature allowlist; generation retirement; init/runtime failure, device loss, resize, scene switch, async stale work, remount; a sticky WebGL fallback latch per channel/pilot session; explicit retry/new-session flow only after fresh authorization, scene eligibility, capability preflight and safe cleanup.
 
 **Explicit exclusions:** Production default or promotion; indefinite retry; sharing observer resources; broad public scene registration.
 
 **Expected touched subsystems:** Host/policy integration, diagnostic UI/test surface, WebGPU lifecycle controls, client-side route and interaction E2E.
 
-**Acceptance criteria:** Actual renderer family/API is exposed; no stale output is reported successful; all accepted operations settle/invalidate; resources are instance-owned and disposed; fallback is one-shot and separate from internal fallback; development path can be disabled.
+**Acceptance criteria:** Actual renderer family/API is exposed; no stale output is reported successful; all accepted operations settle/invalidate; resources are instance-owned and disposed; after failure the host rereads the latest accepted request after cleanup and checks generation/request/channel/scene immediately before publication; a failed session stays on WebGL across frame, focus, aperture, crop, pan, resize, scene change, renderer replacement and incidental remount; only an explicit retry/new session can reset it; fallback is bounded and separate from internal fallback; WebGL failure or uncertain cleanup becomes unavailable; development path can be disabled.
 
-**Negative controls:** Device loss or injected equivalent; failed target/pipeline initialization; readback rejection; cleanup throw; scene transition while pending; repeated failure does not loop.
+**Negative controls:** Device loss or injected equivalent; failed target/pipeline initialization; readback rejection; cleanup throw; focus/aperture/crop/pan update during retirement and during WebGL init/render; scene switch or unmount during cleanup; late old GPU readback; reject stale WebGL completion and render the latest request; repeated update/resize/remount must not retry WebGPU; explicit authorized retry resets only that session; a failed retry returns to sticky WebGL; independent channel remains unaffected; cleanup failure becomes unavailable; WebGL failure does not recurse.
 
 **Validation:** Native-required headed E2E plus ordinary fallback; real SPA transitions; resize/remount; failure/cleanup evidence; production path static/route isolation.
 
@@ -214,23 +218,23 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 **Rollback:** Remove scene-feature eligibility or disable pilot globally; retain existing WebGL.
 
-**Merge gate:** Research/development pilot only unless separately authorized.
+**Merge gate:** Research/development only. M8 cannot activate a public route, public backend selector, production default, or production Ground Glass WebGPU path, regardless of authorization associated with M8.
 
 **Open blockers:** Acceptance thresholds must be agreed before measurement, not selected to fit results.
 
 ## M9 — Production Promotion Decision
 
-**Objective:** Make a documented go/no-go decision based on M1–M8 evidence and explicit product/release authorization.
+**Objective:** Make a documented go/no-go recommendation based on M1–M8 evidence. M9 itself does not authorize or implement production activation.
 
 **Dependencies:** M8 complete; independent review of quality, compatibility, lifecycle, performance and support matrix.
 
-**Scope:** ADR/report update; scene-by-feature readiness; residual risk; rollback plan; explicit approval boundary. If decision is “go,” prepare a separate implementation PR for production selector/default/promotion only after authorization.
+**Scope:** ADR/report update; scene-by-feature readiness; residual risk; rollback plan; explicit approval boundary. A “go” recommendation may be followed only after explicit product/release authorization by a separate production-promotion implementation PR, with its own validation, independent review and controlled rollout.
 
 **Explicit exclusions:** Automatic promotion, merging WebGPU into production as an incidental roadmap step, claims outside tested hardware/scenes.
 
 **Expected touched subsystems:** Architecture/research docs and release-facing decision record; no renderer changes required for a no-go or defer result.
 
-**Acceptance criteria:** Decision has concrete evidence; current WebGL remains a viable rollback; support matrix and user impact are explicit; production change is a separate reviewable unit.
+**Acceptance criteria:** Decision has concrete evidence; current WebGL remains a viable rollback; support matrix and user impact are explicit; any later production change follows explicit authorization and is a separate reviewable unit with production validation/review before controlled rollout.
 
 **Negative controls:** Missing scene evidence; unresolved Critical/High risks; no performance baseline; unsupported fallback/cleanup; no independent reviewer.
 
@@ -253,4 +257,8 @@ No circular dependency is intended. A stage may be split further if a discovered
 - Reject late completion from retired generations.
 - Keep current coordinate spaces distinct and prove WebGPU orientation with asymmetric references.
 - Treat research fixture findings as bounded evidence, not production compatibility.
-- Make any product-visible selector or default change a separately authorized, reviewable decision.
+- Keep M1–M8 development/research-only with no public WebGPU activation, even if a stage has its own authorization.
+- Make any product-visible selector or default change a post-M9, explicitly authorized, separately reviewed production-promotion PR; validate before controlled rollout.
+- Keep accepted request IDs/version checks separate from renderer generations; reject stale results immediately before publication.
+- Keep WebGPU failure sticky on WebGL per pilot session; incidental state updates/remounts do not retry, and channels have independent latches.
+- M5 means Phase H B1 only. C1 and its CPU oracle remain a separate research comparison; B1 requires its own independent CPU oracle and R1–R4 evidence.

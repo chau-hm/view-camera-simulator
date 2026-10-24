@@ -6,7 +6,7 @@
 
 **Base:** Phase L merge `a9114a791e8c6790221c6d6732e0b2872020211a`.
 
-This blueprint translates the [ADR](GROUND_GLASS_WEBGPU_INTEGRATION_ADR.md) into implementation boundaries, contracts, lifecycle rules, and acceptance gates. Source and test references are linked in [Evidence traceability](#evidence-traceability).
+This blueprint translates the [ADR](GROUND_GLASS_WEBGPU_INTEGRATION_ADR.md) into implementation boundaries, contracts, lifecycle rules, and acceptance gates. Source and test references are linked in [Evidence traceability](#17-evidence-traceability).
 
 ## 1. As-is architecture
 
@@ -61,6 +61,8 @@ The first shared value should be an immutable **frame request snapshot**. A futu
 
 ```ts
 type GroundGlassFrameRequest = Readonly<{
+  // Unique version of the entire immutable render-relevant snapshot.
+  // Change it when optics, scene, inspection, quality, or display intent changes.
   requestId: string;
   opticsState: DerivedOpticsState;
   scene: SceneDefinition;
@@ -75,6 +77,21 @@ type GroundGlassFrameRequest = Readonly<{
   // and they are not already represented by canonical state.
 }>;
 ```
+
+The host also tracks an accepted-request identity independent of the renderer lifetime:
+
+```ts
+type AcceptedGroundGlassRequestIdentity = Readonly<{
+  rendererGenerationId: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+}>;
+```
+
+`rendererGenerationId` authorizes lifecycle/resource diagnostics for that renderer only. It does not make its frame current. `requestId` identifies a complete frozen frame-state version, not just scene identity. The host may publish a completed result only if, immediately before publication, its generation is active, its channel is still mounted, and its exact request and scene still match the latest accepted request for that channel. All required scene/CoC/far/near/composite and display operations must have succeeded. A late old readback or a WebGL result rendered during a newer request is discarded and cannot publish current diagnostics or output. If a request changes while a replacement is initializing/rendering, the host renders the latest accepted request before publication.
+
+A development pilot also has an explicit `pilotSessionId`. It persists across renderer-generation replacement and incidental host remount. Record each attempt failure by `(channelId, sceneId, pilotSessionId)`, and keep its exhausted retry latch on `(channelId, pilotSessionId)` across scene changes; changing scene alone does not reset it. Each new request still rechecks eligibility for its current scene.
 
 | Lifetime/contract | Purpose | Must not contain |
 |---|---|---|
@@ -92,19 +109,24 @@ Selection is Ground Glass-specific. Observer functions may inform design but mus
 
 ```mermaid
 stateDiagram-v2
-  [*] --> WebGLDefault: no authorized pilot request
-  [*] --> RequestCheck: explicit development/test request
-  RequestCheck --> Rejected: build or runtime authorization absent
-  RequestCheck --> Rejected: scene/feature unknown or not eligible
-  RequestCheck --> Rejected: required capability preflight fails
-  RequestCheck --> WebGPUMount: authorized and eligible
-  WebGPUMount --> WebGPUActive: renderer initialized and actual API classified
-  WebGPUMount --> WebGLFallback: initialization fails and one-shot fallback authorized
-  WebGPUActive --> Retiring: runtime failure, scene change, resize failure or unmount
-  Retiring --> WebGLFallback: cleanup settled and fallback policy authorizes one attempt
-  Retiring --> Unavailable: cleanup uncertain or no fallback authorized
-  WebGLFallback --> WebGLActive: fresh WebGL generation renders requested frame
-  WebGLFallback --> Unavailable: WebGL initialization/render fails
+  [*] --> WebGLDefault: production or no authorized pilot request
+  [*] --> WebGPURequested: explicit development/test request
+  WebGLDefault --> WebGPURequested: explicit authorized pilot request
+  WebGPURequested --> Rejected: authorization, eligibility, or capability check fails
+  Rejected --> WebGLDefault: no active sticky-fallback latch
+  WebGPURequested --> WebGPUInitializing: checks pass and session retry budget is unused
+  WebGPUInitializing --> WebGPUActive: initialized and actual API classified
+  WebGPUInitializing --> WebGPURetiring: initialization attempt fails
+  WebGPUActive --> WebGPURetiring: runtime failure
+  WebGPURetiring --> StickyWebGLFallback: operations settled/invalidated and cleanup succeeds
+  WebGPURetiring --> Unavailable: cleanup/ownership uncertain or fallback unauthorized
+  StickyWebGLFallback --> WebGLActive: current accepted request renders in fresh WebGL generation
+  WebGLActive --> WebGLActive: request, resize, or incidental remount; stay WebGL
+  WebGLActive --> ExplicitRetryRequested: explicit retry/new pilot session only
+  WebGLActive --> Unavailable: WebGL initialization/render fails; no recursive fallback
+  StickyWebGLFallback --> ExplicitRetryRequested: explicit retry/new pilot session only
+  ExplicitRetryRequested --> WebGPURequested: fresh authorization and eligibility recheck
+  ExplicitRetryRequested --> StickyWebGLFallback: retry rejected; remain on WebGL
 ```
 
 `navigator.gpu` is only a preflight signal. Runtime evidence must report actual renderer family and execution API after initialization. Keep distinct fields for a WebGPURenderer running with WebGL2 fallback and for application-level selection of a WebGL renderer.
@@ -115,14 +137,29 @@ stateDiagram-v2
 | Development WebGPU explicitly requested, scene/features eligible | Attempt WebGPU | Request, policy reason, generation, actual renderer family/API |
 | Scene not evaluated or only fixture-researched | Reject request; choose authorized WebGL | Fail-closed reason; no WebGPU mount |
 | Required feature/capability absent | Reject; choose authorized WebGL | Missing capability/feature, actual final backend |
-| WebGPU initialization failure | Roll back; one fresh WebGL attempt if authorized | Attempted WebGPU, init error, cleanup, app fallback reason |
+| WebGPU initialization failure | Roll back; at most one WebGL attempt for the current explicitly authorized pilot session, then sticky WebGL | Attempted WebGPU, init error, cleanup, app fallback reason, consumed session retry |
 | WebGPU internal WebGL2 fallback | Report non-native execution; policy decides whether acceptable | Renderer family and execution API are separate |
-| WebGPU runtime failure | Retire generation; one WebGL fallback only if explicitly authorized and cleanup completes | Failed frame; failure stage; retirement and fallback generation IDs |
+| WebGPU runtime failure | Retire generation; one WebGL fallback only if explicitly authorized and cleanup completes; then sticky WebGL for that session | Failed frame; failure stage; retirement and fallback generation IDs; consumed retry state |
 | Cleanup failure or uncertain ownership | Fail closed | Cleanup failure; no overlapping replacement GPU generation |
 | Neither backend available | Unavailable | Explicit error; no successful frame claimed |
 | Public request for WebGPU before promotion | Reject/ignore according to public API contract; retain WebGL | No public selector and no WebGPU production path |
 | Scene switch during accepted async frame | Retire old generation, block stale publication, then mount next eligible generation | Old and new generation IDs; stale operation state |
 | Comparison mode | Two independent renderer channels with matched immutable request | Separate owner IDs, capabilities, completion IDs, and memory accounting |
+
+After an authorized initialization or runtime attempt fails, the channel/session retry budget is exhausted and the successful replacement enters **sticky WebGL fallback**. No subsequent focus, aperture, crop, pan, frame, resize, renderer-generation change, scene-ID change, or incidental remount automatically retries WebGPU. The failure record retains its scene ID; authorization and scene eligibility are still re-evaluated for each accepted request. Only an explicit retry or explicit new pilot session can reset the latch, and then authorization, exact-scene eligibility, capability preflight, and safe cleanup are checked again. Cleanup uncertainty yields `Unavailable`. WebGL failure yields `Unavailable`, never another fallback loop. A different channel has its own latch; global device loss may be reported globally but does not silently alter unrelated channel policy.
+
+### Request freshness and fallback race rules
+
+| Race point | Required host behavior |
+|---|---|
+| WebGPU frame fails before retirement | Mark that operation failed; invalidate generation publication authority; reject new work on it; consume the current session retry; do not present the failed frame as success. |
+| Accepted frame/readback is pending during retirement | Drain it or explicitly invalidate it; preserve its outcome; block resource disposal until ownership is safe; reject any late publication. |
+| Canonical request changes during settlement/disposal | Accept a new immutable snapshot with a new `requestId`; after cleanup reread the latest snapshot rather than replaying the failed request. |
+| Scene changes or channel unmounts during cleanup | Recheck mounted channel, scene/feature eligibility, session and fallback authorization; do not mount/publish for a stale or unmounted channel. |
+| WebGL fallback initializes/renders an older request while newer state arrives | Reject old completion at the publication gate; render the latest accepted request on the current WebGL generation; publish only after all required stages complete. |
+| Old WebGPU readback completes after WebGL starts | Generation mismatch makes it stale; it cannot overwrite pixels, current diagnostics, or request status. |
+| WebGPU cleanup fails or leaves ownership uncertain | Enter `Unavailable`; never overlap the old and replacement GPU generations. |
+| WebGL fallback initialization/render fails | Enter `Unavailable`; no recursive fallback or automatic WebGPU retry. |
 
 ## 5. Pass contracts and migration choices
 
@@ -218,16 +255,22 @@ sequenceDiagram
   participant Host
   participant WG as WebGPU generation N
   participant GL as Fresh WebGL generation N+1
+  participant App as Latest accepted request
+  participant Policy
   participant Diag
   Host->>WG: initialize authorized attempt
   WG-->>Host: initialization or pipeline error
   Host->>WG: retire; dispose partial subject/targets/pipelines/context
   WG-->>Host: cleanup result
-  Host->>Diag: record failed attempt, actual identity if known, cleanup and fallback reason
-  alt cleanup safe and one-shot fallback authorized
-    Host->>GL: initialize from same canonical request
-    GL-->>Host: render a new frame
-    Host->>Diag: publish applicationFallback=true and WebGL active identity
+  Host->>Diag: latch StickyWebGLFallback for channel/pilot session; record failure and cleanup
+  alt cleanup safe, channel mounted, current request authorized for WebGL fallback
+    Host->>App: reread latest accepted immutable request after cleanup
+    App-->>Host: current request R2 (may differ from failed R1)
+    Host->>Policy: re-evaluate channel/session/scene authorization for R2
+    Host->>GL: initialize fresh generation N+1 from R2
+    GL-->>Host: render all required passes for R2
+    Host->>Host: compare generation + request ID + channel + scene before publication
+    Host->>Diag: publish only if R2 is still latest and all passes succeeded
   else cleanup uncertain or fallback denied
     Host->>Diag: publish unavailable; no successful frame
   end
@@ -242,21 +285,36 @@ sequenceDiagram
   participant Ops as Accepted frame/readback operations
   participant Diag
   participant GL as Optional fresh WebGL generation N+1
+  participant App as Canonical state
+  participant Policy
   WG->>Host: device loss/pass/resize/readback failure
-  Host->>Diag: mark frame failed; prevent stale success publication
+  Host->>Diag: mark request R1 failed; latch StickyWebGLFallback for channel/session
   Host->>WG: retire N; reject new operations
   Host->>Ops: await settlement or invalidate by generation token
   Ops-->>Host: settled; late result cannot publish
   Host->>WG: dispose owned resources once
   WG-->>Host: cleanup result
-  alt cleanup succeeds and explicit fallback policy permits one attempt
-    Host->>GL: create replacement generation
-    GL->>GL: render the same canonical request as a new frame
-    GL->>Diag: publish WebGL identity and application fallback
+  alt cleanup succeeds and channel/session fallback remains authorized
+    Host->>App: reread latest accepted request after cleanup
+    App-->>Host: current immutable request R2
+    Host->>Policy: re-evaluate current channel, scene, pilot session and fallback policy
+    Host->>GL: initialize fresh generation N+1 from R2
+    GL->>GL: render R2; request changes to R3 may arrive meanwhile
+    App-->>Host: accept R3 with a new requestId
+    GL->>Host: R2 completion
+    Host->>Host: reject R2 publication because R3 is now current
+    Host->>GL: enqueue R3 on active sticky-WebGL generation
+    GL->>Host: all R3 passes and display complete
+    Host->>Host: recheck generation + request + channel + scene + mounted state
+    Host->>Diag: publish R3 and WebGL fallback identity only if still current
   else
     Host->>Diag: publish unavailable/cleanup failure; no new generation
   end
 ```
+
+Later updates and remounts in this pilot session remain on WebGL. They do not reset the exhausted WebGPU retry budget.
+
+The required combined race regression is: pilot session S runs request R1 on WebGPU generation N and that generation fails; the host latches sticky WebGL, retires N, and while cleanup is pending accepts focus change R2. After cleanup it rereads R2 and starts WebGL generation N+1 from that snapshot. An aperture change R3 arrives while R2 is rendering; the R2 completion is rejected at the publication gate, R3 is rendered and published only after its required passes complete, and subsequent updates remain on WebGL for S. Companion negative controls unmount/switch the scene during cleanup, deliver an old GPU readback after fallback starts, and verify a fresh explicit retry is the only action that can create a new WebGPU attempt.
 
 ### Scene switch or unmount during asynchronous work
 
@@ -295,6 +353,8 @@ sequenceDiagram
   UI->>Host: remount
   Host->>R: create fresh generation N+1
 ```
+
+When a channel is in sticky fallback, its remounted generation is WebGL. A resize, view update, scene-ID change, or renderer generation increment cannot re-enable WebGPU in that pilot session. If the channel unmounts, its accepted-request publication authority ends immediately; delayed work is invalidated even if cleanup continues.
 
 ## 8. Coordinate, coverage, and presentation rules
 
@@ -356,7 +416,7 @@ Observer Anatomy transparency/compositing investigations do not establish Ground
 
 ## 10. Phase K/L B1 reconstruction readiness
 
-**Decision:** B1 is suitable only for a controlled research/development pilot with quality gates. It is not ready as a production default or as an unqualified scene capability.
+**Decision:** M5 selects B1 only for a controlled research/development pilot with quality gates. It is not ready as a production default or as an unqualified scene capability. Phase H first showed that center-compatible fallback removed leakage while suppressing too much measured far spread; Phase I's matched Full ×32/×64 comparison then found B1 closer than B0 and C1 on the measured quality metrics. The later comparison supports selecting B1 for integration research but does not erase the original blur-preservation concern or establish broad quality.
 
 | Evidence | Bounded result | What it does not establish |
 |---|---|---|
@@ -377,6 +437,25 @@ Observer Anatomy transparency/compositing investigations do not establish Ground
 8. Representative browser and GPU adapter coverage.
 
 The full gather pipeline additionally needs near gather RGB/alpha, aperture sampling, composite/boundary and failure/lifecycle checks. Phase K/L results are inputs to those gates, not certification.
+
+### M5 algorithm choice and independent B1 oracle
+
+M5 integrates **B1, Phase H's center-compatible far reconstruction**. It does not mean “B1 or C1 as applicable.” B1 maps each full-resolution far destination to its recorded reduced-resolution gather-center identity/provenance, checks that selected center's provenance, validity and compatibility with the source destination under the Phase H B1 rule, including signed-CoC/far eligibility, and uses the declared full-resolution source-color fallback when the selected result is incompatible or unusable. B1's edge, invalid/unresolved, fallback-reason and full-resolution behavior must follow the Phase H contract. The existing near gather, near color/alpha, and associated composite semantics remain unchanged.
+
+Phase I C1 is a separate 3 × 3 surface-aware neighbor search with depth-compatibility tests and spatial weights, plus its own CPU C1 oracle. C1 is retained as comparative research only. Its algorithm and oracle must not be substituted into M5, used as the CPU correctness oracle for B1, or treated as interchangeable with B1 because it was separately measured against the same references. Reconsidering C1 for integration requires a separate algorithm proposal/review that addresses Phase I's stated limitations, runs matched-reference quality comparisons with an independent oracle, and records a new decision before the roadmap changes.
+
+Before M5 GPU B1 conformance is claimed, implement an independent CPU B1 oracle that checks each full-resolution destination pixel's mapped gather-center ID and observed source provenance; center/source compatibility under the Phase H B1 rule and validity; signed-CoC and far eligibility; source-color fallback selection and diagnostic reason; far-gather selection; image-edge behavior; unchanged near RGB/alpha; and composite semantics that consume the far result. The CPU oracle must not call TSL or the C1 neighbor-search oracle. Use the following distinct evidence levels:
+
+| Evidence | What it establishes | What it does not establish |
+|---|---|---|
+| R1 — canonical optical authority | Physical signed CoC, axes/orientation, position/validity, film-window scale, and radius cap inputs | B1 reconstruction correctness or image quality |
+| R2 — independent CPU B1 oracle | GPU implementation follows the selected B1 center, compatibility, fallback, and edge contract | Reference image quality or production parity |
+| R3 — matched native Full ×32/×64 references | Bounded renderer image-quality agreement using RGB MAE/RMSE, interior far/edge ROIs, spread, fallback halos, contamination and suppression metrics | Photographic truth or quality outside tested inputs/adapters |
+| R4 — production WebGL comparator | Application-visible and teaching parity for the public workflow | Native GPU implementation correctness without R1–R3 |
+
+The Full ×32/×64 references are finite-sample renderer references, not photographic ground truth. Report each evidence level separately; do not collapse them into one score or borrow evidence from one level for another.
+
+Required B1 negative controls include wrong gather-center ID/provenance, signed-CoC inversion, wrong source fallback, foreground leakage, an unjustified sharp fallback where expected defocus is meaningful, Near alpha mutation, strong radius-cap overrun, and mismatched reference provenance. Set tolerances from the corresponding fixture measurements; they are not universal thresholds.
 
 ## 11. Performance and memory plan
 
@@ -406,6 +485,8 @@ Future diagnostics should keep common lifecycle fields and typed backend detail 
 type GroundGlassRuntimeDiagnostics = Readonly<{
   requestId: string;
   channelId: string;
+  sceneId: string;
+  pilotSessionId: string | null;
   rendererGeneration: number;
   requestedBackend: "webgl" | "webgpu";
   selectionReason: string;
@@ -413,6 +494,11 @@ type GroundGlassRuntimeDiagnostics = Readonly<{
   rendererFamily: string | null;
   executionBackend: "webgl2" | "webgpu" | "unknown" | null;
   applicationFallback: boolean;
+  fallbackScope: Readonly<{
+    failedSceneId: string | null;
+    retryState: "available" | "consumed" | "explicit-retry-requested";
+    resetReason: "none" | "explicit-retry" | "new-pilot-session";
+  }>;
   sceneCompatibility: string;
   frameState: "initializing" | "ready" | "rendering" | "failed" | "retiring" | "disposed";
   lastCompletedFrameId: number | null;
@@ -447,11 +533,12 @@ Common fields should be common in meaning, not forced into one representation wh
 ```text
 Production WebGL
   → isolated WebGPU research fixtures (C–L, evidence only)
-  → development-only Ground Glass Raw pilot (scene-scoped)
-  → scene/feature verification
-  → matched-frame comparison
-  → broader opt-in development pilot
-  → production promotion decision (separate authorization)
+  → M1–M8 development/research pilot only; no public activation
+  → M9 evidence review and documented go/no-go decision
+  → explicit product/release authorization
+  → separate production-promotion implementation PR
+  → production validation and independent review
+  → controlled rollout with WebGL rollback
 ```
 
 No automatic promotion based on adapter availability. WebGL remains production default through M1–M8. Each pilot request is build/runtime authorized, scene-feature gated, and independently reported.
@@ -504,7 +591,10 @@ Scales: severity `Critical` means threatens production correctness/safety; `High
 | Image Circle/illumination parity fails | High / Medium | Canonical inputs and WebGL consumer known | Shifted/off-axis coverage visual and numerical tests | M6 | Full display and adapter variation |
 | Material/transparency incompatibility | High / High | Research fixtures cover selected registered subjects; Observer evidence separate | Material inventory, scene-feature allowlist, alpha/depth tests; exclude unsupported scenes | M3/M8 | Complex materials may require substantial scene work |
 | Async stale frame publishes after scene switch | Critical / Medium | Fixture generation/operation ownership evidence | Generation tokens; drain/invalidate all accepted work; stale-publication negative control | M2/M7 | Device loss races across browser implementations |
-| Device loss recovery loops or overlaps resources | Critical / Medium | Isolated lifecycle research only | One-shot policy, retire-before-fallback, cleanup proof; fail closed on uncertain cleanup | M7 | Browser/driver-specific loss behavior |
+| Device loss recovery loops or overlaps resources | Critical / Medium | Isolated lifecycle research only | Per-session sticky fallback, retire-before-fallback, cleanup proof; fail closed on uncertain cleanup | M7 | Browser/driver-specific loss behavior |
+| Fallback publishes a stale optical request | Critical / Medium | No integrated host exists yet | Separate request and generation authority; reread latest snapshot after cleanup; publication-time request/channel/scene/pass check; mutate optics during cleanup and render in negative controls | M2/M7 | Scheduling races under device loss |
+| WebGPU retries repeatedly after a session failure | High / Medium | No integrated host exists yet | Sticky WebGL latch per channel/pilot session; only explicit retry/new session resets after fresh authorization; test resize, remount, updates and independent channels | M1/M2/M7 | Product shape for an explicit retry affordance |
+| C1 is accidentally used as the M5 B1 oracle | High / Medium | Separate Phase I C1 oracle and B1 research contract | Lock M5 to B1; require an independent CPU B1 oracle and B1-specific negative controls | M5 | CPU oracle not yet implemented |
 | Side-by-side comparison exhausts memory/contention | High / Medium | No production two-pane evidence | Offline captures first; independently estimate both target sets before live compare | M8 | Driver allocation overhead not fully visible |
 | Perceived performance regresses | High / Medium | Research wall times are not production FPS | End-to-end interaction benchmark with WebGL baseline and valid GPU timers only | M8 | Device classes and workload variation |
 | Untested scene is accidentally eligible | Critical / Medium | Observer compatibility is separate; scene RTT registrations exist | Feature-scoped fail-closed registry and evidence binding; unknown default | M1/M3/M8 | Registry staleness after asset changes |
@@ -519,13 +609,15 @@ Before any WebGPU Ground Glass path is production-visible:
 - WebGL remains default and usable after every intermediate PR.
 - Unknown scene/feature combinations fail closed.
 - Each renderer generation owns and disposes every local GPU allocation exactly once; shared borrowed resources survive consumers.
-- Accepted asynchronous operations cannot publish after generation retirement.
-- Initialization and runtime failures have separate observable outcomes and bounded fallback.
+- Accepted request identity is checked separately from renderer generation both after async completion and immediately before publication.
+- Initialization and runtime failures have separate observable outcomes; a safe fallback rereads the latest request and the failed pilot session remains sticky on WebGL.
+- Resize, scene change, focus/aperture/crop/pan updates, renderer replacement and incidental remount do not reset the WebGPU retry latch; only explicit retry/new pilot session reauthorizes it.
 - Every pass has explicit units, dimensions, format, color/depth, validity, coordinates, owner, resize and error contract.
 - Raw/Upright, Loupe, overlays and shifted coverage use independent asymmetric physical references.
+- M5 uses Phase H B1 center-compatible far reconstruction, not Phase I C1; independent CPU B1 conformance, matched-reference quality and production WebGL parity remain separate evidence gates.
 - B1 stays behind scene/feature quality gates until all required large-CoC/fallback/edge cases pass.
 - Browser/adapter and performance evidence is labeled by actual tested runtime and does not claim universal parity.
-- M9 is a decision gate. Production promotion requires an explicitly authorized, separately reviewable change.
+- M8 is development/research-only with no public activation. M9 is a decision gate; production promotion requires later explicit authorization and a separate implementation PR, validation, independent review and controlled rollout.
 
 ## 17. Evidence traceability
 
@@ -549,7 +641,7 @@ Classification labels: **Implemented fact**, **Native-tested research fact**, **
 | Storage, physical CoC, gather, B1 and lifecycle results exist for bounded cases | Native-tested research fact | [Phase D](GROUND_GLASS_WEBGPU_COC_FOOTPRINT_STORAGE_FEASIBILITY.md), [Phase E](GROUND_GLASS_WEBGPU_PHYSICAL_COC_CLASSIFICATION_FEASIBILITY.md), [Phase F](GROUND_GLASS_WEBGPU_APERTURE_GATHER_FEASIBILITY.md), [Phase G](GROUND_GLASS_WEBGPU_GATHER_QUALITY_PERFORMANCE_FEASIBILITY.md), [Phase H](GROUND_GLASS_WEBGPU_FAR_RECONSTRUCTION_FEASIBILITY.md), [Phase I](GROUND_GLASS_WEBGPU_SURFACE_AWARE_FAR_RECONSTRUCTION_FEASIBILITY.md) |
 | Actual optical-state cases and B1 remain bounded to tested states | Native-tested research fact | [Phase J](GROUND_GLASS_WEBGPU_B1_OPTICAL_STATE_VALIDATION.md), [Phase K](GROUND_GLASS_WEBGPU_SCENE_CORRESPONDENCE_LARGE_COC_FEASIBILITY.md), [Phase L](GROUND_GLASS_WEBGPU_B1_INTERIOR_LARGE_COC_FEASIBILITY.md) |
 | Separate adapters behind a small host are preferable now | Design inference | ADR decision; rationale in alternatives and ownership sections |
-| Development-only compatibility registry and one-shot runtime fallback | Proposed future behavior | This blueprint; not currently implemented for Ground Glass |
+| Development-only compatibility registry and sticky per-session WebGL fallback after a failed WebGPU attempt | Proposed future behavior | This blueprint; not currently implemented for Ground Glass |
 | Full WebGPU material, image-circle, adapter, and public-route parity | Unresolved | No production Ground Glass WebGPU integration evidence |
 
 ## 18. Review checklist
@@ -558,11 +650,11 @@ Classification labels: **Implemented fact**, **Native-tested research fact**, **
 - **Optical authority:** canonical state and calculations remain shared inputs; no duplicate optics.
 - **Backend separation:** WebGL and WebGPU resource/shader lifetimes remain concrete and separate; Observer independent.
 - **Resource ownership:** renderer, scene subject, targets, pipelines, readbacks, borrowed assets, diagnostics and test barriers have named owners.
-- **Fallback:** initialization and runtime failure are separately handled, bounded and observable.
+- **Fallback:** initialization and runtime failure are separately handled; the replacement renders the latest accepted request, request/generation identities are both checked, and retries remain sticky per pilot session until explicit reset.
 - **Coordinate correctness:** current WebGL contract is respected; WebGPU establishes its own globally tested orientation.
-- **DOF quality:** Phase K/L findings are explicitly limited; B1 remains gated.
+- **DOF quality:** Phase K/L findings are explicitly limited; M5 selects B1 and keeps C1/its oracle separate; B1 remains gated.
 - **Scene compatibility:** feature-specific, evidence-bound, unknown-fail-closed.
-- **Production isolation:** M1–M8 preserve production WebGL; no public WebGPU path.
+- **Production isolation:** M1–M8 are research/development only and preserve production WebGL; no public WebGPU path or M8 exception.
 - **Incrementality:** M1–M9 are ordered and independently gated.
 - **Testability:** each contract has behavioral and negative controls.
 - **Reversibility:** a pilot can be disabled without rewriting canonical optics or WebGL.
