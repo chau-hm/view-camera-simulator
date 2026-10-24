@@ -44,6 +44,7 @@ const diagnostics = (
   applicationFallback: { status: "not-observed" },
   rendererGeneration: null,
   lifecycleStatus: "idle",
+  cleanup: { status: "not-required" },
   frame: { current: null, lastSuccessfullyCompleted: null },
   retryState: createGroundGlassPilotRetryState(SYNTHETIC_CHANNEL_ID, SYNTHETIC_PILOT_SESSION_ID),
   backendDetails: null,

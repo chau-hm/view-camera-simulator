@@ -1,5 +1,8 @@
+import { useCallback, useState } from "react";
 import type { DerivedOpticsState } from "../types/optics";
-import { GroundGlassRTT } from "./GroundGlassRTT";
+import { GroundGlassRenderHost } from "./GroundGlassRenderHost";
+import type { GroundGlassBackendDiagnostics } from "./backend/groundGlassBackendDiagnostics";
+import { normalizeGroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import type { SceneDefinition } from "../types/scene";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
@@ -56,12 +59,27 @@ export const GroundGlassRenderSurface = ({
   const rttRuntimeInfo = explicitRuntimeInfo;
   const runtimeInfoChange = explicitRuntimeInfoChange;
   const sceneId = scene.id;
+  const [backendDiagnostics, setBackendDiagnostics] = useState<GroundGlassBackendDiagnostics | null>(null);
+  const handleBackendDiagnosticsChange = useCallback((
+    _channel: GroundGlassRttChannel,
+    diagnostics: GroundGlassBackendDiagnostics | null,
+  ) => setBackendDiagnostics(diagnostics), []);
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
         data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
+        data-renderer-generation={backendDiagnostics?.rendererGeneration?.generationId}
+        data-frame-request-id={backendDiagnostics?.requestIdentity.requestId}
+        data-frame-channel-id={backendDiagnostics?.requestIdentity.channelId}
+        data-frame-scene-id={backendDiagnostics?.requestIdentity.sceneId}
+        data-mounted-renderer-family={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.rendererFamily : undefined}
+        data-actual-execution-api={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.actualExecutionApi : undefined}
+        data-render-host-lifecycle={backendDiagnostics?.lifecycleStatus}
+        data-frame-result-status={backendDiagnostics?.frame.current?.status}
+        data-last-completed-request-id={backendDiagnostics?.frame.lastSuccessfullyCompleted?.request.requestId}
+        data-render-cleanup-status={backendDiagnostics?.cleanup?.status}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
@@ -142,21 +160,24 @@ export const GroundGlassRenderSurface = ({
         data-rtt-profiling-gpu-last-error={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ?? undefined}
         style={{ position: "absolute", inset: 0 }}
       >
-        <GroundGlassRTT
-          opticsState={opticsState}
-          focalLengthMm={focalLengthMm}
-          scene={scene}
-          widthPx={widthPx}
-          heightPx={heightPx}
-          aperture={apertureNumber}
-          previewMode={previewMode}
-          rawDebug={rawDebug}
-          renderQuality={renderQuality}
-          channel={channel}
-          inspectionWindow={inspectionWindow}
-          presentationRegion={presentationRegion}
-          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+        <GroundGlassRenderHost
+          request={normalizeGroundGlassFrameRequestInput({
+            opticsState,
+            focalLengthMm,
+            scene,
+            widthPx,
+            heightPx,
+            aperture: apertureNumber,
+            previewMode,
+            rawDebug,
+            renderQuality,
+            channel,
+            inspectionWindow,
+            presentationRegion,
+            effectiveCameraMovementCalibration,
+          })}
           onRuntimeInfoChange={runtimeInfoChange}
+          onDiagnosticsChange={handleBackendDiagnosticsChange}
         />
       </div>
     );

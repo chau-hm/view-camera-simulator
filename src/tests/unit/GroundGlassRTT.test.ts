@@ -47,6 +47,7 @@ import type {
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
 import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInspectionWindow";
+import type { GroundGlassFrameResult } from "../../render/backend/groundGlassBackendContracts";
 
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
@@ -85,6 +86,8 @@ const fiberTestState = vi.hoisted(() => ({
       width: 500,
       height: 400,
       getBoundingClientRect: () => ({ width: 500, height: 400 }),
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
     },
   },
 }));
@@ -990,6 +993,13 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       activeSceneId: architectureForegroundScene.id,
     };
     const diagnostics = createRuntimeInfoCollector();
+    const frameResults: Array<{ status: string; failedStage?: string | null }> = [];
+    const generation = { generationId: "rtt-generation-failure", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-failure",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
     const previousTarget = new THREE.WebGLRenderTarget(32, 24);
     const disposePreviousTarget = vi.spyOn(previousTarget, "dispose");
     fiberTestState.currentTarget = previousTarget;
@@ -1016,6 +1026,9 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
         heightPx: 400,
         renderQuality: "standard",
         previewMode: "upright",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onFrameResult: (result) => frameResults.push(result),
         onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
       }),
     );
@@ -1029,6 +1042,14 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     }
 
     expect(observedFailure).toBe(injectedFailure);
+    expect(frameResults).toHaveLength(1);
+    expect(frameResults[0]).toMatchObject({
+      status: "failed",
+      failedStage: "nearGather",
+      generation,
+      request,
+      failureReason: injectedFailure.message,
+    });
     expect(targetAtFailure).toBeInstanceOf(THREE.WebGLRenderTarget);
     expect(targetAtFailure).not.toBe(previousTarget);
     expect(fiberTestState.currentTarget).toBe(previousTarget);
@@ -1056,6 +1077,56 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     view.unmount();
     expect(diagnostics.get()).toBeNull();
     expect(disposePreviousTarget).not.toHaveBeenCalled();
+    previousTarget.dispose();
+  });
+
+  it("reports completion only after the final display output and renderer-state restoration", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const previousTarget = new THREE.WebGLRenderTarget(20, 16);
+    fiberTestState.currentTarget = previousTarget;
+    const generation = { generationId: "rtt-generation-success", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-success",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    let targetAtCompletion: unknown;
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => {
+          targetAtCompletion = fiberTestState.currentTarget;
+          results.push(result);
+        },
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    expect(fiberTestState.renderEvents).toHaveLength(6);
+    expect(results).toEqual([expect.objectContaining({
+      status: "completed",
+      generation,
+      request,
+      requiredOperations: "all-completed",
+    })]);
+    expect(targetAtCompletion).toBe(previousTarget);
+    expect(fiberTestState.currentTarget).toBe(previousTarget);
+
+    view.unmount();
     previousTarget.dispose();
   });
 

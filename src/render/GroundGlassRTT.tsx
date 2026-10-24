@@ -67,6 +67,12 @@ import {
   type GroundGlassRttResources,
 } from "./groundGlassRttResources";
 import { withGroundGlassFrameState } from "./groundGlassFrameExecution";
+import type {
+  GroundGlassAcceptedRequestIdentity,
+  GroundGlassFrameResult,
+  GroundGlassRendererGenerationIdentity,
+} from "./backend/groundGlassBackendContracts";
+import type { GroundGlassCleanupOutcome } from "./groundGlassRenderHostState";
 import {
   resolveGroundGlassCocStorageMaxMm,
   type GroundGlassCocStorageFormat,
@@ -134,6 +140,19 @@ export type GroundGlassRTTProps = {
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   /** Application-owned diagnostics adapter. */
   onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
+  /** Host generation/request identity; absent for direct legacy/test mounts. */
+  rendererGeneration?: GroundGlassRendererGenerationIdentity;
+  acceptedRequestIdentity?: GroundGlassAcceptedRequestIdentity;
+  onAdapterStarted?: (generation: GroundGlassRendererGenerationIdentity) => void;
+  onRendererMounted?: (
+    generation: GroundGlassRendererGenerationIdentity,
+    actualExecutionApi: "webgl" | "webgl2",
+  ) => void;
+  onFrameResult?: (result: GroundGlassFrameResult) => void;
+  onAdapterDisposed?: (
+    generation: GroundGlassRendererGenerationIdentity,
+    outcome: GroundGlassCleanupOutcome,
+  ) => void;
   /** Development fixture subject profile; ignored by production builds. */
   developmentSceneProfileOverride?: GroundGlassSceneProfile;
 };
@@ -159,6 +178,10 @@ function OffscreenRenderer({
   presentationRegion: explicitPresentationRegion,
   effectiveCameraMovementCalibration,
   onRuntimeInfoChange,
+  rendererGeneration,
+  acceptedRequestIdentity,
+  onRendererMounted,
+  onFrameResult,
   developmentSceneProfileOverride,
 }: GroundGlassRTTProps) {
   // React gives each mounted renderer a stable identity without a module-level
@@ -176,9 +199,47 @@ function OffscreenRenderer({
   const presentationRegionRef = useRef<CameraMovementPresentationRegion>("middle");
   const runtimeInfoRef = useRef<GroundGlassRttRuntimeInfo | null>(null);
   const runtimeInfoChangeRef = useRef(onRuntimeInfoChange);
+  const onRendererMountedRef = useRef(onRendererMounted);
+  const onFrameResultRef = useRef(onFrameResult);
+  const rendererGenerationRef = useRef(rendererGeneration);
+  const acceptedRequestIdentityRef = useRef(acceptedRequestIdentity);
+  const frameSequenceRef = useRef(0);
   runtimeInfoChangeRef.current = onRuntimeInfoChange;
+  onRendererMountedRef.current = onRendererMounted;
+  onFrameResultRef.current = onFrameResult;
+  rendererGenerationRef.current = rendererGeneration;
+  acceptedRequestIdentityRef.current = acceptedRequestIdentity;
 
   const { gl } = useThree();
+
+  useLayoutEffect(() => {
+    frameSequenceRef.current = 0;
+    if (!rendererGeneration) return;
+    const context = gl.getContext();
+    const actualExecutionApi =
+      typeof WebGL2RenderingContext !== "undefined" &&
+      context instanceof WebGL2RenderingContext
+        ? "webgl2"
+        : "webgl";
+    onRendererMountedRef.current?.(rendererGeneration, actualExecutionApi);
+
+    const canvas = gl.domElement;
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      const currentGeneration = rendererGenerationRef.current;
+      const currentRequest = acceptedRequestIdentityRef.current;
+      if (!currentGeneration || !currentRequest) return;
+      onFrameResultRef.current?.({
+        status: "failed",
+        generation: currentGeneration,
+        request: currentRequest,
+        failedStage: null,
+        failureReason: "WebGL context lost",
+      });
+    };
+    canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    return () => canvas.removeEventListener("webglcontextlost", handleContextLost, false);
+  }, [gl, rendererGeneration]);
   const presentationRegion = explicitPresentationRegion ?? "middle";
   presentationRegionRef.current = presentationRegion;
   const cameraMovementPresentation = effectiveCameraMovementCalibration
@@ -1047,9 +1108,12 @@ function OffscreenRenderer({
   useFrame((_state, frameDelta) => {
     const sourceRenderTarget = renderTarget.current;
     if (!sourceRenderTarget || !offscreenScene.current) return;
+    const frameGeneration = rendererGeneration;
+    const frameRequest = acceptedRequestIdentity;
     const renderer = gl as WebGLRenderer;
     const profiler = groundGlassProfilerRef.current;
     let failedPass: GroundGlassPassId | undefined;
+    let displayOutputCompleted = false;
     withGroundGlassFrameState(
       renderer,
       SKY_COLOR.getHex(),
@@ -1683,6 +1747,7 @@ function OffscreenRenderer({
       gl.setClearColor(SKY_COLOR.getHex(), 1);
       gl.clear(true, true, true);
       gl.render(displayScene, orthoCam);
+      displayOutputCompleted = true;
     } else {
       gl.setRenderTarget(null);
     }
@@ -1738,8 +1803,35 @@ function OffscreenRenderer({
             rendererStats: undefined,
           });
         }
+        if (frameGeneration && frameRequest) {
+          try {
+            onFrameResultRef.current?.({
+              status: "failed",
+              generation: frameGeneration,
+              request: frameRequest,
+              failedStage: failedPass ?? null,
+              failureReason: error instanceof Error ? error.message : String(error),
+            });
+          } catch {
+            // Diagnostic/publication callbacks must not replace the original render failure.
+          }
+        }
       },
     );
+    if (displayOutputCompleted && frameGeneration && frameRequest) {
+      frameSequenceRef.current += 1;
+      try {
+        onFrameResultRef.current?.({
+          status: "completed",
+          generation: frameGeneration,
+          request: frameRequest,
+          frameId: `${frameGeneration.generationId}:frame:${frameSequenceRef.current}`,
+          requiredOperations: "all-completed",
+        });
+      } catch {
+        // Publication callbacks are observational and cannot invalidate rendered output.
+      }
+    }
     profiler?.endFrame();
     const currentInfo = readRuntimeInfo();
     if (
@@ -1773,8 +1865,24 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
   presentationRegion,
   effectiveCameraMovementCalibration,
   onRuntimeInfoChange,
+  rendererGeneration,
+  acceptedRequestIdentity,
+  onAdapterStarted,
+  onRendererMounted,
+  onFrameResult,
+  onAdapterDisposed,
   developmentSceneProfileOverride,
 }) => {
+  const onAdapterStartedRef = useRef(onAdapterStarted);
+  const onAdapterDisposedRef = useRef(onAdapterDisposed);
+  onAdapterStartedRef.current = onAdapterStarted;
+  onAdapterDisposedRef.current = onAdapterDisposed;
+  useEffect(() => {
+    if (!rendererGeneration) return;
+    onAdapterStartedRef.current?.(rendererGeneration);
+    return () => onAdapterDisposedRef.current?.(rendererGeneration, "confirmed");
+  }, [rendererGeneration]);
+
   // Canvas is used to host the three.js scene that displays the render target as a fullscreen quad.
   const resolvedProfile = renderQuality ?? ("standard" as import("../types/ui").RenderQualityProfile);
   const qualitySettings = getRenderQualitySettings(resolvedProfile);
@@ -1803,6 +1911,10 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
           inspectionWindow={inspectionWindow}
           presentationRegion={presentationRegion}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+          rendererGeneration={rendererGeneration}
+          acceptedRequestIdentity={acceptedRequestIdentity}
+          onRendererMounted={onRendererMounted}
+          onFrameResult={onFrameResult}
           onRuntimeInfoChange={onRuntimeInfoChange}
           developmentSceneProfileOverride={developmentSceneProfileOverride}
         />

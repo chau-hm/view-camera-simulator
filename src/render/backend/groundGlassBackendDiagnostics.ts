@@ -89,6 +89,22 @@ export type GroundGlassLifecycleStatus =
   | "disposed"
   | "unavailable";
 
+export type GroundGlassCleanupEvidence =
+  | Readonly<{ status: "not-required" }>
+  | Readonly<{
+      status: "pending";
+      generation: GroundGlassRendererGenerationIdentity;
+    }>
+  | Readonly<{
+      status: "confirmed";
+      generation: GroundGlassRendererGenerationIdentity;
+    }>
+  | Readonly<{
+      status: "failed" | "uncertain";
+      generation: GroundGlassRendererGenerationIdentity;
+      reason: string;
+    }>;
+
 /**
  * Common M2-facing diagnostic envelope. Runtime identity is populated only from mounted renderer
  * evidence; policy selection and reported capability preflight remain separate fields.
@@ -102,6 +118,8 @@ export type GroundGlassBackendDiagnostics = Readonly<{
   applicationFallback: GroundGlassApplicationFallbackEvidence;
   rendererGeneration: GroundGlassRendererGenerationIdentity | null;
   lifecycleStatus: GroundGlassLifecycleStatus;
+  /** M2 teardown evidence; confirmed means owned disposal callbacks completed, not driver memory reclamation. */
+  cleanup: GroundGlassCleanupEvidence;
   frame: GroundGlassFrameDiagnostics;
   retryState: GroundGlassPilotRetryState | null;
   backendDetails: GroundGlassBackendDiagnosticDetails | null;
