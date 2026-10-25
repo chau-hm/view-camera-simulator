@@ -17,6 +17,12 @@ export const ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION =
 export const ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION =
   "m4-architecture-rise-physical-coc-native-v1";
 
+export const ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION =
+  "m5-architecture-rise-aperture-gather-research-v1";
+
+export const ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION =
+  "m5-architecture-rise-far-reconstruction-b1-research-v1";
+
 /**
  * This record authorizes only the Raw scene target and its separate texture display.
  * M4 physical CoC is recorded as research-only and cannot authorize a renderer attempt.
@@ -70,6 +76,54 @@ export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibilit
         textureStorageFormats: ["depth24plus", "rgba16float", "rgba8unorm"],
       },
       knownIncompatibilities: [],
+    },
+    {
+      feature: "aperture-gather",
+      status: "research-only",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
+      testedContext: {
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        rendererRevision: ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION,
+        runtimeDescription: "Three.js r186 native WebGPU M5 development research pass",
+      },
+      evidence: [
+        "M5 adapter-owned far and near passes consume the successful current M4 physical and validity outputs",
+        "research-only targets are separate from the M3 Raw display and public Ground Glass output",
+      ],
+      requiredCapabilities: {
+        adapterFeatures: [],
+        textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+      },
+      knownIncompatibilities: [
+        "Architecture Rise gather quality remains research-only until matched native references and edge gates are evaluated",
+        "full presentation parity and production materials are not established",
+      ],
+    },
+    {
+      feature: "far-reconstruction-b1",
+      status: "research-only",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      evidenceRevision: ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
+      testedContext: {
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        rendererRevision: ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION,
+        runtimeDescription: "Three.js r186 native WebGPU Phase H B1 research pass",
+      },
+      evidence: [
+        "B1 preserves GPU-observed gather selection and source-center provenance with explicit source-color fallback",
+        "the independent CPU oracle is separate from the Phase I C1 neighbor-search oracle",
+      ],
+      requiredCapabilities: {
+        adapterFeatures: [],
+        textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+      },
+      knownIncompatibilities: [
+        "B1 quality qualification remains state-specific and incomplete until matched references and fallback-halo gates pass",
+        "M5 research composition does not establish M6 presentation or production parity",
+      ],
     },
   ],
 };

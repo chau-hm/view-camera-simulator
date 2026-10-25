@@ -2,6 +2,229 @@ import type { GroundGlassFrameResult } from "../backend/groundGlassBackendContra
 import type { GroundGlassPhysicalCocProbeUv } from "./groundGlassPhysicalCocNodes";
 import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
 import type { GroundGlassPhysicalDepthConfidence } from "./groundGlassPhysicalCocContract";
+import type { GroundGlassApertureGatherQualityMode } from "./groundGlassApertureGatherPolicy";
+
+export type GroundGlassApertureGatherCaptureRequest = Readonly<{
+  token: string;
+  qualityMode: GroundGlassApertureGatherQualityMode;
+  maximumRadiusPx?: number;
+  /** Retain bounded typed-array readbacks only for the duration of an explicit test capture. */
+  retainReadbackBuffers?: boolean;
+}>;
+
+/** A bounded test-only request to exercise the mounted adapter's real B1 TSL node. */
+export type GroundGlassB1BoundaryProbeRequest = Readonly<{
+  token: string;
+}>;
+
+export type GroundGlassB1BoundaryProbeCaseReadback = Readonly<{
+  id: string;
+  inputSignedCocMm: number;
+  inputValidityCode: number;
+  inputFarRgba: readonly [number, number, number, number];
+  storedPhysicalHalfBits: readonly [number, number, number, number];
+  storedPhysicalRgba: readonly [number, number, number, number];
+  storedGatherHalfBits: readonly [number, number, number, number];
+  storedGatherRgba: readonly [number, number, number, number];
+  gpuDecisionRgba8: readonly [number, number, number, number];
+  gpuB1HalfBits: readonly [number, number, number, number];
+  gpuB1Rgba: readonly [number, number, number, number];
+  cpuEligible: number;
+  cpuFallbackReason: number;
+  cpuSelectedPath: number;
+  cpuB1Rgba: readonly [number, number, number, number];
+  gpuCpuMaximumError: number;
+}>;
+
+export type GroundGlassB1BoundaryProbeReadback = Readonly<{
+  token: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  rendererRevision: string;
+  targetFormats: Readonly<{
+    sourceColor: string | null;
+    physical: string | null;
+    validity: string | null;
+    farGather: string | null;
+    provenance: string | null;
+    b1: string | null;
+    decision: string | null;
+  }>;
+  cases: readonly GroundGlassB1BoundaryProbeCaseReadback[];
+}>;
+
+export type GroundGlassGpuPassTiming = Readonly<{
+  /** Synchronous JavaScript time inside renderer.render for this pass. */
+  rendererCallCpuMs: number;
+  /** Wall time awaiting GPU queue completion; not GPU execution time. */
+  queueCompletionWaitMs: number;
+  /** Total measured wall time around render submission and queue completion. */
+  wallClockMs: number;
+}>;
+
+export type GroundGlassApertureGatherOperationName =
+  | "sourceIdentity"
+  | "gatherIdentity"
+  | "gatherCenterProvenance"
+  | "farGather"
+  | "nearGather"
+  | "selectedProvenance"
+  | "b1Reconstruction"
+  | "b1Decision"
+  | "researchComposite"
+  | "depthReadback";
+
+export type GroundGlassApertureGatherTargetAllocation = Readonly<{
+  name: GroundGlassApertureGatherOperationName;
+  widthPx: number;
+  heightPx: number;
+  format: string;
+  bytesPerPixel: number;
+  estimatedBytes: number;
+}>;
+
+export type GroundGlassApertureGatherPerformanceEvidence = Readonly<{
+  sceneRender: GroundGlassGpuPassTiming;
+  physicalCocFootprint: GroundGlassGpuPassTiming | null;
+  physicalValidity: GroundGlassGpuPassTiming | null;
+  operations: readonly Readonly<{
+    name: GroundGlassApertureGatherOperationName;
+    timing: GroundGlassGpuPassTiming;
+  }>[];
+  readPixelsWaitWallMs: number;
+  readbackConversionCpuMs: number;
+  cpuReferenceWallClockMs: number;
+  gpuTimestampQueries: "not-collected";
+}>;
+
+export type GroundGlassFramePerformanceEvidence = Readonly<{
+  generationId: string;
+  requestId: string;
+  sourceWidthPx: number;
+  sourceHeightPx: number;
+  sceneRender: GroundGlassGpuPassTiming;
+  physicalCocFootprint: GroundGlassGpuPassTiming | null;
+  physicalValidity: GroundGlassGpuPassTiming | null;
+}>;
+
+export type GroundGlassApertureGatherCaptureReadback = Readonly<{
+  token: string;
+  captureId: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  readbackOrigin: "top" | "bottom" | "unresolved";
+  sceneSourceRevision: string;
+  effectiveOpticalRequestFingerprint: string;
+  cameraStateFingerprint: string;
+  sampledFilmDimensionsMm: Readonly<{ widthMm: number; heightMm: number }>;
+  colorDomain: "source-target-readback-values";
+  qualityMode: GroundGlassApertureGatherQualityMode;
+  sampleCount: number;
+  maximumRadiusPx: number;
+  sourceWidthPx: number;
+  sourceHeightPx: number;
+  farGatherWidthPx: number;
+  farGatherHeightPx: number;
+  nearGatherWidthPx: number;
+  nearGatherHeightPx: number;
+  targetFormats: Readonly<{
+    sourceColor: string | null;
+    physical: string | null;
+    validity: string | null;
+    far: string | null;
+    near: string | null;
+    b1: string | null;
+    composite: string | null;
+    provenance: string | null;
+    decisions: string | null;
+  }>;
+  completedPasses: readonly (
+    | "sourceIdentity"
+    | "gatherIdentity"
+    | "gatherCenterProvenance"
+    | "selectedProvenance"
+    | "farGather"
+    | "nearGather"
+    | "farReconstructionB1"
+    | "researchComposite"
+  )[];
+  cpuB1Conformance: Readonly<{
+    status: "passed" | "failed";
+    selectedCenterProvenanceMismatchCount: number;
+    eligibilityMismatchCount: number;
+    fallbackReasonMismatchCount: number;
+    selectedPathMismatchCount: number;
+    rgbRmse: number;
+    rgbMaximumError: number;
+    fallbackSourceMaximumError: number;
+  }>;
+  farGatherCpuReference: Readonly<{
+    rgbRmse: number;
+    rgbMaximumError: number;
+    pixelsOverMaximumErrorTolerance: number;
+  }>;
+  performance: GroundGlassApertureGatherPerformanceEvidence;
+  resourceInventory: Readonly<{
+    m5OwnedRenderTargetCount: number;
+    adapterOwnedFullscreenMaterialCount: number;
+    adapterOwnedFullscreenSceneCount: number;
+    adapterOwnedFullscreenGeometryCount: number;
+    estimatedTargetAttachmentBytes: number;
+    memoryScope: "m5-owned-target-attachments-only";
+    targetAllocations: readonly GroundGlassApertureGatherTargetAllocation[];
+  }>;
+  sourceToGatherMappingConformance: Readonly<{
+    status: "passed" | "failed";
+    mismatchCount: number;
+  }>;
+  nominalGatherCenterMappingConformance: Readonly<{
+    status: "exact" | "observed-offset";
+    mismatchCount: number;
+  }>;
+  physicalDataFingerprint: string;
+  nearCoveragePixelCount: number;
+  nearRgbInvariantMaximumError: number;
+  nearAlphaInvariantMaximumError: number;
+  nearCoverageNontrivial: boolean;
+  nearCoverageFractionalPixelCount: number;
+  nearReferenceCoverageNontrivial: boolean;
+  nearReferenceCoveragePixelCount: number;
+  nearReferenceCoverageFractionalPixelCount: number;
+  nearReferenceAlphaMaximumError: number;
+  radius: Readonly<{
+    maximumUncappedRadiusPx: number;
+    cappedPixelCount: number;
+    physicalValuesUnchanged: boolean;
+  }>;
+  /** Present only when `retainReadbackBuffers` was explicitly requested by a development test. */
+  readbackBuffers: Readonly<{
+    sourceRgba: Float32Array;
+    physicalRgba: Float32Array;
+    validity: Uint8Array;
+    depth: Float32Array;
+    farGatherRgba: Float32Array;
+    nearRgba: Float32Array;
+    nearBeforeB1Rgba: Float32Array;
+    nearAfterB1Rgba: Float32Array;
+    nearCpuReferenceRgba: Float32Array;
+    b1FarRgba: Float32Array;
+    researchCompositeRgba: Float32Array;
+    observedSelectedGatherIds: Int32Array;
+    observedSelectedCenterSourceIds: Int32Array;
+    observedGatherCenterSourceIds: Int32Array;
+    b1Decision: Uint8Array;
+  }> | null;
+}>;
 
 export type GroundGlassPhysicalCocProbeKernelOverride = Readonly<{
   lens: Readonly<Pick<GroundGlassDofRenderState["lens"],
@@ -77,6 +300,11 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "scene-render-after-submit"
   | "physical-coc-after-submit"
   | "physical-validity-after-submit"
+  | "aperture-far-after-submit"
+  | "aperture-near-after-submit"
+  | "aperture-b1-after-submit"
+  | "aperture-composite-after-submit"
+  | "aperture-readback"
   | "texture-display-after-submit"
   | "dispose-target";
 
@@ -96,7 +324,24 @@ export type GroundGlassWebGpuTestEvent =
       executionApi: "webgpu" | "webgl2" | "webgl";
     }>
   | Readonly<{ kind: "frame-completed"; generationId: string; requestId: string }>
-  | Readonly<{ kind: "cleanup"; generationId: string; outcome: "confirmed" | "failed" | "uncertain" }>;
+  | Readonly<{
+      kind: "gather-research";
+      generationId: string;
+      requestId: string;
+      status: "completed" | "unsupported" | "failed";
+      qualityMode: GroundGlassApertureGatherQualityMode | null;
+      failureReason: string | null;
+    }>
+  | Readonly<{
+      kind: "frame-performance";
+      evidence: GroundGlassFramePerformanceEvidence;
+    }>
+  | Readonly<{
+      kind: "cleanup";
+      generationId: string;
+      outcome: "confirmed" | "failed" | "uncertain";
+      wallClockMs: number;
+    }>;
 
 /** Internal browser control object. It is read only by a Vite development build explicitly
  * started with VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; it is never read from URL or storage. */
@@ -124,6 +369,17 @@ export type GroundGlassWebGpuTestControl = {
   holdPhysicalCocProbeReadback?: boolean;
   physicalCocProbeReadbackBarrierReached?: boolean;
   releasePhysicalCocProbeReadback?: (() => void) | undefined;
+  apertureGatherCaptureRequest?: GroundGlassApertureGatherCaptureRequest | null;
+  apertureGatherCaptureReadback?: GroundGlassApertureGatherCaptureReadback | null;
+  holdApertureGatherReadback?: boolean;
+  apertureGatherReadbackBarrierReached?: boolean;
+  releaseApertureGatherReadback?: (() => void) | undefined;
+  groundGlassB1BoundaryProbeRequest?: GroundGlassB1BoundaryProbeRequest | null;
+  groundGlassB1BoundaryProbeReadback?: GroundGlassB1BoundaryProbeReadback | null;
+  /** Explicit test-only trigger for the adapter's current accepted request. */
+  requestGroundGlassB1BoundaryProbe?: (() => void) | undefined;
+  /** Explicit test-only trigger for the adapter's current accepted request. */
+  requestApertureGatherCapture?: (() => void) | undefined;
 };
 
 declare global {
@@ -175,6 +431,70 @@ export const publishGroundGlassPhysicalCocProbeReadbackForTest = (
 ): void => {
   const control = getControl();
   if (control) control.physicalCocProbeReadback = result;
+};
+
+export const consumeGroundGlassApertureGatherCaptureForTest = (): GroundGlassApertureGatherCaptureRequest | null => {
+  const control = getControl();
+  const request = control?.apertureGatherCaptureRequest ?? null;
+  if (control && request) control.apertureGatherCaptureRequest = null;
+  return request;
+};
+
+export const publishGroundGlassApertureGatherCaptureForTest = (
+  readback: GroundGlassApertureGatherCaptureReadback,
+): void => {
+  const control = getControl();
+  if (control) control.apertureGatherCaptureReadback = readback;
+};
+
+export const clearGroundGlassApertureGatherCaptureForTest = (): void => {
+  const control = getControl();
+  if (!control) return;
+  control.apertureGatherCaptureReadback = null;
+  control.apertureGatherCaptureRequest = null;
+};
+
+export const holdGroundGlassApertureGatherReadbackForTest = async (): Promise<void> => {
+  const control = getControl();
+  if (!control?.holdApertureGatherReadback) return;
+  control.apertureGatherReadbackBarrierReached = true;
+  await new Promise<void>((resolve) => {
+    control.releaseApertureGatherReadback = () => {
+      control.holdApertureGatherReadback = false;
+      control.apertureGatherReadbackBarrierReached = false;
+      control.releaseApertureGatherReadback = undefined;
+      resolve();
+    };
+  });
+};
+
+export const registerGroundGlassApertureGatherCaptureTriggerForTest = (
+  trigger: (() => void) | null,
+): void => {
+  const control = getControl();
+  if (!control) return;
+  control.requestApertureGatherCapture = trigger ?? undefined;
+};
+
+export const consumeGroundGlassB1BoundaryProbeForTest = (): GroundGlassB1BoundaryProbeRequest | null => {
+  const control = getControl();
+  const request = control?.groundGlassB1BoundaryProbeRequest ?? null;
+  if (control && request) control.groundGlassB1BoundaryProbeRequest = null;
+  return request;
+};
+
+export const publishGroundGlassB1BoundaryProbeForTest = (
+  readback: GroundGlassB1BoundaryProbeReadback,
+): void => {
+  const control = getControl();
+  if (control) control.groundGlassB1BoundaryProbeReadback = readback;
+};
+
+export const registerGroundGlassB1BoundaryProbeTriggerForTest = (
+  trigger: (() => void) | null,
+): void => {
+  const control = getControl();
+  if (control) control.requestGroundGlassB1BoundaryProbe = trigger ?? undefined;
 };
 
 export const holdGroundGlassPhysicalCocProbeReadbackForTest = async (): Promise<void> => {

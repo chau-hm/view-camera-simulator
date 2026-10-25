@@ -2,6 +2,7 @@ export type GroundGlassFeatureName =
   | "raw-rtt"
   | "physical-coc"
   | "aperture-gather"
+  | "far-reconstruction-b1"
   | "composite"
   | "full-presentation";
 
@@ -93,6 +94,7 @@ const KNOWN_GROUND_GLASS_FEATURES: ReadonlySet<string> = new Set([
   "raw-rtt",
   "physical-coc",
   "aperture-gather",
+  "far-reconstruction-b1",
   "composite",
   "full-presentation",
 ]);
