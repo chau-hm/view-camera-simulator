@@ -32,6 +32,8 @@ export type GroundGlassWebGpuTestControl = {
   failurePoint?: GroundGlassWebGpuTestFailurePoint;
   /** Ordered controlled faults allow a runtime fault followed by a disposal fault. */
   failurePoints?: GroundGlassWebGpuTestFailurePoint[];
+  /** Exercise Three.js's actual WebGL2 compatibility backend through the M3 adapter boundary. */
+  forceWebGlCompatibilityBackend?: boolean;
   holdAdapterOperationAfterFailure?: boolean;
   adapterOperationBarrierReached?: boolean;
   releaseAdapterOperation?: (() => void) | undefined;
@@ -57,6 +59,9 @@ const getControl = (): GroundGlassWebGpuTestControl | null =>
   isEnabled && typeof window !== "undefined"
     ? window.__groundGlassWebGpuM3TestControl ?? null
     : null;
+
+export const forceGroundGlassWebGlCompatibilityBackendForTest = (): boolean =>
+  getControl()?.forceWebGlCompatibilityBackend === true;
 
 export const recordGroundGlassWebGpuAdapterAttemptForTest = (generationId: string): void => {
   const control = getControl();

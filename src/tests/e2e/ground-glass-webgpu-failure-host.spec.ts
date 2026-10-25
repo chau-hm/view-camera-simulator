@@ -192,6 +192,43 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 90_000 });
   });
 
+  test("D8 WebGPURenderer on its WebGL2 compatibility backend is not reported as native and falls back safely", async ({ page }) => {
+    test.setTimeout(240_000);
+    await installControl(page);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+    const glass = pane(page);
+    await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 90_000 });
+    await writeControl(page, { forceWebGlCompatibilityBackend: true });
+    await page.getByLabel("Raw RTT — bypass DOF").check();
+    await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 120_000 })
+      .toContainEqual(expect.objectContaining({
+        kind: "runtime-observed",
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgl2",
+      }));
+
+    const failedRequestId = await glass.getAttribute("data-frame-request-id");
+    const failedGeneration = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations?.[0] ?? null);
+    if (!failedRequestId || !failedGeneration) throw new Error("Compatibility-backend attempt identity was not captured");
+    await assertConfirmedWebGlFallback(glass, page, failedRequestId, failedGeneration, "initialization", "unknown");
+
+    const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: "failure",
+      generationId: failedGeneration,
+      stage: "initialization",
+      reason: expect.stringContaining("internal WebGL2 backend; native WebGPU is required"),
+    }));
+    expect(events).not.toContainEqual(expect.objectContaining({
+      kind: "frame-completed",
+      generationId: failedGeneration,
+      requestId: failedRequestId,
+    }));
+    expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
+      .toEqual([failedGeneration]);
+  });
+
   test("D6 latest request wins after a held adapter failure and an out-of-order fallback completion", async ({ page }) => {
     test.setTimeout(300_000);
     await installControl(page);

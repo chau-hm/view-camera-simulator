@@ -52,6 +52,7 @@ import {
   holdGroundGlassWebGpuQueueCompletion,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
+  forceGroundGlassWebGlCompatibilityBackendForTest,
   throwIfGroundGlassWebGpuFailureInjected,
 } from "./groundGlassWebGpuTestSeam";
 import {
@@ -556,7 +557,12 @@ export const GroundGlassWebGPUAdapter = ({
       if (effectTokenRef.current !== effectToken || !isGenerationActive()) return;
       try {
         recordGroundGlassWebGpuAdapterAttemptForTest(generation.generationId);
-        renderer = new WebGPURenderer({ canvas, antialias: false, alpha: false });
+        renderer = new WebGPURenderer({
+          canvas,
+          antialias: false,
+          alpha: false,
+          forceWebGL: forceGroundGlassWebGlCompatibilityBackendForTest(),
+        });
         propsRef.current.onAdapterStarted(generation);
         await renderer.init();
         if (retired || !isGenerationActive()) return;
