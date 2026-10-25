@@ -59,6 +59,60 @@ export type GroundGlassWebGlDiagnosticDetails = Readonly<{
   enabledExtensions: readonly string[];
 }>;
 
+export type GroundGlassPhysicalCocPassStatus =
+  | "disabled"
+  | "ready"
+  | "completed"
+  | "unsupported"
+  | "failed";
+
+export type GroundGlassPhysicalCocProbeSummary = Readonly<{
+  count: number;
+  valid: number;
+  noDepth: number;
+  invalidGeometry: number;
+  unrepresentable: number;
+  unresolvedFocalBoundary: number;
+  near: number;
+  neutral: number;
+  far: number;
+  maximumWorldPositionErrorMm: number | null;
+  maximumKernelSignedCoCErrorMm: number | null;
+  maximumKernelMajorRadiusErrorMm: number | null;
+  maximumKernelMinorRadiusErrorMm: number | null;
+  maximumKernelOrientationErrorRad: number | null;
+  maximumStoredSignedCoCErrorMm: number | null;
+  maximumStoredMajorRadiusErrorMm: number | null;
+  maximumStoredMinorRadiusErrorMm: number | null;
+  maximumStoredOrientationErrorRad: number | null;
+  maximumEndToEndSignedCoCErrorMm: number | null;
+  maximumEndToEndMajorRadiusErrorMm: number | null;
+  maximumEndToEndMinorRadiusErrorMm: number | null;
+  maximumEndToEndOrientationErrorRad: number | null;
+}>;
+
+export type GroundGlassPhysicalCocDiagnosticDetails = Readonly<{
+  status: GroundGlassPhysicalCocPassStatus;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  depthFormat: string | null;
+  depthReconstruction: "webgpu-zero-to-one-top-origin" | null;
+  cocStorageFormat: string | null;
+  validityStorageFormat: string | null;
+  widthPx: number;
+  heightPx: number;
+  completedPasses: readonly ("sceneDepth" | "physicalCoc" | "validity")[];
+  probeReadbackStatus: "not-requested" | "completed" | "failed";
+  probeSummary: GroundGlassPhysicalCocProbeSummary | null;
+  probeReadbackFailureReason: string | null;
+  unsupportedReason: string | null;
+  failureReason: string | null;
+}>;
+
 export type GroundGlassWebGpuDiagnosticDetails = Readonly<{
   backend: "webgpu";
   sceneId: string;
@@ -90,12 +144,13 @@ export type GroundGlassWebGpuDiagnosticDetails = Readonly<{
     heightPx: number;
     colorFormat: "rgba8unorm";
     depthAttachment: "enabled";
-    depthFormat: "depth24plus";
+    depthFormat: string | null;
     textureColorSpace: "no-color-space";
     rendererOutputColorSpace: "srgb";
     toneMapping: "none";
   }>;
   completedPasses: readonly ("sceneRender" | "textureDisplay")[];
+  physicalCoc?: GroundGlassPhysicalCocDiagnosticDetails;
 }>;
 
 export type GroundGlassBackendDiagnosticDetails =

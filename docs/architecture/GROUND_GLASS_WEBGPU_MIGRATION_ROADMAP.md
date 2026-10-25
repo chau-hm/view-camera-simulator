@@ -128,7 +128,9 @@ No circular dependency is intended. A stage may be split further if a discovered
 
 **Merge gate:** Research-only capability remains opt-in; production uses WebGL.
 
-**Open blockers:** Adapter precision/range variation and full scene-depth/material parity.
+**M4 implementation note:** The development WebGPU adapter adds a separate physical pass enabled only by the trusted Vite build flag `VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true` inside the already-authorized Architecture Rise Raw pilot. It attaches a sampleable depth texture to the existing scene target, reconstructs native WebGPU [0,1] depth with `getViewPosition`, and records the observed depth format before producing an RGBA16F physical target plus an independent RGBA8 validity target. The TSL kernel converts world metres to millimetres once, computes signed CoC and local affine ellipse data, uses exact finite `U-f` branches, and accepts the exact parallel limit only for controlled vectors that carry explicit test identity. Clear depth, invalid geometry, unrepresentable binary16 values, and unresolved depth-derived focal equality keep separate validity codes. Bounded native application probes compare actual registered Architecture Rise near/far/off-axis/asymmetric surfaces and clear background against independently projected plane intersections and `computePhysicalBlurFootprint`; the same kernel also runs controlled focal-boundary vectors. The physical outputs do not feed the Raw display or the canonical WebGL renderer. `physical-coc` is recorded as `research-only` and cannot qualify for renderer selection; the native evidence is limited to the tested r186 headed Chrome/macOS environment and this scene/configuration.
+
+**Remaining blockers:** Broader adapter/driver precision and format variation, full scene-depth/material parity, public scene revision binding, and production compatibility review remain open. M5 gather/composite work must not start from the M4 research record alone.
 
 ## M5 — Far/Near Gather and B1 Integration
 

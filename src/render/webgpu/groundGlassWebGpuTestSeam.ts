@@ -1,8 +1,48 @@
 import type { GroundGlassFrameResult } from "../backend/groundGlassBackendContracts";
+import type { GroundGlassPhysicalCocProbeUv } from "./groundGlassPhysicalCocNodes";
+
+export type GroundGlassPhysicalCocProbeSample = Readonly<{
+  id: string;
+  u: number;
+  v: number;
+  depth: number;
+  reconstructedWorldM: readonly [number, number, number];
+  kernelObjectPositionM: readonly [number, number, number];
+  controlledObjectPoint: boolean;
+  expectedWorldM: readonly [number, number, number] | null;
+  expectedSurfaceId: string | null;
+  kernelFootprintMm: readonly [number, number, number, number];
+  storedFootprintMm: readonly [number, number, number, number] | null;
+  validityCode: number;
+  focalBranchCode: number;
+}>;
+
+export type GroundGlassPhysicalCocProbeReadback = Readonly<{
+  token: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  widthPx: number;
+  heightPx: number;
+  depthFormat: string | null;
+  cocStorageFormat: string | null;
+  validityStorageFormat: string | null;
+  samples: readonly GroundGlassPhysicalCocProbeSample[];
+}>;
+
+export type GroundGlassPhysicalCocProbeRequest = Readonly<{
+  token: string;
+  probes: readonly GroundGlassPhysicalCocProbeUv[];
+}>;
 
 export type GroundGlassWebGpuTestFailurePoint =
   | "initialization-after-target"
   | "scene-render-after-submit"
+  | "physical-coc-after-submit"
   | "texture-display-after-submit"
   | "dispose-target";
 
@@ -44,6 +84,8 @@ export type GroundGlassWebGpuTestControl = {
   holdNextCompletedFrame?: boolean;
   heldFrameRequestId?: string | null;
   releaseHeldFrame?: (() => void) | undefined;
+  physicalCocProbeRequest?: GroundGlassPhysicalCocProbeRequest | null;
+  physicalCocProbeReadback?: GroundGlassPhysicalCocProbeReadback | null;
 };
 
 declare global {
@@ -77,6 +119,21 @@ export const recordGroundGlassWebGpuTestEvent = (event: GroundGlassWebGpuTestEve
   if (!control) return;
   control.adapterEvents ??= [];
   control.adapterEvents.push(event);
+};
+
+export const consumeGroundGlassPhysicalCocProbeRequestForTest = ():
+  GroundGlassPhysicalCocProbeRequest | null => {
+  const control = getControl();
+  const request = control?.physicalCocProbeRequest ?? null;
+  if (control && request) control.physicalCocProbeRequest = null;
+  return request;
+};
+
+export const publishGroundGlassPhysicalCocProbeReadbackForTest = (
+  result: GroundGlassPhysicalCocProbeReadback,
+): void => {
+  const control = getControl();
+  if (control) control.physicalCocProbeReadback = result;
 };
 
 export const throwIfGroundGlassWebGpuFailureInjected = (
