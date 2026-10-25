@@ -2,6 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 import { productionPreviewSpecGlob } from "./scripts/e2e-spec-policy.mjs";
 
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
+const groundGlassNativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
+const groundGlassFailureIntegration = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
+const headedNativeWebGpuRequired = nativeWebGpuRequired || groundGlassNativeWebGpuRequired;
 const isolatedWebServerPort = process.env.PLAYWRIGHT_WEB_SERVER_PORT;
 const webServerPort = isolatedWebServerPort ?? "4173";
 
@@ -23,11 +26,12 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_BASE_PATH: "/",
+      VITE_GROUND_GLASS_WEBGPU_TEST_SEAM: groundGlassFailureIntegration ? "true" : "false",
     },
   },
 
   projects: [
-    nativeWebGpuRequired
+    headedNativeWebGpuRequired
       ? {
           name: "chrome-native-webgpu",
           use: {

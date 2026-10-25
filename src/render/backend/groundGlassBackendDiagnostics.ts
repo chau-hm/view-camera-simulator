@@ -5,6 +5,7 @@ import type {
   GroundGlassRendererGenerationIdentity,
 } from "./groundGlassBackendContracts";
 import type { GroundGlassBackendSelection } from "./groundGlassBackendPolicy";
+import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
 
 export type GroundGlassMountedRuntimeEvidence =
   | Readonly<{ status: "unknown" }>
@@ -60,10 +61,41 @@ export type GroundGlassWebGlDiagnosticDetails = Readonly<{
 
 export type GroundGlassWebGpuDiagnosticDetails = Readonly<{
   backend: "webgpu";
+  sceneId: string;
+  requestId: string;
+  rendererRevision: string;
+  sceneSourceRevision: string;
+  verificationEvidenceRevision: string;
+  sceneSubject: Readonly<{
+    realization: "registered-ground-glass-profile";
+    mounted: true;
+    childCount: number;
+  }>;
+  camera: Readonly<{
+    coordinateSystem: "webgpu" | "webgl";
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    near: number;
+    far: number;
+  }>;
+  actualExecutionApi: "webgpu" | "webgl2";
+  internalFallback: "none" | "webgl2-compatibility";
   adapterFeatures: readonly string[];
   deviceFeatures: readonly string[];
   textureStorageFormats: readonly string[];
-  rendererRevision: string;
+  target: Readonly<{
+    widthPx: number;
+    heightPx: number;
+    colorFormat: "rgba8unorm";
+    depthAttachment: "enabled";
+    depthFormat: "depth24plus";
+    textureColorSpace: "no-color-space";
+    rendererOutputColorSpace: "srgb";
+    toneMapping: "none";
+  }>;
+  completedPasses: readonly ("sceneRender" | "textureDisplay")[];
 }>;
 
 export type GroundGlassBackendDiagnosticDetails =
@@ -123,6 +155,15 @@ export type GroundGlassBackendDiagnostics = Readonly<{
   frame: GroundGlassFrameDiagnostics;
   retryState: GroundGlassPilotRetryState | null;
   backendDetails: GroundGlassBackendDiagnosticDetails | null;
+  /** Latest adapter failure survives a safe fallback generation replacement. */
+  lastFailure?: Readonly<{
+    generation: GroundGlassRendererGenerationIdentity;
+    request: GroundGlassAcceptedRequestIdentity;
+    backend: "webgl" | "webgpu";
+    stage: "initialization" | "runtime";
+    failedPass: GroundGlassRenderOperationId | null;
+    reason: string;
+  }> | null;
 }>;
 
 export const isGroundGlassNativeWebGpuRuntime = (

@@ -6,6 +6,9 @@ export type GroundGlassPassId =
   | "nearGather"
   | "composite";
 
+/** Renderer operations that may fail; texture display is plumbing, not a semantic DOF pass. */
+export type GroundGlassRenderOperationId = GroundGlassPassId | "textureDisplay";
+
 /** The normal physical-DOF path, in its current execution order. */
 export const GROUND_GLASS_PASS_ORDER = [
   "sceneRender",

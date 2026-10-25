@@ -10,8 +10,15 @@ import type { GroundGlassRttRuntimeInfoChangeHandler } from "../../render/ground
 import { selectGroundGlassBackend } from "../../render/backend/groundGlassBackendPolicy";
 import { GroundGlassRenderHostState } from "../../render/groundGlassRenderHostState";
 import { createGroundGlassRequestInput } from "./groundGlassFrameRequestFixtures";
-import { createWebGpuPolicyInput } from "./groundGlassBackendTestFixtures";
+import {
+  createSyntheticCompatibility,
+  createVerifiedFeature,
+  createWebGpuPolicyInput,
+  SYNTHETIC_PILOT_SESSION_ID,
+} from "./groundGlassBackendTestFixtures";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import type { GroundGlassMountedRuntimeEvidence } from "../../render/backend/groundGlassBackendDiagnostics";
 
 const adapterHarness = vi.hoisted(() => ({
   propsByGeneration: new Map<string, unknown>(),
@@ -72,6 +79,74 @@ const requestObservation = (
   info: null,
 });
 
+const architectureRiseWebGpuPolicyInput = () => createWebGpuPolicyInput({
+  channelId: "default",
+  sceneId: architectureRiseScene.id,
+  sceneCompatibility: createSyntheticCompatibility(
+    [createVerifiedFeature()],
+    architectureRiseScene.id,
+  ),
+  authorization: {
+    status: "authorized",
+    source: "application-configuration",
+    pilotSessionId: SYNTHETIC_PILOT_SESSION_ID,
+  },
+});
+
+const asWebGlPolicyInput = (input: ReturnType<typeof architectureRiseWebGpuPolicyInput>) => ({
+  ...input,
+  requestedBackend: "webgl" as const,
+});
+
+const nativeRuntime = (generation: NonNullable<ReturnType<GroundGlassRenderHostState["getSnapshot"]>["activeGeneration"]>): GroundGlassMountedRuntimeEvidence => ({
+  status: "mounted",
+  generation,
+  rendererFamily: "webgpu-renderer",
+  actualExecutionApi: "webgpu",
+  internalFallback: "none",
+});
+
+const webGpuDetails = (
+  request: { identity: { requestId: string; sceneId: string } },
+) => ({
+  backend: "webgpu" as const,
+  sceneId: request.identity.sceneId,
+  requestId: request.identity.requestId,
+  rendererRevision: "r186",
+  sceneSourceRevision: "architecture-rise-raw-rtt-v1",
+  verificationEvidenceRevision: "m3-architecture-rise-raw-rtt-native-v1",
+  sceneSubject: {
+    realization: "registered-ground-glass-profile" as const,
+    mounted: true as const,
+    childCount: 1,
+  },
+  camera: {
+    coordinateSystem: "webgpu" as const,
+    left: -1,
+    right: 1,
+    top: 1,
+    bottom: -1,
+    near: 0.1,
+    far: 100,
+  },
+  actualExecutionApi: "webgpu" as const,
+  internalFallback: "none" as const,
+  adapterFeatures: [],
+  deviceFeatures: [],
+  textureStorageFormats: [],
+  target: {
+    widthPx: 500,
+    heightPx: 400,
+    colorFormat: "rgba8unorm" as const,
+    depthAttachment: "enabled" as const,
+    depthFormat: "depth24plus" as const,
+    textureColorSpace: "no-color-space" as const,
+    rendererOutputColorSpace: "srgb" as const,
+    toneMapping: "none" as const,
+  },
+  completedPasses: [] as const,
+});
+
 const hostTree = (
   owner: GroundGlassRenderHostState,
   request: ReturnType<typeof createGroundGlassRequestInput>,
@@ -90,6 +165,292 @@ afterEach(() => {
 });
 
 describe("GroundGlassRenderHost request and lifecycle authority", () => {
+  it("keeps an active WebGPU selection isolated while a pending host requests WebGL", () => {
+    const owner = new GroundGlassRenderHostState();
+    const webGpuInput = architectureRiseWebGpuPolicyInput();
+    const authorization = webGpuInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const activeRequest = createGroundGlassRequestInput({ rawDebug: true });
+    const pendingRequest = createGroundGlassRequestInput({ rawDebug: false });
+
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", activeRequest, webGpuInput);
+    const retiringGeneration = owner.getSnapshot("default").activeGeneration;
+    if (!retiringGeneration) throw new Error("Expected active WebGPU generation");
+    owner.markAdapterStarted("default", "host-a", retiringGeneration);
+    owner.attachHost("default", "host-b");
+    owner.acceptRequest("default", "host-b", pendingRequest, asWebGlPolicyInput(webGpuInput));
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: "host-a",
+      pendingHostId: "host-b",
+      activeGeneration: retiringGeneration,
+      selection: { status: "selected", selectedBackend: "webgpu" },
+      pendingSelection: { status: "selected", selectedBackend: "webgl" },
+      cleanupStatus: "none",
+    });
+
+    owner.detachHost("default", "host-a");
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeGeneration: null,
+      retiringGeneration,
+      selection: { status: "selected", selectedBackend: "webgpu" },
+      pendingSelection: { status: "selected", selectedBackend: "webgl" },
+      cleanupStatus: "pending",
+    });
+    const pendingRequestId = owner.getSnapshot("default").pendingRequest?.identity.requestId;
+    owner.reportAdapterDisposed("default", retiringGeneration, "confirmed");
+    const promoted = owner.getSnapshot("default");
+    expect(promoted.activeHostId).toBe("host-b");
+    expect(promoted.activeGeneration?.generationId).not.toBe(retiringGeneration.generationId);
+    expect(promoted.activeRequest?.identity.requestId).toBe(pendingRequestId);
+    expect(promoted.selection).toMatchObject({ status: "selected", selectedBackend: "webgl" });
+  });
+
+  it("keeps an active WebGL selection isolated until an authorized pending WebGPU request is promoted", () => {
+    const owner = new GroundGlassRenderHostState();
+    const webGpuInput = architectureRiseWebGpuPolicyInput();
+    const authorization = webGpuInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const webGlInput = asWebGlPolicyInput(webGpuInput);
+    const activeRequest = createGroundGlassRequestInput({ rawDebug: false });
+    const pendingRequest = createGroundGlassRequestInput({ rawDebug: true });
+
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", activeRequest, webGlInput);
+    const retiringGeneration = owner.getSnapshot("default").activeGeneration;
+    if (!retiringGeneration) throw new Error("Expected active WebGL generation");
+    owner.markAdapterStarted("default", "host-a", retiringGeneration);
+    owner.attachHost("default", "host-b");
+    owner.acceptRequest("default", "host-b", pendingRequest, webGpuInput);
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: "host-a",
+      activeGeneration: retiringGeneration,
+      selection: { status: "selected", selectedBackend: "webgl" },
+      pendingSelection: { status: "selected", selectedBackend: "webgpu" },
+      cleanupStatus: "none",
+    });
+    owner.detachHost("default", "host-a");
+    expect(owner.getSnapshot("default").activeGeneration).toBeNull();
+    expect(owner.getSnapshot("default").retiringGeneration).toEqual(retiringGeneration);
+    owner.reportAdapterDisposed("default", retiringGeneration, "confirmed");
+
+    const promoted = owner.getSnapshot("default");
+    expect(promoted.activeHostId).toBe("host-b");
+    expect(promoted.activeGeneration?.generationId).not.toBe(retiringGeneration.generationId);
+    expect(promoted.selection).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+  });
+
+  it("processes policy-only backend transitions without changing the accepted request identity", () => {
+    const owner = new GroundGlassRenderHostState();
+    const webGpuInput = architectureRiseWebGpuPolicyInput();
+    const authorization = webGpuInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const request = createGroundGlassRequestInput({ rawDebug: true });
+    const webGlInput = asWebGlPolicyInput(webGpuInput);
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", request, webGlInput);
+    const oldGeneration = owner.getSnapshot("default").activeGeneration;
+    const originalRequestId = owner.getSnapshot("default").activeRequest?.identity.requestId;
+    if (!oldGeneration || !originalRequestId) throw new Error("Expected active WebGL request");
+    owner.markAdapterStarted("default", "host-a", oldGeneration);
+
+    owner.acceptRequest("default", "host-a", request, webGpuInput);
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      pendingHostId: "host-a",
+      activeGeneration: null,
+      retiringGeneration: oldGeneration,
+      selection: { status: "selected", selectedBackend: "webgl" },
+      pendingSelection: { status: "selected", selectedBackend: "webgpu" },
+      pendingRequest: { identity: { requestId: originalRequestId } },
+      cleanupStatus: "pending",
+    });
+    owner.reportAdapterDisposed("default", oldGeneration, "confirmed");
+
+    const promoted = owner.getSnapshot("default");
+    expect(promoted.activeGeneration?.generationId).not.toBe(oldGeneration.generationId);
+    expect(promoted.activeRequest?.identity.requestId).toBe(originalRequestId);
+    expect(promoted.selection).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+  });
+
+  it("keeps request and generation identity stable when the same frame and policy are accepted again", () => {
+    const owner = new GroundGlassRenderHostState();
+    const request = createGroundGlassRequestInput();
+    const policyInput = asWebGlPolicyInput(architectureRiseWebGpuPolicyInput());
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", request, policyInput);
+    const first = owner.getSnapshot("default");
+    const requestId = first.activeRequest?.identity.requestId;
+    const generationId = first.activeGeneration?.generationId;
+
+    owner.acceptRequest("default", "host-a", request, { ...policyInput });
+
+    expect(owner.getSnapshot("default")).toBe(first);
+    expect(owner.getSnapshot("default").activeRequest?.identity.requestId).toBe(requestId);
+    expect(owner.getSnapshot("default").activeGeneration?.generationId).toBe(generationId);
+  });
+
+  it("retires WebGPU after capability revocation without changing the frame request", () => {
+    const owner = new GroundGlassRenderHostState();
+    const webGpuInput = architectureRiseWebGpuPolicyInput();
+    const authorization = webGpuInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const request = createGroundGlassRequestInput({ rawDebug: true });
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", request, webGpuInput);
+    const oldGeneration = owner.getSnapshot("default").activeGeneration;
+    const requestId = owner.getSnapshot("default").activeRequest?.identity.requestId;
+    if (!oldGeneration || !requestId) throw new Error("Expected native WebGPU attempt state");
+    owner.markAdapterStarted("default", "host-a", oldGeneration);
+
+    const revokedPolicy = {
+      ...webGpuInput,
+      capabilityPreflight: {
+        ...webGpuInput.capabilityPreflight,
+        webgpuAvailability: "reported-unavailable" as const,
+      },
+    };
+    owner.acceptRequest("default", "host-a", request, revokedPolicy);
+    expect(owner.getSnapshot("default")).toMatchObject({
+      selection: { status: "selected", selectedBackend: "webgpu" },
+      pendingSelection: { status: "selected", selectedBackend: "webgl" },
+      pendingRequest: { identity: { requestId } },
+      retiringGeneration: oldGeneration,
+      cleanupStatus: "pending",
+    });
+    owner.reportAdapterDisposed("default", oldGeneration, "confirmed");
+
+    const promoted = owner.getSnapshot("default");
+    expect(promoted.activeGeneration?.generationId).not.toBe(oldGeneration.generationId);
+    expect(promoted).toMatchObject({
+      activeRequest: { identity: { requestId } },
+      selection: {
+        status: "selected",
+        selectedBackend: "webgl",
+        selectionReason: "webgl-after-request-denial",
+      },
+      retryState: { status: "available" },
+    });
+  });
+
+  it("fails closed on a scene or renderer revision mismatch during a policy-only update", () => {
+    const owner = new GroundGlassRenderHostState();
+    const webGpuInput = architectureRiseWebGpuPolicyInput();
+    const authorization = webGpuInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const request = createGroundGlassRequestInput({ rawDebug: true });
+    owner.attachHost("default", "host-a");
+    owner.acceptRequest("default", "host-a", request, webGpuInput);
+    const oldGeneration = owner.getSnapshot("default").activeGeneration;
+    const requestId = owner.getSnapshot("default").activeRequest?.identity.requestId;
+    if (!oldGeneration || !requestId) throw new Error("Expected active WebGPU attempt");
+    owner.markAdapterStarted("default", "host-a", oldGeneration);
+
+    const compatibility = webGpuInput.sceneCompatibility;
+    if (!compatibility) throw new Error("Expected verified synthetic scene evidence");
+    const staleRevisionPolicy = {
+      ...webGpuInput,
+      sceneCompatibility: {
+        ...compatibility,
+        sourceRevision: `${compatibility.sourceRevision}-changed`,
+      },
+    };
+    owner.acceptRequest("default", "host-a", request, staleRevisionPolicy);
+    expect(owner.getSnapshot("default").pendingSelection).toMatchObject({
+      status: "selected",
+      selectedBackend: "webgl",
+      selectionReason: "webgl-after-request-denial",
+      policyDecision: {
+        status: "denied",
+        reasons: expect.arrayContaining(["scene-ineligible"]),
+      },
+    });
+    expect(owner.getSnapshot("default").pendingRequest?.identity.requestId).toBe(requestId);
+
+    const staleRendererPolicy = {
+      ...webGpuInput,
+      sceneCompatibility: {
+        ...compatibility,
+        features: compatibility.features.map((feature) => feature.status === "verified"
+          ? {
+              ...feature,
+              testedContext: { ...feature.testedContext, rendererRevision: "three-test-r185" },
+            }
+          : feature),
+      },
+    };
+    owner.acceptRequest("default", "host-a", request, staleRendererPolicy);
+    expect(owner.getSnapshot("default").pendingSelection).toMatchObject({
+      status: "selected",
+      selectedBackend: "webgl",
+      policyDecision: {
+        status: "denied",
+        sceneEligibility: {
+          status: "denied",
+          reasons: expect.arrayContaining(["renderer-revision-mismatch"]),
+        },
+      },
+    });
+    expect(owner.getSnapshot("default").pendingRequest?.identity.requestId).toBe(requestId);
+  });
+
+  it("allows an explicit authorized retry with the unchanged frame only after safe cleanup", () => {
+    const owner = new GroundGlassRenderHostState();
+    const policyInput = architectureRiseWebGpuPolicyInput();
+    const authorization = policyInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const request = createGroundGlassRequestInput({ rawDebug: true });
+    owner.attachHost("default", "pilot-host");
+    owner.acceptRequest("default", "pilot-host", request, policyInput);
+    const firstGeneration = owner.getSnapshot("default").activeGeneration;
+    if (!firstGeneration) throw new Error("Expected initial WebGPU generation");
+    owner.markAdapterStarted("default", "pilot-host", firstGeneration);
+    owner.reportAdapterFailure("default", "pilot-host", firstGeneration, "controlled initialization failure", "initialization");
+    owner.requestSafeReplacement("default", "pilot-host", policyInput);
+    owner.reportAdapterDisposed("default", firstGeneration, "confirmed");
+
+    const fallbackGeneration = owner.getSnapshot("default").activeGeneration;
+    const firstRequestId = owner.getSnapshot("default").activeRequest?.identity.requestId;
+    if (!fallbackGeneration || !firstRequestId) throw new Error("Expected the confirmed WebGL fallback");
+    owner.markAdapterStarted("default", "pilot-host", fallbackGeneration);
+    owner.reportRendererMounted("default", "pilot-host", fallbackGeneration, "webgl2");
+    const retry = owner.authorizePilotRetry("default", policyInput, "explicit-retry");
+    expect(retry.status).toBe("authorized");
+    if (retry.status !== "authorized") throw new Error("Expected explicit retry authorization");
+
+    owner.acceptRequest("default", "pilot-host", request, {
+      ...policyInput,
+      retryState: retry.retryState,
+    });
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeGeneration: null,
+      retiringGeneration: fallbackGeneration,
+      selection: { status: "selected", selectedBackend: "webgl" },
+      pendingSelection: { status: "selected", selectedBackend: "webgpu" },
+      pendingRequest: { identity: { requestId: firstRequestId } },
+      retryState: { status: "explicit-retry-requested", failureHistory: [{ failureReason: "controlled initialization failure" }] },
+    });
+    owner.reportAdapterDisposed("default", fallbackGeneration, "confirmed");
+
+    const retried = owner.getSnapshot("default");
+    expect(retried.activeGeneration?.generationId).not.toBe(fallbackGeneration.generationId);
+    expect(retried.activeRequest?.identity.requestId).toBe(firstRequestId);
+    expect(retried.selection).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+    expect(retried.retryState).toMatchObject({
+      status: "explicit-retry-requested",
+      retryEpoch: 1,
+      failureHistory: [{ failedSceneId: architectureRiseScene.id, stage: "initialization" }],
+    });
+  });
+
   it("keeps a pending host request isolated from the active renderer generation", () => {
     const owner = new GroundGlassRenderHostState();
     const activeRequest = createGroundGlassRequestInput();
@@ -633,5 +994,172 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     replacement.unmount();
     await act(async () => { await Promise.resolve(); });
     act(() => adapterHarness.cleanupCallbacks[1]?.());
+  });
+
+  it("uses the latest request after confirmed WebGPU cleanup and rejects late frame completions", () => {
+    const owner = new GroundGlassRenderHostState();
+    const policyInput = architectureRiseWebGpuPolicyInput();
+    const authorization = policyInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+
+    const r1 = createGroundGlassRequestInput({ rawDebug: true });
+    const webGpuSelection = selectGroundGlassBackend(policyInput);
+    expect(webGpuSelection).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+    owner.attachHost("default", "pilot-host");
+    owner.acceptRequest("default", "pilot-host", r1, policyInput);
+    const webGpuGeneration = owner.getSnapshot("default").activeGeneration;
+    const acceptedR1 = owner.getSnapshot("default").activeRequest;
+    if (!webGpuGeneration || !acceptedR1) throw new Error("Expected the initial WebGPU generation and request");
+    owner.markAdapterStarted("default", "pilot-host", webGpuGeneration);
+    owner.reportWebGpuRendererMounted(
+      "default",
+      "pilot-host",
+      webGpuGeneration,
+      nativeRuntime(webGpuGeneration),
+      webGpuDetails(acceptedR1),
+    );
+
+    expect(owner.reportAdapterFailure(
+      "default",
+      "pilot-host",
+      webGpuGeneration,
+      "controlled native device loss",
+      "runtime",
+      "sceneRender",
+    )).toBe(true);
+    const consumedRetry = owner.getSnapshot("default").retryState;
+    expect(consumedRetry).toMatchObject({ status: "consumed", failedSceneId: architectureRiseScene.id });
+    const fallbackSelection = selectGroundGlassBackend({ ...policyInput, retryState: consumedRetry });
+    expect(fallbackSelection).toMatchObject({ status: "selected", selectedBackend: "webgl" });
+    expect(owner.requestSafeReplacement("default", "pilot-host", policyInput)).toBe(true);
+
+    const r2 = createGroundGlassRequestInput({
+      rawDebug: true,
+      camera: { focusDistanceMm: 7200 },
+    });
+    owner.acceptRequest("default", "pilot-host", r2, { ...policyInput, retryState: consumedRetry });
+    expect(owner.getDiagnostics("default")?.requestIdentity.requestId)
+      .toBe(owner.getSnapshot("default").pendingRequest?.identity.requestId);
+    expect(owner.getSnapshot("default").pendingRequest?.identity.requestId)
+      .not.toBe(acceptedR1.identity.requestId);
+    owner.reportAdapterDisposed("default", webGpuGeneration, "confirmed");
+
+    const fallback = owner.getSnapshot("default");
+    const webGlGeneration = fallback.activeGeneration;
+    const acceptedR2 = fallback.activeRequest;
+    if (!webGlGeneration || !acceptedR2) throw new Error("Expected WebGL to activate the latest request");
+    expect(webGlGeneration.generationId).not.toBe(webGpuGeneration.generationId);
+    expect(acceptedR2.identity.requestId).not.toBe(acceptedR1.identity.requestId);
+    expect(acceptedR2.opticsState).toEqual(r2.opticsState);
+    owner.markAdapterStarted("default", "pilot-host", webGlGeneration);
+    owner.reportRendererMounted("default", "pilot-host", webGlGeneration, "webgl2");
+    expect(owner.getDiagnostics("default")?.applicationFallback).toMatchObject({
+      status: "occurred",
+      failedBackend: "webgpu",
+      fallbackRendererFamily: "webgl-renderer",
+      failureStage: "runtime",
+    });
+
+    const r2Result: Extract<GroundGlassFrameResult, { status: "completed" }> = {
+      status: "completed",
+      generation: webGlGeneration,
+      request: acceptedR2.identity,
+      frameId: "r2-complete",
+      requiredOperations: "all-completed",
+    };
+    expect(owner.receiveFrameResult("default", "pilot-host", r2Result)).toBe(true);
+
+    const r3 = createGroundGlassRequestInput({
+      rawDebug: true,
+      camera: { focusDistanceMm: 7200 },
+      aperture: 22,
+    });
+    const r3Selection = selectGroundGlassBackend({ ...policyInput, retryState: owner.getSnapshot("default").retryState });
+    expect(r3Selection.selectedBackend).toBe("webgl");
+    owner.acceptRequest("default", "pilot-host", r3, { ...policyInput, retryState: owner.getSnapshot("default").retryState });
+    expect(owner.receiveFrameResult("default", "pilot-host", r2Result)).toBe(false);
+    const lateWebGpuResult: Extract<GroundGlassFrameResult, { status: "completed" }> = {
+      status: "completed",
+      generation: webGpuGeneration,
+      request: acceptedR1.identity,
+      frameId: "late-native-r1",
+      requiredOperations: "all-completed",
+    };
+    expect(owner.receiveFrameResult("default", "pilot-host", lateWebGpuResult)).toBe(false);
+
+    const acceptedR3 = owner.getSnapshot("default").activeRequest;
+    if (!acceptedR3) throw new Error("Expected the latest accepted request");
+    const r3Result: Extract<GroundGlassFrameResult, { status: "completed" }> = {
+      status: "completed",
+      generation: webGlGeneration,
+      request: acceptedR3.identity,
+      frameId: "r3-complete",
+      requiredOperations: "all-completed",
+    };
+    expect(owner.receiveFrameResult("default", "pilot-host", r3Result)).toBe(true);
+    expect(owner.canPublishFrameNow("default", "pilot-host", r3Result)).toBe(true);
+    expect(owner.getSnapshot("default").retryState?.status).toBe("consumed");
+  });
+
+  it.each(["failed", "uncertain"] as const)("does not mount fallback after %s WebGPU cleanup", (cleanupOutcome) => {
+    const owner = new GroundGlassRenderHostState();
+    const policyInput = architectureRiseWebGpuPolicyInput();
+    const authorization = policyInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    owner.attachHost("default", "pilot-host");
+    const request = createGroundGlassRequestInput({ rawDebug: true });
+    owner.acceptRequest("default", "pilot-host", request, policyInput);
+    const generation = owner.getSnapshot("default").activeGeneration;
+    if (!generation) throw new Error("Expected WebGPU generation");
+    owner.markAdapterStarted("default", "pilot-host", generation);
+    owner.reportAdapterFailure("default", "pilot-host", generation, "controlled renderer failure", "runtime", "sceneRender");
+    owner.requestSafeReplacement("default", "pilot-host", policyInput);
+    owner.reportAdapterDisposed("default", generation, cleanupOutcome, "controlled cleanup result");
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      activeGeneration: null,
+      retiringGeneration: generation,
+      cleanupStatus: cleanupOutcome,
+      lifecycleStatus: "unavailable",
+      retryState: { status: "consumed" },
+    });
+    expect(owner.getDiagnostics("default")?.applicationFallback).toEqual({ status: "not-observed" });
+  });
+
+  it("binds a request accepted during WebGPU cleanup to its new scene and preserves the consumed session", () => {
+    const owner = new GroundGlassRenderHostState();
+    const policyInput = architectureRiseWebGpuPolicyInput();
+    const authorization = policyInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    owner.attachHost("default", "pilot-host");
+    const initial = createGroundGlassRequestInput({ rawDebug: true });
+    owner.acceptRequest("default", "pilot-host", initial, policyInput);
+    const generation = owner.getSnapshot("default").activeGeneration;
+    if (!generation) throw new Error("Expected WebGPU generation");
+    owner.markAdapterStarted("default", "pilot-host", generation);
+    owner.reportAdapterFailure("default", "pilot-host", generation, "controlled init failure", "initialization");
+    owner.requestSafeReplacement("default", "pilot-host", policyInput);
+
+    const switchedSceneRequest = createGroundGlassRequestInput({ scene: understandingCameraMovementsScene });
+    const scenePolicyInput = {
+      ...policyInput,
+      requestedBackend: null,
+      sceneId: understandingCameraMovementsScene.id,
+      requestedFeatures: [],
+      sceneCompatibility: null,
+      retryState: owner.getSnapshot("default").retryState,
+    };
+    owner.acceptRequest("default", "pilot-host", switchedSceneRequest, scenePolicyInput);
+    owner.reportAdapterDisposed("default", generation, "confirmed");
+
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeRequest: { identity: { sceneId: understandingCameraMovementsScene.id } },
+      selection: { status: "selected", selectedBackend: "webgl" },
+      retryState: { status: "consumed", failedSceneId: architectureRiseScene.id },
+    });
   });
 });
