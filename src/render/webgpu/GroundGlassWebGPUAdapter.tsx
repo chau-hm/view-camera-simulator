@@ -18,6 +18,8 @@ import type {
   GroundGlassBackendDiagnosticDetails,
   GroundGlassPhysicalCocDiagnosticDetails,
   GroundGlassPhysicalCocProbeSummary,
+  GroundGlassApertureGatherDiagnosticDetails,
+  GroundGlassApertureGatherStatus,
   GroundGlassMountedRuntimeEvidence,
 } from "../backend/groundGlassBackendDiagnostics";
 import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
@@ -56,6 +58,30 @@ import {
 } from "../worldEnvironmentRig";
 import { classifyGroundGlassWebGpuRuntime } from "./groundGlassWebGpuRuntime";
 import {
+  createGroundGlassApertureGatherNodes,
+  createGroundGlassB1ReconstructionNodes,
+  createGroundGlassGatherCenterProvenanceNode,
+  createGroundGlassDepthReadbackNode,
+  createGroundGlassGatherIdentityNode,
+  createGroundGlassResearchCompositeNode,
+  createGroundGlassSelectedGatherProvenanceNode,
+  createGroundGlassSourceIdentityNode,
+} from "./groundGlassApertureGatherNodes";
+import {
+  isGroundGlassApertureGatherResearchEnabled,
+  resolveGroundGlassApertureGatherSettings,
+  resolveGroundGlassApertureGatherResearchEligibility,
+  resolveGroundGlassApertureGatherFormatEligibility,
+  type GroundGlassApertureGatherSettings,
+} from "./groundGlassApertureGatherPolicy";
+import {
+  compositeGroundGlassB1ResearchReference,
+  reconstructGroundGlassB1Reference,
+} from "./groundGlassB1Reference";
+import {
+  referenceGroundGlassApertureGather,
+} from "./groundGlassApertureGatherReference";
+import {
   createGroundGlassPhysicalCocNodes,
   createGroundGlassPhysicalCocProbeSampleNodes,
 } from "./groundGlassPhysicalCocNodes";
@@ -67,11 +93,19 @@ import {
   consumeGroundGlassPhysicalCocProbeRequestForTest,
   holdGroundGlassWebGpuOperationAfterFailure,
   holdGroundGlassPhysicalCocProbeReadbackForTest,
+  holdGroundGlassApertureGatherReadbackForTest,
   type GroundGlassPhysicalCocProbeReadback,
+  type GroundGlassApertureGatherCaptureReadback,
+  type GroundGlassApertureGatherOperationName,
+  type GroundGlassApertureGatherTargetAllocation,
+  type GroundGlassGpuPassTiming,
   holdGroundGlassWebGpuQueueCompletion,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
   publishGroundGlassPhysicalCocProbeReadbackForTest,
+  consumeGroundGlassApertureGatherCaptureForTest,
+  publishGroundGlassApertureGatherCaptureForTest,
+  registerGroundGlassApertureGatherCaptureTriggerForTest,
   forceGroundGlassWebGlCompatibilityBackendForTest,
   forceGroundGlassPhysicalCocUnsupportedForTest,
   throwIfGroundGlassWebGpuFailureInjected,
@@ -148,6 +182,207 @@ const submitPhysicalWork = async (device: GpuDeviceLike): Promise<void> => {
     await device.queue.onSubmittedWorkDone();
   } catch (error) {
     throw new GroundGlassPhysicalSubmissionFailure(error);
+  }
+};
+
+class GroundGlassGatherSubmissionFailure extends Error {
+  constructor(cause: unknown) {
+    super(`Ground Glass aperture gather queue submission failed: ${errorMessage(cause)}`);
+    this.name = "GroundGlassGatherSubmissionFailure";
+  }
+}
+
+const submitGatherWork = async (device: GpuDeviceLike): Promise<void> => {
+  try {
+    await device.queue.onSubmittedWorkDone();
+  } catch (error) {
+    throw new GroundGlassGatherSubmissionFailure(error);
+  }
+};
+
+type GroundGlassApertureGatherResources = {
+  targets: THREE.RenderTarget[];
+  materials: MeshBasicNodeMaterial[];
+  scenes: THREE.Scene[];
+  geometry: THREE.PlaneGeometry;
+  farTarget: THREE.RenderTarget;
+  nearTarget: THREE.RenderTarget;
+  b1Target: THREE.RenderTarget;
+  researchCompositeTarget: THREE.RenderTarget;
+  sourceIdentityTarget: THREE.RenderTarget;
+  gatherIdentityTarget: THREE.RenderTarget;
+  gatherCenterProvenanceTarget: THREE.RenderTarget;
+  selectedProvenanceTarget: THREE.RenderTarget;
+  b1DecisionTarget: THREE.RenderTarget;
+  ensureDepthReadbackResources: () => Readonly<{
+    target: THREE.RenderTarget;
+    scene: THREE.Scene;
+  }>;
+  farScene: THREE.Scene;
+  nearScene: THREE.Scene;
+  sourceIdentityScene: THREE.Scene;
+  gatherIdentityScene: THREE.Scene;
+  gatherCenterProvenanceScene: THREE.Scene;
+  selectedProvenanceScene: THREE.Scene;
+  b1Scene: THREE.Scene;
+  b1DecisionScene: THREE.Scene;
+  researchCompositeScene: THREE.Scene;
+  gatherNodes: ReturnType<typeof createGroundGlassApertureGatherNodes>;
+  sourceIdentityNodes: ReturnType<typeof createGroundGlassSourceIdentityNode>;
+  gatherIdentityNodes: ReturnType<typeof createGroundGlassGatherIdentityNode>;
+  gatherCenterProvenanceNodes: ReturnType<typeof createGroundGlassGatherCenterProvenanceNode>;
+  b1Nodes: ReturnType<typeof createGroundGlassB1ReconstructionNodes>;
+};
+
+const createGroundGlassApertureGatherResources = (input: Readonly<{
+  sourceColorTarget: THREE.RenderTarget;
+  sceneDepthTexture: THREE.DepthTexture;
+  physicalTarget: THREE.RenderTarget;
+  validityTarget: THREE.RenderTarget;
+  sourceWidthPx: number;
+  sourceHeightPx: number;
+  sampledFilmWidthMm: number;
+  sampledFilmHeightMm: number;
+  inverseProjection: THREE.Matrix4;
+  settings: GroundGlassApertureGatherSettings;
+}>): GroundGlassApertureGatherResources => {
+  const targets: THREE.RenderTarget[] = [];
+  const materials: MeshBasicNodeMaterial[] = [];
+  const scenes: THREE.Scene[] = [];
+  let geometry: THREE.PlaneGeometry | null = null;
+  const initialGatherWidthPx = Math.max(1, Math.round(input.sourceWidthPx * input.settings.gatherScale));
+  const initialGatherHeightPx = Math.max(1, Math.round(input.sourceHeightPx * input.settings.gatherScale));
+  const makeTarget = (widthPx: number, heightPx: number, type: THREE.TextureDataType) => {
+    const target = new THREE.RenderTarget(widthPx, heightPx, {
+      format: THREE.RGBAFormat,
+      type,
+      depthBuffer: false,
+      stencilBuffer: false,
+      samples: 0,
+      generateMipmaps: false,
+    });
+    target.texture.colorSpace = THREE.NoColorSpace;
+    target.texture.minFilter = THREE.NearestFilter;
+    target.texture.magFilter = THREE.NearestFilter;
+    target.texture.generateMipmaps = false;
+    target.texture.wrapS = THREE.ClampToEdgeWrapping;
+    target.texture.wrapT = THREE.ClampToEdgeWrapping;
+    targets.push(target);
+    return target;
+  };
+  const makeScene = (outputNode: MeshBasicNodeMaterial["outputNode"]): THREE.Scene => {
+    const material = new MeshBasicNodeMaterial({ toneMapped: false });
+    materials.push(material);
+    material.outputNode = outputNode;
+    const scene = new THREE.Scene();
+    const mesh = new THREE.Mesh(geometry!, material);
+    mesh.position.z = -0.5;
+    scene.add(mesh);
+    scenes.push(scene);
+    return scene;
+  };
+  try {
+    geometry = new THREE.PlaneGeometry(2, 2);
+    const farTarget = makeTarget(initialGatherWidthPx, initialGatherHeightPx, THREE.HalfFloatType);
+    const nearTarget = makeTarget(initialGatherWidthPx, initialGatherHeightPx, THREE.HalfFloatType);
+    const b1Target = makeTarget(input.sourceWidthPx, input.sourceHeightPx, THREE.HalfFloatType);
+    const researchCompositeTarget = makeTarget(input.sourceWidthPx, input.sourceHeightPx, THREE.HalfFloatType);
+    const sourceIdentityTarget = makeTarget(input.sourceWidthPx, input.sourceHeightPx, THREE.FloatType);
+    const gatherIdentityTarget = makeTarget(initialGatherWidthPx, initialGatherHeightPx, THREE.FloatType);
+    const gatherCenterProvenanceTarget = makeTarget(initialGatherWidthPx, initialGatherHeightPx, THREE.FloatType);
+    const selectedProvenanceTarget = makeTarget(input.sourceWidthPx, input.sourceHeightPx, THREE.FloatType);
+    const b1DecisionTarget = makeTarget(input.sourceWidthPx, input.sourceHeightPx, THREE.UnsignedByteType);
+    let depthReadbackTarget: THREE.RenderTarget | null = null;
+    let depthReadbackScene: THREE.Scene | null = null;
+
+    const gatherNodes = createGroundGlassApertureGatherNodes({
+      sourceColorTexture: input.sourceColorTarget.texture,
+      sceneDepthTexture: input.sceneDepthTexture,
+      physicalTexture: input.physicalTarget.texture,
+      validityTexture: input.validityTarget.texture,
+      state: {
+        sourceWidthPx: input.sourceWidthPx,
+        sourceHeightPx: input.sourceHeightPx,
+        sampledFilmWidthMm: input.sampledFilmWidthMm,
+        sampledFilmHeightMm: input.sampledFilmHeightMm,
+        maximumRadiusPx: input.settings.maximumRadiusPx,
+        sampleCount: input.settings.sampleCount,
+        inverseProjection: input.inverseProjection,
+      },
+    });
+    const sourceIdentityNodes = createGroundGlassSourceIdentityNode(input.sourceWidthPx, input.sourceHeightPx);
+    const gatherIdentityNodes = createGroundGlassGatherIdentityNode(initialGatherWidthPx, initialGatherHeightPx);
+    const gatherCenterProvenanceNodes = createGroundGlassGatherCenterProvenanceNode(
+      sourceIdentityTarget.texture,
+      input.sourceWidthPx,
+      input.sourceHeightPx,
+    );
+    const selectedProvenanceNode = createGroundGlassSelectedGatherProvenanceNode({
+      gatherIdentityTexture: gatherIdentityTarget.texture,
+      gatherCenterProvenanceTexture: gatherCenterProvenanceTarget.texture,
+    });
+    const b1Nodes = createGroundGlassB1ReconstructionNodes({
+      sourceColorTexture: input.sourceColorTarget.texture,
+      gatherFarTexture: farTarget.texture,
+      physicalTexture: input.physicalTarget.texture,
+      validityTexture: input.validityTarget.texture,
+      gatherCenterProvenanceTexture: gatherCenterProvenanceTarget.texture,
+      selectedProvenanceTexture: selectedProvenanceTarget.texture,
+      sourceWidthPx: input.sourceWidthPx,
+      sourceHeightPx: input.sourceHeightPx,
+      gatherWidthPx: initialGatherWidthPx,
+      gatherHeightPx: initialGatherHeightPx,
+    });
+
+    return {
+      targets,
+      materials,
+      scenes,
+      geometry,
+      farTarget,
+      nearTarget,
+      b1Target,
+      researchCompositeTarget,
+      sourceIdentityTarget,
+      gatherIdentityTarget,
+      gatherCenterProvenanceTarget,
+      selectedProvenanceTarget,
+      b1DecisionTarget,
+      farScene: makeScene(gatherNodes.farOutput),
+      nearScene: makeScene(gatherNodes.nearOutput),
+      sourceIdentityScene: makeScene(sourceIdentityNodes.outputNode),
+      gatherIdentityScene: makeScene(gatherIdentityNodes.outputNode),
+      gatherCenterProvenanceScene: makeScene(gatherCenterProvenanceNodes.outputNode),
+      selectedProvenanceScene: makeScene(selectedProvenanceNode),
+      b1Scene: makeScene(b1Nodes.farOutput),
+      b1DecisionScene: makeScene(b1Nodes.decisionOutput),
+      researchCompositeScene: makeScene(createGroundGlassResearchCompositeNode({
+        farTexture: b1Target.texture,
+        nearTexture: nearTarget.texture,
+      })),
+      ensureDepthReadbackResources: () => {
+        depthReadbackTarget ??= makeTarget(input.sourceWidthPx, input.sourceHeightPx, THREE.FloatType);
+        depthReadbackScene ??= makeScene(createGroundGlassDepthReadbackNode(input.sceneDepthTexture));
+        return { target: depthReadbackTarget, scene: depthReadbackScene };
+      },
+      gatherNodes,
+      sourceIdentityNodes,
+      gatherIdentityNodes,
+      gatherCenterProvenanceNodes,
+      b1Nodes,
+    };
+  } catch (error) {
+    scenes.forEach((scene) => scene.clear());
+    materials.forEach((material) => material.dispose());
+    geometry?.dispose();
+    const cleanupErrors: unknown[] = [];
+    targets.forEach((target) => {
+      try { target.dispose(); } catch (cleanupError) { cleanupErrors.push(cleanupError); }
+    });
+    if (cleanupErrors.length > 0) {
+      throw new AggregateError([error, ...cleanupErrors], "M5 partial target initialization cleanup failed");
+    }
+    throw error;
   }
 };
 
@@ -305,6 +540,269 @@ const observeTextureFormat = (
   }
 };
 
+type GroundGlassReadbackPixels = Uint8Array | Uint16Array | Float32Array;
+type GroundGlassReadbackOrigin = "top" | "bottom" | "unresolved";
+
+/**
+ * WebGPU texture-to-buffer copies use 256-byte row pitches. Three.js returns
+ * those rows with their padding intact, so compact each RGBA row before the
+ * M5 CPU oracle interprets pixel coordinates.
+ */
+const compactWebGpuReadbackRows = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+): GroundGlassReadbackPixels => {
+  if (!Number.isSafeInteger(widthPx) || widthPx < 1
+      || !Number.isSafeInteger(heightPx) || heightPx < 1) {
+    throw new RangeError("Ground Glass WebGPU readback requires positive integer dimensions");
+  }
+  const elementsPerRow = widthPx * 4;
+  const tightLength = elementsPerRow * heightPx;
+  if (pixels.length === tightLength) return pixels;
+  const bytesPerElement = pixels.BYTES_PER_ELEMENT;
+  const bytesPerRow = elementsPerRow * bytesPerElement;
+  const paddedRowElements = Math.ceil(bytesPerRow / 256) * 256 / bytesPerElement;
+  const paddedReadbackLength = (heightPx - 1) * paddedRowElements + elementsPerRow;
+  if (pixels.length !== paddedReadbackLength) {
+    throw new RangeError(
+      `Ground Glass WebGPU readback length ${pixels.length} does not match tightly packed `
+      + `${tightLength} or 256-byte row-padded ${paddedReadbackLength} RGBA elements`,
+    );
+  }
+
+  const output = pixels instanceof Uint8Array
+    ? new Uint8Array(tightLength)
+    : pixels instanceof Uint16Array
+      ? new Uint16Array(tightLength)
+      : new Float32Array(tightLength);
+  for (let y = 0; y < heightPx; y += 1) {
+    const sourceOffset = y * paddedRowElements;
+    const destinationOffset = y * elementsPerRow;
+    output.set(pixels.subarray(sourceOffset, sourceOffset + elementsPerRow), destinationOffset);
+  }
+  return output;
+};
+
+const toStoredFloat = (pixels: GroundGlassReadbackPixels, index: number): number => {
+  const value = pixels[index] ?? 0;
+  if (pixels instanceof Uint8Array) return value / 255;
+  if (pixels instanceof Uint16Array) return THREE.DataUtils.fromHalfFloat(value);
+  return value;
+};
+
+const inferReadbackOrigin = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+): Readonly<{ origin: GroundGlassReadbackOrigin; evidence: string }> => {
+  if (!(pixels instanceof Float32Array) || widthPx < 1 || heightPx < 2
+      || pixels.length !== widthPx * heightPx * 4) {
+    const actualType = ArrayBuffer.isView(pixels) ? pixels.constructor.name : typeof pixels;
+    return {
+      origin: "unresolved",
+      evidence: `identity readback type/size mismatch; type=${actualType}, length=${pixels.length}, `
+        + `expected=${widthPx * heightPx * 4}, dimensions=${widthPx}x${heightPx}`,
+    };
+  }
+  let topMismatches = 0;
+  let bottomMismatches = 0;
+  let topFirstMismatch = "none";
+  let bottomFirstMismatch = "none";
+  for (let y = 0; y < heightPx; y += 1) {
+    for (let x = 0; x < widthPx; x += 1) {
+      const offset = (y * widthPx + x) * 4;
+      const observedX = pixels[offset];
+      const observedY = pixels[offset + 1];
+      const expectedTopY = y;
+      const expectedBottomY = heightPx - 1 - y;
+      if (observedX !== x || observedY !== expectedTopY) {
+        topMismatches += 1;
+        if (topFirstMismatch === "none") {
+          topFirstMismatch = `(${x},${y}) observed (${observedX},${observedY})`;
+        }
+      }
+      if (observedX !== x || observedY !== expectedBottomY) {
+        bottomMismatches += 1;
+        if (bottomFirstMismatch === "none") {
+          bottomFirstMismatch = `(${x},${y}) observed (${observedX},${observedY})`;
+        }
+      }
+    }
+  }
+  if (topMismatches === 0) return { origin: "top", evidence: "all source identities match top-origin rows" };
+  if (bottomMismatches === 0) return { origin: "bottom", evidence: "all source identities match bottom-origin rows" };
+  const evidence = `identity grid mismatch; top=${topMismatches} (first ${topFirstMismatch}); `
+    + `bottom=${bottomMismatches} (first ${bottomFirstMismatch})`;
+  return { origin: "unresolved", evidence };
+};
+
+const rgbaReadbackToTopFloat = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+  origin: GroundGlassReadbackOrigin,
+): Float32Array => {
+  if (origin === "unresolved" || pixels.length !== widthPx * heightPx * 4) {
+    throw new Error("Ground Glass readback origin or RGBA dimensions could not be resolved");
+  }
+  const output = new Float32Array(pixels.length);
+  for (let y = 0; y < heightPx; y += 1) {
+    const readY = origin === "top" ? y : heightPx - 1 - y;
+    for (let x = 0; x < widthPx; x += 1) {
+      const inputOffset = (readY * widthPx + x) * 4;
+      const outputOffset = (y * widthPx + x) * 4;
+      for (let channel = 0; channel < 4; channel += 1) {
+        output[outputOffset + channel] = toStoredFloat(pixels, inputOffset + channel);
+      }
+    }
+  }
+  return output;
+};
+
+const redReadbackToTopBytes = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+  origin: GroundGlassReadbackOrigin,
+): Uint8Array => {
+  if (origin === "unresolved" || pixels.length !== widthPx * heightPx * 4
+      || !(pixels instanceof Uint8Array)) {
+    throw new Error("Ground Glass validity readback requires resolved RGBA8 source orientation");
+  }
+  const output = new Uint8Array(widthPx * heightPx);
+  for (let y = 0; y < heightPx; y += 1) {
+    const readY = origin === "top" ? y : heightPx - 1 - y;
+    for (let x = 0; x < widthPx; x += 1) {
+      output[y * widthPx + x] = pixels[(readY * widthPx + x) * 4] ?? 0;
+    }
+  }
+  return output;
+};
+
+const rgbaIdentityToTopIds = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+  origin: GroundGlassReadbackOrigin,
+  xChannel: 0 | 2,
+  yChannel: 1 | 3,
+): Int32Array => {
+  if (!(pixels instanceof Float32Array) || origin === "unresolved"
+      || pixels.length !== widthPx * heightPx * 4) {
+    throw new Error("Ground Glass provenance readback requires RGBA32F identity data");
+  }
+  const output = new Int32Array(widthPx * heightPx * 2);
+  for (let y = 0; y < heightPx; y += 1) {
+    const readY = origin === "top" ? y : heightPx - 1 - y;
+    for (let x = 0; x < widthPx; x += 1) {
+      const inputOffset = (readY * widthPx + x) * 4;
+      const outputOffset = (y * widthPx + x) * 2;
+      output[outputOffset] = Math.round(pixels[inputOffset + xChannel] ?? Number.NaN);
+      output[outputOffset + 1] = Math.round(pixels[inputOffset + yChannel] ?? Number.NaN);
+    }
+  }
+  return output;
+};
+
+const groundGlassReadbackFingerprint = (pixels: GroundGlassReadbackPixels): string => {
+  const bytes = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength);
+  let hash = 2166136261;
+  for (const byte of bytes) hash = Math.imul(hash ^ byte, 16777619);
+  return (hash >>> 0).toString(16).padStart(8, "0");
+};
+
+const compareRgbRms = (left: Float32Array, right: Float32Array) => {
+  if (left.length !== right.length || left.length % 4 !== 0) {
+    throw new RangeError("Ground Glass RGB comparison requires matching RGBA buffers");
+  }
+  let sumSquared = 0;
+  let maximum = 0;
+  let maximumOffset = 0;
+  let count = 0;
+  for (let offset = 0; offset < left.length; offset += 4) {
+    for (let channel = 0; channel < 3; channel += 1) {
+      const error = Math.abs((left[offset + channel] ?? 0) - (right[offset + channel] ?? 0));
+      if (error > maximum) {
+        maximum = error;
+        maximumOffset = offset + channel;
+      }
+      sumSquared += error * error;
+      count += 1;
+    }
+  }
+  return { rmse: Math.sqrt(sumSquared / Math.max(1, count)), maximum, maximumOffset };
+};
+
+const compareAlphaRms = (left: Float32Array, right: Float32Array) => {
+  if (left.length !== right.length || left.length % 4 !== 0) {
+    throw new RangeError("Ground Glass alpha comparison requires matching RGBA buffers");
+  }
+  let sumSquared = 0;
+  let maximum = 0;
+  let count = 0;
+  for (let offset = 3; offset < left.length; offset += 4) {
+    const error = Math.abs((left[offset] ?? 0) - (right[offset] ?? 0));
+    maximum = Math.max(maximum, error);
+    sumSquared += error * error;
+    count += 1;
+  }
+  return { rmse: Math.sqrt(sumSquared / Math.max(1, count)), maximum };
+};
+
+const runGroundGlassApertureGatherPass = async (input: Readonly<{
+  renderer: WebGpuRenderer;
+  device: GpuDeviceLike;
+  target: THREE.RenderTarget;
+  scene: THREE.Scene;
+  camera: THREE.OrthographicCamera;
+  isCurrent: () => boolean;
+}>): Promise<GroundGlassGpuPassTiming | null> => {
+  const startedAt = performance.now();
+  input.renderer.setRenderTarget(input.target);
+  input.renderer.setViewport(0, 0, input.target.width, input.target.height);
+  input.renderer.setScissorTest(false);
+  input.renderer.clear(true, false, false);
+  const rendererCallStartedAt = performance.now();
+  input.renderer.render(input.scene, input.camera);
+  const rendererCallCpuMs = performance.now() - rendererCallStartedAt;
+  const queueWaitStartedAt = performance.now();
+  await submitGatherWork(input.device);
+  const queueCompletionWaitMs = performance.now() - queueWaitStartedAt;
+  if (!input.isCurrent()) return null;
+  return {
+    rendererCallCpuMs,
+    queueCompletionWaitMs,
+    wallClockMs: performance.now() - startedAt,
+  };
+};
+
+const bytesPerPixelForObservedRgbaFormat = (format: string): number => {
+  switch (format) {
+    case "rgba8unorm": return 4;
+    case "rgba16float": return 8;
+    case "rgba32float": return 16;
+    default: throw new Error(`No M5 attachment-size estimate for observed format ${format}`);
+  }
+};
+
+const makeGroundGlassApertureGatherTargetAllocation = (
+  name: GroundGlassApertureGatherOperationName,
+  target: THREE.RenderTarget,
+  format: string | null,
+): GroundGlassApertureGatherTargetAllocation => {
+  if (!format) throw new Error(`M5 target format is unresolved for ${name}`);
+  const bytesPerPixel = bytesPerPixelForObservedRgbaFormat(format);
+  return {
+    name,
+    widthPx: target.width,
+    heightPx: target.height,
+    format,
+    bytesPerPixel,
+    estimatedBytes: target.width * target.height * bytesPerPixel,
+  };
+};
+
 type RenderNow = (request: GroundGlassFrameRequest) => void;
 
 const makeCamera = (
@@ -406,6 +904,7 @@ const makeDiagnosticDetails = (input: {
   backend: WebGpuBackendLike;
   completedPasses: readonly ("sceneRender" | "textureDisplay")[];
   physicalCoc?: GroundGlassPhysicalCocDiagnosticDetails;
+  apertureGather?: GroundGlassApertureGatherDiagnosticDetails;
   actualDepthFormat?: string | null;
 }): GroundGlassBackendDiagnosticDetails => {
   if (input.runtime.status !== "mounted" || input.runtime.rendererFamily !== "webgpu-renderer") {
@@ -449,6 +948,7 @@ const makeDiagnosticDetails = (input: {
     },
     completedPasses: input.completedPasses,
     ...(input.physicalCoc ? { physicalCoc: input.physicalCoc } : {}),
+    ...(input.apertureGather ? { apertureGather: input.apertureGather } : {}),
   };
 };
 
@@ -509,6 +1009,111 @@ const makePhysicalCocDiagnostic = (input: {
   probeReadbackFailureReason: input.probeReadbackFailureReason ?? null,
   unsupportedReason: input.unsupportedReason ?? null,
   failureReason: input.failureReason ?? null,
+});
+
+const makeApertureGatherDiagnostic = (input: Readonly<{
+  status: GroundGlassApertureGatherStatus;
+  request: GroundGlassFrameRequest;
+  generation: GroundGlassRendererGenerationIdentity;
+  target: THREE.RenderTarget;
+  settings?: GroundGlassApertureGatherSettings | null;
+  farWidthPx?: number | null;
+  farHeightPx?: number | null;
+  actualFormats?: Readonly<{
+    sourceColor: string | null;
+    physical: string | null;
+    validity: string | null;
+    far: string | null;
+    near: string | null;
+    b1: string | null;
+    composite: string | null;
+    provenance: string | null;
+  }>;
+  completedPasses?: GroundGlassApertureGatherDiagnosticDetails["completedPasses"];
+  physicalInputRequestId?: string | null;
+  physicalInputFormatVerified?: boolean | null;
+  b1Counts?: Partial<Pick<GroundGlassApertureGatherDiagnosticDetails,
+    | "b1SelectedCenterCount"
+    | "b1FallbackCount"
+    | "fallbackFarGatherAccepted"
+    | "fallbackGatherSelectionMismatch"
+    | "fallbackMissingOrOutOfBoundsProvenance"
+    | "fallbackSelectedCenterProvenanceMismatch"
+    | "fallbackInvalidOrUnresolvedCenter"
+    | "fallbackSelectedCenterNotFarEligible"
+    | "fallbackUnusableGatherData"
+    | "provenanceMismatchCount"
+    | "sourceToGatherMappingMismatchCount"
+    | "nominalGatherCenterMappingMismatchCount"
+    | "farEligibilityRejectedCount"
+  >> | null;
+  cappedPixelCount?: number | null;
+  maximumUncappedRadiusPx?: number | null;
+  nearCoveragePixelCount?: number | null;
+  nearRgbError?: number | null;
+  nearAlphaError?: number | null;
+  b1ReferenceError?: number | null;
+  failureReason?: string | null;
+  qualityGateReason?: string | null;
+}>): GroundGlassApertureGatherDiagnosticDetails => ({
+  status: input.status,
+  requestId: input.request.identity.requestId,
+  channelId: input.request.identity.channelId,
+  sceneId: input.request.identity.sceneId,
+  rendererGenerationId: input.generation.generationId,
+  rendererFamily: "webgpu-renderer",
+  actualExecutionApi: "webgpu",
+  internalFallback: "none",
+  qualityMode: input.settings?.qualityMode ?? null,
+  sampleCount: input.settings?.sampleCount ?? null,
+  maximumRadiusPx: input.settings?.maximumRadiusPx ?? null,
+  sourceWidthPx: input.target.width,
+  sourceHeightPx: input.target.height,
+  farGatherWidthPx: input.farWidthPx ?? null,
+  farGatherHeightPx: input.farHeightPx ?? null,
+  nearGatherWidthPx: input.farWidthPx ?? null,
+  nearGatherHeightPx: input.farHeightPx ?? null,
+  sourceColorFormat: input.actualFormats?.sourceColor ?? null,
+  physicalInputFormat: input.actualFormats?.physical ?? null,
+  validityInputFormat: input.actualFormats?.validity ?? null,
+  farTargetFormat: input.actualFormats?.far ?? null,
+  nearTargetFormat: input.actualFormats?.near ?? null,
+  b1TargetFormat: input.actualFormats?.b1 ?? null,
+  researchCompositeFormat: input.actualFormats?.composite ?? null,
+  provenanceFormat: input.actualFormats?.provenance ?? null,
+  physicalInputRequestId: input.physicalInputRequestId ?? null,
+  validityInputRequestId: input.physicalInputRequestId ?? null,
+  physicalInputFormatVerified: input.physicalInputFormatVerified ?? null,
+  completedPasses: input.completedPasses ?? [],
+  b1SelectedCenterCount: input.b1Counts?.b1SelectedCenterCount ?? null,
+  b1FallbackCount: input.b1Counts?.b1FallbackCount ?? null,
+  fallbackFarGatherAccepted: input.b1Counts?.fallbackFarGatherAccepted ?? null,
+  fallbackGatherSelectionMismatch: input.b1Counts?.fallbackGatherSelectionMismatch ?? null,
+  fallbackMissingOrOutOfBoundsProvenance: input.b1Counts?.fallbackMissingOrOutOfBoundsProvenance ?? null,
+  fallbackSelectedCenterProvenanceMismatch: input.b1Counts?.fallbackSelectedCenterProvenanceMismatch ?? null,
+  fallbackInvalidOrUnresolvedCenter: input.b1Counts?.fallbackInvalidOrUnresolvedCenter ?? null,
+  fallbackSelectedCenterNotFarEligible: input.b1Counts?.fallbackSelectedCenterNotFarEligible ?? null,
+  fallbackUnusableGatherData: input.b1Counts?.fallbackUnusableGatherData ?? null,
+  provenanceMismatchCount: input.b1Counts?.provenanceMismatchCount ?? null,
+  sourceToGatherMappingMismatchCount: input.b1Counts?.sourceToGatherMappingMismatchCount ?? null,
+  nominalGatherCenterMappingMismatchCount: input.b1Counts?.nominalGatherCenterMappingMismatchCount ?? null,
+  farEligibilityRejectedCount: input.b1Counts?.farEligibilityRejectedCount ?? null,
+  cappedPixelCount: input.cappedPixelCount ?? null,
+  maximumUncappedRadiusPx: input.maximumUncappedRadiusPx ?? null,
+  nearCoveragePixelCount: input.nearCoveragePixelCount ?? null,
+  nearRgbError: input.nearRgbError ?? null,
+  nearAlphaError: input.nearAlphaError ?? null,
+  full32Full64ReferenceError: null,
+  b1ReferenceError: input.b1ReferenceError ?? null,
+  b0ReferenceError: null,
+  edgeRoiError: null,
+  interiorFarRoiError: null,
+  blurSuppressionMetric: null,
+  fallbackHaloMetric: null,
+  qualityGateStatus: "not-evaluated",
+  qualityGateReason: input.qualityGateReason ?? "M5 remains research-only; no state has passed the full quality matrix",
+  failureReason: input.failureReason ?? null,
+  cleanupOutcome: "not-yet-run",
 });
 
 const toMillimetres = (value: Readonly<{ x: number; y: number; z: number }>) => ({
@@ -785,6 +1390,8 @@ export const GroundGlassWebGPUAdapter = ({
   const [targetDepthEnabled, setTargetDepthEnabled] = useState(false);
   const [physicalCocDiagnostics, setPhysicalCocDiagnostics] =
     useState<GroundGlassPhysicalCocDiagnosticDetails | null>(null);
+  const [apertureGatherDiagnostics, setApertureGatherDiagnostics] =
+    useState<GroundGlassApertureGatherDiagnosticDetails | null>(null);
   const [lastDisplayedRequestId, setLastDisplayedRequestId] = useState<string | null>(null);
   const [lastDisplayedFrameId, setLastDisplayedFrameId] = useState<string | null>(null);
 
@@ -812,6 +1419,25 @@ export const GroundGlassWebGPUAdapter = ({
     let validityScene: THREE.Scene | null = null;
     let physicalCamera: THREE.OrthographicCamera | null = null;
     let physicalNodes: ReturnType<typeof createGroundGlassPhysicalCocNodes> | null = null;
+    let apertureGatherResources: GroundGlassApertureGatherResources | null = null;
+    let apertureGatherResearchBuildEnabled = false;
+    let apertureGatherStatus: GroundGlassApertureGatherStatus = "disabled";
+    let apertureGatherUnsupportedReason: string | null = null;
+    let apertureGatherFailureReason: string | null = null;
+    let apertureGatherSettings: GroundGlassApertureGatherSettings | null = null;
+    let apertureGatherCompletedPasses: GroundGlassApertureGatherDiagnosticDetails["completedPasses"] = [];
+    let apertureGatherFormats: {
+      sourceColor: string | null;
+      physical: string | null;
+      validity: string | null;
+      far: string | null;
+      near: string | null;
+      b1: string | null;
+      composite: string | null;
+      provenance: string | null;
+      decisions: string | null;
+    } | null = null;
+    let apertureGatherDiagnostic: GroundGlassApertureGatherDiagnosticDetails | null = null;
     let physicalPassEnabled = false;
     let physicalPassStatus: GroundGlassPhysicalCocDiagnosticDetails["status"] = "disabled";
     let physicalPassUnsupportedReason: string | null = null;
@@ -849,6 +1475,7 @@ export const GroundGlassWebGPUAdapter = ({
       if (disposePromise) return disposePromise;
       retired = true;
       activeRef.current = false;
+      const cleanupStartedAt = performance.now();
       disposePromise = (async () => {
         const errors: unknown[] = [];
         let cleanupTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -862,7 +1489,12 @@ export const GroundGlassWebGPUAdapter = ({
           const reason = "WebGPU initialization or queued GPU work did not settle before cleanup deadline; owned resources were retained";
           adapterRoot?.setAttribute("data-cleanup-outcome", "uncertain");
           adapterRoot?.setAttribute("data-cleanup-reason", reason);
-          recordGroundGlassWebGpuTestEvent({ kind: "cleanup", generationId: generation.generationId, outcome: "uncertain" });
+          recordGroundGlassWebGpuTestEvent({
+            kind: "cleanup",
+            generationId: generation.generationId,
+            outcome: "uncertain",
+            wallClockMs: performance.now() - cleanupStartedAt,
+          });
           propsRef.current.onAdapterDisposed(generation, "uncertain", reason);
           return;
         }
@@ -874,6 +1506,13 @@ export const GroundGlassWebGPUAdapter = ({
           await dispose(() => display?.material.dispose());
           await dispose(() => display?.geometry.dispose());
           display = null;
+        }
+        if (apertureGatherResources) {
+          apertureGatherResources.scenes.forEach((ownedScene) => ownedScene.clear());
+          await dispose(() => apertureGatherResources?.materials.forEach((material) => material.dispose()));
+          await dispose(() => apertureGatherResources?.geometry.dispose());
+          await dispose(() => apertureGatherResources?.targets.forEach((ownedTarget) => ownedTarget.dispose()));
+          apertureGatherResources = null;
         }
         physicalScene?.clear();
         validityScene?.clear();
@@ -922,11 +1561,17 @@ export const GroundGlassWebGPUAdapter = ({
         setCameraEvidence({ configured: false, coordinateSystem: "webgpu", frustum: null });
         setTargetDepthEnabled(false);
         setPhysicalCocDiagnostics(null);
+        setApertureGatherDiagnostics(null);
         const outcome: GroundGlassCleanupOutcome = errors.length === 0 ? "confirmed" : "failed";
         const reason = errors.length ? errors.map(errorMessage).join("; ") : undefined;
         adapterRoot?.setAttribute("data-cleanup-outcome", outcome);
         if (reason) adapterRoot?.setAttribute("data-cleanup-reason", reason);
-        recordGroundGlassWebGpuTestEvent({ kind: "cleanup", generationId: generation.generationId, outcome });
+        recordGroundGlassWebGpuTestEvent({
+          kind: "cleanup",
+          generationId: generation.generationId,
+          outcome,
+          wallClockMs: performance.now() - cleanupStartedAt,
+        });
         propsRef.current.onAdapterDisposed(generation, outcome, reason);
         if (errors.length) throw new AggregateError(errors, "Ground Glass WebGPU resource cleanup failed");
       })();
@@ -955,6 +1600,20 @@ export const GroundGlassWebGPUAdapter = ({
           latest.identity.channelId !== requested.identity.channelId ||
           latest.identity.sceneId !== requested.identity.sceneId
         ) return;
+
+        let sceneRenderTiming: GroundGlassGpuPassTiming | null = null;
+        let physicalCocFootprintTiming: GroundGlassGpuPassTiming | null = null;
+        let physicalValidityTiming: GroundGlassGpuPassTiming | null = null;
+        const aperturePassTimings: Array<Readonly<{
+          name: GroundGlassApertureGatherOperationName;
+          timing: GroundGlassGpuPassTiming;
+        }>> = [];
+        if (apertureGatherResearchBuildEnabled) {
+          // Diagnostics belong to one accepted request; never keep the prior frame's
+          // completed gather visible while this request is being processed.
+          apertureGatherDiagnostic = null;
+          setApertureGatherDiagnostics(null);
+        }
 
         let failedPass: GroundGlassRenderOperationId | null = null;
         let physicalDiagnostic: GroundGlassPhysicalCocDiagnosticDetails | undefined;
@@ -985,16 +1644,26 @@ export const GroundGlassWebGPUAdapter = ({
           }
 
           failedPass = "sceneRender";
+          const scenePassStartedAt = performance.now();
           renderer.setRenderTarget(target);
           renderer.setViewport(0, 0, target.width, target.height);
           renderer.setScissorTest(false);
           renderer.setClearColor(SKY_COLOR, 1);
           renderer.clear(true, true, true);
+          const sceneRendererCallStartedAt = performance.now();
           renderer.render(scene, camera);
+          const sceneRendererCallCpuMs = performance.now() - sceneRendererCallStartedAt;
           const device = mountedBackend?.device;
           if (!device) throw new Error("Native WebGPU scene submission has no initialized GPU device");
+          const sceneQueueWaitStartedAt = performance.now();
           await holdGroundGlassWebGpuQueueCompletion();
           await device.queue.onSubmittedWorkDone();
+          const sceneQueueCompletionWaitMs = performance.now() - sceneQueueWaitStartedAt;
+          sceneRenderTiming = {
+            rendererCallCpuMs: sceneRendererCallCpuMs,
+            queueCompletionWaitMs: sceneQueueCompletionWaitMs,
+            wallClockMs: performance.now() - scenePassStartedAt,
+          };
           if (retired || !isGenerationActive() || !activeRef.current) return;
           if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
           throwIfGroundGlassWebGpuFailureInjected("scene-render-after-submit");
@@ -1029,12 +1698,22 @@ export const GroundGlassWebGPUAdapter = ({
                   dof: createPhysicalDofState(latest, camera, target.width, target.height),
                 });
                 failedPass = "cocFootprint";
+                const physicalFootprintStartedAt = performance.now();
                 renderer.setRenderTarget(physicalTarget);
                 renderer.setViewport(0, 0, physicalTarget.width, physicalTarget.height);
                 renderer.setScissorTest(false);
                 renderer.clear(true, false, false);
+                const physicalFootprintRendererStartedAt = performance.now();
                 renderer.render(physicalScene, physicalCamera);
+                const physicalFootprintRendererCallCpuMs =
+                  performance.now() - physicalFootprintRendererStartedAt;
+                const physicalFootprintQueueStartedAt = performance.now();
                 await submitPhysicalWork(device);
+                physicalCocFootprintTiming = {
+                  rendererCallCpuMs: physicalFootprintRendererCallCpuMs,
+                  queueCompletionWaitMs: performance.now() - physicalFootprintQueueStartedAt,
+                  wallClockMs: performance.now() - physicalFootprintStartedAt,
+                };
                 if (retired || !isGenerationActive() || !activeRef.current) return;
                 if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
                 actualCocStorageFormat = observeTextureFormat(mountedBackend, physicalTarget.texture);
@@ -1045,11 +1724,21 @@ export const GroundGlassWebGPUAdapter = ({
                 } else {
                   throwIfGroundGlassWebGpuFailureInjected("physical-coc-after-submit");
                   physicalCompletedPasses.push("physicalCoc");
+                  const physicalValidityStartedAt = performance.now();
                   renderer.setRenderTarget(validityTarget);
                   renderer.setViewport(0, 0, validityTarget.width, validityTarget.height);
                   renderer.clear(true, false, false);
+                  const physicalValidityRendererStartedAt = performance.now();
                   renderer.render(validityScene, physicalCamera);
+                  const physicalValidityRendererCallCpuMs =
+                    performance.now() - physicalValidityRendererStartedAt;
+                  const physicalValidityQueueStartedAt = performance.now();
                   await submitPhysicalWork(device);
+                  physicalValidityTiming = {
+                    rendererCallCpuMs: physicalValidityRendererCallCpuMs,
+                    queueCompletionWaitMs: performance.now() - physicalValidityQueueStartedAt,
+                    wallClockMs: performance.now() - physicalValidityStartedAt,
+                  };
                   if (retired || !isGenerationActive() || !activeRef.current) return;
                   if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
                   actualValidityStorageFormat = observeTextureFormat(mountedBackend, validityTarget.texture);
@@ -1391,6 +2080,770 @@ export const GroundGlassWebGPUAdapter = ({
             failedPass = null;
           }
 
+          // M5 research targets are adapter-owned and run after the exact current M4 inputs.
+          // Their output never replaces the existing M3 Raw display target.
+          const isApertureRequestCurrent = () => !retired
+            && isGenerationActive()
+            && activeRef.current
+            && requestRef.current.identity.requestId === latest.identity.requestId
+            && requestRef.current.identity.channelId === latest.identity.channelId
+            && requestRef.current.identity.sceneId === latest.identity.sceneId;
+          const mountedRuntime = runtimeRef.current;
+          if (apertureGatherResearchBuildEnabled
+              && mountedRuntime.status === "mounted"
+              && mountedRuntime.rendererFamily === "webgpu-renderer"
+              && mountedRuntime.actualExecutionApi === "webgpu") {
+            const captureRequest = consumeGroundGlassApertureGatherCaptureForTest();
+            const resources = apertureGatherResources;
+            const eligibility = resolveGroundGlassApertureGatherResearchEligibility({
+              request: latest,
+              runtime: {
+                rendererFamily: mountedRuntime.rendererFamily,
+                actualExecutionApi: mountedRuntime.actualExecutionApi,
+              },
+              physicalStatus: physicalDiagnostic?.status ?? "disabled",
+              physicalRequestId: physicalDiagnostic?.requestId ?? null,
+              expectedRendererRevision: `r${REVISION}`,
+            });
+            apertureGatherCompletedPasses = [];
+            apertureGatherFailureReason = null;
+            apertureGatherUnsupportedReason = eligibility.status === "eligible" ? null : eligibility.reason;
+            apertureGatherFormats = null;
+            if (eligibility.status !== "eligible" || !resources || !physicalDiagnostic) {
+              apertureGatherStatus = "unsupported";
+              apertureGatherFailureReason = null;
+            } else {
+              try {
+                const settings = resolveGroundGlassApertureGatherSettings(
+                  latest.scene.id,
+                  captureRequest?.qualityMode ?? "half32",
+                  captureRequest?.maximumRadiusPx,
+                );
+                apertureGatherSettings = settings;
+                const sourceWidthPx = target.width;
+                const sourceHeightPx = target.height;
+                const gatherWidthPx = Math.max(1, Math.round(sourceWidthPx * settings.gatherScale));
+                const gatherHeightPx = Math.max(1, Math.round(sourceHeightPx * settings.gatherScale));
+                resources.farTarget.setSize(gatherWidthPx, gatherHeightPx);
+                resources.nearTarget.setSize(gatherWidthPx, gatherHeightPx);
+                resources.gatherIdentityTarget.setSize(gatherWidthPx, gatherHeightPx);
+                resources.gatherCenterProvenanceTarget.setSize(gatherWidthPx, gatherHeightPx);
+                resources.sourceIdentityTarget.setSize(sourceWidthPx, sourceHeightPx);
+                resources.selectedProvenanceTarget.setSize(sourceWidthPx, sourceHeightPx);
+                resources.b1Target.setSize(sourceWidthPx, sourceHeightPx);
+                resources.researchCompositeTarget.setSize(sourceWidthPx, sourceHeightPx);
+                resources.b1DecisionTarget.setSize(sourceWidthPx, sourceHeightPx);
+                resources.sourceIdentityNodes.update(sourceWidthPx, sourceHeightPx);
+                resources.gatherIdentityNodes.update(gatherWidthPx, gatherHeightPx);
+                resources.gatherCenterProvenanceNodes.update(sourceWidthPx, sourceHeightPx);
+                resources.b1Nodes.update({
+                  sourceWidthPx,
+                  sourceHeightPx,
+                  gatherWidthPx,
+                  gatherHeightPx,
+                });
+                const sampledFilmWidthMm = CAMERA_CONSTANTS.filmWidthMm
+                  * latest.inspectionWindow.widthFraction;
+                const sampledFilmHeightMm = CAMERA_CONSTANTS.filmHeightMm
+                  * latest.inspectionWindow.heightFraction;
+                resources.gatherNodes.update({
+                  sourceWidthPx,
+                  sourceHeightPx,
+                  sampledFilmWidthMm,
+                  sampledFilmHeightMm,
+                  maximumRadiusPx: settings.maximumRadiusPx,
+                  sampleCount: settings.sampleCount,
+                  inverseProjection: camera.projectionMatrixInverse,
+                });
+                // Recreate resized M5 attachments without drawing so the exact WebGPU
+                // descriptors are available for fail-closed format preflight.
+                [
+                  resources.farTarget,
+                  resources.nearTarget,
+                  resources.b1Target,
+                  resources.researchCompositeTarget,
+                  resources.sourceIdentityTarget,
+                  resources.gatherIdentityTarget,
+                  resources.gatherCenterProvenanceTarget,
+                  resources.selectedProvenanceTarget,
+                  resources.b1DecisionTarget,
+                ].forEach((preflightTarget) => renderer!.initRenderTarget(preflightTarget));
+                const outputFormats = {
+                  sourceColor: observeTextureFormat(mountedBackend!, target.texture),
+                  depth: observeTextureFormat(mountedBackend!, target.depthTexture),
+                  physical: observeTextureFormat(mountedBackend!, physicalTarget?.texture),
+                  validity: observeTextureFormat(mountedBackend!, validityTarget?.texture),
+                  far: observeTextureFormat(mountedBackend!, resources.farTarget.texture),
+                  near: observeTextureFormat(mountedBackend!, resources.nearTarget.texture),
+                  b1: observeTextureFormat(mountedBackend!, resources.b1Target.texture),
+                  composite: observeTextureFormat(mountedBackend!, resources.researchCompositeTarget.texture),
+                  provenance: [
+                    resources.sourceIdentityTarget,
+                    resources.gatherIdentityTarget,
+                    resources.gatherCenterProvenanceTarget,
+                    resources.selectedProvenanceTarget,
+                  ].every((ownedTarget) =>
+                    observeTextureFormat(mountedBackend!, ownedTarget.texture) === "rgba32float",
+                  ) ? "rgba32float" : null,
+                  decisions: observeTextureFormat(mountedBackend!, resources.b1DecisionTarget.texture),
+                };
+                apertureGatherFormats = outputFormats;
+                const formatEligibility = resolveGroundGlassApertureGatherFormatEligibility({
+                  observedFormats: outputFormats,
+                });
+                if (formatEligibility.status !== "eligible") {
+                  apertureGatherStatus = "unsupported";
+                  apertureGatherUnsupportedReason = formatEligibility.reason;
+                  apertureGatherFailureReason = null;
+                } else {
+                const runPass = async (
+                  operation: GroundGlassRenderOperationId,
+                  targetToRender: THREE.RenderTarget,
+                  sceneToRender: THREE.Scene,
+                  passName: GroundGlassApertureGatherDiagnosticDetails["completedPasses"][number],
+                  timingName: GroundGlassApertureGatherOperationName,
+                  failurePoint?: "aperture-far-after-submit"
+                    | "aperture-near-after-submit"
+                    | "aperture-b1-after-submit"
+                    | "aperture-composite-after-submit",
+                ) => {
+                  failedPass = operation;
+                  const timing = await runGroundGlassApertureGatherPass({
+                    renderer: renderer!,
+                    device,
+                    target: targetToRender,
+                    scene: sceneToRender,
+                    camera: physicalCamera!,
+                    isCurrent: isApertureRequestCurrent,
+                  });
+                  if (timing === null) return null;
+                  apertureGatherCompletedPasses = [...apertureGatherCompletedPasses, passName];
+                  aperturePassTimings.push({ name: timingName, timing });
+                  if (failurePoint) throwIfGroundGlassWebGpuFailureInjected(failurePoint);
+                  failedPass = null;
+                  return timing;
+                };
+
+                if (await runPass("composite", resources.sourceIdentityTarget,
+                  resources.sourceIdentityScene, "sourceIdentity", "sourceIdentity") === null) return;
+                if (await runPass("composite", resources.gatherIdentityTarget,
+                  resources.gatherIdentityScene, "gatherIdentity", "gatherIdentity") === null) return;
+                if (await runPass("composite", resources.gatherCenterProvenanceTarget,
+                  resources.gatherCenterProvenanceScene, "gatherCenterProvenance", "gatherCenterProvenance") === null) return;
+                if (await runPass("farGather", resources.farTarget,
+                  resources.farScene, "farGather", "farGather", "aperture-far-after-submit") === null) return;
+                if (await runPass("nearGather", resources.nearTarget,
+                  resources.nearScene, "nearGather", "nearGather", "aperture-near-after-submit") === null) return;
+
+                const nearBeforeB1Raw = captureRequest
+                  ? compactWebGpuReadbackRows(
+                      await renderer.readRenderTargetPixelsAsync(
+                        resources.nearTarget, 0, 0, gatherWidthPx, gatherHeightPx,
+                      ) as GroundGlassReadbackPixels,
+                      gatherWidthPx,
+                      gatherHeightPx,
+                    )
+                  : null;
+                if (await runPass("composite", resources.selectedProvenanceTarget,
+                  resources.selectedProvenanceScene, "selectedProvenance", "selectedProvenance") === null) return;
+                if (await runPass("composite", resources.b1Target,
+                  resources.b1Scene, "farReconstructionB1", "b1Reconstruction", "aperture-b1-after-submit") === null) return;
+                if (await runPass("composite", resources.b1DecisionTarget,
+                  resources.b1DecisionScene, "farReconstructionB1", "b1Decision") === null) return;
+                if (await runPass("composite", resources.researchCompositeTarget,
+                  resources.researchCompositeScene, "researchComposite", "researchComposite", "aperture-composite-after-submit") === null) return;
+                apertureGatherStatus = "completed";
+                apertureGatherUnsupportedReason = null;
+                apertureGatherFailureReason = null;
+
+                let captureReadback: GroundGlassApertureGatherCaptureReadback | null = null;
+                if (captureRequest && apertureGatherStatus === "completed") {
+                  const depthReadback = resources.ensureDepthReadbackResources();
+                  depthReadback.target.setSize(sourceWidthPx, sourceHeightPx);
+                  failedPass = "composite";
+                  const depthReadbackTiming = await runGroundGlassApertureGatherPass({
+                    renderer: renderer!,
+                    device,
+                    target: depthReadback.target,
+                    scene: depthReadback.scene,
+                    camera: physicalCamera!,
+                    isCurrent: isApertureRequestCurrent,
+                  });
+                  if (depthReadbackTiming === null) return;
+                  aperturePassTimings.push({ name: "depthReadback", timing: depthReadbackTiming });
+                  throwIfGroundGlassWebGpuFailureInjected("aperture-readback");
+                  await holdGroundGlassApertureGatherReadbackForTest();
+                  const readPixelsWaitStartedAt = performance.now();
+                  const [sourceRaw, physicalRaw, validityRaw, depthRaw, farRaw, nearRaw,
+                    b1Raw, compositeRaw, sourceIdentityRaw, gatherIdentityRaw,
+                    centerProvenanceRaw, selectedProvenanceRaw, decisionRaw, nearAfterB1Raw] = await Promise.all([
+                    renderer.readRenderTargetPixelsAsync(target, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(physicalTarget!, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(validityTarget!, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(depthReadback.target, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.farTarget, 0, 0, gatherWidthPx, gatherHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.nearTarget, 0, 0, gatherWidthPx, gatherHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.b1Target, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.researchCompositeTarget, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.sourceIdentityTarget, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.gatherIdentityTarget, 0, 0, gatherWidthPx, gatherHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.gatherCenterProvenanceTarget, 0, 0, gatherWidthPx, gatherHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.selectedProvenanceTarget, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.b1DecisionTarget, 0, 0, sourceWidthPx, sourceHeightPx),
+                    renderer.readRenderTargetPixelsAsync(resources.nearTarget, 0, 0, gatherWidthPx, gatherHeightPx),
+                  ]);
+                  const readPixelsWaitWallMs = performance.now() - readPixelsWaitStartedAt;
+                  if (!isApertureRequestCurrent()) return;
+                  const readbackConversionStartedAt = performance.now();
+                  const sourcePixels = compactWebGpuReadbackRows(
+                    sourceRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const physicalPixels = compactWebGpuReadbackRows(
+                    physicalRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const validityPixels = compactWebGpuReadbackRows(
+                    validityRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const depthPixels = compactWebGpuReadbackRows(
+                    depthRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const farPixels = compactWebGpuReadbackRows(
+                    farRaw as GroundGlassReadbackPixels, gatherWidthPx, gatherHeightPx,
+                  );
+                  const nearPixels = compactWebGpuReadbackRows(
+                    nearRaw as GroundGlassReadbackPixels, gatherWidthPx, gatherHeightPx,
+                  );
+                  const b1Pixels = compactWebGpuReadbackRows(
+                    b1Raw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const compositePixels = compactWebGpuReadbackRows(
+                    compositeRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const sourceIdentityPixels = compactWebGpuReadbackRows(
+                    sourceIdentityRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const gatherIdentityPixels = compactWebGpuReadbackRows(
+                    gatherIdentityRaw as GroundGlassReadbackPixels, gatherWidthPx, gatherHeightPx,
+                  );
+                  const centerProvenancePixels = compactWebGpuReadbackRows(
+                    centerProvenanceRaw as GroundGlassReadbackPixels, gatherWidthPx, gatherHeightPx,
+                  );
+                  const selectedProvenancePixels = compactWebGpuReadbackRows(
+                    selectedProvenanceRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const decisionPixels = compactWebGpuReadbackRows(
+                    decisionRaw as GroundGlassReadbackPixels, sourceWidthPx, sourceHeightPx,
+                  );
+                  const nearAfterB1Pixels = compactWebGpuReadbackRows(
+                    nearAfterB1Raw as GroundGlassReadbackPixels, gatherWidthPx, gatherHeightPx,
+                  );
+                  const originEvidence = inferReadbackOrigin(sourceIdentityPixels, sourceWidthPx, sourceHeightPx);
+                  const readbackOrigin = originEvidence.origin;
+                  if (readbackOrigin === "unresolved") {
+                    throw new Error(`M5 source identity readback did not establish a top/bottom origin: ${originEvidence.evidence}`);
+                  }
+                  const sourceRgba = rgbaReadbackToTopFloat(sourcePixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin);
+                  const physicalRgba = rgbaReadbackToTopFloat(physicalPixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin);
+                  const validity = redReadbackToTopBytes(validityPixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin);
+                  const depth = rgbaReadbackToTopFloat(depthPixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin).filter((_value, index) => index % 4 === 0);
+                  const farGatherRgba = rgbaReadbackToTopFloat(farPixels,
+                    gatherWidthPx, gatherHeightPx, readbackOrigin);
+                  const nearRgba = rgbaReadbackToTopFloat(nearPixels,
+                    gatherWidthPx, gatherHeightPx, readbackOrigin);
+                  const b1FarRgba = rgbaReadbackToTopFloat(b1Pixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin);
+                  const researchCompositeRgba = rgbaReadbackToTopFloat(compositePixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin);
+                  const sourceIdentityIds = rgbaIdentityToTopIds(sourceIdentityPixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin, 0, 1);
+                  const gatherIdentityIds = rgbaIdentityToTopIds(gatherIdentityPixels,
+                    gatherWidthPx, gatherHeightPx, readbackOrigin, 0, 1);
+                  const gatherCenterSourceIds = rgbaIdentityToTopIds(centerProvenancePixels,
+                    gatherWidthPx, gatherHeightPx, readbackOrigin, 0, 1);
+                  const gatherCenterProvenanceRgba = rgbaReadbackToTopFloat(
+                    centerProvenancePixels,
+                    gatherWidthPx,
+                    gatherHeightPx,
+                    readbackOrigin,
+                  );
+                  const gatherCenterSourceUvs = new Float32Array(gatherWidthPx * gatherHeightPx * 2);
+                  for (let pixel = 0; pixel < gatherWidthPx * gatherHeightPx; pixel += 1) {
+                    gatherCenterSourceUvs[pixel * 2] = gatherCenterProvenanceRgba[pixel * 4 + 2] ?? 0;
+                    gatherCenterSourceUvs[pixel * 2 + 1] = gatherCenterProvenanceRgba[pixel * 4 + 3] ?? 0;
+                  }
+                  const observedSelectedGatherIds = rgbaIdentityToTopIds(selectedProvenancePixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin, 0, 1);
+                  const observedSelectedCenterSourceIds = rgbaIdentityToTopIds(selectedProvenancePixels,
+                    sourceWidthPx, sourceHeightPx, readbackOrigin, 2, 3);
+                  const decisionRgbaTop = new Uint8Array(sourceWidthPx * sourceHeightPx * 4);
+                  if (!(decisionPixels instanceof Uint8Array)) {
+                    throw new Error("M5 decision readback did not return RGBA8 data");
+                  }
+                  for (let y = 0; y < sourceHeightPx; y += 1) {
+                    const readY = readbackOrigin === "top" ? y : sourceHeightPx - 1 - y;
+                    decisionRgbaTop.set(
+                      decisionPixels.subarray(readY * sourceWidthPx * 4, (readY + 1) * sourceWidthPx * 4),
+                      y * sourceWidthPx * 4,
+                    );
+                  }
+                  const readbackConversionCpuMs = performance.now() - readbackConversionStartedAt;
+                  const physicalBeforeReference = physicalRgba.slice();
+                  const cpuReferenceStartedAt = performance.now();
+                  const gatherReference = referenceGroundGlassApertureGather({
+                    source: { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+                    gather: { widthPx: gatherWidthPx, heightPx: gatherHeightPx },
+                    film: { widthMm: sampledFilmWidthMm, heightMm: sampledFilmHeightMm },
+                    sourceRgba,
+                    physicalRgba,
+                    validity,
+                    depth,
+                    observedGatherCenterSourceIds: gatherCenterSourceIds,
+                    observedGatherCenterSourceUvs: gatherCenterSourceUvs,
+                    inverseProjectionMatrix: camera.projectionMatrixInverse.elements,
+                    sampleCount: settings.sampleCount,
+                    maximumRadiusPx: settings.maximumRadiusPx,
+                  });
+                  const nominalGatherCenterMismatchCount = gatherReference.nominalGatherCenterSourceIds.reduce(
+                    (mismatchCount, pixel, index) => mismatchCount
+                      + (pixel === gatherCenterSourceIds[index] ? 0 : 1), 0,
+                  );
+                  const gatherIdentityMismatchCount = gatherIdentityIds.reduce((count, id, index) => {
+                    const coordinate = index % 2 === 0
+                      ? (index / 2) % gatherWidthPx
+                      : Math.floor(index / 2 / gatherWidthPx);
+                    return count + (id === coordinate ? 0 : 1);
+                  }, 0);
+                  const farReferenceError = compareRgbRms(gatherReference.farRgba, farGatherRgba);
+                  let farPixelsAboveReferenceTolerance = 0;
+                  for (let offset = 0; offset < farGatherRgba.length; offset += 4) {
+                    if ([0, 1, 2].some((channel) => Math.abs(
+                      (gatherReference.farRgba[offset + channel] ?? 0) - (farGatherRgba[offset + channel] ?? 0),
+                    ) > 0.001)) farPixelsAboveReferenceTolerance += 1;
+                  }
+                  const nearReferenceRgbError = compareRgbRms(gatherReference.nearRgba, nearRgba);
+                  const nearReferenceAlphaError = compareAlphaRms(gatherReference.nearRgba, nearRgba);
+                  const b1Reference = reconstructGroundGlassB1Reference({
+                    source: { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+                    gather: { widthPx: gatherWidthPx, heightPx: gatherHeightPx },
+                    sourceRgba,
+                    gatherFarRgba: farGatherRgba,
+                    physicalRgba,
+                    validity,
+                    observedSelectedGatherIds,
+                    observedSelectedCenterSourceIds,
+                    observedGatherCenterSourceIds: gatherCenterSourceIds,
+                  });
+                  const b1Error = compareRgbRms(b1Reference.farRgba, b1FarRgba);
+                  const expectedB1Composite = compositeGroundGlassB1ResearchReference(
+                    b1Reference.farRgba,
+                    { widthPx: sourceWidthPx, heightPx: sourceHeightPx },
+                    gatherReference.nearRgba,
+                    { widthPx: gatherWidthPx, heightPx: gatherHeightPx },
+                  );
+                  const compositeReferenceError = compareRgbRms(expectedB1Composite, researchCompositeRgba);
+                  let eligibilityMismatchCount = 0;
+                  let fallbackReasonMismatchCount = 0;
+                  let selectedPathMismatchCount = 0;
+                  let fallbackSourceMaximumError = 0;
+                  for (let pixel = 0; pixel < sourceWidthPx * sourceHeightPx; pixel += 1) {
+                    const decisionOffset = pixel * 4;
+                    const expectedSelectedPath = b1Reference.selectedPath[pixel] === 1 ? 1 : 0;
+                    if ((decisionRgbaTop[decisionOffset] === 1 ? 1 : 0) !== b1Reference.eligible[pixel]) {
+                      eligibilityMismatchCount += 1;
+                    }
+                    if (decisionRgbaTop[decisionOffset + 1] !== b1Reference.fallbackReason[pixel]) {
+                      fallbackReasonMismatchCount += 1;
+                    }
+                    if ((decisionRgbaTop[decisionOffset + 2] === 1 ? 1 : 0) !== expectedSelectedPath) {
+                      selectedPathMismatchCount += 1;
+                    }
+                    if (expectedSelectedPath === 0) {
+                      const offset = pixel * 4;
+                      for (let channel = 0; channel < 3; channel += 1) {
+                        fallbackSourceMaximumError = Math.max(fallbackSourceMaximumError,
+                          Math.abs((b1FarRgba[offset + channel] ?? 0) - (sourceRgba[offset + channel] ?? 0)));
+                      }
+                    }
+                  }
+                  const nearBefore = nearBeforeB1Raw as GroundGlassReadbackPixels | null;
+                  const nearAfter = nearAfterB1Pixels;
+                  const nearBeforeRgba = nearBefore
+                    ? rgbaReadbackToTopFloat(nearBefore, gatherWidthPx, gatherHeightPx, readbackOrigin)
+                    : nearRgba;
+                  const nearAfterB1Rgba = rgbaReadbackToTopFloat(nearAfter,
+                    gatherWidthPx, gatherHeightPx, readbackOrigin);
+                  const nearRgbInvariant = compareRgbRms(nearBeforeRgba, nearAfterB1Rgba);
+                  const nearAlphaInvariant = compareAlphaRms(nearBeforeRgba, nearAfterB1Rgba);
+                  const nearCoveragePixelCount = Array.from({ length: gatherWidthPx * gatherHeightPx })
+                    .filter((_value, pixel) => (nearRgba[pixel * 4 + 3] ?? 0) > 0).length;
+                  const nearCoverageFractionalPixelCount = Array.from({ length: gatherWidthPx * gatherHeightPx })
+                    .filter((_value, pixel) => {
+                      const alpha = nearRgba[pixel * 4 + 3] ?? 0;
+                      return alpha > 0 && alpha < 1;
+                    }).length;
+                  const nearCoverageNontrivial = nearCoveragePixelCount > 0;
+                  const nearReferenceCoveragePixelCount = Array.from({ length: gatherWidthPx * gatherHeightPx })
+                    .filter((_value, pixel) => (gatherReference.nearRgba[pixel * 4 + 3] ?? 0) > 0).length;
+                  const nearReferenceCoverageFractionalPixelCount = Array.from({ length: gatherWidthPx * gatherHeightPx })
+                    .filter((_value, pixel) => {
+                      const alpha = gatherReference.nearRgba[pixel * 4 + 3] ?? 0;
+                      return alpha > 0 && alpha < 1;
+                    }).length;
+                  const nearReferenceCoverageNontrivial = nearReferenceCoveragePixelCount > 0;
+                  const physicalValuesUnchanged = physicalRgba.every(
+                    (value, index) => value === physicalBeforeReference[index],
+                  );
+                  const sourceIdentityMismatchCount = sourceIdentityIds.reduce((count, id, index) => {
+                    const coordinate = index % 2 === 0
+                      ? (index / 2) % sourceWidthPx
+                      : Math.floor(index / 2 / sourceWidthPx);
+                    return count + (id === coordinate ? 0 : 1);
+                  }, 0);
+                  const selectedCenterProvenanceMismatchCount =
+                    b1Reference.counts.selectedCenterProvenanceMismatch;
+                  const identityMismatchCount = selectedCenterProvenanceMismatchCount
+                    + sourceIdentityMismatchCount + gatherIdentityMismatchCount;
+                  const sourceToGatherMappingMismatchCount = b1Reference.counts.nominalMappingMismatch;
+                  const sourceToGatherMappingStatus = sourceToGatherMappingMismatchCount === 0
+                    ? "passed" as const
+                    : "failed" as const;
+                  const cpuB1Status = identityMismatchCount === 0
+                    && eligibilityMismatchCount === 0
+                    && fallbackReasonMismatchCount === 0
+                    && selectedPathMismatchCount === 0
+                    && b1Error.maximum <= 0.001
+                    && fallbackSourceMaximumError <= 0.001
+                    ? "passed" as const
+                    : "failed" as const;
+                  const cpuReferenceWallClockMs = performance.now() - cpuReferenceStartedAt;
+                  const captureSceneRenderTiming = sceneRenderTiming;
+                  if (!captureSceneRenderTiming) {
+                    throw new Error("M5 capture has no timing evidence for its accepted scene render");
+                  }
+                  const targetAllocations = [
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "sourceIdentity", resources.sourceIdentityTarget, outputFormats.provenance,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "gatherIdentity", resources.gatherIdentityTarget, outputFormats.provenance,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "gatherCenterProvenance", resources.gatherCenterProvenanceTarget,
+                      outputFormats.provenance,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "farGather", resources.farTarget, outputFormats.far,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "nearGather", resources.nearTarget, outputFormats.near,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "selectedProvenance", resources.selectedProvenanceTarget, outputFormats.provenance,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "b1Reconstruction", resources.b1Target, outputFormats.b1,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "b1Decision", resources.b1DecisionTarget, outputFormats.decisions,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "researchComposite", resources.researchCompositeTarget, outputFormats.composite,
+                    ),
+                    makeGroundGlassApertureGatherTargetAllocation(
+                      "depthReadback", depthReadback.target,
+                      observeTextureFormat(mountedBackend!, depthReadback.target.texture),
+                    ),
+                  ];
+                  const estimatedTargetAttachmentBytes = targetAllocations.reduce(
+                    (sum, allocation) => sum + allocation.estimatedBytes,
+                    0,
+                  );
+                  captureReadback = {
+                    token: captureRequest.token,
+                    requestId: latest.identity.requestId,
+                    channelId: latest.identity.channelId,
+                    sceneId: latest.identity.sceneId,
+                    rendererGenerationId: generation.generationId,
+                    rendererFamily: "webgpu-renderer",
+                    actualExecutionApi: "webgpu",
+                    internalFallback: "none",
+                    readbackOrigin,
+                    qualityMode: settings.qualityMode,
+                    sampleCount: settings.sampleCount,
+                    maximumRadiusPx: settings.maximumRadiusPx,
+                    sourceWidthPx,
+                    sourceHeightPx,
+                    farGatherWidthPx: gatherWidthPx,
+                    farGatherHeightPx: gatherHeightPx,
+                    nearGatherWidthPx: gatherWidthPx,
+                    nearGatherHeightPx: gatherHeightPx,
+                    targetFormats: {
+                      sourceColor: outputFormats.sourceColor,
+                      physical: outputFormats.physical,
+                      validity: outputFormats.validity,
+                      far: outputFormats.far,
+                      near: outputFormats.near,
+                      b1: outputFormats.b1,
+                      composite: outputFormats.composite,
+                      provenance: outputFormats.provenance,
+                      decisions: outputFormats.decisions,
+                    },
+                    performance: {
+                      sceneRender: captureSceneRenderTiming,
+                      physicalCocFootprint: physicalCocFootprintTiming,
+                      physicalValidity: physicalValidityTiming,
+                      operations: aperturePassTimings,
+                      readPixelsWaitWallMs,
+                      readbackConversionCpuMs,
+                      cpuReferenceWallClockMs,
+                      gpuTimestampQueries: "not-collected",
+                    },
+                    resourceInventory: {
+                      m5OwnedRenderTargetCount: resources.targets.length,
+                      adapterOwnedFullscreenMaterialCount: resources.materials.length,
+                      adapterOwnedFullscreenSceneCount: resources.scenes.length,
+                      adapterOwnedFullscreenGeometryCount: 1,
+                      estimatedTargetAttachmentBytes,
+                      memoryScope: "m5-owned-target-attachments-only",
+                      targetAllocations,
+                    },
+                    completedPasses: apertureGatherCompletedPasses,
+                    cpuB1Conformance: {
+                      status: cpuB1Status,
+                      selectedCenterProvenanceMismatchCount,
+                      eligibilityMismatchCount,
+                      fallbackReasonMismatchCount,
+                      selectedPathMismatchCount,
+                      rgbRmse: b1Error.rmse,
+                      rgbMaximumError: b1Error.maximum,
+                      fallbackSourceMaximumError,
+                    },
+                    farGatherCpuReference: {
+                      rgbRmse: farReferenceError.rmse,
+                      rgbMaximumError: farReferenceError.maximum,
+                      pixelsOverMaximumErrorTolerance: farPixelsAboveReferenceTolerance,
+                    },
+                    sourceToGatherMappingConformance: {
+                      status: sourceToGatherMappingStatus,
+                      mismatchCount: sourceToGatherMappingMismatchCount,
+                    },
+                    nominalGatherCenterMappingConformance: {
+                      status: nominalGatherCenterMismatchCount === 0 ? "exact" as const : "observed-offset" as const,
+                      mismatchCount: nominalGatherCenterMismatchCount,
+                    },
+                    physicalDataFingerprint: groundGlassReadbackFingerprint(physicalRaw as GroundGlassReadbackPixels),
+                    nearCoveragePixelCount,
+                    nearCoverageNontrivial,
+                    nearCoverageFractionalPixelCount,
+                    nearReferenceCoverageNontrivial,
+                    nearReferenceCoveragePixelCount,
+                    nearReferenceCoverageFractionalPixelCount,
+                    nearReferenceAlphaMaximumError: nearReferenceAlphaError.maximum,
+                    nearRgbInvariantMaximumError: nearRgbInvariant.maximum,
+                    nearAlphaInvariantMaximumError: nearAlphaInvariant.maximum,
+                    radius: {
+                      maximumUncappedRadiusPx: gatherReference.summary.maximumFarUncappedRadiusPx,
+                      cappedPixelCount: gatherReference.summary.farCappedCenterCount,
+                      physicalValuesUnchanged,
+                    },
+                    readbackBuffers: captureRequest.retainReadbackBuffers === true ? {
+                      sourceRgba,
+                      physicalRgba,
+                      validity,
+                      depth,
+                      farGatherRgba,
+                      nearRgba,
+                      b1FarRgba,
+                      researchCompositeRgba,
+                      observedSelectedGatherIds,
+                      observedSelectedCenterSourceIds,
+                      observedGatherCenterSourceIds: gatherCenterSourceIds,
+                      b1Decision: decisionRgbaTop,
+                    } : null,
+                  };
+                  apertureGatherFailureReason = sourceToGatherMappingMismatchCount > 0
+                    ? "GPU-selected gather IDs did not match the independent source-to-gather mapping"
+                    : selectedCenterProvenanceMismatchCount > 0
+                      ? "CPU gather center source IDs did not match GPU-observed provenance"
+                    : null;
+                  if (cpuB1Status === "failed" || farReferenceError.maximum > 0.001
+                      || nearReferenceRgbError.maximum > 0.001 || nearReferenceAlphaError.maximum > 0.001
+                      || compositeReferenceError.maximum > 0.001
+                      || nearRgbInvariant.maximum > 0.001 || nearAlphaInvariant.maximum > 0.001
+                      || !physicalValuesUnchanged) {
+                    const metric = (value: number) => value.toFixed(7);
+                    const farPixelIndex = Math.floor(farReferenceError.maximumOffset / 4);
+                    const farPixelX = farPixelIndex % gatherWidthPx;
+                    const farPixelY = Math.floor(farPixelIndex / gatherWidthPx);
+                    const farColorOffset = farPixelIndex * 4;
+                    const centerSourceOffset = farPixelIndex * 2;
+                    const centerSourceX = gatherCenterSourceIds[centerSourceOffset] ?? -1;
+                    const centerSourceY = gatherCenterSourceIds[centerSourceOffset + 1] ?? -1;
+                    const centerPhysicalOffset = (centerSourceY * sourceWidthPx + centerSourceX) * 4;
+                    apertureGatherFailureReason ??= [
+                      "native pass output did not match the bounded independent CPU reference",
+                      `far max=${metric(farReferenceError.maximum)} rmse=${metric(farReferenceError.rmse)}`,
+                      `far pixels over 0.001=${farPixelsAboveReferenceTolerance}`,
+                      `at gather (${farPixelX},${farPixelY}) channel=${farReferenceError.maximumOffset % 4}`,
+                      `expected=${Array.from(gatherReference.farRgba.slice(farColorOffset, farColorOffset + 3), metric).join(",")}`,
+                      `observed=${Array.from(farGatherRgba.slice(farColorOffset, farColorOffset + 3), metric).join(",")}`,
+                      `centerSource=(${centerSourceX},${centerSourceY}) coc=${metric(physicalRgba[centerPhysicalOffset] ?? 0)}`,
+                      `near rgb max=${metric(nearReferenceRgbError.maximum)}`,
+                      `near alpha max=${metric(nearReferenceAlphaError.maximum)}`,
+                      `composite max=${metric(compositeReferenceError.maximum)}`,
+                      `B1 max=${metric(b1Error.maximum)}`,
+                      `near invariant rgb=${metric(nearRgbInvariant.maximum)}`,
+                      `near invariant alpha=${metric(nearAlphaInvariant.maximum)}`,
+                      `physical unchanged=${physicalValuesUnchanged}`,
+                    ].join("; ");
+                  }
+                  const b1Counts: Partial<Pick<GroundGlassApertureGatherDiagnosticDetails,
+                    | "b1SelectedCenterCount"
+                    | "b1FallbackCount"
+                    | "fallbackFarGatherAccepted"
+                    | "fallbackGatherSelectionMismatch"
+                    | "fallbackMissingOrOutOfBoundsProvenance"
+                    | "fallbackSelectedCenterProvenanceMismatch"
+                    | "fallbackInvalidOrUnresolvedCenter"
+                    | "fallbackSelectedCenterNotFarEligible"
+                    | "fallbackUnusableGatherData"
+                    | "provenanceMismatchCount"
+                    | "sourceToGatherMappingMismatchCount"
+                    | "nominalGatherCenterMappingMismatchCount"
+                    | "farEligibilityRejectedCount"
+                  >> = {
+                    b1SelectedCenterCount: sourceWidthPx * sourceHeightPx,
+                    b1FallbackCount: b1Reference.counts.sourceColorFallback,
+                    fallbackFarGatherAccepted: b1Reference.counts.farGatherSelected,
+                    fallbackGatherSelectionMismatch: null,
+                    fallbackMissingOrOutOfBoundsProvenance: b1Reference.counts.missingOrOutOfBoundsProvenance,
+                    fallbackSelectedCenterProvenanceMismatch: b1Reference.counts.selectedCenterProvenanceMismatch,
+                    fallbackInvalidOrUnresolvedCenter: b1Reference.counts.invalidOrUnresolvedCenter,
+                    fallbackSelectedCenterNotFarEligible: b1Reference.counts.selectedCenterNotFarEligible,
+                    fallbackUnusableGatherData: b1Reference.counts.unusableGatherData,
+                    provenanceMismatchCount: identityMismatchCount,
+                    sourceToGatherMappingMismatchCount,
+                    nominalGatherCenterMappingMismatchCount: nominalGatherCenterMismatchCount,
+                    farEligibilityRejectedCount: b1Reference.counts.invalidOrUnresolvedCenter
+                      + b1Reference.counts.selectedCenterNotFarEligible,
+                  };
+                  apertureGatherFailureReason = cpuB1Status === "failed"
+                    ? apertureGatherFailureReason ?? "B1 conformance gate failed"
+                    : apertureGatherFailureReason;
+                  if (apertureGatherFailureReason) apertureGatherStatus = "failed";
+                  apertureGatherDiagnostic = makeApertureGatherDiagnostic({
+                    status: apertureGatherFailureReason ? "failed" : "completed",
+                    request: latest,
+                    generation,
+                    target,
+                    settings,
+                    farWidthPx: gatherWidthPx,
+                    farHeightPx: gatherHeightPx,
+                    actualFormats: outputFormats,
+                    completedPasses: apertureGatherCompletedPasses,
+                    physicalInputRequestId: physicalDiagnostic.requestId,
+                    physicalInputFormatVerified: true,
+                    b1Counts,
+                    cappedPixelCount: gatherReference.summary.farCappedCenterCount,
+                    maximumUncappedRadiusPx: gatherReference.summary.maximumFarUncappedRadiusPx,
+                    nearCoveragePixelCount,
+                    nearRgbError: Math.max(nearReferenceRgbError.rmse, nearReferenceRgbError.maximum),
+                    nearAlphaError: Math.max(nearReferenceAlphaError.rmse, nearReferenceAlphaError.maximum),
+                    b1ReferenceError: b1Error.rmse,
+                    failureReason: apertureGatherFailureReason,
+                    qualityGateReason: "R3 matched Full32/Full64, edge, interior, blur-spread, and fallback-halo qualification remains incomplete",
+                  });
+                  if (observedSelectedGatherIds.length === 0) {
+                    throw new Error("M5 readback omitted required GPU-observed selection identities");
+                  }
+                  if (isApertureRequestCurrent() && captureReadback) {
+                    publishGroundGlassApertureGatherCaptureForTest(captureReadback);
+                  }
+                }
+                }
+              } catch (error) {
+                if (error instanceof GroundGlassGatherSubmissionFailure) throw error;
+                apertureGatherStatus = "failed";
+                apertureGatherFailureReason = errorMessage(error);
+                apertureGatherUnsupportedReason = null;
+                apertureGatherDiagnostic = makeApertureGatherDiagnostic({
+                  status: "failed",
+                  request: latest,
+                  generation,
+                  target,
+                  settings: apertureGatherSettings,
+                  farWidthPx: resources.farTarget.width,
+                  farHeightPx: resources.farTarget.height,
+                  actualFormats: apertureGatherFormats ?? undefined,
+                  completedPasses: apertureGatherCompletedPasses,
+                  physicalInputRequestId: physicalDiagnostic.requestId,
+                  failureReason: apertureGatherFailureReason,
+                  qualityGateReason: "CPU reference or a recoverable M5 research operation failed",
+                });
+              }
+            }
+            if (apertureGatherStatus === "completed" && !apertureGatherDiagnostic) {
+              apertureGatherDiagnostic = makeApertureGatherDiagnostic({
+                status: "completed",
+                request: latest,
+                generation,
+                target,
+                settings: apertureGatherSettings,
+                farWidthPx: resources?.farTarget.width,
+                farHeightPx: resources?.farTarget.height,
+                actualFormats: apertureGatherFormats ?? undefined,
+                completedPasses: apertureGatherCompletedPasses,
+                physicalInputRequestId: physicalDiagnostic?.requestId,
+                physicalInputFormatVerified: true,
+              });
+            }
+            if (apertureGatherStatus === "unsupported") {
+              apertureGatherDiagnostic = makeApertureGatherDiagnostic({
+                status: "unsupported",
+                request: latest,
+                generation,
+                target,
+                settings: apertureGatherSettings,
+                farWidthPx: resources?.farTarget.width,
+                farHeightPx: resources?.farTarget.height,
+                actualFormats: apertureGatherFormats ?? undefined,
+                completedPasses: apertureGatherCompletedPasses,
+                physicalInputRequestId: physicalDiagnostic?.requestId,
+                physicalInputFormatVerified: false,
+                qualityGateReason: apertureGatherUnsupportedReason,
+              });
+            }
+            setApertureGatherDiagnostics(apertureGatherDiagnostic);
+            recordGroundGlassWebGpuTestEvent({
+              kind: "gather-research",
+              generationId: generation.generationId,
+              requestId: latest.identity.requestId,
+              status: apertureGatherStatus === "completed" ? "completed"
+                : apertureGatherStatus === "unsupported" ? "unsupported" : "failed",
+              qualityMode: apertureGatherSettings?.qualityMode ?? null,
+              failureReason: apertureGatherFailureReason ?? apertureGatherUnsupportedReason,
+            });
+            if (isApertureRequestCurrent()) {
+              const currentDetails = makeDiagnosticDetails({
+                request: latest,
+                target,
+                camera: cameraFrustum!,
+                subjectChildCount: subject!.group.children.length,
+                runtime: runtimeRef.current,
+                backend: mountedBackend!,
+                completedPasses,
+                ...(physicalDiagnostic ? { physicalCoc: physicalDiagnostic } : {}),
+                ...(physicalDiagnostic ? { actualDepthFormat } : {}),
+                ...(apertureGatherDiagnostic ? { apertureGather: apertureGatherDiagnostic } : {}),
+              });
+              propsRef.current.onBackendDetails(currentDetails);
+            }
+          }
+
           // The raw target blit is presentation plumbing, not a Ground Glass semantic pass.
           failedPass = "textureDisplay";
           renderer.setRenderTarget(null);
@@ -1420,12 +2873,28 @@ export const GroundGlassWebGPUAdapter = ({
             completedPasses,
             ...(physicalDiagnostic ? { physicalCoc: physicalDiagnostic } : {}),
             ...(physicalDiagnostic ? { actualDepthFormat } : {}),
+            ...(apertureGatherDiagnostic ? { apertureGather: apertureGatherDiagnostic } : {}),
           });
           if (physicalDiagnostic) setPhysicalCocDiagnostics(physicalDiagnostic);
           propsRef.current.onBackendDetails(details);
+          if (!sceneRenderTiming) {
+            throw new Error("Completed Raw frame has no scene render timing evidence");
+          }
           const frameId = `${generation.generationId}:${latest.identity.requestId}:${++frameSequence}`;
           setLastDisplayedRequestId(latest.identity.requestId);
           setLastDisplayedFrameId(frameId);
+          recordGroundGlassWebGpuTestEvent({
+            kind: "frame-performance",
+            evidence: {
+              generationId: generation.generationId,
+              requestId: latest.identity.requestId,
+              sourceWidthPx: target.width,
+              sourceHeightPx: target.height,
+              sceneRender: sceneRenderTiming,
+              physicalCocFootprint: physicalCocFootprintTiming,
+              physicalValidity: physicalValidityTiming,
+            },
+          });
           recordGroundGlassWebGpuTestEvent({
             kind: "frame-completed",
             generationId: generation.generationId,
@@ -1447,6 +2916,10 @@ export const GroundGlassWebGPUAdapter = ({
       operationTailRef.current = queued.then(() => undefined, () => undefined);
     };
     renderNowRef.current = renderNow;
+    registerGroundGlassApertureGatherCaptureTriggerForTest(() => {
+      const accepted = requestRef.current;
+      renderNowRef.current?.(accepted);
+    });
 
     initialization = Promise.resolve().then(async () => {
       // StrictMode replays setup/cleanup/setup synchronously in development. Do not acquire a
@@ -1538,6 +3011,9 @@ export const GroundGlassWebGPUAdapter = ({
         physicalPassEnabled =
           runtime.actualExecutionApi === "webgpu" &&
           isGroundGlassPhysicalCocResearchEnabled(currentRequest);
+        apertureGatherResearchBuildEnabled =
+          runtime.actualExecutionApi === "webgpu" &&
+          isGroundGlassApertureGatherResearchEnabled(currentRequest);
         if (physicalPassEnabled && forceGroundGlassPhysicalCocUnsupportedForTest()) {
           physicalPassEnabled = false;
           physicalPassStatus = "unsupported";
@@ -1633,6 +3109,35 @@ export const GroundGlassWebGPUAdapter = ({
         } else if (physicalPassStatus !== "unsupported") {
           physicalPassStatus = "disabled";
         }
+        if (apertureGatherResearchBuildEnabled) {
+          if (!physicalPassEnabled || !physicalTarget || !validityTarget || !target.depthTexture) {
+            apertureGatherStatus = "unsupported";
+            apertureGatherUnsupportedReason = "M4 physical CoC research inputs are not enabled";
+          } else {
+            try {
+              apertureGatherSettings = resolveGroundGlassApertureGatherSettings(currentRequest.scene.id);
+              apertureGatherResources = createGroundGlassApertureGatherResources({
+                sourceColorTarget: target,
+                sceneDepthTexture: target.depthTexture,
+                physicalTarget,
+                validityTarget,
+                sourceWidthPx: target.width,
+                sourceHeightPx: target.height,
+                sampledFilmWidthMm: CAMERA_CONSTANTS.filmWidthMm * currentRequest.inspectionWindow.widthFraction,
+                sampledFilmHeightMm: CAMERA_CONSTANTS.filmHeightMm * currentRequest.inspectionWindow.heightFraction,
+                inverseProjection: camera.projectionMatrixInverse,
+                settings: apertureGatherSettings,
+              });
+              apertureGatherStatus = "ready";
+              apertureGatherUnsupportedReason = null;
+            } catch (error) {
+              apertureGatherStatus = "unsupported";
+              apertureGatherUnsupportedReason = "M5 target or node initialization failed: " + errorMessage(error);
+            }
+          }
+        } else {
+          apertureGatherStatus = "disabled";
+        }
         setCameraEvidence({
           configured: true,
           coordinateSystem: runtime.actualExecutionApi === "webgpu" ? "webgpu" : "webgl",
@@ -1654,6 +3159,19 @@ export const GroundGlassWebGPUAdapter = ({
                 validityStorageFormat: null,
                 completedPasses: [],
                 unsupportedReason: physicalPassUnsupportedReason,
+              })
+            : null,
+        );
+        setApertureGatherDiagnostics(
+          apertureGatherResearchBuildEnabled && runtime.actualExecutionApi === "webgpu"
+            ? makeApertureGatherDiagnostic({
+                status: apertureGatherStatus,
+                request: currentRequest,
+                generation,
+                target,
+                settings: apertureGatherSettings,
+                failureReason: apertureGatherFailureReason,
+                qualityGateReason: apertureGatherUnsupportedReason,
               })
             : null,
         );
@@ -1684,6 +3202,19 @@ export const GroundGlassWebGPUAdapter = ({
                   validityStorageFormat: null,
                   completedPasses: [],
                   unsupportedReason: physicalPassUnsupportedReason,
+                }),
+              }
+            : {}),
+          ...(apertureGatherResearchBuildEnabled && runtime.actualExecutionApi === "webgpu"
+            ? {
+                apertureGather: makeApertureGatherDiagnostic({
+                  status: apertureGatherStatus,
+                  request: currentRequest,
+                  generation,
+                  target,
+                  settings: apertureGatherSettings,
+                  failureReason: apertureGatherFailureReason,
+                  qualityGateReason: apertureGatherUnsupportedReason,
                 }),
               }
             : {}),
@@ -1718,6 +3249,7 @@ export const GroundGlassWebGPUAdapter = ({
         activeRef.current = false;
         void disposeOwned().catch(() => undefined);
         renderNowRef.current = null;
+        registerGroundGlassApertureGatherCaptureTriggerForTest(null);
         if (disposeRef.current === disposeOwned) disposeRef.current = null;
       });
     };
@@ -1756,6 +3288,13 @@ export const GroundGlassWebGPUAdapter = ({
       data-physical-coc-max-world-error-mm={physicalCocDiagnostics?.probeSummary?.maximumWorldPositionErrorMm ?? undefined}
       data-physical-coc-max-kernel-coc-error-mm={physicalCocDiagnostics?.probeSummary?.maximumKernelSignedCoCErrorMm ?? undefined}
       data-physical-coc-max-storage-coc-error-mm={physicalCocDiagnostics?.probeSummary?.maximumStoredSignedCoCErrorMm ?? undefined}
+      data-aperture-gather-status={apertureGatherDiagnostics?.status}
+      data-aperture-gather-request-id={apertureGatherDiagnostics?.requestId}
+      data-aperture-gather-quality-mode={apertureGatherDiagnostics?.qualityMode ?? undefined}
+      data-aperture-gather-passes={apertureGatherDiagnostics?.completedPasses.join(",")}
+      data-aperture-gather-quality-gate-status={apertureGatherDiagnostics?.qualityGateStatus}
+      data-aperture-gather-quality-gate-reason={apertureGatherDiagnostics?.qualityGateReason ?? undefined}
+      data-aperture-gather-failure-reason={apertureGatherDiagnostics?.failureReason ?? undefined}
       data-scene-subject-realization={sceneSubjectEvidence.mounted ? "registered-ground-glass-profile" : undefined}
       data-scene-subject-mounted={sceneSubjectEvidence.mounted ? "true" : undefined}
       data-scene-subject-child-count={sceneSubjectEvidence.mounted ? sceneSubjectEvidence.childCount : undefined}

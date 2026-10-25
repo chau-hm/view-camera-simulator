@@ -5,6 +5,7 @@ const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1"
 const groundGlassNativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const groundGlassFailureIntegration = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
 const groundGlassPhysicalCocResearch = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1";
+const groundGlassApertureGatherResearch = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === "1";
 const headedNativeWebGpuRequired = nativeWebGpuRequired || groundGlassNativeWebGpuRequired;
 const isolatedWebServerPort = process.env.PLAYWRIGHT_WEB_SERVER_PORT;
 const webServerPort = isolatedWebServerPort ?? "4173";
@@ -27,8 +28,9 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_BASE_PATH: "/",
-      VITE_GROUND_GLASS_WEBGPU_TEST_SEAM: groundGlassFailureIntegration || groundGlassPhysicalCocResearch ? "true" : "false",
+      VITE_GROUND_GLASS_WEBGPU_TEST_SEAM: groundGlassFailureIntegration || groundGlassPhysicalCocResearch || groundGlassApertureGatherResearch ? "true" : "false",
       VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH: groundGlassPhysicalCocResearch ? "true" : "false",
+      VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH: groundGlassApertureGatherResearch ? "true" : "false",
     },
   },
 

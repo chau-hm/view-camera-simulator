@@ -6,6 +6,7 @@ import type {
 } from "./groundGlassBackendContracts";
 import type { GroundGlassBackendSelection } from "./groundGlassBackendPolicy";
 import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
+import type { GroundGlassApertureGatherQualityMode } from "../webgpu/groundGlassApertureGatherPolicy";
 
 export type GroundGlassMountedRuntimeEvidence =
   | Readonly<{ status: "unknown" }>
@@ -118,6 +119,86 @@ export type GroundGlassPhysicalCocDiagnosticDetails = Readonly<{
   failureReason: string | null;
 }>;
 
+export type GroundGlassApertureGatherStatus =
+  | "disabled"
+  | "ready"
+  | "completed"
+  | "unsupported"
+  | "failed";
+
+/** M5 research-pass diagnostics. Null means the measurement was not collected. */
+export type GroundGlassApertureGatherDiagnosticDetails = Readonly<{
+  status: GroundGlassApertureGatherStatus;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  qualityMode: GroundGlassApertureGatherQualityMode | null;
+  sampleCount: number | null;
+  maximumRadiusPx: number | null;
+  sourceWidthPx: number;
+  sourceHeightPx: number;
+  farGatherWidthPx: number | null;
+  farGatherHeightPx: number | null;
+  nearGatherWidthPx: number | null;
+  nearGatherHeightPx: number | null;
+  sourceColorFormat: string | null;
+  physicalInputFormat: string | null;
+  validityInputFormat: string | null;
+  farTargetFormat: string | null;
+  nearTargetFormat: string | null;
+  b1TargetFormat: string | null;
+  researchCompositeFormat: string | null;
+  provenanceFormat: string | null;
+  physicalInputRequestId: string | null;
+  validityInputRequestId: string | null;
+  physicalInputFormatVerified: boolean | null;
+  completedPasses: readonly (
+    | "sourceIdentity"
+    | "gatherIdentity"
+    | "gatherCenterProvenance"
+    | "selectedProvenance"
+    | "farGather"
+    | "nearGather"
+    | "farReconstructionB1"
+    | "researchComposite"
+  )[];
+  b1SelectedCenterCount: number | null;
+  b1FallbackCount: number | null;
+  fallbackFarGatherAccepted: number | null;
+  fallbackGatherSelectionMismatch: number | null;
+  fallbackMissingOrOutOfBoundsProvenance: number | null;
+  fallbackSelectedCenterProvenanceMismatch: number | null;
+  fallbackInvalidOrUnresolvedCenter: number | null;
+  fallbackSelectedCenterNotFarEligible: number | null;
+  fallbackUnusableGatherData: number | null;
+  provenanceMismatchCount: number | null;
+  /** Exact GPU-selected versus independent source-to-gather mapping conformance. */
+  sourceToGatherMappingMismatchCount: number | null;
+  /** Count of GPU-observed gather centers that differ from nominal pixel-center math. */
+  nominalGatherCenterMappingMismatchCount: number | null;
+  farEligibilityRejectedCount: number | null;
+  cappedPixelCount: number | null;
+  maximumUncappedRadiusPx: number | null;
+  nearCoveragePixelCount: number | null;
+  nearRgbError: number | null;
+  nearAlphaError: number | null;
+  full32Full64ReferenceError: number | null;
+  b1ReferenceError: number | null;
+  b0ReferenceError: number | null;
+  edgeRoiError: number | null;
+  interiorFarRoiError: number | null;
+  blurSuppressionMetric: number | null;
+  fallbackHaloMetric: number | null;
+  qualityGateStatus: "not-evaluated" | "qualified" | "unqualified";
+  qualityGateReason: string | null;
+  failureReason: string | null;
+  cleanupOutcome: "not-yet-run" | "confirmed" | "failed" | "uncertain";
+}>;
+
 export type GroundGlassWebGpuDiagnosticDetails = Readonly<{
   backend: "webgpu";
   sceneId: string;
@@ -156,6 +237,7 @@ export type GroundGlassWebGpuDiagnosticDetails = Readonly<{
   }>;
   completedPasses: readonly ("sceneRender" | "textureDisplay")[];
   physicalCoc?: GroundGlassPhysicalCocDiagnosticDetails;
+  apertureGather?: GroundGlassApertureGatherDiagnosticDetails;
 }>;
 
 export type GroundGlassBackendDiagnosticDetails =
