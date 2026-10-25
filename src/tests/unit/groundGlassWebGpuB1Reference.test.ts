@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GROUND_GLASS_B1_FALLBACK_REASON,
+  GROUND_GLASS_B1_MAX_FINITE_HALF,
   GROUND_GLASS_B1_SELECTED_PATH,
   compositeGroundGlassB1ResearchReference,
   groundGlassB1FallbackReasonName,
@@ -156,6 +157,75 @@ describe("Ground Glass Phase H B1 CPU reference", () => {
     expect(result.eligible[0]).toBe(0);
     expect(result.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.selectedCenterNotFarEligible);
     expect([...result.farRgba.slice(0, 4)]).toEqual([...input.sourceRgba.slice(0, 4)]);
+  });
+
+  it("accepts the exact positive binary16 maximum and the largest representable value below it", () => {
+    for (const coc of [GROUND_GLASS_B1_MAX_FINITE_HALF, 65472]) {
+      const input = makeInput();
+      const [centerX, centerY] = input.observedGatherCenterSourceIds.slice(0, 2);
+      const centerOffset = (centerY! * source.widthPx + centerX!) * 4;
+      input.physicalRgba[centerOffset] = coc;
+
+      const result = reconstructGroundGlassB1Reference(input);
+      expect(result.eligible[0], `CoC ${coc} should be binary16-representable and far-side`).toBe(1);
+      expect(result.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.farGatherAccepted);
+      expect([...result.farRgba.slice(0, 4)]).toEqual([...input.gatherFarRgba.slice(0, 4)]);
+    }
+  });
+
+  it("keeps negative maximum binary16 CoC representable but not far-eligible", () => {
+    const input = makeInput();
+    const [centerX, centerY] = input.observedGatherCenterSourceIds.slice(0, 2);
+    input.physicalRgba[(centerY! * source.widthPx + centerX!) * 4] = -GROUND_GLASS_B1_MAX_FINITE_HALF;
+
+    const result = reconstructGroundGlassB1Reference(input);
+    expect(result.eligible[0]).toBe(0);
+    expect(result.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.selectedCenterNotFarEligible);
+    expect([...result.farRgba.slice(0, 4)]).toEqual([...input.sourceRgba.slice(0, 4)]);
+  });
+
+  it("rejects out-of-range and non-finite physical CoC while preserving validity-code authority", () => {
+    for (const coc of [65505, -65505, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      const input = makeInput();
+      const [centerX, centerY] = input.observedGatherCenterSourceIds.slice(0, 2);
+      input.physicalRgba[(centerY! * source.widthPx + centerX!) * 4] = coc;
+      const result = reconstructGroundGlassB1Reference(input);
+      expect(result.eligible[0], `CoC ${String(coc)} must fail closed`).toBe(0);
+      expect(result.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.invalidOrUnresolvedCenter);
+    }
+
+    const unrepresentableM4 = makeInput();
+    const [centerX, centerY] = unrepresentableM4.observedGatherCenterSourceIds.slice(0, 2);
+    const centerIndex = centerY! * source.widthPx + centerX!;
+    unrepresentableM4.physicalRgba[centerIndex * 4] = GROUND_GLASS_B1_MAX_FINITE_HALF;
+    unrepresentableM4.validity[centerIndex] = 2;
+    const rejected = reconstructGroundGlassB1Reference(unrepresentableM4);
+    expect(rejected.eligible[0]).toBe(0);
+    expect(rejected.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.invalidOrUnresolvedCenter);
+  });
+
+  it("accepts exact RGBA16F maxima but rejects any unusable required gather channel", () => {
+    const maximumGather = makeInput();
+    maximumGather.gatherFarRgba.set([
+      GROUND_GLASS_B1_MAX_FINITE_HALF,
+      -GROUND_GLASS_B1_MAX_FINITE_HALF,
+      GROUND_GLASS_B1_MAX_FINITE_HALF,
+      GROUND_GLASS_B1_MAX_FINITE_HALF,
+    ], 0);
+    const accepted = reconstructGroundGlassB1Reference(maximumGather);
+    expect(accepted.eligible[0]).toBe(1);
+    expect(accepted.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.farGatherAccepted);
+
+    for (let channel = 0; channel < 4; channel += 1) {
+      for (const invalid of [65505, -65505, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+        const input = makeInput();
+        input.gatherFarRgba[channel] = invalid;
+        const result = reconstructGroundGlassB1Reference(input);
+        expect(result.eligible[0], `channel ${channel}, value ${String(invalid)} must be rejected`).toBe(0);
+        expect(result.fallbackReason[0]).toBe(GROUND_GLASS_B1_FALLBACK_REASON.unusableGatherData);
+        expect([...result.farRgba.slice(0, 4)]).toEqual([...input.sourceRgba.slice(0, 4)]);
+      }
+    }
   });
 
   it("fails closed for validity code 4 rather than treating it as valid near/far data", () => {

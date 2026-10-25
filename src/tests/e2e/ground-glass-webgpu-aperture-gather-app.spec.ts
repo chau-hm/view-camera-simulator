@@ -1,11 +1,31 @@
 import { expect, test, type Page } from "@playwright/test";
 import { REVISION } from "three";
+import { gunzipSync } from "node:zlib";
 import type {
+  GroundGlassB1BoundaryProbeReadback,
   GroundGlassApertureGatherCaptureReadback,
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import type { GroundGlassApertureGatherQualityMode } from "../../render/webgpu/groundGlassApertureGatherPolicy";
+import {
+  evaluateGroundGlassApertureGatherR3,
+  type GroundGlassApertureGatherR3Capture,
+  type GroundGlassApertureGatherR3CaptureMatrix,
+  type GroundGlassR3QualityMode,
+} from "../../render/webgpu/groundGlassApertureGatherQuality";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+
+type CaptureReadbackBuffers = NonNullable<GroundGlassApertureGatherCaptureReadback["readbackBuffers"]>;
+type PackedCaptureReadbacks = Readonly<{
+  capture: Omit<GroundGlassApertureGatherCaptureReadback, "readbackBuffers"> & { readbackBuffers: null };
+  fields: readonly Readonly<{
+    name: keyof CaptureReadbackBuffers;
+    offset: number;
+    byteLength: number;
+    type: "Float32Array" | "Uint8Array" | "Int32Array";
+  }>[];
+  gzipBase64: string;
+}>;
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const rawPilotEnabled = process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true";
@@ -13,6 +33,47 @@ const physicalResearchEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RES
 const gatherResearchEnabled = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === "1";
 const M5_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && gatherResearchEnabled;
 const M4_RAW_BASELINE_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && !gatherResearchEnabled;
+
+/**
+ * Frozen after the separate exploratory capture. Convergence and near tolerances
+ * match existing M5 CPU/GPU conformance limits; ROI minima require bounded
+ * populations, one fractional near pixel, and at least 100 adjacent sign pairs.
+ * A 4 px overrun is deliberately over ten times Phase L's 0.336 px observation.
+ * The 0.01 source-target RGB blur signal is needed before blur-preservation claims;
+ * this contract is limited to one captured state and is not a production threshold.
+ */
+const M5_R3_CONFIRMATORY_THRESHOLDS = Object.freeze({
+  revision: "architecture-rise-f8-r3-review-fix-v2",
+  evidenceScope: "single-native-state",
+  frozenBeforeConfirmatory: true,
+  minimumInteriorFarPixels: 100,
+  minimumDepthEdgePixels: 100,
+  minimumNearFarBoundaryPairs: 100,
+  minimumNearCoveragePixels: 100,
+  minimumFractionalCoveragePixels: 1,
+  minimumNearFarBoundaryCoveragePixels: 100,
+  minimumSpreadOutsideSharpNearPixels: 100,
+  minimumFallbackBoundaryPairs: 100,
+  minimumStrongOverrunPx: 4,
+  maximumReferenceRmse: 0.001,
+  maximumReferenceChannelError: 0.01,
+  maximumReferenceInteriorFarRmse: 0.001,
+  maximumReferenceDepthEdgeRmse: 0.001,
+  maximumB1FullFrameRmse: 0.05,
+  maximumB1InteriorFarRmse: 0.05,
+  maximumB1DepthEdgeRmse: 0.05,
+  maximumB1SignedBoundaryRmse: 0.1,
+  maximumBlurGradientRelativeError: 0.25,
+  maximumMeaningfulBlurFallbackFraction: 0.1,
+  maximumFallbackBoundaryGradientRelativeError: 0.25,
+  maximumFallbackSourceError: 0.001,
+  maximumNearCpuRgbRmse: 0.001,
+  maximumNearCpuAlphaRmse: 0.001,
+  maximumNearB1RgbMaximumError: 0.001,
+  maximumNearB1AlphaMaximumError: 0.001,
+  minimumMeaningfulBlurRgbDifference: 0.01,
+  depthEdgeThreshold: 0.0001,
+} as const);
 
 const paneFor = (page: Page) => page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
 const pilotFor = (page: Page) => page.getByTestId("ground-glass-webgpu-pilot");
@@ -33,15 +94,20 @@ const captureGather = async (
   page: Page,
   qualityMode: GroundGlassApertureGatherQualityMode,
   token: string,
+  retainReadbackBuffers = false,
 ): Promise<GroundGlassApertureGatherCaptureReadback> => {
-  const triggered = await page.evaluate(({ captureToken, mode }) => {
+  const triggered = await page.evaluate(({ captureToken, mode, retainBuffers }) => {
     const control = window.__groundGlassWebGpuM3TestControl;
     if (!control?.requestApertureGatherCapture) return false;
     control.apertureGatherCaptureReadback = null;
-    control.apertureGatherCaptureRequest = { token: captureToken, qualityMode: mode };
+    control.apertureGatherCaptureRequest = {
+      token: captureToken,
+      qualityMode: mode,
+      retainReadbackBuffers: retainBuffers,
+    };
     control.requestApertureGatherCapture();
     return true;
-  }, { captureToken: token, mode: qualityMode });
+  }, { captureToken: token, mode: qualityMode, retainBuffers: retainReadbackBuffers });
   expect(triggered, "The development-only M5 capture seam is registered on the mounted adapter").toBe(true);
   const deadline = Date.now() + 180_000;
   let captured = false;
@@ -63,11 +129,151 @@ const captureGather = async (
     await page.waitForTimeout(250);
   }
   expect(captured, `M5 capture ${token} must publish before the bounded capture timeout`).toBe(true);
-  const readback = await page.evaluate((captureToken) => {
-    const result = window.__groundGlassWebGpuM3TestControl?.apertureGatherCaptureReadback;
-    return result?.token === captureToken ? result : null;
+  const readback = await page.evaluate(async (captureToken) => {
+    const control = window.__groundGlassWebGpuM3TestControl;
+    const result = control?.apertureGatherCaptureReadback;
+    if (!control || result?.token !== captureToken) return null;
+    if (!result.readbackBuffers) return { capture: { ...result, readbackBuffers: null }, fields: [], gzipBase64: "" };
+    const entries = Object.entries(result.readbackBuffers) as [
+      keyof CaptureReadbackBuffers,
+      Float32Array | Uint8Array | Int32Array,
+    ][];
+    let totalBytes = 0;
+    const fields = entries.map(([name, values]) => {
+      const field = {
+        name,
+        offset: totalBytes,
+        byteLength: values.byteLength,
+        type: values.constructor.name as "Float32Array" | "Uint8Array" | "Int32Array",
+      };
+      totalBytes += values.byteLength;
+      return field;
+    });
+    const packed = new Uint8Array(totalBytes);
+    for (const [name, values] of entries) {
+      const field = fields.find((candidate) => candidate.name === name);
+      if (!field) throw new Error(`Missing packed M5 capture field ${name}`);
+      packed.set(new Uint8Array(values.buffer, values.byteOffset, values.byteLength), field.offset);
+    }
+    const compressedBuffer = await new Response(
+      new Blob([packed]).stream().pipeThrough(new CompressionStream("gzip")),
+    ).arrayBuffer();
+    const compressed = new Uint8Array(compressedBuffer);
+    const base64Chunks: string[] = [];
+    for (let offset = 0; offset < compressed.length; offset += 0x6000) {
+      base64Chunks.push(btoa(String.fromCharCode(...compressed.subarray(offset, offset + 0x6000))));
+    }
+    const copied = {
+      capture: { ...result, readbackBuffers: null },
+      fields,
+      gzipBase64: base64Chunks.join(""),
+    };
+    control.apertureGatherCaptureReadback = null;
+    return copied;
   }, token);
   if (!readback) throw new Error(`M5 did not return capture ${token}`);
+  const packed = readback as unknown as PackedCaptureReadbacks;
+  if (!retainReadbackBuffers || !packed.gzipBase64) {
+    return packed.capture as GroundGlassApertureGatherCaptureReadback;
+  }
+  const raw = new Uint8Array(gunzipSync(Buffer.from(packed.gzipBase64, "base64")));
+  const readbackBuffers = Object.fromEntries(packed.fields.map((field) => {
+    const bytes = raw.buffer.slice(field.offset, field.offset + field.byteLength);
+    if (field.type === "Float32Array") return [field.name, new Float32Array(bytes)];
+    if (field.type === "Int32Array") return [field.name, new Int32Array(bytes)];
+    return [field.name, new Uint8Array(bytes)];
+  })) as CaptureReadbackBuffers;
+  return { ...packed.capture, readbackBuffers };
+};
+
+const toR3Capture = (
+  capture: GroundGlassApertureGatherCaptureReadback,
+): GroundGlassApertureGatherR3Capture => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers) throw new Error(`R3 capture ${capture.captureId} did not retain its requested readbacks`);
+  return {
+    captureId: capture.captureId,
+    requestId: capture.requestId,
+    sceneId: capture.sceneId,
+    sceneSourceRevision: capture.sceneSourceRevision,
+    effectiveOpticalRequestFingerprint: capture.effectiveOpticalRequestFingerprint,
+    cameraStateFingerprint: capture.cameraStateFingerprint,
+    readbackOrigin: capture.readbackOrigin,
+    qualityMode: capture.qualityMode as GroundGlassR3QualityMode,
+    sourceDimensions: { widthPx: capture.sourceWidthPx, heightPx: capture.sourceHeightPx },
+    gatherDimensions: { widthPx: capture.farGatherWidthPx, heightPx: capture.farGatherHeightPx },
+    sampledFilmDimensionsMm: capture.sampledFilmDimensionsMm,
+    sampleCount: capture.sampleCount as 32 | 64,
+    maximumRadiusPx: capture.maximumRadiusPx,
+    colorDomain: capture.colorDomain,
+    targetFormats: {
+      sourceColor: capture.targetFormats.sourceColor ?? "",
+      physical: capture.targetFormats.physical ?? "",
+      validity: capture.targetFormats.validity ?? "",
+      far: capture.targetFormats.far ?? "",
+      near: capture.targetFormats.near ?? "",
+      b1: capture.targetFormats.b1 ?? "",
+    },
+    reportedRadiusEvidence: {
+      maximumUncappedRadiusPx: capture.radius.maximumUncappedRadiusPx,
+      cappedPixelCount: capture.radius.cappedPixelCount,
+    },
+    readbackBuffers: {
+      sourceRgba: Float32Array.from(buffers.sourceRgba),
+      depth: Float32Array.from(buffers.depth),
+      physicalRgba: Float32Array.from(buffers.physicalRgba),
+      validity: Uint8Array.from(buffers.validity),
+      farGatherRgba: Float32Array.from(buffers.farGatherRgba),
+      b1FarRgba: Float32Array.from(buffers.b1FarRgba),
+      nearBeforeB1Rgba: Float32Array.from(buffers.nearBeforeB1Rgba),
+      nearAfterB1Rgba: Float32Array.from(buffers.nearAfterB1Rgba),
+      nearCpuReferenceRgba: Float32Array.from(buffers.nearCpuReferenceRgba),
+      observedSelectedGatherIds: Int32Array.from(buffers.observedSelectedGatherIds),
+      observedGatherCenterSourceIds: Int32Array.from(buffers.observedGatherCenterSourceIds),
+      b1DecisionRgba: Uint8Array.from(buffers.b1Decision),
+    },
+  };
+};
+
+const captureB1BoundaryProbe = async (
+  page: Page,
+  token: string,
+): Promise<GroundGlassB1BoundaryProbeReadback> => {
+  const triggered = await page.evaluate((probeToken) => {
+    const control = window.__groundGlassWebGpuM3TestControl;
+    if (!control?.requestGroundGlassB1BoundaryProbe) return false;
+    control.groundGlassB1BoundaryProbeReadback = null;
+    control.groundGlassB1BoundaryProbeRequest = { token: probeToken };
+    control.requestGroundGlassB1BoundaryProbe();
+    return true;
+  }, token);
+  expect(triggered, "The test-only B1 boundary probe is registered on the mounted native adapter").toBe(true);
+
+  const deadline = Date.now() + 180_000;
+  let captured = false;
+  while (Date.now() < deadline) {
+    const state = await page.evaluate((probeToken) => ({
+      captured: window.__groundGlassWebGpuM3TestControl?.groundGlassB1BoundaryProbeReadback?.token === probeToken,
+      status: document.querySelector<HTMLElement>("[data-aperture-gather-status]")
+        ?.getAttribute("data-aperture-gather-status") ?? "unknown",
+      failure: document.querySelector<HTMLElement>("[data-aperture-gather-status]")
+        ?.getAttribute("data-aperture-gather-failure-reason") ?? "no reason recorded",
+    }), token);
+    if (state.captured) {
+      captured = true;
+      break;
+    }
+    if (state.status === "failed" || state.status === "unsupported") {
+      throw new Error(`B1 boundary probe ${state.status}: ${state.failure}`);
+    }
+    await page.waitForTimeout(250);
+  }
+  expect(captured, `B1 boundary probe ${token} must publish before the bounded timeout`).toBe(true);
+  const readback = await page.evaluate((probeToken) => {
+    const result = window.__groundGlassWebGpuM3TestControl?.groundGlassB1BoundaryProbeReadback;
+    return result?.token === probeToken ? result : null;
+  }, token);
+  if (!readback) throw new Error(`B1 boundary probe did not return ${token}`);
   return readback;
 };
 
@@ -184,12 +390,7 @@ const expectFreshM5Frame = async (page: Page): Promise<string> => {
   return requestId;
 };
 
-test("native M5 app adapter captures B1 provenance, source fallback, and near coverage for matched quality modes", async ({ page }, testInfo) => {
-  test.skip(!M5_REQUIRED,
-    "Requires headed native WebGPU, the M3 Raw pilot, the M4 physical research gate, and the separate M5 gather research gate");
-  test.setTimeout(900_000);
-  expect(REVISION).toBe("186");
-
+const prepareNativeM5F8Page = async (page: Page): Promise<string[]> => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.addInitScript(() => {
@@ -201,16 +402,95 @@ test("native M5 app adapter captures B1 provenance, source fallback, and near co
   await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 120_000 });
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expectNativeM5Identity(page);
-
-  // f/8 produces a non-empty foreground coverage region in this registered subject.
   await page.getByRole("radiogroup", { name: "Aperture", exact: true })
     .getByRole("radio", { name: "f/8", exact: true }).check();
   await waitForCurrentFrame(page);
   await expectNativeM5Identity(page);
+  return pageErrors;
+};
+
+test("native M5 app adapter captures B1 provenance, source fallback, and near coverage for matched quality modes", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU, the M3 Raw pilot, the M4 physical research gate, and the separate M5 gather research gate");
+  test.setTimeout(900_000);
+  expect(REVISION).toBe("186");
+
+  const pageErrors = await prepareNativeM5F8Page(page);
+
+  const boundaryProbe = await captureB1BoundaryProbe(page, `m5-b1-boundary-${Date.now()}`);
+  expect(boundaryProbe.rendererFamily).toBe("webgpu-renderer");
+  expect(boundaryProbe.actualExecutionApi).toBe("webgpu");
+  expect(boundaryProbe.internalFallback).toBe("none");
+  expect(boundaryProbe.rendererRevision).toBe(`r${REVISION}`);
+  expect(boundaryProbe.targetFormats).toMatchObject({
+    sourceColor: "rgba8unorm",
+    physical: "rgba16float",
+    validity: "rgba8unorm",
+    farGather: "rgba16float",
+    provenance: "rgba32float",
+    b1: "rgba16float",
+    decision: "rgba8unorm",
+  });
+  expect(boundaryProbe.cases).toHaveLength(10);
+  const byCase = new Map(boundaryProbe.cases.map((probeCase) => [probeCase.id, probeCase]));
+  const maximumHalfCase = byCase.get("physical-positive-half-maximum-and-gather-rgba-maximum");
+  expect(maximumHalfCase?.storedPhysicalHalfBits[0]).toBe(0x7bff);
+  expect(maximumHalfCase?.storedGatherHalfBits).toEqual([0x7bff, 0x7bff, 0x7bff, 0x3c00]);
+  expect(maximumHalfCase?.gpuDecisionRgba8[0]).toBe(1);
+  expect(maximumHalfCase?.cpuEligible).toBe(1);
+  expect(maximumHalfCase?.gpuDecisionRgba8[1]).toBe(maximumHalfCase?.cpuFallbackReason);
+  expect(maximumHalfCase?.gpuB1Rgba).toEqual(maximumHalfCase?.cpuB1Rgba);
+  expect(maximumHalfCase?.gpuCpuMaximumError).toBeLessThanOrEqual(0.001);
+  const belowMaximumCase = byCase.get("physical-largest-half-value-below-maximum");
+  expect(belowMaximumCase?.storedPhysicalHalfBits[0]).toBe(0x7bfe);
+  expect(belowMaximumCase?.gpuDecisionRgba8[0]).toBe(1);
+  const outOfRangeCase = byCase.get("m4-unrepresentable-overflow-preserves-validity-code-two");
+  expect(outOfRangeCase?.storedPhysicalHalfBits[0]).toBe(0x7bff);
+  expect(outOfRangeCase?.inputValidityCode).toBe(2);
+  expect(outOfRangeCase?.gpuDecisionRgba8[0]).toBe(0);
+  expect(outOfRangeCase?.gpuDecisionRgba8[1]).toBe(3);
+  for (const probeCase of boundaryProbe.cases) {
+    expect(probeCase.gpuDecisionRgba8[0], `${probeCase.id} GPU eligibility matches CPU`)
+      .toBe(probeCase.cpuEligible);
+    expect(probeCase.gpuDecisionRgba8[1], `${probeCase.id} GPU reason matches CPU`)
+      .toBe(probeCase.cpuFallbackReason);
+    expect(probeCase.gpuDecisionRgba8[2], `${probeCase.id} GPU path matches CPU`)
+      .toBe(probeCase.cpuSelectedPath);
+    expect(probeCase.gpuCpuMaximumError, `${probeCase.id} GPU output matches CPU`)
+      .toBeLessThanOrEqual(0.001);
+  }
+  const expectedFallbacks: ReadonlyArray<readonly [string, number]> = [
+    ["physical-negative-half-maximum-is-near-side", 4],
+    ["m4-unrepresentable-overflow-preserves-validity-code-two", 3],
+    ["physical-nan", 3],
+    ["physical-positive-infinity", 3],
+    ["physical-negative-infinity", 3],
+    ["m4-validity-code-two-remains-authoritative", 3],
+    ["far-gather-nan-channel-fails-closed", 5],
+    ["far-gather-infinity-channel-fails-closed", 5],
+  ];
+  for (const [caseId, expectedReason] of expectedFallbacks) {
+    const probeCase = byCase.get(caseId);
+    expect(probeCase, `B1 boundary case ${caseId} is present`).toBeDefined();
+    expect(probeCase?.gpuDecisionRgba8[0], `${caseId} falls back to source`).toBe(0);
+    expect(probeCase?.gpuDecisionRgba8[1], `${caseId} preserves the decision reason`).toBe(expectedReason);
+    expect(probeCase?.cpuFallbackReason, `${caseId} matches the CPU oracle`).toBe(expectedReason);
+    expect(probeCase?.gpuCpuMaximumError, `${caseId} GPU and CPU outputs match`).toBeLessThanOrEqual(0.001);
+    for (let channel = 0; channel < 4; channel += 1) {
+      expect(Math.abs((probeCase?.gpuB1Rgba[channel] ?? Number.NaN)
+        - (probeCase?.cpuB1Rgba[channel] ?? Number.NaN)), `${caseId} channel ${channel} matches CPU`)
+        .toBeLessThanOrEqual(0.001);
+    }
+  }
+  await testInfo.attach("ground-glass-m5-b1-binary16-boundary.json", {
+    body: JSON.stringify(boundaryProbe, null, 2),
+    contentType: "application/json",
+  });
 
   const captures: GroundGlassApertureGatherCaptureReadback[] = [];
+  const r3CaptureByMode: Partial<Record<GroundGlassR3QualityMode, GroundGlassApertureGatherR3Capture>> = {};
   for (const qualityMode of ["half32", "full32", "full64"] as const) {
-    const result = await captureGather(page, qualityMode, `m5-${qualityMode}-${Date.now()}`);
+    const result = await captureGather(page, qualityMode, `m5-${qualityMode}-${Date.now()}`, true);
     await expectCaptureMatchesCurrentFrame(page, result);
     await expect(pilotFor(page)).toHaveAttribute("data-aperture-gather-status", "completed");
     expect(result.qualityMode).toBe(qualityMode);
@@ -223,8 +503,16 @@ test("native M5 app adapter captures B1 provenance, source fallback, and near co
     expect(result.farGatherHeightPx).toBe(qualityMode.startsWith("full")
       ? result.sourceHeightPx
       : Math.max(1, Math.round(result.sourceHeightPx / 2)));
-    captures.push(result);
+    r3CaptureByMode[qualityMode] = toR3Capture(result);
+    captures.push({ ...result, readbackBuffers: null });
   }
+  const exploratoryR3 = evaluateGroundGlassApertureGatherR3({
+    half32: r3CaptureByMode.half32!,
+    full32: r3CaptureByMode.full32!,
+    full64: r3CaptureByMode.full64!,
+  } satisfies GroundGlassApertureGatherR3CaptureMatrix);
+  expect(exploratoryR3.provenance.status, JSON.stringify(exploratoryR3.provenance)).toBe("matched");
+  expect(exploratoryR3.qualityDecision.status).toBe("not-evaluated");
   expect(new Set(captures.map((capture) => capture.physicalDataFingerprint)).size).toBe(1);
   expect(pageErrors).toEqual([]);
   await testInfo.attach("ground-glass-m5-native-b1-captures.json", {
@@ -248,6 +536,78 @@ test("native M5 app adapter captures B1 provenance, source fallback, and near co
       radius: capture.radius,
       physicalDataFingerprint: capture.physicalDataFingerprint,
     })), null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("ground-glass-m5-r3-exploratory-report.json", {
+    body: JSON.stringify(exploratoryR3, null, 2),
+    contentType: "application/json",
+  });
+});
+
+test("native M5 app adapter applies frozen R3 thresholds to an independent matched capture", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU, the M3 Raw pilot, the M4 physical research gate, and the separate M5 gather research gate");
+  test.setTimeout(900_000);
+  expect(REVISION).toBe("186");
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const captureByMode: Partial<Record<GroundGlassR3QualityMode, GroundGlassApertureGatherR3Capture>> = {};
+  for (const qualityMode of ["half32", "full32", "full64"] as const) {
+    const capture = await captureGather(page, qualityMode, `m5-r3-confirm-${qualityMode}-${Date.now()}`, true);
+    await expectCaptureMatchesCurrentFrame(page, capture);
+    expect(capture.qualityMode).toBe(qualityMode);
+    captureByMode[qualityMode] = toR3Capture(capture);
+  }
+  const confirmatoryR3 = evaluateGroundGlassApertureGatherR3({
+    half32: captureByMode.half32!,
+    full32: captureByMode.full32!,
+    full64: captureByMode.full64!,
+  } satisfies GroundGlassApertureGatherR3CaptureMatrix, M5_R3_CONFIRMATORY_THRESHOLDS);
+  expect(confirmatoryR3.provenance.status, JSON.stringify(confirmatoryR3.provenance)).toBe("matched");
+  expect(confirmatoryR3.referenceConvergence.status).toBe("converged");
+  expect(confirmatoryR3.qualityDecision.thresholdRevision).toBe(M5_R3_CONFIRMATORY_THRESHOLDS.revision);
+  expect(confirmatoryR3.qualityDecision.thresholdsFrozenBeforeConfirmatory).toBe(true);
+  expect(confirmatoryR3.qualityDecision.status).toBe("insufficient-roi-support");
+  expect(confirmatoryR3.qualityDecision.reasons).toEqual(expect.arrayContaining([
+    expect.stringContaining("strongly overrun"),
+    expect.stringContaining("fractional near coverage"),
+    expect.stringContaining("reference blur signal is below"),
+  ]));
+  expect(confirmatoryR3.radiusCapEvidence.maximumOverrunPx).toBe(0);
+  expect(confirmatoryR3.interiorFarMetrics.expectedBlurMeanRgbDifference).toBeLessThan(
+    M5_R3_CONFIRMATORY_THRESHOLDS.minimumMeaningfulBlurRgbDifference,
+  );
+  expect(confirmatoryR3.fallbackMetrics.boundaryGradient.meanRelativeError).toBeGreaterThan(1);
+  expect(confirmatoryR3.signedBoundaryEvidence.status).toBe("present");
+  expect(confirmatoryR3.qualityDecision.status).not.toBe("bounded-qualified");
+  expect(pageErrors).toEqual([]);
+
+  await testInfo.attach("m5-r3-capture-provenance.json", {
+    body: JSON.stringify({
+      captureProvenance: confirmatoryR3.captureProvenance,
+      requestIds: confirmatoryR3.requestIds,
+      inputFingerprints: confirmatoryR3.provenance.fingerprints,
+      matched: confirmatoryR3.provenance.status,
+    }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5-r3-reference-convergence.json", {
+    body: JSON.stringify(confirmatoryR3.referenceConvergence, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5-r3-b0-b1-quality-matrix.json", {
+    body: JSON.stringify({ fullFrame: confirmatoryR3.fullFrameMetrics, interiorFar: confirmatoryR3.interiorFarMetrics,
+      depthEdge: confirmatoryR3.depthEdgeMetrics, blurSpread: confirmatoryR3.blurSpreadMetrics,
+      fallback: confirmatoryR3.fallbackMetrics, foregroundLeakage: confirmatoryR3.foregroundLeakageMetrics }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5-r3-roi-support.json", {
+    body: JSON.stringify({ interiorFar: confirmatoryR3.interiorFarMetrics, depthEdges: confirmatoryR3.depthEdgeMetrics,
+      nearInvariance: confirmatoryR3.nearInvariance, radiusCap: confirmatoryR3.radiusCapEvidence,
+      signedBoundary: confirmatoryR3.signedBoundaryEvidence }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5-r3-quality-decision.json", {
+    body: JSON.stringify({ thresholds: M5_R3_CONFIRMATORY_THRESHOLDS, decision: confirmatoryR3.qualityDecision }, null, 2),
     contentType: "application/json",
   });
 });

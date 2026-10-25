@@ -12,6 +12,52 @@ export type GroundGlassApertureGatherCaptureRequest = Readonly<{
   retainReadbackBuffers?: boolean;
 }>;
 
+/** A bounded test-only request to exercise the mounted adapter's real B1 TSL node. */
+export type GroundGlassB1BoundaryProbeRequest = Readonly<{
+  token: string;
+}>;
+
+export type GroundGlassB1BoundaryProbeCaseReadback = Readonly<{
+  id: string;
+  inputSignedCocMm: number;
+  inputValidityCode: number;
+  inputFarRgba: readonly [number, number, number, number];
+  storedPhysicalHalfBits: readonly [number, number, number, number];
+  storedPhysicalRgba: readonly [number, number, number, number];
+  storedGatherHalfBits: readonly [number, number, number, number];
+  storedGatherRgba: readonly [number, number, number, number];
+  gpuDecisionRgba8: readonly [number, number, number, number];
+  gpuB1HalfBits: readonly [number, number, number, number];
+  gpuB1Rgba: readonly [number, number, number, number];
+  cpuEligible: number;
+  cpuFallbackReason: number;
+  cpuSelectedPath: number;
+  cpuB1Rgba: readonly [number, number, number, number];
+  gpuCpuMaximumError: number;
+}>;
+
+export type GroundGlassB1BoundaryProbeReadback = Readonly<{
+  token: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  rendererRevision: string;
+  targetFormats: Readonly<{
+    sourceColor: string | null;
+    physical: string | null;
+    validity: string | null;
+    farGather: string | null;
+    provenance: string | null;
+    b1: string | null;
+    decision: string | null;
+  }>;
+  cases: readonly GroundGlassB1BoundaryProbeCaseReadback[];
+}>;
+
 export type GroundGlassGpuPassTiming = Readonly<{
   /** Synchronous JavaScript time inside renderer.render for this pass. */
   rendererCallCpuMs: number;
@@ -68,6 +114,7 @@ export type GroundGlassFramePerformanceEvidence = Readonly<{
 
 export type GroundGlassApertureGatherCaptureReadback = Readonly<{
   token: string;
+  captureId: string;
   requestId: string;
   channelId: string;
   sceneId: string;
@@ -76,6 +123,11 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
   actualExecutionApi: "webgpu";
   internalFallback: "none";
   readbackOrigin: "top" | "bottom" | "unresolved";
+  sceneSourceRevision: string;
+  effectiveOpticalRequestFingerprint: string;
+  cameraStateFingerprint: string;
+  sampledFilmDimensionsMm: Readonly<{ widthMm: number; heightMm: number }>;
+  colorDomain: "source-target-readback-values";
   qualityMode: GroundGlassApertureGatherQualityMode;
   sampleCount: number;
   maximumRadiusPx: number;
@@ -162,6 +214,9 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     depth: Float32Array;
     farGatherRgba: Float32Array;
     nearRgba: Float32Array;
+    nearBeforeB1Rgba: Float32Array;
+    nearAfterB1Rgba: Float32Array;
+    nearCpuReferenceRgba: Float32Array;
     b1FarRgba: Float32Array;
     researchCompositeRgba: Float32Array;
     observedSelectedGatherIds: Int32Array;
@@ -319,6 +374,10 @@ export type GroundGlassWebGpuTestControl = {
   holdApertureGatherReadback?: boolean;
   apertureGatherReadbackBarrierReached?: boolean;
   releaseApertureGatherReadback?: (() => void) | undefined;
+  groundGlassB1BoundaryProbeRequest?: GroundGlassB1BoundaryProbeRequest | null;
+  groundGlassB1BoundaryProbeReadback?: GroundGlassB1BoundaryProbeReadback | null;
+  /** Explicit test-only trigger for the adapter's current accepted request. */
+  requestGroundGlassB1BoundaryProbe?: (() => void) | undefined;
   /** Explicit test-only trigger for the adapter's current accepted request. */
   requestApertureGatherCapture?: (() => void) | undefined;
 };
@@ -415,6 +474,27 @@ export const registerGroundGlassApertureGatherCaptureTriggerForTest = (
   const control = getControl();
   if (!control) return;
   control.requestApertureGatherCapture = trigger ?? undefined;
+};
+
+export const consumeGroundGlassB1BoundaryProbeForTest = (): GroundGlassB1BoundaryProbeRequest | null => {
+  const control = getControl();
+  const request = control?.groundGlassB1BoundaryProbeRequest ?? null;
+  if (control && request) control.groundGlassB1BoundaryProbeRequest = null;
+  return request;
+};
+
+export const publishGroundGlassB1BoundaryProbeForTest = (
+  readback: GroundGlassB1BoundaryProbeReadback,
+): void => {
+  const control = getControl();
+  if (control) control.groundGlassB1BoundaryProbeReadback = readback;
+};
+
+export const registerGroundGlassB1BoundaryProbeTriggerForTest = (
+  trigger: (() => void) | null,
+): void => {
+  const control = getControl();
+  if (control) control.requestGroundGlassB1BoundaryProbe = trigger ?? undefined;
 };
 
 export const holdGroundGlassPhysicalCocProbeReadbackForTest = async (): Promise<void> => {

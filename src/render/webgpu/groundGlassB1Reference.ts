@@ -16,6 +16,9 @@ export const GROUND_GLASS_B1_SELECTED_PATH = {
   farGather: 1,
 } as const;
 
+/** Largest finite binary16 value accepted by the RGBA16F M4/M5 storage path. */
+export const GROUND_GLASS_B1_MAX_FINITE_HALF = 65504;
+
 export type GroundGlassB1SelectedPath =
   (typeof GROUND_GLASS_B1_SELECTED_PATH)[keyof typeof GROUND_GLASS_B1_SELECTED_PATH];
 
@@ -110,11 +113,16 @@ const isSourcePixel = (x: number, y: number, dimensions: GroundGlassB1Dimensions
   && x >= 0 && y >= 0
   && x < dimensions.widthPx && y < dimensions.heightPx;
 
+const isFiniteHalf = (value: number | undefined): value is number =>
+  value !== undefined
+  && Number.isFinite(value)
+  && Math.abs(value) <= GROUND_GLASS_B1_MAX_FINITE_HALF;
+
 const isUsableRgba = (values: ArrayLike<number>, offset: number): boolean =>
-  Number.isFinite(values[offset])
-  && Number.isFinite(values[offset + 1])
-  && Number.isFinite(values[offset + 2])
-  && Number.isFinite(values[offset + 3]);
+  isFiniteHalf(values[offset])
+  && isFiniteHalf(values[offset + 1])
+  && isFiniteHalf(values[offset + 2])
+  && isFiniteHalf(values[offset + 3]);
 
 /**
  * Independently maps source pixel centers to gather texels using top-origin
@@ -238,7 +246,7 @@ export const reconstructGroundGlassB1Reference = (
           const centerOffset = centerIndex * 4;
           const centerValidity = input.validity[centerIndex];
           const centerSignedCocMm = input.physicalRgba[centerOffset];
-          if (centerValidity !== 1 || !Number.isFinite(centerSignedCocMm)) {
+          if (centerValidity !== 1 || !isFiniteHalf(centerSignedCocMm)) {
             reason = GROUND_GLASS_B1_FALLBACK_REASON.invalidOrUnresolvedCenter;
           } else if (!(centerSignedCocMm > 0.00001)) {
             reason = GROUND_GLASS_B1_FALLBACK_REASON.selectedCenterNotFarEligible;

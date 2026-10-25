@@ -9,7 +9,10 @@ import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import type { SceneDefinition } from "../../types/scene";
 import type { DerivedOpticsState } from "../../types/optics";
-import type { GroundGlassFrameRequest } from "../groundGlassFrameRequest";
+import {
+  createGroundGlassFrameRequestFingerprint,
+  type GroundGlassFrameRequest,
+} from "../groundGlassFrameRequest";
 import type {
   GroundGlassFrameResult,
   GroundGlassRendererGenerationIdentity,
@@ -67,6 +70,7 @@ import {
   createGroundGlassSelectedGatherProvenanceNode,
   createGroundGlassSourceIdentityNode,
 } from "./groundGlassApertureGatherNodes";
+import { runGroundGlassB1BoundaryProbe } from "./groundGlassB1BoundaryProbe";
 import {
   isGroundGlassApertureGatherResearchEnabled,
   resolveGroundGlassApertureGatherSettings,
@@ -104,8 +108,11 @@ import {
   recordGroundGlassWebGpuTestEvent,
   publishGroundGlassPhysicalCocProbeReadbackForTest,
   consumeGroundGlassApertureGatherCaptureForTest,
+  consumeGroundGlassB1BoundaryProbeForTest,
   publishGroundGlassApertureGatherCaptureForTest,
+  publishGroundGlassB1BoundaryProbeForTest,
   registerGroundGlassApertureGatherCaptureTriggerForTest,
+  registerGroundGlassB1BoundaryProbeTriggerForTest,
   forceGroundGlassWebGlCompatibilityBackendForTest,
   forceGroundGlassPhysicalCocUnsupportedForTest,
   throwIfGroundGlassWebGpuFailureInjected,
@@ -2094,6 +2101,7 @@ export const GroundGlassWebGPUAdapter = ({
               && mountedRuntime.rendererFamily === "webgpu-renderer"
               && mountedRuntime.actualExecutionApi === "webgpu") {
             const captureRequest = consumeGroundGlassApertureGatherCaptureForTest();
+            const b1BoundaryProbeRequest = consumeGroundGlassB1BoundaryProbeForTest();
             const resources = apertureGatherResources;
             const eligibility = resolveGroundGlassApertureGatherResearchEligibility({
               request: latest,
@@ -2255,6 +2263,24 @@ export const GroundGlassWebGPUAdapter = ({
                 apertureGatherStatus = "completed";
                 apertureGatherUnsupportedReason = null;
                 apertureGatherFailureReason = null;
+
+                if (b1BoundaryProbeRequest) {
+                  const boundaryProbe = await runGroundGlassB1BoundaryProbe({
+                    request: b1BoundaryProbeRequest,
+                    requestId: latest.identity.requestId,
+                    channelId: latest.identity.channelId,
+                    sceneId: latest.identity.sceneId,
+                    rendererGenerationId: generation.generationId,
+                    rendererRevision: `r${REVISION}`,
+                    rendererFamily: mountedRuntime.rendererFamily,
+                    actualExecutionApi: mountedRuntime.actualExecutionApi,
+                    internalFallback: mountedRuntime.internalFallback,
+                    renderer,
+                    queue: device.queue,
+                    textureFormat: (textureValue) => observeTextureFormat(mountedBackend!, textureValue),
+                  });
+                  if (isApertureRequestCurrent()) publishGroundGlassB1BoundaryProbeForTest(boundaryProbe);
+                }
 
                 let captureReadback: GroundGlassApertureGatherCaptureReadback | null = null;
                 if (captureRequest && apertureGatherStatus === "completed") {
@@ -2564,6 +2590,7 @@ export const GroundGlassWebGPUAdapter = ({
                   );
                   captureReadback = {
                     token: captureRequest.token,
+                    captureId: captureRequest.token,
                     requestId: latest.identity.requestId,
                     channelId: latest.identity.channelId,
                     sceneId: latest.identity.sceneId,
@@ -2572,6 +2599,19 @@ export const GroundGlassWebGPUAdapter = ({
                     actualExecutionApi: "webgpu",
                     internalFallback: "none",
                     readbackOrigin,
+                    sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+                    effectiveOpticalRequestFingerprint: createGroundGlassFrameRequestFingerprint(latest),
+                    cameraStateFingerprint: JSON.stringify([
+                      camera.matrixWorld.elements,
+                      camera.matrixWorldInverse.elements,
+                      camera.projectionMatrix.elements,
+                      camera.projectionMatrixInverse.elements,
+                    ]),
+                    sampledFilmDimensionsMm: {
+                      widthMm: sampledFilmWidthMm,
+                      heightMm: sampledFilmHeightMm,
+                    },
+                    colorDomain: "source-target-readback-values",
                     qualityMode: settings.qualityMode,
                     sampleCount: settings.sampleCount,
                     maximumRadiusPx: settings.maximumRadiusPx,
@@ -2657,6 +2697,9 @@ export const GroundGlassWebGPUAdapter = ({
                       depth,
                       farGatherRgba,
                       nearRgba,
+                      nearBeforeB1Rgba: nearBeforeRgba,
+                      nearAfterB1Rgba,
+                      nearCpuReferenceRgba: gatherReference.nearRgba,
                       b1FarRgba,
                       researchCompositeRgba,
                       observedSelectedGatherIds,
@@ -2917,6 +2960,10 @@ export const GroundGlassWebGPUAdapter = ({
     };
     renderNowRef.current = renderNow;
     registerGroundGlassApertureGatherCaptureTriggerForTest(() => {
+      const accepted = requestRef.current;
+      renderNowRef.current?.(accepted);
+    });
+    registerGroundGlassB1BoundaryProbeTriggerForTest(() => {
       const accepted = requestRef.current;
       renderNowRef.current?.(accepted);
     });
@@ -3250,6 +3297,7 @@ export const GroundGlassWebGPUAdapter = ({
         void disposeOwned().catch(() => undefined);
         renderNowRef.current = null;
         registerGroundGlassApertureGatherCaptureTriggerForTest(null);
+        registerGroundGlassB1BoundaryProbeTriggerForTest(null);
         if (disposeRef.current === disposeOwned) disposeRef.current = null;
       });
     };

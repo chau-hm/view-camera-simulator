@@ -312,4 +312,16 @@ describe("Ground Glass independent aperture-gather CPU reference", () => {
     expect(capped.majorAxisPx).toEqual(ellipse.majorAxisPx);
     expect(capped.minorAxisPx).toEqual(ellipse.minorAxisPx);
   });
+
+  it("reports far radius-cap evidence only from valid far centers", () => {
+    const input = makeInput();
+    setPhysical(input, 1, 1, [1, 100, 0, 0]);
+    setPhysical(input, 2, 2, [65504, 1000, 0, 0]);
+    input.validity[2 * input.source.widthPx + 2] = 2;
+
+    const result = referenceGroundGlassApertureGather(input);
+
+    expect(result.summary.maximumFarUncappedRadiusPx).toBeCloseTo(100, 10);
+    expect(result.summary.farCappedCenterCount).toBe(1);
+  });
 });

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {
   GROUND_GLASS_B1_FALLBACK_REASON,
+  GROUND_GLASS_B1_MAX_FINITE_HALF,
 } from "./groundGlassB1Reference";
 import {
   Loop,
@@ -424,14 +425,14 @@ export const createGroundGlassB1ReconstructionNodes = (input: Readonly<{
     const centerSignedCocMm = texture(input.physicalTexture, centerUv).r;
     const centerValidityIsValid = centerValidity.greaterThan(0.5 / 255)
       .and(centerValidity.lessThan(1.5 / 255));
-    const centerPhysicalIsFinite = abs(centerSignedCocMm).lessThan(65504);
+    const centerPhysicalIsFinite = abs(centerSignedCocMm).lessThanEqual(GROUND_GLASS_B1_MAX_FINITE_HALF);
     const centerPhysicalIsValid = centerValidityIsValid.and(centerPhysicalIsFinite);
     const centerFarEligible = centerPhysicalIsValid.and(centerSignedCocMm.greaterThan(FAR_SIGN_EPSILON));
     const gatherColor = texture(input.gatherFarTexture, textureUvTop);
-    const gatherDataIsFinite = abs(gatherColor.r).lessThan(65504)
-      .and(abs(gatherColor.g).lessThan(65504))
-      .and(abs(gatherColor.b).lessThan(65504))
-      .and(abs(gatherColor.a).lessThan(65504));
+    const gatherDataIsFinite = abs(gatherColor.r).lessThanEqual(GROUND_GLASS_B1_MAX_FINITE_HALF)
+      .and(abs(gatherColor.g).lessThanEqual(GROUND_GLASS_B1_MAX_FINITE_HALF))
+      .and(abs(gatherColor.b).lessThanEqual(GROUND_GLASS_B1_MAX_FINITE_HALF))
+      .and(abs(gatherColor.a).lessThanEqual(GROUND_GLASS_B1_MAX_FINITE_HALF));
 
     // The nested selects match the CPU oracle's explicit failure precedence.
     let reasonCode = select(

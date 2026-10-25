@@ -483,8 +483,10 @@ export const referenceGroundGlassApertureGather = (
       farUncappedMaximumRadiusPx[gatherIndex] = centerEllipse.uncappedMaximumRadiusPx;
       farEffectiveMaximumRadiusPx[gatherIndex] = centerEllipse.effectiveMaximumRadiusPx;
       farCapApplied[gatherIndex] = centerEllipse.capApplied ? 1 : 0;
-      maximumFarRadius = Math.max(maximumFarRadius, centerEllipse.uncappedMaximumRadiusPx);
-      if (centerEllipse.capApplied) farCappedCenterCount += 1;
+      if (centerFar) {
+        maximumFarRadius = Math.max(maximumFarRadius, centerEllipse.uncappedMaximumRadiusPx);
+        if (centerEllipse.capApplied) farCappedCenterCount += 1;
+      }
 
       const farAccumulated = [0, 0, 0];
       let farWeight = 0;
