@@ -6,6 +6,7 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -21,9 +22,10 @@ import type {
   GroundGlassFrameResult,
   GroundGlassRendererGenerationIdentity,
 } from "./backend/groundGlassBackendContracts";
-import { selectGroundGlassBackend } from "./backend/groundGlassBackendPolicy";
+import { selectGroundGlassBackend, type GroundGlassBackendPolicyInput } from "./backend/groundGlassBackendPolicy";
 import type { GroundGlassFrameRequest, GroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { createGroundGlassFrameRequestFingerprint } from "./groundGlassFrameRequest";
+import { holdGroundGlassFrameResultForTest } from "./webgpu/groundGlassWebGpuTestSeam";
 import { GroundGlassWebGLAdapter } from "./GroundGlassWebGLAdapter";
 import type { GroundGlassRttRuntimeInfoChangeHandler } from "./groundGlassRttDimensions";
 import type { GroundGlassRuntimeInfoObservation } from "./groundGlassRuntimeObservation";
@@ -33,9 +35,8 @@ import {
 } from "./groundGlassRenderHostState";
 import {
   createGroundGlassRawWebGpuPolicyInput,
-  groundGlassPilotSessionId,
 } from "./webgpu/groundGlassRawWebGpuPolicyInput";
-import type { GroundGlassPassId } from "./groundGlassPassGraph";
+import type { GroundGlassRenderOperationId } from "./groundGlassPassGraph";
 
 const GroundGlassRenderHostStateContext = createContext<GroundGlassRenderHostState | null>(null);
 
@@ -78,6 +79,7 @@ export const GroundGlassRenderHostStateProvider = ({
 type GroundGlassWebGpuAdapterProps = Readonly<{
   request: GroundGlassFrameRequest;
   generation: GroundGlassRendererGenerationIdentity;
+  isGenerationActive: () => boolean;
   onAdapterStarted: (generation: GroundGlassRendererGenerationIdentity) => void;
   onRendererMounted: (
     generation: GroundGlassRendererGenerationIdentity,
@@ -94,7 +96,7 @@ type GroundGlassWebGpuAdapterProps = Readonly<{
   onFailure: (
     error: Error,
     stage: "initialization" | "runtime",
-    failedPass: GroundGlassPassId | null,
+    failedPass: GroundGlassRenderOperationId | null,
   ) => void;
 }>;
 
@@ -141,20 +143,11 @@ export const GroundGlassRenderHost = ({
   diagnosticsChangeRef.current = onDiagnosticsChange;
   framePublishedRef.current = onFramePublished;
 
-  const resolvePolicySelection = useCallback((input: GroundGlassFrameRequestInput) => {
-    const currentRetry = owner.getSnapshot(channel).retryState;
-    const initialPolicyInput = createGroundGlassRawWebGpuPolicyInput(input, currentRetry);
-    if (initialPolicyInput.authorization.status === "authorized" && currentRetry === null) {
-      owner.beginPilotSession(channel, {
-        status: "authorized",
-        source: "application-configuration",
-        pilotSessionId: groundGlassPilotSessionId(channel),
-      });
-    }
-    return selectGroundGlassBackend(
-      createGroundGlassRawWebGpuPolicyInput(input, owner.getSnapshot(channel).retryState),
-    );
-  }, [channel, owner]);
+  const policyInput = useMemo(
+    () => createGroundGlassRawWebGpuPolicyInput(request, state.retryState),
+    [request, state.retryState],
+  );
+  const policyInputIdentity = JSON.stringify(policyInput);
 
   useLayoutEffect(() => {
     lifecycleEffectEpochRef.current += 1;
@@ -172,8 +165,15 @@ export const GroundGlassRenderHost = ({
 
   // This is the acceptance boundary: only a committed React tree can create a request revision.
   useLayoutEffect(() => {
-    owner.acceptRequest(channel, hostId, request, resolvePolicySelection(request));
-  }, [channel, fingerprint, hostId, owner, request, resolvePolicySelection]);
+    if (policyInput.authorization.status === "authorized" && owner.getSnapshot(channel).retryState === null) {
+      owner.beginPilotSession(channel, policyInput.authorization);
+    }
+    const acceptedPolicyInput: GroundGlassBackendPolicyInput = {
+      ...policyInput,
+      retryState: owner.getSnapshot(channel).retryState,
+    };
+    owner.acceptRequest(channel, hostId, request, acceptedPolicyInput);
+  }, [channel, fingerprint, hostId, owner, policyInput, policyInputIdentity, request]);
 
   const generation = state.activeGeneration;
   const activeForThisHost = state.activeHostId === hostId && generation !== null;
@@ -184,6 +184,18 @@ export const GroundGlassRenderHost = ({
   const shouldMountWebGpuAdapter = shouldMountAdapter &&
     state.selection?.status === "selected" &&
     state.selection.selectedBackend === "webgpu";
+
+  const isGenerationActive = useCallback(() => {
+    const latest = owner.getSnapshot(channel);
+    return Boolean(
+      generation &&
+      latest.activeHostId === hostId &&
+      latest.activeGeneration?.generationId === generation.generationId &&
+      latest.retiringGeneration === null &&
+      latest.selection?.status === "selected" &&
+      latest.selection.selectedBackend === "webgpu",
+    );
+  }, [channel, generation, hostId, owner]);
 
   useEffect(() => {
     diagnosticsChangeRef.current?.(channel, diagnostics);
@@ -216,13 +228,16 @@ export const GroundGlassRenderHost = ({
   }, [channel, hostId, owner]);
 
   const handleFrameResult = useCallback((result: GroundGlassFrameResult) => {
-    if (!owner.receiveFrameResult(channel, hostId, result)) return;
-    if (
-      result.status === "completed" &&
-      owner.canPublishFrameNow(channel, hostId, result)
-    ) {
-      framePublishedRef.current?.(result);
-    }
+    const deliver = () => {
+      if (!owner.receiveFrameResult(channel, hostId, result)) return;
+      if (
+        result.status === "completed" &&
+        owner.canPublishFrameNow(channel, hostId, result)
+      ) {
+        framePublishedRef.current?.(result);
+      }
+    };
+    if (!holdGroundGlassFrameResultForTest(result, deliver)) deliver();
   }, [channel, hostId, owner]);
 
   const handleRuntimeObservation = useCallback((observation: GroundGlassRuntimeInfoObservation) => {
@@ -268,7 +283,7 @@ export const GroundGlassRenderHost = ({
   const handleAdapterFailureAtStage = useCallback((
     error: Error,
     stage: "initialization" | "runtime",
-    failedPass: GroundGlassPassId | null,
+    failedPass: GroundGlassRenderOperationId | null,
   ) => {
     const current = owner.getSnapshot(channel);
     const activeGeneration = current.activeGeneration;
@@ -295,20 +310,21 @@ export const GroundGlassRenderHost = ({
       // adapter and its own cleanup reports; no second WebGL mount is attempted.
       return;
     }
-    let replacementSelection = selectGroundGlassBackend(latestPolicyInput);
+    let replacementPolicyInput = latestPolicyInput;
+    const replacementSelection = selectGroundGlassBackend(replacementPolicyInput);
     if (
       replacementSelection.status === "selected" &&
       replacementSelection.selectedBackend === "webgpu"
     ) {
       // Failure to consume the session latch is an invariant violation. Fail closed rather
       // than allowing another attempt or mounting over uncertain ownership.
-      replacementSelection = selectGroundGlassBackend({
+      replacementPolicyInput = {
         ...latestPolicyInput,
         requestedBackend: "webgl",
         webglAvailable: false,
-      });
+      };
     }
-    owner.requestSafeReplacement(channel, hostId, replacementSelection);
+    owner.requestSafeReplacement(channel, hostId, replacementPolicyInput);
   }, [channel, hostId, owner]);
 
   const handleAdapterFailure = useCallback((error: Error) => {
@@ -321,7 +337,7 @@ export const GroundGlassRenderHost = ({
   const handleWebGpuFailure = useCallback((
     error: Error,
     stage: "initialization" | "runtime",
-    failedPass: GroundGlassPassId | null,
+    failedPass: GroundGlassRenderOperationId | null,
   ) => handleAdapterFailureAtStage(error, stage, failedPass), [handleAdapterFailureAtStage]);
 
   useEffect(() => {
@@ -350,6 +366,7 @@ export const GroundGlassRenderHost = ({
         <WebGpuAdapter
           request={acceptedRequest}
           generation={generation}
+          isGenerationActive={isGenerationActive}
           onAdapterStarted={handleAdapterStarted}
           onRendererMounted={handleWebGpuRendererMounted}
           onBackendDetails={handleWebGpuBackendDetails}

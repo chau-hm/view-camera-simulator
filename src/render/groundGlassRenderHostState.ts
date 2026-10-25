@@ -30,7 +30,7 @@ import {
 } from "./groundGlassFrameRequest";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
 import type { GroundGlassCleanupOutcome } from "./groundGlassCleanupEvidence";
-import type { GroundGlassPassId } from "./groundGlassPassGraph";
+import type { GroundGlassRenderOperationId } from "./groundGlassPassGraph";
 
 export type { GroundGlassCleanupOutcome } from "./groundGlassCleanupEvidence";
 
@@ -56,9 +56,11 @@ export type GroundGlassRenderHostChannelState = Readonly<{
   pendingRequestFingerprint: string | null;
   pendingSceneFingerprint: string | null;
   pendingSelection: GroundGlassBackendSelection | null;
+  pendingPolicyInput: GroundGlassBackendPolicyInput | null;
   requestFingerprint: string | null;
   sceneFingerprint: string | null;
   selection: GroundGlassBackendSelection | null;
+  activePolicyInput: GroundGlassBackendPolicyInput | null;
   attemptedBackend: GroundGlassBackendDiagnostics["attemptedBackend"];
   mountedRuntime: GroundGlassMountedRuntimeEvidence;
   backendDetails: GroundGlassBackendDiagnosticDetails | null;
@@ -95,9 +97,11 @@ const emptyChannelState = (channelId: GroundGlassRttChannel): GroundGlassRenderH
   pendingRequestFingerprint: null,
   pendingSceneFingerprint: null,
   pendingSelection: null,
+  pendingPolicyInput: null,
   requestFingerprint: null,
   sceneFingerprint: null,
   selection: null,
+  activePolicyInput: null,
   attemptedBackend: { status: "not-started" },
   mountedRuntime: unknownRuntime,
   backendDetails: null,
@@ -136,6 +140,27 @@ const createDefaultWebGlSelection = (
   // This selects the configured WebGL attempt; mounted runtime evidence is reported separately.
   webglAvailable: true,
 });
+
+const samePolicySelection = (
+  left: GroundGlassBackendSelection | null,
+  right: GroundGlassBackendSelection,
+): boolean => left !== null && JSON.stringify(left) === JSON.stringify(right);
+
+const samePolicyInput = (
+  left: GroundGlassBackendPolicyInput | null,
+  right: GroundGlassBackendPolicyInput | null,
+): boolean => left === right || (
+  left !== null && right !== null && JSON.stringify(left) === JSON.stringify(right)
+);
+
+const selectPolicyForState = (
+  channelId: GroundGlassRttChannel,
+  sceneId: string,
+  policyInput: GroundGlassBackendPolicyInput | null,
+  retryState: GroundGlassPilotRetryState | null,
+): GroundGlassBackendSelection => policyInput
+  ? selectGroundGlassBackend({ ...policyInput, retryState })
+  : createDefaultWebGlSelection(channelId, sceneId);
 
 /**
  * App-lifetime owner for channel request/generation identities and pilot-session retry state.
@@ -195,11 +220,14 @@ export class GroundGlassRenderHostState {
     state: GroundGlassRenderHostChannelState,
     hostId: string,
   ): GroundGlassRenderHostChannelState {
-    const generation = this.allocateGeneration(state.channelId);
     const activatingPendingHost = state.pendingHostId === hostId;
     const acceptedRequest = activatingPendingHost ? state.pendingRequest : null;
-    const selection = activatingPendingHost ? state.pendingSelection : null;
+    const policyInput = activatingPendingHost ? state.pendingPolicyInput : null;
+    const selection = acceptedRequest
+      ? selectPolicyForState(state.channelId, acceptedRequest.scene.id, policyInput, state.retryState)
+      : null;
     const selectedBackend = selection?.status === "selected" ? selection.selectedBackend : null;
+    const generation = selectedBackend === null ? null : this.allocateGeneration(state.channelId);
     return {
       ...state,
       activeHostId: hostId,
@@ -219,6 +247,7 @@ export class GroundGlassRenderHostState {
       pendingRequestFingerprint: null,
       pendingSceneFingerprint: null,
       pendingSelection: null,
+      pendingPolicyInput: null,
       requestFingerprint: acceptedRequest
         ? state.pendingRequestFingerprint
         : state.requestFingerprint,
@@ -226,18 +255,19 @@ export class GroundGlassRenderHostState {
         ? state.pendingSceneFingerprint
         : state.sceneFingerprint,
       selection: acceptedRequest
-        ? selection ?? createDefaultWebGlSelection(state.channelId, acceptedRequest.scene.id)
+        ? selection
         : null,
+      activePolicyInput: acceptedRequest ? policyInput : null,
       attemptedBackend: { status: "not-started" },
       mountedRuntime: unknownRuntime,
       backendDetails: null,
       lifecycleStatus: !acceptedRequest
         ? "idle"
-        : selection?.status === "unavailable" || selectedBackend === null
+        : selection?.status !== "selected" || selectedBackend === null
           ? "unavailable"
           : "initializing",
       frame: {
-        current: acceptedRequest
+        current: acceptedRequest && generation
           ? { status: "pending", generation, request: acceptedRequest.identity }
           : null,
         lastSuccessfullyCompleted: state.frame.lastSuccessfullyCompleted,
@@ -265,35 +295,46 @@ export class GroundGlassRenderHostState {
     channel: GroundGlassRttChannel,
     hostId: string,
     input: GroundGlassFrameRequestInput,
-    selectedPolicy?: GroundGlassBackendSelection,
+    policyInput: GroundGlassBackendPolicyInput | null = null,
   ): void => {
     let shouldFinishUnstartedRetirement = false;
     this.update(channel, (state) => {
       if (state.activeHostId !== hostId && state.pendingHostId !== hostId) return state;
-      const selection = selectedPolicy ?? createDefaultWebGlSelection(channel, input.scene.id);
+      const selection = selectPolicyForState(channel, input.scene.id, policyInput, state.retryState);
       const fingerprint = createGroundGlassFrameRequestFingerprint(input);
       const acceptedByActiveHost = state.activeHostId === hostId;
       const priorRequest = acceptedByActiveHost ? state.activeRequest : state.pendingRequest;
       const priorFingerprint = acceptedByActiveHost
         ? state.activeRequestFingerprint
         : state.pendingRequestFingerprint;
-      if (priorFingerprint === fingerprint && priorRequest) return state;
-      this.requestSequence += 1;
-      const identity = Object.freeze({
-        requestId: `gg-${this.instanceId}-${channel}-request-${this.requestSequence}`,
-        channelId: channel,
-        sceneId: input.scene.id,
-      });
+      const priorPolicyInput = acceptedByActiveHost ? state.activePolicyInput : state.pendingPolicyInput;
+      const priorSelection = acceptedByActiveHost ? state.selection : state.pendingSelection;
+      const sameFrameRequest = priorFingerprint === fingerprint && priorRequest !== null;
+      const sameSelection = samePolicySelection(priorSelection, selection);
+      const samePolicy = samePolicyInput(priorPolicyInput, policyInput);
+      if (sameFrameRequest && sameSelection && samePolicy) return state;
+
+      const request = sameFrameRequest
+        ? priorRequest
+        : (() => {
+            this.requestSequence += 1;
+            const identity = Object.freeze({
+              requestId: `gg-${this.instanceId}-${channel}-request-${this.requestSequence}`,
+              channelId: channel,
+              sceneId: input.scene.id,
+            });
+            const sceneFingerprint = createGroundGlassSceneFingerprint(input.scene);
+            // Frame updates reuse the stable scene snapshot while its Ground Glass identity/bounds
+            // remain unchanged. Policy-only updates reuse the entire accepted request identity.
+            const priorSceneFingerprint = acceptedByActiveHost
+              ? state.activeSceneFingerprint
+              : state.pendingSceneFingerprint;
+            const stableSceneSnapshot = priorSceneFingerprint === sceneFingerprint
+              ? priorRequest?.scene
+              : undefined;
+            return createGroundGlassFrameRequest(input, identity, stableSceneSnapshot);
+          })();
       const sceneFingerprint = createGroundGlassSceneFingerprint(input.scene);
-      // A crop, resize, optics, or display update must retain the mounted scene subject. Reuse the
-      // immutable scene snapshot while its Ground Glass identity/bounds remain unchanged.
-      const priorSceneFingerprint = acceptedByActiveHost
-        ? state.activeSceneFingerprint
-        : state.pendingSceneFingerprint;
-      const stableSceneSnapshot = priorSceneFingerprint === sceneFingerprint
-        ? priorRequest?.scene
-        : undefined;
-      const request = createGroundGlassFrameRequest(input, identity, stableSceneSnapshot);
       if (!acceptedByActiveHost) {
         return {
           ...state,
@@ -304,7 +345,7 @@ export class GroundGlassRenderHostState {
           pendingRequestFingerprint: fingerprint,
           pendingSceneFingerprint: sceneFingerprint,
           pendingSelection: selection,
-          selection,
+          pendingPolicyInput: policyInput,
         };
       }
       const activeGeneration = state.activeGeneration;
@@ -314,21 +355,23 @@ export class GroundGlassRenderHostState {
       const requestedBackend = selection.status === "selected" ? selection.selectedBackend : null;
 
       if (state.activeRequest && activeGeneration && activeBackend !== requestedBackend) {
+        const preserveOtherPendingHost = state.pendingHostId !== null && state.pendingHostId !== hostId;
         shouldFinishUnstartedRetirement = !state.adapterStarted;
         return {
           ...state,
           activeHostId: null,
-          pendingHostId: hostId,
-          latestRequest: request,
-          pendingRequest: request,
-          pendingRequestFingerprint: fingerprint,
-          pendingSceneFingerprint: sceneFingerprint,
-          pendingSelection: selection,
+          pendingHostId: preserveOtherPendingHost ? state.pendingHostId : hostId,
+          latestRequest: preserveOtherPendingHost ? state.latestRequest : request,
+          pendingRequest: preserveOtherPendingHost ? state.pendingRequest : request,
+          pendingRequestFingerprint: preserveOtherPendingHost ? state.pendingRequestFingerprint : fingerprint,
+          pendingSceneFingerprint: preserveOtherPendingHost ? state.pendingSceneFingerprint : sceneFingerprint,
+          pendingSelection: preserveOtherPendingHost ? state.pendingSelection : selection,
+          pendingPolicyInput: preserveOtherPendingHost ? state.pendingPolicyInput : policyInput,
           activeRequest: state.activeRequest,
           activeRequestFingerprint: state.activeRequestFingerprint,
           activeSceneFingerprint: state.activeSceneFingerprint,
-          requestFingerprint: fingerprint,
-          sceneFingerprint,
+          requestFingerprint: preserveOtherPendingHost ? state.requestFingerprint : fingerprint,
+          sceneFingerprint: preserveOtherPendingHost ? state.sceneFingerprint : sceneFingerprint,
           activeGeneration: null,
           retiringGeneration: activeGeneration,
           mounted: false,
@@ -342,6 +385,12 @@ export class GroundGlassRenderHostState {
           ...(!state.adapterStarted ? { mountedRuntime: unknownRuntime, backendDetails: null } : {}),
         };
       }
+      if (sameFrameRequest && sameSelection && !samePolicy) {
+        return { ...state, activePolicyInput: policyInput };
+      }
+      const activatedGeneration = !activeGeneration && selection.status === "selected"
+        ? this.allocateGeneration(channel)
+        : activeGeneration;
       return {
         ...state,
         latestRequest: request,
@@ -351,14 +400,16 @@ export class GroundGlassRenderHostState {
         requestFingerprint: fingerprint,
         sceneFingerprint,
         selection,
-        lifecycleStatus: activeGeneration
+        activePolicyInput: policyInput,
+        activeGeneration: activatedGeneration,
+        lifecycleStatus: activatedGeneration
           ? selection.status === "unavailable"
             ? "unavailable"
             : state.mounted ? "rendering" : "initializing"
-          : state.retiringGeneration || state.activeGeneration ? "retiring" : "idle",
+          : state.retiringGeneration ? "retiring" : selection.status === "unavailable" ? "unavailable" : "idle",
         frame: {
-          current: activeGeneration
-            ? { status: "pending", generation: activeGeneration, request: identity }
+          current: activatedGeneration
+            ? { status: "pending", generation: activatedGeneration, request: request.identity }
             : null,
           lastSuccessfullyCompleted: state.frame.lastSuccessfullyCompleted,
         },
@@ -491,7 +542,7 @@ export class GroundGlassRenderHostState {
     generation: GroundGlassRendererGenerationIdentity,
     failureReason: string,
     explicitStage?: GroundGlassPilotFailureStage,
-    failedPass: GroundGlassPassId | null = null,
+    failedPass: GroundGlassRenderOperationId | null = null,
   ): boolean => {
     let accepted = false;
     this.update(channel, (state) => {
@@ -687,7 +738,7 @@ export class GroundGlassRenderHostState {
   requestSafeReplacement = (
     channel: GroundGlassRttChannel,
     hostId: string,
-    replacementSelection?: GroundGlassBackendSelection,
+    replacementPolicyInput?: GroundGlassBackendPolicyInput,
   ): boolean => {
     let requested = false;
     this.update(channel, (state) => {
@@ -695,19 +746,26 @@ export class GroundGlassRenderHostState {
       if (
         state.activeHostId !== hostId ||
         !generation ||
-        state.retiringGeneration ||
-        (state.pendingHostId !== null && state.pendingHostId !== hostId)
+        state.retiringGeneration
       ) return state;
       requested = true;
+      const preserveOtherPendingHost = state.pendingHostId !== null && state.pendingHostId !== hostId;
+      const policyInput = preserveOtherPendingHost
+        ? state.pendingPolicyInput
+        : replacementPolicyInput ?? state.activePolicyInput;
+      const selection = state.activeRequest
+        ? selectPolicyForState(channel, state.activeRequest.scene.id, policyInput, state.retryState)
+        : state.selection;
       return {
         ...state,
         activeHostId: null,
-        pendingHostId: hostId,
-        pendingRequest: state.activeRequest,
-        pendingRequestFingerprint: state.activeRequestFingerprint,
-        pendingSceneFingerprint: state.activeSceneFingerprint,
-        pendingSelection: replacementSelection ?? state.selection,
-        selection: replacementSelection ?? state.selection,
+        pendingHostId: preserveOtherPendingHost ? state.pendingHostId : hostId,
+        latestRequest: preserveOtherPendingHost ? state.latestRequest : state.activeRequest,
+        pendingRequest: preserveOtherPendingHost ? state.pendingRequest : state.activeRequest,
+        pendingRequestFingerprint: preserveOtherPendingHost ? state.pendingRequestFingerprint : state.activeRequestFingerprint,
+        pendingSceneFingerprint: preserveOtherPendingHost ? state.pendingSceneFingerprint : state.activeSceneFingerprint,
+        pendingSelection: preserveOtherPendingHost ? state.pendingSelection : selection,
+        pendingPolicyInput: policyInput,
         activeGeneration: null,
         retiringGeneration: generation,
         mounted: false,
@@ -744,6 +802,7 @@ export class GroundGlassRenderHostState {
         pendingRequestFingerprint: null,
         pendingSceneFingerprint: null,
         pendingSelection: null,
+        pendingPolicyInput: null,
         latestRequest: state.activeRequest ?? state.latestRequest,
         requestFingerprint: state.activeRequestFingerprint ?? state.requestFingerprint,
         sceneFingerprint: state.activeSceneFingerprint ?? state.sceneFingerprint,
@@ -862,6 +921,7 @@ export class GroundGlassRenderHostState {
         cleanupStatus: "confirmed" as const,
         cleanupFailureReason: null,
         runtimeOwnerId: null,
+        activePolicyInput: null,
         activeRequest: state.pendingHostId ? state.activeRequest : null,
         activeRequestFingerprint: state.pendingHostId ? state.activeRequestFingerprint : null,
         activeSceneFingerprint: state.pendingHostId ? state.activeSceneFingerprint : null,
@@ -911,7 +971,12 @@ export class GroundGlassRenderHostState {
   ) => {
     const state = this.getSnapshot(channel);
     if (!state.retryState) return { status: "rejected", reason: "retry-not-consumed" } as const;
-    const cleanup = state.cleanupStatus === "confirmed"
+    const cleanup = state.cleanupStatus === "confirmed" || (
+      state.cleanupStatus === "none" &&
+      state.lifecycleStatus !== "failed" &&
+      state.retiringGeneration === null &&
+      state.lastCleanupGeneration !== null
+    )
       ? "confirmed"
       : state.cleanupStatus === "failed" ? "failed" : "uncertain";
     const result = authorizeGroundGlassPilotRetry(state.retryState, input, resetReason, cleanup);
@@ -924,7 +989,9 @@ export class GroundGlassRenderHostState {
   getDiagnostics = (channel: GroundGlassRttChannel): GroundGlassBackendDiagnostics | null => {
     const state = this.getSnapshot(channel);
     if (this.diagnosticsByState.has(state)) return this.diagnosticsByState.get(state) ?? null;
-    const request = state.activeRequest ?? state.latestRequest;
+    // Diagnostics identify the latest accepted request even while a prior generation retires.
+    // The retiring generation's last failure retains its own request identity separately.
+    const request = state.latestRequest ?? state.activeRequest;
     const selection = state.selection;
     if (!request || !selection) {
       this.diagnosticsByState.set(state, null);

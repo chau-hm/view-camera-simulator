@@ -16,7 +16,7 @@ import type {
   GroundGlassMountedRuntimeEvidence,
 } from "../backend/groundGlassBackendDiagnostics";
 import type { GroundGlassCleanupOutcome } from "../groundGlassRenderHostState";
-import type { GroundGlassPassId } from "../groundGlassPassGraph";
+import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
 import { getGroundGlassSceneProfile } from "../groundGlassSceneProfiles";
 import {
   configureGroundGlassCamera,
@@ -48,6 +48,13 @@ import {
 } from "../worldEnvironmentRig";
 import { classifyGroundGlassWebGpuRuntime } from "./groundGlassWebGpuRuntime";
 import {
+  holdGroundGlassWebGpuOperationAfterFailure,
+  holdGroundGlassWebGpuQueueCompletion,
+  recordGroundGlassWebGpuAdapterAttemptForTest,
+  recordGroundGlassWebGpuTestEvent,
+  throwIfGroundGlassWebGpuFailureInjected,
+} from "./groundGlassWebGpuTestSeam";
+import {
   ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
 } from "./groundGlassRawWebGpuCompatibility";
@@ -70,6 +77,7 @@ type MountedSubject = ReturnType<ReturnType<typeof getGroundGlassSceneProfile>["
 type GroundGlassWebGPUAdapterProps = Readonly<{
   request: GroundGlassFrameRequest;
   generation: GroundGlassRendererGenerationIdentity;
+  isGenerationActive: () => boolean;
   onAdapterStarted: (generation: GroundGlassRendererGenerationIdentity) => void;
   onRendererMounted: (
     generation: GroundGlassRendererGenerationIdentity,
@@ -86,7 +94,7 @@ type GroundGlassWebGPUAdapterProps = Readonly<{
   onFailure: (
     error: Error,
     stage: "initialization" | "runtime",
-    failedPass: GroundGlassPassId | null,
+    failedPass: GroundGlassRenderOperationId | null,
   ) => void;
 }>;
 
@@ -280,6 +288,7 @@ const createGroundGlassWorldEnvironment = (
 export const GroundGlassWebGPUAdapter = ({
   request,
   generation,
+  isGenerationActive,
   onAdapterStarted,
   onRendererMounted,
   onBackendDetails,
@@ -336,11 +345,19 @@ export const GroundGlassWebGPUAdapter = ({
     let environmentRig: WorldEnvironmentRig | null = null;
     let cameraFrustum: GroundGlassFrustum | null = null;
 
-    const reportFailure = (error: unknown, stage: "initialization" | "runtime", failedPass: GroundGlassPassId | null) => {
-      if (failureReported || retired) return;
+    const reportFailure = (error: unknown, stage: "initialization" | "runtime", failedPass: GroundGlassRenderOperationId | null) => {
+      if (failureReported || retired || !isGenerationActive()) return;
       failureReported = true;
       adapterRoot?.setAttribute("data-failure-stage", stage);
+      adapterRoot?.setAttribute("data-failure-operation", failedPass ?? "unknown");
       adapterRoot?.setAttribute("data-failure-reason", errorMessage(error));
+      recordGroundGlassWebGpuTestEvent({
+        kind: "failure",
+        generationId: generation.generationId,
+        stage,
+        operation: failedPass ?? "unknown",
+        reason: errorMessage(error),
+      });
       propsRef.current.onFailure(error instanceof Error ? error : new Error(errorMessage(error)), stage, failedPass);
     };
 
@@ -361,6 +378,7 @@ export const GroundGlassWebGPUAdapter = ({
           const reason = "WebGPU initialization or queued GPU work did not settle before cleanup deadline; owned resources were retained";
           adapterRoot?.setAttribute("data-cleanup-outcome", "uncertain");
           adapterRoot?.setAttribute("data-cleanup-reason", reason);
+          recordGroundGlassWebGpuTestEvent({ kind: "cleanup", generationId: generation.generationId, outcome: "uncertain" });
           propsRef.current.onAdapterDisposed(generation, "uncertain", reason);
           return;
         }
@@ -373,7 +391,10 @@ export const GroundGlassWebGPUAdapter = ({
           await dispose(() => display?.geometry.dispose());
           display = null;
         }
-        await dispose(() => target?.dispose());
+        await dispose(async () => {
+          await target?.dispose();
+          throwIfGroundGlassWebGpuFailureInjected("dispose-target");
+        });
         target = null;
         if (subject) {
           await dispose(() => subject?.dispose());
@@ -404,6 +425,7 @@ export const GroundGlassWebGPUAdapter = ({
         const reason = errors.length ? errors.map(errorMessage).join("; ") : undefined;
         adapterRoot?.setAttribute("data-cleanup-outcome", outcome);
         if (reason) adapterRoot?.setAttribute("data-cleanup-reason", reason);
+        recordGroundGlassWebGpuTestEvent({ kind: "cleanup", generationId: generation.generationId, outcome });
         propsRef.current.onAdapterDisposed(generation, outcome, reason);
         if (errors.length) throw new AggregateError(errors, "Ground Glass WebGPU resource cleanup failed");
       })();
@@ -421,6 +443,7 @@ export const GroundGlassWebGPUAdapter = ({
         const latest = requestRef.current;
         if (
           retired ||
+          !isGenerationActive() ||
           !activeRef.current ||
           !renderer ||
           !target ||
@@ -432,7 +455,7 @@ export const GroundGlassWebGPUAdapter = ({
           latest.identity.sceneId !== requested.identity.sceneId
         ) return;
 
-        let failedPass: GroundGlassPassId | null = null;
+        let failedPass: GroundGlassRenderOperationId | null = null;
         try {
           const dimensions = resolveGroundGlassRttDimensions({
             logicalWidth: latest.widthPx,
@@ -468,20 +491,24 @@ export const GroundGlassWebGPUAdapter = ({
           renderer.render(scene, camera);
           const device = mountedBackend?.device;
           if (!device) throw new Error("Native WebGPU scene submission has no initialized GPU device");
+          await holdGroundGlassWebGpuQueueCompletion();
           await device.queue.onSubmittedWorkDone();
-          if (retired || !activeRef.current) return;
+          if (retired || !isGenerationActive() || !activeRef.current) return;
           if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+          throwIfGroundGlassWebGpuFailureInjected("scene-render-after-submit");
 
           // The raw target blit is presentation plumbing, not a Ground Glass semantic pass.
-          failedPass = null;
+          failedPass = "textureDisplay";
           renderer.setRenderTarget(null);
           renderer.setViewport(0, 0, Math.max(1, latest.widthPx), Math.max(1, latest.heightPx));
           renderer.setClearColor(SKY_COLOR, 1);
           renderer.clear(true, true, true);
           renderer.render(display.scene, display.camera);
+          await holdGroundGlassWebGpuQueueCompletion();
           await device.queue.onSubmittedWorkDone();
-          if (retired || !activeRef.current) return;
+          if (retired || !isGenerationActive() || !activeRef.current) return;
           if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+          throwIfGroundGlassWebGpuFailureInjected("texture-display-after-submit");
 
           failedPass = null;
           completedPasses = ["sceneRender", "textureDisplay"];
@@ -501,6 +528,11 @@ export const GroundGlassWebGPUAdapter = ({
           const frameId = `${generation.generationId}:${latest.identity.requestId}:${++frameSequence}`;
           setLastDisplayedRequestId(latest.identity.requestId);
           setLastDisplayedFrameId(frameId);
+          recordGroundGlassWebGpuTestEvent({
+            kind: "frame-completed",
+            generationId: generation.generationId,
+            requestId: latest.identity.requestId,
+          });
           propsRef.current.onFrameResult({
             status: "completed",
             generation,
@@ -511,6 +543,7 @@ export const GroundGlassWebGPUAdapter = ({
         } catch (error) {
           activeRef.current = false;
           reportFailure(error, "runtime", failedPass);
+          await holdGroundGlassWebGpuOperationAfterFailure();
         }
       });
       operationTailRef.current = queued.then(() => undefined, () => undefined);
@@ -520,12 +553,13 @@ export const GroundGlassWebGPUAdapter = ({
     initialization = Promise.resolve().then(async () => {
       // StrictMode replays setup/cleanup/setup synchronously in development. Do not acquire a
       // renderer until this effect instance survives that replay.
-      if (effectTokenRef.current !== effectToken) return;
+      if (effectTokenRef.current !== effectToken || !isGenerationActive()) return;
       try {
+        recordGroundGlassWebGpuAdapterAttemptForTest(generation.generationId);
         renderer = new WebGPURenderer({ canvas, antialias: false, alpha: false });
         propsRef.current.onAdapterStarted(generation);
         await renderer.init();
-        if (retired) return;
+        if (retired || !isGenerationActive()) return;
 
         renderer.setPixelRatio(1);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -542,6 +576,14 @@ export const GroundGlassWebGPUAdapter = ({
           backendIsWebGl: observed.isWebGLBackend === true,
         });
         runtimeRef.current = runtime;
+        if (runtime.status === "mounted") {
+          recordGroundGlassWebGpuTestEvent({
+            kind: "runtime-observed",
+            generationId: generation.generationId,
+            rendererFamily: runtime.rendererFamily,
+            executionApi: runtime.actualExecutionApi,
+          });
+        }
         setRuntimeApi(runtime.status === "mounted"
           ? runtime.actualExecutionApi === "webgpu" ? "webgpu"
             : runtime.actualExecutionApi === "webgl2" ? "webgl2" : "unknown"
@@ -604,6 +646,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (!target.depthBuffer) throw new Error("Raw WebGPU render target must own an enabled depth attachment");
         setTargetDepthEnabled(true);
         display = createDisplayScene(target, currentRequest.previewMode);
+        throwIfGroundGlassWebGpuFailureInjected("initialization-after-target");
         renderer.setSize(Math.max(1, currentRequest.widthPx), Math.max(1, currentRequest.heightPx), false);
         setTargetSize({ width: target.width, height: target.height });
 
@@ -616,6 +659,7 @@ export const GroundGlassWebGPUAdapter = ({
           backend: observed,
           completedPasses: [],
         });
+        if (retired || !isGenerationActive()) return;
         propsRef.current.onRendererMounted(generation, runtime, details);
 
         if (runtime.actualExecutionApi !== "webgpu") {
@@ -648,7 +692,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (disposeRef.current === disposeOwned) disposeRef.current = null;
       });
     };
-  }, [generation]);
+  }, [generation, isGenerationActive]);
 
   useLayoutEffect(() => {
     if (!ready || !readyRef.current || !activeRef.current) return;

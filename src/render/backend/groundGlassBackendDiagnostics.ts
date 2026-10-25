@@ -5,7 +5,7 @@ import type {
   GroundGlassRendererGenerationIdentity,
 } from "./groundGlassBackendContracts";
 import type { GroundGlassBackendSelection } from "./groundGlassBackendPolicy";
-import type { GroundGlassPassId } from "../groundGlassPassGraph";
+import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
 
 export type GroundGlassMountedRuntimeEvidence =
   | Readonly<{ status: "unknown" }>
@@ -161,7 +161,7 @@ export type GroundGlassBackendDiagnostics = Readonly<{
     request: GroundGlassAcceptedRequestIdentity;
     backend: "webgl" | "webgpu";
     stage: "initialization" | "runtime";
-    failedPass: GroundGlassPassId | null;
+    failedPass: GroundGlassRenderOperationId | null;
     reason: string;
   }> | null;
 }>;

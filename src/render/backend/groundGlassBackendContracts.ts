@@ -3,7 +3,7 @@ import type {
   GroundGlassBackendPolicyInput,
   GroundGlassBackendSelection,
 } from "./groundGlassBackendPolicy";
-import type { GroundGlassPassId } from "../groundGlassPassGraph";
+import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
 
 /** requestId versions one complete immutable render-relevant input snapshot. */
 export type GroundGlassAcceptedRequestIdentity = Readonly<{
@@ -41,7 +41,7 @@ export type GroundGlassFrameResult =
       status: "failed";
       generation: GroundGlassRendererGenerationIdentity;
       request: GroundGlassAcceptedRequestIdentity;
-      failedStage: GroundGlassPassId | null;
+      failedStage: GroundGlassRenderOperationId | null;
       failureReason: string;
     }>;
 
