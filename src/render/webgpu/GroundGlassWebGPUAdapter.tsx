@@ -20,6 +20,7 @@ import type {
   GroundGlassPhysicalCocProbeSummary,
   GroundGlassMountedRuntimeEvidence,
 } from "../backend/groundGlassBackendDiagnostics";
+import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
 import type { GroundGlassCleanupOutcome } from "../groundGlassRenderHostState";
 import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
 import { getGroundGlassSceneProfile } from "../groundGlassSceneProfiles";
@@ -60,21 +61,29 @@ import {
 } from "./groundGlassPhysicalCocNodes";
 import { isGroundGlassPhysicalCocResearchEnabled } from "./groundGlassPhysicalCocPolicy";
 import {
+  type GroundGlassPhysicalCocControlledKernelCase,
+  type GroundGlassPhysicalCocControlledKernelReadback,
+  type GroundGlassPhysicalCocProbeKernelOverride,
   consumeGroundGlassPhysicalCocProbeRequestForTest,
   holdGroundGlassWebGpuOperationAfterFailure,
+  holdGroundGlassPhysicalCocProbeReadbackForTest,
   type GroundGlassPhysicalCocProbeReadback,
   holdGroundGlassWebGpuQueueCompletion,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
   publishGroundGlassPhysicalCocProbeReadbackForTest,
   forceGroundGlassWebGlCompatibilityBackendForTest,
+  forceGroundGlassPhysicalCocUnsupportedForTest,
   throwIfGroundGlassWebGpuFailureInjected,
 } from "./groundGlassWebGpuTestSeam";
 import {
   ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
 } from "./groundGlassRawWebGpuCompatibility";
-import { groundGlassPhysicalCocOrientationErrorModuloPi } from "./groundGlassPhysicalCocContract";
+import {
+  assessGroundGlassPhysicalDepthConfidence,
+  groundGlassPhysicalCocOrientationErrorModuloPi,
+} from "./groundGlassPhysicalCocContract";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 
 type WebGpuRenderer = InstanceType<typeof WebGPURenderer>;
@@ -125,6 +134,159 @@ const errorMessage = (error: unknown): string =>
 const backendObservation = (renderer: WebGpuRenderer): WebGpuBackendLike => {
   const backend = renderer.backend as unknown as WebGpuBackendLike;
   return backend;
+};
+
+class GroundGlassPhysicalSubmissionFailure extends Error {
+  constructor(cause: unknown) {
+    super(`Ground Glass physical pass queue submission failed: ${errorMessage(cause)}`);
+    this.name = "GroundGlassPhysicalSubmissionFailure";
+  }
+}
+
+const submitPhysicalWork = async (device: GpuDeviceLike): Promise<void> => {
+  try {
+    await device.queue.onSubmittedWorkDone();
+  } catch (error) {
+    throw new GroundGlassPhysicalSubmissionFailure(error);
+  }
+};
+
+const mergePhysicalProbeKernelOverride = (
+  base: GroundGlassDofRenderState,
+  override: GroundGlassPhysicalCocProbeKernelOverride,
+): GroundGlassDofRenderState => ({
+  ...base,
+  lens: { ...base.lens, ...override.lens },
+  film: { ...base.film, ...override.film },
+  optics: { ...base.optics, ...override.optics },
+});
+
+const readControlledPhysicalKernelCase = async (input: Readonly<{
+  renderer: WebGpuRenderer;
+  device: GpuDeviceLike;
+  backend: WebGpuBackendLike;
+  depthTexture: THREE.DepthTexture;
+  camera: THREE.OrthographicCamera;
+  dof: GroundGlassDofRenderState;
+  testCase: GroundGlassPhysicalCocControlledKernelCase;
+}>): Promise<GroundGlassPhysicalCocControlledKernelReadback> => {
+  const dof = mergePhysicalProbeKernelOverride(input.dof, input.testCase.kernelOverride);
+  const nodes = createGroundGlassPhysicalCocNodes({
+    depthTexture: input.depthTexture,
+    state: { dof },
+    probes: [input.testCase.probe],
+  });
+  const targets: THREE.RenderTarget[] = [];
+  const materials: MeshBasicNodeMaterial[] = [];
+  const scenes: THREE.Scene[] = [];
+  let geometry: THREE.PlaneGeometry | null = null;
+  try {
+    geometry = new THREE.PlaneGeometry(2, 2);
+    const makeMaterial = (outputNode: MeshBasicNodeMaterial["outputNode"]) => {
+      const material = new MeshBasicNodeMaterial({ toneMapped: false });
+      materials.push(material);
+      material.outputNode = outputNode;
+      const scene = new THREE.Scene();
+      scene.add(new THREE.Mesh(geometry!, material));
+      scenes.push(scene);
+      return scene;
+    };
+    const makeTarget = (type: THREE.TextureDataType) => {
+      const target = new THREE.RenderTarget(1, 1, {
+        format: THREE.RGBAFormat,
+        type,
+        depthBuffer: false,
+        stencilBuffer: false,
+        samples: 0,
+        generateMipmaps: false,
+      });
+      targets.push(target);
+      target.texture.colorSpace = THREE.NoColorSpace;
+      target.texture.minFilter = THREE.NearestFilter;
+      target.texture.magFilter = THREE.NearestFilter;
+      target.texture.generateMipmaps = false;
+      return target;
+    };
+    const calculatedTarget = makeTarget(THREE.FloatType);
+    const orientationTarget = makeTarget(THREE.FloatType);
+    const validityTarget = makeTarget(THREE.UnsignedByteType);
+    const storedTarget = makeTarget(THREE.HalfFloatType);
+    const sampledTarget = makeTarget(THREE.FloatType);
+    const renderPairs = [
+      [makeMaterial(nodes.rawFootprint), calculatedTarget],
+      [makeMaterial(nodes.orientationDiagnostics), orientationTarget],
+      [makeMaterial(vec4(nodes.validityCode.div(255), 0, 0, 1)), validityTarget],
+      [makeMaterial(nodes.storedFootprint), storedTarget],
+      [makeMaterial(vec4(texture(storedTarget.texture, vec2(0.5, 0.5)))), sampledTarget],
+    ] as const;
+
+    for (const [scene, target] of renderPairs) {
+      input.renderer.setRenderTarget(target);
+      input.renderer.setViewport(0, 0, 1, 1);
+      input.renderer.setScissorTest(false);
+      input.renderer.clear(true, false, false);
+      input.renderer.render(scene, input.camera);
+    }
+    await submitPhysicalWork(input.device);
+    const calculated = await input.renderer.readRenderTargetPixelsAsync(
+      calculatedTarget, 0, 0, 1, 1,
+    ) as Float32Array;
+    const orientation = await input.renderer.readRenderTargetPixelsAsync(
+      orientationTarget, 0, 0, 1, 1,
+    ) as Float32Array;
+    const validity = await input.renderer.readRenderTargetPixelsAsync(
+      validityTarget, 0, 0, 1, 1,
+    ) as Uint8Array;
+    const sampled = await input.renderer.readRenderTargetPixelsAsync(
+      sampledTarget, 0, 0, 1, 1,
+    ) as Float32Array;
+    if (
+      !(calculated instanceof Float32Array) ||
+      !(orientation instanceof Float32Array) ||
+      !(validity instanceof Uint8Array) ||
+      !(sampled instanceof Float32Array)
+    ) throw new Error("Controlled physical kernel returned an unexpected diagnostic readback type");
+
+    const storageFormat = observeTextureFormat(input.backend, storedTarget.texture);
+    let storedHalfFloatBits: readonly [number, number, number, number] | null = null;
+    let readbackFootprintMm: readonly [number, number, number, number] | null = null;
+    let sampledFootprintMm: readonly [number, number, number, number] | null = null;
+    if (storageFormat === "rgba16float") {
+      const stored = await input.renderer.readRenderTargetPixelsAsync(
+        storedTarget, 0, 0, 1, 1,
+      ) as Uint16Array;
+      if (!(stored instanceof Uint16Array)) {
+        throw new Error("Controlled RGBA16F target did not return binary16 storage bits");
+      }
+      storedHalfFloatBits = [stored[0]!, stored[1]!, stored[2]!, stored[3]!];
+      readbackFootprintMm = storedHalfFloatBits.map((bits) => THREE.DataUtils.fromHalfFloat(bits)) as
+        unknown as readonly [number, number, number, number];
+      sampledFootprintMm = [sampled[0]!, sampled[1]!, sampled[2]!, sampled[3]!];
+    }
+
+    return {
+      id: input.testCase.id,
+      probeId: input.testCase.probe.id,
+      calculatedFootprintMm: [calculated[0]!, calculated[1]!, calculated[2]!, calculated[3]!],
+      orientationPrincipalAngleRad: orientation[0]!,
+      orientationDefined: Math.round(orientation[1]!) === 1,
+      validityCode: validity[0]!,
+      focalBranchCode: Math.round(orientation[3]!),
+      storageFormat,
+      storedHalfFloatBits,
+      readbackFootprintMm,
+      sampledFootprintMm,
+    };
+  } finally {
+    try {
+      input.renderer.setRenderTarget(null);
+    } finally {
+      scenes.forEach((scene) => scene.clear());
+      materials.forEach((material) => material.dispose());
+      geometry?.dispose();
+      targets.forEach((target) => target.dispose());
+    }
+  }
 };
 
 const observeTextureFormat = (
@@ -341,6 +503,7 @@ const makePhysicalCocDiagnostic = (input: {
   widthPx: input.target.width,
   heightPx: input.target.height,
   completedPasses: input.completedPasses,
+  depthConfidenceStatus: "not-assessed",
   probeReadbackStatus: input.probeReadbackStatus ?? "not-requested",
   probeSummary: input.probeSummary ?? null,
   probeReadbackFailureReason: input.probeReadbackFailureReason ?? null,
@@ -363,6 +526,9 @@ const makePhysicalProbeSummary = (
   let invalidGeometry = 0;
   let unrepresentable = 0;
   let unresolvedFocalBoundary = 0;
+  let depthResolved = 0;
+  let depthLimited = 0;
+  let depthNotAssessed = 0;
   let near = 0;
   let neutral = 0;
   let far = 0;
@@ -405,6 +571,11 @@ const makePhysicalProbeSummary = (
   });
 
   for (const sample of readback.samples) {
+    switch (sample.depthConfidence.status) {
+      case "resolved": depthResolved += 1; break;
+      case "depth-limited": depthLimited += 1; break;
+      case "not-assessed": depthNotAssessed += 1; break;
+    }
     switch (sample.validityCode) {
       case 0: noDepth += 1; continue;
       case 1: valid += 1; break;
@@ -524,6 +695,9 @@ const makePhysicalProbeSummary = (
     invalidGeometry,
     unrepresentable,
     unresolvedFocalBoundary,
+    depthResolved,
+    depthLimited,
+    depthNotAssessed,
     near,
     neutral,
     far,
@@ -860,7 +1034,7 @@ export const GroundGlassWebGPUAdapter = ({
                 renderer.setScissorTest(false);
                 renderer.clear(true, false, false);
                 renderer.render(physicalScene, physicalCamera);
-                await device.queue.onSubmittedWorkDone();
+                await submitPhysicalWork(device);
                 if (retired || !isGenerationActive() || !activeRef.current) return;
                 if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
                 actualCocStorageFormat = observeTextureFormat(mountedBackend, physicalTarget.texture);
@@ -869,13 +1043,13 @@ export const GroundGlassWebGPUAdapter = ({
                   physicalPassUnsupportedReason =
                     "RGBA16F physical target required; observed " + (actualCocStorageFormat ?? "unknown");
                 } else {
-                  physicalCompletedPasses.push("physicalCoc");
                   throwIfGroundGlassWebGpuFailureInjected("physical-coc-after-submit");
+                  physicalCompletedPasses.push("physicalCoc");
                   renderer.setRenderTarget(validityTarget);
                   renderer.setViewport(0, 0, validityTarget.width, validityTarget.height);
                   renderer.clear(true, false, false);
                   renderer.render(validityScene, physicalCamera);
-                  await device.queue.onSubmittedWorkDone();
+                  await submitPhysicalWork(device);
                   if (retired || !isGenerationActive() || !activeRef.current) return;
                   if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
                   actualValidityStorageFormat = observeTextureFormat(mountedBackend, validityTarget.texture);
@@ -884,15 +1058,18 @@ export const GroundGlassWebGPUAdapter = ({
                     physicalPassUnsupportedReason =
                       "RGBA8 validity target required; observed " + (actualValidityStorageFormat ?? "unknown");
                   } else {
+                    throwIfGroundGlassWebGpuFailureInjected("physical-validity-after-submit");
                     physicalCompletedPasses.push("validity");
                     physicalPassStatus = "completed";
                   }
                 }
               }
             } catch (error) {
+              if (error instanceof GroundGlassPhysicalSubmissionFailure) throw error;
               physicalPassStatus = "failed";
               physicalPassFailureReason = errorMessage(error);
             }
+            if (failureReported) return;
             failedPass = null;
             physicalDiagnostic = makePhysicalCocDiagnostic({
               status: physicalPassStatus,
@@ -914,19 +1091,40 @@ export const GroundGlassWebGPUAdapter = ({
               ? consumeGroundGlassPhysicalCocProbeRequestForTest()
               : null;
             if (probeRequest) {
+              failedPass = "cocFootprint";
+              const validProbe = (probe: GroundGlassPhysicalCocControlledKernelCase["probe"]) =>
+                probe.id.trim().length > 0 &&
+                Number.isFinite(probe.u) && probe.u >= 0 && probe.u <= 1 &&
+                Number.isFinite(probe.v) && probe.v >= 0 && probe.v <= 1 &&
+                (!probe.controlledObjectPointMm || probe.controlledObjectPointMm.every(Number.isFinite)) &&
+                (!probe.explicitParallelLimitIdentity || Boolean(probe.controlledObjectPointMm)) &&
+                (probe.focalLengthOverrideMm === undefined ||
+                  (Number.isFinite(probe.focalLengthOverrideMm) && probe.focalLengthOverrideMm > 0));
+              const validKernelOverride = (override: GroundGlassPhysicalCocProbeKernelOverride) => {
+                const vectors = [
+                  override.lens.centerWorldM,
+                  override.lens.planeNormal,
+                  override.lens.planeBasisX,
+                  override.lens.planeBasisY,
+                  override.film.planePointWorldM,
+                  override.film.planeNormal,
+                  override.film.planeBasisX,
+                  override.film.planeBasisY,
+                ];
+                return vectors.every((value) => [value.x, value.y, value.z].every(Number.isFinite)) &&
+                  Number.isFinite(override.optics.focalLengthMm) && override.optics.focalLengthMm > 0 &&
+                  Number.isFinite(override.optics.apertureFNumber) && override.optics.apertureFNumber > 0;
+              };
               const validProbeRequest =
                 probeRequest.probes.length > 0 &&
                 probeRequest.probes.length <= 16 &&
-                probeRequest.probes.every((probe) =>
-                  probe.id.trim().length > 0 &&
-                  Number.isFinite(probe.u) &&
-                  probe.u >= 0 &&
-                  probe.u <= 1 &&
-                  Number.isFinite(probe.v) &&
-                  probe.v >= 0 &&
-                    probe.v <= 1 &&
-                    (!probe.controlledObjectPointMm || probe.controlledObjectPointMm.every(Number.isFinite)) &&
-                    (!probe.explicitParallelLimitIdentity || Boolean(probe.controlledObjectPointMm)),
+                probeRequest.probes.every(validProbe) &&
+                (probeRequest.controlledKernelCases?.length ?? 0) <= 16 &&
+                (probeRequest.controlledKernelCases ?? []).every((testCase) =>
+                  testCase.id.trim().length > 0 &&
+                  Boolean(testCase.probe.controlledObjectPointMm) &&
+                  validProbe(testCase.probe) &&
+                  validKernelOverride(testCase.kernelOverride),
                 );
               if (!validProbeRequest || !target.depthTexture || !physicalTarget || !validityTarget) {
                 physicalDiagnostic = {
@@ -1027,7 +1225,8 @@ export const GroundGlassWebGPUAdapter = ({
                     renderer.clear(true, false, false);
                     renderer.render(probeScene, probeCamera);
                   }
-                  await device.queue.onSubmittedWorkDone();
+                  await submitPhysicalWork(device);
+                  await holdGroundGlassPhysicalCocProbeReadbackForTest();
                   if (retired || !isGenerationActive() || !activeRef.current) return;
                   if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
                   const kernelPixels = await renderer.readRenderTargetPixelsAsync(
@@ -1090,7 +1289,7 @@ export const GroundGlassWebGPUAdapter = ({
                         kernelPixels[offset + 2]!,
                         kernelPixels[offset + 3]!,
                       ] as const,
-                      storedFootprintMm: probe.controlledObjectPointMm
+                      storedFootprintMm: probe.controlledObjectPointMm || probe.focalLengthOverrideMm !== undefined
                         ? null
                         : [
                             storedPixels[offset]!,
@@ -1098,12 +1297,43 @@ export const GroundGlassWebGPUAdapter = ({
                             storedPixels[offset + 2]!,
                             storedPixels[offset + 3]!,
                           ] as const,
-                      validityCode: probe.controlledObjectPointMm
+                      validityCode: probe.controlledObjectPointMm || probe.focalLengthOverrideMm !== undefined
                         ? kernelValidityPixels[offset]!
                         : validityPixels[offset]!,
                       focalBranchCode: Math.round(focalPixels[offset + 2]!),
+                      depthConfidence: assessGroundGlassPhysicalDepthConfidence({
+                        expectedWorldM: probe.expectedWorldM ?? null,
+                        reconstructedWorldM: [
+                          worldPixels[offset]!,
+                          worldPixels[offset + 1]!,
+                          worldPixels[offset + 2]!,
+                        ],
+                        expectedSurfaceId: probe.expectedSurfaceId ?? null,
+                        lensCenterWorldM: [dof.lens.centerWorldM.x, dof.lens.centerWorldM.y, dof.lens.centerWorldM.z],
+                        lensNormal: [dof.lens.planeNormal.x, dof.lens.planeNormal.y, dof.lens.planeNormal.z],
+                        focalLengthMm: probe.focalLengthOverrideMm ?? dof.optics.focalLengthMm,
+                        sampledDepth: worldPixels[offset + 3]!,
+                        controlledObjectPoint: Boolean(probe.controlledObjectPointMm),
+                        kernelBranchCode: Math.round(focalPixels[offset + 2]!),
+                      }),
                     };
                   });
+                  const controlledKernelCases: GroundGlassPhysicalCocControlledKernelReadback[] = [];
+                  for (const testCase of probeRequest.controlledKernelCases ?? []) {
+                    controlledKernelCases.push(await readControlledPhysicalKernelCase({
+                      renderer,
+                      device,
+                      backend: mountedBackend!,
+                      depthTexture: target.depthTexture,
+                      camera: physicalCamera!,
+                      dof,
+                      testCase,
+                    }));
+                  }
+                  if (
+                    retired || failureReported || !isGenerationActive() || !activeRef.current ||
+                    requestRef.current.identity.requestId !== latest.identity.requestId
+                  ) return;
                   const mountedRuntime = runtimeRef.current;
                   if (
                     mountedRuntime.status !== "mounted" ||
@@ -1127,6 +1357,7 @@ export const GroundGlassWebGPUAdapter = ({
                     cocStorageFormat: actualCocStorageFormat,
                     validityStorageFormat: actualValidityStorageFormat,
                     samples,
+                    controlledKernelCases,
                   };
                   publishGroundGlassPhysicalCocProbeReadbackForTest(readback);
                   physicalDiagnostic = {
@@ -1136,6 +1367,7 @@ export const GroundGlassWebGPUAdapter = ({
                     probeReadbackFailureReason: null,
                   };
                 } catch (error) {
+                  if (error instanceof GroundGlassPhysicalSubmissionFailure) throw error;
                   physicalDiagnostic = {
                     ...physicalDiagnostic,
                     probeReadbackStatus: "failed",
@@ -1156,6 +1388,7 @@ export const GroundGlassWebGPUAdapter = ({
               }
             }
             if (physicalDiagnostic) setPhysicalCocDiagnostics(physicalDiagnostic);
+            failedPass = null;
           }
 
           // The raw target blit is presentation plumbing, not a Ground Glass semantic pass.
@@ -1305,6 +1538,12 @@ export const GroundGlassWebGPUAdapter = ({
         physicalPassEnabled =
           runtime.actualExecutionApi === "webgpu" &&
           isGroundGlassPhysicalCocResearchEnabled(currentRequest);
+        if (physicalPassEnabled && forceGroundGlassPhysicalCocUnsupportedForTest()) {
+          physicalPassEnabled = false;
+          physicalPassStatus = "unsupported";
+          physicalPassUnsupportedReason =
+            "test-only capability control: required RGBA16F physical storage is unavailable";
+        }
         if (physicalPassEnabled) {
           try {
             const depthTexture = new THREE.DepthTexture(
@@ -1510,6 +1749,7 @@ export const GroundGlassWebGPUAdapter = ({
       data-physical-coc-depth-format={physicalCocDiagnostics?.depthFormat ?? undefined}
       data-physical-coc-storage-format={physicalCocDiagnostics?.cocStorageFormat ?? undefined}
       data-physical-coc-validity-format={physicalCocDiagnostics?.validityStorageFormat ?? undefined}
+      data-physical-coc-depth-confidence-status={physicalCocDiagnostics?.depthConfidenceStatus}
       data-physical-coc-passes={physicalCocDiagnostics?.completedPasses.join(",")}
       data-physical-coc-probe-readback-status={physicalCocDiagnostics?.probeReadbackStatus}
       data-physical-coc-probe-count={physicalCocDiagnostics?.probeSummary?.count}

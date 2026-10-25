@@ -1,5 +1,35 @@
 import type { GroundGlassFrameResult } from "../backend/groundGlassBackendContracts";
 import type { GroundGlassPhysicalCocProbeUv } from "./groundGlassPhysicalCocNodes";
+import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
+import type { GroundGlassPhysicalDepthConfidence } from "./groundGlassPhysicalCocContract";
+
+export type GroundGlassPhysicalCocProbeKernelOverride = Readonly<{
+  lens: Readonly<Pick<GroundGlassDofRenderState["lens"],
+    "centerWorldM" | "planeNormal" | "planeBasisX" | "planeBasisY">>;
+  film: Readonly<Pick<GroundGlassDofRenderState["film"],
+    "planePointWorldM" | "planeNormal" | "planeBasisX" | "planeBasisY">>;
+  optics: Readonly<Pick<GroundGlassDofRenderState["optics"], "focalLengthMm" | "apertureFNumber">>;
+}>;
+
+export type GroundGlassPhysicalCocControlledKernelCase = Readonly<{
+  id: string;
+  kernelOverride: GroundGlassPhysicalCocProbeKernelOverride;
+  probe: GroundGlassPhysicalCocProbeUv;
+}>;
+
+export type GroundGlassPhysicalCocControlledKernelReadback = Readonly<{
+  id: string;
+  probeId: string;
+  calculatedFootprintMm: readonly [number, number, number, number];
+  orientationPrincipalAngleRad: number;
+  orientationDefined: boolean;
+  validityCode: number;
+  focalBranchCode: number;
+  storageFormat: string | null;
+  storedHalfFloatBits: readonly [number, number, number, number] | null;
+  readbackFootprintMm: readonly [number, number, number, number] | null;
+  sampledFootprintMm: readonly [number, number, number, number] | null;
+}>;
 
 export type GroundGlassPhysicalCocProbeSample = Readonly<{
   id: string;
@@ -15,6 +45,7 @@ export type GroundGlassPhysicalCocProbeSample = Readonly<{
   storedFootprintMm: readonly [number, number, number, number] | null;
   validityCode: number;
   focalBranchCode: number;
+  depthConfidence: GroundGlassPhysicalDepthConfidence;
 }>;
 
 export type GroundGlassPhysicalCocProbeReadback = Readonly<{
@@ -32,17 +63,20 @@ export type GroundGlassPhysicalCocProbeReadback = Readonly<{
   cocStorageFormat: string | null;
   validityStorageFormat: string | null;
   samples: readonly GroundGlassPhysicalCocProbeSample[];
+  controlledKernelCases: readonly GroundGlassPhysicalCocControlledKernelReadback[];
 }>;
 
 export type GroundGlassPhysicalCocProbeRequest = Readonly<{
   token: string;
   probes: readonly GroundGlassPhysicalCocProbeUv[];
+  controlledKernelCases?: readonly GroundGlassPhysicalCocControlledKernelCase[];
 }>;
 
 export type GroundGlassWebGpuTestFailurePoint =
   | "initialization-after-target"
   | "scene-render-after-submit"
   | "physical-coc-after-submit"
+  | "physical-validity-after-submit"
   | "texture-display-after-submit"
   | "dispose-target";
 
@@ -86,6 +120,10 @@ export type GroundGlassWebGpuTestControl = {
   releaseHeldFrame?: (() => void) | undefined;
   physicalCocProbeRequest?: GroundGlassPhysicalCocProbeRequest | null;
   physicalCocProbeReadback?: GroundGlassPhysicalCocProbeReadback | null;
+  forcePhysicalCocUnsupported?: boolean;
+  holdPhysicalCocProbeReadback?: boolean;
+  physicalCocProbeReadbackBarrierReached?: boolean;
+  releasePhysicalCocProbeReadback?: (() => void) | undefined;
 };
 
 declare global {
@@ -104,6 +142,9 @@ const getControl = (): GroundGlassWebGpuTestControl | null =>
 
 export const forceGroundGlassWebGlCompatibilityBackendForTest = (): boolean =>
   getControl()?.forceWebGlCompatibilityBackend === true;
+
+export const forceGroundGlassPhysicalCocUnsupportedForTest = (): boolean =>
+  getControl()?.forcePhysicalCocUnsupported === true;
 
 export const recordGroundGlassWebGpuAdapterAttemptForTest = (generationId: string): void => {
   const control = getControl();
@@ -134,6 +175,20 @@ export const publishGroundGlassPhysicalCocProbeReadbackForTest = (
 ): void => {
   const control = getControl();
   if (control) control.physicalCocProbeReadback = result;
+};
+
+export const holdGroundGlassPhysicalCocProbeReadbackForTest = async (): Promise<void> => {
+  const control = getControl();
+  if (!control?.holdPhysicalCocProbeReadback) return;
+  control.physicalCocProbeReadbackBarrierReached = true;
+  await new Promise<void>((resolve) => {
+    control.releasePhysicalCocProbeReadback = () => {
+      control.holdPhysicalCocProbeReadback = false;
+      control.physicalCocProbeReadbackBarrierReached = false;
+      control.releasePhysicalCocProbeReadback = undefined;
+      resolve();
+    };
+  });
 };
 
 export const throwIfGroundGlassWebGpuFailureInjected = (

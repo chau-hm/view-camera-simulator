@@ -5,10 +5,13 @@ import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const failureIntegrationEnabled = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
+const physicalResearchEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1";
 
 type FailurePoint =
   | "initialization-after-target"
   | "scene-render-after-submit"
+  | "physical-coc-after-submit"
+  | "physical-validity-after-submit"
   | "texture-display-after-submit"
   | "dispose-target";
 
@@ -37,14 +40,18 @@ const installControl = async (page: Page) => {
   });
 };
 
-const startNativePilot = async (page: Page, failurePoints: FailurePoint[]) => {
+const startNativePilot = async (
+  page: Page,
+  failurePoints: FailurePoint[],
+  controlPatch: Partial<GroundGlassWebGpuTestControl> = {},
+) => {
   await installControl(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
   const glass = pane(page);
   await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 90_000 });
   await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
-  await writeControl(page, { failurePoints });
+  await writeControl(page, { ...controlPatch, failurePoints });
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 120_000 })
     .toContainEqual(expect.objectContaining({
@@ -131,13 +138,21 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
   });
 
   for (const scenario of [
-    { name: "D2 scene render submission", point: "scene-render-after-submit" as const, operation: "sceneRender" },
+    { name: "D2 controlled scene render submission rejection", point: "scene-render-after-submit" as const, operation: "sceneRender" },
     { name: "D3 texture display submission", point: "texture-display-after-submit" as const, operation: "textureDisplay" },
   ]) {
     test(`${scenario.name} fails the whole frame and falls back only after confirmed cleanup`, async ({ page }) => {
       test.setTimeout(240_000);
       const { glass, failedRequestId, failedGeneration } = await startNativePilot(page, [scenario.point]);
       await assertConfirmedWebGlFallback(glass, page, failedRequestId, failedGeneration, "runtime", scenario.operation);
+      if (scenario.point === "scene-render-after-submit") {
+        const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+        expect(events).toContainEqual(expect.objectContaining({
+          kind: "failure",
+          generationId: failedGeneration,
+          reason: expect.stringContaining("Injected test-only Ground Glass WebGPU failure"),
+        }));
+      }
       const adapterAttempts = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []);
       expect(adapterAttempts).toEqual([failedGeneration]);
     });
@@ -227,6 +242,88 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     }));
     expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
       .toEqual([failedGeneration]);
+  });
+
+  for (const scenario of [
+    {
+      name: "physical writer",
+      point: "physical-coc-after-submit" as const,
+      completedPasses: "sceneDepth",
+    },
+    {
+      name: "physical validity writer",
+      point: "physical-validity-after-submit" as const,
+      completedPasses: "sceneDepth,physicalCoc",
+    },
+  ]) {
+    test(`M4 ${scenario.name} failure stays local while Raw completes and the next request recovers`, async ({ page }) => {
+      test.skip(!physicalResearchEnabled, "Requires the separate M4 physical research build gate");
+      test.setTimeout(300_000);
+      const { glass, failedRequestId, failedGeneration } = await startNativePilot(page, [scenario.point]);
+      const pilot = page.getByTestId("ground-glass-webgpu-pilot");
+      await expect(pilot).toHaveAttribute("data-physical-coc-status", "failed", { timeout: 120_000 });
+      await expect(pilot).toHaveAttribute("data-physical-coc-request-id", failedRequestId);
+      await expect(pilot).toHaveAttribute("data-physical-coc-passes", scenario.completedPasses);
+      await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer");
+      await expect(glass).toHaveAttribute("data-actual-execution-api", "webgpu");
+      await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready");
+      await expect(glass).toHaveAttribute("data-last-completed-request-id", failedRequestId, { timeout: 90_000 });
+      const initialGeneration = await glass.getAttribute("data-renderer-generation");
+      expect(initialGeneration).toBe(failedGeneration);
+
+      const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+      expect(events).toContainEqual(expect.objectContaining({
+        kind: "frame-completed",
+        generationId: failedGeneration,
+        requestId: failedRequestId,
+      }));
+      expect(events).not.toContainEqual(expect.objectContaining({
+        kind: "failure",
+        generationId: failedGeneration,
+      }));
+      expect(events).not.toContainEqual(expect.objectContaining({
+        kind: "cleanup",
+        generationId: failedGeneration,
+      }));
+
+      const focus = page.getByRole("slider", { name: "Focus distance" });
+      const currentFocus = Number(await focus.inputValue());
+      const focusStep = Number(await focus.getAttribute("step"));
+      await setStepRangeInput(page, "Focus distance", currentFocus + focusStep);
+      const recoveredRequestId = await waitForStableRequestId(page, glass);
+      expect(recoveredRequestId).not.toBe(failedRequestId);
+      await expect(pilot).toHaveAttribute("data-physical-coc-status", "completed", { timeout: 120_000 });
+      await expect(pilot).toHaveAttribute("data-physical-coc-request-id", recoveredRequestId!);
+      await expect(pilot).toHaveAttribute("data-physical-coc-passes", "sceneDepth,physicalCoc,validity");
+      await expect(glass).toHaveAttribute("data-last-completed-request-id", recoveredRequestId!, { timeout: 90_000 });
+      expect(await glass.getAttribute("data-renderer-generation")).toBe(initialGeneration);
+    });
+  }
+
+  test("M4 unsupported physical storage reports unsupported while native Raw remains available", async ({ page }) => {
+    test.skip(!physicalResearchEnabled, "Requires the separate M4 physical research build gate");
+    test.setTimeout(240_000);
+    const { glass, failedRequestId, failedGeneration } = await startNativePilot(
+      page,
+      [],
+      { forcePhysicalCocUnsupported: true },
+    );
+    const pilot = page.getByTestId("ground-glass-webgpu-pilot");
+    await expect(pilot).toHaveAttribute("data-physical-coc-status", "unsupported", { timeout: 120_000 });
+    await expect(pilot).toHaveAttribute("data-physical-coc-passes", "");
+    await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer");
+    await expect(glass).toHaveAttribute("data-actual-execution-api", "webgpu");
+    await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready");
+    await expect(glass).toHaveAttribute("data-last-completed-request-id", failedRequestId, { timeout: 90_000 });
+    expect(await glass.getAttribute("data-renderer-generation")).toBe(failedGeneration);
+    const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: "frame-completed",
+      generationId: failedGeneration,
+      requestId: failedRequestId,
+    }));
+    expect(events).not.toContainEqual(expect.objectContaining({ kind: "failure", generationId: failedGeneration }));
+    expect(events).not.toContainEqual(expect.objectContaining({ kind: "cleanup", generationId: failedGeneration }));
   });
 
   test("D6 latest request wins after a held adapter failure and an out-of-order fallback completion", async ({ page }) => {

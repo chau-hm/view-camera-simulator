@@ -73,6 +73,9 @@ export type GroundGlassPhysicalCocProbeSummary = Readonly<{
   invalidGeometry: number;
   unrepresentable: number;
   unresolvedFocalBoundary: number;
+  depthResolved: number;
+  depthLimited: number;
+  depthNotAssessed: number;
   near: number;
   neutral: number;
   far: number;
@@ -106,6 +109,8 @@ export type GroundGlassPhysicalCocDiagnosticDetails = Readonly<{
   widthPx: number;
   heightPx: number;
   completedPasses: readonly ("sceneDepth" | "physicalCoc" | "validity")[];
+  /** Full-resolution physical validity does not establish canonical depth confidence. */
+  depthConfidenceStatus: "not-assessed";
   probeReadbackStatus: "not-requested" | "completed" | "failed";
   probeSummary: GroundGlassPhysicalCocProbeSummary | null;
   probeReadbackFailureReason: string | null;

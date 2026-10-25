@@ -41,6 +41,8 @@ export type GroundGlassPhysicalCocProbeUv = Readonly<{
   controlledObjectPointMm?: readonly [number, number, number] | null;
   /** Authoritative exact U=f identity for a controlled diagnostic vector only. */
   explicitParallelLimitIdentity?: boolean;
+  /** Test-seam-only focal length used to place a reference-backed probe at U=f. */
+  focalLengthOverrideMm?: number;
 }>;
 
 const toVector = (value: Vec3, scale = 1): THREE.Vector3 =>
@@ -97,7 +99,20 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
   const parallelLimitFlags = probeCount > 0
     ? uniformArray<"float">(input.probes!.map((probe) => probe.explicitParallelLimitIdentity ? 1 : 0), "float")
     : null;
+  const focalLengthOverrideFlags = probeCount > 0
+    ? uniformArray<"float">(input.probes!.map((probe) => probe.focalLengthOverrideMm === undefined ? 0 : 1), "float")
+    : null;
+  const focalLengthOverrides = probeCount > 0
+    ? uniformArray<"float">(input.probes!.map((probe) => probe.focalLengthOverrideMm ?? 0), "float")
+    : null;
   const probeIndex = probeCount > 0 ? int(floor(uv().x.mul(probeCount))) : null;
+  const focalLengthForKernel = probeCount > 0
+    ? select(
+        focalLengthOverrideFlags!.element(probeIndex!).greaterThan(0.5),
+        focalLengthOverrides!.element(probeIndex!),
+        focalLengthMm,
+      )
+    : focalLengthMm;
   const sourceUv = probeCount > 0
     ? vec2(probeUs!.element(probeIndex!), probeVs!.element(probeIndex!))
     : vec2(uv().x, uv().y.oneMinus());
@@ -145,7 +160,7 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
   const objectDelta = objectPointMm.sub(lensCenterMm);
   const objectDistanceMm = dot(objectDelta, lens.normal);
   const lateralOffsetMm = objectDelta.sub(lens.normal.mul(objectDistanceMm));
-  const imageDenominator = objectDistanceMm.sub(focalLengthMm);
+  const imageDenominator = objectDistanceMm.sub(focalLengthForKernel);
   // Preserve every representable finite U-f. Only a controlled diagnostic may
   // supply authority for the exact parallel-image limit; scene depth cannot.
   const finiteImage = abs(imageDenominator).greaterThan(0);
@@ -153,7 +168,7 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
   const focalBranchResolved = finiteImage.or(parallelImageLimit);
   const safeObjectDistance = select(abs(objectDistanceMm).greaterThan(1e-7), objectDistanceMm, 1);
   const safeImageDenominator = select(finiteImage, imageDenominator, 1);
-  const idealImageDistanceMm = focalLengthMm.mul(objectDistanceMm).div(safeImageDenominator);
+  const idealImageDistanceMm = focalLengthForKernel.mul(objectDistanceMm).div(safeImageDenominator);
   const finiteImagePoint = lensCenterMm
     .sub(lens.normal.mul(idealImageDistanceMm))
     .sub(lateralOffsetMm.mul(idealImageDistanceMm.div(safeObjectDistance)));
@@ -170,7 +185,7 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
   const safeFilmDenominator = select(abs(filmDenominator).greaterThan(1e-7), filmDenominator, 1);
   const centerDistance = dot(filmPointMm.sub(lensCenterMm), film.normal).div(safeFilmDenominator);
   const filmDelta = filmPointMm.sub(lensCenterMm);
-  const apertureRadiusMm = focalLengthMm.div(apertureFNumber.mul(2));
+  const apertureRadiusMm = focalLengthForKernel.div(apertureFNumber.mul(2));
   const apertureX = lens.x.mul(apertureRadiusMm);
   const apertureY = lens.y.mul(apertureRadiusMm);
   const imageVector = imagePoint.sub(lensCenterMm);
@@ -233,7 +248,7 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
   const geometryBaseValid = lens.valid
     .and(film.valid)
     .and(objectDistanceMm.greaterThan(1e-7))
-    .and(focalLengthMm.greaterThan(0))
+    .and(focalLengthForKernel.greaterThan(0))
     .and(apertureFNumber.greaterThan(0))
     .and(length(imageDirectionInput).greaterThan(1e-7))
     .and(centerDistance.greaterThan(1e-14))
@@ -298,6 +313,12 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
     branchCode,
     select(usesControlledObjectPoint, 1, 0),
   );
+  const orientationDiagnostics = vec4(
+    orientationPrincipalAngleRad,
+    select(orientationDefined, 1, 0),
+    orientationNormalized,
+    branchCode,
+  );
 
   const setState = (state: GroundGlassPhysicalCocState): void => {
     const dof = state.dof;
@@ -325,6 +346,7 @@ export const createGroundGlassPhysicalCocNodes = (input: Readonly<{
     storedFootprint,
     validityCode,
     focalDiagnostics,
+    orientationDiagnostics,
     usesControlledObjectPoint,
     setState,
   };
