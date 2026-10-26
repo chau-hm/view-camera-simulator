@@ -5,6 +5,8 @@ import {
   auditGroundGlassM5sProposalStrategy,
   compareGroundGlassM5sRgb,
   createGroundGlassM5sProposalStrategy,
+  fingerprintGroundGlassM5sProposalCoordinates,
+  groundGlassM5sProposalIdentityKey,
   integrateGroundGlassM5sUnitDiskFunction,
   runGroundGlassM5sReferenceMatrix,
   runGroundGlassM5sSparseFarReference,
@@ -13,9 +15,13 @@ import {
 } from "../../render/webgpu/groundGlassM5sReference";
 import {
   aggregateGroundGlassM5sStrata,
+  analyzeGroundGlassM5sReferenceMatrix,
   evaluateGroundGlassM5sBlurPreservation,
+  evaluateGroundGlassM5sAnalyticAuthority,
   evaluateGroundGlassM5sEvidence,
-  runGroundGlassM5sAnalyticControls,
+  evaluateGroundGlassM5sProposalAnalyticControls,
+  type GroundGlassM5sAnalyticControlReport,
+  type GroundGlassM5sAnalyticAuthority,
   type GroundGlassM5sEvidenceAssessment,
   type GroundGlassM5sRoiStratum,
   type GroundGlassM5sStratumStudy,
@@ -60,6 +66,53 @@ const halton32 = () => createGroundGlassM5sProposalStrategy({
   sampleCount: 32,
 });
 
+const requiredStrategiesAt1024 = () => [
+  createGroundGlassM5sProposalStrategy({ method: "golden-angle-count-dependent", sampleCount: 1024 }),
+  createGroundGlassM5sProposalStrategy({ method: "halton-2-3-progressive", sampleCount: 1024 }),
+  createGroundGlassM5sProposalStrategy({
+    method: "seeded-stratified-square-to-disk", sampleCount: 1024, seed: 104729,
+  }),
+  createGroundGlassM5sProposalStrategy({
+    method: "seeded-stratified-square-to-disk", sampleCount: 1024, seed: 130363,
+  }),
+];
+
+let cachedValidAnalyticEvidence: Readonly<{
+  strategies: readonly GroundGlassM5sProposalStrategy[];
+  reports: readonly GroundGlassM5sAnalyticControlReport[];
+  authority: GroundGlassM5sAnalyticAuthority;
+}> | null = null;
+const analyticReportCache = new Map<string, GroundGlassM5sAnalyticControlReport>();
+
+const analyticReportFor = (strategy: GroundGlassM5sProposalStrategy) => {
+  const fingerprint = fingerprintGroundGlassM5sProposalCoordinates(strategy);
+  const key = `${groundGlassM5sProposalIdentityKey(strategy.descriptor)}:${fingerprint}`;
+  const cached = analyticReportCache.get(key);
+  if (cached) return cached;
+  const report = evaluateGroundGlassM5sProposalAnalyticControls(strategy);
+  analyticReportCache.set(key, report);
+  return report;
+};
+
+const validAnalyticEvidence = () => {
+  if (cachedValidAnalyticEvidence) return cachedValidAnalyticEvidence;
+  const strategies = requiredStrategiesAt1024();
+  const reports = strategies.map(analyticReportFor);
+  const authority = evaluateGroundGlassM5sAnalyticAuthority({
+    requiredStrategies: strategies.map(({ descriptor }) => descriptor),
+    observedParticipants: strategies.map((strategy) => ({
+      descriptor: strategy.descriptor,
+      coordinateFingerprint: fingerprintGroundGlassM5sProposalCoordinates(strategy),
+    })),
+    analyticResults: reports,
+  });
+  cachedValidAnalyticEvidence = { strategies, reports, authority };
+  return cachedValidAnalyticEvidence;
+};
+
+const passingAnalyticAuthority = (): GroundGlassM5sAnalyticAuthority =>
+  validAnalyticEvidence().authority;
+
 const passingMetric = compareGroundGlassM5sRgb([0, 0, 0], [0.0002, 0, 0]);
 const passingEvidence = (overrides: Partial<Parameters<typeof evaluateGroundGlassM5sEvidence>[0]> = {}) =>
   evaluateGroundGlassM5sEvidence({
@@ -67,7 +120,7 @@ const passingEvidence = (overrides: Partial<Parameters<typeof evaluateGroundGlas
     candidateCount: 16,
     selectedPixelCount: 16,
     minimumSupport: 12,
-    analyticControlsPassed: true,
+    analyticAuthority: passingAnalyticAuthority(),
     blurPreservationStatus: "preserved",
     withinMethodConvergence: [passingMetric],
     crossMethodAgreement: [passingMetric],
@@ -96,12 +149,102 @@ const validStudy = (
   evidence: { classification, adequateSupport: true } as GroundGlassM5sEvidenceAssessment,
 });
 
+const strategyFor = (
+  method: GroundGlassM5sProposalStrategy["descriptor"]["method"],
+  sampleCount: 512 | 1024,
+  seed: number | null = null,
+  transform?: (point: readonly [number, number]) => readonly [number, number],
+): GroundGlassM5sProposalStrategy => {
+  const base = createGroundGlassM5sProposalStrategy({
+    method, sampleCount, ...(seed === null ? {} : { seed }),
+  });
+  return transform ? {
+    descriptor: base.descriptor,
+    proposalAt: (index) => transform(base.proposalAt(index)),
+  } : base;
+};
+
+const matrixFor = (input: Readonly<{
+  strategyTransform?: (strategy: GroundGlassM5sProposalStrategy) => GroundGlassM5sProposalStrategy;
+  analyticReportTransform?: (reports: readonly GroundGlassM5sAnalyticControlReport[]) => readonly GroundGlassM5sAnalyticControlReport[];
+}> = {}) => {
+  const methods = [
+    ["golden-angle-count-dependent", null],
+    ["halton-2-3-progressive", null],
+    ["seeded-stratified-square-to-disk", 104729],
+    ["seeded-stratified-square-to-disk", 130363],
+  ] as const;
+  const transform = (strategy: GroundGlassM5sProposalStrategy) =>
+    input.strategyTransform?.(strategy) ?? strategy;
+  const requiredStrategies = methods.map(([method, seed]) => transform(
+    strategyFor(method, 1024, seed),
+  ));
+  const reports = requiredStrategies.map(analyticReportFor);
+  const analyticResults = input.analyticReportTransform?.(reports) ?? reports;
+  const runs = methods.flatMap(([method, seed]) => ([512, 1024] as const).map((sampleCount) =>
+    runGroundGlassM5sSparseFarReference({
+      referenceInput: makeInput(),
+      selectedGatherPixelIds: [0],
+      strategy: transform(strategyFor(method, sampleCount, seed)),
+    })));
+  const stratum = {
+    id: "S1-smooth-valid-far-interior",
+    candidateCount: 1,
+    selectedGatherPixelIds: [0],
+    minimumSupport: 1,
+  } as unknown as GroundGlassM5sRoiStratum;
+  const study = analyzeGroundGlassM5sReferenceMatrix({
+    strata: [stratum],
+    runs,
+    provenanceStatus: "matched",
+    requiredAnalyticStrategies: requiredStrategies.map(({ descriptor }) => descriptor),
+    analyticResults,
+    blurPreservationByStratum: { [stratum.id]: "preserved" },
+  })[0]!;
+  const authority = evaluateGroundGlassM5sAnalyticAuthority({
+    requiredStrategies: requiredStrategies.map(({ descriptor }) => descriptor),
+    observedParticipants: runs.filter(({ descriptor }) => descriptor.sampleCount === 1024)
+      .map(({ descriptor, proposalCoordinateFingerprint }) => ({
+        descriptor, coordinateFingerprint: proposalCoordinateFingerprint,
+      })),
+    analyticResults,
+  });
+  return { requiredStrategies, reports, analyticResults, runs, study, authority };
+};
+
 describe("Ground Glass M5S independent sparse Far reference", () => {
-  it("runs analytic uniform, affine, boundary, silhouette, depth, cap, and blur controls", () => {
-    const controls = runGroundGlassM5sAnalyticControls();
-    expect(controls.status).toBe("passed");
-    expect(Object.values(controls.cases).every(({ status }) => status === "passed")).toBe(true);
-    expect(controls.independentRasterOracle.resolutionPerAxis).toBe(512);
+  it("runs analytic controls independently for every high-tier method and seed", () => {
+    const { strategies, reports, authority } = validAnalyticEvidence();
+    expect(strategies.map(({ descriptor }) => groundGlassM5sProposalIdentityKey(descriptor)))
+      .toEqual(reports.map(({ strategyId }) => strategyId));
+    expect(reports.map(({ method, seed }) => [method, seed])).toEqual([
+      ["golden-angle-count-dependent", null],
+      ["halton-2-3-progressive", null],
+      ["seeded-stratified-square-to-disk", 104729],
+      ["seeded-stratified-square-to-disk", 130363],
+    ]);
+    expect(reports.every(({ sampleCount, analyticStatus, independentRasterOracle }) =>
+      sampleCount === 1024 && analyticStatus === "passed"
+      && Object.values(independentRasterOracle).includes(512))).toBe(true);
+    expect(reports.every(({ analyticCases }) => Object.values(analyticCases)
+      .every(({ status }) => status === "passed"))).toBe(true);
+    expect(authority.status).toBe("passed");
+  });
+
+  it("fingerprints proposal sequences deterministically from canonical binary coordinates", () => {
+    const first = createGroundGlassM5sProposalStrategy({ method: "halton-2-3-progressive", sampleCount: 64 });
+    const regenerated = createGroundGlassM5sProposalStrategy({ method: "halton-2-3-progressive", sampleCount: 64 });
+    const changed: GroundGlassM5sProposalStrategy = {
+      descriptor: first.descriptor,
+      proposalAt: (index) => {
+        const [x, y] = first.proposalAt(index);
+        return index === 17 ? [x + 1e-7, y] : [x, y];
+      },
+    };
+    expect(fingerprintGroundGlassM5sProposalCoordinates(regenerated))
+      .toBe(fingerprintGroundGlassM5sProposalCoordinates(first));
+    expect(fingerprintGroundGlassM5sProposalCoordinates(changed))
+      .not.toBe(fingerprintGroundGlassM5sProposalCoordinates(first));
   });
 
   it("detects a one-channel mutation with RGB error metrics (N1)", () => {
@@ -123,14 +266,11 @@ describe("Ground Glass M5S independent sparse Far reference", () => {
   });
 
   it("flags duplicate proposals and prevents the sparse engine from using them (N3)", () => {
+    const duplicateBase = createGroundGlassM5sProposalStrategy({
+      method: "halton-2-3-progressive", sampleCount: 32,
+    });
     const duplicateStrategy: GroundGlassM5sProposalStrategy = {
-      descriptor: {
-        method: "halton-2-3-progressive",
-        sequenceId: "intentionally-duplicated-control",
-        sampleCount: 32,
-        seed: null,
-        progressivePrefix: true,
-      },
+      descriptor: { ...duplicateBase.descriptor, sequenceId: "intentionally-duplicated-control" },
       proposalAt: () => [0, 0],
     };
     const audit = auditGroundGlassM5sProposalStrategy(duplicateStrategy);
@@ -163,14 +303,11 @@ describe("Ground Glass M5S independent sparse Far reference", () => {
 
   it("distinguishes uniform-radius sampling from the equal-area disk oracle (N5)", () => {
     const count = 1024;
+    const radialBase = createGroundGlassM5sProposalStrategy({
+      method: "golden-angle-count-dependent", sampleCount: 1024,
+    });
     const radialUniform: GroundGlassM5sProposalStrategy = {
-      descriptor: {
-        method: "golden-angle-count-dependent",
-        sequenceId: "uniform-radius-negative-control",
-        sampleCount: count,
-        seed: null,
-        progressivePrefix: false,
-      },
+      descriptor: { ...radialBase.descriptor, sequenceId: "uniform-radius-negative-control" },
       proposalAt: (index) => {
         const radius = (index + 0.5) / count;
         const angle = (index + 0.5) * 2.399963229728653;
@@ -185,11 +322,11 @@ describe("Ground Glass M5S independent sparse Far reference", () => {
   });
 
   it("rejects aperture proposals outside the unit disk (N6)", () => {
+    const outsideBase = createGroundGlassM5sProposalStrategy({
+      method: "halton-2-3-progressive", sampleCount: 32,
+    });
     const outside: GroundGlassM5sProposalStrategy = {
-      descriptor: {
-        method: "halton-2-3-progressive", sequenceId: "outside-disk-negative-control",
-        sampleCount: 32, seed: null, progressivePrefix: true,
-      },
+      descriptor: { ...outsideBase.descriptor, sequenceId: "outside-disk-negative-control" },
       proposalAt: (index) => index === 0 ? [1.01, 0] : [0.5 * Math.cos(index), 0.5 * Math.sin(index)],
     };
     expect(auditGroundGlassM5sProposalStrategy(outside).status).toBe("invalid");
@@ -199,7 +336,8 @@ describe("Ground Glass M5S independent sparse Far reference", () => {
   });
 
   it("does not qualify agreeing methods when the analytic oracle fails (N7)", () => {
-    const evidence = passingEvidence({ analyticControlsPassed: false });
+    const authority = passingAnalyticAuthority();
+    const evidence = passingEvidence({ analyticAuthority: { ...authority, status: "failed" } });
     expect(evidence.classification).toBe("analytically-invalid");
     expect(evidence.referenceAuthority).toBe("none");
   });
@@ -378,5 +516,253 @@ describe("Ground Glass M5S independent sparse Far reference", () => {
       .some((same) => !same)).toBe(true);
     expect(auditGroundGlassM5sProposalStrategy(seedA).status).toBe("valid");
     expect(auditGroundGlassM5sProposalStrategy(seedB).status).toBe("valid");
+  });
+
+  it("allows cross-method analysis only when every actual high-tier participant passes its controls (F1)", () => {
+    const result = matrixFor();
+    expect(result.authority.status).toBe("passed");
+    expect(result.authority.qualifiedStrategyIds).toHaveLength(4);
+    expect(result.study.evidence.analyticAuthority).toEqual(result.authority);
+    expect(result.study.evidence.classification).toBe("converged-and-cross-validated");
+  });
+
+  it("rejects a structurally valid center-biased Golden-angle sequence (F2)", () => {
+    const result = matrixFor({
+      strategyTransform: (strategy) => strategy.descriptor.method === "golden-angle-count-dependent"
+        ? { descriptor: strategy.descriptor, proposalAt: (index) => {
+          const [x, y] = strategy.proposalAt(index);
+          return [x * 0.5, y * 0.5];
+        } }
+        : strategy,
+    });
+    const golden = result.reports.find(({ method }) => method === "golden-angle-count-dependent")!;
+    expect(golden.proposalAudit.status).toBe("valid");
+    expect(golden.analyticCases.unitDiskAreaMoment.observed).toBeCloseTo(0.125, 6);
+    expect(golden.analyticCases.unitDiskAreaMoment.status).toBe("failed");
+    expect(result.authority.status).toBe("failed");
+    expect(result.study.evidence.classification).toBe("analytically-invalid");
+    expect(result.study.evidence.classification).not.toBe("converged-and-cross-validated");
+  });
+
+  it("rejects a uniform-radius seeded strategy despite all proposals remaining inside the disk (F3)", () => {
+    const result = matrixFor({
+      strategyTransform: (strategy) => strategy.descriptor.method === "seeded-stratified-square-to-disk"
+        && strategy.descriptor.seed === 104729
+        ? { descriptor: strategy.descriptor, proposalAt: (index) => {
+          const radius = (index + 0.5) / strategy.descriptor.sampleCount;
+          const angle = (index + 0.5) * 2.399963229728653;
+          return [radius * Math.cos(angle), radius * Math.sin(angle)];
+        } }
+        : strategy,
+    });
+    const seedA = result.reports.find(({ seed }) => seed === 104729)!;
+    expect(seedA.proposalAudit.status).toBe("valid");
+    expect(seedA.analyticCases.unitDiskAreaMoment.observed).toBeCloseTo(1 / 3, 5);
+    expect(seedA.analyticCases.unitDiskAreaMoment.status).toBe("failed");
+    expect(result.study.evidence.classification).toBe("analytically-invalid");
+  });
+
+  it("keeps seed A qualified while an analytically failed seed B blocks aggregate qualification (F4)", () => {
+    const result = matrixFor({
+      strategyTransform: (strategy) => strategy.descriptor.method === "seeded-stratified-square-to-disk"
+        && strategy.descriptor.seed === 130363
+        ? { descriptor: strategy.descriptor, proposalAt: (index) => {
+          const [x, y] = strategy.proposalAt(index);
+          return [x * 0.5, y * 0.5];
+        } }
+        : strategy,
+    });
+    const seedA = groundGlassM5sProposalIdentityKey(result.requiredStrategies[2]!.descriptor);
+    const seedB = groundGlassM5sProposalIdentityKey(result.requiredStrategies[3]!.descriptor);
+    expect(result.authority.qualifiedStrategyIds).toContain(seedA);
+    expect(result.authority.failedStrategies.map(({ strategyId }) => strategyId)).toContain(seedB);
+    expect(result.study.evidence.classification).toBe("analytically-invalid");
+  });
+
+  it("fails closed when a required seed result is missing or replaced by another seed (F5/F6)", () => {
+    const { strategies, reports } = validAnalyticEvidence();
+    const observedParticipants = strategies.map((strategy) => ({
+      descriptor: strategy.descriptor,
+      coordinateFingerprint: fingerprintGroundGlassM5sProposalCoordinates(strategy),
+    }));
+    const missing = evaluateGroundGlassM5sAnalyticAuthority({
+      requiredStrategies: strategies.map(({ descriptor }) => descriptor),
+      observedParticipants,
+      analyticResults: reports.filter(({ seed }) => seed !== 130363),
+    });
+    expect(missing.status).toBe("invalid");
+    expect(missing.missingStrategyIds).toContain(groundGlassM5sProposalIdentityKey(
+      strategies[3]!.descriptor,
+    ));
+
+    const wrongSeed = evaluateGroundGlassM5sAnalyticAuthority({
+      requiredStrategies: strategies.map(({ descriptor }) => descriptor),
+      observedParticipants,
+      analyticResults: [...reports.slice(0, 3), reports[2]!],
+    });
+    expect(wrongSeed.status).toBe("invalid");
+    expect(wrongSeed.duplicateStrategyIds).toContain(groundGlassM5sProposalIdentityKey(
+      strategies[2]!.descriptor,
+    ));
+    expect(wrongSeed.missingStrategyIds).toContain(groundGlassM5sProposalIdentityKey(
+      strategies[3]!.descriptor,
+    ));
+  });
+
+  it("does not let a Halton-only PASS qualify missing methods or seeds (F7)", () => {
+    const { strategies, reports } = validAnalyticEvidence();
+    const authority = evaluateGroundGlassM5sAnalyticAuthority({
+      requiredStrategies: strategies.map(({ descriptor }) => descriptor),
+      observedParticipants: strategies.map((strategy) => ({
+        descriptor: strategy.descriptor,
+        coordinateFingerprint: fingerprintGroundGlassM5sProposalCoordinates(strategy),
+      })),
+      analyticResults: [reports[1]!],
+    });
+    expect(authority.status).toBe("invalid");
+    expect(authority.qualifiedStrategyIds).toHaveLength(1);
+    const evidence = passingEvidence({ analyticAuthority: authority });
+    expect(evidence.classification).toBe("invalid-comparison");
+    expect(evidence.referenceAuthority).toBe("none");
+  });
+
+  it("does not let identical numerical outputs override one failed method's analytic evidence (F8)", () => {
+    const result = matrixFor({
+      strategyTransform: (strategy) => strategy.descriptor.method === "golden-angle-count-dependent"
+        ? { descriptor: strategy.descriptor, proposalAt: (index) => {
+          const [x, y] = strategy.proposalAt(index);
+          return [x * 0.5, y * 0.5];
+        } }
+        : strategy,
+    });
+    expect(result.study.highTierCrossMethodAgreement.every(({ metrics }) => metrics.rmse === 0)).toBe(true);
+    expect(result.study.evidence.classification).toBe("analytically-invalid");
+  });
+
+  it("rejects analytic evidence for a different sample tier or algorithm revision (F9)", () => {
+    const { strategies, reports } = validAnalyticEvidence();
+    const wrongTier = {
+      ...reports[0]!,
+      sampleCount: 512,
+    } as GroundGlassM5sAnalyticControlReport;
+    const wrongMethod = {
+      ...reports[1]!,
+      method: "golden-angle-count-dependent",
+    } as GroundGlassM5sAnalyticControlReport;
+    const wrongRevision = {
+      ...reports[1]!,
+      algorithmRevision: "unreviewed-proposal-revision",
+    } as unknown as GroundGlassM5sAnalyticControlReport;
+    const reportSets = [
+      reports.map((_report, index) => index === 0 ? wrongTier : reports[index]!),
+      reports.map((_report, index) => index === 1 ? wrongMethod : reports[index]!),
+      reports.map((_report, index) => index === 1 ? wrongRevision : reports[index]!),
+    ];
+    for (const analyticResults of reportSets) {
+      const authority = evaluateGroundGlassM5sAnalyticAuthority({
+        requiredStrategies: strategies.map(({ descriptor }) => descriptor),
+        observedParticipants: strategies.map((strategy) => ({
+          descriptor: strategy.descriptor,
+          coordinateFingerprint: fingerprintGroundGlassM5sProposalCoordinates(strategy),
+        })),
+        analyticResults,
+      });
+      expect(authority.status).toBe("invalid");
+      expect(authority.qualifiedStrategyIds).toHaveLength(3);
+    }
+  });
+
+  it("serializes one consistent analytic status from method to stratum and aggregate (F10)", () => {
+    const result = matrixFor({
+      strategyTransform: (strategy) => strategy.descriptor.method === "golden-angle-count-dependent"
+        ? { descriptor: strategy.descriptor, proposalAt: (index) => {
+          const [x, y] = strategy.proposalAt(index);
+          return [x * 0.5, y * 0.5];
+        } }
+        : strategy,
+    });
+    const aggregate = aggregateGroundGlassM5sStrata([result.study]);
+    const serialized = JSON.parse(JSON.stringify({
+      methodStatuses: result.analyticResults.map(({ strategyId, analyticStatus }) => ({ strategyId, analyticStatus })),
+      stratumAuthority: result.study.evidence.analyticAuthority,
+      stratumClassification: result.study.evidence.classification,
+      aggregate,
+    })) as {
+      methodStatuses: readonly { strategyId: string; analyticStatus: string }[];
+      stratumAuthority: { status: string };
+      stratumClassification: string;
+      aggregate: { classification: string; referenceAuthority: string };
+    };
+    expect(serialized.methodStatuses.some(({ analyticStatus }) => analyticStatus === "failed")).toBe(true);
+    expect(serialized.stratumAuthority.status).toBe("failed");
+    expect(serialized.stratumClassification).toBe("analytically-invalid");
+    expect(serialized.aggregate.classification).toBe("analytically-invalid");
+    expect(serialized.aggregate.referenceAuthority).toBe("unresolved");
+  });
+
+  it("keeps the tracked M5S report compact while retaining reproducibility and native evidence", () => {
+    const report = JSON.parse(readFileSync(
+      "docs/architecture/GROUND_GLASS_M5S_REFERENCE_CONVERGENCE_REPORT.json", "utf8",
+    )) as {
+      nativeRuntime: { browserProject: string; rendererFamily: string; actualExecutionApi: string };
+      samplingFamilies: {
+        methods: readonly string[];
+        sampleCounts: readonly number[];
+        randomizedSeeds: readonly number[];
+        samplingPatterns: readonly Record<string, unknown>[];
+      };
+      analyticValidation: {
+        authority: { status: string; expectedStrategyIds: readonly string[]; observedStrategyIds: readonly string[] };
+        strategies: readonly { method: string; sampleCount: number; seed: number | null; analyticStatus: string }[];
+      };
+      perSequenceEvidence: readonly { inputFingerprints: object; descriptor: object; acceptedProposalCounts: readonly number[] }[];
+      opticalStates: readonly { captureIds: object; inputFingerprints: object; roiStrata: readonly Record<string, unknown>[] }[];
+    };
+    expect(report.nativeRuntime).toEqual(expect.objectContaining({
+      browserProject: "chrome-native-webgpu", rendererFamily: "webgpu-renderer", actualExecutionApi: "webgpu",
+    }));
+    expect(report.samplingFamilies.methods).toEqual([
+      "golden-angle-count-dependent",
+      "halton-2-3-progressive",
+      "seeded-stratified-square-to-disk",
+    ]);
+    expect(report.samplingFamilies.sampleCounts).toEqual([32, 64, 128, 256, 512, 1024]);
+    expect(report.samplingFamilies.randomizedSeeds).toEqual([104729, 130363]);
+    expect(report.samplingFamilies.samplingPatterns.length).toBeGreaterThan(0);
+    expect(report.samplingFamilies.samplingPatterns.every((pattern) =>
+      !Object.hasOwn(pattern, "proposals") && typeof pattern.coordinateFingerprint === "string"
+      && typeof pattern.proposalAudit === "object" && typeof pattern.descriptor === "object"
+      && typeof pattern.proposalCount === "number")).toBe(true);
+    const highTierPatterns = report.samplingFamilies.samplingPatterns.filter((pattern) =>
+      (pattern.descriptor as { sampleCount?: number }).sampleCount === 1024);
+    expect(highTierPatterns.map((pattern) => {
+      const descriptor = pattern.descriptor as { method: string; seed: number | null; algorithmRevision: string };
+      return [descriptor.method, descriptor.seed, descriptor.algorithmRevision];
+    })).toEqual([
+      ["golden-angle-count-dependent", null, "ground-glass-m5s-proposal-v1"],
+      ["halton-2-3-progressive", null, "ground-glass-m5s-proposal-v1"],
+      ["seeded-stratified-square-to-disk", 104729, "ground-glass-m5s-proposal-v1"],
+      ["seeded-stratified-square-to-disk", 130363, "ground-glass-m5s-proposal-v1"],
+    ]);
+    expect(report.analyticValidation.authority.status).toBe("passed");
+    expect(report.analyticValidation.authority.expectedStrategyIds).toHaveLength(4);
+    expect(report.analyticValidation.authority.observedStrategyIds).toHaveLength(4);
+    expect(report.analyticValidation.strategies.map(({ method, sampleCount, seed, analyticStatus }) =>
+      [method, sampleCount, seed, analyticStatus])).toEqual([
+      ["golden-angle-count-dependent", 1024, null, "passed"],
+      ["halton-2-3-progressive", 1024, null, "passed"],
+      ["seeded-stratified-square-to-disk", 1024, 104729, "passed"],
+      ["seeded-stratified-square-to-disk", 1024, 130363, "passed"],
+    ]);
+    expect(report.perSequenceEvidence.length).toBeGreaterThan(0);
+    expect(report.perSequenceEvidence.every(({ inputFingerprints, descriptor, acceptedProposalCounts }) =>
+      Object.keys(inputFingerprints).length === 4 && Object.keys(descriptor).length > 0
+      && acceptedProposalCounts.length === 10)).toBe(true);
+    expect(report.opticalStates.some(({ roiStrata }) => roiStrata.some((stratum) =>
+      Array.isArray(stratum.convergenceCurves) && Array.isArray(stratum.highTierCrossMethodAgreement)
+      && typeof stratum.evidence === "object"))).toBe(true);
+    expect(report.opticalStates.every(({ captureIds, inputFingerprints }) =>
+      Object.keys(captureIds).includes("full32") && Object.keys(captureIds).includes("full64")
+      && Object.keys(inputFingerprints).length === 4)).toBe(true);
   });
 });

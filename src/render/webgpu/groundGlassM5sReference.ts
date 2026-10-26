@@ -22,6 +22,7 @@ import {
 } from "./groundGlassApertureGatherReference";
 
 export const GROUND_GLASS_M5S_SAMPLE_COUNTS = [32, 64, 128, 256, 512, 1024] as const;
+export const GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION = "ground-glass-m5s-proposal-v1";
 export type GroundGlassM5sSampleCount = (typeof GROUND_GLASS_M5S_SAMPLE_COUNTS)[number];
 export type GroundGlassM5sSamplingMethod =
   | "golden-angle-count-dependent"
@@ -39,6 +40,7 @@ export const GROUND_GLASS_M5S_DECLARED_MAXIMUM_CHANNEL_ERROR = 0.01;
 export type GroundGlassM5sProposalDescriptor = Readonly<{
   method: GroundGlassM5sSamplingMethod;
   sequenceId: string;
+  algorithmRevision: typeof GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION;
   sampleCount: GroundGlassM5sSampleCount;
   seed: number | null;
   progressivePrefix: boolean;
@@ -110,6 +112,7 @@ export type GroundGlassM5sFarReferenceResult = Readonly<{
   targetSemantics: "finite-estimator-and-limiting-conditional-integral";
   descriptor: GroundGlassM5sProposalDescriptor;
   proposalAudit: GroundGlassM5sProposalAudit;
+  proposalCoordinateFingerprint: string;
   inputFingerprints: GroundGlassM5sInputFingerprints;
   selectedGatherPixelIds: readonly number[];
   evaluatedProposalCount: number;
@@ -207,6 +210,7 @@ export const createGroundGlassM5sProposalStrategy = (input: Readonly<{
       : input.method === "halton-2-3-progressive"
         ? "halton-base-2-3-equal-area-polar-v1"
         : "seeded-jittered-equal-area-square-grid-concentric-v1",
+    algorithmRevision: GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION,
     sampleCount: input.sampleCount,
     seed,
     progressivePrefix: input.method === "halton-2-3-progressive",
@@ -236,6 +240,44 @@ export const createGroundGlassM5sProposalStrategy = (input: Readonly<{
   };
 
   return Object.freeze({ descriptor, proposalAt });
+};
+
+export const groundGlassM5sProposalIdentityKey = (
+  descriptor: GroundGlassM5sProposalDescriptor,
+): string => JSON.stringify([
+  descriptor.method,
+  descriptor.sequenceId,
+  descriptor.sampleCount,
+  descriptor.seed,
+  descriptor.algorithmRevision,
+]);
+
+/**
+ * Fingerprints proposal coordinates using a canonical binary representation:
+ * each x then y coordinate is encoded as IEEE-754 binary64, little-endian,
+ * in proposal order, then folded through FNV-1a 64-bit. This is a reproducible
+ * integrity checksum, not a cryptographic hash.
+ */
+export const fingerprintGroundGlassM5sProposalCoordinates = (
+  strategy: GroundGlassM5sProposalStrategy,
+): string => {
+  let hash = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+  const mask = 0xffffffffffffffffn;
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  for (let index = 0; index < strategy.descriptor.sampleCount; index += 1) {
+    const point = strategy.proposalAt(index);
+    for (const coordinate of point) {
+      if (!Number.isFinite(coordinate)) throw new RangeError("Cannot fingerprint a non-finite M5S proposal");
+      view.setFloat64(0, coordinate, true);
+      for (let byteIndex = 0; byteIndex < 8; byteIndex += 1) {
+        hash ^= BigInt(view.getUint8(byteIndex));
+        hash = (hash * prime) & mask;
+      }
+    }
+  }
+  return `fnv1a64-f64le-v1:${hash.toString(16).padStart(16, "0")}`;
 };
 
 /** Audits proposal integrity and basic spatial coverage before numerical use. */
@@ -502,6 +544,7 @@ export const runGroundGlassM5sSparseFarReference = (input: Readonly<{
   if (proposalAudit.status !== "valid") {
     throw new RangeError("M5S invalid proposal sequence: " + proposalAudit.issues.join("; "));
   }
+  const proposalCoordinateFingerprint = fingerprintGroundGlassM5sProposalCoordinates(strategy);
 
   const startedAt = Date.now();
   const results: GroundGlassM5sFarPixelResult[] = [];
@@ -614,6 +657,7 @@ export const runGroundGlassM5sSparseFarReference = (input: Readonly<{
     targetSemantics: "finite-estimator-and-limiting-conditional-integral",
     descriptor: strategy.descriptor,
     proposalAudit,
+    proposalCoordinateFingerprint,
     inputFingerprints: input.referenceInput.inputFingerprints,
     selectedGatherPixelIds: [...input.selectedGatherPixelIds],
     evaluatedProposalCount,

@@ -20,6 +20,8 @@ import {
   GROUND_GLASS_M5S_SAMPLE_COUNTS,
   compareGroundGlassM5sRgb,
   createGroundGlassM5sProposalStrategy,
+  fingerprintGroundGlassM5sProposalCoordinates,
+  groundGlassM5sProposalIdentityKey,
   runGroundGlassM5sReferenceMatrix,
   type GroundGlassM5sFarReferenceInput,
   type GroundGlassM5sFarReferenceResult,
@@ -29,7 +31,8 @@ import {
   analyzeGroundGlassM5sReferenceMatrix,
   compareGroundGlassM5sInputFingerprints,
   evaluateGroundGlassM5sBlurPreservation,
-  runGroundGlassM5sAnalyticControls,
+  evaluateGroundGlassM5sAnalyticAuthority,
+  evaluateGroundGlassM5sProposalAnalyticControls,
   selectGroundGlassM5sRoiStrata,
   type GroundGlassM5sStratumStudy,
 } from "../../render/webgpu/groundGlassM5sAnalysis";
@@ -2228,12 +2231,29 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     q6: "reference-not-converged",
     q7: "reference-not-converged",
   } as const;
-  const m5sAnalyticControls = runGroundGlassM5sAnalyticControls();
-  if (m5sAnalyticControls.status !== "passed") {
-    await testInfo.attach("m5s-analytic-control-failure.json", {
-      body: JSON.stringify(m5sAnalyticControls, null, 2), contentType: "application/json",
+  const m5sSamplingSeeds = [104729, 130363] as const;
+  const m5sRequiredAnalyticStrategies = [
+    createGroundGlassM5sProposalStrategy({ method: "golden-angle-count-dependent", sampleCount: 1024 }),
+    createGroundGlassM5sProposalStrategy({ method: "halton-2-3-progressive", sampleCount: 1024 }),
+    ...m5sSamplingSeeds.map((seed) => createGroundGlassM5sProposalStrategy({
+      method: "seeded-stratified-square-to-disk" as const, sampleCount: 1024 as const, seed,
+    })),
+  ];
+  const m5sAnalyticReports = m5sRequiredAnalyticStrategies.map((strategy) =>
+    evaluateGroundGlassM5sProposalAnalyticControls(strategy));
+  const m5sAnalyticAuthority = evaluateGroundGlassM5sAnalyticAuthority({
+    requiredStrategies: m5sRequiredAnalyticStrategies.map(({ descriptor }) => descriptor),
+    observedParticipants: m5sRequiredAnalyticStrategies.map((strategy, index) => ({
+      descriptor: strategy.descriptor,
+      coordinateFingerprint: m5sAnalyticReports[index]!.coordinateFingerprint,
+    })),
+    analyticResults: m5sAnalyticReports,
+  });
+  if (m5sAnalyticReports.some(({ analyticStatus }) => analyticStatus !== "passed")) {
+    await testInfo.attach("m5s-analytic-controls-failure.json", {
+      body: JSON.stringify({ analyticAuthority: m5sAnalyticAuthority, strategies: m5sAnalyticReports }, null, 2),
+      contentType: "application/json",
     });
-    throw new Error("M5S analytic CPU controls failed before native reference analysis");
   }
   const m5sCapturePairs = [
     { opticalStateId: "ar-f3200-f5p6-loupe4-rise0", role: "primary-4x-control-cap60", full32: q1Captures.full32a, full64: q1Captures.full64a },
@@ -2241,9 +2261,9 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     { opticalStateId: "ar-f5200-f5p6-full-rise0", role: "focus-distance-control-cap60", full32: q4Capture, full64: q4Full64Capture },
     { opticalStateId: "ar-f3200-f5p6-loupe4-rise0", role: "stressed-cap2", full32: q1Cap2Full32, full64: q1Cap2Full64 },
   ] as const;
-  const m5sSamplingSeeds = [104729, 130363] as const;
   const m5sTotalProposalEvaluations = { value: 0 };
   const m5sSamplingPatterns: unknown[] = [];
+  const m5sSamplingProposals: unknown[] = [];
   const m5sOpticalStateReports: M5sNativeStateReport[] = [];
   const m5sRunProvenance: unknown[] = [];
   for (const capturePair of m5sCapturePairs) {
@@ -2317,19 +2337,39 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
         : null;
       if (runFingerprints) expect(runFingerprints.status).toBe("matched");
       if (m5sSamplingPatterns.length === 0 && runs.length) {
-        m5sSamplingPatterns.push(...runs.map((run) => {
+        const generatedPatterns = runs.map((run) => {
           const strategy = createGroundGlassM5sProposalStrategy({
             method: run.descriptor.method,
             sampleCount: run.descriptor.sampleCount,
             ...(run.descriptor.seed === null ? {} : { seed: run.descriptor.seed }),
           });
+          const coordinateFingerprint = fingerprintGroundGlassM5sProposalCoordinates(strategy);
+          expect(coordinateFingerprint).toBe(run.proposalCoordinateFingerprint);
+          const analytic = m5sAnalyticReports.find((evidence) =>
+            evidence.strategyId === groundGlassM5sProposalIdentityKey(run.descriptor));
+          const proposals = Array.from({ length: run.descriptor.sampleCount }, (_value, index) =>
+            strategy.proposalAt(index));
           return {
             descriptor: run.descriptor,
-            audit: run.proposalAudit,
-            proposals: Array.from({ length: run.descriptor.sampleCount }, (_value, index) =>
-              strategy.proposalAt(index)),
+            proposalCount: run.descriptor.sampleCount,
+            coordinateFingerprint,
+            proposalAudit: run.proposalAudit,
+            analyticStatus: run.descriptor.sampleCount === 1024
+              ? analytic?.analyticStatus ?? "missing"
+              : "not-evaluated-at-lower-tier",
+            analyticStrategyId: analytic?.strategyId ?? null,
+            proposals,
           };
-        }));
+        });
+        m5sSamplingProposals.push(...generatedPatterns);
+        m5sSamplingPatterns.push(...generatedPatterns.map((pattern) => ({
+          descriptor: pattern.descriptor,
+          proposalCount: pattern.proposalCount,
+          coordinateFingerprint: pattern.coordinateFingerprint,
+          proposalAudit: pattern.proposalAudit,
+          analyticStatus: pattern.analyticStatus,
+          analyticStrategyId: pattern.analyticStrategyId,
+        })));
       }
       const runAt = (method: string, seed: number | null = null) => runs.find((run) =>
         run.descriptor.method === method && run.descriptor.sampleCount === 1024
@@ -2354,12 +2394,24 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
         strata: [stratum],
         runs,
         provenanceStatus: profileProvenance.status,
-        analyticControlsPassed: m5sAnalyticControls.status === "passed",
+        requiredAnalyticStrategies: m5sRequiredAnalyticStrategies.map(({ descriptor }) => descriptor),
+        analyticResults: m5sAnalyticReports,
         blurPreservationByStratum: {
           [stratum.id]: blur?.status ?? "unresolved",
         },
       });
       const study = studies[0]!;
+      if (study.evidence.analyticAuthority.status !== "passed") {
+        await testInfo.attach(`m5s-run-analytic-authority-${capturePair.role}-${stratum.id}.json`, {
+          body: JSON.stringify({
+            role: capturePair.role,
+            stratumId: stratum.id,
+            authority: study.evidence.analyticAuthority,
+            analyticResults: m5sAnalyticReports,
+          }, null, 2),
+          contentType: "application/json",
+        });
+      }
       studyValues.push(study);
       const nativeFull32 = rgbFromSelectedRgba(full32Rgba, selectedIds);
       const nativeFull64 = rgbFromSelectedRgba(full64Rgba, selectedIds);
@@ -2401,7 +2453,10 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
           full64ToSourceRatio: mean(localSourceGradients)
             ? mean(localFull64Gradients)! / mean(localSourceGradients)! : null,
         },
-        edgeSpreadProxy: m5sAnalyticControls.cases.compactSilhouette,
+        edgeSpreadProxyByStrategy: m5sAnalyticReports.map((evidence) => ({
+          strategyId: evidence.strategyId,
+          result: evidence.analyticCases.compactSilhouette,
+        })),
       };
       stratumReports.push({
         ...study,
@@ -2455,10 +2510,18 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
       aggregate: aggregateGroundGlassM5sStrata(studyValues),
     });
   }
+  const m5sNativeAnalyticAuthority = m5sOpticalStateReports
+    .flatMap(({ roiStrata }) => roiStrata)
+    .map(({ evidence }) => evidence.analyticAuthority)
+    .find(({ observedStrategyIds }) => observedStrategyIds.length > 0);
+  if (!m5sNativeAnalyticAuthority) {
+    throw new Error("M5S native study produced no captured high-tier proposal identities to bind analytic evidence");
+  }
   const m5sReport = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     evaluatorRevision: "ground-glass-m5s-sparse-reference-v1",
-    experimentRevision: "ground-glass-m5s-sparse-reference-v1",
+    experimentRevision: "ground-glass-m5s-review-fix-1",
+    originalReviewedHead: "d2b8f114a132852d51ba9e35bd84f5d412d799ef",
     generatedAtUtc: new Date().toISOString(),
     baseCommit: "8cd0d869229de04cf56845d98e93116aa2a92a60",
     implementationBranch: "feature/ground-glass-m5s-reference-convergence",
@@ -2482,9 +2545,21 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
       sampleCounts: GROUND_GLASS_M5S_SAMPLE_COUNTS,
       randomizedSeeds: m5sSamplingSeeds,
       progressiveSequenceNestingVerifiedByUnitTest: true,
+      coordinateFingerprintEncoding: "FNV-1a 64-bit over proposal-order x/y IEEE-754 binary64 little-endian bytes; deterministic integrity checksum, not cryptographic hash",
+      analyticQualificationScope: "Each participating 1024-sample method/seed is qualified independently. Lower tiers retain structural proposal audits and tier convergence measurements; they do not inherit 1024 analytic qualification.",
       samplingPatterns: m5sSamplingPatterns,
     },
-    analyticValidation: m5sAnalyticControls,
+    analyticValidation: {
+      requiredParticipantStrategyIds: m5sRequiredAnalyticStrategies.map(({ descriptor }) =>
+        groundGlassM5sProposalIdentityKey(descriptor)),
+      authority: m5sNativeAnalyticAuthority,
+      unitDiskSecondMoment: {
+        expected: 0.5,
+        absoluteTolerance: 0.03,
+        rationale: "At N=1024 the fixed tolerance allows finite deterministic/randomized variation while rejecting the measured center-biased 0.125 and uniform-radius 0.333 signatures.",
+      },
+      strategies: m5sAnalyticReports,
+    },
     roiSelection: { maximumSelectedPixelsPerStratum: 10, minimumSupport: 10,
       candidateQualityOutputConsulted: false, strata: ["S1-smooth-valid-far-interior",
         "S2-strong-defocus-textured-interior", "S3-high-source-gradient-valid-far",
@@ -2493,9 +2568,11 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     opticalStates: m5sOpticalStateReports,
     perSequenceEvidence: m5sRunProvenance,
     negativeControls: {
-      native: { profileFingerprints: "matched", runtimeIdentity: "native-webgpu", analyticControls: m5sAnalyticControls.status,
+      native: { profileFingerprints: "matched", runtimeIdentity: "native-webgpu",
+        methodAnalyticAuthority: m5sNativeAnalyticAuthority.status,
         proposalEvaluationBudget: "passed" },
       unitControlIds: ["N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14", "N15", "N16"],
+      reviewFixControlIds: ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10"],
       unitControlSuite: "src/tests/unit/groundGlassM5sReference.test.ts",
       unitControlExecutionIsReportedSeparatelyFromNativeEvidence: true,
     },
@@ -2519,10 +2596,17 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     },
     totalEvaluatedProposals: m5sTotalProposalEvaluations.value,
     proposalEvaluationBudget: GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS,
+    historicalPreviousQualificationCandidates: [
+      { opticalStateId: "ar-f3200-f5p6-loupe4-rise0", stratumId: "S1-smooth-valid-far-interior",
+        previousClassification: "converged-and-cross-validated", status: "historical-before-per-method-analytic-gate" },
+      { opticalStateId: "ar-f5200-f5p6-full-rise0", stratumId: "S4-depth-discontinuity-valid-far",
+        previousClassification: "converged-and-cross-validated", status: "historical-before-per-method-analytic-gate" },
+    ],
     qualificationCandidates: m5sOpticalStateReports.flatMap((state) =>
       state.roiStrata.map((stratum) => ({ opticalStateId: state.opticalStateId,
         stratumId: stratum.stratum.id, classification: stratum.evidence.classification,
-        referenceAuthority: stratum.evidence.referenceAuthority }))),
+        referenceAuthority: stratum.evidence.referenceAuthority,
+        analyticAuthority: stratum.evidence.analyticAuthority }))),
     m5qQualificationBoundary: {
       frozenThresholdRevision: M5Q_FROZEN_THRESHOLDS.revision,
       statuses: m5qStatusesPreserved,
@@ -2957,10 +3041,14 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     contentType: "application/json",
   });
   await writeM5qArtifact(testInfo, "m5r-investigation-report.json", report);
-  await testInfo.attach("m5s-analytic-oracles.json", {
-    body: JSON.stringify(m5sAnalyticControls, null, 2), contentType: "application/json",
+  await testInfo.attach("m5s-analytic-controls.json", {
+    body: JSON.stringify({ authority: m5sNativeAnalyticAuthority, strategies: m5sAnalyticReports }, null, 2),
+    contentType: "application/json",
   });
-  await testInfo.attach("m5s-sampling-patterns.json", {
+  await testInfo.attach("m5s-sampling-proposals.json", {
+    body: JSON.stringify(m5sSamplingProposals, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-sampling-audits.json", {
     body: JSON.stringify(m5sSamplingPatterns, null, 2), contentType: "application/json",
   });
   await testInfo.attach("m5s-roi-catalog.json", {
@@ -3006,13 +3094,14 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     })), null, 2), contentType: "application/json",
   });
   await testInfo.attach("m5s-failed-controls.json", {
-    body: JSON.stringify({ analyticControls: m5sAnalyticControls,
+    body: JSON.stringify({ analyticAuthority: m5sNativeAnalyticAuthority, analyticResults: m5sAnalyticReports,
       nativeGates: { exactProfileInputFingerprints: "passed", nativeExecutionIdentity: "passed",
         totalProposalBudget: "passed" } }, null, 2), contentType: "application/json",
   });
   await testInfo.attach("m5s-conclusion.json", {
     body: JSON.stringify({ experimentRevision: m5sReport.experimentRevision,
       opticalStates: m5sReport.opticalStates, qualificationCandidates: m5sReport.qualificationCandidates,
+      analyticValidation: m5sReport.analyticValidation,
       totalEvaluatedProposals: m5sReport.totalEvaluatedProposals,
       remainingLimitations: m5sReport.limitations,
       m5qQualificationBoundary: m5sReport.m5qQualificationBoundary }, null, 2), contentType: "application/json",

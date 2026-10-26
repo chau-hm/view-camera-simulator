@@ -60,12 +60,60 @@ The frozen M5Q revision `m5q-architecture-rise-r186-v3` and statuses remain unch
 
 ## Negative controls and validation
 
-The 19-test M5S suite exercises N1–N16: one-channel error, provenance mismatch, duplicate/outside proposals, center-biased and uniform-radius distributions, analytic-gate failure, sharp-source substitution, nearer-layer depth rejection, RMSE/max-channel disagreement, per-stratum aggregation, randomized-seed uncertainty, CPU128/256 non-convergence, frozen M5Q outcomes, and ROI/sample/sequence budgets.
+At the original PR baseline, the 19-test M5S suite exercised N1–N16: one-channel error, provenance mismatch, duplicate/outside proposals, center-biased and uniform-radius distributions, analytic-gate failure, sharp-source substitution, nearer-layer depth rejection, RMSE/max-channel disagreement, per-stratum aggregation, randomized-seed uncertainty, CPU128/256 non-convergence, frozen M5Q outcomes, and ROI/sample/sequence budgets. The review-fix suite below adds the per-method/per-seed authority controls.
 
-The final native M5R/M5S capture, separate native M5Q confirmation, three native M5 app-adapter/stale-capture regressions, and two production-preview isolation tests passed. Full `npm test` passed (292 files, 2,829 tests), along with typecheck, lint, CSS, and production build. `npm run ci:local:e2e` failed at the first unrelated Architecture/Foreground title assertion; the same spec failed at the same assertion on clean `origin/main` `8cd0d869229de04cf56845d98e93116aa2a92a60`. Phase J/K/L native tests were not rerun because M5S changed no optical, M4 physical, B1, or renderer lifecycle behavior.
+At the original PR baseline, the native M5R/M5S capture, separate native M5Q confirmation, three native M5 app-adapter/stale-capture regressions, and two production-preview isolation tests passed. The baseline full `npm test` had 292 files and 2,829 tests; typecheck, lint, CSS, and production build passed. The same known `npm run ci:local:e2e` Architecture/Foreground title assertion is re-evaluated below for this review-fix round. Phase J/K/L native tests were not rerun because M5S changed no optical, M4 physical, B1, or renderer lifecycle behavior.
 
 ## Limitations and next research
 
 This is a sparse CPU reference feasibility result with ten selected pixels per stratum. S2 has no support in the tested captures; several high-gradient, signed-boundary, and cap cases remain unresolved or show only one-method convergence. The two cross-validated strata do not establish a universally converged reference, photographic truth, broad registered-scene quality, or complete blur spread. The prior CPU128/CPU256 divergence is unchanged.
 
 The next research PR should test a separately implemented adaptive or deterministic quadrature reference and spatial edge-spread measurements on new predeclared valid-Far ROIs, while preserving the M5 gather and frozen M5Q contract.
+
+## M5S Review-Fix Round 1
+
+### Per-method analytic authority
+
+The prior E2E generator evaluated analytic controls only on Halton N=1024, then passed one global boolean into all method and seed comparisons. The corrected evaluator accepts and tests each actual proposal strategy independently. The required identity is method, sequence ID, N=1024, seed, and proposal algorithm revision; the analytic result must also match the coordinate fingerprint from the strategy used by the native reference matrix. Every required participant must have exactly one result. A missing, duplicate, unexpected, or mismatched method/seed result blocks cross-method qualification. The method-level gate applies to these four high-tier candidates only; lower tiers retain structural audits and measured convergence curves without inheriting N=1024 analytic status.
+
+Structural validity and analytic validity answer different questions. The proposal audit records finite, unique, in-disk coordinates and their distribution summaries. Eight independent analytic controls test uniform-color invariance, symmetric affine integration, a planar boundary, compact silhouette against 512×512 midpoint quadrature, depth rejection, radius-cap mapping, equal-area disk sampling, and sharp-source blur loss. The compact-silhouette midpoint calculation remains a numerical oracle, not photographic truth.
+
+The unit-disk second-moment target is `E[x² + y²] = E[r²] = 0.5`, with a fixed absolute tolerance of `0.03` declared for the N=1024 diagnostic gate. This allowance accommodates finite deterministic and seeded samples while rejecting the tested center-scaled signature (`0.125`) and uniform-radius signature (`about 0.333`). It does not change M5Q thresholds.
+
+| Required strategy | Seed | Measured `E[r²]` | Analytic result |
+|---|---:|---:|---|
+| Golden-angle count-dependent | — | `0.50000000` | Passed |
+| Halton 2/3 progressive | — | `0.49951220` | Passed |
+| Seeded stratified square-to-disk | `104729` | `0.49972672` | Passed |
+| Seeded stratified square-to-disk | `130363` | `0.50058089` | Passed |
+
+The passing controls apply to these exact sequences and the tested N=1024 tier. They do not establish correctness for every sample count or another algorithm revision. The native analytic PASS is joined to the observed matrix participant's descriptor and coordinate fingerprint before it reaches each stratum decision.
+
+### Mutation controls and corrected strata
+
+The 30-test M5S unit suite includes mutation-sensitive review controls F1–F10. A structurally valid Golden-angle sequence scaled to half-radius measured `E[r²] = 0.125` and was rejected. A seeded sequence changed to uniform radius measured about `0.333` and was rejected. A failing second seed remained distinct from the passing first seed and blocked the aggregate. Missing seed evidence, duplicate/wrong-seed evidence, Halton-only evidence, an altered sample tier, method, or revision, and exact numerical agreement paired with failed analytics all fail closed. The report serialization control checks that per-method status, stratum status, and aggregate classification agree.
+
+The corrected native run re-evaluated the original four capture roles and all six ROI strata, without changing their pixel limit or the 1,048,320-evaluation native study budget. Primary 4× S1 remains `converged-and-cross-validated`; its maximum seed-to-mean variation is RMSE `0.00013531`, maximum channel error `0.00052849`, and blur preservation passes. Focus-distance S4 remains `converged-and-cross-validated`; its maximum seed-to-mean variation is RMSE `0.00036316`, maximum channel error `0.00135078`, and blur preservation passes. Both are restricted to their exact selected ten pixels and captured optical states. Other supported strata remain one-method-only or unresolved; S2 remains insufficiently supported. No native capture was intentionally mutated.
+
+The historical report's previous capture IDs, fingerprints, selected S1/S4 pixel identities, tier metrics, cross-method comparisons, seed variation, and blur results are preserved in the versioned [review-fix report](GROUND_GLASS_M5S_REVIEW_FIX_1_REPORT.json), alongside the corrected decisions. The corrected report also preserves the original native M5S evaluation count and the historical M5R comparisons.
+
+### Compact tracked report and evidence attachments
+
+The native test generator now separates its complete proposal arrays from its tracked summary. `samplingFamilies.samplingPatterns` records method, sequence, revision, N, seed, progressive-prefix flag, proposal count, audit, coordinate checksum, and analytic status. The checksum is FNV-1a 64-bit over ordered x/y IEEE-754 binary64 little-endian coordinates; it is a reproducibility integrity check, not a cryptographic signature or proof of validity. Full proposals and raw per-pixel RGB vectors remain in the ignored Playwright attachments `m5s-sampling-proposals.json` and `m5s-blur-spread.json`. The compact report retains computed blur and spread metrics, convergence curves, selected ROI IDs, accepted proposal counts, capture IDs, native runtime identity, and input fingerprints. A schema regression loads the tracked JSON and checks its method identities, seeds, audits, metrics, provenance, and absence of proposal-coordinate arrays.
+
+At the reviewed baseline, the tracked JSON was 1,439,569 bytes and 45,457 lines; the corrected report is 1,132,556 bytes and 24,988 lines. The prior tracked snapshot already represented proposals through its raw-artifact flag, while the E2E report generator itself emitted the large arrays. This fix moves those generated arrays to the ignored attachment and adds a stable checksum to the tracked summary. The original tracked report's measurements remain available in Git history and are also summarized in the review-fix report.
+
+### Evidence boundary
+
+The native run used `chrome-native-webgpu`, Three.js r186, `rendererFamily=webgpu-renderer`, `actualExecutionApi=webgpu`, no internal fallback, and no application fallback. Source/depth/physical/validity fingerprints and the observed gather-center provenance remain attached to the captured roles. The M5Q frozen revision `m5q-architecture-rise-r186-v3` and Q1–Q7 outcomes are unchanged. The M5S results do not promote Q1/Q6, broaden Q3, qualify M5/B1, establish photographic ground truth, or authorize M6 quality-dependent presentation or production WebGPU.
+
+Detailed native proposal, audit, convergence, cross-method, ROI, and blur-spread files are emitted as ignored Playwright test attachments. The committed report and versioned correction summary are the concise reproducibility and decision record; they are not a substitute for the captured input or an independent optical truth source.
+
+### Review-fix validation
+
+- M5S-focused cases: 30 passed as part of the full 292-file suite; the five focused M5S/M5R/M5Q/aperture-reference suites also passed earlier in this round.
+- Full `npm test`: 292 files, 2,840 tests passed with Node Web Storage enabled using a fresh temporary file. Typecheck, lint, CSS structure, production build, and `git diff --check` passed.
+- Native M5S confirmation: 1 passed; native M5Q confirmatory test: 1 passed; three native M5 adapter/R3/stale-capture regressions passed in isolated runs.
+- Production-preview WebGL isolation: 2 passed. The default route and URL-shaped WebGPU requests did not load the WebGPU adapter.
+- `npm run ci:local:e2e`: CSS, lint, typecheck, unit/integration, and build stages passed, then development E2E stopped at `architecture-foreground-compound.spec.ts` because the expected “Complete the Photograph” heading was absent. This matches the recorded clean-main baseline failure at `8cd0d869229de04cf56845d98e93116aa2a92a60`; later development E2E specs were not run.
+- Phase J/K/L browser tests were not rerun because this correction changes no optics, M4 physical calculations, B1 behavior, or renderer lifecycle.

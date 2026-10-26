@@ -13,11 +13,16 @@ import {
   type GroundGlassPixelAxis,
 } from "./groundGlassApertureGatherReference";
 import {
+  GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION,
   GROUND_GLASS_M5S_DECLARED_MAXIMUM_CHANNEL_ERROR,
   GROUND_GLASS_M5S_DECLARED_REFERENCE_RMSE_LIMIT,
+  auditGroundGlassM5sProposalStrategy,
   compareGroundGlassM5sRgb,
-  createGroundGlassM5sProposalStrategy,
+  fingerprintGroundGlassM5sProposalCoordinates,
+  groundGlassM5sProposalIdentityKey,
+  integrateGroundGlassM5sUnitDiskFunction,
   runGroundGlassM5sSparseFarReference,
+  type GroundGlassM5sProposalDescriptor,
   type GroundGlassM5sProposalStrategy,
   type GroundGlassM5sFarReferenceInput,
   type GroundGlassM5sFarReferenceResult,
@@ -336,7 +341,7 @@ export type GroundGlassM5sEvidenceAssessment = Readonly<{
   referenceAuthority: "supported-for-exact-stratum" | "candidate-only" | "unresolved" | "none";
   provenanceValid: boolean | null;
   adequateSupport: boolean | null;
-  analyticControlsPassed: boolean | null;
+  analyticAuthority: GroundGlassM5sAnalyticAuthority;
   blurPreservationPassed: boolean | null;
   finiteSampleReferenceConverged: boolean | null;
   withinMethodConvergencePassed: boolean | null;
@@ -346,12 +351,105 @@ export type GroundGlassM5sEvidenceAssessment = Readonly<{
   failedConditions: readonly string[];
 }>;
 
+export type GroundGlassM5sAnalyticAuthority = Readonly<{
+  status: "passed" | "failed" | "invalid";
+  expectedStrategyIds: readonly string[];
+  observedStrategyIds: readonly string[];
+  qualifiedStrategyIds: readonly string[];
+  failedStrategies: readonly Readonly<{
+    strategyId: string;
+    method: GroundGlassM5sSamplingMethod;
+    seed: number | null;
+    failedCriteria: readonly string[];
+  }>[];
+  missingStrategyIds: readonly string[];
+  unexpectedStrategyIds: readonly string[];
+  duplicateStrategyIds: readonly string[];
+  identityMismatchStrategyIds: readonly string[];
+}>;
+
+const strategyId = (descriptor: GroundGlassM5sProposalDescriptor): string =>
+  groundGlassM5sProposalIdentityKey(descriptor);
+
+/** Requires exact per-method/per-seed analytic evidence for every high-tier participant. */
+export const evaluateGroundGlassM5sAnalyticAuthority = (input: Readonly<{
+  requiredStrategies: readonly GroundGlassM5sProposalDescriptor[];
+  observedParticipants: readonly Readonly<{
+    descriptor: GroundGlassM5sProposalDescriptor;
+    coordinateFingerprint: string | null;
+  }>[];
+  analyticResults: readonly GroundGlassM5sAnalyticControlReport[];
+}>): GroundGlassM5sAnalyticAuthority => {
+  const ids = (descriptors: readonly GroundGlassM5sProposalDescriptor[]) => descriptors.map(strategyId);
+  const expectedStrategyIds = ids(input.requiredStrategies);
+  const observedStrategyIds = ids(input.observedParticipants.map(({ descriptor }) => descriptor));
+  const observedCoordinateFingerprints = new Map(input.observedParticipants.map(({ descriptor, coordinateFingerprint }) =>
+    [strategyId(descriptor), coordinateFingerprint] as const));
+  const resultStrategyIds = input.analyticResults.map((result) => groundGlassM5sProposalIdentityKey({
+    method: result.method,
+    sequenceId: result.sequenceId,
+    algorithmRevision: result.algorithmRevision,
+    sampleCount: result.sampleCount as GroundGlassM5sProposalDescriptor["sampleCount"],
+    seed: result.seed,
+    progressivePrefix: result.progressivePrefix,
+  }));
+  const duplicateIds = (values: readonly string[]) => {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const value of values) {
+      if (seen.has(value)) duplicates.add(value);
+      seen.add(value);
+    }
+    return [...duplicates];
+  };
+  const expectedSet = new Set(expectedStrategyIds);
+  const resultCounts = new Map<string, number>();
+  for (const id of resultStrategyIds) resultCounts.set(id, (resultCounts.get(id) ?? 0) + 1);
+  const missingStrategyIds = expectedStrategyIds.filter((id) => !resultCounts.has(id));
+  const unexpectedStrategyIds = resultStrategyIds.filter((id) => !expectedSet.has(id));
+  const strategyIdMismatches = input.analyticResults.flatMap((result, index) =>
+    result.strategyId === resultStrategyIds[index]
+      && observedCoordinateFingerprints.get(resultStrategyIds[index]!) === result.coordinateFingerprint
+      && result.coordinateFingerprint !== null
+      ? [] : [resultStrategyIds[index]!]);
+  const duplicateStrategyIds = [
+    ...duplicateIds(expectedStrategyIds),
+    ...duplicateIds(observedStrategyIds),
+    ...duplicateIds(resultStrategyIds),
+  ];
+  const observedSet = new Set(observedStrategyIds);
+  for (const id of expectedStrategyIds) if (!observedSet.has(id)) missingStrategyIds.push(id);
+  for (const id of observedStrategyIds) if (!expectedSet.has(id)) unexpectedStrategyIds.push(id);
+  const failedStrategies = input.analyticResults.flatMap((result, index) => {
+    const id = resultStrategyIds[index]!;
+    if (!expectedSet.has(id) || result.analyticStatus === "passed") return [];
+    return [{ strategyId: id, method: result.method, seed: result.seed, failedCriteria: result.failedCriteria }];
+  });
+  const invalid = expectedStrategyIds.length === 0 || missingStrategyIds.length > 0
+    || unexpectedStrategyIds.length > 0 || duplicateStrategyIds.length > 0
+    || strategyIdMismatches.length > 0;
+  const status = invalid ? "invalid" : failedStrategies.length ? "failed" : "passed";
+  return {
+    status,
+    expectedStrategyIds,
+    observedStrategyIds,
+    qualifiedStrategyIds: input.analyticResults.flatMap((result, index) =>
+      result.analyticStatus === "passed" && expectedSet.has(resultStrategyIds[index]!)
+        ? [resultStrategyIds[index]!] : []),
+    failedStrategies,
+    missingStrategyIds: [...new Set(missingStrategyIds)],
+    unexpectedStrategyIds: [...new Set(unexpectedStrategyIds)],
+    duplicateStrategyIds: [...new Set(duplicateStrategyIds)],
+    identityMismatchStrategyIds: [...new Set(strategyIdMismatches)],
+  };
+};
+
 export const evaluateGroundGlassM5sEvidence = (input: Readonly<{
   provenanceStatus: "matched" | "mismatched" | "incomplete";
   candidateCount: number;
   selectedPixelCount: number;
   minimumSupport: number;
-  analyticControlsPassed: boolean | null;
+  analyticAuthority: GroundGlassM5sAnalyticAuthority;
   blurPreservationStatus: "preserved" | "failed" | "unresolved";
   withinMethodConvergence: readonly GroundGlassM5sRgbMetrics[] | null;
   crossMethodAgreement: readonly GroundGlassM5sRgbMetrics[] | null;
@@ -379,7 +477,7 @@ export const evaluateGroundGlassM5sEvidence = (input: Readonly<{
   if (input.provenanceStatus !== "matched") {
     failedConditions.push("input fingerprints are mismatched or incomplete");
     return { classification: "invalid-comparison", confidence: "none", referenceAuthority: "none",
-      provenanceValid: false, adequateSupport: supportPassed, analyticControlsPassed: input.analyticControlsPassed,
+      provenanceValid: false, adequateSupport: supportPassed, analyticAuthority: input.analyticAuthority,
       blurPreservationPassed: input.blurPreservationStatus === "preserved",
       finiteSampleReferenceConverged: null, withinMethodConvergencePassed: null,
       crossMethodAgreementPassed: null, randomizedUncertaintyPassed: null,
@@ -389,23 +487,35 @@ export const evaluateGroundGlassM5sEvidence = (input: Readonly<{
   if (!supportPassed) {
     failedConditions.push("selected population is below the predeclared minimum support");
     return { classification: "insufficient-support", confidence: "none", referenceAuthority: "none",
-      provenanceValid: true, adequateSupport: false, analyticControlsPassed: input.analyticControlsPassed,
+      provenanceValid: true, adequateSupport: false, analyticAuthority: input.analyticAuthority,
       blurPreservationPassed: input.blurPreservationStatus === "preserved",
       finiteSampleReferenceConverged: null, withinMethodConvergencePassed: null,
       crossMethodAgreementPassed: null, randomizedUncertaintyPassed: null,
       supportingEvidence, failedConditions };
   }
   supportingEvidence.push("predeclared candidate and selected-pixel support floors are met");
-  if (input.analyticControlsPassed === false || input.blurPreservationStatus === "failed") {
-    if (input.analyticControlsPassed === false) failedConditions.push("analytic controls failed");
+  if (input.analyticAuthority.status === "failed" || input.blurPreservationStatus === "failed") {
+    if (input.analyticAuthority.status === "failed") {
+      failedConditions.push("one or more required method/seed analytic controls failed");
+    }
     if (input.blurPreservationStatus === "failed") failedConditions.push("blur-preservation control failed");
     return { classification: "analytically-invalid", confidence: "none", referenceAuthority: "none",
-      provenanceValid: true, adequateSupport: true, analyticControlsPassed: input.analyticControlsPassed,
-      blurPreservationPassed: false, finiteSampleReferenceConverged: null,
+      provenanceValid: true, adequateSupport: true, analyticAuthority: input.analyticAuthority,
+      blurPreservationPassed: input.blurPreservationStatus === "preserved", finiteSampleReferenceConverged: null,
       withinMethodConvergencePassed: null, crossMethodAgreementPassed: null,
       randomizedUncertaintyPassed: null, supportingEvidence, failedConditions };
   }
-  if (input.analyticControlsPassed !== true || input.blurPreservationStatus !== "preserved"
+  if (input.analyticAuthority.status !== "passed") {
+    failedConditions.push("required method/seed analytic evidence is missing, duplicated, or mismatched");
+    return { classification: "invalid-comparison", confidence: "none", referenceAuthority: "none",
+      provenanceValid: true, adequateSupport: true, analyticAuthority: input.analyticAuthority,
+      blurPreservationPassed: input.blurPreservationStatus === "preserved",
+      finiteSampleReferenceConverged: null, withinMethodConvergencePassed: null,
+      crossMethodAgreementPassed: null, randomizedUncertaintyPassed: null,
+      supportingEvidence, failedConditions };
+  }
+  supportingEvidence.push("every declared high-tier method and seed has matching passing analytic evidence");
+  if (input.blurPreservationStatus !== "preserved"
       || !withinMeasured || !crossMeasured || input.randomizedSeedVariationRmse === null
       || !Number.isFinite(input.randomizedSeedVariationRmse)
       || input.randomizedSeedVariationMaximumChannelError === null
@@ -413,7 +523,7 @@ export const evaluateGroundGlassM5sEvidence = (input: Readonly<{
     failedConditions.push("analytic, blur, tier, cross-method, or randomized uncertainty evidence is missing");
     return { classification: "convergence-trending-but-unresolved", confidence: "low",
       referenceAuthority: "unresolved", provenanceValid: true, adequateSupport: true,
-      analyticControlsPassed: input.analyticControlsPassed,
+      analyticAuthority: input.analyticAuthority,
       blurPreservationPassed: input.blurPreservationStatus === "preserved",
       finiteSampleReferenceConverged: null, withinMethodConvergencePassed: withinMeasured ? null : false,
       crossMethodAgreementPassed: crossMeasured ? null : false, randomizedUncertaintyPassed: null,
@@ -438,27 +548,27 @@ export const evaluateGroundGlassM5sEvidence = (input: Readonly<{
   if (withinPass && crossPass && uncertaintyPass) {
     return { classification: "converged-and-cross-validated", confidence: "bounded-high",
       referenceAuthority: "supported-for-exact-stratum", provenanceValid: true, adequateSupport: true,
-      analyticControlsPassed: true, blurPreservationPassed: true, finiteSampleReferenceConverged: true,
+      analyticAuthority: input.analyticAuthority, blurPreservationPassed: true, finiteSampleReferenceConverged: true,
       withinMethodConvergencePassed: true, crossMethodAgreementPassed: true,
       randomizedUncertaintyPassed: true, supportingEvidence, failedConditions };
   }
   if (withinAnyPass && !crossPass) {
     return { classification: "converged-within-one-method-only", confidence: "low",
       referenceAuthority: "candidate-only", provenanceValid: true, adequateSupport: true,
-      analyticControlsPassed: true, blurPreservationPassed: true, finiteSampleReferenceConverged: false,
+      analyticAuthority: input.analyticAuthority, blurPreservationPassed: true, finiteSampleReferenceConverged: false,
       withinMethodConvergencePassed: false, crossMethodAgreementPassed: false,
       randomizedUncertaintyPassed: uncertaintyPass, supportingEvidence, failedConditions };
   }
   if (!crossPass && !withinPass) {
     return { classification: "systematic-method-disagreement", confidence: "low",
       referenceAuthority: "unresolved", provenanceValid: true, adequateSupport: true,
-      analyticControlsPassed: true, blurPreservationPassed: true, finiteSampleReferenceConverged: false,
+      analyticAuthority: input.analyticAuthority, blurPreservationPassed: true, finiteSampleReferenceConverged: false,
       withinMethodConvergencePassed: false, crossMethodAgreementPassed: false,
       randomizedUncertaintyPassed: uncertaintyPass, supportingEvidence, failedConditions };
   }
   return { classification: "convergence-trending-but-unresolved", confidence: "low",
     referenceAuthority: "unresolved", provenanceValid: true, adequateSupport: true,
-    analyticControlsPassed: true, blurPreservationPassed: true, finiteSampleReferenceConverged: false,
+    analyticAuthority: input.analyticAuthority, blurPreservationPassed: true, finiteSampleReferenceConverged: false,
     withinMethodConvergencePassed: false, crossMethodAgreementPassed: crossPass,
     randomizedUncertaintyPassed: uncertaintyPass, supportingEvidence, failedConditions };
 };
@@ -537,13 +647,27 @@ export const analyzeGroundGlassM5sReferenceMatrix = (input: Readonly<{
   strata: readonly GroundGlassM5sRoiStratum[];
   runs: readonly GroundGlassM5sFarReferenceResult[];
   provenanceStatus: "matched" | "mismatched" | "incomplete";
-  analyticControlsPassed: boolean | null;
+  requiredAnalyticStrategies: readonly GroundGlassM5sProposalDescriptor[];
+  analyticResults: readonly GroundGlassM5sAnalyticControlReport[];
   blurPreservationByStratum?: Partial<Record<GroundGlassM5sRoiStratumId, "preserved" | "failed" | "unresolved">>;
-}>): readonly GroundGlassM5sStratumStudy[] => input.strata.map((stratum) => {
+}>): readonly GroundGlassM5sStratumStudy[] => {
+  const analyticAuthority = evaluateGroundGlassM5sAnalyticAuthority({
+    requiredStrategies: input.requiredAnalyticStrategies,
+    observedParticipants: input.runs
+      .filter((run) => run.descriptor.sampleCount === 1024)
+      .map((run) => ({ descriptor: run.descriptor, coordinateFingerprint: run.proposalCoordinateFingerprint })),
+    analyticResults: input.analyticResults,
+  });
+  return input.strata.map((stratum) => {
   const ids = stratum.selectedGatherPixelIds;
   const groups = new Map<string, GroundGlassM5sFarReferenceResult[]>();
   for (const run of input.runs) {
-    const key = run.descriptor.method + ":" + (run.descriptor.seed ?? "deterministic");
+    const key = JSON.stringify([
+      run.descriptor.method,
+      run.descriptor.sequenceId,
+      run.descriptor.algorithmRevision,
+      run.descriptor.seed,
+    ]);
     const group = groups.get(key) ?? [];
     group.push(run);
     groups.set(key, group);
@@ -621,7 +745,7 @@ export const analyzeGroundGlassM5sReferenceMatrix = (input: Readonly<{
     candidateCount: stratum.candidateCount,
     selectedPixelCount: ids.length,
     minimumSupport: stratum.minimumSupport,
-    analyticControlsPassed: input.analyticControlsPassed,
+    analyticAuthority,
     blurPreservationStatus: input.blurPreservationByStratum?.[stratum.id] ?? "unresolved",
     withinMethodConvergence: finalTierWithinMethod.length ? finalTierWithinMethod : null,
     crossMethodAgreement: highTierCrossMethodAgreement.map(({ metrics }) => metrics),
@@ -638,7 +762,8 @@ export const analyzeGroundGlassM5sReferenceMatrix = (input: Readonly<{
     maximumSeedChannelError: seedVariationAvailable ? maximumSeedChannelError : null,
     evidence,
   };
-});
+  });
+};
 
 export const aggregateGroundGlassM5sStrata = (
   studies: readonly GroundGlassM5sStratumStudy[],
@@ -678,21 +803,49 @@ export const aggregateGroundGlassM5sStrata = (
 };
 
 
+export const GROUND_GLASS_M5S_UNIT_DISK_SECOND_MOMENT_EXPECTATION = 0.5;
+/** 0.03 is a fixed 3-sigma-scale allowance for N=1024 and rejects 1/8 or 1/3 bias. */
+export const GROUND_GLASS_M5S_UNIT_DISK_SECOND_MOMENT_TOLERANCE = 0.03;
+
+export type GroundGlassM5sAnalyticCaseId =
+  | "uniformColor"
+  | "affineGradient"
+  | "planarBoundary"
+  | "compactSilhouette"
+  | "depthRejection"
+  | "radiusCap"
+  | "unitDiskAreaMoment"
+  | "sharpSourceNegativeControl";
+
+export type GroundGlassM5sAnalyticCaseResult = Readonly<{
+  status: "passed" | "failed" | "not-run";
+  observed: number | null;
+  expected: number | null;
+  absoluteError: number | null;
+  tolerance: number;
+  detail: string;
+}>;
+
 export type GroundGlassM5sAnalyticControlReport = Readonly<{
-  status: "passed" | "failed";
-  referenceAlgorithm: "sparse-far-v1";
+  method: GroundGlassM5sSamplingMethod;
+  sequenceId: string;
+  algorithmRevision: typeof GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION;
+  sampleCount: number;
+  seed: number | null;
+  progressivePrefix: boolean;
+  strategyId: string;
+  coordinateFingerprint: string | null;
+  proposalAudit: ReturnType<typeof auditGroundGlassM5sProposalStrategy>;
+  analyticCases: Readonly<Record<GroundGlassM5sAnalyticCaseId, GroundGlassM5sAnalyticCaseResult>>;
+  analyticStatus: "passed" | "failed";
+  failedCriteria: readonly string[];
+  observedErrors: Readonly<Record<GroundGlassM5sAnalyticCaseId, number | null>>;
+  declaredTolerances: Readonly<Record<GroundGlassM5sAnalyticCaseId, number>>;
   independentRasterOracle: Readonly<{
     method: "512x512 midpoint quadrature over unit disk and nearest-source raster cells";
     resolutionPerAxis: number;
-    evaluatedDiskPoints: number;
+    evaluatedDiskPoints: number | null;
   }>;
-  cases: Readonly<Record<string, Readonly<{
-    status: "passed" | "failed";
-    observed: number | null;
-    expected: number | null;
-    absoluteError: number | null;
-    detail: string;
-  }>>>;
 }>;
 
 const makeAnalyticFixture = (size = 65): GroundGlassM5sFarReferenceInput => {
@@ -806,19 +959,33 @@ const rasterMidpointLimit = (
   };
 };
 
-/** Runs bounded analytic cases and an independent high-resolution raster oracle. */
-export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticControlReport => {
-  const strategy = createGroundGlassM5sProposalStrategy({
-    method: "halton-2-3-progressive",
-    sampleCount: 1024,
-  });
-  const cases: Record<string, {
-    status: "passed" | "failed";
-    observed: number | null;
-    expected: number | null;
-    absoluteError: number | null;
-    detail: string;
-  }> = {};
+/** Runs the bounded analytic suite against exactly the supplied proposal sequence. */
+export const evaluateGroundGlassM5sProposalAnalyticControls = (
+  strategy: GroundGlassM5sProposalStrategy,
+): GroundGlassM5sAnalyticControlReport => {
+  const proposalAudit = auditGroundGlassM5sProposalStrategy(strategy);
+  const tolerances: Record<GroundGlassM5sAnalyticCaseId, number> = {
+    uniformColor: 1e-7,
+    affineGradient: 0.02,
+    planarBoundary: 0.025,
+    compactSilhouette: 0.025,
+    depthRejection: 1e-7,
+    radiusCap: 1e-8,
+    unitDiskAreaMoment: GROUND_GLASS_M5S_UNIT_DISK_SECOND_MOMENT_TOLERANCE,
+    sharpSourceNegativeControl: 0.01,
+  };
+  const cases: Partial<Record<GroundGlassM5sAnalyticCaseId, GroundGlassM5sAnalyticCaseResult>> = {};
+  let rasterOracle: ReturnType<typeof rasterMidpointLimit> | null = null;
+  const notRun = (id: GroundGlassM5sAnalyticCaseId, detail: string) => {
+    cases[id] = { status: "not-run", observed: null, expected: null, absoluteError: null,
+      tolerance: tolerances[id], detail };
+  };
+
+  if (proposalAudit.status !== "valid") {
+    for (const id of Object.keys(tolerances) as GroundGlassM5sAnalyticCaseId[]) {
+      notRun(id, "proposal sequence failed structural validation; numerical case was not run");
+    }
+  } else {
 
   const uniform = makeAnalyticFixture();
   for (let pixel = 0; pixel < uniform.source.widthPx * uniform.source.heightPx; pixel += 1) {
@@ -828,10 +995,11 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
   const uniformError = Math.max(...uniformResult.limitingIntegralRgb!
     .map((value, channel) => Math.abs(value - [0.2, 0.4, 0.7][channel]!)));
   cases.uniformColor = {
-    status: uniformError <= 1e-7 ? "passed" : "failed",
+    status: uniformError <= tolerances.uniformColor ? "passed" : "failed",
     observed: uniformResult.limitingIntegralRgb![0],
     expected: 0.2,
     absoluteError: uniformError,
+    tolerance: tolerances.uniformColor,
     detail: "uniform valid Far color is invariant under aperture integration",
   };
 
@@ -852,10 +1020,11 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
   const gradientError = Math.max(...gradientResult.limitingIntegralRgb!
     .map((value, channel) => Math.abs(value - [0.5, 0.5, 0.4][channel]!)));
   cases.affineGradient = {
-    status: gradientError <= 0.02 ? "passed" : "failed",
+    status: gradientError <= tolerances.affineGradient ? "passed" : "failed",
     observed: gradientResult.limitingIntegralRgb![0],
     expected: 0.5,
     absoluteError: gradientError,
+    tolerance: tolerances.affineGradient,
     detail: "symmetric continuous-disk average equals center color; raster field is symmetric around center texel",
   };
 
@@ -869,10 +1038,11 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
   const boundaryResult = runAnalytic(boundary, strategy);
   const boundaryError = Math.abs(boundaryResult.limitingIntegralRgb![0] - 0.5);
   cases.planarBoundary = {
-    status: boundaryError <= 0.025 ? "passed" : "failed",
+    status: boundaryError <= tolerances.planarBoundary ? "passed" : "failed",
     observed: boundaryResult.limitingIntegralRgb![0],
     expected: 0.5,
     absoluteError: boundaryError,
+    tolerance: tolerances.planarBoundary,
     detail: "symmetric half-plane integral with explicit half-coverage center source texel",
   };
 
@@ -886,14 +1056,15 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
     }
   }
   const silhouetteResult = runAnalytic(silhouette, strategy);
-  const rasterOracle = rasterMidpointLimit(silhouette, 512);
+  rasterOracle = rasterMidpointLimit(silhouette, 512);
   const silhouetteError = Math.abs(silhouetteResult.limitingIntegralRgb![0] - rasterOracle.rgb[0]);
   cases.compactSilhouette = {
-    status: silhouetteError <= 0.025 ? "passed" : "failed",
+    status: silhouetteError <= tolerances.compactSilhouette ? "passed" : "failed",
     observed: silhouetteResult.limitingIntegralRgb![0],
     expected: rasterOracle.rgb[0],
     absoluteError: silhouetteError,
-    detail: "sparse Halton estimate is compared with independent 512x512 raster midpoint quadrature",
+    tolerance: tolerances.compactSilhouette,
+    detail: "the supplied proposal sequence is compared with independent 512x512 raster midpoint quadrature",
   };
 
   const depthLayers = makeAnalyticFixture();
@@ -910,10 +1081,11 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
   const depthResult = runAnalytic(depthLayers, strategy);
   const depthError = Math.max(...depthResult.limitingIntegralRgb!.map((value) => Math.abs(value)));
   cases.depthRejection = {
-    status: depthError <= 1e-7 ? "passed" : "failed",
+    status: depthError <= tolerances.depthRejection ? "passed" : "failed",
     observed: depthResult.limitingIntegralRgb![0],
     expected: 0,
     absoluteError: depthError,
+    tolerance: tolerances.depthRejection,
     detail: "nearer zero-CoC samples pass signed-CoC eligibility but fail depth acceptance",
   };
 
@@ -929,7 +1101,19 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
     observed: capResult.effectiveMaximumRadiusPx,
     expected: 5,
     absoluteError: Math.abs(capResult.effectiveMaximumRadiusPx - 5),
+    tolerance: tolerances.radiusCap,
     detail: "physical ellipse is mapped to source pixels before the 5 px radius cap is applied",
+  };
+
+  const moment = integrateGroundGlassM5sUnitDiskFunction(strategy, ([x, y]) => x * x + y * y);
+  const momentError = Math.abs(moment - GROUND_GLASS_M5S_UNIT_DISK_SECOND_MOMENT_EXPECTATION);
+  cases.unitDiskAreaMoment = {
+    status: momentError <= tolerances.unitDiskAreaMoment ? "passed" : "failed",
+    observed: moment,
+    expected: GROUND_GLASS_M5S_UNIT_DISK_SECOND_MOMENT_EXPECTATION,
+    absoluteError: momentError,
+    tolerance: tolerances.unitDiskAreaMoment,
+    detail: "equal-area unit-disk proposals satisfy E[x^2 + y^2] = 1/2; a fixed 0.03 finite-sample tolerance rejects center and uniform-radius bias",
   };
 
   const blur = evaluateGroundGlassM5sBlurPreservation({
@@ -942,19 +1126,46 @@ export const runGroundGlassM5sAnalyticControls = (): GroundGlassM5sAnalyticContr
     observed: blur.sourceToCandidate.rmse,
     expected: blur.sourceToExpectedBlur.rmse,
     absoluteError: blur.expectedToCandidate.rmse,
+    tolerance: tolerances.sharpSourceNegativeControl,
     detail: "sharp-source substitution is rejected because it removes the analytic defocus transition",
   };
+  }
 
-  const statuses = Object.values(cases);
+  const analyticCases = cases as Readonly<Record<GroundGlassM5sAnalyticCaseId, GroundGlassM5sAnalyticCaseResult>>;
+  const failedCriteria = [
+    ...(proposalAudit.status !== "valid" ? ["proposalAudit"] : []),
+    ...Object.entries(analyticCases).flatMap(([id, result]) => result.status === "passed" ? [] : [id]),
+  ];
+  const strategyDescriptor = strategy.descriptor;
+  const strategyIdValue = groundGlassM5sProposalIdentityKey(strategyDescriptor);
+  const observedErrors = Object.fromEntries(Object.entries(analyticCases)
+    .map(([id, result]) => [id, result.absoluteError])) as Record<GroundGlassM5sAnalyticCaseId, number | null>;
+  let coordinateFingerprint: string | null = null;
+  try {
+    coordinateFingerprint = fingerprintGroundGlassM5sProposalCoordinates(strategy);
+  } catch {
+    failedCriteria.push("coordinateFingerprint");
+  }
   return {
-    status: statuses.every(({ status }) => status === "passed") ? "passed" : "failed",
-    referenceAlgorithm: "sparse-far-v1",
+    method: strategyDescriptor.method,
+    sequenceId: strategyDescriptor.sequenceId,
+    algorithmRevision: strategyDescriptor.algorithmRevision,
+    sampleCount: strategyDescriptor.sampleCount,
+    seed: strategyDescriptor.seed,
+    progressivePrefix: strategyDescriptor.progressivePrefix,
+    strategyId: strategyIdValue,
+    coordinateFingerprint,
+    proposalAudit,
+    analyticCases,
+    analyticStatus: failedCriteria.length === 0 ? "passed" : "failed",
+    failedCriteria,
+    observedErrors,
+    declaredTolerances: tolerances,
     independentRasterOracle: {
       method: "512x512 midpoint quadrature over unit disk and nearest-source raster cells",
       resolutionPerAxis: 512,
-      evaluatedDiskPoints: rasterOracle.evaluatedDiskPoints,
+      evaluatedDiskPoints: rasterOracle?.evaluatedDiskPoints ?? null,
     },
-    cases,
   };
 };
 
