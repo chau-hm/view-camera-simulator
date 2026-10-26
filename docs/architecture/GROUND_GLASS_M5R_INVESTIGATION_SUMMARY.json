@@ -175,7 +175,8 @@
       }
     },
     "classification": "deterministic-reference-sampling-limited",
-    "cpuHighSamplesAreGroundTruth": false
+    "cpuHighSamplesAreGroundTruth": false,
+    "repeatabilityAssertion": "The original M5R run recorded exact output comparisons but did not assert them; see reviewFix1 for the fail-closed revalidation."
   },
   "B": {
     "state": "ar-f3200-f5p6-full-rise0",
@@ -399,11 +400,11 @@
       "problem": "Full32/Full64 divergence",
       "hypothesis": "Finite aperture sampling error",
       "experiment": "Repeated native captures; matched-count independent CPU references; CPU32/64/128/256 ROI sequence.",
-      "actual": "Same-profile bit-exact; GPU32/CPU32 float RMSE 6.519639132757963e-8; GPU64/CPU64 1.3437508839549746e-7; CPU32/64 0.011646611340034392, CPU64/128 0.005748315524033702, CPU128/256 0.00415713039720048.",
-      "supporting": "GPU/CPU conformance is excellent and tier error decreases with more samples.",
-      "contradicting": "CPU128/256 remains above 0.001; reference is not converged.",
+      "actual": "Review Fix 1 asserted exact same-profile captures; GPU32/CPU32 float RMSE 6.519639132757963e-8; GPU64/CPU64 1.3437508839549746e-7; CPU32/64 0.011646611340034392, CPU64/128 0.005748315524033702, CPU128/256 0.00415713039720048.",
+      "supporting": "The Review Fix 1 native run asserted exact same-profile repeats and matched-count GPU/CPU conformance; CPU tier differences decrease through 256 samples.",
+      "contradicting": "CPU128/CPU256 remains above 0.001; reference authority is unresolved.",
       "confidence": "high",
-      "classification": "deterministic-reference-sampling-limited; reference unresolved",
+      "classification": "deterministic-reference-sampling-limited; CPU128/CPU256 reference unresolved",
       "next": "Separate sampling/reference study with validated convergence and blur-spread gates."
     },
     {
@@ -443,11 +444,11 @@
       "problem": "Capture reliability",
       "hypothesis": "Renderer/resource/readback instability.",
       "experiment": "Three repeat captures per native sample profile with matched provenance.",
-      "actual": "All Full32 and Full64 Far/Near outputs are bit-exact and fingerprints match.",
-      "supporting": "Exact repeatability.",
-      "contradicting": "No instability observed.",
+      "actual": "The earlier report recorded exact comparisons without asserting them. Review Fix 1 explicitly asserted Full32 and Full64 A/B and A/C Far and Near arrays and all were bit-exact.",
+      "supporting": "Review Fix 1 native repeatability gate passed across all four Far/Near comparisons.",
+      "contradicting": "No instability was observed in the tested capture matrix; this remains bounded to the recorded scene, renderer, device, and captures.",
       "confidence": "high",
-      "classification": "capture instability not observed",
+      "classification": "capture-instability-not-observed",
       "next": "Retain as a regression control."
     },
     {
@@ -504,19 +505,30 @@
       "confidence": "high",
       "classification": "M5 Near TSL supports fractional alpha; controlled fixture only",
       "next": "Keep app qualification blocked until registered evidence has off-center accepted proposals."
+    },
+    {
+      "problem": "Full32/Full64 divergence",
+      "hypothesis": "H-A6 physical footprint or coordinate inputs differ across profiles.",
+      "experiment": "Compare current input fingerprints and same-count GPU/CPU results for the same native Q1 state.",
+      "actual": "Review Fix 1 matched source, depth, physical, and validity fingerprints; matched-count GPU/CPU RGB RMSE remained below 0.001.",
+      "supporting": "The trusted input identity and same-count output checks both passed for this capture matrix.",
+      "contradicting": "Evidence covers the tested Architecture Rise state, renderer, device, and ROI only.",
+      "confidence": "high",
+      "classification": "geometry-provenance-mismatch-not-observed",
+      "next": "Keep exact input and matched-count comparisons as controls; widen evidence before making a general scene or device claim."
     }
   ],
   "negativeControls": {
     "unitSuites": {
       "gatherReference": "21 passed",
-      "m5rReferenceAnalysis": "10 passed incl. N6",
+      "m5rReferenceAnalysis": "20 passed incl. M5R-A1-A10 and N6",
       "m5rFallbackAnalysis": "13 passed incl. N7-N10, B8-B9",
       "m5rNearAlphaAnalysis": "9 passed incl. C1-C8",
       "m5qQualification": "24 passed"
     },
     "nativeAssertions": [
-      "N1 repeated same-profile captures are bit-exact",
-      "N2 comparison inputs have matching source, depth, physical, and validity fingerprints",
+      "N1 repeated Full32/Full64 Far/Near captures are bit-exact (passed).",
+      "N2 comparison inputs have matching source, depth, physical, and validity fingerprints (passed).",
       "registered-app and native-research-fixture evidence scopes remain distinct"
     ],
     "separateM5qConfirmatoryRegression": "The separately run native M5Q confirmation retained its frozen per-dimension outcomes and bounded Q3 result; it is not mapped to M5R N16-N18.",
@@ -540,5 +552,18 @@
     "qualityDependentM6PresentationBlocked": true,
     "productionWebGpuPromotion": false,
     "productionM5BehaviorChanged": false
+  },
+  "reviewFix1Report": "GROUND_GLASS_M5R_REVIEW_FIX_1_REPORT.json",
+  "reviewFix1": {
+    "evaluatorRevision": "ground-glass-m5r-reference-evidence-v1",
+    "sourceHeadSha": "93f0ec74431e9913aad52e1c64fbfe0bae7fc3a4",
+    "rootCauseClassification": "deterministic-reference-sampling-limited",
+    "confidence": "high",
+    "inputFingerprintsMatched": true,
+    "sameProfileRepeatabilityAsserted": true,
+    "matchedCountGpuCpuConformancePassed": true,
+    "cpu128VsCpu256RgbRmse": 0.00415713039720048,
+    "finiteSampleReferenceConverged": false,
+    "reportPath": "GROUND_GLASS_M5R_REVIEW_FIX_1_REPORT.json"
   }
 }

@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "ground-glass-m5r-reference-evidence-v1",
+  "sourceHeadSha": "93f0ec74431e9913aad52e1c64fbfe0bae7fc3a4",
+  "generatedAtUtc": "2026-10-26T15:28:44.177Z",
+  "nativeRuntime": {
+    "rendererRevision": "r186",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false
+  },
+  "opticalState": {
+    "id": "ar-f3200-f5p6-loupe4-rise0",
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "sourceDimensionsPx": [
+      474,
+      379
+    ],
+    "sampledFilmDimensionsMm": {
+      "widthMm": 31.75,
+      "heightMm": 25.4
+    },
+    "maximumRadiusPx": 60,
+    "gatherDimensionsPx": [
+      474,
+      379
+    ]
+  },
+  "captureIds": {
+    "full32": [
+      "m5r-q1-full32-a-1793028424199",
+      "m5r-q1-full32-b-1793028427106",
+      "m5r-q1-full32-c-1793028429583"
+    ],
+    "full64": [
+      "m5r-q1-full64-a-1793028432226",
+      "m5r-q1-full64-b-1793028436807",
+      "m5r-q1-full64-c-1793028440948"
+    ]
+  },
+  "repeatedCaptureMetrics": {
+    "full32": [
+      {
+        "qualityMode": "Full32",
+        "comparedCaptureIds": [
+          "m5r-q1-full32-a-1793028424199",
+          "m5r-q1-full32-b-1793028427106"
+        ],
+        "comparedBuffers": {
+          "Far": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          },
+          "Near": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          }
+        }
+      },
+      {
+        "qualityMode": "Full32",
+        "comparedCaptureIds": [
+          "m5r-q1-full32-a-1793028424199",
+          "m5r-q1-full32-c-1793028429583"
+        ],
+        "comparedBuffers": {
+          "Far": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          },
+          "Near": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          }
+        }
+      }
+    ],
+    "full64": [
+      {
+        "qualityMode": "Full64",
+        "comparedCaptureIds": [
+          "m5r-q1-full64-a-1793028432226",
+          "m5r-q1-full64-b-1793028436807"
+        ],
+        "comparedBuffers": {
+          "Far": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          },
+          "Near": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          }
+        }
+      },
+      {
+        "qualityMode": "Full64",
+        "comparedCaptureIds": [
+          "m5r-q1-full64-a-1793028432226",
+          "m5r-q1-full64-c-1793028440948"
+        ],
+        "comparedBuffers": {
+          "Far": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          },
+          "Near": {
+            "valueCount": 718584,
+            "exact": true,
+            "changedValueCount": 0,
+            "maximumAbsoluteError": 0,
+            "maximumErrorIndex": -1,
+            "rmse": 0
+          }
+        }
+      }
+    ],
+    "sameProfileRepeatable": true
+  },
+  "inputProvenance": {
+    "matched": true,
+    "requestId": "gg-mvpetsts-vu1nrhxrpz-default-request-7",
+    "rendererGenerationId": "gg-mvpetsts-vu1nrhxrpz-default-generation-2",
+    "inputFingerprints": {
+      "sourceColor": "4c6374b1",
+      "depth": "89c670bb",
+      "physical": "e37fced7",
+      "validity": "bde57a05"
+    }
+  },
+  "gpuCpuConformance": {
+    "diagnosticMatchedCountLimitRgbRmse": 0.001,
+    "full32VsCpu32RgbRmse": 6.519639132757963e-8,
+    "full64VsCpu64RgbRmse": 1.3437508839549746e-7,
+    "passed": true
+  },
+  "finiteSampleReferenceConvergence": {
+    "cpu32VsCpu64RgbRmse": 0.011646611340034392,
+    "cpu64VsCpu128RgbRmse": 0.005748315524033702,
+    "cpu128VsCpu256RgbRmse": 0.00415713039720048,
+    "declaredLimitRgbRmse": 0.001,
+    "converged": false,
+    "authority": "CPU256 remains a candidate reference, not validated optical ground truth."
+  },
+  "rootCauseClassification": {
+    "classification": "deterministic-reference-sampling-limited",
+    "confidence": "high",
+    "supportingEvidence": [
+      "Input fingerprints match for the compared native captures.",
+      "Full32 and Full64 A/B and A/C Far and Near buffers are bit-exact.",
+      "GPU32/CPU32 (6.519639132757963e-8) and GPU64/CPU64 (1.3437508839549746e-7) RMSE meet the 0.001 diagnostic limit."
+    ],
+    "failedConditions": [
+      "CPU128/CPU256 RMSE 0.00415713039720048 exceeds 0.001; reference authority remains unresolved."
+    ],
+    "rootCauseStatementsAllowed": {
+      "deterministicReferenceSamplingLimited": true,
+      "captureInstabilityObserved": false,
+      "captureInstabilityNotObserved": true,
+      "geometryProvenanceMismatchNotObserved": true
+    },
+    "matrix": {
+      "hA1": {
+        "problem": "Full32/Full64 divergence",
+        "hypothesis": "H-A1 finite aperture-sampling error",
+        "discriminatingExperiment": "Compare repeated native profiles with matched-count independent CPU references and CPU32/64/128/256 on the same 128-pixel valid-far blur ROI.",
+        "predictedObservation": "Same-count GPU/CPU agreement with stable same-profile captures, while finite sample counts disagree and higher tiers move toward one another.",
+        "actualObservation": {
+          "gpuCpuFloat32Rmse": 6.519639132757963e-8,
+          "gpuCpuFloat64Rmse": 1.3437508839549746e-7,
+          "cpu32Vs64Rmse": 0.011646611340034392,
+          "cpu64Vs128Rmse": 0.005748315524033702,
+          "cpu128Vs256Rmse": 0.00415713039720048
+        },
+        "supportingEvidence": [
+          "Input fingerprints match for the compared native captures.",
+          "Full32 and Full64 A/B and A/C Far and Near buffers are bit-exact.",
+          "GPU32/CPU32 (6.519639132757963e-8) and GPU64/CPU64 (1.3437508839549746e-7) RMSE meet the 0.001 diagnostic limit.",
+          "Measured CPU tier differences decrease through 256 samples."
+        ],
+        "contradictingEvidence": [
+          "CPU128/CPU256 RMSE 0.00415713039720048 exceeds 0.001; reference authority remains unresolved."
+        ],
+        "confidence": "high",
+        "classification": "deterministic-reference-sampling-limited",
+        "proposedNextAction": "Keep references unqualified; design a separate progressive or higher-quality sampling/reference study against explicit blur-spread metrics."
+      },
+      "hA5": {
+        "problem": "Full32/Full64 divergence",
+        "hypothesis": "H-A5 renderer, resource, or readback instability",
+        "discriminatingExperiment": "Capture three repeated Full32 and Full64 results with identical request inputs and renderer generation.",
+        "predictedObservation": "A same-profile capture changes despite stable source and optical fingerprints.",
+        "actualObservation": "The evidence evaluator confirms all four repeated Full32/Full64 Far and Near comparisons are bit-exact.",
+        "supportingEvidence": [
+          "All four Full32/Full64 A/B and A/C Far/Near comparisons are exact."
+        ],
+        "contradictingEvidence": [],
+        "confidence": "high",
+        "classification": "capture-instability-not-observed",
+        "proposedNextAction": "No lifecycle change indicated; retain repeatability as a regression control."
+      },
+      "hA6": {
+        "problem": "Full32/Full64 divergence",
+        "hypothesis": "H-A6 physical footprint or coordinate inputs differ across profiles",
+        "discriminatingExperiment": "Match effective-state fingerprints and compare Full32/Full64 GPU output against CPU references consuming observed gather-center IDs/UVs and the captured inverse projection.",
+        "predictedObservation": "A mismatched input fingerprint or materially larger same-sample GPU/CPU residual.",
+        "actualObservation": {
+          "inputFingerprintsMatch": true,
+          "gpu32Cpu32RgbRmse": 6.519639132757963e-8,
+          "gpu64Cpu64RgbRmse": 1.3437508839549746e-7,
+          "sourceDimensions": [
+            474,
+            379
+          ],
+          "gatherDimensions": [
+            474,
+            379
+          ],
+          "sampledFilmDimensionsMm": {
+            "widthMm": 31.75,
+            "heightMm": 25.4
+          },
+          "maximumRadiusPx": 60
+        },
+        "supportingEvidence": [
+          "Input fingerprints match and matched-count GPU/CPU conformance passes."
+        ],
+        "contradictingEvidence": [],
+        "confidence": "high",
+        "classification": "geometry-provenance-mismatch-not-observed",
+        "proposedNextAction": "Keep the matched-input assertions; broaden only if another state demonstrates an input mismatch."
+      }
+    }
+  },
+  "negativeControls": {
+    "unitSuite": "src/tests/unit/groundGlassM5rReferenceAnalysis.test.ts — 20 passed, including M5R-A1 through M5R-A10.",
+    "full32FarMutation": {
+      "passed": true,
+      "mutatedBuffer": "isolated Float32Array; Full32 A/B Far RGB channel",
+      "changedValueCount": 1,
+      "maximumErrorIndex": 2
+    },
+    "full64NearAlphaMutation": {
+      "passed": true,
+      "mutatedBuffer": "isolated Float32Array; Full64 A/C Near alpha channel",
+      "changedValueCount": 1,
+      "maximumErrorIndex": 3
+    },
+    "gpu32Cpu32Mismatch": {
+      "passed": true,
+      "valueAboveLimitIsRejected": true
+    },
+    "gpu64Cpu64Mismatch": {
+      "passed": true,
+      "valueAboveLimitIsRejected": true
+    },
+    "fingerprintMismatch": {
+      "passed": true,
+      "classification": "invalid-comparison"
+    },
+    "missingOrNonfiniteMetric": {
+      "passed": true,
+      "successfulClassificationDenied": true
+    },
+    "reportSerializationConsistency": {
+      "passed": true,
+      "hA1MatchesTopLevel": true,
+      "n1RequiresRepeatability": true
+    },
+    "nativeAssertions": [
+      "N1 repeated Full32/Full64 Far/Near captures are bit-exact (passed).",
+      "N2 comparison inputs have matching source, depth, physical, and validity fingerprints (passed).",
+      "registered-app and native-research-fixture evidence scopes remain distinct"
+    ]
+  },
+  "historicalComparison": {
+    "sourceReport": "GROUND_GLASS_M5R_INVESTIGATION_SUMMARY.json",
+    "historicalMeasurementsRetained": true,
+    "measuredValuesUnchanged": true,
+    "note": "The earlier native M5R test recorded repeat comparisons without asserting them. This run uses the corrected fail-closed assertions and the same numeric reference measurements."
+  },
+  "preservedFindings": {
+    "sampling": {
+      "baselineFull32ToFull64ProposalOverlap": 0,
+      "nestedCpu32To64ProposalOverlap": 32,
+      "nestedAlternativePromoted": false,
+      "full32VsFull64RgbRgba16fRmse": 0.007857539077244886,
+      "full32VsFull64RgbRgba32fRmse": 0.007859192980570341
+    },
+    "fallback": {
+      "pixels": 57598,
+      "meaningfulBlurPixels": 6
+    },
+    "near": {
+      "registeredApplicationFractionalPixels": 0,
+      "controlledNativeFixtureFractionalAlphaPixels": 1896
+    },
+    "m5q": {
+      "thresholdRevision": "m5q-architecture-rise-r186-v3",
+      "evaluator": "m5q-r3-review-fix-2",
+      "q1": "reference-not-converged",
+      "q2": "insufficient-support",
+      "q3": "bounded-qualified",
+      "q4": "insufficient-support",
+      "q5": "reference-not-converged",
+      "q6": "reference-not-converged",
+      "q7": "reference-not-converged"
+    }
+  },
+  "remainingLimitations": [
+    "The CPU128/CPU256 sequence remains above the 0.001 reference convergence limit.",
+    "Full32/Full64 agreement is bounded to this Architecture Rise optical state, ROI, Three.js r186 renderer, native WebGPU backend, and device.",
+    "No finite reference is established as photographic ground truth; no broad B1 or registered-app fractional Near quality conclusion follows.",
+    "The Q3 qualification remains narrow to its existing signed-boundary ROI; M5R does not establish general B1 quality or M6 R4 parity.",
+    "Production WebGL remains the public renderer; production WebGPU authorization is unchanged and disabled."
+  ]
+}
