@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "evaluatorRevision": "ground-glass-m5s-review-fix-1",
   "originalReviewedHead": "d2b8f114a132852d51ba9e35bd84f5d412d799ef",
+  "nativeRunSourceCommit": "2bca0783a55482d2d9b673aee448e3984c40504a",
   "nativeReevaluationArtifact": "test-results/ground-glass-webgpu-apertu-8ba1e-verage-without-changing-M5Q-chrome-native-webgpu/m5s-reference-convergence.json",
   "frozenThresholdRevision": "m5q-architecture-rise-r186-v3",
   "nativeRuntime": {
