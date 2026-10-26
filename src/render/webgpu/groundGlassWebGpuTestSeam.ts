@@ -10,6 +10,10 @@ export type GroundGlassApertureGatherCaptureRequest = Readonly<{
   maximumRadiusPx?: number;
   /** Retain bounded typed-array readbacks only for the duration of an explicit test capture. */
   retainReadbackBuffers?: boolean;
+  /** Run temporary M5R-only precision and Near-intermediate renders for this capture. */
+  includeM5rDiagnostics?: boolean;
+  /** Exercise the actual M5 Near TSL node with bounded synthetic native inputs. */
+  includeM5rNearFixture?: boolean;
 }>;
 
 /** A bounded test-only request to exercise the mounted adapter's real B1 TSL node. */
@@ -126,6 +130,8 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
   sceneSourceRevision: string;
   effectiveOpticalRequestFingerprint: string;
   cameraStateFingerprint: string;
+  /** Exact inverse projection values used by M5 and its independent CPU reference. */
+  inverseProjectionMatrix: readonly number[];
   sampledFilmDimensionsMm: Readonly<{ widthMm: number; heightMm: number }>;
   colorDomain: "source-target-readback-values";
   qualityMode: GroundGlassApertureGatherQualityMode;
@@ -192,6 +198,19 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     mismatchCount: number;
   }>;
   physicalDataFingerprint: string;
+  inputFingerprints: Readonly<{
+    sourceColor: string;
+    depth: string;
+    physical: string;
+    validity: string;
+  }>;
+  m5rDiagnostics: Readonly<{
+    status: "captured" | "not-requested";
+    diagnosticTargetFormat: "rgba32float" | null;
+    diagnosticTargetCount: number;
+    nearFinalAlphaMaximumError: number | null;
+  }>;
+  m5rNearFixture: GroundGlassM5rNearFixtureReadback | null;
   nearCoveragePixelCount: number;
   nearRgbInvariantMaximumError: number;
   nearAlphaInvariantMaximumError: number;
@@ -217,13 +236,65 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     nearBeforeB1Rgba: Float32Array;
     nearAfterB1Rgba: Float32Array;
     nearCpuReferenceRgba: Float32Array;
+    nearCpuCenterIsNear: Uint8Array;
+    nearCpuEvaluatedProposalCount: Uint16Array;
+    nearCpuAcceptedProposalCount: Uint16Array;
+    nearCpuNonzeroMembershipCount: Uint16Array;
+    nearCpuWeightSum: Float32Array;
+    nearCpuCoverageMass: Float32Array;
+    nearCpuEstimatedCoverage: Float32Array;
+    nearCpuAcceptedAreaRatioMean: Float32Array;
+    nearCpuAcceptedCompensationMaximum: Float32Array;
     b1FarRgba: Float32Array;
     researchCompositeRgba: Float32Array;
     observedSelectedGatherIds: Int32Array;
     observedSelectedCenterSourceIds: Int32Array;
     observedGatherCenterSourceIds: Int32Array;
+    observedGatherCenterSourceUvs: Float32Array;
     b1Decision: Uint8Array;
+    /** Present only for explicit M5R diagnostic captures. */
+    farGatherRgba32?: Float32Array;
+    nearProposalCountsRgba?: Float32Array;
+    nearCoverageDiagnosticsRgba?: Float32Array;
+    nearAcceptedFootprintRgba?: Float32Array;
+    /** Raw channel-order binary16 bits from the native RGBA16F Near target. */
+    nearAlphaHalfBits?: Uint16Array;
+    /** Raw channel-order binary16 bits from the native RGBA16F Far target. */
+    farGatherHalfBits?: Uint16Array;
+    /** Controlled fixture arrays are present only when includeM5rNearFixture was requested. */
+    m5rFixtureNearRgba?: Float32Array;
+    m5rFixtureProposalCountsRgba?: Float32Array;
+    m5rFixtureCoverageRgba?: Float32Array;
+    m5rFixtureAcceptedFootprintRgba?: Float32Array;
+    m5rFixtureNearAlphaHalfBits?: Uint16Array;
   }> | null;
+}>;
+
+/** Synthetic-input evidence is always labeled separately from registered app captures. */
+export type GroundGlassM5rNearFixtureReadback = Readonly<{
+  evidenceScope: "native-research-fixture";
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  rendererGenerationId: string;
+  requestId: string;
+  sceneId: string;
+  widthPx: number;
+  heightPx: number;
+  centerPixel: Readonly<{ x: number; y: number }>;
+  foregroundShape: Readonly<{
+    kind: "disc";
+    centerPixel: Readonly<{ x: number; y: number }>;
+    radiusPx: number;
+    signedCocNearMm: number;
+    signedCocBackgroundMm: number;
+    depthNear: number;
+    depthBackground: number;
+    maximumRadiusPx: number;
+  }>;
+  targetFormat: "rgba16float";
+  diagnosticTargetFormat: "rgba32float";
+  finalAlphaMatchesNearTargetMaximumError: number;
 }>;
 
 export type GroundGlassPhysicalCocProbeKernelOverride = Readonly<{

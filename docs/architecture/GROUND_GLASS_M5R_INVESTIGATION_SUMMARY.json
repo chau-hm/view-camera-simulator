@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 1,
+  "investigation": "M5R — Native Reference Convergence and Reconstruction Quality Investigation",
+  "baseCommit": "cefc29b910440fc9ab5afd728ee37edd9427e465",
+  "m5qThresholdRevision": "m5q-architecture-rise-r186-v3",
+  "m5qThresholdsUnchanged": true,
+  "native": {
+    "scope": "registered-app-adapter",
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "rendererRevision": "r186",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "rendererGenerationId": "gg-mvpcee9f-kvxdqfsraaj-default-generation-2",
+    "requestId": "gg-mvpcee9f-kvxdqfsraaj-default-request-7",
+    "inputFingerprints": {
+      "sourceColor": "4c6374b1",
+      "depth": "89c670bb",
+      "physical": "e37fced7",
+      "validity": "bde57a05"
+    },
+    "sourceDimensions": [
+      474,
+      379
+    ],
+    "sampledFilmDimensionsMm": {
+      "widthMm": 31.75,
+      "heightMm": 25.4
+    },
+    "radiusCapPx": 60,
+    "colorDomain": "source-target-readback-values"
+  },
+  "A": {
+    "state": "ar-f3200-f5p6-loupe4-rise0",
+    "full32CaptureIds": [
+      "m5r-q1-full32-a-1793024346285",
+      "m5r-q1-full32-b-1793024349204",
+      "m5r-q1-full32-c-1793024351651"
+    ],
+    "full64CaptureIds": [
+      "m5r-q1-full64-a-1793024354334",
+      "m5r-q1-full64-b-1793024358992",
+      "m5r-q1-full64-c-1793024363223"
+    ],
+    "repeatable": true,
+    "fingerprintsMatched": true,
+    "full32Vs64": {
+      "channelScope": "RGBA includes the equal constant alpha channel; RGB excludes alpha.",
+      "rgba16f": {
+        "n": 718584,
+        "mae": 0.0025423116666866167,
+        "rmse": 0.006804828452123007,
+        "max": 0.11865234375
+      },
+      "rgba32f": {
+        "n": 718584,
+        "mae": 0.0025435369132797824,
+        "rmse": 0.006806260774418255,
+        "max": 0.11865261197090149
+      },
+      "rgb16f": {
+        "n": 538938,
+        "mae": 0.003389748888915489,
+        "rmse": 0.007857539077244886,
+        "max": 0.11865234375
+      },
+      "rgb32f": {
+        "n": 538938,
+        "mae": 0.00339138255103971,
+        "rmse": 0.007859192980570341,
+        "max": 0.11865261197090149
+      },
+      "nearExact": true
+    },
+    "proposalFormula": "sqrt((index + 0.5) / sampleCount), angle=(index + 0.5)*goldenAngle",
+    "baseline32OverlapWith64": 0,
+    "nested32OverlapWith64": 32,
+    "sample16CaptureId": "m5r-q1-half16-1793024345684",
+    "matchedGpuCpu": {
+      "gpu32HalfVsCpu32": {
+        "n": 384,
+        "mae": 0.00011846007449397196,
+        "rmse": 0.00015421205700620716,
+        "max": 0.0004666447639465332
+      },
+      "gpu32FloatVsCpu32": {
+        "n": 384,
+        "mae": 4.6532174261907734e-8,
+        "rmse": 6.519639132757963e-8,
+        "max": 2.980232238769531e-7
+      },
+      "gpu64HalfVsCpu64": {
+        "n": 384,
+        "mae": 0.0001182874208704258,
+        "rmse": 0.00015485226697009333,
+        "max": 0.00048595666885375977
+      },
+      "gpu64FloatVsCpu64": {
+        "n": 384,
+        "mae": 9.692545669774215e-8,
+        "rmse": 1.3437508839549746e-7,
+        "max": 5.960464477539062e-7
+      }
+    },
+    "cpuRoiConvergence": {
+      "cpu32VsCpu64": {
+        "n": 384,
+        "mae": 0.007414796166510011,
+        "rmse": 0.011646611340034392,
+        "max": 0.04397276043891907
+      },
+      "cpu64VsCpu128": {
+        "n": 384,
+        "mae": 0.004052956438196513,
+        "rmse": 0.005748315524033702,
+        "max": 0.024763166904449463
+      },
+      "cpu128VsCpu256": {
+        "n": 384,
+        "mae": 0.002636649922351353,
+        "rmse": 0.00415713039720048,
+        "max": 0.02286297082901001
+      },
+      "nested32VsNested64": {
+        "n": 384,
+        "mae": 0.006414707813140315,
+        "rmse": 0.010502842982460837,
+        "max": 0.060404956340789795
+      },
+      "nested32VsCpu256": {
+        "n": 384,
+        "mae": 0.007723151526685494,
+        "rmse": 0.011497307042016403,
+        "max": 0.04932457208633423
+      },
+      "nested64VsCpu256": {
+        "n": 384,
+        "mae": 0.004381230421131477,
+        "rmse": 0.00620182941685279,
+        "max": 0.027117162942886353
+      },
+      "gpu32HalfVsCpu256": {
+        "n": 384,
+        "mae": 0.007338241989297482,
+        "rmse": 0.011008201323499202,
+        "max": 0.05056306719779968
+      },
+      "gpu64HalfVsCpu256": {
+        "n": 384,
+        "mae": 0.004372573025951472,
+        "rmse": 0.006205186635136087,
+        "max": 0.026973247528076172
+      }
+    },
+    "precision": {
+      "gpuFloatVsHalfRmse": 0.00011697192507501379,
+      "cpuHalfMatchedChannels": 512
+    },
+    "roiPixels": 128,
+    "cap2": {
+      "full32CaptureId": "m5r-q1-cap2-full32-1793024367725",
+      "full64CaptureId": "m5r-q1-cap2-full64-1793024370117",
+      "channelScope": "Existing fields are RGBA including equal constant alpha; rgbOnly excludes alpha.",
+      "n": 718584,
+      "mae": 0.0011075373720382453,
+      "rmse": 0.003996052042002714,
+      "max": 0.062744140625,
+      "rgbOnly": {
+        "n": 538938,
+        "mae": 0.0014767164960509938,
+        "rmse": 0.004614243444292041,
+        "max": 0.062744140625
+      }
+    },
+    "classification": "deterministic-reference-sampling-limited",
+    "cpuHighSamplesAreGroundTruth": false
+  },
+  "B": {
+    "state": "ar-f3200-f5p6-full-rise0",
+    "captureIds": {
+      "half32": "m5r-q2-half32-1793024374408",
+      "full32": "m5r-q2-full32-1793024375129",
+      "full64": "m5r-q2-full64-1793024377401"
+    },
+    "fallbackPixels": 57598,
+    "reasonBreakdown": [
+      {
+        "key": "invalidOrUnresolvedCenter",
+        "code": 3,
+        "name": "invalid-or-unresolved-center",
+        "count": 57158,
+        "percent": 99.23608458627035,
+        "validFar": 364,
+        "meaningfulBlur": 6
+      },
+      {
+        "key": "selectedCenterNotFarEligible",
+        "code": 4,
+        "name": "selected-center-not-far-eligible",
+        "count": 440,
+        "percent": 0.7639154137296434,
+        "validFar": 7,
+        "meaningfulBlur": 0
+      }
+    ],
+    "validFarBlur": {
+      "pixels": 121753,
+      "meaningfulReferencePixels": 33125,
+      "meaningfulFallbackPixels": 6,
+      "referenceMeanSignal": 0.027836475127177695,
+      "b1MeanSignal": 0.0424547411434726,
+      "b1ToReferenceSignalRatio": 1.525147884188203
+    },
+    "gradient": {
+      "pairs": 1436,
+      "absolute": {
+        "sampleCount": 1436,
+        "mean": 0.20354607067621508,
+        "p50": 0.04158528645833333,
+        "p90": 0.6258544921875,
+        "p95": 0.6258544921875,
+        "p99": 0.7643992106119791,
+        "maximum": 0.7761637369791666
+      },
+      "relative": {
+        "sampleCount": 1436,
+        "mean": 20.059458886239685,
+        "p50": 4.1259765625,
+        "p90": 62.58544921875,
+        "p95": 62.58544921875,
+        "p99": 76.43992106119791,
+        "maximum": 77.61637369791666
+      },
+      "denominatorFloor": {
+        "value": 0.01,
+        "appliedPairCount": 1089,
+        "appliedPairFraction": 0.7583565459610028
+      }
+    },
+    "spatial": {
+      "threshold": 0.01,
+      "limitPx": 8,
+      "full32WidthPx": 9,
+      "limitReached": true
+    },
+    "leakageDirection": {
+      "depthPairs": 3307,
+      "depthB1NearSourceFraction": 0.6465074085273662,
+      "depthMeanReferenceMinusB1": 0.1276348384832939,
+      "signedPairs": 65,
+      "signedMeanReferenceMinusB1": -0.00004882812500000683
+    },
+    "conclusion": "Relative gradient metric is floor-inflated, but absolute differences remain. Meaningful fallback support is only six pixels and reference convergence is unresolved; no general visible B1 halo is established."
+  },
+  "C": {
+    "state": "ar-f5200-f5p6-full-rise0",
+    "captureId": "m5r-q4-near-1793024381561",
+    "appScope": "registered-app-adapter",
+    "classification": "registered-application-support-limited; controlled native silhouette demonstrates M5 TSL fractional coverage and foreground spread",
+    "app": {
+      "gpuAlpha": {
+        "pixelCount": 179646,
+        "zeroCount": 151146,
+        "oneCount": 28500,
+        "fractionalCount": 0,
+        "belowZeroCount": 0,
+        "aboveOneCount": 0,
+        "minimum": 0,
+        "maximum": 1,
+        "mean": 0.15864533582712667
+      },
+      "cpuAlpha": {
+        "pixelCount": 179646,
+        "zeroCount": 151146,
+        "oneCount": 28500,
+        "fractionalCount": 0,
+        "belowZeroCount": 0,
+        "aboveOneCount": 0,
+        "minimum": 0,
+        "maximum": 1,
+        "mean": 0.15864533582712667
+      },
+      "centerNearPixels": 28500,
+      "centerAccepted": 0,
+      "offCenterPixels": 151146,
+      "offCenterAccepted": 0,
+      "offCenterMembership": 0,
+      "gpuCpuRgb": {
+        "n": 538938,
+        "rmse": 0.00007292677567925993,
+        "max": 0.0004825592041015625
+      },
+      "gpuCpuAlpha": {
+        "n": 179646,
+        "rmse": 0,
+        "max": 0
+      },
+      "binary16": {
+        "available": true,
+        "storedAlpha": {
+          "pixelCount": 179646,
+          "zeroCount": 151146,
+          "oneCount": 28500,
+          "fractionalCount": 0,
+          "belowZeroCount": 0,
+          "aboveOneCount": 0,
+          "minimum": 0,
+          "maximum": 1,
+          "mean": 0.15864533582712667
+        },
+        "rawBitsRoundTripMismatchCount": 0,
+        "decodedBitsVsGpuTargetAlpha": {
+          "valueCount": 179646,
+          "exactMismatchCount": 0,
+          "rootMeanSquareError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumAbsoluteErrorIndex": 0
+        },
+        "gpuDiagnosticVsStoredAlpha": {
+          "valueCount": 179646,
+          "exactMismatchCount": 0,
+          "rootMeanSquareError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumAbsoluteErrorIndex": 0
+        },
+        "cpuDiagnosticVsStoredAlpha": {
+          "valueCount": 179646,
+          "exactMismatchCount": 0,
+          "rootMeanSquareError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumAbsoluteErrorIndex": 0
+        },
+        "sameHalfBinCount": 179646,
+        "differentHalfBinCount": 0,
+        "preQuantizationDifferenceWithinSameHalfBinCount": 0
+      }
+    },
+    "fixture": {
+      "evidenceScope": "native-research-fixture",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "rendererGenerationId": "gg-mvpcee9f-kvxdqfsraaj-default-generation-2",
+      "requestId": "gg-mvpcee9f-kvxdqfsraaj-default-request-9",
+      "sceneId": "architecture-rise",
+      "widthPx": 96,
+      "heightPx": 96,
+      "centerPixel": {
+        "x": 55,
+        "y": 48
+      },
+      "foregroundShape": {
+        "kind": "disc",
+        "centerPixel": {
+          "x": 32,
+          "y": 48
+        },
+        "radiusPx": 18,
+        "signedCocNearMm": -8,
+        "signedCocBackgroundMm": 1,
+        "depthNear": 0.35,
+        "depthBackground": 0.62,
+        "maximumRadiusPx": 16
+      },
+      "targetFormat": "rgba16float",
+      "diagnosticTargetFormat": "rgba32float",
+      "finalAlphaMatchesNearTargetMaximumError": 0.0002353191375732422,
+      "scope": "native-research-fixture",
+      "nearAlphaDistribution": {
+        "pixelCount": 9216,
+        "nonzeroAlphaPixelCount": 2905,
+        "fractionalAlphaPixelCount": 1896,
+        "fractionalForegroundSpreadOutsideSilhouettePixelCount": 1896,
+        "foregroundSpreadOutsideSilhouettePixelCount": 1896,
+        "maximumOutsideForegroundAlpha": 0.388671875
+      },
+      "center": {
+        "centerNear": 0,
+        "evaluatedProposalCount": 64,
+        "acceptedProposalCount": 5,
+        "nonzeroMembershipCount": 7,
+        "weightSum": 5,
+        "coverageMass": 7.499997615814209,
+        "estimatedCoverage": 0.11058157682418823,
+        "diagnosticFinalAlpha": 0.11058157682418823,
+        "actualNearAlpha": 0.11053466796875,
+        "acceptedAreaRatioMean": 0.6666669249534607,
+        "acceptedCompensationMaximum": 1.4999995231628418,
+        "storedHalfBits": 12051,
+        "decodedStoredAlpha": 0.11053466796875
+      }
+    },
+    "conclusion": "App state lacks accepted off-center samples; GPU, CPU and binary16 agree. Controlled silhouette confirms actual Near TSL fractional alpha and spread, but only as fixture evidence."
+  },
+  "rootCauseMatrix": [
+    {
+      "problem": "Full32/Full64 divergence",
+      "hypothesis": "Finite aperture sampling error",
+      "experiment": "Repeated native captures; matched-count independent CPU references; CPU32/64/128/256 ROI sequence.",
+      "actual": "Same-profile bit-exact; GPU32/CPU32 float RMSE 6.519639132757963e-8; GPU64/CPU64 1.3437508839549746e-7; CPU32/64 0.011646611340034392, CPU64/128 0.005748315524033702, CPU128/256 0.00415713039720048.",
+      "supporting": "GPU/CPU conformance is excellent and tier error decreases with more samples.",
+      "contradicting": "CPU128/256 remains above 0.001; reference is not converged.",
+      "confidence": "high",
+      "classification": "deterministic-reference-sampling-limited; reference unresolved",
+      "next": "Separate sampling/reference study with validated convergence and blur-spread gates."
+    },
+    {
+      "problem": "Full32/Full64 proposal identity",
+      "hypothesis": "Sample-count radial formula changes all 32-point positions at 64 samples.",
+      "experiment": "Exact proposal overlap plus CPU-only nested 64-master alternative vs CPU256.",
+      "actual": "Baseline overlap 0/32; nested overlap 32/32; nested64/CPU256 RMSE 0.00620182941685279.",
+      "supporting": "The current sets are non-nested.",
+      "contradicting": "Nested alternative does not improve against CPU256 and is not a qualified reference.",
+      "confidence": "high",
+      "classification": "non-nested proposal behavior confirmed; alternative not promoted",
+      "next": "Do not replace production samples from agreement-only evidence."
+    },
+    {
+      "problem": "Full32/Full64 divergence",
+      "hypothesis": "Scene discontinuities dominate the residual.",
+      "experiment": "Would stratify error by source gradients, depth edges and occlusion boundaries.",
+      "actual": "This run measured matched ROI/global differences but did not stratify by discontinuity class.",
+      "supporting": "No direct evidence.",
+      "contradicting": "No direct evidence.",
+      "confidence": "low",
+      "classification": "insufficient-evidence",
+      "next": "Run bounded edge/texture-stratified study."
+    },
+    {
+      "problem": "Full32/Full64 divergence",
+      "hypothesis": "RGBA16F storage precision dominates.",
+      "experiment": "Matched RGBA16F/RGBA32F outputs and CPU half-bit comparisons.",
+      "actual": "GPU F32 vs F16 RMSE 0.00011697192507501379; Full32/64 F32 RMSE 0.006806260774418255; CPU half matches 512/512.",
+      "supporting": "Half storage introduces measurable quantization.",
+      "contradicting": "Full32/64 error remains in F32 and CPU half conversion matches exact stored bits.",
+      "confidence": "high",
+      "classification": "storage precision is secondary, not dominant",
+      "next": "Keep internal accumulation precision as a separate untested question."
+    },
+    {
+      "problem": "Capture reliability",
+      "hypothesis": "Renderer/resource/readback instability.",
+      "experiment": "Three repeat captures per native sample profile with matched provenance.",
+      "actual": "All Full32 and Full64 Far/Near outputs are bit-exact and fingerprints match.",
+      "supporting": "Exact repeatability.",
+      "contradicting": "No instability observed.",
+      "confidence": "high",
+      "classification": "capture instability not observed",
+      "next": "Retain as a regression control."
+    },
+    {
+      "problem": "B1 fallback",
+      "hypothesis": "Fallback broadly substitutes sharp color in meaningfully defocused valid-far pixels.",
+      "experiment": "GPU-authored reason taxonomy and expected-blur support.",
+      "actual": "57598 fallbacks; 6 meet blur floor; 57158 are invalid/unresolved centers.",
+      "supporting": "Reason taxonomy is complete for the captured surface.",
+      "contradicting": "Only six meaningful-blur fallbacks; most are invalid/unresolved center.",
+      "confidence": "high",
+      "classification": "insufficient valid-far fallback support",
+      "next": "Construct matched valid-far meaningful-blur fallback case before any algorithm decision."
+    },
+    {
+      "problem": "B1 boundary metric",
+      "hypothesis": "Large relative error is mostly a small-denominator artifact.",
+      "experiment": "Absolute/relative pair distributions and denominator floor usage.",
+      "actual": "0.7583565459610028 floor fraction; abs mean/p90/max 0.20354607067621508/0.6258544921875/0.7761637369791666; relative mean 20.059458886239685.",
+      "supporting": "The floor inflates most relative ratios.",
+      "contradicting": "Absolute differences remain substantial.",
+      "confidence": "high",
+      "classification": "ratio inflation confirmed but not sole explanation",
+      "next": "Keep historical and absolute metrics side by side."
+    },
+    {
+      "problem": "B1 halo extent/leakage",
+      "hypothesis": "B1 error is only at fallback edges or proves foreground leakage.",
+      "experiment": "Distance-from-boundary error to 8px; directional near-source comparison at valid depth/sign boundaries.",
+      "actual": "Difference support reaches 8px analysis limit; depth-edge B1 closer fraction 0.6465074085273662; signed-boundary mean directional delta -0.00004882812500000683.",
+      "supporting": "There is a depth-edge directional signal and spatial error beyond the boundary.",
+      "contradicting": "Support is truncated at the radius limit; signed signal is near zero; reference unconverged.",
+      "confidence": "medium",
+      "classification": "potential directional contamination signal, no causal/visible halo proof",
+      "next": "Use a converged reference and controlled foreground-color mutation."
+    },
+    {
+      "problem": "Registered Near alpha",
+      "hypothesis": "Center override and rejected off-center geometry explain binary alpha.",
+      "experiment": "Actual TSL intermediate readback, independent CPU match, and raw RGBA16F bits.",
+      "actual": "28500 center-Near pixels with 0 accepted proposals; 151146 off-center pixels with 0 accepted proposals; alpha GPU/CPU RMSE 0; half mismatches 0.",
+      "supporting": "GPU/CPU decisions and storage match exactly; off-center accepted proposal count is zero.",
+      "contradicting": "No app population exercises fractional proposal coverage.",
+      "confidence": "high",
+      "classification": "registered application support limited; no alpha or storage defect observed",
+      "next": "Find a registered state with accepted off-center proposals before code changes."
+    },
+    {
+      "problem": "Near kernel fractional capability",
+      "hypothesis": "Coverage formula or binary16 storage makes output binary.",
+      "experiment": "Actual TSL on controlled sharp foreground silhouette with different near/far depth and CoC fields.",
+      "actual": "1896 pixels simultaneously outside the silhouette, foreground-colored, and fractional-alpha; selected-center alpha 0.11053466796875 from estimated 0.11058157682418823.",
+      "supporting": "Fractional alpha survives RGBA16F and foreground spread is measured.",
+      "contradicting": "Synthetic fixture does not qualify public app scene support.",
+      "confidence": "high",
+      "classification": "M5 Near TSL supports fractional alpha; controlled fixture only",
+      "next": "Keep app qualification blocked until registered evidence has off-center accepted proposals."
+    }
+  ],
+  "negativeControls": {
+    "unitSuites": {
+      "gatherReference": "21 passed",
+      "m5rReferenceAnalysis": "10 passed incl. N6",
+      "m5rFallbackAnalysis": "13 passed incl. N7-N10, B8-B9",
+      "m5rNearAlphaAnalysis": "9 passed incl. C1-C8",
+      "m5qQualification": "24 passed"
+    },
+    "nativeAssertions": [
+      "N1 repeated same-profile captures are bit-exact",
+      "N2 comparison inputs have matching source, depth, physical, and validity fingerprints",
+      "registered-app and native-research-fixture evidence scopes remain distinct"
+    ],
+    "separateM5qConfirmatoryRegression": "The separately run native M5Q confirmation retained its frozen per-dimension outcomes and bounded Q3 result; it is not mapped to M5R N16-N18.",
+    "r3ThresholdsChanged": false
+  },
+  "m5qStatus": {
+    "Q1": "reference-not-converged",
+    "Q2": "insufficient-support",
+    "Q3": "bounded-qualified",
+    "Q4": "insufficient-support",
+    "Q5": "reference-not-converged",
+    "Q6": "reference-not-converged",
+    "Q7": "reference-not-converged",
+    "noNewQualification": true
+  },
+  "recommendation": {
+    "first": "Option A — separate sampling/reference study; require independently validated convergence and blur-spread metrics. The nested CPU-only proposal is not promoted.",
+    "b1": "No B1 rewrite or C1 adoption yet; require a converged reference and controlled valid-far meaningful-blur fallback.",
+    "near": "Find registered-app off-center accepted Near proposals before considering alpha changes.",
+    "m6ArchitectureOnlyMayProceed": true,
+    "qualityDependentM6PresentationBlocked": true,
+    "productionWebGpuPromotion": false,
+    "productionM5BehaviorChanged": false
+  }
+}

@@ -100,6 +100,7 @@ import {
   holdGroundGlassApertureGatherReadbackForTest,
   type GroundGlassPhysicalCocProbeReadback,
   type GroundGlassApertureGatherCaptureReadback,
+  type GroundGlassM5rNearFixtureReadback,
   type GroundGlassApertureGatherOperationName,
   type GroundGlassApertureGatherTargetAllocation,
   type GroundGlassGpuPassTiming,
@@ -782,6 +783,353 @@ const runGroundGlassApertureGatherPass = async (input: Readonly<{
     queueCompletionWaitMs,
     wallClockMs: performance.now() - startedAt,
   };
+};
+
+const renderM5rFloatDiagnosticTarget = async (input: Readonly<{
+  renderer: WebGpuRenderer;
+  device: GpuDeviceLike;
+  outputNode: MeshBasicNodeMaterial["outputNode"];
+  widthPx: number;
+  heightPx: number;
+  camera: THREE.OrthographicCamera;
+  isCurrent: () => boolean;
+}>): Promise<Readonly<{ values: Float32Array; format: string | null }> | null> => {
+  const target = new THREE.RenderTarget(input.widthPx, input.heightPx, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
+    depthBuffer: false,
+    stencilBuffer: false,
+    samples: 0,
+    generateMipmaps: false,
+  });
+  target.texture.colorSpace = THREE.NoColorSpace;
+  target.texture.minFilter = THREE.NearestFilter;
+  target.texture.magFilter = THREE.NearestFilter;
+  target.texture.generateMipmaps = false;
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const material = new MeshBasicNodeMaterial({ toneMapped: false });
+  material.outputNode = input.outputNode;
+  const scene = new THREE.Scene();
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.z = -0.5;
+  scene.add(mesh);
+  try {
+    input.renderer.initRenderTarget(target);
+    const timing = await runGroundGlassApertureGatherPass({
+      renderer: input.renderer,
+      device: input.device,
+      target,
+      scene,
+      camera: input.camera,
+      isCurrent: input.isCurrent,
+    });
+    if (timing === null) return null;
+    const format = observeTextureFormat(input.renderer.backend as WebGpuBackendLike, target.texture);
+    const readback = compactWebGpuReadbackRows(
+      await input.renderer.readRenderTargetPixelsAsync(
+        target, 0, 0, input.widthPx, input.heightPx,
+      ) as GroundGlassReadbackPixels,
+      input.widthPx,
+      input.heightPx,
+    );
+    if (!(readback instanceof Float32Array)) {
+      throw new Error("M5R diagnostic target did not return RGBA32F readback values");
+    }
+    if (!input.isCurrent()) return null;
+    return { values: readback, format };
+  } finally {
+    scene.clear();
+    material.dispose();
+    geometry.dispose();
+    target.dispose();
+  }
+};
+
+const nearAlphaHalfBitsTop = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+  origin: GroundGlassReadbackOrigin,
+): Uint16Array => {
+  if (!(pixels instanceof Uint16Array) || origin === "unresolved"
+      || pixels.length !== widthPx * heightPx * 4) {
+    throw new Error("M5R Near storage diagnostic requires tightly packed RGBA16F readback bits");
+  }
+  const output = new Uint16Array(widthPx * heightPx);
+  for (let y = 0; y < heightPx; y += 1) {
+    const readY = origin === "top" ? y : heightPx - 1 - y;
+    for (let x = 0; x < widthPx; x += 1) {
+      output[y * widthPx + x] = pixels[(readY * widthPx + x) * 4 + 3] ?? 0;
+    }
+  }
+  return output;
+};
+
+const rgbaHalfBitsTop = (
+  pixels: GroundGlassReadbackPixels,
+  widthPx: number,
+  heightPx: number,
+  origin: GroundGlassReadbackOrigin,
+): Uint16Array => {
+  if (!(pixels instanceof Uint16Array) || origin === "unresolved"
+      || pixels.length !== widthPx * heightPx * 4) {
+    throw new Error("M5R Far storage diagnostic requires tightly packed RGBA16F readback bits");
+  }
+  const output = new Uint16Array(pixels.length);
+  for (let y = 0; y < heightPx; y += 1) {
+    const readY = origin === "top" ? y : heightPx - 1 - y;
+    output.set(
+      pixels.subarray(readY * widthPx * 4, (readY + 1) * widthPx * 4),
+      y * widthPx * 4,
+    );
+  }
+  return output;
+};
+
+const runGroundGlassM5rNearFixture = async (input: Readonly<{
+  renderer: WebGpuRenderer;
+  device: GpuDeviceLike;
+  backend: WebGpuBackendLike;
+  camera: THREE.OrthographicCamera;
+  isCurrent: () => boolean;
+  rendererGenerationId: string;
+  requestId: string;
+  sceneId: string;
+}>): Promise<Readonly<{
+  metadata: GroundGlassM5rNearFixtureReadback;
+  buffers: Readonly<{
+    nearRgba: Float32Array;
+    proposalCountsRgba: Float32Array;
+    coverageRgba: Float32Array;
+    acceptedFootprintRgba: Float32Array;
+    nearAlphaHalfBits: Uint16Array;
+  }>;
+}> | null> => {
+  const widthPx = 96;
+  const heightPx = 96;
+  const pixelCount = widthPx * heightPx;
+  const foregroundCenterPixel = { x: 32, y: 48 };
+  const foregroundRadiusPx = 18;
+  const foregroundNearCocMm = -8;
+  const backgroundFarCocMm = 1;
+  const depthNear = 0.35;
+  const depthBackground = 0.62;
+  const maximumRadiusPx = 16;
+  const centerPixel = { x: 55, y: 48 };
+  const sourceData = new Float32Array(pixelCount * 4);
+  const physicalData = new Float32Array(pixelCount * 4);
+  const validityData = new Uint8Array(pixelCount);
+  const depthData = new Float32Array(pixelCount);
+  for (let pixel = 0; pixel < pixelCount; pixel += 1) {
+    const offset = pixel * 4;
+    const x = pixel % widthPx;
+    const y = Math.floor(pixel / widthPx);
+    const dx = x - foregroundCenterPixel.x;
+    const dy = y - foregroundCenterPixel.y;
+    const isForeground = dx * dx + dy * dy <= foregroundRadiusPx * foregroundRadiusPx;
+    sourceData.set(isForeground ? [0.92, 0.27, 0.06, 1] : [0.04, 0.12, 0.82, 1], offset);
+    physicalData.set(
+      isForeground
+        ? [foregroundNearCocMm, 8, 8, 0]
+        : [backgroundFarCocMm, 1, 1, 0],
+      offset,
+    );
+    validityData[pixel] = 1;
+    depthData[pixel] = isForeground ? depthNear : depthBackground;
+  }
+
+  const textures: THREE.Texture[] = [];
+  const targets: THREE.RenderTarget[] = [];
+  const materials: MeshBasicNodeMaterial[] = [];
+  const scenes: THREE.Scene[] = [];
+  let geometry: THREE.PlaneGeometry | null = null;
+  const makeDataTexture = (
+    data: Float32Array | Uint8Array,
+    format: THREE.PixelFormat,
+    type: THREE.TextureDataType,
+  ): THREE.DataTexture => {
+    const textureValue = new THREE.DataTexture(data, widthPx, heightPx, format, type);
+    textureValue.colorSpace = THREE.NoColorSpace;
+    textureValue.minFilter = THREE.NearestFilter;
+    textureValue.magFilter = THREE.NearestFilter;
+    textureValue.wrapS = THREE.ClampToEdgeWrapping;
+    textureValue.wrapT = THREE.ClampToEdgeWrapping;
+    textureValue.generateMipmaps = false;
+    textureValue.needsUpdate = true;
+    textures.push(textureValue);
+    return textureValue;
+  };
+  const makeRenderTarget = (type: THREE.TextureDataType): THREE.RenderTarget => {
+    const target = new THREE.RenderTarget(widthPx, heightPx, {
+      format: THREE.RGBAFormat,
+      type,
+      depthBuffer: false,
+      stencilBuffer: false,
+      samples: 0,
+      generateMipmaps: false,
+    });
+    target.texture.colorSpace = THREE.NoColorSpace;
+    target.texture.minFilter = THREE.NearestFilter;
+    target.texture.magFilter = THREE.NearestFilter;
+    target.texture.generateMipmaps = false;
+    targets.push(target);
+    return target;
+  };
+  const sourceTexture = makeDataTexture(sourceData, THREE.RGBAFormat, THREE.FloatType);
+  const physicalTexture = makeDataTexture(physicalData, THREE.RGBAFormat, THREE.FloatType);
+  const validityTexture = makeDataTexture(validityData, THREE.RedFormat, THREE.UnsignedByteType);
+  const depthTexture = makeDataTexture(depthData, THREE.RedFormat, THREE.FloatType);
+  const gatherNodes = createGroundGlassApertureGatherNodes({
+    sourceColorTexture: sourceTexture,
+    sceneDepthTexture: depthTexture as unknown as THREE.DepthTexture,
+    physicalTexture,
+    validityTexture,
+    state: {
+      sourceWidthPx: widthPx,
+      sourceHeightPx: heightPx,
+      sampledFilmWidthMm: 36,
+      sampledFilmHeightMm: 24,
+      maximumRadiusPx,
+      sampleCount: 64,
+      inverseProjection: input.camera.projectionMatrixInverse.clone(),
+    },
+  });
+  const diagnosticNodes = gatherNodes.createM5rNearDiagnosticOutputs();
+  const nearTarget = makeRenderTarget(THREE.HalfFloatType);
+  const identityTarget = makeRenderTarget(THREE.FloatType);
+  const identityNodes = createGroundGlassSourceIdentityNode(widthPx, heightPx);
+  const outputPairs = [
+    [gatherNodes.nearOutput, nearTarget],
+    [identityNodes.outputNode, identityTarget],
+  ] as const;
+  try {
+    geometry = new THREE.PlaneGeometry(2, 2);
+    const makeScene = (outputNode: MeshBasicNodeMaterial["outputNode"]): THREE.Scene => {
+      const material = new MeshBasicNodeMaterial({ toneMapped: false });
+      material.outputNode = outputNode;
+      materials.push(material);
+      const scene = new THREE.Scene();
+      const mesh = new THREE.Mesh(geometry!, material);
+      mesh.position.z = -0.5;
+      scene.add(mesh);
+      scenes.push(scene);
+      return scene;
+    };
+    const scenesForOutput = outputPairs.map(([outputNode]) => makeScene(outputNode));
+    const readOutput = async (
+      outputNode: MeshBasicNodeMaterial["outputNode"],
+      target: THREE.RenderTarget,
+      label: string,
+    ): Promise<Readonly<{ pixels: GroundGlassReadbackPixels; format: string | null }>> => {
+      const sceneIndex = outputPairs.findIndex((pair) => pair[0] === outputNode);
+      const scene = sceneIndex >= 0 ? scenesForOutput[sceneIndex] : makeScene(outputNode);
+      input.renderer.initRenderTarget(target);
+      const timing = await runGroundGlassApertureGatherPass({
+        renderer: input.renderer,
+        device: input.device,
+        target,
+        scene: scene!,
+        camera: input.camera,
+        isCurrent: input.isCurrent,
+      });
+      if (timing === null) throw new Error(`M5R controlled Near fixture became stale during ${label}`);
+      const format = observeTextureFormat(input.backend, target.texture);
+      const rawPixels = await input.renderer.readRenderTargetPixelsAsync(target, 0, 0, widthPx, heightPx);
+      const pixels = compactWebGpuReadbackRows(
+        rawPixels as GroundGlassReadbackPixels,
+        widthPx,
+        heightPx,
+      );
+      if (!input.isCurrent()) throw new Error(`M5R controlled Near fixture became stale after ${label}`);
+      return { pixels, format };
+    };
+    const near = await readOutput(gatherNodes.nearOutput, nearTarget, "Near target");
+    const identity = await readOutput(identityNodes.outputNode, identityTarget, "orientation identity");
+    const originEvidence = inferReadbackOrigin(identity.pixels, widthPx, heightPx);
+    if (originEvidence.origin === "unresolved") {
+      throw new Error(`M5R controlled Near fixture could not resolve row origin: ${originEvidence.evidence}`);
+    }
+    if (near.format !== "rgba16float") {
+      throw new Error(`M5R controlled Near target format was ${near.format ?? "unresolved"}`);
+    }
+    const nearRgba = rgbaReadbackToTopFloat(near.pixels, widthPx, heightPx, originEvidence.origin);
+    const alphaBits = nearAlphaHalfBitsTop(near.pixels, widthPx, heightPx, originEvidence.origin);
+    const renderFloatOutput = async (outputNode: MeshBasicNodeMaterial["outputNode"], label: string) => {
+      const target = makeRenderTarget(THREE.FloatType);
+      const scene = makeScene(outputNode);
+      input.renderer.initRenderTarget(target);
+      const timing = await runGroundGlassApertureGatherPass({
+        renderer: input.renderer,
+        device: input.device,
+        target,
+        scene,
+        camera: input.camera,
+        isCurrent: input.isCurrent,
+      });
+      if (timing === null) throw new Error(`M5R controlled Near fixture became stale during ${label}`);
+      const format = observeTextureFormat(input.backend, target.texture);
+      if (format !== "rgba32float") throw new Error(`M5R controlled Near diagnostic ${label} format is ${format}`);
+      const rawPixels = await input.renderer.readRenderTargetPixelsAsync(target, 0, 0, widthPx, heightPx);
+      const pixels = compactWebGpuReadbackRows(
+        rawPixels as GroundGlassReadbackPixels,
+        widthPx,
+        heightPx,
+      );
+      if (!(pixels instanceof Float32Array)) throw new Error(`M5R controlled Near diagnostic ${label} was not Float32`);
+      if (!input.isCurrent()) throw new Error(`M5R controlled Near fixture became stale after ${label}`);
+      return rgbaReadbackToTopFloat(pixels, widthPx, heightPx, originEvidence.origin);
+    };
+    const proposalCountsRgba = await renderFloatOutput(diagnosticNodes.proposalCounts, "proposal counts");
+    const coverageRgba = await renderFloatOutput(diagnosticNodes.coverage, "coverage intermediates");
+    const acceptedFootprintRgba = await renderFloatOutput(diagnosticNodes.acceptedFootprint, "accepted footprint");
+    let finalAlphaMatchesNearTargetMaximumError = 0;
+    for (let pixel = 0; pixel < pixelCount; pixel += 1) {
+      finalAlphaMatchesNearTargetMaximumError = Math.max(
+        finalAlphaMatchesNearTargetMaximumError,
+        Math.abs((coverageRgba[pixel * 4 + 3] ?? 0) - (nearRgba[pixel * 4 + 3] ?? 0)),
+      );
+    }
+    return {
+      metadata: {
+        evidenceScope: "native-research-fixture",
+        rendererFamily: "webgpu-renderer",
+        actualExecutionApi: "webgpu",
+        internalFallback: "none",
+        rendererGenerationId: input.rendererGenerationId,
+        requestId: input.requestId,
+        sceneId: input.sceneId,
+        widthPx,
+        heightPx,
+        centerPixel,
+        foregroundShape: {
+          kind: "disc",
+          centerPixel: foregroundCenterPixel,
+          radiusPx: foregroundRadiusPx,
+          signedCocNearMm: foregroundNearCocMm,
+          signedCocBackgroundMm: backgroundFarCocMm,
+          depthNear,
+          depthBackground,
+          maximumRadiusPx,
+        },
+        targetFormat: "rgba16float",
+        diagnosticTargetFormat: "rgba32float",
+        finalAlphaMatchesNearTargetMaximumError,
+      },
+      buffers: {
+        nearRgba,
+        proposalCountsRgba,
+        coverageRgba,
+        acceptedFootprintRgba,
+        nearAlphaHalfBits: alphaBits,
+      },
+    };
+  } finally {
+    scenes.forEach((scene) => scene.clear());
+    materials.forEach((material) => material.dispose());
+    geometry?.dispose();
+    targets.forEach((target) => target.dispose());
+    textures.forEach((textureValue) => textureValue.dispose());
+  }
 };
 
 const bytesPerPixelForObservedRgbaFormat = (format: string): number => {
@@ -2520,6 +2868,104 @@ export const GroundGlassWebGPUAdapter = ({
                       return alpha > 0 && alpha < 1;
                     }).length;
                   const nearReferenceCoverageNontrivial = nearReferenceCoveragePixelCount > 0;
+                  let m5rDiagnosticReadbacks: Readonly<{
+                    farGatherRgba32: Float32Array;
+                    farGatherHalfBits: Uint16Array;
+                    nearProposalCountsRgba: Float32Array;
+                    nearCoverageDiagnosticsRgba: Float32Array;
+                    nearAcceptedFootprintRgba: Float32Array;
+                    nearAlphaHalfBits: Uint16Array;
+                    nearFinalAlphaMaximumError: number;
+                    targetFormat: "rgba32float";
+                  }> | null = null;
+                  if (captureRequest.includeM5rDiagnostics === true) {
+                    const renderDiagnostic = async (
+                      outputNode: MeshBasicNodeMaterial["outputNode"],
+                      label: string,
+                    ): Promise<Float32Array> => {
+                      const diagnostic = await renderM5rFloatDiagnosticTarget({
+                        renderer: renderer!,
+                        device,
+                        outputNode,
+                        widthPx: gatherWidthPx,
+                        heightPx: gatherHeightPx,
+                        camera: physicalCamera!,
+                        isCurrent: isApertureRequestCurrent,
+                      });
+                      if (!diagnostic) throw new Error(`M5R ${label} capture became stale before completion`);
+                      if (diagnostic.format !== "rgba32float") {
+                        throw new Error(`M5R ${label} target format was ${diagnostic.format ?? "unresolved"}`);
+                      }
+                      return rgbaReadbackToTopFloat(
+                        diagnostic.values,
+                        gatherWidthPx,
+                        gatherHeightPx,
+                        readbackOrigin,
+                      );
+                    };
+                    const diagnosticNodes = resources.gatherNodes.createM5rNearDiagnosticOutputs();
+                    const farGatherRgba32 = await renderDiagnostic(
+                      resources.gatherNodes.farOutput,
+                      "Full32/64 far precision",
+                    );
+                    const nearProposalCountsRgba = await renderDiagnostic(
+                      diagnosticNodes.proposalCounts,
+                      "Near proposal counts",
+                    );
+                    const nearCoverageDiagnosticsRgba = await renderDiagnostic(
+                      diagnosticNodes.coverage,
+                      "Near coverage",
+                    );
+                    const nearAcceptedFootprintRgba = await renderDiagnostic(
+                      diagnosticNodes.acceptedFootprint,
+                      "Near accepted-footprint",
+                    );
+                    let nearFinalAlphaMaximumError = 0;
+                    for (let pixel = 0; pixel < gatherWidthPx * gatherHeightPx; pixel += 1) {
+                      nearFinalAlphaMaximumError = Math.max(
+                        nearFinalAlphaMaximumError,
+                        Math.abs(
+                          (nearCoverageDiagnosticsRgba[pixel * 4 + 3] ?? 0)
+                          - (nearRgba[pixel * 4 + 3] ?? 0),
+                        ),
+                      );
+                    }
+                    m5rDiagnosticReadbacks = {
+                      farGatherRgba32,
+                      farGatherHalfBits: rgbaHalfBitsTop(
+                        farPixels,
+                        gatherWidthPx,
+                        gatherHeightPx,
+                        readbackOrigin,
+                      ),
+                      nearProposalCountsRgba,
+                      nearCoverageDiagnosticsRgba,
+                      nearAcceptedFootprintRgba,
+                      nearAlphaHalfBits: nearAlphaHalfBitsTop(
+                        nearPixels,
+                        gatherWidthPx,
+                        gatherHeightPx,
+                        readbackOrigin,
+                      ),
+                      nearFinalAlphaMaximumError,
+                      targetFormat: "rgba32float",
+                    };
+                  }
+                  const m5rNearFixtureCapture = captureRequest.includeM5rNearFixture === true
+                    ? await runGroundGlassM5rNearFixture({
+                      renderer: renderer!,
+                      device,
+                      backend: mountedBackend!,
+                      camera: physicalCamera!,
+                      isCurrent: isApertureRequestCurrent,
+                      rendererGenerationId: generation.generationId,
+                      requestId: latest.identity.requestId,
+                      sceneId: latest.identity.sceneId,
+                    })
+                    : null;
+                  if (captureRequest.includeM5rNearFixture === true && !m5rNearFixtureCapture) {
+                    throw new Error("M5R controlled Near fixture was not completed for the accepted request");
+                  }
                   const physicalValuesUnchanged = physicalRgba.every(
                     (value, index) => value === physicalBeforeReference[index],
                   );
@@ -2607,6 +3053,7 @@ export const GroundGlassWebGPUAdapter = ({
                       camera.projectionMatrix.elements,
                       camera.projectionMatrixInverse.elements,
                     ]),
+                    inverseProjectionMatrix: Array.from(camera.projectionMatrixInverse.elements),
                     sampledFilmDimensionsMm: {
                       widthMm: sampledFilmWidthMm,
                       heightMm: sampledFilmHeightMm,
@@ -2685,6 +3132,19 @@ export const GroundGlassWebGPUAdapter = ({
                     nearReferenceAlphaMaximumError: nearReferenceAlphaError.maximum,
                     nearRgbInvariantMaximumError: nearRgbInvariant.maximum,
                     nearAlphaInvariantMaximumError: nearAlphaInvariant.maximum,
+                    inputFingerprints: {
+                      sourceColor: groundGlassReadbackFingerprint(sourcePixels),
+                      depth: groundGlassReadbackFingerprint(depthPixels),
+                      physical: groundGlassReadbackFingerprint(physicalPixels),
+                      validity: groundGlassReadbackFingerprint(validityPixels),
+                    },
+                    m5rDiagnostics: {
+                      status: m5rDiagnosticReadbacks ? "captured" : "not-requested",
+                      diagnosticTargetFormat: m5rDiagnosticReadbacks?.targetFormat ?? null,
+                      diagnosticTargetCount: m5rDiagnosticReadbacks ? 4 : 0,
+                      nearFinalAlphaMaximumError: m5rDiagnosticReadbacks?.nearFinalAlphaMaximumError ?? null,
+                    },
+                    m5rNearFixture: m5rNearFixtureCapture?.metadata ?? null,
                     radius: {
                       maximumUncappedRadiusPx: gatherReference.summary.maximumFarUncappedRadiusPx,
                       cappedPixelCount: gatherReference.summary.farCappedCenterCount,
@@ -2700,12 +3160,37 @@ export const GroundGlassWebGPUAdapter = ({
                       nearBeforeB1Rgba: nearBeforeRgba,
                       nearAfterB1Rgba,
                       nearCpuReferenceRgba: gatherReference.nearRgba,
+                      nearCpuCenterIsNear: gatherReference.nearCenterIsNear,
+                      nearCpuEvaluatedProposalCount: gatherReference.nearEvaluatedProposalCount,
+                      nearCpuAcceptedProposalCount: gatherReference.nearAcceptedProposalCount,
+                      nearCpuNonzeroMembershipCount: gatherReference.nearNonzeroMembershipCount,
+                      nearCpuWeightSum: gatherReference.nearWeightSum,
+                      nearCpuCoverageMass: gatherReference.nearCoverageMass,
+                      nearCpuEstimatedCoverage: gatherReference.nearEstimatedCoverage,
+                      nearCpuAcceptedAreaRatioMean: gatherReference.nearAcceptedAreaRatioMean,
+                      nearCpuAcceptedCompensationMaximum: gatherReference.nearAcceptedCompensationMaximum,
                       b1FarRgba,
                       researchCompositeRgba,
                       observedSelectedGatherIds,
                       observedSelectedCenterSourceIds,
                       observedGatherCenterSourceIds: gatherCenterSourceIds,
+                      observedGatherCenterSourceUvs: gatherCenterSourceUvs,
                       b1Decision: decisionRgbaTop,
+                      ...(m5rDiagnosticReadbacks ? {
+                        farGatherRgba32: m5rDiagnosticReadbacks.farGatherRgba32,
+                        farGatherHalfBits: m5rDiagnosticReadbacks.farGatherHalfBits,
+                        nearProposalCountsRgba: m5rDiagnosticReadbacks.nearProposalCountsRgba,
+                        nearCoverageDiagnosticsRgba: m5rDiagnosticReadbacks.nearCoverageDiagnosticsRgba,
+                        nearAcceptedFootprintRgba: m5rDiagnosticReadbacks.nearAcceptedFootprintRgba,
+                        nearAlphaHalfBits: m5rDiagnosticReadbacks.nearAlphaHalfBits,
+                      } : {}),
+                      ...(m5rNearFixtureCapture ? {
+                        m5rFixtureNearRgba: m5rNearFixtureCapture.buffers.nearRgba,
+                        m5rFixtureProposalCountsRgba: m5rNearFixtureCapture.buffers.proposalCountsRgba,
+                        m5rFixtureCoverageRgba: m5rNearFixtureCapture.buffers.coverageRgba,
+                        m5rFixtureAcceptedFootprintRgba: m5rNearFixtureCapture.buffers.acceptedFootprintRgba,
+                        m5rFixtureNearAlphaHalfBits: m5rNearFixtureCapture.buffers.nearAlphaHalfBits,
+                      } : {}),
                     } : null,
                   };
                   apertureGatherFailureReason = sourceToGatherMappingMismatchCount > 0

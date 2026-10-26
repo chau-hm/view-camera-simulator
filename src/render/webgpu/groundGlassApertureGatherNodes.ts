@@ -264,6 +264,120 @@ export const createGroundGlassApertureGatherNodes = (input: Readonly<{
     return vec4(nearColor, coverage);
   })();
 
+  /**
+   * Construct an opt-in M5R diagnostic graph that mirrors the real Near
+   * proposal gates and coverage math. The default Near output above remains
+   * the only output used by M5. Callers render these nodes only for an explicit
+   * development test capture and compare the final-alpha channel to nearOutput.
+   */
+  const createM5rNearDiagnosticOutputs = () => {
+    const evaluate = () => {
+      const sourceUv = textureUvTop;
+      const centerPhysical = physicalAt(sourceUv);
+      const centerNear = validityAt(sourceUv).and(centerPhysical.r.lessThan(-FAR_SIGN_EPSILON));
+      const centerDepth = depthAt(sourceUv);
+      const centerDistanceMm = viewDistanceMmAt(sourceUv, centerDepth);
+      const activeSamples = max(sampleCount, 1);
+      const weightSum = float(0).toVar();
+      const coverageMass = float(0).toVar();
+      const evaluatedCount = float(0).toVar();
+      const acceptedCount = float(0).toVar();
+      const nonzeroMembershipCount = float(0).toVar();
+      const acceptedAreaRatioSum = float(0).toVar();
+      const maximumAcceptedCompensation = float(0).toVar();
+      const centerWeight = select(centerNear, 1, 0);
+      weightSum.assign(centerWeight);
+
+      Loop({ start: int(0), end: int(MAX_APERTURE_SAMPLES) }, ({ i }) => {
+        const index = float(i);
+        const active = index.lessThan(sampleCount);
+        const radial = sqrt(index.add(0.5).div(activeSamples));
+        const angle = index.add(0.5).mul(GOLDEN_ANGLE_RAD);
+        const disk = radial.mul(vec2(cos(angle), sin(angle)));
+        const proposalOffsetPx = disk.mul(maximumRadiusPx);
+        const sampleUv = clamp(
+          sourceUv.add(vec2(proposalOffsetPx.x.div(sourceWidthPx), proposalOffsetPx.y.div(sourceHeightPx))),
+          vec2(0),
+          vec2(1),
+        );
+        const samplePhysical = physicalAt(sampleUv);
+        const sampleDepth = depthAt(sampleUv);
+        const sampleDistanceMm = viewDistanceMmAt(sampleUv, sampleDepth);
+        const sampleAxes = axesToSourcePixels(samplePhysical);
+        const membership = ellipseMembershipWeight(
+          proposalOffsetPx,
+          sampleAxes.major,
+          sampleAxes.minor,
+          sampleAxes.scale,
+        );
+        const behindNearCenter = centerNear.not().or(
+          sampleDistanceMm.lessThanEqual(centerDistanceMm.add(depthToleranceMmAt(centerDistanceMm))),
+        );
+        const accepted = validityAt(sampleUv)
+          .and(sampleDepth.lessThan(1))
+          .and(samplePhysical.r.lessThan(-FAR_SIGN_EPSILON))
+          .and(membership.greaterThan(0))
+          .and(behindNearCenter)
+          .and(active);
+        const membershipPresent = membership.greaterThan(0).and(active);
+        const weight = select(accepted, membership, 0);
+        const area = abs(
+          sampleAxes.major.x.mul(sampleAxes.minor.y)
+            .sub(sampleAxes.major.y.mul(sampleAxes.minor.x)),
+        ).mul(sampleAxes.scale.mul(sampleAxes.scale));
+        const areaRatio = clamp(area.div(max(maximumRadiusPx.mul(maximumRadiusPx), 1e-6)), 0, 1);
+        const areaFloor = float(1).div(activeSamples);
+        const compensation = min(activeSamples, float(1).div(max(areaRatio, areaFloor)));
+
+        evaluatedCount.addAssign(select(active, 1, 0));
+        acceptedCount.addAssign(select(accepted, 1, 0));
+        nonzeroMembershipCount.addAssign(select(membershipPresent, 1, 0));
+        weightSum.addAssign(weight);
+        coverageMass.addAssign(weight.mul(compensation));
+        acceptedAreaRatioSum.addAssign(select(accepted, areaRatio, 0));
+        maximumAcceptedCompensation.assign(max(
+          maximumAcceptedCompensation,
+          select(accepted, compensation, 0),
+        ));
+      });
+
+      const estimatedCoverage = float(1).sub(exp(coverageMass.div(activeSamples).mul(-1)));
+      const finalCoverage = select(centerNear, 1, clamp(estimatedCoverage, 0, 1));
+      const meanAreaRatio = select(
+        acceptedCount.greaterThan(0),
+        acceptedAreaRatioSum.div(max(acceptedCount, 1)),
+        0,
+      );
+      return {
+        centerNear: select(centerNear, 1, 0),
+        evaluatedCount,
+        acceptedCount,
+        nonzeroMembershipCount,
+        weightSum,
+        coverageMass,
+        estimatedCoverage,
+        finalCoverage,
+        meanAreaRatio,
+        maximumAcceptedCompensation,
+      };
+    };
+
+    return {
+      proposalCounts: Fn(() => {
+        const values = evaluate();
+        return vec4(values.centerNear, values.evaluatedCount, values.acceptedCount, values.nonzeroMembershipCount);
+      })(),
+      coverage: Fn(() => {
+        const values = evaluate();
+        return vec4(values.weightSum, values.coverageMass, values.estimatedCoverage, values.finalCoverage);
+      })(),
+      acceptedFootprint: Fn(() => {
+        const values = evaluate();
+        return vec4(values.meanAreaRatio, values.maximumAcceptedCompensation, sampleCount, 1);
+      })(),
+    };
+  };
+
   const update = (state: GroundGlassApertureGatherState): void => {
     sourceWidthPx.value = state.sourceWidthPx;
     sourceHeightPx.value = state.sourceHeightPx;
@@ -277,6 +391,7 @@ export const createGroundGlassApertureGatherNodes = (input: Readonly<{
   return {
     farOutput,
     nearOutput,
+    createM5rNearDiagnosticOutputs,
     update,
     uniforms: {
       sourceWidthPx,

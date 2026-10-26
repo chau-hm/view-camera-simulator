@@ -66,8 +66,21 @@ export type GroundGlassApertureGatherReferenceInput = Readonly<{
   maximumRadiusPx: number;
 }>;
 
+/** Diagnostic-only sample counts; the native TSL gather remains capped at 64. */
+export type GroundGlassApertureGatherDiagnosticInput = Omit<
+  GroundGlassApertureGatherReferenceInput,
+  "sampleCount"
+> & Readonly<{
+  sampleCount: 128 | 256;
+}>;
+
+export type GroundGlassApertureGatherNestedSampleCount = 16 | 32 | 64;
+
 export type GroundGlassApertureGatherReferenceResult = Readonly<{
-  /** Gather-grid RGBA; far alpha is 1, near alpha is coverage. */
+  /**
+   * Gather-grid RGBA; far alpha is 1, near alpha is coverage. These are
+   * Float32 outputs written from JavaScript double-precision intermediates.
+   */
   farRgba: Float32Array;
   nearRgba: Float32Array;
   /** Actual top-origin source texel sampled for each gather output center. */
@@ -83,6 +96,24 @@ export type GroundGlassApertureGatherReferenceResult = Readonly<{
   nearMaximumCandidateUncappedRadiusPx: Float32Array;
   nearCandidateFootprintEvaluationCount: Uint16Array;
   nearCandidateCapAppliedCount: Uint16Array;
+  /** Per output texel: 1 iff the observed center has valid negative signed CoC. */
+  nearCenterIsNear: Uint8Array;
+  /** Number of proposals visited by the near pass. */
+  nearEvaluatedProposalCount: Uint16Array;
+  /** Number of near proposals accepted after validity, sign, footprint, and depth gates. */
+  nearAcceptedProposalCount: Uint16Array;
+  /** Number of proposals with positive candidate-ellipse membership, before other gates. */
+  nearNonzeroMembershipCount: Uint16Array;
+  /** Near color weight sum, including the center sample when the center is near. */
+  nearWeightSum: Float32Array;
+  /** Proposal-derived coverage mass before division by sample count. */
+  nearCoverageMass: Float32Array;
+  /** Proposal-derived alpha estimate before the center-near alpha override. */
+  nearEstimatedCoverage: Float32Array;
+  /** Mean candidate area ratio over accepted proposals; zero when none are accepted. */
+  nearAcceptedAreaRatioMean: Float32Array;
+  /** Maximum candidate proposal compensation over accepted proposals; zero if none. */
+  nearAcceptedCompensationMaximum: Float32Array;
   summary: Readonly<{
     maximumFarUncappedRadiusPx: number;
     farCappedCenterCount: number;
@@ -103,7 +134,10 @@ const assertFiniteArray = (values: ArrayLike<number>, label: string): void => {
   }
 };
 
-const assertInput = (input: GroundGlassApertureGatherReferenceInput): number => {
+const assertInput = (
+  input: GroundGlassApertureGatherReferenceInput,
+  maximumSampleCount = GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT,
+): number => {
   if (!validDimensions(input.source) || !validDimensions(input.gather)) {
     throw new RangeError("Aperture gather source and output dimensions must be positive safe integers");
   }
@@ -127,7 +161,7 @@ const assertInput = (input: GroundGlassApertureGatherReferenceInput): number => 
       || !Number.isFinite(input.film.heightMm) || input.film.heightMm <= 0
       || !Number.isInteger(input.sampleCount)
       || input.sampleCount <= 0
-      || input.sampleCount > GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT
+      || input.sampleCount > maximumSampleCount
       || !Number.isFinite(input.maximumRadiusPx)
       || input.maximumRadiusPx < 0) {
     throw new RangeError("Aperture gather film, sample count, or radius cap is invalid");
@@ -303,6 +337,24 @@ export const groundGlassGoldenAngleDiskProposal = (
   return [radius * Math.cos(angle), radius * Math.sin(angle)];
 };
 
+/**
+ * Test-only nested subset of a single 64-point equal-area master sequence.
+ * Sixteen uses every fourth master point; 32 uses every second point.
+ */
+export const groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting = (
+  index: number,
+  sampleCount: GroundGlassApertureGatherNestedSampleCount,
+): GroundGlassPixelAxis => {
+  if (sampleCount !== 16 && sampleCount !== 32 && sampleCount !== 64) {
+    throw new RangeError("Nested M5R sample count must be 16, 32, or 64");
+  }
+  if (!Number.isInteger(index) || index < 0 || index >= sampleCount) {
+    throw new RangeError("Nested golden-angle proposal index must be inside the selected sample count");
+  }
+  const masterStride = GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT / sampleCount;
+  return groundGlassGoldenAngleDiskProposal(index * masterStride, GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT);
+};
+
 const depthToleranceMm = (centerDistanceMm: number): number => Math.max(
   GROUND_GLASS_APERTURE_DEPTH_TOLERANCE_FLOOR_MM,
   centerDistanceMm * GROUND_GLASS_APERTURE_DEPTH_TOLERANCE_FRACTION,
@@ -429,10 +481,13 @@ const footprintMembership = (
  * the renderer cap and test each sampled candidate against that candidate's
  * own capped physical ellipse, then retain the Phase F area coverage estimate.
  */
-export const referenceGroundGlassApertureGather = (
+const referenceGroundGlassApertureGatherKernel = (
   input: GroundGlassApertureGatherReferenceInput,
+  maximumSampleCount: number,
+  proposalForIndex: (index: number, sampleCount: number) => GroundGlassPixelAxis =
+    groundGlassGoldenAngleDiskProposal,
 ): GroundGlassApertureGatherReferenceResult => {
-  const gatherPixelCount = assertInput(input);
+  const gatherPixelCount = assertInput(input, maximumSampleCount);
   const farRgba = new Float32Array(gatherPixelCount * 4);
   const nearRgba = new Float32Array(gatherPixelCount * 4);
   const gatherCenterSourceIds = new Int32Array(gatherPixelCount * 2);
@@ -444,6 +499,15 @@ export const referenceGroundGlassApertureGather = (
   const nearMaximumCandidateUncappedRadiusPx = new Float32Array(gatherPixelCount);
   const nearCandidateFootprintEvaluationCount = new Uint16Array(gatherPixelCount);
   const nearCandidateCapAppliedCount = new Uint16Array(gatherPixelCount);
+  const nearCenterIsNear = new Uint8Array(gatherPixelCount);
+  const nearEvaluatedProposalCount = new Uint16Array(gatherPixelCount);
+  const nearAcceptedProposalCount = new Uint16Array(gatherPixelCount);
+  const nearNonzeroMembershipCount = new Uint16Array(gatherPixelCount);
+  const nearWeightSum = new Float32Array(gatherPixelCount);
+  const nearCoverageMassByOutput = new Float32Array(gatherPixelCount);
+  const nearEstimatedCoverage = new Float32Array(gatherPixelCount);
+  const nearAcceptedAreaRatioMean = new Float32Array(gatherPixelCount);
+  const nearAcceptedCompensationMaximum = new Float32Array(gatherPixelCount);
   let maximumFarRadius = 0;
   let farCappedCenterCount = 0;
   let maximumNearCandidateRadius = 0;
@@ -474,6 +538,7 @@ export const referenceGroundGlassApertureGather = (
         && center.signedCocMm > GROUND_GLASS_APERTURE_SIGN_EPSILON_MM;
       const centerNear = center.validity === GROUND_GLASS_APERTURE_VALIDITY_CODE
         && center.signedCocMm < -GROUND_GLASS_APERTURE_SIGN_EPSILON_MM;
+      nearCenterIsNear[gatherIndex] = centerNear ? 1 : 0;
       const centerEllipse = mappedEllipseForSample(input, center);
       gatherCenterSourceIds[centerIdOffset] = centerSourceX;
       gatherCenterSourceIds[centerIdOffset + 1] = centerSourceY;
@@ -500,6 +565,8 @@ export const referenceGroundGlassApertureGather = (
       const nearAccumulated = [0, 0, 0];
       let nearWeight = 0;
       let nearCoverageMass = 0;
+      let acceptedAreaRatioSum = 0;
+      let acceptedProposalCount = 0;
       if (centerNear) {
         nearAccumulated[0] = center.color[0];
         nearAccumulated[1] = center.color[1];
@@ -509,7 +576,7 @@ export const referenceGroundGlassApertureGather = (
 
       const activeSamples = Math.max(input.sampleCount, 1);
       for (let sampleIndex = 0; sampleIndex < input.sampleCount; sampleIndex += 1) {
-        const disk = groundGlassGoldenAngleDiskProposal(sampleIndex, activeSamples);
+        const disk = proposalForIndex(sampleIndex, activeSamples);
 
         const farOffset = ellipseProposalOffset(disk, centerEllipse);
         const farSampleUv = offsetTopUvByPixels(centerUvTop, farOffset, input.source);
@@ -534,6 +601,7 @@ export const referenceGroundGlassApertureGather = (
         const nearSampleUv = offsetTopUvByPixels(centerUvTop, nearProposalOffset, input.source);
         const nearSample = sampleAtUv(input, nearSampleUv[0], nearSampleUv[1]);
         const candidateEllipse = mappedEllipseForSample(input, nearSample);
+        nearEvaluatedProposalCount[gatherIndex] += 1;
         nearCandidateFootprintEvaluationCount[gatherIndex] += 1;
         nearMaximumCandidateUncappedRadiusPx[gatherIndex] = Math.max(
           nearMaximumCandidateUncappedRadiusPx[gatherIndex]!,
@@ -553,6 +621,8 @@ export const referenceGroundGlassApertureGather = (
           && nearSample.signedCocMm < -GROUND_GLASS_APERTURE_SIGN_EPSILON_MM
           && member > 0
           && behindNearCenter;
+        if (member > 0) nearNonzeroMembershipCount[gatherIndex] += 1;
+        if (nearSampleAccepted) nearAcceptedProposalCount[gatherIndex] += 1;
         const nearSampleWeight = nearSampleAccepted ? member : 0;
         if (nearSampleWeight > 0) {
           nearAccumulated[0] += nearSample.color[0] * nearSampleWeight;
@@ -569,6 +639,12 @@ export const referenceGroundGlassApertureGather = (
           ));
           const areaFloor = 1 / activeSamples;
           const compensation = Math.min(activeSamples, 1 / Math.max(areaRatio, areaFloor));
+          acceptedAreaRatioSum += areaRatio;
+          acceptedProposalCount += 1;
+          nearAcceptedCompensationMaximum[gatherIndex] = Math.max(
+            nearAcceptedCompensationMaximum[gatherIndex]!,
+            compensation,
+          );
           nearCoverageMass += nearSampleWeight * compensation;
         }
       }
@@ -584,6 +660,15 @@ export const referenceGroundGlassApertureGather = (
         ? 1
         : Math.min(1, Math.max(0, 1 - Math.exp(-nearCoverageMass / activeSamples)));
       nearRgba.set([nearColor[0]!, nearColor[1]!, nearColor[2]!, nearCoverage], outputOffset);
+      nearWeightSum[gatherIndex] = nearWeight;
+      nearCoverageMassByOutput[gatherIndex] = nearCoverageMass;
+      nearEstimatedCoverage[gatherIndex] = Math.min(
+        1,
+        Math.max(0, 1 - Math.exp(-nearCoverageMass / activeSamples)),
+      );
+      nearAcceptedAreaRatioMean[gatherIndex] = acceptedProposalCount > 0
+        ? acceptedAreaRatioSum / acceptedProposalCount
+        : 0;
     }
   }
 
@@ -599,6 +684,15 @@ export const referenceGroundGlassApertureGather = (
     nearMaximumCandidateUncappedRadiusPx,
     nearCandidateFootprintEvaluationCount,
     nearCandidateCapAppliedCount,
+    nearCenterIsNear,
+    nearEvaluatedProposalCount,
+    nearAcceptedProposalCount,
+    nearNonzeroMembershipCount,
+    nearWeightSum,
+    nearCoverageMass: nearCoverageMassByOutput,
+    nearEstimatedCoverage,
+    nearAcceptedAreaRatioMean,
+    nearAcceptedCompensationMaximum,
     summary: {
       maximumFarUncappedRadiusPx: maximumFarRadius,
       farCappedCenterCount,
@@ -607,3 +701,41 @@ export const referenceGroundGlassApertureGather = (
     },
   };
 };
+
+/**
+ * Existing native-range CPU oracle. Its accepted input range remains limited
+ * to the TSL maximum of 64 samples.
+ */
+export const referenceGroundGlassApertureGather = (
+  input: GroundGlassApertureGatherReferenceInput,
+): GroundGlassApertureGatherReferenceResult =>
+  referenceGroundGlassApertureGatherKernel(input, GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT);
+
+/**
+ * Diagnostic CPU-only convergence oracle for predeclared 128/256-sample runs.
+ * It shares the native-range reference kernel and does not raise the TSL limit.
+ */
+export const referenceGroundGlassApertureGatherDiagnostic = (
+  input: GroundGlassApertureGatherDiagnosticInput,
+): GroundGlassApertureGatherReferenceResult => {
+  if (input.sampleCount !== 128 && input.sampleCount !== 256) {
+    throw new RangeError("Aperture gather diagnostic sample count must be 128 or 256");
+  }
+  return referenceGroundGlassApertureGatherKernel(input, 256);
+};
+
+/**
+ * CPU-only test variant for nested sample-count comparisons. Proposal indices
+ * are selected from one 64-point master, while the shared gather kernel keeps
+ * the requested count for coverage normalization and all physical gates.
+ */
+export const referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting = (
+  input: GroundGlassApertureGatherReferenceInput & Readonly<{
+    sampleCount: GroundGlassApertureGatherNestedSampleCount;
+  }>,
+): GroundGlassApertureGatherReferenceResult =>
+  referenceGroundGlassApertureGatherKernel(
+    input,
+    GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT,
+    (index) => groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting(index, input.sampleCount),
+  );
