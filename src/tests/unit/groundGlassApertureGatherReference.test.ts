@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT,
   capGroundGlassPixelEllipse,
   groundGlassGoldenAngleDiskProposal,
+  groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting,
   groundGlassViewDistanceMmAtTopUv,
   mapGroundGlassPhysicalEllipseToSourcePixels,
   nearestGroundGlassSourcePixelAtTopUv,
   referenceGroundGlassApertureGather,
+  referenceGroundGlassApertureGatherDiagnostic,
+  referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting,
+  type GroundGlassApertureGatherDiagnosticInput,
   type GroundGlassApertureGatherReferenceInput,
   type GroundGlassApertureDimensions,
 } from "../../render/webgpu/groundGlassApertureGatherReference";
@@ -130,6 +135,45 @@ describe("Ground Glass independent aperture-gather CPU reference", () => {
     const first = groundGlassGoldenAngleDiskProposal(0, 1);
     expect(first[0]).toBeCloseTo(0.2562377421, 9);
     expect(first[1]).toBeCloseTo(0.6590464472, 9);
+  });
+
+  it("keeps the test-only nested variant separately named and selects the 64-master subsets", () => {
+    for (const sampleCount of [16, 32, 64] as const) {
+      const stride = 64 / sampleCount;
+      for (let index = 0; index < sampleCount; index += 1) {
+        expect(groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting(index, sampleCount))
+          .toEqual(groundGlassGoldenAngleDiskProposal(index * stride, 64));
+      }
+    }
+    expect(groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting(0, 32))
+      .not.toEqual(groundGlassGoldenAngleDiskProposal(0, 32));
+    expect(() => groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting(16, 16)).toThrow(/index/);
+  });
+
+  it("runs the nested sequence through a separately named shared-kernel CPU variant", () => {
+    const input = makeInput({ widthPx: 17, heightPx: 17 }, { widthPx: 1, heightPx: 1 });
+    for (let y = 0; y < input.source.heightPx; y += 1) {
+      for (let x = 0; x < input.source.widthPx; x += 1) {
+        const pixel = y * input.source.widthPx + x;
+        input.sourceRgba.set([x / 17, y / 17, (x + y) / 34, 1], pixel * 4);
+        setPhysical(input, x, y, [1, 6.5, 6.5, 0]);
+      }
+    }
+
+    const nativeSequence = referenceGroundGlassApertureGather({
+      ...input,
+      sampleCount: 32,
+      maximumRadiusPx: 8,
+    });
+    const nestedSequence = referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting({
+      ...input,
+      sampleCount: 32,
+      maximumRadiusPx: 8,
+    });
+
+    expect(nestedSequence.farRgba).not.toEqual(nativeSequence.farRgba);
+    expect(nestedSequence.nearEvaluatedProposalCount[0]).toBe(32);
+    expect(nestedSequence.nearCoverageMass[0]).toBe(nativeSequence.nearCoverageMass[0]);
   });
 
   it("keeps negative signed CoC in the near layer and out of the far layer", () => {
@@ -268,6 +312,62 @@ describe("Ground Glass independent aperture-gather CPU reference", () => {
     const alpha = coverage.nearRgba[centerIndex * 4 + 3]!;
     expect(alpha).toBeGreaterThan(0);
     expect(alpha).toBeLessThan(1);
+  });
+
+  it("returns per-output near proposal intermediates without changing the near-alpha formula", () => {
+    const input = makeInput({ widthPx: 5, heightPx: 5 }, { widthPx: 1, heightPx: 1 });
+    for (let pixel = 0; pixel < input.validity.length; pixel += 1) {
+      setPhysical(input, pixel % input.source.widthPx, Math.floor(pixel / input.source.widthPx), [-1, 4, 4, 0]);
+    }
+    setPhysical(input, 2, 2, [0, 0, 0, 0]);
+
+    const result = referenceGroundGlassApertureGather({
+      ...input,
+      maximumRadiusPx: 2,
+      sampleCount: 16,
+    });
+    const estimatedCoverage = 1 - Math.exp(-result.nearCoverageMass[0]! / 16);
+
+    expect(result.nearCenterIsNear[0]).toBe(0);
+    expect(result.nearEvaluatedProposalCount[0]).toBe(16);
+    expect(result.nearAcceptedProposalCount[0]).toBeGreaterThan(0);
+    expect(result.nearAcceptedProposalCount[0]).toBeLessThanOrEqual(result.nearEvaluatedProposalCount[0]!);
+    expect(result.nearNonzeroMembershipCount[0]).toBeGreaterThanOrEqual(result.nearAcceptedProposalCount[0]!);
+    expect(result.nearWeightSum[0]).toBeGreaterThan(0);
+    expect(result.nearCoverageMass[0]).toBeGreaterThan(0);
+    expect(result.nearEstimatedCoverage[0]).toBeCloseTo(estimatedCoverage, 7);
+    expect(result.nearRgba[3]).toBeCloseTo(estimatedCoverage, 7);
+    expect(result.nearAcceptedAreaRatioMean[0]).toBeGreaterThan(0);
+    expect(result.nearAcceptedCompensationMaximum[0]).toBeGreaterThan(0);
+    expect(result.nearCandidateFootprintEvaluationCount[0]).toBe(16);
+
+    setPhysical(input, 2, 2, [-1, 4, 4, 0]);
+    const nearCenter = referenceGroundGlassApertureGather({
+      ...input,
+      maximumRadiusPx: 2,
+      sampleCount: 16,
+    });
+    expect(nearCenter.nearCenterIsNear[0]).toBe(1);
+    expect(nearCenter.nearEstimatedCoverage[0]).toBeLessThan(1);
+    expect(nearCenter.nearRgba[3]).toBe(1);
+  });
+
+  it("keeps the 64-sample API bound and accepts only 128/256 in the explicit diagnostic API", () => {
+    const input = makeInput({ widthPx: 1, heightPx: 1 });
+    expect(GROUND_GLASS_APERTURE_MAX_SAMPLE_COUNT).toBe(64);
+    expect(referenceGroundGlassApertureGather({ ...input, sampleCount: 64 }).nearEvaluatedProposalCount[0])
+      .toBe(64);
+    expect(() => referenceGroundGlassApertureGather({ ...input, sampleCount: 65 })).toThrow(/sample count/);
+
+    const diagnosticInput = (sampleCount: number): GroundGlassApertureGatherDiagnosticInput => ({
+      ...input,
+      sampleCount: sampleCount as 128 | 256,
+    });
+    expect(referenceGroundGlassApertureGatherDiagnostic(diagnosticInput(128)).nearEvaluatedProposalCount[0])
+      .toBe(128);
+    expect(referenceGroundGlassApertureGatherDiagnostic(diagnosticInput(256)).nearEvaluatedProposalCount[0])
+      .toBe(256);
+    expect(() => referenceGroundGlassApertureGatherDiagnostic(diagnosticInput(64))).toThrow(/128 or 256/);
   });
 
   it("applies near foreground ordering using reconstructed view distances", () => {

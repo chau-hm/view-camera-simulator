@@ -1,14 +1,35 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { REVISION, PerspectiveCamera } from "three";
+import { DataUtils, REVISION, PerspectiveCamera } from "three";
 import { gunzipSync } from "node:zlib";
 import type {
   GroundGlassB1BoundaryProbeReadback,
   GroundGlassApertureGatherCaptureReadback,
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import type { GroundGlassApertureGatherQualityMode } from "../../render/webgpu/groundGlassApertureGatherPolicy";
-import { mapGroundGlassPhysicalEllipseToSourcePixels } from "../../render/webgpu/groundGlassApertureGatherReference";
+import {
+  groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting,
+  mapGroundGlassPhysicalEllipseToSourcePixels,
+  referenceGroundGlassApertureGather,
+  referenceGroundGlassApertureGatherDiagnostic,
+  referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting,
+} from "../../render/webgpu/groundGlassApertureGatherReference";
+import {
+  analyzeGroundGlassM5rFallbacks,
+} from "../../render/webgpu/groundGlassM5rFallbackAnalysis";
+import {
+  analyzeGroundGlassM5rNearAlpha,
+  type GroundGlassM5rNearAlphaCapture,
+} from "../../render/webgpu/groundGlassM5rNearAlphaAnalysis";
+import {
+  analyzeGroundGlassM5rSampleDistribution,
+  compareGroundGlassM5rNumericArrays,
+  compareGroundGlassM5rGatherResults,
+  createGroundGlassM5rGoldenAngleProposals,
+  createGroundGlassM5rReferenceReportFields,
+  evaluateGroundGlassM5rReferenceEvidence,
+} from "../../render/webgpu/groundGlassM5rReferenceAnalysis";
 import {
   evaluateGroundGlassApertureGatherR3,
   type GroundGlassApertureGatherR3Thresholds,
@@ -45,7 +66,7 @@ type PackedCaptureReadbacks = Readonly<{
     name: keyof CaptureReadbackBuffers;
     offset: number;
     byteLength: number;
-    type: "Float32Array" | "Uint8Array" | "Int32Array";
+    type: "Float32Array" | "Uint8Array" | "Uint16Array" | "Int32Array";
   }>[];
   gzipBase64: string;
 }>;
@@ -180,8 +201,9 @@ const captureGather = async (
   token: string,
   retainReadbackBuffers = false,
   maximumRadiusPx?: number,
+  options: Readonly<{ includeM5rDiagnostics?: boolean; includeM5rNearFixture?: boolean }> = {},
 ): Promise<GroundGlassApertureGatherCaptureReadback> => {
-  const triggered = await page.evaluate(({ captureToken, mode, retainBuffers, maxRadiusPx }) => {
+  const triggered = await page.evaluate(({ captureToken, mode, retainBuffers, maxRadiusPx, m5rOptions }) => {
     const control = window.__groundGlassWebGpuM3TestControl;
     if (!control?.requestApertureGatherCapture) return false;
     control.apertureGatherCaptureReadback = null;
@@ -189,11 +211,19 @@ const captureGather = async (
       token: captureToken,
       qualityMode: mode,
       retainReadbackBuffers: retainBuffers,
+      ...(m5rOptions.includeM5rDiagnostics ? { includeM5rDiagnostics: true } : {}),
+      ...(m5rOptions.includeM5rNearFixture ? { includeM5rNearFixture: true } : {}),
       ...(maxRadiusPx !== undefined ? { maximumRadiusPx: maxRadiusPx } : {}),
     };
     control.requestApertureGatherCapture();
     return true;
-  }, { captureToken: token, mode: qualityMode, retainBuffers: retainReadbackBuffers, maxRadiusPx: maximumRadiusPx });
+  }, {
+    captureToken: token,
+    mode: qualityMode,
+    retainBuffers: retainReadbackBuffers,
+    maxRadiusPx: maximumRadiusPx,
+    m5rOptions: options,
+  });
   expect(triggered, "The development-only M5 capture seam is registered on the mounted adapter").toBe(true);
   const deadline = Date.now() + 180_000;
   let captured = false;
@@ -222,7 +252,7 @@ const captureGather = async (
     if (!result.readbackBuffers) return { capture: { ...result, readbackBuffers: null }, fields: [], gzipBase64: "" };
     const entries = Object.entries(result.readbackBuffers) as [
       keyof CaptureReadbackBuffers,
-      Float32Array | Uint8Array | Int32Array,
+      Float32Array | Uint8Array | Uint16Array | Int32Array,
     ][];
     let totalBytes = 0;
     const fields = entries.map(([name, values]) => {
@@ -230,7 +260,7 @@ const captureGather = async (
         name,
         offset: totalBytes,
         byteLength: values.byteLength,
-        type: values.constructor.name as "Float32Array" | "Uint8Array" | "Int32Array",
+      type: values.constructor.name as "Float32Array" | "Uint8Array" | "Uint16Array" | "Int32Array",
       };
       totalBytes += values.byteLength;
       return field;
@@ -267,6 +297,7 @@ const captureGather = async (
     const bytes = raw.buffer.slice(field.offset, field.offset + field.byteLength);
     if (field.type === "Float32Array") return [field.name, new Float32Array(bytes)];
     if (field.type === "Int32Array") return [field.name, new Int32Array(bytes)];
+    if (field.type === "Uint16Array") return [field.name, new Uint16Array(bytes)];
     return [field.name, new Uint8Array(bytes)];
   })) as CaptureReadbackBuffers;
   return { ...packed.capture, readbackBuffers };
@@ -591,6 +622,168 @@ const toR3Capture = (
       observedGatherCenterSourceIds: Int32Array.from(buffers.observedGatherCenterSourceIds),
       b1DecisionRgba: Uint8Array.from(buffers.b1Decision),
     },
+  };
+};
+
+const rgbFromSelectedRgba = (rgba: Float32Array, pixelIndices: readonly number[]): Float32Array => {
+  const output = new Float32Array(pixelIndices.length * 3);
+  let destination = 0;
+  for (const pixel of pixelIndices) {
+    const offset = pixel * 4;
+    output[destination++] = rgba[offset] ?? 0;
+    output[destination++] = rgba[offset + 1] ?? 0;
+    output[destination++] = rgba[offset + 2] ?? 0;
+  }
+  return output;
+};
+
+const chooseM5rFarRoi = (
+  capture: GroundGlassApertureGatherCaptureReadback,
+  minimumSourceDifference: number,
+  maximumPixels = 128,
+): number[] => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers) throw new Error(`M5R ROI selection requires retained buffers for ${capture.captureId}`);
+  const candidates: number[] = [];
+  const gatherPixels = capture.farGatherWidthPx * capture.farGatherHeightPx;
+  for (let gatherPixel = 0; gatherPixel < gatherPixels; gatherPixel += 1) {
+    const centerX = buffers.observedGatherCenterSourceIds[gatherPixel * 2] ?? -1;
+    const centerY = buffers.observedGatherCenterSourceIds[gatherPixel * 2 + 1] ?? -1;
+    if (centerX < 0 || centerY < 0 || centerX >= capture.sourceWidthPx || centerY >= capture.sourceHeightPx) continue;
+    const sourcePixel = centerY * capture.sourceWidthPx + centerX;
+    if (buffers.validity[sourcePixel] !== 1 || (buffers.physicalRgba[sourcePixel * 4] ?? 0) <= 0.00001) continue;
+    const sourceOffset = sourcePixel * 4;
+    const gatherOffset = gatherPixel * 4;
+    const sourceDifference = Math.hypot(
+      (buffers.farGatherRgba[gatherOffset] ?? 0) - (buffers.sourceRgba[sourceOffset] ?? 0),
+      (buffers.farGatherRgba[gatherOffset + 1] ?? 0) - (buffers.sourceRgba[sourceOffset + 1] ?? 0),
+      (buffers.farGatherRgba[gatherOffset + 2] ?? 0) - (buffers.sourceRgba[sourceOffset + 2] ?? 0),
+    );
+    if (sourceDifference >= minimumSourceDifference) candidates.push(gatherPixel);
+  }
+  if (candidates.length === 0) return [];
+  const selectedCount = Math.min(maximumPixels, candidates.length);
+  return Array.from({ length: selectedCount }, (_value, index) =>
+    candidates[Math.floor(index * candidates.length / selectedCount)]!,
+  );
+};
+
+const makeM5rCpuReferences = (
+  capture: GroundGlassApertureGatherCaptureReadback,
+  gatherPixelIndices: readonly number[],
+) => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers || gatherPixelIndices.length === 0) {
+    throw new Error(`M5R CPU reference ROI is empty for ${capture.captureId}`);
+  }
+  const centerSourceIds = new Int32Array(gatherPixelIndices.length * 2);
+  const centerSourceUvs = new Float32Array(gatherPixelIndices.length * 2);
+  gatherPixelIndices.forEach((gatherPixel, destinationPixel) => {
+    centerSourceIds[destinationPixel * 2] = buffers.observedGatherCenterSourceIds[gatherPixel * 2] ?? -1;
+    centerSourceIds[destinationPixel * 2 + 1] = buffers.observedGatherCenterSourceIds[gatherPixel * 2 + 1] ?? -1;
+    centerSourceUvs[destinationPixel * 2] = buffers.observedGatherCenterSourceUvs[gatherPixel * 2] ?? 0;
+    centerSourceUvs[destinationPixel * 2 + 1] = buffers.observedGatherCenterSourceUvs[gatherPixel * 2 + 1] ?? 0;
+  });
+  const sharedInput = {
+    source: { widthPx: capture.sourceWidthPx, heightPx: capture.sourceHeightPx },
+    gather: { widthPx: gatherPixelIndices.length, heightPx: 1 },
+    film: capture.sampledFilmDimensionsMm,
+    sourceRgba: buffers.sourceRgba,
+    physicalRgba: buffers.physicalRgba,
+    validity: buffers.validity,
+    depth: buffers.depth,
+    observedGatherCenterSourceIds: centerSourceIds,
+    observedGatherCenterSourceUvs: centerSourceUvs,
+    inverseProjectionMatrix: capture.inverseProjectionMatrix,
+    maximumRadiusPx: capture.maximumRadiusPx,
+  } as const;
+  const native32 = referenceGroundGlassApertureGather({ ...sharedInput, sampleCount: 32 });
+  const native64 = referenceGroundGlassApertureGather({ ...sharedInput, sampleCount: 64 });
+  const nested32 = referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting({
+    ...sharedInput,
+    sampleCount: 32,
+  });
+  const nested64 = referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting({
+    ...sharedInput,
+    sampleCount: 64,
+  });
+  const high128 = referenceGroundGlassApertureGatherDiagnostic({ ...sharedInput, sampleCount: 128 });
+  const high256 = referenceGroundGlassApertureGatherDiagnostic({ ...sharedInput, sampleCount: 256 });
+  return { native32, native64, nested32, nested64, high128, high256, centerSourceIds, centerSourceUvs };
+};
+
+const makeM5rNestedProposals = (sampleCount: 16 | 32 | 64): Float64Array => {
+  const proposals = new Float64Array(sampleCount * 2);
+  for (let index = 0; index < sampleCount; index += 1) {
+    const [x, y] = groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting(index, sampleCount);
+    proposals[index * 2] = x;
+    proposals[index * 2 + 1] = y;
+  }
+  return proposals;
+};
+
+const gpuM5rNearCapture = (
+  capture: GroundGlassApertureGatherCaptureReadback,
+): GroundGlassM5rNearAlphaCapture => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers?.nearProposalCountsRgba || !buffers.nearCoverageDiagnosticsRgba
+      || !buffers.nearAcceptedFootprintRgba || !buffers.nearAlphaHalfBits) {
+    throw new Error(`M5R Near diagnostics are absent from ${capture.captureId}`);
+  }
+  const outputCount = capture.nearGatherWidthPx * capture.nearGatherHeightPx;
+  const channel = (values: Float32Array, channelIndex: number) => {
+    const output = new Float32Array(outputCount);
+    for (let pixel = 0; pixel < outputCount; pixel += 1) output[pixel] = values[pixel * 4 + channelIndex] ?? 0;
+    return output;
+  };
+  return {
+    identity: {
+      captureId: capture.captureId,
+      requestId: capture.requestId,
+      sceneId: capture.sceneId,
+      inputFingerprint: Object.values(capture.inputFingerprints).join(":"),
+      outputWidthPx: capture.nearGatherWidthPx,
+      outputHeightPx: capture.nearGatherHeightPx,
+      sampleCount: capture.sampleCount,
+      pixelOrder: "top-origin",
+    },
+    intermediates: {
+      nearCenterIsNear: channel(buffers.nearProposalCountsRgba, 0),
+      nearEvaluatedProposalCount: channel(buffers.nearProposalCountsRgba, 1),
+      nearAcceptedProposalCount: channel(buffers.nearProposalCountsRgba, 2),
+      nearNonzeroMembershipCount: channel(buffers.nearProposalCountsRgba, 3),
+      nearWeightSum: channel(buffers.nearCoverageDiagnosticsRgba, 0),
+      nearCoverageMass: channel(buffers.nearCoverageDiagnosticsRgba, 1),
+      nearEstimatedCoverage: channel(buffers.nearCoverageDiagnosticsRgba, 2),
+      nearFinalAlpha: channel(buffers.nearCoverageDiagnosticsRgba, 3),
+      nearAcceptedAreaRatioMean: channel(buffers.nearAcceptedFootprintRgba, 0),
+      nearAcceptedCompensationMaximum: channel(buffers.nearAcceptedFootprintRgba, 1),
+    },
+    nearRgba: buffers.nearRgba,
+    rawNearAlphaHalfBits: buffers.nearAlphaHalfBits,
+  };
+};
+
+const cpuM5rNearCapture = (capture: GroundGlassApertureGatherCaptureReadback):
+  GroundGlassM5rNearAlphaCapture & Readonly<{ referenceId: string }> => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers) throw new Error(`M5R CPU Near reference is absent from ${capture.captureId}`);
+  return {
+    identity: gpuM5rNearCapture(capture).identity,
+    referenceId: `cpu-m5-r186-${capture.sampleCount}`,
+    intermediates: {
+      nearCenterIsNear: buffers.nearCpuCenterIsNear,
+      nearEvaluatedProposalCount: buffers.nearCpuEvaluatedProposalCount,
+      nearAcceptedProposalCount: buffers.nearCpuAcceptedProposalCount,
+      nearNonzeroMembershipCount: buffers.nearCpuNonzeroMembershipCount,
+      nearWeightSum: buffers.nearCpuWeightSum,
+      nearCoverageMass: buffers.nearCpuCoverageMass,
+      nearEstimatedCoverage: buffers.nearCpuEstimatedCoverage,
+      nearFinalAlpha: buffers.nearCpuReferenceRgba.filter((_value, index) => index % 4 === 3),
+      nearAcceptedAreaRatioMean: buffers.nearCpuAcceptedAreaRatioMean,
+      nearAcceptedCompensationMaximum: buffers.nearCpuAcceptedCompensationMaximum,
+    },
+    nearRgba: buffers.nearCpuReferenceRgba,
   };
 };
 
@@ -1521,6 +1714,807 @@ test("native M5 app adapter applies frozen R3 thresholds to an independent match
     body: JSON.stringify({ thresholds: M5_R3_CONFIRMATORY_THRESHOLDS, decision: confirmatoryR3.qualityDecision }, null, 2),
     contentType: "application/json",
   });
+});
+
+test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage without changing M5Q", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU, M3 Raw, M4 physical research, and the M5 gather research gate");
+  test.setTimeout(1_800_000);
+  expect(REVISION).toBe("186");
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const q1 = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-loupe4-rise0")!;
+  const q2 = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-full-rise0")!;
+  const q4 = M5Q_CANDIDATES.find(({ id }) => id === "ar-f5200-f5p6-full-rise0")!;
+  const captureCurrent = async (
+    qualityMode: GroundGlassApertureGatherQualityMode,
+    token: string,
+    maximumRadiusPx?: number,
+    options: Readonly<{ includeM5rDiagnostics?: boolean; includeM5rNearFixture?: boolean }> = {},
+  ): Promise<GroundGlassApertureGatherCaptureReadback> => {
+    const capture = await captureGather(page, qualityMode, token, true, maximumRadiusPx, options);
+    await expectCaptureMatchesCurrentFrame(page, capture, false);
+    return capture;
+  };
+
+  await setM5qCandidateState(page, q1);
+  const q1Captures: Readonly<Record<string, GroundGlassApertureGatherCaptureReadback>> = {
+    half16: await captureCurrent("half16", `m5r-q1-half16-${Date.now()}`),
+    full32a: await captureCurrent("full32", `m5r-q1-full32-a-${Date.now()}`, undefined,
+      { includeM5rDiagnostics: true }),
+    full32b: await captureCurrent("full32", `m5r-q1-full32-b-${Date.now()}`),
+    full32c: await captureCurrent("full32", `m5r-q1-full32-c-${Date.now()}`),
+    full64a: await captureCurrent("full64", `m5r-q1-full64-a-${Date.now()}`, undefined,
+      { includeM5rDiagnostics: true }),
+    full64b: await captureCurrent("full64", `m5r-q1-full64-b-${Date.now()}`),
+    full64c: await captureCurrent("full64", `m5r-q1-full64-c-${Date.now()}`),
+  };
+  const q1FingerprintValues = Object.values(q1Captures).map((capture) => JSON.stringify({
+    requestId: capture.requestId,
+    rendererGenerationId: capture.rendererGenerationId,
+    sceneId: capture.sceneId,
+    sceneSourceRevision: capture.sceneSourceRevision,
+    effectiveOpticalRequestFingerprint: capture.effectiveOpticalRequestFingerprint,
+    cameraStateFingerprint: capture.cameraStateFingerprint,
+    sourceDimensions: [capture.sourceWidthPx, capture.sourceHeightPx],
+    sampledFilmDimensionsMm: capture.sampledFilmDimensionsMm,
+    inputFingerprints: capture.inputFingerprints,
+  }));
+  const q1InputFingerprintsMatch = new Set(q1FingerprintValues).size === 1;
+  if (!q1InputFingerprintsMatch) {
+    await testInfo.attach("m5r-input-provenance-failure.json", {
+      body: JSON.stringify({
+        captureIds: Object.values(q1Captures).map((capture) => capture.captureId),
+        fingerprints: q1FingerprintValues,
+      }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  expect(q1InputFingerprintsMatch, "Q1 repetitions and profiles retain the exact source/input state").toBe(true);
+  expect(q1Captures.full32a.m5rDiagnostics.status).toBe("captured");
+  expect(q1Captures.full64a.m5rDiagnostics.status).toBe("captured");
+
+  const q1Buffers32 = q1Captures.full32a.readbackBuffers!;
+  const q1Buffers64 = q1Captures.full64a.readbackBuffers!;
+  const full32Repeatability = [q1Captures.full32b, q1Captures.full32c].map((capture, index) => ({
+    qualityMode: "Full32" as const,
+    comparedCaptureIds: [q1Captures.full32a.captureId, capture.captureId] as const,
+    comparison: index === 0 ? "A/B" as const : "A/C" as const,
+    far: compareGroundGlassM5rNumericArrays(q1Buffers32.farGatherRgba, capture.readbackBuffers!.farGatherRgba),
+    near: compareGroundGlassM5rNumericArrays(q1Buffers32.nearRgba, capture.readbackBuffers!.nearRgba),
+  }));
+  const full64Repeatability = [q1Captures.full64b, q1Captures.full64c].map((capture, index) => ({
+    qualityMode: "Full64" as const,
+    comparedCaptureIds: [q1Captures.full64a.captureId, capture.captureId] as const,
+    comparison: index === 0 ? "A/B" as const : "A/C" as const,
+    far: compareGroundGlassM5rNumericArrays(q1Buffers64.farGatherRgba, capture.readbackBuffers!.farGatherRgba),
+    near: compareGroundGlassM5rNumericArrays(q1Buffers64.nearRgba, capture.readbackBuffers!.nearRgba),
+  }));
+  const sameProfileRepeatable = [...full32Repeatability, ...full64Repeatability]
+    .every(({ far, near }) => far.exact && near.exact);
+  if (!sameProfileRepeatable) {
+    const repeatabilityFailures = [...full32Repeatability, ...full64Repeatability].flatMap((comparison) =>
+      (["Far", "Near"] as const).flatMap((comparedBuffer) => {
+        const difference = comparison[comparedBuffer === "Far" ? "far" : "near"];
+        return difference.exact ? [] : [{
+          qualityMode: comparison.qualityMode,
+          comparedCaptureIds: comparison.comparedCaptureIds,
+          comparedBuffer,
+          changedValueCount: difference.changedValueCount,
+          maximumAbsoluteError: difference.maximumAbsoluteError,
+          maximumErrorIndex: difference.maximumErrorIndex,
+          rmse: difference.rootMeanSquareError,
+        }];
+      }));
+    await testInfo.attach("m5r-repeatability-failure.json", {
+      body: JSON.stringify({
+        requiredComparisons: "Full32 and Full64 A/B and A/C, Far RGBA and Near RGBA",
+        repeatabilityFailures,
+        full32: full32Repeatability,
+        full64: full64Repeatability,
+      }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  expect(sameProfileRepeatable, "Full32/Full64 A/B/A/C Far and Near readbacks must be bit-exact")
+    .toBe(true);
+  const fullGatherPixelIndices = Array.from(
+    { length: q1Captures.full32a.farGatherWidthPx * q1Captures.full32a.farGatherHeightPx },
+    (_value, index) => index,
+  );
+  const nativeProfileDifference = {
+    farRgba16: compareGroundGlassM5rNumericArrays(q1Buffers32.farGatherRgba, q1Buffers64.farGatherRgba),
+    farRgb16: compareGroundGlassM5rNumericArrays(
+      rgbFromSelectedRgba(q1Buffers32.farGatherRgba, fullGatherPixelIndices),
+      rgbFromSelectedRgba(q1Buffers64.farGatherRgba, fullGatherPixelIndices),
+    ),
+    farRgba32F: compareGroundGlassM5rNumericArrays(
+      q1Buffers32.farGatherRgba32!, q1Buffers64.farGatherRgba32!,
+    ),
+    farRgb32F: compareGroundGlassM5rNumericArrays(
+      rgbFromSelectedRgba(q1Buffers32.farGatherRgba32!, fullGatherPixelIndices),
+      rgbFromSelectedRgba(q1Buffers64.farGatherRgba32!, fullGatherPixelIndices),
+    ),
+    pixelCount: fullGatherPixelIndices.length,
+    channelScope: "RGBA metrics include the equal constant alpha channel; RGB metrics exclude alpha.",
+    nearRgba: compareGroundGlassM5rNumericArrays(q1Buffers32.nearRgba, q1Buffers64.nearRgba),
+  };
+
+  const roiPixelIndices = chooseM5rFarRoi(q1Captures.full32a, 0.01, 128);
+  expect(roiPixelIndices.length, "Q1 has bounded valid far pixels with source-color blur signal").toBeGreaterThan(0);
+  const cpuReferences = makeM5rCpuReferences(q1Captures.full32a, roiPixelIndices);
+  const gpuFull32Roi = Float32Array.from(roiPixelIndices.flatMap((pixel) =>
+    Array.from(q1Buffers32.farGatherRgba.subarray(pixel * 4, pixel * 4 + 4))));
+  const gpuFull64Roi = Float32Array.from(roiPixelIndices.flatMap((pixel) =>
+    Array.from(q1Buffers64.farGatherRgba.subarray(pixel * 4, pixel * 4 + 4))));
+  const gpuFull32FloatRoi = Float32Array.from(roiPixelIndices.flatMap((pixel) =>
+    Array.from(q1Buffers32.farGatherRgba32!.subarray(pixel * 4, pixel * 4 + 4))));
+  const gpuFull64FloatRoi = Float32Array.from(roiPixelIndices.flatMap((pixel) =>
+    Array.from(q1Buffers64.farGatherRgba32!.subarray(pixel * 4, pixel * 4 + 4))));
+  const cpuRoiRgb = (rgba: Float32Array) => rgbFromSelectedRgba(rgba, Array.from(
+    { length: roiPixelIndices.length }, (_value, index) => index,
+  ));
+  const gpuRoiRgb = (rgba: Float32Array) => rgbFromSelectedRgba(rgba, Array.from(
+    { length: roiPixelIndices.length }, (_value, index) => index,
+  ));
+  const cpuMatchedErrors = {
+    gpu32HalfVsCpu32: compareGroundGlassM5rNumericArrays(gpuRoiRgb(gpuFull32Roi), cpuRoiRgb(cpuReferences.native32.farRgba)),
+    gpu32FloatVsCpu32: compareGroundGlassM5rNumericArrays(gpuRoiRgb(gpuFull32FloatRoi), cpuRoiRgb(cpuReferences.native32.farRgba)),
+    gpu64HalfVsCpu64: compareGroundGlassM5rNumericArrays(gpuRoiRgb(gpuFull64Roi), cpuRoiRgb(cpuReferences.native64.farRgba)),
+    gpu64FloatVsCpu64: compareGroundGlassM5rNumericArrays(gpuRoiRgb(gpuFull64FloatRoi), cpuRoiRgb(cpuReferences.native64.farRgba)),
+  };
+  const cpuReferenceConvergence = {
+    cpu32VsCpu64: compareGroundGlassM5rGatherResults(cpuReferences.native32, cpuReferences.native64),
+    cpu64VsCpu128: compareGroundGlassM5rGatherResults(cpuReferences.native64, cpuReferences.high128),
+    cpu128VsCpu256: compareGroundGlassM5rGatherResults(cpuReferences.high128, cpuReferences.high256),
+    nested32VsNested64: compareGroundGlassM5rGatherResults(cpuReferences.nested32, cpuReferences.nested64),
+    nested32VsCpu256: compareGroundGlassM5rGatherResults(cpuReferences.nested32, cpuReferences.high256),
+    nested64VsCpu256: compareGroundGlassM5rGatherResults(cpuReferences.nested64, cpuReferences.high256),
+    gpu32HalfVsCpu128: compareGroundGlassM5rNumericArrays(
+      gpuRoiRgb(gpuFull32Roi), cpuRoiRgb(cpuReferences.high128.farRgba),
+    ),
+    gpu32HalfVsCpu256: compareGroundGlassM5rNumericArrays(
+      gpuRoiRgb(gpuFull32Roi), cpuRoiRgb(cpuReferences.high256.farRgba),
+    ),
+    gpu64HalfVsCpu128: compareGroundGlassM5rNumericArrays(
+      gpuRoiRgb(gpuFull64Roi), cpuRoiRgb(cpuReferences.high128.farRgba),
+    ),
+    gpu64HalfVsCpu256: compareGroundGlassM5rNumericArrays(
+      gpuRoiRgb(gpuFull64Roi), cpuRoiRgb(cpuReferences.high256.farRgba),
+    ),
+  };
+  const m5rEvidenceDecision = evaluateGroundGlassM5rReferenceEvidence({
+    inputFingerprintMatch: q1InputFingerprintsMatch,
+    repeatedCaptures: [...full32Repeatability, ...full64Repeatability],
+    gpu32VsCpu32RgbRmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+    gpu64VsCpu64RgbRmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+    declaredMatchedCountConformanceLimit: 0.001,
+    cpu128VsCpu256RgbRmse: cpuReferenceConvergence.cpu128VsCpu256.farRgb.rootMeanSquareError,
+    declaredReferenceConvergenceLimit: M5Q_FROZEN_THRESHOLDS.maximumReferenceRmse,
+  });
+  const m5rReferenceReportFields = createGroundGlassM5rReferenceReportFields(m5rEvidenceDecision);
+  if (m5rEvidenceDecision.gpuCpuConformancePassed !== true) {
+    await testInfo.attach("m5r-gpu-cpu-conformance-failure.json", {
+      body: JSON.stringify({
+        gpu32VsCpu32RgbRmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+        gpu64VsCpu64RgbRmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+        diagnosticLimit: 0.001,
+        evidenceDecision: m5rEvidenceDecision,
+      }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  expect(m5rEvidenceDecision.gpuCpuConformancePassed,
+    "Full32/CPU32 and Full64/CPU64 matched-count RMSE must meet the 0.001 diagnostic limit")
+    .toBe(true);
+  const sampleDistributions = Object.fromEntries(([16, 32, 64] as const).map((sampleCount) => [
+    sampleCount,
+    analyzeGroundGlassM5rSampleDistribution(createGroundGlassM5rGoldenAngleProposals(sampleCount)),
+  ]));
+  const nestedSampleDistributions = Object.fromEntries(([16, 32, 64] as const).map((sampleCount) => [
+    sampleCount,
+    analyzeGroundGlassM5rSampleDistribution(makeM5rNestedProposals(sampleCount)),
+  ]));
+  const proposals32 = createGroundGlassM5rGoldenAngleProposals(32);
+  const proposals64 = createGroundGlassM5rGoldenAngleProposals(64);
+  const proposalKey = (values: Float64Array, index: number) =>
+    `${values[index * 2]},${values[index * 2 + 1]}`;
+  const proposal64Set = new Set(Array.from({ length: 64 }, (_value, index) => proposalKey(proposals64, index)));
+  const proposalOverlap32In64 = Array.from({ length: 32 }, (_value, index) => proposalKey(proposals32, index))
+    .filter((key) => proposal64Set.has(key)).length;
+  const nestedProposals32 = makeM5rNestedProposals(32);
+  const nestedProposals64 = makeM5rNestedProposals(64);
+  const nested64Set = new Set(Array.from(
+    { length: 64 }, (_value, index) => proposalKey(nestedProposals64, index),
+  ));
+  const nestedProposalOverlap32In64 = Array.from({ length: 32 }, (_value, index) => proposalKey(nestedProposals32, index))
+    .filter((key) => nested64Set.has(key)).length;
+  const halfStorage = {
+    gpu32FloatVsHalfStored: compareGroundGlassM5rNumericArrays(
+      q1Buffers32.farGatherRgba32!, q1Buffers32.farGatherRgba,
+    ),
+    cpu32HalfBitAgreement: (() => {
+      let matching = 0;
+      let compared = 0;
+      for (const pixel of roiPixelIndices) {
+        for (let channel = 0; channel < 4; channel += 1) {
+          const index = pixel * 4 + channel;
+          matching += DataUtils.toHalfFloat(cpuReferences.native32.farRgba[roiPixelIndices.indexOf(pixel) * 4 + channel] ?? 0)
+            === q1Buffers32.farGatherHalfBits![index] ? 1 : 0;
+          compared += 1;
+        }
+      }
+      return { matchedChannels: matching, comparedChannels: compared, matchingFraction: matching / compared };
+    })(),
+  };
+  const q1Cap2Full32 = await captureCurrent("full32", `m5r-q1-cap2-full32-${Date.now()}`, 2);
+  const q1Cap2Full64 = await captureCurrent("full64", `m5r-q1-cap2-full64-${Date.now()}`, 2);
+  const cap2GatherPixels = Array.from(
+    { length: q1Cap2Full32.farGatherWidthPx * q1Cap2Full32.farGatherHeightPx },
+    (_value, index) => index,
+  );
+  const cap2Difference = compareGroundGlassM5rNumericArrays(
+    q1Cap2Full32.readbackBuffers!.farGatherRgba,
+    q1Cap2Full64.readbackBuffers!.farGatherRgba,
+  );
+  const cap2DifferenceRgb = compareGroundGlassM5rNumericArrays(
+    rgbFromSelectedRgba(q1Cap2Full32.readbackBuffers!.farGatherRgba, cap2GatherPixels),
+    rgbFromSelectedRgba(q1Cap2Full64.readbackBuffers!.farGatherRgba, cap2GatherPixels),
+  );
+
+  await setM5qCandidateState(page, q2);
+  const q2Captures = {
+    half32: await captureCurrent("half32", `m5r-q2-half32-${Date.now()}`),
+    full32: await captureCurrent("full32", `m5r-q2-full32-${Date.now()}`),
+    full64: await captureCurrent("full64", `m5r-q2-full64-${Date.now()}`),
+  };
+  const q2R3 = {
+    half32: toR3Capture(q2Captures.half32),
+    full32: toR3Capture(q2Captures.full32),
+    full64: toR3Capture(q2Captures.full64),
+  } satisfies GroundGlassApertureGatherR3CaptureMatrix;
+  const fallbackAnalysis = analyzeGroundGlassM5rFallbacks(q2R3);
+  const fallbackReasonBreakdown = Object.fromEntries(
+    Object.entries(fallbackAnalysis.byReason).map(([reasonKey, metrics]) => [reasonKey, {
+      reasonCode: metrics.reasonCode,
+      reasonName: metrics.reasonName,
+      fallbackPixelCount: metrics.fallbackPixelCount,
+      percentOfFallback: fallbackAnalysis.fallbackSummary.pixelCount > 0
+        ? metrics.fallbackPixelCount / fallbackAnalysis.fallbackSummary.pixelCount * 100
+        : null,
+      validFarFallbackPixelCount: metrics.validFarFallbackPixelCount,
+      meaningfulBlurFallbackPixelCount: metrics.meaningfulBlurFallbackPixelCount,
+      negligibleBlurFallbackPixelCount: metrics.negligibleBlurFallbackPixelCount,
+      depthEdgeFallbackOverlapPixelCount: metrics.depthEdgeFallbackOverlapPixelCount,
+      signedBoundaryFallbackOverlapPixelCount: metrics.signedBoundaryFallbackOverlapPixelCount,
+    }]),
+  );
+
+  await setM5qCandidateState(page, q4);
+  const q4Capture = await captureCurrent("full32", `m5r-q4-near-${Date.now()}`, undefined, {
+    includeM5rDiagnostics: true,
+    includeM5rNearFixture: true,
+  });
+  expect(q4Capture.m5rDiagnostics.status).toBe("captured");
+  expect(q4Capture.m5rDiagnostics.nearFinalAlphaMaximumError).toBeLessThanOrEqual(0.001);
+  const nearAlphaAnalysis = analyzeGroundGlassM5rNearAlpha({
+    gpu: {
+      ...gpuM5rNearCapture(q4Capture),
+      renderer: {
+        rendererFamily: q4Capture.rendererFamily,
+        actualExecutionApi: q4Capture.actualExecutionApi,
+        internalFallback: q4Capture.internalFallback,
+        rendererGenerationId: q4Capture.rendererGenerationId,
+      },
+    },
+    cpu: cpuM5rNearCapture(q4Capture),
+  });
+  expect(nearAlphaAnalysis.binary16.available).toBe(true);
+  expect(nearAlphaAnalysis.binary16.rawBitsRoundTripMismatchCount).toBe(0);
+  expect(nearAlphaAnalysis.binary16.storedAlpha?.zeroCount)
+    .toBe(nearAlphaAnalysis.gpu.outputAlpha.zeroCount);
+  expect(nearAlphaAnalysis.binary16.storedAlpha?.oneCount)
+    .toBe(nearAlphaAnalysis.gpu.outputAlpha.oneCount);
+  expect(nearAlphaAnalysis.binary16.storedAlpha?.fractionalCount)
+    .toBe(nearAlphaAnalysis.gpu.outputAlpha.fractionalCount);
+  const q4Buffers = q4Capture.readbackBuffers!;
+  const fixtureMetadata = q4Capture.m5rNearFixture;
+  if (!fixtureMetadata || !q4Buffers.m5rFixtureNearRgba || !q4Buffers.m5rFixtureProposalCountsRgba
+      || !q4Buffers.m5rFixtureCoverageRgba || !q4Buffers.m5rFixtureAcceptedFootprintRgba
+      || !q4Buffers.m5rFixtureNearAlphaHalfBits) {
+    throw new Error("M5R native controlled Near fixture omitted its required typed readbacks");
+  }
+  const fixturePixelCount = fixtureMetadata.widthPx * fixtureMetadata.heightPx;
+  let fixtureFractionalAlphaCount = 0;
+  let fixtureNonzeroAlphaCount = 0;
+  let fixtureForegroundSpreadPixelCount = 0;
+  let fixtureFractionalForegroundSpreadPixelCount = 0;
+  let fixtureMaximumOutsideForegroundAlpha = 0;
+  const fixtureCenterIndex = fixtureMetadata.centerPixel.y * fixtureMetadata.widthPx + fixtureMetadata.centerPixel.x;
+  for (let pixel = 0; pixel < fixturePixelCount; pixel += 1) {
+    const alpha = q4Buffers.m5rFixtureNearRgba[pixel * 4 + 3] ?? 0;
+    const x = pixel % fixtureMetadata.widthPx;
+    const y = Math.floor(pixel / fixtureMetadata.widthPx);
+    const dx = x - fixtureMetadata.foregroundShape.centerPixel.x;
+    const dy = y - fixtureMetadata.foregroundShape.centerPixel.y;
+    const outsideSilhouette = dx * dx + dy * dy > fixtureMetadata.foregroundShape.radiusPx ** 2;
+    if (alpha > 0) fixtureNonzeroAlphaCount += 1;
+    if (alpha > 0 && alpha < 1) fixtureFractionalAlphaCount += 1;
+    if (outsideSilhouette && alpha > 0
+        && (q4Buffers.m5rFixtureNearRgba[pixel * 4] ?? 0)
+          > (q4Buffers.m5rFixtureNearRgba[pixel * 4 + 2] ?? 0)) {
+      fixtureForegroundSpreadPixelCount += 1;
+      fixtureMaximumOutsideForegroundAlpha = Math.max(fixtureMaximumOutsideForegroundAlpha, alpha);
+      if (alpha < 1) fixtureFractionalForegroundSpreadPixelCount += 1;
+    }
+  }
+  const fixtureCenterOffset = fixtureCenterIndex * 4;
+  const fixtureCenter = {
+    centerNear: q4Buffers.m5rFixtureProposalCountsRgba[fixtureCenterOffset] ?? 0,
+    evaluatedProposalCount: q4Buffers.m5rFixtureProposalCountsRgba[fixtureCenterOffset + 1] ?? 0,
+    acceptedProposalCount: q4Buffers.m5rFixtureProposalCountsRgba[fixtureCenterOffset + 2] ?? 0,
+    nonzeroMembershipCount: q4Buffers.m5rFixtureProposalCountsRgba[fixtureCenterOffset + 3] ?? 0,
+    weightSum: q4Buffers.m5rFixtureCoverageRgba[fixtureCenterOffset] ?? 0,
+    coverageMass: q4Buffers.m5rFixtureCoverageRgba[fixtureCenterOffset + 1] ?? 0,
+    estimatedCoverage: q4Buffers.m5rFixtureCoverageRgba[fixtureCenterOffset + 2] ?? 0,
+    diagnosticFinalAlpha: q4Buffers.m5rFixtureCoverageRgba[fixtureCenterOffset + 3] ?? 0,
+    actualNearAlpha: q4Buffers.m5rFixtureNearRgba[fixtureCenterOffset + 3] ?? 0,
+    acceptedAreaRatioMean: q4Buffers.m5rFixtureAcceptedFootprintRgba[fixtureCenterOffset] ?? 0,
+    acceptedCompensationMaximum: q4Buffers.m5rFixtureAcceptedFootprintRgba[fixtureCenterOffset + 1] ?? 0,
+    storedHalfBits: q4Buffers.m5rFixtureNearAlphaHalfBits[fixtureCenterIndex] ?? 0,
+    decodedStoredAlpha: DataUtils.fromHalfFloat(q4Buffers.m5rFixtureNearAlphaHalfBits[fixtureCenterIndex] ?? 0),
+  };
+  expect(fixtureCenter.centerNear).toBe(0);
+  expect(fixtureCenter.acceptedProposalCount).toBeGreaterThan(0);
+  expect(fixtureCenter.estimatedCoverage).toBeGreaterThan(0);
+  expect(fixtureCenter.estimatedCoverage).toBeLessThan(1);
+  expect(fixtureCenter.actualNearAlpha).toBeGreaterThan(0);
+  expect(fixtureCenter.actualNearAlpha).toBeLessThan(1);
+  expect(fixtureMetadata.evidenceScope).toBe("native-research-fixture");
+  expect(fixtureMetadata.foregroundShape.kind).toBe("disc");
+  const centerDx = fixtureMetadata.centerPixel.x - fixtureMetadata.foregroundShape.centerPixel.x;
+  const centerDy = fixtureMetadata.centerPixel.y - fixtureMetadata.foregroundShape.centerPixel.y;
+  expect(centerDx * centerDx + centerDy * centerDy)
+    .toBeGreaterThan(fixtureMetadata.foregroundShape.radiusPx ** 2);
+  expect(fixtureForegroundSpreadPixelCount).toBeGreaterThan(0);
+  expect(fixtureFractionalForegroundSpreadPixelCount).toBeGreaterThan(0);
+  expect(Math.abs(fixtureCenter.decodedStoredAlpha - fixtureCenter.actualNearAlpha)).toBeLessThanOrEqual(0.0005);
+  expect(fixtureMetadata.finalAlphaMatchesNearTargetMaximumError).toBeLessThanOrEqual(0.001);
+  expect(fixtureFractionalAlphaCount).toBeGreaterThan(0);
+  expect(fixtureNonzeroAlphaCount).toBeGreaterThan(fixtureFractionalAlphaCount);
+  const applicationEvidenceScope = "registered-app-adapter" as const;
+  expect(applicationEvidenceScope).not.toBe(fixtureMetadata.evidenceScope);
+  expect(nearAlphaAnalysis.identity.captureId).toBe(q4Capture.captureId);
+
+  const m5qStatusesPreserved = {
+    thresholdRevision: M5Q_FROZEN_THRESHOLDS.revision,
+    evaluator: "m5q-r3-review-fix-2",
+    q1: "reference-not-converged",
+    q2: "insufficient-support",
+    q3: "bounded-qualified",
+    q4: "insufficient-support",
+    q5: "reference-not-converged",
+    q6: "reference-not-converged",
+    q7: "reference-not-converged",
+  } as const;
+  const rootCauseMatrix = {
+    referenceConvergence: [
+      {
+        problem: "Full32/Full64 divergence",
+        hypothesis: "H-A1 finite aperture-sampling error",
+        discriminatingExperiment: "Compare repeated native profiles with matched-count independent CPU references and CPU32/64/128/256 on the same 128-pixel valid-far blur ROI.",
+        predictedObservation: "Same-count GPU/CPU agreement with stable same-profile captures, while finite sample counts disagree and higher tiers move toward one another.",
+        actualObservation: {
+          gpuCpuFloat32Rmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+          gpuCpuFloat64Rmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+          cpu32Vs64Rmse: cpuReferenceConvergence.cpu32VsCpu64.farRgb.rootMeanSquareError,
+          cpu64Vs128Rmse: cpuReferenceConvergence.cpu64VsCpu128.farRgb.rootMeanSquareError,
+          cpu128Vs256Rmse: cpuReferenceConvergence.cpu128VsCpu256.farRgb.rootMeanSquareError,
+        },
+        supportingEvidence: [
+          ...m5rReferenceReportFields.rootCauseMatrix.hA1.supportingEvidence,
+          ...(cpuReferenceConvergence.cpu32VsCpu64.farRgb.rootMeanSquareError
+            > cpuReferenceConvergence.cpu64VsCpu128.farRgb.rootMeanSquareError
+            && cpuReferenceConvergence.cpu64VsCpu128.farRgb.rootMeanSquareError
+              > cpuReferenceConvergence.cpu128VsCpu256.farRgb.rootMeanSquareError
+            ? ["Measured CPU tier differences decrease through 256 samples."] : []),
+        ],
+        contradictingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA1.contradictingEvidence,
+        confidence: m5rReferenceReportFields.rootCauseMatrix.hA1.confidence,
+        classification: m5rReferenceReportFields.rootCauseMatrix.hA1.classification,
+        proposedNextAction: "Keep references unqualified; design a separate progressive or higher-quality sampling/reference study against explicit blur-spread metrics.",
+      },
+      {
+        problem: "Full32/Full64 proposal identity",
+        hypothesis: "H-A2 sampleCount-dependent radial positions make the current sets non-nested",
+        discriminatingExperiment: "Audit exact proposal overlap and evaluate a CPU-only nested 64-master subset against CPU256 on the same ROI.",
+        predictedObservation: "The current 32-point set does not appear inside the 64-point set; nested sets share their 32 lower points, but agreement alone may not improve accuracy.",
+        actualObservation: {
+          original32PositionsSharedWith64: proposalOverlap32In64,
+          nested32PositionsSharedWith64: nestedProposalOverlap32In64,
+          originalCpu32Vs64Rmse: cpuReferenceConvergence.cpu32VsCpu64.farRgb.rootMeanSquareError,
+          nestedCpu32Vs64Rmse: cpuReferenceConvergence.nested32VsNested64.farRgb.rootMeanSquareError,
+          nested32VsCpu256Rmse: cpuReferenceConvergence.nested32VsCpu256.farRgb.rootMeanSquareError,
+          nested64VsCpu256Rmse: cpuReferenceConvergence.nested64VsCpu256.farRgb.rootMeanSquareError,
+        },
+        supportingEvidence: ["The production-formula 32 and 64 sets share zero exact positions.", "The CPU-only nested 32/64 sets share all 32 positions."],
+        contradictingEvidence: ["The nested 64 result does not improve over the baseline Full64-to-CPU256 RMSE on this ROI."],
+        confidence: "high",
+        classification: "non-nested-proposal-change-confirmed; nested alternative not promoted",
+        proposedNextAction: "Retain current production proposals; require accuracy and spread evidence before adopting any progressive sequence.",
+      },
+      {
+        problem: "Full32/Full64 divergence",
+        hypothesis: "H-A3 scene discontinuities dominate error",
+        discriminatingExperiment: "Stratify profile error by source-color gradients, depth edges, and occlusion boundaries.",
+        predictedObservation: "Error concentration at high-gradient or depth-discontinuous pixels.",
+        actualObservation: "M5R measured the state-wide difference and selected a blur-signal ROI, but did not stratify convergence by texture/depth-edge class.",
+        supportingEvidence: [],
+        contradictingEvidence: [],
+        confidence: "low",
+        classification: "insufficient-evidence",
+        proposedNextAction: "Add bounded edge/texture-stratified sample variance evidence before attributing the residual to scene discontinuities.",
+      },
+      {
+        problem: "Full32/Full64 divergence",
+        hypothesis: "H-A4 RGBA16F storage precision dominates the disagreement",
+        discriminatingExperiment: "Compare RGBA16F and RGBA32F render-target outputs and CPU binary16 conversion for matched inputs.",
+        predictedObservation: "The Full32/Full64 difference materially shrinks in RGBA32F or is reproduced by binary16 conversion.",
+        actualObservation: {
+          rgba32fFull32VsFull64Rmse: nativeProfileDifference.farRgba32F.rootMeanSquareError,
+          rgbOnly32fFull32VsFull64Rmse: nativeProfileDifference.farRgb32F.rootMeanSquareError,
+          rgba16fFull32VsFull64Rmse: nativeProfileDifference.farRgba16.rootMeanSquareError,
+          sameShaderFloat32VsHalfRmse: halfStorage.gpu32FloatVsHalfStored.rootMeanSquareError,
+          cpu32HalfBitMatches: halfStorage.cpu32HalfBitAgreement.matchedChannels,
+          cpu32ComparedHalfChannels: halfStorage.cpu32HalfBitAgreement.comparedChannels,
+        },
+        supportingEvidence: ["RGBA16F quantization is measurable at 1.17e-4 RMSE."],
+        contradictingEvidence: ["Full32/Full64 divergence remains essentially unchanged in RGBA32F.", "All 512 selected CPU32 half channels match native stored half bits."],
+        confidence: "high",
+        classification: "storage-precision-secondary; not the dominant divergence cause",
+        proposedNextAction: "Do not change precision on this evidence; keep any accumulation-precision question separate from storage quantization.",
+      },
+      {
+        problem: "Full32/Full64 divergence",
+        hypothesis: "H-A5 renderer, resource, or readback instability",
+        discriminatingExperiment: "Capture three repeated Full32 and Full64 results with identical request inputs and renderer generation.",
+        predictedObservation: "A same-profile capture changes despite stable source and optical fingerprints.",
+        actualObservation: m5rReferenceReportFields.rootCauseMatrix.hA5.classification === "capture-instability-not-observed"
+          ? "The evidence evaluator confirms all four repeated Full32/Full64 Far and Near comparisons are bit-exact."
+          : m5rReferenceReportFields.rootCauseMatrix.hA5.classification,
+        supportingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA5.supportingEvidence,
+        contradictingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA5.contradictingEvidence,
+        confidence: m5rReferenceReportFields.rootCauseMatrix.hA5.confidence,
+        classification: m5rReferenceReportFields.rootCauseMatrix.hA5.classification,
+        proposedNextAction: "No lifecycle change indicated; retain repeatability as a regression control.",
+      },
+      {
+        problem: "Full32/Full64 divergence",
+        hypothesis: "H-A6 physical footprint or coordinate inputs differ across profiles",
+        discriminatingExperiment: "Match effective-state fingerprints and compare Full32/Full64 GPU output against CPU references consuming observed gather-center IDs/UVs and the captured inverse projection.",
+        predictedObservation: "A mismatched input fingerprint or materially larger same-sample GPU/CPU residual.",
+        actualObservation: m5rReferenceReportFields.rootCauseMatrix.hA6.classification === "geometry-provenance-mismatch-not-observed"
+          ? {
+            inputFingerprintsMatch: m5rEvidenceDecision.provenanceValid,
+            gpu32Cpu32RgbRmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+            gpu64Cpu64RgbRmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+            sourceDimensions: [q1Captures.full32a.sourceWidthPx, q1Captures.full32a.sourceHeightPx],
+            gatherDimensions: [q1Captures.full32a.farGatherWidthPx, q1Captures.full32a.farGatherHeightPx],
+            sampledFilmDimensionsMm: q1Captures.full32a.sampledFilmDimensionsMm,
+            maximumRadiusPx: q1Captures.full32a.maximumRadiusPx,
+          }
+          : m5rReferenceReportFields.rootCauseMatrix.hA6.classification,
+        supportingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA6.supportingEvidence,
+        contradictingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA6.contradictingEvidence,
+        confidence: m5rReferenceReportFields.rootCauseMatrix.hA6.confidence,
+        classification: m5rReferenceReportFields.rootCauseMatrix.hA6.classification,
+        proposedNextAction: "Keep the matched-input assertions; broaden only if another state demonstrates an input mismatch.",
+      },
+      {
+        problem: "Quality reference authority",
+        hypothesis: "H-A7 a finite Full64 or CPU256 result can be treated as ground truth",
+        discriminatingExperiment: "Measure consecutive CPU integration tiers instead of choosing one result as truth.",
+        predictedObservation: "A converged sequence meets the unchanged threshold; otherwise reference authority remains unresolved.",
+        actualObservation: "CPU128/CPU256 Far RGB RMSE is 0.004157 with 0.022863 maximum channel error over 128 ROI pixels.",
+        supportingEvidence: ["Consecutive reference tiers remain visibly/numerically separated under the frozen numeric gate."],
+        contradictingEvidence: ["The tier-to-tier RMSE decreases as sample count grows."],
+        confidence: "high",
+        classification: "reference-not-converged; CPU256 is a candidate, not optical ground truth",
+        proposedNextAction: "Do not qualify Q1/Q6 from Full64 or CPU256; continue with a separately validated reference sequence.",
+      },
+    ],
+    fallbackHalo: [
+      {
+        problem: "B1 fallback quality",
+        hypothesis: "Fallback broadly substitutes sharp source color where meaningful defocus is expected",
+        discriminatingExperiment: "Classify actual GPU fallback reason bytes and count valid-far meaningful-blur pixels per reason.",
+        predictedObservation: "Many fallback pixels overlap valid far centers with meaningful Full32 blur.",
+        actualObservation: {
+          fallbackPixels: fallbackAnalysis.fallbackSummary.pixelCount,
+          meaningfulBlurFallbackPixels: fallbackAnalysis.fallbackSummary.meaningfulBlurPixelCount,
+          meaningfulBlurFallbackFraction: fallbackAnalysis.fallbackSummary.meaningfulBlurFraction,
+          reasonBreakdown: fallbackReasonBreakdown,
+        },
+        supportingEvidence: ["Fallback classification is derived from the GPU-authored reason surface."],
+        contradictingEvidence: ["Only six of 57,598 fallback pixels meet the 0.01 diagnostic blur floor; 57,158 have invalid or unresolved centers."],
+        confidence: "high",
+        classification: "insufficient-valid-far-fallback-support; fallback population is mostly invalid/unresolved data",
+        proposedNextAction: "Do not infer broad halo quality from the aggregate fallback count; select or construct a valid-far meaningful-blur fallback state.",
+      },
+      {
+        problem: "B1 fallback boundary gradient ratio",
+        hypothesis: "The historical relative error is inflated by a small reference-gradient denominator",
+        discriminatingExperiment: "Report absolute and relative gradient distributions and count pairs receiving the 0.01 denominator floor.",
+        predictedObservation: "The floor is applied broadly while absolute error remains separately inspectable.",
+        actualObservation: {
+          boundaryPairs: fallbackAnalysis.fallbackBoundaryGradient.pairCount,
+          absoluteMean: fallbackAnalysis.fallbackBoundaryGradient.absoluteError.mean,
+          absoluteP50: fallbackAnalysis.fallbackBoundaryGradient.absoluteError.p50,
+          absoluteP90: fallbackAnalysis.fallbackBoundaryGradient.absoluteError.p90,
+          relativeMean: fallbackAnalysis.fallbackBoundaryGradient.relativeError.mean,
+          relativeP50: fallbackAnalysis.fallbackBoundaryGradient.relativeError.p50,
+          relativeP90: fallbackAnalysis.fallbackBoundaryGradient.relativeError.p90,
+          denominatorFloorAppliedFraction: fallbackAnalysis.fallbackBoundaryGradient.denominatorFloor.appliedPairFraction,
+        },
+        supportingEvidence: ["The denominator floor is applied to about 75.8% of pairs and inflates the ratio."],
+        contradictingEvidence: ["Absolute p90 remains 0.6259 and the maximum is 0.7762, so the result is not only a small-denominator artifact."],
+        confidence: "high",
+        classification: "relative-metric-floor-inflation-confirmed; substantial absolute mismatch also remains",
+        proposedNextAction: "Preserve the historical metric and keep interpreting it alongside absolute error and reference uncertainty.",
+      },
+      {
+        problem: "B1 halo spatial extent",
+        hypothesis: "B1/reference mismatch is confined to the exact fallback boundary",
+        discriminatingExperiment: "Measure Full32/B1 pixel error by Manhattan distance from GPU fallback-status boundaries, using a 0.01 diagnostic threshold through 8 px.",
+        predictedObservation: "Above-threshold errors stop at distance zero if the mismatch is boundary-local.",
+        actualObservation: fallbackAnalysis.boundaryDifferenceSupport.full32,
+        supportingEvidence: ["The 0.01 diagnostic threshold measures error support beyond distance zero."],
+        contradictingEvidence: ["Supported pixels reach the 8 px analysis limit, so the complete spatial extent is not bounded."],
+        confidence: "medium",
+        classification: "spatial mismatch measured; exact halo width unresolved and Full32 reference is unconverged",
+        proposedNextAction: "Use a converged reference and a larger bounded ROI before calling the measured band a visible halo.",
+      },
+      {
+        problem: "Far-layer foreground contamination",
+        hypothesis: "B1 farther-side output is shifted toward adjacent near-source color",
+        discriminatingExperiment: "At valid depth-edge and signed-CoC boundary pairs, compare farther-side B1 and Full32/Full64 color distance to the Half32 near-side source pixel.",
+        predictedObservation: "A positive reference-minus-B1 distance indicates the B1 output is closer to near-side source color.",
+        actualObservation: fallbackAnalysis.foregroundLeakageDirection,
+        supportingEvidence: ["At depth edges B1 is closer to the near-side source in about 64.7% of 3,307 pairs; mean reference-minus-B1 distance is about 0.128."],
+        contradictingEvidence: ["At the 65 signed-boundary pairs the mean difference is near zero and slightly negative; Full32/Full64 are themselves unconverged."],
+        confidence: "medium",
+        classification: "depth-edge directional contamination signal; not causal proof of foreground leakage",
+        proposedNextAction: "If a follow-up is justified, isolate this behavior with a converged reference and controlled foreground-color mutation.",
+      },
+    ],
+    nearCoverage: [
+      {
+        problem: "No fractional Near alpha in registered app capture",
+        hypothesis: "C1 center-Near override sets the center population to one while off-center proposals are rejected geometrically.",
+        discriminatingExperiment: "Capture the actual Near TSL intermediate channels on Q4 and compare them with the independent CPU reference and binary16 target bits.",
+        predictedObservation: "Center-Near pixels are one due to override; off-center pixels have no accepted proposal; GPU/CPU and stored alpha agree.",
+        actualObservation: {
+          centerNearPixels: nearAlphaAnalysis.gpu.populations.centerNear.all.outputCount,
+          centerNearAcceptedProposals: nearAlphaAnalysis.gpu.populations.centerNear.all.acceptedProposalTotal,
+          offCenterPixels: nearAlphaAnalysis.gpu.populations.offCenter.all.outputCount,
+          offCenterAcceptedProposals: nearAlphaAnalysis.gpu.populations.offCenter.all.acceptedProposalTotal,
+          offCenterNonzeroMembershipProposals: nearAlphaAnalysis.gpu.populations.offCenter.all.nonzeroMembershipProposalTotal,
+          fractionalAlphaPixels: nearAlphaAnalysis.gpu.outputAlpha.fractionalCount,
+          gpuCpuAlphaRmse: nearAlphaAnalysis.nearOutputErrors.alpha.rootMeanSquareError,
+          rawHalfBitRoundTripMismatches: nearAlphaAnalysis.binary16.rawBitsRoundTripMismatchCount,
+        },
+        supportingEvidence: ["GPU and CPU intermediate decisions and final alpha match exactly; binary16 stored alpha matches the readback exactly."],
+        contradictingEvidence: ["The app capture has no accepted off-center proposal population, so it does not exercise proposal-derived alpha."],
+        confidence: "high",
+        classification: "registered-application-support-limited; no alpha quantization or GPU/CPU defect observed",
+        proposedNextAction: "Do not change alpha semantics from this capture; add a registered state only if it yields accepted off-center footprint support.",
+      },
+      {
+        problem: "Whether the actual Near kernel can represent fractional coverage",
+        hypothesis: "The Near coverage formula is mathematically or storage-wise binary",
+        discriminatingExperiment: "Render the actual Near TSL node against a sharp, depth- and signed-CoC-separated native research silhouette, and read RGBA16F alpha bits plus RGBA32F intermediates.",
+        predictedObservation: "Accepted off-center contributions produce fractional estimated/final alpha and survive binary16 storage.",
+        actualObservation: {
+          evidenceScope: fixtureMetadata.evidenceScope,
+          acceptedProposalsAtSelectedBackgroundCenter: fixtureCenter.acceptedProposalCount,
+          nonzeroMembershipAtSelectedBackgroundCenter: fixtureCenter.nonzeroMembershipCount,
+          estimatedAlpha: fixtureCenter.estimatedCoverage,
+          actualRgba16fAlpha: fixtureCenter.actualNearAlpha,
+          fractionalPixels: fixtureFractionalAlphaCount,
+          fractionalForegroundSpreadOutsideSilhouettePixels: fixtureFractionalForegroundSpreadPixelCount,
+          foregroundSpreadOutsideSilhouettePixels: fixtureForegroundSpreadPixelCount,
+          finalAlphaDiagnosticMaximumError: fixtureMetadata.finalAlphaMatchesNearTargetMaximumError,
+        },
+        supportingEvidence: [`The selected non-Near center accepts five proposals and stores alpha 0.110535; ${fixtureFractionalForegroundSpreadPixelCount} pixels outside the silhouette have fractional alpha and foreground color.`],
+        contradictingEvidence: ["Fixture evidence is synthetic native research and does not establish application scene support."],
+        confidence: "high",
+        classification: "actual-M5-TSL-supports-fractional-near-coverage; controlled evidence only",
+        proposedNextAction: "Seek a registered scene/state with valid off-center accepted Near proposals; keep application qualification blocked until then.",
+      },
+    ],
+  } as const;
+  const report = {
+    schemaVersion: 1,
+    investigation: "M5R — Native Reference Convergence and Reconstruction Quality Investigation",
+    evidenceProvenance: {
+      scope: "registered-app-adapter",
+      sceneId: q1Captures.full32a.sceneId,
+      sceneSourceRevision: q1Captures.full32a.sceneSourceRevision,
+      rendererRevision: `r${REVISION}`,
+      rendererFamily: q1Captures.full32a.rendererFamily,
+      actualExecutionApi: q1Captures.full32a.actualExecutionApi,
+      internalFallback: q1Captures.full32a.internalFallback,
+      applicationFallback: false,
+      requestId: q1Captures.full32a.requestId,
+      rendererGenerationId: q1Captures.full32a.rendererGenerationId,
+      inputFingerprints: q1Captures.full32a.inputFingerprints,
+      effectiveOpticalRequestFingerprint: q1Captures.full32a.effectiveOpticalRequestFingerprint,
+      cameraStateFingerprint: q1Captures.full32a.cameraStateFingerprint,
+      sourceDimensions: [q1Captures.full32a.sourceWidthPx, q1Captures.full32a.sourceHeightPx],
+      film: q1Captures.full32a.sampledFilmDimensionsMm,
+      maximumRadiusPx: q1Captures.full32a.maximumRadiusPx,
+      gather: [q1Captures.full32a.farGatherWidthPx, q1Captures.full32a.farGatherHeightPx],
+      colorDomain: q1Captures.full32a.colorDomain,
+    },
+    referenceRepeatability: {
+      q1State: q1.id,
+      full32: full32Repeatability,
+      full64: full64Repeatability,
+      ...m5rReferenceReportFields.referenceRepeatability,
+      full32CaptureIds: [q1Captures.full32a.captureId, q1Captures.full32b.captureId, q1Captures.full32c.captureId],
+      full64CaptureIds: [q1Captures.full64a.captureId, q1Captures.full64b.captureId, q1Captures.full64c.captureId],
+    },
+    sampleDistribution: {
+      proposalFormula: "sqrt((index + 0.5) / sampleCount), angle=(index + 0.5)*goldenAngle",
+      profiles: sampleDistributions,
+      exact32ProposalOverlapWith64: proposalOverlap32In64,
+      compared32Proposals: 32,
+      nestedGoldenAngle64Master: {
+        proposalRule: "select 32 every second point and 64 every point from one 64-point master sequence",
+        profiles: nestedSampleDistributions,
+        exact32ProposalOverlapWith64: nestedProposalOverlap32In64,
+        compared32Proposals: 32,
+        cpuOnlyCandidateComparison: true,
+        promoted: false,
+      },
+      sample16CaptureId: q1Captures.half16.captureId,
+      nativeSampleCountsCapturedOrAudited: [16, 32, 64],
+    },
+    referenceConvergence: {
+      q1FarRoiPixelCount: roiPixelIndices.length,
+      selectedGatherPixelIndices: roiPixelIndices,
+      sampleMatchedGpuCpuErrors: cpuMatchedErrors,
+      numericalIntegrationSequence: cpuReferenceConvergence,
+      alternativeSamplingExperiment: {
+        name: "nested-golden-angle-64-master",
+        status: "cpu-only-test-variant",
+        nativeShaderChanged: false,
+        profileAgreementAloneIsNotEvidenceOfAccuracy: true,
+        compareAgainstIndependentCpu256: true,
+      },
+      full32VsFull64Native: nativeProfileDifference,
+      cap2: {
+        maximumRadiusPx: 2,
+        full32CaptureId: q1Cap2Full32.captureId,
+        full64CaptureId: q1Cap2Full64.captureId,
+        full32VsFull64FarRgba: cap2Difference,
+        full32VsFull64FarRgb: cap2DifferenceRgb,
+        full32CpuMatch: q1Cap2Full32.farGatherCpuReference,
+        full64CpuMatch: q1Cap2Full64.farGatherCpuReference,
+      },
+      precision: halfStorage,
+      evidenceDecision: m5rEvidenceDecision,
+      ...m5rReferenceReportFields.referenceConvergence,
+      highSampleReferenceAuthority: "independent numerical candidate; not photographic ground truth",
+    },
+    fallbackHalo: fallbackAnalysis,
+    fallbackReasonBreakdown,
+    nearCoverage: {
+      q4CaptureId: q4Capture.captureId,
+      q4Diagnostics: q4Capture.m5rDiagnostics,
+      applicationAnalysis: nearAlphaAnalysis,
+      applicationEvidenceScope,
+      controlledFixture: {
+        ...fixtureMetadata,
+        scope: "native-research-fixture",
+        nearAlphaDistribution: {
+          pixelCount: fixturePixelCount,
+          nonzeroAlphaPixelCount: fixtureNonzeroAlphaCount,
+          fractionalAlphaPixelCount: fixtureFractionalAlphaCount,
+          fractionalForegroundSpreadOutsideSilhouettePixelCount: fixtureFractionalForegroundSpreadPixelCount,
+          foregroundSpreadOutsideSilhouettePixelCount: fixtureForegroundSpreadPixelCount,
+          maximumOutsideForegroundAlpha: fixtureMaximumOutsideForegroundAlpha,
+        },
+        center: fixtureCenter,
+      },
+      classification: nearAlphaAnalysis.gpu.outputAlpha.fractionalCount === 0
+        && fixtureFractionalAlphaCount > 0
+        && fixtureForegroundSpreadPixelCount > 0
+        ? "registered-application-support-limited; controlled native silhouette demonstrates M5 TSL fractional coverage and foreground spread"
+        : "measured-per-pixel-population-requires-review",
+    },
+    negativeControls: {
+      pureUnitSuites: [
+        "repeatability and identity mismatch controls N1-N2",
+        "GPU/CPU mismatch and high-sample non-convergence controls N3-N6",
+        "B1 fallback, blur, foreground contamination, reason-mask, and denominator-floor controls B1-B7/N7-N10",
+        "Near alpha/RGB mutation, center override, binary16, and rejected geometry controls C1-C8/N11-N15",
+      ],
+      nativeAssertions: m5rReferenceReportFields.negativeControls.nativeAssertions,
+      separateM5qConfirmatoryRegression: "The separately run native M5Q confirmation retained its frozen per-dimension outcomes and bounded Q3 result; this is regression evidence, not an M5R N16-N18 unit-control mapping.",
+      r3ThresholdsChanged: false,
+    },
+    rootCauseMatrix,
+    m5qStatus: m5qStatusesPreserved,
+    nextStage: {
+      m5RemainsResearchOnly: true,
+      m6ArchitectureOnlyMayProceed: true,
+      qualityDependentM6PresentationBlocked: true,
+      productionWebGpuAuthorization: false,
+    },
+    pageErrors,
+  };
+  expect(pageErrors).toEqual([]);
+
+  await testInfo.attach("m5r-reference-repeatability.json", {
+    body: JSON.stringify(report.referenceRepeatability, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-sample-distribution.json", {
+    body: JSON.stringify(report.sampleDistribution, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-gpu-cpu-reference.json", {
+    body: JSON.stringify({ sampleMatchedErrors: cpuMatchedErrors, nativeProfileDifference }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5r-high-sample-cpu-reference.json", {
+    body: JSON.stringify(cpuReferenceConvergence, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-reference-convergence.json", {
+    body: JSON.stringify(report.referenceConvergence, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-b1-fallback-taxonomy.json", {
+    body: JSON.stringify({
+      totalFallbackPixels: fallbackAnalysis.fallbackSummary.pixelCount,
+      reasonCounts: fallbackAnalysis.reasonCounts,
+      reasonBreakdown: fallbackReasonBreakdown,
+      byReason: fallbackAnalysis.byReason,
+    }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5r-fallback-halo-metrics.json", {
+    body: JSON.stringify({
+      fallbackSummary: fallbackAnalysis.fallbackSummary,
+      blurPreservation: fallbackAnalysis.blurPreservation,
+      fallbackBoundaryGradient: fallbackAnalysis.fallbackBoundaryGradient,
+      boundaryDifferenceSupport: fallbackAnalysis.boundaryDifferenceSupport,
+      foregroundLeakageDirection: fallbackAnalysis.foregroundLeakageDirection,
+    }, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-near-alpha-intermediates.json", {
+    body: JSON.stringify(nearAlphaAnalysis, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-near-alpha-population.json", {
+    body: JSON.stringify(report.nearCoverage, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5r-root-cause-matrix.json", {
+    body: JSON.stringify(rootCauseMatrix, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5r-conclusion.json", {
+    body: JSON.stringify({
+      referenceRepeatability: report.referenceRepeatability,
+      referenceConvergence: report.referenceConvergence,
+      rootCauseMatrix: {
+        hA1: rootCauseMatrix.referenceConvergence[0],
+        hA5: rootCauseMatrix.referenceConvergence[4],
+        hA6: rootCauseMatrix.referenceConvergence[5],
+      },
+      nativeAssertions: report.negativeControls.nativeAssertions,
+      m5qStatus: report.m5qStatus,
+      nextStage: report.nextStage,
+    }, null, 2),
+    contentType: "application/json",
+  });
+  await writeM5qArtifact(testInfo, "m5r-investigation-report.json", report);
 });
 
 test("native M3/M4 Raw baseline records frame and physical pass timing with M5 disabled", async ({ page }, testInfo) => {
