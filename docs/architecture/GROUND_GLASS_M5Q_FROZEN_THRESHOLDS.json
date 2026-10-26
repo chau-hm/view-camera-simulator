@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "revision": "m5q-architecture-rise-r186-v3",
+  "frozenBeforeConfirmatory": true,
+  "evidenceScope": "independent-dimension-decisions-for-one-optical-state",
+  "candidateScope": {
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "rendererRevision": "r186",
+    "selectedOpticalStates": {
+      "Q1_Q5_Q6": "ar-f3200-f5p6-loupe4-rise0",
+      "Q2_Q7": "ar-f3200-f5p6-full-rise0",
+      "Q3_Q4": "ar-f5200-f5p6-full-rise0"
+    },
+    "radiusCapsPx": {
+      "stress": 2,
+      "control": 60
+    }
+  },
+  "thresholds": {
+    "minimumInteriorFarPixels": 1000,
+    "minimumDepthEdgePixels": 100,
+    "minimumNearFarBoundaryPairs": 100,
+    "minimumNearCoveragePixels": 100,
+    "minimumFractionalCoveragePixels": 32,
+    "minimumNearFarBoundaryCoveragePixels": 20,
+    "minimumSpreadOutsideSharpNearPixels": 20,
+    "minimumFallbackBoundaryPairs": 100,
+    "minimumStrongOverrunPx": 4,
+    "minimumFallbackPixels": 100,
+    "minimumMeaningfulBlurFallbackPixels": 20,
+    "minimumSignedBoundaryPairs": 100,
+    "minimumSignedBoundarySidePixels": 100,
+    "minimumCappedPixels": 100,
+    "maximumReferenceRmse": 0.001,
+    "maximumReferenceFullFrameRmse": 0.001,
+    "maximumReferenceChannelError": 0.01,
+    "maximumReferenceInteriorFarRmse": 0.001,
+    "maximumReferenceDepthEdgeRmse": 0.001,
+    "maximumB1FullFrameRmse": 0.05,
+    "maximumB1InteriorFarRmse": 0.05,
+    "maximumB1DepthEdgeRmse": 0.05,
+    "maximumB1SignedBoundaryRmse": 0.1,
+    "maximumB1FallbackRmse": 0.05,
+    "maximumBlurGradientRelativeError": 0.25,
+    "maximumMeaningfulBlurFallbackFraction": 0.1,
+    "maximumFallbackBoundaryGradientRelativeError": 0.25,
+    "maximumFallbackSourceError": 0.001,
+    "maximumNearCpuRgbRmse": 0.001,
+    "maximumNearCpuAlphaRmse": 0.001,
+    "maximumNearB1RgbMaximumError": 0.001,
+    "maximumNearB1AlphaMaximumError": 0.001,
+    "minimumMeaningfulBlurRgbDifference": 0.01,
+    "depthEdgeThreshold": 0.0001
+  },
+  "revisionNote": "Revision v3 retains every numeric threshold from v2 and keeps its 2 px stress / 60 px control caps. It clarifies dimension ownership: Q5 compares same-cap full-frame and interior-far reference convergence, recording a depth-edge reference only when that ROI exists; Q6 evaluates blur preservation without requiring fallback evidence, which belongs to Q2. An earlier 1 px stress attempt failed the existing native GPU/CPU gather comparison (maximum channel error 0.016975 > 0.001) before an R3 matrix was accepted; it is not confirmatory evidence."
+}
