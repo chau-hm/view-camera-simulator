@@ -16,6 +16,27 @@ import {
   referenceGroundGlassApertureGatherNestedGoldenAngle64ForTesting,
 } from "../../render/webgpu/groundGlassApertureGatherReference";
 import {
+  GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS,
+  GROUND_GLASS_M5S_SAMPLE_COUNTS,
+  compareGroundGlassM5sRgb,
+  createGroundGlassM5sProposalStrategy,
+  fingerprintGroundGlassM5sProposalCoordinates,
+  groundGlassM5sProposalIdentityKey,
+  runGroundGlassM5sReferenceMatrix,
+  type GroundGlassM5sFarReferenceInput,
+  type GroundGlassM5sFarReferenceResult,
+} from "../../render/webgpu/groundGlassM5sReference";
+import {
+  aggregateGroundGlassM5sStrata,
+  analyzeGroundGlassM5sReferenceMatrix,
+  compareGroundGlassM5sInputFingerprints,
+  evaluateGroundGlassM5sBlurPreservation,
+  evaluateGroundGlassM5sAnalyticAuthority,
+  evaluateGroundGlassM5sProposalAnalyticControls,
+  selectGroundGlassM5sRoiStrata,
+  type GroundGlassM5sStratumStudy,
+} from "../../render/webgpu/groundGlassM5sAnalysis";
+import {
   analyzeGroundGlassM5rFallbacks,
 } from "../../render/webgpu/groundGlassM5rFallbackAnalysis";
 import {
@@ -69,6 +90,40 @@ type PackedCaptureReadbacks = Readonly<{
     type: "Float32Array" | "Uint8Array" | "Uint16Array" | "Int32Array";
   }>[];
   gzipBase64: string;
+}>;
+
+type M5sNativeStratumReport = GroundGlassM5sStratumStudy & Readonly<{
+  validSupport: Readonly<{ candidateCount: number; selectedCount: number; requiredCount: number; status: string }>;
+  sourcePixelIds: readonly number[];
+  gatherPixelIds: readonly number[];
+  sampleCounts: readonly number[];
+  samplingSeeds: readonly number[];
+  evaluatedProposalCount: number;
+  inputFingerprints: GroundGlassM5sFarReferenceInput["inputFingerprints"];
+  blurAndSpread: Readonly<Record<string, unknown>>;
+}>;
+
+type M5sNativeStateReport = Readonly<{
+  opticalStateId: string;
+  captureRole: string;
+  captureIds: Readonly<{ full32: string; full64: string }>;
+  runtime: Readonly<{ rendererRevision: string; rendererFamily: string; actualExecutionApi: string;
+    internalFallback: string; applicationFallback: false }>;
+  requestIds: Readonly<{ full32: string; full64: string }>;
+  rendererGenerationIds: Readonly<{ full32: string; full64: string }>;
+  sceneId: string;
+  sceneSourceRevision: string;
+  effectiveOpticalRequestFingerprints: readonly [string, string];
+  cameraFingerprints: readonly [string, string];
+  sourceDimensions: readonly [number, number];
+  gatherDimensions: readonly [number, number];
+  sampledFilmDimensionsMm: GroundGlassApertureGatherCaptureReadback["sampledFilmDimensionsMm"];
+  radiusCapPx: number;
+  sourceColorDomain: GroundGlassApertureGatherCaptureReadback["colorDomain"];
+  inputFingerprints: GroundGlassM5sFarReferenceInput["inputFingerprints"];
+  profileInputProvenance: ReturnType<typeof compareGroundGlassM5sInputFingerprints>;
+  roiStrata: readonly M5sNativeStratumReport[];
+  aggregate: ReturnType<typeof aggregateGroundGlassM5sStrata>;
 }>;
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
@@ -574,6 +629,85 @@ const writeM5qArtifact = async (
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(value, null, 2));
   await testInfo.attach(filename, { path, contentType: "application/json" });
+};
+
+const makeM5sInputFromCapture = (
+  capture: GroundGlassApertureGatherCaptureReadback,
+): GroundGlassM5sFarReferenceInput => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers) throw new Error(`M5S capture ${capture.captureId} did not retain readback buffers`);
+  if (capture.readbackOrigin !== "top") {
+    throw new Error(`M5S requires top-origin readbacks; capture ${capture.captureId} reports ${capture.readbackOrigin}`);
+  }
+  return {
+    source: { widthPx: capture.sourceWidthPx, heightPx: capture.sourceHeightPx },
+    gather: { widthPx: capture.farGatherWidthPx, heightPx: capture.farGatherHeightPx },
+    film: capture.sampledFilmDimensionsMm,
+    sourceRgba: buffers.sourceRgba,
+    physicalRgba: buffers.physicalRgba,
+    validity: buffers.validity,
+    depth: buffers.depth,
+    observedGatherCenterSourceIds: buffers.observedGatherCenterSourceIds,
+    observedGatherCenterSourceUvs: buffers.observedGatherCenterSourceUvs,
+    inverseProjectionMatrix: capture.inverseProjectionMatrix,
+    maximumRadiusPx: capture.maximumRadiusPx,
+    inputFingerprints: capture.inputFingerprints,
+  };
+};
+
+const m5sRgbForRun = (
+  run: GroundGlassM5sFarReferenceResult,
+  gatherPixelIds: readonly number[],
+): Float64Array | null => {
+  const pixelsById = new Map(run.pixels.map((pixel) => [pixel.gatherPixelId, pixel]));
+  const result = new Float64Array(gatherPixelIds.length * 3);
+  for (let index = 0; index < gatherPixelIds.length; index += 1) {
+    const rgb = pixelsById.get(gatherPixelIds[index]!)?.limitingIntegralRgb;
+    if (!rgb) return null;
+    result.set(rgb, index * 3);
+  }
+  return result;
+};
+
+const m5sSourceRgbAtGatherIds = (
+  input: GroundGlassM5sFarReferenceInput,
+  gatherPixelIds: readonly number[],
+): Float64Array => {
+  const result = new Float64Array(gatherPixelIds.length * 3);
+  for (let index = 0; index < gatherPixelIds.length; index += 1) {
+    const sourceId = input.observedGatherCenterSourceIds[gatherPixelIds[index]! * 2 + 1]!
+      * input.source.widthPx
+      + input.observedGatherCenterSourceIds[gatherPixelIds[index]! * 2]!;
+    result.set(input.sourceRgba.subarray(sourceId * 4, sourceId * 4 + 3), index * 3);
+  }
+  return result;
+};
+
+const m5sLocalGradientEnergy = (
+  rgba: ArrayLike<number>,
+  width: number,
+  height: number,
+  centerPixelId: number,
+): number => {
+  const centerX = centerPixelId % width;
+  const centerY = Math.floor(centerPixelId / width);
+  let total = 0;
+  let count = 0;
+  for (let dy = -1; dy <= 1; dy += 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = centerX + dx;
+      const ny = centerY + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      const neighbor = (ny * width + nx) * 4;
+      const center = centerPixelId * 4;
+      for (let channel = 0; channel < 3; channel += 1) {
+        total += Math.abs(rgba[center + channel]! - rgba[neighbor + channel]!);
+      }
+      count += 1;
+    }
+  }
+  return count ? total / (count * 3) : 0;
 };
 
 const toR3Capture = (
@@ -1994,6 +2128,7 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     includeM5rDiagnostics: true,
     includeM5rNearFixture: true,
   });
+  const q4Full64Capture = await captureCurrent("full64", `m5s-q4-full64-${Date.now()}`);
   expect(q4Capture.m5rDiagnostics.status).toBe("captured");
   expect(q4Capture.m5rDiagnostics.nearFinalAlphaMaximumError).toBeLessThanOrEqual(0.001);
   const nearAlphaAnalysis = analyzeGroundGlassM5rNearAlpha({
@@ -2096,6 +2231,397 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     q6: "reference-not-converged",
     q7: "reference-not-converged",
   } as const;
+  const m5sSamplingSeeds = [104729, 130363] as const;
+  const m5sRequiredAnalyticStrategies = [
+    createGroundGlassM5sProposalStrategy({ method: "golden-angle-count-dependent", sampleCount: 1024 }),
+    createGroundGlassM5sProposalStrategy({ method: "halton-2-3-progressive", sampleCount: 1024 }),
+    ...m5sSamplingSeeds.map((seed) => createGroundGlassM5sProposalStrategy({
+      method: "seeded-stratified-square-to-disk" as const, sampleCount: 1024 as const, seed,
+    })),
+  ];
+  const m5sAnalyticReports = m5sRequiredAnalyticStrategies.map((strategy) =>
+    evaluateGroundGlassM5sProposalAnalyticControls(strategy));
+  const m5sAnalyticAuthority = evaluateGroundGlassM5sAnalyticAuthority({
+    requiredStrategies: m5sRequiredAnalyticStrategies.map(({ descriptor }) => descriptor),
+    observedParticipants: m5sRequiredAnalyticStrategies.map((strategy, index) => ({
+      descriptor: strategy.descriptor,
+      coordinateFingerprint: m5sAnalyticReports[index]!.coordinateFingerprint,
+    })),
+    analyticResults: m5sAnalyticReports,
+  });
+  if (m5sAnalyticReports.some(({ analyticStatus }) => analyticStatus !== "passed")) {
+    await testInfo.attach("m5s-analytic-controls-failure.json", {
+      body: JSON.stringify({ analyticAuthority: m5sAnalyticAuthority, strategies: m5sAnalyticReports }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  const m5sCapturePairs = [
+    { opticalStateId: "ar-f3200-f5p6-loupe4-rise0", role: "primary-4x-control-cap60", full32: q1Captures.full32a, full64: q1Captures.full64a },
+    { opticalStateId: "ar-f3200-f5p6-full-rise0", role: "full-frame-control-cap60", full32: q2Captures.full32, full64: q2Captures.full64 },
+    { opticalStateId: "ar-f5200-f5p6-full-rise0", role: "focus-distance-control-cap60", full32: q4Capture, full64: q4Full64Capture },
+    { opticalStateId: "ar-f3200-f5p6-loupe4-rise0", role: "stressed-cap2", full32: q1Cap2Full32, full64: q1Cap2Full64 },
+  ] as const;
+  const m5sTotalProposalEvaluations = { value: 0 };
+  const m5sSamplingPatterns: unknown[] = [];
+  const m5sSamplingProposals: unknown[] = [];
+  const m5sOpticalStateReports: M5sNativeStateReport[] = [];
+  const m5sRunProvenance: unknown[] = [];
+  for (const capturePair of m5sCapturePairs) {
+    const { full32, full64 } = capturePair;
+    expect(full32.rendererFamily).toBe("webgpu-renderer");
+    expect(full32.actualExecutionApi).toBe("webgpu");
+    expect(full32.internalFallback).toBe("none");
+    expect(full64.rendererFamily).toBe("webgpu-renderer");
+    expect(full64.actualExecutionApi).toBe("webgpu");
+    expect(full64.internalFallback).toBe("none");
+    expect(full32.sceneId).toBe("architecture-rise");
+    expect(full64.sceneId).toBe(full32.sceneId);
+    expect(full64.sceneSourceRevision).toBe(full32.sceneSourceRevision);
+    const profileProvenance = compareGroundGlassM5sInputFingerprints([
+      { captureId: full32.captureId, fingerprints: full32.inputFingerprints },
+      { captureId: full64.captureId, fingerprints: full64.inputFingerprints },
+    ]);
+    if (profileProvenance.status !== "matched") {
+      await testInfo.attach(`m5s-provenance-failure-${capturePair.role}.json`, {
+        body: JSON.stringify({ role: capturePair.role, profileProvenance }, null, 2),
+        contentType: "application/json",
+      });
+      throw new Error(`M5S ${capturePair.role} Full32/Full64 source inputs do not match`);
+    }
+    const referenceInput = makeM5sInputFromCapture(full32);
+    const roiStrata = selectGroundGlassM5sRoiStrata({
+      referenceInput,
+      maximumPixelsPerStratum: 10,
+      minimumSupport: 10,
+      depthEdgeRelativeThreshold: 0.03,
+    });
+    const full32Rgba = full32.readbackBuffers!.farGatherRgba;
+    const full64Rgba = full64.readbackBuffers!.farGatherRgba;
+    const stratumReports: M5sNativeStratumReport[] = [];
+    const studyValues: GroundGlassM5sStratumStudy[] = [];
+    for (const stratum of roiStrata) {
+      const selectedIds = stratum.selectedGatherPixelIds;
+      let runs: readonly GroundGlassM5sFarReferenceResult[] = [];
+      if (selectedIds.length) {
+        try {
+          runs = runGroundGlassM5sReferenceMatrix({
+            referenceInput,
+            selectedGatherPixelIds: selectedIds,
+            sampleCounts: GROUND_GLASS_M5S_SAMPLE_COUNTS,
+            stratifiedSeeds: m5sSamplingSeeds,
+          });
+        } catch (error) {
+          await testInfo.attach(`m5s-reference-failure-${capturePair.role}-${stratum.id}.json`, {
+            body: JSON.stringify({ role: capturePair.role, stratum, error: String(error) }, null, 2),
+            contentType: "application/json",
+          });
+          throw error;
+        }
+      }
+      const evaluated = runs.reduce((sum, run) => sum + run.evaluatedProposalCount, 0);
+      m5sTotalProposalEvaluations.value += evaluated;
+      if (m5sTotalProposalEvaluations.value > GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS) {
+        await testInfo.attach("m5s-proposal-budget-failure.json", {
+          body: JSON.stringify({ totalProposalEvaluations: m5sTotalProposalEvaluations.value,
+            declaredBudget: GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS,
+            role: capturePair.role, stratumId: stratum.id, evaluatedThisStratum: evaluated }, null, 2),
+          contentType: "application/json",
+        });
+        throw new Error("M5S total CPU evaluations exceeded the declared two-million experiment budget");
+      }
+      const runFingerprints = runs.length
+        ? compareGroundGlassM5sInputFingerprints(runs.map((run, index) => ({
+          captureId: `m5s-${capturePair.role}-${stratum.id}-run-${index}`,
+          fingerprints: run.inputFingerprints,
+        })))
+        : null;
+      if (runFingerprints) expect(runFingerprints.status).toBe("matched");
+      if (m5sSamplingPatterns.length === 0 && runs.length) {
+        const generatedPatterns = runs.map((run) => {
+          const strategy = createGroundGlassM5sProposalStrategy({
+            method: run.descriptor.method,
+            sampleCount: run.descriptor.sampleCount,
+            ...(run.descriptor.seed === null ? {} : { seed: run.descriptor.seed }),
+          });
+          const coordinateFingerprint = fingerprintGroundGlassM5sProposalCoordinates(strategy);
+          expect(coordinateFingerprint).toBe(run.proposalCoordinateFingerprint);
+          const analytic = m5sAnalyticReports.find((evidence) =>
+            evidence.strategyId === groundGlassM5sProposalIdentityKey(run.descriptor));
+          const proposals = Array.from({ length: run.descriptor.sampleCount }, (_value, index) =>
+            strategy.proposalAt(index));
+          return {
+            descriptor: run.descriptor,
+            proposalCount: run.descriptor.sampleCount,
+            coordinateFingerprint,
+            proposalAudit: run.proposalAudit,
+            analyticStatus: run.descriptor.sampleCount === 1024
+              ? analytic?.analyticStatus ?? "missing"
+              : "not-evaluated-at-lower-tier",
+            analyticStrategyId: analytic?.strategyId ?? null,
+            proposals,
+          };
+        });
+        m5sSamplingProposals.push(...generatedPatterns);
+        m5sSamplingPatterns.push(...generatedPatterns.map((pattern) => ({
+          descriptor: pattern.descriptor,
+          proposalCount: pattern.proposalCount,
+          coordinateFingerprint: pattern.coordinateFingerprint,
+          proposalAudit: pattern.proposalAudit,
+          analyticStatus: pattern.analyticStatus,
+          analyticStrategyId: pattern.analyticStrategyId,
+        })));
+      }
+      const runAt = (method: string, seed: number | null = null) => runs.find((run) =>
+        run.descriptor.method === method && run.descriptor.sampleCount === 1024
+        && run.descriptor.seed === seed);
+      const halton = runAt("halton-2-3-progressive");
+      const seedRuns = runs.filter((run) => run.descriptor.method === "seeded-stratified-square-to-disk"
+        && run.descriptor.sampleCount === 1024);
+      const haltonRgb = halton ? m5sRgbForRun(halton, selectedIds) : null;
+      const seedRgb = seedRuns.map((run) => m5sRgbForRun(run, selectedIds));
+      const seedMean = seedRgb.length > 0 && seedRgb.every((rgb) => rgb !== null)
+        ? Float64Array.from(seedRgb[0]!, (_value, index) =>
+          seedRgb.reduce((sum, rgb) => sum + rgb![index]!, 0) / seedRgb.length)
+        : null;
+      const blur = selectedIds.length && seedMean && haltonRgb
+        ? evaluateGroundGlassM5sBlurPreservation({
+          sourceRgb: m5sSourceRgbAtGatherIds(referenceInput, selectedIds),
+          expectedBlurRgb: seedMean,
+          candidateRgb: haltonRgb,
+        })
+        : null;
+      const studies = analyzeGroundGlassM5sReferenceMatrix({
+        strata: [stratum],
+        runs,
+        provenanceStatus: profileProvenance.status,
+        requiredAnalyticStrategies: m5sRequiredAnalyticStrategies.map(({ descriptor }) => descriptor),
+        analyticResults: m5sAnalyticReports,
+        blurPreservationByStratum: {
+          [stratum.id]: blur?.status ?? "unresolved",
+        },
+      });
+      const study = studies[0]!;
+      if (study.evidence.analyticAuthority.status !== "passed") {
+        await testInfo.attach(`m5s-run-analytic-authority-${capturePair.role}-${stratum.id}.json`, {
+          body: JSON.stringify({
+            role: capturePair.role,
+            stratumId: stratum.id,
+            authority: study.evidence.analyticAuthority,
+            analyticResults: m5sAnalyticReports,
+          }, null, 2),
+          contentType: "application/json",
+        });
+      }
+      studyValues.push(study);
+      const nativeFull32 = rgbFromSelectedRgba(full32Rgba, selectedIds);
+      const nativeFull64 = rgbFromSelectedRgba(full64Rgba, selectedIds);
+      const sourceRgb = m5sSourceRgbAtGatherIds(referenceInput, selectedIds);
+      const highestReference = seedMean ?? haltonRgb;
+      const localSourceGradients = stratum.selectedSourcePixelIds.map((id) =>
+        m5sLocalGradientEnergy(referenceInput.sourceRgba, referenceInput.source.widthPx,
+          referenceInput.source.heightPx, id));
+      const localFull32Gradients = selectedIds.map((id) =>
+        m5sLocalGradientEnergy(full32Rgba, full32.farGatherWidthPx, full32.farGatherHeightPx, id));
+      const localFull64Gradients = selectedIds.map((id) =>
+        m5sLocalGradientEnergy(full64Rgba, full64.farGatherWidthPx, full64.farGatherHeightPx, id));
+      const mean = (values: readonly number[]) => values.length
+        ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+      const referenceMetrics = highestReference
+        ? {
+          sourceToHighSampleRgb: compareGroundGlassM5sRgb(sourceRgb, highestReference),
+          full32ToHighSampleRgb: compareGroundGlassM5sRgb(nativeFull32, highestReference),
+          full64ToHighSampleRgb: compareGroundGlassM5sRgb(nativeFull64, highestReference),
+        }
+        : null;
+      const blurAndSpread = {
+        sourceRgb: Array.from(sourceRgb),
+        full32NativeRgb: Array.from(nativeFull32),
+        full64NativeRgb: Array.from(nativeFull64),
+        halton1024CandidateRgb: haltonRgb ? Array.from(haltonRgb) : null,
+        stratifiedSeedMean1024Rgb: seedMean ? Array.from(seedMean) : null,
+        sourceToFull32: compareGroundGlassM5sRgb(sourceRgb, nativeFull32),
+        sourceToFull64: compareGroundGlassM5sRgb(sourceRgb, nativeFull64),
+        blurPreservation: blur,
+        candidateComparison: referenceMetrics,
+        localGradientEnergy: {
+          measurement: "mean absolute RGB difference from each ROI center to neighbors in a 3x3 source/gather patch; not a line-spread function",
+          source: mean(localSourceGradients),
+          full32: mean(localFull32Gradients),
+          full64: mean(localFull64Gradients),
+          full32ToSourceRatio: mean(localSourceGradients)
+            ? mean(localFull32Gradients)! / mean(localSourceGradients)! : null,
+          full64ToSourceRatio: mean(localSourceGradients)
+            ? mean(localFull64Gradients)! / mean(localSourceGradients)! : null,
+        },
+        edgeSpreadProxyByStrategy: m5sAnalyticReports.map((evidence) => ({
+          strategyId: evidence.strategyId,
+          result: evidence.analyticCases.compactSilhouette,
+        })),
+      };
+      stratumReports.push({
+        ...study,
+        validSupport: { candidateCount: stratum.candidateCount, selectedCount: selectedIds.length,
+          requiredCount: stratum.minimumSupport, status: stratum.status },
+        sourcePixelIds: stratum.selectedSourcePixelIds,
+        gatherPixelIds: stratum.selectedGatherPixelIds,
+        sampleCounts: GROUND_GLASS_M5S_SAMPLE_COUNTS,
+        samplingSeeds: m5sSamplingSeeds,
+        evaluatedProposalCount: evaluated,
+        inputFingerprints: referenceInput.inputFingerprints,
+        blurAndSpread,
+      });
+      m5sRunProvenance.push(...runs.map((run) => ({
+        state: capturePair.opticalStateId,
+        role: capturePair.role,
+        descriptor: run.descriptor,
+        inputFingerprints: run.inputFingerprints,
+        proposalAudit: run.proposalAudit,
+        evaluatedProposalCount: run.evaluatedProposalCount,
+        elapsedMs: run.elapsedMs,
+        selectedGatherPixelIds: run.selectedGatherPixelIds,
+        acceptedProposalCounts: run.pixels.map(({ acceptedProposalCount }) => acceptedProposalCount),
+      })));
+    }
+    m5sOpticalStateReports.push({
+      opticalStateId: capturePair.opticalStateId,
+      captureRole: capturePair.role,
+      captureIds: { full32: full32.captureId, full64: full64.captureId },
+      runtime: {
+        rendererRevision: `r${REVISION}`,
+        rendererFamily: full32.rendererFamily,
+        actualExecutionApi: full32.actualExecutionApi,
+        internalFallback: full32.internalFallback,
+        applicationFallback: false,
+      },
+      requestIds: { full32: full32.requestId, full64: full64.requestId },
+      rendererGenerationIds: { full32: full32.rendererGenerationId, full64: full64.rendererGenerationId },
+      sceneId: full32.sceneId,
+      sceneSourceRevision: full32.sceneSourceRevision,
+      effectiveOpticalRequestFingerprints: [full32.effectiveOpticalRequestFingerprint, full64.effectiveOpticalRequestFingerprint],
+      cameraFingerprints: [full32.cameraStateFingerprint, full64.cameraStateFingerprint],
+      sourceDimensions: [full32.sourceWidthPx, full32.sourceHeightPx],
+      gatherDimensions: [full32.farGatherWidthPx, full32.farGatherHeightPx],
+      sampledFilmDimensionsMm: full32.sampledFilmDimensionsMm,
+      radiusCapPx: full32.maximumRadiusPx,
+      sourceColorDomain: full32.colorDomain,
+      inputFingerprints: full32.inputFingerprints,
+      profileInputProvenance: profileProvenance,
+      roiStrata: stratumReports,
+      aggregate: aggregateGroundGlassM5sStrata(studyValues),
+    });
+  }
+  const m5sNativeAnalyticAuthority = m5sOpticalStateReports
+    .flatMap(({ roiStrata }) => roiStrata)
+    .map(({ evidence }) => evidence.analyticAuthority)
+    .find(({ observedStrategyIds }) => observedStrategyIds.length > 0);
+  if (!m5sNativeAnalyticAuthority) {
+    throw new Error("M5S native study produced no captured high-tier proposal identities to bind analytic evidence");
+  }
+  const m5sReport = {
+    schemaVersion: 2,
+    evaluatorRevision: "ground-glass-m5s-sparse-reference-v1",
+    experimentRevision: "ground-glass-m5s-review-fix-1",
+    originalReviewedHead: "d2b8f114a132852d51ba9e35bd84f5d412d799ef",
+    generatedAtUtc: new Date().toISOString(),
+    baseCommit: "8cd0d869229de04cf56845d98e93116aa2a92a60",
+    implementationBranch: "feature/ground-glass-m5s-reference-convergence",
+    nativeRuntime: { browserProject: testInfo.project.name, browserVersion: page.context().browser()?.version() ?? null,
+      platform: process.platform, rendererRevision: `r${REVISION}`, rendererFamily: "webgpu-renderer",
+      actualExecutionApi: "webgpu", internalFallback: "none", applicationFallback: false },
+    referenceDefinition: {
+      finiteEstimator: "eligible center RGB weight 1 plus every accepted finite disk proposal RGB weight 1, divided by center plus accepted-proposal weight",
+      limitingIntegral: "conditional accepted-area RGB mean; the O(1) center sample is omitted, and an empty accepted set is undefined/null",
+      physicalMapping: "captured physical ellipse axes/orientation mapped with source/film dimensions, then capture radius cap; top-origin UV and GPU-observed gather-center ID/UV; nearest source texel; current validity, signed CoC, and view-distance acceptance rules",
+      colorDomain: "source-target-readback-values; no tone/display transform",
+      nativeTslOrB1Changed: false,
+    },
+    samplingFamilies: {
+      methods: ["golden-angle-count-dependent", "halton-2-3-progressive", "seeded-stratified-square-to-disk"],
+      descriptions: {
+        "golden-angle-count-dependent": "Existing sqrt((i + 0.5) / N), (i + 0.5) * golden-angle disk sequence; count-dependent, baseline only.",
+        "halton-2-3-progressive": "Extensible Halton bases 2/3 mapped through sqrt(u) equal-area polar disk coordinates; exact prefixes across tiers.",
+        "seeded-stratified-square-to-disk": "Independently seeded jitter inside equal-area square strata, mapped to a disk with the concentric square-to-disk map.",
+      },
+      sampleCounts: GROUND_GLASS_M5S_SAMPLE_COUNTS,
+      randomizedSeeds: m5sSamplingSeeds,
+      progressiveSequenceNestingVerifiedByUnitTest: true,
+      coordinateFingerprintEncoding: "FNV-1a 64-bit over proposal-order x/y IEEE-754 binary64 little-endian bytes; deterministic integrity checksum, not cryptographic hash",
+      analyticQualificationScope: "Each participating 1024-sample method/seed is qualified independently. Lower tiers retain structural proposal audits and tier convergence measurements; they do not inherit 1024 analytic qualification.",
+      samplingPatterns: m5sSamplingPatterns,
+    },
+    analyticValidation: {
+      requiredParticipantStrategyIds: m5sRequiredAnalyticStrategies.map(({ descriptor }) =>
+        groundGlassM5sProposalIdentityKey(descriptor)),
+      authority: m5sNativeAnalyticAuthority,
+      unitDiskSecondMoment: {
+        expected: 0.5,
+        absoluteTolerance: 0.03,
+        rationale: "At N=1024 the fixed tolerance allows finite deterministic/randomized variation while rejecting the measured center-biased 0.125 and uniform-radius 0.333 signatures.",
+      },
+      strategies: m5sAnalyticReports,
+    },
+    roiSelection: { maximumSelectedPixelsPerStratum: 10, minimumSupport: 10,
+      candidateQualityOutputConsulted: false, strata: ["S1-smooth-valid-far-interior",
+        "S2-strong-defocus-textured-interior", "S3-high-source-gradient-valid-far",
+        "S4-depth-discontinuity-valid-far", "S5-signed-coc-boundary-neighborhood",
+        "S6-cap-activated-valid-far"] },
+    opticalStates: m5sOpticalStateReports,
+    perSequenceEvidence: m5sRunProvenance,
+    negativeControls: {
+      native: { profileFingerprints: "matched", runtimeIdentity: "native-webgpu",
+        methodAnalyticAuthority: m5sNativeAnalyticAuthority.status,
+        proposalEvaluationBudget: "passed" },
+      unitControlIds: ["N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N10", "N11", "N12", "N13", "N14", "N15", "N16"],
+      reviewFixControlIds: ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10"],
+      unitControlSuite: "src/tests/unit/groundGlassM5sReference.test.ts",
+      unitControlExecutionIsReportedSeparatelyFromNativeEvidence: true,
+    },
+    historicalM5rComparison: {
+      sourceReport: "GROUND_GLASS_M5R_REVIEW_FIX_1_REPORT.json",
+      measurementsPreserved: true,
+      full32VsFull64RgbRmseRgba16f: 0.007857539077244886,
+      full32VsFull64RgbRmseRgba32f: 0.007859192980570341,
+      gpuFull32VsCpu32RgbRmse: 6.519639132757963e-8,
+      gpuFull64VsCpu64RgbRmse: 1.3437508839549746e-7,
+      cpu32Vs64RgbRmse: 0.011646611340034392,
+      cpu64Vs128RgbRmse: 0.005748315524033702,
+      cpu128Vs256RgbRmse: 0.00415713039720048,
+      currentGolden32To64ExactProposalOverlap: "0/32",
+      nestedCpuOnly32To64ExactProposalOverlap: "32/32",
+      cpu256IsGroundTruth: false,
+      fallbackPixels: 57598,
+      meaningfulBlurFallbackPixels: 6,
+      registeredApplicationFractionalNearPixels: 0,
+      controlledNativeFractionalNearAlphaPixels: 1896,
+    },
+    totalEvaluatedProposals: m5sTotalProposalEvaluations.value,
+    proposalEvaluationBudget: GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS,
+    historicalPreviousQualificationCandidates: [
+      { opticalStateId: "ar-f3200-f5p6-loupe4-rise0", stratumId: "S1-smooth-valid-far-interior",
+        previousClassification: "converged-and-cross-validated", status: "historical-before-per-method-analytic-gate" },
+      { opticalStateId: "ar-f5200-f5p6-full-rise0", stratumId: "S4-depth-discontinuity-valid-far",
+        previousClassification: "converged-and-cross-validated", status: "historical-before-per-method-analytic-gate" },
+    ],
+    qualificationCandidates: m5sOpticalStateReports.flatMap((state) =>
+      state.roiStrata.map((stratum) => ({ opticalStateId: state.opticalStateId,
+        stratumId: stratum.stratum.id, classification: stratum.evidence.classification,
+        referenceAuthority: stratum.evidence.referenceAuthority,
+        analyticAuthority: stratum.evidence.analyticAuthority }))),
+    m5qQualificationBoundary: {
+      frozenThresholdRevision: M5Q_FROZEN_THRESHOLDS.revision,
+      statuses: m5qStatusesPreserved,
+      automaticallyPromoted: false,
+      supplementaryM5sEvidenceDoesNotRewriteQ1OrQ6: true,
+    },
+    limitations: [
+      "CPU finite and limiting estimates remain numerical approximations; only synthetic analytic controls have exact expected outcomes.",
+      "A small sparse ROI can qualify only its exact optical state and selected pixels, not a scene-wide reference.",
+      "The native run does not establish browser/device-wide behavior or photographic ground truth.",
+      "GPU/CPU Full32 and Full64 comparisons are diagnostic and do not independently establish the limiting aperture integral.",
+      "The existing CPU128/CPU256 divergence remains historical and CPU256 remains unqualified as ground truth.",
+    ],
+    recommendedNextPr: "If any critical stratum remains unresolved, investigate a separately implemented adaptive/quadrature reference and spatial edge-spread measurements without changing the M5 gather.",
+  };
   const rootCauseMatrix = {
     referenceConvergence: [
       {
@@ -2515,6 +3041,72 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     contentType: "application/json",
   });
   await writeM5qArtifact(testInfo, "m5r-investigation-report.json", report);
+  await testInfo.attach("m5s-analytic-controls.json", {
+    body: JSON.stringify({ authority: m5sNativeAnalyticAuthority, strategies: m5sAnalyticReports }, null, 2),
+    contentType: "application/json",
+  });
+  await testInfo.attach("m5s-sampling-proposals.json", {
+    body: JSON.stringify(m5sSamplingProposals, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-sampling-audits.json", {
+    body: JSON.stringify(m5sSamplingPatterns, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-roi-catalog.json", {
+    body: JSON.stringify(m5sOpticalStateReports.map((state) => ({
+      opticalStateId: state.opticalStateId, captureRole: state.captureRole,
+      roiStrata: state.roiStrata.map((stratum) => ({
+        ...stratum.stratum, validSupport: stratum.validSupport,
+        gatherPixelIds: stratum.gatherPixelIds, sourcePixelIds: stratum.sourcePixelIds,
+      })),
+    })), null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-convergence-curves.json", {
+    body: JSON.stringify(m5sOpticalStateReports.map((state) => ({
+      opticalStateId: state.opticalStateId,
+      roiStrata: state.roiStrata.map((stratum) => ({
+        id: stratum.stratum.id, convergenceCurves: stratum.convergenceCurves,
+        finalTierWithinMethod: stratum.finalTierWithinMethod,
+      })),
+    })), null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-cross-method-agreement.json", {
+    body: JSON.stringify(m5sOpticalStateReports.map((state) => ({
+      opticalStateId: state.opticalStateId,
+      roiStrata: state.roiStrata.map((stratum) => ({
+        id: stratum.stratum.id, agreement: stratum.highTierCrossMethodAgreement,
+        seedVariation: stratum.randomizedSeedVariation,
+        maximumSeedRmse: stratum.maximumSeedRmse,
+        maximumSeedChannelError: stratum.maximumSeedChannelError,
+      })),
+    })), null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-blur-spread.json", {
+    body: JSON.stringify(m5sOpticalStateReports.map((state) => ({
+      opticalStateId: state.opticalStateId,
+      roiStrata: state.roiStrata.map((stratum) => ({ id: stratum.stratum.id, ...stratum.blurAndSpread })),
+    })), null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-depth-edge-strata.json", {
+    body: JSON.stringify(m5sOpticalStateReports.map((state) => ({
+      opticalStateId: state.opticalStateId,
+      strata: state.roiStrata.filter((stratum) => stratum.stratum.id.startsWith("S4")
+        || stratum.stratum.id.startsWith("S5")),
+    })), null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-failed-controls.json", {
+    body: JSON.stringify({ analyticAuthority: m5sNativeAnalyticAuthority, analyticResults: m5sAnalyticReports,
+      nativeGates: { exactProfileInputFingerprints: "passed", nativeExecutionIdentity: "passed",
+        totalProposalBudget: "passed" } }, null, 2), contentType: "application/json",
+  });
+  await testInfo.attach("m5s-conclusion.json", {
+    body: JSON.stringify({ experimentRevision: m5sReport.experimentRevision,
+      opticalStates: m5sReport.opticalStates, qualificationCandidates: m5sReport.qualificationCandidates,
+      analyticValidation: m5sReport.analyticValidation,
+      totalEvaluatedProposals: m5sReport.totalEvaluatedProposals,
+      remainingLimitations: m5sReport.limitations,
+      m5qQualificationBoundary: m5sReport.m5qQualificationBoundary }, null, 2), contentType: "application/json",
+  });
+  await writeM5qArtifact(testInfo, "m5s-reference-convergence.json", m5sReport);
 });
 
 test("native M3/M4 Raw baseline records frame and physical pass timing with M5 disabled", async ({ page }, testInfo) => {
