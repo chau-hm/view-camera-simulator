@@ -12,33 +12,168 @@
     "applicationFallback": false,
     "rendererRevision": "r186",
     "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
-    "sourceDimensions": [474, 379],
+    "sourceDimensions": [
+      474,
+      379
+    ],
     "environment": "Headed native WebGPU Chrome on macOS"
   },
   "candidateSearch": {
     "candidateSceneFamily": "registered Architecture Rise application adapter",
     "lensFocalLengthMm": 150,
     "apertureFNumber": 5.6,
-    "focusStationsMm": [3200, 5200, 8890, 13000],
-    "frontRiseMm": [0, 20],
-    "cropMagnifications": [1, 4],
+    "focusStationsMm": [
+      3200,
+      5200,
+      8890,
+      13000
+    ],
+    "frontRiseMm": [
+      0,
+      20
+    ],
+    "cropMagnifications": [
+      1,
+      4
+    ],
     "candidateCount": 8,
     "qualityMetricsConsultedForSelection": false,
     "screeningMode": "Full32 expected-blur signal and geometry/support only; B0/B1 quality was not consulted.",
     "candidates": [
-      { "id": "ar-f3200-f5p6-full-rise0", "focusMm": 3200, "riseMm": 0, "crop": 1, "validFarPixels": 121753, "interiorFarPixels": 116730, "depthEdgePixels": 3903, "signedNearFarPairs": 65, "nearPixels": 434, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.0277343, "maxValidAbsCoCDiameterMm": 0.987793, "maxUncappedRadiusPx": 1.84336 },
-      { "id": "ar-f5200-f5p6-full-rise0", "focusMm": 5200, "riseMm": 0, "crop": 1, "validFarPixels": 92383, "interiorFarPixels": 89923, "depthEdgePixels": 3904, "signedNearFarPairs": 540, "nearPixels": 28500, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.00402896, "maxValidAbsCoCDiameterMm": 0.542969, "maxUncappedRadiusPx": 0.881588 },
-      { "id": "ar-f8890-f5p6-full-rise0", "focusMm": 8890, "riseMm": 0, "crop": 1, "validFarPixels": 37383, "interiorFarPixels": 36893, "depthEdgePixels": 3892, "signedNearFarPairs": 5213, "nearPixels": 83247, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.00008613, "maxValidAbsCoCDiameterMm": 0.90332, "maxUncappedRadiusPx": 0.265843 },
-      { "id": "ar-f8890-f5p6-full-rise20", "focusMm": 8890, "riseMm": 20, "crop": 1, "validFarPixels": 37705, "interiorFarPixels": 37348, "depthEdgePixels": 2601, "signedNearFarPairs": 5851, "nearPixels": 56586, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.00008470, "maxValidAbsCoCDiameterMm": 0.35083, "maxUncappedRadiusPx": 0.260376 },
-      { "id": "ar-f13000-f5p6-full-rise20", "focusMm": 13000, "riseMm": 20, "crop": 1, "validFarPixels": 0, "interiorFarPixels": 0, "depthEdgePixels": 2175, "signedNearFarPairs": 0, "nearPixels": 94086, "fractionalNearPixels": 0, "interiorFull32SourceRgb": null, "maxValidAbsCoCDiameterMm": 0.493652, "maxUncappedRadiusPx": 0 },
-      { "id": "ar-f3200-f5p6-loupe4-rise0", "focusMm": 3200, "riseMm": 0, "crop": 4, "validFarPixels": 179646, "interiorFarPixels": 176250, "depthEdgePixels": 0, "signedNearFarPairs": 0, "nearPixels": 0, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.0363193, "maxValidAbsCoCDiameterMm": 0.843262, "maxUncappedRadiusPx": 6.29458 },
-      { "id": "ar-f5200-f5p6-loupe4-rise0", "focusMm": 5200, "riseMm": 0, "crop": 4, "validFarPixels": 179646, "interiorFarPixels": 176250, "depthEdgePixels": 0, "signedNearFarPairs": 0, "nearPixels": 0, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.0176536, "maxValidAbsCoCDiameterMm": 0.330566, "maxUncappedRadiusPx": 2.46754 },
-      { "id": "ar-f8890-f5p6-loupe4-rise20", "focusMm": 8890, "riseMm": 20, "crop": 4, "validFarPixels": 72744, "interiorFarPixels": 71500, "depthEdgePixels": 0, "signedNearFarPairs": 4834, "nearPixels": 106902, "fractionalNearPixels": 0, "interiorFull32SourceRgb": 0.00009688, "maxValidAbsCoCDiameterMm": 0.00506973, "maxUncappedRadiusPx": 0.00319633 }
+      {
+        "id": "ar-f3200-f5p6-full-rise0",
+        "focusMm": 3200,
+        "riseMm": 0,
+        "crop": 1,
+        "validFarPixels": 121753,
+        "interiorFarPixels": 116730,
+        "depthEdgePixels": 3903,
+        "signedNearFarPairs": 65,
+        "nearPixels": 434,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.0277343,
+        "maxValidAbsCoCDiameterMm": 0.987793,
+        "maxUncappedRadiusPx": 1.84336
+      },
+      {
+        "id": "ar-f5200-f5p6-full-rise0",
+        "focusMm": 5200,
+        "riseMm": 0,
+        "crop": 1,
+        "validFarPixels": 92383,
+        "interiorFarPixels": 89923,
+        "depthEdgePixels": 3904,
+        "signedNearFarPairs": 540,
+        "nearPixels": 28500,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.00402896,
+        "maxValidAbsCoCDiameterMm": 0.542969,
+        "maxUncappedRadiusPx": 0.881588
+      },
+      {
+        "id": "ar-f8890-f5p6-full-rise0",
+        "focusMm": 8890,
+        "riseMm": 0,
+        "crop": 1,
+        "validFarPixels": 37383,
+        "interiorFarPixels": 36893,
+        "depthEdgePixels": 3892,
+        "signedNearFarPairs": 5213,
+        "nearPixels": 83247,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.00008613,
+        "maxValidAbsCoCDiameterMm": 0.90332,
+        "maxUncappedRadiusPx": 0.265843
+      },
+      {
+        "id": "ar-f8890-f5p6-full-rise20",
+        "focusMm": 8890,
+        "riseMm": 20,
+        "crop": 1,
+        "validFarPixels": 37705,
+        "interiorFarPixels": 37348,
+        "depthEdgePixels": 2601,
+        "signedNearFarPairs": 5851,
+        "nearPixels": 56586,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.0000847,
+        "maxValidAbsCoCDiameterMm": 0.35083,
+        "maxUncappedRadiusPx": 0.260376
+      },
+      {
+        "id": "ar-f13000-f5p6-full-rise20",
+        "focusMm": 13000,
+        "riseMm": 20,
+        "crop": 1,
+        "validFarPixels": 0,
+        "interiorFarPixels": 0,
+        "depthEdgePixels": 2175,
+        "signedNearFarPairs": 0,
+        "nearPixels": 94086,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": null,
+        "maxValidAbsCoCDiameterMm": 0.493652,
+        "maxUncappedRadiusPx": 0
+      },
+      {
+        "id": "ar-f3200-f5p6-loupe4-rise0",
+        "focusMm": 3200,
+        "riseMm": 0,
+        "crop": 4,
+        "validFarPixels": 179646,
+        "interiorFarPixels": 176250,
+        "depthEdgePixels": 0,
+        "signedNearFarPairs": 0,
+        "nearPixels": 0,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.0363193,
+        "maxValidAbsCoCDiameterMm": 0.843262,
+        "maxUncappedRadiusPx": 6.29458
+      },
+      {
+        "id": "ar-f5200-f5p6-loupe4-rise0",
+        "focusMm": 5200,
+        "riseMm": 0,
+        "crop": 4,
+        "validFarPixels": 179646,
+        "interiorFarPixels": 176250,
+        "depthEdgePixels": 0,
+        "signedNearFarPairs": 0,
+        "nearPixels": 0,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.0176536,
+        "maxValidAbsCoCDiameterMm": 0.330566,
+        "maxUncappedRadiusPx": 2.46754
+      },
+      {
+        "id": "ar-f8890-f5p6-loupe4-rise20",
+        "focusMm": 8890,
+        "riseMm": 20,
+        "crop": 4,
+        "validFarPixels": 72744,
+        "interiorFarPixels": 71500,
+        "depthEdgePixels": 0,
+        "signedNearFarPairs": 4834,
+        "nearPixels": 106902,
+        "fractionalNearPixels": 0,
+        "interiorFull32SourceRgb": 0.00009688,
+        "maxValidAbsCoCDiameterMm": 0.00506973,
+        "maxUncappedRadiusPx": 0.00319633
+      }
     ],
     "selected": {
-      "Q1_Q5_Q6": { "state": "ar-f3200-f5p6-loupe4-rise0", "reason": "Largest Full32/source interior-far signal and largest measured uncapped raster radius." },
-      "Q2_Q7": { "state": "ar-f3200-f5p6-full-rise0", "reason": "Meaningful far signal plus reconstructed-depth edge support." },
-      "Q3_Q4": { "state": "ar-f5200-f5p6-full-rise0", "reason": "Selected despite fewer raster pairs than the 8,890 mm alternatives (540 versus 5,213/5,851) because its canonical façade CoC is +0.330761 mm versus +0.000517 mm near focus and its expected interior Full32/source signal is 0.004029 versus about 0.000086; the 4x 8,890 mm crop has zero reconstructed-depth edge pixels." }
+      "Q1_Q5_Q6": {
+        "state": "ar-f3200-f5p6-loupe4-rise0",
+        "reason": "Largest Full32/source interior-far signal and largest measured uncapped raster radius."
+      },
+      "Q2_Q7": {
+        "state": "ar-f3200-f5p6-full-rise0",
+        "reason": "Meaningful far signal plus reconstructed-depth edge support."
+      },
+      "Q3_Q4": {
+        "state": "ar-f5200-f5p6-full-rise0",
+        "reason": "Selected despite fewer raster pairs than the 8,890 mm alternatives (540 versus 5,213/5,851) because its canonical façade CoC is +0.330761 mm versus +0.000517 mm near focus and its expected interior Full32/source signal is 0.004029 versus about 0.000086; the 4x 8,890 mm crop has zero reconstructed-depth edge pixels."
+      }
     },
     "fixtureEvidenceTreatment": "Macro and Interior Phase J–L runs are reported separately as native-research-fixture evidence below. They do not execute the registered GroundGlassWebGPUAdapter and are not merged into the Architecture Rise app-adapter Q1–Q7 decisions."
   },
@@ -54,26 +189,81 @@
     },
     "phaseJ": {
       "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts --project=chrome-native-webgpu --workers=1",
-      "result": { "passed": 2, "skipped": 1, "failed": 0 },
-      "states": { "macroFocusAndAperture": 4, "interiorAndArchitectureMovements": 7 },
+      "result": {
+        "passed": 2,
+        "skipped": 1,
+        "failed": 0
+      },
+      "states": {
+        "macroFocusAndAperture": 4,
+        "interiorAndArchitectureMovements": 7
+      },
       "observations": [
-        { "state": "macro-focus-near-f5_6", "focusMm": 390, "apertureFNumber": 5.6, "maximumAbsCoCDiameterMm": 1.195313, "maximumUnclampedRadiusPx": 2.408203, "capPx": 12, "capActivatedPixels": 0, "knownPointMaximumCoCErrorMm": 0.000223 },
-        { "state": "macro-focus-middle-f16", "focusMm": 400, "apertureFNumber": 16, "maximumAbsCoCDiameterMm": 0.267822, "maximumUnclampedRadiusPx": 0.539551, "capPx": 12, "capActivatedPixels": 0, "knownPointMaximumCoCErrorMm": 0.000107 },
-        { "state": "interior-front-swing-focus", "focusMm": 8500, "frontSwingDeg": 5, "maximumAbsCoCDiameterMm": 1.647461, "maximumUnclampedRadiusPx": 3.275391, "capPx": 12, "capActivatedPixels": 0, "knownPointMaximumCoCErrorMm": 0.000201 },
-        { "state": "architecture-rise", "focusMm": 8890, "frontRiseMm": 20, "maximumAbsCoCDiameterMm": 0.178589, "maximumUnclampedRadiusPx": 0.359863, "capPx": 12, "capActivatedPixels": 0, "knownPointMaximumCoCErrorMm": 0.000000897 }
+        {
+          "state": "macro-focus-near-f5_6",
+          "focusMm": 390,
+          "apertureFNumber": 5.6,
+          "maximumAbsCoCDiameterMm": 1.195313,
+          "maximumUnclampedRadiusPx": 2.408203,
+          "capPx": 12,
+          "capActivatedPixels": 0,
+          "knownPointMaximumCoCErrorMm": 0.000223
+        },
+        {
+          "state": "macro-focus-middle-f16",
+          "focusMm": 400,
+          "apertureFNumber": 16,
+          "maximumAbsCoCDiameterMm": 0.267822,
+          "maximumUnclampedRadiusPx": 0.539551,
+          "capPx": 12,
+          "capActivatedPixels": 0,
+          "knownPointMaximumCoCErrorMm": 0.000107
+        },
+        {
+          "state": "interior-front-swing-focus",
+          "focusMm": 8500,
+          "frontSwingDeg": 5,
+          "maximumAbsCoCDiameterMm": 1.647461,
+          "maximumUnclampedRadiusPx": 3.275391,
+          "capPx": 12,
+          "capActivatedPixels": 0,
+          "knownPointMaximumCoCErrorMm": 0.000201
+        },
+        {
+          "state": "architecture-rise",
+          "focusMm": 8890,
+          "frontRiseMm": 20,
+          "maximumAbsCoCDiameterMm": 0.178589,
+          "maximumUnclampedRadiusPx": 0.359863,
+          "capPx": 12,
+          "capActivatedPixels": 0,
+          "knownPointMaximumCoCErrorMm": 8.97e-7
+        }
       ],
       "scope": "Canonical Macro, Interior Corner and Architecture Rise fixtures provide optical and B0/B1 reference observations. None activates the 12 px cap; these states do not qualify app-adapter M5 output."
     },
     "phaseK": {
       "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts --project=chrome-native-webgpu --workers=1",
-      "result": { "passed": 2, "skipped": 1, "failed": 0 },
-      "correspondence": { "states": 7, "probes": 15, "occludedTargets": 12, "deliberatelyOffsetTargets": 3 },
+      "result": {
+        "passed": 2,
+        "skipped": 1,
+        "failed": 0
+      },
+      "correspondence": {
+        "states": 7,
+        "probes": 15,
+        "occludedTargets": 12,
+        "deliberatelyOffsetTargets": 3
+      },
       "largeCocState": {
         "scene": "macro-depth-of-field",
         "apertureFNumber": 5.6,
         "focusMm": 400,
         "cropMagnification": 16,
-        "sourceDimensions": [512, 384],
+        "sourceDimensions": [
+          512,
+          384
+        ],
         "maximumAbsCoCDiameterMm": 0.765137,
         "maximumUnclampedRadiusPx": 24.671875,
         "testCapPx": 12,
@@ -87,7 +277,11 @@
     },
     "phaseL": {
       "command": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts --project=chrome-native-webgpu --workers=1",
-      "result": { "passed": 1, "skipped": 1, "failed": 0 },
+      "result": {
+        "passed": 1,
+        "skipped": 1,
+        "failed": 0
+      },
       "discoveryCandidates": 12,
       "geometryQualifiedCandidates": 1,
       "selected": {
@@ -96,8 +290,14 @@
         "apertureFNumber": 5.6,
         "focusMm": 400,
         "cropMagnification": 8,
-        "pan": [0, 0],
-        "sourceDimensions": [512, 384],
+        "pan": [
+          0,
+          0
+        ],
+        "sourceDimensions": [
+          512,
+          384
+        ],
         "maximumAbsCoCDiameterMm": 0.765137,
         "maximumUnclampedRadiusPx": 12.335938,
         "interiorCappedFarPixels": 47058,
@@ -121,33 +321,192 @@
     "candidateDisposition": {
       "relationshipToM5qCandidateSearch": "The eight-state M5Q candidate ranking is exclusively the registered Architecture Rise application-adapter search in GROUND_GLASS_M5Q_CANDIDATE_CATALOG.json. Phase J/K optical and correspondence states and Phase L Macro crop candidates are separately rerun native fixture context; they were not ranked against M5Q Q1-Q7 thresholds and are not confirmatory M5Q states. Their own-phase dispositions are recorded below, preserving all evidence without pooling it into app-adapter qualification.",
       "phaseJOpticalStates": [
-        { "id": "macro-focus-near-f5_6", "sceneId": "macro-depth-of-field", "disposition": "fixture-context-only", "reason": "Phase J known-point optical validation; not an M5Q matched Q1-Q7 matrix." },
-        { "id": "macro-focus-middle-f5_6", "sceneId": "macro-depth-of-field", "disposition": "fixture-context-only", "reason": "Phase J known-point optical validation; not an M5Q matched Q1-Q7 matrix." },
-        { "id": "macro-focus-far-f5_6", "sceneId": "macro-depth-of-field", "disposition": "fixture-context-only", "reason": "Phase J known-point optical validation; not an M5Q matched Q1-Q7 matrix." },
-        { "id": "macro-focus-middle-f16", "sceneId": "macro-depth-of-field", "disposition": "fixture-context-only", "reason": "Phase J aperture/CoC control; not an M5Q matched Q1-Q7 matrix." },
-        { "id": "interior-initial", "sceneId": "interior-corner", "disposition": "fixture-context-only", "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix." },
-        { "id": "interior-front-swing", "sceneId": "interior-corner", "disposition": "fixture-context-only", "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix." },
-        { "id": "interior-front-swing-focus", "sceneId": "interior-corner", "disposition": "fixture-context-only", "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix." },
-        { "id": "interior-rise-swing", "sceneId": "interior-corner", "disposition": "fixture-context-only", "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix." },
-        { "id": "architecture-initial", "sceneId": "architecture-rise", "disposition": "fixture-context-only", "reason": "Phase J fixture evidence; M5Q ranking uses the separately captured registered app adapter." },
-        { "id": "architecture-rise", "sceneId": "architecture-rise", "disposition": "fixture-context-only", "reason": "Phase J fixture evidence; M5Q ranking uses the separately captured registered app adapter." },
-        { "id": "architecture-rise-focus", "sceneId": "architecture-rise", "disposition": "fixture-context-only", "reason": "Phase J fixture evidence; M5Q ranking uses the separately captured registered app adapter." }
+        {
+          "id": "macro-focus-near-f5_6",
+          "sceneId": "macro-depth-of-field",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J known-point optical validation; not an M5Q matched Q1-Q7 matrix."
+        },
+        {
+          "id": "macro-focus-middle-f5_6",
+          "sceneId": "macro-depth-of-field",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J known-point optical validation; not an M5Q matched Q1-Q7 matrix."
+        },
+        {
+          "id": "macro-focus-far-f5_6",
+          "sceneId": "macro-depth-of-field",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J known-point optical validation; not an M5Q matched Q1-Q7 matrix."
+        },
+        {
+          "id": "macro-focus-middle-f16",
+          "sceneId": "macro-depth-of-field",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J aperture/CoC control; not an M5Q matched Q1-Q7 matrix."
+        },
+        {
+          "id": "interior-initial",
+          "sceneId": "interior-corner",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix."
+        },
+        {
+          "id": "interior-front-swing",
+          "sceneId": "interior-corner",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix."
+        },
+        {
+          "id": "interior-front-swing-focus",
+          "sceneId": "interior-corner",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix."
+        },
+        {
+          "id": "interior-rise-swing",
+          "sceneId": "interior-corner",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J canonical optical validation; raster target correspondence is not a matched M5Q quality matrix."
+        },
+        {
+          "id": "architecture-initial",
+          "sceneId": "architecture-rise",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J fixture evidence; M5Q ranking uses the separately captured registered app adapter."
+        },
+        {
+          "id": "architecture-rise",
+          "sceneId": "architecture-rise",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J fixture evidence; M5Q ranking uses the separately captured registered app adapter."
+        },
+        {
+          "id": "architecture-rise-focus",
+          "sceneId": "architecture-rise",
+          "disposition": "fixture-context-only",
+          "reason": "Phase J fixture evidence; M5Q ranking uses the separately captured registered app adapter."
+        }
       ],
-      "phaseKCorrespondenceCases": ["interior-initial", "interior-front-swing", "interior-front-swing-focus", "interior-rise-swing", "architecture-initial", "architecture-rise", "architecture-rise-focus"],
+      "phaseKCorrespondenceCases": [
+        "interior-initial",
+        "interior-front-swing",
+        "interior-front-swing-focus",
+        "interior-rise-swing",
+        "architecture-initial",
+        "architecture-rise",
+        "architecture-rise-focus"
+      ],
       "phaseKDisposition": "The seven Phase K cases are correspondence-only fixture evidence, not M5Q per-dimension confirmatory matrices. The separate Macro 16x large-CoC comparison is recorded above as cap-feasibility context, not Q5 qualification.",
       "phaseLCropCandidates": [
-        { "id": "m8-y0", "panY": 0, "interiorCappedPixels": 47058, "interiorHighContrastPairs": 46, "phaseLDisposition": "selected-for-phase-L-confirmation", "m5qDisposition": "fixture-context-only", "reason": "Sole Phase L geometry-qualified candidate; its L-A result is not an M5Q Q1-Q7 pass." },
-        { "id": "m8-yn0p5", "panY": -0.5, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m8-yn0p75", "panY": -0.75, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m8-yn1", "panY": -1, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m12-y0", "panY": 0, "interiorCappedPixels": 8780, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No interior high-contrast pairs, below the Phase L 32-pair requirement." },
-        { "id": "m12-yn0p5", "panY": -0.5, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m12-yn0p75", "panY": -0.75, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m12-yn1", "panY": -1, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m16-y0", "panY": 0, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "Only 218 total capped pixels and no interior cap support; below the Phase L 200-pixel interior requirement." },
-        { "id": "m16-yn0p5", "panY": -0.5, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m16-yn0p75", "panY": -0.75, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." },
-        { "id": "m16-yn1", "panY": -1, "interiorCappedPixels": 0, "interiorHighContrastPairs": 0, "phaseLDisposition": "rejected", "m5qDisposition": "fixture-context-only", "reason": "No valid visible content in the required Phase L interior window." }
+        {
+          "id": "m8-y0",
+          "panY": 0,
+          "interiorCappedPixels": 47058,
+          "interiorHighContrastPairs": 46,
+          "phaseLDisposition": "selected-for-phase-L-confirmation",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "Sole Phase L geometry-qualified candidate; its L-A result is not an M5Q Q1-Q7 pass."
+        },
+        {
+          "id": "m8-yn0p5",
+          "panY": -0.5,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m8-yn0p75",
+          "panY": -0.75,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m8-yn1",
+          "panY": -1,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m12-y0",
+          "panY": 0,
+          "interiorCappedPixels": 8780,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No interior high-contrast pairs, below the Phase L 32-pair requirement."
+        },
+        {
+          "id": "m12-yn0p5",
+          "panY": -0.5,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m12-yn0p75",
+          "panY": -0.75,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m12-yn1",
+          "panY": -1,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m16-y0",
+          "panY": 0,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "Only 218 total capped pixels and no interior cap support; below the Phase L 200-pixel interior requirement."
+        },
+        {
+          "id": "m16-yn0p5",
+          "panY": -0.5,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m16-yn0p75",
+          "panY": -0.75,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        },
+        {
+          "id": "m16-yn1",
+          "panY": -1,
+          "interiorCappedPixels": 0,
+          "interiorHighContrastPairs": 0,
+          "phaseLDisposition": "rejected",
+          "m5qDisposition": "fixture-context-only",
+          "reason": "No valid visible content in the required Phase L interior window."
+        }
       ]
     }
   },
@@ -173,24 +532,254 @@
   "confirmatory": {
     "captureCount": 12,
     "rendererGenerationId": "gg-mvoiqsuy-k0pnzli6lqa-default-generation-2",
-    "requestIds": ["gg-mvoiqsuy-k0pnzli6lqa-default-request-7", "gg-mvoiqsuy-k0pnzli6lqa-default-request-8", "gg-mvoiqsuy-k0pnzli6lqa-default-request-9"],
+    "requestIds": [
+      "gg-mvoiqsuy-k0pnzli6lqa-default-request-7",
+      "gg-mvoiqsuy-k0pnzli6lqa-default-request-8",
+      "gg-mvoiqsuy-k0pnzli6lqa-default-request-9"
+    ],
     "fingerprintsMatchedWithinMatrices": true,
     "captures": [
-      "m5q-q5-cap2-half32-1792974536242", "m5q-q5-cap2-full32-1792974536982", "m5q-q5-cap2-full64-1792974539304",
-      "m5q-q1-control60-half32-1792974543405", "m5q-q1-control60-full32-1792974544180", "m5q-q1-control60-full64-1792974546398",
-      "m5q-q2-fallback-q7-profile60-half32-1792974550679", "m5q-q2-fallback-q7-profile60-full32-1792974551319", "m5q-q2-fallback-q7-profile60-full64-1792974553428",
-      "m5q-q3-signed-q4-near60-half32-1792974557631", "m5q-q3-signed-q4-near60-full32-1792974558246", "m5q-q3-signed-q4-near60-full64-1792974560294"
+      "m5q-q5-cap2-half32-1792974536242",
+      "m5q-q5-cap2-full32-1792974536982",
+      "m5q-q5-cap2-full64-1792974539304",
+      "m5q-q1-control60-half32-1792974543405",
+      "m5q-q1-control60-full32-1792974544180",
+      "m5q-q1-control60-full64-1792974546398",
+      "m5q-q2-fallback-q7-profile60-half32-1792974550679",
+      "m5q-q2-fallback-q7-profile60-full32-1792974551319",
+      "m5q-q2-fallback-q7-profile60-full64-1792974553428",
+      "m5q-q3-signed-q4-near60-half32-1792974557631",
+      "m5q-q3-signed-q4-near60-full32-1792974558246",
+      "m5q-q3-signed-q4-near60-full64-1792974560294"
     ],
     "reference": "Full64 is a finite-sampling comparison reference, not photographic ground truth."
   },
   "qualificationByDimension": {
-    "Q1": { "state": "ar-f3200-f5p6-loupe4-rise0", "status": "reference-not-converged", "full32Full64InteriorRmse": 0.00785105, "maximumChannelError": 0.118652, "expectedBlurMeanRgb": 0.036555, "interiorFarPixels": 177944, "half32B1InteriorRmse": 0.0133734 },
-    "Q2": { "state": "ar-f3200-f5p6-full-rise0", "status": "insufficient-support", "fallbackPixels": 57598, "meaningfulBlurFallbackPixels": 6, "fallbackBoundaryPairs": 1436, "fallbackBoundaryGradientRelativeError": 20.0595, "sourceMismatchPixels": 0, "half32B1DepthEdgeRmse": 0.182795 },
-    "Q3": { "state": "ar-f5200-f5p6-full-rise0", "status": "reference-not-converged", "signedNearFarPairs": 540, "signedBoundaryB1Rmse": 0.0627079, "depthEdgeFull32Full64Rmse": 0.00165325, "depthEdgeMaximumChannelError": 0.020874, "half32B1DepthEdgeRmse": 0.181073 },
-    "Q4": { "state": "ar-f5200-f5p6-full-rise0", "status": "insufficient-support", "nonzeroNearPixels": 7225, "fractionalNearPixels": 0, "requiredFractionalNearPixels": 32, "nearCpuRgbRmse": 0.00007285, "nearCpuAlphaRmse": 0, "beforeAfterB1RgbAndAlphaMaximumError": 0 },
-    "Q5": { "state": "ar-f3200-f5p6-loupe4-rise0", "status": "reference-not-converged", "stressCapPx": 2, "controlCapPx": 60, "maximumUncappedRadiusPx": 6.29458, "maximumOverrunPx": 4.29458, "stressCappedPixels": 45030, "inputFingerprintsMatched": true, "depthFingerprintMatched": true, "stressFull32Full64Rmse": 0.00461424, "crossCapFull32FarRmse": 0.0536945, "crossCapHalf32B1Rmse": 0.052796, "crossCapNearRgbRmse": 0, "crossCapNearAlphaRmse": 0 },
-    "Q6": { "state": "ar-f3200-f5p6-loupe4-rise0", "status": "reference-not-converged", "expectedBlurMeanRgb": 0.036555, "blurGradientRelativeError": 0.0653656, "full32Full64InteriorRmse": 0.00785105 },
-    "Q7": { "state": "ar-f3200-f5p6-full-rise0", "status": "reference-not-converged", "half32B1FullFrameRmse": 0.0557224, "half32B0FullFrameRmse": 0.060305, "half32B1InteriorFarRmse": 0.0422383, "half32B0InteriorFarRmse": 0.0513019, "half32B1DepthEdgeRmse": 0.182795, "half32B0DepthEdgeRmse": 0.182850 }
+    "Q1": {
+      "state": "ar-f3200-f5p6-loupe4-rise0",
+      "status": "reference-not-converged",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [
+        {
+          "key": "interior-far-rmse",
+          "category": "reference",
+          "observed": 0.007851049626122295,
+          "requirement": "Full32/Full64 interior-far RMSE must be <= 0.001"
+        },
+        {
+          "key": "interior-far-maximum-channel-error",
+          "category": "reference",
+          "observed": 0.11865234375,
+          "requirement": "Full32/Full64 interior-far maximum channel error must be <= 0.01"
+        },
+        {
+          "key": "reference-convergence-status",
+          "category": "reference",
+          "observed": false,
+          "requirement": "Full32/Full64 references must converge on the Q1 interior-far ROI"
+        }
+      ],
+      "full32Full64InteriorRmse": 0.007851049626122295,
+      "full32Full64InteriorMaximumChannelError": 0.11865234375,
+      "expectedBlurMeanRgb": 0.03655501251209549,
+      "interiorFarPixels": 177944,
+      "half32B1InteriorRmse": 0.013373417708260565
+    },
+    "Q2": {
+      "state": "ar-f3200-f5p6-full-rise0",
+      "status": "insufficient-support",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [
+        {
+          "key": "fallback-with-meaningful-blur",
+          "category": "support",
+          "observed": 6,
+          "requirement": "meaningfully defocused fallback pixels must be >= 20"
+        },
+        {
+          "key": "fallback-reference-converged",
+          "category": "reference",
+          "observed": false,
+          "requirement": "fallback halo comparison requires a converged Full32/Full64 reference"
+        },
+        {
+          "key": "fallback-boundary-gradient-error",
+          "category": "quality",
+          "observed": 20.059458886239685,
+          "requirement": "fallback boundary gradient relative error must be <= 0.25"
+        }
+      ],
+      "fallbackPixels": 57598,
+      "meaningfulBlurFallbackPixels": 6,
+      "fallbackBoundaryPairs": 1436,
+      "fallbackBoundaryGradientRelativeError": 20.059458886239685,
+      "sourceMismatchPixels": 0,
+      "half32B1DepthEdgeRmse": 0.182795035835988
+    },
+    "Q3": {
+      "state": "ar-f5200-f5p6-full-rise0",
+      "status": "bounded-qualified",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [],
+      "signedNearFarPairs": 540,
+      "signedBoundaryPixels": 1072,
+      "signedBoundaryReferenceRmse": 0,
+      "signedBoundaryReferenceMaximumChannelError": 0,
+      "signedBoundaryB1Rmse": 0.06270786018850183,
+      "depthEdgeReferenceRmse": 0.0016532534799456272,
+      "half32B1DepthEdgeRmse": 0.18107282592941454,
+      "scope": "signed-boundary only"
+    },
+    "Q4": {
+      "state": "ar-f5200-f5p6-full-rise0",
+      "status": "insufficient-support",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [
+        {
+          "key": "fractional-near-coverage",
+          "category": "support",
+          "observed": 0,
+          "requirement": "fractional Near alpha must contain >= 32 pixels"
+        }
+      ],
+      "nonzeroNearPixels": 7225,
+      "fractionalNearPixels": 0,
+      "requiredFractionalNearPixels": 32,
+      "nearCpuRgbRmse": 0.0000728491376021755,
+      "nearCpuAlphaRmse": 0,
+      "beforeAfterB1RgbAndAlphaMaximumError": 0
+    },
+    "Q5": {
+      "state": "ar-f3200-f5p6-loupe4-rise0",
+      "status": "reference-not-converged",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [
+        {
+          "key": "same-cap-reference-convergence",
+          "category": "reference",
+          "observed": false,
+          "requirement": "Full32/Full64 references must converge separately under both declared cap settings"
+        }
+      ],
+      "stressCapPx": 2,
+      "controlCapPx": 60,
+      "maximumUncappedRadiusPx": 6.294583538385826,
+      "maximumOverrunPx": 4.294583538385826,
+      "stressCappedPixels": 45030,
+      "inputFingerprintsMatched": true,
+      "stressedFull32Full64Rmse": 0.004614243444292041,
+      "stressedB1FullFrameRmse": 0.023812770667857506,
+      "stressedB1InteriorFarRmse": 0.023542177113266,
+      "stressedBlurGradientRelativeError": 0.02926880358070938,
+      "stressedDepthEdgeQualityCoverage": "unavailable",
+      "stressedFallbackQualityCoverage": "unavailable",
+      "crossCapFull32FarRmse": 0.05369452200020212,
+      "crossCapHalf32B1Rmse": 0.052795985606107196,
+      "crossCapNearRgbRmse": 0,
+      "crossCapNearAlphaRmse": 0
+    },
+    "Q6": {
+      "state": "ar-f3200-f5p6-loupe4-rise0",
+      "status": "reference-not-converged",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [
+        {
+          "key": "interior-far-rmse",
+          "category": "reference",
+          "observed": 0.007851049626122295,
+          "requirement": "Full32/Full64 interior-far RMSE must be <= 0.001"
+        },
+        {
+          "key": "interior-far-maximum-channel-error",
+          "category": "reference",
+          "observed": 0.11865234375,
+          "requirement": "Full32/Full64 interior-far maximum channel error must be <= 0.01"
+        },
+        {
+          "key": "reference-convergence-status",
+          "category": "reference",
+          "observed": false,
+          "requirement": "Full32/Full64 references must converge on the Q6 interior-far ROI"
+        }
+      ],
+      "expectedBlurMeanRgb": 0.03655501251209549,
+      "blurGradientRelativeError": 0.0653656233381531,
+      "full32Full64InteriorRmse": 0.007851049626122295,
+      "b1InteriorFarRmse": 0.013373417708260565,
+      "interiorFarPixels": 177944
+    },
+    "Q7": {
+      "state": "ar-f3200-f5p6-full-rise0",
+      "status": "reference-not-converged",
+      "evaluatorRevision": "m5q-r3-review-fix-1",
+      "failedCriteria": [
+        {
+          "key": "full-frame-reference-rmse",
+          "category": "reference",
+          "observed": 0.006912507688556698,
+          "requirement": "Full32/Full64 full-frame-reference RMSE must be <= 0.001"
+        },
+        {
+          "key": "full-frame-reference-maximum-channel-error",
+          "category": "reference",
+          "observed": 0.080078125,
+          "requirement": "Full32/Full64 full-frame-reference maximum channel error must be <= 0.01"
+        },
+        {
+          "key": "interior-far-reference-rmse",
+          "category": "reference",
+          "observed": 0.00831451844960192,
+          "requirement": "Full32/Full64 interior-far-reference RMSE must be <= 0.001"
+        },
+        {
+          "key": "interior-far-reference-maximum-channel-error",
+          "category": "reference",
+          "observed": 0.080078125,
+          "requirement": "Full32/Full64 interior-far-reference maximum channel error must be <= 0.01"
+        },
+        {
+          "key": "depth-edge-reference-rmse",
+          "category": "reference",
+          "observed": 0.011794410996572309,
+          "requirement": "Full32/Full64 depth-edge-reference RMSE must be <= 0.001"
+        },
+        {
+          "key": "depth-edge-reference-maximum-channel-error",
+          "category": "reference",
+          "observed": 0.045166015625,
+          "requirement": "Full32/Full64 depth-edge-reference maximum channel error must be <= 0.01"
+        },
+        {
+          "key": "reference-convergence-status",
+          "category": "reference",
+          "observed": false,
+          "requirement": "Full32/Full64 cross-profile references must converge"
+        },
+        {
+          "key": "half32-b1-full-frame-rmse",
+          "category": "quality",
+          "observed": 0.05572244346546434,
+          "requirement": "Half32 B1 / Full32 RMSE must be <= 0.05"
+        },
+        {
+          "key": "half32-b1-vs-full64-rmse",
+          "category": "quality",
+          "observed": 0.05512287295460979,
+          "requirement": "Half32 B1 / Full64 RMSE must be <= 0.05"
+        },
+        {
+          "key": "half32-b1-depth-edge-rmse",
+          "category": "quality",
+          "observed": 0.182795035835988,
+          "requirement": "Half32 B1 / Full32 depth-edge RMSE must be <= 0.05"
+        }
+      ],
+      "half32B1FullFrameRmse": 0.05572244346546434,
+      "half32B1InteriorFarRmse": 0.042238311935484864,
+      "half32B0InteriorFarRmse": 0.05130189768069581,
+      "half32B1DepthEdgeRmse": 0.182795035835988,
+      "half32B0DepthEdgeRmse": 0.18284958264240667
+    }
   },
   "canonicalGeometryAndDepth": {
     "selectedQ3Q4CanonicalSigns": "Known foreground/midground surface points are negative-CoC and façade/far surface points are positive-CoC under the independent canonical calculation.",
@@ -208,7 +797,20 @@
     "suite": "src/tests/unit/groundGlassM5qQualification.test.ts",
     "testCount": 16,
     "syntheticOnly": true,
-    "covered": ["N1/N2/N19 empty ROI and weak-blur control", "N3/N4/N22 mismatched/repeated/self-comparison captures", "N5 reference non-convergence", "N6/N15 provenance and validity", "N7/N9 incorrect source fallback and sharp halo", "N8/N10 foreground contamination and blur suppression", "N11/N12/N13 fractional coverage and independent RGB/alpha", "N14 depth edge without signed near/far transition", "N16/N17 paired cap identity and activation", "N18 dimension isolation", "N20/N21 evidence labels and frozen thresholds", "N23/N24 paired-cap empty ROI and stress-reference provenance"]
+    "covered": [
+      "N1/N2/N19 empty ROI and weak-blur control",
+      "N3/N4/N22 mismatched/repeated/self-comparison captures",
+      "N5 reference non-convergence",
+      "N6/N15 provenance and validity",
+      "N7/N9 incorrect source fallback and sharp halo",
+      "N8/N10 foreground contamination and blur suppression",
+      "N11/N12/N13 fractional coverage and independent RGB/alpha",
+      "N14 depth edge without signed near/far transition",
+      "N16/N17 paired cap identity and activation",
+      "N18 dimension isolation",
+      "N20/N21 evidence labels and frozen thresholds",
+      "N23/N24 paired-cap empty ROI and stress-reference provenance"
+    ]
   },
   "historicalM5F8": {
     "preservedUnchanged": true,
@@ -224,13 +826,117 @@
     "decision": "insufficient ROI support; not quality-qualified"
   },
   "conclusion": {
-    "boundedQualifiedDimensions": [],
+    "boundedQualifiedDimensions": [
+      "Q3"
+    ],
     "universalB1QualityPass": false,
     "productionAuthorization": false,
     "m6ArchitecturePresentation": "A narrowly gated development-only research composite/presentation may proceed without quality promotion.",
     "m6UserVisibleQualityPromotion": "Not justified; do not represent B1 as broadly quality-qualified.",
-    "recommendedNextAction": "Before M6 relies on B1, investigate reference divergence, fallback-boundary halos and blur preservation, and valid fractional Near coverage; preserve failing native captures.",
-    "remainingBlockers": ["Q1/Q6 reference convergence", "Q2 fallback halo and meaningful-blur support", "Q3 edge reference convergence and B1 edge quality", "Q4 fractional Near coverage", "Q5 same-cap convergence under strong overrun", "Q7 profile consistency", "Macro and Interior registered-app-adapter evidence", "M5Q-thresholded controlled signed-boundary and fractional-Near fixture evidence", "Depth confidence, broad materials, cross-adapter coverage, and M6 R4 WebGL comparison"]
+    "recommendedNextAction": "Keep M5Q research-only. Before any quality-dependent M6 use, investigate the remaining reference divergence, fallback halo/blur preservation, and valid fractional Near coverage; retain the native captures and frozen thresholds.",
+    "remainingBlockers": [
+      "Q1/Q6 interior-far Full32/Full64 reference convergence",
+      "Q2 fallback halo quality and meaningful-blur support",
+      "Q4 fractional Near coverage",
+      "Q5 same-cap Full32/Full64 convergence under strong overrun",
+      "Q7 profile reference convergence and B1 full-frame/depth-edge quality",
+      "Macro and Interior registered-app-adapter evidence",
+      "Broader depth confidence, material coverage, and adapter/driver variation",
+      "M6 R4 WebGL comparison and presentation parity"
+    ],
+    "q3BoundedScope": "Q3 is bounded-qualified only for the measured signed near/far boundary in ar-f5200-f5p6-full-rise0; ordinary depth-edge B1 RMSE remains 0.181073 and is not covered by this qualification."
   },
-  "limitations": ["Only registered Architecture Rise Raw M5 adapter states on Three.js r186 are represented in the Q1–Q7 app qualification matrix; Phase J–L Macro/Interior results are retained separately as native fixture evidence.", "The Phase J–L TSL fixture graph is a separate execution path and does not establish GroundGlassWebGPUAdapter routing or displayed-output parity.", "No photographic ground truth, production WebGL parity, broad material support, driver portability, or performance budget is established.", "M5Q does not authorize production WebGPU or change the existing WebGL default."]
+  "limitations": [
+    "Only registered Architecture Rise Raw M5 adapter states on Three.js r186 are represented in the Q1–Q7 app qualification matrix; Phase J–L Macro/Interior results are retained separately as native fixture evidence.",
+    "The Phase J–L TSL fixture graph is a separate execution path and does not establish GroundGlassWebGPUAdapter routing or displayed-output parity.",
+    "No photographic ground truth, production WebGL parity, broad material support, driver portability, or performance budget is established.",
+    "M5Q does not authorize production WebGPU or change the existing WebGL default."
+  ],
+  "historicalQualificationByDimension": {
+    "Q1": {
+      "state": "ar-f3200-f5p6-loupe4-rise0",
+      "status": "reference-not-converged",
+      "full32Full64InteriorRmse": 0.00785105,
+      "maximumChannelError": 0.118652,
+      "expectedBlurMeanRgb": 0.036555,
+      "interiorFarPixels": 177944,
+      "half32B1InteriorRmse": 0.0133734
+    },
+    "Q2": {
+      "state": "ar-f3200-f5p6-full-rise0",
+      "status": "insufficient-support",
+      "fallbackPixels": 57598,
+      "meaningfulBlurFallbackPixels": 6,
+      "fallbackBoundaryPairs": 1436,
+      "fallbackBoundaryGradientRelativeError": 20.0595,
+      "sourceMismatchPixels": 0,
+      "half32B1DepthEdgeRmse": 0.182795
+    },
+    "Q3": {
+      "state": "ar-f5200-f5p6-full-rise0",
+      "status": "reference-not-converged",
+      "signedNearFarPairs": 540,
+      "signedBoundaryB1Rmse": 0.0627079,
+      "depthEdgeFull32Full64Rmse": 0.00165325,
+      "depthEdgeMaximumChannelError": 0.020874,
+      "half32B1DepthEdgeRmse": 0.181073
+    },
+    "Q4": {
+      "state": "ar-f5200-f5p6-full-rise0",
+      "status": "insufficient-support",
+      "nonzeroNearPixels": 7225,
+      "fractionalNearPixels": 0,
+      "requiredFractionalNearPixels": 32,
+      "nearCpuRgbRmse": 0.00007285,
+      "nearCpuAlphaRmse": 0,
+      "beforeAfterB1RgbAndAlphaMaximumError": 0
+    },
+    "Q5": {
+      "state": "ar-f3200-f5p6-loupe4-rise0",
+      "status": "reference-not-converged",
+      "stressCapPx": 2,
+      "controlCapPx": 60,
+      "maximumUncappedRadiusPx": 6.29458,
+      "maximumOverrunPx": 4.29458,
+      "stressCappedPixels": 45030,
+      "inputFingerprintsMatched": true,
+      "depthFingerprintMatched": true,
+      "stressFull32Full64Rmse": 0.00461424,
+      "crossCapFull32FarRmse": 0.0536945,
+      "crossCapHalf32B1Rmse": 0.052796,
+      "crossCapNearRgbRmse": 0,
+      "crossCapNearAlphaRmse": 0
+    },
+    "Q6": {
+      "state": "ar-f3200-f5p6-loupe4-rise0",
+      "status": "reference-not-converged",
+      "expectedBlurMeanRgb": 0.036555,
+      "blurGradientRelativeError": 0.0653656,
+      "full32Full64InteriorRmse": 0.00785105
+    },
+    "Q7": {
+      "state": "ar-f3200-f5p6-full-rise0",
+      "status": "reference-not-converged",
+      "half32B1FullFrameRmse": 0.0557224,
+      "half32B0FullFrameRmse": 0.060305,
+      "half32B1InteriorFarRmse": 0.0422383,
+      "half32B0InteriorFarRmse": 0.0513019,
+      "half32B1DepthEdgeRmse": 0.182795,
+      "half32B0DepthEdgeRmse": 0.18285
+    }
+  },
+  "reviewFixRound1": {
+    "report": "GROUND_GLASS_M5Q_REVIEW_FIX_1_REPORT.json",
+    "evaluatorRevision": "m5q-r3-review-fix-1",
+    "numericThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "originalConfirmatoryReportPreserved": true,
+    "changedDecisions": {
+      "Q3": {
+        "from": "reference-not-converged",
+        "to": "bounded-qualified"
+      }
+    },
+    "q3SignedBoundaryScope": "Bounded qualification applies only to the tested Q3 signed near/far boundary population and optical state. It does not qualify the separate geometric depth-edge ROI, universal B1 quality, R4 presentation parity, or production use.",
+    "q5QualityEvidence": "Q5 stressed-cap B1 full-frame, interior-far, and blur-spread quality passed. Same-cap Full32/Full64 reference convergence did not pass, so Q5 remains unqualified."
+  }
 }

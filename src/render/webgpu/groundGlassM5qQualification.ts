@@ -5,6 +5,8 @@ import type {
 
 export type GroundGlassM5qDimensionId = "Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6" | "Q7";
 
+export const GROUND_GLASS_M5Q_EVALUATOR_REVISION = "m5q-r3-review-fix-1";
+
 export type GroundGlassM5qEvidenceSource = "registered-app-adapter" | "native-research-fixture";
 
 export type GroundGlassM5qRuntimeEvidence = Readonly<{
@@ -151,6 +153,9 @@ export type GroundGlassM5qDimensionMeasurements = Readonly<{
   signedNearSidePixels: number | null;
   signedFarSidePixels: number | null;
   b1SignedBoundaryRmse: number | null;
+  signedBoundaryReferencePixelCount: number | null;
+  signedBoundaryReferenceRmse: number | null;
+  signedBoundaryReferenceMaximumChannelError: number | null;
   depthEdgePixels: number | null;
   depthEdgePairs: number | null;
   b1DepthEdgeRmse: number | null;
@@ -189,6 +194,14 @@ export type GroundGlassM5qDimensionMeasurements = Readonly<{
   crossCapNearRgbRmse: number | null;
   crossCapNearAlphaRmse: number | null;
   crossCapFallbackBoundaryGradientDelta: number | null;
+  stressedCapB1FullFrameRmse: number | null;
+  stressedCapB1InteriorFarRmse: number | null;
+  stressedCapBlurGradientRelativeError: number | null;
+  stressedCapDepthEdgeB1Rmse: number | null;
+  stressedCapDepthEdgeQualityCoverage: "measured" | "unavailable" | null;
+  stressedCapFallbackB1Rmse: number | null;
+  stressedCapFallbackBoundaryGradientRelativeError: number | null;
+  stressedCapFallbackQualityCoverage: "measured" | "unavailable" | null;
 }>;
 
 export type GroundGlassM5qDecisionStatus =
@@ -200,6 +213,7 @@ export type GroundGlassM5qDecisionStatus =
   | "bounded-qualified";
 
 export type GroundGlassM5qDimensionDecision = Readonly<{
+  evaluatorRevision: string;
   dimension: GroundGlassM5qDimensionId;
   status: GroundGlassM5qDecisionStatus;
   opticalStateId: string;
@@ -215,7 +229,8 @@ export type GroundGlassM5qDimensionDecision = Readonly<{
 }>;
 
 export type GroundGlassM5qQualification = Readonly<{
-  schemaVersion: 1;
+  schemaVersion: 2;
+  evaluatorRevision: string;
   evidenceScope: "independent-dimension-decisions-for-one-optical-state";
   opticalStateId: string;
   sceneId: string;
@@ -248,6 +263,12 @@ const measured = (metrics: GroundGlassR3RgbMetrics, minimumPixels: number): bool
   metrics.status === "measured" && Number.isInteger(metrics.pixelCount) && metrics.pixelCount >= minimumPixels
   && isFiniteNumber(metrics.rmse) && isFiniteNumber(metrics.maximumChannelError);
 
+const measuredRgb = (metrics: GroundGlassR3RgbMetrics, minimumPixels: number): boolean =>
+  measured(metrics, minimumPixels)
+  && Number.isSafeInteger(metrics.channelCount)
+  && metrics.channelCount === metrics.pixelCount * 3
+  && isFiniteNumber(metrics.mae);
+
 const numberGate = (
   key: string,
   category: Gate["category"],
@@ -273,6 +294,7 @@ const measurement = (
   metrics: GroundGlassApertureGatherR3Evaluation,
   pairedCapEvidence?: GroundGlassM5qPairedCapEvidence,
   pairedCapFingerprintsMatch?: boolean | null,
+  q5QualityCoverage?: Readonly<{ depthEdge: boolean; fallback: boolean }>,
 ): GroundGlassM5qDimensionMeasurements => ({
   interiorFarPixels: metrics.interiorFarMetrics.pixelCount,
   expectedBlurMeanRgbDifference: metrics.interiorFarMetrics.expectedBlurMeanRgbDifference,
@@ -290,6 +312,10 @@ const measurement = (
   signedNearSidePixels: metrics.depthEdgeMetrics.nearSidePixelCount,
   signedFarSidePixels: metrics.depthEdgeMetrics.farSidePixelCount,
   b1SignedBoundaryRmse: metrics.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary.rmse,
+  signedBoundaryReferencePixelCount: metrics.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.pixelCount,
+  signedBoundaryReferenceRmse: metrics.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.rmse,
+  signedBoundaryReferenceMaximumChannelError:
+    metrics.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.maximumChannelError,
   depthEdgePixels: metrics.depthEdgeMetrics.pixelCount,
   depthEdgePairs: metrics.depthEdgeMetrics.depthEdgePairCount,
   b1DepthEdgeRmse: metrics.depthEdgeMetrics.half32B1VsFull32.rmse,
@@ -328,6 +354,17 @@ const measurement = (
   crossCapNearRgbRmse: pairedCapEvidence?.crossCapSensitivity.nearRgbRmse ?? null,
   crossCapNearAlphaRmse: pairedCapEvidence?.crossCapSensitivity.nearAlphaRmse ?? null,
   crossCapFallbackBoundaryGradientDelta: pairedCapEvidence?.crossCapSensitivity.fallbackBoundaryGradientDelta ?? null,
+  stressedCapB1FullFrameRmse: pairedCapEvidence ? metrics.fullFrameMetrics.half32B1VsFull32.rmse : null,
+  stressedCapB1InteriorFarRmse: pairedCapEvidence ? metrics.interiorFarMetrics.half32B1VsFull32.rmse : null,
+  stressedCapBlurGradientRelativeError: pairedCapEvidence ? metrics.blurSpreadMetrics.relativeGradientError : null,
+  stressedCapDepthEdgeB1Rmse: pairedCapEvidence ? metrics.depthEdgeMetrics.half32B1VsFull32.rmse : null,
+  stressedCapDepthEdgeQualityCoverage: pairedCapEvidence
+    ? q5QualityCoverage?.depthEdge ? "measured" : "unavailable" : null,
+  stressedCapFallbackB1Rmse: pairedCapEvidence ? metrics.fallbackMetrics.b1VsFull32.rmse : null,
+  stressedCapFallbackBoundaryGradientRelativeError: pairedCapEvidence
+    ? metrics.fallbackMetrics.boundaryGradient.meanRelativeError : null,
+  stressedCapFallbackQualityCoverage: pairedCapEvidence
+    ? q5QualityCoverage?.fallback ? "measured" : "unavailable" : null,
 });
 
 const validateThresholds = (thresholds: GroundGlassM5qFrozenThresholds): string[] => {
@@ -456,6 +493,7 @@ const buildDecision = (input: {
   gates: readonly Gate[];
   pairedCapEvidence?: GroundGlassM5qPairedCapEvidence;
   pairedCapFingerprintsMatch?: boolean | null;
+  q5QualityCoverage?: Readonly<{ depthEdge: boolean; fallback: boolean }>;
 }): GroundGlassM5qDimensionDecision => {
   const thresholdRevision = nonEmpty(input.thresholds.revision) ? input.thresholds.revision : null;
   const criteria: GroundGlassM5qCriterion[] = [
@@ -490,6 +528,7 @@ const buildDecision = (input: {
   } else status = "bounded-qualified";
 
   return {
+    evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
     dimension: input.dimension,
     status,
     opticalStateId: input.context.opticalStateId,
@@ -501,7 +540,7 @@ const buildDecision = (input: {
     thresholdRevision,
     captureIds: input.r3.captureIds,
     criteria,
-    measurements: measurement(input.r3, input.pairedCapEvidence, input.pairedCapFingerprintsMatch),
+    measurements: measurement(input.r3, input.pairedCapEvidence, input.pairedCapFingerprintsMatch, input.q5QualityCoverage),
   };
 };
 
@@ -521,7 +560,7 @@ const reference = (
   maximumRmse: number,
   maximumChannelError: number,
 ): Gate[] => [
-  booleanGate(`${key}-measured`, "support", measured(metrics, minimumPixels),
+  booleanGate(`${key}-measured`, "support", measuredRgb(metrics, minimumPixels),
     `matched reference ROI must contain at least ${minimumPixels} finite pixels`),
   numberGate(`${key}-rmse`, "reference", metrics.rmse, (value) => value <= maximumRmse,
     `Full32/Full64 ${key} RMSE must be <= ${maximumRmse}`),
@@ -551,6 +590,8 @@ export const evaluateGroundGlassM5qDimensions = (
       thresholds.maximumReferenceChannelError),
   ];
   const isReferenceConverged = r3.referenceConvergence.status === "converged";
+  const expectedFullFramePixels = r3.captureProvenance.full32.sourceDimensions.widthPx
+    * r3.captureProvenance.full32.sourceDimensions.heightPx;
   const q1 = buildDecision({
     dimension: "Q1", context, r3, thresholds, thresholdIssues, provenanceIssues,
     gates: [
@@ -561,8 +602,13 @@ export const evaluateGroundGlassM5qDimensions = (
       ...reference("interior-far", r3.referenceConvergence.interiorFar,
         thresholds.minimumInteriorFarPixels, thresholds.maximumReferenceInteriorFarRmse,
         thresholds.maximumReferenceChannelError),
-      booleanGate("reference-convergence-status", "reference", isReferenceConverged,
-        "Full32/Full64 references must converge for this optical state"),
+      booleanGate("reference-convergence-status", "reference",
+        r3.referenceConvergence.interiorFar.status === "measured"
+          && isFiniteNumber(r3.referenceConvergence.interiorFar.rmse)
+          && r3.referenceConvergence.interiorFar.rmse <= thresholds.maximumReferenceInteriorFarRmse
+          && isFiniteNumber(r3.referenceConvergence.interiorFar.maximumChannelError)
+          && r3.referenceConvergence.interiorFar.maximumChannelError <= thresholds.maximumReferenceChannelError,
+      "Full32/Full64 references must converge on the Q1 interior-far ROI"),
       booleanGate("b1-interior-metric-measured", "support", measured(r3.interiorFarMetrics.half32B1VsFull32,
         thresholds.minimumInteriorFarPixels), "Half32 B1 must be measured against Full32 on the same ROI"),
       quality("b1-interior-far-rmse", r3.interiorFarMetrics.half32B1VsFull32.rmse,
@@ -606,24 +652,16 @@ export const evaluateGroundGlassM5qDimensions = (
       support("signed-near-far-pairs", r3.signedBoundaryEvidence.status === "present"
         ? r3.signedBoundaryEvidence.adjacentNearFarPairCount : null,
       thresholds.minimumSignedBoundaryPairs, `valid signed near/far adjacency must contain >= ${thresholds.minimumSignedBoundaryPairs} pairs`),
-      support("signed-near-population", r3.depthEdgeMetrics.nearSidePixelCount,
-        thresholds.minimumSignedBoundarySidePixels, `valid negative-CoC side must contain >= ${thresholds.minimumSignedBoundarySidePixels} pixels`),
-      support("signed-far-population", r3.depthEdgeMetrics.farSidePixelCount,
-        thresholds.minimumSignedBoundarySidePixels, `valid positive-CoC side must contain >= ${thresholds.minimumSignedBoundarySidePixels} pixels`),
       support("signed-boundary-pixels", r3.signedBoundaryEvidence.participatingPixelCount,
         thresholds.minimumSignedBoundarySidePixels, `signed-boundary ROI must contain >= ${thresholds.minimumSignedBoundarySidePixels} pixels`),
-      ...reference("depth-edge", r3.referenceConvergence.depthEdge,
+      ...reference("signed-boundary", r3.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary,
         thresholds.minimumSignedBoundarySidePixels, thresholds.maximumReferenceDepthEdgeRmse,
         thresholds.maximumReferenceChannelError),
-      booleanGate("reference-convergence-status", "reference", isReferenceConverged,
-        "Full32/Full64 references must converge at signed depth edges"),
-      booleanGate("b1-signed-boundary-measured", "support", measured(
+      booleanGate("b1-signed-boundary-measured", "support", measuredRgb(
         r3.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary,
         thresholds.minimumSignedBoundarySidePixels), "B1 signed-boundary error must use the valid signed-boundary ROI"),
       quality("b1-signed-boundary-rmse", r3.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary.rmse,
         thresholds.maximumB1SignedBoundaryRmse, `B1 signed-boundary RMSE must be <= ${thresholds.maximumB1SignedBoundaryRmse}`),
-      quality("b1-depth-edge-rmse", r3.depthEdgeMetrics.half32B1VsFull32.rmse,
-        thresholds.maximumB1DepthEdgeRmse, `B1 depth-edge RMSE must be <= ${thresholds.maximumB1DepthEdgeRmse}`),
     ],
   });
   const q4 = buildDecision({
@@ -703,8 +741,6 @@ export const evaluateGroundGlassM5qDimensions = (
       && value.interiorFarRmse <= thresholds.maximumReferenceInteriorFarRmse
       && (value.depthEdgeRmse === null
         || (isFiniteNumber(value.depthEdgeRmse) && value.depthEdgeRmse <= thresholds.maximumReferenceDepthEdgeRmse));
-  const expectedFullFramePixels = r3.captureProvenance.full32.sourceDimensions.widthPx
-    * r3.captureProvenance.full32.sourceDimensions.heightPx;
   const capReferenceHasSupport = (value: GroundGlassM5qPairedCapEvidence["sameCapReferences"]["stressed"]) =>
     Number.isSafeInteger(expectedFullFramePixels)
       && Number.isSafeInteger(value.fullFramePixelCount)
@@ -715,10 +751,22 @@ export const evaluateGroundGlassM5qDimensions = (
         ? value.depthEdgePixelCount === null || value.depthEdgePixelCount === 0
         : Number.isSafeInteger(value.depthEdgePixelCount)
           && (value.depthEdgePixelCount ?? 0) > 0);
+  const q5DepthEdgeQualityApplicable = r3.depthEdgeMetrics.status === "measured"
+    && Number.isSafeInteger(r3.depthEdgeMetrics.pixelCount)
+    && r3.depthEdgeMetrics.pixelCount >= thresholds.minimumSignedBoundarySidePixels;
+  const q5FallbackQualityApplicable = Number.isSafeInteger(r3.fallbackMetrics.pixelCount)
+    && r3.fallbackMetrics.pixelCount >= thresholds.minimumFallbackPixels
+    && Number.isSafeInteger(r3.fallbackMetrics.meaningfulBlurPixelCount)
+    && r3.fallbackMetrics.meaningfulBlurPixelCount >= thresholds.minimumMeaningfulBlurFallbackPixels
+    && r3.fallbackMetrics.boundaryGradient.status === "measured"
+    && Number.isSafeInteger(r3.fallbackMetrics.boundaryGradient.pairCount)
+    && r3.fallbackMetrics.boundaryGradient.pairCount >= thresholds.minimumFallbackBoundaryPairs;
+  const q5QualityCoverage = { depthEdge: q5DepthEdgeQualityApplicable, fallback: q5FallbackQualityApplicable } as const;
   const q5 = buildDecision({
     dimension: "Q5", context, r3, thresholds, thresholdIssues, provenanceIssues,
     pairedCapEvidence: capEvidence,
     pairedCapFingerprintsMatch: capFingerprintsMatch,
+    q5QualityCoverage,
     gates: [
       booleanGate("paired-cap-evidence-present", "support", capEvidence !== undefined,
         "paired lower-cap/control-cap native capture evidence is required"),
@@ -743,6 +791,65 @@ export const evaluateGroundGlassM5qDimensions = (
         : capReferenceConverged(capEvidence.sameCapReferences.stressed)
           && capReferenceConverged(capEvidence.sameCapReferences.control),
       "Full32/Full64 references must converge separately under both declared cap settings"),
+      booleanGate("stressed-cap-b1-full-frame-measured", "support",
+        measuredRgb(r3.fullFrameMetrics.half32B1VsFull32, expectedFullFramePixels)
+          && r3.fullFrameMetrics.half32B1VsFull32.pixelCount === expectedFullFramePixels,
+      `stressed Half32 B1 must be measured against Full32 over the complete ${expectedFullFramePixels}-pixel source frame`),
+      quality("stressed-cap-b1-full-frame-rmse", r3.fullFrameMetrics.half32B1VsFull32.rmse,
+        thresholds.maximumB1FullFrameRmse,
+      `stressed-cap Half32 B1 full-frame RMSE must be <= ${thresholds.maximumB1FullFrameRmse}`),
+      booleanGate("stressed-cap-b1-interior-far-measured", "support",
+        measuredRgb(r3.interiorFarMetrics.half32B1VsFull32, thresholds.minimumInteriorFarPixels)
+          && r3.interiorFarMetrics.half32B1VsFull32.pixelCount === r3.interiorFarMetrics.pixelCount,
+      `stressed Half32 B1 must be measured over at least ${thresholds.minimumInteriorFarPixels} interior-far pixels`),
+      quality("stressed-cap-b1-interior-far-rmse", r3.interiorFarMetrics.half32B1VsFull32.rmse,
+        thresholds.maximumB1InteriorFarRmse,
+      `stressed-cap Half32 B1 interior-far RMSE must be <= ${thresholds.maximumB1InteriorFarRmse}`),
+      minimumSignal("stressed-cap-meaningful-reference-blur", r3.interiorFarMetrics.expectedBlurMeanRgbDifference,
+        thresholds.minimumMeaningfulBlurRgbDifference,
+      `stressed-cap Full32/source interior-far blur must be >= ${thresholds.minimumMeaningfulBlurRgbDifference}`),
+      booleanGate("stressed-cap-blur-spread-measured", "support",
+        r3.blurSpreadMetrics.status === "measured"
+          && Number.isSafeInteger(r3.blurSpreadMetrics.roiPixelCount)
+          && r3.blurSpreadMetrics.roiPixelCount >= thresholds.minimumInteriorFarPixels
+          && isFiniteNumber(r3.blurSpreadMetrics.full32ReferenceGradientEnergy)
+          && isFiniteNumber(r3.blurSpreadMetrics.b1CandidateGradientEnergy)
+          && isFiniteNumber(r3.blurSpreadMetrics.relativeGradientError),
+      "stressed-cap candidate and Full32 reference gradients must be measured on the interior-far ROI"),
+      quality("stressed-cap-blur-gradient-relative-error", r3.blurSpreadMetrics.relativeGradientError,
+        thresholds.maximumBlurGradientRelativeError,
+      `stressed-cap B1 blur-gradient relative error must be <= ${thresholds.maximumBlurGradientRelativeError}`),
+      ...(q5DepthEdgeQualityApplicable ? [
+        booleanGate("stressed-cap-depth-edge-b1-measured", "support",
+          measuredRgb(r3.depthEdgeMetrics.half32B1VsFull32, thresholds.minimumSignedBoundarySidePixels)
+            && r3.depthEdgeMetrics.half32B1VsFull32.pixelCount === r3.depthEdgeMetrics.pixelCount,
+        "applicable stressed-cap depth-edge B1 quality must be measured on the complete depth-edge ROI"),
+        quality("stressed-cap-depth-edge-b1-rmse", r3.depthEdgeMetrics.half32B1VsFull32.rmse,
+          thresholds.maximumB1DepthEdgeRmse,
+        `stressed-cap B1 depth-edge RMSE must be <= ${thresholds.maximumB1DepthEdgeRmse}`),
+      ] : []),
+      ...(q5FallbackQualityApplicable ? [
+        booleanGate("stressed-cap-fallback-b1-measured", "support",
+          measuredRgb(r3.fallbackMetrics.b1VsFull32, thresholds.minimumFallbackPixels)
+            && r3.fallbackMetrics.b1VsFull32.pixelCount === r3.fallbackMetrics.pixelCount,
+        "applicable stressed-cap fallback B1 quality must be measured on the complete fallback ROI"),
+        quality("stressed-cap-fallback-b1-rmse", r3.fallbackMetrics.b1VsFull32.rmse,
+          thresholds.maximumB1FallbackRmse,
+        `stressed-cap B1 fallback RMSE must be <= ${thresholds.maximumB1FallbackRmse}`),
+        booleanGate("stressed-cap-fallback-boundary-gradient-measured", "support",
+          isFiniteNumber(r3.fallbackMetrics.boundaryGradient.meanRelativeError),
+        "applicable stressed-cap fallback boundary gradient error must be measured"),
+        quality("stressed-cap-fallback-boundary-gradient-error", r3.fallbackMetrics.boundaryGradient.meanRelativeError,
+          thresholds.maximumFallbackBoundaryGradientRelativeError,
+        `stressed-cap fallback boundary gradient relative error must be <= ${thresholds.maximumFallbackBoundaryGradientRelativeError}`),
+        quality("stressed-cap-meaningful-blur-fallback-fraction", r3.fallbackMetrics.meaningfulBlurFraction,
+          thresholds.maximumMeaningfulBlurFallbackFraction,
+        `stressed-cap meaningful-blur fallback fraction must be <= ${thresholds.maximumMeaningfulBlurFallbackFraction}`),
+        numberGate("stressed-cap-fallback-source-mismatches", "quality",
+          r3.fallbackMetrics.sourceColorMismatchPixelCount,
+          (value) => Number.isSafeInteger(value) && value === 0,
+          "stressed-cap source fallback must preserve source color"),
+      ] : []),
       booleanGate("paired-cap-capture-identities", "support", capEvidence === undefined ? null
         : Object.values(capEvidence.captureIds).every(nonEmpty)
           && new Set(Object.values(capEvidence.captureIds)).size === 6,
@@ -778,8 +885,13 @@ export const evaluateGroundGlassM5qDimensions = (
       ...reference("interior-far", r3.referenceConvergence.interiorFar,
         thresholds.minimumInteriorFarPixels, thresholds.maximumReferenceInteriorFarRmse,
         thresholds.maximumReferenceChannelError),
-      booleanGate("reference-convergence-status", "reference", isReferenceConverged,
-        "Full32/Full64 references must converge for blur-spread comparison"),
+      booleanGate("reference-convergence-status", "reference",
+        r3.referenceConvergence.interiorFar.status === "measured"
+          && isFiniteNumber(r3.referenceConvergence.interiorFar.rmse)
+          && r3.referenceConvergence.interiorFar.rmse <= thresholds.maximumReferenceInteriorFarRmse
+          && isFiniteNumber(r3.referenceConvergence.interiorFar.maximumChannelError)
+          && r3.referenceConvergence.interiorFar.maximumChannelError <= thresholds.maximumReferenceChannelError,
+      "Full32/Full64 references must converge on the Q6 interior-far ROI"),
       booleanGate("blur-spread-measured", "support", r3.blurSpreadMetrics.status === "measured"
         && isFiniteNumber(r3.blurSpreadMetrics.relativeGradientError),
       "B1 and Full32 blur spread must be measured on the same interior-far ROI"),
@@ -834,7 +946,8 @@ export const evaluateGroundGlassM5qDimensions = (
     Q7: q7,
   };
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
     evidenceScope: "independent-dimension-decisions-for-one-optical-state",
     opticalStateId: context.opticalStateId,
     sceneId: context.sceneId,

@@ -18,6 +18,7 @@ import {
 } from "../../render/webgpu/groundGlassApertureGatherQuality";
 import {
   evaluateGroundGlassM5qDimensions,
+  GROUND_GLASS_M5Q_EVALUATOR_REVISION,
   type GroundGlassM5qEvidenceContext,
   type GroundGlassM5qFrozenThresholds,
   type GroundGlassM5qPairedCapEvidence,
@@ -1221,8 +1222,11 @@ test("native M5Q applies frozen per-dimension R3 gates to independent optical st
     Q6: q1ControlQualification.dimensions.Q6,
     Q7: q2Qualification.dimensions.Q7,
   } satisfies GroundGlassM5qQualification["dimensions"];
+  expect(q5StressQualification.evaluatorRevision).toBe(GROUND_GLASS_M5Q_EVALUATOR_REVISION);
+  expect(q3Qualification.dimensions.Q3.evaluatorRevision).toBe(GROUND_GLASS_M5Q_EVALUATOR_REVISION);
   const report = {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
     stage: "independent-native-confirmatory-matrices",
     thresholdContract: M5Q_FROZEN_THRESHOLDS,
     selectedStates: {

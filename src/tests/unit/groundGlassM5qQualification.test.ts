@@ -147,6 +147,7 @@ const baseR3 = (): DeepMutable<GroundGlassApertureGatherR3Evaluation> => ({
     depthEdgePixelCount: 32,
     signedBoundaryPairCount: 8,
     signedBoundaryPixelCount: 16,
+    full32VsFull64AtSignedBoundary: rgb(0.0001, 16),
     half32B1VsFull32AtDepthEdges: rgb(0.006, 32),
     half32B0VsFull32AtDepthEdges: rgb(0.02, 32),
     half32B1VsFull32AtSignedBoundary: rgb(0.006, 16),
@@ -303,7 +304,10 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     const result = evaluate();
     expect(Object.values(result.dimensions).map(({ status }) => status))
       .toEqual(Array(7).fill("bounded-qualified"));
+    expect(result.schemaVersion).toBe(2);
     expect(result.evidenceScope).toBe("independent-dimension-decisions-for-one-optical-state");
+    expect(result.evaluatorRevision).toBe("m5q-r3-review-fix-1");
+    expect(result.dimensions.Q1.evaluatorRevision).toBe(result.evaluatorRevision);
     expect(result.runtime.actualExecutionApi).toBe("webgpu");
     expect("status" in result).toBe(false);
     expect(result.dimensions.Q5.measurements).toMatchObject({
@@ -377,11 +381,97 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
   it("N5: separates reference non-convergence from candidate quality failure", () => {
     const unstableReference = baseR3();
     unstableReference.referenceConvergence.status = "not-converged";
-    unstableReference.referenceConvergence.fullFrame = rgb(0.2);
+    unstableReference.referenceConvergence.interiorFar = rgb(0.2, 64);
     const result = evaluate(unstableReference);
     expect(result.dimensions.Q1.status).toBe("reference-not-converged");
     expect(result.dimensions.Q2.status).toBe("reference-not-converged");
     expect(result.dimensions.Q7.status).toBe("reference-not-converged");
+  });
+
+  it("B1/B2/B8: Q1 and Q6 use their own interior-far reference even without depth-edge support", () => {
+    const noDepthEdge = baseR3();
+    const unavailable: GroundGlassR3RgbMetrics = {
+      status: "insufficient-support", pixelCount: 0, channelCount: 0,
+      mae: null, rmse: null, maximumChannelError: null,
+    };
+    noDepthEdge.referenceConvergence.status = "insufficient-support";
+    noDepthEdge.referenceConvergence.depthEdge = unavailable;
+    noDepthEdge.depthEdgeMetrics = {
+      ...noDepthEdge.depthEdgeMetrics,
+      status: "insufficient-support",
+      pixelCount: 0,
+      depthEdgePairCount: 0,
+      nearSidePixelCount: 0,
+      farSidePixelCount: 0,
+      half32B1VsFull32: unavailable,
+      half32B0VsFull32: unavailable,
+      full32VsFull64: unavailable,
+    };
+    noDepthEdge.signedBoundaryEvidence = {
+      status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+    };
+    noDepthEdge.foregroundLeakageMetrics.status = "insufficient-support";
+    noDepthEdge.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary = unavailable;
+    noDepthEdge.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary = unavailable;
+
+    const result = evaluate(noDepthEdge);
+    expect(result.dimensions.Q1.status).toBe("bounded-qualified");
+    expect(result.dimensions.Q6.status).toBe("bounded-qualified");
+    expect(result.dimensions.Q3.status).toBe("insufficient-support");
+
+    const signedBoundaryWithoutDepthEdge = baseR3();
+    signedBoundaryWithoutDepthEdge.referenceConvergence.status = "insufficient-support";
+    signedBoundaryWithoutDepthEdge.referenceConvergence.depthEdge = unavailable;
+    signedBoundaryWithoutDepthEdge.depthEdgeMetrics = noDepthEdge.depthEdgeMetrics;
+    signedBoundaryWithoutDepthEdge.foregroundLeakageMetrics.status = "insufficient-support";
+    expect(evaluate(signedBoundaryWithoutDepthEdge).dimensions.Q3.status).toBe("bounded-qualified");
+
+    const badUnrelatedEdge = baseR3();
+    badUnrelatedEdge.referenceConvergence.status = "not-converged";
+    badUnrelatedEdge.referenceConvergence.depthEdge = rgb(0.5, 32);
+    const unaffected = evaluate(badUnrelatedEdge);
+    expect(unaffected.dimensions.Q1.status).toBe("bounded-qualified");
+    expect(unaffected.dimensions.Q6.status).toBe("bounded-qualified");
+
+    const divergentInterior = baseR3();
+    divergentInterior.referenceConvergence.interiorFar = rgb(0.5, 64);
+    expect(evaluate(divergentInterior).dimensions.Q1.status).toBe("reference-not-converged");
+    expect(evaluate(divergentInterior).dimensions.Q6.status).toBe("reference-not-converged");
+  });
+
+  it("C1/C2/C3/C4/C5/C6: Q3 requires measured Full32/Full64 signed-boundary convergence", () => {
+    const baseline = evaluate();
+    expectOnlyDimension(baseline, "Q3", "bounded-qualified");
+    expect(baseline.dimensions.Q3.measurements.signedBoundaryReferenceRmse).toBe(0.0001);
+    expect(baseline.dimensions.Q3.measurements.signedBoundaryReferencePixelCount).toBe(16);
+
+    const badReference = baseR3();
+    badReference.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary = rgb(0.02, 16);
+    const referenceFailure = evaluate(badReference);
+    expectOnlyDimension(referenceFailure, "Q3", "reference-not-converged");
+    expect(referenceFailure.dimensions.Q3.criteria.find((criterion) =>
+      criterion.key === "signed-boundary-rmse")?.met).toBe(false);
+
+    const badCandidate = baseR3();
+    badCandidate.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary = rgb(0.2, 16);
+    expectOnlyDimension(evaluate(badCandidate), "Q3", "candidate-quality-failed");
+
+    const noBoundary = baseR3();
+    noBoundary.signedBoundaryEvidence = { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0 };
+    noBoundary.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary = {
+      status: "insufficient-support", pixelCount: 0, channelCount: 0,
+      mae: null, rmse: null, maximumChannelError: null,
+    };
+    expectOnlyDimension(evaluate(noBoundary), "Q3", "insufficient-support");
+
+    for (const badMetric of [null, Number.NaN]) {
+      const missing = baseR3();
+      missing.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.rmse = badMetric;
+      expect(evaluate(missing).dimensions.Q3.status).not.toBe("bounded-qualified");
+    }
+    const incompleteRgb = baseR3();
+    incompleteRgb.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.channelCount = 0;
+    expect(evaluate(incompleteRgb).dimensions.Q3.status).not.toBe("bounded-qualified");
   });
 
   it("N6/N15: carries upstream provenance and validity rejection forward without inventing raw-buffer evidence", () => {
@@ -401,11 +491,15 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
   it("N7/N9: rejects wrong source fallback and a sharp fallback halo", () => {
     const wrongFallbackSource = baseR3();
     wrongFallbackSource.fallbackMetrics.sourceColorMismatchPixelCount = 1;
-    expectOnlyDimension(evaluate(wrongFallbackSource), "Q2", "candidate-quality-failed");
+    const wrongFallbackResult = evaluate(wrongFallbackSource);
+    expect(wrongFallbackResult.dimensions.Q2.status).toBe("candidate-quality-failed");
+    expect(wrongFallbackResult.dimensions.Q5.status).toBe("candidate-quality-failed");
 
     const sharpHalo = baseR3();
     sharpHalo.fallbackMetrics.boundaryGradient.meanRelativeError = 0.9;
-    expectOnlyDimension(evaluate(sharpHalo), "Q2", "candidate-quality-failed");
+    const sharpHaloResult = evaluate(sharpHalo);
+    expect(sharpHaloResult.dimensions.Q2.status).toBe("candidate-quality-failed");
+    expect(sharpHaloResult.dimensions.Q5.status).toBe("candidate-quality-failed");
   });
 
   it("N8/N10: scores foreground contamination and suppressed blur as separate failures", () => {
@@ -481,13 +575,29 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     noCapDepthEdgeRoi.sameCapReferences.control.depthEdgeRmse = null;
     noCapDepthEdgeRoi.sameCapReferences.control.depthEdgePixelCount = 0;
     const noCapDepthEdgeR3 = baseR3();
+    const unavailableDepthEdge: GroundGlassR3RgbMetrics = {
+      status: "insufficient-support", pixelCount: 0, channelCount: 0,
+      mae: null, rmse: null, maximumChannelError: null,
+    };
     noCapDepthEdgeR3.referenceConvergence.depthEdge = {
       status: "insufficient-support", pixelCount: 0, channelCount: 0,
       mae: null, rmse: null, maximumChannelError: null,
     };
+    noCapDepthEdgeR3.depthEdgeMetrics = {
+      ...noCapDepthEdgeR3.depthEdgeMetrics,
+      status: "insufficient-support",
+      pixelCount: 0,
+      depthEdgePairCount: 0,
+      nearSidePixelCount: 0,
+      farSidePixelCount: 0,
+      half32B1VsFull32: unavailableDepthEdge,
+      half32B0VsFull32: unavailableDepthEdge,
+      full32VsFull64: unavailableDepthEdge,
+    };
     const noEdgeResult = evaluate(noCapDepthEdgeR3, context, thresholds, noCapDepthEdgeRoi);
     expect(noEdgeResult.dimensions.Q5.status).toBe("bounded-qualified");
     expect(noEdgeResult.dimensions.Q5.measurements.stressedCapDepthEdgeReferenceRmse).toBeNull();
+    expect(noEdgeResult.dimensions.Q5.measurements.stressedCapDepthEdgeQualityCoverage).toBe("unavailable");
   });
 
   it("N23/N24: Q5 cannot pass zero-RMSE references with empty ROIs or fabricated stress metrics", () => {
@@ -533,11 +643,55 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     expectOnlyDimension(evaluate(baseR3(), context, thresholds, fabricatedStressReference), "Q5", "invalid-comparison");
   });
 
+  it("A1-A8: Q5 requires stressed-cap B1 quality in addition to cap activation and reference convergence", () => {
+    const poorFullFrame = baseR3();
+    poorFullFrame.fullFrameMetrics.half32B1VsFull32 = rgb(1, 64);
+    const fullFrameResult = evaluate(poorFullFrame, context, thresholds, makePairedCaps());
+    expect(fullFrameResult.dimensions.Q5.status).toBe("candidate-quality-failed");
+    expect(fullFrameResult.dimensions.Q5.criteria.find((criterion) =>
+      criterion.key === "stressed-cap-b1-full-frame-rmse")?.met).toBe(false);
+
+    const poorInterior = baseR3();
+    poorInterior.interiorFarMetrics.half32B1VsFull32 = rgb(1, 64);
+    const interiorResult = evaluate(poorInterior, context, thresholds, makePairedCaps());
+    expect(interiorResult.dimensions.Q5.status).toBe("candidate-quality-failed");
+    expect(interiorResult.dimensions.Q5.criteria.find((criterion) =>
+      criterion.key === "stressed-cap-b1-interior-far-rmse")?.met).toBe(false);
+
+    const poorSpread = baseR3();
+    poorSpread.blurSpreadMetrics.relativeGradientError = 1;
+    expect(evaluate(poorSpread, context, thresholds, makePairedCaps()).dimensions.Q5.status)
+      .toBe("candidate-quality-failed");
+
+    const controlCapQuality = evaluate(baseR3()).dimensions.Q6.status;
+    expect(controlCapQuality).toBe("bounded-qualified");
+
+    const badStressReference = baseR3();
+    badStressReference.referenceConvergence.fullFrame = rgb(0.02, 64);
+    const capEvidence = makePairedCaps();
+    capEvidence.sameCapReferences.stressed.fullFrameRmse = 0.02;
+    capEvidence.sameCapReferences.stressed.maximumChannelError = 0.04;
+    const referenceResult = evaluate(badStressReference, context, thresholds, capEvidence);
+    expect(referenceResult.dimensions.Q5.status).toBe("reference-not-converged");
+    expect(referenceResult.dimensions.Q5.criteria.find((criterion) =>
+      criterion.key === "stressed-cap-b1-full-frame-rmse")?.met).toBe(true);
+
+    const noBlur = baseR3();
+    noBlur.interiorFarMetrics.expectedBlurMeanRgbDifference = 0;
+    expect(evaluate(noBlur, context, thresholds, makePairedCaps()).dimensions.Q5.status).toBe("insufficient-support");
+
+    const qualified = evaluate(baseR3(), context, thresholds, makePairedCaps());
+    expect(qualified.dimensions.Q5.status).toBe("bounded-qualified");
+    expect(qualified.dimensions.Q5.measurements.stressedCapDepthEdgeQualityCoverage).toBe("measured");
+    expect(qualified.dimensions.Q5.measurements.stressedCapFallbackQualityCoverage).toBe("measured");
+  });
+
   it("N18: a Q1 pass does not convert a failed Q2 or any other dimension into a universal pass", () => {
     const poorFallback = baseR3();
     poorFallback.fallbackMetrics.boundaryGradient.meanRelativeError = 0.9;
     const result = evaluate(poorFallback);
-    expectOnlyDimension(result, "Q2", "candidate-quality-failed");
+    expect(result.dimensions.Q2.status).toBe("candidate-quality-failed");
+    expect(result.dimensions.Q5.status).toBe("candidate-quality-failed");
     expect("overallStatus" in result).toBe(false);
     expect(Object.keys(result.dimensions)).toEqual(["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7"]);
   });
@@ -556,7 +710,8 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     const suppressedBlur = baseR3();
     suppressedBlur.blurSpreadMetrics.relativeGradientError = 0.8;
     const q6Failure = evaluate(suppressedBlur);
-    expectOnlyDimension(q6Failure, "Q6", "candidate-quality-failed");
+    expect(q6Failure.dimensions.Q6.status).toBe("candidate-quality-failed");
+    expect(q6Failure.dimensions.Q5.status).toBe("candidate-quality-failed");
 
     const noFallback = baseR3();
     noFallback.fallbackMetrics.pixelCount = 0;
@@ -571,6 +726,7 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     const noFallbackResult = evaluate(noFallback);
     expect(noFallbackResult.dimensions.Q6.status).toBe("bounded-qualified");
     expect(noFallbackResult.dimensions.Q2.status).toBe("insufficient-support");
+    expect(noFallbackResult.dimensions.Q5.measurements.stressedCapFallbackQualityCoverage).toBe("unavailable");
 
     const divergentFull64Candidate = baseR3();
     divergentFull64Candidate.fullFrameMetrics.half32B1VsFull64 = rgb(0.2);

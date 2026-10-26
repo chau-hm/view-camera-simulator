@@ -216,6 +216,7 @@ export type GroundGlassApertureGatherR3Evaluation = Readonly<{
     depthEdgePixelCount: number;
     signedBoundaryPairCount: number;
     signedBoundaryPixelCount: number;
+    full32VsFull64AtSignedBoundary: GroundGlassR3RgbMetrics;
     half32B1VsFull32AtDepthEdges: GroundGlassR3RgbMetrics;
     half32B0VsFull32AtDepthEdges: GroundGlassR3RgbMetrics;
     half32B1VsFull32AtSignedBoundary: GroundGlassR3RgbMetrics;
@@ -739,7 +740,8 @@ const invalidResult = (
     b1CandidateGradientEnergy: null, candidateToReferenceGradientRatio: null, relativeGradientError: null },
   foregroundLeakageMetrics: { status: "insufficient-support", depthEdgePixelCount: 0, signedBoundaryPairCount: 0,
     signedBoundaryPixelCount: 0, half32B1VsFull32AtDepthEdges: unavailableMetrics(),
-    half32B0VsFull32AtDepthEdges: unavailableMetrics(), half32B1VsFull32AtSignedBoundary: unavailableMetrics() },
+    full32VsFull64AtSignedBoundary: unavailableMetrics(), half32B0VsFull32AtDepthEdges: unavailableMetrics(),
+    half32B1VsFull32AtSignedBoundary: unavailableMetrics() },
   nearInvariance: { status: "insufficient-support", gpuVsCpuRgb: unavailableMetrics(), gpuVsCpuAlpha: unavailableMetrics(),
     beforeVsAfterB1Rgb: unavailableMetrics(), beforeVsAfterB1Alpha: unavailableMetrics(), nonzeroCoveragePixelCount: 0,
     fractionalCoveragePixelCount: 0, spreadOutsideSharpNearPixelCount: 0, nearFarBoundaryCoveragePixelCount: 0 },
@@ -874,6 +876,8 @@ export const evaluateGroundGlassApertureGatherR3 = (
   const b0Interior = metricsForMask(full32.readbackBuffers.farGatherRgba, b0, sourcePixels, masks.interiorFar);
   const b1Edges = metricsForMask(full32.readbackBuffers.farGatherRgba, half.readbackBuffers.b1FarRgba, sourcePixels, masks.depthEdge);
   const b0Edges = metricsForMask(full32.readbackBuffers.farGatherRgba, b0, sourcePixels, masks.depthEdge);
+  const referenceBoundary = metricsForMask(full32.readbackBuffers.farGatherRgba,
+    full64.readbackBuffers.farGatherRgba, sourcePixels, masks.signedBoundary);
   const b1Boundary = metricsForMask(full32.readbackBuffers.farGatherRgba, half.readbackBuffers.b1FarRgba, sourcePixels, masks.signedBoundary);
 
   let fallbackPixelCount = 0;
@@ -1134,6 +1138,7 @@ export const evaluateGroundGlassApertureGatherR3 = (
       candidateToReferenceGradientRatio: gradientRatio, relativeGradientError: gradientError },
     foregroundLeakageMetrics: { status: edgeCount > 0 ? "measured" : "insufficient-support", depthEdgePixelCount: edgeCount,
       signedBoundaryPairCount: masks.signedBoundaryPairCount, signedBoundaryPixelCount,
+      full32VsFull64AtSignedBoundary: referenceBoundary,
       half32B1VsFull32AtDepthEdges: b1Edges, half32B0VsFull32AtDepthEdges: b0Edges,
       half32B1VsFull32AtSignedBoundary: b1Boundary },
     nearInvariance: { status: nonzeroCoveragePixelCount > 0 ? "measured" : "insufficient-support",
