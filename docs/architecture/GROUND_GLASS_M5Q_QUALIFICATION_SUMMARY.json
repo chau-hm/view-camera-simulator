@@ -938,5 +938,72 @@
     },
     "q3SignedBoundaryScope": "Bounded qualification applies only to the tested Q3 signed near/far boundary population and optical state. It does not qualify the separate geometric depth-edge ROI, universal B1 quality, R4 presentation parity, or production use.",
     "q5QualityEvidence": "Q5 stressed-cap B1 full-frame, interior-far, and blur-spread quality passed. Same-cap Full32/Full64 reference convergence did not pass, so Q5 remains unqualified."
+  },
+  "reviewFixRound2": {
+    "report": "GROUND_GLASS_M5Q_REVIEW_FIX_2_REPORT.json",
+    "evaluatorRevision": "m5q-r3-review-fix-2",
+    "numericThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "rootCause": "Round 1 signedNearSidePixels and signedFarSidePixels were sourced from the general depth-edge ROI instead of the signed-boundary mask.",
+    "populationSemantics": {
+      "signedBoundaryPairCount": 540,
+      "signedBoundaryUniquePixels": 1072,
+      "signedBoundaryNearSidePixels": 536,
+      "signedBoundaryFarSidePixels": 536,
+      "signedBoundaryPopulationInvariantPassed": true,
+      "depthEdgeTotalPixels": 6142,
+      "depthEdgeNearSidePixels": 3024,
+      "depthEdgeFarSidePixels": 3118
+    },
+    "q3SupportThresholds": {
+      "minimumSignedBoundaryPairs": 100,
+      "minimumSignedBoundaryPixelsPerSide": 100,
+      "numericThresholdsChanged": false
+    },
+    "q3Decision": {
+      "previous": "bounded-qualified",
+      "corrected": "bounded-qualified",
+      "failedCriteria": [],
+      "signedBoundaryReferenceRmse": 0,
+      "signedBoundaryReferenceMaximumChannelError": 0,
+      "signedBoundaryB1Rmse": 0.06270786018850183
+    },
+    "qualificationByDimension": {
+      "Q1": "reference-not-converged",
+      "Q2": "insufficient-support",
+      "Q3": "bounded-qualified",
+      "Q4": "insufficient-support",
+      "Q5": "reference-not-converged",
+      "Q6": "reference-not-converged",
+      "Q7": "reference-not-converged"
+    },
+    "otherDimensionsUnchangedFromReviewFix1": true,
+    "positiveAndNegativeControls": [
+      "Balanced signed-boundary unique-pixel populations",
+      "Multiple adjacency pairs sharing a source pixel",
+      "Near-side and Far-side shortages",
+      "Pair-count inflation",
+      "Far/far edge exclusion",
+      "Invalid validity-code exclusion",
+      "Neutral CoC exclusion",
+      "Depth-edge independence",
+      "Population-conservation failure"
+    ],
+    "nativeRuntime": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false,
+      "rendererRevision": "r186"
+    },
+    "productionIsolation": "No M5 gather/B1, adapter lifecycle, production WebGL, public selector, or M6 composite changes; no production WebGPU authorization.",
+    "remainingBlockers": [
+      "Full32/Full64 convergence for Q1, Q5, Q6 and Q7 references",
+      "Fallback halo and blur support for Q2",
+      "Fractional Near coverage for Q4",
+      "Strong-overrun same-cap reference quality for Q5",
+      "General depth-edge B1 quality",
+      "Broader scene, hardware and driver coverage"
+    ],
+    "qualityDependentM6PresentationBlocked": true
   }
 }

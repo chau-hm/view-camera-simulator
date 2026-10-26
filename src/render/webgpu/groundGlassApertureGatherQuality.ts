@@ -242,9 +242,12 @@ export type GroundGlassApertureGatherR3Evaluation = Readonly<{
     reportedEvidenceMatches: boolean;
   }>;
   signedBoundaryEvidence: Readonly<{
-    status: "present" | "absent";
+    status: "present" | "absent" | "invalid";
     adjacentNearFarPairCount: number;
     participatingPixelCount: number;
+    nearSidePixelCount: number;
+    farSidePixelCount: number;
+    populationConsistent: boolean;
   }>;
   qualityDecision: Readonly<{
     status: GroundGlassR3DecisionStatus;
@@ -523,6 +526,9 @@ type Masks = Readonly<{
   signedBoundary: Uint8Array;
   depthEdgePairCount: number;
   signedBoundaryPairCount: number;
+  signedBoundaryNearSidePixelCount: number;
+  signedBoundaryFarSidePixelCount: number;
+  signedBoundaryPopulationConsistent: boolean;
   averageDepthDelta: number | null;
 }>;
 
@@ -584,12 +590,37 @@ const buildMasks = (
       if (!nearEdge) interiorFar[pixel] = 1;
     }
   }
+  let signedBoundaryNearSidePixelCount = 0;
+  let signedBoundaryFarSidePixelCount = 0;
+  let signedBoundaryPopulationConsistent = true;
+  let signedBoundaryPixelCount = 0;
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (signedBoundary[pixel] !== 1) continue;
+    signedBoundaryPixelCount += 1;
+    if (validity[pixel] !== 1) {
+      signedBoundaryPopulationConsistent = false;
+      continue;
+    }
+    const coc = physicalRgba[pixel * 4]!;
+    if (coc < -SIGN_EPSILON_MM) signedBoundaryNearSidePixelCount += 1;
+    else if (coc > SIGN_EPSILON_MM) signedBoundaryFarSidePixelCount += 1;
+    else signedBoundaryPopulationConsistent = false;
+  }
+  signedBoundaryPopulationConsistent = signedBoundaryPopulationConsistent
+    && Number.isSafeInteger(signedBoundaryNearSidePixelCount)
+    && signedBoundaryNearSidePixelCount >= 0
+    && Number.isSafeInteger(signedBoundaryFarSidePixelCount)
+    && signedBoundaryFarSidePixelCount >= 0
+    && signedBoundaryNearSidePixelCount + signedBoundaryFarSidePixelCount === signedBoundaryPixelCount;
   return {
     interiorFar,
     depthEdge,
     signedBoundary,
     depthEdgePairCount,
     signedBoundaryPairCount,
+    signedBoundaryNearSidePixelCount,
+    signedBoundaryFarSidePixelCount,
+    signedBoundaryPopulationConsistent,
     averageDepthDelta: depthEdgePairCount ? depthDeltaSum / depthEdgePairCount : null,
   };
 };
@@ -748,7 +779,8 @@ const invalidResult = (
   radiusCapEvidence: { status: "inconsistent", maximumUncappedRadiusPx: null, maximumOverrunPx: null, cappedPixelCount: 0,
     reportedMaximumUncappedRadiusPx: captures.half32.reportedRadiusEvidence.maximumUncappedRadiusPx,
     reportedCappedPixelCount: captures.half32.reportedRadiusEvidence.cappedPixelCount, reportedEvidenceMatches: false },
-  signedBoundaryEvidence: { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0 },
+  signedBoundaryEvidence: { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+    nearSidePixelCount: 0, farSidePixelCount: 0, populationConsistent: true },
   qualityDecision: { status: "invalid-comparison", reasons, thresholdRevision: null, thresholdsFrozenBeforeConfirmatory: false },
 });
 
@@ -1034,6 +1066,10 @@ export const evaluateGroundGlassApertureGatherR3 = (
   } else {
     thresholdErrors = validateThresholds(thresholds);
     if (thresholdErrors.length) qualityReasons = thresholdErrors;
+    else if (!masks.signedBoundaryPopulationConsistent) {
+      qualityStatus = "invalid-comparison";
+      qualityReasons = ["signed-boundary Near/Far unique-pixel population is inconsistent with its mask"];
+    }
     else {
       const supportErrors: string[] = [];
       if (interiorCount < thresholds.minimumInteriorFarPixels) supportErrors.push("interior far ROI support is insufficient");
@@ -1150,8 +1186,12 @@ export const evaluateGroundGlassApertureGatherR3 = (
       reportedMaximumUncappedRadiusPx: half.reportedRadiusEvidence.maximumUncappedRadiusPx,
       reportedCappedPixelCount: half.reportedRadiusEvidence.cappedPixelCount,
       reportedEvidenceMatches: radiusReportedMatches },
-    signedBoundaryEvidence: { status: masks.signedBoundaryPairCount > 0 ? "present" : "absent",
-      adjacentNearFarPairCount: masks.signedBoundaryPairCount, participatingPixelCount: signedBoundaryPixelCount },
+    signedBoundaryEvidence: { status: !masks.signedBoundaryPopulationConsistent ? "invalid"
+      : masks.signedBoundaryPairCount > 0 ? "present" : "absent",
+      adjacentNearFarPairCount: masks.signedBoundaryPairCount, participatingPixelCount: signedBoundaryPixelCount,
+      nearSidePixelCount: masks.signedBoundaryNearSidePixelCount,
+      farSidePixelCount: masks.signedBoundaryFarSidePixelCount,
+      populationConsistent: masks.signedBoundaryPopulationConsistent },
     qualityDecision: { status: qualityStatus, reasons: qualityReasons,
       thresholdRevision: thresholds?.revision ?? null,
       thresholdsFrozenBeforeConfirmatory: thresholds?.frozenBeforeConfirmatory ?? false },

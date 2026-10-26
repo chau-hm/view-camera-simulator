@@ -1204,6 +1204,25 @@ test("native M5Q applies frozen per-dimension R3 gates to independent optical st
     r3: q3Run.r3,
     thresholds: M5Q_FROZEN_THRESHOLDS,
   });
+  const q3SignedBoundary = q3Run.r3.signedBoundaryEvidence;
+  const q3Decision = q3Qualification.dimensions.Q3;
+  const q3SidePopulationInvariantPassed = q3SignedBoundary.nearSidePixelCount + q3SignedBoundary.farSidePixelCount
+    === q3SignedBoundary.participatingPixelCount;
+  expect(q3Run.runtime.rendererFamily).toBe("webgpu-renderer");
+  expect(q3Run.runtime.actualExecutionApi).toBe("webgpu");
+  expect(q3Run.runtime.internalFallback).toBe("none");
+  expect(q3Run.runtime.applicationFallback).toBe(false);
+  expect(q3Run.runtime.rendererRevision).toBe(`r${REVISION}`);
+  expect(q3SignedBoundary.status).toBe("present");
+  expect(q3SignedBoundary.populationConsistent).toBe(true);
+  expect(q3SidePopulationInvariantPassed).toBe(true);
+  if (q3SignedBoundary.nearSidePixelCount < M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels
+      || q3SignedBoundary.farSidePixelCount < M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels) {
+    expect(q3Decision.status).toBe("insufficient-support");
+    expect(q3Decision.status).not.toBe("bounded-qualified");
+  } else {
+    expect(q3Decision.status).toBe("bounded-qualified");
+  }
 
   const allCaptureSummaries = [
     ...q5Stress.captureSummary,
@@ -1225,7 +1244,7 @@ test("native M5Q applies frozen per-dimension R3 gates to independent optical st
   expect(q5StressQualification.evaluatorRevision).toBe(GROUND_GLASS_M5Q_EVALUATOR_REVISION);
   expect(q3Qualification.dimensions.Q3.evaluatorRevision).toBe(GROUND_GLASS_M5Q_EVALUATOR_REVISION);
   const report = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
     stage: "independent-native-confirmatory-matrices",
     thresholdContract: M5Q_FROZEN_THRESHOLDS,
@@ -1245,6 +1264,35 @@ test("native M5Q applies frozen per-dimension R3 gates to independent optical st
     confirmatoryCaptures: allCaptureSummaries,
     pairedCapSensitivity: pairedCapEvidence.crossCapSensitivity,
     qualificationByDimension,
+    q3SignedBoundaryEvidence: {
+      opticalStateId: q3Candidate.id,
+      evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
+      frozenThresholdRevision: M5Q_FROZEN_THRESHOLDS.revision,
+      evidenceSource: q3Context.evidenceSource,
+      captureIds: q3Run.r3.captureIds,
+      signedBoundaryPairCount: q3SignedBoundary.adjacentNearFarPairCount,
+      signedBoundaryPixelCount: q3SignedBoundary.participatingPixelCount,
+      signedBoundaryNearSidePixelCount: q3SignedBoundary.nearSidePixelCount,
+      signedBoundaryFarSidePixelCount: q3SignedBoundary.farSidePixelCount,
+      depthEdgePixelCount: q3Run.r3.depthEdgeMetrics.pixelCount,
+      depthEdgeNearSidePixelCount: q3Run.r3.depthEdgeMetrics.nearSidePixelCount,
+      depthEdgeFarSidePixelCount: q3Run.r3.depthEdgeMetrics.farSidePixelCount,
+      signedBoundaryReferenceRmse: q3Run.r3.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.rmse,
+      signedBoundaryReferenceMaximumChannelError:
+        q3Run.r3.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.maximumChannelError,
+      signedBoundaryB1Rmse: q3Run.r3.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary.rmse,
+      requiredNearSidePixelMinimum: M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels,
+      requiredFarSidePixelMinimum: M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels,
+      sidePopulationInvariantPassed: q3SidePopulationInvariantPassed,
+      previousDecision: "bounded-qualified",
+      correctedDecision: q3Decision.status,
+      failedCriteria: q3Decision.criteria.filter(({ met }) => met === false),
+      runtime: q3Run.runtime,
+      remainingLimitations: [
+        "Q3 establishes only signed-boundary support and bounded quality for this optical state and capture matrix.",
+        "General depth-edge B1 quality remains a separate unqualified claim.",
+      ],
+    },
     qualificationByOpticalState: {
       "q1-q5-q6-control-cap": q1ControlQualification,
       "q5-stress-cap": q5StressQualification,

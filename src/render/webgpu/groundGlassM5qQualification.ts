@@ -5,7 +5,7 @@ import type {
 
 export type GroundGlassM5qDimensionId = "Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6" | "Q7";
 
-export const GROUND_GLASS_M5Q_EVALUATOR_REVISION = "m5q-r3-review-fix-1";
+export const GROUND_GLASS_M5Q_EVALUATOR_REVISION = "m5q-r3-review-fix-2";
 
 export type GroundGlassM5qEvidenceSource = "registered-app-adapter" | "native-research-fixture";
 
@@ -148,16 +148,18 @@ export type GroundGlassM5qDimensionMeasurements = Readonly<{
   fallbackBoundaryPairs: number | null;
   fallbackBoundaryMeanRelativeError: number | null;
   fallbackSourceMismatchPixels: number | null;
-  signedBoundaryPairs: number | null;
-  signedBoundaryPixels: number | null;
-  signedNearSidePixels: number | null;
-  signedFarSidePixels: number | null;
+  signedBoundaryPairCount: number | null;
+  signedBoundaryTotalPixels: number | null;
+  signedBoundaryNearSidePixels: number | null;
+  signedBoundaryFarSidePixels: number | null;
   b1SignedBoundaryRmse: number | null;
   signedBoundaryReferencePixelCount: number | null;
   signedBoundaryReferenceRmse: number | null;
   signedBoundaryReferenceMaximumChannelError: number | null;
-  depthEdgePixels: number | null;
+  depthEdgeTotalPixels: number | null;
   depthEdgePairs: number | null;
+  depthEdgeNearSidePixels: number | null;
+  depthEdgeFarSidePixels: number | null;
   b1DepthEdgeRmse: number | null;
   nearCoveragePixels: number | null;
   fractionalNearCoveragePixels: number | null;
@@ -229,7 +231,7 @@ export type GroundGlassM5qDimensionDecision = Readonly<{
 }>;
 
 export type GroundGlassM5qQualification = Readonly<{
-  schemaVersion: 2;
+  schemaVersion: 3;
   evaluatorRevision: string;
   evidenceScope: "independent-dimension-decisions-for-one-optical-state";
   opticalStateId: string;
@@ -307,17 +309,19 @@ const measurement = (
   fallbackBoundaryPairs: metrics.fallbackMetrics.boundaryGradient.pairCount,
   fallbackBoundaryMeanRelativeError: metrics.fallbackMetrics.boundaryGradient.meanRelativeError,
   fallbackSourceMismatchPixels: metrics.fallbackMetrics.sourceColorMismatchPixelCount,
-  signedBoundaryPairs: metrics.signedBoundaryEvidence.adjacentNearFarPairCount,
-  signedBoundaryPixels: metrics.signedBoundaryEvidence.participatingPixelCount,
-  signedNearSidePixels: metrics.depthEdgeMetrics.nearSidePixelCount,
-  signedFarSidePixels: metrics.depthEdgeMetrics.farSidePixelCount,
+  signedBoundaryPairCount: metrics.signedBoundaryEvidence.adjacentNearFarPairCount,
+  signedBoundaryTotalPixels: metrics.signedBoundaryEvidence.participatingPixelCount,
+  signedBoundaryNearSidePixels: metrics.signedBoundaryEvidence.nearSidePixelCount,
+  signedBoundaryFarSidePixels: metrics.signedBoundaryEvidence.farSidePixelCount,
   b1SignedBoundaryRmse: metrics.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary.rmse,
   signedBoundaryReferencePixelCount: metrics.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.pixelCount,
   signedBoundaryReferenceRmse: metrics.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.rmse,
   signedBoundaryReferenceMaximumChannelError:
     metrics.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.maximumChannelError,
-  depthEdgePixels: metrics.depthEdgeMetrics.pixelCount,
+  depthEdgeTotalPixels: metrics.depthEdgeMetrics.pixelCount,
   depthEdgePairs: metrics.depthEdgeMetrics.depthEdgePairCount,
+  depthEdgeNearSidePixels: metrics.depthEdgeMetrics.nearSidePixelCount,
+  depthEdgeFarSidePixels: metrics.depthEdgeMetrics.farSidePixelCount,
   b1DepthEdgeRmse: metrics.depthEdgeMetrics.half32B1VsFull32.rmse,
   nearCoveragePixels: metrics.nearInvariance.nonzeroCoveragePixelCount,
   fractionalNearCoveragePixels: metrics.nearInvariance.fractionalCoveragePixelCount,
@@ -649,11 +653,31 @@ export const evaluateGroundGlassM5qDimensions = (
   const q3 = buildDecision({
     dimension: "Q3", context, r3, thresholds, thresholdIssues, provenanceIssues,
     gates: [
+      booleanGate("signed-boundary-population-invariant", "provenance",
+        r3.signedBoundaryEvidence.status !== "invalid"
+          && r3.signedBoundaryEvidence.populationConsistent === true
+          && Number.isSafeInteger(r3.signedBoundaryEvidence.participatingPixelCount)
+          && r3.signedBoundaryEvidence.participatingPixelCount >= 0
+          && Number.isSafeInteger(r3.signedBoundaryEvidence.nearSidePixelCount)
+          && r3.signedBoundaryEvidence.nearSidePixelCount >= 0
+          && Number.isSafeInteger(r3.signedBoundaryEvidence.farSidePixelCount)
+          && r3.signedBoundaryEvidence.farSidePixelCount >= 0
+          && r3.signedBoundaryEvidence.nearSidePixelCount + r3.signedBoundaryEvidence.farSidePixelCount
+            === r3.signedBoundaryEvidence.participatingPixelCount,
+        "unique signed-boundary Near and Far pixels must equal the participating source-pixel total"),
       support("signed-near-far-pairs", r3.signedBoundaryEvidence.status === "present"
         ? r3.signedBoundaryEvidence.adjacentNearFarPairCount : null,
       thresholds.minimumSignedBoundaryPairs, `valid signed near/far adjacency must contain >= ${thresholds.minimumSignedBoundaryPairs} pairs`),
       support("signed-boundary-pixels", r3.signedBoundaryEvidence.participatingPixelCount,
         thresholds.minimumSignedBoundarySidePixels, `signed-boundary ROI must contain >= ${thresholds.minimumSignedBoundarySidePixels} pixels`),
+      support("signed-boundary-near-side-unique-pixels", r3.signedBoundaryEvidence.status === "present"
+        ? r3.signedBoundaryEvidence.nearSidePixelCount : null,
+      thresholds.minimumSignedBoundarySidePixels,
+      `unique signed-boundary Near-side pixels must be >= ${thresholds.minimumSignedBoundarySidePixels}`),
+      support("signed-boundary-far-side-unique-pixels", r3.signedBoundaryEvidence.status === "present"
+        ? r3.signedBoundaryEvidence.farSidePixelCount : null,
+      thresholds.minimumSignedBoundarySidePixels,
+      `unique signed-boundary Far-side pixels must be >= ${thresholds.minimumSignedBoundarySidePixels}`),
       ...reference("signed-boundary", r3.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary,
         thresholds.minimumSignedBoundarySidePixels, thresholds.maximumReferenceDepthEdgeRmse,
         thresholds.maximumReferenceChannelError),
@@ -946,7 +970,7 @@ export const evaluateGroundGlassM5qDimensions = (
     Q7: q7,
   };
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
     evidenceScope: "independent-dimension-decisions-for-one-optical-state",
     opticalStateId: context.opticalStateId,

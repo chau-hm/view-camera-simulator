@@ -176,6 +176,9 @@ const baseR3 = (): DeepMutable<GroundGlassApertureGatherR3Evaluation> => ({
     status: "present",
     adjacentNearFarPairCount: 8,
     participatingPixelCount: 16,
+    nearSidePixelCount: 8,
+    farSidePixelCount: 8,
+    populationConsistent: true,
   },
   qualityDecision: {
     status: "not-evaluated",
@@ -289,6 +292,20 @@ const evaluate = (
   ...(pairedCapEvidence ? { pairedCapEvidence } : {}),
 });
 
+const setSignedBoundaryPopulation = (
+  r3: DeepMutable<GroundGlassApertureGatherR3Evaluation>,
+  population: Readonly<{ pairs: number; total: number; near: number; far: number; consistent?: boolean }>,
+) => {
+  r3.signedBoundaryEvidence = {
+    status: population.pairs > 0 ? "present" : "absent",
+    adjacentNearFarPairCount: population.pairs,
+    participatingPixelCount: population.total,
+    nearSidePixelCount: population.near,
+    farSidePixelCount: population.far,
+    populationConsistent: population.consistent ?? population.near + population.far === population.total,
+  };
+};
+
 const expectOnlyDimension = (
   result: GroundGlassM5qQualification,
   targetDimension: GroundGlassM5qDimensionId,
@@ -304,9 +321,9 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     const result = evaluate();
     expect(Object.values(result.dimensions).map(({ status }) => status))
       .toEqual(Array(7).fill("bounded-qualified"));
-    expect(result.schemaVersion).toBe(2);
+    expect(result.schemaVersion).toBe(3);
     expect(result.evidenceScope).toBe("independent-dimension-decisions-for-one-optical-state");
-    expect(result.evaluatorRevision).toBe("m5q-r3-review-fix-1");
+    expect(result.evaluatorRevision).toBe("m5q-r3-review-fix-2");
     expect(result.dimensions.Q1.evaluatorRevision).toBe(result.evaluatorRevision);
     expect(result.runtime.actualExecutionApi).toBe("webgpu");
     expect("status" in result).toBe(false);
@@ -409,6 +426,7 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     };
     noDepthEdge.signedBoundaryEvidence = {
       status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+      nearSidePixelCount: 0, farSidePixelCount: 0, populationConsistent: true,
     };
     noDepthEdge.foregroundLeakageMetrics.status = "insufficient-support";
     noDepthEdge.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary = unavailable;
@@ -457,7 +475,8 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     expectOnlyDimension(evaluate(badCandidate), "Q3", "candidate-quality-failed");
 
     const noBoundary = baseR3();
-    noBoundary.signedBoundaryEvidence = { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0 };
+    noBoundary.signedBoundaryEvidence = { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+      nearSidePixelCount: 0, farSidePixelCount: 0, populationConsistent: true };
     noBoundary.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary = {
       status: "insufficient-support", pixelCount: 0, channelCount: 0,
       mae: null, rmse: null, maximumChannelError: null,
@@ -472,6 +491,105 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
     const incompleteRgb = baseR3();
     incompleteRgb.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.channelCount = 0;
     expect(evaluate(incompleteRgb).dimensions.Q3.status).not.toBe("bounded-qualified");
+  });
+
+  it("requires independently supported unique Near and Far pixels within the signed-boundary ROI", () => {
+    const supported = evaluate();
+    expect(supported.dimensions.Q3.status).toBe("bounded-qualified");
+    expect(supported.dimensions.Q3.measurements).toMatchObject({
+      signedBoundaryPairCount: 8,
+      signedBoundaryTotalPixels: 16,
+      signedBoundaryNearSidePixels: 8,
+      signedBoundaryFarSidePixels: 8,
+    });
+
+    const nearShort = baseR3();
+    setSignedBoundaryPopulation(nearShort, { pairs: 8, total: 16, near: 7, far: 9 });
+    const nearShortResult = evaluate(nearShort);
+    expect(nearShortResult.dimensions.Q3.status).toBe("insufficient-support");
+    expect(nearShortResult.dimensions.Q3.criteria.find((criterion) =>
+      criterion.key === "signed-boundary-near-side-unique-pixels")?.met).toBe(false);
+
+    const farShort = baseR3();
+    setSignedBoundaryPopulation(farShort, { pairs: 8, total: 16, near: 9, far: 7 });
+    const farShortResult = evaluate(farShort);
+    expect(farShortResult.dimensions.Q3.status).toBe("insufficient-support");
+    expect(farShortResult.dimensions.Q3.criteria.find((criterion) =>
+      criterion.key === "signed-boundary-far-side-unique-pixels")?.met).toBe(false);
+  });
+
+  it("does not let adjacency-pair inflation or general depth-edge pixels rescue a deficient signed side", () => {
+    const pairInflated = baseR3();
+    setSignedBoundaryPopulation(pairInflated, { pairs: 120, total: 200, near: 99, far: 101 });
+    pairInflated.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary = rgb(0.0001, 200);
+    pairInflated.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary = rgb(0.006, 200);
+    const frozenSideThresholds = { ...thresholds, minimumSignedBoundaryPairs: 100, minimumSignedBoundarySidePixels: 100 };
+    const pairInflatedResult = evaluate(pairInflated, context, frozenSideThresholds);
+    expect(pairInflatedResult.dimensions.Q3.criteria.find((criterion) =>
+      criterion.key === "signed-near-far-pairs")?.met).toBe(true);
+    expect(pairInflatedResult.dimensions.Q3.criteria.find((criterion) =>
+      criterion.key === "signed-boundary-near-side-unique-pixels")?.met).toBe(false);
+    expect(pairInflatedResult.dimensions.Q3.status).toBe("insufficient-support");
+
+    const edgeOnly = baseR3();
+    setSignedBoundaryPopulation(edgeOnly, { pairs: 8, total: 16, near: 7, far: 9 });
+    edgeOnly.depthEdgeMetrics.nearSidePixelCount = 3000;
+    edgeOnly.depthEdgeMetrics.farSidePixelCount = 3000;
+    const edgeOnlyResult = evaluate(edgeOnly);
+    expect(edgeOnlyResult.dimensions.Q3.measurements.depthEdgeNearSidePixels).toBe(3000);
+    expect(edgeOnlyResult.dimensions.Q3.measurements.depthEdgeFarSidePixels).toBe(3000);
+    expect(edgeOnlyResult.dimensions.Q3.measurements.signedBoundaryNearSidePixels).toBe(7);
+    expect(edgeOnlyResult.dimensions.Q3.status).toBe("insufficient-support");
+  });
+
+  it("fails closed on inconsistent signed-boundary population and keeps the ROI total explicit", () => {
+    const inconsistent = baseR3();
+    setSignedBoundaryPopulation(inconsistent, { pairs: 8, total: 16, near: 8, far: 7, consistent: false });
+    const result = evaluate(inconsistent);
+    expect(result.dimensions.Q3.status).toBe("invalid-comparison");
+    expect(result.dimensions.Q3.criteria.find((criterion) =>
+      criterion.key === "signed-boundary-population-invariant")?.met).toBe(false);
+    expect(result.dimensions.Q3.measurements).toMatchObject({
+      signedBoundaryTotalPixels: 16,
+      signedBoundaryNearSidePixels: 8,
+      signedBoundaryFarSidePixels: 7,
+      depthEdgeTotalPixels: 32,
+      depthEdgeNearSidePixels: 16,
+      depthEdgeFarSidePixels: 16,
+    });
+  });
+
+  it("keeps Q3 independent from the general depth-edge reference and other dimension decisions", () => {
+    const unrelatedEdgeFailure = baseR3();
+    unrelatedEdgeFailure.referenceConvergence.status = "not-converged";
+    unrelatedEdgeFailure.referenceConvergence.depthEdge = rgb(0.5, 32);
+    unrelatedEdgeFailure.depthEdgeMetrics.full32VsFull64 = rgb(0.5, 32);
+    expect(evaluate(unrelatedEdgeFailure).dimensions.Q3.status).toBe("bounded-qualified");
+
+    const deficientSignedSide = baseR3();
+    setSignedBoundaryPopulation(deficientSignedSide, { pairs: 8, total: 16, near: 7, far: 9 });
+    const result = evaluate(deficientSignedSide);
+    expect(result.dimensions.Q3.status).toBe("insufficient-support");
+    expect(result.dimensions.Q1.status).toBe("bounded-qualified");
+    expect(result.dimensions.Q5.status).toBe("bounded-qualified");
+    expect(result.dimensions.Q6.status).toBe("bounded-qualified");
+    expect("overallStatus" in result).toBe(false);
+  });
+
+  it("serializes Q3 with explicit signed-boundary and depth-edge populations that conserve the signed ROI", () => {
+    const q3 = evaluate().dimensions.Q3;
+    const serialized = JSON.parse(JSON.stringify(q3)) as typeof q3;
+    expect(serialized.measurements).toMatchObject({
+      signedBoundaryPairCount: 8,
+      signedBoundaryTotalPixels: 16,
+      signedBoundaryNearSidePixels: 8,
+      signedBoundaryFarSidePixels: 8,
+      depthEdgeTotalPixels: 32,
+      depthEdgeNearSidePixels: 16,
+      depthEdgeFarSidePixels: 16,
+    });
+    expect(serialized.measurements.signedBoundaryNearSidePixels! + serialized.measurements.signedBoundaryFarSidePixels!)
+      .toBe(serialized.measurements.signedBoundaryTotalPixels);
   });
 
   it("N6/N15: carries upstream provenance and validity rejection forward without inventing raw-buffer evidence", () => {
@@ -534,6 +652,9 @@ describe("Ground Glass M5Q independent R3 dimension decisions", () => {
       status: "absent",
       adjacentNearFarPairCount: 0,
       participatingPixelCount: 0,
+      nearSidePixelCount: 0,
+      farSidePixelCount: 0,
+      populationConsistent: true,
     };
     expect(farFarOnly.depthEdgeMetrics.depthEdgePairCount).toBeGreaterThan(0);
     expectOnlyDimension(evaluate(farFarOnly), "Q3", "insufficient-support");
