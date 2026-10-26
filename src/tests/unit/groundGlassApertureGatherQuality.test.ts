@@ -448,6 +448,57 @@ describe("Ground Glass M5 independent R3 quality evaluator", () => {
     expect(result.qualityDecision.reasons.join(" ")).toContain("signed near/far-boundary error exceeds its limit");
   });
 
+  it("computes Full32/Full64 convergence from the signed-boundary mask independently of depth edges", () => {
+    const matrix = makeMatrix();
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) {
+      for (let y = 0; y < source.heightPx; y += 1) {
+        for (let x = 0; x < source.widthPx; x += 1) {
+          // Keep the near/far sign transition at x=3/4 separate from a far/far depth edge at x=5/6.
+          capture.readbackBuffers.depth[y * source.widthPx + x] = x < 6 ? 0.4 : 0.7;
+        }
+      }
+    }
+
+    const converged = evaluateGroundGlassApertureGatherR3(matrix, thresholds);
+    expect(converged.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.status).toBe("measured");
+    expect(converged.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.pixelCount)
+      .toBe(converged.signedBoundaryEvidence.participatingPixelCount);
+    expect(converged.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.channelCount)
+      .toBe(converged.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.pixelCount * 3);
+    expect(converged.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.mae).toBe(0);
+    expect(converged.depthEdgeMetrics.full32VsFull64.rmse).toBe(0);
+
+    const signedBoundaryPixel = 3 * source.widthPx + 3;
+    matrix.full64.readbackBuffers.farGatherRgba[signedBoundaryPixel * 4] += 0.5;
+    const divergent = evaluateGroundGlassApertureGatherR3(matrix, thresholds);
+    expect(divergent.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.rmse).toBeGreaterThan(0.01);
+    expect(divergent.depthEdgeMetrics.full32VsFull64.rmse).toBe(0);
+  });
+
+  it("requires validity-one adjacent pixels and opposite CoC signs for its reference boundary mask", () => {
+    const farFar = makeMatrix();
+    for (const capture of [farFar.half32, farFar.full32, farFar.full64]) {
+      for (let pixel = 0; pixel < capture.readbackBuffers.validity.length; pixel += 1) {
+        capture.readbackBuffers.physicalRgba[pixel * 4] = 0.5;
+      }
+    }
+    const noSignBoundary = evaluateGroundGlassApertureGatherR3(farFar, thresholds);
+    expect(noSignBoundary.signedBoundaryEvidence.status).toBe("absent");
+    expect(noSignBoundary.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.status)
+      .toBe("insufficient-support");
+
+    const invalidAdjacent = makeMatrix();
+    for (const capture of [invalidAdjacent.half32, invalidAdjacent.full32, invalidAdjacent.full64]) {
+      for (let y = 0; y < source.heightPx; y += 1) {
+        capture.readbackBuffers.validity[y * source.widthPx + 3] = 0;
+        capture.readbackBuffers.validity[y * source.widthPx + 4] = 0;
+      }
+    }
+    const excluded = evaluateGroundGlassApertureGatherR3(invalidAdjacent, thresholds);
+    expect(excluded.signedBoundaryEvidence.status).toBe("absent");
+    expect(excluded.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.pixelCount).toBe(0);
+  });
+
   it("does not count over-cap physical data from validity-code-2 pixels", () => {
     const base = makeMatrix();
     const invalidCenter = source.widthPx + 7;
@@ -509,5 +560,118 @@ describe("Ground Glass M5 independent R3 quality evaluator", () => {
     nonFinite.full32.readbackBuffers.physicalRgba[0] = Number.NaN;
     expect(evaluateGroundGlassApertureGatherR3(nonFinite, thresholds).qualityDecision.status)
       .toBe("invalid-comparison");
+  });
+
+  it("counts each balanced signed-boundary source pixel once from the constructed mask", () => {
+    const result = evaluateGroundGlassApertureGatherR3(makeMatrix(), thresholds);
+    expect(result.signedBoundaryEvidence).toMatchObject({
+      status: "present",
+      adjacentNearFarPairCount: 8,
+      participatingPixelCount: 16,
+      nearSidePixelCount: 8,
+      farSidePixelCount: 8,
+      populationConsistent: true,
+    });
+    expect(result.signedBoundaryEvidence.nearSidePixelCount + result.signedBoundaryEvidence.farSidePixelCount)
+      .toBe(result.signedBoundaryEvidence.participatingPixelCount);
+  });
+
+  it("counts shared signed-boundary pixels once even when they participate in multiple adjacency pairs", () => {
+    const matrix = makeMatrix();
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) {
+      capture.readbackBuffers.physicalRgba.fill(0);
+      const near = 3 * source.widthPx + 3;
+      const farRight = near + 1;
+      const farBelow = near + source.widthPx;
+      capture.readbackBuffers.physicalRgba[near * 4] = -0.5;
+      capture.readbackBuffers.physicalRgba[farRight * 4] = 0.5;
+      capture.readbackBuffers.physicalRgba[farBelow * 4] = 0.5;
+    }
+
+    const evidence = evaluateGroundGlassApertureGatherR3(matrix, thresholds).signedBoundaryEvidence;
+    expect(evidence.adjacentNearFarPairCount).toBe(2);
+    expect(evidence.participatingPixelCount).toBe(3);
+    expect(evidence.nearSidePixelCount).toBe(1);
+    expect(evidence.farSidePixelCount).toBe(2);
+    expect(evidence.nearSidePixelCount + evidence.farSidePixelCount).toBe(evidence.participatingPixelCount);
+  });
+
+  it("keeps far/far depth edges out of the signed-boundary mask and side populations", () => {
+    const matrix = makeMatrix();
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) {
+      capture.readbackBuffers.physicalRgba.fill(0.5);
+      for (let y = 0; y < source.heightPx; y += 1) {
+        capture.readbackBuffers.depth[y * source.widthPx + 4] = 0.8;
+      }
+    }
+
+    const result = evaluateGroundGlassApertureGatherR3(matrix, thresholds);
+    expect(result.signedBoundaryEvidence).toMatchObject({
+      status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+      nearSidePixelCount: 0, farSidePixelCount: 0, populationConsistent: true,
+    });
+    expect(result.depthEdgeMetrics.pixelCount).toBeGreaterThan(0);
+  });
+
+  it.each([0, 2, 3, 4])("excludes validity code %i from signed-boundary adjacency and side counts", (invalidCode) => {
+    const matrix = makeMatrix();
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) {
+      capture.readbackBuffers.physicalRgba.fill(0);
+      const near = 3 * source.widthPx + 3;
+      const far = near + 1;
+      capture.readbackBuffers.physicalRgba[near * 4] = -0.5;
+      capture.readbackBuffers.physicalRgba[far * 4] = 0.5;
+      capture.readbackBuffers.validity[far] = invalidCode;
+    }
+
+    const evidence = evaluateGroundGlassApertureGatherR3(matrix, thresholds).signedBoundaryEvidence;
+    expect(evidence.adjacentNearFarPairCount).toBe(0);
+    expect(evidence.participatingPixelCount).toBe(0);
+    expect(evidence.nearSidePixelCount).toBe(0);
+    expect(evidence.farSidePixelCount).toBe(0);
+  });
+
+  it("does not classify CoC inside the neutral epsilon band as a signed side", () => {
+    const matrix = makeMatrix();
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) {
+      capture.readbackBuffers.physicalRgba.fill(0);
+      const neutral = 3 * source.widthPx + 3;
+      const far = neutral + 1;
+      capture.readbackBuffers.physicalRgba[neutral * 4] = -0.000005;
+      capture.readbackBuffers.physicalRgba[far * 4] = 0.5;
+    }
+
+    const evidence = evaluateGroundGlassApertureGatherR3(matrix, thresholds).signedBoundaryEvidence;
+    expect(evidence.status).toBe("absent");
+    expect(evidence.adjacentNearFarPairCount).toBe(0);
+    expect(evidence.nearSidePixelCount).toBe(0);
+    expect(evidence.farSidePixelCount).toBe(0);
+  });
+
+  it("reports zero signed-boundary populations when no opposite-sign boundary exists", () => {
+    const matrix = makeMatrix();
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) {
+      capture.readbackBuffers.physicalRgba.fill(0.5);
+    }
+
+    const result = evaluateGroundGlassApertureGatherR3(matrix, thresholds);
+    expect(result.signedBoundaryEvidence).toMatchObject({
+      status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+      nearSidePixelCount: 0, farSidePixelCount: 0, populationConsistent: true,
+    });
+    expect(result.qualityDecision.status).toBe("insufficient-roi-support");
+  });
+
+  it("keeps signed-boundary population and reference metrics independent of depth-edge changes", () => {
+    const matrix = makeMatrix();
+    const withDepthEdge = evaluateGroundGlassApertureGatherR3(matrix, thresholds);
+    for (const capture of [matrix.half32, matrix.full32, matrix.full64]) capture.readbackBuffers.depth.fill(0.5);
+    const withoutDepthEdge = evaluateGroundGlassApertureGatherR3(matrix, thresholds);
+
+    expect(withDepthEdge.depthEdgeMetrics.pixelCount).toBeGreaterThan(0);
+    expect(withoutDepthEdge.depthEdgeMetrics.pixelCount).toBe(0);
+    expect(withoutDepthEdge.signedBoundaryEvidence).toEqual(withDepthEdge.signedBoundaryEvidence);
+    expect(withoutDepthEdge.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary)
+      .toEqual(withDepthEdge.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary);
   });
 });

@@ -1,19 +1,42 @@
-import { expect, test, type Page } from "@playwright/test";
-import { REVISION } from "three";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { REVISION, PerspectiveCamera } from "three";
 import { gunzipSync } from "node:zlib";
 import type {
   GroundGlassB1BoundaryProbeReadback,
   GroundGlassApertureGatherCaptureReadback,
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import type { GroundGlassApertureGatherQualityMode } from "../../render/webgpu/groundGlassApertureGatherPolicy";
+import { mapGroundGlassPhysicalEllipseToSourcePixels } from "../../render/webgpu/groundGlassApertureGatherReference";
 import {
   evaluateGroundGlassApertureGatherR3,
+  type GroundGlassApertureGatherR3Thresholds,
   type GroundGlassApertureGatherR3Capture,
   type GroundGlassApertureGatherR3CaptureMatrix,
   type GroundGlassR3QualityMode,
 } from "../../render/webgpu/groundGlassApertureGatherQuality";
+import {
+  evaluateGroundGlassM5qDimensions,
+  GROUND_GLASS_M5Q_EVALUATOR_REVISION,
+  type GroundGlassM5qEvidenceContext,
+  type GroundGlassM5qFrozenThresholds,
+  type GroundGlassM5qPairedCapEvidence,
+  type GroundGlassM5qQualification,
+} from "../../render/webgpu/groundGlassM5qQualification";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import {
+  facade,
+  focusTarget,
+  getArchitectureReferenceObjectProbePoint,
+  referenceObjects,
+} from "../../scenes/architectureRiseGeometry";
+import {
+  computePhaseJKnownPointFootprint,
+  createPhaseJOpticalState,
+  projectPhaseJKnownPointToSourcePixel,
+} from "./fixtures/ground-glass-webgpu-optical-state-cases";
 
 type CaptureReadbackBuffers = NonNullable<GroundGlassApertureGatherCaptureReadback["readbackBuffers"]>;
 type PackedCaptureReadbacks = Readonly<{
@@ -33,6 +56,67 @@ const physicalResearchEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RES
 const gatherResearchEnabled = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === "1";
 const M5_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && gatherResearchEnabled;
 const M4_RAW_BASELINE_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && !gatherResearchEnabled;
+
+type M5qCandidate = Readonly<{
+  id: string;
+  focusDistanceMm: number;
+  apertureFNumber: 5.6;
+  frontRiseMm: 0 | 20;
+  cropMagnification: 1 | 4;
+}>;
+
+/** Bounded, reachable Architecture Rise app candidates; these are search inputs, not passes. */
+const M5Q_CANDIDATES: readonly M5qCandidate[] = Object.freeze([
+  { id: "ar-f3200-f5p6-full-rise0", focusDistanceMm: 3200, apertureFNumber: 5.6, frontRiseMm: 0, cropMagnification: 1 },
+  { id: "ar-f5200-f5p6-full-rise0", focusDistanceMm: 5200, apertureFNumber: 5.6, frontRiseMm: 0, cropMagnification: 1 },
+  { id: "ar-f8890-f5p6-full-rise0", focusDistanceMm: 8890, apertureFNumber: 5.6, frontRiseMm: 0, cropMagnification: 1 },
+  { id: "ar-f8890-f5p6-full-rise20", focusDistanceMm: 8890, apertureFNumber: 5.6, frontRiseMm: 20, cropMagnification: 1 },
+  { id: "ar-f13000-f5p6-full-rise20", focusDistanceMm: 13000, apertureFNumber: 5.6, frontRiseMm: 20, cropMagnification: 1 },
+  { id: "ar-f3200-f5p6-loupe4-rise0", focusDistanceMm: 3200, apertureFNumber: 5.6, frontRiseMm: 0, cropMagnification: 4 },
+  { id: "ar-f5200-f5p6-loupe4-rise0", focusDistanceMm: 5200, apertureFNumber: 5.6, frontRiseMm: 0, cropMagnification: 4 },
+  { id: "ar-f8890-f5p6-loupe4-rise20", focusDistanceMm: 8890, apertureFNumber: 5.6, frontRiseMm: 20, cropMagnification: 4 },
+]);
+
+/** Frozen after the eight-state exploratory catalog and before confirmation. */
+const M5Q_FROZEN_THRESHOLDS = Object.freeze({
+  revision: "m5q-architecture-rise-r186-v3",
+  evidenceScope: "single-native-state",
+  frozenBeforeConfirmatory: true,
+  minimumInteriorFarPixels: 1_000,
+  minimumDepthEdgePixels: 100,
+  minimumNearFarBoundaryPairs: 100,
+  minimumNearCoveragePixels: 100,
+  minimumFractionalCoveragePixels: 32,
+  minimumNearFarBoundaryCoveragePixels: 20,
+  minimumSpreadOutsideSharpNearPixels: 20,
+  minimumFallbackBoundaryPairs: 100,
+  minimumStrongOverrunPx: 4,
+  minimumFallbackPixels: 100,
+  minimumMeaningfulBlurFallbackPixels: 20,
+  minimumSignedBoundaryPairs: 100,
+  minimumSignedBoundarySidePixels: 100,
+  minimumCappedPixels: 100,
+  maximumReferenceRmse: 0.001,
+  maximumReferenceFullFrameRmse: 0.001,
+  maximumReferenceChannelError: 0.01,
+  maximumReferenceInteriorFarRmse: 0.001,
+  maximumReferenceDepthEdgeRmse: 0.001,
+  maximumB1FullFrameRmse: 0.05,
+  maximumB1InteriorFarRmse: 0.05,
+  maximumB1DepthEdgeRmse: 0.05,
+  maximumB1SignedBoundaryRmse: 0.1,
+  maximumB1FallbackRmse: 0.05,
+  maximumBlurGradientRelativeError: 0.25,
+  maximumMeaningfulBlurFallbackFraction: 0.1,
+  maximumFallbackBoundaryGradientRelativeError: 0.25,
+  maximumFallbackSourceError: 0.001,
+  maximumNearCpuRgbRmse: 0.001,
+  maximumNearCpuAlphaRmse: 0.001,
+  maximumNearB1RgbMaximumError: 0.001,
+  maximumNearB1AlphaMaximumError: 0.001,
+  minimumMeaningfulBlurRgbDifference: 0.01,
+  depthEdgeThreshold: 0.0001,
+} satisfies GroundGlassApertureGatherR3Thresholds & GroundGlassM5qFrozenThresholds);
 
 /**
  * Frozen after the separate exploratory capture. Convergence and near tolerances
@@ -95,8 +179,9 @@ const captureGather = async (
   qualityMode: GroundGlassApertureGatherQualityMode,
   token: string,
   retainReadbackBuffers = false,
+  maximumRadiusPx?: number,
 ): Promise<GroundGlassApertureGatherCaptureReadback> => {
-  const triggered = await page.evaluate(({ captureToken, mode, retainBuffers }) => {
+  const triggered = await page.evaluate(({ captureToken, mode, retainBuffers, maxRadiusPx }) => {
     const control = window.__groundGlassWebGpuM3TestControl;
     if (!control?.requestApertureGatherCapture) return false;
     control.apertureGatherCaptureReadback = null;
@@ -104,10 +189,11 @@ const captureGather = async (
       token: captureToken,
       qualityMode: mode,
       retainReadbackBuffers: retainBuffers,
+      ...(maxRadiusPx !== undefined ? { maximumRadiusPx: maxRadiusPx } : {}),
     };
     control.requestApertureGatherCapture();
     return true;
-  }, { captureToken: token, mode: qualityMode, retainBuffers: retainReadbackBuffers });
+  }, { captureToken: token, mode: qualityMode, retainBuffers: retainReadbackBuffers, maxRadiusPx: maximumRadiusPx });
   expect(triggered, "The development-only M5 capture seam is registered on the mounted adapter").toBe(true);
   const deadline = Date.now() + 180_000;
   let captured = false;
@@ -186,6 +272,279 @@ const captureGather = async (
   return { ...packed.capture, readbackBuffers };
 };
 
+const setM5qCandidateState = async (page: Page, candidate: M5qCandidate): Promise<void> => {
+  const aperture = page.getByRole("radiogroup", { name: "Aperture", exact: true });
+  await aperture.getByRole("radio", { name: "f/5.6", exact: true }).check();
+  const setReachableRangeValue = async (label: string, target: number): Promise<void> => {
+    const slider = page.getByRole("slider", { name: label });
+    const metadata = await slider.evaluate((element) => {
+      const input = element as HTMLInputElement;
+      return { min: Number(input.min), max: Number(input.max), step: Number(input.step) };
+    });
+    const stepsFromMinimum = (target - metadata.min) / metadata.step;
+    if (!Number.isFinite(target) || target < metadata.min || target > metadata.max
+        || !Number.isFinite(stepsFromMinimum) || Math.abs(stepsFromMinimum - Math.round(stepsFromMinimum)) >= 1e-8) {
+      throw new Error(`${label} target ${target} is outside or not aligned to the public range control`);
+    }
+    await slider.evaluate((element, nextValue) => {
+      const input = element as HTMLInputElement;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      if (!setter) throw new Error("The public range input value setter is unavailable");
+      setter.call(input, String(nextValue));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }, target);
+    await expect(slider).toHaveValue(String(target));
+  };
+  const priorRequestId = await paneFor(page).getAttribute("data-frame-request-id");
+  await setReachableRangeValue("Focus distance", candidate.focusDistanceMm);
+  await setReachableRangeValue("Rise", candidate.frontRiseMm);
+
+  const stage = page.getByLabel("GroundGlassViewport").locator("[data-zoomed]");
+  await stage.scrollIntoViewIfNeeded();
+  const isZoomed = await stage.getAttribute("data-zoomed") === "true";
+  if (candidate.cropMagnification === 4 && !isZoomed) {
+    await clickStageAt(page, stage, 0.5, 0.5);
+  } else if (candidate.cropMagnification === 1 && isZoomed) {
+    await page.getByRole("button", { name: "Reset Ground Glass view", exact: true }).click();
+  }
+  await expect(stage).toHaveAttribute("data-zoomed", candidate.cropMagnification === 4 ? "true" : "false");
+  if (candidate.cropMagnification === 4) {
+    await expect(stage).toHaveAttribute("data-focus-loupe-window-width", "0.25");
+  }
+  await expectFreshM5Frame(page);
+  if (priorRequestId !== null) {
+    await expect(paneFor(page)).not.toHaveAttribute("data-frame-request-id", priorRequestId);
+  }
+};
+
+const m5qKnownSurfaces = () => {
+  const foreground = referenceObjects.find((object) => object.role === "foreground");
+  const midground = referenceObjects.find((object) => object.role === "midground");
+  const far = referenceObjects.find((object) => object.role === "far");
+  if (!foreground || !midground || !far) throw new Error("Architecture Rise canonical reference surfaces are incomplete");
+  return [
+    { id: "foreground-plinth-front", pointMm: getArchitectureReferenceObjectProbePoint(foreground) },
+    { id: "midground-plinth-front", pointMm: getArchitectureReferenceObjectProbePoint(midground) },
+    { id: "facade-front-focus-target", pointMm: { ...focusTarget.worldPosition, z: facade.frontFacadeZ } },
+    { id: "far-plinth-front", pointMm: getArchitectureReferenceObjectProbePoint(far) },
+  ] as const;
+};
+
+const measureM5qCanonicalPoints = (
+  candidate: M5qCandidate,
+  capture: GroundGlassApertureGatherCaptureReadback,
+) => {
+  const camera = new PerspectiveCamera();
+  const opticalState = createPhaseJOpticalState(
+    candidate.frontRiseMm === 20 ? "architecture-rise" : "architecture-initial",
+    camera,
+    capture.sourceWidthPx,
+    capture.sourceHeightPx,
+    capture.maximumRadiusPx,
+    undefined,
+    {
+      apertureFNumber: candidate.apertureFNumber,
+      focusDistanceMm: candidate.focusDistanceMm,
+      cropMagnification: candidate.cropMagnification,
+    },
+  );
+  const readbacks = capture.readbackBuffers;
+  if (!readbacks) throw new Error(`Candidate ${candidate.id} did not retain its native physical readback`);
+  return m5qKnownSurfaces().map((surface) => {
+    const footprint = computePhaseJKnownPointFootprint(opticalState, surface.pointMm);
+    const pixelEllipse = mapGroundGlassPhysicalEllipseToSourcePixels({
+      majorRadiusMm: footprint.majorRadiusMm,
+      minorRadiusMm: footprint.minorRadiusMm,
+      orientationRad: footprint.orientationRad,
+      film: capture.sampledFilmDimensionsMm,
+      source: { widthPx: capture.sourceWidthPx, heightPx: capture.sourceHeightPx },
+    });
+    const projected = projectPhaseJKnownPointToSourcePixel(
+      opticalState,
+      surface.pointMm,
+      capture.sourceWidthPx,
+      capture.sourceHeightPx,
+    );
+    const offset = projected.inBounds ? (projected.y * capture.sourceWidthPx + projected.x) * 4 : -1;
+    const rasterValidity = offset >= 0 ? readbacks.validity[offset] ?? 0 : null;
+    const storedRasterSignedCoCMm = offset >= 0 ? readbacks.physicalRgba[offset] ?? null : null;
+    const rasterSignedCoCMm = rasterValidity === 1 ? storedRasterSignedCoCMm : null;
+    const canonicalSign = Math.sign(footprint.signedCoCDiameterMm);
+    const rasterSign = rasterSignedCoCMm === null ? null : Math.sign(rasterSignedCoCMm);
+    return {
+      surfaceId: surface.id,
+      worldPositionMm: surface.pointMm,
+      canonical: {
+        valid: footprint.valid,
+        signedCoCDiameterMm: footprint.signedCoCDiameterMm,
+        majorRadiusMm: footprint.majorRadiusMm,
+        minorRadiusMm: footprint.minorRadiusMm,
+        orientationRad: footprint.orientationRad,
+        sourcePixelEllipse: pixelEllipse,
+      },
+      projectedPixel: { x: projected.x, y: projected.y, inBounds: projected.inBounds },
+      reconstructedRasterSample: {
+        validityCode: rasterValidity,
+        storedPhysicalValueMm: storedRasterSignedCoCMm,
+        signedCoCDiameterMm: rasterSignedCoCMm,
+        signedCoCAbsoluteErrorMm: rasterSignedCoCMm === null
+          ? null : Math.abs(rasterSignedCoCMm - footprint.signedCoCDiameterMm),
+        signMatches: rasterSign === null || canonicalSign === 0 ? null : rasterSign === canonicalSign,
+        depthValue: offset >= 0 ? readbacks.depth[offset] ?? null : null,
+      },
+    };
+  });
+};
+
+const summarizeM5qCandidate = (
+  candidate: M5qCandidate,
+  capture: GroundGlassApertureGatherCaptureReadback,
+  canonicalPoints: ReturnType<typeof measureM5qCanonicalPoints>,
+  mountedRendererRevision: string,
+) => {
+  const buffers = capture.readbackBuffers;
+  if (!buffers) throw new Error(`Candidate ${candidate.id} did not retain readbacks`);
+  const width = capture.sourceWidthPx;
+  const height = capture.sourceHeightPx;
+  const validCounts = { near: 0, far: 0, neutral: 0, invalid: 0 };
+  let maximumAbsoluteCoCMm = 0;
+  let validFarSourceDifference = 0;
+  let validFarSourceDifferencePixels = 0;
+  let interiorFarSourceDifference = 0;
+  let interiorFarPixels = 0;
+  let depthEdgePixels = 0;
+  let signedBoundaryPairs = 0;
+  let sourceContrastAtSignedBoundary = 0;
+  let signedBoundarySourceContrastPairs = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const pixel = y * width + x;
+      const offset = pixel * 4;
+      const coc = buffers.physicalRgba[offset]!;
+      const valid = buffers.validity[pixel] === 1;
+      const signedFar = valid && coc > 0.00001;
+      const signedNear = valid && coc < -0.00001;
+      if (!valid) validCounts.invalid += 1;
+      else if (signedFar) validCounts.far += 1;
+      else if (signedNear) validCounts.near += 1;
+      else validCounts.neutral += 1;
+      maximumAbsoluteCoCMm = Math.max(maximumAbsoluteCoCMm, valid ? Math.abs(coc) : 0);
+
+      let isDepthEdge = false;
+      for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= width || ny >= height) continue;
+        const other = ny * width + nx;
+        if (buffers.validity[other] === 1
+            && Math.abs(buffers.depth[pixel]! - buffers.depth[other]!) > 0.0001) isDepthEdge = true;
+        const otherCoc = buffers.physicalRgba[other * 4]!;
+        const otherNear = buffers.validity[other] === 1 && otherCoc < -0.00001;
+        const otherFar = buffers.validity[other] === 1 && otherCoc > 0.00001;
+        if ((signedNear && otherFar) || (signedFar && otherNear)) {
+          signedBoundaryPairs += 1;
+          const sourceOffset = other * 4;
+          sourceContrastAtSignedBoundary += (
+            Math.abs(buffers.sourceRgba[offset]! - buffers.sourceRgba[sourceOffset]!)
+            + Math.abs(buffers.sourceRgba[offset + 1]! - buffers.sourceRgba[sourceOffset + 1]!)
+            + Math.abs(buffers.sourceRgba[offset + 2]! - buffers.sourceRgba[sourceOffset + 2]!)
+          ) / 3;
+          signedBoundarySourceContrastPairs += 1;
+        }
+      }
+      if (isDepthEdge) depthEdgePixels += 1;
+      if (!signedFar) continue;
+      let sourceDifference = 0;
+      for (let channel = 0; channel < 3; channel += 1) {
+        sourceDifference += Math.abs(buffers.farGatherRgba[offset + channel]! - buffers.sourceRgba[offset + channel]!);
+      }
+      sourceDifference /= 3;
+      validFarSourceDifference += sourceDifference;
+      validFarSourceDifferencePixels += 1;
+      if (!isDepthEdge && x >= 2 && y >= 2 && x < width - 2 && y < height - 2) {
+        interiorFarSourceDifference += sourceDifference;
+        interiorFarPixels += 1;
+      }
+    }
+  }
+  let nearNonzeroPixels = 0;
+  let nearFractionalPixels = 0;
+  for (let pixel = 0; pixel < capture.nearGatherWidthPx * capture.nearGatherHeightPx; pixel += 1) {
+    const alpha = buffers.nearRgba[pixel * 4 + 3]!;
+    if (alpha > 0) nearNonzeroPixels += 1;
+    if (alpha > 0 && alpha < 1) nearFractionalPixels += 1;
+  }
+  return {
+    opticalStateId: candidate.id,
+    configuration: candidate,
+    evidenceSource: "registered-app-adapter" as const,
+    sceneSourceRevision: capture.sceneSourceRevision,
+    requestId: capture.requestId,
+    rendererGenerationId: capture.rendererGenerationId,
+    runtime: {
+      rendererFamily: capture.rendererFamily,
+      actualExecutionApi: capture.actualExecutionApi,
+      internalFallback: capture.internalFallback,
+      rendererRevision: mountedRendererRevision,
+    },
+    capture: {
+      captureId: capture.captureId,
+      qualityMode: capture.qualityMode,
+      sampleCount: capture.sampleCount,
+      sourceDimensions: { widthPx: width, heightPx: height },
+      sampledFilmDimensionsMm: capture.sampledFilmDimensionsMm,
+      maximumRadiusPx: capture.maximumRadiusPx,
+      effectiveOpticalRequestFingerprint: capture.effectiveOpticalRequestFingerprint,
+      cameraStateFingerprint: capture.cameraStateFingerprint,
+      physicalDataFingerprint: capture.physicalDataFingerprint,
+    },
+    canonicalGeometry: {
+      lensFocalLengthMm: 150,
+      focusDistanceMm: candidate.focusDistanceMm,
+      apertureFNumber: candidate.apertureFNumber,
+      cropMagnification: candidate.cropMagnification,
+      frontRiseMm: candidate.frontRiseMm,
+      points: canonicalPoints,
+      priorSurfaceCorrespondenceEvidence: {
+        source: "Phase J native Architecture Rise M4 probe",
+        facadeTargetOffsetMm: 10,
+        interpretation: "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence.",
+      },
+    },
+    screeningMetrics: {
+      population: { validNearPixels: validCounts.near, validFarPixels: validCounts.far, validNeutralPixels: validCounts.neutral,
+        invalidPixels: validCounts.invalid, depthEdgePixels, signedNearFarPairs: signedBoundaryPairs },
+      maximumValidAbsoluteCoCDiameterMm: maximumAbsoluteCoCMm,
+      meanFull32FarSourceRgbDifference: validFarSourceDifferencePixels
+        ? validFarSourceDifference / validFarSourceDifferencePixels : null,
+      validFarSourceDifferencePixelCount: validFarSourceDifferencePixels,
+      meanInteriorFull32FarSourceRgbDifference: interiorFarPixels ? interiorFarSourceDifference / interiorFarPixels : null,
+      interiorFarPixelCount: interiorFarPixels,
+      meanSourceRgbContrastAtSignedBoundary: signedBoundarySourceContrastPairs
+        ? sourceContrastAtSignedBoundary / signedBoundarySourceContrastPairs : null,
+      nearNonzeroPixels,
+      nearFractionalPixels,
+      reportedMaximumUncappedRadiusPx: capture.radius.maximumUncappedRadiusPx,
+      reportedCappedPixelCountAtCaptureCap: capture.radius.cappedPixelCount,
+    },
+    selectionInputs: ["canonical signed CoC and pixel ellipse", "valid physical/depth ROI support", "Full32 reference blur signal", "signed boundary/source edge support", "fractional near coverage"],
+    candidateQualityOutputConsulted: false,
+    disposition: "exploratory-only" as const,
+  };
+};
+
+const writeM5qArtifact = async (
+  testInfo: TestInfo,
+  filename: string,
+  value: unknown,
+): Promise<void> => {
+  const path = testInfo.outputPath(filename);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(value, null, 2));
+  await testInfo.attach(filename, { path, contentType: "application/json" });
+};
+
 const toR3Capture = (
   capture: GroundGlassApertureGatherCaptureReadback,
 ): GroundGlassApertureGatherR3Capture => {
@@ -233,6 +592,207 @@ const toR3Capture = (
       b1DecisionRgba: Uint8Array.from(buffers.b1Decision),
     },
   };
+};
+
+type M5qCaptureMatrixRun = Readonly<{
+  r3: ReturnType<typeof evaluateGroundGlassApertureGatherR3>;
+  captureSummary: readonly Readonly<{
+    captureId: string;
+    requestId: string;
+    rendererGenerationId: string;
+    qualityMode: GroundGlassR3QualityMode;
+    maximumRadiusPx: number;
+  }>[];
+  runtime: GroundGlassM5qEvidenceContext["runtime"];
+  sensitivityBuffers: Readonly<{
+    full32Far: Float32Array;
+    half32B1: Float32Array;
+    half32Near: Float32Array;
+  }> | null;
+}>;
+
+const captureM5qMatrix = async (
+  page: Page,
+  candidate: M5qCandidate,
+  maximumRadiusPx: number,
+  tokenPrefix: string,
+  mountedRendererRevision: string,
+  retainSensitivityBuffers = false,
+): Promise<M5qCaptureMatrixRun> => {
+  const captures: Partial<Record<GroundGlassR3QualityMode, GroundGlassApertureGatherCaptureReadback>> = {};
+  const summary: Array<{
+    captureId: string;
+    requestId: string;
+    rendererGenerationId: string;
+    qualityMode: GroundGlassR3QualityMode;
+    maximumRadiusPx: number;
+  }> = [];
+  let runtime: GroundGlassM5qEvidenceContext["runtime"] | null = null;
+  for (const qualityMode of ["half32", "full32", "full64"] as const) {
+    const capture = await captureGather(
+      page,
+      qualityMode,
+      `${tokenPrefix}-${qualityMode}-${Date.now()}`,
+      true,
+      maximumRadiusPx,
+    );
+    await expectCaptureMatchesCurrentFrame(page, capture, false);
+    expect(capture.qualityMode).toBe(qualityMode);
+    expect(capture.sampleCount).toBe(qualityMode === "full64" ? 64 : 32);
+    expect(capture.maximumRadiusPx).toBe(maximumRadiusPx);
+    expect(capture.sceneSourceRevision).toBe("architecture-rise-raw-rtt-v1");
+    expect(mountedRendererRevision).toBe(`r${REVISION}`);
+    captures[qualityMode] = capture;
+    runtime = {
+      rendererFamily: capture.rendererFamily,
+      actualExecutionApi: capture.actualExecutionApi,
+      internalFallback: capture.internalFallback,
+      applicationFallback: false,
+      rendererRevision: mountedRendererRevision,
+    };
+    summary.push({
+      captureId: capture.captureId,
+      requestId: capture.requestId,
+      rendererGenerationId: capture.rendererGenerationId,
+      qualityMode,
+      maximumRadiusPx: capture.maximumRadiusPx,
+    });
+  }
+  if (!captures.half32 || !captures.full32 || !captures.full64 || !runtime) {
+    throw new Error(`Incomplete M5Q capture matrix for ${candidate.id}`);
+  }
+  const r3 = evaluateGroundGlassApertureGatherR3({
+    half32: toR3Capture(captures.half32),
+    full32: toR3Capture(captures.full32),
+    full64: toR3Capture(captures.full64),
+  } satisfies GroundGlassApertureGatherR3CaptureMatrix, M5Q_FROZEN_THRESHOLDS);
+  expect(r3.provenance.status, JSON.stringify(r3.provenance)).toBe("matched");
+  const halfBuffers = captures.half32.readbackBuffers;
+  const full32Buffers = captures.full32.readbackBuffers;
+  if (!halfBuffers || !full32Buffers) throw new Error(`M5Q matrix ${candidate.id} lost retained readbacks`);
+  return {
+    r3,
+    captureSummary: summary,
+    runtime,
+    sensitivityBuffers: retainSensitivityBuffers ? {
+      full32Far: Float32Array.from(full32Buffers.farGatherRgba),
+      half32B1: Float32Array.from(halfBuffers.b1FarRgba),
+      half32Near: Float32Array.from(halfBuffers.nearBeforeB1Rgba),
+    } : null,
+  };
+};
+
+const rmseForRgbaChannels = (
+  left: Float32Array,
+  right: Float32Array,
+  channels: readonly number[],
+): number | null => {
+  if (left.length === 0 || left.length !== right.length || left.length % 4 !== 0) return null;
+  let squaredError = 0;
+  let sampleCount = 0;
+  for (let pixel = 0; pixel < left.length / 4; pixel += 1) {
+    for (const channel of channels) {
+      const delta = left[pixel * 4 + channel]! - right[pixel * 4 + channel]!;
+      if (!Number.isFinite(delta)) return null;
+      squaredError += delta * delta;
+      sampleCount += 1;
+    }
+  }
+  return sampleCount > 0 ? Math.sqrt(squaredError / sampleCount) : null;
+};
+
+const makeM5qEvidenceContext = (
+  candidate: M5qCandidate,
+  run: M5qCaptureMatrixRun,
+  candidateSelectionReason: string,
+): GroundGlassM5qEvidenceContext => ({
+  opticalStateId: candidate.id,
+  sceneId: run.r3.captureProvenance.full32.sceneId,
+  evidenceSource: "registered-app-adapter",
+  m5ExecutionPath: "ground-glass-webgpu-adapter",
+  sceneSourceRevision: run.r3.captureProvenance.full32.sceneSourceRevision,
+  candidateSelectionReason,
+  runtime: run.runtime,
+});
+
+const makeM5qPairedCapEvidence = (
+  opticalStateId: string,
+  stressed: M5qCaptureMatrixRun,
+  control: M5qCaptureMatrixRun,
+  stressedCapPx: number,
+  controlCapPx: number,
+): GroundGlassM5qPairedCapEvidence => {
+  const stressedR3 = stressed.r3;
+  const controlR3 = control.r3;
+  const stressBuffers = stressed.sensitivityBuffers;
+  const controlBuffers = control.sensitivityBuffers;
+  const evidence = {
+    opticalStateId,
+    stressedCapPx,
+    controlCapPx,
+    maximumUncappedRadiusPx: stressedR3.radiusCapEvidence.maximumUncappedRadiusPx,
+    stressedCappedPixelCount: stressedR3.radiusCapEvidence.cappedPixelCount,
+    controlCappedPixelCount: controlR3.radiusCapEvidence.cappedPixelCount,
+    captureIds: {
+      stressedHalf32: stressedR3.captureIds.half32,
+      stressedFull32: stressedR3.captureIds.full32,
+      stressedFull64: stressedR3.captureIds.full64,
+      controlHalf32: controlR3.captureIds.half32,
+      controlFull32: controlR3.captureIds.full32,
+      controlFull64: controlR3.captureIds.full64,
+    },
+    fingerprints: {
+      stressed: {
+        depth: stressedR3.provenance.fingerprints.half32.depth ?? "",
+        physical: stressedR3.provenance.fingerprints.half32.physical ?? "",
+        validity: stressedR3.provenance.fingerprints.half32.validity ?? "",
+        sourceColor: stressedR3.provenance.fingerprints.half32.sourceColor ?? "",
+        camera: stressedR3.captureProvenance.half32.cameraStateFingerprint,
+      },
+      control: {
+        depth: controlR3.provenance.fingerprints.half32.depth ?? "",
+        physical: controlR3.provenance.fingerprints.half32.physical ?? "",
+        validity: controlR3.provenance.fingerprints.half32.validity ?? "",
+        sourceColor: controlR3.provenance.fingerprints.half32.sourceColor ?? "",
+        camera: controlR3.captureProvenance.half32.cameraStateFingerprint,
+      },
+    },
+    sameCapReferences: {
+      stressed: {
+        fullFrameRmse: stressedR3.referenceConvergence.fullFrame.rmse,
+        fullFramePixelCount: stressedR3.referenceConvergence.fullFrame.pixelCount,
+        maximumChannelError: stressedR3.referenceConvergence.fullFrame.maximumChannelError,
+        interiorFarRmse: stressedR3.referenceConvergence.interiorFar.rmse,
+        interiorFarPixelCount: stressedR3.referenceConvergence.interiorFar.pixelCount,
+        depthEdgeRmse: stressedR3.referenceConvergence.depthEdge.rmse,
+        depthEdgePixelCount: stressedR3.referenceConvergence.depthEdge.pixelCount,
+      },
+      control: {
+        fullFrameRmse: controlR3.referenceConvergence.fullFrame.rmse,
+        fullFramePixelCount: controlR3.referenceConvergence.fullFrame.pixelCount,
+        maximumChannelError: controlR3.referenceConvergence.fullFrame.maximumChannelError,
+        interiorFarRmse: controlR3.referenceConvergence.interiorFar.rmse,
+        interiorFarPixelCount: controlR3.referenceConvergence.interiorFar.pixelCount,
+        depthEdgeRmse: controlR3.referenceConvergence.depthEdge.rmse,
+        depthEdgePixelCount: controlR3.referenceConvergence.depthEdge.pixelCount,
+      },
+    },
+    crossCapSensitivity: {
+      full32FarRmse: stressBuffers && controlBuffers
+        ? rmseForRgbaChannels(stressBuffers.full32Far, controlBuffers.full32Far, [0, 1, 2]) : null,
+      half32B1Rmse: stressBuffers && controlBuffers
+        ? rmseForRgbaChannels(stressBuffers.half32B1, controlBuffers.half32B1, [0, 1, 2]) : null,
+      nearRgbRmse: stressBuffers && controlBuffers
+        ? rmseForRgbaChannels(stressBuffers.half32Near, controlBuffers.half32Near, [0, 1, 2]) : null,
+      nearAlphaRmse: stressBuffers && controlBuffers
+        ? rmseForRgbaChannels(stressBuffers.half32Near, controlBuffers.half32Near, [3]) : null,
+      fallbackBoundaryGradientDelta: stressedR3.fallbackMetrics.boundaryGradient.meanRelativeError !== null
+        && controlR3.fallbackMetrics.boundaryGradient.meanRelativeError !== null
+        ? Math.abs(stressedR3.fallbackMetrics.boundaryGradient.meanRelativeError
+          - controlR3.fallbackMetrics.boundaryGradient.meanRelativeError) : null,
+    },
+  } satisfies GroundGlassM5qPairedCapEvidence;
+  return evidence;
 };
 
 const captureB1BoundaryProbe = async (
@@ -299,6 +859,7 @@ const expectNativeM5Identity = async (page: Page): Promise<void> => {
 const expectCaptureMatchesCurrentFrame = async (
   page: Page,
   result: GroundGlassApertureGatherCaptureReadback,
+  requireNontrivialNearCoverage = true,
 ): Promise<void> => {
   const pane = paneFor(page);
   const pilot = pilotFor(page);
@@ -323,7 +884,7 @@ const expectCaptureMatchesCurrentFrame = async (
   expect(result.farGatherCpuReference.rgbMaximumError).toBeLessThanOrEqual(0.001);
   expect(result.farGatherCpuReference.pixelsOverMaximumErrorTolerance).toBe(0);
   expect(result.radius.physicalValuesUnchanged).toBe(true);
-  expect(result.nearCoverageNontrivial).toBe(true);
+  if (requireNontrivialNearCoverage) expect(result.nearCoverageNontrivial).toBe(true);
   expect(result.nearRgbInvariantMaximumError).toBeLessThanOrEqual(0.001);
   expect(result.nearAlphaInvariantMaximumError).toBeLessThanOrEqual(0.001);
   expect(result.completedPasses).toEqual(expect.arrayContaining([
@@ -408,6 +969,356 @@ const prepareNativeM5F8Page = async (page: Page): Promise<string[]> => {
   await expectNativeM5Identity(page);
   return pageErrors;
 };
+
+test("native M5Q explores a bounded Architecture Rise optical-state catalog before confirmation", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU, the M3 Raw pilot, the M4 physical research gate, and the separate M5 gather research gate");
+  test.setTimeout(900_000);
+  expect(REVISION).toBe("186");
+  expect(M5Q_CANDIDATES.length).toBeLessThanOrEqual(8);
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const mountedRuntimeEvidence = await captureB1BoundaryProbe(page, `m5q-exploration-runtime-${Date.now()}`);
+  expect(mountedRuntimeEvidence.rendererFamily).toBe("webgpu-renderer");
+  expect(mountedRuntimeEvidence.actualExecutionApi).toBe("webgpu");
+  expect(mountedRuntimeEvidence.internalFallback).toBe("none");
+  expect(mountedRuntimeEvidence.rendererRevision).toBe(`r${REVISION}`);
+  const candidateRecords: ReturnType<typeof summarizeM5qCandidate>[] = [];
+
+  for (const candidate of M5Q_CANDIDATES) {
+    await setM5qCandidateState(page, candidate);
+    const capture = await captureGather(page, "full32", `m5q-explore-${candidate.id}-${Date.now()}`, true);
+    await expectCaptureMatchesCurrentFrame(page, capture, false);
+    expect(capture.sceneSourceRevision.trim()).not.toBe("");
+    expect(capture.rendererFamily).toBe("webgpu-renderer");
+    expect(capture.actualExecutionApi).toBe("webgpu");
+    expect(capture.internalFallback).toBe("none");
+    expect(capture.qualityMode).toBe("full32");
+    expect(capture.sampleCount).toBe(32);
+    expect(capture.sampledFilmDimensionsMm.widthMm).toBeCloseTo(127 / candidate.cropMagnification, 3);
+    const canonicalPoints = measureM5qCanonicalPoints(candidate, capture);
+    const summary = summarizeM5qCandidate(candidate, capture, canonicalPoints, mountedRuntimeEvidence.rendererRevision);
+    expect(summary.screeningMetrics.population.validFarPixels
+      + summary.screeningMetrics.population.validNearPixels).toBeGreaterThan(0);
+    candidateRecords.push(summary);
+  }
+
+  const byCandidateId = new Map(candidateRecords.map((record) => [record.opticalStateId, record]));
+  const farAndEdges = byCandidateId.get("ar-f3200-f5p6-full-rise0");
+  const maximumBlurAndRadius = byCandidateId.get("ar-f3200-f5p6-loupe4-rise0");
+  const signedBoundary = byCandidateId.get("ar-f5200-f5p6-full-rise0");
+  if (!signedBoundary) throw new Error("The selected Q3/Q4 Architecture Rise candidate is missing");
+  const signedBoundaryPoints = signedBoundary.canonicalGeometry.points;
+  const canonicalSignedPoint = (candidate: typeof signedBoundary, surfaceId: string) => {
+    const point = candidate.canonicalGeometry.points.find((entry) => entry.surfaceId === surfaceId);
+    if (!point) throw new Error(`Missing canonical M5Q surface evidence for ${surfaceId}`);
+    if (!point.canonical.valid) throw new Error(`Canonical M5Q CoC is invalid for ${surfaceId}`);
+    return point.canonical.signedCoCDiameterMm;
+  };
+  const signedPoint = (surfaceId: string) => canonicalSignedPoint(signedBoundary, surfaceId);
+  expect(signedPoint("foreground-plinth-front")).toBeLessThan(-0.00001);
+  expect(signedPoint("midground-plinth-front")).toBeLessThan(-0.00001);
+  expect(signedPoint("facade-front-focus-target")).toBeGreaterThan(0.00001);
+  expect(signedPoint("far-plinth-front")).toBeGreaterThan(0.00001);
+  const q3AlternativeIds = [
+    "ar-f8890-f5p6-full-rise0",
+    "ar-f8890-f5p6-full-rise20",
+    "ar-f8890-f5p6-loupe4-rise20",
+  ] as const;
+  const q3Alternatives = q3AlternativeIds.map((candidateId) => {
+    const candidate = byCandidateId.get(candidateId);
+    if (!candidate) throw new Error(`Missing M5Q Q3 alternative ${candidateId}`);
+    return {
+      opticalStateId: candidate.opticalStateId,
+      signedNearFarPairs: candidate.screeningMetrics.population.signedNearFarPairs,
+      meanSourceRgbContrastAtSignedBoundary: candidate.screeningMetrics.meanSourceRgbContrastAtSignedBoundary,
+      meanInteriorFull32FarSourceRgbDifference: candidate.screeningMetrics.meanInteriorFull32FarSourceRgbDifference,
+      canonicalFacadeSignedCoCDiameterMm: canonicalSignedPoint(candidate, "facade-front-focus-target"),
+    };
+  });
+  const q3FullFrameAlternatives = q3Alternatives.filter(({ opticalStateId }) => opticalStateId.includes("full-rise"));
+  const q3CropAlternative = q3Alternatives.find(({ opticalStateId }) => opticalStateId === "ar-f8890-f5p6-loupe4-rise20");
+  if (!q3CropAlternative) throw new Error("Missing cropped M5Q Q3 alternative");
+  const q3SelectionTradeoff =
+    `The selected 5,200 mm full-film state has ${signedBoundary.screeningMetrics.population.signedNearFarPairs} valid signed pairs and interior Full32/source signal ${signedBoundary.screeningMetrics.meanInteriorFull32FarSourceRgbDifference}. The 8,890 mm full-film alternatives have more signed pairs (${q3FullFrameAlternatives.map(({ signedNearFarPairs }) => signedNearFarPairs).join(" and ")}) and about 0.209 boundary contrast, but their canonical façade point is only ${q3FullFrameAlternatives[0].canonicalFacadeSignedCoCDiameterMm.toFixed(6)} mm from focus and their interior Full32/source signal is about ${q3FullFrameAlternatives[0].meanInteriorFull32FarSourceRgbDifference?.toFixed(6)} (about 47x weaker). The 8,890 mm 4x-crop alternative has ${q3CropAlternative.signedNearFarPairs} signed pairs and ${q3CropAlternative.meanSourceRgbContrastAtSignedBoundary} boundary contrast, but zero reconstructed-depth edge pixels and an interior Full32/source signal of ${q3CropAlternative.meanInteriorFull32FarSourceRgbDifference?.toFixed(6)}. Q3 therefore prioritizes canonical sign separation, measurable expected blur and depth-edge support over maximum raster pair count; no B0/B1 quality score is used for selection.`;
+  const selection = {
+    policy: "Geometry and signal support only; Full32 is used as an expected-blur signal. B0/B1 quality, fallback error, and confirmatory thresholds are not consulted.",
+    Q1_Q6: {
+      opticalStateId: maximumBlurAndRadius?.opticalStateId ?? null,
+      reason: maximumBlurAndRadius
+        ? `Largest measured Full32/source interior far signal (${maximumBlurAndRadius.screeningMetrics.meanInteriorFull32FarSourceRgbDifference}) with ${maximumBlurAndRadius.screeningMetrics.interiorFarPixelCount} pixels; quality metrics are not used.`
+        : "No candidate had measurable interior far signal.",
+      support: maximumBlurAndRadius?.screeningMetrics ?? null,
+    },
+    Q2_Q7: {
+      opticalStateId: farAndEdges?.opticalStateId ?? null,
+      reason: farAndEdges
+        ? `Strong Full32/source interior far signal (${farAndEdges.screeningMetrics.meanInteriorFull32FarSourceRgbDifference}) with ${farAndEdges.screeningMetrics.population.depthEdgePixels} reconstructed-depth edge pixels and ${farAndEdges.screeningMetrics.population.signedNearFarPairs} valid signed-boundary pairs; fallback and profile quality remain unexamined.`
+        : "No candidate combined measurable far signal and reconstructed-depth edge support.",
+      support: farAndEdges?.screeningMetrics ?? null,
+    },
+    Q3_Q4: {
+      opticalStateId: signedBoundary?.opticalStateId ?? null,
+      reason: signedBoundary
+        ? `${q3SelectionTradeoff} Canonical signs are foreground ${signedPoint("foreground-plinth-front").toFixed(6)} mm, midground ${signedPoint("midground-plinth-front").toFixed(6)} mm, façade ${signedPoint("facade-front-focus-target").toFixed(6)} mm, and far ${signedPoint("far-plinth-front").toFixed(6)} mm. Raster point correspondence remains separately reported.`
+        : "No candidate provided signed-boundary support.",
+      tradeoffAgainstHigherBoundarySupportAlternatives: q3Alternatives,
+      canonicalSignEvidence: signedBoundaryPoints.map((point) => ({
+        surfaceId: point.surfaceId,
+        valid: point.canonical.valid,
+        signedCoCDiameterMm: point.canonical.signedCoCDiameterMm,
+        rasterValidityCode: point.reconstructedRasterSample.validityCode,
+        rasterSignedCoCDiameterMm: point.reconstructedRasterSample.signedCoCDiameterMm,
+      })),
+      support: signedBoundary?.screeningMetrics ?? null,
+    },
+    Q5: {
+      opticalStateId: maximumBlurAndRadius?.opticalStateId ?? null,
+      reason: maximumBlurAndRadius
+        ? `Largest uncapped raster radius observed in the mounted app catalog (${maximumBlurAndRadius.screeningMetrics.reportedMaximumUncappedRadiusPx}px); paired stress-cap confirmation is still required.`
+        : "No candidate reported a valid physical far radius.",
+      support: maximumBlurAndRadius?.screeningMetrics ?? null,
+    },
+    dispositions: [
+      { opticalStateId: maximumBlurAndRadius?.opticalStateId ?? null, status: "selected", dimensions: ["Q1", "Q5", "Q6"] },
+      { opticalStateId: farAndEdges?.opticalStateId ?? null, status: "selected", dimensions: ["Q2", "Q7"] },
+      { opticalStateId: signedBoundary?.opticalStateId ?? null, status: "selected", dimensions: ["Q3", "Q4"] },
+      ...candidateRecords.filter((record) => ![maximumBlurAndRadius, farAndEdges, signedBoundary].some((selected) =>
+        selected?.opticalStateId === record.opticalStateId)).map((record) => ({
+        opticalStateId: record.opticalStateId,
+        status: "not-selected" as const,
+        reason: record.opticalStateId === "ar-f8890-f5p6-full-rise0"
+          || record.opticalStateId === "ar-f8890-f5p6-full-rise20"
+          ? `Has ${record.screeningMetrics.population.signedNearFarPairs} valid signed pairs and boundary contrast ${record.screeningMetrics.meanSourceRgbContrastAtSignedBoundary}, but was not selected for Q3: the canonical façade point is only ${canonicalSignedPoint(record, "facade-front-focus-target").toFixed(6)} mm from focus and the interior Full32/source signal (${record.screeningMetrics.meanInteriorFull32FarSourceRgbDifference}) is much weaker than the selected 5,200 mm state.`
+          : record.opticalStateId === "ar-f8890-f5p6-loupe4-rise20"
+            ? `Has ${record.screeningMetrics.population.signedNearFarPairs} valid signed pairs and boundary contrast ${record.screeningMetrics.meanSourceRgbContrastAtSignedBoundary}, but zero reconstructed-depth edge pixels in this crop; its interior Full32/source signal (${record.screeningMetrics.meanInteriorFull32FarSourceRgbDifference}) is also much weaker than the selected 5,200 mm state.`
+          : record.screeningMetrics.meanInteriorFull32FarSourceRgbDifference === null
+            ? "No valid interior-far signal was measured."
+            : record.screeningMetrics.population.signedNearFarPairs < M5Q_FROZEN_THRESHOLDS.minimumSignedBoundaryPairs
+              ? `Signed-boundary support (${record.screeningMetrics.population.signedNearFarPairs} pairs) is below the frozen ${M5Q_FROZEN_THRESHOLDS.minimumSignedBoundaryPairs}-pair floor for Q3.`
+              : record.screeningMetrics.population.signedNearFarPairs === 0
+                ? "The selected crop has no adjacent valid signed near/far pairs for Q3."
+                : "A selected state provides stronger support for the bounded M5Q dimension; this state remains exploratory-only.",
+      })),
+    ],
+  };
+  const report = {
+    schemaVersion: 1,
+    stage: "exploratory-candidate-discovery",
+    candidateSearch: {
+      candidateSceneFamily: "registered Architecture Rise application adapter",
+      supportedLensMm: 150,
+      aperture: "f/5.6 (widest public camera setting)",
+      focusRangeMm: { min: 3200, max: 13000, stepMm: 10 },
+      cropMagnifications: [1, 4],
+      maximumExploratoryCandidates: 8,
+      maximumConfirmatoryOpticalStates: 3,
+      qualityMode: "Full32 for screening only",
+      scopeClarification: "Only these eight registered Architecture Rise app-adapter states were ranked for M5Q confirmatory selection. Macro/Interior Phase J-L fixture states are enumerated separately in GROUND_GLASS_M5Q_QUALIFICATION_SUMMARY.json.fixtureNativeEvidence.candidateDisposition; they were not ranked against M5Q thresholds and are not pooled into app-adapter Q1-Q7 decisions.",
+      fixtureEvidenceReference: "GROUND_GLASS_M5Q_QUALIFICATION_SUMMARY.json.fixtureNativeEvidence",
+      controlledFixture: "No M5Q-thresholded controlled signed-boundary or fractional-Near fixture was added; existing Phase J-L evidence remains separately labeled.",
+    },
+    nativeRuntime: {
+      rendererFamily: candidateRecords[0]?.runtime.rendererFamily ?? "unknown",
+      actualExecutionApi: candidateRecords[0]?.runtime.actualExecutionApi ?? "unknown",
+      internalFallback: candidateRecords[0]?.runtime.internalFallback ?? "unknown",
+      rendererRevision: candidateRecords[0]?.runtime.rendererRevision ?? null,
+      applicationFallback: false,
+    },
+    candidates: candidateRecords,
+    selection,
+    candidateQualityMetricsConsulted: false,
+    limitations: [
+      "Exploratory Full32 outputs are finite-sample expected-blur signals, not photographic ground truth or B1 quality results.",
+      "Canonical point CoC is computed from registered scene geometry; raster CoC and depth remain reconstructed-depth evidence. Point-to-raster correspondence uncertainty is reported per point.",
+      "No confirmatory threshold or Q dimension is decided by this catalog.",
+    ],
+  };
+  await writeM5qArtifact(testInfo, "m5q-candidate-catalog.json", report);
+  expect(candidateRecords.map(({ opticalStateId }) => opticalStateId)).toEqual(M5Q_CANDIDATES.map(({ id }) => id));
+  expect(pageErrors).toEqual([]);
+});
+
+test("native M5Q applies frozen per-dimension R3 gates to independent optical states", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU, the M3 Raw pilot, the M4 physical research gate, and the separate M5 gather research gate");
+  test.setTimeout(900_000);
+  expect(REVISION).toBe("186");
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const mountedRuntimeEvidence = await captureB1BoundaryProbe(page, `m5q-confirm-runtime-${Date.now()}`);
+  expect(mountedRuntimeEvidence.rendererFamily).toBe("webgpu-renderer");
+  expect(mountedRuntimeEvidence.actualExecutionApi).toBe("webgpu");
+  expect(mountedRuntimeEvidence.internalFallback).toBe("none");
+  expect(mountedRuntimeEvidence.rendererRevision).toBe(`r${REVISION}`);
+  const q1Candidate = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-loupe4-rise0");
+  const q2Candidate = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-full-rise0");
+  const q3Candidate = M5Q_CANDIDATES.find(({ id }) => id === "ar-f5200-f5p6-full-rise0");
+  if (!q1Candidate || !q2Candidate || !q3Candidate) throw new Error("Frozen M5Q optical-state selection is incomplete");
+
+  await setM5qCandidateState(page, q1Candidate);
+  const q5Stress = await captureM5qMatrix(page, q1Candidate, 2, "m5q-q5-cap2", mountedRuntimeEvidence.rendererRevision, true);
+  const q1Control = await captureM5qMatrix(page, q1Candidate, 60, "m5q-q1-control60", mountedRuntimeEvidence.rendererRevision, true);
+  const q1Context = makeM5qEvidenceContext(
+    q1Candidate,
+    q1Control,
+    "Selected from the eight-state Full32-only search for the largest measured interior-far Full32/source signal and largest uncapped pixel radius; B0/B1 quality was not consulted.",
+  );
+  const q1ControlQualification = evaluateGroundGlassM5qDimensions({
+    context: q1Context,
+    r3: q1Control.r3,
+    thresholds: M5Q_FROZEN_THRESHOLDS,
+  });
+  const pairedCapEvidence = makeM5qPairedCapEvidence(q1Candidate.id, q5Stress, q1Control, 2, 60);
+  const q5StressQualification = evaluateGroundGlassM5qDimensions({
+    context: makeM5qEvidenceContext(
+      q1Candidate,
+      q5Stress,
+      "Same geometry-selected state as Q1, rerun under a 2 px test-only stress cap and matched 60 px control cap.",
+    ),
+    r3: q5Stress.r3,
+    thresholds: M5Q_FROZEN_THRESHOLDS,
+    pairedCapEvidence,
+  });
+
+  await setM5qCandidateState(page, q2Candidate);
+  const q2Run = await captureM5qMatrix(page, q2Candidate, 60, "m5q-q2-fallback-q7-profile60", mountedRuntimeEvidence.rendererRevision);
+  const q2Context = makeM5qEvidenceContext(
+    q2Candidate,
+    q2Run,
+    "Selected for high interior-far Full32/source signal together with reconstructed-depth edge support; fallback and profile quality were not available during selection.",
+  );
+  const q2Qualification = evaluateGroundGlassM5qDimensions({
+    context: q2Context,
+    r3: q2Run.r3,
+    thresholds: M5Q_FROZEN_THRESHOLDS,
+  });
+
+  await setM5qCandidateState(page, q3Candidate);
+  const q3Run = await captureM5qMatrix(page, q3Candidate, 60, "m5q-q3-signed-q4-near60", mountedRuntimeEvidence.rendererRevision);
+  const q3Context = makeM5qEvidenceContext(
+    q3Candidate,
+    q3Run,
+    "Selected for 540 valid adjacent signed near/far pairs, substantial nonzero near support, and independently computed opposite canonical surface CoC signs; raster correspondence remains reconstructed-depth evidence.",
+  );
+  const q3Qualification = evaluateGroundGlassM5qDimensions({
+    context: q3Context,
+    r3: q3Run.r3,
+    thresholds: M5Q_FROZEN_THRESHOLDS,
+  });
+  const q3SignedBoundary = q3Run.r3.signedBoundaryEvidence;
+  const q3Decision = q3Qualification.dimensions.Q3;
+  const q3SidePopulationInvariantPassed = q3SignedBoundary.nearSidePixelCount + q3SignedBoundary.farSidePixelCount
+    === q3SignedBoundary.participatingPixelCount;
+  expect(q3Run.runtime.rendererFamily).toBe("webgpu-renderer");
+  expect(q3Run.runtime.actualExecutionApi).toBe("webgpu");
+  expect(q3Run.runtime.internalFallback).toBe("none");
+  expect(q3Run.runtime.applicationFallback).toBe(false);
+  expect(q3Run.runtime.rendererRevision).toBe(`r${REVISION}`);
+  expect(q3SignedBoundary.status).toBe("present");
+  expect(q3SignedBoundary.populationConsistent).toBe(true);
+  expect(q3SidePopulationInvariantPassed).toBe(true);
+  if (q3SignedBoundary.nearSidePixelCount < M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels
+      || q3SignedBoundary.farSidePixelCount < M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels) {
+    expect(q3Decision.status).toBe("insufficient-support");
+    expect(q3Decision.status).not.toBe("bounded-qualified");
+  } else {
+    expect(q3Decision.status).toBe("bounded-qualified");
+  }
+
+  const allCaptureSummaries = [
+    ...q5Stress.captureSummary,
+    ...q1Control.captureSummary,
+    ...q2Run.captureSummary,
+    ...q3Run.captureSummary,
+  ];
+  expect(new Set(allCaptureSummaries.map(({ captureId }) => captureId)).size).toBe(12);
+  expect(new Set(allCaptureSummaries.map(({ rendererGenerationId }) => rendererGenerationId)).size).toBe(1);
+  const qualificationByDimension = {
+    Q1: q1ControlQualification.dimensions.Q1,
+    Q2: q2Qualification.dimensions.Q2,
+    Q3: q3Qualification.dimensions.Q3,
+    Q4: q3Qualification.dimensions.Q4,
+    Q5: q5StressQualification.dimensions.Q5,
+    Q6: q1ControlQualification.dimensions.Q6,
+    Q7: q2Qualification.dimensions.Q7,
+  } satisfies GroundGlassM5qQualification["dimensions"];
+  expect(q5StressQualification.evaluatorRevision).toBe(GROUND_GLASS_M5Q_EVALUATOR_REVISION);
+  expect(q3Qualification.dimensions.Q3.evaluatorRevision).toBe(GROUND_GLASS_M5Q_EVALUATOR_REVISION);
+  const report = {
+    schemaVersion: 3,
+    evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
+    stage: "independent-native-confirmatory-matrices",
+    thresholdContract: M5Q_FROZEN_THRESHOLDS,
+    selectedStates: {
+      Q1_Q5_Q6: { opticalStateId: q1Candidate.id, capsPx: [2, 60], reason: q1Context.candidateSelectionReason },
+      Q2_Q7: { opticalStateId: q2Candidate.id, capsPx: [60], reason: q2Context.candidateSelectionReason },
+      Q3_Q4: { opticalStateId: q3Candidate.id, capsPx: [60], reason: q3Context.candidateSelectionReason },
+    },
+    nativeRuntime: {
+      rendererFamily: q1Control.runtime.rendererFamily,
+      actualExecutionApi: q1Control.runtime.actualExecutionApi,
+      internalFallback: q1Control.runtime.internalFallback,
+      applicationFallback: q1Control.runtime.applicationFallback,
+      rendererRevision: q1Control.runtime.rendererRevision,
+      sourceRevision: q1Control.r3.captureProvenance.full32.sceneSourceRevision,
+    },
+    confirmatoryCaptures: allCaptureSummaries,
+    pairedCapSensitivity: pairedCapEvidence.crossCapSensitivity,
+    qualificationByDimension,
+    q3SignedBoundaryEvidence: {
+      opticalStateId: q3Candidate.id,
+      evaluatorRevision: GROUND_GLASS_M5Q_EVALUATOR_REVISION,
+      frozenThresholdRevision: M5Q_FROZEN_THRESHOLDS.revision,
+      evidenceSource: q3Context.evidenceSource,
+      captureIds: q3Run.r3.captureIds,
+      signedBoundaryPairCount: q3SignedBoundary.adjacentNearFarPairCount,
+      signedBoundaryPixelCount: q3SignedBoundary.participatingPixelCount,
+      signedBoundaryNearSidePixelCount: q3SignedBoundary.nearSidePixelCount,
+      signedBoundaryFarSidePixelCount: q3SignedBoundary.farSidePixelCount,
+      depthEdgePixelCount: q3Run.r3.depthEdgeMetrics.pixelCount,
+      depthEdgeNearSidePixelCount: q3Run.r3.depthEdgeMetrics.nearSidePixelCount,
+      depthEdgeFarSidePixelCount: q3Run.r3.depthEdgeMetrics.farSidePixelCount,
+      signedBoundaryReferenceRmse: q3Run.r3.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.rmse,
+      signedBoundaryReferenceMaximumChannelError:
+        q3Run.r3.foregroundLeakageMetrics.full32VsFull64AtSignedBoundary.maximumChannelError,
+      signedBoundaryB1Rmse: q3Run.r3.foregroundLeakageMetrics.half32B1VsFull32AtSignedBoundary.rmse,
+      requiredNearSidePixelMinimum: M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels,
+      requiredFarSidePixelMinimum: M5Q_FROZEN_THRESHOLDS.minimumSignedBoundarySidePixels,
+      sidePopulationInvariantPassed: q3SidePopulationInvariantPassed,
+      previousDecision: "bounded-qualified",
+      correctedDecision: q3Decision.status,
+      failedCriteria: q3Decision.criteria.filter(({ met }) => met === false),
+      runtime: q3Run.runtime,
+      remainingLimitations: [
+        "Q3 establishes only signed-boundary support and bounded quality for this optical state and capture matrix.",
+        "General depth-edge B1 quality remains a separate unqualified claim.",
+      ],
+    },
+    qualificationByOpticalState: {
+      "q1-q5-q6-control-cap": q1ControlQualification,
+      "q5-stress-cap": q5StressQualification,
+      "q2-q7": q2Qualification,
+      "q3-q4": q3Qualification,
+    },
+    R3ByOpticalState: {
+      "q1-q5-q6-control-cap": q1Control.r3,
+      "q5-stress-cap": q5Stress.r3,
+      "q2-q7": q2Run.r3,
+      "q3-q4": q3Run.r3,
+    },
+    conclusion: {
+      universalB1QualityPass: false,
+      productionAuthorization: false,
+      limitations: [
+        "Native qualification applies only to these registered Architecture Rise adapter states, source revision and renderer revision.",
+        "A missing support or failed quality gate remains explicit for its own dimension; no dimension inherits another state’s pass.",
+        "The 2 px stress cap is a test-only configuration and does not change the normal 60 px renderer cap.",
+        "No fractional Near alpha was present in the exploratory catalog; confirmatory near checks remain useful negative evidence and cannot establish fractional coverage when absent.",
+      ],
+    },
+  };
+  await writeM5qArtifact(testInfo, "m5q-confirmatory-qualification.json", report);
+  expect(pageErrors).toEqual([]);
+});
 
 test("native M5 app adapter captures B1 provenance, source fallback, and near coverage for matched quality modes", async ({ page }, testInfo) => {
   test.skip(!M5_REQUIRED,

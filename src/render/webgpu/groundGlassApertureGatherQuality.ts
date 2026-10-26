@@ -216,6 +216,7 @@ export type GroundGlassApertureGatherR3Evaluation = Readonly<{
     depthEdgePixelCount: number;
     signedBoundaryPairCount: number;
     signedBoundaryPixelCount: number;
+    full32VsFull64AtSignedBoundary: GroundGlassR3RgbMetrics;
     half32B1VsFull32AtDepthEdges: GroundGlassR3RgbMetrics;
     half32B0VsFull32AtDepthEdges: GroundGlassR3RgbMetrics;
     half32B1VsFull32AtSignedBoundary: GroundGlassR3RgbMetrics;
@@ -241,9 +242,12 @@ export type GroundGlassApertureGatherR3Evaluation = Readonly<{
     reportedEvidenceMatches: boolean;
   }>;
   signedBoundaryEvidence: Readonly<{
-    status: "present" | "absent";
+    status: "present" | "absent" | "invalid";
     adjacentNearFarPairCount: number;
     participatingPixelCount: number;
+    nearSidePixelCount: number;
+    farSidePixelCount: number;
+    populationConsistent: boolean;
   }>;
   qualityDecision: Readonly<{
     status: GroundGlassR3DecisionStatus;
@@ -522,6 +526,9 @@ type Masks = Readonly<{
   signedBoundary: Uint8Array;
   depthEdgePairCount: number;
   signedBoundaryPairCount: number;
+  signedBoundaryNearSidePixelCount: number;
+  signedBoundaryFarSidePixelCount: number;
+  signedBoundaryPopulationConsistent: boolean;
   averageDepthDelta: number | null;
 }>;
 
@@ -583,12 +590,37 @@ const buildMasks = (
       if (!nearEdge) interiorFar[pixel] = 1;
     }
   }
+  let signedBoundaryNearSidePixelCount = 0;
+  let signedBoundaryFarSidePixelCount = 0;
+  let signedBoundaryPopulationConsistent = true;
+  let signedBoundaryPixelCount = 0;
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (signedBoundary[pixel] !== 1) continue;
+    signedBoundaryPixelCount += 1;
+    if (validity[pixel] !== 1) {
+      signedBoundaryPopulationConsistent = false;
+      continue;
+    }
+    const coc = physicalRgba[pixel * 4]!;
+    if (coc < -SIGN_EPSILON_MM) signedBoundaryNearSidePixelCount += 1;
+    else if (coc > SIGN_EPSILON_MM) signedBoundaryFarSidePixelCount += 1;
+    else signedBoundaryPopulationConsistent = false;
+  }
+  signedBoundaryPopulationConsistent = signedBoundaryPopulationConsistent
+    && Number.isSafeInteger(signedBoundaryNearSidePixelCount)
+    && signedBoundaryNearSidePixelCount >= 0
+    && Number.isSafeInteger(signedBoundaryFarSidePixelCount)
+    && signedBoundaryFarSidePixelCount >= 0
+    && signedBoundaryNearSidePixelCount + signedBoundaryFarSidePixelCount === signedBoundaryPixelCount;
   return {
     interiorFar,
     depthEdge,
     signedBoundary,
     depthEdgePairCount,
     signedBoundaryPairCount,
+    signedBoundaryNearSidePixelCount,
+    signedBoundaryFarSidePixelCount,
+    signedBoundaryPopulationConsistent,
     averageDepthDelta: depthEdgePairCount ? depthDeltaSum / depthEdgePairCount : null,
   };
 };
@@ -739,14 +771,16 @@ const invalidResult = (
     b1CandidateGradientEnergy: null, candidateToReferenceGradientRatio: null, relativeGradientError: null },
   foregroundLeakageMetrics: { status: "insufficient-support", depthEdgePixelCount: 0, signedBoundaryPairCount: 0,
     signedBoundaryPixelCount: 0, half32B1VsFull32AtDepthEdges: unavailableMetrics(),
-    half32B0VsFull32AtDepthEdges: unavailableMetrics(), half32B1VsFull32AtSignedBoundary: unavailableMetrics() },
+    full32VsFull64AtSignedBoundary: unavailableMetrics(), half32B0VsFull32AtDepthEdges: unavailableMetrics(),
+    half32B1VsFull32AtSignedBoundary: unavailableMetrics() },
   nearInvariance: { status: "insufficient-support", gpuVsCpuRgb: unavailableMetrics(), gpuVsCpuAlpha: unavailableMetrics(),
     beforeVsAfterB1Rgb: unavailableMetrics(), beforeVsAfterB1Alpha: unavailableMetrics(), nonzeroCoveragePixelCount: 0,
     fractionalCoveragePixelCount: 0, spreadOutsideSharpNearPixelCount: 0, nearFarBoundaryCoveragePixelCount: 0 },
   radiusCapEvidence: { status: "inconsistent", maximumUncappedRadiusPx: null, maximumOverrunPx: null, cappedPixelCount: 0,
     reportedMaximumUncappedRadiusPx: captures.half32.reportedRadiusEvidence.maximumUncappedRadiusPx,
     reportedCappedPixelCount: captures.half32.reportedRadiusEvidence.cappedPixelCount, reportedEvidenceMatches: false },
-  signedBoundaryEvidence: { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0 },
+  signedBoundaryEvidence: { status: "absent", adjacentNearFarPairCount: 0, participatingPixelCount: 0,
+    nearSidePixelCount: 0, farSidePixelCount: 0, populationConsistent: true },
   qualityDecision: { status: "invalid-comparison", reasons, thresholdRevision: null, thresholdsFrozenBeforeConfirmatory: false },
 });
 
@@ -874,6 +908,8 @@ export const evaluateGroundGlassApertureGatherR3 = (
   const b0Interior = metricsForMask(full32.readbackBuffers.farGatherRgba, b0, sourcePixels, masks.interiorFar);
   const b1Edges = metricsForMask(full32.readbackBuffers.farGatherRgba, half.readbackBuffers.b1FarRgba, sourcePixels, masks.depthEdge);
   const b0Edges = metricsForMask(full32.readbackBuffers.farGatherRgba, b0, sourcePixels, masks.depthEdge);
+  const referenceBoundary = metricsForMask(full32.readbackBuffers.farGatherRgba,
+    full64.readbackBuffers.farGatherRgba, sourcePixels, masks.signedBoundary);
   const b1Boundary = metricsForMask(full32.readbackBuffers.farGatherRgba, half.readbackBuffers.b1FarRgba, sourcePixels, masks.signedBoundary);
 
   let fallbackPixelCount = 0;
@@ -1030,6 +1066,10 @@ export const evaluateGroundGlassApertureGatherR3 = (
   } else {
     thresholdErrors = validateThresholds(thresholds);
     if (thresholdErrors.length) qualityReasons = thresholdErrors;
+    else if (!masks.signedBoundaryPopulationConsistent) {
+      qualityStatus = "invalid-comparison";
+      qualityReasons = ["signed-boundary Near/Far unique-pixel population is inconsistent with its mask"];
+    }
     else {
       const supportErrors: string[] = [];
       if (interiorCount < thresholds.minimumInteriorFarPixels) supportErrors.push("interior far ROI support is insufficient");
@@ -1134,6 +1174,7 @@ export const evaluateGroundGlassApertureGatherR3 = (
       candidateToReferenceGradientRatio: gradientRatio, relativeGradientError: gradientError },
     foregroundLeakageMetrics: { status: edgeCount > 0 ? "measured" : "insufficient-support", depthEdgePixelCount: edgeCount,
       signedBoundaryPairCount: masks.signedBoundaryPairCount, signedBoundaryPixelCount,
+      full32VsFull64AtSignedBoundary: referenceBoundary,
       half32B1VsFull32AtDepthEdges: b1Edges, half32B0VsFull32AtDepthEdges: b0Edges,
       half32B1VsFull32AtSignedBoundary: b1Boundary },
     nearInvariance: { status: nonzeroCoveragePixelCount > 0 ? "measured" : "insufficient-support",
@@ -1145,8 +1186,12 @@ export const evaluateGroundGlassApertureGatherR3 = (
       reportedMaximumUncappedRadiusPx: half.reportedRadiusEvidence.maximumUncappedRadiusPx,
       reportedCappedPixelCount: half.reportedRadiusEvidence.cappedPixelCount,
       reportedEvidenceMatches: radiusReportedMatches },
-    signedBoundaryEvidence: { status: masks.signedBoundaryPairCount > 0 ? "present" : "absent",
-      adjacentNearFarPairCount: masks.signedBoundaryPairCount, participatingPixelCount: signedBoundaryPixelCount },
+    signedBoundaryEvidence: { status: !masks.signedBoundaryPopulationConsistent ? "invalid"
+      : masks.signedBoundaryPairCount > 0 ? "present" : "absent",
+      adjacentNearFarPairCount: masks.signedBoundaryPairCount, participatingPixelCount: signedBoundaryPixelCount,
+      nearSidePixelCount: masks.signedBoundaryNearSidePixelCount,
+      farSidePixelCount: masks.signedBoundaryFarSidePixelCount,
+      populationConsistent: masks.signedBoundaryPopulationConsistent },
     qualityDecision: { status: qualityStatus, reasons: qualityReasons,
       thresholdRevision: thresholds?.revision ?? null,
       thresholdsFrozenBeforeConfirmatory: thresholds?.frozenBeforeConfirmatory ?? false },
