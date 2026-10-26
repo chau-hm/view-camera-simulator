@@ -27,6 +27,8 @@ import {
   compareGroundGlassM5rNumericArrays,
   compareGroundGlassM5rGatherResults,
   createGroundGlassM5rGoldenAngleProposals,
+  createGroundGlassM5rReferenceReportFields,
+  evaluateGroundGlassM5rReferenceEvidence,
 } from "../../render/webgpu/groundGlassM5rReferenceAnalysis";
 import {
   evaluateGroundGlassApertureGatherR3,
@@ -1757,22 +1759,64 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     sampledFilmDimensionsMm: capture.sampledFilmDimensionsMm,
     inputFingerprints: capture.inputFingerprints,
   }));
-  expect(new Set(q1FingerprintValues).size, "Q1 repetitions and profiles retain the exact source/input state").toBe(1);
+  const q1InputFingerprintsMatch = new Set(q1FingerprintValues).size === 1;
+  if (!q1InputFingerprintsMatch) {
+    await testInfo.attach("m5r-input-provenance-failure.json", {
+      body: JSON.stringify({
+        captureIds: Object.values(q1Captures).map((capture) => capture.captureId),
+        fingerprints: q1FingerprintValues,
+      }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  expect(q1InputFingerprintsMatch, "Q1 repetitions and profiles retain the exact source/input state").toBe(true);
   expect(q1Captures.full32a.m5rDiagnostics.status).toBe("captured");
   expect(q1Captures.full64a.m5rDiagnostics.status).toBe("captured");
 
   const q1Buffers32 = q1Captures.full32a.readbackBuffers!;
   const q1Buffers64 = q1Captures.full64a.readbackBuffers!;
-  const full32Repeatability = [q1Captures.full32b, q1Captures.full32c].map((capture) => ({
+  const full32Repeatability = [q1Captures.full32b, q1Captures.full32c].map((capture, index) => ({
+    qualityMode: "Full32" as const,
+    comparedCaptureIds: [q1Captures.full32a.captureId, capture.captureId] as const,
+    comparison: index === 0 ? "A/B" as const : "A/C" as const,
     far: compareGroundGlassM5rNumericArrays(q1Buffers32.farGatherRgba, capture.readbackBuffers!.farGatherRgba),
     near: compareGroundGlassM5rNumericArrays(q1Buffers32.nearRgba, capture.readbackBuffers!.nearRgba),
   }));
-  const full64Repeatability = [q1Captures.full64b, q1Captures.full64c].map((capture) => ({
+  const full64Repeatability = [q1Captures.full64b, q1Captures.full64c].map((capture, index) => ({
+    qualityMode: "Full64" as const,
+    comparedCaptureIds: [q1Captures.full64a.captureId, capture.captureId] as const,
+    comparison: index === 0 ? "A/B" as const : "A/C" as const,
     far: compareGroundGlassM5rNumericArrays(q1Buffers64.farGatherRgba, capture.readbackBuffers!.farGatherRgba),
     near: compareGroundGlassM5rNumericArrays(q1Buffers64.nearRgba, capture.readbackBuffers!.nearRgba),
   }));
   const sameProfileRepeatable = [...full32Repeatability, ...full64Repeatability]
     .every(({ far, near }) => far.exact && near.exact);
+  if (!sameProfileRepeatable) {
+    const repeatabilityFailures = [...full32Repeatability, ...full64Repeatability].flatMap((comparison) =>
+      (["Far", "Near"] as const).flatMap((comparedBuffer) => {
+        const difference = comparison[comparedBuffer === "Far" ? "far" : "near"];
+        return difference.exact ? [] : [{
+          qualityMode: comparison.qualityMode,
+          comparedCaptureIds: comparison.comparedCaptureIds,
+          comparedBuffer,
+          changedValueCount: difference.changedValueCount,
+          maximumAbsoluteError: difference.maximumAbsoluteError,
+          maximumErrorIndex: difference.maximumErrorIndex,
+          rmse: difference.rootMeanSquareError,
+        }];
+      }));
+    await testInfo.attach("m5r-repeatability-failure.json", {
+      body: JSON.stringify({
+        requiredComparisons: "Full32 and Full64 A/B and A/C, Far RGBA and Near RGBA",
+        repeatabilityFailures,
+        full32: full32Repeatability,
+        full64: full64Repeatability,
+      }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  expect(sameProfileRepeatable, "Full32/Full64 A/B/A/C Far and Near readbacks must be bit-exact")
+    .toBe(true);
   const fullGatherPixelIndices = Array.from(
     { length: q1Captures.full32a.farGatherWidthPx * q1Captures.full32a.farGatherHeightPx },
     (_value, index) => index,
@@ -1838,6 +1882,30 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
       gpuRoiRgb(gpuFull64Roi), cpuRoiRgb(cpuReferences.high256.farRgba),
     ),
   };
+  const m5rEvidenceDecision = evaluateGroundGlassM5rReferenceEvidence({
+    inputFingerprintMatch: q1InputFingerprintsMatch,
+    repeatedCaptures: [...full32Repeatability, ...full64Repeatability],
+    gpu32VsCpu32RgbRmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+    gpu64VsCpu64RgbRmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+    declaredMatchedCountConformanceLimit: 0.001,
+    cpu128VsCpu256RgbRmse: cpuReferenceConvergence.cpu128VsCpu256.farRgb.rootMeanSquareError,
+    declaredReferenceConvergenceLimit: M5Q_FROZEN_THRESHOLDS.maximumReferenceRmse,
+  });
+  const m5rReferenceReportFields = createGroundGlassM5rReferenceReportFields(m5rEvidenceDecision);
+  if (m5rEvidenceDecision.gpuCpuConformancePassed !== true) {
+    await testInfo.attach("m5r-gpu-cpu-conformance-failure.json", {
+      body: JSON.stringify({
+        gpu32VsCpu32RgbRmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+        gpu64VsCpu64RgbRmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+        diagnosticLimit: 0.001,
+        evidenceDecision: m5rEvidenceDecision,
+      }, null, 2),
+      contentType: "application/json",
+    });
+  }
+  expect(m5rEvidenceDecision.gpuCpuConformancePassed,
+    "Full32/CPU32 and Full64/CPU64 matched-count RMSE must meet the 0.001 diagnostic limit")
+    .toBe(true);
   const sampleDistributions = Object.fromEntries(([16, 32, 64] as const).map((sampleCount) => [
     sampleCount,
     analyzeGroundGlassM5rSampleDistribution(createGroundGlassM5rGoldenAngleProposals(sampleCount)),
@@ -2042,10 +2110,17 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
           cpu64Vs128Rmse: cpuReferenceConvergence.cpu64VsCpu128.farRgb.rootMeanSquareError,
           cpu128Vs256Rmse: cpuReferenceConvergence.cpu128VsCpu256.farRgb.rootMeanSquareError,
         },
-        supportingEvidence: ["Full32 and Full64 each match their same-count CPU algorithm within 1.35e-7 float32 ROI RMSE.", "CPU tier differences decrease through 256 samples."],
-        contradictingEvidence: ["CPU128/CPU256 remain separated above the frozen 0.001 convergence target."],
-        confidence: "high",
-        classification: "deterministic-reference-sampling-limited; higher-sample sequence unresolved",
+        supportingEvidence: [
+          ...m5rReferenceReportFields.rootCauseMatrix.hA1.supportingEvidence,
+          ...(cpuReferenceConvergence.cpu32VsCpu64.farRgb.rootMeanSquareError
+            > cpuReferenceConvergence.cpu64VsCpu128.farRgb.rootMeanSquareError
+            && cpuReferenceConvergence.cpu64VsCpu128.farRgb.rootMeanSquareError
+              > cpuReferenceConvergence.cpu128VsCpu256.farRgb.rootMeanSquareError
+            ? ["Measured CPU tier differences decrease through 256 samples."] : []),
+        ],
+        contradictingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA1.contradictingEvidence,
+        confidence: m5rReferenceReportFields.rootCauseMatrix.hA1.confidence,
+        classification: m5rReferenceReportFields.rootCauseMatrix.hA1.classification,
         proposedNextAction: "Keep references unqualified; design a separate progressive or higher-quality sampling/reference study against explicit blur-spread metrics.",
       },
       {
@@ -2103,11 +2178,13 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
         hypothesis: "H-A5 renderer, resource, or readback instability",
         discriminatingExperiment: "Capture three repeated Full32 and Full64 results with identical request inputs and renderer generation.",
         predictedObservation: "A same-profile capture changes despite stable source and optical fingerprints.",
-        actualObservation: "All four repeated Full32/Full64 Far and Near arrays are bit-exact; source, depth, physical, validity, camera, and optical fingerprints match.",
-        supportingEvidence: ["Same-profile exact equality across three captures per profile."],
-        contradictingEvidence: ["No observed capture or readback instability."],
-        confidence: "high",
-        classification: "capture-instability-not-observed",
+        actualObservation: m5rReferenceReportFields.rootCauseMatrix.hA5.classification === "capture-instability-not-observed"
+          ? "The evidence evaluator confirms all four repeated Full32/Full64 Far and Near comparisons are bit-exact."
+          : m5rReferenceReportFields.rootCauseMatrix.hA5.classification,
+        supportingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA5.supportingEvidence,
+        contradictingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA5.contradictingEvidence,
+        confidence: m5rReferenceReportFields.rootCauseMatrix.hA5.confidence,
+        classification: m5rReferenceReportFields.rootCauseMatrix.hA5.classification,
         proposedNextAction: "No lifecycle change indicated; retain repeatability as a regression control.",
       },
       {
@@ -2115,11 +2192,21 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
         hypothesis: "H-A6 physical footprint or coordinate inputs differ across profiles",
         discriminatingExperiment: "Match effective-state fingerprints and compare Full32/Full64 GPU output against CPU references consuming observed gather-center IDs/UVs and the captured inverse projection.",
         predictedObservation: "A mismatched input fingerprint or materially larger same-sample GPU/CPU residual.",
-        actualObservation: "Inputs match across all profiles; GPU RGBA32F and CPU same-sample errors are below 1.35e-7 RMSE on the selected ROI.",
-        supportingEvidence: ["Matched source dimensions 474×379, gather 474×379, film dimensions, 60 px cap, camera fingerprint, and four source-input fingerprints."],
-        contradictingEvidence: ["No input identity or same-count implementation mismatch was observed in this capture."],
-        confidence: "high",
-        classification: "geometry-provenance-mismatch-not-observed",
+        actualObservation: m5rReferenceReportFields.rootCauseMatrix.hA6.classification === "geometry-provenance-mismatch-not-observed"
+          ? {
+            inputFingerprintsMatch: m5rEvidenceDecision.provenanceValid,
+            gpu32Cpu32RgbRmse: cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError,
+            gpu64Cpu64RgbRmse: cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError,
+            sourceDimensions: [q1Captures.full32a.sourceWidthPx, q1Captures.full32a.sourceHeightPx],
+            gatherDimensions: [q1Captures.full32a.farGatherWidthPx, q1Captures.full32a.farGatherHeightPx],
+            sampledFilmDimensionsMm: q1Captures.full32a.sampledFilmDimensionsMm,
+            maximumRadiusPx: q1Captures.full32a.maximumRadiusPx,
+          }
+          : m5rReferenceReportFields.rootCauseMatrix.hA6.classification,
+        supportingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA6.supportingEvidence,
+        contradictingEvidence: m5rReferenceReportFields.rootCauseMatrix.hA6.contradictingEvidence,
+        confidence: m5rReferenceReportFields.rootCauseMatrix.hA6.confidence,
+        classification: m5rReferenceReportFields.rootCauseMatrix.hA6.classification,
         proposedNextAction: "Keep the matched-input assertions; broaden only if another state demonstrates an input mismatch.",
       },
       {
@@ -2272,8 +2359,7 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
       q1State: q1.id,
       full32: full32Repeatability,
       full64: full64Repeatability,
-      sameProfileRepeatable,
-      inputFingerprintsMatchedAcrossProfilesAndRepeats: true,
+      ...m5rReferenceReportFields.referenceRepeatability,
       full32CaptureIds: [q1Captures.full32a.captureId, q1Captures.full32b.captureId, q1Captures.full32c.captureId],
       full64CaptureIds: [q1Captures.full64a.captureId, q1Captures.full64b.captureId, q1Captures.full64c.captureId],
     },
@@ -2316,10 +2402,8 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
         full64CpuMatch: q1Cap2Full64.farGatherCpuReference,
       },
       precision: halfStorage,
-      classification: sameProfileRepeatable && cpuMatchedErrors.gpu32FloatVsCpu32.rootMeanSquareError <= 0.001
-        && cpuMatchedErrors.gpu64FloatVsCpu64.rootMeanSquareError <= 0.001
-        ? "deterministic-reference-sampling-limited"
-        : "mixed-causes-or-insufficient-evidence",
+      evidenceDecision: m5rEvidenceDecision,
+      ...m5rReferenceReportFields.referenceConvergence,
       highSampleReferenceAuthority: "independent numerical candidate; not photographic ground truth",
     },
     fallbackHalo: fallbackAnalysis,
@@ -2355,11 +2439,7 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
         "B1 fallback, blur, foreground contamination, reason-mask, and denominator-floor controls B1-B7/N7-N10",
         "Near alpha/RGB mutation, center override, binary16, and rejected geometry controls C1-C8/N11-N15",
       ],
-      nativeAssertions: [
-        "N1 repeated same-profile captures are bit-exact",
-        "N2 comparison inputs have matching source, depth, physical, and validity fingerprints",
-        "registered-app and native-research-fixture evidence scopes remain distinct",
-      ],
+      nativeAssertions: m5rReferenceReportFields.negativeControls.nativeAssertions,
       separateM5qConfirmatoryRegression: "The separately run native M5Q confirmation retained its frozen per-dimension outcomes and bounded Q3 result; this is regression evidence, not an M5R N16-N18 unit-control mapping.",
       r3ThresholdsChanged: false,
     },
@@ -2420,7 +2500,18 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
     contentType: "application/json",
   });
   await testInfo.attach("m5r-conclusion.json", {
-    body: JSON.stringify({ m5qStatus: report.m5qStatus, nextStage: report.nextStage }, null, 2),
+    body: JSON.stringify({
+      referenceRepeatability: report.referenceRepeatability,
+      referenceConvergence: report.referenceConvergence,
+      rootCauseMatrix: {
+        hA1: rootCauseMatrix.referenceConvergence[0],
+        hA5: rootCauseMatrix.referenceConvergence[4],
+        hA6: rootCauseMatrix.referenceConvergence[5],
+      },
+      nativeAssertions: report.negativeControls.nativeAssertions,
+      m5qStatus: report.m5qStatus,
+      nextStage: report.nextStage,
+    }, null, 2),
     contentType: "application/json",
   });
   await writeM5qArtifact(testInfo, "m5r-investigation-report.json", report);

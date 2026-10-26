@@ -7,6 +7,10 @@ import {
   compareGroundGlassM5rNumericArrays,
   compareGroundGlassM5rWithHighSampleReference,
   createGroundGlassM5rGoldenAngleProposals,
+  createGroundGlassM5rReferenceReportFields,
+  evaluateGroundGlassM5rReferenceEvidence,
+  type GroundGlassM5rReferenceEvidenceInput,
+  type GroundGlassM5rRepeatComparison,
   type GroundGlassM5rHighSampleCount,
 } from "../../render/webgpu/groundGlassM5rReferenceAnalysis";
 
@@ -40,6 +44,44 @@ const makeResult = (
     maximumNearCandidateUncappedRadiusPx: 0,
     nearCappedCandidateCount: 0,
   },
+});
+
+const makeRepeatComparisons = (
+  mutation?: Readonly<{ qualityMode: "Full32" | "Full64"; comparison: "A/B" | "A/C"; buffer: "far" | "near" }>,
+): readonly GroundGlassM5rRepeatComparison[] => ([
+  { qualityMode: "Full32", comparison: "A/B", comparedCaptureIds: ["f32-a", "f32-b"] },
+  { qualityMode: "Full32", comparison: "A/C", comparedCaptureIds: ["f32-a", "f32-c"] },
+  { qualityMode: "Full64", comparison: "A/B", comparedCaptureIds: ["f64-a", "f64-b"] },
+  { qualityMode: "Full64", comparison: "A/C", comparedCaptureIds: ["f64-a", "f64-c"] },
+] as const).map((entry) => ({
+  ...entry,
+  far: (() => {
+    const first = new Float32Array([0.1, 0.2, 0.3, 1]);
+    const repeat = first.slice();
+    if (mutation?.qualityMode === entry.qualityMode
+        && mutation.comparison === entry.comparison && mutation.buffer === "far") repeat[2] = 0.31;
+    return compareGroundGlassM5rNumericArrays(first, repeat);
+  })(),
+  near: (() => {
+    const first = new Float32Array([0.3, 0.2, 0.1, 0.4]);
+    const repeat = first.slice();
+    if (mutation?.qualityMode === entry.qualityMode
+        && mutation.comparison === entry.comparison && mutation.buffer === "near") repeat[3] = 0.41;
+    return compareGroundGlassM5rNumericArrays(first, repeat);
+  })(),
+}));
+
+const stableEvidenceInput = (
+  overrides: Partial<GroundGlassM5rReferenceEvidenceInput> = {},
+): GroundGlassM5rReferenceEvidenceInput => ({
+  inputFingerprintMatch: true,
+  repeatedCaptures: makeRepeatComparisons(),
+  gpu32VsCpu32RgbRmse: 0.0000000652,
+  gpu64VsCpu64RgbRmse: 0.000000134,
+  declaredMatchedCountConformanceLimit: 0.001,
+  cpu128VsCpu256RgbRmse: 0.004157,
+  declaredReferenceConvergenceLimit: 0.001,
+  ...overrides,
 });
 
 describe("Ground Glass M5R CPU-reference analysis", () => {
@@ -148,5 +190,132 @@ describe("Ground Glass M5R CPU-reference analysis", () => {
       .toThrow(/equal, non-empty/);
     expect(() => compareGroundGlassM5rNumericArrays(new Float32Array([Number.NaN]), new Float32Array([1])))
       .toThrow(/finite values/);
+  });
+
+  it("M5R-A1: supports deterministic finite-sampling attribution only after all measured gates pass", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput());
+    const fields = createGroundGlassM5rReferenceReportFields(decision);
+
+    expect(decision.provenanceValid).toBe(true);
+    expect(decision.sameProfileRepeatable).toBe(true);
+    expect(decision.gpuCpuConformancePassed).toBe(true);
+    expect(decision.classification).toBe("deterministic-reference-sampling-limited");
+    expect(decision.rootCauseStatementsAllowed.deterministicReferenceSamplingLimited).toBe(true);
+    expect(fields.rootCauseMatrix.hA5.classification).toBe("capture-instability-not-observed");
+    expect(fields.negativeControls.nativeAssertions[0]).toContain("(passed)");
+  });
+
+  it("M5R-A2: detects a one-channel Full32 Far mutation with measured error details", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({
+      repeatedCaptures: makeRepeatComparisons({ qualityMode: "Full32", comparison: "A/B", buffer: "far" }),
+    }));
+    const changed = decision.repeatability!.find((entry) => entry.qualityMode === "Full32" && entry.comparison === "A/B")!.far!;
+
+    expect(decision.sameProfileRepeatable).toBe(false);
+    expect(changed.changedValueCount).toBeGreaterThan(0);
+    expect(changed.maximumAbsoluteError).toBeGreaterThan(0);
+    expect(changed.maximumErrorIndex).toBe(2);
+    expect(changed.rootMeanSquareError).toBeGreaterThan(0);
+    expect(decision.classification).toBe("capture-instability-observed");
+    expect(decision.rootCauseStatementsAllowed.deterministicReferenceSamplingLimited).toBe(false);
+  });
+
+  it("M5R-A3: detects a one-channel Full64 Near-alpha mutation even when Far is exact", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({
+      repeatedCaptures: makeRepeatComparisons({ qualityMode: "Full64", comparison: "A/C", buffer: "near" }),
+    }));
+    const comparison = decision.repeatability!.find((entry) => entry.qualityMode === "Full64" && entry.comparison === "A/C")!;
+
+    expect(comparison.far!.exact).toBe(true);
+    expect(comparison.near!.exact).toBe(false);
+    expect(comparison.near!.changedValueCount).toBe(1);
+    expect(comparison.near!.maximumErrorIndex % 4).toBe(3);
+    expect(decision.sameProfileRepeatable).toBe(false);
+  });
+
+  it("M5R-A4: rejects sampling attribution when stable captures have a GPU32/CPU32 mismatch", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({
+      gpu32VsCpu32RgbRmse: 0.0011,
+    }));
+
+    expect(decision.sameProfileRepeatable).toBe(true);
+    expect(decision.gpuCpuConformancePassed).toBe(false);
+    expect(decision.classification).toBe("gpu-cpu-mismatch");
+    expect(decision.rootCauseStatementsAllowed.deterministicReferenceSamplingLimited).toBe(false);
+  });
+
+  it("M5R-A5: rejects sampling attribution when stable captures have a GPU64/CPU64 mismatch", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({
+      gpu64VsCpu64RgbRmse: 0.0011,
+    }));
+
+    expect(decision.sameProfileRepeatable).toBe(true);
+    expect(decision.gpuCpuConformancePassed).toBe(false);
+    expect(decision.classification).toBe("gpu-cpu-mismatch");
+    expect(decision.rootCauseStatementsAllowed.deterministicReferenceSamplingLimited).toBe(false);
+  });
+
+  it("M5R-A6: rejects identical outputs as an invalid comparison when fingerprints differ", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({ inputFingerprintMatch: false }));
+    const fields = createGroundGlassM5rReferenceReportFields(decision);
+
+    expect(decision.sameProfileRepeatable).toBe(true);
+    expect(decision.classification).toBe("invalid-comparison");
+    expect(decision.rootCauseStatementsAllowed.deterministicReferenceSamplingLimited).toBe(false);
+    expect(fields.rootCauseMatrix.hA6.classification).toBe("geometry-provenance-mismatch-observed");
+  });
+
+  it("M5R-A7: missing, NaN, and infinite metrics never produce a successful classification", () => {
+    const missing = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({ gpu32VsCpu32RgbRmse: null }));
+    const nan = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({ gpu32VsCpu32RgbRmse: Number.NaN }));
+    const infinity = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({ cpu128VsCpu256RgbRmse: Number.POSITIVE_INFINITY }));
+
+    expect(missing.classification).toBe("insufficient-evidence");
+    expect(nan.classification).toBe("invalid-comparison");
+    expect(infinity.classification).toBe("invalid-comparison");
+    expect([missing, nan, infinity].every((decision) =>
+      decision.rootCauseStatementsAllowed.deterministicReferenceSamplingLimited)).toBe(false);
+  });
+
+  it("M5R-A8: preserves unresolved high-sample reference authority when the measured sequence is not converged", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput());
+
+    expect(decision.classification).toBe("deterministic-reference-sampling-limited");
+    expect(decision.finiteSampleReferenceConverged).toBe(false);
+    expect(decision.evidenceStatus.finiteSampleReferenceConvergence).toBe("contradicted");
+    expect(decision.failedConditions.some((condition) => condition.includes("reference authority remains unresolved")))
+      .toBe(true);
+  });
+
+  it("M5R-A9: keeps the matrix aligned with failed top-level decisions and removes unsupported success claims", () => {
+    const gpuMismatch = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({
+      gpu32VsCpu32RgbRmse: 0.002,
+    }));
+    const mismatchFields = createGroundGlassM5rReferenceReportFields(gpuMismatch);
+    const unstable = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput({
+      repeatedCaptures: makeRepeatComparisons({ qualityMode: "Full32", comparison: "A/B", buffer: "far" }),
+    }));
+    const unstableFields = createGroundGlassM5rReferenceReportFields(unstable);
+
+    expect(mismatchFields.rootCauseMatrix.hA1.classification).toBe(mismatchFields.referenceConvergence.classification);
+    expect(mismatchFields.rootCauseMatrix.hA1.classification).toBe("gpu-cpu-mismatch");
+    expect(mismatchFields.rootCauseMatrix.hA1.contradictingEvidence.some((item) => item.includes("GPU32/CPU32")))
+      .toBe(true);
+    expect(unstableFields.rootCauseMatrix.hA1.classification).toBe(unstableFields.referenceConvergence.classification);
+    expect(unstableFields.rootCauseMatrix.hA5.classification).toBe("capture-instability-observed");
+    expect(unstableFields.rootCauseMatrix.hA5.classification).not.toBe("capture-instability-not-observed");
+    expect(unstableFields.negativeControls.nativeAssertions[0]).toContain("(failed or unresolved)");
+  });
+
+  it("M5R-A10: serializes one consistent decision across repeatability, convergence, matrix, and N1", () => {
+    const decision = evaluateGroundGlassM5rReferenceEvidence(stableEvidenceInput());
+    const fields = createGroundGlassM5rReferenceReportFields(decision);
+    const report = JSON.parse(JSON.stringify(fields)) as typeof fields;
+
+    expect(report.referenceRepeatability.sameProfileRepeatable).toBe(true);
+    expect(report.referenceConvergence.classification).toBe("deterministic-reference-sampling-limited");
+    expect(report.rootCauseMatrix.hA1.classification).toBe(report.referenceConvergence.classification);
+    expect(report.rootCauseMatrix.hA5.classification).toBe("capture-instability-not-observed");
+    expect(report.negativeControls.nativeAssertions[0]).toContain("(passed)");
   });
 });
