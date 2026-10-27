@@ -908,10 +908,15 @@ export const evaluateGroundGlassM5tReferenceEvidence = (input: Readonly<{
   if (!input.analyticControlsPassed) reasons.push("Independent analytic controls did not pass.");
 
   let classification: GroundGlassM5tReferenceEvidence["classification"];
-  if (inputProvenance !== "matched" || finiteMetrics.some((value) => !Number.isFinite(value)) || !budgetCountValid) {
+  if (inputProvenance !== "matched" || !budgetCountValid) {
     classification = "invalid-comparison";
   } else if (budgetExceededPixelCount > 0) {
+    // A budget stop makes the downstream RGB/area comparisons unavailable by
+    // construction. Preserve that specific bounded outcome instead of
+    // relabeling its expected missing metrics as an invalid comparison.
     classification = "budget-limited-unresolved";
+  } else if (finiteMetrics.some((value) => !Number.isFinite(value))) {
+    classification = "invalid-comparison";
   } else if (!support.adequate) {
     classification = "insufficient-support";
   } else if (independentFixedGrid.rmse !== null && independentFixedGrid.rmse > rmseLimit) {

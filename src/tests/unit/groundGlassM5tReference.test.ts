@@ -278,6 +278,11 @@ describe("Ground Glass M5T independent aperture quadrature", () => {
     expect(budgetEvidence.classification).toBe("budget-limited-unresolved");
     expect(budgetEvidence.budgetExceededPixelCount).toBe(1);
     expect(budgetEvidence.reasons.join(" ")).toContain("exhausted the declared evaluation budget");
+    const invalidProvenanceStillFailsClosed = evaluate({
+      budgetExceededPixelCount: 1,
+      inputFingerprintSets: [fingerprints, { ...fingerprints, sourceColor: "different-source" }],
+    });
+    expect(invalidProvenanceStillFailsClosed.classification).toBe("invalid-comparison");
   });
 
   it("N7/N9/N10: depth, cap, and asymmetric top-origin source evidence affect the actual integral", () => {
