@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { DataUtils, REVISION, PerspectiveCamera } from "three";
@@ -9,7 +10,9 @@ import type {
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import type { GroundGlassApertureGatherQualityMode } from "../../render/webgpu/groundGlassApertureGatherPolicy";
 import {
+  GROUND_GLASS_APERTURE_SIGN_EPSILON_MM,
   groundGlassGoldenAngleNestedDiskProposalFrom64ForTesting,
+  groundGlassViewDistanceMmAtTopUv,
   mapGroundGlassPhysicalEllipseToSourcePixels,
   referenceGroundGlassApertureGather,
   referenceGroundGlassApertureGatherDiagnostic,
@@ -51,6 +54,22 @@ import {
   createGroundGlassM5rReferenceReportFields,
   evaluateGroundGlassM5rReferenceEvidence,
 } from "../../render/webgpu/groundGlassM5rReferenceAnalysis";
+import {
+  GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL,
+  GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS,
+  compareGroundGlassM5tPixelEstimates,
+  evaluateGroundGlassM5tReferenceEvidence,
+  runGroundGlassM5tAdaptiveQuadrature,
+  runGroundGlassM5tFixedGridReference,
+  type GroundGlassM5tFarReferenceInput,
+} from "../../render/webgpu/groundGlassM5tQuadrature";
+import {
+  analyzeGroundGlassM5tEdgeSpread,
+  analyzeGroundGlassM5tLineSpread,
+  compareGroundGlassM5tSpatialProfiles,
+  createGroundGlassM5tSpatialProfile,
+  validateGroundGlassM5tRoiSelection,
+} from "../../render/webgpu/groundGlassM5tSpatialBlurAnalysis";
 import {
   evaluateGroundGlassApertureGatherR3,
   type GroundGlassApertureGatherR3Thresholds,
@@ -653,6 +672,83 @@ const makeM5sInputFromCapture = (
     maximumRadiusPx: capture.maximumRadiusPx,
     inputFingerprints: capture.inputFingerprints,
   };
+};
+
+const makeM5tInputFromCapture = (
+  capture: GroundGlassApertureGatherCaptureReadback,
+): GroundGlassM5tFarReferenceInput => makeM5sInputFromCapture(capture);
+
+type M5tSpatialLineSelection = Readonly<{
+  orientation: "horizontal" | "vertical";
+  sourcePixelIds: readonly number[];
+  gatherPixelIds: readonly number[];
+  roiId: string;
+}>;
+
+/** Selects a contiguous ROI from source/depth/physical evidence before inspecting candidate error. */
+const selectM5tSpatialLine = (
+  input: GroundGlassM5sFarReferenceInput,
+): M5tSpatialLineSelection | null => {
+  const { widthPx, heightPx } = input.source;
+  const sampleDistance = (x: number, y: number): number => groundGlassViewDistanceMmAtTopUv(
+    (x + 0.5) / widthPx, (y + 0.5) / heightPx,
+    input.depth[y * widthPx + x]!, input.inverseProjectionMatrix,
+  );
+  const eligibleFar = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= widthPx || y >= heightPx) return false;
+    const sourceId = y * widthPx + x;
+    return input.validity[sourceId] === 1
+      && input.physicalRgba[sourceId * 4]! > GROUND_GLASS_APERTURE_SIGN_EPSILON_MM;
+  };
+  const sourceContrast = (firstId: number, secondId: number): number => {
+    const first = firstId * 4;
+    const second = secondId * 4;
+    return Math.abs(input.sourceRgba[first]! - input.sourceRgba[second]!);
+  };
+  const findLine = (orientation: "horizontal" | "vertical"): M5tSpatialLineSelection | null => {
+    for (let y = 5; y < heightPx - 5; y += 1) {
+      for (let x = 5; x < widthPx - 5; x += 1) {
+        const nextX = orientation === "horizontal" ? x + 1 : x;
+        const nextY = orientation === "vertical" ? y + 1 : y;
+        if (!eligibleFar(x, y) || !eligibleFar(nextX, nextY)) continue;
+        const centerDistance = sampleDistance(x, y);
+        const nextDistance = sampleDistance(nextX, nextY);
+        const relativeDepthEdge = Math.abs(centerDistance - nextDistance)
+          / Math.max(1, Math.min(Math.abs(centerDistance), Math.abs(nextDistance)));
+        if (relativeDepthEdge <= 0.03 || sourceContrast(y * widthPx + x, nextY * widthPx + nextX) < 0.04) continue;
+        const sourcePixelIds = Array.from({ length: 9 }, (_value, index) => {
+          const offset = index - 4;
+          const lineX = x + (orientation === "horizontal" ? offset : 0);
+          const lineY = y + (orientation === "vertical" ? offset : 0);
+          return lineY * widthPx + lineX;
+        });
+        if (sourcePixelIds.some((sourceId) => {
+          const lineX = sourceId % widthPx;
+          const lineY = Math.floor(sourceId / widthPx);
+          return !eligibleFar(lineX, lineY);
+        })) continue;
+        const gatherPixelIds: number[] = [];
+        for (let index = 0; index < sourcePixelIds.length; index += 1) {
+          const sourceId = sourcePixelIds[index]!;
+          const lineX = sourceId % widthPx;
+          const lineY = Math.floor(sourceId / widthPx);
+          const gatherId = lineY * input.gather.widthPx + lineX;
+          const observedX = input.observedGatherCenterSourceIds[gatherId * 2]!;
+          const observedY = input.observedGatherCenterSourceIds[gatherId * 2 + 1]!;
+          if (observedX !== lineX || observedY !== lineY) return null;
+          gatherPixelIds.push(gatherId);
+        }
+        return {
+          orientation,
+          sourcePixelIds,
+          gatherPixelIds,
+          roiId: `depth-edge-${orientation}-${sourcePixelIds[0]}`,
+        };
+      }
+    }
+    return null;
+  };
+  return findLine("horizontal") ?? findLine("vertical");
 };
 
 const m5sRgbForRun = (
@@ -3107,6 +3203,576 @@ test("native M5R diagnoses reference convergence, B1 fallback, and Near coverage
       m5qQualificationBoundary: m5sReport.m5qQualificationBoundary }, null, 2), contentType: "application/json",
   });
   await writeM5qArtifact(testInfo, "m5s-reference-convergence.json", m5sReport);
+});
+
+test("native M5T validates adaptive Far quadrature and spatial blur without changing M5 or M5Q", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU, M3 Raw, M4 physical research, and the M5 gather research gate");
+  test.setTimeout(1_800_000);
+  expect(REVISION).toBe("186");
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const q1 = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-loupe4-rise0")!;
+  const q2 = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-full-rise0")!;
+  const q4 = M5Q_CANDIDATES.find(({ id }) => id === "ar-f5200-f5p6-full-rise0")!;
+  const roleSpecs = [
+    { opticalStateId: q1.id, role: "primary-4x-control-cap60", candidate: q1,
+      cap: undefined, anchor: "S1-smooth-valid-far-interior", priority: "S3-high-source-gradient-valid-far" },
+    { opticalStateId: q2.id, role: "full-frame-control-cap60", candidate: q2,
+      cap: undefined, anchor: null, priority: "S5-signed-coc-boundary-neighborhood" },
+    { opticalStateId: q4.id, role: "focus-distance-control-cap60", candidate: q4,
+      cap: undefined, anchor: "S4-depth-discontinuity-valid-far", priority: null },
+    { opticalStateId: q1.id, role: "stressed-cap2", candidate: q1,
+      cap: 2, anchor: null, priority: "S6-cap-activated-valid-far" },
+  ] as const;
+  const anchorIds = {
+    primaryS1: [6384, 17781, 33899, 47388, 63961, 78006, 99883, 118094, 136935, 168492],
+    focusS4: [63186, 120251, 133286, 133668, 134044, 134427, 139867, 140295, 140723, 141145],
+  } as const;
+  const strataByRole: Record<string, readonly ReturnType<typeof selectGroundGlassM5sRoiStrata>[number][]> = {};
+  const opticalStates: unknown[] = [];
+  const roiStudies: unknown[] = [];
+  const spatialRecords: unknown[] = [];
+  const m5sCrossMethodRecords: unknown[] = [];
+  const priorityStrataRun = new Set<string>();
+  let selectedPixelSlots = 0;
+  let adaptiveEvaluations = 0;
+  let fixedGridEvaluations = 0;
+  let m5sProposalEvaluations = 0;
+  let syntheticUniformControl: Readonly<Record<string, unknown>> | null = null;
+  const syntheticSpatialValues = [0, 0, 0.05, 0.15, 0.35, 0.65, 0.85, 0.95, 1, 1, 1];
+  const syntheticSpatialProfile = (captureId: string, values: readonly number[]) => createGroundGlassM5tSpatialProfile({
+    roiId: "controlled-spatial-edge",
+    captureId,
+    evidenceScope: "controlled-synthetic-fixture",
+    colorDomain: "source-target-readback-values",
+    valueConvention: "source-target-readback-channel-r",
+    samples: values.map((value, index) => ({ xPx: index, yPx: 0, value })),
+  });
+  const syntheticSpatialReference = syntheticSpatialProfile("m5t-synthetic-blurred-edge", syntheticSpatialValues);
+  const syntheticSharpSource = syntheticSpatialProfile("m5t-synthetic-sharp-source", [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]);
+  const syntheticSpatialEsf = analyzeGroundGlassM5tEdgeSpread(syntheticSpatialReference);
+  const syntheticSpatialLsf = analyzeGroundGlassM5tLineSpread(syntheticSpatialReference, syntheticSpatialEsf);
+  const syntheticSpatialAgreement = compareGroundGlassM5tSpatialProfiles({
+    reference: syntheticSpatialReference,
+    candidate: syntheticSharpSource,
+    sharpSource: syntheticSharpSource,
+  });
+  const syntheticSpatialControl = {
+    evidenceScope: "controlled-synthetic-fixture",
+    referenceProfile: syntheticSpatialReference,
+    sharpSourceProfile: syntheticSharpSource,
+    esf: syntheticSpatialEsf,
+    lsf: syntheticSpatialLsf,
+    sharpSourceSubstitution: syntheticSpatialAgreement,
+    passed: syntheticSpatialEsf.status === "measured"
+      && syntheticSpatialLsf.status === "measured"
+      && syntheticSpatialAgreement.classification === "sharp-source-substitution",
+  };
+  expect(syntheticSpatialControl.passed, JSON.stringify(syntheticSpatialControl)).toBe(true);
+
+  const runNumericalStudy = (
+    role: string,
+    opticalStateId: string,
+    capture: GroundGlassApertureGatherCaptureReadback,
+    full64: GroundGlassApertureGatherCaptureReadback,
+    referenceInput: GroundGlassM5tFarReferenceInput,
+    stratumId: string,
+    selectedGatherPixelIds: readonly number[],
+    isAnchor: boolean,
+  ) => {
+    if (selectedGatherPixelIds.length !== 10) {
+      throw new Error(`M5T ${role}/${stratumId} requires the exact bounded ten-pixel ROI`);
+    }
+    selectedPixelSlots += selectedGatherPixelIds.length;
+    const levels = GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS.map((initialResolution) =>
+      runGroundGlassM5tAdaptiveQuadrature({
+        referenceInput,
+        selectedGatherPixelIds,
+        initialResolution,
+      }));
+    const fixedGrid = runGroundGlassM5tFixedGridReference({ referenceInput, selectedGatherPixelIds });
+    adaptiveEvaluations += levels.reduce((sum, run) => sum + run.evaluatedPoints, 0);
+    fixedGridEvaluations += fixedGrid.evaluatedPoints;
+    const refinementComparisons = levels.slice(0, -1).flatMap((run, index) =>
+      compareGroundGlassM5tPixelEstimates(run.pixels, levels[index + 1]!.pixels));
+    const fixedGridComparisons = compareGroundGlassM5tPixelEstimates(
+      levels.at(-1)!.pixels, fixedGrid.pixels,
+    );
+    const latest = levels.at(-1)!;
+    const budgetExceededPixelCount = levels.reduce((sum, run) => sum
+      + run.pixels.filter(({ classification }) => classification === "evaluation-budget-exceeded").length, 0)
+      + fixedGrid.pixels.filter(({ classification }) => classification === "evaluation-budget-exceeded").length;
+    const evidence = evaluateGroundGlassM5tReferenceEvidence({
+      inputFingerprintSets: [
+        referenceInput.inputFingerprints,
+        makeM5tInputFromCapture(full64).inputFingerprints,
+        ...levels.map(({ inputFingerprints }) => inputFingerprints),
+        fixedGrid.inputFingerprints,
+      ],
+      refinementComparisons,
+      fixedGridComparisons,
+      comparedPixelCount: selectedGatherPixelIds.length,
+      requiredPixelCount: 10,
+      budgetExceededPixelCount,
+      latestUnresolvedAreaFractions: latest.pixels.map(({ unresolvedAreaFraction }) => unresolvedAreaFraction),
+      analyticControlsPassed: syntheticUniformControl?.passed === true && syntheticSpatialControl.passed,
+    });
+    const m5sRuns = runGroundGlassM5sReferenceMatrix({
+      referenceInput: makeM5sInputFromCapture(capture),
+      selectedGatherPixelIds,
+      sampleCounts: [1024],
+      stratifiedSeeds: [104729, 130363],
+    });
+    m5sProposalEvaluations += m5sRuns.reduce((sum, run) => sum + run.evaluatedProposalCount, 0);
+    const finalRgbAvailable = latest.pixels.every(({ classification, conditionalMeanRgb }) =>
+      classification === "estimated" && conditionalMeanRgb !== null);
+    const finalRgb = finalRgbAvailable
+      ? Float64Array.from(latest.pixels.flatMap(({ conditionalMeanRgb }) => [...conditionalMeanRgb!]))
+      : null;
+    const crossMethod = m5sRuns.map((run) => {
+      const m5sRgb = m5sRgbForRun(run, selectedGatherPixelIds);
+      return {
+        method: run.descriptor,
+        evaluatedProposalCount: run.evaluatedProposalCount,
+        comparison: finalRgb && m5sRgb ? compareGroundGlassM5sRgb(finalRgb, m5sRgb) : null,
+        comparisonStatus: finalRgbAvailable ? "measured" : "m5t-reference-unresolved",
+      };
+    });
+    const gatherCenters = selectedGatherPixelIds.map((gatherPixelId) => ({
+      gatherPixelId,
+      sourceId: [
+        capture.readbackBuffers!.observedGatherCenterSourceIds[gatherPixelId * 2]!,
+        capture.readbackBuffers!.observedGatherCenterSourceIds[gatherPixelId * 2 + 1]!,
+      ],
+      sourceUvTopOrigin: [
+        capture.readbackBuffers!.observedGatherCenterSourceUvs[gatherPixelId * 2]!,
+        capture.readbackBuffers!.observedGatherCenterSourceUvs[gatherPixelId * 2 + 1]!,
+      ],
+    }));
+    const study = {
+      role,
+      opticalStateId,
+      stratumId,
+      anchor: isAnchor,
+      selectedGatherPixelIds,
+      selectedSourcePixelIds: selectedGatherPixelIds.map((id) => {
+        const buffers = capture.readbackBuffers!;
+        return buffers.observedGatherCenterSourceIds[id * 2 + 1]! * capture.sourceWidthPx
+          + buffers.observedGatherCenterSourceIds[id * 2]!;
+      }),
+      gatherCenters,
+      inputFingerprints: referenceInput.inputFingerprints,
+      refinement: levels.map((run) => ({
+        initialResolution: run.initialResolution,
+        maximumDepth: run.maximumDepth,
+        evaluationBudgetPerPixel: run.evaluationBudgetPerPixel,
+        evaluatedPoints: run.evaluatedPoints,
+        elapsedMs: run.elapsedMs,
+        pixels: run.pixels.map((pixel) => ({
+          gatherPixelId: pixel.gatherPixelId,
+          centerSourceId: pixel.centerSourceId,
+          acceptedAreaEstimate: pixel.acceptedAreaEstimate,
+          acceptedColorAreaIntegralRgb: pixel.acceptedColorAreaIntegralRgb,
+          conditionalMeanRgb: pixel.conditionalMeanRgb,
+          estimatedAreaError: pixel.estimatedAreaError,
+          estimatedColorErrorRgb: pixel.estimatedColorErrorRgb,
+          unresolvedArea: pixel.unresolvedArea,
+          unresolvedAreaFraction: pixel.unresolvedAreaFraction,
+          unresolvedCellCount: pixel.unresolvedCellCount,
+          evaluatedPoints: pixel.evaluatedPoints,
+          refinementDepth: pixel.refinementDepth,
+          cellClassCounts: pixel.cellClassCounts,
+          classification: pixel.classification,
+        })),
+      })),
+      fixedGrid: {
+        algorithm: fixedGrid.algorithm,
+        resolution: fixedGrid.resolution,
+        evaluationBudgetPerPixel: fixedGrid.evaluationBudgetPerPixel,
+        evaluatedPoints: fixedGrid.evaluatedPoints,
+        elapsedMs: fixedGrid.elapsedMs,
+        pixels: fixedGrid.pixels.map((pixel) => ({
+          gatherPixelId: pixel.gatherPixelId,
+          acceptedAreaEstimate: pixel.acceptedAreaEstimate,
+          conditionalMeanRgb: pixel.conditionalMeanRgb,
+          estimatedAreaError: pixel.estimatedAreaError,
+          unresolvedArea: pixel.unresolvedArea,
+          unresolvedAreaFraction: pixel.unresolvedAreaFraction,
+          evaluatedPoints: pixel.evaluatedPoints,
+          classification: pixel.classification,
+        })),
+      },
+      refinementComparisons,
+      fixedGridComparisons,
+      evidence,
+      budgetExceededPixelCount,
+      crossMethod,
+    };
+    roiStudies.push(study);
+    m5sCrossMethodRecords.push({ role, stratumId, selectedGatherPixelIds, crossMethod });
+    return { levels, fixedGrid, evidence };
+  };
+
+  for (const roleSpec of roleSpecs) {
+    await setM5qCandidateState(page, roleSpec.candidate);
+    const full32 = await captureGather(page, "full32", `m5t-${roleSpec.role}-full32-${Date.now()}`, true, roleSpec.cap);
+    await expectCaptureMatchesCurrentFrame(page, full32, false);
+    const full64 = await captureGather(page, "full64", `m5t-${roleSpec.role}-full64-${Date.now()}`, true, roleSpec.cap);
+    await expectCaptureMatchesCurrentFrame(page, full64, false);
+    for (const capture of [full32, full64]) {
+      expect(capture.rendererFamily).toBe("webgpu-renderer");
+      expect(capture.actualExecutionApi).toBe("webgpu");
+      expect(capture.internalFallback).toBe("none");
+      expect(capture.sceneId).toBe("architecture-rise");
+      expect(capture.sceneSourceRevision.trim()).not.toBe("");
+      expect(capture.readbackOrigin).toBe("top");
+    }
+    expect(full32.sourceWidthPx).toBe(full64.sourceWidthPx);
+    expect(full32.sourceHeightPx).toBe(full64.sourceHeightPx);
+    expect(full32.farGatherWidthPx).toBe(full64.farGatherWidthPx);
+    expect(full32.farGatherHeightPx).toBe(full64.farGatherHeightPx);
+    expect(full32.sceneSourceRevision).toBe(full64.sceneSourceRevision);
+    expect(full32.cameraStateFingerprint).toBe(full64.cameraStateFingerprint);
+    expect(full32.effectiveOpticalRequestFingerprint).toBe(full64.effectiveOpticalRequestFingerprint);
+    const profileProvenance = compareGroundGlassM5sInputFingerprints([
+      { captureId: full32.captureId, fingerprints: full32.inputFingerprints },
+      { captureId: full64.captureId, fingerprints: full64.inputFingerprints },
+    ]);
+    if (profileProvenance.status !== "matched") {
+      await testInfo.attach(`m5t-provenance-failure-${roleSpec.role}.json`, {
+        body: JSON.stringify({ role: roleSpec.role, profileProvenance, full32, full64 }, null, 2),
+        contentType: "application/json",
+      });
+      throw new Error(`M5T ${roleSpec.role} Full32/Full64 inputs do not match`);
+    }
+    const m5sInput = makeM5sInputFromCapture(full32);
+    const m5tInput = makeM5tInputFromCapture(full32);
+    const strata = selectGroundGlassM5sRoiStrata({
+      referenceInput: m5sInput,
+      maximumPixelsPerStratum: 10,
+      minimumSupport: 10,
+      depthEdgeRelativeThreshold: 0.03,
+    });
+    strataByRole[roleSpec.role] = strata;
+    const stratumById = new Map(strata.map((stratum) => [stratum.id, stratum]));
+    const opticalStateReport = {
+      role: roleSpec.role,
+      opticalStateId: roleSpec.opticalStateId,
+      captureIds: { full32: full32.captureId, full64: full64.captureId },
+      requestIds: { full32: full32.requestId, full64: full64.requestId },
+      rendererGenerationIds: { full32: full32.rendererGenerationId, full64: full64.rendererGenerationId },
+      sceneId: full32.sceneId,
+      sceneSourceRevision: full32.sceneSourceRevision,
+      runtime: { rendererRevision: `r${REVISION}`, rendererFamily: full32.rendererFamily,
+        actualExecutionApi: full32.actualExecutionApi, internalFallback: full32.internalFallback,
+        applicationFallback: false },
+      effectiveOpticalRequestFingerprints: [full32.effectiveOpticalRequestFingerprint,
+        full64.effectiveOpticalRequestFingerprint],
+      cameraFingerprints: [full32.cameraStateFingerprint, full64.cameraStateFingerprint],
+      sourceDimensions: [full32.sourceWidthPx, full32.sourceHeightPx],
+      gatherDimensions: [full32.farGatherWidthPx, full32.farGatherHeightPx],
+      sampledFilmDimensionsMm: full32.sampledFilmDimensionsMm,
+      radiusCapPx: full32.maximumRadiusPx,
+      sourceColorDomain: full32.colorDomain,
+      profileInputProvenance: profileProvenance,
+      inputFingerprints: full32.inputFingerprints,
+      strata: strata.map(({ id, selectionRule, candidateCount, selectedGatherPixelIds,
+        selectedSourcePixelIds, minimumSupport, status, physicalRadiusPx, effectiveRadiusPx,
+        signedCocMm, selectedDepthEdgeCount, selectedCapActivatedCount, sourceGradient,
+        depthEdgeRelativeThreshold, gradientThresholds }) => ({
+        id, selectionRule, candidateCount, selectedGatherPixelIds, selectedSourcePixelIds,
+        minimumSupport, status, physicalRadiusPx, effectiveRadiusPx, signedCocMm,
+        selectedDepthEdgeCount, selectedCapActivatedCount, sourceGradient,
+        depthEdgeRelativeThreshold, gradientThresholds,
+      })),
+    };
+    opticalStates.push(opticalStateReport);
+
+    if (roleSpec.role === "primary-4x-control-cap60") {
+      const syntheticSource = new Float32Array(m5tInput.sourceRgba.length);
+      for (let offset = 0; offset < syntheticSource.length; offset += 4) {
+        syntheticSource.set([0.2, 0.4, 0.6, 1], offset);
+      }
+      const syntheticInput: GroundGlassM5tFarReferenceInput = {
+        ...m5tInput,
+        sourceRgba: syntheticSource,
+        inputFingerprints: { ...m5tInput.inputFingerprints, sourceColor: "m5t-synthetic-uniform-0.2-0.4-0.6" },
+      };
+      const analyticRun = runGroundGlassM5tAdaptiveQuadrature({
+        referenceInput: syntheticInput,
+        selectedGatherPixelIds: [stratumById.get("S1-smooth-valid-far-interior")!.selectedGatherPixelIds[0]!],
+        initialResolution: 32,
+        maximumDepth: 6,
+      });
+      const analyticPixel = analyticRun.pixels[0]!;
+      const observed = analyticPixel.conditionalMeanRgb;
+      const passed = analyticPixel.classification === "estimated" && observed !== null
+        && Math.abs(observed[0] - 0.2) <= 1e-6
+        && Math.abs(observed[1] - 0.4) <= 1e-6
+        && Math.abs(observed[2] - 0.6) <= 1e-6;
+      syntheticUniformControl = {
+        fixture: "synthetic-uniform-valid-Far-over-native-physical-map",
+        expectedRgb: [0.2, 0.4, 0.6],
+        observedRgb: observed,
+        acceptedAreaEstimate: analyticPixel.acceptedAreaEstimate,
+        classification: analyticPixel.classification,
+        evaluatedPoints: analyticPixel.evaluatedPoints,
+        passed,
+      };
+      expect(passed, JSON.stringify(syntheticUniformControl)).toBe(true);
+    }
+
+    if (roleSpec.anchor) {
+      const anchor = stratumById.get(roleSpec.anchor)!;
+      expect(anchor.status).toBe("measured");
+      if (roleSpec.role === "primary-4x-control-cap60") expect(anchor.selectedGatherPixelIds).toEqual(anchorIds.primaryS1);
+      if (roleSpec.role === "focus-distance-control-cap60") expect(anchor.selectedGatherPixelIds).toEqual(anchorIds.focusS4);
+      runNumericalStudy(roleSpec.role, roleSpec.opticalStateId, full32, full64, m5tInput,
+        roleSpec.anchor, anchor.selectedGatherPixelIds, true);
+    }
+
+    const selectedPriority = [
+      ...(roleSpec.priority ? [roleSpec.priority] : []),
+      ...(!priorityStrataRun.has("S2-strong-defocus-textured-interior")
+        ? ["S2-strong-defocus-textured-interior" as const] : []),
+    ];
+    for (const stratumId of selectedPriority) {
+      if (stratumId === "S2-strong-defocus-textured-interior" && priorityStrataRun.has(stratumId)) continue;
+      const stratum = stratumById.get(stratumId);
+      if (!stratum || stratum.status !== "measured") continue;
+      priorityStrataRun.add(stratumId);
+      runNumericalStudy(roleSpec.role, roleSpec.opticalStateId, full32, full64, m5tInput,
+        stratumId, stratum.selectedGatherPixelIds, false);
+    }
+
+    if (roleSpec.role === "primary-4x-control-cap60" || roleSpec.role === "focus-distance-control-cap60") {
+      const lineSelection = selectM5tSpatialLine(m5sInput);
+      if (!lineSelection) {
+        spatialRecords.push({ role: roleSpec.role, status: "spatial-profile-insufficient-support",
+          reason: "No contiguous nine-pixel line met source contrast, depth-edge, physical, validity, and mapping gates." });
+      } else {
+        const selectionEvidence = validateGroundGlassM5tRoiSelection({
+          roiId: lineSelection.roiId,
+          selectedPixelIds: lineSelection.sourcePixelIds,
+          evidenceInputs: ["source", "depth", "physical", "validity"],
+          candidateQualityOutputConsulted: false,
+          evidenceScope: "registered-app-adapter",
+        });
+        expect(selectionEvidence.status).toBe("valid");
+        selectedPixelSlots += lineSelection.gatherPixelIds.length;
+        const lineReference = runGroundGlassM5tAdaptiveQuadrature({
+          referenceInput: m5tInput,
+          selectedGatherPixelIds: lineSelection.gatherPixelIds,
+          initialResolution: 256,
+        });
+        adaptiveEvaluations += lineReference.evaluatedPoints;
+        const buffers = full32.readbackBuffers!;
+        const buffers64 = full64.readbackBuffers!;
+        const profileInput = (captureId: string, evidenceScope: "registered-app-adapter",
+          values: readonly number[]) => createGroundGlassM5tSpatialProfile({
+          roiId: lineSelection.roiId,
+          captureId,
+          evidenceScope,
+          colorDomain: "source-target-readback-values",
+          valueConvention: "source-target-readback-channel-r",
+          samples: lineSelection.sourcePixelIds.map((sourceId, index) => ({
+            xPx: sourceId % full32.sourceWidthPx,
+            yPx: Math.floor(sourceId / full32.sourceWidthPx),
+            value: values[index]!,
+          })),
+        });
+        const sourceValues = lineSelection.sourcePixelIds.map((sourceId) => buffers.sourceRgba[sourceId * 4]!);
+        const full32Values = lineSelection.gatherPixelIds.map((id) => buffers.farGatherRgba[id * 4]!);
+        const full64Values = lineSelection.gatherPixelIds.map((id) => buffers64.farGatherRgba[id * 4]!);
+        const referenceById = new Map(lineReference.pixels.map((pixel) => [pixel.gatherPixelId, pixel]));
+        const referenceValues = lineSelection.gatherPixelIds.map((id) => referenceById.get(id)?.conditionalMeanRgb?.[0] ?? Number.NaN);
+        const sourceProfile = profileInput(`${full32.captureId}-sharp-source`, "registered-app-adapter", sourceValues);
+        const full32Profile = profileInput(full32.captureId, "registered-app-adapter", full32Values);
+        const full64Profile = profileInput(full64.captureId, "registered-app-adapter", full64Values);
+        const referenceProfile = referenceValues.every(Number.isFinite)
+          && lineReference.pixels.every(({ classification }) => classification === "estimated")
+          ? profileInput(`${full32.captureId}-m5t-adaptive-256`, "registered-app-adapter", referenceValues)
+          : null;
+        const sourceEsf = analyzeGroundGlassM5tEdgeSpread(sourceProfile);
+        const full32Esf = analyzeGroundGlassM5tEdgeSpread(full32Profile);
+        const full64Esf = analyzeGroundGlassM5tEdgeSpread(full64Profile);
+        const sourceLsf = analyzeGroundGlassM5tLineSpread(sourceProfile, sourceEsf);
+        const full32Lsf = analyzeGroundGlassM5tLineSpread(full32Profile, full32Esf);
+        const full64Lsf = analyzeGroundGlassM5tLineSpread(full64Profile, full64Esf);
+        const endpointSourceIds = [lineSelection.sourcePixelIds[0]!, lineSelection.sourcePixelIds.at(-1)!];
+        const endpointDistance = endpointSourceIds.map((sourceId) => groundGlassViewDistanceMmAtTopUv(
+          (sourceId % full32.sourceWidthPx + 0.5) / full32.sourceWidthPx,
+          (Math.floor(sourceId / full32.sourceWidthPx) + 0.5) / full32.sourceHeightPx,
+          buffers.depth[sourceId]!, full32.inverseProjectionMatrix,
+        ));
+        const nearEndpointIndex = endpointDistance[0]! <= endpointDistance[1]! ? 0 : 1;
+        const foregroundSignal = Math.abs(sourceValues[0]! - sourceValues.at(-1)!) >= 0.05
+          ? sourceValues[nearEndpointIndex === 0 ? 0 : sourceValues.length - 1] : undefined;
+        const full32Agreement = referenceProfile
+          ? compareGroundGlassM5tSpatialProfiles({ reference: referenceProfile, candidate: full32Profile,
+            sharpSource: sourceProfile, ...(foregroundSignal === undefined ? {} : { foregroundColorSignal: foregroundSignal }) })
+          : null;
+        const full64Agreement = referenceProfile
+          ? compareGroundGlassM5tSpatialProfiles({ reference: referenceProfile, candidate: full64Profile,
+            sharpSource: sourceProfile, ...(foregroundSignal === undefined ? {} : { foregroundColorSignal: foregroundSignal }) })
+          : null;
+        const sharpSubstitutionControl = referenceProfile
+          ? compareGroundGlassM5tSpatialProfiles({ reference: referenceProfile, candidate: sourceProfile,
+            sharpSource: sourceProfile })
+          : null;
+        const integratedError = (values: readonly number[]) => referenceProfile
+          ? values.reduce((sum, value, index) => sum + (value - referenceValues[index]!), 0) : null;
+        spatialRecords.push({
+          role: roleSpec.role,
+          status: referenceProfile ? "measured" : "spatial-profile-insufficient-support",
+          selection: { ...lineSelection, selectionEvidence, candidateQualityOutputConsulted: false,
+            sourceDepthEndpointDistanceMm: endpointDistance,
+            direction: endpointDistance[0]! < endpointDistance[1]! ? "first-end-nearer" : "last-end-nearer" },
+          profiles: { source: sourceProfile, full32: full32Profile, full64: full64Profile,
+            m5tAdaptiveReference: referenceProfile },
+          edgeSpread: { source: sourceEsf, full32: full32Esf, full64: full64Esf,
+            m5tAdaptiveReference: referenceProfile ? analyzeGroundGlassM5tEdgeSpread(referenceProfile) : null },
+          lineSpread: { source: sourceLsf, full32: full32Lsf, full64: full64Lsf,
+            m5tAdaptiveReference: referenceProfile ? analyzeGroundGlassM5tLineSpread(referenceProfile) : null },
+          agreement: { full32: full32Agreement, full64: full64Agreement, sharpSourceSubstitution: sharpSubstitutionControl },
+          profileIntegratedError: { full32: integratedError(full32Values), full64: integratedError(full64Values) },
+          foregroundColorSignal: foregroundSignal ?? null,
+          referenceLimit: "Adaptive 256 is a numerical candidate; spatial metrics remain bounded to this registered-app line and do not establish a scene-wide halo or image-quality claim.",
+        });
+      }
+    }
+  }
+
+  expect(selectedPixelSlots).toBeLessThanOrEqual(128);
+  expect(m5sProposalEvaluations).toBeLessThanOrEqual(GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS);
+  expect(priorityStrataRun.has("S2-strong-defocus-textured-interior")
+    || Object.values(strataByRole).every((strata) =>
+      strata.find(({ id }) => id === "S2-strong-defocus-textured-interior")?.status === "insufficient-support"))
+    .toBe(true);
+  expect(pageErrors).toEqual([]);
+  const m5qQualificationBoundary = {
+    thresholdRevision: "m5q-architecture-rise-r186-v3",
+    q1: "reference-not-converged",
+    q2: "insufficient-support",
+    q3: "bounded-qualified",
+    q4: "insufficient-support",
+    q5: "reference-not-converged",
+    q6: "reference-not-converged",
+    q7: "reference-not-converged",
+    thresholdsChanged: false,
+    qualificationRewritten: false,
+  } as const;
+  expect(m5qQualificationBoundary.q3).toBe("bounded-qualified");
+  const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const m5tReport = {
+    schemaVersion: 1,
+    experimentRevision: "ground-glass-m5t-native-review-1",
+    evaluatorRevision: "ground-glass-m5t-adaptive-quadtree-v1",
+    sourceCommit,
+    generatedAtUtc: new Date().toISOString(),
+    nativeRuntime: { browserProject: testInfo.project.name,
+      browserVersion: page.context().browser()?.version() ?? null,
+      platform: process.platform, rendererRevision: `r${REVISION}`, rendererFamily: "webgpu-renderer",
+      actualExecutionApi: "webgpu", internalFallback: "none", applicationFallback: false },
+    numericalReferenceDefinition: {
+      finiteEstimator: "Existing M5 finite estimator includes the O(1) eligible center sample plus accepted proposals; M5T does not replace or conflate this with the limiting integral.",
+      limitingIntegral: "Conditional accepted-aperture RGB area integral divided by accepted aperture area; null when no positive accepted area is established.",
+      mappingAuthority: "Captured physical ellipse, radius cap, GPU-observed gather-center ID/UV, top-origin nearest source texel, validity, signed CoC, depth and view-distance tolerance helpers.",
+      numericalIndependence: "Adaptive quadtree midpoint and uniform 512-grid midpoint use independent point layouts and traversal; physical semantics are shared with the authoritative M5 contract.",
+      uncertainty: "Refinement differences and unresolved-area estimates are diagnostic estimators, not certified integration error bounds.",
+    },
+    adaptiveQuadratureMethod: { resolutions: GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS,
+      maximumDepth: 12, evaluationBudgetPerPixel: GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL,
+      selectedPixelLimit: 128, revision: "ground-glass-m5t-adaptive-quadtree-v1" },
+    independentFixedGridMethod: { resolution: 512, method: "independent-square-grid-midpoint" },
+    analyticControls: { syntheticUniformControl, syntheticSpatialControl,
+      mutationSensitiveControls: "Executed by the focused M5T unit suite; detailed control mapping is attached separately." },
+    opticalStates,
+    roiCatalog: Object.entries(strataByRole).map(([role, strata]) => ({
+      role, strata: strata.map(({ id, candidateCount, selectedGatherPixelIds, selectedSourcePixelIds,
+        minimumSupport, status, physicalRadiusPx, effectiveRadiusPx, sourceGradient, selectedDepthEdgeCount,
+        selectedCapActivatedCount }) => ({ id, candidateCount, selectedGatherPixelIds, selectedSourcePixelIds,
+        minimumSupport, status, physicalRadiusPx, effectiveRadiusPx, sourceGradient,
+        selectedDepthEdgeCount, selectedCapActivatedCount })),
+    })),
+    refinementConvergence: roiStudies,
+    acceptedAreaStability: roiStudies.map((study) => ({
+      role: (study as { role: string }).role,
+      stratumId: (study as { stratumId: string }).stratumId,
+      evidence: (study as { evidence: unknown }).evidence,
+    })),
+    crossMethodAgreement: m5sCrossMethodRecords,
+    m5sRegressionAnchors: {
+      primary4xS1: { selectedGatherPixelIds: anchorIds.primaryS1,
+        m5sHistoricalClassification: "converged-and-cross-validated",
+        m5tClassification: roiStudies.find((study) => (study as { role: string }).role === "primary-4x-control-cap60"
+          && (study as { stratumId: string }).stratumId === "S1-smooth-valid-far-interior")
+          ? (roiStudies.find((study) => (study as { role: string }).role === "primary-4x-control-cap60"
+            && (study as { stratumId: string }).stratumId === "S1-smooth-valid-far-interior") as { evidence: unknown }).evidence : null },
+      focusDistanceS4: { selectedGatherPixelIds: anchorIds.focusS4,
+        m5sHistoricalClassification: "converged-and-cross-validated",
+        m5tClassification: roiStudies.find((study) => (study as { role: string }).role === "focus-distance-control-cap60"
+          && (study as { stratumId: string }).stratumId === "S4-depth-discontinuity-valid-far")
+          ? (roiStudies.find((study) => (study as { role: string }).role === "focus-distance-control-cap60"
+            && (study as { stratumId: string }).stratumId === "S4-depth-discontinuity-valid-far") as { evidence: unknown }).evidence : null },
+    },
+    spatialProfiles: spatialRecords,
+    edgeSpreadMetrics: spatialRecords.map((record) => (record as { role: string; edgeSpread: unknown }).edgeSpread),
+    lineSpreadMetrics: spatialRecords.map((record) => (record as { role: string; lineSpread: unknown }).lineSpread),
+    haloAndContamination: spatialRecords.map((record) => (record as { role: string; agreement: unknown; profileIntegratedError: unknown }).agreement),
+    numericalClassifications: roiStudies.map((study) => ({
+      role: (study as { role: string }).role,
+      stratumId: (study as { stratumId: string }).stratumId,
+      classification: ((study as { evidence: { classification: string } }).evidence).classification,
+    })),
+    spatialClassifications: spatialRecords.map((record) => ({ role: (record as { role: string }).role,
+      status: (record as { status: string }).status })),
+    combinedReferenceAuthority: {
+      classification: "bounded-research-only; no M5Q promotion",
+      numerical: roiStudies.map((study) => ({ role: (study as { role: string }).role,
+        stratumId: (study as { stratumId: string }).stratumId,
+        classification: ((study as { evidence: { classification: string } }).evidence).classification })),
+      spatial: spatialRecords.map((record) => ({ role: (record as { role: string }).role,
+        status: (record as { status: string }).status })),
+      registeredAppScopeOnlyForExactCapturesAndSelectedPixels: true,
+      fixtureDoesNotPromoteRegisteredAppSupport: true,
+    },
+    negativeControls: {
+      unitControls: ["N1-N24: actual CPU mutation, analytic, convergence, spatial, ROI authority, and frozen-M5Q controls"],
+      nativeControls: { profileInputProvenance: "matched for all native pairs",
+        genuineNativeExecution: "webgpu-renderer / webgpu / no internal or application fallback",
+        syntheticUniformControl: syntheticUniformControl?.passed === true,
+        syntheticSpatialSharpSubstitutionControl: syntheticSpatialControl.passed,
+        roiSelectionUsedCandidateQualityOutput: false,
+        allSourceDepthPhysicalValidityInputsRetained: true },
+    },
+    resourceBudgets: { selectedPixelSlots, maximumSelectedPixelSlots: 128,
+      adaptiveEvaluations, fixedGridEvaluations, m5sProposalEvaluations,
+      adaptiveTimeMs: roiStudies.reduce<number>((total, study) => total
+        + (study as { refinement: readonly { elapsedMs: number }[] }).refinement.reduce((sum, run) => sum + run.elapsedMs, 0), 0),
+      fixedGridTimeMs: roiStudies.reduce<number>((total, study) => total + (study as { fixedGrid: { elapsedMs: number } }).fixedGrid.elapsedMs, 0),
+      m5sProposalEvaluationBudget: GROUND_GLASS_M5S_MAX_TOTAL_PROPOSAL_EVALUATIONS },
+    regression: { m5sS1S4AnchorsChecked: true, productionM5Changed: false,
+      m5qConfirmatoryMustRunSeparately: true, pageErrors },
+    m5qQualificationBoundary,
+    limitations: [
+      "M5T only supplements the four tested Architecture Rise capture roles and exact selected pixels.",
+      "S2 remains insufficient-support unless current captures actually provide the required valid population; no registered-app result is manufactured.",
+      "Agreement between adaptive, fixed-grid, and M5S methods does not prove photographic or whole-scene ground truth.",
+      "Spatial profiles are short registered-app line samples; no general B1 halo or production quality claim follows.",
+      "M5Q frozen thresholds and Q1-Q7 outcomes remain unchanged; M6 quality-dependent presentation remains blocked.",
+    ],
+    recommendedNextPr: "If numerical disagreements remain concentrated at source-texel or eligibility boundaries, pursue M5U discontinuity-aware reference refinement; otherwise acquire narrowly targeted registered-app optical-state evidence for unsupported S2/S6 regions before any quality integration.",
+    nextStage: { m6QualityDependentPresentationAllowed: false, productionWebGpuAuthorization: false },
+  };
+  await testInfo.attach("m5t-refinement-curves.json", { body: JSON.stringify(roiStudies, null, 2), contentType: "application/json" });
+  await testInfo.attach("m5t-roi-patches.json", { body: JSON.stringify(m5tReport.roiCatalog, null, 2), contentType: "application/json" });
+  await testInfo.attach("m5t-cross-method.json", { body: JSON.stringify(m5sCrossMethodRecords, null, 2), contentType: "application/json" });
+  await testInfo.attach("m5t-esf-profiles.json", { body: JSON.stringify(spatialRecords.map((record) => (record as { role: string; profiles: unknown; edgeSpread: unknown }).edgeSpread), null, 2), contentType: "application/json" });
+  await testInfo.attach("m5t-lsf-profiles.json", { body: JSON.stringify(spatialRecords.map((record) => (record as { role: string; lineSpread: unknown }).lineSpread), null, 2), contentType: "application/json" });
+  await testInfo.attach("m5t-halo-diagnostics.json", { body: JSON.stringify(m5tReport.haloAndContamination, null, 2), contentType: "application/json" });
+  await testInfo.attach("m5t-negative-controls.json", { body: JSON.stringify(m5tReport.negativeControls, null, 2), contentType: "application/json" });
+  await writeM5qArtifact(testInfo, "m5t-conclusion.json", m5tReport);
 });
 
 test("native M3/M4 Raw baseline records frame and physical pass timing with M5 disabled", async ({ page }, testInfo) => {
