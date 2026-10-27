@@ -69,4 +69,4 @@ M5Q remains frozen at `m5q-architecture-rise-r186-v3`: Q1 `reference-not-converg
 - Native Chrome WebGPU matrix — passed 5 tests covering M5Q, M5 app adapter, M5T, and M5U.
 - Production-preview isolation — passed 2/2; no WebGPU activation path appeared in production.
 - `npm run ci:local:e2e` — CSS, lint, typecheck, unit tests, and build passed; the first development E2E failed on the known missing “Complete the Photograph” heading. The same failure was reproduced against a clean archive of base `c80f7d297ec5f044a87e37d870af16b4b0b00e1e`.
-- Hosted CI is reported separately after PR publication.
+- Hosted GitHub Actions CI at PR head `7978d3fee6f99d5dd891926c6425b8baa4719adc` — passed (run 40544347361; lint, type-check, unit/integration); deploy job skipped.

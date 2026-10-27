@@ -1492,7 +1492,7 @@
     "nativeWebGpu": "passed: 5 tests covering M5Q, M5 adapter, M5T and M5U",
     "productionPreview": "passed: 2/2, no WebGPU activation in production",
     "localCiE2e": "known Architecture/Foreground “Complete the Photograph” heading E2E failed; reproduced on clean base c80f7d297ec5f044a87e37d870af16b4b0b00e1e after all earlier CI stages passed",
-    "hostedCi": "pending PR"
+    "hostedCi": "passed at PR head 7978d3fee6f99d5dd891926c6425b8baa4719adc; GitHub Actions run 40544347361 succeeded (lint, type-check, unit/integration); deploy job skipped"
   },
   "rawReadbacks": "Ignored Playwright output; this report keeps compact evidence and exact selected center IDs/UVs."
 }
