@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "experimentRevision": "ground-glass-m5t-native-review-1",
+  "spatialMetricRevision": "ground-glass-m5t-spatial-lsf-v2",
   "evaluatorRevision": "ground-glass-m5t-adaptive-quadtree-v1",
   "sourceCommit": "2113ee6f480e9564729b02eba967b01c061d0062",
   "generatedAtUtc": "2026-10-27T00:35:12.848Z",
@@ -132,7 +133,12 @@
         "centroidPx": 4.5,
         "positiveSidelobeMaximum": 0.19999999999999998,
         "negativeSidelobeMinimum": 0,
-        "asymmetry": 0.30000000000000004,
+        "positiveIntegral": 1,
+        "leftPositiveIntegral": 0.5,
+        "rightPositiveIntegral": 0.5,
+        "asymmetry": 0,
+        "integratedDirectionalSignal": 1,
+        "expectedDirectionalSignal": 1,
         "integralConsistencyError": 0,
         "issue": null
       },
@@ -150,7 +156,7 @@
       },
       "passed": true
     },
-    "cpuUnitSuite": "src/tests/unit/groundGlassM5tReference.test.ts: 15 tests, including grouped N1–N24 controls and analytic fixtures."
+    "cpuUnitSuite": "src/tests/unit/groundGlassM5tReference.test.ts: 31 tests, including grouped N1–N24 controls and M5T-F1–F12 spatial metric regressions."
   },
   "opticalStates": [
     {
@@ -3806,7 +3812,12 @@
       "centroidPx": 4.5,
       "positiveSidelobeMaximum": 0.19999999999999998,
       "negativeSidelobeMinimum": 0,
-      "asymmetry": 0.30000000000000004,
+      "positiveIntegral": 1,
+      "leftPositiveIntegral": 0.5,
+      "rightPositiveIntegral": 0.5,
+      "asymmetry": 0,
+      "integratedDirectionalSignal": 1,
+      "expectedDirectionalSignal": 1,
       "integralConsistencyError": 0,
       "issue": null
     }

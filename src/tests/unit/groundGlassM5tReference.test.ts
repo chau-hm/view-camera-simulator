@@ -123,7 +123,21 @@ const makeProfile = (
   samples: values.map((value, index) => ({ xPx: (options.xStart ?? 0) + index, yPx: options.y ?? 0, value })),
 });
 
+const makeAnalysisProfileAtSpacing = (
+  values: readonly number[],
+  spacingPx: number,
+): GroundGlassM5tSpatialProfile => {
+  const contiguous = makeProfile(values);
+  return {
+    ...contiguous,
+    samples: values.map((value, index) => ({ xPx: index * spacingPx, yPx: 0, value })),
+    stepVectorPx: [spacingPx, 0],
+  };
+};
+
 describe("Ground Glass M5T independent aperture quadrature", () => {
+  const boundedFixtureOptions = { resolution: 32 as const, depth: 5, budget: 25_000 };
+
   it("N1: a one-texel RGB mutation changes the actual conditional integral", () => {
     const baseline = makeInput({ majorRadiusPx: 2, minorRadiusPx: 2, sourceColor: () => [0.2, 0.2, 0.2] });
     const changed = makeInput({ majorRadiusPx: 2, minorRadiusPx: 2, sourceColor: () => [0.2, 0.2, 0.2] });
@@ -186,54 +200,74 @@ describe("Ground Glass M5T independent aperture quadrature", () => {
     expect(capped.capApplied).toBe(true);
   });
 
-  it("D/E/F/H/K: resolves compact silhouettes, shifted depth edges, rotated ellipses, clamps, and texture phases", () => {
+  it("D: retains compact-silhouette ordering in bounded partial estimates", () => {
     const silhouetteIntegral = (offset: number) => adaptive(makeInput({
       majorRadiusPx: 30,
       minorRadiusPx: 30,
       sourceColor: (x, y) => (x - (64 + offset)) ** 2 + (y - 64) ** 2 <= 16 ** 2
         ? [1, 0, 0] : [0, 0, 0],
-    }), { resolution: 64, depth: 8 }).pixels[0]!;
+    }), boundedFixtureOptions).pixels[0]!;
     const centeredSilhouette = silhouetteIntegral(0);
     const shiftedSilhouette = silhouetteIntegral(24);
     const edgeSilhouette = silhouetteIntegral(44);
     expect(centeredSilhouette.conditionalMeanRgb?.[0]).toBeGreaterThan(shiftedSilhouette.conditionalMeanRgb?.[0] ?? 1);
     expect(shiftedSilhouette.conditionalMeanRgb?.[0]).toBeGreaterThan(edgeSilhouette.conditionalMeanRgb?.[0] ?? 1);
     expect(edgeSilhouette.conditionalMeanRgb?.[0]).toBeGreaterThan(0);
+    expect([centeredSilhouette, shiftedSilhouette, edgeSilhouette]
+      .every(({ classification, evaluatedPoints }) => classification === "evaluation-budget-exceeded"
+        && evaluatedPoints > 0 && evaluatedPoints <= boundedFixtureOptions.budget)).toBe(true);
+  });
 
+  it("E: retains shifted depth-boundary ordering in bounded partial estimates", () => {
     const depthAreas = [56, 60, 64].map((boundaryX) => adaptive(makeInput({
       majorRadiusPx: 28,
       minorRadiusPx: 28,
       sourceColor: (x) => x < boundaryX ? [1, 0, 0] : [0, 0, 1],
       depth: (x) => x < boundaryX ? 0.3 : 0.5,
-    }), { resolution: 64, depth: 7 }).pixels[0]!);
+    }), boundedFixtureOptions).pixels[0]!);
     expect(depthAreas[0]!.acceptedAreaEstimate).toBeGreaterThan(depthAreas[1]!.acceptedAreaEstimate);
     expect(depthAreas[1]!.acceptedAreaEstimate).toBeGreaterThan(depthAreas[2]!.acceptedAreaEstimate);
     expect(depthAreas.every(({ conditionalMeanRgb }) => conditionalMeanRgb?.[0] === 0
       && conditionalMeanRgb[2] === 1)).toBe(true);
+    expect(depthAreas.every(({ classification, evaluatedPoints }) => classification === "evaluation-budget-exceeded"
+      && evaluatedPoints > 0 && evaluatedPoints <= boundedFixtureOptions.budget)).toBe(true);
+  });
 
+  it("F: retains ellipse-orientation discrimination in bounded partial estimates", () => {
     const boundaryColor = (x: number) => x >= 74 ? [1, 0, 0] as const : [0, 0, 0] as const;
     const orientationMeans = [0, Math.PI / 6, Math.PI / 3].map((orientationRad) => adaptive(makeInput({
       majorRadiusPx: 40, minorRadiusPx: 10, orientationRad, sourceColor: boundaryColor,
-    }), { resolution: 64, depth: 7 }).pixels[0]!.conditionalMeanRgb?.[0] ?? Number.NaN);
-    expect(orientationMeans[0]).toBeGreaterThan(orientationMeans[1]!);
-    expect(orientationMeans[1]).toBeGreaterThan(orientationMeans[2]!);
+    }), boundedFixtureOptions).pixels[0]!);
+    const orientationValues = orientationMeans.map(({ conditionalMeanRgb }) => conditionalMeanRgb?.[0] ?? Number.NaN);
+    expect(orientationValues[0]).toBeGreaterThan(orientationValues[1]!);
+    expect(orientationValues[1]).toBeGreaterThan(orientationValues[2]!);
+    expect(orientationMeans.every(({ classification, evaluatedPoints }) => classification === "evaluation-budget-exceeded"
+      && evaluatedPoints > 0 && evaluatedPoints <= boundedFixtureOptions.budget)).toBe(true);
+  });
 
+  it("H: retains source-image edge and clamping contributions", () => {
     const edgeInput = makeInput({ size: 129, centerX: 4, centerY: 64,
       majorRadiusPx: 8, minorRadiusPx: 6,
       sourceColor: (x) => x === 0 ? [1, 0, 0] : [0, 0, 1] });
     const edgeResult = adaptive(edgeInput, { resolution: 32, depth: 5 }).pixels[0]!;
     expect(edgeResult.classification).toBe("estimated");
     expect(edgeResult.conditionalMeanRgb?.[0]).toBeGreaterThan(0);
+    expect(edgeResult.evaluatedPoints).toBeGreaterThan(0);
+    expect(edgeResult.evaluatedPoints).toBeLessThanOrEqual(250_000);
+  });
 
+  it("K: retains texture-boundary and phase discrimination in bounded partial estimates", () => {
     const textureResults = [2, 4, 8].flatMap((period) => [0, 1].map((phase) => adaptive(makeInput({
       majorRadiusPx: 26,
       minorRadiusPx: 26,
       sourceColor: (x, y) => ((Math.floor((x + phase) / period) + Math.floor(y / period)) % 2)
         ? [1, 1, 1] : [0, 0, 0],
-    }), { resolution: 64, depth: 7 }).pixels[0]!));
+    }), boundedFixtureOptions).pixels[0]!));
     expect(textureResults.every((pixel) => pixel.conditionalMeanRgb !== null
       && pixel.cellClassCounts["source-texel-boundary"] > 0)).toBe(true);
     expect(new Set(textureResults.map(({ conditionalMeanRgb }) => conditionalMeanRgb![0])).size).toBeGreaterThan(1);
+    expect(textureResults.every(({ classification, evaluatedPoints }) => classification === "evaluation-budget-exceeded"
+      && evaluatedPoints > 0 && evaluatedPoints <= boundedFixtureOptions.budget)).toBe(true);
   });
 
   it("I/J/N3/N4/N13: empty and unstable accepted areas never become black or a convergence pass", () => {
@@ -343,6 +377,155 @@ describe("Ground Glass M5T independent aperture quadrature", () => {
 
 describe("Ground Glass M5T spatial ESF/LSF analysis", () => {
   const rising = [0, 0, 0.05, 0.15, 0.35, 0.65, 0.85, 0.95, 1, 1, 1];
+
+  it("M5T-F1: integrates a unit-contrast rising edge in raw source-target units", () => {
+    const lsf = analyzeGroundGlassM5tLineSpread(makeProfile(rising));
+    expect(lsf.integratedDirectionalSignal).toBeCloseTo(1, 12);
+    expect(lsf.expectedDirectionalSignal).toBeCloseTo(1, 12);
+    expect(lsf.integralConsistencyError).toBeLessThan(1e-12);
+  });
+
+  it("M5T-F2: matches the 0.6 endpoint change for a non-unit rising edge", () => {
+    const profile = makeProfile(rising.map((value) => 0.2 + 0.6 * value));
+    const lsf = analyzeGroundGlassM5tLineSpread(profile);
+    expect(lsf.integratedDirectionalSignal).toBeCloseTo(0.6, 12);
+    expect(lsf.expectedDirectionalSignal).toBeCloseTo(0.6, 12);
+    expect(lsf.integralConsistencyError).toBeLessThan(1e-12);
+  });
+
+  it("M5T-F3: direction-corrects a non-unit falling edge", () => {
+    const profile = makeProfile(rising.map((value) => 0.8 - 0.6 * value));
+    const lsf = analyzeGroundGlassM5tLineSpread(profile);
+    expect(lsf.integratedDirectionalSignal).toBeCloseTo(0.6, 12);
+    expect(lsf.expectedDirectionalSignal).toBeCloseTo(0.6, 12);
+    expect(lsf.integralConsistencyError).toBeLessThan(1e-12);
+    expect(lsf.signedDerivative.every((value) => value >= 0)).toBe(true);
+    expect(lsf.asymmetry).toBeLessThan(1e-12);
+  });
+
+  it("M5T-F4: preserves widths, FWHM, asymmetry, and consistency under contrast scaling", () => {
+    const baseProfile = makeProfile(rising);
+    const scaledProfile = makeProfile(rising.map((value) => 0.2 + 0.6 * value));
+    const baseEsf = analyzeGroundGlassM5tEdgeSpread(baseProfile);
+    const scaledEsf = analyzeGroundGlassM5tEdgeSpread(scaledProfile);
+    const baseLsf = analyzeGroundGlassM5tLineSpread(baseProfile, baseEsf);
+    const scaledLsf = analyzeGroundGlassM5tLineSpread(scaledProfile, scaledEsf);
+    expect(scaledEsf.transitionWidth10To90Px).toBeCloseTo(baseEsf.transitionWidth10To90Px!, 12);
+    expect(scaledEsf.transitionWidth20To80Px).toBeCloseTo(baseEsf.transitionWidth20To80Px!, 12);
+    expect(scaledLsf.fwhmPx).toBeCloseTo(baseLsf.fwhmPx!, 12);
+    expect(scaledLsf.asymmetry).toBeCloseTo(baseLsf.asymmetry!, 12);
+    expect(scaledLsf.integralConsistencyError).toBeCloseTo(baseLsf.integralConsistencyError!, 12);
+  });
+
+  it("M5T-F5: splits the derivative bin centered on a symmetric ESF midpoint", () => {
+    const lsf = analyzeGroundGlassM5tLineSpread(makeProfile(rising));
+    expect(lsf.samplePositionsPx[4]).toBe(4.5);
+    expect(lsf.leftPositiveIntegral).toBeCloseTo(0.5, 12);
+    expect(lsf.rightPositiveIntegral).toBeCloseTo(0.5, 12);
+    expect(lsf.leftPositiveIntegral! + lsf.rightPositiveIntegral!).toBeCloseTo(lsf.positiveIntegral!, 12);
+    expect(lsf.asymmetry).toBeLessThan(1e-12);
+  });
+
+  it("M5T-F6: keeps a fractionally translated symmetric edge balanced", () => {
+    const evaluateAt = (position: number): number => {
+      if (position <= 0) return rising[0]!;
+      if (position >= rising.length - 1) return rising[rising.length - 1]!;
+      const leftIndex = Math.floor(position);
+      const fraction = position - leftIndex;
+      return rising[leftIndex]! + (rising[leftIndex + 1]! - rising[leftIndex]!) * fraction;
+    };
+    const shiftPx = 0.25;
+    const translatedProfile = makeProfile(rising.map((_value, index) => evaluateAt(index - shiftPx)));
+    const translatedEsf = analyzeGroundGlassM5tEdgeSpread(translatedProfile);
+    const translatedLsf = analyzeGroundGlassM5tLineSpread(translatedProfile, translatedEsf);
+    expect(translatedEsf.edgeMidpointPositionPx).toBeGreaterThan(4.6);
+    expect(translatedEsf.edgeMidpointPositionPx).toBeLessThan(4.9);
+    expect(translatedLsf.asymmetry).toBeLessThan(1e-12);
+  });
+
+  it("M5T-F7: retains measurable asymmetry when positive mass is unbalanced by a negative lobe", () => {
+    const profile = makeProfile([0, 0, 0.125, 0.25, 0.375, 0.625, 0.75, 1.125, 0.875, 1, 1]);
+    const lsf = analyzeGroundGlassM5tLineSpread(profile);
+    expect(lsf.leftPositiveIntegral).toBeCloseTo(0.5, 12);
+    expect(lsf.rightPositiveIntegral).toBeCloseTo(0.75, 12);
+    expect(lsf.positiveIntegral).toBeCloseTo(1.25, 12);
+    expect(lsf.asymmetry).toBeCloseTo(0.2, 12);
+  });
+
+  it("M5T-F8: assigns no extra mass when the ESF midpoint lies on a sample-bin boundary", () => {
+    const profile = makeProfile([0, 0, 0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 1, 1]);
+    const esf = analyzeGroundGlassM5tEdgeSpread(profile);
+    const lsf = analyzeGroundGlassM5tLineSpread(profile, esf);
+    expect(esf.edgeMidpointPositionPx).toBe(5);
+    expect(lsf.leftPositiveIntegral).toBeCloseTo(0.5, 12);
+    expect(lsf.rightPositiveIntegral).toBeCloseTo(0.5, 12);
+    expect(lsf.asymmetry).toBeLessThan(1e-12);
+
+    const translatedEdge = makeProfile(rising);
+    const translatedEsf = analyzeGroundGlassM5tEdgeSpread(translatedEdge);
+    const beforeRange = analyzeGroundGlassM5tLineSpread(translatedEdge, {
+      ...translatedEsf, edgeMidpointPositionPx: -1,
+    });
+    const afterRange = analyzeGroundGlassM5tLineSpread(translatedEdge, {
+      ...translatedEsf, edgeMidpointPositionPx: 11,
+    });
+    expect(beforeRange.leftPositiveIntegral).toBe(0);
+    expect(beforeRange.rightPositiveIntegral).toBeCloseTo(beforeRange.positiveIntegral!, 12);
+    expect(afterRange.leftPositiveIntegral).toBeCloseTo(afterRange.positiveIntegral!, 12);
+    expect(afterRange.rightPositiveIntegral).toBe(0);
+    expect(beforeRange.asymmetry).toBeCloseTo(1, 12);
+    expect(afterRange.asymmetry).toBeCloseTo(1, 12);
+  });
+
+  it("M5T-F9: integrates half-pixel and two-pixel analysis intervals by their real widths", () => {
+    for (const spacingPx of [0.5, 2]) {
+      const profile = makeAnalysisProfileAtSpacing(rising, spacingPx);
+      const esf = analyzeGroundGlassM5tEdgeSpread(profile);
+      const lsf = analyzeGroundGlassM5tLineSpread(profile, esf);
+      expect(esf.transitionWidth10To90Px).toBeCloseTo(4 * spacingPx, 12);
+      expect(lsf.integratedDirectionalSignal).toBeCloseTo(1, 12);
+      expect(lsf.expectedDirectionalSignal).toBeCloseTo(1, 12);
+      expect(lsf.integralConsistencyError).toBeLessThan(1e-12);
+      expect(lsf.asymmetry).toBeLessThan(1e-12);
+    }
+  });
+
+  it("M5T-F10: withholds LSF metrics when there is no meaningful ESF transition", () => {
+    const noEdge = makeProfile(Array(11).fill(0.25));
+    const esf = analyzeGroundGlassM5tEdgeSpread(noEdge);
+    const lsf = analyzeGroundGlassM5tLineSpread(noEdge, esf);
+    expect(esf.status).toBe("spatial-profile-insufficient-support");
+    expect(lsf.status).toBe("spatial-profile-insufficient-support");
+    expect(lsf.fwhmPx).toBeNull();
+    expect(lsf.asymmetry).toBeNull();
+    expect(lsf.integratedDirectionalSignal).toBeNull();
+    expect(lsf.integralConsistencyError).toBeNull();
+  });
+
+  it("M5T-F11: retains ambiguous multi-peak FWHM rejection", () => {
+    const profile = makeProfile([0, 0, 0, 0.7, 0.1, 0.8, 1, 1, 1, 1, 1]);
+    const lsf = analyzeGroundGlassM5tLineSpread(profile);
+    expect(lsf.status).toBe("ambiguous-peaks");
+    expect(lsf.fwhmPx).toBeNull();
+  });
+
+  it("M5T-F12: preserves controlled-fixture widths and sharp-source substitution", () => {
+    const profile = makeProfile(rising);
+    const esf = analyzeGroundGlassM5tEdgeSpread(profile);
+    const lsf = analyzeGroundGlassM5tLineSpread(profile, esf);
+    const sharp = makeProfile([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]);
+    const agreement = compareGroundGlassM5tSpatialProfiles({
+      reference: profile,
+      candidate: sharp,
+      sharpSource: sharp,
+    });
+    expect(esf.transitionWidth10To90Px).toBeCloseTo(4, 12);
+    expect(esf.transitionWidth20To80Px).toBeCloseTo(2.5, 12);
+    expect(lsf.fwhmPx).toBeCloseTo(3, 12);
+    expect(lsf.asymmetry).toBeLessThan(1e-12);
+    expect(lsf.integralConsistencyError).toBeLessThan(1e-12);
+    expect(agreement.classification).toBe("sharp-source-substitution");
+  });
 
   it("N14: detects a sharp source substituted for a validated blurred transition", () => {
     const sharp = makeProfile([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]);

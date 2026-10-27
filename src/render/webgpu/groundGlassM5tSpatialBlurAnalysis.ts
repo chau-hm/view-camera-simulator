@@ -49,7 +49,17 @@ export type GroundGlassM5tLineSpreadMetrics = Readonly<{
   centroidPx: number | null;
   positiveSidelobeMaximum: number | null;
   negativeSidelobeMinimum: number | null;
+  /** Positive LSF mass integrated over the sampled range, in raw source-target units. */
+  positiveIntegral: number | null;
+  /** Positive LSF mass to the left of the ESF 50% crossing, in raw source-target units. */
+  leftPositiveIntegral: number | null;
+  /** Positive LSF mass to the right of the ESF 50% crossing, in raw source-target units. */
+  rightPositiveIntegral: number | null;
   asymmetry: number | null;
+  /** Absolute difference between the raw signed LSF integral and its raw endpoint signal change. */
+  integratedDirectionalSignal: number | null;
+  /** Direction-corrected change from the first sample to the last sample. */
+  expectedDirectionalSignal: number | null;
   integralConsistencyError: number | null;
   issue: string | null;
 }>;
@@ -230,6 +240,8 @@ export const analyzeGroundGlassM5tLineSpread = (
       status: "spatial-profile-insufficient-support", sampleCount: profile.samples.length,
       samplePositionsPx: [], signedDerivative: [], fwhmPx: null, centroidPx: null,
       positiveSidelobeMaximum: null, negativeSidelobeMinimum: null, asymmetry: null,
+      positiveIntegral: null, leftPositiveIntegral: null, rightPositiveIntegral: null,
+      integratedDirectionalSignal: null, expectedDirectionalSignal: null,
       integralConsistencyError: null, issue: esf.issue ?? profile.issue ?? "ESF is unresolved.",
     };
   }
@@ -244,6 +256,8 @@ export const analyzeGroundGlassM5tLineSpread = (
       status: "spatial-profile-insufficient-support", sampleCount: values.length,
       samplePositionsPx: [], signedDerivative: [], fwhmPx: null, centroidPx: null,
       positiveSidelobeMaximum: null, negativeSidelobeMinimum: null, asymmetry: null,
+      positiveIntegral: null, leftPositiveIntegral: null, rightPositiveIntegral: null,
+      integratedDirectionalSignal: null, expectedDirectionalSignal: null,
       integralConsistencyError: null, issue: "ESF signal amplitude is unusable.",
     };
   }
@@ -277,12 +291,21 @@ export const analyzeGroundGlassM5tLineSpread = (
   const positiveCentroidNumerator = derivative.reduce((sum, value, index) =>
     sum + Math.max(0, value) * Math.abs(positions[index + 1]! - positions[index]!) * derivativePositions[index]!, 0);
   const edgeMidpoint = esf.edgeMidpointPositionPx!;
-  const leftIntegral = derivative.reduce((sum, value, index) => sum
-    + (derivativePositions[index]! < edgeMidpoint ? Math.max(0, value) * Math.abs(positions[index + 1]! - positions[index]!) : 0), 0);
-  const rightIntegral = derivative.reduce((sum, value, index) => sum
-    + (derivativePositions[index]! >= edgeMidpoint ? Math.max(0, value) * Math.abs(positions[index + 1]! - positions[index]!) : 0), 0);
-  const sumIntegral = derivative.reduce((sum, value, index) =>
+  let leftIntegral = 0;
+  let rightIntegral = 0;
+  for (let index = 0; index < derivative.length; index += 1) {
+    const binStart = Math.min(positions[index]!, positions[index + 1]!);
+    const binEnd = Math.max(positions[index]!, positions[index + 1]!);
+    const binWidth = binEnd - binStart;
+    const leftWidth = Math.min(binWidth, Math.max(0, edgeMidpoint - binStart));
+    const rightWidth = binWidth - leftWidth;
+    const positiveDensity = Math.max(0, derivative[index]!);
+    leftIntegral += positiveDensity * leftWidth;
+    rightIntegral += positiveDensity * rightWidth;
+  }
+  const integratedDirectionalSignal = derivative.reduce((sum, value, index) =>
     sum + value * Math.abs(positions[index + 1]! - positions[index]!), 0);
+  const expectedDirectionalSignal = direction * (values[values.length - 1]! - values[0]!);
   const sidelobes = derivative.filter((_value, index) => index !== peakIndex);
   return {
     status: ambiguous ? "ambiguous-peaks" : "measured",
@@ -293,8 +316,13 @@ export const analyzeGroundGlassM5tLineSpread = (
     centroidPx: positiveIntegral > 0 ? positiveCentroidNumerator / positiveIntegral : null,
     positiveSidelobeMaximum: Math.max(0, ...sidelobes),
     negativeSidelobeMinimum: Math.min(0, ...sidelobes),
+    positiveIntegral,
+    leftPositiveIntegral: leftIntegral,
+    rightPositiveIntegral: rightIntegral,
     asymmetry: positiveIntegral > 0 ? Math.abs(leftIntegral - rightIntegral) / positiveIntegral : null,
-    integralConsistencyError: Math.abs(sumIntegral - 1),
+    integratedDirectionalSignal,
+    expectedDirectionalSignal,
+    integralConsistencyError: Math.abs(integratedDirectionalSignal - expectedDirectionalSignal),
     issue: ambiguous ? "Multiple separated LSF peaks exceed half the dominant peak; FWHM is withheld." : null,
   };
 };

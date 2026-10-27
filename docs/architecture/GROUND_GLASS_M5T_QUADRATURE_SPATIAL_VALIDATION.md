@@ -3,6 +3,7 @@
 **Status:** research-only; no M5Q promotion, M6 quality gate, or production WebGPU authorization.
 **Experiment revision:** `ground-glass-m5t-native-review-1`
 **Implementation source commit:** `2113ee6f480e9564729b02eba967b01c061d0062`
+**Spatial metric revision:** `ground-glass-m5t-spatial-lsf-v2` (review-fix correction; quadrature and native numeric captures are unchanged)
 **Machine-readable evidence:** [GROUND_GLASS_M5T_QUADRATURE_SPATIAL_VALIDATION_REPORT.json](GROUND_GLASS_M5T_QUADRATURE_SPATIAL_VALIDATION_REPORT.json)
 
 ## Scope and reference definition
@@ -15,9 +16,11 @@ An independently traversed 512 × 512 midpoint grid supplies a second numerical 
 
 ## Analytic and controlled evidence
 
-The CPU unit suite passed 15 tests covering the grouped N1–N24 controls. It exercises uniform and affine fields, multiple disk/half-plane offsets, compact silhouettes, depth rejection, ellipse orientation, radius caps, image-edge clamping, texture phase/frequency, small and empty accepted area, fixed-grid independence, spatial profile validity, sharp-source substitution, ROI provenance, and preservation of the M5S/M5Q boundaries.
+The CPU unit suite now has 31 tests covering the grouped N1–N24 controls and M5T-F1–F12 LSF regressions. The previous combined D/E/F/H/K quadrature test is split into five cases; D/E/F/K use resolution 32, adaptive depth 5, and a test-only 25,000 evaluation budget, and explicitly retain `evaluation-budget-exceeded` classification while checking their ordering/phase distinctions. The source-edge clamp case remains at resolution 32/depth 5 and evaluates 87,580 points. These controls are bounded diagnostic estimates, not convergence evidence. The suite also exercises uniform and affine fields, multiple disk/half-plane offsets, compact silhouettes, depth rejection, ellipse orientation, radius caps, image-edge clamping, texture phase/frequency, small and empty accepted area, fixed-grid independence, spatial profile validity, sharp-source substitution, ROI provenance, and preservation of the M5S/M5Q boundaries.
 
 The native test's uniform synthetic control returned RGB `[0.200000003, 0.400000006, 0.600000024]` for expected `[0.2, 0.4, 0.6]`, with accepted area `3.141677856` and 179,720 evaluations. A separate controlled 11-sample edge fixture measured ESF widths of 4.0 px (10–90%) and 2.5 px (20–80%), LSF FWHM 3.0 px and centroid 4.5 px. Replacing it with the sharp source was classified `sharp-source-substitution` (profile RMSE `0.16376`, transition-width ratio `0.20`). These are controlled-fixture checks, not registered-scene qualification.
+
+The corrected LSF integrates its direction-corrected finite differences in raw source-target channel units and compares that integral with the direction-corrected first-to-last sample change. The ESF baseline/plateau medians still define normalized widths and the 50% crossing; they are not substituted for the finite interval endpoints. LSF asymmetry integrates each positive derivative over the geometric portions of its sample interval on either side of that crossing. In spatial metric revision `ground-glass-m5t-spatial-lsf-v2`, the symmetric fixture has positive mass `0.5` on each side, asymmetry `0`, raw integrated signal `1`, expected endpoint signal `1`, and consistency error `0`. These internal consistency metrics do not validate optical blur or establish registered-scene reference authority.
 
 ## Native Architecture Rise study
 
