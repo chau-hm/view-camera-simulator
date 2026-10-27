@@ -1,0 +1,3971 @@
+{
+  "schemaVersion": 1,
+  "experimentRevision": "ground-glass-m5t-native-review-1",
+  "spatialMetricRevision": "ground-glass-m5t-spatial-lsf-v2",
+  "evaluatorRevision": "ground-glass-m5t-adaptive-quadtree-v1",
+  "sourceCommit": "2113ee6f480e9564729b02eba967b01c061d0062",
+  "generatedAtUtc": "2026-10-27T00:35:12.848Z",
+  "nativeRuntime": {
+    "browserProject": "chrome-native-webgpu",
+    "browserVersion": "156.0.8078.48",
+    "platform": "darwin",
+    "rendererRevision": "r186",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false
+  },
+  "numericalReferenceDefinition": {
+    "domain": "Unit aperture disk u² + v² ≤ 1, mapped through captured physical radius-capped ellipse and top-origin observed gather-center UV.",
+    "limitingIntegral": "I = integral_D A(u,v) C(u,v) dA / integral_D A(u,v) dA when accepted area is positive; O(1) GPU center weight excluded.",
+    "finiteEstimator": "The existing M5 estimator remains (centerRGB + accepted proposal RGB sum) / (1 + accepted proposal count). It is not conflated with the limiting integral.",
+    "sharedPhysicalAuthority": [
+      "physical major/minor axes and orientation",
+      "source/film dimensions",
+      "radius cap",
+      "observed gather-center source IDs and UVs",
+      "top-origin coordinate convention",
+      "nearest-source-texel sampling",
+      "depth and physical validity",
+      "signed-CoC Far classification",
+      "view-distance reconstruction",
+      "depth rejection tolerance",
+      "source-target readback color domain"
+    ],
+    "independentNumerics": "The adaptive quadtree and fixed square-grid have separate traversal/sampling locations from M5S golden-angle, Halton, and stratified proposals."
+  },
+  "adaptiveQuadratureMethod": {
+    "revision": "ground-glass-m5t-adaptive-quadtree-v1",
+    "resolutions": [
+      32,
+      64,
+      128,
+      256
+    ],
+    "maximumDepth": 12,
+    "evaluationBudgetPerPixel": 250000,
+    "errorSemantics": "Refinement differences and unresolved-area/error estimates are diagnostics, not certified bounds. Any budget-exceeded pixel makes the study budget-limited-unresolved.",
+    "levelsAreValidReferencesWhenBudgetExceeded": false,
+    "algorithm": "Deterministic midpoint quadtree over a square containing the unit disk; conservatively subdivides disk, source-texel, and eligibility boundaries.",
+    "baseGridLevelsRepresent": "Initial cell-grid resolution labels; adaptive subdivision continues locally up to the declared maximum depth.",
+    "maximumSelectedPixelsPerStudy": 128,
+    "cellClassifications": [
+      "smooth-interior",
+      "disk-boundary",
+      "source-texel-boundary",
+      "eligibility-boundary",
+      "unresolved-cell"
+    ]
+  },
+  "independentFixedGridMethod": {
+    "resolution": 512,
+    "nativeDisposition": "All 50 selected ROI pixels returned estimated 512-grid outputs within budget. A single grid resolution has no independent convergence bound, so it was not treated as authority while adaptive results were unresolved.",
+    "algorithm": "Independent uniform square-grid midpoint traversal; sample locations and traversal do not reuse adaptive quadtree nodes or M5S proposal sequences.",
+    "evaluationBudgetPerPixel": 250000
+  },
+  "analyticControls": {
+    "syntheticUniformControl": {
+      "fixture": "synthetic-uniform-valid-Far-over-native-physical-map",
+      "expectedRgb": [
+        0.2,
+        0.4,
+        0.6
+      ],
+      "observedRgb": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579
+      ],
+      "acceptedAreaEstimate": 3.1416778564453125,
+      "evaluatedPoints": 179720,
+      "passed": true
+    },
+    "controlledSpatialFixture": {
+      "evidenceScope": "controlled-synthetic-fixture",
+      "esf": {
+        "status": "measured",
+        "sampleCount": 11,
+        "edgeDirection": "rising",
+        "baselineValue": 0,
+        "plateauValue": 1,
+        "edgeMidpointPositionPx": 4.5,
+        "transitionWidth10To90Px": 4.000000000000001,
+        "transitionWidth20To80Px": 2.5,
+        "overshoot": 0,
+        "undershoot": 0,
+        "crossingCounts": {
+          "p10": 1,
+          "p20": 1,
+          "p50": 1,
+          "p80": 1,
+          "p90": 1
+        },
+        "issue": null
+      },
+      "lsf": {
+        "status": "measured",
+        "sampleCount": 11,
+        "samplePositionsPx": [
+          0.5,
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5
+        ],
+        "signedDerivative": [
+          0,
+          0.05,
+          0.09999999999999999,
+          0.19999999999999998,
+          0.30000000000000004,
+          0.19999999999999996,
+          0.09999999999999998,
+          0.050000000000000044,
+          0,
+          0
+        ],
+        "fwhmPx": 2.9999999999999987,
+        "centroidPx": 4.5,
+        "positiveSidelobeMaximum": 0.19999999999999998,
+        "negativeSidelobeMinimum": 0,
+        "positiveIntegral": 1,
+        "leftPositiveIntegral": 0.5,
+        "rightPositiveIntegral": 0.5,
+        "asymmetry": 0,
+        "integratedDirectionalSignal": 1,
+        "expectedDirectionalSignal": 1,
+        "integralConsistencyError": 0,
+        "issue": null
+      },
+      "sharpSourceSubstitution": {
+        "status": "measured",
+        "sampleCount": 11,
+        "profileRmse": 0.16376257758774382,
+        "profileMaximumAbsoluteError": 0.35,
+        "edgePositionErrorPx": 0,
+        "transitionWidthRatio": 0.20000000000000012,
+        "maximumOvershoot": 0,
+        "maximumUndershoot": 0,
+        "foregroundLeakageFraction": null,
+        "classification": "sharp-source-substitution"
+      },
+      "passed": true
+    },
+    "cpuUnitSuite": "src/tests/unit/groundGlassM5tReference.test.ts: 31 tests, including grouped N1–N24 controls and M5T-F1–F12 spatial metric regressions."
+  },
+  "opticalStates": [
+    {
+      "role": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "radiusCapPx": 60,
+      "captureIds": {
+        "full32": "m5t-primary-4x-control-cap60-full32-1793061262804",
+        "full64": "m5t-primary-4x-control-cap60-full64-1793061265367"
+      },
+      "requestIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-request-7",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-request-7"
+      },
+      "rendererGenerationIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-generation-2",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-generation-2"
+      },
+      "rendererRevision": "r186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false,
+      "sourceDimensionsPx": [
+        474,
+        379
+      ],
+      "gatherDimensionsPx": [
+        474,
+        379
+      ],
+      "sampledFilmDimensionsMm": {
+        "widthMm": 31.75,
+        "heightMm": 25.4
+      },
+      "sourceColorDomain": "source-target-readback-values",
+      "matchedProvenance": {
+        "sourceDepthPhysicalValidity": "matched",
+        "mismatchedFields": [],
+        "cameraFingerprintMatched": true,
+        "cameraFingerprintSha256": "8f2e2c0f5ee2efc8b84d0f3fd3ecc886b0f15248195f329fa31e7ed77da62ea0",
+        "effectiveOpticalRequestMatched": true,
+        "effectiveOpticalRequestFingerprintSha256": "276a03886e08b4aacb187831da73c28aa48b7089075ab70c29624008a3a89bbc",
+        "capturedInputFingerprintTags": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        }
+      }
+    },
+    {
+      "role": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "radiusCapPx": 60,
+      "captureIds": {
+        "full32": "m5t-full-frame-control-cap60-full32-1793061278731",
+        "full64": "m5t-full-frame-control-cap60-full64-1793061280942"
+      },
+      "requestIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-request-8",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-request-8"
+      },
+      "rendererGenerationIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-generation-2",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-generation-2"
+      },
+      "rendererRevision": "r186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false,
+      "sourceDimensionsPx": [
+        474,
+        379
+      ],
+      "gatherDimensionsPx": [
+        474,
+        379
+      ],
+      "sampledFilmDimensionsMm": {
+        "widthMm": 127,
+        "heightMm": 101.6
+      },
+      "sourceColorDomain": "source-target-readback-values",
+      "matchedProvenance": {
+        "sourceDepthPhysicalValidity": "matched",
+        "mismatchedFields": [],
+        "cameraFingerprintMatched": true,
+        "cameraFingerprintSha256": "9201172f0b00909b327142a09661a60a115cad9380ad685fb0aa958305f497aa",
+        "effectiveOpticalRequestMatched": true,
+        "effectiveOpticalRequestFingerprintSha256": "a0ef8c5d0985b53c26b076273412fcec3f21f323f3c5dac12398f0df6413fa7f",
+        "capturedInputFingerprintTags": {
+          "sourceColor": "2376a6ec",
+          "depth": "88205d0e",
+          "physical": "92736c61",
+          "validity": "c3d94854"
+        }
+      }
+    },
+    {
+      "role": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "radiusCapPx": 60,
+      "captureIds": {
+        "full32": "m5t-focus-distance-control-cap60-full32-1793061289861",
+        "full64": "m5t-focus-distance-control-cap60-full64-1793061292160"
+      },
+      "requestIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-request-9",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-request-9"
+      },
+      "rendererGenerationIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-generation-2",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-generation-2"
+      },
+      "rendererRevision": "r186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false,
+      "sourceDimensionsPx": [
+        474,
+        379
+      ],
+      "gatherDimensionsPx": [
+        474,
+        379
+      ],
+      "sampledFilmDimensionsMm": {
+        "widthMm": 127,
+        "heightMm": 101.6
+      },
+      "sourceColorDomain": "source-target-readback-values",
+      "matchedProvenance": {
+        "sourceDepthPhysicalValidity": "matched",
+        "mismatchedFields": [],
+        "cameraFingerprintMatched": true,
+        "cameraFingerprintSha256": "2a737204cfabbaf2d40a5ae0a2024aa5e9ad5511db5fec25c5bbc78ba60c2f00",
+        "effectiveOpticalRequestMatched": true,
+        "effectiveOpticalRequestFingerprintSha256": "7a42bab3e454791127ad556cd03ac39a018606956544f486b6773245f5f17c00",
+        "capturedInputFingerprintTags": {
+          "sourceColor": "32445fc8",
+          "depth": "3d561cf3",
+          "physical": "c739ac93",
+          "validity": "3f3eb294"
+        }
+      }
+    },
+    {
+      "role": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "radiusCapPx": 2,
+      "captureIds": {
+        "full32": "m5t-stressed-cap2-full32-1793061301985",
+        "full64": "m5t-stressed-cap2-full64-1793061304387"
+      },
+      "requestIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-request-11",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-request-11"
+      },
+      "rendererGenerationIds": {
+        "full32": "gg-mvpydns1-ei01rx9zw8s-default-generation-2",
+        "full64": "gg-mvpydns1-ei01rx9zw8s-default-generation-2"
+      },
+      "rendererRevision": "r186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false,
+      "sourceDimensionsPx": [
+        474,
+        379
+      ],
+      "gatherDimensionsPx": [
+        474,
+        379
+      ],
+      "sampledFilmDimensionsMm": {
+        "widthMm": 31.75,
+        "heightMm": 25.4
+      },
+      "sourceColorDomain": "source-target-readback-values",
+      "matchedProvenance": {
+        "sourceDepthPhysicalValidity": "matched",
+        "mismatchedFields": [],
+        "cameraFingerprintMatched": true,
+        "cameraFingerprintSha256": "8f2e2c0f5ee2efc8b84d0f3fd3ecc886b0f15248195f329fa31e7ed77da62ea0",
+        "effectiveOpticalRequestMatched": true,
+        "effectiveOpticalRequestFingerprintSha256": "276a03886e08b4aacb187831da73c28aa48b7089075ab70c29624008a3a89bbc",
+        "capturedInputFingerprintTags": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        }
+      }
+    }
+  ],
+  "roiCatalog": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "strata": [
+        {
+          "id": "S1-smooth-valid-far-interior",
+          "candidateCount": 60891,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            6384,
+            17781,
+            33899,
+            47388,
+            63961,
+            78006,
+            99883,
+            118094,
+            136935,
+            168492
+          ],
+          "selectedSourcePixelIds": [
+            6384,
+            17781,
+            33899,
+            47388,
+            63961,
+            78006,
+            99883,
+            118094,
+            136935,
+            168492
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 6.27271468996063,
+            "median": 6.29093873031496,
+            "maximum": 6.294583538385827
+          },
+          "effectiveRadiusPx": {
+            "minimum": 6.27271468996063,
+            "median": 6.29093873031496,
+            "maximum": 6.294583538385827
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0,
+            "maximum": 0
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S2-strong-defocus-textured-interior",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S3-high-source-gradient-valid-far",
+          "candidateCount": 17967,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            5617,
+            19750,
+            24995,
+            39911,
+            53175,
+            68749,
+            84678,
+            107914,
+            123625,
+            158770
+          ],
+          "selectedSourcePixelIds": [
+            5617,
+            19750,
+            24995,
+            39911,
+            53175,
+            68749,
+            84678,
+            107914,
+            123625,
+            158770
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 6.254490649606299,
+            "median": 6.269069881889764,
+            "maximum": 6.294583538385827
+          },
+          "effectiveRadiusPx": {
+            "minimum": 6.254490649606299,
+            "median": 6.269069881889764,
+            "maximum": 6.294583538385827
+          },
+          "sourceGradient": {
+            "minimum": 0.03496732438604037,
+            "median": 0.057843140015999474,
+            "maximum": 0.24542484572157264
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S4-depth-discontinuity-valid-far",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S5-signed-coc-boundary-neighborhood",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S6-cap-activated-valid-far",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        }
+      ]
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "strata": [
+        {
+          "id": "S1-smooth-valid-far-interior",
+          "candidateCount": 38747,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            12704,
+            44208,
+            69318,
+            93484,
+            118472,
+            127553,
+            133815,
+            142852,
+            148878,
+            153062
+          ],
+          "selectedSourcePixelIds": [
+            12704,
+            44208,
+            69318,
+            93484,
+            118472,
+            127553,
+            133815,
+            142852,
+            148878,
+            153062
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.9722525529035433,
+            "median": 1.4196527436023623,
+            "maximum": 1.7877783587598426
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.9722525529035433,
+            "median": 1.4196527436023623,
+            "maximum": 1.7877783587598426
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0,
+            "maximum": 0
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S2-strong-defocus-textured-interior",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S3-high-source-gradient-valid-far",
+          "candidateCount": 11016,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            4896,
+            13557,
+            25299,
+            33477,
+            48557,
+            55739,
+            64694,
+            76706,
+            96027,
+            141399
+          ],
+          "selectedSourcePixelIds": [
+            4896,
+            13557,
+            25299,
+            33477,
+            48557,
+            55739,
+            64694,
+            76706,
+            96027,
+            141399
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.8975339874507874,
+            "median": 1.567267470472441,
+            "maximum": 1.57273468257874
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.8975339874507874,
+            "median": 1.567267470472441,
+            "maximum": 1.57273468257874
+          },
+          "sourceGradient": {
+            "minimum": 0.12189542944543064,
+            "median": 0.13660131356058022,
+            "maximum": 0.4588235307795306
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S4-depth-discontinuity-valid-far",
+          "candidateCount": 6773,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            95890,
+            134296,
+            134981,
+            137633,
+            141498,
+            144479,
+            155593,
+            156270,
+            156948,
+            157630
+          ],
+          "selectedSourcePixelIds": [
+            95890,
+            134296,
+            134981,
+            137633,
+            141498,
+            144479,
+            155593,
+            156270,
+            156948,
+            157630
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.747185654527559,
+            "median": 0.9658741387795275,
+            "maximum": 1.6775229146161417
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.747185654527559,
+            "median": 0.9658741387795275,
+            "maximum": 1.6775229146161417
+          },
+          "sourceGradient": {
+            "minimum": 0.0006535947322845459,
+            "median": 0.12091503789027531,
+            "maximum": 0.24248367051283518
+          },
+          "selectedDepthEdgeCount": 10,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S5-signed-coc-boundary-neighborhood",
+          "candidateCount": 61,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            174747,
+            174753,
+            174759,
+            174765,
+            174771,
+            174777,
+            174783,
+            176165,
+            177587,
+            179009
+          ],
+          "selectedSourcePixelIds": [
+            174747,
+            174753,
+            174759,
+            174765,
+            174771,
+            174777,
+            174783,
+            176165,
+            177587,
+            179009
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.010742217536986344,
+            "median": 0.010742217536986344,
+            "maximum": 0.024744829793614666
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.010742217536986344,
+            "median": 0.010742217536986344,
+            "maximum": 0.024744829793614666
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0,
+            "maximum": 0.04575163125991821
+          },
+          "selectedDepthEdgeCount": 1,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S6-cap-activated-valid-far",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        }
+      ]
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "strata": [
+        {
+          "id": "S1-smooth-valid-far-interior",
+          "candidateCount": 35581,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            12262,
+            40889,
+            66589,
+            90641,
+            117154,
+            125513,
+            131015,
+            139005,
+            146558,
+            150622
+          ],
+          "selectedSourcePixelIds": [
+            12262,
+            40889,
+            66589,
+            90641,
+            117154,
+            125513,
+            131015,
+            139005,
+            146558,
+            150622
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.055298572450172244,
+            "median": 0.5130067359744095,
+            "maximum": 0.8369390532726378
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.055298572450172244,
+            "median": 0.5130067359744095,
+            "maximum": 0.8369390532726378
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0,
+            "maximum": 0
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S2-strong-defocus-textured-interior",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S3-high-source-gradient-valid-far",
+          "candidateCount": 8751,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            5517,
+            13935,
+            24383,
+            31590,
+            48053,
+            55773,
+            62842,
+            72840,
+            85047,
+            121615
+          ],
+          "selectedSourcePixelIds": [
+            5517,
+            13935,
+            24383,
+            31590,
+            48053,
+            55773,
+            62842,
+            72840,
+            85047,
+            121615
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.604126937746063,
+            "median": 0.6077717458169292,
+            "maximum": 0.6155169629675197
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.604126937746063,
+            "median": 0.6077717458169292,
+            "maximum": 0.6155169629675197
+          },
+          "sourceGradient": {
+            "minimum": 0.12189542944543064,
+            "median": 0.15915033547207713,
+            "maximum": 0.2712418364050488
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S4-depth-discontinuity-valid-far",
+          "candidateCount": 3762,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            63186,
+            120251,
+            133286,
+            133668,
+            134044,
+            134427,
+            139867,
+            140295,
+            140723,
+            141145
+          ],
+          "selectedSourcePixelIds": [
+            63186,
+            120251,
+            133286,
+            133668,
+            134044,
+            134427,
+            139867,
+            140295,
+            140723,
+            141145
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.19602233406126968,
+            "median": 0.364253006582185,
+            "maximum": 0.7699657049704725
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.19602233406126968,
+            "median": 0.364253006582185,
+            "maximum": 0.7699657049704725
+          },
+          "sourceGradient": {
+            "minimum": 0.024183007578055065,
+            "median": 0.12124183525641759,
+            "maximum": 0.32461875014834934
+          },
+          "selectedDepthEdgeCount": 10,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S5-signed-coc-boundary-neighborhood",
+          "candidateCount": 536,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            136669,
+            145692,
+            152181,
+            152234,
+            152333,
+            152386,
+            152440,
+            152494,
+            152547,
+            152601
+          ],
+          "selectedSourcePixelIds": [
+            136669,
+            145692,
+            152181,
+            152234,
+            152333,
+            152386,
+            152440,
+            152494,
+            152547,
+            152601
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 0.010671029879352239,
+            "median": 0.010671029879352239,
+            "maximum": 0.016188073345995323
+          },
+          "effectiveRadiusPx": {
+            "minimum": 0.010671029879352239,
+            "median": 0.010671029879352239,
+            "maximum": 0.016188073345995323
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0,
+            "maximum": 0
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S6-cap-activated-valid-far",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        }
+      ]
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "strata": [
+        {
+          "id": "S1-smooth-valid-far-interior",
+          "candidateCount": 60891,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            6384,
+            17781,
+            33899,
+            47388,
+            63961,
+            78006,
+            99883,
+            118094,
+            136935,
+            168492
+          ],
+          "selectedSourcePixelIds": [
+            6384,
+            17781,
+            33899,
+            47388,
+            63961,
+            78006,
+            99883,
+            118094,
+            136935,
+            168492
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 6.27271468996063,
+            "median": 6.29093873031496,
+            "maximum": 6.294583538385827
+          },
+          "effectiveRadiusPx": {
+            "minimum": 1.9999999999999998,
+            "median": 2,
+            "maximum": 2
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0,
+            "maximum": 0
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 10
+        },
+        {
+          "id": "S2-strong-defocus-textured-interior",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S3-high-source-gradient-valid-far",
+          "candidateCount": 17967,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            5617,
+            19750,
+            24995,
+            39911,
+            53175,
+            68749,
+            84678,
+            107914,
+            123625,
+            158770
+          ],
+          "selectedSourcePixelIds": [
+            5617,
+            19750,
+            24995,
+            39911,
+            53175,
+            68749,
+            84678,
+            107914,
+            123625,
+            158770
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 6.254490649606299,
+            "median": 6.269069881889764,
+            "maximum": 6.294583538385827
+          },
+          "effectiveRadiusPx": {
+            "minimum": 1.9999999999999998,
+            "median": 2,
+            "maximum": 2
+          },
+          "sourceGradient": {
+            "minimum": 0.03496732438604037,
+            "median": 0.057843140015999474,
+            "maximum": 0.24542484572157264
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 10
+        },
+        {
+          "id": "S4-depth-discontinuity-valid-far",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S5-signed-coc-boundary-neighborhood",
+          "candidateCount": 0,
+          "status": "insufficient-support",
+          "selectedCount": 0,
+          "selectedGatherPixelIds": [],
+          "selectedSourcePixelIds": [],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "effectiveRadiusPx": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "sourceGradient": {
+            "minimum": null,
+            "median": null,
+            "maximum": null
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 0
+        },
+        {
+          "id": "S6-cap-activated-valid-far",
+          "candidateCount": 179646,
+          "status": "measured",
+          "selectedCount": 10,
+          "selectedGatherPixelIds": [
+            8982,
+            26946,
+            44911,
+            62876,
+            80840,
+            98805,
+            116769,
+            134734,
+            152699,
+            170663
+          ],
+          "selectedSourcePixelIds": [
+            8982,
+            26946,
+            44911,
+            62876,
+            80840,
+            98805,
+            116769,
+            134734,
+            152699,
+            170663
+          ],
+          "minimumSupport": 10,
+          "physicalRadiusPx": {
+            "minimum": 6.254490649606299,
+            "median": 6.2872939222440944,
+            "maximum": 6.294583538385827
+          },
+          "effectiveRadiusPx": {
+            "minimum": 1.9999999999999998,
+            "median": 2,
+            "maximum": 2
+          },
+          "sourceGradient": {
+            "minimum": 0,
+            "median": 0.0006535947322845459,
+            "maximum": 0.004248365759849548
+          },
+          "selectedDepthEdgeCount": 0,
+          "selectedCapActivatedCount": 10
+        }
+      ]
+    }
+  ],
+  "refinementConvergence": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "isRegressionAnchor": true,
+      "selectedGatherPixelIds": [
+        6384,
+        17781,
+        33899,
+        47388,
+        63961,
+        78006,
+        99883,
+        118094,
+        136935,
+        168492
+      ],
+      "selectedSourcePixelIds": [
+        6384,
+        17781,
+        33899,
+        47388,
+        63961,
+        78006,
+        99883,
+        118094,
+        136935,
+        168492
+      ],
+      "observedGatherCenters": [
+        {
+          "gatherPixelId": 6384,
+          "sourceId": [
+            222,
+            13
+          ],
+          "sourceUvTopOrigin": [
+            0.4694092869758606,
+            0.03562009334564209
+          ]
+        },
+        {
+          "gatherPixelId": 17781,
+          "sourceId": [
+            243,
+            37
+          ],
+          "sourceUvTopOrigin": [
+            0.5137130618095398,
+            0.09894460439682007
+          ]
+        },
+        {
+          "gatherPixelId": 33899,
+          "sourceId": [
+            245,
+            71
+          ],
+          "sourceUvTopOrigin": [
+            0.5179324746131897,
+            0.188654363155365
+          ]
+        },
+        {
+          "gatherPixelId": 47388,
+          "sourceId": [
+            462,
+            99
+          ],
+          "sourceUvTopOrigin": [
+            0.9757384061813354,
+            0.2625330090522766
+          ]
+        },
+        {
+          "gatherPixelId": 63961,
+          "sourceId": [
+            445,
+            134
+          ],
+          "sourceUvTopOrigin": [
+            0.9398733973503113,
+            0.35488128662109375
+          ]
+        },
+        {
+          "gatherPixelId": 78006,
+          "sourceId": [
+            270,
+            164
+          ],
+          "sourceUvTopOrigin": [
+            0.5706750750541687,
+            0.4340369701385498
+          ]
+        },
+        {
+          "gatherPixelId": 99883,
+          "sourceId": [
+            343,
+            210
+          ],
+          "sourceUvTopOrigin": [
+            0.7246835231781006,
+            0.5554089546203613
+          ]
+        },
+        {
+          "gatherPixelId": 118094,
+          "sourceId": [
+            68,
+            249
+          ],
+          "sourceUvTopOrigin": [
+            0.1445147544145584,
+            0.6583113670349121
+          ]
+        },
+        {
+          "gatherPixelId": 136935,
+          "sourceId": [
+            423,
+            288
+          ],
+          "sourceUvTopOrigin": [
+            0.8934599161148071,
+            0.7612137198448181
+          ]
+        },
+        {
+          "gatherPixelId": 168492,
+          "sourceId": [
+            222,
+            355
+          ],
+          "sourceUvTopOrigin": [
+            0.4694092869758606,
+            0.9379947185516357
+          ]
+        }
+      ],
+      "inputFingerprintTags": {
+        "sourceColor": "4c6374b1",
+        "depth": "89c670bb",
+        "physical": "e37fced7",
+        "validity": "bde57a05"
+      },
+      "inputProvenance": "matched",
+      "support": {
+        "comparedPixelCount": 10,
+        "requiredPixelCount": 10,
+        "adequate": true
+      },
+      "levels": [
+        {
+          "initialResolution": 32,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499970,
+          "elapsedMs": 1100,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.01179361,
+            "median": 0.01183125,
+            "max": 0.01183308
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14164329,
+            "median": 3.14164329,
+            "max": 3.14164329
+          },
+          "maximumEstimatedAreaError": 0.20777631,
+          "maximumEstimatedColorErrorRgb": [
+            0.18923102,
+            0.19453683,
+            0.19953055
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.40820483,
+            0.36936972,
+            0.30435775
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 64,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1046,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.01180333,
+            "median": 0.01183975,
+            "max": 0.01184157
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14164376,
+            "median": 3.14164376,
+            "max": 3.14164376
+          },
+          "maximumEstimatedAreaError": 0.11795115,
+          "maximumEstimatedColorErrorRgb": [
+            0.10508302,
+            0.10778902,
+            0.11004402
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.40820484,
+            0.36936973,
+            0.30435775
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 128,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499990,
+          "elapsedMs": 1030,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.01197947,
+            "median": 0.01201339,
+            "max": 0.01201521
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.141644,
+            "median": 3.141644,
+            "max": 3.141644
+          },
+          "maximumEstimatedAreaError": 0.07845402,
+          "maximumEstimatedColorErrorRgb": [
+            0.06898999,
+            0.07076655,
+            0.07224703
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.40820485,
+            0.36936974,
+            0.30435776
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 256,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499970,
+          "elapsedMs": 1032,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.01307177,
+            "median": 0.01310543,
+            "max": 0.01310728
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.1416533,
+            "median": 3.1416533,
+            "max": 3.1416533
+          },
+          "maximumEstimatedAreaError": 0.06049418,
+          "maximumEstimatedColorErrorRgb": [
+            0.0523888,
+            0.05374117,
+            0.05488811
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.40820502,
+            0.36936985,
+            0.30435781
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        }
+      ],
+      "adjacentPartialRgbDiagnostics": [
+        {
+          "resolutions": [
+            32,
+            64
+          ],
+          "rmse": 3e-8,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            64,
+            128
+          ],
+          "rmse": 2e-8,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            128,
+            256
+          ],
+          "rmse": 2.4e-7,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        }
+      ],
+      "fixedGrid": {
+        "algorithm": "ground-glass-m5t-fixed-midpoint-v1",
+        "resolution": 512,
+        "evaluationBudgetPerPixel": 250000,
+        "evaluatedPoints": 2058920,
+        "elapsedMs": 78,
+        "estimatedPixelCount": 10,
+        "budgetExceededPixelCount": 0,
+        "acceptedAreaEstimateRange": {
+          "min": 3.1416626,
+          "median": 3.1416626,
+          "max": 3.1416626
+        },
+        "outputUsedAsM5sReference": false
+      },
+      "evidence": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": false,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved.",
+          "Unresolved aperture area exceeds the declared coverage limit."
+        ]
+      },
+      "budgetExceededPixelLevelCount": 40,
+      "m5sCrossMethodComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ]
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "isRegressionAnchor": false,
+      "selectedGatherPixelIds": [
+        5617,
+        19750,
+        24995,
+        39911,
+        53175,
+        68749,
+        84678,
+        107914,
+        123625,
+        158770
+      ],
+      "selectedSourcePixelIds": [
+        5617,
+        19750,
+        24995,
+        39911,
+        53175,
+        68749,
+        84678,
+        107914,
+        123625,
+        158770
+      ],
+      "observedGatherCenters": [
+        {
+          "gatherPixelId": 5617,
+          "sourceId": [
+            403,
+            11
+          ],
+          "sourceUvTopOrigin": [
+            0.8512657880783081,
+            0.030343055725097656
+          ]
+        },
+        {
+          "gatherPixelId": 19750,
+          "sourceId": [
+            316,
+            41
+          ],
+          "sourceUvTopOrigin": [
+            0.6677214503288269,
+            0.10949873924255371
+          ]
+        },
+        {
+          "gatherPixelId": 24995,
+          "sourceId": [
+            347,
+            52
+          ],
+          "sourceUvTopOrigin": [
+            0.7331222891807556,
+            0.1385224461555481
+          ]
+        },
+        {
+          "gatherPixelId": 39911,
+          "sourceId": [
+            95,
+            84
+          ],
+          "sourceUvTopOrigin": [
+            0.2014767825603485,
+            0.22295516729354858
+          ]
+        },
+        {
+          "gatherPixelId": 53175,
+          "sourceId": [
+            87,
+            112
+          ],
+          "sourceUvTopOrigin": [
+            0.1845991462469101,
+            0.2968338131904602
+          ]
+        },
+        {
+          "gatherPixelId": 68749,
+          "sourceId": [
+            19,
+            145
+          ],
+          "sourceUvTopOrigin": [
+            0.04113923758268356,
+            0.3839050531387329
+          ]
+        },
+        {
+          "gatherPixelId": 84678,
+          "sourceId": [
+            306,
+            178
+          ],
+          "sourceUvTopOrigin": [
+            0.6466244459152222,
+            0.4709762930870056
+          ]
+        },
+        {
+          "gatherPixelId": 107914,
+          "sourceId": [
+            316,
+            227
+          ],
+          "sourceUvTopOrigin": [
+            0.6677215099334717,
+            0.6002638339996338
+          ]
+        },
+        {
+          "gatherPixelId": 123625,
+          "sourceId": [
+            385,
+            260
+          ],
+          "sourceUvTopOrigin": [
+            0.8132911324501038,
+            0.6873351335525513
+          ]
+        },
+        {
+          "gatherPixelId": 158770,
+          "sourceId": [
+            454,
+            334
+          ],
+          "sourceUvTopOrigin": [
+            0.9588607549667358,
+            0.8825857639312744
+          ]
+        }
+      ],
+      "inputFingerprintTags": {
+        "sourceColor": "4c6374b1",
+        "depth": "89c670bb",
+        "physical": "e37fced7",
+        "validity": "bde57a05"
+      },
+      "inputProvenance": "matched",
+      "support": {
+        "comparedPixelCount": 10,
+        "requiredPixelCount": 10,
+        "adequate": true
+      },
+      "levels": [
+        {
+          "initialResolution": 32,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499970,
+          "elapsedMs": 1043,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.0117568,
+            "median": 0.01180416,
+            "max": 0.01183308
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14164329,
+            "median": 3.14164329,
+            "max": 3.14164329
+          },
+          "maximumEstimatedAreaError": 0.20777631,
+          "maximumEstimatedColorErrorRgb": [
+            0.16081734,
+            0.14607536,
+            0.11356734
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.42882413,
+            0.38219257,
+            0.2890063
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 64,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1032,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.01176652,
+            "median": 0.01181357,
+            "max": 0.01184157
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14164376,
+            "median": 3.14164376,
+            "max": 3.14164376
+          },
+          "maximumEstimatedAreaError": 0.11795115,
+          "maximumEstimatedColorErrorRgb": [
+            0.07680801,
+            0.06435649,
+            0.05045846
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.42882418,
+            0.38219255,
+            0.28900623
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 128,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499990,
+          "elapsedMs": 1013,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.01194388,
+            "median": 0.01198907,
+            "max": 0.01201521
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.141644,
+            "median": 3.141644,
+            "max": 3.141644
+          },
+          "maximumEstimatedAreaError": 0.07845402,
+          "maximumEstimatedColorErrorRgb": [
+            0.04389315,
+            0.03759716,
+            0.02875004
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.42882365,
+            0.382192,
+            0.28900577
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 256,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499978,
+          "elapsedMs": 1022,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.0130361,
+            "median": 0.01308141,
+            "max": 0.01310728
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14165282,
+            "median": 3.14165306,
+            "max": 3.1416533
+          },
+          "maximumEstimatedAreaError": 0.06049418,
+          "maximumEstimatedColorErrorRgb": [
+            0.03222283,
+            0.02806539,
+            0.02138623
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.42881863,
+            0.38218706,
+            0.2890014
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        }
+      ],
+      "adjacentPartialRgbDiagnostics": [
+        {
+          "resolutions": [
+            32,
+            64
+          ],
+          "rmse": 8.6e-7,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            64,
+            128
+          ],
+          "rmse": 8.8e-7,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            128,
+            256
+          ],
+          "rmse": 0.00000848,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        }
+      ],
+      "fixedGrid": {
+        "algorithm": "ground-glass-m5t-fixed-midpoint-v1",
+        "resolution": 512,
+        "evaluationBudgetPerPixel": 250000,
+        "evaluatedPoints": 2058920,
+        "elapsedMs": 78,
+        "estimatedPixelCount": 10,
+        "budgetExceededPixelCount": 0,
+        "acceptedAreaEstimateRange": {
+          "min": 3.1416626,
+          "median": 3.1416626,
+          "max": 3.1416626
+        },
+        "outputUsedAsM5sReference": false
+      },
+      "evidence": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": false,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved.",
+          "Unresolved aperture area exceeds the declared coverage limit."
+        ]
+      },
+      "budgetExceededPixelLevelCount": 40,
+      "m5sCrossMethodComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ]
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "isRegressionAnchor": false,
+      "selectedGatherPixelIds": [
+        174747,
+        174753,
+        174759,
+        174765,
+        174771,
+        174777,
+        174783,
+        176165,
+        177587,
+        179009
+      ],
+      "selectedSourcePixelIds": [
+        174747,
+        174753,
+        174759,
+        174765,
+        174771,
+        174777,
+        174783,
+        176165,
+        177587,
+        179009
+      ],
+      "observedGatherCenters": [
+        {
+          "gatherPixelId": 174747,
+          "sourceId": [
+            315,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.6656118035316467,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 174753,
+          "sourceId": [
+            321,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.6782700419425964,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 174759,
+          "sourceId": [
+            327,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.6909282803535461,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 174765,
+          "sourceId": [
+            333,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.7035865187644958,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 174771,
+          "sourceId": [
+            339,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.7162446975708008,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 174777,
+          "sourceId": [
+            345,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.7289029359817505,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 174783,
+          "sourceId": [
+            351,
+            368
+          ],
+          "sourceUvTopOrigin": [
+            0.7415611743927002,
+            0.9722955226898193
+          ]
+        },
+        {
+          "gatherPixelId": 176165,
+          "sourceId": [
+            311,
+            371
+          ],
+          "sourceUvTopOrigin": [
+            0.6571729779243469,
+            0.980211079120636
+          ]
+        },
+        {
+          "gatherPixelId": 177587,
+          "sourceId": [
+            311,
+            374
+          ],
+          "sourceUvTopOrigin": [
+            0.6571729779243469,
+            0.9881266355514526
+          ]
+        },
+        {
+          "gatherPixelId": 179009,
+          "sourceId": [
+            311,
+            377
+          ],
+          "sourceUvTopOrigin": [
+            0.6571729779243469,
+            0.9960421919822693
+          ]
+        }
+      ],
+      "inputFingerprintTags": {
+        "sourceColor": "2376a6ec",
+        "depth": "88205d0e",
+        "physical": "92736c61",
+        "validity": "c3d94854"
+      },
+      "inputProvenance": "matched",
+      "support": {
+        "comparedPixelCount": 10,
+        "requiredPixelCount": 10,
+        "adequate": true
+      },
+      "levels": [
+        {
+          "initialResolution": 32,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499990,
+          "elapsedMs": 1226,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00027028,
+            "median": 0.00027028,
+            "max": 0.00027028
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159499,
+            "median": 3.14159499,
+            "max": 3.14159499
+          },
+          "maximumEstimatedAreaError": 0.17329283,
+          "maximumEstimatedColorErrorRgb": [
+            0.05016753,
+            0.06440427,
+            0.07321748
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.23137256,
+            0.29843138,
+            0.34000001
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 64,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499990,
+          "elapsedMs": 1196,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00027194,
+            "median": 0.00027194,
+            "max": 0.00027194
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159513,
+            "median": 3.14159513,
+            "max": 3.14159513
+          },
+          "maximumEstimatedAreaError": 0.08345297,
+          "maximumEstimatedColorErrorRgb": [
+            0.02409562,
+            0.03093356,
+            0.03516658
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.23137256,
+            0.29843138,
+            0.34000001
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 128,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499970,
+          "elapsedMs": 1215,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00027909,
+            "median": 0.00027909,
+            "max": 0.00027909
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159532,
+            "median": 3.14159532,
+            "max": 3.14159532
+          },
+          "maximumEstimatedAreaError": 0.04343032,
+          "maximumEstimatedColorErrorRgb": [
+            0.01247794,
+            0.01601897,
+            0.01821104
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.23137256,
+            0.29843138,
+            0.34000001
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 256,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1172,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.0003084,
+            "median": 0.0003084,
+            "max": 0.0003084
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159562,
+            "median": 3.14159562,
+            "max": 3.14159562
+          },
+          "maximumEstimatedAreaError": 0.02224861,
+          "maximumEstimatedColorErrorRgb": [
+            0.00631802,
+            0.00811097,
+            0.0092209
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.23137256,
+            0.29843138,
+            0.34000001
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        }
+      ],
+      "adjacentPartialRgbDiagnostics": [
+        {
+          "resolutions": [
+            32,
+            64
+          ],
+          "rmse": 0,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            64,
+            128
+          ],
+          "rmse": 0,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            128,
+            256
+          ],
+          "rmse": 0,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        }
+      ],
+      "fixedGrid": {
+        "algorithm": "ground-glass-m5t-fixed-midpoint-v1",
+        "resolution": 512,
+        "evaluationBudgetPerPixel": 250000,
+        "evaluatedPoints": 2058920,
+        "elapsedMs": 80,
+        "estimatedPixelCount": 10,
+        "budgetExceededPixelCount": 0,
+        "acceptedAreaEstimateRange": {
+          "min": 3.1416626,
+          "median": 3.1416626,
+          "max": 3.1416626
+        },
+        "outputUsedAsM5sReference": false
+      },
+      "evidence": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": true,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved."
+        ]
+      },
+      "budgetExceededPixelLevelCount": 40,
+      "m5sCrossMethodComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ]
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "isRegressionAnchor": true,
+      "selectedGatherPixelIds": [
+        63186,
+        120251,
+        133286,
+        133668,
+        134044,
+        134427,
+        139867,
+        140295,
+        140723,
+        141145
+      ],
+      "selectedSourcePixelIds": [
+        63186,
+        120251,
+        133286,
+        133668,
+        134044,
+        134427,
+        139867,
+        140295,
+        140723,
+        141145
+      ],
+      "observedGatherCenters": [
+        {
+          "gatherPixelId": 63186,
+          "sourceId": [
+            144,
+            133
+          ],
+          "sourceUvTopOrigin": [
+            0.30485227704048157,
+            0.35224276781082153
+          ]
+        },
+        {
+          "gatherPixelId": 120251,
+          "sourceId": [
+            329,
+            253
+          ],
+          "sourceUvTopOrigin": [
+            0.695147693157196,
+            0.668865442276001
+          ]
+        },
+        {
+          "gatherPixelId": 133286,
+          "sourceId": [
+            92,
+            281
+          ],
+          "sourceUvTopOrigin": [
+            0.19514766335487366,
+            0.7427440881729126
+          ]
+        },
+        {
+          "gatherPixelId": 133668,
+          "sourceId": [
+            0,
+            282
+          ],
+          "sourceUvTopOrigin": [
+            0.001054852269589901,
+            0.7453826069831848
+          ]
+        },
+        {
+          "gatherPixelId": 134044,
+          "sourceId": [
+            376,
+            282
+          ],
+          "sourceUvTopOrigin": [
+            0.7943037748336792,
+            0.7453826069831848
+          ]
+        },
+        {
+          "gatherPixelId": 134427,
+          "sourceId": [
+            285,
+            283
+          ],
+          "sourceUvTopOrigin": [
+            0.6023206114768982,
+            0.748021125793457
+          ]
+        },
+        {
+          "gatherPixelId": 139867,
+          "sourceId": [
+            37,
+            295
+          ],
+          "sourceUvTopOrigin": [
+            0.0791139155626297,
+            0.7796833515167236
+          ]
+        },
+        {
+          "gatherPixelId": 140295,
+          "sourceId": [
+            465,
+            295
+          ],
+          "sourceUvTopOrigin": [
+            0.9820674657821655,
+            0.7796833515167236
+          ]
+        },
+        {
+          "gatherPixelId": 140723,
+          "sourceId": [
+            419,
+            296
+          ],
+          "sourceUvTopOrigin": [
+            0.8850210905075073,
+            0.7823219299316406
+          ]
+        },
+        {
+          "gatherPixelId": 141145,
+          "sourceId": [
+            367,
+            297
+          ],
+          "sourceUvTopOrigin": [
+            0.7753164768218994,
+            0.7849604487419128
+          ]
+        }
+      ],
+      "inputFingerprintTags": {
+        "sourceColor": "32445fc8",
+        "depth": "3d561cf3",
+        "physical": "c739ac93",
+        "validity": "3f3eb294"
+      },
+      "inputProvenance": "matched",
+      "support": {
+        "comparedPixelCount": 10,
+        "requiredPixelCount": 10,
+        "adequate": true
+      },
+      "levels": [
+        {
+          "initialResolution": 32,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499987,
+          "elapsedMs": 1200,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00027028,
+            "median": 0.00027028,
+            "max": 0.00095103
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 2.40827674,
+            "median": 3.14159499,
+            "max": 3.14159499
+          },
+          "maximumEstimatedAreaError": 0.20496376,
+          "maximumEstimatedColorErrorRgb": [
+            0.12776123,
+            0.12776123,
+            0.11338809
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.46245818,
+            0.46232179,
+            0.40268087
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 64,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499990,
+          "elapsedMs": 1199,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00027194,
+            "median": 0.00027194,
+            "max": 0.00095457
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 2.40825456,
+            "median": 3.14159513,
+            "max": 3.14159513
+          },
+          "maximumEstimatedAreaError": 0.08345297,
+          "maximumEstimatedColorErrorRgb": [
+            0.05177302,
+            0.05209864,
+            0.04623754
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.46245818,
+            0.46232179,
+            0.40268087
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 128,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499974,
+          "elapsedMs": 1192,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00027909,
+            "median": 0.00027909,
+            "max": 0.00097436
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 2.40819773,
+            "median": 3.14159532,
+            "max": 3.14159532
+          },
+          "maximumEstimatedAreaError": 0.05481157,
+          "maximumEstimatedColorErrorRgb": [
+            0.03345372,
+            0.03345372,
+            0.02969018
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.46245818,
+            0.46232179,
+            0.40268087
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 256,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499983,
+          "elapsedMs": 1167,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.0003084,
+            "median": 0.0003084,
+            "max": 0.0010761
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 2.40813386,
+            "median": 3.14159562,
+            "max": 3.14159562
+          },
+          "maximumEstimatedAreaError": 0.02412497,
+          "maximumEstimatedColorErrorRgb": [
+            0.01357521,
+            0.01366059,
+            0.01212377
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.46245818,
+            0.46232179,
+            0.40268087
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        }
+      ],
+      "adjacentPartialRgbDiagnostics": [
+        {
+          "resolutions": [
+            32,
+            64
+          ],
+          "rmse": 1e-8,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            64,
+            128
+          ],
+          "rmse": 0,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            128,
+            256
+          ],
+          "rmse": 1e-8,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        }
+      ],
+      "fixedGrid": {
+        "algorithm": "ground-glass-m5t-fixed-midpoint-v1",
+        "resolution": 512,
+        "evaluationBudgetPerPixel": 250000,
+        "evaluatedPoints": 2058920,
+        "elapsedMs": 81,
+        "estimatedPixelCount": 10,
+        "budgetExceededPixelCount": 0,
+        "acceptedAreaEstimateRange": {
+          "min": 2.40507507,
+          "median": 3.1416626,
+          "max": 3.1416626
+        },
+        "outputUsedAsM5sReference": false
+      },
+      "evidence": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": true,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved."
+        ]
+      },
+      "budgetExceededPixelLevelCount": 40,
+      "m5sCrossMethodComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ]
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "isRegressionAnchor": false,
+      "selectedGatherPixelIds": [
+        8982,
+        26946,
+        44911,
+        62876,
+        80840,
+        98805,
+        116769,
+        134734,
+        152699,
+        170663
+      ],
+      "selectedSourcePixelIds": [
+        8982,
+        26946,
+        44911,
+        62876,
+        80840,
+        98805,
+        116769,
+        134734,
+        152699,
+        170663
+      ],
+      "observedGatherCenters": [
+        {
+          "gatherPixelId": 8982,
+          "sourceId": [
+            450,
+            18
+          ],
+          "sourceUvTopOrigin": [
+            0.950421929359436,
+            0.048812687397003174
+          ]
+        },
+        {
+          "gatherPixelId": 26946,
+          "sourceId": [
+            402,
+            56
+          ],
+          "sourceUvTopOrigin": [
+            0.8491560816764832,
+            0.14907658100128174
+          ]
+        },
+        {
+          "gatherPixelId": 44911,
+          "sourceId": [
+            355,
+            94
+          ],
+          "sourceUvTopOrigin": [
+            0.75,
+            0.24934041500091553
+          ]
+        },
+        {
+          "gatherPixelId": 62876,
+          "sourceId": [
+            308,
+            132
+          ],
+          "sourceUvTopOrigin": [
+            0.6508438587188721,
+            0.3496042490005493
+          ]
+        },
+        {
+          "gatherPixelId": 80840,
+          "sourceId": [
+            260,
+            170
+          ],
+          "sourceUvTopOrigin": [
+            0.5495780110359192,
+            0.4498681426048279
+          ]
+        },
+        {
+          "gatherPixelId": 98805,
+          "sourceId": [
+            213,
+            208
+          ],
+          "sourceUvTopOrigin": [
+            0.45042192935943604,
+            0.5501319169998169
+          ]
+        },
+        {
+          "gatherPixelId": 116769,
+          "sourceId": [
+            165,
+            246
+          ],
+          "sourceUvTopOrigin": [
+            0.34915608167648315,
+            0.6503957509994507
+          ]
+        },
+        {
+          "gatherPixelId": 134734,
+          "sourceId": [
+            118,
+            284
+          ],
+          "sourceUvTopOrigin": [
+            0.25,
+            0.7506596446037292
+          ]
+        },
+        {
+          "gatherPixelId": 152699,
+          "sourceId": [
+            71,
+            322
+          ],
+          "sourceUvTopOrigin": [
+            0.15084388852119446,
+            0.850923478603363
+          ]
+        },
+        {
+          "gatherPixelId": 170663,
+          "sourceId": [
+            23,
+            360
+          ],
+          "sourceUvTopOrigin": [
+            0.04957806318998337,
+            0.9511873126029968
+          ]
+        }
+      ],
+      "inputFingerprintTags": {
+        "sourceColor": "4c6374b1",
+        "depth": "89c670bb",
+        "physical": "e37fced7",
+        "validity": "bde57a05"
+      },
+      "inputProvenance": "matched",
+      "support": {
+        "comparedPixelCount": 10,
+        "requiredPixelCount": 10,
+        "adequate": true
+      },
+      "levels": [
+        {
+          "initialResolution": 32,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1061,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00228123,
+            "median": 0.00228197,
+            "max": 0.00228271
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159441,
+            "median": 3.14159441,
+            "max": 3.14159441
+          },
+          "maximumEstimatedAreaError": 0.17895502,
+          "maximumEstimatedColorErrorRgb": [
+            0.10215898,
+            0.09327267,
+            0.07363027
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.39734051,
+            0.33934451,
+            0.23854878
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 64,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1081,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00229485,
+            "median": 0.00229551,
+            "max": 0.00229618
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159477,
+            "median": 3.14159477,
+            "max": 3.14159477
+          },
+          "maximumEstimatedAreaError": 0.08914977,
+          "maximumEstimatedColorErrorRgb": [
+            0.05048624,
+            0.04609416,
+            0.03638967
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.39734051,
+            0.33934451,
+            0.23854878
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 128,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1057,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00237038,
+            "median": 0.00237089,
+            "max": 0.0023714
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159411,
+            "median": 3.14159411,
+            "max": 3.14159411
+          },
+          "maximumEstimatedAreaError": 0.04932219,
+          "maximumEstimatedColorErrorRgb": [
+            0.02755822,
+            0.02516151,
+            0.01986391
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.39734051,
+            0.33934452,
+            0.23854879
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        },
+        {
+          "initialResolution": 256,
+          "maximumDepth": 12,
+          "evaluationBudgetPerPixel": 250000,
+          "evaluatedPoints": 2499980,
+          "elapsedMs": 1055,
+          "budgetExceededPixelCount": 10,
+          "unresolvedAreaFraction": {
+            "min": 0.00271031,
+            "median": 0.00271075,
+            "max": 0.00271119
+          },
+          "acceptedAreaEstimateRange": {
+            "min": 3.14159387,
+            "median": 3.14159387,
+            "max": 3.14159387
+          },
+          "maximumEstimatedAreaError": 0.02905202,
+          "maximumEstimatedColorErrorRgb": [
+            0.01584007,
+            0.01446495,
+            0.01141435
+          ],
+          "partialConditionalMeanRgbAcrossSelectedPixels": [
+            0.39734056,
+            0.33934452,
+            0.23854879
+          ],
+          "outputAuthority": "partial budget-exhausted diagnostic only; not valid reference evidence"
+        }
+      ],
+      "adjacentPartialRgbDiagnostics": [
+        {
+          "resolutions": [
+            32,
+            64
+          ],
+          "rmse": 1e-8,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            64,
+            128
+          ],
+          "rmse": 4e-8,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        },
+        {
+          "resolutions": [
+            128,
+            256
+          ],
+          "rmse": 1e-7,
+          "classification": "diagnostic-only; every adaptive pixel at both levels exhausted its budget"
+        }
+      ],
+      "fixedGrid": {
+        "algorithm": "ground-glass-m5t-fixed-midpoint-v1",
+        "resolution": 512,
+        "evaluationBudgetPerPixel": 250000,
+        "evaluatedPoints": 2058920,
+        "elapsedMs": 79,
+        "estimatedPixelCount": 10,
+        "budgetExceededPixelCount": 0,
+        "acceptedAreaEstimateRange": {
+          "min": 3.1416626,
+          "median": 3.1416626,
+          "max": 3.1416626
+        },
+        "outputUsedAsM5sReference": false
+      },
+      "evidence": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": true,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved."
+        ]
+      },
+      "budgetExceededPixelLevelCount": 40,
+      "m5sCrossMethodComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ]
+    }
+  ],
+  "acceptedAreaStability": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "acceptedAreaStable": false,
+      "unresolvedAreaAcceptable": false,
+      "budgetExceededPixelLevelCount": 40,
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "acceptedAreaStable": false,
+      "unresolvedAreaAcceptable": false,
+      "budgetExceededPixelLevelCount": 40,
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "acceptedAreaStable": false,
+      "unresolvedAreaAcceptable": true,
+      "budgetExceededPixelLevelCount": 40,
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "acceptedAreaStable": false,
+      "unresolvedAreaAcceptable": true,
+      "budgetExceededPixelLevelCount": 40,
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "stratumId": "S6-cap-activated-valid-far",
+      "acceptedAreaStable": false,
+      "unresolvedAreaAcceptable": true,
+      "budgetExceededPixelLevelCount": 40,
+      "classification": "budget-limited-unresolved"
+    }
+  ],
+  "crossMethodAgreement": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "adaptiveReferenceClassification": "budget-limited-unresolved",
+      "m5sComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ],
+      "validRmseAvailable": false
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "adaptiveReferenceClassification": "budget-limited-unresolved",
+      "m5sComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ],
+      "validRmseAvailable": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "adaptiveReferenceClassification": "budget-limited-unresolved",
+      "m5sComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ],
+      "validRmseAvailable": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "adaptiveReferenceClassification": "budget-limited-unresolved",
+      "m5sComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ],
+      "validRmseAvailable": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "stratumId": "S6-cap-activated-valid-far",
+      "adaptiveReferenceClassification": "budget-limited-unresolved",
+      "m5sComparisons": [
+        {
+          "method": "golden-angle-count-dependent",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "halton-2-3-progressive",
+          "sampleCount": 1024,
+          "seed": null,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        },
+        {
+          "method": "seeded-stratified-square-to-disk",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "evaluatedProposalCount": 10240,
+          "comparison": null,
+          "status": "m5t-reference-unresolved"
+        }
+      ],
+      "validRmseAvailable": false
+    }
+  ],
+  "m5sRegressionAnchors": {
+    "primary4xS1": {
+      "selectedGatherPixelIds": [
+        6384,
+        17781,
+        33899,
+        47388,
+        63961,
+        78006,
+        99883,
+        118094,
+        136935,
+        168492
+      ],
+      "historicalM5sClassification": "converged-and-cross-validated",
+      "m5tClassification": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": false,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved.",
+          "Unresolved aperture area exceeds the declared coverage limit."
+        ]
+      }
+    },
+    "focusDistanceS4": {
+      "selectedGatherPixelIds": [
+        63186,
+        120251,
+        133286,
+        133668,
+        134044,
+        134427,
+        139867,
+        140295,
+        140723,
+        141145
+      ],
+      "historicalM5sClassification": "converged-and-cross-validated",
+      "m5tClassification": {
+        "classification": "budget-limited-unresolved",
+        "inputProvenance": "matched",
+        "support": {
+          "comparedPixelCount": 10,
+          "requiredPixelCount": 10,
+          "adequate": true
+        },
+        "budgetExceededPixelCount": 40,
+        "adaptiveRefinement": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "independentFixedGrid": {
+          "status": "unavailable",
+          "valueCount": 0,
+          "rmse": null,
+          "maximumChannelError": null,
+          "maximumErrorIndex": null
+        },
+        "acceptedAreaStable": false,
+        "unresolvedAreaAcceptable": true,
+        "analyticControlsPassed": true,
+        "m5qPromotionAllowed": false,
+        "reasons": [
+          "One or more quadrature pixels exhausted the declared evaluation budget.",
+          "One or more required evidence metrics are missing or non-finite.",
+          "Adaptive refinement levels do not meet the declared RGB stability targets.",
+          "Adaptive output does not agree with the independent fixed-grid reference.",
+          "Accepted-area denominator stability is unresolved."
+        ]
+      }
+    }
+  },
+  "spatialProfiles": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "status": "spatial-profile-insufficient-support",
+      "reason": "No contiguous nine-pixel line met source contrast, depth-edge, physical, validity, and mapping gates.",
+      "roiId": null,
+      "selectionEvidence": null,
+      "candidateQualityOutputConsulted": false,
+      "orientation": null,
+      "sourcePixelIds": [],
+      "gatherPixelIds": [],
+      "sourceDepthEndpointDistanceMm": null,
+      "sourceEsf": null,
+      "full32Esf": null,
+      "full64Esf": null,
+      "sourceLsf": null,
+      "full32Lsf": null,
+      "full64Lsf": null,
+      "foregroundColorSignal": null,
+      "haloAttribution": "not established; no registered-app profile has a valid transition and M5T reference output is unresolved"
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "status": "spatial-profile-insufficient-support",
+      "reason": null,
+      "roiId": "depth-edge-horizontal-16256",
+      "selectionEvidence": {
+        "status": "valid",
+        "issues": []
+      },
+      "candidateQualityOutputConsulted": false,
+      "orientation": "horizontal",
+      "sourcePixelIds": [
+        16256,
+        16257,
+        16258,
+        16259,
+        16260,
+        16261,
+        16262,
+        16263,
+        16264
+      ],
+      "gatherPixelIds": [
+        16256,
+        16257,
+        16258,
+        16259,
+        16260,
+        16261,
+        16262,
+        16263,
+        16264
+      ],
+      "sourceDepthEndpointDistanceMm": [
+        9569.613090756433,
+        8899.522262784927
+      ],
+      "sourceEsf": {
+        "status": "spatial-profile-insufficient-support",
+        "sampleCount": 9,
+        "edgeDirection": "unresolved",
+        "baselineValue": null,
+        "plateauValue": null,
+        "edgeMidpointPositionPx": null,
+        "transitionWidth10To90Px": null,
+        "transitionWidth20To80Px": null,
+        "overshoot": null,
+        "undershoot": null,
+        "crossingCounts": {
+          "p10": 0,
+          "p20": 0,
+          "p50": 0,
+          "p80": 0,
+          "p90": 0
+        },
+        "issue": "Profile has no meaningful endpoint transition."
+      },
+      "full32Esf": {
+        "status": "spatial-profile-insufficient-support",
+        "sampleCount": 9,
+        "edgeDirection": "unresolved",
+        "baselineValue": null,
+        "plateauValue": null,
+        "edgeMidpointPositionPx": null,
+        "transitionWidth10To90Px": null,
+        "transitionWidth20To80Px": null,
+        "overshoot": null,
+        "undershoot": null,
+        "crossingCounts": {
+          "p10": 0,
+          "p20": 0,
+          "p50": 0,
+          "p80": 0,
+          "p90": 0
+        },
+        "issue": "Profile has no meaningful endpoint transition."
+      },
+      "full64Esf": {
+        "status": "spatial-profile-insufficient-support",
+        "sampleCount": 9,
+        "edgeDirection": "unresolved",
+        "baselineValue": null,
+        "plateauValue": null,
+        "edgeMidpointPositionPx": null,
+        "transitionWidth10To90Px": null,
+        "transitionWidth20To80Px": null,
+        "overshoot": null,
+        "undershoot": null,
+        "crossingCounts": {
+          "p10": 0,
+          "p20": 0,
+          "p50": 0,
+          "p80": 0,
+          "p90": 0
+        },
+        "issue": "Profile has no meaningful endpoint transition."
+      },
+      "sourceLsf": {
+        "status": "spatial-profile-insufficient-support",
+        "sampleCount": 9,
+        "samplePositionsPx": [],
+        "signedDerivative": [],
+        "fwhmPx": null,
+        "centroidPx": null,
+        "positiveSidelobeMaximum": null,
+        "negativeSidelobeMinimum": null,
+        "asymmetry": null,
+        "integralConsistencyError": null,
+        "issue": "Profile has no meaningful endpoint transition."
+      },
+      "full32Lsf": {
+        "status": "spatial-profile-insufficient-support",
+        "sampleCount": 9,
+        "samplePositionsPx": [],
+        "signedDerivative": [],
+        "fwhmPx": null,
+        "centroidPx": null,
+        "positiveSidelobeMaximum": null,
+        "negativeSidelobeMinimum": null,
+        "asymmetry": null,
+        "integralConsistencyError": null,
+        "issue": "Profile has no meaningful endpoint transition."
+      },
+      "full64Lsf": {
+        "status": "spatial-profile-insufficient-support",
+        "sampleCount": 9,
+        "samplePositionsPx": [],
+        "signedDerivative": [],
+        "fwhmPx": null,
+        "centroidPx": null,
+        "positiveSidelobeMaximum": null,
+        "negativeSidelobeMinimum": null,
+        "asymmetry": null,
+        "integralConsistencyError": null,
+        "issue": "Profile has no meaningful endpoint transition."
+      },
+      "foregroundColorSignal": 0.1882352977991104,
+      "haloAttribution": "not established; no registered-app profile has a valid transition and M5T reference output is unresolved"
+    }
+  ],
+  "spatialProfileCoverage": {
+    "registeredAppProfiles": [
+      "source",
+      "full32",
+      "full64"
+    ],
+    "unavailableComparisons": {
+      "m5sReferenceCandidates": "M5S references were evaluated at selected gather pixels, but no complete contiguous profile was captured for the selected native line.",
+      "m5tQuadrature": "No M5T quadrature profile qualified; all selected numerical ROI pixels exhausted the adaptive evaluation budget.",
+      "b0B1": "No B0/B1 outputs were captured for these native spatial line ROIs."
+    },
+    "controlledFixture": "A separate synthetic fixture compares a blurred profile with sharp-source substitution; it does not establish registered-app support."
+  },
+  "edgeSpreadMetrics": {
+    "registeredApp": "No qualifying native ESF transition was measured. The selected nine-pixel focus-distance line had no meaningful endpoint transition; primary state had no eligible contiguous line.",
+    "controlledFixture": {
+      "status": "measured",
+      "sampleCount": 11,
+      "edgeDirection": "rising",
+      "baselineValue": 0,
+      "plateauValue": 1,
+      "edgeMidpointPositionPx": 4.5,
+      "transitionWidth10To90Px": 4.000000000000001,
+      "transitionWidth20To80Px": 2.5,
+      "overshoot": 0,
+      "undershoot": 0,
+      "crossingCounts": {
+        "p10": 1,
+        "p20": 1,
+        "p50": 1,
+        "p80": 1,
+        "p90": 1
+      },
+      "issue": null
+    }
+  },
+  "lineSpreadMetrics": {
+    "registeredApp": "No qualifying native LSF/FWHM was measured because the native ESF lacked a meaningful transition.",
+    "controlledFixture": {
+      "status": "measured",
+      "sampleCount": 11,
+      "samplePositionsPx": [
+        0.5,
+        1.5,
+        2.5,
+        3.5,
+        4.5,
+        5.5,
+        6.5,
+        7.5,
+        8.5,
+        9.5
+      ],
+      "signedDerivative": [
+        0,
+        0.05,
+        0.09999999999999999,
+        0.19999999999999998,
+        0.30000000000000004,
+        0.19999999999999996,
+        0.09999999999999998,
+        0.050000000000000044,
+        0,
+        0
+      ],
+      "fwhmPx": 2.9999999999999987,
+      "centroidPx": 4.5,
+      "positiveSidelobeMaximum": 0.19999999999999998,
+      "negativeSidelobeMinimum": 0,
+      "positiveIntegral": 1,
+      "leftPositiveIntegral": 0.5,
+      "rightPositiveIntegral": 0.5,
+      "asymmetry": 0,
+      "integratedDirectionalSignal": 1,
+      "expectedDirectionalSignal": 1,
+      "integralConsistencyError": 0,
+      "issue": null
+    }
+  },
+  "haloAndContamination": {
+    "registeredAppHaloConfirmed": false,
+    "registeredAppForegroundColorSignal": 0.1882352977991104,
+    "interpretation": "The source channel signal is not sufficient to attribute foreground leakage, blur suppression, or a halo without a converged reference and suitable spatial support.",
+    "controlledFixtureOvershoot": 0,
+    "controlledFixtureUndershoot": 0,
+    "controlledFixtureSharpSourceClassification": "sharp-source-substitution"
+  },
+  "numericalClassifications": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "budget-limited-unresolved"
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "budget-limited-unresolved"
+    }
+  ],
+  "spatialClassifications": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "classification": "spatial-profile-insufficient-support"
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "classification": "spatial-profile-insufficient-support"
+    }
+  ],
+  "combinedReferenceAuthority": {
+    "classification": "bounded-research-only; no M5Q promotion",
+    "numerical": [
+      {
+        "role": "primary-4x-control-cap60",
+        "stratumId": "S1-smooth-valid-far-interior",
+        "classification": "budget-limited-unresolved"
+      },
+      {
+        "role": "primary-4x-control-cap60",
+        "stratumId": "S3-high-source-gradient-valid-far",
+        "classification": "budget-limited-unresolved"
+      },
+      {
+        "role": "full-frame-control-cap60",
+        "stratumId": "S5-signed-coc-boundary-neighborhood",
+        "classification": "budget-limited-unresolved"
+      },
+      {
+        "role": "focus-distance-control-cap60",
+        "stratumId": "S4-depth-discontinuity-valid-far",
+        "classification": "budget-limited-unresolved"
+      },
+      {
+        "role": "stressed-cap2",
+        "stratumId": "S6-cap-activated-valid-far",
+        "classification": "budget-limited-unresolved"
+      }
+    ],
+    "spatial": [
+      {
+        "role": "primary-4x-control-cap60",
+        "status": "spatial-profile-insufficient-support"
+      },
+      {
+        "role": "focus-distance-control-cap60",
+        "status": "spatial-profile-insufficient-support"
+      }
+    ],
+    "registeredAppScopeOnlyForExactCapturesAndSelectedPixels": true,
+    "fixtureDoesNotPromoteRegisteredAppSupport": true
+  },
+  "negativeControls": {
+    "unitControls": [
+      "N1-N24: actual CPU mutation, analytic, convergence, spatial, ROI authority, and frozen-M5Q controls"
+    ],
+    "nativeControls": {
+      "profileInputProvenance": "matched for all native pairs",
+      "genuineNativeExecution": "webgpu-renderer / webgpu / no internal or application fallback",
+      "syntheticUniformControl": true,
+      "syntheticSpatialSharpSubstitutionControl": true,
+      "roiSelectionUsedCandidateQualityOutput": false,
+      "allSourceDepthPhysicalValidityInputsRetained": true
+    },
+    "mutationSensitiveResults": "The focused 15-test M5T CPU suite passed. Controlled mutations reject wrong RGB, altered denominator, missing disk/texel refinement, depth/orientation/cap/top-origin errors, budget exhaustion, spatial substitution/invalid profiles, unsupported ROI provenance, fixture/app relabeling, M5Q promotion, and altered historical M5S anchors."
+  },
+  "resourceBudgets": {
+    "selectedPixelSlots": 59,
+    "maximumSelectedPixelSlots": 128,
+    "adaptiveEvaluations": 52249594,
+    "fixedGridEvaluations": 10294600,
+    "m5sProposalEvaluations": 204800,
+    "adaptiveTimeMs": 22139,
+    "fixedGridTimeMs": 396,
+    "m5sProposalEvaluationBudget": 2000000
+  },
+  "regression": {
+    "m5sS1S4AnchorsChecked": true,
+    "productionM5Changed": false,
+    "m5qConfirmatoryMustRunSeparately": true,
+    "pageErrors": []
+  },
+  "m5qQualificationBoundary": {
+    "thresholdRevision": "m5q-architecture-rise-r186-v3",
+    "q1": "reference-not-converged",
+    "q2": "insufficient-support",
+    "q3": "bounded-qualified",
+    "q4": "insufficient-support",
+    "q5": "reference-not-converged",
+    "q6": "reference-not-converged",
+    "q7": "reference-not-converged",
+    "thresholdsChanged": false,
+    "qualificationRewritten": false
+  },
+  "limitations": [
+    "M5T only supplements the four tested Architecture Rise capture roles and exact selected pixels.",
+    "S2 remains insufficient-support unless current captures actually provide the required valid population; no registered-app result is manufactured.",
+    "Agreement between adaptive, fixed-grid, and M5S methods does not prove photographic or whole-scene ground truth.",
+    "Spatial profiles are short registered-app line samples; no general B1 halo or production quality claim follows.",
+    "M5Q frozen thresholds and Q1-Q7 outcomes remain unchanged; M6 quality-dependent presentation remains blocked.",
+    "All five selected native numerical ROIs exhausted the 250,000-evaluation per-pixel adaptive budget at all four refinement levels; partial estimates remain diagnostic-only.",
+    "The 512-grid outputs are single-resolution estimates and were not compared as a substitute M5T adaptive reference.",
+    "S2 has zero registered-app candidates across all four Architecture Rise roles; CPU checkerboard controls do not create app support.",
+    "The one focus-distance native line contains nine contiguous source/depth-supported pixels but no meaningful edge transition, so native ESF/LSF widths and halo attribution remain unavailable."
+  ],
+  "recommendedNextPr": "M5U should focus on discontinuity-aware reference refinement under the existing evaluation ceiling (for example, geometry-aware source-texel/eligibility boundary integration), with the same S1/S4 anchors and analytic controls. Acquire a separate suitable registered-app contiguous edge ROI before making spatial or B1 quality claims.",
+  "nextStage": {
+    "m6ArchitectureOnlyMayProceedSeparately": true,
+    "m6QualityDependentPresentation": "blocked pending valid numerical and spatial reference authority",
+    "productionWebGpu": "disabled"
+  }
+}
