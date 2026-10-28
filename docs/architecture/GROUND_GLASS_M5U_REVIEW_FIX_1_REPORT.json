@@ -1,0 +1,865 @@
+{
+  "reviewFixRevision": "m5u-review-fix-1",
+  "reviewedHead": "ea429f39c8e828e6581c8e8d79dc0c0354bf1550",
+  "correctedSourceCommit": "b8bba7aaf9408be6b4630a1754a46283a76e68d8",
+  "nativeRunArtifact": "Playwright attachment m5u-strategy-and-confirmation.json from the corrected native test; full artifact remains temporary/untracked",
+  "evidenceEvaluatorRevision": "m5u-independent-reference-matrix-v1",
+  "costAccountingRevision": "m5u-same-pixel-r256-actual-v1",
+  "fixedMethodCompletenessGate": {
+    "requiredM5sPerPixel": 4,
+    "requiredIndependentReferencesPerPixel": 5,
+    "fixedGridRequired": true,
+    "optionalHistoricalAdaptive": true,
+    "completeMatrices": 50,
+    "incompleteMatrices": 0,
+    "invalidMatrices": 0,
+    "unavailableComparisons": [],
+    "duplicateOrMismatchedComparisons": []
+  },
+  "requiredReferenceMatrix": {
+    "fixedGrid": {
+      "algorithm": "ground-glass-m5t-fixed-midpoint-v1",
+      "method": "independent-square-grid-midpoint",
+      "resolution": 512
+    },
+    "m5s": [
+      {
+        "descriptor": {
+          "method": "golden-angle-count-dependent",
+          "sequenceId": "golden-angle-sqrt-index-plus-half-v1",
+          "algorithmRevision": "ground-glass-m5s-proposal-v1",
+          "sampleCount": 1024,
+          "seed": null,
+          "progressivePrefix": false
+        },
+        "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:f60678bb6e0e6c84"
+      },
+      {
+        "descriptor": {
+          "method": "halton-2-3-progressive",
+          "sequenceId": "halton-base-2-3-equal-area-polar-v1",
+          "algorithmRevision": "ground-glass-m5s-proposal-v1",
+          "sampleCount": 1024,
+          "seed": null,
+          "progressivePrefix": true
+        },
+        "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:aa154147230ea4a9"
+      },
+      {
+        "descriptor": {
+          "method": "seeded-stratified-square-to-disk",
+          "sequenceId": "seeded-jittered-equal-area-square-grid-concentric-v1",
+          "algorithmRevision": "ground-glass-m5s-proposal-v1",
+          "sampleCount": 1024,
+          "seed": 104729,
+          "progressivePrefix": false
+        },
+        "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:444e31a841ab4ad4"
+      },
+      {
+        "descriptor": {
+          "method": "seeded-stratified-square-to-disk",
+          "sequenceId": "seeded-jittered-equal-area-square-grid-concentric-v1",
+          "algorithmRevision": "ground-glass-m5s-proposal-v1",
+          "sampleCount": 1024,
+          "seed": 130363,
+          "progressivePrefix": false
+        },
+        "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:54676ccc5fda5785"
+      }
+    ],
+    "optionalDiagnostic": "m5t-adaptive"
+  },
+  "nativeProvenance": {
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "nativeRuntime": {
+      "rendererRevision": "r186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false
+    },
+    "allFull32Full64InputsMatched": true,
+    "allPixelCandidateAndReferenceInputsMatched": true,
+    "capturePairs": [
+      {
+        "role": "primary-4x-control-cap60",
+        "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+        "stratumId": "S1-smooth-valid-far-interior",
+        "sceneId": "architecture-rise",
+        "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+        "sourceDimensions": [
+          474,
+          379
+        ],
+        "gatherDimensions": [
+          474,
+          379
+        ],
+        "captureIds": {
+          "full32": "m5u-baseline-primary-4x-control-cap60-full32-1793146944156",
+          "full64": "m5u-baseline-primary-4x-control-cap60-full64-1793146946807"
+        },
+        "requestIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-request-7",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-request-7"
+        },
+        "rendererGenerationIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-generation-2",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-generation-2"
+        },
+        "inputFingerprints": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        },
+        "profileInputProvenance": {
+          "status": "matched",
+          "referenceFingerprint": {
+            "sourceColor": "4c6374b1",
+            "depth": "89c670bb",
+            "physical": "e37fced7",
+            "validity": "bde57a05"
+          },
+          "comparedCaptureIds": [
+            "m5u-baseline-primary-4x-control-cap60-full32-1793146944156",
+            "m5u-baseline-primary-4x-control-cap60-full64-1793146946807"
+          ],
+          "mismatchedFields": []
+        },
+        "cameraFingerprintPairMatched": true,
+        "cameraFingerprintSha256": "f8c5e204379c84089bede1bc3782ff1b8db668abca0293d1444eab25a16f3af5",
+        "effectiveRequestFingerprintPairMatched": true,
+        "effectiveRequestFingerprintSha256": "0bfe169602a7bc375293737e91654237f12c954975b7a3a5305658f5890cd086",
+        "nativeRuntime": {
+          "rendererRevision": "r186",
+          "rendererFamily": "webgpu-renderer",
+          "actualExecutionApi": "webgpu",
+          "internalFallback": "none",
+          "applicationFallback": false
+        }
+      },
+      {
+        "role": "primary-4x-control-cap60",
+        "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+        "stratumId": "S3-high-source-gradient-valid-far",
+        "sceneId": "architecture-rise",
+        "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+        "sourceDimensions": [
+          474,
+          379
+        ],
+        "gatherDimensions": [
+          474,
+          379
+        ],
+        "captureIds": {
+          "full32": "m5u-baseline-primary-4x-control-cap60-full32-1793146944156",
+          "full64": "m5u-baseline-primary-4x-control-cap60-full64-1793146946807"
+        },
+        "requestIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-request-7",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-request-7"
+        },
+        "rendererGenerationIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-generation-2",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-generation-2"
+        },
+        "inputFingerprints": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        },
+        "profileInputProvenance": {
+          "status": "matched",
+          "referenceFingerprint": {
+            "sourceColor": "4c6374b1",
+            "depth": "89c670bb",
+            "physical": "e37fced7",
+            "validity": "bde57a05"
+          },
+          "comparedCaptureIds": [
+            "m5u-baseline-primary-4x-control-cap60-full32-1793146944156",
+            "m5u-baseline-primary-4x-control-cap60-full64-1793146946807"
+          ],
+          "mismatchedFields": []
+        },
+        "cameraFingerprintPairMatched": true,
+        "cameraFingerprintSha256": "f8c5e204379c84089bede1bc3782ff1b8db668abca0293d1444eab25a16f3af5",
+        "effectiveRequestFingerprintPairMatched": true,
+        "effectiveRequestFingerprintSha256": "0bfe169602a7bc375293737e91654237f12c954975b7a3a5305658f5890cd086",
+        "nativeRuntime": {
+          "rendererRevision": "r186",
+          "rendererFamily": "webgpu-renderer",
+          "actualExecutionApi": "webgpu",
+          "internalFallback": "none",
+          "applicationFallback": false
+        }
+      },
+      {
+        "role": "full-frame-control-cap60",
+        "opticalStateId": "ar-f3200-f5p6-full-rise0",
+        "stratumId": "S5-signed-coc-boundary-neighborhood",
+        "sceneId": "architecture-rise",
+        "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+        "sourceDimensions": [
+          474,
+          379
+        ],
+        "gatherDimensions": [
+          474,
+          379
+        ],
+        "captureIds": {
+          "full32": "m5u-baseline-full-frame-control-cap60-full32-1793146957416",
+          "full64": "m5u-baseline-full-frame-control-cap60-full64-1793146959669"
+        },
+        "requestIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-request-8",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-request-8"
+        },
+        "rendererGenerationIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-generation-2",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-generation-2"
+        },
+        "inputFingerprints": {
+          "sourceColor": "2376a6ec",
+          "depth": "88205d0e",
+          "physical": "92736c61",
+          "validity": "c3d94854"
+        },
+        "profileInputProvenance": {
+          "status": "matched",
+          "referenceFingerprint": {
+            "sourceColor": "2376a6ec",
+            "depth": "88205d0e",
+            "physical": "92736c61",
+            "validity": "c3d94854"
+          },
+          "comparedCaptureIds": [
+            "m5u-baseline-full-frame-control-cap60-full32-1793146957416",
+            "m5u-baseline-full-frame-control-cap60-full64-1793146959669"
+          ],
+          "mismatchedFields": []
+        },
+        "cameraFingerprintPairMatched": true,
+        "cameraFingerprintSha256": "d5cf9012064ffda315284f307167749bfb0dfbea8fefe95c0b2cf11c0a8d83cd",
+        "effectiveRequestFingerprintPairMatched": true,
+        "effectiveRequestFingerprintSha256": "23d4da389be0cdc00ecd12cb443ad08ab89808a8e718b6cb2d5bb9b91872b31a",
+        "nativeRuntime": {
+          "rendererRevision": "r186",
+          "rendererFamily": "webgpu-renderer",
+          "actualExecutionApi": "webgpu",
+          "internalFallback": "none",
+          "applicationFallback": false
+        }
+      },
+      {
+        "role": "focus-distance-control-cap60",
+        "opticalStateId": "ar-f5200-f5p6-full-rise0",
+        "stratumId": "S4-depth-discontinuity-valid-far",
+        "sceneId": "architecture-rise",
+        "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+        "sourceDimensions": [
+          474,
+          379
+        ],
+        "gatherDimensions": [
+          474,
+          379
+        ],
+        "captureIds": {
+          "full32": "m5u-baseline-focus-distance-control-cap60-full32-1793146966860",
+          "full64": "m5u-baseline-focus-distance-control-cap60-full64-1793146969192"
+        },
+        "requestIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-request-9",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-request-9"
+        },
+        "rendererGenerationIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-generation-2",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-generation-2"
+        },
+        "inputFingerprints": {
+          "sourceColor": "32445fc8",
+          "depth": "3d561cf3",
+          "physical": "c739ac93",
+          "validity": "3f3eb294"
+        },
+        "profileInputProvenance": {
+          "status": "matched",
+          "referenceFingerprint": {
+            "sourceColor": "32445fc8",
+            "depth": "3d561cf3",
+            "physical": "c739ac93",
+            "validity": "3f3eb294"
+          },
+          "comparedCaptureIds": [
+            "m5u-baseline-focus-distance-control-cap60-full32-1793146966860",
+            "m5u-baseline-focus-distance-control-cap60-full64-1793146969192"
+          ],
+          "mismatchedFields": []
+        },
+        "cameraFingerprintPairMatched": true,
+        "cameraFingerprintSha256": "5c6b354e8f3e9205da710391fc3c0958a1624fe1b512516c7d509121b634baff",
+        "effectiveRequestFingerprintPairMatched": true,
+        "effectiveRequestFingerprintSha256": "5347f46a268eef31126e99e094a807ae7d9cc631e32743d6d382fea7efd70551",
+        "nativeRuntime": {
+          "rendererRevision": "r186",
+          "rendererFamily": "webgpu-renderer",
+          "actualExecutionApi": "webgpu",
+          "internalFallback": "none",
+          "applicationFallback": false
+        }
+      },
+      {
+        "role": "stressed-cap2",
+        "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+        "stratumId": "S6-cap-activated-valid-far",
+        "sceneId": "architecture-rise",
+        "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+        "sourceDimensions": [
+          474,
+          379
+        ],
+        "gatherDimensions": [
+          474,
+          379
+        ],
+        "captureIds": {
+          "full32": "m5u-baseline-stressed-cap2-full32-1793146976268",
+          "full64": "m5u-baseline-stressed-cap2-full64-1793146978721"
+        },
+        "requestIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-request-11",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-request-11"
+        },
+        "rendererGenerationIds": {
+          "full32": "gg-mvrde3va-15w46e3wtrb-default-generation-2",
+          "full64": "gg-mvrde3va-15w46e3wtrb-default-generation-2"
+        },
+        "inputFingerprints": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        },
+        "profileInputProvenance": {
+          "status": "matched",
+          "referenceFingerprint": {
+            "sourceColor": "4c6374b1",
+            "depth": "89c670bb",
+            "physical": "e37fced7",
+            "validity": "bde57a05"
+          },
+          "comparedCaptureIds": [
+            "m5u-baseline-stressed-cap2-full32-1793146976268",
+            "m5u-baseline-stressed-cap2-full64-1793146978721"
+          ],
+          "mismatchedFields": []
+        },
+        "cameraFingerprintPairMatched": true,
+        "cameraFingerprintSha256": "f8c5e204379c84089bede1bc3782ff1b8db668abca0293d1444eab25a16f3af5",
+        "effectiveRequestFingerprintPairMatched": true,
+        "effectiveRequestFingerprintSha256": "0bfe169602a7bc375293737e91654237f12c954975b7a3a5305658f5890cd086",
+        "nativeRuntime": {
+          "rendererRevision": "r186",
+          "rendererFamily": "webgpu-renderer",
+          "actualExecutionApi": "webgpu",
+          "internalFallback": "none",
+          "applicationFallback": false
+        }
+      }
+    ]
+  },
+  "originalClassificationCounts": {
+    "source": "initial tracked report; provisional because the full four-method identity/completeness gate was not enforced",
+    "integrated": 50,
+    "supported": 44,
+    "unresolved": 6,
+    "invalidComparison": 0
+  },
+  "correctedClassificationCounts": {
+    "pixelCount": 50,
+    "supported": 44,
+    "unresolved": 6,
+    "invalidComparison": 0,
+    "countsConserved": true
+  },
+  "missingMethodNegativeControls": [
+    {
+      "test": "M5U-F2/F10/F13",
+      "control": "one required M5S method unavailable while others agree",
+      "outcome": "unresolved; candidateResolved remains true"
+    },
+    {
+      "test": "M5U-F3/F4",
+      "control": "Halton or seed 130363 omitted",
+      "outcome": "support denied"
+    },
+    {
+      "test": "M5U-F5",
+      "control": "seed 104729 duplicated in place of seed 130363",
+      "outcome": "invalid-comparison"
+    },
+    {
+      "test": "M5U-F6/F7",
+      "control": "wrong sequence identity or N=512",
+      "outcome": "identity mismatch rejected"
+    },
+    {
+      "test": "M5U-F8/F9",
+      "control": "NaN, Infinity, or null metric under measured status",
+      "outcome": "fail closed"
+    },
+    {
+      "test": "M5U-F10",
+      "control": "zero-error available methods with one unavailable required method",
+      "outcome": "support denied"
+    },
+    {
+      "test": "M5U-F11",
+      "control": "unavailable historical M5T adaptive diagnostic",
+      "outcome": "optional; complete required matrix may support"
+    },
+    {
+      "test": "M5U-F12",
+      "control": "mismatched input fingerprint provenance",
+      "outcome": "invalid-comparison"
+    }
+  ],
+  "correctedRoiResults": [
+    {
+      "stratumId": "S1-smooth-valid-far-interior",
+      "pixelCount": 10,
+      "supported": 9,
+      "unresolved": 1,
+      "invalidComparison": 0,
+      "countsConserved": true,
+      "fullySupported": false
+    },
+    {
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "pixelCount": 10,
+      "supported": 7,
+      "unresolved": 3,
+      "invalidComparison": 0,
+      "countsConserved": true,
+      "fullySupported": false
+    },
+    {
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "pixelCount": 10,
+      "supported": 10,
+      "unresolved": 0,
+      "invalidComparison": 0,
+      "countsConserved": true,
+      "fullySupported": true
+    },
+    {
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "pixelCount": 10,
+      "supported": 9,
+      "unresolved": 1,
+      "invalidComparison": 0,
+      "countsConserved": true,
+      "fullySupported": false
+    },
+    {
+      "stratumId": "S6-cap-activated-valid-far",
+      "pixelCount": 10,
+      "supported": 9,
+      "unresolved": 1,
+      "invalidComparison": 0,
+      "countsConserved": true,
+      "fullySupported": false
+    }
+  ],
+  "correctedPixelSummary": {
+    "candidateIntegrated": 50,
+    "newlyResolved": 50,
+    "independentlySupported": 44,
+    "independentlyUnresolved": 6,
+    "invalidComparisons": 0,
+    "unresolvedPixels": [
+      {
+        "stratumId": "S1-smooth-valid-far-interior",
+        "gatherPixelId": 17781
+      },
+      {
+        "stratumId": "S3-high-source-gradient-valid-far",
+        "gatherPixelId": 24995
+      },
+      {
+        "stratumId": "S3-high-source-gradient-valid-far",
+        "gatherPixelId": 39911
+      },
+      {
+        "stratumId": "S3-high-source-gradient-valid-far",
+        "gatherPixelId": 53175
+      },
+      {
+        "stratumId": "S4-depth-discontinuity-valid-far",
+        "gatherPixelId": 63186
+      },
+      {
+        "stratumId": "S6-cap-activated-valid-far",
+        "gatherPixelId": 26946
+      }
+    ],
+    "invalidPixels": []
+  },
+  "methodSummaries": [
+    {
+      "descriptor": {
+        "method": "golden-angle-count-dependent",
+        "sequenceId": "golden-angle-sqrt-index-plus-half-v1",
+        "algorithmRevision": "ground-glass-m5s-proposal-v1",
+        "sampleCount": 1024,
+        "seed": null,
+        "progressivePrefix": false
+      },
+      "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:f60678bb6e0e6c84",
+      "pixelCount": 50,
+      "measured": 50,
+      "unavailable": 0,
+      "maximumRgbRmse": 0.0014300483020561105,
+      "pixelsAboveRgbRmseLimit": 1,
+      "maximumChannelError": 0.001648801624072882
+    },
+    {
+      "descriptor": {
+        "method": "halton-2-3-progressive",
+        "sequenceId": "halton-base-2-3-equal-area-polar-v1",
+        "algorithmRevision": "ground-glass-m5s-proposal-v1",
+        "sampleCount": 1024,
+        "seed": null,
+        "progressivePrefix": true
+      },
+      "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:aa154147230ea4a9",
+      "pixelCount": 50,
+      "measured": 50,
+      "unavailable": 0,
+      "maximumRgbRmse": 0.0025036046225809187,
+      "pixelsAboveRgbRmseLimit": 3,
+      "maximumChannelError": 0.0028799890586337362
+    },
+    {
+      "descriptor": {
+        "method": "seeded-stratified-square-to-disk",
+        "sequenceId": "seeded-jittered-equal-area-square-grid-concentric-v1",
+        "algorithmRevision": "ground-glass-m5s-proposal-v1",
+        "sampleCount": 1024,
+        "seed": 104729,
+        "progressivePrefix": false
+      },
+      "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:444e31a841ab4ad4",
+      "pixelCount": 50,
+      "measured": 50,
+      "unavailable": 0,
+      "maximumRgbRmse": 0.0013184112841069231,
+      "pixelsAboveRgbRmseLimit": 3,
+      "maximumChannelError": 0.0016344363909122084
+    },
+    {
+      "descriptor": {
+        "method": "seeded-stratified-square-to-disk",
+        "sequenceId": "seeded-jittered-equal-area-square-grid-concentric-v1",
+        "algorithmRevision": "ground-glass-m5s-proposal-v1",
+        "sampleCount": 1024,
+        "seed": 130363,
+        "progressivePrefix": false
+      },
+      "proposalCoordinateFingerprint": "fnv1a64-f64le-v1:54676ccc5fda5785",
+      "pixelCount": 50,
+      "measured": 50,
+      "unavailable": 0,
+      "maximumRgbRmse": 0.003009503557544812,
+      "pixelsAboveRgbRmseLimit": 4,
+      "maximumChannelError": 0.0035398058533394616
+    }
+  ],
+  "fixedGrid512": {
+    "measuredPixels": 50,
+    "maximumAcceptedAreaRelativeError": 0.001307860090710103,
+    "acceptedAreaRelativeErrorLimit": 0.005,
+    "maximumRgbRmse": 0.0005299036375342847,
+    "rgbRmseLimit": 0.001,
+    "maximumChannelError": 0.0006103100563683017,
+    "maximumChannelErrorLimit": 0.01,
+    "authority": "finite approximation, not certified ground truth"
+  },
+  "previousPerPixelEvaluationRatios": {
+    "historicalTrackedList": null,
+    "note": "The original tracked report did not serialize per-pixel ratios. The following values reconstruct the pre-review formula over this corrected run only; they are counterfactuals, not measurements from the historical capture run.",
+    "counterfactualSummary": {
+      "min": 0.9999327991935903,
+      "median": 0.9999903999231994,
+      "max": 0.9999995999972799
+    }
+  },
+  "correctedPerPixelEvaluationRatios": {
+    "formula": "1 - same-pixel M5U actual integrand evaluations / same-pixel M5T R256 actual point evaluations",
+    "denominator": "matching M5T R256 pixel costBreakdown.actualPointEvaluations",
+    "numerator": "matching M5U pixel integrandEvaluations",
+    "pixelCount": 50,
+    "min": 0.9993003061160742,
+    "median": 0.9998945902856164,
+    "max": 0.9999946015104973
+  },
+  "historicalAggregateCosts": {
+    "originalFullFourLevelActualPointEvaluations": 42395885,
+    "originalChargedPointFunctionCalls": 49999612,
+    "originalM5uActualIntegrandEvaluations": 3607,
+    "originalFullFourLevelRatio": 0.9999149209882044,
+    "correctedRun": {
+      "fullFourLevelM5tActualPointEvaluations": 42395885,
+      "fullFourLevelM5tPointFunctionCalls": 49999612,
+      "fullFourLevelM5tBudgetChargedCalls": 49999612,
+      "fullFourLevelM5uActualIntegrandEvaluations": 3607,
+      "fullFourLevelEvaluationReductionRatio": 0.9999149209882044,
+      "r256Aggregate": {
+        "status": "conserved",
+        "pixelCount": 50,
+        "baselineActualPointEvaluations": 10844440,
+        "candidateActualIntegrandEvaluations": 3607,
+        "expectedBaselineActualPointEvaluations": 10844440,
+        "expectedCandidateActualIntegrandEvaluations": 3607,
+        "evaluationReductionRatio": 0.9996673871587652
+      },
+      "fixed512Evaluations": 10294600,
+      "m5s1024Proposals": 204800,
+      "depthProbes": 0,
+      "m5uGeometricOperations": 362848,
+      "m5uSourceBoundarySearchEvaluations": 272320
+    }
+  },
+  "batchTimingMetrics": {
+    "originalSingleRun": {
+      "m5tMs": 24539.84325200002,
+      "m5uMs": 5.066248000046471,
+      "caveat": "Full confirmation totals are secondary single-run sums. Repeated matched two-pixel timing medians are primary; these are CPU research timings, not FPS."
+    },
+    "correctedSingleRun": {
+      "m5tFourLevelSummedElapsedMs": 24443.957581000002,
+      "m5uConfirmationSummedElapsedMs": 5.98000100000354,
+      "scope": "batch totals for selected pixels; not per-pixel runtime"
+    },
+    "perPixelElapsedTimeMeasured": false,
+    "matchedTwoPixelMedianStudy": {
+      "preservedFromOriginalReport": true,
+      "medianCandidateBaselineElapsedRatio": 0.001646500996065094,
+      "trials": [
+        {
+          "stratum": "S1-smooth-valid-far-interior",
+          "ids": [
+            6384,
+            168492
+          ],
+          "baselineMs": 227.9445829999895,
+          "baselineEvaluations": 477526,
+          "candidateEvaluations": 334,
+          "candidateMedianMs": 1.2912920000089798,
+          "candidateTimeSamplesMs": [
+            2.8275829999765847,
+            1.2912920000089798,
+            1.0947499999892898
+          ],
+          "evaluationReduction": 0.999300561644811,
+          "elapsedRatio": 0.00566493830655778,
+          "geometricOperations": 62774,
+          "sourceBoundarySearchEvaluations": 54464,
+          "estimatedMemoryBytes": 7352,
+          "allIntegrated": true
+        },
+        {
+          "stratum": "S3-high-source-gradient-valid-far",
+          "ids": [
+            5617,
+            158770
+          ],
+          "baselineMs": 230.5669579999958,
+          "baselineEvaluations": 477526,
+          "candidateEvaluations": 331,
+          "candidateMedianMs": 0.6410829999949783,
+          "candidateTimeSamplesMs": [
+            0.6392499999783468,
+            0.872166000015568,
+            0.6410829999949783
+          ],
+          "evaluationReduction": 0.9993068440252468,
+          "elapsedRatio": 0.0027804634521612155,
+          "geometricOperations": 62776,
+          "sourceBoundarySearchEvaluations": 54464,
+          "estimatedMemoryBytes": 7352,
+          "allIntegrated": true
+        },
+        {
+          "stratum": "S5-signed-coc-boundary-neighborhood",
+          "ids": [
+            174747,
+            179009
+          ],
+          "baselineMs": 268.90466699999524,
+          "baselineEvaluations": 338010,
+          "candidateEvaluations": 2,
+          "candidateMedianMs": 0.3433329999970738,
+          "candidateTimeSamplesMs": [
+            0.3590410000178963,
+            0.3433329999970738,
+            0.33941700001014397
+          ],
+          "evaluationReduction": 0.9999940830152954,
+          "elapsedRatio": 0.0012767833441770643,
+          "geometricOperations": 54528,
+          "sourceBoundarySearchEvaluations": 54464,
+          "estimatedMemoryBytes": 7352,
+          "allIntegrated": true
+        },
+        {
+          "stratum": "S4-depth-discontinuity-valid-far",
+          "ids": [
+            63186,
+            141145
+          ],
+          "baselineMs": 243.11166699999012,
+          "baselineEvaluations": 376887,
+          "candidateEvaluations": 9,
+          "candidateMedianMs": 0.3426249999902211,
+          "candidateTimeSamplesMs": [
+            0.3593330000003334,
+            0.3426249999902211,
+            0.33791699999710545
+          ],
+          "evaluationReduction": 0.999976120163338,
+          "elapsedRatio": 0.0014093317865745828,
+          "geometricOperations": 54730,
+          "sourceBoundarySearchEvaluations": 54464,
+          "estimatedMemoryBytes": 7352,
+          "allIntegrated": true
+        },
+        {
+          "stratum": "S6-cap-activated-valid-far",
+          "ids": [
+            8982,
+            170663
+          ],
+          "baselineMs": 231.09612500001094,
+          "baselineEvaluations": 449872,
+          "candidateEvaluations": 48,
+          "candidateMedianMs": 0.3804999999993015,
+          "candidateTimeSamplesMs": [
+            0.3804999999993015,
+            0.3601249999774154,
+            0.4309580000117421
+          ],
+          "evaluationReduction": 0.9998933029839598,
+          "elapsedRatio": 0.001646500996065094,
+          "geometricOperations": 55740,
+          "sourceBoundarySearchEvaluations": 54464,
+          "estimatedMemoryBytes": 7352,
+          "allIntegrated": true
+        }
+      ],
+      "scope": "matched two-pixel batch diagnostics; not per-pixel runtime or production FPS"
+    }
+  },
+  "researchClosureDecision": {
+    "decision": "reference-efficiency-improved",
+    "newlyResolvedPixelCount": 50,
+    "newlySupportedPixelCount": 44,
+    "correctedRoiClassifications": [
+      {
+        "stratumId": "S1-smooth-valid-far-interior",
+        "pixelCount": 10,
+        "supported": 9,
+        "unresolved": 1,
+        "invalidComparison": 0,
+        "countsConserved": true,
+        "fullySupported": false
+      },
+      {
+        "stratumId": "S3-high-source-gradient-valid-far",
+        "pixelCount": 10,
+        "supported": 7,
+        "unresolved": 3,
+        "invalidComparison": 0,
+        "countsConserved": true,
+        "fullySupported": false
+      },
+      {
+        "stratumId": "S5-signed-coc-boundary-neighborhood",
+        "pixelCount": 10,
+        "supported": 10,
+        "unresolved": 0,
+        "invalidComparison": 0,
+        "countsConserved": true,
+        "fullySupported": true
+      },
+      {
+        "stratumId": "S4-depth-discontinuity-valid-far",
+        "pixelCount": 10,
+        "supported": 9,
+        "unresolved": 1,
+        "invalidComparison": 0,
+        "countsConserved": true,
+        "fullySupported": false
+      },
+      {
+        "stratumId": "S6-cap-activated-valid-far",
+        "pixelCount": 10,
+        "supported": 9,
+        "unresolved": 1,
+        "invalidComparison": 0,
+        "countsConserved": true,
+        "fullySupported": false
+      }
+    ],
+    "fullySupportedRoiStrata": [
+      "S5-signed-coc-boundary-neighborhood"
+    ],
+    "unresolvedPixelCount": 6,
+    "invalidComparisonPixelCount": 0,
+    "globalReferenceAuthorityEstablished": false,
+    "validatedHighAccuracyGroundTruthEstablished": false,
+    "m5qPromotionAllowed": false,
+    "m6ArchitectureOnlyDevelopmentAllowed": true,
+    "m6QualityDependentPresentationAllowed": false,
+    "productionWebGpuAllowed": false
+  },
+  "remainingLimitations": [
+    "Six registered-app pixels remain unresolved because at least one required finite M5S method exceeds a diagnostic comparison limit.",
+    "The fixed 512 midpoint grid and four M5S finite sequences are approximations, not validated high-accuracy or photographic ground truth.",
+    "Five Architecture Rise strata do not establish scene-wide, device-wide, or universal image-quality qualification.",
+    "M5Q Q1-Q7 remain frozen; M6 quality-dependent presentation is blocked; production WebGPU remains disabled."
+  ],
+  "regressionResults": {
+    "focusedM5uUnitTests": "36 passed",
+    "focusedM5tM5sM5rM5qUnitTests": "163 passed across 7 suites",
+    "fullUnitIntegration": "2907 passed across 294 files under Node 24.3.0; Node 26.12.1 has unrelated jsdom window.localStorage setup failures.",
+    "nativeM5u": "passed on chrome-native-webgpu; full run evidence is compacted into this report",
+    "nativeM5tM5qAndAdapterRegressions": "M5T, frozen M5Q R3 gate, and M5 app adapter tests passed on chrome-native-webgpu",
+    "productionPreviewIsolation": "2/2 passed against a VITE_BASE_PATH=/ production build and preview",
+    "broadLocalCiE2e": "stopped at the missing Complete the Photograph heading in architecture-foreground-compound.spec.ts; reproduced at the same test/heading on clean base c80f7d297ec5f044a87e37d870af16b4b0b00e1e"
+  },
+  "m5qPreservation": {
+    "thresholdRevision": "m5q-architecture-rise-r186-v3",
+    "Q1": "reference-not-converged",
+    "Q2": "insufficient-support",
+    "Q3": "bounded-qualified",
+    "Q4": "insufficient-support",
+    "Q5": "reference-not-converged",
+    "Q6": "reference-not-converged",
+    "Q7": "reference-not-converged",
+    "changed": false
+  },
+  "productionIsolation": {
+    "productionWebGpuAllowed": false,
+    "productionRendererChanged": false,
+    "policyImportedByProduction": false
+  },
+  "fullPerPixelEvidence": "GROUND_GLASS_M5U_QUADRATURE_EFFICIENCY_REPORT.json#reviewFix1.pixelEvidence"
+}

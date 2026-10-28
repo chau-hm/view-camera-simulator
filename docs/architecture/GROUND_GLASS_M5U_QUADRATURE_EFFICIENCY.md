@@ -1,10 +1,10 @@
 # M5U — Discontinuity-Aware Quadrature Efficiency and Reference Research Closure
 
-**Decision:** `reference-efficiency-improved` for the exact registered-app pixels below. This is bounded support, not global reference authority.
+**Current corrected decision:** `reference-efficiency-improved` for 44 registered-app pixels supported by the complete independent-reference matrix; six remain unresolved. The initial 44/50 classifications below are historical and provisional until the M5U review-fix re-evaluation. This remains bounded support, not global reference authority.
 
 **Native evidence:** Chrome 156.0.8078.48 on macOS 27.0.1; Three.js r186; `webgpu-renderer` using native `webgpu`; no internal or application fallback. Source resolution was 474×379. The tested scene source revision was `architecture-rise-raw-rtt-v1`.
 
-The implementation and measurements are recorded in [GROUND_GLASS_M5U_QUADRATURE_EFFICIENCY_REPORT.json](GROUND_GLASS_M5U_QUADRATURE_EFFICIENCY_REPORT.json). It retains the Full32/Full64 capture IDs, input fingerprints, matched camera/effective-request fingerprint digests, exact selected gather-center IDs and UVs, costs, and per-ROI evidence. Full readbacks and adaptive cell traces remain in ignored Playwright output.
+The implementation and measurements are recorded in [GROUND_GLASS_M5U_QUADRATURE_EFFICIENCY_REPORT.json](GROUND_GLASS_M5U_QUADRATURE_EFFICIENCY_REPORT.json), with the corrected review-fix summary in [GROUND_GLASS_M5U_REVIEW_FIX_1_REPORT.json](GROUND_GLASS_M5U_REVIEW_FIX_1_REPORT.json). The full report preserves both the original run and the corrected Full32/Full64 capture IDs, input fingerprints, matched camera/effective-request fingerprint digests, exact selected gather-center IDs and UVs, costs, and per-ROI evidence. Full readbacks and adaptive cell traces remain in ignored Playwright output.
 
 ## M5T cost baseline
 
@@ -34,7 +34,9 @@ Across five repeated, matched two-pixel diagnostics, Strategy A reduced actual i
 
 Strategy B was not attempted: Strategy A removed the measured dominant source-texel subdivision and passed the predeclared efficiency gate, so the stop rule was met.
 
-## Registered-app confirmation and evidence
+## Initial registered-app confirmation (historical classifications)
+
+The measurements in this section are preserved from the initial run. Its 44/50 support labels were provisional because that implementation did not enforce the complete four-method M5S identity matrix; its aggregate all-tier cost counts remain historical measurements. Corrected classifications and the rerun appear in the review-fix section below.
 
 The confirmation reused the preselected ten-pixel sets for S1, S3, S5, S4, and S6, with matched source, depth, physical, validity, camera, and optical-request provenance. Every selected pixel exhausted M5T’s budget at each original resolution (32, 64, 128, and 256). M5U integrated all 50 pixels with a maximum unresolved area of `4.01e-11`.
 
@@ -52,9 +54,26 @@ Each 1024-sample M5S method/seed was compared independently. Maximum RGB RMSE an
 
 The full 50-pixel confirmation recorded 42,395,885 M5T actual point evaluations and 49,999,612 budget-charged point calls, versus 3,607 M5U integrand evaluations: a 99.9915% reduction in actual integrand evaluations. Summed elapsed time was 24,539.843 ms for M5T and 5.066 ms for M5U; this single-run aggregate is secondary to repeated matched diagnostic medians. M5U also recorded 362,848 geometric operations and 272,320 source-boundary-search evaluations. The separate 512 grid used 10,294,600 evaluations; the four M5S methods used 204,800 proposals.
 
+## M5U Review-Fix Round 1 — corrected registered-app confirmation
+
+The correction requires one measured M5T fixed-grid-512 comparison and all four independently identified M5S N=1024 references for each pixel: Golden-angle, progressive Halton, stratified seed 104729, and stratified seed 130363. Every method is bound to its M5S descriptor and canonical proposal-coordinate fingerprint. An unavailable or missing required method leaves support unresolved; duplicate, wrong-identity, nonfinite, or mismatched-provenance evidence is rejected. Historical M5T adaptive output remains optional diagnostic evidence.
+
+A new native Chrome r186 run re-evaluated the same 50 selected gather-pixel IDs in the same five ROIs. All Full32/Full64 inputs matched. All 50 pixels have the complete five-reference matrix: fixed grid 50/50, and each M5S method 50/50 measured; unavailable, duplicate, mismatched, and invalid comparisons were all zero. Geometry integration completed for 50/50 pixels. The corrected evaluator supports 44/50 and leaves six unresolved (S1 17781; S3 24995, 39911, 53175; S4 63186; S6 26946), with no invalid comparisons. ROI support is S1 9/10, S3 7/10, S5 10/10, S4 9/10, and S6 9/10; only S5 is fully supported. These are recomputed outcomes, not carried-forward assertions.
+
+| Cost basis | M5T actual point evaluations | M5T charged calls | M5U actual integrand evaluations | Reduction |
+|---|---:|---:|---:|---:|
+| Same-pixel R256 aggregate, 50 matching pixels | 10,844,440 | 12,499,891 | 3,607 | 99.9667% |
+| Full R32/R64/R128/R256 research workload, same 50 pixels | 42,395,885 | 49,999,612 | 3,607 | 99.9915% |
+
+The per-pixel ratio uses each matching M5T R256 pixel's `actualPointEvaluations` and its M5U `integrandEvaluations`. Corrected reductions range from 99.9300% to 99.9995%, with a median of 99.9895%. The original tracked report did not retain a per-pixel ratio list; a clearly labeled counterfactual reconstruction of the previous batch-charged formula is in the versioned report, not presented as a historical measurement. Charged calls remain separate from actual evaluations.
+
+The corrected single-run elapsed sums are 22,243.493 ms for the full four-level M5T batch and 5.324 ms for the 50-pixel M5U batch. They are batch totals, not per-pixel timing. The prior repeated matched two-pixel timing study remains in the original report; neither timing result is an FPS claim. The 512 grid remains a finite approximation, not certified ground truth.
+
+The closure decision is recomputed as `reference-efficiency-improved`, limited to the 44 pixels supported by the corrected complete matrix; six remain unresolved. M5Q stays frozen, M6 architecture-only work may proceed independently, M6 quality-dependent presentation remains blocked, and production WebGPU remains disabled. Exact capture, request, generation, fingerprint, descriptor, method-completeness, per-pixel classification, and cost records are in the corrected JSON report.
+
 ## Research closure and limits
 
-The selected outcome is `reference-efficiency-improved`: Strategy A resolved all 50 formerly budget-limited pixels, and 44 passed the independent per-pixel diagnostic gates. Six remain unresolved due to finite M5S disagreements. The result does not establish a validated high-accuracy or photographic ground truth, universal sampling attribution, or quality across other scenes/devices. M5Q’s frozen reference-convergence outcomes are unchanged.
+The corrected outcome is `reference-efficiency-improved`, limited to the 44 pixels supported by the complete independent-reference gate. Strategy A integrated all 50 formerly budget-limited pixels; six remain unresolved due to finite M5S disagreements. The result does not establish a validated high-accuracy or photographic ground truth, universal sampling attribution, or quality across other scenes/devices. M5Q’s frozen reference-convergence outcomes are unchanged.
 
 The planned M5 numerical-reference sequence is closed. Do not create an automatic M5V follow-up. New numerical research requires a concrete hypothesis, new evidence, or a demonstrated production blocker. M6 architecture-only work may proceed independently; quality-dependent presentation remains blocked. Production WebGPU remains disabled.
 
