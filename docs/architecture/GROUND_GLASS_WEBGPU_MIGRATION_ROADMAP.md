@@ -280,6 +280,10 @@ Against the finite 512 midpoint grid and all four M5S 1024-sample methods/seeds,
 
 **Open blockers:** Full material and color pipeline parity; adapter-level presentation differences.
 
+**M6 implementation evidence (2026-10-28):** `architecture-partially-implemented`; photographic quality remains `quality-unqualified`. A development-only exact Architecture Rise allowlist now displays the completed M5 research composite through a single fused WebGPU presentation draw. Native Chrome r186 evidence confirms actual `webgpu-renderer` / `webgpu` execution, Raw/Upright orientation, shared Focus Loupe crop and pan, canonical coverage/natural illumination, global throughput, and failure/stale-request controls. The linear NoColorSpace target values are multiplied in M6 and converted by the renderer to sRGB with tone mapping disabled. The run and screenshot comparisons are recorded in [GROUND_GLASS_M6_PRESENTATION_REPORT.json](GROUND_GLASS_M6_PRESENTATION_REPORT.json); WebGL screenshot differences are explicitly not a parity or quality result.
+
+The Architecture Rise shared grid is decorative; the physical grid and physical target overlay are Macro-only and cannot be exercised on the exact M6 scene. The M6 presentation therefore remains partial until a physical-overlay fixture can verify alignment against the displayed image with native raster evidence. The native run's screenshot transform negative control proves an overlay-only error is visible, but does not establish physical target alignment. This bounded gap remains M6 work and is not deferred to M7. M5Q revision `m5q-architecture-rise-r186-v3` and Q1–Q7 are unchanged. M7 still owns the complete development-pilot lifecycle/failure recovery matrix; M8 still owns multi-scene/material/device and repeatable performance qualification. Production WebGPU stays disabled.
+
 ## M7 — Development Pilot and Failure Recovery
 
 **Objective:** Connect complete Raw/DOF/presentation WebGPU stages behind the development-only host with robust recovery, request-safe fallback and lifecycle behavior.
