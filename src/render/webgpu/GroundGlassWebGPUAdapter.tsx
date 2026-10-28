@@ -24,6 +24,7 @@ import type {
   GroundGlassApertureGatherDiagnosticDetails,
   GroundGlassApertureGatherStatus,
   GroundGlassMountedRuntimeEvidence,
+  GroundGlassPresentationDiagnosticDetails,
 } from "../backend/groundGlassBackendDiagnostics";
 import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
 import type { GroundGlassCleanupOutcome } from "../groundGlassRenderHostState";
@@ -73,6 +74,7 @@ import {
 import { runGroundGlassB1BoundaryProbe } from "./groundGlassB1BoundaryProbe";
 import {
   isGroundGlassApertureGatherResearchEnabled,
+  isGroundGlassApertureGatherResourceProvisioningEnabled,
   resolveGroundGlassApertureGatherSettings,
   resolveGroundGlassApertureGatherResearchEligibility,
   resolveGroundGlassApertureGatherFormatEligibility,
@@ -89,7 +91,10 @@ import {
   createGroundGlassPhysicalCocNodes,
   createGroundGlassPhysicalCocProbeSampleNodes,
 } from "./groundGlassPhysicalCocNodes";
-import { isGroundGlassPhysicalCocResearchEnabled } from "./groundGlassPhysicalCocPolicy";
+import {
+  isGroundGlassPhysicalCocResearchEnabled,
+  isGroundGlassPhysicalCocResourceProvisioningEnabled,
+} from "./groundGlassPhysicalCocPolicy";
 import {
   type GroundGlassPhysicalCocControlledKernelCase,
   type GroundGlassPhysicalCocControlledKernelReadback,
@@ -104,6 +109,7 @@ import {
   type GroundGlassApertureGatherOperationName,
   type GroundGlassApertureGatherTargetAllocation,
   type GroundGlassGpuPassTiming,
+  holdGroundGlassWebGpuPresentationQueueCompletion,
   holdGroundGlassWebGpuQueueCompletion,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
@@ -127,6 +133,21 @@ import {
   groundGlassPhysicalCocOrientationErrorModuloPi,
 } from "./groundGlassPhysicalCocContract";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
+import { resolveGroundGlassCoverageRenderState } from "../groundGlassCoverage";
+import { resolveGroundGlassNaturalIlluminationRenderState } from "../groundGlassNaturalIllumination";
+import { resolveGroundGlassRelativeIlluminance } from "../../core/optics/groundGlassIlluminance";
+import {
+  createGroundGlassPresentationNode,
+  type GroundGlassPresentationNodeState,
+} from "./groundGlassPresentationNodes";
+import {
+  ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+  getGroundGlassM6BuildConfigurationEvidence,
+  isGroundGlassM6CapablePilotSessionForBuild,
+  isGroundGlassM6PresentationBuildEnabled,
+  isGroundGlassM6PresentationRequest,
+} from "./groundGlassM6PresentationPolicy";
 
 type WebGpuRenderer = InstanceType<typeof WebGPURenderer>;
 type GpuQueue = Readonly<{ onSubmittedWorkDone: () => Promise<void> }>;
@@ -1237,18 +1258,131 @@ const createDisplayMaterial = (target: THREE.RenderTarget, mode: "raw" | "uprigh
   return material;
 };
 
-const createDisplayScene = (target: THREE.RenderTarget, mode: "raw" | "upright") => {
+type GroundGlassDisplayScene = Readonly<{
+  scene: THREE.Scene;
+  geometry: THREE.PlaneGeometry;
+  material: MeshBasicNodeMaterial;
+  camera: THREE.OrthographicCamera;
+  mode: "raw" | "upright";
+  presentationMode: "raw-diagnostic" | "m6-experimental-dof";
+  updatePresentation: ((state: GroundGlassPresentationNodeState) => void) | null;
+}>;
+
+const createDisplayScene = (
+  target: THREE.RenderTarget,
+  mode: "raw" | "upright",
+  presentation?: Readonly<{
+    sourceTexture: THREE.Texture;
+    state: GroundGlassPresentationNodeState;
+  }>,
+): GroundGlassDisplayScene => {
   const scene = new THREE.Scene();
   const geometry = new THREE.PlaneGeometry(2, 2);
-  const material = createDisplayMaterial(target, mode);
+  const presentationNode = presentation
+    ? createGroundGlassPresentationNode(presentation.sourceTexture, presentation.state)
+    : null;
+  const material = presentationNode?.material ?? createDisplayMaterial(target, mode);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.z = -0.5;
   scene.add(mesh);
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   camera.position.z = 0;
   camera.updateMatrixWorld();
-  return { scene, geometry, material, camera };
+  return {
+    scene,
+    geometry,
+    material,
+    camera,
+    mode,
+    presentationMode: presentationNode ? "m6-experimental-dof" : "raw-diagnostic",
+    updatePresentation: presentationNode?.update ?? null,
+  };
 };
+
+const resolvePresentationNodeState = (
+  request: GroundGlassFrameRequest,
+  camera: THREE.PerspectiveCamera,
+  widthPx: number,
+  heightPx: number,
+): GroundGlassPresentationNodeState => {
+  const inspectionWindow = {
+    active: request.inspectionWindow.active,
+    centerU: request.inspectionWindow.centerU,
+    centerV: request.inspectionWindow.centerV,
+    widthFraction: request.inspectionWindow.widthFraction,
+    heightFraction: request.inspectionWindow.heightFraction,
+  };
+  const coverage = resolveGroundGlassCoverageRenderState({
+    state: request.opticsState.groundGlassCoverage,
+    rawDebug: false,
+    filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+    filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+    inspectionWindow,
+    renderWidthPx: widthPx,
+    renderHeightPx: heightPx,
+  });
+  const naturalIllumination = resolveGroundGlassNaturalIlluminationRenderState({
+    state: request.opticsState.groundGlassNaturalIllumination,
+    rawDebug: false,
+    filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
+    filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
+    inspectionWindow,
+  });
+  const dof = createPhysicalDofState(request, camera, widthPx, heightPx);
+  const throughputGain = resolveGroundGlassRelativeIlluminance({
+    apertureFNumber: request.aperture,
+    focalLengthMm: request.focalLengthMm,
+    // Match WebGL: fallback optics may render, but cannot supply trusted bellows loss.
+    imageDistanceMm: request.opticsState.diagnostics.fallbackApplied
+      ? null
+      : dof.optics.imageDistanceMm,
+  });
+  return {
+    previewMode: request.previewMode,
+    coverage,
+    naturalIllumination,
+    throughputGain,
+  };
+};
+
+const makePresentationDiagnostic = (input: Readonly<{
+  request: GroundGlassFrameRequest;
+  generation: GroundGlassRendererGenerationIdentity;
+  status: GroundGlassPresentationDiagnosticDetails["status"];
+  source: GroundGlassPresentationDiagnosticDetails["source"];
+  throughputGain: number | null;
+  naturalIllumination: GroundGlassPresentationDiagnosticDetails["naturalIllumination"];
+  coverage: GroundGlassPresentationDiagnosticDetails["coverage"];
+  passTiming?: GroundGlassPresentationDiagnosticDetails["passTiming"];
+}>): GroundGlassPresentationDiagnosticDetails => ({
+  requestId: input.request.identity.requestId,
+  channelId: input.request.identity.channelId,
+  sceneId: input.request.identity.sceneId,
+  rendererGenerationId: input.generation.generationId,
+  mode: isGroundGlassM6PresentationRequest(input.request) ? "m6-experimental-dof" : "raw-diagnostic",
+  status: input.status,
+  source: input.source,
+  rendererRevision: `r${REVISION}`,
+  sceneSourceRevision: isGroundGlassM6PresentationRequest(input.request)
+    ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
+    : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  verificationEvidenceRevision: isGroundGlassM6PresentationRequest(input.request)
+    ? ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION
+    : ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
+  opticalQuality: isGroundGlassM6PresentationRequest(input.request) ? "unqualified" : "not-qualified",
+  colorDomain: "linear-no-color-space",
+  outputColorSpace: "srgb",
+  toneMapping: "none",
+  throughputGain: input.throughputGain,
+  naturalIllumination: input.naturalIllumination,
+  coverage: input.coverage,
+  outputWidthPx: input.request.widthPx,
+  outputHeightPx: input.request.heightPx,
+  additionalRenderTargetCount: 0,
+  additionalTargetAttachmentBytes: 0,
+  additionalFullscreenPassCount: 0,
+  passTiming: input.passTiming ?? null,
+});
 
 const makeDiagnosticDetails = (input: {
   request: GroundGlassFrameRequest;
@@ -1257,9 +1391,10 @@ const makeDiagnosticDetails = (input: {
   subjectChildCount: number;
   runtime: GroundGlassMountedRuntimeEvidence;
   backend: WebGpuBackendLike;
-  completedPasses: readonly ("sceneRender" | "textureDisplay")[];
+  completedPasses: readonly ("sceneRender" | "presentation" | "textureDisplay")[];
   physicalCoc?: GroundGlassPhysicalCocDiagnosticDetails;
   apertureGather?: GroundGlassApertureGatherDiagnosticDetails;
+  presentation?: GroundGlassPresentationDiagnosticDetails;
   actualDepthFormat?: string | null;
 }): GroundGlassBackendDiagnosticDetails => {
   if (input.runtime.status !== "mounted" || input.runtime.rendererFamily !== "webgpu-renderer") {
@@ -1270,8 +1405,12 @@ const makeDiagnosticDetails = (input: {
     sceneId: input.request.scene.id,
     requestId: input.request.identity.requestId,
     rendererRevision: `r${REVISION}`,
-    sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
-    verificationEvidenceRevision: ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
+    sceneSourceRevision: isGroundGlassM6PresentationRequest(input.request)
+      ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
+      : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+    verificationEvidenceRevision: isGroundGlassM6PresentationRequest(input.request)
+      ? ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION
+      : ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
     sceneSubject: {
       realization: "registered-ground-glass-profile",
       mounted: true,
@@ -1304,6 +1443,7 @@ const makeDiagnosticDetails = (input: {
     completedPasses: input.completedPasses,
     ...(input.physicalCoc ? { physicalCoc: input.physicalCoc } : {}),
     ...(input.apertureGather ? { apertureGather: input.apertureGather } : {}),
+    ...(input.presentation ? { presentation: input.presentation } : {}),
   };
 };
 
@@ -1732,6 +1872,7 @@ export const GroundGlassWebGPUAdapter = ({
   const disposeRef = useRef<(() => Promise<void>) | null>(null);
   const renderNowRef = useRef<RenderNow | null>(null);
   const latestRequestKey = `${request.identity.requestId}:${request.widthPx}x${request.heightPx}:${request.previewMode}`;
+  const m6BuildConfigurationEvidence = getGroundGlassM6BuildConfigurationEvidence();
   const [ready, setReady] = useState(false);
   const [runtimeApi, setRuntimeApi] = useState<"webgpu" | "webgl2" | "unknown">("unknown");
   const [targetSize, setTargetSize] = useState({ width: 0, height: 0 });
@@ -1747,6 +1888,23 @@ export const GroundGlassWebGPUAdapter = ({
     useState<GroundGlassPhysicalCocDiagnosticDetails | null>(null);
   const [apertureGatherDiagnostics, setApertureGatherDiagnostics] =
     useState<GroundGlassApertureGatherDiagnosticDetails | null>(null);
+  const [presentationDiagnostics, setPresentationDiagnostics] =
+    useState<GroundGlassPresentationDiagnosticDetails | null>(null);
+  const [m6ResourceProvisioning, setM6ResourceProvisioning] = useState<Readonly<{
+    status: "inactive" | "provisioning" | "ready" | "failed";
+    physicalReady: boolean;
+    gatherReady: boolean;
+    gatherTargetCount: number;
+    initialRequestId: string | null;
+    initialRawDebug: boolean | null;
+  }>>({
+    status: "inactive",
+    physicalReady: false,
+    gatherReady: false,
+    gatherTargetCount: 0,
+    initialRequestId: null,
+    initialRawDebug: null,
+  });
   const [lastDisplayedRequestId, setLastDisplayedRequestId] = useState<string | null>(null);
   const [lastDisplayedFrameId, setLastDisplayedFrameId] = useState<string | null>(null);
 
@@ -1775,7 +1933,7 @@ export const GroundGlassWebGPUAdapter = ({
     let physicalCamera: THREE.OrthographicCamera | null = null;
     let physicalNodes: ReturnType<typeof createGroundGlassPhysicalCocNodes> | null = null;
     let apertureGatherResources: GroundGlassApertureGatherResources | null = null;
-    let apertureGatherResearchBuildEnabled = false;
+    let apertureGatherResourcesProvisioned = false;
     let apertureGatherStatus: GroundGlassApertureGatherStatus = "disabled";
     let apertureGatherUnsupportedReason: string | null = null;
     let apertureGatherFailureReason: string | null = null;
@@ -1793,7 +1951,8 @@ export const GroundGlassWebGPUAdapter = ({
       decisions: string | null;
     } | null = null;
     let apertureGatherDiagnostic: GroundGlassApertureGatherDiagnosticDetails | null = null;
-    let physicalPassEnabled = false;
+    let physicalResourcesProvisioned = false;
+    let m6SessionProvisioningAllowed = false;
     let physicalPassStatus: GroundGlassPhysicalCocDiagnosticDetails["status"] = "disabled";
     let physicalPassUnsupportedReason: string | null = null;
     let physicalPassFailureReason: string | null = null;
@@ -1803,12 +1962,19 @@ export const GroundGlassWebGPUAdapter = ({
     let physicalCompletedPasses: Array<"sceneDepth" | "physicalCoc" | "validity"> = [];
     let scene: THREE.Scene | null = null;
     let camera: THREE.PerspectiveCamera | null = null;
-    let display: ReturnType<typeof createDisplayScene> | null = null;
+    let display: GroundGlassDisplayScene | null = null;
+    let presentationDiagnostic: GroundGlassPresentationDiagnosticDetails | null = null;
     let subject: MountedSubject = null;
     let presentationLighting: ReturnType<typeof createPresentationLightingRig> | null = null;
     let worldLighting: ReturnType<typeof createWorldIlluminationRig> | null = null;
     let environmentRig: WorldEnvironmentRig | null = null;
     let cameraFrustum: GroundGlassFrustum | null = null;
+    const firstAcceptedRequest = requestRef.current;
+    setM6ResourceProvisioning((current) => ({
+      ...current,
+      initialRequestId: firstAcceptedRequest.identity.requestId,
+      initialRawDebug: firstAcceptedRequest.rawDebug,
+    }));
 
     const reportFailure = (error: unknown, stage: "initialization" | "runtime", failedPass: GroundGlassRenderOperationId | null) => {
       if (failureReported || retired || !isGenerationActive()) return;
@@ -1816,6 +1982,23 @@ export const GroundGlassWebGPUAdapter = ({
       adapterRoot?.setAttribute("data-failure-stage", stage);
       adapterRoot?.setAttribute("data-failure-operation", failedPass ?? "unknown");
       adapterRoot?.setAttribute("data-failure-reason", errorMessage(error));
+      if (isGroundGlassM6PresentationRequest(requestRef.current)) {
+        const previousPresentation = presentationDiagnostic ?? makePresentationDiagnostic({
+          request: requestRef.current,
+          generation,
+          status: "pending",
+          source: "m5-research-composite",
+          throughputGain: null,
+          naturalIllumination: "bypassed",
+          coverage: "bypassed",
+        });
+        presentationDiagnostic = {
+          ...previousPresentation,
+          status: "failed",
+          failureReason: errorMessage(error),
+        };
+        setPresentationDiagnostics(presentationDiagnostic);
+      }
       recordGroundGlassWebGpuTestEvent({
         kind: "failure",
         generationId: generation.generationId,
@@ -1824,6 +2007,39 @@ export const GroundGlassWebGPUAdapter = ({
         reason: errorMessage(error),
       });
       propsRef.current.onFailure(error instanceof Error ? error : new Error(errorMessage(error)), stage, failedPass);
+    };
+
+    const createRequestDisplay = (
+      displayRequest: GroundGlassFrameRequest,
+      displayCamera: THREE.PerspectiveCamera,
+      widthPx: number,
+      heightPx: number,
+    ): GroundGlassDisplayScene => {
+      if (!target) throw new Error("Ground Glass display cannot initialize without its source target");
+      if (!isGroundGlassM6PresentationRequest(displayRequest)) {
+        presentationDiagnostic = null;
+        setPresentationDiagnostics(null);
+        return createDisplayScene(target, displayRequest.previewMode);
+      }
+      const composite = apertureGatherResources?.researchCompositeTarget;
+      if (!composite) {
+        throw new Error("M6 presentation requires the adapter-owned M5 composite target");
+      }
+      const state = resolvePresentationNodeState(displayRequest, displayCamera, widthPx, heightPx);
+      presentationDiagnostic = makePresentationDiagnostic({
+        request: displayRequest,
+        generation,
+        status: "pending",
+        source: "m5-research-composite",
+        throughputGain: state.throughputGain,
+        naturalIllumination: state.naturalIllumination.enabled ? "applied" : "bypassed",
+        coverage: state.coverage.active ? "applied" : "bypassed",
+      });
+      setPresentationDiagnostics(presentationDiagnostic);
+      return createDisplayScene(target, displayRequest.previewMode, {
+        sourceTexture: composite.texture,
+        state,
+      });
     };
 
     const disposeOwned = (): Promise<void> => {
@@ -1917,6 +2133,7 @@ export const GroundGlassWebGPUAdapter = ({
         setTargetDepthEnabled(false);
         setPhysicalCocDiagnostics(null);
         setApertureGatherDiagnostics(null);
+        setPresentationDiagnostics(null);
         const outcome: GroundGlassCleanupOutcome = errors.length === 0 ? "confirmed" : "failed";
         const reason = errors.length ? errors.map(errorMessage).join("; ") : undefined;
         adapterRoot?.setAttribute("data-cleanup-outcome", outcome);
@@ -1935,13 +2152,19 @@ export const GroundGlassWebGPUAdapter = ({
     disposeRef.current = disposeOwned;
 
     let mountedBackend: WebGpuBackendLike | null = null;
-    let completedPasses: readonly ("sceneRender" | "textureDisplay")[] = [];
+    let completedPasses: readonly ("sceneRender" | "presentation" | "textureDisplay")[] = [];
     let frameSequence = 0;
     let displayMode: "raw" | "upright" = requestRef.current.previewMode;
 
     const renderNow: RenderNow = (requested) => {
       const queued = operationTailRef.current.then(async () => {
         const latest = requestRef.current;
+        const isRequestCurrent = () => !retired
+          && isGenerationActive()
+          && activeRef.current
+          && requestRef.current.identity.requestId === latest.identity.requestId
+          && requestRef.current.identity.channelId === latest.identity.channelId
+          && requestRef.current.identity.sceneId === latest.identity.sceneId;
         if (
           retired ||
           !isGenerationActive() ||
@@ -1955,23 +2178,25 @@ export const GroundGlassWebGPUAdapter = ({
           latest.identity.channelId !== requested.identity.channelId ||
           latest.identity.sceneId !== requested.identity.sceneId
         ) return;
+        let physicalDiagnostic: GroundGlassPhysicalCocDiagnosticDetails | undefined;
+
+        const executePhysicalForRequest =
+          physicalResourcesProvisioned && isGroundGlassPhysicalCocResearchEnabled(latest);
+        const executeGatherForRequest =
+          apertureGatherResourcesProvisioned && isGroundGlassApertureGatherResearchEnabled(latest);
+        const mountedExecutionApi = runtimeRef.current.status === "mounted"
+          ? runtimeRef.current.actualExecutionApi
+          : "unknown";
 
         let sceneRenderTiming: GroundGlassGpuPassTiming | null = null;
         let physicalCocFootprintTiming: GroundGlassGpuPassTiming | null = null;
         let physicalValidityTiming: GroundGlassGpuPassTiming | null = null;
+        let presentationPassTiming: GroundGlassGpuPassTiming | null = null;
         const aperturePassTimings: Array<Readonly<{
           name: GroundGlassApertureGatherOperationName;
           timing: GroundGlassGpuPassTiming;
         }>> = [];
-        if (apertureGatherResearchBuildEnabled) {
-          // Diagnostics belong to one accepted request; never keep the prior frame's
-          // completed gather visible while this request is being processed.
-          apertureGatherDiagnostic = null;
-          setApertureGatherDiagnostics(null);
-        }
-
         let failedPass: GroundGlassRenderOperationId | null = null;
-        let physicalDiagnostic: GroundGlassPhysicalCocDiagnosticDetails | undefined;
         try {
           const dimensions = resolveGroundGlassRttDimensions({
             logicalWidth: latest.widthPx,
@@ -1980,6 +2205,40 @@ export const GroundGlassWebGPUAdapter = ({
             devicePixelRatio: 1,
           });
           target.setSize(dimensions.internalWidthPx, dimensions.internalHeightPx);
+          const resizeInitializedTarget = (
+            renderTarget: THREE.RenderTarget,
+            widthPx: number,
+            heightPx: number,
+          ) => {
+            if (renderTarget.width === widthPx && renderTarget.height === heightPx) return;
+            renderTarget.setSize(widthPx, heightPx);
+            renderer!.initRenderTarget(renderTarget);
+          };
+          if (physicalResourcesProvisioned && physicalTarget && validityTarget) {
+            resizeInitializedTarget(physicalTarget, target.width, target.height);
+            resizeInitializedTarget(validityTarget, target.width, target.height);
+          }
+          if (apertureGatherResourcesProvisioned && apertureGatherResources && apertureGatherSettings) {
+            const gatherWidthPx = Math.max(1, Math.round(target.width * apertureGatherSettings.gatherScale));
+            const gatherHeightPx = Math.max(1, Math.round(target.height * apertureGatherSettings.gatherScale));
+            [
+              [apertureGatherResources.farTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.nearTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.gatherIdentityTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.gatherCenterProvenanceTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.sourceIdentityTarget, target.width, target.height],
+              [apertureGatherResources.selectedProvenanceTarget, target.width, target.height],
+              [apertureGatherResources.b1Target, target.width, target.height],
+              [apertureGatherResources.researchCompositeTarget, target.width, target.height],
+              [apertureGatherResources.b1DecisionTarget, target.width, target.height],
+            ].forEach(([renderTarget, widthPx, heightPx]) => {
+              resizeInitializedTarget(
+                renderTarget as THREE.RenderTarget,
+                widthPx as number,
+                heightPx as number,
+              );
+            });
+          }
           renderer.setSize(Math.max(1, latest.widthPx), Math.max(1, latest.heightPx), false);
           const cameraConfiguration = makeCamera(renderer, latest, target.width, target.height);
           camera = cameraConfiguration.camera;
@@ -1988,14 +2247,76 @@ export const GroundGlassWebGPUAdapter = ({
           setTargetSize({ width: target.width, height: target.height });
           setSourceCrop(mappedSourceCrop);
 
-          if (displayMode !== latest.previewMode) {
+          if (apertureGatherResourcesProvisioned && apertureGatherResources && apertureGatherSettings) {
+            // Readiness includes dimensions for this accepted request; Raw still executes no M4/M5 passes.
+            apertureGatherCompletedPasses = [];
+            apertureGatherStatus = "ready";
+            apertureGatherFailureReason = null;
+            apertureGatherUnsupportedReason = null;
+            apertureGatherDiagnostic = makeApertureGatherDiagnostic({
+              status: "ready",
+              request: latest,
+              generation,
+              target,
+              settings: apertureGatherSettings,
+              farWidthPx: Math.max(1, Math.round(target.width * apertureGatherSettings.gatherScale)),
+              farHeightPx: Math.max(1, Math.round(target.height * apertureGatherSettings.gatherScale)),
+              failureReason: null,
+              qualityGateReason: null,
+            });
+            setApertureGatherDiagnostics(apertureGatherDiagnostic);
+            // Let an M6 request create a fresh completion record after the actual gather passes finish.
+            apertureGatherDiagnostic = null;
+          }
+          if (physicalResourcesProvisioned && mountedExecutionApi === "webgpu") {
+            physicalPassStatus = "ready";
+            physicalCompletedPasses = [];
+            physicalDiagnostic = makePhysicalCocDiagnostic({
+              status: "ready",
+              request: latest,
+              generation,
+              target,
+              actualExecutionApi: mountedExecutionApi,
+              depthFormat: null,
+              cocStorageFormat: null,
+              validityStorageFormat: null,
+              completedPasses: [],
+            });
+            setPhysicalCocDiagnostics(physicalDiagnostic);
+          }
+
+          const m6PresentationRequested = isGroundGlassM6PresentationRequest(latest);
+          const requestedDisplayMode = m6PresentationRequested
+            ? "m6-experimental-dof"
+            : "raw-diagnostic";
+          if (display.presentationMode !== requestedDisplayMode ||
+              (!m6PresentationRequested && displayMode !== latest.previewMode)) {
             display.scene.clear();
             const previousMaterial = display.material;
             const previousGeometry = display.geometry;
-            display = createDisplayScene(target, latest.previewMode);
+            display = createRequestDisplay(latest, camera, target.width, target.height);
             displayMode = latest.previewMode;
             previousMaterial.dispose();
             previousGeometry.dispose();
+          } else if (m6PresentationRequested) {
+            const presentationState = resolvePresentationNodeState(
+              latest,
+              camera,
+              target.width,
+              target.height,
+            );
+            display.updatePresentation?.(presentationState);
+            presentationDiagnostic = makePresentationDiagnostic({
+              request: latest,
+              generation,
+              status: "pending",
+              source: "m5-research-composite",
+              throughputGain: presentationState.throughputGain,
+              naturalIllumination: presentationState.naturalIllumination.enabled ? "applied" : "bypassed",
+              coverage: presentationState.coverage.active ? "applied" : "bypassed",
+            });
+            setPresentationDiagnostics(presentationDiagnostic);
+            displayMode = latest.previewMode;
           }
 
           failedPass = "sceneRender";
@@ -2020,11 +2341,11 @@ export const GroundGlassWebGPUAdapter = ({
             wallClockMs: performance.now() - scenePassStartedAt,
           };
           if (retired || !isGenerationActive() || !activeRef.current) return;
-          if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+          if (!isRequestCurrent()) return;
           throwIfGroundGlassWebGpuFailureInjected("scene-render-after-submit");
 
           if (
-            physicalPassEnabled &&
+            executePhysicalForRequest &&
             physicalTarget &&
             validityTarget &&
             physicalNodes &&
@@ -2070,7 +2391,7 @@ export const GroundGlassWebGPUAdapter = ({
                   wallClockMs: performance.now() - physicalFootprintStartedAt,
                 };
                 if (retired || !isGenerationActive() || !activeRef.current) return;
-                if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+                if (!isRequestCurrent()) return;
                 actualCocStorageFormat = observeTextureFormat(mountedBackend, physicalTarget.texture);
                 if (actualCocStorageFormat !== "rgba16float") {
                   physicalPassStatus = "unsupported";
@@ -2095,7 +2416,7 @@ export const GroundGlassWebGPUAdapter = ({
                     wallClockMs: performance.now() - physicalValidityStartedAt,
                   };
                   if (retired || !isGenerationActive() || !activeRef.current) return;
-                  if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+                  if (!isRequestCurrent()) return;
                   actualValidityStorageFormat = observeTextureFormat(mountedBackend, validityTarget.texture);
                   if (actualValidityStorageFormat !== "rgba8unorm") {
                     physicalPassStatus = "unsupported";
@@ -2129,7 +2450,7 @@ export const GroundGlassWebGPUAdapter = ({
               failureReason: physicalPassFailureReason,
             });
             if (retired || !isGenerationActive() || !activeRef.current) return;
-            if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+            if (!isRequestCurrent()) return;
 
             const probeRequest = physicalPassStatus === "completed"
               ? consumeGroundGlassPhysicalCocProbeRequestForTest()
@@ -2272,7 +2593,7 @@ export const GroundGlassWebGPUAdapter = ({
                   await submitPhysicalWork(device);
                   await holdGroundGlassPhysicalCocProbeReadbackForTest();
                   if (retired || !isGenerationActive() || !activeRef.current) return;
-                  if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+                  if (!isRequestCurrent()) return;
                   const kernelPixels = await renderer.readRenderTargetPixelsAsync(
                     kernelTarget, 0, 0, count, 1,
                   ) as Float32Array;
@@ -2306,7 +2627,7 @@ export const GroundGlassWebGPUAdapter = ({
                     throw new Error("Native physical CoC probe readback returned an unexpected typed array");
                   }
                   if (retired || !isGenerationActive() || !activeRef.current) return;
-                  if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+                  if (!isRequestCurrent()) return;
                   const samples = probeRequest.probes.map((probe, index) => {
                     const offset = index * 4;
                     return {
@@ -2375,8 +2696,7 @@ export const GroundGlassWebGPUAdapter = ({
                     }));
                   }
                   if (
-                    retired || failureReported || !isGenerationActive() || !activeRef.current ||
-                    requestRef.current.identity.requestId !== latest.identity.requestId
+                    retired || failureReported || !isRequestCurrent()
                   ) return;
                   const mountedRuntime = runtimeRef.current;
                   if (
@@ -2437,14 +2757,9 @@ export const GroundGlassWebGPUAdapter = ({
 
           // M5 research targets are adapter-owned and run after the exact current M4 inputs.
           // Their output never replaces the existing M3 Raw display target.
-          const isApertureRequestCurrent = () => !retired
-            && isGenerationActive()
-            && activeRef.current
-            && requestRef.current.identity.requestId === latest.identity.requestId
-            && requestRef.current.identity.channelId === latest.identity.channelId
-            && requestRef.current.identity.sceneId === latest.identity.sceneId;
+          const isApertureRequestCurrent = isRequestCurrent;
           const mountedRuntime = runtimeRef.current;
-          if (apertureGatherResearchBuildEnabled
+          if (executeGatherForRequest
               && mountedRuntime.status === "mounted"
               && mountedRuntime.rendererFamily === "webgpu-renderer"
               && mountedRuntime.actualExecutionApi === "webgpu") {
@@ -2517,13 +2832,16 @@ export const GroundGlassWebGPUAdapter = ({
                   resources.farTarget,
                   resources.nearTarget,
                   resources.b1Target,
-                  resources.researchCompositeTarget,
                   resources.sourceIdentityTarget,
                   resources.gatherIdentityTarget,
                   resources.gatherCenterProvenanceTarget,
                   resources.selectedProvenanceTarget,
                   resources.b1DecisionTarget,
                 ].forEach((preflightTarget) => renderer!.initRenderTarget(preflightTarget));
+                if (isGroundGlassM6PresentationRequest(latest)) {
+                  throwIfGroundGlassWebGpuFailureInjected("m6-presentation-target-initialization");
+                }
+                renderer.initRenderTarget(resources.researchCompositeTarget);
                 const outputFormats = {
                   sourceColor: observeTextureFormat(mountedBackend!, target.texture),
                   depth: observeTextureFormat(mountedBackend!, target.depthTexture),
@@ -3372,24 +3690,76 @@ export const GroundGlassWebGPUAdapter = ({
             }
           }
 
-          // The raw target blit is presentation plumbing, not a Ground Glass semantic pass.
-          failedPass = "textureDisplay";
+          if (m6PresentationRequested) {
+            const exactPhysicalInput = physicalDiagnostic?.status === "completed" &&
+              physicalDiagnostic.requestId === latest.identity.requestId &&
+              physicalDiagnostic.channelId === latest.identity.channelId &&
+              physicalDiagnostic.sceneId === latest.identity.sceneId &&
+              physicalDiagnostic.rendererGenerationId === generation.generationId;
+            const exactGatherInput = apertureGatherStatus === "completed" &&
+              apertureGatherDiagnostic?.requestId === latest.identity.requestId &&
+              apertureGatherDiagnostic.channelId === latest.identity.channelId &&
+              apertureGatherDiagnostic.sceneId === latest.identity.sceneId &&
+              apertureGatherDiagnostic.rendererGenerationId === generation.generationId;
+            if (!exactPhysicalInput || !exactGatherInput || !apertureGatherResources ||
+                display.presentationMode !== "m6-experimental-dof") {
+              failedPass = "presentation";
+              throw new Error(
+                "M6 presentation requires completed M4 and M5 inputs for the exact accepted request and renderer generation",
+              );
+            }
+          }
+
+          // M6 fuses the presentation transform and final texture display into this one fullscreen
+          // operation; it samples the completed M5 composite directly and allocates no extra target.
+          failedPass = m6PresentationRequested ? "presentation" : "textureDisplay";
           renderer.setRenderTarget(null);
           renderer.setViewport(0, 0, Math.max(1, latest.widthPx), Math.max(1, latest.heightPx));
           renderer.setClearColor(SKY_COLOR, 1);
           renderer.clear(true, true, true);
+          if (m6PresentationRequested) {
+            throwIfGroundGlassWebGpuFailureInjected("m6-presentation-before-render");
+          }
+          const presentationStartedAt = performance.now();
+          const presentationRendererCallStartedAt = presentationStartedAt;
           renderer.render(display.scene, display.camera);
+          const presentationRendererCallCpuMs = performance.now() - presentationRendererCallStartedAt;
+          if (m6PresentationRequested) await holdGroundGlassWebGpuPresentationQueueCompletion();
+          const presentationQueueWaitStartedAt = performance.now();
           await holdGroundGlassWebGpuQueueCompletion();
           await device.queue.onSubmittedWorkDone();
-          if (retired || !isGenerationActive() || !activeRef.current) return;
-          if (requestRef.current.identity.requestId !== latest.identity.requestId) return;
+          const presentationQueueCompletionWaitMs = performance.now() - presentationQueueWaitStartedAt;
+          presentationPassTiming = m6PresentationRequested
+            ? {
+                rendererCallCpuMs: presentationRendererCallCpuMs,
+                queueCompletionWaitMs: presentationQueueCompletionWaitMs,
+                wallClockMs: performance.now() - presentationStartedAt,
+              }
+            : null;
+          if (!isRequestCurrent()) return;
+          if (m6PresentationRequested) {
+            throwIfGroundGlassWebGpuFailureInjected("m6-presentation-after-submit");
+            const pendingPresentation = presentationDiagnostic;
+            if (!pendingPresentation) {
+              throw new Error("M6 completed its display operation without pending presentation evidence");
+            }
+            presentationDiagnostic = {
+              ...pendingPresentation,
+              status: "completed",
+              passTiming: presentationPassTiming,
+            };
+            setPresentationDiagnostics(presentationDiagnostic);
+          }
+          failedPass = "textureDisplay";
           throwIfGroundGlassWebGpuFailureInjected("texture-display-after-submit");
 
           failedPass = null;
-          completedPasses = ["sceneRender", "textureDisplay"];
+          completedPasses = m6PresentationRequested
+            ? ["sceneRender", "presentation"]
+            : ["sceneRender", "textureDisplay"];
           const runtime = runtimeRef.current;
           if (runtime.status !== "mounted" || !mountedBackend || !cameraFrustum || !subject) {
-            throw new Error("Completed Raw display has no mounted WebGPU runtime evidence");
+            throw new Error("Completed display has no mounted WebGPU runtime evidence");
           }
           const details = makeDiagnosticDetails({
             request: latest,
@@ -3402,6 +3772,7 @@ export const GroundGlassWebGPUAdapter = ({
             ...(physicalDiagnostic ? { physicalCoc: physicalDiagnostic } : {}),
             ...(physicalDiagnostic ? { actualDepthFormat } : {}),
             ...(apertureGatherDiagnostic ? { apertureGather: apertureGatherDiagnostic } : {}),
+            ...(presentationDiagnostic ? { presentation: presentationDiagnostic } : {}),
           });
           if (physicalDiagnostic) setPhysicalCocDiagnostics(physicalDiagnostic);
           propsRef.current.onBackendDetails(details);
@@ -3540,19 +3911,37 @@ export const GroundGlassWebGPUAdapter = ({
           samples: 0,
           generateMipmaps: false,
         });
-        physicalPassEnabled =
+        m6SessionProvisioningAllowed =
           runtime.actualExecutionApi === "webgpu" &&
-          isGroundGlassPhysicalCocResearchEnabled(currentRequest);
-        apertureGatherResearchBuildEnabled =
+          isGroundGlassM6CapablePilotSessionForBuild(
+            currentRequest,
+            isGroundGlassM6PresentationBuildEnabled(),
+            "webgpu",
+            runtime.actualExecutionApi,
+          );
+        setM6ResourceProvisioning((current) => ({
+          ...current,
+          status: m6SessionProvisioningAllowed ? "provisioning" : "inactive",
+          physicalReady: false,
+          gatherReady: false,
+          gatherTargetCount: 0,
+        }));
+        physicalResourcesProvisioned =
           runtime.actualExecutionApi === "webgpu" &&
-          isGroundGlassApertureGatherResearchEnabled(currentRequest);
-        if (physicalPassEnabled && forceGroundGlassPhysicalCocUnsupportedForTest()) {
-          physicalPassEnabled = false;
+          isGroundGlassPhysicalCocResourceProvisioningEnabled(currentRequest);
+        apertureGatherResourcesProvisioned =
+          runtime.actualExecutionApi === "webgpu" &&
+          isGroundGlassApertureGatherResourceProvisioningEnabled(currentRequest);
+        if (physicalResourcesProvisioned && forceGroundGlassPhysicalCocUnsupportedForTest()) {
+          physicalResourcesProvisioned = false;
           physicalPassStatus = "unsupported";
           physicalPassUnsupportedReason =
             "test-only capability control: required RGBA16F physical storage is unavailable";
+          if (m6SessionProvisioningAllowed) {
+            throw new Error(`M6 session physical resource provisioning failed: ${physicalPassUnsupportedReason}`);
+          }
         }
-        if (physicalPassEnabled) {
+        if (physicalResourcesProvisioned) {
           try {
             const depthTexture = new THREE.DepthTexture(
               dimensions.internalWidthPx,
@@ -3565,9 +3954,12 @@ export const GroundGlassWebGPUAdapter = ({
             depthTexture.generateMipmaps = false;
             target.depthTexture = depthTexture;
           } catch (error) {
-            physicalPassEnabled = false;
+            physicalResourcesProvisioned = false;
             physicalPassStatus = "unsupported";
             physicalPassUnsupportedReason = "sampleable depth attachment initialization failed: " + errorMessage(error);
+            if (m6SessionProvisioningAllowed) {
+              throw new Error(`M6 session physical resource provisioning failed: ${physicalPassUnsupportedReason}`);
+            }
           }
         }
         target.texture.colorSpace = THREE.NoColorSpace;
@@ -3577,7 +3969,7 @@ export const GroundGlassWebGPUAdapter = ({
         const cameraConfiguration = makeCamera(renderer, currentRequest, target.width, target.height);
         camera = cameraConfiguration.camera;
         cameraFrustum = cameraConfiguration.frustum;
-        if (physicalPassEnabled) {
+        if (physicalResourcesProvisioned) {
           try {
           physicalTarget = new THREE.RenderTarget(target.width, target.height, {
             format: THREE.RGBAFormat,
@@ -3634,17 +4026,23 @@ export const GroundGlassWebGPUAdapter = ({
           physicalCamera.updateMatrixWorld();
           physicalPassStatus = "ready";
           } catch (error) {
-            physicalPassEnabled = false;
+            physicalResourcesProvisioned = false;
             physicalPassStatus = "unsupported";
             physicalPassUnsupportedReason = "physical target or kernel initialization failed: " + errorMessage(error);
+            if (m6SessionProvisioningAllowed) {
+              throw new Error(`M6 session physical resource provisioning failed: ${physicalPassUnsupportedReason}`);
+            }
           }
         } else if (physicalPassStatus !== "unsupported") {
           physicalPassStatus = "disabled";
         }
-        if (apertureGatherResearchBuildEnabled) {
-          if (!physicalPassEnabled || !physicalTarget || !validityTarget || !target.depthTexture) {
+        if (apertureGatherResourcesProvisioned) {
+          if (!physicalResourcesProvisioned || !physicalTarget || !validityTarget || !target.depthTexture) {
             apertureGatherStatus = "unsupported";
             apertureGatherUnsupportedReason = "M4 physical CoC research inputs are not enabled";
+            if (m6SessionProvisioningAllowed) {
+              throw new Error(`M6 session gather resource provisioning failed: ${apertureGatherUnsupportedReason}`);
+            }
           } else {
             try {
               apertureGatherSettings = resolveGroundGlassApertureGatherSettings(currentRequest.scene.id);
@@ -3665,6 +4063,9 @@ export const GroundGlassWebGPUAdapter = ({
             } catch (error) {
               apertureGatherStatus = "unsupported";
               apertureGatherUnsupportedReason = "M5 target or node initialization failed: " + errorMessage(error);
+              if (m6SessionProvisioningAllowed) {
+                throw new Error(`M6 session gather resource provisioning failed: ${apertureGatherUnsupportedReason}`);
+              }
             }
           }
         } else {
@@ -3677,9 +4078,67 @@ export const GroundGlassWebGPUAdapter = ({
         });
         if (!target.depthBuffer) throw new Error("Raw WebGPU render target must own an enabled depth attachment");
         setTargetDepthEnabled(true);
+        if (m6SessionProvisioningAllowed) {
+          try {
+            if (!physicalResourcesProvisioned || !physicalTarget || !validityTarget ||
+                !target.depthTexture || !apertureGatherResourcesProvisioned || !apertureGatherResources) {
+              throw new Error("Authorized M6 session did not provision its complete M4/M5 target set");
+            }
+            const m6OwnedTargets = [
+              target,
+              physicalTarget,
+              validityTarget,
+              ...apertureGatherResources.targets,
+            ];
+            m6OwnedTargets.forEach((ownedTarget) => {
+              renderer!.initRenderTarget(ownedTarget);
+              if (ownedTarget === apertureGatherResources?.farTarget) {
+                // Inject after a real M5 target allocation so cleanup is exercised from a
+                // partially initialized M4/M5 resource set.
+                throwIfGroundGlassWebGpuFailureInjected("m6-optical-resource-initialization");
+              }
+            });
+            const observedFormats = {
+              sourceColor: observeTextureFormat(mountedBackend!, target.texture),
+              depth: observeTextureFormat(mountedBackend!, target.depthTexture),
+              physical: observeTextureFormat(mountedBackend!, physicalTarget.texture),
+              validity: observeTextureFormat(mountedBackend!, validityTarget.texture),
+              far: observeTextureFormat(mountedBackend!, apertureGatherResources.farTarget.texture),
+              near: observeTextureFormat(mountedBackend!, apertureGatherResources.nearTarget.texture),
+              b1: observeTextureFormat(mountedBackend!, apertureGatherResources.b1Target.texture),
+              composite: observeTextureFormat(mountedBackend!, apertureGatherResources.researchCompositeTarget.texture),
+              provenance: [
+                apertureGatherResources.sourceIdentityTarget,
+                apertureGatherResources.gatherIdentityTarget,
+                apertureGatherResources.gatherCenterProvenanceTarget,
+                apertureGatherResources.selectedProvenanceTarget,
+              ].every((ownedTarget) =>
+                observeTextureFormat(mountedBackend!, ownedTarget.texture) === "rgba32float",
+              ) ? "rgba32float" : null,
+              decisions: observeTextureFormat(mountedBackend!, apertureGatherResources.b1DecisionTarget.texture),
+            };
+            const formatEligibility = resolveGroundGlassApertureGatherFormatEligibility({
+              observedFormats,
+            });
+            if (formatEligibility.status !== "eligible") {
+              throw new Error(`Authorized M6 session target preflight failed: ${formatEligibility.reason}`);
+            }
+            apertureGatherFormats = observedFormats;
+          } catch (error) {
+            setM6ResourceProvisioning((current) => ({ ...current, status: "failed" }));
+            throw new Error(`M6 optical resource initialization failed: ${errorMessage(error)}`);
+          }
+        }
+        setM6ResourceProvisioning((current) => ({
+          ...current,
+          status: m6SessionProvisioningAllowed ? "ready" : "inactive",
+          physicalReady: physicalResourcesProvisioned && physicalPassStatus === "ready",
+          gatherReady: apertureGatherResourcesProvisioned && apertureGatherStatus === "ready" && apertureGatherResources !== null,
+          gatherTargetCount: apertureGatherResources?.targets.length ?? 0,
+        }));
         setPhysicalCocDiagnostics(
           runtime.actualExecutionApi === "webgpu" &&
-          (physicalPassEnabled || physicalPassStatus === "unsupported")
+          (physicalResourcesProvisioned || physicalPassStatus === "unsupported")
             ? makePhysicalCocDiagnostic({
                 status: physicalPassStatus,
                 request: currentRequest,
@@ -3695,7 +4154,7 @@ export const GroundGlassWebGPUAdapter = ({
             : null,
         );
         setApertureGatherDiagnostics(
-          apertureGatherResearchBuildEnabled && runtime.actualExecutionApi === "webgpu"
+          apertureGatherResourcesProvisioned && runtime.actualExecutionApi === "webgpu"
             ? makeApertureGatherDiagnostic({
                 status: apertureGatherStatus,
                 request: currentRequest,
@@ -3707,7 +4166,15 @@ export const GroundGlassWebGPUAdapter = ({
               })
             : null,
         );
-        display = createDisplayScene(target, currentRequest.previewMode);
+        display = createRequestDisplay(
+          currentRequest,
+          camera,
+          target.width,
+          target.height,
+        );
+        if (isGroundGlassM6PresentationRequest(currentRequest)) {
+          throwIfGroundGlassWebGpuFailureInjected("m6-presentation-node-initialization");
+        }
         throwIfGroundGlassWebGpuFailureInjected("initialization-after-target");
         renderer.setSize(Math.max(1, currentRequest.widthPx), Math.max(1, currentRequest.heightPx), false);
         setTargetSize({ width: target.width, height: target.height });
@@ -3720,8 +4187,9 @@ export const GroundGlassWebGPUAdapter = ({
           runtime,
           backend: observed,
           completedPasses: [],
+          ...(presentationDiagnostic ? { presentation: presentationDiagnostic } : {}),
           ...(runtime.actualExecutionApi === "webgpu" &&
-          (physicalPassEnabled || physicalPassStatus === "unsupported")
+          (physicalResourcesProvisioned || physicalPassStatus === "unsupported")
             ? {
                 physicalCoc: makePhysicalCocDiagnostic({
                   status: physicalPassStatus,
@@ -3737,7 +4205,7 @@ export const GroundGlassWebGPUAdapter = ({
                 }),
               }
             : {}),
-          ...(apertureGatherResearchBuildEnabled && runtime.actualExecutionApi === "webgpu"
+          ...(apertureGatherResourcesProvisioned && runtime.actualExecutionApi === "webgpu"
             ? {
                 apertureGather: makeApertureGatherDiagnostic({
                   status: apertureGatherStatus,
@@ -3767,6 +4235,9 @@ export const GroundGlassWebGPUAdapter = ({
           if (!retired) reportFailure(new Error(`WebGPU device lost: ${info.message ?? info.reason ?? "unknown reason"}`), "runtime", null);
         });
       } catch (error) {
+        if (m6SessionProvisioningAllowed) {
+          setM6ResourceProvisioning((current) => ({ ...current, status: "failed" }));
+        }
         reportFailure(error, "initialization", null);
       }
     });
@@ -3801,9 +4272,21 @@ export const GroundGlassWebGPUAdapter = ({
       data-renderer-generation={generation.generationId}
       data-frame-request-id={request.identity.requestId}
       data-frame-scene-id={request.scene.id}
+      data-frame-raw-debug={request.rawDebug ? "true" : "false"}
       data-preview-mode={request.previewMode}
       data-mounted-renderer-family={runtimeRef.current.status === "mounted" ? runtimeRef.current.rendererFamily : undefined}
       data-actual-execution-api={runtimeApi === "unknown" ? undefined : runtimeApi}
+      data-internal-fallback={runtimeRef.current.status === "mounted" ? runtimeRef.current.internalFallback : undefined}
+      data-m6-session-provisioning={m6ResourceProvisioning.status}
+      data-m6-physical-resources-ready={m6ResourceProvisioning.physicalReady ? "true" : "false"}
+      data-m6-gather-resources-ready={m6ResourceProvisioning.gatherReady ? "true" : "false"}
+      data-m6-gather-target-count={m6ResourceProvisioning.gatherTargetCount}
+      data-adapter-initial-request-id={m6ResourceProvisioning.initialRequestId ?? undefined}
+      data-adapter-initial-raw-debug={m6ResourceProvisioning.initialRawDebug === null ? undefined : String(m6ResourceProvisioning.initialRawDebug)}
+      data-m6-build-raw-pilot-enabled={m6BuildConfigurationEvidence.rawPilotEnabled ? "true" : "false"}
+      data-m6-build-presentation-enabled={m6BuildConfigurationEvidence.m6PresentationEnabled ? "true" : "false"}
+      data-m6-build-physical-research-enabled={m6BuildConfigurationEvidence.physicalCocResearchEnabled ? "true" : "false"}
+      data-m6-build-gather-research-enabled={m6BuildConfigurationEvidence.apertureGatherResearchEnabled ? "true" : "false"}
       data-target-width={targetSize.width || undefined}
       data-target-height={targetSize.height || undefined}
       data-target-color-format={targetSize.width > 0 ? "rgba8unorm" : undefined}
@@ -3811,7 +4294,12 @@ export const GroundGlassWebGPUAdapter = ({
       data-target-depth-format={targetDepthEnabled ? "depth24plus" : undefined}
       data-physical-coc-status={physicalCocDiagnostics?.status}
       data-physical-coc-request-id={physicalCocDiagnostics?.requestId}
+      data-physical-coc-channel-id={physicalCocDiagnostics?.channelId}
+      data-physical-coc-scene-id={physicalCocDiagnostics?.sceneId}
+      data-physical-coc-renderer-generation={physicalCocDiagnostics?.rendererGenerationId}
       data-physical-coc-depth-format={physicalCocDiagnostics?.depthFormat ?? undefined}
+      data-physical-coc-width-px={physicalCocDiagnostics?.widthPx}
+      data-physical-coc-height-px={physicalCocDiagnostics?.heightPx}
       data-physical-coc-storage-format={physicalCocDiagnostics?.cocStorageFormat ?? undefined}
       data-physical-coc-validity-format={physicalCocDiagnostics?.validityStorageFormat ?? undefined}
       data-physical-coc-depth-confidence-status={physicalCocDiagnostics?.depthConfidenceStatus}
@@ -3823,11 +4311,43 @@ export const GroundGlassWebGPUAdapter = ({
       data-physical-coc-max-storage-coc-error-mm={physicalCocDiagnostics?.probeSummary?.maximumStoredSignedCoCErrorMm ?? undefined}
       data-aperture-gather-status={apertureGatherDiagnostics?.status}
       data-aperture-gather-request-id={apertureGatherDiagnostics?.requestId}
+      data-aperture-gather-channel-id={apertureGatherDiagnostics?.channelId}
+      data-aperture-gather-scene-id={apertureGatherDiagnostics?.sceneId}
+      data-aperture-gather-renderer-generation={apertureGatherDiagnostics?.rendererGenerationId}
       data-aperture-gather-quality-mode={apertureGatherDiagnostics?.qualityMode ?? undefined}
+      data-aperture-gather-source-width-px={apertureGatherDiagnostics?.sourceWidthPx}
+      data-aperture-gather-source-height-px={apertureGatherDiagnostics?.sourceHeightPx}
+      data-aperture-gather-far-width-px={apertureGatherDiagnostics?.farGatherWidthPx ?? undefined}
+      data-aperture-gather-far-height-px={apertureGatherDiagnostics?.farGatherHeightPx ?? undefined}
+      data-aperture-gather-near-width-px={apertureGatherDiagnostics?.nearGatherWidthPx ?? undefined}
+      data-aperture-gather-near-height-px={apertureGatherDiagnostics?.nearGatherHeightPx ?? undefined}
       data-aperture-gather-passes={apertureGatherDiagnostics?.completedPasses.join(",")}
       data-aperture-gather-quality-gate-status={apertureGatherDiagnostics?.qualityGateStatus}
       data-aperture-gather-quality-gate-reason={apertureGatherDiagnostics?.qualityGateReason ?? undefined}
       data-aperture-gather-failure-reason={apertureGatherDiagnostics?.failureReason ?? undefined}
+      data-presentation-mode={presentationDiagnostics?.mode}
+      data-presentation-status={presentationDiagnostics?.status}
+      data-presentation-source={presentationDiagnostics?.source}
+      data-presentation-request-id={presentationDiagnostics?.requestId}
+      data-presentation-channel-id={presentationDiagnostics?.channelId}
+      data-presentation-scene-id={presentationDiagnostics?.sceneId}
+      data-presentation-renderer-generation={presentationDiagnostics?.rendererGenerationId}
+      data-presentation-renderer-revision={presentationDiagnostics?.rendererRevision}
+      data-presentation-scene-source-revision={presentationDiagnostics?.sceneSourceRevision}
+      data-presentation-evidence-revision={presentationDiagnostics?.verificationEvidenceRevision}
+      data-presentation-quality={presentationDiagnostics?.opticalQuality}
+      data-presentation-throughput-gain={presentationDiagnostics?.throughputGain ?? undefined}
+      data-presentation-natural-illumination={presentationDiagnostics?.naturalIllumination}
+      data-presentation-coverage={presentationDiagnostics?.coverage}
+      data-presentation-output-width={presentationDiagnostics?.outputWidthPx}
+      data-presentation-output-height={presentationDiagnostics?.outputHeightPx}
+      data-presentation-additional-target-count={presentationDiagnostics?.additionalRenderTargetCount}
+      data-presentation-additional-target-attachment-bytes={presentationDiagnostics?.additionalTargetAttachmentBytes}
+      data-presentation-additional-fullscreen-pass-count={presentationDiagnostics?.additionalFullscreenPassCount}
+      data-presentation-pass-renderer-call-cpu-ms={presentationDiagnostics?.passTiming?.rendererCallCpuMs}
+      data-presentation-pass-queue-completion-wait-ms={presentationDiagnostics?.passTiming?.queueCompletionWaitMs}
+      data-presentation-pass-wall-clock-ms={presentationDiagnostics?.passTiming?.wallClockMs}
+      data-presentation-failure-reason={presentationDiagnostics?.failureReason}
       data-scene-subject-realization={sceneSubjectEvidence.mounted ? "registered-ground-glass-profile" : undefined}
       data-scene-subject-mounted={sceneSubjectEvidence.mounted ? "true" : undefined}
       data-scene-subject-child-count={sceneSubjectEvidence.mounted ? sceneSubjectEvidence.childCount : undefined}
@@ -3845,12 +4365,22 @@ export const GroundGlassWebGPUAdapter = ({
       data-last-displayed-frame-id={lastDisplayedFrameId ?? undefined}
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
     >
-      <canvas ref={canvasRef} aria-label="Raw WebGPU pilot output, no depth-of-field composite" style={{ display: "block", width: "100%", height: "100%" }} />
+      <canvas
+        ref={canvasRef}
+        aria-label={presentationDiagnostics?.mode === "m6-experimental-dof"
+          ? "Experimental WebGPU Ground Glass presentation, optical quality unqualified"
+          : "Raw WebGPU pilot output, no depth-of-field composite"}
+        style={{ display: "block", width: "100%", height: "100%" }}
+      />
       <div
-        aria-hidden="true"
+        role="status"
+        aria-live="polite"
+        data-testid="ground-glass-webgpu-pilot-status"
         style={{ position: "absolute", top: 8, left: 8, padding: "4px 7px", borderRadius: 4, background: "rgba(15,23,42,.82)", color: "white", font: "600 11px/1.3 system-ui, sans-serif", pointerEvents: "none" }}
       >
-        Raw WebGPU pilot · no DOF composite
+        {presentationDiagnostics?.mode === "m6-experimental-dof"
+          ? "WebGPU M6 Experimental · Optical quality unqualified · Production disabled"
+          : "Raw WebGPU pilot · no DOF composite"}
       </div>
     </div>
   );

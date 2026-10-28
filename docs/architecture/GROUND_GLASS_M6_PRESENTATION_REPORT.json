@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "experimentRevision": "m6-native-presentation-v1",
+  "sourceCommit": "9f05d24e44a75c4183823625ae12f8cbc939c3cf",
+  "implementationScope": {
+    "architectureStatus": "architecture-partially-implemented",
+    "qualityStatus": "quality-unqualified",
+    "supportedSceneIds": ["architecture-rise"],
+    "unsupportedSceneBehavior": "existing-WebGL-host",
+    "rawDebugUsesM6": false,
+    "presentationSource": "completed-M5-research-composite",
+    "additionalRenderTargets": 0,
+    "additionalTargetAttachmentBytes": 0,
+    "additionalFullscreenPasses": 0
+  },
+  "featureGate": {
+    "developmentOnly": true,
+    "requiredFlags": [
+      "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true",
+      "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true"
+    ],
+    "activationPredicate": "import.meta.env.DEV && VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION === true",
+    "publicSelector": false,
+    "productionAuthorization": "disabled"
+  },
+  "nativeRuntime": {
+    "browserProject": "chrome-native-webgpu",
+    "platform": "darwin",
+    "sceneId": "architecture-rise",
+    "renderQuality": "low",
+    "threeRevision": "r186",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "rendererGenerationId": "gg-mvs9uegl-7712jh2pi87-default-generation-1",
+    "finalRequestId": "gg-mvs9uegl-7712jh2pi87-default-request-16",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1+m6-presentation-v1",
+    "verificationEvidenceRevision": "m6-architecture-rise-native-presentation-v1"
+  },
+  "presentationPassGraph": [
+    "M3 scene target",
+    "M4 physical CoC and validity",
+    "M5 Far/Near gather, B1 reconstruction, research composite",
+    "M6 fullscreen presentation node",
+    "canvas output"
+  ],
+  "opticalCompositeSource": {
+    "captureId": "m6-composite-1793201452868",
+    "requestId": "gg-mvs9uegl-7712jh2pi87-default-request-3",
+    "rendererGenerationId": "gg-mvs9uegl-7712jh2pi87-default-generation-1",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "exactIdentityMatchAtCapture": true,
+    "readbackOrigin": "top",
+    "sourceDimensionsPx": {"width": 334, "height": 267},
+    "targetFormats": {
+      "sourceColor": "rgba8unorm",
+      "physical": "rgba16float",
+      "validity": "rgba8unorm",
+      "far": "rgba16float",
+      "near": "rgba16float",
+      "b1": "rgba16float",
+      "composite": "rgba16float",
+      "provenance": "rgba32float",
+      "decisions": "rgba8unorm"
+    },
+    "inputFingerprints": {
+      "sourceColor": "37a1a80d",
+      "depth": "e632ee19",
+      "physical": "074cbefb",
+      "validity": "e29d66f5"
+    },
+    "physicalDataFingerprint": "1d8f573b",
+    "sourceToGatherMappingConformance": {"status": "passed", "mismatchCount": 0},
+    "nominalGatherCenterMappingConformance": {"status": "observed-offset", "mismatchCount": 10556}
+  },
+  "rawUprightContract": {
+    "rawFlip": "180-degree physical transform with one WebGPU target-origin conversion",
+    "uprightFlip": "no physical Raw inversion",
+    "correct180DegreeMatchMeanRgbError": 3.5896296296296275,
+    "horizontalOnlyNegativeControlMeanRgbError": 44.05777777777777,
+    "verticalOnlyNegativeControlMeanRgbError": 52.39407407407408
+  },
+  "focusLoupeConformance": {
+    "sharedStageState": true,
+    "centeredCrop": {"centerU": 0.6505836753993647, "centerV": 0.38695256588780835, "widthFraction": 0.25, "heightFraction": 0.25},
+    "sourceAfterZoom": {"u": 0.3494163246006353, "v": 0.6130474341121916, "widthFraction": 0.25, "heightFraction": 0.25},
+    "sourceAfterPan": {"u": 0.3795330478059642, "v": 0.5929599993945631, "widthFraction": 0.25, "heightFraction": 0.25},
+    "centerAndPannedCaptures": "passed"
+  },
+  "physicalFilmWindow": {
+    "mappingAuthority": "canonical cropped source-film UV to physical film millimetres",
+    "coverageAndIlluminationShareWindow": true,
+    "coverageDisplayOrientationIndependent": true
+  },
+  "imageCircleCoverage": {
+    "nativeState": "applied",
+    "pureReferenceControls": [
+      "centered and shifted circles",
+      "positive and negative X/Y offsets",
+      "combined X/Y offsets",
+      "crop across a boundary",
+      "edge feathering",
+      "nonparallel conic",
+      "disabled coverage",
+      "Raw Debug bypass"
+    ],
+    "registeredScenePhysicalGrid": "not-supported-by-Architecture-Rise; Macro-only shared overlay"
+  },
+  "naturalIllumination": {
+    "nativeState": "applied",
+    "implementation": "existing canonical natural-illumination render state and film-position calculation"
+  },
+  "globalThroughput": {
+    "implementation": "resolveGroundGlassRelativeIlluminance",
+    "f22Gain": 0.2416347281674155,
+    "f56Gain": 3.729311493400163,
+    "apertureDirectionControl": "passed"
+  },
+  "colorTransfer": {
+    "sceneAndM5TargetDomain": "unencoded linear values; NoColorSpace target storage",
+    "m6PresentationDomain": "linear RGB multiplication; source alpha preserved",
+    "canvasOutputDomain": "sRGB",
+    "conversionLocation": "WebGPU renderer output; no M6 sRGB encoding node",
+    "toneMapping": "disabled",
+    "unitPatchControls": ["black", "white", "middle gray", "saturated RGB", "low-intensity RGB", "supported high values"]
+  },
+  "overlayAlignment": {
+    "stageGrid": "decorative CSS grid; not physical",
+    "physicalSpacingXPx": null,
+    "physicalSpacingYPx": null,
+    "overlayOnlyFlipNegativeControl": {
+      "changedPixels": 50196,
+      "meanAbsoluteChannelError": 3.1112999163639543,
+      "underlyingFrameStateUnchanged": true
+    },
+    "physicalGridAndTargetAlignment": "unverified; requires an M6-eligible physical-overlay fixture"
+  },
+  "visualComparison": {
+    "comparisonIsParityClaim": false,
+    "webglReference": {"width": 514, "height": 412, "meanSrgbLuminance": 108.27471735582809, "contentful": true},
+    "m6Raw": {"width": 514, "height": 412, "meanSrgbLuminance": 158.85636619893282, "contentful": true},
+    "m3RawDebug": {"width": 514, "height": 412, "meanSrgbLuminance": 179.26288442291408, "contentful": true},
+    "webglVsM6Raw": {"changedPixels": 207557, "meanAbsoluteChannelError": 55.03600953244431},
+    "m6VsM3Raw": {"changedPixels": 207390, "meanAbsoluteChannelError": 24.46669468474935},
+    "upright": {"width": 514, "height": 412, "meanSrgbLuminance": 158.05824418447187, "contentful": true}
+  },
+  "resourceAccounting": {
+    "additionalRenderTargetCount": 0,
+    "additionalTargetAttachmentBytes": 0,
+    "additionalFullscreenPassCount": 0,
+    "outputAfterResize": {"width": 394, "height": 315, "targetWidth": 256, "targetHeight": 205},
+    "presentationTimingSingleSampleMs": {"rendererCallCpu": 0.09999990463256836, "queueCompletionWait": 0.7000000476837158, "wallClock": 1.4000000953674316},
+    "performanceQualification": "none; one diagnostic observation only"
+  },
+  "lifecycle": {
+    "rawDebugRestoration": "passed",
+    "presentationInitializationFailure": "existing WebGL host selected",
+    "presentationPassFailure": "no completed M6 frame published",
+    "finalDisplayFailure": "no completed M6 frame published",
+    "staleRequestAfterResize": "discarded before publication",
+    "ownedPresentationMaterialAndGeometry": "disposed on replacement and adapter teardown"
+  },
+  "negativeControls": {
+    "horizontalOnlyFlip": "detected by asymmetric RGB error",
+    "verticalOnlyFlip": "detected by asymmetric RGB error",
+    "sourceCropAndPhysicalCoverageMapping": "covered by unit reference controls",
+    "offsetSignAndConicCoverage": "covered by unit reference controls",
+    "throughputDirection": "aperture control changed reported gain as predicted",
+    "overlayOnlyFlip": "changed screenshot while frame identity and canvas geometry were unchanged",
+    "presentationFailureAndStaleResize": "native failure injection passed",
+    "unsupportedScene": "policy unit test remains on WebGL",
+    "productionActivation": "production preview isolation passed with pilot build flags supplied"
+  },
+  "regression": {
+    "nativeM6": {"project": "chrome-native-webgpu", "testsPassed": 5, "testsFailed": 0},
+    "unitSuite": {"testFilesPassed": 295, "testsPassed": 2923},
+    "focusedM6Unit": {"testsPassed": 16},
+    "typecheck": "passed",
+    "lint": "passed",
+    "cssCheck": "passed",
+    "productionBuildWithPilotFlags": "passed",
+    "productionPreviewIsolation": {"testsPassed": 2, "productionWebGLOnly": true},
+    "nativeM5QExploration": {"testsPassed": 1},
+    "nativeM5QConfirmatory": {"testsPassed": 1, "frozenRevision": "m5q-architecture-rise-r186-v3", "Q1": "reference-not-converged", "Q2": "insufficient-support", "Q3": "bounded-qualified", "Q4": "insufficient-support", "Q5": "reference-not-converged", "Q6": "reference-not-converged", "Q7": "reference-not-converged"},
+    "nativeM5AdapterRegression": {"testsPassed": 1},
+    "broadLocalE2E": "ci:local:e2e reaches broad E2E then fails at architecture-foreground-compound.spec.ts because Complete the Photograph is missing; same failure reproduced against clean base c89556f482c1b62ee32eba6817a5fd8007c087dc"
+  },
+  "validationCommands": {
+    "focusedUnit": "npm test -- src/tests/unit/groundGlassM6Presentation.test.ts",
+    "fullUnit": "npm test",
+    "typecheck": "npm run typecheck",
+    "lint": "npm run lint",
+    "css": "npm run check:css",
+    "build": "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npm run build",
+    "nativeM6": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_M6_SOURCE_COMMIT=9f05d24e44a75c4183823625ae12f8cbc939c3cf PLAYWRIGHT_WEB_SERVER_PORT=4247 GROUND_GLASS_M6_WEBGL_BASELINE_PORT=4248 VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npx playwright test src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts --project=chrome-native-webgpu --reporter=line",
+    "nativeM5QAndAdapter": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 npx playwright test src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'native M5Q|native M5 app adapter captures B1 provenance, source fallback, and near coverage for matched quality modes'",
+    "productionPreview": "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npx playwright test --config=playwright.production.config.ts src/tests/e2e/architecture-rise-webgpu-production.spec.ts --reporter=line",
+    "broadE2E": "npm run ci:local:e2e (baseline failure reproduced at c89556f482c1b62ee32eba6817a5fd8007c087dc)",
+    "diff": "git diff --check"
+  },
+  "ignoredNativeArtifacts": {
+    "directory": "test-results/ground-glass-webgpu-m6-pre-b4d57-p-and-presentation-behavior-chrome-native-webgpu/",
+    "evidenceJson": "ground-glass-m6-presentation-evidence.json",
+    "m5CompositeCapture": "ground-glass-m6-m5-composite-capture.json",
+    "compressedReadback": "ground-glass-m6-native-optical-readback.bin.gz",
+    "screenshots": [
+      "ground-glass-m6-webgl-reference.png",
+      "ground-glass-m3-raw-debug-native.png",
+      "ground-glass-m6-experimental-raw.png",
+      "ground-glass-m6-experimental-upright.png",
+      "ground-glass-m6-loupe-center.png",
+      "ground-glass-m6-loupe-panned.png",
+      "ground-glass-m6-stage-overlay-alignment.png",
+      "ground-glass-m6-grid-only-flip-negative-control.png"
+    ]
+  },
+  "qualificationBoundary": {
+    "architecture": "architecture-partially-implemented",
+    "quality": "quality-unqualified",
+    "notEstablished": [
+      "physical grid and target alignment on an M6-eligible scene",
+      "M6 final-output GPU pixel oracle",
+      "photographic ground truth or broad B1 quality",
+      "M5Q R3 qualification beyond its existing Q3 ROI",
+      "multi-scene or multi-device compatibility",
+      "production WebGPU readiness"
+    ]
+  },
+  "remainingM7M8Dependencies": {
+    "m6FollowUp": "Create a physical-overlay fixture within M6 eligibility and verify grid/target raster alignment against the same completed frame; add a direct final-output color/mapping oracle where feasible.",
+    "m7": ["device loss", "complete retry/fallback recovery matrix", "scene switching and remount", "asynchronous retirement across accepted requests"],
+    "m8": ["multiple scenes and materials", "browser/device matrix", "repeatable latency and memory qualification"]
+  },
+  "m5qFrozenStatus": {
+    "revision": "m5q-architecture-rise-r186-v3",
+    "Q1": "reference-not-converged",
+    "Q2": "insufficient-support",
+    "Q3": "bounded-qualified",
+    "Q4": "insufficient-support",
+    "Q5": "reference-not-converged",
+    "Q6": "reference-not-converged",
+    "Q7": "reference-not-converged"
+  },
+  "productionIsolation": {
+    "webglDefaultUnchanged": true,
+    "m6ActivationInProduction": false,
+    "urlBackendParameterAuthorization": false,
+    "observerBehaviorChanged": false
+  },
+  "reviewerFocus": [
+    "M6 reads the exact completed M5 research composite and does not blend Near or B1 twice.",
+    "Film-space coverage and illumination use the cropped physical source window exactly once.",
+    "Raw/Upright use the tested WebGPU target-origin transform.",
+    "The architecture remains partial until physical grid/target raster alignment is verified.",
+    "Quality remains unqualified; screenshot differences are not parity or correctness claims.",
+    "M6 build authorization cannot affect production WebGL or enable production WebGPU."
+  ],
+  "reviewFix1": {
+    "reviewedHead": "91d4f9330e250f0369236dad2a88733869002903",
+    "correctedSourceCommit": "bfa7b0348d37f9840a68097255de0e3a128dfc98",
+    "supplementalReport": "GROUND_GLASS_M6_REVIEW_FIX_1_REPORT.json",
+    "historicalEvidence": "All original capture IDs, measurements, and conclusions above remain unchanged and describe the original M6 run.",
+    "scopeClarification": "The original zero-additional-target accounting describes the M6 presentation node beyond its M5 input. Review-Fix 1 separately records the M4/M5 resources now provisioned when an authorized M6-capable session starts in Raw Debug.",
+    "m6Status": "architecture-partially-implemented; quality-unqualified; physical grid/target alignment remains open.",
+    "productionWebGpu": "disabled"
+  }
+}

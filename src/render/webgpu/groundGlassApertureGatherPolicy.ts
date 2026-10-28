@@ -6,6 +6,13 @@ import {
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
   GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
 } from "./groundGlassRawWebGpuCompatibility";
+import {
+  ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+  GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
+  isGroundGlassM6CapablePilotSessionForBuild,
+  isGroundGlassM6PresentationBuildEnabled,
+  isGroundGlassM6PresentationRequest,
+} from "./groundGlassM6PresentationPolicy";
 
 export type GroundGlassApertureGatherQualityMode =
   | "full32"
@@ -68,9 +75,26 @@ const QUALITY: Readonly<Record<GroundGlassApertureGatherQualityMode, Omit<Ground
 export const isGroundGlassApertureGatherResearchEnabled = (
   request: GroundGlassFrameRequestInput,
 ): boolean =>
-  import.meta.env.DEV &&
-  import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH === "true" &&
-  isGroundGlassRawWebGpuPilotRequest(request);
+  isGroundGlassM6PresentationRequest(request) || (
+    import.meta.env.DEV &&
+    import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH === "true" &&
+    isGroundGlassRawWebGpuPilotRequest(request)
+  );
+
+/** M6-capable sessions provision M5 resources even if their first frame is Raw Debug. */
+export const isGroundGlassApertureGatherResourceProvisioningEnabled = (
+  request: GroundGlassFrameRequestInput,
+): boolean =>
+  isGroundGlassM6CapablePilotSessionForBuild(
+    request,
+    isGroundGlassM6PresentationBuildEnabled(),
+    "webgpu",
+    "webgpu",
+  ) || (
+    import.meta.env.DEV &&
+    import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH === "true" &&
+    isGroundGlassRawWebGpuPilotRequest(request)
+  );
 
 /**
  * M5 is a research-only downstream pass. This check binds it to the current
@@ -80,13 +104,19 @@ export const isGroundGlassApertureGatherResearchEnabled = (
 export const resolveGroundGlassApertureGatherResearchEligibility = (
   input: GroundGlassApertureGatherEligibilityInput,
 ): GroundGlassApertureGatherResearchEligibility => {
-  const compatibility = input.compatibility ?? GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY;
+  const m6Request = isGroundGlassM6PresentationRequest(input.request);
+  const compatibility = input.compatibility ?? (m6Request
+    ? GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY
+    : GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY);
   const revision = input.expectedRendererRevision?.trim();
-  if (!isGroundGlassRawWebGpuPilotRequest(input.request)) {
+  if (!m6Request && !isGroundGlassRawWebGpuPilotRequest(input.request)) {
     return { status: "unsupported", reason: "request-outside-architecture-rise-raw-pilot" };
   }
+  const expectedSourceRevision = m6Request
+    ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
+    : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION;
   if (compatibility.sceneId !== input.request.scene.id
-      || compatibility.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION
+      || compatibility.sourceRevision !== expectedSourceRevision
       || !compatibility.sourceRevision.trim()) {
     return { status: "unsupported", reason: "scene-source-compatibility-mismatch" };
   }
@@ -97,15 +127,21 @@ export const resolveGroundGlassApertureGatherResearchEligibility = (
       return { status: "unsupported", reason: `${featureName}-evidence-missing-or-ambiguous` };
     }
     const [feature] = matches;
-    if (feature.status !== "research-only"
+    const evidence = feature.status === "research-only"
+      ? feature.evidence
+      : feature.status === "implementation-verified"
+        ? feature.verificationEvidence
+        : [];
+    const expectedStatus = m6Request ? "implementation-verified" : "research-only";
+    if (feature.status !== expectedStatus
         || feature.sourceRevision !== compatibility.sourceRevision
         || !feature.evidenceRevision.trim()
         || !feature.testedContext.rendererRevision.trim()
         || feature.testedContext.rendererRevision !== revision
         || feature.testedContext.rendererFamily !== "webgpu-renderer"
         || feature.testedContext.executionApi !== "webgpu"
-        || feature.evidence.length === 0
-        || feature.evidence.some((entry) => !entry.trim())) {
+        || evidence.length === 0
+        || evidence.some((entry) => !entry.trim())) {
       return { status: "unsupported", reason: `${featureName}-evidence-does-not-match-candidate` };
     }
   }

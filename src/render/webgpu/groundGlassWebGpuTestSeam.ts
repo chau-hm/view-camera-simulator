@@ -375,6 +375,11 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "aperture-near-after-submit"
   | "aperture-b1-after-submit"
   | "aperture-composite-after-submit"
+  | "m6-presentation-target-initialization"
+  | "m6-optical-resource-initialization"
+  | "m6-presentation-node-initialization"
+  | "m6-presentation-before-render"
+  | "m6-presentation-after-submit"
   | "aperture-readback"
   | "texture-display-after-submit"
   | "dispose-target";
@@ -417,6 +422,8 @@ export type GroundGlassWebGpuTestEvent =
 /** Internal browser control object. It is read only by a Vite development build explicitly
  * started with VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; it is never read from URL or storage. */
 export type GroundGlassWebGpuTestControl = {
+  /** Set the application's first accepted Ground Glass request to Raw Debug in an isolated test. */
+  initialRawDebug?: boolean;
   adapterAttemptGenerations?: string[];
   adapterEvents?: GroundGlassWebGpuTestEvent[];
   failurePoint?: GroundGlassWebGpuTestFailurePoint;
@@ -430,6 +437,9 @@ export type GroundGlassWebGpuTestControl = {
   holdQueueCompletion?: boolean;
   queueCompletionBarrierReached?: boolean;
   releaseQueueCompletion?: (() => void) | undefined;
+  holdPresentationQueueCompletion?: boolean;
+  presentationQueueCompletionBarrierReached?: boolean;
+  releasePresentationQueueCompletion?: (() => void) | undefined;
   holdFrameRequestId?: string | null;
   holdNextCompletedFrame?: boolean;
   heldFrameRequestId?: string | null;
@@ -466,6 +476,9 @@ const getControl = (): GroundGlassWebGpuTestControl | null =>
   isEnabled && typeof window !== "undefined"
     ? window.__groundGlassWebGpuM3TestControl ?? null
     : null;
+
+export const initialGroundGlassRawDebugForTest = (): boolean =>
+  getControl()?.initialRawDebug === true;
 
 export const forceGroundGlassWebGlCompatibilityBackendForTest = (): boolean =>
   getControl()?.forceWebGlCompatibilityBackend === true;
@@ -603,6 +616,21 @@ export const holdGroundGlassWebGpuQueueCompletion = async (): Promise<void> => {
       control.holdQueueCompletion = false;
       control.queueCompletionBarrierReached = false;
       control.releaseQueueCompletion = undefined;
+      resolve();
+    };
+  });
+};
+
+/** Holds only after the M6 final presentation draw has been submitted, for stale-request tests. */
+export const holdGroundGlassWebGpuPresentationQueueCompletion = async (): Promise<void> => {
+  const control = getControl();
+  if (!control?.holdPresentationQueueCompletion) return;
+  control.presentationQueueCompletionBarrierReached = true;
+  await new Promise<void>((resolve) => {
+    control.releasePresentationQueueCompletion = () => {
+      control.holdPresentationQueueCompletion = false;
+      control.presentationQueueCompletionBarrierReached = false;
+      control.releasePresentationQueueCompletion = undefined;
       resolve();
     };
   });

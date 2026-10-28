@@ -74,6 +74,13 @@ export const GroundGlassRenderSurface = ({
         data-frame-request-id={backendDiagnostics?.requestIdentity.requestId}
         data-frame-channel-id={backendDiagnostics?.requestIdentity.channelId}
         data-frame-scene-id={backendDiagnostics?.requestIdentity.sceneId}
+        data-policy-selected-backend={backendDiagnostics?.policySelection.status === "selected"
+          ? backendDiagnostics.policySelection.selectedBackend
+          : "unavailable"}
+        data-pilot-session-id={backendDiagnostics?.pilotSessionId ?? undefined}
+        data-pilot-retry-status={backendDiagnostics?.retryState?.status ?? "none"}
+        data-pilot-retry-epoch={backendDiagnostics?.retryState?.retryEpoch}
+        data-application-fallback={backendDiagnostics?.applicationFallback.status ?? "unknown"}
         data-mounted-renderer-family={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.rendererFamily : undefined}
         data-actual-execution-api={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.actualExecutionApi : undefined}
         data-render-host-lifecycle={backendDiagnostics?.lifecycleStatus}

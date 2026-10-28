@@ -67,6 +67,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise");
   await expect(groundGlass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 60_000 });
+  await expect(groundGlass).toHaveAttribute("data-policy-selected-backend", "webgl");
   await expect(groundGlass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
   await expect(groundGlass).toHaveAttribute("data-actual-execution-api", "webgl2");
   await expect(page.getByTestId("ground-glass-webgpu-pilot")).toHaveCount(0);
