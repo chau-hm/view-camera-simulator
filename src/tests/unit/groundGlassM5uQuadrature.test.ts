@@ -10,10 +10,15 @@ import {
   runGroundGlassM5tAdaptiveQuadrature,
   runGroundGlassM5tFixedGridReference,
   type GroundGlassM5tFarReferenceInput,
+  type GroundGlassM5tQuadratureRun,
 } from "../../render/webgpu/groundGlassM5tQuadrature";
 import {
   evaluateGroundGlassM5uPixelEvidence,
+  getGroundGlassM5uR256BaselinePixelEvidence,
+  getGroundGlassM5uRequiredM5sReferences,
   runGroundGlassM5uQuadrature,
+  summarizeGroundGlassM5uEvidence,
+  summarizeGroundGlassM5uR256Costs,
 } from "../../render/webgpu/groundGlassM5uQuadrature";
 
 const makeInput = (options: Readonly<{
@@ -83,12 +88,53 @@ const run = (referenceInput: GroundGlassM5tFarReferenceInput, maxEvaluationsPerP
     maxEvaluationsPerPixel,
   }).pixels[0]!;
 
-const zeroIndependentComparisons = [
-  { reference: "m5t-fixed-grid-512" as const, status: "measured" as const,
-    rgbRmse: 0, maximumChannelError: 0, acceptedAreaRelativeError: 0 },
-  { reference: "m5s-finite-sampling" as const, status: "measured" as const,
-    rgbRmse: 0, maximumChannelError: 0, acceptedAreaRelativeError: 0 },
+const evidenceFingerprints = makeInput().inputFingerprints;
+const zeroIndependentComparisons = (gatherPixelId = 0) => [
+  {
+    reference: "m5t-fixed-grid-512" as const,
+    gatherPixelId,
+    inputFingerprints: evidenceFingerprints,
+    status: "measured" as const,
+    rgbRmse: 0,
+    maximumChannelError: 0,
+    acceptedAreaRelativeError: 0,
+    fixedGrid: {
+      algorithm: "ground-glass-m5t-fixed-midpoint-v1" as const,
+      method: "independent-square-grid-midpoint" as const,
+      resolution: 512 as const,
+    },
+  },
+  ...getGroundGlassM5uRequiredM5sReferences().map(({ descriptor, proposalCoordinateFingerprint }) => ({
+    reference: "m5s-finite-sampling" as const,
+    gatherPixelId,
+    inputFingerprints: evidenceFingerprints,
+    status: "measured" as const,
+    rgbRmse: 0,
+    maximumChannelError: 0,
+    acceptedAreaRelativeError: null,
+    descriptor,
+    proposalCoordinateFingerprint,
+  })),
 ];
+
+type PixelEvidenceInput = Parameters<typeof evaluateGroundGlassM5uPixelEvidence>[0];
+const evaluateEvidence = (input: Pick<PixelEvidenceInput, "candidate">
+  & Partial<Omit<PixelEvidenceInput, "candidate">>) => evaluateGroundGlassM5uPixelEvidence({
+  evidenceId: `unit-fixture:${input.candidate.gatherPixelId}`,
+  inputFingerprintsMatch: true,
+  expectedInputFingerprints: evidenceFingerprints,
+  candidateInputFingerprints: evidenceFingerprints,
+  analyticControlsPassed: true,
+  evidenceScope: "registered-app",
+  baselineClassification: "evaluation-budget-exceeded",
+  baselinePixel: {
+    initialResolution: 256,
+    gatherPixelId: input.candidate.gatherPixelId,
+    actualPointEvaluations: 250_000,
+  },
+  independentComparisons: zeroIndependentComparisons(input.candidate.gatherPixelId),
+  ...input,
+});
 
 describe("Ground Glass M5U texel-footprint quadrature", () => {
   it("N1/N6/N7: conserves unit-disk area across source partitions without integrating outside the disk", () => {
@@ -268,18 +314,7 @@ describe("Ground Glass M5U texel-footprint quadrature", () => {
   it("N13/N14: keeps denominator uncertainty separate from RGB stability", () => {
     const candidate = run(makeInput({ radius: 8 }));
     const withUncertainArea = { ...candidate, estimatedAreaError: 0.02 };
-    const evidence = evaluateGroundGlassM5uPixelEvidence({
-      inputFingerprintsMatch: true,
-      analyticControlsPassed: true,
-      evidenceScope: "registered-app",
-      candidate: withUncertainArea,
-      baselineClassification: "evaluation-budget-exceeded",
-      baselineEvaluations: 250_000,
-      candidateEvaluations: candidate.integrandEvaluations,
-      baselineElapsedMs: 100,
-      candidateElapsedMs: 10,
-      independentComparisons: zeroIndependentComparisons,
-    });
+    const evidence = evaluateEvidence({ candidate: withUncertainArea });
     candidate.conditionalMeanRgb!.forEach((value, index) =>
       expect(value).toBeCloseTo([0.2, 0.4, 0.6][index]!, 6));
     expect(evidence.acceptedAreaStable).toBe(false);
@@ -288,23 +323,11 @@ describe("Ground Glass M5U texel-footprint quadrature", () => {
 
   it("N13: rejects a corrupted accepted-area comparison even when RGB agrees", () => {
     const candidate = run(makeInput({ radius: 8 }));
-    const evidence = evaluateGroundGlassM5uPixelEvidence({
-      inputFingerprintsMatch: true,
-      analyticControlsPassed: true,
-      evidenceScope: "registered-app",
-      candidate,
-      baselineClassification: "evaluation-budget-exceeded",
-      baselineEvaluations: 250_000,
-      candidateEvaluations: candidate.integrandEvaluations,
-      baselineElapsedMs: 100,
-      candidateElapsedMs: 10,
-      independentComparisons: [
-        { reference: "m5t-fixed-grid-512", status: "measured", rgbRmse: 0,
-          maximumChannelError: 0, acceptedAreaRelativeError: 0.1 },
-        { reference: "m5s-finite-sampling", status: "measured", rgbRmse: 0,
-          maximumChannelError: 0, acceptedAreaRelativeError: null },
-      ],
-    });
+    const comparisons = zeroIndependentComparisons(candidate.gatherPixelId).map((comparison) =>
+      comparison.reference === "m5t-fixed-grid-512"
+        ? { ...comparison, acceptedAreaRelativeError: 0.1 }
+        : comparison);
+    const evidence = evaluateEvidence({ candidate, independentComparisons: comparisons });
     expect(evidence.rgbStable).toBe(true);
     expect(evidence.acceptedAreaStable).toBe(false);
     expect(evidence.classification).toBe("unresolved");
@@ -331,22 +354,11 @@ describe("Ground Glass M5U texel-footprint quadrature", () => {
 
   it("N17: lower evaluation count cannot overrule independent RGB disagreement", () => {
     const candidate = run(makeInput({ radius: 8 }));
-    const evidence = evaluateGroundGlassM5uPixelEvidence({
-      inputFingerprintsMatch: true,
-      analyticControlsPassed: true,
-      evidenceScope: "registered-app",
-      candidate,
-      baselineClassification: "evaluation-budget-exceeded",
-      baselineEvaluations: 250_000,
-      candidateEvaluations: candidate.integrandEvaluations,
-      baselineElapsedMs: 100,
-      candidateElapsedMs: 1,
-      independentComparisons: [
-        ...zeroIndependentComparisons.slice(0, 1),
-        { reference: "m5s-finite-sampling", status: "measured", rgbRmse: 0.1,
-          maximumChannelError: 0.2, acceptedAreaRelativeError: 0 },
-      ],
-    });
+    const comparisons = zeroIndependentComparisons(candidate.gatherPixelId).map((comparison, index) =>
+      comparison.reference === "m5s-finite-sampling" && index === 1
+        ? { ...comparison, rgbRmse: 0.1, maximumChannelError: 0.2 }
+        : comparison);
+    const evidence = evaluateEvidence({ candidate, independentComparisons: comparisons });
     expect(evidence.evaluationReductionRatio).toBeGreaterThan(0.99);
     expect(evidence.rgbStable).toBe(false);
     expect(evidence.classification).toBe("unresolved");
@@ -354,20 +366,15 @@ describe("Ground Glass M5U texel-footprint quadrature", () => {
 
   it("N18: agreement with the old adaptive estimate cannot overrule a failed analytic control", () => {
     const candidate = run(makeInput({ radius: 8 }));
-    const evidence = evaluateGroundGlassM5uPixelEvidence({
-      inputFingerprintsMatch: true,
+    const comparisons = zeroIndependentComparisons(candidate.gatherPixelId);
+    const evidence = evaluateEvidence({
       analyticControlsPassed: false,
-      evidenceScope: "registered-app",
       candidate,
-      baselineClassification: "evaluation-budget-exceeded",
-      baselineEvaluations: 250_000,
-      candidateEvaluations: candidate.integrandEvaluations,
-      baselineElapsedMs: 100,
-      candidateElapsedMs: 1,
       independentComparisons: [
-        { reference: "m5t-adaptive", status: "measured", rgbRmse: 0,
+        { reference: "m5t-adaptive", gatherPixelId: candidate.gatherPixelId,
+          inputFingerprints: evidenceFingerprints, status: "measured", rgbRmse: 0,
           maximumChannelError: 0, acceptedAreaRelativeError: 0 },
-        ...zeroIndependentComparisons,
+        ...comparisons,
       ],
     });
     expect(evidence.analyticControlsPassed).toBe(false);
@@ -377,50 +384,251 @@ describe("Ground Glass M5U texel-footprint quadrature", () => {
 
   it("N19: agreement with one finite M5S method cannot hide disagreement with another", () => {
     const candidate = run(makeInput({ radius: 8 }));
-    const evidence = evaluateGroundGlassM5uPixelEvidence({
-      inputFingerprintsMatch: true,
-      analyticControlsPassed: true,
-      evidenceScope: "registered-app",
-      candidate,
-      baselineClassification: "evaluation-budget-exceeded",
-      baselineEvaluations: 250_000,
-      candidateEvaluations: candidate.integrandEvaluations,
-      baselineElapsedMs: 100,
-      candidateElapsedMs: 1,
-      independentComparisons: [
-        { reference: "m5t-adaptive", status: "measured", rgbRmse: 0,
-          maximumChannelError: 0, acceptedAreaRelativeError: 0 },
-        { reference: "m5t-fixed-grid-512", status: "measured", rgbRmse: 0,
-          maximumChannelError: 0, acceptedAreaRelativeError: 0 },
-        { reference: "m5s-finite-sampling", status: "measured", rgbRmse: 0,
-          maximumChannelError: 0, acceptedAreaRelativeError: null },
-        { reference: "m5s-finite-sampling", status: "measured", rgbRmse: 0.1,
-          maximumChannelError: 0.2, acceptedAreaRelativeError: null },
-      ],
+    const comparisons = zeroIndependentComparisons(candidate.gatherPixelId).map((comparison, index) => {
+      if (comparison.reference === "m5s-finite-sampling" && index === 1) {
+        return { ...comparison, rgbRmse: 0.1, maximumChannelError: 0.2 };
+      }
+      return comparison;
     });
+    const evidence = evaluateEvidence({ candidate, independentComparisons: comparisons });
     expect(evidence.rgbStable).toBe(false);
     expect(evidence.classification).toBe("unresolved");
   });
 
   it("N20/N21/N24: partial and fixture-only results cannot support registered pixels, M5Q, M6 quality, or production", () => {
     const partial = run(makeInput({ radius: 20 }), 1);
-    const evidence = evaluateGroundGlassM5uPixelEvidence({
-      inputFingerprintsMatch: true,
-      analyticControlsPassed: true,
-      evidenceScope: "controlled-fixture",
-      candidate: partial,
-      baselineClassification: "evaluation-budget-exceeded",
-      baselineEvaluations: 250_000,
-      candidateEvaluations: partial.integrandEvaluations,
-      baselineElapsedMs: 100,
-      candidateElapsedMs: 10,
-      independentComparisons: zeroIndependentComparisons,
-    });
+    const evidence = evaluateEvidence({ candidate: partial, evidenceScope: "controlled-fixture" });
     expect(evidence.candidateResolved).toBe(false);
     expect(evidence.classification).toBe("unresolved");
     expect(evidence.m5qPromotionAllowed).toBe(false);
     expect(evidence.m6QualityPresentationAllowed).toBe(false);
     expect(evidence.productionWebGpuAllowed).toBe(false);
+  });
+
+  it("M5U-F1: requires and accepts the complete fixed-grid plus four-method M5S matrix", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const evidence = evaluateEvidence({ candidate });
+    expect(evidence.referenceMatrix).toMatchObject({
+      status: "complete", requiredReferenceCount: 5, measuredReferenceCount: 5,
+      missingReferences: [], unavailableReferences: [], duplicateIdentities: [], mismatchedIdentities: [],
+    });
+    expect(evidence.rgbStable).toBe(true);
+    expect(evidence.classification).toBe("supported");
+  });
+
+  it("M5U-F2/F10/F13: one unavailable M5S method stays unresolved without invalidating completed integration", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const comparisons = zeroIndependentComparisons(candidate.gatherPixelId).map((comparison, index) =>
+      comparison.reference === "m5s-finite-sampling" && index === 1
+        ? { ...comparison, status: "unavailable" as const, rgbRmse: null, maximumChannelError: null }
+        : comparison);
+    const evidence = evaluateEvidence({ candidate, independentComparisons: comparisons });
+    expect(evidence.candidateResolved).toBe(true);
+    expect(evidence.referenceMatrix.status).toBe("incomplete");
+    expect(evidence.referenceMatrix.unavailableReferences).toHaveLength(1);
+    expect(evidence.rgbStable).toBe(false);
+    expect(evidence.classification).toBe("unresolved");
+  });
+
+  it("M5U-F3/F4: omitted Halton or stratified seed 130363 cannot establish support", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const complete = zeroIndependentComparisons(candidate.gatherPixelId);
+    for (const omitted of [
+      (comparison: (typeof complete)[number]) => comparison.reference === "m5s-finite-sampling"
+        && comparison.descriptor.method === "halton-2-3-progressive",
+      (comparison: (typeof complete)[number]) => comparison.reference === "m5s-finite-sampling"
+        && comparison.descriptor.seed === 130363,
+    ]) {
+      const evidence = evaluateEvidence({ candidate, independentComparisons: complete.filter((item) => !omitted(item)) });
+      expect(evidence.rgbStable).toBe(false);
+      expect(evidence.referenceMatrix.status).toBe("incomplete");
+      expect(evidence.referenceMatrix.missingReferences).toHaveLength(1);
+      expect(evidence.classification).toBe("unresolved");
+    }
+  });
+
+  it("M5U-F5: duplicate seed identity is invalid and cannot stand in for the missing independent seed", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const complete = zeroIndependentComparisons(candidate.gatherPixelId);
+    const seedA = complete.find((item) => item.reference === "m5s-finite-sampling" && item.descriptor.seed === 104729)!;
+    const withoutSeedB = complete.filter((item) => !(item.reference === "m5s-finite-sampling"
+      && item.descriptor.seed === 130363));
+    const evidence = evaluateEvidence({ candidate, independentComparisons: [...withoutSeedB, { ...seedA }] });
+    expect(evidence.referenceMatrix.status).toBe("invalid-comparison");
+    expect(evidence.referenceMatrix.duplicateIdentities).toHaveLength(1);
+    expect(evidence.referenceMatrix.missingReferences).toHaveLength(1);
+    expect(evidence.classification).toBe("invalid-comparison");
+  });
+
+  it("M5U-F6/F7: incorrect sequence identity or sample count is rejected visibly", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const complete = zeroIndependentComparisons(candidate.gatherPixelId);
+    type M5sComparison = Extract<(typeof complete)[number], { reference: "m5s-finite-sampling" }>;
+    const golden = complete.find((item): item is M5sComparison => item.reference === "m5s-finite-sampling"
+      && item.descriptor.method === "golden-angle-count-dependent")!;
+    for (const mutated of [
+      { ...golden, descriptor: { ...golden.descriptor, sequenceId: "wrong-sequence" } },
+      { ...golden, descriptor: { ...golden.descriptor, sampleCount: 512 as const } },
+    ]) {
+      const evidence = evaluateEvidence({ candidate, independentComparisons: complete.map((item) => item === golden ? mutated : item) });
+      expect(evidence.referenceMatrix.status).toBe("invalid-comparison");
+      expect(evidence.referenceMatrix.mismatchedIdentities.length).toBeGreaterThan(0);
+      expect(evidence.classification).toBe("invalid-comparison");
+    }
+  });
+
+  it("M5U-F8/F9: nonfinite or null measured comparison metrics fail closed", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const complete = zeroIndependentComparisons(candidate.gatherPixelId);
+    const halton = complete.find((item) => item.reference === "m5s-finite-sampling"
+      && item.descriptor.method === "halton-2-3-progressive")!;
+    for (const mutated of [
+      { ...halton, rgbRmse: Number.NaN },
+      { ...halton, maximumChannelError: Number.POSITIVE_INFINITY },
+      { ...halton, rgbRmse: null },
+    ]) {
+      const evidence = evaluateEvidence({ candidate, independentComparisons: complete.map((item) => item === halton ? mutated : item) });
+      expect(evidence.referenceMatrix.status).toBe("invalid-comparison");
+      expect(evidence.rgbStable).toBe(false);
+      expect(evidence.classification).toBe("invalid-comparison");
+    }
+  });
+
+  it("M5U-F11: unavailable or mismatched historical adaptive output remains optional", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const adaptive = {
+      reference: "m5t-adaptive" as const,
+      gatherPixelId: candidate.gatherPixelId,
+      inputFingerprints: { ...evidenceFingerprints, depth: "unmatched-historical-diagnostic" },
+      status: "unavailable" as const,
+      rgbRmse: null,
+      maximumChannelError: null,
+      acceptedAreaRelativeError: null,
+    };
+    const evidence = evaluateEvidence({ candidate,
+      independentComparisons: [...zeroIndependentComparisons(candidate.gatherPixelId), adaptive] });
+    expect(evidence.referenceMatrix.status).toBe("complete");
+    expect(evidence.rgbStable).toBe(true);
+    expect(evidence.classification).toBe("supported");
+  });
+
+  it("M5U-F12: required evidence from mismatched pixel input provenance is invalid", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const comparisons = zeroIndependentComparisons(candidate.gatherPixelId).map((comparison) =>
+      comparison.reference === "m5s-finite-sampling" && comparison.descriptor.seed === 104729
+        ? { ...comparison, inputFingerprints: { ...evidenceFingerprints, depth: "stale-depth" } }
+        : comparison);
+    const evidence = evaluateEvidence({ candidate, independentComparisons: comparisons });
+    expect(evidence.referenceMatrix.status).toBe("invalid-comparison");
+    expect(evidence.referenceMatrix.mismatchedIdentities).toContain(
+      "seeded-stratified-square-to-disk:N1024:seed=104729:seeded-jittered-equal-area-square-grid-concentric-v1:input-fingerprints",
+    );
+    expect(evidence.classification).toBe("invalid-comparison");
+  });
+
+  it("M5U-F14: per-pixel reduction uses the matching R256 pixel's actual count", () => {
+    const result = run(makeInput({ radius: 8 }));
+    const candidate = { ...result, integrandEvaluations: 40 };
+    const evidence = evaluateEvidence({ candidate,
+      baselinePixel: { initialResolution: 256, gatherPixelId: result.gatherPixelId, actualPointEvaluations: 200_000 } });
+    expect(evidence.baselineActualPointEvaluations).toBe(200_000);
+    expect(evidence.candidateActualIntegrandEvaluations).toBe(40);
+    expect(evidence.evaluationReductionRatio).toBe(1 - 40 / 200_000);
+  });
+
+  it("M5U-F15/F16: extracts R256 actual pixel work, never batch charged calls", () => {
+    const result = run(makeInput({ radius: 8 }));
+    const baselinePixel = (gatherPixelId: number, actualPointEvaluations: number) => ({
+      gatherPixelId,
+      costBreakdown: { actualPointEvaluations },
+    });
+    const batch = {
+      initialResolution: 256,
+      pixels: [baselinePixel(0, 200_000), baselinePixel(1, 190_000)],
+      evaluatedPoints: 2_500_000,
+      costBreakdown: { actualPointEvaluations: 390_000, budgetChargedEvaluationUnits: 2_500_000 },
+    } as unknown as GroundGlassM5tQuadratureRun;
+    const extracted = getGroundGlassM5uR256BaselinePixelEvidence(batch, 1);
+    expect(extracted).toEqual({ initialResolution: 256, gatherPixelId: 1, actualPointEvaluations: 190_000 });
+    const candidate = { ...result, gatherPixelId: 1, integrandEvaluations: 40 };
+    const evidence = evaluateEvidence({ candidate, baselinePixel: extracted });
+    expect(evidence.evaluationReductionRatio).toBe(1 - 40 / 190_000);
+    expect(evidence.evaluationReductionRatio).not.toBe(1 - 40 / 2_500_000);
+  });
+
+  it("M5U-F17/F18: zero baseline yields no ratio and batch timing is never exposed as per-pixel time", () => {
+    const result = run(makeInput({ radius: 8 }));
+    const evidence = evaluateEvidence({ candidate: result,
+      baselinePixel: { initialResolution: 256, gatherPixelId: result.gatherPixelId, actualPointEvaluations: 0 } });
+    expect(evidence.evaluationReductionRatio).toBeNull();
+    expect(evidence.evaluationReductionUnavailableReason).toMatch(/zero actual point evaluations/);
+    expect("elapsedTimeRatio" in evidence).toBe(false);
+  });
+
+  it("M5U-F19: R256 per-pixel cost sums conserve the corresponding baseline and candidate batches", () => {
+    const base = run(makeInput({ radius: 8 }));
+    const evidence = [0, 1].map((gatherPixelId, index) => evaluateEvidence({
+      candidate: { ...base, gatherPixelId, integrandEvaluations: 40 + index },
+      independentComparisons: zeroIndependentComparisons(gatherPixelId),
+      baselinePixel: { initialResolution: 256, gatherPixelId, actualPointEvaluations: 200_000 + index },
+    }));
+    const summary = summarizeGroundGlassM5uR256Costs({
+      evidence,
+      expectedBaselineActualPointEvaluations: 400_001,
+      expectedCandidateActualIntegrandEvaluations: 81,
+    });
+    expect(summary.status).toBe("conserved");
+    expect(summary.evaluationReductionRatio).toBe(1 - 81 / 400_001);
+    expect(summarizeGroundGlassM5uR256Costs({ ...{
+      evidence,
+      expectedBaselineActualPointEvaluations: 400_002,
+      expectedCandidateActualIntegrandEvaluations: 81,
+    } }).status).toBe("mismatch");
+  });
+
+  it("M5U-F20/F21: classification counts conserve the 50-pixel population and cannot promote M5Q or production", () => {
+    const base = run(makeInput({ radius: 8 }));
+    const pixels = Array.from({ length: 50 }, (_, gatherPixelId) => evaluateEvidence({
+      candidate: { ...base, gatherPixelId },
+      independentComparisons: zeroIndependentComparisons(gatherPixelId),
+      baselinePixel: { initialResolution: 256, gatherPixelId, actualPointEvaluations: 200_000 },
+    }));
+    const counts = summarizeGroundGlassM5uEvidence(pixels);
+    expect(counts).toEqual({ pixelCount: 50, supported: 50, unresolved: 0, invalidComparison: 0, countsConserved: true });
+    const failedEvidence = evaluateEvidence({
+      candidate: base,
+      independentComparisons: zeroIndependentComparisons(base.gatherPixelId).filter((comparison) =>
+        comparison.reference !== "m5s-finite-sampling" || comparison.descriptor.seed !== 130363),
+    });
+    expect(failedEvidence.candidateResolved).toBe(true);
+    expect(failedEvidence.classification).toBe("unresolved");
+    expect(failedEvidence.m5qPromotionAllowed).toBe(false);
+    expect(failedEvidence.m6QualityPresentationAllowed).toBe(false);
+    expect(failedEvidence.productionWebGpuAllowed).toBe(false);
+  });
+
+  it("M5U-F22: serialized evidence preserves computed matrix, counts, and bounded disposition", () => {
+    const candidate = run(makeInput({ radius: 8 }));
+    const evidence = evaluateEvidence({ candidate });
+    const counts = summarizeGroundGlassM5uEvidence([evidence]);
+    const report = JSON.parse(JSON.stringify({
+      evidence: [evidence],
+      classificationCounts: counts,
+      researchClosure: { m5qPromotionAllowed: evidence.m5qPromotionAllowed,
+        m6QualityPresentationAllowed: evidence.m6QualityPresentationAllowed,
+        productionWebGpuAllowed: evidence.productionWebGpuAllowed },
+    })) as {
+      evidence: typeof evidence[];
+      classificationCounts: typeof counts;
+      researchClosure: { m5qPromotionAllowed: boolean; m6QualityPresentationAllowed: boolean; productionWebGpuAllowed: boolean };
+    };
+    expect(report.evidence[0]!.referenceMatrix.status).toBe("complete");
+    expect(report.evidence[0]!.classification).toBe("supported");
+    expect(report.classificationCounts.supported).toBe(1);
+    expect(report.classificationCounts.countsConserved).toBe(true);
+    expect(report.researchClosure).toEqual({
+      m5qPromotionAllowed: false, m6QualityPresentationAllowed: false, productionWebGpuAllowed: false,
+    });
   });
 
   it("N22/N23: leaves historical M5S anchors and frozen M5Q statuses untouched", () => {

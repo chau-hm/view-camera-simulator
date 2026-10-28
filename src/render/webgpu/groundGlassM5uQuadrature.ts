@@ -15,10 +15,19 @@ import {
 } from "./groundGlassApertureGatherReference";
 import {
   GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL,
+  GROUND_GLASS_M5T_FIXED_GRID_RESOLUTION,
   GROUND_GLASS_M5T_MAX_PIXELS_PER_STUDY,
   type GroundGlassM5tFarPixelEstimate,
   type GroundGlassM5tFarReferenceInput,
+  type GroundGlassM5tInputFingerprints,
+  type GroundGlassM5tQuadratureRun,
 } from "./groundGlassM5tQuadrature";
+import {
+  createGroundGlassM5sProposalStrategy,
+  fingerprintGroundGlassM5sProposalCoordinates,
+  GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION,
+  type GroundGlassM5sProposalDescriptor,
+} from "./groundGlassM5sReference";
 
 export const GROUND_GLASS_M5U_QUADRATURE_REVISION = "ground-glass-m5u-texel-footprint-area-v1" as const;
 export const GROUND_GLASS_M5U_AREA_PARTITION_TOLERANCE = 1e-8;
@@ -505,23 +514,120 @@ const makePixelResult = (
   };
 };
 
+export const GROUND_GLASS_M5U_REFERENCE_EVIDENCE_CONTRACT_REVISION =
+  "m5u-independent-reference-matrix-v1" as const;
+export const GROUND_GLASS_M5U_COST_ACCOUNTING_REVISION = "m5u-same-pixel-r256-actual-v1" as const;
+
+export type GroundGlassM5uRequiredM5sReference = Readonly<{
+  descriptor: GroundGlassM5sProposalDescriptor;
+  proposalCoordinateFingerprint: string;
+}>;
+
+const requiredM5sReferenceSpecs = [
+  { method: "golden-angle-count-dependent", seed: undefined },
+  { method: "halton-2-3-progressive", seed: undefined },
+  { method: "seeded-stratified-square-to-disk", seed: 104729 },
+  { method: "seeded-stratified-square-to-disk", seed: 130363 },
+] as const;
+
+/** Expected identities are derived from the M5S strategy contract itself. */
+export const getGroundGlassM5uRequiredM5sReferences = (): readonly GroundGlassM5uRequiredM5sReference[] =>
+  Object.freeze(requiredM5sReferenceSpecs.map((spec) => {
+    const strategy = createGroundGlassM5sProposalStrategy({
+      method: spec.method,
+      sampleCount: 1024,
+      ...(spec.seed === undefined ? {} : { seed: spec.seed }),
+    });
+    return Object.freeze({
+      descriptor: strategy.descriptor,
+      proposalCoordinateFingerprint: fingerprintGroundGlassM5sProposalCoordinates(strategy),
+    });
+  }));
+
 export type GroundGlassM5uReferenceComparison = Readonly<{
-  reference: "m5t-adaptive" | "m5t-fixed-grid-512" | "m5s-finite-sampling";
+  reference: "m5t-adaptive";
+  gatherPixelId: number;
+  inputFingerprints: GroundGlassM5tInputFingerprints;
   status: "measured" | "unavailable";
   rgbRmse: number | null;
   maximumChannelError: number | null;
   acceptedAreaRelativeError: number | null;
+}> | Readonly<{
+  reference: "m5t-fixed-grid-512";
+  gatherPixelId: number;
+  inputFingerprints: GroundGlassM5tInputFingerprints;
+  status: "measured" | "unavailable";
+  rgbRmse: number | null;
+  maximumChannelError: number | null;
+  acceptedAreaRelativeError: number | null;
+  fixedGrid: Readonly<{
+    algorithm: "ground-glass-m5t-fixed-midpoint-v1";
+    method: "independent-square-grid-midpoint";
+    resolution: typeof GROUND_GLASS_M5T_FIXED_GRID_RESOLUTION;
+  }>;
+}> | Readonly<{
+  reference: "m5s-finite-sampling";
+  gatherPixelId: number;
+  inputFingerprints: GroundGlassM5tInputFingerprints;
+  status: "measured" | "unavailable";
+  rgbRmse: number | null;
+  maximumChannelError: number | null;
+  acceptedAreaRelativeError: null;
+  descriptor: GroundGlassM5sProposalDescriptor;
+  proposalCoordinateFingerprint: string;
 }>;
 
+export type GroundGlassM5uReferenceMatrixEvidence = Readonly<{
+  status: "complete" | "incomplete" | "invalid-comparison";
+  requiredReferenceCount: 5;
+  measuredReferenceCount: number;
+  missingReferences: readonly string[];
+  unavailableReferences: readonly string[];
+  duplicateIdentities: readonly string[];
+  mismatchedIdentities: readonly string[];
+  overLimitReferences: readonly string[];
+  rgbOverLimitReferences: readonly string[];
+  acceptedAreaOverLimitReferences: readonly string[];
+}>;
+
+export type GroundGlassM5uBaselinePixelEvidence = Readonly<{
+  initialResolution: number;
+  gatherPixelId: number;
+  actualPointEvaluations: number;
+}>;
+
+/** Extracts one pixel's actual count from its R256 batch, never the batch total. */
+export const getGroundGlassM5uR256BaselinePixelEvidence = (
+  run: GroundGlassM5tQuadratureRun,
+  gatherPixelId: number,
+): GroundGlassM5uBaselinePixelEvidence | null => {
+  if (run.initialResolution !== 256) return null;
+  const matches = run.pixels.filter((pixel) => pixel.gatherPixelId === gatherPixelId);
+  if (matches.length !== 1) return null;
+  const pixel = matches[0]!;
+  if (!Number.isSafeInteger(pixel.costBreakdown.actualPointEvaluations)
+      || pixel.costBreakdown.actualPointEvaluations < 0) return null;
+  return {
+    initialResolution: run.initialResolution,
+    gatherPixelId: pixel.gatherPixelId,
+    actualPointEvaluations: pixel.costBreakdown.actualPointEvaluations,
+  };
+};
+
 export type GroundGlassM5uPixelEvidence = Readonly<{
+  evidenceId: string;
+  gatherPixelId: number;
   classification: "supported" | "unresolved" | "invalid-comparison";
   inputProvenance: "matched" | "mismatched";
   analyticControlsPassed: boolean;
   acceptedAreaStable: boolean;
   rgbStable: boolean;
   independentReferenceCount: number;
+  referenceMatrix: GroundGlassM5uReferenceMatrixEvidence;
+  baselineActualPointEvaluations: number | null;
+  candidateActualIntegrandEvaluations: number | null;
   evaluationReductionRatio: number | null;
-  elapsedTimeRatio: number | null;
+  evaluationReductionUnavailableReason: string | null;
   candidateResolved: boolean;
   newlyResolved: boolean;
   reasons: readonly string[];
@@ -530,17 +636,87 @@ export type GroundGlassM5uPixelEvidence = Readonly<{
   productionWebGpuAllowed: false;
 }>;
 
+export type GroundGlassM5uEvidenceCounts = Readonly<{
+  pixelCount: number;
+  supported: number;
+  unresolved: number;
+  invalidComparison: number;
+  countsConserved: boolean;
+}>;
+
+/** Derives report counts only from per-pixel evaluator outcomes. */
+export const summarizeGroundGlassM5uEvidence = (
+  evidence: readonly GroundGlassM5uPixelEvidence[],
+): GroundGlassM5uEvidenceCounts => {
+  const supported = evidence.filter((pixel) => pixel.classification === "supported").length;
+  const unresolved = evidence.filter((pixel) => pixel.classification === "unresolved").length;
+  const invalidComparison = evidence.filter((pixel) => pixel.classification === "invalid-comparison").length;
+  return {
+    pixelCount: evidence.length,
+    supported,
+    unresolved,
+    invalidComparison,
+    countsConserved: supported + unresolved + invalidComparison === evidence.length,
+  };
+};
+
+export type GroundGlassM5uR256CostSummary = Readonly<{
+  status: "conserved" | "incomplete" | "mismatch";
+  pixelCount: number;
+  baselineActualPointEvaluations: number | null;
+  candidateActualIntegrandEvaluations: number | null;
+  expectedBaselineActualPointEvaluations: number;
+  expectedCandidateActualIntegrandEvaluations: number;
+  evaluationReductionRatio: number | null;
+}>;
+
+/** Ensures same-pixel R256 evidence sums reconcile with their source batches. */
+export const summarizeGroundGlassM5uR256Costs = (input: Readonly<{
+  evidence: readonly GroundGlassM5uPixelEvidence[];
+  expectedBaselineActualPointEvaluations: number;
+  expectedCandidateActualIntegrandEvaluations: number;
+}>): GroundGlassM5uR256CostSummary => {
+  const validExpected = groundGlassM5uIsValidCount(input.expectedBaselineActualPointEvaluations)
+    && groundGlassM5uIsValidCount(input.expectedCandidateActualIntegrandEvaluations);
+  const ids = input.evidence.map((pixel) => `${pixel.evidenceId}:${pixel.gatherPixelId}`);
+  const completePixels = input.evidence.length > 0
+    && new Set(ids).size === ids.length
+    && input.evidence.every((pixel) => groundGlassM5uIsValidCount(pixel.baselineActualPointEvaluations ?? NaN)
+      && groundGlassM5uIsValidCount(pixel.candidateActualIntegrandEvaluations ?? NaN)
+      && pixel.evaluationReductionRatio !== null);
+  const baselineTotal = completePixels
+    ? input.evidence.reduce((sum, pixel) => sum + pixel.baselineActualPointEvaluations!, 0)
+    : null;
+  const candidateTotal = completePixels
+    ? input.evidence.reduce((sum, pixel) => sum + pixel.candidateActualIntegrandEvaluations!, 0)
+    : null;
+  const conserved = validExpected && completePixels
+    && baselineTotal === input.expectedBaselineActualPointEvaluations
+    && candidateTotal === input.expectedCandidateActualIntegrandEvaluations;
+  const mismatch = validExpected && completePixels && !conserved;
+  return {
+    status: !validExpected ? "incomplete" : mismatch ? "mismatch" : conserved ? "conserved" : "incomplete",
+    pixelCount: input.evidence.length,
+    baselineActualPointEvaluations: baselineTotal,
+    candidateActualIntegrandEvaluations: candidateTotal,
+    expectedBaselineActualPointEvaluations: input.expectedBaselineActualPointEvaluations,
+    expectedCandidateActualIntegrandEvaluations: input.expectedCandidateActualIntegrandEvaluations,
+    evaluationReductionRatio: conserved && baselineTotal! > 0
+      ? 1 - candidateTotal! / baselineTotal! : null,
+  };
+};
+
 /** A bounded evidence gate: efficiency never overrides provenance or error evidence. */
 export const evaluateGroundGlassM5uPixelEvidence = (input: Readonly<{
+  evidenceId: string;
   inputFingerprintsMatch: boolean;
+  expectedInputFingerprints: GroundGlassM5tInputFingerprints;
+  candidateInputFingerprints: GroundGlassM5tInputFingerprints;
   analyticControlsPassed: boolean;
   evidenceScope: "controlled-fixture" | "registered-app";
   candidate: GroundGlassM5uPixelResult;
   baselineClassification: GroundGlassM5tFarPixelEstimate["classification"];
-  baselineEvaluations: number;
-  candidateEvaluations: number;
-  baselineElapsedMs: number;
-  candidateElapsedMs: number;
+  baselinePixel: GroundGlassM5uBaselinePixelEvidence | null;
   independentComparisons: readonly GroundGlassM5uReferenceComparison[];
   acceptedAreaRelativeLimit?: number;
   rgbRmseLimit?: number;
@@ -550,61 +726,227 @@ export const evaluateGroundGlassM5uPixelEvidence = (input: Readonly<{
   const rgbRmseLimit = input.rgbRmseLimit ?? 0.001;
   const rgbMaximumErrorLimit = input.rgbMaximumErrorLimit ?? 0.01;
   const reasons: string[] = [];
+  const requiredM5sReferences = getGroundGlassM5uRequiredM5sReferences();
+  const missingReferences: string[] = [];
+  const unavailableReferences: string[] = [];
+  const duplicateIdentities: string[] = [];
+  const mismatchedIdentities: string[] = [];
+  const overLimitReferences: string[] = [];
+  const rgbOverLimitReferences: string[] = [];
+  const acceptedAreaOverLimitReferences: string[] = [];
+  const measuredReferenceIds = new Set<string>();
+  let invalidComparison = !input.evidenceId.trim()
+    || !input.inputFingerprintsMatch
+    || !groundGlassM5uInputFingerprintsMatch(input.candidateInputFingerprints, input.expectedInputFingerprints);
+  if (!input.evidenceId.trim()) reasons.push("Per-pixel evidence identity is missing.");
+  if (!groundGlassM5uFingerprintsAreValid(input.expectedInputFingerprints)
+      || !groundGlassM5uFingerprintsAreValid(input.candidateInputFingerprints)) {
+    invalidComparison = true;
+    reasons.push("Expected or candidate input fingerprints are missing or blank.");
+  }
+  if (!input.inputFingerprintsMatch) {
+    reasons.push("Full32/Full64 input fingerprints differ; this is not a valid numerical comparison.");
+  }
+  if (!groundGlassM5uInputFingerprintsMatch(input.candidateInputFingerprints, input.expectedInputFingerprints)) {
+    invalidComparison = true;
+    reasons.push("M5U candidate input provenance does not match the expected captured input.");
+  }
   const finiteCandidate = Number.isFinite(input.candidate.acceptedAreaEstimate)
     && Number.isFinite(input.candidate.estimatedAreaError)
     && input.candidate.estimatedColorErrorRgb.every(Number.isFinite)
     && input.candidate.conditionalMeanRgb?.every(Number.isFinite) === true;
-  const measuredComparisons = input.independentComparisons.filter(({ reference, status }) =>
-    status === "measured" && reference !== "m5t-adaptive");
-  const hasFixedGrid = measuredComparisons.some(({ reference }) => reference === "m5t-fixed-grid-512");
-  const hasM5s = measuredComparisons.some(({ reference }) => reference === "m5s-finite-sampling");
-  const comparisonsFinite = measuredComparisons.length > 0 && measuredComparisons.every((comparison) =>
-    Number.isFinite(comparison.rgbRmse) && Number.isFinite(comparison.maximumChannelError));
-  const comparisonsWithinLimits = comparisonsFinite && measuredComparisons.every((comparison) =>
-    comparison.rgbRmse! <= rgbRmseLimit
-    && comparison.maximumChannelError! <= rgbMaximumErrorLimit);
-  const areaComparisons = input.independentComparisons.filter(({ reference, status, acceptedAreaRelativeError }) =>
-    reference === "m5t-fixed-grid-512" && status === "measured"
-    && Number.isFinite(acceptedAreaRelativeError));
-  const areaWithinLimits = areaComparisons.length > 0 && areaComparisons.every(({ acceptedAreaRelativeError }) =>
-    acceptedAreaRelativeError! <= acceptedAreaRelativeLimit);
+  const fixedGridComparisons = input.independentComparisons.filter((comparison) =>
+    comparison.reference === "m5t-fixed-grid-512");
+  let fixedGridMeasured: Extract<GroundGlassM5uReferenceComparison, { reference: "m5t-fixed-grid-512" }> | null = null;
+  if (fixedGridComparisons.length === 0) {
+    missingReferences.push("m5t-fixed-grid-512");
+  } else if (fixedGridComparisons.length > 1) {
+    duplicateIdentities.push("m5t-fixed-grid-512");
+    invalidComparison = true;
+  } else {
+    const fixed = fixedGridComparisons[0]!;
+    if (fixed.gatherPixelId !== input.candidate.gatherPixelId) {
+      mismatchedIdentities.push(`m5t-fixed-grid-512:gatherPixelId=${fixed.gatherPixelId}`);
+      invalidComparison = true;
+    }
+    if (!groundGlassM5uInputFingerprintsMatch(fixed.inputFingerprints, input.expectedInputFingerprints)) {
+      mismatchedIdentities.push("m5t-fixed-grid-512:input-fingerprints");
+      invalidComparison = true;
+    }
+    if (fixed.fixedGrid.algorithm !== "ground-glass-m5t-fixed-midpoint-v1"
+        || fixed.fixedGrid.method !== "independent-square-grid-midpoint"
+        || fixed.fixedGrid.resolution !== GROUND_GLASS_M5T_FIXED_GRID_RESOLUTION) {
+      mismatchedIdentities.push("m5t-fixed-grid-512:fixed-grid-descriptor");
+      invalidComparison = true;
+    }
+    if (fixed.status === "unavailable") {
+      unavailableReferences.push("m5t-fixed-grid-512");
+    } else if (!groundGlassM5uComparisonMetricsAreFinite(fixed)
+        || !Number.isFinite(fixed.acceptedAreaRelativeError)
+        || fixed.acceptedAreaRelativeError! < 0) {
+      mismatchedIdentities.push("m5t-fixed-grid-512:missing-or-nonfinite-metric");
+      invalidComparison = true;
+    } else {
+      fixedGridMeasured = fixed;
+      measuredReferenceIds.add("m5t-fixed-grid-512");
+      if (fixed.rgbRmse > rgbRmseLimit || fixed.maximumChannelError > rgbMaximumErrorLimit) {
+        overLimitReferences.push("m5t-fixed-grid-512");
+        rgbOverLimitReferences.push("m5t-fixed-grid-512");
+      }
+      if (fixed.acceptedAreaRelativeError! > acceptedAreaRelativeLimit) {
+        overLimitReferences.push("m5t-fixed-grid-512:accepted-area");
+        acceptedAreaOverLimitReferences.push("m5t-fixed-grid-512");
+      }
+    }
+  }
+
+  const m5sComparisons = input.independentComparisons.filter((comparison) =>
+    comparison.reference === "m5s-finite-sampling");
+  const matchedM5s = new Set<GroundGlassM5uReferenceComparison>();
+  for (const required of requiredM5sReferences) {
+    const label = groundGlassM5uM5sReferenceLabel(required.descriptor);
+    const descriptorMatches = m5sComparisons.filter((comparison) =>
+      groundGlassM5uDescriptorMatches(comparison.descriptor, required.descriptor));
+    const exactMatches = descriptorMatches.filter((comparison) =>
+      comparison.proposalCoordinateFingerprint === required.proposalCoordinateFingerprint);
+    if (exactMatches.length > 1) {
+      duplicateIdentities.push(label);
+      invalidComparison = true;
+      exactMatches.forEach((comparison) => matchedM5s.add(comparison));
+      continue;
+    }
+    if (exactMatches.length === 0) {
+      if (descriptorMatches.length > 0) {
+        mismatchedIdentities.push(`${label}:proposal-coordinate-fingerprint`);
+        invalidComparison = true;
+        descriptorMatches.forEach((comparison) => matchedM5s.add(comparison));
+      } else {
+        const partialMatches = m5sComparisons.filter((comparison) =>
+          comparison.descriptor.method === required.descriptor.method
+          && comparison.descriptor.seed === required.descriptor.seed
+          && comparison.descriptor.sampleCount === required.descriptor.sampleCount);
+        if (partialMatches.length > 0) {
+          mismatchedIdentities.push(`${label}:descriptor`);
+          invalidComparison = true;
+          partialMatches.forEach((comparison) => matchedM5s.add(comparison));
+        } else {
+          missingReferences.push(label);
+        }
+      }
+      continue;
+    }
+    const comparison = exactMatches[0]!;
+    matchedM5s.add(comparison);
+    if (comparison.gatherPixelId !== input.candidate.gatherPixelId) {
+      mismatchedIdentities.push(`${label}:gatherPixelId=${comparison.gatherPixelId}`);
+      invalidComparison = true;
+    }
+    if (!groundGlassM5uInputFingerprintsMatch(comparison.inputFingerprints, input.expectedInputFingerprints)) {
+      mismatchedIdentities.push(`${label}:input-fingerprints`);
+      invalidComparison = true;
+    }
+    if (comparison.status === "unavailable") {
+      unavailableReferences.push(label);
+    } else if (!groundGlassM5uComparisonMetricsAreFinite(comparison)) {
+      mismatchedIdentities.push(`${label}:missing-or-nonfinite-metric`);
+      invalidComparison = true;
+    } else {
+      measuredReferenceIds.add(label);
+      if (comparison.rgbRmse > rgbRmseLimit || comparison.maximumChannelError > rgbMaximumErrorLimit) {
+        overLimitReferences.push(label);
+        rgbOverLimitReferences.push(label);
+      }
+    }
+  }
+  for (const comparison of m5sComparisons) {
+    if (!matchedM5s.has(comparison)) {
+      mismatchedIdentities.push(`unexpected:${groundGlassM5uM5sReferenceLabel(comparison.descriptor)}`);
+      invalidComparison = true;
+    }
+  }
+  // Historical M5T adaptive output is retained as optional diagnostic evidence,
+  // and is deliberately excluded from M5U qualification and completeness.
+  const requiredComparisonsComplete = missingReferences.length === 0
+    && unavailableReferences.length === 0
+    && duplicateIdentities.length === 0
+    && mismatchedIdentities.length === 0
+    && measuredReferenceIds.size === 5;
+  const referenceMatrix: GroundGlassM5uReferenceMatrixEvidence = {
+    status: invalidComparison ? "invalid-comparison"
+      : requiredComparisonsComplete ? "complete" : "incomplete",
+    requiredReferenceCount: 5,
+    measuredReferenceCount: measuredReferenceIds.size,
+    missingReferences,
+    unavailableReferences,
+    duplicateIdentities,
+    mismatchedIdentities,
+    overLimitReferences,
+    rgbOverLimitReferences,
+    acceptedAreaOverLimitReferences,
+  };
   const acceptedAreaStable = finiteCandidate
     && input.candidate.classification === "integrated"
     && input.candidate.unresolvedArea <= GROUND_GLASS_M5U_AREA_PARTITION_TOLERANCE
     && input.candidate.estimatedAreaError <= acceptedAreaRelativeLimit * Math.max(input.candidate.acceptedAreaEstimate, 1e-12)
-    && hasFixedGrid
-    && areaWithinLimits;
-  const rgbStable = finiteCandidate && comparisonsWithinLimits && hasFixedGrid && hasM5s;
+    && fixedGridMeasured !== null
+    && Number.isFinite(fixedGridMeasured.acceptedAreaRelativeError)
+    && fixedGridMeasured.acceptedAreaRelativeError! <= acceptedAreaRelativeLimit;
+  const rgbStable = finiteCandidate
+    && requiredComparisonsComplete
+    && rgbOverLimitReferences.length === 0;
   const candidateResolved = input.candidate.classification === "integrated"
     && finiteCandidate
     && input.candidate.unresolvedArea <= GROUND_GLASS_M5U_AREA_PARTITION_TOLERANCE;
   const newlyResolved = candidateResolved && input.baselineClassification === "evaluation-budget-exceeded";
-  if (!input.inputFingerprintsMatch) reasons.push("Input fingerprints differ; this is not a valid numerical comparison.");
   if (!input.analyticControlsPassed) reasons.push("One or more analytic controls failed.");
   if (!finiteCandidate) reasons.push("Candidate output or uncertainty metrics are missing or non-finite.");
   if (!candidateResolved) reasons.push("Candidate did not completely integrate this pixel within its declared area bound.");
   if (!acceptedAreaStable) reasons.push("Accepted-area stability is unresolved against independent evidence.");
-  if (!rgbStable) reasons.push("RGB agreement is unresolved against the fixed grid and M5S evidence.");
+  if (!rgbStable) reasons.push("RGB agreement is unresolved against the required fixed-grid and four-method M5S matrix.");
+  if (missingReferences.length > 0) reasons.push(`Required independent comparisons are missing: ${missingReferences.join(", ")}.`);
+  if (unavailableReferences.length > 0) reasons.push(`Required independent comparisons are unavailable: ${unavailableReferences.join(", ")}.`);
+  if (duplicateIdentities.length > 0) reasons.push(`Independent comparison identities are duplicated: ${duplicateIdentities.join(", ")}.`);
+  if (mismatchedIdentities.length > 0) reasons.push(`Independent comparison identities or provenance do not match: ${mismatchedIdentities.join(", ")}.`);
+  if (overLimitReferences.length > 0) reasons.push(`Independent comparisons exceed declared limits: ${overLimitReferences.join(", ")}.`);
   if (input.evidenceScope !== "registered-app") reasons.push("Controlled fixtures cannot establish registered-app support.");
-  const classification: GroundGlassM5uPixelEvidence["classification"] = !input.inputFingerprintsMatch
+  const classification: GroundGlassM5uPixelEvidence["classification"] = invalidComparison
     ? "invalid-comparison"
     : input.analyticControlsPassed && acceptedAreaStable && rgbStable && candidateResolved
       && input.evidenceScope === "registered-app" ? "supported" : "unresolved";
-  const evaluationReductionRatio = Number.isFinite(input.baselineEvaluations)
-    && Number.isFinite(input.candidateEvaluations) && input.baselineEvaluations > 0
-    ? 1 - input.candidateEvaluations / input.baselineEvaluations : null;
-  const elapsedTimeRatio = Number.isFinite(input.baselineElapsedMs)
-    && Number.isFinite(input.candidateElapsedMs) && input.baselineElapsedMs > 0
-    ? input.candidateElapsedMs / input.baselineElapsedMs : null;
+  const baselineActualPointEvaluations = input.baselinePixel
+    && groundGlassM5uIsValidCount(input.baselinePixel.actualPointEvaluations)
+    ? input.baselinePixel.actualPointEvaluations : null;
+  const candidateActualIntegrandEvaluations = groundGlassM5uIsValidCount(input.candidate.integrandEvaluations)
+    ? input.candidate.integrandEvaluations : null;
+  let evaluationReductionUnavailableReason: string | null = null;
+  if (!input.baselinePixel) evaluationReductionUnavailableReason = "Matching M5T baseline pixel evidence is unavailable.";
+  else if (input.baselinePixel.initialResolution !== 256) {
+    evaluationReductionUnavailableReason = "Per-pixel baseline must use the matching M5T R256 result.";
+  } else if (input.baselinePixel.gatherPixelId !== input.candidate.gatherPixelId) {
+    evaluationReductionUnavailableReason = "M5T baseline and M5U candidate gather-pixel identities differ.";
+  } else if (baselineActualPointEvaluations === null || candidateActualIntegrandEvaluations === null) {
+    evaluationReductionUnavailableReason = "Per-pixel actual evaluation counts must be finite nonnegative safe integers.";
+  } else if (baselineActualPointEvaluations === 0) {
+    evaluationReductionUnavailableReason = "The M5T R256 pixel has zero actual point evaluations.";
+  }
+  const evaluationReductionRatio = evaluationReductionUnavailableReason === null
+    ? 1 - candidateActualIntegrandEvaluations! / baselineActualPointEvaluations!
+    : null;
+  if (evaluationReductionUnavailableReason) reasons.push(evaluationReductionUnavailableReason);
   return {
+    evidenceId: input.evidenceId,
+    gatherPixelId: input.candidate.gatherPixelId,
     classification,
     inputProvenance: input.inputFingerprintsMatch ? "matched" : "mismatched",
     analyticControlsPassed: input.analyticControlsPassed,
     acceptedAreaStable,
     rgbStable,
-    independentReferenceCount: measuredComparisons.length,
+    independentReferenceCount: measuredReferenceIds.size,
+    referenceMatrix,
+    baselineActualPointEvaluations,
+    candidateActualIntegrandEvaluations,
     evaluationReductionRatio,
-    elapsedTimeRatio,
+    evaluationReductionUnavailableReason,
     candidateResolved,
     newlyResolved,
     reasons,
@@ -613,6 +955,43 @@ export const evaluateGroundGlassM5uPixelEvidence = (input: Readonly<{
     productionWebGpuAllowed: false,
   };
 };
+
+const groundGlassM5uFingerprintsAreValid = (
+  value: GroundGlassM5tInputFingerprints,
+): boolean => [value.sourceColor, value.depth, value.physical, value.validity]
+  .every((entry) => typeof entry === "string" && entry.trim().length > 0);
+
+const groundGlassM5uInputFingerprintsMatch = (
+  actual: GroundGlassM5tInputFingerprints,
+  expected: GroundGlassM5tInputFingerprints,
+): boolean => groundGlassM5uFingerprintsAreValid(actual)
+  && groundGlassM5uFingerprintsAreValid(expected)
+  && actual.sourceColor === expected.sourceColor
+  && actual.depth === expected.depth
+  && actual.physical === expected.physical
+  && actual.validity === expected.validity;
+
+const groundGlassM5uComparisonMetricsAreFinite = (
+  comparison: Pick<GroundGlassM5uReferenceComparison, "rgbRmse" | "maximumChannelError">,
+): comparison is typeof comparison & { rgbRmse: number; maximumChannelError: number } =>
+  Number.isFinite(comparison.rgbRmse) && comparison.rgbRmse! >= 0
+  && Number.isFinite(comparison.maximumChannelError) && comparison.maximumChannelError! >= 0;
+
+const groundGlassM5uIsValidCount = (value: number): boolean => Number.isSafeInteger(value) && value >= 0;
+
+const groundGlassM5uDescriptorMatches = (
+  actual: GroundGlassM5sProposalDescriptor,
+  expected: GroundGlassM5sProposalDescriptor,
+): boolean => actual.method === expected.method
+  && actual.sequenceId === expected.sequenceId
+  && actual.algorithmRevision === expected.algorithmRevision
+  && actual.sampleCount === expected.sampleCount
+  && actual.seed === expected.seed
+  && actual.progressivePrefix === expected.progressivePrefix
+  && actual.algorithmRevision === GROUND_GLASS_M5S_PROPOSAL_ALGORITHM_REVISION;
+
+const groundGlassM5uM5sReferenceLabel = (descriptor: GroundGlassM5sProposalDescriptor): string =>
+  `${descriptor.method}:N${descriptor.sampleCount}:seed=${descriptor.seed ?? "none"}:${descriptor.sequenceId}`;
 
 export const runGroundGlassM5uQuadrature = (input: Readonly<{
   referenceInput: GroundGlassM5tFarReferenceInput;

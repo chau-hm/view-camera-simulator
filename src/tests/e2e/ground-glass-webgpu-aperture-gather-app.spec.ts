@@ -71,8 +71,14 @@ import {
   validateGroundGlassM5tRoiSelection,
 } from "../../render/webgpu/groundGlassM5tSpatialBlurAnalysis";
 import {
+  GROUND_GLASS_M5U_COST_ACCOUNTING_REVISION,
+  GROUND_GLASS_M5U_REFERENCE_EVIDENCE_CONTRACT_REVISION,
   evaluateGroundGlassM5uPixelEvidence,
+  getGroundGlassM5uR256BaselinePixelEvidence,
+  getGroundGlassM5uRequiredM5sReferences,
   runGroundGlassM5uQuadrature,
+  summarizeGroundGlassM5uEvidence,
+  summarizeGroundGlassM5uR256Costs,
 } from "../../render/webgpu/groundGlassM5uQuadrature";
 import {
   evaluateGroundGlassApertureGatherR3,
@@ -3892,7 +3898,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
             costBreakdown.budgetChargedEvaluationUnits <= GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL)).toBe(true);
           repeats.push({
             repeat,
-            elapsedMs: run.elapsedMs,
+            batchElapsedMs: run.elapsedMs,
             evaluatedPoints: run.evaluatedPoints,
             costBreakdown: run.costBreakdown,
             pixels: run.pixels.map((pixel) => ({
@@ -3907,7 +3913,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
             })),
           });
         }
-        const elapsed = repeats.map((value) => (value as { elapsedMs: number }).elapsedMs).sort((a, b) => a - b);
+        const elapsed = repeats.map((value) => (value as { batchElapsedMs: number }).batchElapsedMs).sort((a, b) => a - b);
         baselineRecords.push({
           role: roleSpec.role,
           stratumId: stratum.id,
@@ -3916,7 +3922,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
           m5uSensitivityOnlyWhenBelow32: initialResolution < 32,
           evaluationBudgetPerPixel: GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL,
           repeatCount,
-          medianElapsedMs: elapsed[Math.floor(elapsed.length / 2)],
+          medianBatchElapsedMs: elapsed[Math.floor(elapsed.length / 2)],
           repeats,
         });
       }
@@ -3947,7 +3953,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
       perPixelEvaluationBudget: GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL,
     },
     strategySelectionRule: {
-      strategyBTrigger: "Evaluate Strategy B only if Strategy A fails to reduce actual integrand evaluations by at least 90%, has median CPU elapsedTimeRatio > 1.0, or fails to integrate every diagnostic pixel within the declared area bound.",
+      strategyBTrigger: "Evaluate Strategy B only if Strategy A fails to reduce actual integrand evaluations by at least 90%, has a two-pixel batch median elapsed-time ratio > 1.0, or fails to integrate every diagnostic pixel within the declared area bound.",
       minimumActualIntegrandEvaluationReductionRatio: 0.9,
       maximumMedianElapsedTimeRatio: 1,
       requiredDiagnosticPixelClassification: "integrated",
@@ -3962,20 +3968,20 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
         const value = record as { role: string; stratumId: string; initialResolution: number };
         return value.role === roleInput.roleSpec.role && value.stratumId === stratum.id
           && value.initialResolution === 32;
-      }) as { repeats: readonly { elapsedMs: number; evaluatedPoints: number;
-        costBreakdown: { actualPointEvaluations: number } }[]; medianElapsedMs: number } | undefined;
+      }) as { repeats: readonly { batchElapsedMs: number; evaluatedPoints: number;
+        costBreakdown: { actualPointEvaluations: number } }[]; medianBatchElapsedMs: number } | undefined;
       if (!baseline32) throw new Error(`M5U is missing the 32-grid baseline for ${stratum.id}`);
       const repeats = Array.from({ length: repeatCount }, (_, repeat) => {
         const run = runGroundGlassM5uQuadrature({ referenceInput: roleInput.input, selectedGatherPixelIds: ids });
         return {
           repeat,
-          elapsedMs: run.elapsedMs,
+          batchElapsedMs: run.elapsedMs,
           integrandEvaluations: run.integrandEvaluations,
           costBreakdown: run.costBreakdown,
           pixels: run.pixels,
         };
       });
-      const elapsed = repeats.map(({ elapsedMs }) => elapsedMs).sort((left, right) => left - right);
+      const elapsed = repeats.map(({ batchElapsedMs }) => batchElapsedMs).sort((left, right) => left - right);
       const candidateEvaluations = repeats[0]!.integrandEvaluations;
       strategyADiagnosticRecords.push({
         role: roleInput.roleSpec.role,
@@ -3988,16 +3994,16 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
         baselineResolution32: {
           evaluatedPoints: baseline32.repeats[0]!.evaluatedPoints,
           actualIntegrandEvaluations: baseline32.repeats[0]!.costBreakdown.actualPointEvaluations,
-          medianElapsedMs: baseline32.medianElapsedMs,
+          medianBatchElapsedMs: baseline32.medianBatchElapsedMs,
         },
         strategyA: {
           repeatCount,
-          medianElapsedMs: elapsed[Math.floor(elapsed.length / 2)],
+          medianBatchElapsedMs: elapsed[Math.floor(elapsed.length / 2)],
           candidateEvaluations,
-          evaluationReductionRatio: baseline32.repeats[0]!.costBreakdown.actualPointEvaluations > 0
+          twoPixelBatchEvaluationReductionRatio: baseline32.repeats[0]!.costBreakdown.actualPointEvaluations > 0
             ? 1 - candidateEvaluations / baseline32.repeats[0]!.costBreakdown.actualPointEvaluations : null,
-          elapsedTimeRatio: baseline32.medianElapsedMs > 0
-            ? elapsed[Math.floor(elapsed.length / 2)]! / baseline32.medianElapsedMs : null,
+          twoPixelBatchElapsedTimeRatio: baseline32.medianBatchElapsedMs > 0
+            ? elapsed[Math.floor(elapsed.length / 2)]! / baseline32.medianBatchElapsedMs : null,
           repeats,
         },
       });
@@ -4005,16 +4011,16 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
   }
   const strategyARecords = strategyADiagnosticRecords as readonly {
     strategyA: {
-      evaluationReductionRatio: number | null;
-      elapsedTimeRatio: number | null;
+      twoPixelBatchEvaluationReductionRatio: number | null;
+      twoPixelBatchElapsedTimeRatio: number | null;
       repeats: readonly { pixels: readonly { classification: string; unresolvedArea: number }[] }[];
     };
   }[];
   const strategyAAddressesDominantCost = strategyARecords.length === 5 && strategyARecords.every((record) =>
-    record.strategyA.evaluationReductionRatio !== null
-    && record.strategyA.evaluationReductionRatio >= 0.9
-    && record.strategyA.elapsedTimeRatio !== null
-    && record.strategyA.elapsedTimeRatio <= 1
+    record.strategyA.twoPixelBatchEvaluationReductionRatio !== null
+    && record.strategyA.twoPixelBatchEvaluationReductionRatio >= 0.9
+    && record.strategyA.twoPixelBatchElapsedTimeRatio !== null
+    && record.strategyA.twoPixelBatchElapsedTimeRatio <= 1
     && record.strategyA.repeats.every((repeat) => repeat.pixels.every((pixel) =>
       pixel.classification === "integrated" && pixel.unresolvedArea <= 1e-8)));
   const strategyADiagnostic = {
@@ -4027,8 +4033,8 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
   await writeM5qArtifact(testInfo, "m5u-strategy-a-diagnostic.json", strategyADiagnostic);
   if (!strategyAAddressesDominantCost) {
     throw new Error(`M5U Strategy A did not clear the predeclared gate; inspect m5u-strategy-a-diagnostic.json. Summary: ${JSON.stringify(strategyARecords.map((record) => ({
-      evaluationReductionRatio: record.strategyA.evaluationReductionRatio,
-      elapsedTimeRatio: record.strategyA.elapsedTimeRatio,
+      twoPixelBatchEvaluationReductionRatio: record.strategyA.twoPixelBatchEvaluationReductionRatio,
+      twoPixelBatchElapsedTimeRatio: record.strategyA.twoPixelBatchElapsedTimeRatio,
       pixelResults: record.strategyA.repeats.map((repeat) => repeat.pixels.map((pixel) => ({
         classification: pixel.classification, unresolvedArea: pixel.unresolvedArea,
       }))),
@@ -4037,6 +4043,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
 
   const confirmationRecords: unknown[] = [];
   let confirmedM5tActualPointEvaluations = 0;
+  let confirmedM5tR256ActualPointEvaluations = 0;
   let confirmedM5tPointFunctionCalls = 0;
   let confirmedM5tDepthProbeEvaluations = 0;
   let confirmedM5tBudgetChargedUnits = 0;
@@ -4048,6 +4055,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
   let confirmedM5sProposals = 0;
   const confirmationResolutions = GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS;
   const m5sSeeds = [104729, 130363] as const;
+  const requiredM5sReferences = getGroundGlassM5uRequiredM5sReferences();
   const rgbVector = (rgb: readonly [number, number, number] | null): Float64Array | null =>
     rgb ? Float64Array.from(rgb) : null;
   const relativeAreaError = (left: number, right: number): number =>
@@ -4074,6 +4082,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
       });
       confirmedM5tActualPointEvaluations += m5tRuns.reduce((sum, run) =>
         sum + run.costBreakdown.actualPointEvaluations, 0);
+      confirmedM5tR256ActualPointEvaluations += m5tRuns.at(-1)!.costBreakdown.actualPointEvaluations;
       confirmedM5tPointFunctionCalls += m5tRuns.reduce((sum, run) =>
         sum + run.costBreakdown.pointFunctionCalls, 0);
       confirmedM5tDepthProbeEvaluations += m5tRuns.reduce((sum, run) =>
@@ -4106,6 +4115,8 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
             ? compareGroundGlassM5sRgb(optimizedRgb, referenceVector) : null;
           return {
             reference: "m5s-finite-sampling" as const,
+            gatherPixelId,
+            inputFingerprints: m5sRun.inputFingerprints,
             status: metrics?.status === "measured" ? "measured" as const : "unavailable" as const,
             rgbRmse: metrics?.rmse ?? null,
             maximumChannelError: metrics?.maximumChannelError ?? null,
@@ -4130,18 +4141,22 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
           };
         });
         const evidence = evaluateGroundGlassM5uPixelEvidence({
+          evidenceId: `${roleInput.roleSpec.role}:${roleInput.full32.captureId}:${gatherPixelId}`,
           inputFingerprintsMatch: roleInput.provenance.status === "matched",
+          expectedInputFingerprints: roleInput.input.inputFingerprints,
+          candidateInputFingerprints: candidate.inputFingerprints,
           analyticControlsPassed: true,
           evidenceScope: "registered-app",
           candidate: optimized,
           baselineClassification: oldPixels.at(-1)!.classification,
-          baselineEvaluations: m5tRuns.at(-1)!.evaluatedPoints,
-          candidateEvaluations: optimized.integrandEvaluations,
-          baselineElapsedMs: m5tRuns.at(-1)!.elapsedMs,
-          candidateElapsedMs: candidate.elapsedMs,
+          baselinePixel: getGroundGlassM5uR256BaselinePixelEvidence(
+            m5tRuns.at(-1)!, gatherPixelId,
+          ),
           independentComparisons: [
             {
               reference: "m5t-adaptive",
+              gatherPixelId,
+              inputFingerprints: m5tRuns.at(-1)!.inputFingerprints,
               status: oldPixels.at(-1)!.conditionalMeanRgb ? "measured" : "unavailable",
               rgbRmse: m5tComparisons.at(-1)!.rgbComparison?.rmse ?? null,
               maximumChannelError: m5tComparisons.at(-1)!.rgbComparison?.maximumChannelError ?? null,
@@ -4149,10 +4164,17 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
             },
             {
               reference: "m5t-fixed-grid-512",
+              gatherPixelId,
+              inputFingerprints: fixed.inputFingerprints,
               status: fixedRgbMetrics?.status === "measured" ? "measured" : "unavailable",
               rgbRmse: fixedRgbMetrics?.rmse ?? null,
               maximumChannelError: fixedRgbMetrics?.maximumChannelError ?? null,
               acceptedAreaRelativeError: fixedAreaRelativeError,
+              fixedGrid: {
+                algorithm: fixed.algorithm,
+                method: fixed.method,
+                resolution: fixed.resolution,
+              },
             },
             ...m5sComparisons,
           ],
@@ -4168,6 +4190,7 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
           m5u: optimized,
           fixedGrid512: fixedPixel,
           fixedGridComparison: fixedRgbMetrics,
+          fixedGridAcceptedAreaRelativeError: fixedAreaRelativeError,
           m5sComparisons,
           evidence,
         };
@@ -4193,16 +4216,17 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
           applicationFallback: false },
         m5t: m5tRuns.map((run) => ({
           initialResolution: run.initialResolution,
-          elapsedMs: run.elapsedMs,
+          batchElapsedMs: run.elapsedMs,
           evaluatedPoints: run.evaluatedPoints,
           costBreakdown: run.costBreakdown,
         })),
-        m5u: { algorithm: candidate.algorithm, method: candidate.method, elapsedMs: candidate.elapsedMs,
+        m5u: { algorithm: candidate.algorithm, method: candidate.method, batchElapsedMs: candidate.elapsedMs,
           integrandEvaluations: candidate.integrandEvaluations, costBreakdown: candidate.costBreakdown },
-        fixedGrid512: { elapsedMs: fixed.elapsedMs, evaluatedPoints: fixed.evaluatedPoints,
+        fixedGrid512: { batchElapsedMs: fixed.elapsedMs, evaluatedPoints: fixed.evaluatedPoints,
           algorithm: fixed.algorithm, method: fixed.method },
-        m5s: m5sRuns.map((run) => ({ descriptor: run.descriptor, elapsedMs: run.elapsedMs,
+        m5s: m5sRuns.map((run) => ({ descriptor: run.descriptor, batchElapsedMs: run.elapsedMs,
           evaluatedProposalCount: run.evaluatedProposalCount,
+          inputFingerprints: run.inputFingerprints,
           proposalCoordinateFingerprint: run.proposalCoordinateFingerprint })),
         pixels: pixelRecords,
       });
@@ -4211,23 +4235,34 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
   const allPixelEvidence = confirmationRecords.flatMap((record) =>
     (record as { pixels: readonly { evidence: ReturnType<typeof evaluateGroundGlassM5uPixelEvidence> }[] }).pixels)
     .map(({ evidence }) => evidence);
-  const comparisonCounts = Object.fromEntries(["supported", "unresolved", "invalid-comparison"].map((classification) =>
-    [classification, allPixelEvidence.filter((evidence) => evidence.classification === classification).length]));
+  const comparisonCounts = summarizeGroundGlassM5uEvidence(allPixelEvidence);
+  expect(comparisonCounts.countsConserved).toBe(true);
+  expect(comparisonCounts.pixelCount).toBe(50);
   const newlyResolvedPixelCount = allPixelEvidence.filter((evidence) => evidence.newlyResolved).length;
   const newlySupportedPixelCount = allPixelEvidence.filter((evidence) =>
     evidence.classification === "supported" && evidence.newlyResolved).length;
+  const r256CostSummary = summarizeGroundGlassM5uR256Costs({
+    evidence: allPixelEvidence,
+    expectedBaselineActualPointEvaluations: confirmedM5tR256ActualPointEvaluations,
+    expectedCandidateActualIntegrandEvaluations: confirmedM5uEvaluations,
+  });
+  expect(r256CostSummary.status).toBe("conserved");
+  const fullFourLevelResearchWorkloadEvaluationReductionRatio = confirmedM5tActualPointEvaluations > 0
+    ? 1 - confirmedM5uEvaluations / confirmedM5tActualPointEvaluations : null;
   const researchClosureDecision = strategyAAddressesDominantCost && newlySupportedPixelCount > 0
     ? "reference-efficiency-improved"
     : "efficiency-improved-reference-unresolved";
-  const fullySupportedRoiStrata = confirmationRecords.flatMap((record) => {
+  const correctedRoiClassifications = confirmationRecords.map((record) => {
     const typedRecord = record as { stratumId: string; pixels: readonly {
       evidence: ReturnType<typeof evaluateGroundGlassM5uPixelEvidence>;
     }[] };
-    return typedRecord.pixels.length > 0
-      && typedRecord.pixels.every((pixel) => pixel.evidence.classification === "supported")
-      ? [typedRecord.stratumId]
-      : [];
+    const counts = summarizeGroundGlassM5uEvidence(typedRecord.pixels.map(({ evidence }) => evidence));
+    return { stratumId: typedRecord.stratumId, ...counts,
+      fullySupported: counts.pixelCount > 0 && counts.supported === counts.pixelCount };
   });
+  const fullySupportedRoiStrata = correctedRoiClassifications
+    .filter((record) => record.fullySupported)
+    .map((record) => record.stratumId);
   const m5uSummary = {
     experimentRevision: "m5u-texel-footprint-native-confirmation-v1",
     strategy: "A-geometry-aware-homogeneous-source-texel-regions",
@@ -4236,32 +4271,77 @@ test("native M5U measures M5T cost and confirms geometry-aware quadrature", asyn
     diagnosticSubset: strategyADiagnosticRecords,
     confirmation: {
       roiStrataCount: confirmationRecords.length,
+      comparisonContractRevision: GROUND_GLASS_M5U_REFERENCE_EVIDENCE_CONTRACT_REVISION,
+      requiredM5sDescriptors: requiredM5sReferences,
+      requiredM5sSeeds: [104729, 130363],
       selectedPixelCount: confirmationRecords.reduce<number>((sum, record) => sum
         + (record as { selectedGatherPixelIds: readonly number[] }).selectedGatherPixelIds.length, 0),
       records: confirmationRecords,
+      methodCompletenessByPixel: allPixelEvidence.map((evidence) => ({
+        evidenceId: evidence.evidenceId,
+        gatherPixelId: evidence.gatherPixelId,
+        status: evidence.referenceMatrix.status,
+        measuredReferenceCount: evidence.referenceMatrix.measuredReferenceCount,
+        missingReferences: evidence.referenceMatrix.missingReferences,
+        unavailableReferences: evidence.referenceMatrix.unavailableReferences,
+        duplicateIdentities: evidence.referenceMatrix.duplicateIdentities,
+        mismatchedIdentities: evidence.referenceMatrix.mismatchedIdentities,
+      })),
+      unavailableComparisons: allPixelEvidence.flatMap((evidence) =>
+        evidence.referenceMatrix.unavailableReferences.map((reference) => ({
+          evidenceId: evidence.evidenceId,
+          gatherPixelId: evidence.gatherPixelId, reference,
+        }))),
+      duplicateOrMismatchedComparisons: allPixelEvidence.flatMap((evidence) => [
+        ...evidence.referenceMatrix.duplicateIdentities.map((identity) => ({
+          evidenceId: evidence.evidenceId,
+          gatherPixelId: evidence.gatherPixelId, kind: "duplicate" as const, identity,
+        })),
+        ...evidence.referenceMatrix.mismatchedIdentities.map((identity) => ({
+          evidenceId: evidence.evidenceId,
+          gatherPixelId: evidence.gatherPixelId, kind: "mismatched" as const, identity,
+        })),
+      ]),
       classificationCounts: comparisonCounts,
       confirmedM5tActualPointEvaluations,
+      confirmedM5tR256ActualPointEvaluations,
       confirmedM5tPointFunctionCalls,
       confirmedM5tDepthProbeEvaluations,
       confirmedM5tBudgetChargedUnits,
-      confirmedM5tElapsedMs,
+      confirmedM5tFourLevelBatchElapsedMs: confirmedM5tElapsedMs,
       confirmedM5uEvaluations,
-      confirmedM5uElapsedMs,
+      confirmedM5uConfirmationBatchElapsedMs: confirmedM5uElapsedMs,
       confirmedFixedGridEvaluations,
-      confirmedFixedGridElapsedMs,
+      confirmedFixedGridBatchElapsedMs: confirmedFixedGridElapsedMs,
       confirmedM5sProposals,
-      evaluationReductionRatio: confirmedM5tActualPointEvaluations > 0
-        ? 1 - confirmedM5uEvaluations / confirmedM5tActualPointEvaluations : null,
-      elapsedTimeRatio: confirmedM5tElapsedMs > 0
-        ? confirmedM5uElapsedMs / confirmedM5tElapsedMs : null,
+      costAccountingRevision: GROUND_GLASS_M5U_COST_ACCOUNTING_REVISION,
+      perPixelCostBasis: "matching-gather-pixel-m5t-r256-actual-point-evaluations-vs-m5u-actual-integrand-evaluations",
+      r256AggregateCost: r256CostSummary,
+      fourLevelResearchWorkloadCostBasis: "one-m5u-confirmation-pass-vs-m5t-r32-r64-r128-r256-total-work",
+      fullFourLevelResearchWorkloadEvaluationReductionRatio,
+      batchTiming: {
+        m5tFourLevelSummedElapsedMs: confirmedM5tElapsedMs,
+        m5uConfirmationSummedElapsedMs: confirmedM5uElapsedMs,
+        scope: "batch totals for selected pixels; not per-pixel runtime",
+      },
+      negativeControls: {
+        requiredM5sEvidenceCount: 4,
+        registeredPixelCount: comparisonCounts.pixelCount,
+        classificationCountsConserved: comparisonCounts.countsConserved,
+        r256PixelCostConserved: r256CostSummary.status === "conserved",
+        unavailableReferenceCount: allPixelEvidence.reduce((sum, evidence) =>
+          sum + evidence.referenceMatrix.unavailableReferences.length, 0),
+        invalidComparisonPixelCount: comparisonCounts.invalidComparison,
+      },
     },
     researchClosure: {
       decision: researchClosureDecision,
       newlyResolvedPixelCount,
       newlySupportedPixelCount,
+      correctedRoiClassifications,
       fullySupportedRoiStrata,
       unresolvedPixelCount: comparisonCounts.unresolved,
-      invalidComparisonPixelCount: comparisonCounts["invalid-comparison"],
+      invalidComparisonPixelCount: comparisonCounts.invalidComparison,
       globalReferenceAuthorityEstablished: false,
       validatedHighAccuracyGroundTruthEstablished: false,
       m5qPromotionAllowed: false,
