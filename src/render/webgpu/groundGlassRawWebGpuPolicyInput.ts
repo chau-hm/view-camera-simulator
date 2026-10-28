@@ -9,11 +9,15 @@ import {
   GROUND_GLASS_M6_PRESENTATION_FEATURES,
   groundGlassM6PilotSessionId,
   isGroundGlassM6PresentationBuildEnabled,
+  isGroundGlassRawPilotBuildAuthorizedForFlags,
 } from "./groundGlassM6PresentationPolicy";
 
 /** This Vite flag is trusted build configuration; it is ignored in production builds. */
 export const isGroundGlassRawWebGpuPilotBuildEnabled = (): boolean =>
-  import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true";
+  isGroundGlassRawPilotBuildAuthorizedForFlags({
+    developmentBuild: import.meta.env.DEV,
+    rawPilotFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT,
+  });
 
 const sameBounds = (
   left: GroundGlassFrameRequestInput["scene"]["bounds"],

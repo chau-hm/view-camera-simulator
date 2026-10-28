@@ -43,6 +43,27 @@ export const GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY: GroundGlassSceneCompati
   })),
 };
 
+export type GroundGlassM6BuildFlags = Readonly<{
+  developmentBuild: boolean;
+  rawPilotFlag: string | undefined;
+  m6PresentationFlag: string | undefined;
+}>;
+
+/** Shared trusted Raw pilot gate; M6 adds its own feature flag on top of this gate. */
+export const isGroundGlassRawPilotBuildAuthorizedForFlags = (
+  flags: Pick<GroundGlassM6BuildFlags, "developmentBuild" | "rawPilotFlag">,
+): boolean => flags.developmentBuild && flags.rawPilotFlag === "true";
+
+/** M6 is authorized only by the complete trusted development build configuration. */
+export const isGroundGlassM6BuildAuthorizedForFlags = (
+  flags: GroundGlassM6BuildFlags,
+): boolean => isGroundGlassRawPilotBuildAuthorizedForFlags(flags) &&
+  flags.m6PresentationFlag === "true";
+
+const isArchitectureRiseRequest = (request: GroundGlassFrameRequestInput): boolean =>
+  request.scene.id === architectureRiseScene.id &&
+  sameBounds(request.scene.bounds, architectureRiseScene.bounds);
+
 const sameBounds = (
   left: GroundGlassFrameRequestInput["scene"]["bounds"],
   right: typeof architectureRiseScene.bounds,
@@ -61,12 +82,35 @@ export const isGroundGlassM6PresentationRequestForBuild = (
 ): boolean =>
   buildAuthorized &&
   !request.rawDebug &&
-  request.scene.id === architectureRiseScene.id &&
-  sameBounds(request.scene.bounds, architectureRiseScene.bounds);
+  isArchitectureRiseRequest(request);
 
-/** This Vite build flag is the only M6 activation input; production builds ignore it. */
+/** Session provisioning is independent of the initial Raw/M6 request mode. */
+export const isGroundGlassM6CapablePilotSessionForBuild = (
+  request: GroundGlassFrameRequestInput,
+  buildAuthorized: boolean,
+  selectedBackend: "webgpu" | "webgl" | "unavailable",
+  actualExecutionApi: "webgpu" | "webgl2" | "unknown",
+): boolean =>
+  buildAuthorized &&
+  selectedBackend === "webgpu" &&
+  actualExecutionApi === "webgpu" &&
+  isArchitectureRiseRequest(request);
+
+/** Both documented Vite flags are required; production builds ignore them. */
 export const isGroundGlassM6PresentationBuildEnabled = (): boolean =>
-  import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION === "true";
+  isGroundGlassM6BuildAuthorizedForFlags({
+    developmentBuild: import.meta.env.DEV,
+    rawPilotFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT,
+    m6PresentationFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION,
+  });
+
+/** Narrow startup evidence for the M6 native test; does not expose other build environment. */
+export const getGroundGlassM6BuildConfigurationEvidence = () => Object.freeze({
+  rawPilotEnabled: import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true",
+  m6PresentationEnabled: import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION === "true",
+  physicalCocResearchEnabled: import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "true",
+  apertureGatherResearchEnabled: import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH === "true",
+});
 
 export const isGroundGlassM6PresentationRequest = (
   request: GroundGlassFrameRequestInput,

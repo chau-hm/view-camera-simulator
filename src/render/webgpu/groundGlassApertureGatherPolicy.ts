@@ -9,6 +9,8 @@ import {
 import {
   ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
   GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
+  isGroundGlassM6CapablePilotSessionForBuild,
+  isGroundGlassM6PresentationBuildEnabled,
   isGroundGlassM6PresentationRequest,
 } from "./groundGlassM6PresentationPolicy";
 
@@ -74,6 +76,21 @@ export const isGroundGlassApertureGatherResearchEnabled = (
   request: GroundGlassFrameRequestInput,
 ): boolean =>
   isGroundGlassM6PresentationRequest(request) || (
+    import.meta.env.DEV &&
+    import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH === "true" &&
+    isGroundGlassRawWebGpuPilotRequest(request)
+  );
+
+/** M6-capable sessions provision M5 resources even if their first frame is Raw Debug. */
+export const isGroundGlassApertureGatherResourceProvisioningEnabled = (
+  request: GroundGlassFrameRequestInput,
+): boolean =>
+  isGroundGlassM6CapablePilotSessionForBuild(
+    request,
+    isGroundGlassM6PresentationBuildEnabled(),
+    "webgpu",
+    "webgpu",
+  ) || (
     import.meta.env.DEV &&
     import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH === "true" &&
     isGroundGlassRawWebGpuPilotRequest(request)

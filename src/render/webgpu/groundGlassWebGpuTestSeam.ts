@@ -376,6 +376,7 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "aperture-b1-after-submit"
   | "aperture-composite-after-submit"
   | "m6-presentation-target-initialization"
+  | "m6-optical-resource-initialization"
   | "m6-presentation-node-initialization"
   | "m6-presentation-before-render"
   | "m6-presentation-after-submit"
@@ -421,6 +422,8 @@ export type GroundGlassWebGpuTestEvent =
 /** Internal browser control object. It is read only by a Vite development build explicitly
  * started with VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; it is never read from URL or storage. */
 export type GroundGlassWebGpuTestControl = {
+  /** Set the application's first accepted Ground Glass request to Raw Debug in an isolated test. */
+  initialRawDebug?: boolean;
   adapterAttemptGenerations?: string[];
   adapterEvents?: GroundGlassWebGpuTestEvent[];
   failurePoint?: GroundGlassWebGpuTestFailurePoint;
@@ -473,6 +476,9 @@ const getControl = (): GroundGlassWebGpuTestControl | null =>
   isEnabled && typeof window !== "undefined"
     ? window.__groundGlassWebGpuM3TestControl ?? null
     : null;
+
+export const initialGroundGlassRawDebugForTest = (): boolean =>
+  getControl()?.initialRawDebug === true;
 
 export const forceGroundGlassWebGlCompatibilityBackendForTest = (): boolean =>
   getControl()?.forceWebGlCompatibilityBackend === true;

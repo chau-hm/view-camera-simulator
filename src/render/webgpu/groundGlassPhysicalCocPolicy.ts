@@ -1,6 +1,10 @@
 import type { GroundGlassFrameRequestInput } from "../groundGlassFrameRequest";
 import { isGroundGlassRawWebGpuPilotRequest } from "./groundGlassRawWebGpuPolicyInput";
-import { isGroundGlassM6PresentationRequest } from "./groundGlassM6PresentationPolicy";
+import {
+  isGroundGlassM6CapablePilotSessionForBuild,
+  isGroundGlassM6PresentationBuildEnabled,
+  isGroundGlassM6PresentationRequest,
+} from "./groundGlassM6PresentationPolicy";
 
 /**
  * M4 is a separately gated research pass inside the already-authorized M3
@@ -11,6 +15,21 @@ export const isGroundGlassPhysicalCocResearchEnabled = (
   request: GroundGlassFrameRequestInput,
 ): boolean =>
   isGroundGlassM6PresentationRequest(request) || (
+    import.meta.env.DEV &&
+    import.meta.env.VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "true" &&
+    isGroundGlassRawWebGpuPilotRequest(request)
+  );
+
+/** M6-capable sessions provision M4 resources before the first mode switch. */
+export const isGroundGlassPhysicalCocResourceProvisioningEnabled = (
+  request: GroundGlassFrameRequestInput,
+): boolean =>
+  isGroundGlassM6CapablePilotSessionForBuild(
+    request,
+    isGroundGlassM6PresentationBuildEnabled(),
+    "webgpu",
+    "webgpu",
+  ) || (
     import.meta.env.DEV &&
     import.meta.env.VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "true" &&
     isGroundGlassRawWebGpuPilotRequest(request)

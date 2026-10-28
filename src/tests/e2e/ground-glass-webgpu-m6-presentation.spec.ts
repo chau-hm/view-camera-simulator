@@ -221,10 +221,14 @@ const captureM5CompositeReadback = async (page: Page, token: string, outputPath:
 const startM6NativeLowPage = async (
   page: Page,
   failurePoint?: GroundGlassWebGpuTestFailurePoint,
+  initialRawDebug = false,
 ): Promise<void> => {
-  await page.addInitScript((point) => {
-    window.__groundGlassWebGpuM3TestControl = point ? { failurePoint: point } : {};
-  }, failurePoint ?? null);
+  await page.addInitScript(({ point, rawDebug }) => {
+    window.__groundGlassWebGpuM3TestControl = {
+      ...(point ? { failurePoint: point } : {}),
+      ...(rawDebug ? { initialRawDebug: true } : {}),
+    };
+  }, { point: failurePoint ?? null, rawDebug: initialRawDebug });
   await page.setViewportSize({ width: 1000, height: 760 });
   await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
   await page.getByLabel("Render quality").selectOption("low");
@@ -597,6 +601,319 @@ test("native M6 displays the M5 composite with shared crop and presentation beha
   expect(pageErrors).toEqual([]);
   await webglPage.close();
   console.log("[M6 E2E] comparison page closed; test body complete");
+});
+
+test("native M6 provisions once from initial Raw Debug and completes Raw/M6/loupe/resize transitions", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+    "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
+  test.setTimeout(600_000);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await startM6NativeLowPage(page, undefined, true);
+
+  const pane = paneFor(page);
+  const pilot = pilotFor(page);
+  const rawDebug = page.getByLabel("Raw RTT — bypass DOF");
+  await expect(rawDebug).toBeChecked();
+  await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 120_000 });
+  await expect(pane).toHaveAttribute("data-policy-selected-backend", "webgpu");
+  await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer");
+  await expect(pane).toHaveAttribute("data-actual-execution-api", "webgpu");
+  await expect(pane).toHaveAttribute("data-application-fallback", "not-observed");
+  await expect(pilot).toHaveAttribute("data-frame-raw-debug", "true");
+  await expect(pilot).toHaveAttribute("data-adapter-initial-raw-debug", "true");
+  await expect(pilot).toHaveAttribute("data-m6-session-provisioning", "ready");
+  await expect(pilot).toHaveAttribute("data-m6-physical-resources-ready", "true");
+  await expect(pilot).toHaveAttribute("data-m6-gather-resources-ready", "true");
+  await expect(pilot).toHaveAttribute("data-m6-build-raw-pilot-enabled", "true");
+  await expect(pilot).toHaveAttribute("data-m6-build-presentation-enabled", "true");
+  await expect(pilot).toHaveAttribute("data-m6-build-physical-research-enabled", "false");
+  await expect(pilot).toHaveAttribute("data-m6-build-gather-research-enabled", "false");
+  await waitForCurrentFrame(page);
+
+  const initialRawRequest = await pane.getAttribute("data-frame-request-id");
+  const generation = await pane.getAttribute("data-renderer-generation");
+  const pilotSessionId = await pane.getAttribute("data-pilot-session-id");
+  const initialTargetDimensions = {
+    widthPx: Number(await pilot.getAttribute("data-target-width")),
+    heightPx: Number(await pilot.getAttribute("data-target-height")),
+  };
+  const initialGatherTargetCount = Number(await pilot.getAttribute("data-m6-gather-target-count"));
+  expect(initialRawRequest).toBeTruthy();
+  expect(generation).toBeTruthy();
+  expect(pilotSessionId).toBeTruthy();
+  await expect(pane).toHaveAttribute("data-pilot-retry-status", "available");
+  expect(Number(await pilot.getAttribute("data-m6-gather-target-count"))).toBeGreaterThan(0);
+  expect(await pilot.getAttribute("data-adapter-initial-request-id")).toBeTruthy();
+  await expect(pilot).toHaveAttribute("data-physical-coc-status", "ready");
+  await expect(pilot).toHaveAttribute("data-physical-coc-request-id", initialRawRequest!);
+  await expect(pilot).toHaveAttribute("data-physical-coc-channel-id", "default");
+  await expect(pilot).toHaveAttribute("data-physical-coc-scene-id", "architecture-rise");
+  await expect(pilot).toHaveAttribute("data-physical-coc-renderer-generation", generation!);
+  await expect(pilot).toHaveAttribute("data-physical-coc-passes", "");
+  await expect(pilot).toHaveAttribute("data-aperture-gather-status", "ready");
+  await expect(pilot).toHaveAttribute("data-aperture-gather-request-id", initialRawRequest!);
+  await expect(pilot).toHaveAttribute("data-aperture-gather-renderer-generation", generation!);
+  await expect(pilot).toHaveAttribute("data-aperture-gather-passes", "");
+  await expect(pilot).not.toHaveAttribute("data-presentation-status", "completed");
+  await expect(pilot).toHaveAttribute("data-last-displayed-request-id", initialRawRequest!);
+  const initialRawPng = await pilot.locator("canvas").screenshot({ animations: "disabled" });
+  expect((await screenshotStats(page, initialRawPng)).contentful).toBe(true);
+  await attachM6Evidence(testInfo, "ground-glass-m6-raw-first-initial.png", initialRawPng, "image/png");
+
+  const stage = page.getByLabel("GroundGlassViewport").locator("[data-zoomed]");
+  await clickStageAt(page, stage, 0.7, 0.35);
+  await expect(stage).toHaveAttribute("data-zoomed", "true");
+  await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+    .not.toBe(initialRawRequest);
+  await waitForCurrentFrame(page);
+  const loupeRawRequest = await pane.getAttribute("data-frame-request-id");
+  expect(loupeRawRequest).not.toBe(initialRawRequest);
+  expect(await pilot.getAttribute("data-frame-raw-debug")).toBe("true");
+  const loupeSourceCrop = (await pilot.getAttribute("data-source-crop"))?.split(",").map(Number) ?? [];
+  expect(loupeSourceCrop).toHaveLength(4);
+  expect(loupeSourceCrop[2]).toBeLessThan(1);
+  expect(loupeSourceCrop[3]).toBeLessThan(1);
+  expect(await pilot.getAttribute("data-physical-coc-passes")).toBe("");
+  expect(await pilot.getAttribute("data-aperture-gather-passes")).toBe("");
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+    .not.toBe(loupeRawRequest);
+  await waitForCurrentFrame(page);
+  const resizedRawRequest = await pane.getAttribute("data-frame-request-id");
+  expect(resizedRawRequest).not.toBe(loupeRawRequest);
+  expect(await pilot.getAttribute("data-frame-raw-debug")).toBe("true");
+  expect(await pilot.getAttribute("data-physical-coc-passes")).toBe("");
+  expect(await pilot.getAttribute("data-aperture-gather-passes")).toBe("");
+
+  await page.evaluate(() => {
+    window.__groundGlassWebGpuM3TestControl!.holdQueueCompletion = true;
+  });
+  await rawDebug.uncheck();
+  await expect(pilot).toHaveAttribute("data-frame-raw-debug", "false");
+  await expect(pilot).toHaveAttribute("data-presentation-mode", "m6-experimental-dof");
+  await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+    .not.toBe(resizedRawRequest);
+  const heldM6Request = await pane.getAttribute("data-frame-request-id");
+  expect(heldM6Request).toBeTruthy();
+  await expect.poll(() => page.evaluate(() =>
+    window.__groundGlassWebGpuM3TestControl?.queueCompletionBarrierReached === true,
+  ), { timeout: 60_000 }).toBe(true);
+  expect(await pilot.getAttribute("data-last-displayed-request-id")).toBe(resizedRawRequest);
+  const apertureGroup = page.getByRole("radiogroup", { name: "Aperture", exact: true });
+  const apertureOptions = await apertureGroup.getByRole("radio").evaluateAll((elements) =>
+    elements.map((element) => ({
+      name: element.getAttribute("aria-label") ?? element.textContent?.trim() ?? "",
+      checked: (element as HTMLInputElement).checked,
+    })),
+  );
+  const nextAperture = apertureOptions.find((option) => !option.checked)?.name;
+  expect(nextAperture).toBeTruthy();
+  try {
+    await apertureGroup.getByRole("radio", { name: nextAperture!, exact: true }).check();
+    await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+      .not.toBe(heldM6Request);
+  } finally {
+    await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.releaseQueueCompletion?.());
+  }
+  const newestM6Request = await pane.getAttribute("data-frame-request-id");
+  expect(newestM6Request).toBeTruthy();
+  expect(newestM6Request).not.toBe(heldM6Request);
+  await expect(pilot).toHaveAttribute("data-presentation-status", "completed", { timeout: 120_000 });
+  await waitForCurrentFrame(page);
+  const firstM6Request = await pane.getAttribute("data-frame-request-id");
+  await expect(pane).toHaveAttribute("data-policy-selected-backend", "webgpu");
+  await expect(pane).toHaveAttribute("data-pilot-session-id", pilotSessionId!);
+  await expect(pane).toHaveAttribute("data-pilot-retry-status", "available");
+  await expect(pane).toHaveAttribute("data-application-fallback", "not-observed");
+  expect(firstM6Request).toBe(newestM6Request);
+  await expect(pilot).toHaveAttribute("data-physical-coc-status", "completed");
+  await expect(pilot).toHaveAttribute("data-physical-coc-request-id", firstM6Request!);
+  await expect(pilot).toHaveAttribute("data-physical-coc-channel-id", "default");
+  await expect(pilot).toHaveAttribute("data-physical-coc-scene-id", "architecture-rise");
+  await expect(pilot).toHaveAttribute("data-physical-coc-renderer-generation", generation!);
+  await expect(pilot).toHaveAttribute("data-aperture-gather-status", "completed");
+  await expect(pilot).toHaveAttribute("data-aperture-gather-request-id", firstM6Request!);
+  await expect(pilot).toHaveAttribute("data-aperture-gather-channel-id", "default");
+  await expect(pilot).toHaveAttribute("data-aperture-gather-scene-id", "architecture-rise");
+  await expect(pilot).toHaveAttribute("data-aperture-gather-renderer-generation", generation!);
+  await expect(pilot).toHaveAttribute("data-presentation-source", "m5-research-composite");
+  await expect(pilot).toHaveAttribute("data-presentation-request-id", firstM6Request!);
+  await expect(pilot).toHaveAttribute("data-presentation-channel-id", "default");
+  await expect(pilot).toHaveAttribute("data-presentation-scene-id", "architecture-rise");
+  await expect(pilot).toHaveAttribute("data-presentation-renderer-generation", generation!);
+  await expect(pilot).toHaveAttribute("data-last-displayed-request-id", firstM6Request!);
+  await expect(pane).toHaveAttribute("data-last-completed-request-id", firstM6Request!);
+  await expect(pilot).toHaveAttribute("data-actual-execution-api", "webgpu");
+  await expect(pilot).toHaveAttribute("data-internal-fallback", "none");
+  expect(await pilot.getAttribute("data-renderer-generation")).toBe(generation);
+  expect(Number(await pilot.getAttribute("data-m6-gather-target-count"))).toBe(initialGatherTargetCount);
+  const m6Image = await pilot.locator("canvas").screenshot({ animations: "disabled" });
+  expect((await screenshotStats(page, m6Image)).contentful).toBe(true);
+  await attachM6Evidence(testInfo, "ground-glass-m6-raw-first-completed.png", m6Image, "image/png");
+
+  await rawDebug.check();
+  await expect(pilot).toHaveAttribute("data-frame-raw-debug", "true");
+  await waitForCurrentFrame(page);
+  const middleRawRequest = await pane.getAttribute("data-frame-request-id");
+  expect(middleRawRequest).not.toBe(firstM6Request);
+  await expect(pilot).not.toHaveAttribute("data-presentation-status", "completed");
+  expect(await pilot.getAttribute("data-physical-coc-passes")).toBe("");
+  expect(await pilot.getAttribute("data-aperture-gather-passes")).toBe("");
+
+  await page.setViewportSize({ width: 1000, height: 760 });
+  await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+    .not.toBe(middleRawRequest);
+  await waitForCurrentFrame(page);
+  const finalRawRequest = await pane.getAttribute("data-frame-request-id");
+  expect(finalRawRequest).not.toBe(middleRawRequest);
+  await rawDebug.uncheck();
+  await expect(pilot).toHaveAttribute("data-presentation-status", "completed", { timeout: 120_000 });
+  await waitForCurrentFrame(page);
+  const finalM6Request = await pane.getAttribute("data-frame-request-id");
+  await expect(pilot).toHaveAttribute("data-physical-coc-request-id", finalM6Request!);
+  await expect(pilot).toHaveAttribute("data-aperture-gather-request-id", finalM6Request!);
+  const finalTargetDimensions = {
+    widthPx: Number(await pilot.getAttribute("data-target-width")),
+    heightPx: Number(await pilot.getAttribute("data-target-height")),
+  };
+  await expect(pilot).toHaveAttribute("data-physical-coc-width-px", String(finalTargetDimensions.widthPx));
+  await expect(pilot).toHaveAttribute("data-physical-coc-height-px", String(finalTargetDimensions.heightPx));
+  await expect(pilot).toHaveAttribute("data-aperture-gather-source-width-px", String(finalTargetDimensions.widthPx));
+  await expect(pilot).toHaveAttribute("data-aperture-gather-source-height-px", String(finalTargetDimensions.heightPx));
+  await expect(pilot).toHaveAttribute("data-aperture-gather-near-width-px", await pilot.getAttribute("data-aperture-gather-far-width-px") ?? "");
+  await expect(pilot).toHaveAttribute("data-aperture-gather-near-height-px", await pilot.getAttribute("data-aperture-gather-far-height-px") ?? "");
+  await expect(pilot).toHaveAttribute("data-presentation-request-id", finalM6Request!);
+  await expect(pilot).toHaveAttribute("data-last-displayed-request-id", finalM6Request!);
+  expect(finalM6Request).not.toBe(finalRawRequest);
+  expect(await pilot.getAttribute("data-renderer-generation")).toBe(generation);
+  await expect(pane).toHaveAttribute("data-policy-selected-backend", "webgpu");
+  await expect(pane).toHaveAttribute("data-pilot-session-id", pilotSessionId!);
+  await expect(pane).toHaveAttribute("data-pilot-retry-status", "available");
+  await expect(pane).toHaveAttribute("data-application-fallback", "not-observed");
+
+  const events = await readM6TestEvents(page);
+  expect(events.filter((event) => event.kind === "failure")).toEqual([]);
+  expect(events.filter((event) => event.kind === "attempt")).toHaveLength(1);
+  expect(new Set(events.filter((event) => event.kind === "attempt").map((event) => event.generationId)))
+    .toEqual(new Set([generation]));
+  for (const requestId of [initialRawRequest, loupeRawRequest, resizedRawRequest, middleRawRequest, finalRawRequest]) {
+    expect(events.some((event) => event.kind === "frame-completed" && event.requestId === requestId)).toBe(true);
+  }
+  expect(events.some((event) => event.kind === "frame-completed" && event.requestId === heldM6Request)).toBe(false);
+  expect(events.some((event) => event.kind === "frame-completed" && event.requestId === finalM6Request)).toBe(true);
+  expect(pageErrors).toEqual([]);
+  await attachM6Evidence(testInfo, "ground-glass-m6-raw-first-lifecycle-evidence.json", JSON.stringify({
+    effectiveBuildConfiguration: {
+      rawPilotEnabled: true,
+      m6PresentationEnabled: true,
+      physicalCocResearchEnabled: false,
+      apertureGatherResearchEnabled: false,
+    },
+    initialRequest: {
+      requestId: await pilot.getAttribute("data-adapter-initial-request-id"),
+      rawDebug: true,
+      completedRequestId: initialRawRequest,
+      targetDimensionsPx: initialTargetDimensions,
+      screenshotContentful: true,
+    },
+    provisionedResources: {
+      sessionStatus: "ready",
+      physicalResourcesReady: true,
+      gatherResourcesReady: true,
+      m5OwnedRenderTargetCount: initialGatherTargetCount,
+      provisionedAtAdapterInitializationPx: {
+        physical: {
+          width: Number(await pilot.getAttribute("data-physical-coc-width-px")),
+          height: Number(await pilot.getAttribute("data-physical-coc-height-px")),
+        },
+        gatherSource: {
+          width: Number(await pilot.getAttribute("data-aperture-gather-source-width-px")),
+          height: Number(await pilot.getAttribute("data-aperture-gather-source-height-px")),
+        },
+      },
+      currentRawFrameTargetDimensionsPx: initialTargetDimensions,
+      rawFrameM4Passes: [],
+      rawFrameM5Passes: [],
+      m4AndM5TargetDimensionsTrackSource: true,
+      resizedTargetDimensionsPx: finalTargetDimensions,
+      resizedFarGatherDimensionsPx: {
+        widthPx: Number(await pilot.getAttribute("data-aperture-gather-far-width-px")),
+        heightPx: Number(await pilot.getAttribute("data-aperture-gather-far-height-px")),
+      },
+    },
+    rawToM6QueueHold: {
+      staleM6RequestId: heldM6Request,
+      latestM6RequestId: firstM6Request,
+      staleRequestPublished: events.some((event) => event.kind === "frame-completed" && event.requestId === heldM6Request),
+      latestRequestCompleted: events.some((event) => event.kind === "frame-completed" && event.requestId === firstM6Request),
+    },
+    modeTransitions: [
+      { requestId: initialRawRequest, rawDebug: true },
+      { requestId: loupeRawRequest, rawDebug: true, focusLoupe: true },
+      { requestId: resizedRawRequest, rawDebug: true, resized: true },
+      { requestId: firstM6Request, rawDebug: false, m4M5M6Completed: true },
+      { requestId: middleRawRequest, rawDebug: true, opticalPassesBypassed: true },
+      { requestId: finalRawRequest, rawDebug: true, resized: true, opticalPassesBypassed: true },
+      { requestId: finalM6Request, rawDebug: false, m4M5M6Completed: true },
+    ],
+    rendererGenerationId: generation,
+    pilotSessionId,
+    retryStateAfterValidTransitions: {
+      status: await pane.getAttribute("data-pilot-retry-status"),
+      epoch: Number(await pane.getAttribute("data-pilot-retry-epoch")),
+    },
+    adapterAttempts: events.filter((event) => event.kind === "attempt").map((event) => event.generationId),
+    failures: events.filter((event) => event.kind === "failure"),
+    runtime: {
+      rendererFamily: await pilot.getAttribute("data-mounted-renderer-family"),
+      actualExecutionApi: await pilot.getAttribute("data-actual-execution-api"),
+      internalFallback: await pilot.getAttribute("data-internal-fallback"),
+    },
+  }, null, 2), "application/json");
+});
+
+test("native M6 optical-resource initialization failure cleans up the Raw-first adapter and falls back", async ({ page }) => {
+  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+    "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
+  test.setTimeout(180_000);
+  await startM6NativeLowPage(page, "m6-optical-resource-initialization", true);
+  const pane = paneFor(page);
+  await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer", { timeout: 120_000 });
+  await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 120_000 });
+  await expect(pane).toHaveAttribute("data-application-fallback", "occurred");
+  await waitForCurrentFrame(page);
+  await expect(pilotFor(page)).toHaveCount(0);
+
+  const events = await readM6TestEvents(page);
+  const failure = events.find((event) => event.kind === "failure" &&
+    event.reason.includes("m6-optical-resource-initialization"));
+  expect(failure).toMatchObject({ kind: "failure", stage: "initialization" });
+  if (failure?.kind !== "failure") throw new Error("Raw-first M6 resource initialization failure was not observed");
+  expect(events.some((event) => event.kind === "frame-completed" &&
+    event.generationId === failure.generationId)).toBe(false);
+  expect(events.filter((event) => event.kind === "cleanup" && event.generationId === failure.generationId))
+    .toEqual([expect.objectContaining({ outcome: "confirmed" })]);
+});
+
+test("native M6 flags leave an unsupported Ground Glass scene on WebGL without attempting WebGPU", async ({ page }) => {
+  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+    "Requires headed chrome-native-webgpu and both trusted M6 development build flags");
+  await page.addInitScript(() => {
+    window.__groundGlassWebGpuM3TestControl = {};
+  });
+  await page.setViewportSize({ width: 900, height: 700 });
+  await page.goto("/simulator/free/macro-depth-of-field?rttDiagnostics=1");
+
+  const pane = paneFor(page);
+  await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 90_000 });
+  await expect(pane).toHaveAttribute("data-policy-selected-backend", "webgl");
+  await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
+  await expect(pane).toHaveAttribute("data-actual-execution-api", "webgl2");
+  await expect(pane).toHaveAttribute("data-application-fallback", "not-observed");
+  await expect(page.getByTestId("ground-glass-webgpu-pilot")).toHaveCount(0);
+  expect((await readM6TestEvents(page)).filter((event) => event.kind === "attempt")).toEqual([]);
 });
 
 const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (

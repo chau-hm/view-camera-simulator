@@ -48,6 +48,7 @@ import { SceneViewport } from "../simulator/SceneViewport";
 import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
 import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import { initialGroundGlassRawDebugForTest } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import {
   projectSceneFocusTargetsToGroundGlass,
   resolveGroundGlassPreviewMode,
@@ -452,7 +453,7 @@ export const SimulatorWorkspace = ({
     mode === "guided" && task?.enabledControls.includes("aperture") === true;
   const apertureLocked = controlPolicy.aperture === "fixed" && !taskCanChangeAperture;
   const infinityResetHidden = controlPolicy.infinityReset === false;
-  const [rawRttDebug, setRawRttDebug] = useState(false);
+  const [rawRttDebug, setRawRttDebug] = useState(initialGroundGlassRawDebugForTest);
   const showPublicTeachingControls =
     sceneId === "understanding-camera-movements" &&
     mode === "free" &&

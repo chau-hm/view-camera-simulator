@@ -7,7 +7,10 @@ import {
   GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
   GROUND_GLASS_M6_PRESENTATION_FEATURES,
   groundGlassM6PilotSessionId,
+  isGroundGlassM6BuildAuthorizedForFlags,
+  isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationRequestForBuild,
+  isGroundGlassRawPilotBuildAuthorizedForFlags,
 } from "../../render/webgpu/groundGlassM6PresentationPolicy";
 import {
   encodeGroundGlassLinearChannelToSrgb,
@@ -289,6 +292,23 @@ const makeRequest = (options: import("./groundGlassFrameRequestFixtures").Ground
   );
 
 describe("M6 development-only compatibility policy", () => {
+  it.each([
+    { label: "both flags disabled", developmentBuild: true, rawPilotFlag: "false", m6PresentationFlag: "false", expected: false },
+    { label: "Raw pilot only", developmentBuild: true, rawPilotFlag: "true", m6PresentationFlag: "false", expected: false },
+    { label: "M6 flag only", developmentBuild: true, rawPilotFlag: "false", m6PresentationFlag: "true", expected: false },
+    { label: "both flags enabled in development", developmentBuild: true, rawPilotFlag: "true", m6PresentationFlag: "true", expected: true },
+    { label: "both flags enabled in production", developmentBuild: false, rawPilotFlag: "true", m6PresentationFlag: "true", expected: false },
+  ])("requires the documented authorization combination: $label", (input) => {
+    expect(isGroundGlassM6BuildAuthorizedForFlags(input)).toBe(input.expected);
+  });
+
+  it("preserves the M3-only Raw pilot gate when the M6 flag is absent", () => {
+    const flags = { developmentBuild: true, rawPilotFlag: "true", m6PresentationFlag: "false" } as const;
+    expect(isGroundGlassRawPilotBuildAuthorizedForFlags(flags)).toBe(true);
+    expect(isGroundGlassM6BuildAuthorizedForFlags(flags)).toBe(false);
+    expect(isGroundGlassRawPilotBuildAuthorizedForFlags({ ...flags, developmentBuild: false })).toBe(false);
+  });
+
   it("keeps Raw Debug within the authorized M6 channel session without changing the M3 session", () => {
     expect(resolveGroundGlassRawWebGpuPilotSessionId("default", true))
       .toBe(groundGlassM6PilotSessionId("default"));
@@ -306,6 +326,35 @@ describe("M6 development-only compatibility policy", () => {
     expect(isGroundGlassM6PresentationRequestForBuild(
       makeRequest({ scene: understandingCameraMovementsScene }),
       true,
+    )).toBe(false);
+  });
+
+  it("provisions an M6-capable session for an initial Raw request while keeping M6 execution request-scoped", () => {
+    const rawRequest = makeRequest({ rawDebug: true });
+    expect(isGroundGlassM6CapablePilotSessionForBuild(
+      rawRequest,
+      true,
+      "webgpu",
+      "webgpu",
+    )).toBe(true);
+    expect(isGroundGlassM6PresentationRequestForBuild(rawRequest, true)).toBe(false);
+    expect(isGroundGlassM6CapablePilotSessionForBuild(
+      rawRequest,
+      true,
+      "webgl",
+      "webgpu",
+    )).toBe(false);
+    expect(isGroundGlassM6CapablePilotSessionForBuild(
+      rawRequest,
+      true,
+      "webgpu",
+      "webgl2",
+    )).toBe(false);
+    expect(isGroundGlassM6CapablePilotSessionForBuild(
+      makeRequest({ rawDebug: true, scene: understandingCameraMovementsScene }),
+      true,
+      "webgpu",
+      "webgpu",
     )).toBe(false);
   });
 

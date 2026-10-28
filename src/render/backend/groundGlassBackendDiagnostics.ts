@@ -207,6 +207,10 @@ export type GroundGlassPresentationPassTiming = Readonly<{
 
 /** M6 presentation evidence; its quality field is deliberately independent from pass completion. */
 export type GroundGlassPresentationDiagnosticDetails = Readonly<{
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
   mode: "raw-diagnostic" | "m6-experimental-dof";
   status: "not-requested" | "pending" | "completed" | "failed";
   source: "raw-scene-target" | "m5-research-composite";
