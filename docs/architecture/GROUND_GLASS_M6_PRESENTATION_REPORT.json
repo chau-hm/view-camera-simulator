@@ -255,5 +255,14 @@
     "The architecture remains partial until physical grid/target raster alignment is verified.",
     "Quality remains unqualified; screenshot differences are not parity or correctness claims.",
     "M6 build authorization cannot affect production WebGL or enable production WebGPU."
-  ]
+  ],
+  "reviewFix1": {
+    "reviewedHead": "91d4f9330e250f0369236dad2a88733869002903",
+    "correctedSourceCommit": "bfa7b0348d37f9840a68097255de0e3a128dfc98",
+    "supplementalReport": "GROUND_GLASS_M6_REVIEW_FIX_1_REPORT.json",
+    "historicalEvidence": "All original capture IDs, measurements, and conclusions above remain unchanged and describe the original M6 run.",
+    "scopeClarification": "The original zero-additional-target accounting describes the M6 presentation node beyond its M5 input. Review-Fix 1 separately records the M4/M5 resources now provisioned when an authorized M6-capable session starts in Raw Debug.",
+    "m6Status": "architecture-partially-implemented; quality-unqualified; physical grid/target alignment remains open.",
+    "productionWebGpu": "disabled"
+  }
 }
