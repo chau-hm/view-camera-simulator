@@ -19,7 +19,8 @@ import {
 
 export const GROUND_GLASS_M5T_QUADRATURE_REVISION = "ground-glass-m5t-adaptive-quadtree-v1" as const;
 export const GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS = [32, 64, 128, 256] as const;
-export type GroundGlassM5tQuadratureResolution = (typeof GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS)[number];
+/** 8/16 are accepted only for M5U start-grid sensitivity experiments. */
+export type GroundGlassM5tQuadratureResolution = 8 | 16 | (typeof GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS)[number];
 export const GROUND_GLASS_M5T_MAX_ADAPTIVE_DEPTH = 12;
 export const GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL = 250_000;
 export const GROUND_GLASS_M5T_MAX_PIXELS_PER_STUDY = 128;
@@ -59,6 +60,51 @@ export type GroundGlassM5tCellClass =
   | "eligibility-boundary"
   | "unresolved-cell";
 
+export type GroundGlassM5tCostBreakdown = Readonly<{
+  initialRootCellCount: number;
+  rootCellsOutsideDisk: number;
+  rootCellsInsideDisk: number;
+  rootCellsCrossingDisk: number;
+  sourceTexelBoundaryCells: number;
+  eligibilityBoundaryCells: number;
+  overlappingBoundaryCategories: Readonly<{
+    diskAndSourceTexel: number;
+    diskAndEligibility: number;
+    sourceTexelAndEligibility: number;
+    allThree: number;
+  }>;
+  smoothAcceptedCells: number;
+  smoothRejectedCells: number;
+  unresolvedCells: number;
+  maximumDepthCells: number;
+  depthProbeEvaluations: number;
+  sourceMappingEvaluations: number;
+  rgbFetches: number;
+  actualPointEvaluations: number;
+  pointFunctionCalls: number;
+  geometricPredicates: number;
+  sourceTexelMappingOperations: number;
+  cachedIntegrandLookups: number;
+  uncachedIntegrandEvaluations: number;
+  acceptedAreaContributions: number;
+  budgetChargedEvaluationUnits: number;
+  totalRefinedCells: number;
+  maximumFrontierSize: number;
+  allocatedCellNodes: number;
+  estimatedPeakWorkingMemoryBytes: number;
+  budgetExhaustionDepthCounts: Readonly<Record<string, number>>;
+  unresolvedAreaByCause: Readonly<{
+    diskBoundary: number;
+    sourceTexelBoundary: number;
+    eligibilityBoundary: number;
+    overlappingBoundaries: number;
+    budgetPreempted: number;
+    depthLimit: number;
+    depthProbeBudget: number;
+    unclassified: number;
+  }>;
+}>;
+
 export type GroundGlassM5tFarPixelEstimate = Readonly<{
   gatherPixelId: number;
   centerSourceId: number;
@@ -78,6 +124,7 @@ export type GroundGlassM5tFarPixelEstimate = Readonly<{
   evaluatedPoints: number;
   refinementDepth: number;
   cellClassCounts: Readonly<Record<GroundGlassM5tCellClass, number>>;
+  costBreakdown: GroundGlassM5tCostBreakdown;
   classification: "estimated" | "empty-accepted-area" | "invalid-center" | "evaluation-budget-exceeded";
 }>;
 
@@ -90,6 +137,7 @@ export type GroundGlassM5tQuadratureRun = Readonly<{
   evaluationBudgetPerPixel: number;
   evaluatedPoints: number;
   elapsedMs: number;
+  costBreakdown: GroundGlassM5tCostBreakdown;
   pixels: readonly GroundGlassM5tFarPixelEstimate[];
 }>;
 
@@ -170,7 +218,42 @@ type CellNode = {
   colorArea: [number, number, number];
   needsRefinement: boolean;
   unresolved: boolean;
+  boundaryCauses: readonly ("disk" | "sourceTexel" | "eligibility")[];
+  unresolvedReason: "budget-preempted" | "depth-limit" | "depth-probe-budget" | null;
   children: CellNode[] | null;
+};
+type MutableCostBreakdown = {
+  initialRootCellCount: number;
+  rootCellsOutsideDisk: number;
+  rootCellsInsideDisk: number;
+  rootCellsCrossingDisk: number;
+  sourceTexelBoundaryCells: number;
+  eligibilityBoundaryCells: number;
+  overlappingBoundaryCategories: { diskAndSourceTexel: number; diskAndEligibility: number;
+    sourceTexelAndEligibility: number; allThree: number };
+  smoothAcceptedCells: number;
+  smoothRejectedCells: number;
+  unresolvedCells: number;
+  maximumDepthCells: number;
+  depthProbeEvaluations: number;
+  sourceMappingEvaluations: number;
+  rgbFetches: number;
+  actualPointEvaluations: number;
+  pointFunctionCalls: number;
+  geometricPredicates: number;
+  sourceTexelMappingOperations: number;
+  cachedIntegrandLookups: number;
+  uncachedIntegrandEvaluations: number;
+  acceptedAreaContributions: number;
+  budgetChargedEvaluationUnits: number;
+  totalRefinedCells: number;
+  maximumFrontierSize: number;
+  allocatedCellNodes: number;
+  estimatedPeakWorkingMemoryBytes: number;
+  budgetExhaustionDepthCounts: Record<string, number>;
+  unresolvedAreaByCause: { diskBoundary: number; sourceTexelBoundary: number;
+    eligibilityBoundary: number; overlappingBoundaries: number; budgetPreempted: number;
+    depthLimit: number; depthProbeBudget: number; unclassified: number };
 };
 type Accumulator = {
   acceptedArea: number;
@@ -182,6 +265,7 @@ type Accumulator = {
   evaluations: number;
   maximumDepth: number;
   budgetExceeded: boolean;
+  diagnostics: MutableCostBreakdown;
   counts: Record<GroundGlassM5tCellClass, number>;
 };
 
@@ -192,6 +276,87 @@ const zeroCounts = (): Record<GroundGlassM5tCellClass, number> => ({
   "eligibility-boundary": 0,
   "unresolved-cell": 0,
 });
+
+const createCostBreakdown = (): MutableCostBreakdown => ({
+  initialRootCellCount: 0,
+  rootCellsOutsideDisk: 0,
+  rootCellsInsideDisk: 0,
+  rootCellsCrossingDisk: 0,
+  sourceTexelBoundaryCells: 0,
+  eligibilityBoundaryCells: 0,
+  overlappingBoundaryCategories: { diskAndSourceTexel: 0, diskAndEligibility: 0,
+    sourceTexelAndEligibility: 0, allThree: 0 },
+  smoothAcceptedCells: 0,
+  smoothRejectedCells: 0,
+  unresolvedCells: 0,
+  maximumDepthCells: 0,
+  depthProbeEvaluations: 0,
+  sourceMappingEvaluations: 0,
+  rgbFetches: 0,
+  actualPointEvaluations: 0,
+  pointFunctionCalls: 0,
+  geometricPredicates: 0,
+  sourceTexelMappingOperations: 0,
+  cachedIntegrandLookups: 0,
+  uncachedIntegrandEvaluations: 0,
+  acceptedAreaContributions: 0,
+  budgetChargedEvaluationUnits: 0,
+  totalRefinedCells: 0,
+  maximumFrontierSize: 0,
+  allocatedCellNodes: 0,
+  estimatedPeakWorkingMemoryBytes: 0,
+  budgetExhaustionDepthCounts: {},
+  unresolvedAreaByCause: { diskBoundary: 0, sourceTexelBoundary: 0,
+    eligibilityBoundary: 0, overlappingBoundaries: 0, budgetPreempted: 0,
+    depthLimit: 0, depthProbeBudget: 0, unclassified: 0 },
+});
+
+const snapshotCostBreakdown = (cost: MutableCostBreakdown): GroundGlassM5tCostBreakdown => ({
+  ...cost,
+  overlappingBoundaryCategories: { ...cost.overlappingBoundaryCategories },
+  budgetExhaustionDepthCounts: { ...cost.budgetExhaustionDepthCounts },
+  unresolvedAreaByCause: { ...cost.unresolvedAreaByCause },
+});
+
+const mergeCostBreakdown = (target: MutableCostBreakdown, source: GroundGlassM5tCostBreakdown): void => {
+  target.initialRootCellCount += source.initialRootCellCount;
+  target.rootCellsOutsideDisk += source.rootCellsOutsideDisk;
+  target.rootCellsInsideDisk += source.rootCellsInsideDisk;
+  target.rootCellsCrossingDisk += source.rootCellsCrossingDisk;
+  target.sourceTexelBoundaryCells += source.sourceTexelBoundaryCells;
+  target.eligibilityBoundaryCells += source.eligibilityBoundaryCells;
+  target.overlappingBoundaryCategories.diskAndSourceTexel += source.overlappingBoundaryCategories.diskAndSourceTexel;
+  target.overlappingBoundaryCategories.diskAndEligibility += source.overlappingBoundaryCategories.diskAndEligibility;
+  target.overlappingBoundaryCategories.sourceTexelAndEligibility += source.overlappingBoundaryCategories.sourceTexelAndEligibility;
+  target.overlappingBoundaryCategories.allThree += source.overlappingBoundaryCategories.allThree;
+  target.smoothAcceptedCells += source.smoothAcceptedCells;
+  target.smoothRejectedCells += source.smoothRejectedCells;
+  target.unresolvedCells += source.unresolvedCells;
+  target.maximumDepthCells += source.maximumDepthCells;
+  target.depthProbeEvaluations += source.depthProbeEvaluations;
+  target.sourceMappingEvaluations += source.sourceMappingEvaluations;
+  target.rgbFetches += source.rgbFetches;
+  target.actualPointEvaluations += source.actualPointEvaluations;
+  target.pointFunctionCalls += source.pointFunctionCalls;
+  target.geometricPredicates += source.geometricPredicates;
+  target.sourceTexelMappingOperations += source.sourceTexelMappingOperations;
+  target.cachedIntegrandLookups += source.cachedIntegrandLookups;
+  target.uncachedIntegrandEvaluations += source.uncachedIntegrandEvaluations;
+  target.acceptedAreaContributions += source.acceptedAreaContributions;
+  target.budgetChargedEvaluationUnits += source.budgetChargedEvaluationUnits;
+  target.totalRefinedCells += source.totalRefinedCells;
+  target.maximumFrontierSize = Math.max(target.maximumFrontierSize, source.maximumFrontierSize);
+  target.allocatedCellNodes += source.allocatedCellNodes;
+  target.estimatedPeakWorkingMemoryBytes = Math.max(target.estimatedPeakWorkingMemoryBytes,
+    source.estimatedPeakWorkingMemoryBytes);
+  for (const [depth, count] of Object.entries(source.budgetExhaustionDepthCounts)) {
+    target.budgetExhaustionDepthCounts[depth] = (target.budgetExhaustionDepthCounts[depth] ?? 0) + count;
+  }
+  for (const [cause, area] of Object.entries(source.unresolvedAreaByCause) as
+    [keyof MutableCostBreakdown["unresolvedAreaByCause"], number][]) {
+    target.unresolvedAreaByCause[cause] += area;
+  }
+};
 
 const validDimensions = (value: GroundGlassApertureDimensions): boolean =>
   Number.isSafeInteger(value.widthPx) && value.widthPx > 0
@@ -313,12 +478,20 @@ const evaluatePoint = (
   context: PixelContext,
   x: number,
   y: number,
+  diagnostics?: MutableCostBreakdown,
 ): PointValue => {
   const insideDisk = x * x + y * y <= 1;
   if (!insideDisk) return { insideDisk, accepted: false, sourcePixelId: -1, rgb: [0, 0, 0], viewDistanceMm: 0 };
+  if (diagnostics) {
+    diagnostics.actualPointEvaluations += 1;
+    diagnostics.uncachedIntegrandEvaluations += 1;
+    diagnostics.sourceMappingEvaluations += 1;
+    diagnostics.sourceTexelMappingOperations += 1;
+  }
   const [uTop, vTop] = uvAt(input, context, x, y);
   const [sourceX, sourceY] = nearestGroundGlassSourcePixelAtTopUv(uTop, vTop, input.source);
   const sourcePixelId = sourceY * input.source.widthPx + sourceX;
+  if (diagnostics) diagnostics.rgbFetches += 1;
   const offset = sourcePixelId * 4;
   const depth = input.depth[sourcePixelId]!;
   const viewDistanceMm = groundGlassViewDistanceMmAtTopUv(
@@ -359,7 +532,10 @@ const cellCrossesSourceTexel = (
   input: GroundGlassM5tFarReferenceInput,
   context: PixelContext,
   cell: Cell,
+  diagnostics: MutableCostBreakdown,
 ): boolean => {
+  diagnostics.geometricPredicates += 1;
+  diagnostics.sourceTexelMappingOperations += 4;
   const mapped = cornersOf(cell).map(([x, y]) => uvAt(input, context, x, y));
   for (const [axis, dimension] of [[0, input.source.widthPx], [1, input.source.heightPx]] as const) {
     const minimum = Math.min(...mapped.map((point) => point[axis])) * dimension;
@@ -398,6 +574,7 @@ const createAccumulator = (): Accumulator => ({
   evaluations: 0,
   maximumDepth: 0,
   budgetExceeded: false,
+  diagnostics: createCostBreakdown(),
   counts: zeroCounts(),
 });
 
@@ -419,6 +596,7 @@ const invalidPixelResult = (gatherPixelId: number, centerSourceId: number): Grou
   evaluatedPoints: 0,
   refinementDepth: 0,
   cellClassCounts: zeroCounts(),
+  costBreakdown: snapshotCostBreakdown(createCostBreakdown()),
   classification: "invalid-center",
 });
 
@@ -448,6 +626,7 @@ const makePixelResult = (
   evaluatedPoints: accumulator.evaluations,
   refinementDepth: accumulator.maximumDepth,
   cellClassCounts: accumulator.counts,
+  costBreakdown: snapshotCostBreakdown(accumulator.diagnostics),
   classification: classificationOverride
     ?? (accumulator.acceptedArea > 0 ? "estimated" : "empty-accepted-area"),
 });
@@ -467,7 +646,9 @@ const validateRunArgs = (input: Readonly<{
     throw new RangeError("M5T requires unique in-range gather pixels, capped at 128 per study");
   }
   if (!(GROUND_GLASS_M5T_QUADRATURE_RESOLUTIONS as readonly number[]).includes(input.initialResolution)) {
-    throw new RangeError("M5T initial resolution must be 32, 64, 128, or 256");
+    if (input.initialResolution !== 8 && input.initialResolution !== 16) {
+      throw new RangeError("M5T resolution must use its 32/64/128/256 sequence; 8/16 are reserved for M5U sensitivity only");
+    }
   }
   const maximumDepth = input.maximumDepth ?? GROUND_GLASS_M5T_MAX_ADAPTIVE_DEPTH;
   const maxEvaluationsPerPixel = input.maxEvaluationsPerPixel ?? GROUND_GLASS_M5T_MAX_EVALUATIONS_PER_PIXEL;
@@ -492,9 +673,10 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
   maxEvaluationsPerPixel?: number;
 }>): GroundGlassM5tQuadratureRun => {
   const { maximumDepth, maxEvaluationsPerPixel } = validateRunArgs(input);
-  const startedAt = Date.now();
+  const startedAt = performance.now();
   const pixels: GroundGlassM5tFarPixelEstimate[] = [];
   let runEvaluations = 0;
+  const runDiagnostics = createCostBreakdown();
   for (const gatherPixelId of input.selectedGatherPixelIds) {
     const centerX = input.referenceInput.observedGatherCenterSourceIds[gatherPixelId * 2]!;
     const centerY = input.referenceInput.observedGatherCenterSourceIds[gatherPixelId * 2 + 1]!;
@@ -508,33 +690,49 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
     const accumulator = createAccumulator();
     const resolution = input.initialResolution;
     const cellSize = 2 / resolution;
+    accumulator.diagnostics.initialRootCellCount = resolution * resolution;
     const uvDependentDepth = viewDistanceDependsOnUv(input.referenceInput);
     let areaError = 0;
     const colorError: [number, number, number] = [0, 0, 0];
 
     const buildCell = (cell: Cell): CellNode => {
+      accumulator.diagnostics.allocatedCellNodes += 1;
+      accumulator.diagnostics.geometricPredicates += 1;
       const relation = cellRelationToDisk(cell);
       const cellArea = cell.size * cell.size;
+      if (cell.depth === 0) {
+        if (relation === "outside") accumulator.diagnostics.rootCellsOutsideDisk += 1;
+        else if (relation === "inside") accumulator.diagnostics.rootCellsInsideDisk += 1;
+        else accumulator.diagnostics.rootCellsCrossingDisk += 1;
+      }
       if (relation === "outside") return {
         cell, areaEstimate: 0, colorArea: [0, 0, 0], needsRefinement: false,
-        unresolved: false, children: null,
+        unresolved: false, boundaryCauses: [], unresolvedReason: null, children: null,
       };
       if (accumulator.evaluations >= maxEvaluationsPerPixel) {
         accumulator.budgetExceeded = true;
         accumulator.counts["unresolved-cell"] += 1;
+        const depth = String(cell.depth);
+        accumulator.diagnostics.budgetExhaustionDepthCounts[depth] =
+          (accumulator.diagnostics.budgetExhaustionDepthCounts[depth] ?? 0) + 1;
         return {
           cell, areaEstimate: 0, colorArea: [0, 0, 0], needsRefinement: true,
-          unresolved: true, children: null,
+          unresolved: true,
+          boundaryCauses: relation === "boundary" ? ["disk"] : [],
+          unresolvedReason: "budget-preempted", children: null,
         };
       }
       const centerX = cell.minX + cell.size / 2;
       const centerY = cell.minY + cell.size / 2;
-      const centerValue = evaluatePoint(input.referenceInput, context, centerX, centerY);
+      accumulator.diagnostics.pointFunctionCalls += 1;
+      const centerValue = evaluatePoint(input.referenceInput, context, centerX, centerY,
+        accumulator.diagnostics);
       accumulator.evaluations += 1;
       accumulator.maximumDepth = Math.max(accumulator.maximumDepth, cell.depth);
       const parentArea = centerValue.insideDisk && centerValue.accepted ? cellArea : 0;
       const parentColor = rgbAreaAt(centerValue, cellArea);
-      const crossesTexel = cellCrossesSourceTexel(input.referenceInput, context, cell);
+      const crossesTexel = cellCrossesSourceTexel(input.referenceInput, context, cell,
+        accumulator.diagnostics);
       let eligibilityBoundary = false;
       let probeBudgetUnavailable = false;
       if (uvDependentDepth && relation === "inside" && !crossesTexel) {
@@ -551,15 +749,34 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
             return groundGlassViewDistanceMmAtTopUv(uTop, vTop, depth, input.referenceInput.inverseProjectionMatrix);
           });
           accumulator.evaluations += corners.length;
+          accumulator.diagnostics.depthProbeEvaluations += corners.length;
           const centerDecision = centerValue.viewDistanceMm >= limit;
           eligibilityBoundary = distances.some((distance) => (distance >= limit) !== centerDecision);
         }
       }
+      const boundaryCauses = [
+        ...(relation === "boundary" ? ["disk" as const] : []),
+        ...(crossesTexel ? ["sourceTexel" as const] : []),
+        ...(eligibilityBoundary ? ["eligibility" as const] : []),
+      ];
+      if (crossesTexel) accumulator.diagnostics.sourceTexelBoundaryCells += 1;
+      if (eligibilityBoundary) accumulator.diagnostics.eligibilityBoundaryCells += 1;
+      if (boundaryCauses.length >= 2) {
+        if (boundaryCauses.length === 3) accumulator.diagnostics.overlappingBoundaryCategories.allThree += 1;
+        else if (boundaryCauses.includes("disk") && boundaryCauses.includes("sourceTexel")) {
+          accumulator.diagnostics.overlappingBoundaryCategories.diskAndSourceTexel += 1;
+        } else if (boundaryCauses.includes("disk") && boundaryCauses.includes("eligibility")) {
+          accumulator.diagnostics.overlappingBoundaryCategories.diskAndEligibility += 1;
+        } else accumulator.diagnostics.overlappingBoundaryCategories.sourceTexelAndEligibility += 1;
+      }
       const needsRefinement = relation === "boundary" || crossesTexel || eligibilityBoundary;
       if (!needsRefinement) {
         accumulator.counts["smooth-interior"] += 1;
+        if (centerValue.accepted) accumulator.diagnostics.smoothAcceptedCells += 1;
+        else accumulator.diagnostics.smoothRejectedCells += 1;
         return { cell, areaEstimate: parentArea, colorArea: parentColor,
-          needsRefinement: false, unresolved: false, children: null };
+          needsRefinement: false, unresolved: false, boundaryCauses: [],
+          unresolvedReason: null, children: null };
       }
       if (relation === "boundary") accumulator.counts["disk-boundary"] += 1;
       if (crossesTexel) accumulator.counts["source-texel-boundary"] += 1;
@@ -569,7 +786,8 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
         accumulator.counts["unresolved-cell"] += 1;
       }
       return { cell, areaEstimate: parentArea, colorArea: parentColor,
-        needsRefinement, unresolved, children: null };
+        needsRefinement, unresolved, boundaryCauses,
+        unresolvedReason: unresolved ? "depth-probe-budget" : null, children: null };
     };
 
     const roots: CellNode[] = [];
@@ -585,19 +803,27 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
     }
 
     let frontier = roots;
+    accumulator.diagnostics.maximumFrontierSize = Math.max(
+      accumulator.diagnostics.maximumFrontierSize, frontier.length);
     while (frontier.length) {
       const nextFrontier: CellNode[] = [];
       for (const node of frontier) {
         if (!node.needsRefinement || node.unresolved) continue;
         if (node.cell.depth >= maximumDepth) {
           node.unresolved = true;
+          node.unresolvedReason = "depth-limit";
           accumulator.counts["unresolved-cell"] += 1;
+          accumulator.diagnostics.maximumDepthCells += 1;
           continue;
         }
         if (accumulator.evaluations + 4 > maxEvaluationsPerPixel) {
           node.unresolved = true;
+          node.unresolvedReason = "budget-preempted";
           accumulator.budgetExceeded = true;
           accumulator.counts["unresolved-cell"] += 1;
+          const depth = String(node.cell.depth);
+          accumulator.diagnostics.budgetExhaustionDepthCounts[depth] =
+            (accumulator.diagnostics.budgetExhaustionDepthCounts[depth] ?? 0) + 1;
           continue;
         }
         const half = node.cell.size / 2;
@@ -609,6 +835,7 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
         ];
         const children = childCells.map(buildCell);
         node.children = children;
+        accumulator.diagnostics.totalRefinedCells += 1;
         const refinedArea = children.reduce((sum, child) => sum + child.areaEstimate, 0);
         areaError += Math.abs(refinedArea - node.areaEstimate);
         for (let channel = 0; channel < 3; channel += 1) {
@@ -618,6 +845,8 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
         nextFrontier.push(...children);
       }
       frontier = nextFrontier;
+      accumulator.diagnostics.maximumFrontierSize = Math.max(
+        accumulator.diagnostics.maximumFrontierSize, frontier.length);
     }
 
     let unresolvedArea = 0;
@@ -629,10 +858,21 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
       }
       accumulator.acceptedArea += node.areaEstimate;
       accumulator.colorArea = addRgb(accumulator.colorArea, node.colorArea);
+      if (node.areaEstimate > 0) accumulator.diagnostics.acceptedAreaContributions += 1;
       if (node.unresolved) {
         const cellArea = node.cell.size * node.cell.size;
         unresolvedArea += cellArea;
         unresolvedCellCount += 1;
+        accumulator.diagnostics.unresolvedCells += 1;
+        const unresolvedDiagnostics = accumulator.diagnostics.unresolvedAreaByCause;
+        if (node.boundaryCauses.includes("disk")) unresolvedDiagnostics.diskBoundary += cellArea;
+        if (node.boundaryCauses.includes("sourceTexel")) unresolvedDiagnostics.sourceTexelBoundary += cellArea;
+        if (node.boundaryCauses.includes("eligibility")) unresolvedDiagnostics.eligibilityBoundary += cellArea;
+        if (node.boundaryCauses.length > 1) unresolvedDiagnostics.overlappingBoundaries += cellArea;
+        if (node.unresolvedReason === "budget-preempted") unresolvedDiagnostics.budgetPreempted += cellArea;
+        else if (node.unresolvedReason === "depth-limit") unresolvedDiagnostics.depthLimit += cellArea;
+        else if (node.unresolvedReason === "depth-probe-budget") unresolvedDiagnostics.depthProbeBudget += cellArea;
+        else if (node.boundaryCauses.length === 0) unresolvedDiagnostics.unclassified += cellArea;
         areaError += cellArea;
         for (let channel = 0; channel < 3; channel += 1) {
           colorError[channel] += Math.abs(node.colorArea[channel]!);
@@ -644,10 +884,17 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
     accumulator.colorError = colorError;
     accumulator.unresolvedArea = unresolvedArea;
     accumulator.unresolvedCellCount = unresolvedCellCount;
+    accumulator.diagnostics.budgetChargedEvaluationUnits = accumulator.evaluations;
+    accumulator.diagnostics.estimatedPeakWorkingMemoryBytes =
+      accumulator.diagnostics.allocatedCellNodes * 128
+      + (roots.length + accumulator.diagnostics.maximumFrontierSize) * 8;
     runEvaluations += accumulator.evaluations;
-    pixels.push(makePixelResult(context, accumulator,
-      accumulator.budgetExceeded ? "evaluation-budget-exceeded" : undefined));
+    const pixelResult = makePixelResult(context, accumulator,
+      accumulator.budgetExceeded ? "evaluation-budget-exceeded" : undefined);
+    mergeCostBreakdown(runDiagnostics, pixelResult.costBreakdown);
+    pixels.push(pixelResult);
   }
+  runDiagnostics.budgetChargedEvaluationUnits = runEvaluations;
   return {
     algorithm: GROUND_GLASS_M5T_QUADRATURE_REVISION,
     method: "adaptive-quadtree-midpoint",
@@ -656,7 +903,8 @@ export const runGroundGlassM5tAdaptiveQuadrature = (input: Readonly<{
     maximumDepth,
     evaluationBudgetPerPixel: maxEvaluationsPerPixel,
     evaluatedPoints: runEvaluations,
-    elapsedMs: Date.now() - startedAt,
+    elapsedMs: performance.now() - startedAt,
+    costBreakdown: snapshotCostBreakdown(runDiagnostics),
     pixels,
   };
 };
@@ -686,7 +934,7 @@ export const runGroundGlassM5tFixedGridReference = (input: Readonly<{
   if (input.selectedGatherPixelIds.some((id) => !Number.isSafeInteger(id) || id < 0 || id >= gatherCount)) {
     throw new RangeError("M5T fixed-grid selected gather pixel is out of range");
   }
-  const startedAt = Date.now();
+  const startedAt = performance.now();
   const spacing = 2 / resolution;
   const cellArea = spacing * spacing;
   const maximumSourceMagnitude: [number, number, number] = [0, 0, 0];
@@ -744,6 +992,7 @@ export const runGroundGlassM5tFixedGridReference = (input: Readonly<{
         evaluations: evaluatedPoints,
         maximumDepth: 0,
         budgetExceeded: exceeded,
+        diagnostics: createCostBreakdown(),
         counts,
       }, exceeded ? "evaluation-budget-exceeded" : undefined),
       cellClassCounts: counts,
@@ -756,7 +1005,7 @@ export const runGroundGlassM5tFixedGridReference = (input: Readonly<{
     resolution,
     evaluationBudgetPerPixel: maxEvaluationsPerPixel,
     evaluatedPoints: runEvaluations,
-    elapsedMs: Date.now() - startedAt,
+    elapsedMs: performance.now() - startedAt,
     pixels,
   };
 };
