@@ -6,9 +6,20 @@ const groundGlassNativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_R
 const groundGlassFailureIntegration = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
 const groundGlassPhysicalCocResearch = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1";
 const groundGlassApertureGatherResearch = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === "1";
-const headedNativeWebGpuRequired = nativeWebGpuRequired || groundGlassNativeWebGpuRequired;
+const groundGlassM6PresentationRequired = process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === "1";
+const headedNativeWebGpuRequired = nativeWebGpuRequired || groundGlassNativeWebGpuRequired || groundGlassM6PresentationRequired;
 const isolatedWebServerPort = process.env.PLAYWRIGHT_WEB_SERVER_PORT;
-const webServerPort = isolatedWebServerPort ?? "4173";
+const webServerPort = isolatedWebServerPort ?? (groundGlassM6PresentationRequired ? "4175" : "4173");
+const baselineWebServerPort = process.env.GROUND_GLASS_M6_WEBGL_BASELINE_PORT ?? String(Number(webServerPort) + 1);
+const webServerEnvironment = {
+  ...process.env,
+  VITE_BASE_PATH: "/",
+  VITE_GROUND_GLASS_WEBGPU_TEST_SEAM: groundGlassFailureIntegration || groundGlassPhysicalCocResearch || groundGlassApertureGatherResearch || groundGlassM6PresentationRequired ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH: groundGlassPhysicalCocResearch || groundGlassM6PresentationRequired ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH: groundGlassApertureGatherResearch || groundGlassM6PresentationRequired ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_RAW_PILOT: groundGlassM6PresentationRequired ? "true" : process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT ?? "false",
+  VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION: groundGlassM6PresentationRequired ? "true" : "false",
+};
 
 export default defineConfig({
   testDir: "./src/tests/e2e",
@@ -20,19 +31,36 @@ export default defineConfig({
     trace: "on-first-retry",
   },
 
-  webServer: {
-    command: `npm run dev -- --host 127.0.0.1 --port ${webServerPort} --strictPort`,
-    url: `http://127.0.0.1:${webServerPort}`,
-    reuseExistingServer: !process.env.CI && isolatedWebServerPort === undefined,
-    timeout: 120_000,
-    env: {
-      ...process.env,
-      VITE_BASE_PATH: "/",
-      VITE_GROUND_GLASS_WEBGPU_TEST_SEAM: groundGlassFailureIntegration || groundGlassPhysicalCocResearch || groundGlassApertureGatherResearch ? "true" : "false",
-      VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH: groundGlassPhysicalCocResearch ? "true" : "false",
-      VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH: groundGlassApertureGatherResearch ? "true" : "false",
-    },
-  },
+  webServer: groundGlassM6PresentationRequired
+    ? [
+        {
+          command: `npm run dev -- --host 127.0.0.1 --port ${webServerPort} --strictPort`,
+          url: `http://127.0.0.1:${webServerPort}`,
+          reuseExistingServer: false,
+          timeout: 120_000,
+          env: webServerEnvironment,
+        },
+        {
+          command: `npm run dev -- --host 127.0.0.1 --port ${baselineWebServerPort} --strictPort`,
+          url: `http://127.0.0.1:${baselineWebServerPort}`,
+          reuseExistingServer: false,
+          timeout: 120_000,
+          env: {
+            ...webServerEnvironment,
+            VITE_GROUND_GLASS_WEBGPU_RAW_PILOT: "false",
+            VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION: "false",
+            VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH: "false",
+            VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH: "false",
+          },
+        },
+      ]
+    : {
+        command: `npm run dev -- --host 127.0.0.1 --port ${webServerPort} --strictPort`,
+        url: `http://127.0.0.1:${webServerPort}`,
+        reuseExistingServer: !process.env.CI && isolatedWebServerPort === undefined,
+        timeout: 120_000,
+        env: webServerEnvironment,
+      },
 
   projects: [
     headedNativeWebGpuRequired

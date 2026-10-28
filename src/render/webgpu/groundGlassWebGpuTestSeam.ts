@@ -375,6 +375,10 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "aperture-near-after-submit"
   | "aperture-b1-after-submit"
   | "aperture-composite-after-submit"
+  | "m6-presentation-target-initialization"
+  | "m6-presentation-node-initialization"
+  | "m6-presentation-before-render"
+  | "m6-presentation-after-submit"
   | "aperture-readback"
   | "texture-display-after-submit"
   | "dispose-target";
@@ -430,6 +434,9 @@ export type GroundGlassWebGpuTestControl = {
   holdQueueCompletion?: boolean;
   queueCompletionBarrierReached?: boolean;
   releaseQueueCompletion?: (() => void) | undefined;
+  holdPresentationQueueCompletion?: boolean;
+  presentationQueueCompletionBarrierReached?: boolean;
+  releasePresentationQueueCompletion?: (() => void) | undefined;
   holdFrameRequestId?: string | null;
   holdNextCompletedFrame?: boolean;
   heldFrameRequestId?: string | null;
@@ -603,6 +610,21 @@ export const holdGroundGlassWebGpuQueueCompletion = async (): Promise<void> => {
       control.holdQueueCompletion = false;
       control.queueCompletionBarrierReached = false;
       control.releaseQueueCompletion = undefined;
+      resolve();
+    };
+  });
+};
+
+/** Holds only after the M6 final presentation draw has been submitted, for stale-request tests. */
+export const holdGroundGlassWebGpuPresentationQueueCompletion = async (): Promise<void> => {
+  const control = getControl();
+  if (!control?.holdPresentationQueueCompletion) return;
+  control.presentationQueueCompletionBarrierReached = true;
+  await new Promise<void>((resolve) => {
+    control.releasePresentationQueueCompletion = () => {
+      control.holdPresentationQueueCompletion = false;
+      control.presentationQueueCompletionBarrierReached = false;
+      control.releasePresentationQueueCompletion = undefined;
       resolve();
     };
   });

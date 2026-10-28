@@ -48,6 +48,15 @@ export type GroundGlassFeatureCompatibility =
       testedContext: GroundGlassVerifiedRuntimeContext;
       verificationEvidence: readonly string[];
       requiredCapabilities: GroundGlassCapabilityRequirements;
+    }>)
+  | (GroundGlassFeatureCompatibilityBase & Readonly<{
+      /** Development implementation is verified while optical quality remains unqualified. */
+      status: "implementation-verified";
+      qualityQualification: "unqualified";
+      evidenceRevision: string;
+      testedContext: GroundGlassVerifiedRuntimeContext;
+      verificationEvidence: readonly string[];
+      requiredCapabilities: GroundGlassCapabilityRequirements;
     }>);
 
 export type GroundGlassSceneCompatibility = Readonly<{
@@ -82,6 +91,8 @@ export type GroundGlassSceneEligibility =
       requestedFeatures: readonly GroundGlassFeatureName[];
       requiredCapabilities: GroundGlassCapabilityRequirements;
       evidenceRevisions: readonly string[];
+      /** Present when a development-only implementation record supports eligibility. */
+      qualityQualification?: "unqualified";
     }>
   | Readonly<{
       status: "denied";
@@ -104,13 +115,15 @@ const isGroundGlassFeatureName = (
 ): feature is GroundGlassFeatureName => KNOWN_GROUND_GLASS_FEATURES.has(feature);
 
 const mergeRequirements = (
-  features: readonly GroundGlassFeatureCompatibility[],
+  features: readonly Extract<GroundGlassFeatureCompatibility, {
+    status: "verified" | "implementation-verified";
+  }>[],
 ): GroundGlassCapabilityRequirements => ({
   adapterFeatures: [...new Set(features.flatMap((feature) =>
-    feature.status === "verified" ? feature.requiredCapabilities.adapterFeatures : [],
+    feature.requiredCapabilities.adapterFeatures,
   ))],
   textureStorageFormats: [...new Set(features.flatMap((feature) =>
-    feature.status === "verified" ? feature.requiredCapabilities.textureStorageFormats : [],
+    feature.requiredCapabilities.textureStorageFormats,
   ))],
 });
 
@@ -135,7 +148,9 @@ export const resolveGroundGlassSceneEligibility = (
   if (compatibility.sceneId !== sceneId) reasons.add("scene-identity-mismatch");
   if (requestedFeatures.length === 0) reasons.add("no-features-requested");
 
-  const requestedEntries: Array<Extract<GroundGlassFeatureCompatibility, { status: "verified" }>> = [];
+  const requestedEntries: Array<Extract<GroundGlassFeatureCompatibility, {
+    status: "verified" | "implementation-verified";
+  }>> = [];
   for (const requestedFeature of requestedFeatures) {
     if (!isGroundGlassFeatureName(requestedFeature)) {
       reasons.add("unknown-feature");
@@ -221,5 +236,8 @@ export const resolveGroundGlassSceneEligibility = (
     requestedFeatures: requestedEntries.map((feature) => feature.feature as GroundGlassFeatureName),
     requiredCapabilities: mergeRequirements(requestedEntries),
     evidenceRevisions: requestedEntries.map((feature) => feature.evidenceRevision),
+    ...(requestedEntries.some((feature) => feature.status === "implementation-verified")
+      ? { qualityQualification: "unqualified" as const }
+      : {}),
   };
 };
