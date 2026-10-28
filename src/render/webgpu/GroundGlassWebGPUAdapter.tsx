@@ -2196,43 +2196,6 @@ export const GroundGlassWebGPUAdapter = ({
           name: GroundGlassApertureGatherOperationName;
           timing: GroundGlassGpuPassTiming;
         }>> = [];
-        if (apertureGatherResourcesProvisioned) {
-          // Diagnostics belong to one accepted request; never keep the prior frame's
-          // completed gather visible while this request is being processed.
-          apertureGatherCompletedPasses = [];
-          apertureGatherStatus = "ready";
-          apertureGatherFailureReason = null;
-          apertureGatherUnsupportedReason = null;
-          apertureGatherDiagnostic = makeApertureGatherDiagnostic({
-            status: "ready",
-            request: latest,
-            generation,
-            target,
-            settings: apertureGatherSettings,
-            failureReason: null,
-            qualityGateReason: null,
-          });
-          setApertureGatherDiagnostics(apertureGatherDiagnostic);
-          // Keep the visible per-request "ready" status for Raw Debug, but let a subsequent
-          // M6 request create a fresh completion record after the actual gather passes finish.
-          apertureGatherDiagnostic = null;
-        }
-        if (physicalResourcesProvisioned && mountedExecutionApi === "webgpu") {
-          physicalPassStatus = "ready";
-          physicalCompletedPasses = [];
-          physicalDiagnostic = makePhysicalCocDiagnostic({
-            status: "ready",
-            request: latest,
-            generation,
-            target,
-            actualExecutionApi: mountedExecutionApi,
-            depthFormat: null,
-            cocStorageFormat: null,
-            validityStorageFormat: null,
-            completedPasses: [],
-          });
-          setPhysicalCocDiagnostics(physicalDiagnostic);
-        }
         let failedPass: GroundGlassRenderOperationId | null = null;
         try {
           const dimensions = resolveGroundGlassRttDimensions({
@@ -2242,6 +2205,40 @@ export const GroundGlassWebGPUAdapter = ({
             devicePixelRatio: 1,
           });
           target.setSize(dimensions.internalWidthPx, dimensions.internalHeightPx);
+          const resizeInitializedTarget = (
+            renderTarget: THREE.RenderTarget,
+            widthPx: number,
+            heightPx: number,
+          ) => {
+            if (renderTarget.width === widthPx && renderTarget.height === heightPx) return;
+            renderTarget.setSize(widthPx, heightPx);
+            renderer!.initRenderTarget(renderTarget);
+          };
+          if (physicalResourcesProvisioned && physicalTarget && validityTarget) {
+            resizeInitializedTarget(physicalTarget, target.width, target.height);
+            resizeInitializedTarget(validityTarget, target.width, target.height);
+          }
+          if (apertureGatherResourcesProvisioned && apertureGatherResources && apertureGatherSettings) {
+            const gatherWidthPx = Math.max(1, Math.round(target.width * apertureGatherSettings.gatherScale));
+            const gatherHeightPx = Math.max(1, Math.round(target.height * apertureGatherSettings.gatherScale));
+            [
+              [apertureGatherResources.farTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.nearTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.gatherIdentityTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.gatherCenterProvenanceTarget, gatherWidthPx, gatherHeightPx],
+              [apertureGatherResources.sourceIdentityTarget, target.width, target.height],
+              [apertureGatherResources.selectedProvenanceTarget, target.width, target.height],
+              [apertureGatherResources.b1Target, target.width, target.height],
+              [apertureGatherResources.researchCompositeTarget, target.width, target.height],
+              [apertureGatherResources.b1DecisionTarget, target.width, target.height],
+            ].forEach(([renderTarget, widthPx, heightPx]) => {
+              resizeInitializedTarget(
+                renderTarget as THREE.RenderTarget,
+                widthPx as number,
+                heightPx as number,
+              );
+            });
+          }
           renderer.setSize(Math.max(1, latest.widthPx), Math.max(1, latest.heightPx), false);
           const cameraConfiguration = makeCamera(renderer, latest, target.width, target.height);
           camera = cameraConfiguration.camera;
@@ -2249,6 +2246,44 @@ export const GroundGlassWebGPUAdapter = ({
           const mappedSourceCrop = latest.inspectionWindow as unknown as GroundGlassInspectionWindow;
           setTargetSize({ width: target.width, height: target.height });
           setSourceCrop(mappedSourceCrop);
+
+          if (apertureGatherResourcesProvisioned && apertureGatherResources && apertureGatherSettings) {
+            // Readiness includes dimensions for this accepted request; Raw still executes no M4/M5 passes.
+            apertureGatherCompletedPasses = [];
+            apertureGatherStatus = "ready";
+            apertureGatherFailureReason = null;
+            apertureGatherUnsupportedReason = null;
+            apertureGatherDiagnostic = makeApertureGatherDiagnostic({
+              status: "ready",
+              request: latest,
+              generation,
+              target,
+              settings: apertureGatherSettings,
+              farWidthPx: Math.max(1, Math.round(target.width * apertureGatherSettings.gatherScale)),
+              farHeightPx: Math.max(1, Math.round(target.height * apertureGatherSettings.gatherScale)),
+              failureReason: null,
+              qualityGateReason: null,
+            });
+            setApertureGatherDiagnostics(apertureGatherDiagnostic);
+            // Let an M6 request create a fresh completion record after the actual gather passes finish.
+            apertureGatherDiagnostic = null;
+          }
+          if (physicalResourcesProvisioned && mountedExecutionApi === "webgpu") {
+            physicalPassStatus = "ready";
+            physicalCompletedPasses = [];
+            physicalDiagnostic = makePhysicalCocDiagnostic({
+              status: "ready",
+              request: latest,
+              generation,
+              target,
+              actualExecutionApi: mountedExecutionApi,
+              depthFormat: null,
+              cocStorageFormat: null,
+              validityStorageFormat: null,
+              completedPasses: [],
+            });
+            setPhysicalCocDiagnostics(physicalDiagnostic);
+          }
 
           const m6PresentationRequested = isGroundGlassM6PresentationRequest(latest);
           const requestedDisplayMode = m6PresentationRequested

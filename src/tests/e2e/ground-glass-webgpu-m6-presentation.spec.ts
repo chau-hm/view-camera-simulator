@@ -638,10 +638,37 @@ test("native M6 provisions once from initial Raw Debug and completes Raw/M6/loup
     widthPx: Number(await pilot.getAttribute("data-target-width")),
     heightPx: Number(await pilot.getAttribute("data-target-height")),
   };
+  const initialPhysicalDimensions = {
+    width: Number(await pilot.getAttribute("data-physical-coc-width-px")),
+    height: Number(await pilot.getAttribute("data-physical-coc-height-px")),
+  };
+  const initialGatherSourceDimensions = {
+    width: Number(await pilot.getAttribute("data-aperture-gather-source-width-px")),
+    height: Number(await pilot.getAttribute("data-aperture-gather-source-height-px")),
+  };
+  const initialFarGatherDimensions = {
+    width: Number(await pilot.getAttribute("data-aperture-gather-far-width-px")),
+    height: Number(await pilot.getAttribute("data-aperture-gather-far-height-px")),
+  };
+  const initialNearGatherDimensions = {
+    width: Number(await pilot.getAttribute("data-aperture-gather-near-width-px")),
+    height: Number(await pilot.getAttribute("data-aperture-gather-near-height-px")),
+  };
   const initialGatherTargetCount = Number(await pilot.getAttribute("data-m6-gather-target-count"));
   expect(initialRawRequest).toBeTruthy();
   expect(generation).toBeTruthy();
   expect(pilotSessionId).toBeTruthy();
+  expect(initialPhysicalDimensions).toEqual({
+    width: initialTargetDimensions.widthPx,
+    height: initialTargetDimensions.heightPx,
+  });
+  expect(initialGatherSourceDimensions).toEqual({
+    width: initialTargetDimensions.widthPx,
+    height: initialTargetDimensions.heightPx,
+  });
+  expect(initialFarGatherDimensions.width).toBeGreaterThan(0);
+  expect(initialFarGatherDimensions.height).toBeGreaterThan(0);
+  expect(initialFarGatherDimensions).toEqual(initialNearGatherDimensions);
   await expect(pane).toHaveAttribute("data-pilot-retry-status", "available");
   expect(Number(await pilot.getAttribute("data-m6-gather-target-count"))).toBeGreaterThan(0);
   expect(await pilot.getAttribute("data-adapter-initial-request-id")).toBeTruthy();
@@ -823,15 +850,11 @@ test("native M6 provisions once from initial Raw Debug and completes Raw/M6/loup
       physicalResourcesReady: true,
       gatherResourcesReady: true,
       m5OwnedRenderTargetCount: initialGatherTargetCount,
-      provisionedAtAdapterInitializationPx: {
-        physical: {
-          width: Number(await pilot.getAttribute("data-physical-coc-width-px")),
-          height: Number(await pilot.getAttribute("data-physical-coc-height-px")),
-        },
-        gatherSource: {
-          width: Number(await pilot.getAttribute("data-aperture-gather-source-width-px")),
-          height: Number(await pilot.getAttribute("data-aperture-gather-source-height-px")),
-        },
+      firstRawFrameResourceDimensionsPx: {
+        physical: initialPhysicalDimensions,
+        gatherSource: initialGatherSourceDimensions,
+        farGather: initialFarGatherDimensions,
+        nearGather: initialNearGatherDimensions,
       },
       currentRawFrameTargetDimensionsPx: initialTargetDimensions,
       rawFrameM4Passes: [],
