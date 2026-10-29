@@ -130,6 +130,10 @@ export const createGroundGlassPresentationNode = (
   );
   const source = texture(sourceTexture, sourceUv);
   const material = new MeshBasicNodeMaterial({ toneMapped: false });
+  // The node expression carries the sampled alpha, but the accepted M6
+  // presentation contract is opaque: MeshBasicNodeMaterial's opaque path
+  // stores alpha one. Normal M5 input is already the completed alpha-one
+  // research composite; partial-alpha M6C sources remain a test-only probe.
   material.colorNode = Fn(() => vec4(
     source.rgb.mul(throughput).mul(naturalFactor).mul(clamp(selectedCoverageFactor, 0, 1)),
     source.a,

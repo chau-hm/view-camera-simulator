@@ -111,6 +111,7 @@ import {
   type GroundGlassApertureGatherTargetAllocation,
   type GroundGlassGpuPassTiming,
   type GroundGlassM6cAlphaCaptureReadback,
+  type GroundGlassM6dCompositeContractProbeReadback,
   holdGroundGlassWebGpuPresentationQueueCompletion,
   holdGroundGlassWebGpuQueueCompletion,
   isGroundGlassM6bCalibrationFixtureEnabledForRequest,
@@ -3406,6 +3407,26 @@ export const GroundGlassWebGPUAdapter = ({
                 apertureGatherUnsupportedReason = null;
                 apertureGatherFailureReason = null;
 
+                let m6dCompositeContractProbe: GroundGlassM6dCompositeContractProbeReadback | null = null;
+                if (import.meta.env.DEV && captureRequest?.includeM6dCompositeContractProbe === true) {
+                  const { runGroundGlassM6dCompositeContractProbe } = await import(
+                    "./groundGlassM6dCompositeContractProbe"
+                  );
+                  m6dCompositeContractProbe = await runGroundGlassM6dCompositeContractProbe({
+                    token: captureRequest.token,
+                    requestId: latest.identity.requestId,
+                    channelId: latest.identity.channelId,
+                    sceneId: latest.identity.sceneId,
+                    rendererGenerationId: generation.generationId,
+                    rendererRevision: `r${REVISION}`,
+                    renderer: renderer!,
+                    queue: device.queue,
+                    isCurrent: isApertureRequestCurrent,
+                    textureFormat: (textureValue) => observeTextureFormat(mountedBackend!, textureValue),
+                  });
+                  if (!isApertureRequestCurrent()) return;
+                }
+
                 if (b1BoundaryProbeRequest) {
                   const boundaryProbe = await runGroundGlassB1BoundaryProbe({
                     request: b1BoundaryProbeRequest,
@@ -3892,6 +3913,7 @@ export const GroundGlassWebGPUAdapter = ({
                       memoryScope: "m5-owned-target-attachments-only",
                       targetAllocations,
                     },
+                    m6dCompositeContractProbe,
                     completedPasses: apertureGatherCompletedPasses,
                     cpuB1Conformance: {
                       status: cpuB1Status,
