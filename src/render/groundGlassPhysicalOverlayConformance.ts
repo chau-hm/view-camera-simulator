@@ -10,6 +10,23 @@ export const GROUND_GLASS_M6B_SOURCE_WIDTH_PX = 512;
 export const GROUND_GLASS_M6B_SOURCE_HEIGHT_PX = 512;
 export const GROUND_GLASS_M6B_MARKER_RADIUS_SOURCE_PX = 10;
 export const GROUND_GLASS_M6B_FIELD_LINEAR_RGBA = [0.18, 0.18, 0.18, 1] as const;
+export const GROUND_GLASS_M6C_ALPHA_MATRIX = Object.freeze([
+  { id: "alpha-0", rgba: [0.25, 0.5, 0.75, 0] },
+  { id: "alpha-001", rgba: [0.25, 0.5, 0.75, 0.01] },
+  { id: "alpha-025", rgba: [0.25, 0.5, 0.75, 0.25] },
+  { id: "alpha-035", rgba: [0.25, 0.5, 0.75, 0.35] },
+  { id: "alpha-050", rgba: [0.25, 0.5, 0.75, 0.5] },
+  { id: "alpha-075", rgba: [0.25, 0.5, 0.75, 0.75] },
+  { id: "alpha-099", rgba: [0.25, 0.5, 0.75, 0.99] },
+  { id: "alpha-1", rgba: [0.25, 0.5, 0.75, 1] },
+  { id: "same-rgb-alpha-low", rgba: [0.15, 0.35, 0.7, 0.25] },
+  { id: "same-rgb-alpha-high", rgba: [0.15, 0.35, 0.7, 0.75] },
+  { id: "red-alpha-half", rgba: [0.9, 0.05, 0.02, 0.5] },
+  { id: "blue-alpha-half", rgba: [0.02, 0.2, 0.9, 0.5] },
+  { id: "nonzero-rgb-alpha-zero", rgba: [0.6, 0.3, 0.1, 0] },
+  { id: "dark-rgb-alpha-partial", rgba: [0.01, 0.02, 0.03, 0.35] },
+  { id: "bright-rgb-alpha-partial", rgba: [0.9, 0.75, 0.55, 0.35] },
+] as const satisfies readonly Readonly<{ id: string; rgba: readonly [number, number, number, number] }>[]);
 
 /** Uniform-field probes avoid every landmark and swatch while spanning film center and edge positions. */
 export const GROUND_GLASS_M6B_PRESENTATION_FIELD_PROBES = Object.freeze([
@@ -295,6 +312,14 @@ export type GroundGlassM6bSamplingBoundary = Readonly<{
   adjacentTexel: Readonly<{ x: number; y: number }>;
 }>;
 
+export type GroundGlassM6cAlphaSourceSample = Readonly<{
+  id: string;
+  sourceTexelPx: Readonly<{ x: number; y: number }>;
+  sourceUvTopOrigin: Readonly<{ u: number; v: number }>;
+  displayUvTopOrigin: Readonly<{ u: number; v: number }>;
+  linearRgba: readonly [number, number, number, number];
+}>;
+
 /** Compact deterministic trace fingerprint; this is not a cryptographic integrity primitive. */
 export const fingerprintGroundGlassM6bBytes = (bytes: Uint8Array): string => {
   let hash = 0x811c9dc5;
@@ -320,6 +345,7 @@ export const createGroundGlassM6bCalibrationSource = (input: Readonly<{
   previewMode?: GroundGlassPreviewMode;
   widthPx?: number;
   heightPx?: number;
+  includeAlphaMatrix?: boolean;
 }> = {}): Readonly<{
   widthPx: number;
   heightPx: number;
@@ -328,6 +354,7 @@ export const createGroundGlassM6bCalibrationSource = (input: Readonly<{
   swatches: readonly GroundGlassM6bColorSwatch[];
   fieldProbes: readonly GroundGlassM6bPresentationFieldProbe[];
   samplingBoundaries: readonly GroundGlassM6bSamplingBoundary[];
+  alphaSamples: readonly GroundGlassM6cAlphaSourceSample[];
 }> => {
   const widthPx = input.widthPx ?? GROUND_GLASS_M6B_SOURCE_WIDTH_PX;
   const heightPx = input.heightPx ?? GROUND_GLASS_M6B_SOURCE_HEIGHT_PX;
@@ -410,6 +437,40 @@ export const createGroundGlassM6bCalibrationSource = (input: Readonly<{
     expectedNearestTexel: { x: redSwatchEndX - 1, y: swatchY + swatchHeightPx / 2 },
     adjacentTexel: { x: redSwatchEndX, y: swatchY + swatchHeightPx / 2 },
   }];
+  const alphaSamples: GroundGlassM6cAlphaSourceSample[] = [];
+  if (input.includeAlphaMatrix) {
+    const columns = 5;
+    const positions = GROUND_GLASS_M6C_ALPHA_MATRIX.map((sample, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      return { sample, displayU: 0.12 + column * 0.19, displayV: 0.24 + row * 0.26 };
+    });
+    for (const { sample, displayU, displayV } of positions) {
+      const storedRgba = sample.rgba.map((value) => Math.fround(value)) as [number, number, number, number];
+      const requestedDisplayUv = { u: displayU, v: displayV };
+      const sourceUvTopOrigin = previewMode === "raw"
+        ? { u: 1 - requestedDisplayUv.u, v: 1 - requestedDisplayUv.v }
+        : requestedDisplayUv;
+      const x = Math.max(0, Math.min(widthPx - 1, Math.floor(sourceUvTopOrigin.u * widthPx)));
+      const y = Math.max(0, Math.min(heightPx - 1, Math.floor(sourceUvTopOrigin.v * heightPx)));
+      const actualSourceUv = { u: (x + 0.5) / widthPx, v: (y + 0.5) / heightPx };
+      const displayUvTopOrigin = previewMode === "raw"
+        ? { u: 1 - actualSourceUv.u, v: 1 - actualSourceUv.v }
+        : actualSourceUv;
+      for (let dy = -7; dy <= 7; dy += 1) {
+        for (let dx = -7; dx <= 7; dx += 1) {
+          paint(rgba, widthPx, heightPx, x + dx, y + dy, storedRgba);
+        }
+      }
+      alphaSamples.push({
+        id: sample.id,
+        sourceTexelPx: { x, y },
+        sourceUvTopOrigin: actualSourceUv,
+        displayUvTopOrigin,
+        linearRgba: storedRgba,
+      });
+    }
+  }
   const fieldProbes = GROUND_GLASS_M6B_PRESENTATION_FIELD_PROBES.map((probe) => {
     const filmUv = {
       u: 0.5 + probe.physicalXMm / CAMERA_CONSTANTS.filmWidthMm,
@@ -441,6 +502,7 @@ export const createGroundGlassM6bCalibrationSource = (input: Readonly<{
     swatches,
     fieldProbes,
     samplingBoundaries,
+    alphaSamples,
   };
 };
 

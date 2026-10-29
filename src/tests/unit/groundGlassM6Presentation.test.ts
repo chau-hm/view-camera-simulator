@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as THREE from "three";
 import type { GroundGlassCoverageState } from "../../types/optics";
 import { calculateGroundGlassNaturalIlluminationGain } from "../../core/optics/groundGlassNaturalIllumination";
 import { createGroundGlassPilotRetryState } from "../../render/backend/groundGlassBackendContracts";
@@ -26,6 +27,7 @@ import {
   resolveGroundGlassCoverageRenderState,
 } from "../../render/groundGlassCoverage";
 import { resolveGroundGlassNaturalIlluminationRenderState } from "../../render/groundGlassNaturalIllumination";
+import { createGroundGlassPresentationNode } from "../../render/webgpu/groundGlassPresentationNodes";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
@@ -73,6 +75,30 @@ const noNatural = resolveGroundGlassNaturalIlluminationRenderState({
 });
 
 describe("M6 Ground Glass presentation reference", () => {
+  it("keeps the actual M6 material opaque with Three.js r186's default NormalBlending contract", () => {
+    const source = new THREE.DataTexture(
+      new Float32Array([0.2, 0.4, 0.6, 0.35]),
+      1,
+      1,
+      THREE.RGBAFormat,
+      THREE.FloatType,
+    );
+    source.colorSpace = THREE.NoColorSpace;
+    const { material } = createGroundGlassPresentationNode(source, {
+      previewMode: "upright",
+      coverage: noCoverage,
+      naturalIllumination: noNatural,
+      throughputGain: 1,
+    });
+    expect(material.transparent).toBe(false);
+    expect(material.opacity).toBe(1);
+    expect(material.blending).toBe(THREE.NormalBlending);
+    expect(material.alphaTest).toBe(0);
+    expect(material.premultipliedAlpha).toBe(false);
+    material.dispose();
+    source.dispose();
+  });
+
   it("maps asymmetric physical landmarks through the established Raw and Upright transforms", () => {
     const displayUv = { u: 0.17, v: 0.28 };
     const rawSource = applyGroundGlassRttDisplayTransform(

@@ -110,9 +110,17 @@ import {
   type GroundGlassApertureGatherOperationName,
   type GroundGlassApertureGatherTargetAllocation,
   type GroundGlassGpuPassTiming,
+  type GroundGlassM6cAlphaCaptureReadback,
   holdGroundGlassWebGpuPresentationQueueCompletion,
   holdGroundGlassWebGpuQueueCompletion,
   isGroundGlassM6bCalibrationFixtureEnabledForRequest,
+  isGroundGlassM6cAlphaFixtureEnabledForRequest,
+  consumeGroundGlassM6cAlphaCaptureForTest,
+  holdGroundGlassM6cAlphaReadbackForTest,
+  publishGroundGlassM6cAlphaCaptureForTest,
+  recordGroundGlassM6cAlphaTargetAllocatedForTest,
+  recordGroundGlassM6cAlphaTargetDisposedForTest,
+  registerGroundGlassM6cAlphaCaptureTriggerForTest,
   publishGroundGlassM6bPresentationEvidenceForTest,
   recordGroundGlassM6bFixtureResourceDisposedForTest,
   resolveGroundGlassM6bPresentationStateForTest,
@@ -145,6 +153,13 @@ import {
   createGroundGlassPresentationNode,
   type GroundGlassPresentationNodeState,
 } from "./groundGlassPresentationNodes";
+import { evaluateGroundGlassPresentationReference } from "./groundGlassPresentationReference";
+import {
+  isGroundGlassM6cReadbackCurrent,
+  isGroundGlassM6cMaterialEquivalent,
+  type GroundGlassM6cAlphaSampleInput,
+  type GroundGlassM6cReadbackIdentity,
+} from "../groundGlassM6cAlphaConformance";
 import {
   ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
@@ -1311,10 +1326,12 @@ const updateGroundGlassM6bCalibrationTexture = (
   texture: THREE.DataTexture | null,
   requestSourceCrop: GroundGlassInspectionWindow,
   previewMode: "raw" | "upright",
+  includeAlphaMatrix: boolean,
 ): Readonly<{ texture: THREE.DataTexture; sourceFingerprint: string }> => {
   const source = conformance.createGroundGlassM6bCalibrationSource({
     inspectionWindow: mapGroundGlassInspectionWindowToRttSourceCrop(requestSourceCrop, previewMode),
     previewMode,
+    includeAlphaMatrix,
   });
   const nextTexture = texture ?? new THREE.DataTexture(
     source.rgba,
@@ -2110,6 +2127,7 @@ export const GroundGlassWebGPUAdapter = ({
           calibrationSourceTexture,
           displayRequest.inspectionWindow,
           displayRequest.previewMode,
+          isGroundGlassM6cAlphaFixtureEnabledForRequest(displayRequest),
         );
         calibrationSourceTexture = updatedSource.texture;
         calibrationSourceDataFingerprint = updatedSource.sourceFingerprint;
@@ -2253,6 +2271,344 @@ export const GroundGlassWebGPUAdapter = ({
     let completedPasses: readonly ("sceneRender" | "presentation" | "textureDisplay")[] = [];
     let frameSequence = 0;
     let displayMode: "raw" | "upright" = requestRef.current.previewMode;
+
+    const captureM6cAlphaReadback = async (
+      captureRequest: Readonly<{ token: string }>,
+      acceptedRequest: GroundGlassFrameRequest,
+      isRequestCurrent: () => boolean,
+    ): Promise<void> => {
+      const runtime = runtimeRef.current;
+      const mountedNativeWebGpu = runtime.status === "mounted" &&
+        runtime.rendererFamily === "webgpu-renderer" &&
+        runtime.actualExecutionApi === "webgpu" &&
+        runtime.internalFallback === "none";
+      const common: Omit<GroundGlassM6cAlphaCaptureReadback, "status" | "failureReason" | "identity" | "source" | "target" | "rendererOutputColorSpace" | "rendererToneMapping" | "material" | "samples" | "resourceAccounting"> = {
+        token: captureRequest.token,
+        captureId: `m6c-alpha-${captureRequest.token}`,
+        evidenceScope: "controlled-native-presentation-fixture",
+        rendererRevision: REVISION,
+        rendererFamily: runtime.status === "mounted" ? runtime.rendererFamily : "unknown",
+        actualExecutionApi: runtime.status === "mounted" ? runtime.actualExecutionApi : "unknown",
+        internalFallback: runtime.status === "mounted" ? runtime.internalFallback : "unknown",
+        applicationFallback: mountedNativeWebGpu ? false : null,
+      };
+      const publishUnavailable = (status: "unsupported" | "failed", failureReason: string): void => {
+        publishGroundGlassM6cAlphaCaptureForTest({
+          ...common,
+          status,
+          failureReason,
+          identity: null,
+          source: null,
+          target: null,
+          rendererOutputColorSpace: renderer?.outputColorSpace ?? null,
+          rendererToneMapping: renderer?.toneMapping ?? null,
+          material: null,
+          samples: [],
+          resourceAccounting: {
+            allocationOperation: null,
+            disposalOperation: null,
+            targetAllocated: false,
+            targetDisposed: false,
+            disposalOutcome: "not-allocated",
+            previousRenderTargetRestored: true,
+            allocationCount: 0,
+            disposalCount: 0,
+          },
+        });
+      };
+
+      if (
+        !import.meta.env.DEV ||
+        import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT !== "true" ||
+        import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION !== "true" ||
+        !isGroundGlassM6cAlphaFixtureEnabledForRequest(acceptedRequest) ||
+        !isGroundGlassM6PresentationRequest(acceptedRequest) ||
+        !mountedNativeWebGpu ||
+        REVISION !== "186" ||
+        !renderer ||
+        !target ||
+        !display ||
+        display.presentationMode !== "m6-experimental-dof" ||
+        !calibrationSourceTexture ||
+        !calibrationSourceDataFingerprint ||
+        !currentM6bPresentationState ||
+        !m6bConformanceModule
+      ) {
+        publishUnavailable("unsupported", "M6C requires the authorized Architecture Rise calibration fixture and mounted Three.js r186 native WebGPU M6 material");
+        return;
+      }
+
+      const sourceTexture = calibrationSourceTexture;
+      const source = sourceTexture.image;
+      const sourceData = source.data as Float32Array;
+      const conformance = m6bConformanceModule;
+      const alphaFixture = conformance.createGroundGlassM6bCalibrationSource({
+        inspectionWindow: mapGroundGlassInspectionWindowToRttSourceCrop(acceptedRequest.inspectionWindow, acceptedRequest.previewMode),
+        previewMode: acceptedRequest.previewMode,
+        includeAlphaMatrix: true,
+      });
+      if (
+        alphaFixture.alphaSamples.length !== 15 ||
+        alphaFixture.sourceFingerprint !== calibrationSourceDataFingerprint ||
+        source.width !== alphaFixture.widthPx ||
+        source.height !== alphaFixture.heightPx
+      ) {
+        publishUnavailable("failed", "M6C controlled source alpha matrix does not match the uploaded fixture texture fingerprint");
+        return;
+      }
+
+      const presentationState = currentM6bPresentationState;
+      const presentationStateFingerprint = conformance.fingerprintGroundGlassM6bPresentationState(presentationState);
+      const targetWidthPx = target.width;
+      const targetHeightPx = target.height;
+      const identity: GroundGlassM6cReadbackIdentity = {
+        requestId: acceptedRequest.identity.requestId,
+        channelId: acceptedRequest.identity.channelId,
+        sceneId: acceptedRequest.identity.sceneId,
+        rendererGenerationId: generation.generationId,
+        sourceDataFingerprint: calibrationSourceDataFingerprint,
+        presentationStateFingerprint,
+        targetWidthPx,
+        targetHeightPx,
+        previewMode: acceptedRequest.previewMode,
+        inspectionWindow: { ...acceptedRequest.inspectionWindow },
+      };
+      const material = display.material;
+      const materialEvidence = {
+        uuid: material.uuid,
+        transparent: material.transparent,
+        opacity: material.opacity,
+        blending: material.blending === THREE.NoBlending ? "none" as const
+          : material.blending === THREE.NormalBlending ? "normal" as const : "other" as const,
+        depthWrite: material.depthWrite,
+        depthTest: material.depthTest,
+        colorWrite: material.colorWrite,
+        alphaTest: material.alphaTest,
+        premultipliedAlpha: material.premultipliedAlpha,
+        samePresentationMaterialInstance: true as const,
+      };
+      const materialEquivalent = isGroundGlassM6cMaterialEquivalent(materialEvidence);
+      const outputColorSpace = renderer.outputColorSpace;
+      const toneMapping = renderer.toneMapping;
+      const captureTarget = new THREE.RenderTarget(targetWidthPx, targetHeightPx, {
+        format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType,
+        depthBuffer: false,
+        stencilBuffer: false,
+        samples: 0,
+        generateMipmaps: false,
+      });
+      captureTarget.texture.colorSpace = THREE.NoColorSpace;
+      captureTarget.texture.minFilter = THREE.NearestFilter;
+      captureTarget.texture.magFilter = THREE.NearestFilter;
+      captureTarget.texture.generateMipmaps = false;
+      captureTarget.texture.wrapS = THREE.ClampToEdgeWrapping;
+      captureTarget.texture.wrapT = THREE.ClampToEdgeWrapping;
+      const allocationCount = recordGroundGlassM6cAlphaTargetAllocatedForTest();
+      const savedTarget = renderer.getRenderTarget();
+      const savedViewport = renderer.getViewport(new THREE.Vector4()).clone();
+      const savedScissor = renderer.getScissor(new THREE.Vector4()).clone();
+      const savedScissorTest = renderer.getScissorTest();
+      const savedClearColor = renderer.getClearColor(new THREE.Color()).clone();
+      const savedClearAlpha = renderer.getClearAlpha();
+      const savedOutputColorSpace = renderer.outputColorSpace;
+      const savedToneMapping = renderer.toneMapping;
+      let rows: Map<number, Uint8Array> | null = null;
+      let captureStatus: GroundGlassM6cAlphaCaptureReadback["status"] = "failed";
+      let failureReason: string | null = null;
+      let previousRenderTargetRestored = false;
+      let targetDisposed = false;
+      let disposalError: unknown = null;
+      let samples: GroundGlassM6cAlphaSampleInput[] = [];
+      let readbackBytes = 0;
+      try {
+        renderer.initRenderTarget(captureTarget);
+        renderer.setRenderTarget(captureTarget);
+        renderer.setViewport(0, 0, targetWidthPx, targetHeightPx);
+        renderer.setScissorTest(false);
+        renderer.setClearColor(new THREE.Color(0, 0, 0), 0);
+        renderer.clear(true, true, true);
+        renderer.render(display.scene, display.camera);
+        const device = mountedBackend?.device;
+        if (!device) throw new Error("M6C native alpha readback has no mounted WebGPU device");
+        await device.queue.onSubmittedWorkDone();
+
+        const samplePixels = alphaFixture.alphaSamples.map((sample) => ({
+          sample,
+          x: Math.max(0, Math.min(targetWidthPx - 1, Math.floor(sample.displayUvTopOrigin.u * targetWidthPx))),
+          y: Math.max(0, Math.min(targetHeightPx - 1, Math.floor(sample.displayUvTopOrigin.v * targetHeightPx))),
+        }));
+        const readbackByRow = new Map<number, Promise<Uint8Array>>();
+        samplePixels.forEach(({ y }) => {
+          if (!readbackByRow.has(y)) {
+            readbackByRow.set(y, renderer!.readRenderTargetPixelsAsync(captureTarget, 0, y, targetWidthPx, 1)
+              .then((result) => {
+                if (!(result instanceof Uint8Array) || result.length !== targetWidthPx * 4) {
+                  throw new Error(`M6C RGBA8 readback returned an unsupported buffer shape: ${result.constructor.name}/${result.length}`);
+                }
+                return result;
+              }));
+          }
+        });
+        await holdGroundGlassM6cAlphaReadbackForTest();
+        rows = new Map(await Promise.all([...readbackByRow].map(async ([y, promise]) => [y, await promise] as const)));
+        readbackBytes = [...rows.values()].reduce((sum, row) => sum + row.byteLength, 0);
+
+        const currentRequest = requestRef.current;
+        const currentState = currentM6bPresentationState;
+        const currentIdentity = currentState && calibrationSourceDataFingerprint
+          ? {
+              requestId: currentRequest.identity.requestId,
+              channelId: currentRequest.identity.channelId,
+              sceneId: currentRequest.identity.sceneId,
+              rendererGenerationId: generation.generationId,
+              sourceDataFingerprint: calibrationSourceDataFingerprint,
+              presentationStateFingerprint: conformance.fingerprintGroundGlassM6bPresentationState(currentState),
+              targetWidthPx: target.width,
+              targetHeightPx: target.height,
+              previewMode: currentRequest.previewMode,
+              inspectionWindow: { ...currentRequest.inspectionWindow },
+            } satisfies GroundGlassM6cReadbackIdentity
+          : null;
+        if (retired || !isGenerationActive() || !isRequestCurrent() || !currentIdentity ||
+            !isGroundGlassM6cReadbackCurrent(identity, currentIdentity)) {
+          captureStatus = "stale";
+          failureReason = "Accepted request, channel, scene, generation, source, presentation, target size, preview, or inspection window changed before publication";
+        } else {
+          captureStatus = "measured";
+          for (const { sample, x, y } of samplePixels) {
+            const row = rows.get(y);
+            if (!row) throw new Error(`M6C readback row ${y} is unavailable`);
+            const displayUvTopOrigin = { u: (x + 0.5) / targetWidthPx, v: (y + 0.5) / targetHeightPx };
+            const reference = evaluateGroundGlassPresentationReference({
+              displayUvTopOrigin,
+              previewMode: acceptedRequest.previewMode,
+              filmWindow: presentationState.coverage.filmWindow,
+              coverage: presentationState.coverage,
+              naturalIllumination: presentationState.naturalIllumination,
+              throughputGain: presentationState.throughputGain,
+              sampleSource: ({ u, v }) => {
+                const sx = Math.max(0, Math.min(source.width - 1, Math.floor(u * source.width)));
+                const sy = Math.max(0, Math.min(source.height - 1, Math.floor(v * source.height)));
+                const offset = (sy * source.width + sx) * 4;
+                return [sourceData[offset] ?? 0, sourceData[offset + 1] ?? 0, sourceData[offset + 2] ?? 0, sourceData[offset + 3] ?? 0];
+              },
+            });
+            const sampledX = Math.max(0, Math.min(source.width - 1, Math.floor(reference.sourceUvTopOrigin.u * source.width)));
+            const sampledY = Math.max(0, Math.min(source.height - 1, Math.floor(reference.sourceUvTopOrigin.v * source.height)));
+            const identityMatches = reference.inputLinearRgba.every((value, channel) => value === sample.linearRgba[channel]);
+            const offset = x * 4;
+            const bytes = [row[offset] ?? 0, row[offset + 1] ?? 0, row[offset + 2] ?? 0, row[offset + 3] ?? 0] as const;
+            samples.push({
+              id: sample.id,
+              sourceTexel: { x: sampledX, y: sampledY },
+              sourceUvTopOrigin: reference.sourceUvTopOrigin,
+              displayUvTopOrigin,
+              sourceLinearRgba: reference.inputLinearRgba,
+              expectedFragmentRgba: reference.outputLinearRgba,
+              actualTargetBytes: bytes,
+              sourceSampleIdentityMatches: identityMatches,
+              materialEquivalent,
+            });
+          }
+        }
+      } catch (error) {
+        captureStatus = "failed";
+        failureReason = errorMessage(error);
+      } finally {
+        try {
+          renderer.setRenderTarget(savedTarget);
+          renderer.setViewport(savedViewport);
+          renderer.setScissor(savedScissor);
+          renderer.setScissorTest(savedScissorTest);
+          renderer.setClearColor(savedClearColor, savedClearAlpha);
+          renderer.outputColorSpace = savedOutputColorSpace;
+          renderer.toneMapping = savedToneMapping;
+          previousRenderTargetRestored = renderer.getRenderTarget() === savedTarget;
+          if (!previousRenderTargetRestored) {
+            failureReason = [failureReason, "renderer state restore failed: M6C did not restore the prior render target"]
+              .filter(Boolean)
+              .join("; ");
+            captureStatus = "failed";
+          }
+        } catch (error) {
+          failureReason = [failureReason, `renderer state restore failed: ${errorMessage(error)}`].filter(Boolean).join("; ");
+          captureStatus = "failed";
+        }
+        try {
+          captureTarget.dispose();
+          targetDisposed = true;
+        } catch (error) {
+          disposalError = error;
+          failureReason = [failureReason, `alpha target disposal failed: ${errorMessage(error)}`].filter(Boolean).join("; ");
+          captureStatus = "failed";
+        }
+      }
+      const disposalCount = targetDisposed ? recordGroundGlassM6cAlphaTargetDisposedForTest(true) : 0;
+      if (!targetDisposed) recordGroundGlassM6cAlphaTargetDisposedForTest(false);
+      if (disposalError) samples = [];
+      const latestAfterReadback = requestRef.current;
+      const stateAfterReadback = currentM6bPresentationState;
+      const identityAfterReadback = stateAfterReadback && calibrationSourceDataFingerprint
+        ? {
+            requestId: latestAfterReadback.identity.requestId,
+            channelId: latestAfterReadback.identity.channelId,
+            sceneId: latestAfterReadback.identity.sceneId,
+            rendererGenerationId: generation.generationId,
+            sourceDataFingerprint: calibrationSourceDataFingerprint,
+            presentationStateFingerprint: conformance.fingerprintGroundGlassM6bPresentationState(stateAfterReadback),
+            targetWidthPx: target.width,
+            targetHeightPx: target.height,
+            previewMode: latestAfterReadback.previewMode,
+            inspectionWindow: { ...latestAfterReadback.inspectionWindow },
+          } satisfies GroundGlassM6cReadbackIdentity
+        : null;
+      const stillCurrent = !retired && isGenerationActive() && isRequestCurrent() && identityAfterReadback !== null &&
+        isGroundGlassM6cReadbackCurrent(identity, identityAfterReadback);
+      const status: GroundGlassM6cAlphaCaptureReadback["status"] = captureStatus === "measured" && !stillCurrent
+        ? "stale"
+        : captureStatus;
+      publishGroundGlassM6cAlphaCaptureForTest({
+        ...common,
+        status,
+        failureReason: status === "stale"
+          ? failureReason ?? "The alpha readback became stale before publication"
+          : failureReason,
+        identity,
+        source: {
+          format: "rgba32float",
+          colorSpace: "no-color-space",
+          sampling: "nearest",
+          widthPx: source.width,
+          heightPx: source.height,
+          sourceDataFingerprint: calibrationSourceDataFingerprint,
+        },
+        target: {
+          format: "rgba8unorm",
+          colorSpace: "no-color-space",
+          channelOrder: "rgba",
+          widthPx: targetWidthPx,
+          heightPx: targetHeightPx,
+          estimatedBytes: targetWidthPx * targetHeightPx * 4,
+          readbackBytes,
+          clearRgba: [0, 0, 0, 0],
+        },
+        rendererOutputColorSpace: outputColorSpace,
+        rendererToneMapping: toneMapping,
+        material: materialEvidence,
+        samples: status === "measured" ? samples : [],
+        resourceAccounting: {
+          allocationOperation: "explicit-m6c-test-capture",
+          disposalOperation: "capture-finally",
+          targetAllocated: true,
+          targetDisposed,
+          disposalOutcome: targetDisposed ? "confirmed" : "failed",
+          previousRenderTargetRestored,
+          allocationCount,
+          disposalCount,
+        },
+      });
+    };
 
     const renderNow: RenderNow = (requested) => {
       const queued = operationTailRef.current.then(async () => {
@@ -2418,6 +2774,7 @@ export const GroundGlassWebGPUAdapter = ({
                 calibrationSourceTexture,
                 latest.inspectionWindow,
                 latest.previewMode,
+                isGroundGlassM6cAlphaFixtureEnabledForRequest(latest),
               );
               calibrationSourceTexture = updatedSource.texture;
               calibrationSourceDataFingerprint = updatedSource.sourceFingerprint;
@@ -3895,11 +4252,19 @@ export const GroundGlassWebGPUAdapter = ({
                 sourceHeightPx: source.height,
                 sourceDataFingerprint: calibrationSourceDataFingerprint,
                 presentationStateFingerprint: conformance.fingerprintGroundGlassM6bPresentationState(currentM6bPresentationState),
+                presentationMaterialUuid: display.material.uuid,
                 outputWidthPx: latest.widthPx,
                 outputHeightPx: latest.heightPx,
                 sourceCrop: latest.inspectionWindow,
                 presentationState: currentM6bPresentationState,
               });
+            }
+            if (import.meta.env.DEV) {
+              const alphaCaptureRequest = consumeGroundGlassM6cAlphaCaptureForTest();
+              if (alphaCaptureRequest) {
+                await captureM6cAlphaReadback(alphaCaptureRequest, latest, isRequestCurrent);
+                if (!isRequestCurrent()) return;
+              }
             }
           }
           failedPass = "textureDisplay";
@@ -3972,6 +4337,10 @@ export const GroundGlassWebGPUAdapter = ({
       renderNowRef.current?.(accepted);
     });
     registerGroundGlassB1BoundaryProbeTriggerForTest(() => {
+      const accepted = requestRef.current;
+      renderNowRef.current?.(accepted);
+    });
+    registerGroundGlassM6cAlphaCaptureTriggerForTest(() => {
       const accepted = requestRef.current;
       renderNowRef.current?.(accepted);
     });
@@ -4406,6 +4775,7 @@ export const GroundGlassWebGPUAdapter = ({
         renderNowRef.current = null;
         registerGroundGlassApertureGatherCaptureTriggerForTest(null);
         registerGroundGlassB1BoundaryProbeTriggerForTest(null);
+        registerGroundGlassM6cAlphaCaptureTriggerForTest(null);
         if (disposeRef.current === disposeOwned) disposeRef.current = null;
       });
     };

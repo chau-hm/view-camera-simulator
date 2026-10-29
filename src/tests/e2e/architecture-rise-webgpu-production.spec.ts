@@ -71,6 +71,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(groundGlass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
   await expect(groundGlass).toHaveAttribute("data-actual-execution-api", "webgl2");
   await expect(page.getByTestId("ground-glass-webgpu-pilot")).toHaveCount(0);
+  expect(await page.evaluate(() => typeof window.__groundGlassWebGpuM3TestControl)).toBe("undefined");
   const defaultObserverScreenshot = await observer.locator("canvas").screenshot();
   const defaultGroundGlassScreenshot = await groundGlass.screenshot();
   const defaultObserverPixels = await analyzeScreenshot(page, defaultObserverScreenshot);

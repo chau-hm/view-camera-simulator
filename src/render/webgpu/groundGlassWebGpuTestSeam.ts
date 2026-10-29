@@ -5,6 +5,11 @@ import type { GroundGlassPhysicalCocProbeUv } from "./groundGlassPhysicalCocNode
 import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
 import type { GroundGlassPhysicalDepthConfidence } from "./groundGlassPhysicalCocContract";
 import type { GroundGlassApertureGatherQualityMode } from "./groundGlassApertureGatherPolicy";
+import type {
+  GroundGlassM6cAlphaSampleInput,
+  GroundGlassM6cReadbackIdentity,
+} from "../groundGlassM6cAlphaConformance";
+import { isGroundGlassM6cBuildAuthorized } from "../groundGlassM6cAlphaConformance";
 import { isGroundGlassM6bFixtureSceneEnabled } from "./groundGlassM6PresentationPolicy";
 
 export type GroundGlassM6bPresentationEffectOverrides = Readonly<{
@@ -29,6 +34,7 @@ export type GroundGlassM6bPresentationFixtureEvidence = Readonly<{
   sourceHeightPx: number;
   sourceDataFingerprint: string;
   presentationStateFingerprint: string;
+  presentationMaterialUuid: string;
   outputWidthPx: number;
   outputHeightPx: number;
   sourceCrop: GroundGlassFrameRequest["inspectionWindow"];
@@ -40,6 +46,75 @@ export type GroundGlassM6bCalibrationFixtureControl = {
   presentationState?: "neutral" | "request";
   effectOverrides?: GroundGlassM6bPresentationEffectOverrides;
   presentationEvidence?: GroundGlassM6bPresentationFixtureEvidence | null;
+  resourceDisposed?: boolean;
+};
+
+export type GroundGlassM6cAlphaCaptureRequest = Readonly<{ token: string }>;
+
+export type GroundGlassM6cAlphaCaptureReadback = Readonly<{
+  token: string;
+  captureId: string;
+  status: "measured" | "unsupported" | "failed" | "stale";
+  failureReason: string | null;
+  evidenceScope: "controlled-native-presentation-fixture";
+  rendererRevision: string;
+  rendererFamily: "webgpu-renderer" | "webgl-renderer" | "unknown";
+  actualExecutionApi: "webgpu" | "webgl2" | "webgl" | "unknown";
+  internalFallback: "none" | "webgl2-compatibility" | "unknown";
+  applicationFallback: boolean | null;
+  identity: GroundGlassM6cReadbackIdentity | null;
+  source: Readonly<{
+    format: "rgba32float";
+    colorSpace: "no-color-space";
+    sampling: "nearest";
+    widthPx: number;
+    heightPx: number;
+    sourceDataFingerprint: string;
+  }> | null;
+  target: Readonly<{
+    format: "rgba8unorm";
+    colorSpace: "no-color-space";
+    channelOrder: "rgba";
+    widthPx: number;
+    heightPx: number;
+    estimatedBytes: number;
+    readbackBytes: number;
+    clearRgba: readonly [0, 0, 0, 0];
+  }> | null;
+  rendererOutputColorSpace: string | null;
+  rendererToneMapping: number | null;
+  material: Readonly<{
+    uuid: string;
+    transparent: boolean;
+    opacity: number;
+    blending: "none" | "normal" | "other";
+    depthWrite: boolean;
+    depthTest: boolean;
+    colorWrite: boolean;
+    alphaTest: number;
+    premultipliedAlpha: boolean;
+    samePresentationMaterialInstance: true;
+  }> | null;
+  samples: readonly GroundGlassM6cAlphaSampleInput[];
+  resourceAccounting: Readonly<{
+    allocationOperation: "explicit-m6c-test-capture" | null;
+    disposalOperation: "capture-finally" | null;
+    targetAllocated: boolean;
+    targetDisposed: boolean;
+    disposalOutcome: "confirmed" | "failed" | "not-allocated";
+    previousRenderTargetRestored: boolean;
+    allocationCount: number;
+    disposalCount: number;
+  }>;
+}>;
+
+export type GroundGlassM6cAlphaFixtureControl = {
+  enabled: true;
+  holdReadback?: boolean;
+  readbackBarrierReached?: boolean;
+  releaseReadback?: (() => void) | undefined;
+  targetAllocationCount?: number;
+  targetDisposalCount?: number;
   resourceDisposed?: boolean;
 };
 
@@ -472,6 +547,11 @@ export type GroundGlassWebGpuTestControl = {
   forceWebGlCompatibilityBackend?: boolean;
   /** Test-only calibration source and Stage overlay; requires all trusted M6 build gates. */
   m6bCalibrationFixture?: GroundGlassM6bCalibrationFixtureControl;
+  /** Controlled alpha source and readback are opt-in for the M6C native test only. */
+  m6cAlphaFixture?: GroundGlassM6cAlphaFixtureControl;
+  m6cAlphaCaptureRequest?: GroundGlassM6cAlphaCaptureRequest | null;
+  m6cAlphaCaptureReadback?: GroundGlassM6cAlphaCaptureReadback | null;
+  requestM6cAlphaCapture?: (() => void) | undefined;
   holdAdapterOperationAfterFailure?: boolean;
   adapterOperationBarrierReached?: boolean;
   releaseAdapterOperation?: (() => void) | undefined;
@@ -533,6 +613,17 @@ export const isGroundGlassM6bCalibrationFixtureEnabledForRequest = (
 ): boolean => !request.rawDebug &&
   isGroundGlassM6bCalibrationFixtureEnabledForScene(request.scene);
 
+export const isGroundGlassM6cAlphaFixtureEnabledForRequest = (
+  request: GroundGlassFrameRequest,
+): boolean => isGroundGlassM6cBuildAuthorized({
+  developmentBuild: import.meta.env.DEV,
+  rawPilotFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true",
+  m6PresentationFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION === "true",
+  testSeamFlag: isEnabled,
+  explicitFixtureControl: getControl()?.m6cAlphaFixture?.enabled === true,
+  exactRegisteredScene: !request.rawDebug && isGroundGlassM6bCalibrationFixtureEnabledForRequest(request),
+});
+
 export const resolveGroundGlassM6bPresentationStateForTest = (
   request: GroundGlassFrameRequest,
   state: GroundGlassPresentationNodeState,
@@ -567,6 +658,56 @@ export const publishGroundGlassM6bPresentationEvidenceForTest = (
   const fixture = getControl()?.m6bCalibrationFixture;
   if (!fixture?.enabled) return;
   fixture.presentationEvidence = evidence;
+};
+
+export const consumeGroundGlassM6cAlphaCaptureForTest = (): GroundGlassM6cAlphaCaptureRequest | null => {
+  const control = getControl();
+  const request = control?.m6cAlphaCaptureRequest ?? null;
+  if (control && request) control.m6cAlphaCaptureRequest = null;
+  return request;
+};
+
+export const publishGroundGlassM6cAlphaCaptureForTest = (
+  readback: GroundGlassM6cAlphaCaptureReadback,
+): void => {
+  const control = getControl();
+  if (control) control.m6cAlphaCaptureReadback = readback;
+};
+
+export const registerGroundGlassM6cAlphaCaptureTriggerForTest = (
+  trigger: (() => void) | null,
+): void => {
+  const control = getControl();
+  if (control) control.requestM6cAlphaCapture = trigger ?? undefined;
+};
+
+export const holdGroundGlassM6cAlphaReadbackForTest = async (): Promise<void> => {
+  const fixture = getControl()?.m6cAlphaFixture;
+  if (!fixture?.holdReadback) return;
+  fixture.readbackBarrierReached = true;
+  await new Promise<void>((resolve) => {
+    fixture.releaseReadback = () => {
+      fixture.holdReadback = false;
+      fixture.readbackBarrierReached = false;
+      fixture.releaseReadback = undefined;
+      resolve();
+    };
+  });
+};
+
+export const recordGroundGlassM6cAlphaTargetAllocatedForTest = (): number => {
+  const fixture = getControl()?.m6cAlphaFixture;
+  if (!fixture) return 0;
+  fixture.targetAllocationCount = (fixture.targetAllocationCount ?? 0) + 1;
+  return fixture.targetAllocationCount;
+};
+
+export const recordGroundGlassM6cAlphaTargetDisposedForTest = (disposed: boolean): number => {
+  const fixture = getControl()?.m6cAlphaFixture;
+  if (!fixture) return 0;
+  fixture.targetDisposalCount = (fixture.targetDisposalCount ?? 0) + 1;
+  fixture.resourceDisposed = disposed;
+  return fixture.targetDisposalCount;
 };
 
 export const recordGroundGlassM6bFixtureResourceDisposedForTest = (): void => {
