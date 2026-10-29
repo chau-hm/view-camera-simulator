@@ -285,7 +285,11 @@ const captureGather = async (
   token: string,
   retainReadbackBuffers = false,
   maximumRadiusPx?: number,
-  options: Readonly<{ includeM5rDiagnostics?: boolean; includeM5rNearFixture?: boolean }> = {},
+  options: Readonly<{
+    includeM5rDiagnostics?: boolean;
+    includeM5rNearFixture?: boolean;
+    includeM6dCompositeContractProbe?: boolean;
+  }> = {},
 ): Promise<GroundGlassApertureGatherCaptureReadback> => {
   const triggered = await page.evaluate(({ captureToken, mode, retainBuffers, maxRadiusPx, m5rOptions }) => {
     const control = window.__groundGlassWebGpuM3TestControl;
@@ -297,6 +301,7 @@ const captureGather = async (
       retainReadbackBuffers: retainBuffers,
       ...(m5rOptions.includeM5rDiagnostics ? { includeM5rDiagnostics: true } : {}),
       ...(m5rOptions.includeM5rNearFixture ? { includeM5rNearFixture: true } : {}),
+      ...(m5rOptions.includeM6dCompositeContractProbe ? { includeM6dCompositeContractProbe: true } : {}),
       ...(maxRadiusPx !== undefined ? { maximumRadiusPx: maxRadiusPx } : {}),
     };
     control.requestApertureGatherCapture();
@@ -1750,6 +1755,104 @@ test("native M5Q applies frozen per-dimension R3 gates to independent optical st
     },
   };
   await writeM5qArtifact(testInfo, "m5q-confirmatory-qualification.json", report);
+  expect(pageErrors).toEqual([]);
+});
+
+test("native M6D confirms the actual M5 composite completes Near coverage as opaque RGB", async ({ page }, testInfo) => {
+  test.skip(!M5_REQUIRED,
+    "Requires headed native WebGPU and the development-only M3/M4/M5 adapter gates");
+  test.setTimeout(600_000);
+  expect(REVISION).toBe("186");
+
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const capture = await captureGather(
+    page,
+    "half16",
+    `m6d-composite-contract-${Date.now()}`,
+    false,
+    undefined,
+    { includeM6dCompositeContractProbe: true },
+  );
+  await expectCaptureMatchesCurrentFrame(page, capture);
+  expect(capture.rendererFamily).toBe("webgpu-renderer");
+  expect(capture.actualExecutionApi).toBe("webgpu");
+  expect(capture.internalFallback).toBe("none");
+  expect(capture.sceneId).toBe("architecture-rise");
+  expect(capture.completedPasses).toContain("researchComposite");
+  expect(capture.targetFormats.composite).toBe("rgba16float");
+  const probe = capture.m6dCompositeContractProbe;
+  expect(probe).toBeDefined();
+  if (!probe) throw new Error("Native M6D composite probe did not return evidence");
+  await testInfo.attach("ground-glass-m6d-native-composite-contract.json", {
+    body: JSON.stringify({
+      registeredM5Capture: {
+        captureId: capture.captureId,
+        requestId: capture.requestId,
+        channelId: capture.channelId,
+        sceneId: capture.sceneId,
+        rendererGenerationId: capture.rendererGenerationId,
+        rendererFamily: capture.rendererFamily,
+        actualExecutionApi: capture.actualExecutionApi,
+        internalFallback: capture.internalFallback,
+        completedPasses: capture.completedPasses,
+        compositeTargetFormat: capture.targetFormats.composite,
+      },
+      controlledCompositeProbe: probe,
+    }, null, 2),
+    contentType: "application/json",
+  });
+  expect(probe.contractRevision).toBe("m6d-opaque-presentation-v1");
+  expect(probe.rendererRevision).toBe(`r${REVISION}`);
+  expect(probe.rendererFamily).toBe("webgpu-renderer");
+  expect(probe.actualExecutionApi).toBe("webgpu");
+  expect(probe.internalFallback).toBe("none");
+  expect(probe.applicationFallback).toBe(false);
+  expect(probe.requestId).toBe(capture.requestId);
+  expect(probe.channelId).toBe(capture.channelId);
+  expect(probe.sceneId).toBe(capture.sceneId);
+  expect(probe.rendererGenerationId).toBe(capture.rendererGenerationId);
+  expect(probe.sourceTextureFormat).toBe("rgba16float");
+  expect(probe.targetFormat).toBe("rgba16float");
+  expect(probe.targetColorSpace).toBe("no-color-space");
+  expect(probe.rendererStateRestored).toBe(true);
+  expect(probe.cases.map(({ coverage }) => coverage)).toEqual([0, 0.25, 0.5, 0.75, 1]);
+
+  const expectedRgb = [
+    [0.75, 0.5, 0.25],
+    [0.625, 0.5625, 0.3125],
+    [0.5, 0.625, 0.375],
+    [0.375, 0.6875, 0.4375],
+    [0.25, 0.75, 0.5],
+  ] as const;
+  const maximumError = (left: readonly number[], right: readonly number[]): number =>
+    Math.max(...left.map((value, index) => Math.abs(value - (right[index] ?? Number.NaN))));
+
+  for (const [index, sample] of probe.cases.entries()) {
+    expect(sample.id).toBe(`near-coverage-${sample.coverage}`);
+    expect(sample.farRgba).toEqual([0.75, 0.5, 0.25, 1]);
+    expect(sample.nearRgba).toEqual([0.25, 0.75, 0.5, sample.coverage]);
+    const expected = [...expectedRgb[index]!, 1];
+    expect(maximumError(sample.measuredCompositeRgba, expected), `${sample.id} GPU RGB/alpha matches the independent expected value`)
+      .toBeLessThanOrEqual(0.001);
+    expect(sample.measuredCompositeRgba[3], `${sample.id} composite target alpha is opaque`).toBe(1);
+
+    const ignoredCoverage = [...sample.farRgba.slice(0, 3), 1];
+    const rawNear = [...sample.nearRgba];
+    if (sample.coverage > 0) {
+      expect(maximumError(sample.measuredCompositeRgba, ignoredCoverage), `${sample.id} detects ignored Near coverage`)
+        .toBeGreaterThan(0.01);
+    }
+    if (sample.coverage === 0) {
+      expect(maximumError(sample.measuredCompositeRgba, rawNear), "coverage-zero control detects returning raw Near RGBA")
+        .toBeGreaterThan(0.01);
+    }
+    if (sample.coverage === 0.5) {
+      const doubleBlend = sample.measuredCompositeRgba.slice(0, 3)
+        .map((value, channel) => value * (1 - sample.coverage) + sample.nearRgba[channel]! * sample.coverage);
+      expect(maximumError(expected.slice(0, 3), doubleBlend), "mid-coverage control rejects applying Near coverage twice")
+        .toBeGreaterThan(0.01);
+    }
+  }
   expect(pageErrors).toEqual([]);
 });
 

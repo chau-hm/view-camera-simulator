@@ -128,6 +128,36 @@ export type GroundGlassApertureGatherCaptureRequest = Readonly<{
   includeM5rDiagnostics?: boolean;
   /** Exercise the actual M5 Near TSL node with bounded synthetic native inputs. */
   includeM5rNearFixture?: boolean;
+  /** Exercise the actual M5 composite TSL node on known Near coverage values. */
+  includeM6dCompositeContractProbe?: boolean;
+}>;
+
+export type GroundGlassM6dCompositeContractProbeCase = Readonly<{
+  id: string;
+  coverage: number;
+  farRgba: readonly [number, number, number, number];
+  nearRgba: readonly [number, number, number, number];
+  measuredCompositeRgba: readonly [number, number, number, number];
+}>;
+
+/** Test-only readback from the real M5 research-composite TSL node. */
+export type GroundGlassM6dCompositeContractProbeReadback = Readonly<{
+  token: string;
+  contractRevision: "m6d-opaque-presentation-v1";
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererRevision: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  applicationFallback: false;
+  sourceTextureFormat: string | null;
+  targetFormat: string | null;
+  targetColorSpace: "no-color-space";
+  rendererStateRestored: boolean;
+  cases: readonly GroundGlassM6dCompositeContractProbeCase[];
 }>;
 
 /** A bounded test-only request to exercise the mounted adapter's real B1 TSL node. */
@@ -382,6 +412,7 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     m5rFixtureAcceptedFootprintRgba?: Float32Array;
     m5rFixtureNearAlphaHalfBits?: Uint16Array;
   }> | null;
+  m6dCompositeContractProbe?: GroundGlassM6dCompositeContractProbeReadback | null;
 }>;
 
 /** Synthetic-input evidence is always labeled separately from registered app captures. */

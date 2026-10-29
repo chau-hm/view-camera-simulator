@@ -9,6 +9,20 @@ import type { GroundGlassPreviewMode } from "../groundGlassTargetProjection";
 
 export type GroundGlassPresentationRgba = readonly [number, number, number, number];
 
+/**
+ * Apply the accepted M6 opaque-material output contract to the pre-material
+ * presentation expression. RGB is already final linear presentation output;
+ * the opaque node material writes alpha one independently of source alpha.
+ */
+export const finalizeGroundGlassOpaquePresentationRgba = (
+  preMaterialLinearRgba: GroundGlassPresentationRgba,
+): GroundGlassPresentationRgba => [
+  preMaterialLinearRgba[0],
+  preMaterialLinearRgba[1],
+  preMaterialLinearRgba[2],
+  1,
+];
+
 export type GroundGlassPresentationReferenceInput = Readonly<{
   displayUvTopOrigin: Readonly<{ u: number; v: number }>;
   previewMode: GroundGlassPreviewMode;
@@ -27,7 +41,10 @@ export type GroundGlassPresentationReferenceResult = Readonly<{
   naturalIlluminationGain: number;
   throughputGain: number;
   inputLinearRgba: GroundGlassPresentationRgba;
+  /** The TSL color expression before MeshBasicNodeMaterial applies opaque output semantics. */
   outputLinearRgba: GroundGlassPresentationRgba;
+  /** Expected final linear target value under the M6 opaque-material contract; not a GPU readback. */
+  expectedOpaqueTargetLinearRgba: GroundGlassPresentationRgba;
 }>;
 
 /** Independent CPU oracle for display-to-source mapping and canonical physical presentation. */
@@ -75,6 +92,12 @@ export const evaluateGroundGlassPresentationReference = (
       )
     : 1;
   const rgbGain = input.throughputGain * naturalIlluminationGain * coverageGain;
+  const outputLinearRgba: GroundGlassPresentationRgba = [
+    source[0] * rgbGain,
+    source[1] * rgbGain,
+    source[2] * rgbGain,
+    source[3],
+  ];
   return {
     sourceUvTopOrigin,
     physicalFilmPointMm,
@@ -82,12 +105,8 @@ export const evaluateGroundGlassPresentationReference = (
     naturalIlluminationGain,
     throughputGain: input.throughputGain,
     inputLinearRgba: source,
-    outputLinearRgba: [
-      source[0] * rgbGain,
-      source[1] * rgbGain,
-      source[2] * rgbGain,
-      source[3],
-    ],
+    outputLinearRgba,
+    expectedOpaqueTargetLinearRgba: finalizeGroundGlassOpaquePresentationRgba(outputLinearRgba),
   };
 };
 
