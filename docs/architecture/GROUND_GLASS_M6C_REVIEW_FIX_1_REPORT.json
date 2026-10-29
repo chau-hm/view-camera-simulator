@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29",
+  "reviewedHead": "27852b80f35aee360ebdf9514d6f5979b08f7197",
+  "correctedSourceCommit": "ce00d7e437e25c8c52f377a247675ffa930b2182",
+  "findingId": "M6C-R1-P2-RGB-EVIDENCE-QUALIFICATION",
+  "originalRootCause": "The r1 RGB decision checked only whether maximumRgbError existed and was below tolerance. It did not require the declared sample inventory and per-sample provenance/material/target evidence to be complete and valid, so a zero-error subset could qualify despite missing required samples.",
+  "previousRgbGate": "maximumRgbError !== null && maximumRgbError <= GROUND_GLASS_M6C_MAX_RGB_ERROR",
+  "correctedRgbGate": "evidenceValid && maximumRgbError !== null && maximumRgbError <= GROUND_GLASS_M6C_MAX_RGB_ERROR",
+  "expectedSampleInventoryValidation": {
+    "requiresNonEmptyInventory": true,
+    "requiresUniqueValidExpectedIds": true,
+    "requiresExactlyOneSamplePerExpectedId": true,
+    "rejectsDuplicateActualIds": true,
+    "rejectsMissingIds": true,
+    "rejectsUnexpectedIds": true
+  },
+  "evidenceIntegrityChecks": {
+    "captureMustBeMeasuredAndCurrent": true,
+    "sourceAndExpectedRgbaMustBeFiniteAndStructurallyValid": true,
+    "sourceTexelAndNormalizedUvMustBeValid": true,
+    "targetRgbaMustBeIntegerBytesInInclusiveRange0To255": true,
+    "expectedStoredAlphaMustBeFiniteAndInInclusiveRange0To1": true,
+    "targetStorageAlphaMustMatchExpectationWithinUnchanged2Over255Tolerance": true,
+    "sourceSampleIdentityMustBeExplicitlyTrue": true,
+    "presentationMaterialEquivalenceMustBeExplicitlyTrue": true,
+    "everyExpectedSampleMustProduceRgbComparison": true,
+    "validPartialRgbMetricsRemainDiagnosticButCannotQualify": true
+  },
+  "negativeControlResults": {
+    "addedEvaluatorCases": 32,
+    "totalM6cEvaluatorTests": 50,
+    "completeValidEvidence": "passed RGB qualification",
+    "missingRequiredSampleWithZeroRgbError": "failed RGB qualification; measured zero-error subset retained",
+    "duplicateActualId": "failed RGB qualification",
+    "duplicateExpectedId": "failed RGB qualification",
+    "emptyInventory": "failed RGB qualification",
+    "unexpectedId": "failed RGB qualification",
+    "nonfiniteSourceOrExpectedValue": "failed RGB qualification",
+    "invalidTargetByte": "failed RGB qualification",
+    "invalidExpectedStoredAlpha": "failed RGB qualification",
+    "sourceIdentityMismatch": "failed RGB qualification",
+    "falseOrMissingMaterialEquivalence": "failed RGB qualification",
+    "rgbAboveLimit": "failed RGB qualification",
+    "rgbExactlyAtLimit": "passed RGB qualification with otherwise valid evidence",
+    "targetStorageAlphaViolation": "failed RGB qualification while preserving RGB error diagnostics",
+    "unsupportedStaleOrRetiredIdentity": "failed RGB qualification",
+    "mutationSensitivity": "The regression invokes the production evaluator with expected IDs [a,b] and only valid zero-error sample a. It asserts rgb-regression-failed; the previous predicate would have passed this measured subset."
+  },
+  "alphaRgbDecisionIndependence": {
+    "actualMaterialOutput": "Opaque MeshBasicNodeMaterial stores target alpha one.",
+    "sourceAlphaPreservation": "Still fails; maximum error 1 and RMSE 0.6453784431632674.",
+    "alphaDecision": "alpha-observable-contract-different",
+    "validCompleteRgbDecision": "rgb-regression-passed",
+    "clarification": "A valid expected opaque-storage observation and complete RGB evidence can qualify RGB even while source-alpha preservation fails. A stored target alpha that violates its declared opaque-storage expectation invalidates the capture evidence and cannot qualify RGB."
+  },
+  "nativeRegression": {
+    "sourceCommit": "ce00d7e437e25c8c52f377a247675ffa930b2182",
+    "command": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts",
+    "result": "3/3 passed",
+    "runtime": {
+      "browser": "Chrome 156",
+      "operatingSystem": "macOS",
+      "threeRevision": "186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false
+    },
+    "comparisonRevision": "m6c-alpha-rgba8-r2",
+    "captureIds": [
+      "m6c-neutral-raw",
+      "m6c-throughput-half",
+      "m6c-throughput-above-one",
+      "m6c-natural-cos4",
+      "m6c-circle-centered",
+      "m6c-circle-shifted",
+      "m6c-conic-coverage",
+      "m6c-combined-effects",
+      "m6c-upright",
+      "m6c-raw-round-trip",
+      "m6c-loupe-centered",
+      "m6c-loupe-panned",
+      "m6c-resized-target"
+    ],
+    "captureIdentityRecords": [
+      {"id":"m6c-neutral-raw","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:a84fdbc5","targetSizePx":"334x267"},
+      {"id":"m6c-throughput-half","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:da7f607b","targetSizePx":"334x267"},
+      {"id":"m6c-throughput-above-one","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:8a4c1f30","targetSizePx":"334x267"},
+      {"id":"m6c-natural-cos4","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:260f9741","targetSizePx":"334x267"},
+      {"id":"m6c-circle-centered","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:d16f05ae","targetSizePx":"334x267"},
+      {"id":"m6c-circle-shifted","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:74ebb7c9","targetSizePx":"334x267"},
+      {"id":"m6c-conic-coverage","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:ca7f9a93","targetSizePx":"334x267"},
+      {"id":"m6c-combined-effects","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-3","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:d2a4059c","targetSizePx":"334x267"},
+      {"id":"m6c-upright","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-4","sourceFingerprint":"fnv1a32:9129a15b","presentationFingerprint":"fnv1a32:b191fe66","targetSizePx":"334x267"},
+      {"id":"m6c-raw-round-trip","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-5","sourceFingerprint":"fnv1a32:fbc6a72f","presentationFingerprint":"fnv1a32:a84fdbc5","targetSizePx":"334x267"},
+      {"id":"m6c-loupe-centered","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-6","sourceFingerprint":"fnv1a32:55512832","presentationFingerprint":"fnv1a32:f7bd2909","targetSizePx":"334x267"},
+      {"id":"m6c-loupe-panned","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-12","sourceFingerprint":"fnv1a32:f023714a","presentationFingerprint":"fnv1a32:aca9e68b","targetSizePx":"334x267"},
+      {"id":"m6c-resized-target","requestId":"gg-mvtoib0t-lppax7nw5k-default-request-13","sourceFingerprint":"fnv1a32:f023714a","presentationFingerprint":"fnv1a32:aca9e68b","targetSizePx":"437x349"}
+    ],
+    "captureCount": 13,
+    "samplesPerCapture": 15,
+    "totalSamples": 195,
+    "eachCapture": {
+      "status": "failed only for the preserved alpha contract mismatch",
+      "alphaDecision": "alpha-observable-contract-different",
+      "rgbDecision": "rgb-regression-passed",
+      "maximumRgbError": 0,
+      "rgbRmse": 0,
+      "maximumTargetStorageAlphaError": 0,
+      "measuredTargetAlpha": 1,
+      "supportedSamples": 15,
+      "unavailableSamples": 0,
+      "invalidComparisons": 0
+    },
+    "sourceAlphaPreservationMaximumError": 1,
+    "sourceAlphaPreservationRmse": 0.6453784431632674,
+    "identity": {
+      "rendererGenerationId": "gg-mvtoib0t-lppax7nw5k-default-generation-1",
+      "sourceDataFingerprints": [
+        "fnv1a32:fbc6a72f",
+        "fnv1a32:9129a15b",
+        "fnv1a32:55512832",
+        "fnv1a32:f023714a"
+      ],
+      "captureTargetSizesPx": ["334x267", "437x349 resized target"]
+    },
+    "staleReadbackControls": {
+      "acceptedRequestChanged": "stale, zero samples published, target disposed and prior render target restored",
+      "rendererGenerationRetired": "stale, zero samples published, target disposed and prior render target restored"
+    },
+    "resourceAccounting": {
+      "captureTargetAllocations": 13,
+      "captureTargetDisposals": 13,
+      "normalFrameAlphaTargetAllocations": 0,
+      "staleControlTargetsDisposed": true
+    }
+  },
+  "unitRegression": {
+    "m6cEvaluatorSuite": "50/50 passed",
+    "focusedM6cAndPresentationSuites": "75/75 passed",
+    "fullUnitIntegrationSuite": "298 files / 3044 tests passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "checkCss": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "hostedCi": {
+    "statusAtReportGeneration": "awaiting checks for corrected PR head",
+    "finalCorrectedHeadMustPass": true,
+    "previousHeadRun": "40889453305",
+    "previousHeadRunCountsForCorrectedHead": false
+  },
+  "preservedAlphaObservation": {
+    "material": "MeshBasicNodeMaterial",
+    "transparent": false,
+    "opacity": 1,
+    "blending": "NormalBlending",
+    "alphaTest": 0,
+    "premultipliedAlpha": false,
+    "measuredTargetAlpha": 1,
+    "sourceAlphaPreservationMaximumError": 1,
+    "sourceAlphaPreservationRmse": 0.6453784431632674,
+    "decision": "alpha-observable-contract-different"
+  },
+  "preservedM6bEvidence": {
+    "spatialGateRevision": "m6b-spatial-gate-r1",
+    "finalOutputRgbCases": 9,
+    "finalOutputRgbSamples": 206,
+    "maximumChannelErrorCodes": 1,
+    "worstRgbRmseCodes": 0.204125,
+    "decision": "unchanged"
+  },
+  "architectureDecision": "architecture-partially-implemented",
+  "finalOutputDecision": "final-output-partial",
+  "photographicQualityDecision": "quality-unqualified",
+  "productionIsolation": {
+    "publicGroundGlassRenderer": "WebGL",
+    "productionWebGpu": "production-webgpu-disabled",
+    "normalRenderingPathChanged": false,
+    "M6MaterialOrShaderChanged": false,
+    "M5OrB1Changed": false
+  },
+  "remainingLimitations": [
+    "The opaque M6 material does not preserve source alpha; a separate material/output contract review is still required.",
+    "M6C RGB evidence does not qualify photographic blur fidelity.",
+    "Evidence is scoped to the Architecture Rise fixture on Chrome 156, macOS and Three.js r186.",
+    "The broad local E2E suite fails at the existing missing Complete the Photograph heading; that failure was reproduced on clean current main at 310dc0770b46f103ada68b5872258306f2b048e9.",
+    "M7 has not started; production WebGPU remains disabled."
+  ]
+}
