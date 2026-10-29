@@ -1,8 +1,47 @@
 import type { GroundGlassFrameResult } from "../backend/groundGlassBackendContracts";
+import type { GroundGlassFrameRequest } from "../groundGlassFrameRequest";
+import type { GroundGlassPresentationNodeState } from "./groundGlassPresentationNodes";
 import type { GroundGlassPhysicalCocProbeUv } from "./groundGlassPhysicalCocNodes";
 import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
 import type { GroundGlassPhysicalDepthConfidence } from "./groundGlassPhysicalCocContract";
 import type { GroundGlassApertureGatherQualityMode } from "./groundGlassApertureGatherPolicy";
+import { isGroundGlassM6bFixtureSceneEnabled } from "./groundGlassM6PresentationPolicy";
+
+export type GroundGlassM6bPresentationEffectOverrides = Readonly<{
+  throughputGain?: number;
+  coverage?: Readonly<Partial<Pick<GroundGlassPresentationNodeState["coverage"], "active" | "geometry" | "edgeFeatherMm">>>;
+  naturalIllumination?: Readonly<Partial<Pick<GroundGlassPresentationNodeState["naturalIllumination"], "enabled" | "geometry">>>;
+}>;
+
+export type GroundGlassM6bPresentationFixtureEvidence = Readonly<{
+  fixtureRevision: "m6b-physical-overlay-v1";
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+  rendererFamily: "webgpu-renderer";
+  actualExecutionApi: "webgpu";
+  internalFallback: "none";
+  previewMode: "raw" | "upright";
+  sourceSampling: "nearest";
+  sourceColorDomain: "linear-no-color-space";
+  sourceWidthPx: number;
+  sourceHeightPx: number;
+  sourceDataFingerprint: string;
+  presentationStateFingerprint: string;
+  outputWidthPx: number;
+  outputHeightPx: number;
+  sourceCrop: GroundGlassFrameRequest["inspectionWindow"];
+  presentationState: GroundGlassPresentationNodeState;
+}>;
+
+export type GroundGlassM6bCalibrationFixtureControl = {
+  enabled: true;
+  presentationState?: "neutral" | "request";
+  effectOverrides?: GroundGlassM6bPresentationEffectOverrides;
+  presentationEvidence?: GroundGlassM6bPresentationFixtureEvidence | null;
+  resourceDisposed?: boolean;
+};
 
 export type GroundGlassApertureGatherCaptureRequest = Readonly<{
   token: string;
@@ -431,6 +470,8 @@ export type GroundGlassWebGpuTestControl = {
   failurePoints?: GroundGlassWebGpuTestFailurePoint[];
   /** Exercise Three.js's actual WebGL2 compatibility backend through the M3 adapter boundary. */
   forceWebGlCompatibilityBackend?: boolean;
+  /** Test-only calibration source and Stage overlay; requires all trusted M6 build gates. */
+  m6bCalibrationFixture?: GroundGlassM6bCalibrationFixtureControl;
   holdAdapterOperationAfterFailure?: boolean;
   adapterOperationBarrierReached?: boolean;
   releaseAdapterOperation?: (() => void) | undefined;
@@ -479,6 +520,59 @@ const getControl = (): GroundGlassWebGpuTestControl | null =>
 
 export const initialGroundGlassRawDebugForTest = (): boolean =>
   getControl()?.initialRawDebug === true;
+
+export const isGroundGlassM6bCalibrationFixtureEnabledForScene = (
+  scene: Pick<GroundGlassFrameRequest["scene"], "id" | "bounds">,
+): boolean => {
+  const fixture = getControl()?.m6bCalibrationFixture;
+  return fixture?.enabled === true && isGroundGlassM6bFixtureSceneEnabled(scene, true);
+};
+
+export const isGroundGlassM6bCalibrationFixtureEnabledForRequest = (
+  request: GroundGlassFrameRequest,
+): boolean => !request.rawDebug &&
+  isGroundGlassM6bCalibrationFixtureEnabledForScene(request.scene);
+
+export const resolveGroundGlassM6bPresentationStateForTest = (
+  request: GroundGlassFrameRequest,
+  state: GroundGlassPresentationNodeState,
+): GroundGlassPresentationNodeState | null => {
+  if (!isGroundGlassM6bCalibrationFixtureEnabledForRequest(request)) return null;
+  const fixture = getControl()?.m6bCalibrationFixture;
+  const neutralState = fixture?.presentationState === "neutral"
+    ? {
+        ...state,
+        coverage: { ...state.coverage, active: false, geometry: null, edgeFeatherMm: 0 },
+        naturalIllumination: { ...state.naturalIllumination, enabled: false, geometry: null },
+        throughputGain: 1,
+      }
+    : state;
+  const overrides = fixture?.effectOverrides;
+  return {
+    ...neutralState,
+    previewMode: request.previewMode,
+    ...(overrides?.throughputGain !== undefined ? { throughputGain: overrides.throughputGain } : {}),
+    ...(overrides?.coverage ? {
+      coverage: { ...neutralState.coverage, ...overrides.coverage },
+    } : {}),
+    ...(overrides?.naturalIllumination ? {
+      naturalIllumination: { ...neutralState.naturalIllumination, ...overrides.naturalIllumination },
+    } : {}),
+  };
+};
+
+export const publishGroundGlassM6bPresentationEvidenceForTest = (
+  evidence: GroundGlassM6bPresentationFixtureEvidence,
+): void => {
+  const fixture = getControl()?.m6bCalibrationFixture;
+  if (!fixture?.enabled) return;
+  fixture.presentationEvidence = evidence;
+};
+
+export const recordGroundGlassM6bFixtureResourceDisposedForTest = (): void => {
+  const fixture = getControl()?.m6bCalibrationFixture;
+  if (fixture?.enabled) fixture.resourceDisposed = true;
+};
 
 export const forceGroundGlassWebGlCompatibilityBackendForTest = (): boolean =>
   getControl()?.forceWebGlCompatibilityBackend === true;

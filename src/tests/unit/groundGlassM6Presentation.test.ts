@@ -8,6 +8,7 @@ import {
   GROUND_GLASS_M6_PRESENTATION_FEATURES,
   groundGlassM6PilotSessionId,
   isGroundGlassM6BuildAuthorizedForFlags,
+  isGroundGlassM6bFixtureBuildAuthorizedForFlags,
   isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationRequestForBuild,
   isGroundGlassRawPilotBuildAuthorizedForFlags,
@@ -327,6 +328,28 @@ describe("M6 development-only compatibility policy", () => {
       makeRequest({ scene: understandingCameraMovementsScene }),
       true,
     )).toBe(false);
+  });
+
+  it("keeps the M6B fixture behind the dev seam, both M6 flags, exact scene identity, and explicit test control", () => {
+    const flags = {
+      developmentBuild: true,
+      rawPilotFlag: "true",
+      m6PresentationFlag: "true",
+      testSeamFlag: "true",
+    } as const;
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags(flags, true, architectureRiseScene)).toBe(true);
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags({ ...flags, developmentBuild: false }, true, architectureRiseScene)).toBe(false);
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags({ ...flags, testSeamFlag: "false" }, true, architectureRiseScene)).toBe(false);
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags({ ...flags, m6PresentationFlag: "false" }, true, architectureRiseScene)).toBe(false);
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags(flags, false, architectureRiseScene)).toBe(false);
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags(flags, true, understandingCameraMovementsScene)).toBe(false);
+    expect(isGroundGlassM6bFixtureBuildAuthorizedForFlags(flags, true, {
+      ...architectureRiseScene,
+      bounds: {
+        ...architectureRiseScene.bounds,
+        max: { ...architectureRiseScene.bounds.max, x: architectureRiseScene.bounds.max.x + 1 },
+      },
+    })).toBe(false);
   });
 
   it("provisions an M6-capable session for an initial Raw request while keeping M6 execution request-scoped", () => {

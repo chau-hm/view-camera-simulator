@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { useTranslation } from "react-i18next";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
+import { isGroundGlassM6bCalibrationFixtureEnabledForScene } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import { ViewOptions } from "../controls/ViewOptions";
 import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
@@ -110,6 +111,8 @@ export const GroundGlassViewport = ({
   const { t } = useTranslation();
   const sceneId = scene.id;
   const previewMode = resolveGroundGlassPreviewMode(groundGlassAssistEnabled);
+  const preservesFocusLoupeOnPreviewChange = import.meta.env.DEV && !rawRttDebug &&
+    isGroundGlassM6bCalibrationFixtureEnabledForScene(scene);
   const narrowLayout = useNarrowLayout();
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
@@ -183,7 +186,7 @@ export const GroundGlassViewport = ({
           focusMetric={focusMetric}
           zoomEnabled={layerZoomEnabled}
           onZoomChange={onLayerZoomChange}
-          interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}:${resetSuffix}`}
+          interactionResetKey={`${interactionResetKey ?? sceneId}:${preservesFocusLoupeOnPreviewChange ? "m6" : previewMode}:${resetSuffix}`}
           cameraState={layer.camera}
           channel={label === "Original" ? "camera-movement-original" : "camera-movement-current"}
           presentationRegion={layer.presentationTargetRegion}
@@ -199,7 +202,7 @@ export const GroundGlassViewport = ({
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, preservesFocusLoupeOnPreviewChange, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t],
   );
 
   useEffect(() => {
@@ -331,7 +334,7 @@ export const GroundGlassViewport = ({
               focusMetric={focusMetric}
               zoomEnabled={zoomEnabled}
               onZoomChange={handleZoomChange}
-              interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
+              interactionResetKey={`${interactionResetKey ?? sceneId}:${preservesFocusLoupeOnPreviewChange ? "m6" : previewMode}`}
               accessibleLabel={singleViewAccessibleLabel}
               stageLabel={singleViewAccessibleLabel}
               zoomInLabel={focusLoupeLabel}

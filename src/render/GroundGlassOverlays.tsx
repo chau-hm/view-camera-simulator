@@ -9,11 +9,21 @@ export const GroundGlassTransformedOverlays = ({
   gridEnabled,
   rawDebug,
   physicalGrid,
+  calibrationTargets,
 }: {
   gridEnabled: boolean;
   rawDebug?: boolean;
   /** Optional physical film grid; absent preserves the legacy decorative grid. */
   physicalGrid?: GroundGlassPhysicalGrid | null;
+  /** Development-test-only points projected through the existing Ground Glass target contract. */
+  calibrationTargets?: readonly Readonly<{
+    id: string;
+    displayU: number;
+    displayV: number;
+    visible: boolean;
+    physicalFilmU: number;
+    physicalFilmV: number;
+  }>[];
 }): ReactNode | null => {
   return (
     <>
@@ -61,6 +71,34 @@ export const GroundGlassTransformedOverlays = ({
           }}
         />
       )}
+
+      {calibrationTargets?.map((target) => (
+        <div
+          key={target.id}
+          data-testid="ground-glass-calibration-target"
+          data-calibration-landmark-id={target.id}
+          data-calibration-visible={target.visible ? "true" : "false"}
+          data-calibration-film-u={target.physicalFilmU}
+          data-calibration-film-v={target.physicalFilmV}
+          data-calibration-display-u={target.displayU}
+          data-calibration-display-v={target.displayV}
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: `${target.displayU * 100}%`,
+            top: `${target.displayV * 100}%`,
+            width: 18,
+            height: 18,
+            boxSizing: "border-box",
+            border: "2px solid rgba(255,255,255,0.95)",
+            borderRadius: "50%",
+            transform: "translate(-50%, -50%)",
+            display: target.visible ? "block" : "none",
+            pointerEvents: "none",
+            zIndex: 2,
+          }}
+        />
+      ))}
 
     </>
   );
