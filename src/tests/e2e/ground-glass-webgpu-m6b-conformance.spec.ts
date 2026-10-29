@@ -13,6 +13,14 @@ import {
   encodeGroundGlassLinearChannelToSrgb,
   evaluateGroundGlassPresentationReference,
 } from "../../render/webgpu/groundGlassPresentationReference";
+import {
+  evaluateGroundGlassM6bCaptureSpatialConformance,
+  evaluateGroundGlassM6bSpatialConformance,
+  GROUND_GLASS_M6B_MAXIMUM_SPATIAL_ERROR_PX,
+  GROUND_GLASS_M6B_MAXIMUM_SPATIAL_RMS_PX,
+  GROUND_GLASS_M6B_REQUIRED_CAPTURE_IDS,
+  GROUND_GLASS_M6B_SPATIAL_GATE_REVISION,
+} from "../../render/groundGlassM6bSpatialConformance";
 import type {
   GroundGlassM6bPresentationEffectOverrides,
   GroundGlassM6bPresentationFixtureEvidence,
@@ -301,7 +309,12 @@ const measureGridRaster = async (
   });
 };
 
-const captureAlignment = async (page: Page, testInfo: TestInfo, name: string) => {
+const captureAlignment = async (
+  page: Page,
+  testInfo: TestInfo,
+  name: string,
+  previousInternalTargetSizePx: Readonly<{ widthPx: number; heightPx: number }> | null = null,
+) => {
   const pane = paneFor(page);
   const stage = stageFor(page);
   const grid = stage.getByTestId("ground-glass-grid");
@@ -406,7 +419,27 @@ const captureAlignment = async (page: Page, testInfo: TestInfo, name: string) =>
   expect(evidence?.actualExecutionApi).toBe("webgpu");
   expect(evidence?.internalFallback).toBe("none");
   expect(await pilotFor(page).getAttribute("data-presentation-source")).toBe("m6b-calibration-fixture");
-  const result = { name, previewMode, geometry, expected, raster, alignment, identity, evidence, png };
+  const spatialConformanceInput = {
+    captureId: name,
+    captureName: name,
+    previewMode,
+    focusLoupeActive: geometry.inspectionWindow.active,
+    crop: geometry.inspectionWindow,
+    displaySizePx: { widthPx: geometry.widthPx, heightPx: geometry.heightPx },
+    internalTargetSizePx: { widthPx: identity.targetWidthPx, heightPx: identity.targetHeightPx },
+    previousInternalTargetSizePx,
+    requestId: identity.requestId,
+    channelId: evidence?.channelId ?? null,
+    sceneId: evidence?.sceneId ?? null,
+    rendererGenerationId: identity.rendererGenerationId,
+    expectedLandmarks: expected,
+    minimumMeasuredLandmarkCount: expected.filter(({ visibleInCrop }) => visibleInCrop).length,
+    maximumSpatialErrorPx: GROUND_GLASS_M6B_MAXIMUM_SPATIAL_ERROR_PX,
+    maximumSpatialRmsPx: GROUND_GLASS_M6B_MAXIMUM_SPATIAL_RMS_PX,
+    alignment,
+  } as const;
+  const spatialConformance = evaluateGroundGlassM6bCaptureSpatialConformance(spatialConformanceInput);
+  const result = { name, previewMode, geometry, expected, raster, alignment, identity, evidence, png, spatialConformanceInput, spatialConformance };
   await attachEvidence(testInfo, `${name}-measurements.json`, JSON.stringify({
     previewMode,
     geometry,
@@ -415,6 +448,7 @@ const captureAlignment = async (page: Page, testInfo: TestInfo, name: string) =>
     identity,
     presentationEvidence: evidence,
     alignment,
+    spatialConformance,
   }, null, 2), "application/json");
   return result;
 };
@@ -593,10 +627,6 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   const raw = await captureAlignment(page, testInfo, "m6b-raw-full-film");
   captures.push(raw);
   await attachEvidence(testInfo, "m6b-overlay-alignment-error.svg", alignmentErrorSvg(raw), "image/svg+xml");
-  expect(raw.alignment.measuredLandmarkCount).toBe(GROUND_GLASS_M6B_CALIBRATION_LANDMARKS.length);
-  expect(raw.alignment.unsupportedCount).toBe(0);
-  expect(raw.alignment.maximumErrorPx).toBeLessThanOrEqual(2);
-  expect(raw.alignment.rmsErrorPx).toBeLessThanOrEqual(1.25);
 
   const pixelOracle = await runPixelOracle(page, raw.png, raw.evidence!);
   await attachEvidence(testInfo, "m6b-source-to-output-sampling.svg", sourceToOutputSamplingSvg(pixelOracle), "image/svg+xml");
@@ -753,15 +783,11 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   await waitForCurrentFrame(page);
   const upright = await captureAlignment(page, testInfo, "m6b-upright-full-film");
   captures.push(upright);
-  expect(upright.alignment.measuredLandmarkCount).toBe(GROUND_GLASS_M6B_CALIBRATION_LANDMARKS.length);
-  expect(upright.alignment.maximumErrorPx).toBeLessThanOrEqual(2);
-  expect(upright.alignment.rmsErrorPx).toBeLessThanOrEqual(1.25);
 
   await page.getByRole("radio", { name: "Raw Ground Glass", exact: true }).check();
   await waitForCurrentFrame(page);
   const rawRoundTrip = await captureAlignment(page, testInfo, "m6b-raw-round-trip");
   captures.push(rawRoundTrip);
-  expect(rawRoundTrip.alignment.measuredLandmarkCount).toBe(GROUND_GLASS_M6B_CALIBRATION_LANDMARKS.length);
   expect(rawRoundTrip.identity.rendererGenerationId).toBe(raw.identity.rendererGenerationId);
 
   await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
@@ -769,8 +795,6 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   await waitForCurrentFrame(page);
   const centeredLoupe = await captureAlignment(page, testInfo, "m6b-loupe-centered");
   captures.push(centeredLoupe);
-  expect(centeredLoupe.alignment.measuredLandmarkCount).toBeGreaterThan(0);
-  expect(centeredLoupe.alignment.unsupportedCount).toBe(0);
   const centeredLoupePixelOracle = await runPixelOracle(page, centeredLoupe.png, centeredLoupe.evidence!);
   await attachEvidence(testInfo, "m6b-loupe-cropped-pixel-oracle.json", JSON.stringify(centeredLoupePixelOracle, null, 2), "application/json");
   expect(centeredLoupePixelOracle.samples.length).toBeGreaterThan(13);
@@ -810,8 +834,6 @@ test("native M6B measures physical overlay alignment and final canvas output", a
     .toBeLessThan(1e-6);
   const horizontalLoupe = await captureAlignment(page, testInfo, "m6b-loupe-horizontal-pan");
   captures.push(horizontalLoupe);
-  expect(horizontalLoupe.alignment.measuredLandmarkCount).toBeGreaterThan(0);
-  expect(horizontalLoupe.alignment.unsupportedCount).toBe(0);
 
   const horizontalGeometry = horizontalPanGeometry;
   const verticalPanGeometry = await panLoupeBy(0, 0.12);
@@ -821,14 +843,10 @@ test("native M6B measures physical overlay alignment and final canvas output", a
     .toBeGreaterThan(0.005);
   const verticalLoupe = await captureAlignment(page, testInfo, "m6b-loupe-vertical-pan");
   captures.push(verticalLoupe);
-  expect(verticalLoupe.alignment.measuredLandmarkCount).toBeGreaterThan(0);
-  expect(verticalLoupe.alignment.unsupportedCount).toBe(0);
 
   await panLoupeBy(0.12, -0.09);
   const pannedLoupe = await captureAlignment(page, testInfo, "m6b-loupe-diagonal-pan");
   captures.push(pannedLoupe);
-  expect(pannedLoupe.alignment.measuredLandmarkCount).toBeGreaterThan(0);
-  expect(pannedLoupe.alignment.unsupportedCount).toBe(0);
 
   const expectedBoundaryCenter = (direction: -1 | 1) => direction === 1 ? 0.125 : 0.875;
   const panLoupeToBoundary = async (axis: "horizontal" | "vertical", direction: -1 | 1) => {
@@ -853,10 +871,6 @@ test("native M6B measures physical overlay alignment and final canvas output", a
       .toBeCloseTo(expectedCenter, 3);
     const capture = await captureAlignment(page, testInfo, name);
     captures.push(capture);
-    expect(capture.alignment.measuredLandmarkCount).toBeGreaterThan(0);
-    expect(capture.alignment.unsupportedCount).toBe(0);
-    expect(capture.alignment.maximumErrorPx).toBeLessThanOrEqual(2);
-    expect(capture.alignment.rmsErrorPx).toBeLessThanOrEqual(1.25);
     return capture;
   };
   await captureCropBoundary("m6b-loupe-left-limit", "horizontal", 1, 0.125);
@@ -870,10 +884,6 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   const croppedUpright = await captureAlignment(page, testInfo, "m6b-upright-cropped-loupe");
   captures.push(croppedUpright);
   expect(croppedUpright.geometry.inspectionWindow.active).toBe(true);
-  expect(croppedUpright.alignment.measuredLandmarkCount).toBeGreaterThan(0);
-  expect(croppedUpright.alignment.unsupportedCount).toBe(0);
-  expect(croppedUpright.alignment.maximumErrorPx).toBeLessThanOrEqual(2);
-  expect(croppedUpright.alignment.rmsErrorPx).toBeLessThanOrEqual(1.25);
   await page.getByRole("radio", { name: "Raw Ground Glass", exact: true }).check();
   await waitForCurrentFrame(page);
   await expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
@@ -884,8 +894,6 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   await waitForCurrentFrame(page);
   const cropReset = await captureAlignment(page, testInfo, "m6b-loupe-reset-full-film");
   captures.push(cropReset);
-  expect(cropReset.alignment.measuredLandmarkCount).toBe(GROUND_GLASS_M6B_CALIBRATION_LANDMARKS.length);
-  expect(cropReset.alignment.unsupportedCount).toBe(0);
 
   const resizeBefore = {
     targetWidthPx: Number(await pilot.getAttribute("data-target-width")),
@@ -923,10 +931,11 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   expect(resizeAfter.outputWidthPx).toBe(resizeAfter.stage.widthPx);
   expect(resizeAfter.outputHeightPx).toBe(resizeAfter.stage.heightPx);
   expect(await pilot.getAttribute("data-renderer-generation")).toBe(generationBeforeResize);
-  const resized = await captureAlignment(page, testInfo, "m6b-resized-standard-quality");
+  const resized = await captureAlignment(page, testInfo, "m6b-resized-standard-quality", {
+    widthPx: resizeBefore.targetWidthPx,
+    heightPx: resizeBefore.targetHeightPx,
+  });
   captures.push(resized);
-  expect(resized.alignment.measuredLandmarkCount).toBe(GROUND_GLASS_M6B_CALIBRATION_LANDMARKS.length);
-  expect(resized.alignment.unsupportedCount).toBe(0);
   const resizedPixelOracle = await runPixelOracle(page, resized.png, resized.evidence!);
   await attachEvidence(testInfo, "m6b-resized-pixel-oracle.json", JSON.stringify(resizedPixelOracle, null, 2), "application/json");
   expect(resizedPixelOracle.samples.length).toBeGreaterThan(13);
@@ -953,8 +962,30 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   }));
   expect(fixtureControl.active).toBe(true);
 
+  // Reaching this point means all explicit M6B state-transition assertions above passed.
+  // The spatial evaluator owns the per-capture limits and exact 14-capture inventory.
+  const spatialConformance = evaluateGroundGlassM6bSpatialConformance({
+    captures: captures.map(({ spatialConformanceInput }) => spatialConformanceInput),
+    stateSpecificAssertionsPassed: true,
+  });
+  const spatialConformanceEvidence = {
+    sourceCommit: process.env.GROUND_GLASS_M6B_SOURCE_COMMIT ?? null,
+    nativeRuntime: {
+      rendererFamily: await pane.getAttribute("data-mounted-renderer-family"),
+      actualExecutionApi: await pane.getAttribute("data-actual-execution-api"),
+      rendererRevision: await pilot.getAttribute("data-presentation-renderer-revision"),
+    },
+    result: spatialConformance,
+  };
+  await attachEvidence(testInfo, "m6b-spatial-conformance.json", JSON.stringify(spatialConformanceEvidence, null, 2), "application/json");
+  expect(spatialConformance.requiredCaptureIds).toEqual([...GROUND_GLASS_M6B_REQUIRED_CAPTURE_IDS]);
+  expect(spatialConformance.allRequiredCaptureIdsPresentExactlyOnce).toBe(true);
+  expect(spatialConformance.physicalOverlayConformant, JSON.stringify(spatialConformance.failureReasons, null, 2)).toBe(true);
+
   const report = {
     schemaVersion: 1,
+    spatialGateRevision: GROUND_GLASS_M6B_SPATIAL_GATE_REVISION,
+    spatialConformance,
     sourceCommit: process.env.GROUND_GLASS_M6B_SOURCE_COMMIT ?? null,
     fixtureRevision: raw.evidence?.fixtureRevision,
     physicalFilmContract: {
@@ -1017,6 +1048,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
       outputSizePx: [capture.identity.outputWidthPx, capture.identity.outputHeightPx],
       crop: capture.geometry.inspectionWindow,
       alignment: capture.alignment,
+      spatialConformance: capture.spatialConformance,
     })),
     resize: { before: resizeBefore, after: resizeAfter },
     pixelOracle,
