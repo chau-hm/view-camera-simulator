@@ -49,17 +49,22 @@ const makeSample = (
   ...overrides,
 });
 
-const evaluate = (samples: readonly GroundGlassM6cAlphaSampleInput[]) =>
+const evaluate = (
+  samples: readonly GroundGlassM6cAlphaSampleInput[],
+  expectedSampleIds: readonly string[] = samples.map((sample) => sample.id),
+  expectedStoredAlpha?: (sample: GroundGlassM6cAlphaSampleInput) => number,
+) =>
   evaluateGroundGlassM6cAlphaConformance({
     status: "measured",
     identityCurrent: true,
-    expectedSampleIds: samples.map((sample) => sample.id),
+    expectedSampleIds,
     samples,
+    ...(expectedStoredAlpha ? { expectedStoredAlpha } : {}),
   });
 
 describe("M6C alpha conformance contract", () => {
   it("uses the fixed RGBA8 gate and source matrix including zero, partial, and opaque alpha", () => {
-    expect(GROUND_GLASS_M6C_ALPHA_GATE_REVISION).toBe("m6c-alpha-rgba8-r1");
+    expect(GROUND_GLASS_M6C_ALPHA_GATE_REVISION).toBe("m6c-alpha-rgba8-r2");
     expect(GROUND_GLASS_M6C_MAX_ALPHA_ERROR).toBeCloseTo(2 / 255, 12);
     expect(GROUND_GLASS_M6C_ALPHA_MATRIX.map(({ id }) => id)).toHaveLength(15);
     expect(GROUND_GLASS_M6C_ALPHA_MATRIX.slice(0, 8).map(({ rgba }) => rgba[3])).toEqual([
@@ -91,11 +96,12 @@ describe("M6C alpha conformance contract", () => {
 
   it("rejects alpha forcibly set to one or zero", () => {
     const source = [0.2, 0.4, 0.6, 0.35] as const;
-    const forcedOne = evaluate([makeSample("partial", source, [0.2, 0.4, 0.6, 1])]);
+    const forcedOne = evaluate([makeSample("partial", source, [0.2, 0.4, 0.6, 1])], undefined, () => 1);
     const forcedZero = evaluate([makeSample("partial", source, [0.2, 0.4, 0.6, 0])]);
     expect(forcedOne.alphaDecision).toBe("alpha-observable-contract-different");
     expect(forcedZero.alphaDecision).toBe("alpha-failed");
-    expect(forcedOne.maximumAlphaError).toBeGreaterThan(2 / 255);
+    expect(forcedOne.maximumAlphaError).toBe(0);
+    expect(forcedOne.maximumSourceAlphaPreservationError).toBeGreaterThan(2 / 255);
     expect(forcedZero.maximumAlphaError).toBeGreaterThan(2 / 255);
   });
 
@@ -135,12 +141,14 @@ describe("M6C alpha conformance contract", () => {
     expect(ignored.failedConditions).toContain("source-sample-identity-mismatch");
   });
 
-  it("fails closed when clear-alpha contamination changes stored alpha", () => {
+  it("separates an observed opaque material output from source-alpha preservation", () => {
     const source = [0.2, 0.4, 0.6, 0.35] as const;
-    const result = evaluate([makeSample("clear-contaminated", source, [0.2, 0.4, 0.6, 1])]);
+    const result = evaluate([makeSample("opaque-material-output", source, [0.2, 0.4, 0.6, 1])], undefined, () => 1);
     expect(result.status).toBe("failed");
     expect(result.alphaDecision).toBe("alpha-observable-contract-different");
-    expect(result.maximumAlphaError).toBeGreaterThan(0.6);
+    expect(result.maximumAlphaError).toBe(0);
+    expect(result.maximumSourceAlphaPreservationError).toBeGreaterThan(0.6);
+    expect(result.rgbDecision).toBe("rgb-regression-passed");
   });
 
   it("treats readback bytes as RGBA8 codes and rejects wrong normalization or channel order", () => {
@@ -206,6 +214,206 @@ describe("M6C alpha conformance contract", () => {
     expect(result.alphaDecision).toBe("alpha-preservation-conformant");
     expect(result.rgbDecision).toBe("rgb-regression-failed");
     expect(result.status).toBe("failed");
+  });
+
+  it("fails RGB qualification for a missing required sample even when measured RGB error is zero", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const result = evaluate([makeSample("a", source)], ["a", "b"]);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.rgbRmse).toBe(0);
+    expect(result.supportedSampleCount).toBe(1);
+    expect(result.unavailableSampleCount).toBe(1);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("missing-sample");
+    expect(result.failedConditions).toContain("rgb-evidence-incomplete-or-invalid");
+  });
+
+  it("rejects duplicate actual sample IDs without discarding their measured RGB diagnostic", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const result = evaluate([makeSample("a", source), makeSample("a", source)], ["a"]);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.supportedSampleCount).toBe(2);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("duplicate-sample-id");
+  });
+
+  it("rejects duplicate expected IDs rather than counting one observation twice", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const result = evaluate([makeSample("a", source)], ["a", "a"]);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("duplicate-expected-sample-id");
+    expect(result.invalidComparisonCount).toBeGreaterThan(0);
+  });
+
+  it("rejects an empty expected sample inventory", () => {
+    const result = evaluate([], []);
+    expect(result.maximumRgbError).toBeNull();
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("empty-expected-sample-inventory");
+  });
+
+  it("rejects unexpected sample IDs", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const result = evaluate([makeSample("unexpected", source)], ["a"]);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("unexpected-sample-id");
+    expect(result.failedConditions).toContain("missing-sample");
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "rejects nonfinite source RGB input %s while preserving an unqualified result",
+    (invalidChannel) => {
+      const invalidSource = [invalidChannel, 0.4, 0.6, 1] as const;
+      const result = evaluate([makeSample("invalid-source", invalidSource, [0.2, 0.4, 0.6, 1])]);
+      expect(result.rgbDecision).toBe("rgb-regression-failed");
+      expect(result.failedConditions).toContain("invalid-sample-value");
+    },
+  );
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "rejects nonfinite expected RGB input %s",
+    (invalidChannel) => {
+      const source = [0.2, 0.4, 0.6, 1] as const;
+      const result = evaluate([makeSample("invalid-reference", source, source, {
+        expectedFragmentRgba: [invalidChannel, 0.4, 0.6, 1],
+      })]);
+      expect(result.rgbDecision).toBe("rgb-regression-failed");
+      expect(result.failedConditions).toContain("invalid-sample-value");
+    },
+  );
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 256, -1, 1.5])(
+    "rejects invalid target byte %s",
+    (invalidByte) => {
+      const source = [0.2, 0.4, 0.6, 1] as const;
+      const result = evaluate([makeSample("invalid-target", source, source, {
+        actualTargetBytes: [invalidByte, 102, 153, 255],
+      })]);
+      expect(result.rgbDecision).toBe("rgb-regression-failed");
+      expect(result.failedConditions).toContain("invalid-sample-value");
+    },
+  );
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, -0.01, 1.01])(
+    "rejects invalid expected stored alpha %s",
+    (invalidAlpha) => {
+      const source = [0.2, 0.4, 0.6, 1] as const;
+      const result = evaluate([makeSample("invalid-alpha-expectation", source)], ["invalid-alpha-expectation"], () => invalidAlpha);
+      expect(result.maximumRgbError).toBe(0);
+      expect(result.rgbDecision).toBe("rgb-regression-failed");
+      expect(result.failedConditions).toContain("invalid-expected-stored-alpha");
+    },
+  );
+
+  it("rejects a source sample identity mismatch while retaining the numerical RGB error", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const result = evaluate([makeSample("wrong-texel", source, source, { sourceSampleIdentityMatches: false })]);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("source-sample-identity-mismatch");
+  });
+
+  it("rejects substituted presentation material evidence while retaining RGB diagnostics", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const result = evaluate([makeSample("substituted-material", source, source, { materialEquivalent: false })]);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("presentation-material-equivalence-failed");
+  });
+
+  it("rejects missing material-equivalence evidence", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const { materialEquivalent: _materialEquivalent, ...withoutMaterialEvidence } = makeSample("no-material", source);
+    expect(_materialEquivalent).toBe(true);
+    const result = evaluate([withoutMaterialEvidence as unknown as GroundGlassM6cAlphaSampleInput]);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("presentation-material-equivalence-failed");
+  });
+
+  it("rejects nonfinite or invalid sample coordinates", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const invalidTexel = makeSample("invalid-texel", source, source, { sourceTexel: { x: Number.NaN, y: 4 } });
+    const invalidUv = makeSample("invalid-uv", source, source, { displayUvTopOrigin: { u: Number.POSITIVE_INFINITY, v: 0.4 } });
+    for (const result of [evaluate([invalidTexel]), evaluate([invalidUv])]) {
+      expect(result.rgbDecision).toBe("rgb-regression-failed");
+      expect(result.failedConditions).toContain("invalid-sample-value");
+    }
+  });
+
+  it("fails RGB above the fixed threshold and passes exactly at the threshold", () => {
+    const source = [0.5, 0.5, 0.5, 1] as const;
+    const expectedByte = Math.round(0.5 * 255);
+    const above = evaluate([makeSample("rgb-above-limit", source, source, {
+      actualTargetBytes: [expectedByte + 5, expectedByte, expectedByte, 255],
+    })]);
+    const boundary = evaluate([makeSample("rgb-at-limit", source, source, {
+      actualTargetBytes: [expectedByte + 4, expectedByte, expectedByte, 255],
+    })]);
+    expect(above.maximumRgbError).toBeGreaterThan(4 / 255);
+    expect(above.rgbDecision).toBe("rgb-regression-failed");
+    expect(boundary.maximumRgbError).toBe(4 / 255);
+    expect(boundary.rgbDecision).toBe("rgb-regression-passed");
+  });
+
+  it("allows independently valid RGB when the declared source-alpha preservation contract differs", () => {
+    const source = [0.2, 0.4, 0.6, 0.35] as const;
+    const result = evaluate([makeSample("opaque-output", source, [0.2, 0.4, 0.6, 1])], undefined, () => 1);
+    expect(result.status).toBe("failed");
+    expect(result.alphaDecision).toBe("alpha-observable-contract-different");
+    expect(result.maximumSourceAlphaPreservationError).toBeGreaterThan(0.6);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.rgbDecision).toBe("rgb-regression-passed");
+  });
+
+  it("does not promote RGB when measured target alpha violates its valid storage expectation", () => {
+    const source = [0.5, 0.4, 0.6, 0.35] as const;
+    const result = evaluate([makeSample("wrong-stored-alpha", source, [0.5, 0.4, 0.6, 128 / 255])], undefined, () => 1);
+    expect(result.maximumRgbError).toBe(0);
+    expect(result.maximumAlphaError).toBeGreaterThan(2 / 255);
+    expect(result.rgbDecision).toBe("rgb-regression-failed");
+    expect(result.failedConditions).toContain("target-storage-evidence-invalid");
+  });
+
+  it("keeps RGB passing across a complete opaque target matrix with varied source alpha", () => {
+    const samples = [0, 0.35, 1].map((alpha, index) => {
+      const source = [0.2, 0.4, 0.6, alpha] as const;
+      return makeSample(`opaque-${index}`, source, [0.2, 0.4, 0.6, 1]);
+    });
+    const result = evaluate(samples, samples.map(({ id }) => id), () => 1);
+    expect(result.alphaDecision).toBe("alpha-observable-contract-different");
+    expect(result.maximumSourceAlphaPreservationError).toBe(1);
+    expect(result.rgbDecision).toBe("rgb-regression-passed");
+  });
+
+  it("rejects unsupported, stale-status, and no-longer-current captures for RGB qualification", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const sample = makeSample("a", source);
+    const unsupported = evaluateGroundGlassM6cAlphaConformance({
+      status: "unsupported", identityCurrent: true, expectedSampleIds: ["a"], samples: [sample],
+    });
+    const staleStatus = evaluateGroundGlassM6cAlphaConformance({
+      status: "stale", identityCurrent: true, expectedSampleIds: ["a"], samples: [sample],
+    });
+    const retiredIdentity = evaluateGroundGlassM6cAlphaConformance({
+      status: "measured", identityCurrent: false, expectedSampleIds: ["a"], samples: [sample],
+    });
+    for (const result of [unsupported, staleStatus, retiredIdentity]) {
+      expect(result.rgbDecision).toBe("rgb-regression-failed");
+      expect(result.maximumRgbError).toBeNull();
+    }
+    expect(unsupported.status).toBe("unsupported");
+    expect(staleStatus.status).toBe("stale");
+    expect(retiredIdentity.status).toBe("stale");
+  });
+
+  it("reproduces the reviewed false-positive case using the real evaluator", () => {
+    const source = [0.2, 0.4, 0.6, 1] as const;
+    const reviewedFalsePositive = evaluate([makeSample("a", source)], ["a", "b"]);
+    expect(reviewedFalsePositive.maximumRgbError).toBe(0);
+    expect(reviewedFalsePositive.rgbDecision).toBe("rgb-regression-failed");
+    expect(reviewedFalsePositive.unavailableSampleCount).toBe(1);
   });
 
   it("binds evidence freshness to request, channel, scene, generation, fingerprints, size, preview, and crop", () => {

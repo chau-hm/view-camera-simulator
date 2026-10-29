@@ -5,6 +5,7 @@ import {
   createGroundGlassM6bCalibrationSource,
 } from "../../render/groundGlassPhysicalOverlayConformance";
 import {
+  GROUND_GLASS_M6C_ALPHA_GATE_REVISION,
   evaluateGroundGlassM6cAlphaConformance,
   type GroundGlassM6cAlphaConformanceResult,
 } from "../../render/groundGlassM6cAlphaConformance";
@@ -326,7 +327,7 @@ test("native M6C captures actual presentation alpha across effects, orientation,
   expect(finalResourceAccounting).toEqual({ allocations: captures.length, disposals: captures.length });
 
   await attachJson(testInfo, "m6c-alpha-conformance-report-fragment.json", {
-    evaluatorRevision: "m6c-alpha-rgba8-r1",
+    evaluatorRevision: GROUND_GLASS_M6C_ALPHA_GATE_REVISION,
     sourceAlphaMatrix: GROUND_GLASS_M6C_ALPHA_MATRIX,
     browserUserAgent,
     captureIds: captures.map(({ id }) => id),
