@@ -1,0 +1,2806 @@
+{
+  "schemaVersion": 1,
+  "reportRevision": "m6b-physical-overlay-v1",
+  "sourceCommit": "bdbcd08ae83e5d6114cf7bb4d6ef6d0f27bd8bd7",
+  "nativeRunSourceCommit": "bdbcd08",
+  "predecessorMerge": "f831e48121a7e6fdb3106b3a59fcce716143f90a",
+  "fixtureRevision": "m6b-physical-overlay-v1",
+  "architectureAudit": {
+    "priorGaps": [
+      "No native raster evidence connected physical film landmarks to the shared physical grid and target overlay.",
+      "No direct native canvas-pixel comparison against an independent CPU final-presentation reference."
+    ],
+    "exercisedPath": [
+      "GroundGlassWebGPUAdapter",
+      "actual M6 TSL presentation node",
+      "shared GroundGlassStage",
+      "GroundGlassTransformedOverlays",
+      "resolveGroundGlassPhysicalGrid",
+      "existing physical target projection contract"
+    ],
+    "excluded": [
+      "M4 physical CoC changes",
+      "M5 Far/Near/B1 algorithm changes",
+      "public scene catalog or renderer selector changes",
+      "production WebGPU activation"
+    ]
+  },
+  "calibrationGeometry": {
+    "fixtureRevision": "m6b-physical-overlay-v1",
+    "filmWidthMm": 127,
+    "filmHeightMm": 101.6,
+    "gridSquareMm": 10,
+    "physicalOrigin": "film center (0, 0); +X right; +Y up",
+    "landmarkCount": 13,
+    "landmarks": [
+      {
+        "id": "center",
+        "physicalXMm": -3.5,
+        "physicalYMm": 0.8,
+        "color": "red"
+      },
+      {
+        "id": "upper-left",
+        "physicalXMm": -43.5,
+        "physicalYMm": 30.8,
+        "color": "green"
+      },
+      {
+        "id": "upper-right",
+        "physicalXMm": 46.5,
+        "physicalYMm": 10.8,
+        "color": "blue"
+      },
+      {
+        "id": "lower-left",
+        "physicalXMm": -53.5,
+        "physicalYMm": -29.2,
+        "color": "yellow"
+      },
+      {
+        "id": "lower-right",
+        "physicalXMm": 36.5,
+        "physicalYMm": -39.2,
+        "color": "magenta"
+      },
+      {
+        "id": "film-upper-left",
+        "physicalXMm": -53.5,
+        "physicalYMm": 40.8,
+        "color": "red"
+      },
+      {
+        "id": "film-upper-right",
+        "physicalXMm": 56.5,
+        "physicalYMm": 40.8,
+        "color": "green"
+      },
+      {
+        "id": "film-lower-left",
+        "physicalXMm": -53.5,
+        "physicalYMm": -49.2,
+        "color": "blue"
+      },
+      {
+        "id": "film-lower-right",
+        "physicalXMm": 56.5,
+        "physicalYMm": -49.2,
+        "color": "yellow"
+      },
+      {
+        "id": "film-left-center",
+        "physicalXMm": -53.5,
+        "physicalYMm": 0.8,
+        "color": "magenta"
+      },
+      {
+        "id": "film-right-center",
+        "physicalXMm": 56.5,
+        "physicalYMm": 0.8,
+        "color": "red"
+      },
+      {
+        "id": "film-center-top",
+        "physicalXMm": -3.5,
+        "physicalYMm": 40.8,
+        "color": "green"
+      },
+      {
+        "id": "film-center-bottom",
+        "physicalXMm": -3.5,
+        "physicalYMm": -49.2,
+        "color": "blue"
+      }
+    ]
+  },
+  "physicalFilmContract": {
+    "filmWidthMm": 127,
+    "filmHeightMm": 101.6,
+    "gridSquareMm": 10,
+    "physicalOriginMm": "film center (0, 0); +X right; +Y up",
+    "canonicalFilmUv": "u = 0.5 + xMm / filmWidthMm; v = 0.5 - yMm / filmHeightMm",
+    "previewMapping": "Raw = (1-u, v); Upright = (u, 1-v)",
+    "logicalCoordinates": "CSS content-box pixel coordinates; raster detections converted from screenshot pixel centers by measured canvas CSS scale",
+    "rasterDevicePixelRatio": 1
+  },
+  "sourceToDisplayContract": {
+    "canonicalFilmUv": "u = 0.5 + xMm / filmWidthMm; v = 0.5 - yMm / filmHeightMm",
+    "rawDisplayUv": "(1-u, v)",
+    "uprightDisplayUv": "(u, 1-v)",
+    "sourceSampling": "nearest",
+    "sourceColorDomain": "linear-no-color-space",
+    "rasterPixelConvention": "measured screenshot sample is its pixel cell center"
+  },
+  "overlayCoordinateOracle": {
+    "coordinateSpace": "CSS content-box pixel coordinates; raster detections converted from screenshot pixel centers by measured canvas CSS scale",
+    "rasterDevicePixelRatio": 1,
+    "markerRadiusSourcePx": 10,
+    "expectedRasterLocalizationUncertaintyCssPx": 1,
+    "maximumSpatialErrorCssPx": 2,
+    "maximumSpatialRmsCssPx": 1.25,
+    "specificationVersion": "m6b-physical-overlay-v1"
+  },
+  "actualRasterMeasurements": {
+    "classification": "physical-overlay-conformant",
+    "evidenceScope": "controlled-calibration-fixture",
+    "captureCount": 14,
+    "markerSlots": 182,
+    "markerStatusCounts": {
+      "measured": 77,
+      "outside-current-crop": 105,
+      "unsupported": 0
+    },
+    "measuredErrorSummary": {
+      "maximumCaptureErrorCssPx": 1.5492044700919514,
+      "maximumCaptureRmsErrorCssPx": 0.7301107934845426,
+      "imageToPhysical": {
+        "count": 77,
+        "maximum": 1.1050315404571398,
+        "rms": 0.6621731209873419
+      },
+      "targetOverlayToPhysical": {
+        "count": 77,
+        "maximum": 0.019654744874155576,
+        "rms": 0.012975180535743406
+      },
+      "gridToLandmark": {
+        "count": 77,
+        "maximum": 1.0269403409303977,
+        "rms": 0.6956955106077615
+      }
+    },
+    "allCaptureGatesPass": true,
+    "captures": [
+      {
+        "captureId": "m6b-raw-full-film",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-3",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:a84fdbc5"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": false,
+          "centerU": 0.5,
+          "centerV": 0.5,
+          "widthFraction": 1,
+          "heightFraction": 1
+        },
+        "markers": {
+          "measured": 13,
+          "outsideCurrentCrop": 0,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.5492044700919514,
+          "rmsErrorCssPx": 0.7171881755040718,
+          "imageToPhysical": {
+            "count": 13,
+            "maximum": 1.1050315404571398,
+            "rms": 0.7077892023203887
+          },
+          "targetOverlayToPhysical": {
+            "count": 13,
+            "maximum": 0.019654744874155576,
+            "rms": 0.014058811056214855
+          },
+          "gridToLandmark": {
+            "count": 13,
+            "maximum": 1.026081261408622,
+            "rms": 0.6950363719435616
+          }
+        }
+      },
+      {
+        "captureId": "m6b-upright-full-film",
+        "previewMode": "upright",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-10",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:b191fe66"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": false,
+          "centerU": 0.5,
+          "centerV": 0.5,
+          "widthFraction": 1,
+          "heightFraction": 1
+        },
+        "markers": {
+          "measured": 13,
+          "outsideCurrentCrop": 0,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.3999607429559606,
+          "rmsErrorCssPx": 0.6351077079514105,
+          "imageToPhysical": {
+            "count": 13,
+            "maximum": 0.7993877766597233,
+            "rms": 0.5380702406973811
+          },
+          "targetOverlayToPhysical": {
+            "count": 13,
+            "maximum": 0.015336423671899099,
+            "rms": 0.01041327722552142
+          },
+          "gridToLandmark": {
+            "count": 13,
+            "maximum": 1.0269403409303977,
+            "rms": 0.7959632701179042
+          }
+        }
+      },
+      {
+        "captureId": "m6b-raw-round-trip",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-11",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:a84fdbc5"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": false,
+          "centerU": 0.5,
+          "centerV": 0.5,
+          "widthFraction": 1,
+          "heightFraction": 1
+        },
+        "markers": {
+          "measured": 13,
+          "outsideCurrentCrop": 0,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.5492044700919514,
+          "rmsErrorCssPx": 0.7171881755040718,
+          "imageToPhysical": {
+            "count": 13,
+            "maximum": 1.1050315404571398,
+            "rms": 0.7077892023203887
+          },
+          "targetOverlayToPhysical": {
+            "count": 13,
+            "maximum": 0.019654744874155576,
+            "rms": 0.014058811056214855
+          },
+          "gridToLandmark": {
+            "count": 13,
+            "maximum": 1.026081261408622,
+            "rms": 0.6950363719435616
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-centered",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-12",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:f27af457",
+          "presentationState": "fnv1a32:f7bd2909"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.5,
+          "centerV": 0.5,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 1,
+          "outsideCurrentCrop": 12,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.0413756654628028,
+          "rmsErrorCssPx": 0.650063910660135,
+          "imageToPhysical": {
+            "count": 1,
+            "maximum": 0.3702262229489109,
+            "rms": 0.3702262229489109
+          },
+          "targetOverlayToPhysical": {
+            "count": 1,
+            "maximum": 0.008541050379974482,
+            "rms": 0.008541050379974482
+          },
+          "gridToLandmark": {
+            "count": 1,
+            "maximum": 0.6846376190747093,
+            "rms": 0.6846376190747093
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-horizontal-pan",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-18",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:73deb11f",
+          "presentationState": "fnv1a32:5cd6579d"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.46988327679467107,
+          "centerV": 0.5,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 1,
+          "outsideCurrentCrop": 12,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.1068278556873594,
+          "rmsErrorCssPx": 0.6876606246666802,
+          "imageToPhysical": {
+            "count": 1,
+            "maximum": 0.44458406609172296,
+            "rms": 0.44458406609172296
+          },
+          "targetOverlayToPhysical": {
+            "count": 1,
+            "maximum": 0.007548209553319057,
+            "rms": 0.007548209553319057
+          },
+          "gridToLandmark": {
+            "count": 1,
+            "maximum": 0.6846376190747093,
+            "rms": 0.6846376190747093
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-vertical-pan",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-24",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:2c8d511f",
+          "presentationState": "fnv1a32:7dbb800d"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.46988327679467107,
+          "centerV": 0.46986884792355726,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 1,
+          "outsideCurrentCrop": 12,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 0.9658408466432077,
+          "rmsErrorCssPx": 0.5937089489494227,
+          "imageToPhysical": {
+            "count": 1,
+            "maximum": 0.46825140514610075,
+            "rms": 0.46825140514610075
+          },
+          "targetOverlayToPhysical": {
+            "count": 1,
+            "maximum": 0.004074946521010448,
+            "rms": 0.004074946521010448
+          },
+          "gridToLandmark": {
+            "count": 1,
+            "maximum": 0.5077762692324227,
+            "rms": 0.5077762692324227
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-diagonal-pan",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-30",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:06e6e5cf",
+          "presentationState": "fnv1a32:05add7cf"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.4397665535893422,
+          "centerV": 0.4924672259031421,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 1,
+          "outsideCurrentCrop": 12,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 0.9993823473613084,
+          "rmsErrorCssPx": 0.6996523466592943,
+          "imageToPhysical": {
+            "count": 1,
+            "maximum": 0.678347203990135,
+            "rms": 0.678347203990135
+          },
+          "targetOverlayToPhysical": {
+            "count": 1,
+            "maximum": 0.009691070522861504,
+            "rms": 0.009691070522861504
+          },
+          "gridToLandmark": {
+            "count": 1,
+            "maximum": 0.7064274219740608,
+            "rms": 0.7064274219740608
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-left-limit",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-41",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:13c44d6b",
+          "presentationState": "fnv1a32:0e3c15fb"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.125,
+          "centerV": 0.4924672259031421,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 2,
+          "outsideCurrentCrop": 11,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 0.8185896874069835,
+          "rmsErrorCssPx": 0.5142157404175219,
+          "imageToPhysical": {
+            "count": 2,
+            "maximum": 0.8185896874069835,
+            "rms": 0.7989740167376238
+          },
+          "targetOverlayToPhysical": {
+            "count": 2,
+            "maximum": 0.015706487442415533,
+            "rms": 0.01492485195576648
+          },
+          "gridToLandmark": {
+            "count": 2,
+            "maximum": 0.7064274219740608,
+            "rms": 0.5760887514256547
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-right-limit",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-65",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:d91c86d0",
+          "presentationState": "fnv1a32:92f58e75"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.875,
+          "centerV": 0.4924672259031421,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 1,
+          "outsideCurrentCrop": 12,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 0.39172088693122376,
+          "rmsErrorCssPx": 0.2716649738421047,
+          "imageToPhysical": {
+            "count": 1,
+            "maximum": 0.016032589687590124,
+            "rms": 0.016032589687590124
+          },
+          "targetOverlayToPhysical": {
+            "count": 1,
+            "maximum": 0.009630444621916978,
+            "rms": 0.009630444621916978
+          },
+          "gridToLandmark": {
+            "count": 1,
+            "maximum": 0.37604838704166077,
+            "rms": 0.37604838704166077
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-top-limit",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-77",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:bade58e2",
+          "presentationState": "fnv1a32:4b6a4d99"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.875,
+          "centerV": 0.125,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 2,
+          "outsideCurrentCrop": 11,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.1011463811478008,
+          "rmsErrorCssPx": 0.7301107934845426,
+          "imageToPhysical": {
+            "count": 2,
+            "maximum": 0.971623165277908,
+            "rms": 0.8544294562755568
+          },
+          "targetOverlayToPhysical": {
+            "count": 2,
+            "maximum": 0.012234938693878003,
+            "rms": 0.01092169333895098
+          },
+          "gridToLandmark": {
+            "count": 2,
+            "maximum": 0.6494846619947561,
+            "rms": 0.6427337852682243
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-bottom-limit",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-101",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:9f50f2ae",
+          "presentationState": "fnv1a32:8b09f859"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.875,
+          "centerV": 0.875,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 2,
+          "outsideCurrentCrop": 11,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 0.8305752026070832,
+          "rmsErrorCssPx": 0.419017115209674,
+          "imageToPhysical": {
+            "count": 2,
+            "maximum": 0.31559816116792355,
+            "rms": 0.3081664049077519
+          },
+          "targetOverlayToPhysical": {
+            "count": 2,
+            "maximum": 0.014119582473991275,
+            "rms": 0.01046126808660697
+          },
+          "gridToLandmark": {
+            "count": 2,
+            "maximum": 0.5711098565928151,
+            "rms": 0.41463293430859144
+          }
+        }
+      },
+      {
+        "captureId": "m6b-upright-cropped-loupe",
+        "previewMode": "upright",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-102",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:04fa57c8",
+          "presentationState": "fnv1a32:8b331e16"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": true,
+          "centerU": 0.875,
+          "centerV": 0.875,
+          "widthFraction": 0.25,
+          "heightFraction": 0.25
+        },
+        "markers": {
+          "measured": 1,
+          "outsideCurrentCrop": 12,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 0.4915982219702379,
+          "rmsErrorCssPx": 0.3370007012853922,
+          "imageToPhysical": {
+            "count": 1,
+            "maximum": 0.08562116082914843,
+            "rms": 0.08562116082914843
+          },
+          "targetOverlayToPhysical": {
+            "count": 1,
+            "maximum": 0.006303943760523377,
+            "rms": 0.006303943760523377
+          },
+          "gridToLandmark": {
+            "count": 1,
+            "maximum": 0.4915982219702379,
+            "rms": 0.4915982219702379
+          }
+        }
+      },
+      {
+        "captureId": "m6b-loupe-reset-full-film",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-104",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:a84fdbc5"
+        },
+        "targetSizePx": [
+          334,
+          267
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": false,
+          "centerU": 0.5,
+          "centerV": 0.5,
+          "widthFraction": 1,
+          "heightFraction": 1
+        },
+        "markers": {
+          "measured": 13,
+          "outsideCurrentCrop": 0,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.5492044700919514,
+          "rmsErrorCssPx": 0.7171881755040718,
+          "imageToPhysical": {
+            "count": 13,
+            "maximum": 1.1050315404571398,
+            "rms": 0.7077892023203887
+          },
+          "targetOverlayToPhysical": {
+            "count": 13,
+            "maximum": 0.019654744874155576,
+            "rms": 0.014058811056214855
+          },
+          "gridToLandmark": {
+            "count": 13,
+            "maximum": 1.026081261408622,
+            "rms": 0.6950363719435616
+          }
+        }
+      },
+      {
+        "captureId": "m6b-resized-standard-quality",
+        "previewMode": "raw",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-105",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:a84fdbc5"
+        },
+        "targetSizePx": [
+          437,
+          349
+        ],
+        "outputSizePx": [
+          514,
+          411
+        ],
+        "crop": {
+          "active": false,
+          "centerU": 0.5,
+          "centerV": 0.5,
+          "widthFraction": 1,
+          "heightFraction": 1
+        },
+        "markers": {
+          "measured": 13,
+          "outsideCurrentCrop": 0,
+          "unsupported": 0
+        },
+        "alignment": {
+          "maximumErrorCssPx": 1.5492044700919514,
+          "rmsErrorCssPx": 0.7171881755040718,
+          "imageToPhysical": {
+            "count": 13,
+            "maximum": 1.1050315404571398,
+            "rms": 0.7077892023203887
+          },
+          "targetOverlayToPhysical": {
+            "count": 13,
+            "maximum": 0.019654744874155576,
+            "rms": 0.014058811056214855
+          },
+          "gridToLandmark": {
+            "count": 13,
+            "maximum": 1.026081261408622,
+            "rms": 0.6950363719435616
+          }
+        }
+      }
+    ]
+  },
+  "rawUprightResults": {
+    "captureIds": [
+      "m6b-raw-full-film",
+      "m6b-upright-full-film",
+      "m6b-raw-round-trip",
+      "m6b-loupe-reset-full-film"
+    ],
+    "statement": "Detailed request/generation identity and alignment metrics are in actualRasterMeasurements.captures."
+  },
+  "focusLoupeResults": {
+    "captureIds": [
+      "m6b-loupe-centered",
+      "m6b-loupe-horizontal-pan",
+      "m6b-loupe-vertical-pan",
+      "m6b-loupe-diagonal-pan",
+      "m6b-loupe-left-limit",
+      "m6b-loupe-right-limit",
+      "m6b-loupe-top-limit",
+      "m6b-loupe-bottom-limit",
+      "m6b-upright-cropped-loupe",
+      "m6b-loupe-reset-full-film"
+    ],
+    "statement": "Detailed crop, request/generation identity and measured alignment are in actualRasterMeasurements.captures."
+  },
+  "resizeResults": {
+    "captureId": "m6b-resized-standard-quality",
+    "before": {
+      "target": [
+        334,
+        267
+      ],
+      "physical": [
+        334,
+        267
+      ],
+      "gather": [
+        167,
+        134
+      ],
+      "output": [
+        514,
+        411
+      ]
+    },
+    "after": {
+      "target": [
+        437,
+        349
+      ],
+      "physical": [
+        437,
+        349
+      ],
+      "gather": [
+        219,
+        175
+      ],
+      "output": [
+        514,
+        411
+      ]
+    },
+    "newRequestId": "gg-mvsvaodu-h4blmb49ij-default-request-105",
+    "targetDimensionsChanged": true
+  },
+  "nativeGpuPixelOracle": {
+    "classification": "final-output-partial",
+    "rgbSubresult": "rgb-conformant-for-tested-cases",
+    "evidenceScope": "controlled-calibration-fixture",
+    "implementation": "actual M6 TSL presentation node and visible WebGPU canvas",
+    "independentReference": "CPU evaluation of canonical orientation, physical film point, crop, coverage, natural illumination, throughput and linear-to-sRGB transfer",
+    "sourceDimensions": {
+      "widthPx": 512,
+      "heightPx": 512
+    },
+    "outputDimensions": {
+      "widthPx": 514,
+      "heightPx": 411
+    },
+    "sourceSampling": "nearest",
+    "sourceColorDomain": "linear-no-color-space",
+    "outputColorDomain": "sRGB canvas bytes read from browser canvas bitmap",
+    "acceptance": {
+      "maximumChannelError8BitCodes": 4,
+      "maximumRgbRmse8BitCodes": 2.5
+    },
+    "caseCount": 9,
+    "sampleCount": 206,
+    "worstMaximumChannelError8BitCodes": 1,
+    "worstRgbRmse8BitCodes": 0.2041241452319315,
+    "allRgbCasesPass": true,
+    "alphaObservation": "canvas-is-opaque; partial source alpha is not independently observable in the visible output",
+    "cases": [
+      {
+        "name": "neutral-raw",
+        "captureId": "m6b-raw-full-film",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-3",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:a84fdbc5"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      },
+      {
+        "name": "m6b-throughput-half",
+        "captureId": "m6b-throughput-half",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-4",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:030094fc"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      },
+      {
+        "name": "m6b-natural-cos4",
+        "captureId": "m6b-natural-cos4",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-5",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:260f9741"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 1,
+        "rgbRmse8BitCodes": 0.11785113019775792,
+        "meanAbsoluteError8BitCodes": 0.013888888888888888
+      },
+      {
+        "name": "m6b-circle-centered",
+        "captureId": "m6b-circle-centered",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-6",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:0b21499b"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      },
+      {
+        "name": "m6b-circle-shifted",
+        "captureId": "m6b-circle-shifted",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-7",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:74ebb7c9"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      },
+      {
+        "name": "m6b-conic-coverage",
+        "captureId": "m6b-conic-coverage",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-8",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:e2a7ecc2"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      },
+      {
+        "name": "m6b-combined-effects",
+        "captureId": "m6b-combined-effects",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-9",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:d2a4059c"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 1,
+        "rgbRmse8BitCodes": 0.2041241452319315,
+        "meanAbsoluteError8BitCodes": 0.041666666666666664
+      },
+      {
+        "name": "loupe-centered-crop",
+        "captureId": "m6b-loupe-centered",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-12",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:f27af457",
+          "presentationState": "fnv1a32:f7bd2909"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 14,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      },
+      {
+        "name": "resized-standard-quality",
+        "captureId": "m6b-resized-standard-quality",
+        "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-105",
+        "channelId": "default",
+        "sceneId": "architecture-rise",
+        "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+        "inputFingerprints": {
+          "sourceData": "fnv1a32:5be0e64a",
+          "presentationState": "fnv1a32:a84fdbc5"
+        },
+        "sourceDimensions": {
+          "widthPx": 512,
+          "heightPx": 512
+        },
+        "outputDimensions": {
+          "widthPx": 514,
+          "heightPx": 411
+        },
+        "sourceSampling": "nearest",
+        "sourceColorDomain": "linear-no-color-space",
+        "sampleCount": 24,
+        "maximumChannelError8BitCodes": 0,
+        "rgbRmse8BitCodes": 0,
+        "meanAbsoluteError8BitCodes": 0
+      }
+    ],
+    "selectedMeasuredSamples": [
+      {
+        "id": "black",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 16,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 497,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          0,
+          0,
+          0
+        ],
+        "measuredSrgbRgba": [
+          0,
+          0,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "low-gray",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 37,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 476,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.0020000000949949026,
+          0.0020000000949949026,
+          0.0020000000949949026,
+          1
+        ],
+        "expectedSrgbRgb": [
+          7,
+          7,
+          7
+        ],
+        "measuredSrgbRgba": [
+          7,
+          7,
+          7,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "middle-gray",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 58,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 455,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "srgb-break-low",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 79,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 434,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.003000000026077032,
+          0.003000000026077032,
+          0.003000000026077032,
+          1
+        ],
+        "expectedSrgbRgb": [
+          10,
+          10,
+          10
+        ],
+        "measuredSrgbRgba": [
+          10,
+          10,
+          10,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "srgb-break-mid",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 100,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 413,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.0031308000907301903,
+          0.0031308000907301903,
+          0.0031308000907301903,
+          1
+        ],
+        "expectedSrgbRgb": [
+          10,
+          10,
+          10
+        ],
+        "measuredSrgbRgba": [
+          10,
+          10,
+          10,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "srgb-break-high",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 121,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 392,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.0032999999821186066,
+          0.0032999999821186066,
+          0.0032999999821186066,
+          1
+        ],
+        "expectedSrgbRgb": [
+          11,
+          11,
+          11
+        ],
+        "measuredSrgbRgba": [
+          11,
+          11,
+          11,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "white",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 141,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 371,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          255,
+          255
+        ],
+        "measuredSrgbRgba": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "saturated-red",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 162,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 350,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          0,
+          0
+        ],
+        "measuredSrgbRgba": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "saturated-green",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 183,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 329,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          0,
+          255,
+          0
+        ],
+        "measuredSrgbRgba": [
+          0,
+          255,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "saturated-blue",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 204,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 308,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "expectedSrgbRgb": [
+          0,
+          0,
+          255
+        ],
+        "measuredSrgbRgba": [
+          0,
+          0,
+          255,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "asymmetric-rgb",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 225,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 287,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.7200000286102295,
+          0.1899999976158142,
+          0.03500000014901161,
+          1
+        ],
+        "expectedSrgbRgb": [
+          221,
+          121,
+          53
+        ],
+        "measuredSrgbRgba": [
+          221,
+          121,
+          53,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "partial-alpha",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 246,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 266,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.550000011920929,
+          0.23000000417232513,
+          0.07999999821186066,
+          0.3499999940395355
+        ],
+        "expectedSrgbRgb": [
+          196,
+          132,
+          80
+        ],
+        "measuredSrgbRgba": [
+          196,
+          132,
+          80,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "hdr",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 268,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 244,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          1.5,
+          0.5,
+          0.11999999731779099,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          188,
+          97
+        ],
+        "measuredSrgbRgba": [
+          255,
+          188,
+          97,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "field-center-upper",
+        "kind": "uniform-field",
+        "expectedNearestTexelPx": {
+          "x": 255,
+          "y": 346
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 257,
+          "y": 132
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "field-center-lower",
+        "kind": "uniform-field",
+        "expectedNearestTexelPx": {
+          "x": 255,
+          "y": 165
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 257,
+          "y": 278
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "field-left",
+        "kind": "uniform-field",
+        "expectedNearestTexelPx": {
+          "x": 146,
+          "y": 256
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 366,
+          "y": 205
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "field-right",
+        "kind": "uniform-field",
+        "expectedNearestTexelPx": {
+          "x": 365,
+          "y": 256
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 147,
+          "y": 205
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "field-upper",
+        "kind": "uniform-field",
+        "expectedNearestTexelPx": {
+          "x": 255,
+          "y": 431
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 257,
+          "y": 64
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "field-lower",
+        "kind": "uniform-field",
+        "expectedNearestTexelPx": {
+          "x": 255,
+          "y": 80
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 257,
+          "y": 346
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "nearest-edge-saturated-red",
+        "kind": "sampling-boundary",
+        "expectedNearestTexelPx": {
+          "x": 170,
+          "y": 490
+        },
+        "adjacentTexelPx": {
+          "x": 171,
+          "y": 490
+        },
+        "outputPixelPx": {
+          "x": 342,
+          "y": 17
+        },
+        "inputLinearRgba": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          0,
+          0
+        ],
+        "measuredSrgbRgba": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      }
+    ]
+  },
+  "sourceSamplingResults": {
+    "filter": "nearest",
+    "colorDomain": "linear-no-color-space",
+    "boundary": {
+      "id": "nearest-edge-saturated-red",
+      "expectedNearestTexelPx": {
+        "x": 170,
+        "y": 490
+      },
+      "adjacentTexelPx": {
+        "x": 171,
+        "y": 490
+      },
+      "measuredSourceTexelPx": {
+        "x": 170,
+        "y": 490
+      },
+      "outputPixelPx": {
+        "x": 342,
+        "y": 17
+      },
+      "expectedSrgbRgb": [
+        255,
+        0,
+        0
+      ],
+      "measuredSrgbRgba": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "maximumChannelError8BitCodes": 0
+    }
+  },
+  "colorTransferResults": {
+    "source": "linear-no-color-space",
+    "visibleOutput": "sRGB canvas bytes",
+    "toneMapping": "disabled in the M6 presentation path",
+    "comparedSwatchCount": 13,
+    "swatches": [
+      {
+        "id": "black",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 16,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 497,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          0,
+          0,
+          0
+        ],
+        "measuredSrgbRgba": [
+          0,
+          0,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "low-gray",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 37,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 476,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.0020000000949949026,
+          0.0020000000949949026,
+          0.0020000000949949026,
+          1
+        ],
+        "expectedSrgbRgb": [
+          7,
+          7,
+          7
+        ],
+        "measuredSrgbRgba": [
+          7,
+          7,
+          7,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "middle-gray",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 58,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 455,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.18000000715255737,
+          0.18000000715255737,
+          0.18000000715255737,
+          1
+        ],
+        "expectedSrgbRgb": [
+          118,
+          118,
+          118
+        ],
+        "measuredSrgbRgba": [
+          118,
+          118,
+          118,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "srgb-break-low",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 79,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 434,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.003000000026077032,
+          0.003000000026077032,
+          0.003000000026077032,
+          1
+        ],
+        "expectedSrgbRgb": [
+          10,
+          10,
+          10
+        ],
+        "measuredSrgbRgba": [
+          10,
+          10,
+          10,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "srgb-break-mid",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 100,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 413,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.0031308000907301903,
+          0.0031308000907301903,
+          0.0031308000907301903,
+          1
+        ],
+        "expectedSrgbRgb": [
+          10,
+          10,
+          10
+        ],
+        "measuredSrgbRgba": [
+          10,
+          10,
+          10,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "srgb-break-high",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 121,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 392,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.0032999999821186066,
+          0.0032999999821186066,
+          0.0032999999821186066,
+          1
+        ],
+        "expectedSrgbRgb": [
+          11,
+          11,
+          11
+        ],
+        "measuredSrgbRgba": [
+          11,
+          11,
+          11,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "white",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 141,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 371,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          255,
+          255
+        ],
+        "measuredSrgbRgba": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "saturated-red",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 162,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 350,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          0,
+          0
+        ],
+        "measuredSrgbRgba": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "saturated-green",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 183,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 329,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "expectedSrgbRgb": [
+          0,
+          255,
+          0
+        ],
+        "measuredSrgbRgba": [
+          0,
+          255,
+          0,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "saturated-blue",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 204,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 308,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "expectedSrgbRgb": [
+          0,
+          0,
+          255
+        ],
+        "measuredSrgbRgba": [
+          0,
+          0,
+          255,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "asymmetric-rgb",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 225,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 287,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.7200000286102295,
+          0.1899999976158142,
+          0.03500000014901161,
+          1
+        ],
+        "expectedSrgbRgb": [
+          221,
+          121,
+          53
+        ],
+        "measuredSrgbRgba": [
+          221,
+          121,
+          53,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "partial-alpha",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 246,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 266,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          0.550000011920929,
+          0.23000000417232513,
+          0.07999999821186066,
+          0.3499999940395355
+        ],
+        "expectedSrgbRgb": [
+          196,
+          132,
+          80
+        ],
+        "measuredSrgbRgba": [
+          196,
+          132,
+          80,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      },
+      {
+        "id": "hdr",
+        "kind": "color-swatch",
+        "expectedNearestTexelPx": {
+          "x": 268,
+          "y": 488
+        },
+        "adjacentTexelPx": null,
+        "outputPixelPx": {
+          "x": 244,
+          "y": 18
+        },
+        "inputLinearRgba": [
+          1.5,
+          0.5,
+          0.11999999731779099,
+          1
+        ],
+        "expectedSrgbRgb": [
+          255,
+          188,
+          97
+        ],
+        "measuredSrgbRgba": [
+          255,
+          188,
+          97,
+          255
+        ],
+        "maximumChannelError8BitCodes": 0
+      }
+    ],
+    "acceptance": "Every controlled RGB sample passed the native GPU/independent CPU comparison."
+  },
+  "coverageResults": [
+    {
+      "name": "m6b-circle-centered",
+      "captureId": "m6b-circle-centered",
+      "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-6",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:0b21499b"
+      },
+      "sourceDimensions": {
+        "widthPx": 512,
+        "heightPx": 512
+      },
+      "outputDimensions": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "sourceSampling": "nearest",
+      "sourceColorDomain": "linear-no-color-space",
+      "sampleCount": 24,
+      "maximumChannelError8BitCodes": 0,
+      "rgbRmse8BitCodes": 0,
+      "meanAbsoluteError8BitCodes": 0
+    },
+    {
+      "name": "m6b-circle-shifted",
+      "captureId": "m6b-circle-shifted",
+      "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-7",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:74ebb7c9"
+      },
+      "sourceDimensions": {
+        "widthPx": 512,
+        "heightPx": 512
+      },
+      "outputDimensions": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "sourceSampling": "nearest",
+      "sourceColorDomain": "linear-no-color-space",
+      "sampleCount": 24,
+      "maximumChannelError8BitCodes": 0,
+      "rgbRmse8BitCodes": 0,
+      "meanAbsoluteError8BitCodes": 0
+    },
+    {
+      "name": "m6b-conic-coverage",
+      "captureId": "m6b-conic-coverage",
+      "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-8",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:e2a7ecc2"
+      },
+      "sourceDimensions": {
+        "widthPx": 512,
+        "heightPx": 512
+      },
+      "outputDimensions": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "sourceSampling": "nearest",
+      "sourceColorDomain": "linear-no-color-space",
+      "sampleCount": 24,
+      "maximumChannelError8BitCodes": 0,
+      "rgbRmse8BitCodes": 0,
+      "meanAbsoluteError8BitCodes": 0
+    },
+    {
+      "name": "m6b-combined-effects",
+      "captureId": "m6b-combined-effects",
+      "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-9",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:d2a4059c"
+      },
+      "sourceDimensions": {
+        "widthPx": 512,
+        "heightPx": 512
+      },
+      "outputDimensions": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "sourceSampling": "nearest",
+      "sourceColorDomain": "linear-no-color-space",
+      "sampleCount": 24,
+      "maximumChannelError8BitCodes": 1,
+      "rgbRmse8BitCodes": 0.2041241452319315,
+      "meanAbsoluteError8BitCodes": 0.041666666666666664
+    }
+  ],
+  "illuminationResults": {
+    "name": "m6b-natural-cos4",
+    "captureId": "m6b-natural-cos4",
+    "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-5",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+    "inputFingerprints": {
+      "sourceData": "fnv1a32:5be0e64a",
+      "presentationState": "fnv1a32:260f9741"
+    },
+    "sourceDimensions": {
+      "widthPx": 512,
+      "heightPx": 512
+    },
+    "outputDimensions": {
+      "widthPx": 514,
+      "heightPx": 411
+    },
+    "sourceSampling": "nearest",
+    "sourceColorDomain": "linear-no-color-space",
+    "sampleCount": 24,
+    "maximumChannelError8BitCodes": 1,
+    "rgbRmse8BitCodes": 0.11785113019775792,
+    "meanAbsoluteError8BitCodes": 0.013888888888888888
+  },
+  "throughputResults": {
+    "name": "m6b-throughput-half",
+    "captureId": "m6b-throughput-half",
+    "requestId": "gg-mvsvaodu-h4blmb49ij-default-request-4",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+    "inputFingerprints": {
+      "sourceData": "fnv1a32:5be0e64a",
+      "presentationState": "fnv1a32:030094fc"
+    },
+    "sourceDimensions": {
+      "widthPx": 512,
+      "heightPx": 512
+    },
+    "outputDimensions": {
+      "widthPx": 514,
+      "heightPx": 411
+    },
+    "sourceSampling": "nearest",
+    "sourceColorDomain": "linear-no-color-space",
+    "sampleCount": 24,
+    "maximumChannelError8BitCodes": 0,
+    "rgbRmse8BitCodes": 0,
+    "meanAbsoluteError8BitCodes": 0
+  },
+  "alphaResults": {
+    "classification": "unobservable",
+    "sourcePartialAlphaSwatch": 0.3499999940395355,
+    "outputAlphaObserved": false,
+    "alphaError": null,
+    "visibleOutput": "canvas-is-opaque; partial source alpha is not independently observable in the visible output"
+  },
+  "negativeControls": [
+    {
+      "id": "N1",
+      "mutation": "Raw horizontal flip removed",
+      "evidence": "M6B coordinate mutation test plus measured native Raw capture",
+      "status": "detected"
+    },
+    {
+      "id": "N2",
+      "mutation": "Raw vertical flip removed",
+      "evidence": "M6B coordinate mutation test plus measured native Raw capture",
+      "status": "detected"
+    },
+    {
+      "id": "N3",
+      "mutation": "Double WebGPU target-origin conversion",
+      "evidence": "Inspection-window-to-RTT crop mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N4",
+      "mutation": "Source crop V inversion",
+      "evidence": "Raw crop V-inversion alignment mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N5",
+      "mutation": "Physical grid X origin shifted",
+      "evidence": "Grid-to-landmark X mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N6",
+      "mutation": "Physical grid Y origin shifted",
+      "evidence": "Grid-to-landmark Y mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N7",
+      "mutation": "Physical grid spacing altered",
+      "evidence": "Multi-landmark grid-spacing mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N8",
+      "mutation": "Full-film grid used with cropped image",
+      "evidence": "Stale crop-grid mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N9",
+      "mutation": "Target marker follows old crop after pan",
+      "evidence": "Stale pan-target mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N10",
+      "mutation": "Image-only horizontal inversion",
+      "evidence": "Image-only coordinate mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N11",
+      "mutation": "Overlay-only horizontal inversion",
+      "evidence": "Target-overlay-only coordinate mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N12",
+      "mutation": "Image-only vertical inversion",
+      "evidence": "Image-only coordinate mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N13",
+      "mutation": "Overlay-only vertical inversion",
+      "evidence": "Target-overlay-only coordinate mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N14",
+      "mutation": "Internal RTT resize with stale grid geometry",
+      "evidence": "Stale resize target/grid mutation test and actual resize capture",
+      "status": "detected"
+    },
+    {
+      "id": "N15",
+      "mutation": "Logical CSS dimensions confused with device pixels",
+      "evidence": "Device-pixel-scale mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N16",
+      "mutation": "Border-box used instead of content-box",
+      "evidence": "One-pixel border-box offset mutation test",
+      "status": "detected"
+    },
+    {
+      "id": "N17",
+      "mutation": "Coverage physical X offset sign reversed",
+      "evidence": "Canonical shifted-circle X sign reversal unit control and native coverage cases",
+      "status": "detected"
+    },
+    {
+      "id": "N18",
+      "mutation": "Coverage physical Y offset sign reversed",
+      "evidence": "Canonical shifted-circle Y sign reversal unit control and native coverage cases",
+      "status": "detected"
+    },
+    {
+      "id": "N19",
+      "mutation": "Conic coverage replaced by centered circle",
+      "evidence": "Native conic coverage output compared with independent CPU oracle",
+      "status": "oracle-sensitive"
+    },
+    {
+      "id": "N20",
+      "mutation": "Natural illumination gradient reversed",
+      "evidence": "Native cos4 field compared with independent CPU oracle",
+      "status": "oracle-sensitive"
+    },
+    {
+      "id": "N21",
+      "mutation": "Throughput applied twice",
+      "evidence": "Native half-throughput output compared with one-application CPU oracle",
+      "status": "oracle-sensitive"
+    },
+    {
+      "id": "N22",
+      "mutation": "Coverage applied twice",
+      "evidence": "Native centered/shifted/conic/combined coverage output compared with CPU oracle",
+      "status": "oracle-sensitive"
+    },
+    {
+      "id": "N23",
+      "mutation": "sRGB encoded twice",
+      "evidence": "Native linear-patch canvas bytes compared with one-encode CPU reference",
+      "status": "oracle-sensitive"
+    },
+    {
+      "id": "N24",
+      "mutation": "sRGB encoding omitted",
+      "evidence": "Native linear-patch canvas bytes compared with encoded CPU reference",
+      "status": "oracle-sensitive"
+    },
+    {
+      "id": "N25",
+      "mutation": "Linear readback compared as sRGB",
+      "evidence": "No linear GPU readback exists; linear source and sRGB canvas domains are separately recorded",
+      "status": "not-applicable-to-path"
+    },
+    {
+      "id": "N26",
+      "mutation": "Source UV sampling offset by one pixel",
+      "evidence": "Native asymmetric nearest-boundary sample expects texel 170 rather than adjacent texel 171",
+      "status": "detected"
+    },
+    {
+      "id": "N27",
+      "mutation": "Bilinear sampling treated as nearest",
+      "evidence": "Native nearest-boundary pixel oracle differs from the adjacent blended result",
+      "status": "detected"
+    },
+    {
+      "id": "N28",
+      "mutation": "Alpha modified unexpectedly",
+      "evidence": "Partial source alpha cannot be independently observed through the opaque visible canvas",
+      "status": "unobservable"
+    },
+    {
+      "id": "N29",
+      "mutation": "Old source target sampled after resize",
+      "evidence": "Actual target dimension change, new request identity, and resized native pixel oracle",
+      "status": "detected"
+    },
+    {
+      "id": "N30",
+      "mutation": "Old M6 request publishes after newer request",
+      "evidence": "Existing native M6 stale-resize publication regression passed",
+      "status": "detected"
+    },
+    {
+      "id": "N31",
+      "mutation": "Calibration fixture enabled in production",
+      "evidence": "Production-preview isolation passed; production asset scan contains no M6B fixture module",
+      "status": "detected"
+    },
+    {
+      "id": "N32",
+      "mutation": "Calibration fixture enabled in unsupported scene",
+      "evidence": "M6 scene-policy unit and native unsupported-scene denial regressions",
+      "status": "detected"
+    },
+    {
+      "id": "N33",
+      "mutation": "Macro scene added to normal M6 allowlist",
+      "evidence": "Fixture authorization unit control denies Macro Bellows",
+      "status": "detected"
+    },
+    {
+      "id": "N34",
+      "mutation": "Fixture-only PASS reported as registered-app support",
+      "evidence": "Controlled fixture and registered-app M6 integration are separate test/report populations",
+      "status": "scope-separated"
+    },
+    {
+      "id": "N35",
+      "mutation": "Presentation PASS promotes M5Q optical quality",
+      "evidence": "M6 policy leaves optical quality unqualified; frozen M5Q regression preserves Q1-Q7",
+      "status": "detected"
+    }
+  ],
+  "registeredAppEvidence": {
+    "classification": "native-registered-app-integration-verified; fixture overlay conformance not inferred",
+    "testSuite": "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts",
+    "sourceCommit": "bdbcd08ae83e5d6114cf7bb4d6ef6d0f27bd8bd7",
+    "result": "8/8 native tests passed on the M6B branch",
+    "sceneId": "architecture-rise",
+    "runtime": {
+      "applicationFallback": false,
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "rendererRevision": "r186",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1+m6-presentation-v1",
+      "sceneId": "architecture-rise"
+    },
+    "evidenceScope": "registered M6 application integration; not pooled with controlled fixture pixel samples",
+    "registeredAppPhysicalOverlayStatus": "not-claimed because the normal Architecture Rise scene lacks the physical grid/target overlay"
+  },
+  "nativeRuntime": {
+    "browserProject": "chrome-native-webgpu",
+    "platform": "macOS native WebGPU host",
+    "applicationFallback": false,
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "rendererRevision": "r186",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1+m6-presentation-v1",
+    "sceneId": "architecture-rise",
+    "fixtureActivation": {
+      "devTestSeam": true,
+      "bothM6BuildFlags": true,
+      "exactScene": "architecture-rise",
+      "explicitControl": true,
+      "source": "m6b-calibration-fixture"
+    }
+  },
+  "captureProvenance": {
+    "sourceCommit": "bdbcd08ae83e5d6114cf7bb4d6ef6d0f27bd8bd7",
+    "nativeReportSourceCommit": "bdbcd08",
+    "fixtureRevision": "m6b-physical-overlay-v1",
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1+m6-presentation-v1",
+    "channelId": "default",
+    "rendererGenerationId": "gg-mvsvaodu-h4blmb49ij-default-generation-1",
+    "sourceDataFingerprint": "fnv1a32:5be0e64a",
+    "captureCount": 14,
+    "identityFields": [
+      "captureId",
+      "requestId",
+      "channelId",
+      "sceneId",
+      "rendererGenerationId",
+      "inputFingerprints",
+      "targetSizePx",
+      "outputSizePx",
+      "crop",
+      "previewMode"
+    ],
+    "captureIds": [
+      "m6b-raw-full-film",
+      "m6b-upright-full-film",
+      "m6b-raw-round-trip",
+      "m6b-loupe-centered",
+      "m6b-loupe-horizontal-pan",
+      "m6b-loupe-vertical-pan",
+      "m6b-loupe-diagonal-pan",
+      "m6b-loupe-left-limit",
+      "m6b-loupe-right-limit",
+      "m6b-loupe-top-limit",
+      "m6b-loupe-bottom-limit",
+      "m6b-upright-cropped-loupe",
+      "m6b-loupe-reset-full-film",
+      "m6b-resized-standard-quality"
+    ]
+  },
+  "resourceAccounting": {
+    "fixtureSourceTexture": "adapter-owned test DataTexture; disposal is asserted after route retirement",
+    "fixtureSourceDataFingerprint": "fnv1a32:5be0e64a",
+    "fixtureResourceDisposedAfterRetirement": true
+  },
+  "m6ArchitectureDecision": {
+    "status": "architecture-partially-implemented",
+    "reason": "Native RGB presentation and controlled physical-overlay checks pass, but output alpha behavior is not independently observable through the opaque canvas."
+  },
+  "m6PhotographicQualityDecision": "quality-unqualified",
+  "m7Readiness": "not-started; M6B does not implement or authorize M7",
+  "productionIsolation": {
+    "status": "production-webgpu-disabled",
+    "productionPreviewIsolation": "2/2 production-preview tests passed",
+    "normalPublicRenderer": "existing WebGL Ground Glass unchanged",
+    "fixtureModuleInProductionBundle": false,
+    "productionAssetScan": "no M6B fixture identifiers or fixture module present in dist/assets"
+  },
+  "m5qPreservation": {
+    "frozenThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "statuses": {
+      "Q1": "reference-not-converged",
+      "Q2": "insufficient-support",
+      "Q3": "bounded-qualified",
+      "Q4": "insufficient-support",
+      "Q5": "reference-not-converged",
+      "Q6": "reference-not-converged",
+      "Q7": "reference-not-converged"
+    },
+    "nativePreservationRun": "2 M5Q native tests and 1 M5 app-adapter test passed"
+  },
+  "validation": {
+    "fullUnitAndIntegration": "npm test: 296 files, 2949 tests passed",
+    "typecheck": "passed in ci:local:e2e",
+    "lint": "passed in ci:local:e2e",
+    "css": "passed in ci:local:e2e",
+    "build": "passed in ci:local:e2e",
+    "nativeM6b": "1/1 passed after broad validation; native report source matches the implementation commit",
+    "nativeM6RegisteredApp": "8/8 passed",
+    "nativeM5qAndAdapter": "3/3 passed",
+    "productionPreviewIsolation": "2/2 passed",
+    "broadLocalE2e": {
+      "result": "failed-at-known-unrelated-baseline-test",
+      "failedSpec": "src/tests/e2e/architecture-foreground-compound.spec.ts",
+      "failure": "Missing heading Complete the Photograph",
+      "currentBaseComparisonCommit": "f831e48121a7e6fdb3106b3a59fcce716143f90a",
+      "baseResult": "same failure at the same heading assertion",
+      "notRunAfterFailure": "later broad E2E specs were not executed"
+    }
+  },
+  "evidenceArtifacts": {
+    "trackedReport": "docs/architecture/GROUND_GLASS_M6B_PHYSICAL_OVERLAY_CONFORMANCE_REPORT.json",
+    "ignoredPlaywrightDirectory": "test-results/ground-glass-webgpu-m6b-co-38117-ent-and-final-canvas-output-chrome-native-webgpu",
+    "largeArtifactsAreTracked": false
+  },
+  "remainingLimitations": [
+    "Source alpha cannot be independently measured through the opaque visible canvas.",
+    "Controlled fixture alignment does not claim registered Architecture Rise physical-overlay support.",
+    "This does not qualify M5 optical image quality or photographic fidelity.",
+    "Native evidence is limited to the tested Chrome r186/macOS adapter and layout.",
+    "Broad scene/material/device/performance coverage remains an M8 responsibility.",
+    "Device loss, full retry and retirement recovery remain M7 responsibilities."
+  ]
+}
