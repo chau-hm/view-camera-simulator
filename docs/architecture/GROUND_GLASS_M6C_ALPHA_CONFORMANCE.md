@@ -6,6 +6,12 @@ M6C measured the actual M6 presentation material on native WebGPU. The TSL expre
 
 M6B's fixture-scoped physical overlay and RGB results remain valid. M6C does not modify the visible canvas, normal material state, M5/B1 behavior, M5Q qualification, or public WebGL. M7 should wait for a separately reviewed M6 material/output contract decision. Production WebGPU remains disabled.
 
+## Review-Fix Round 1 — Evidence-gated RGB qualification
+
+The original `m6c-alpha-rgba8-r1` evaluator could report `rgb-regression-passed` from the measured subset even when the declared capture inventory was incomplete. The corrected `m6c-alpha-rgba8-r2` decision requires a non-empty, unique expected inventory and exactly one valid observation for every expected ID. Duplicate, missing, unexpected, malformed or nonfinite evidence; invalid expected stored alpha; wrong source-sample identity; substituted material evidence; stale/unsupported capture state; or target-storage alpha outside its declared tolerance prevents RGB qualification. Valid partial RGB measurements remain available as diagnostics and do not qualify the capture.
+
+RGB numerical conformance remains independent of source-alpha preservation. The complete native matrix can therefore report `alpha-observable-contract-different` and `rgb-regression-passed` together: the opaque material still stores alpha one while all measured RGB values match. This does not make alpha conformant or complete M6 final-output/architecture work. The material and shader were not changed. The original 195-sample run remains historical evidence; a new corrected-evaluator native run is recorded in [GROUND_GLASS_M6C_REVIEW_FIX_1_REPORT.json](GROUND_GLASS_M6C_REVIEW_FIX_1_REPORT.json).
+
 ## Alpha pipeline audit
 
 | Stage | Measured or declared contract |
@@ -44,7 +50,7 @@ The 15-sample neutral matrix includes alpha `0`, `0.01`, `0.25`, `0.35`, `0.5`, 
 | Source-alpha preservation RMSE | 0.6453784431632674 |
 | Source-alpha preservation mean absolute error | 0.5633333339045445 |
 | RGB maximum error / RMSE at the alpha target | 0 / 0 |
-| Alpha target tolerance | maximum absolute alpha error ≤ 2/255 (`m6c-alpha-rgba8-r1`) |
+| Alpha target tolerance | maximum absolute alpha error ≤ 2/255; unchanged under evidence gate `m6c-alpha-rgba8-r2` |
 
 The native matrix includes neutral, throughput 0.5, throughput 1.25, natural `parallel-cos4`, centered and shifted circular coverage, conic coverage, combined effects, Upright, Raw return, centered and panned Focus Loupe, and an actual resize from 334×267 to 437×349. Every case retained the same source-alpha result (stored alpha one); each RGB-effect case changed measured GPU RGB and passed its independent CPU comparison. Raw/Upright, loupe crop/pan, and resize retained matching request/source/presentation identities for each capture.
 
@@ -52,7 +58,7 @@ The normal canvas remains opaque. M6B's separate final-canvas RGB oracle remains
 
 ## Negative controls
 
-The 18 M6C unit tests exercise the actual pure evaluator, identity predicate, material gate, build gate, and lifecycle gate. They cover forced alpha one/zero, alpha scaled by throughput/illumination/coverage, wrong source-alpha reference, premultiplication/unpremultiplication, channel swap, inversion, ignored source alpha, clear-alpha contamination, wrong byte normalization/order, shifted sample identity, alternate/missing material evidence, missing/duplicate/nonfinite/unavailable samples, nonfinite expected alpha, and an alpha result that cannot hide RGB failure.
+The original r1 report recorded 18 M6C unit tests. The corrected suite now has 50 tests and exercises the actual pure evaluator, identity predicate, material gate, build gate, and lifecycle gate. It includes empty/duplicate expected inventories; duplicate, missing and unexpected actual IDs; NaN and infinities in source/reference values; invalid target bytes and expected stored alpha; invalid source identity and absent/false material equivalence; threshold boundary and over-limit RGB; incomplete zero-error evidence; stale/unsupported evidence; and opaque stored alpha with independently passing RGB. The original controls for forced alpha, throughput/illumination/coverage, premultiplication, channel order, ignored source alpha, and material/build/lifecycle gates remain.
 
 The native E2E tests additionally cover the 15-value source matrix, Raw/Upright/crop/resize, effects, held stale readback after request change, adapter retirement during readback, allocation/disposal counts, renderer-state restoration, and production-preview absence of the M6C test seam. The implementation uses RGBA8 only; an RGBA16F decoding control is not applicable to this chosen format. No browser E2E mutates live GPU readbacks to manufacture a result.
 

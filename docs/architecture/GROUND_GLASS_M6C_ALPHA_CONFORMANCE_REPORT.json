@@ -1279,5 +1279,191 @@
     "A separately reviewed M6 material/output contract must preserve existing RGB before M6 final-output or architecture can be considered complete.",
     "M6 photographic quality remains unqualified; M5Q thresholds and Q1-Q7 are unchanged.",
     "No production WebGPU authorization, M7 integration, or broad scene/device qualification is included."
-  ]
+  ],
+  "reviewFix1EvidenceQualification": {
+    "reviewedHead": "27852b80f35aee360ebdf9514d6f5979b08f7197",
+    "correctedSourceCommit": "ce00d7e437e25c8c52f377a247675ffa930b2182",
+    "comparisonRevision": "m6c-alpha-rgba8-r2",
+    "originalR1EvidenceStatus": "historical; the original 195-sample measurements are not relabeled as corrected-evaluator captures",
+    "rootCause": "The r1 RGB decision compared maximumRgbError with the tolerance without requiring a complete, valid, current sample population. A zero-error subset could pass when required sample IDs were missing or evidence was otherwise invalid.",
+    "correctedRgbGate": "evidenceValid && maximumRgbError !== null && maximumRgbError <= GROUND_GLASS_M6C_MAX_RGB_ERROR",
+    "expectedSampleInventory": {
+      "mustBeNonEmpty": true,
+      "idsMustBeValidAndUnique": true,
+      "eachExpectedIdMustHaveExactlyOneObservation": true,
+      "duplicateActualIdsRejected": true,
+      "missingAndUnexpectedIdsRejected": true
+    },
+    "evidenceIntegrityChecks": [
+      "Capture status is measured and the readback identity is current.",
+      "Source and expected RGBA values are finite and structurally valid.",
+      "Source texel coordinates and normalized UV coordinates are valid.",
+      "Target RGBA values are integer bytes in [0,255].",
+      "Expected stored alpha is finite and in [0,1], and measured target alpha matches that storage contract within 2/255.",
+      "Source-sample identity and presentation-material equivalence are explicitly true for every required sample.",
+      "Every required sample produces an RGB comparison; partial measurements remain diagnostic only."
+    ],
+    "nativeRegression": {
+      "command": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts",
+      "result": "3/3 passed on the committed corrected source",
+      "runtime": {
+        "browser": "Chrome 156",
+        "operatingSystem": "macOS",
+        "threeRevision": "186",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false
+      },
+      "captureIds": [
+        "m6c-neutral-raw",
+        "m6c-throughput-half",
+        "m6c-throughput-above-one",
+        "m6c-natural-cos4",
+        "m6c-circle-centered",
+        "m6c-circle-shifted",
+        "m6c-conic-coverage",
+        "m6c-combined-effects",
+        "m6c-upright",
+        "m6c-raw-round-trip",
+        "m6c-loupe-centered",
+        "m6c-loupe-panned",
+        "m6c-resized-target"
+      ],
+      "captureIdentitySummary": {
+        "rendererGenerationId": "gg-mvtoib0t-lppax7nw5k-default-generation-1",
+        "sourceFingerprintsByState": {
+          "Raw": "fnv1a32:fbc6a72f",
+          "Upright": "fnv1a32:9129a15b",
+          "FocusLoupeCentered": "fnv1a32:55512832",
+          "FocusLoupePannedAndResized": "fnv1a32:f023714a"
+        },
+        "requestIdSuffixesByState": {
+          "neutralAndEffects": [3],
+          "upright": [4],
+          "rawRoundTrip": [5],
+          "focusLoupeCentered": [6],
+          "focusLoupePanned": [12],
+          "resizedTarget": [13]
+        },
+        "captureTargetSizePx": "334x267; resized capture 437x349"
+      },
+      "measurements": {
+        "samples": 195,
+        "samplesPerCapture": 15,
+        "completeCaptures": 13,
+        "rgbDecisionPerCapture": "rgb-regression-passed",
+        "alphaDecisionPerCapture": "alpha-observable-contract-different",
+        "overallCaptureStatusPerCapture": "failed due to the preserved source-alpha contract mismatch",
+        "measuredTargetAlpha": 1,
+        "targetStorageMaximumAlphaError": 0,
+        "sourceAlphaPreservationMaximumError": 1,
+        "sourceAlphaPreservationRmse": 0.6453784431632674,
+        "maximumRgbError": 0,
+        "rgbRmse": 0,
+        "missingSamples": 0,
+        "invalidComparisons": 0
+      },
+      "staleReadbackControls": {
+        "acceptedRequestChanged": {
+          "status": "stale",
+          "publishedSamples": 0,
+          "targetDisposed": true,
+          "previousRenderTargetRestored": true,
+          "allocations": 1,
+          "disposals": 1
+        },
+        "rendererGenerationRetired": {
+          "status": "stale",
+          "publishedSamples": 0,
+          "targetDisposed": true,
+          "previousRenderTargetRestored": true,
+          "allocations": 1,
+          "disposals": 1
+        }
+      },
+      "resourceAccounting": {
+        "captureTargetAllocations": 13,
+        "captureTargetDisposals": 13,
+        "normalFrameAlphaTargetAllocations": 0
+      }
+    },
+    "unitRegression": {
+      "m6cConformanceSuite": "50/50 passed",
+      "focusedM6cAndPresentationSuites": "75/75 passed",
+      "fullUnitIntegrationSuite": "298 files / 3044 tests passed",
+      "negativeControlCasesAdded": 32,
+      "primaryFalsePositiveControl": "A required inventory [a,b] with only valid zero-error sample a is evaluated by the actual policy and returns rgb-regression-failed; the former r1 predicate would return a passing numeric result.",
+      "covers": [
+        "Empty and duplicate expected inventories.",
+        "Missing, duplicate and unexpected actual sample IDs.",
+        "Nonfinite source/reference values and invalid target bytes.",
+        "Invalid stored-alpha expectations and target-storage violations.",
+        "Source identity mismatch and false or missing material-equivalence evidence.",
+        "RGB limit exceeded and exact-boundary acceptance.",
+        "Unsupported, stale and no-longer-current captures.",
+        "Opaque alpha contract mismatch with independent valid RGB pass."
+      ]
+    },
+    "alphaRgbDecisionIndependence": {
+      "sourceAlphaPreservation": "failed; the actual opaque material stores alpha one",
+      "alphaObservation": "alpha-observable-contract-different",
+      "rgbDecisionForCompleteValidMatrix": "rgb-regression-passed",
+      "statement": "A source-alpha mismatch does not invalidate numerically conformant RGB when the actual opaque stored-alpha contract is correctly measured."
+    },
+    "preservedM6bEvidence": {
+      "spatialGateRevision": "m6b-spatial-gate-r1",
+      "finalOutputRgbCases": 9,
+      "finalOutputRgbSamples": 206,
+      "maximumChannelErrorCodes": 1,
+      "worstRgbRmseCodes": 0.204125,
+      "status": "unchanged; existing native M6B regression passed"
+    },
+    "preservedM5q": {
+      "frozenThresholdRevision": "m5q-architecture-rise-r186-v3",
+      "statuses": {
+        "Q1": "reference-not-converged",
+        "Q2": "insufficient-support",
+        "Q3": "bounded-qualified",
+        "Q4": "insufficient-support",
+        "Q5": "reference-not-converged",
+        "Q6": "reference-not-converged",
+        "Q7": "reference-not-converged"
+      }
+    },
+    "otherValidation": {
+      "nativeM6b": "1/1 passed; 14 capture gates passed",
+      "nativeM6PresentationAndLifecycle": "8/8 passed",
+      "nativeM5qAndAppAdapter": "3/3 passed",
+      "productionPreviewIsolation": "2/2 passed",
+      "typecheck": "passed",
+      "lint": "passed",
+      "css": "passed",
+      "build": "passed",
+      "gitDiffCheck": "passed",
+      "localBroadE2e": "failed only at architecture-foreground-compound.spec.ts for missing 'Complete the Photograph' heading; reproduced on clean origin/main at 310dc0770b46f103ada68b5872258306f2b048e9"
+    },
+    "hostedCi": {
+      "statusAtReportGeneration": "awaiting checks for corrected PR head",
+      "finalCorrectedHeadMustPass": true,
+      "previousHeadRunIsNotSubstitute": true
+    },
+    "preservedAlphaObservation": "The active MeshBasicNodeMaterial remains opaque (transparent=false, opacity=1, NormalBlending, alphaTest=0, premultipliedAlpha=false); measured target alpha is 1, while source-alpha preservation maximum error is 1 and RMSE is 0.6453784431632674.",
+    "architectureDecision": "architecture-partially-implemented",
+    "finalOutputDecision": "final-output-partial",
+    "photographicQualityDecision": "quality-unqualified",
+    "productionIsolation": {
+      "publicRenderer": "WebGL unchanged",
+      "productionWebGpu": "production-webgpu-disabled",
+      "materialOrShaderChanged": false,
+      "productionCodePathChanged": false
+    },
+    "remainingLimitations": [
+      "The current M6 material/output contract does not preserve source alpha; resolve that in a separate review before any later presentation work.",
+      "M6C RGB evidence is not photographic blur-quality qualification.",
+      "Evidence remains scoped to the controlled Architecture Rise fixture, Chrome 156, macOS, and Three.js r186.",
+      "The broad local E2E suite retains the same failure reproduced on current main.",
+      "M7 is not part of this correction and production WebGPU remains disabled."
+    ]
+  }
 }
