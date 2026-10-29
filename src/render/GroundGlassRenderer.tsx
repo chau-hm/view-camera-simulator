@@ -32,6 +32,7 @@ import {
   mapGroundGlassInspectionWindowToRttSourceCrop,
   type GroundGlassInspectionWindow,
 } from "./groundGlassInspectionWindow";
+import { isGroundGlassM6bCalibrationFixtureEnabledForScene } from "./webgpu/groundGlassWebGpuTestSeam";
 
 export type GroundGlassRendererProps = {
   opticsState: DerivedOpticsState;
@@ -73,6 +74,7 @@ export type GroundGlassRendererProps = {
 
 const PANEL_WIDTH_PX = 500;
 const PANEL_HEIGHT_PX = 400;
+type GroundGlassM6bConformanceModule = typeof import("./groundGlassPhysicalOverlayConformance");
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
@@ -186,11 +188,37 @@ export const GroundGlassRenderer = ({
     () => mapGroundGlassInspectionWindowToRttSourceCrop(inspectionWindow, previewMode),
     [inspectionWindow, previewMode],
   );
-  const physicalGrid = scene.macroTeachingCapability?.kind === "bellows-extension" && gridEnabled && !rawDebug
+  const m6bCalibrationFixtureEnabled = import.meta.env.DEV && !rawDebug &&
+    isGroundGlassM6bCalibrationFixtureEnabledForScene(scene);
+  const [m6bConformanceModule, setM6bConformanceModule] = useState<GroundGlassM6bConformanceModule | null>(null);
+  useEffect(() => {
+    if (!import.meta.env.DEV || !m6bCalibrationFixtureEnabled) {
+      setM6bConformanceModule(null);
+      return;
+    }
+    let active = true;
+    // Resolve the fixture module only through Vite's dev server; never package its source data in production.
+    const moduleUrl = import.meta.url.replace(
+      /\/GroundGlassRenderer\.tsx(?:\?.*)?$/,
+      "/groundGlassPhysicalOverlayConformance.ts",
+    );
+    if (moduleUrl === import.meta.url) return;
+    void import(/* @vite-ignore */ moduleUrl).then((module) => {
+      if (active) setM6bConformanceModule(module);
+    }).catch(() => {
+      if (active) setM6bConformanceModule(null);
+    });
+    return () => { active = false; };
+  }, [m6bCalibrationFixtureEnabled]);
+  const m6bFixtureActive = m6bCalibrationFixtureEnabled && m6bConformanceModule !== null;
+  const sceneGridSquareMm = scene.macroTeachingCapability?.kind === "bellows-extension"
+    ? scene.macroTeachingCapability.groundGlassGridSquareMm
+    : m6bFixtureActive ? m6bConformanceModule.GROUND_GLASS_M6B_GRID_SQUARE_MM : null;
+  const physicalGrid = sceneGridSquareMm !== null && gridEnabled && !rawDebug
     ? resolveGroundGlassPhysicalGrid({
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
-      gridSquareMm: scene.macroTeachingCapability.groundGlassGridSquareMm,
+      gridSquareMm: sceneGridSquareMm,
       displayWidthPx: rttLogicalSize.width,
       displayHeightPx: rttLogicalSize.height,
       inspectionWindow,
@@ -231,8 +259,26 @@ export const GroundGlassRenderer = ({
   });
 
   // Project scene focus targets (if available) into ground-glass UV coordinates for positioning overlays
-  const sceneDef = scene;
+  const sceneDef = m6bFixtureActive
+    ? m6bConformanceModule.createGroundGlassM6bCalibrationScene(scene, opticsState)
+    : scene;
   const projectedTargets = projectSceneFocusTargetsToGroundGlass({ sceneDef, opticsState, aperture: resolvedAperture, previewMode });
+  const calibrationTargets = m6bFixtureActive
+    ? projectedTargets.map((target) => {
+      const inWindow = m6bConformanceModule.mapGroundGlassM6bTargetIntoInspectionWindow({
+        displayUv: target.displayUv,
+        inspectionWindow,
+      });
+      return {
+        id: target.id,
+        displayU: inWindow.u,
+        displayV: inWindow.v,
+        visible: target.visible && inWindow.visible,
+        physicalFilmU: target.physicalFilmUv.u,
+        physicalFilmV: target.physicalFilmUv.v,
+      };
+    })
+    : undefined;
   const primaryProjectedTarget = projectedTargets.length > 0 ? projectedTargets[0] : null;
   const apertureNumber = typeof resolvedAperture === "number" ? resolvedAperture : Number(resolvedAperture as unknown as number);
 
@@ -279,7 +325,12 @@ export const GroundGlassRenderer = ({
           onRuntimeInfoChange={onRuntimeInfoChange}
         />
 
-        <GroundGlassTransformedOverlays gridEnabled={gridEnabled} rawDebug={rawDebug} physicalGrid={physicalGrid} />
+        <GroundGlassTransformedOverlays
+          gridEnabled={gridEnabled}
+          rawDebug={rawDebug}
+          physicalGrid={physicalGrid}
+          calibrationTargets={calibrationTargets}
+        />
       </div>
     </>
   );

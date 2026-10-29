@@ -213,7 +213,7 @@ export type GroundGlassPresentationDiagnosticDetails = Readonly<{
   rendererGenerationId: string;
   mode: "raw-diagnostic" | "m6-experimental-dof";
   status: "not-requested" | "pending" | "completed" | "failed";
-  source: "raw-scene-target" | "m5-research-composite";
+  source: "raw-scene-target" | "m5-research-composite" | "m6b-calibration-fixture";
   /** Build/runtime revision evidence; never a substitute for mounted family or execution API. */
   rendererRevision: string;
   sceneSourceRevision: string;

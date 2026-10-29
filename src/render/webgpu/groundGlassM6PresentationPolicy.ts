@@ -49,6 +49,10 @@ export type GroundGlassM6BuildFlags = Readonly<{
   m6PresentationFlag: string | undefined;
 }>;
 
+export type GroundGlassM6bTestBuildFlags = GroundGlassM6BuildFlags & Readonly<{
+  testSeamFlag: string | undefined;
+}>;
+
 /** Shared trusted Raw pilot gate; M6 adds its own feature flag on top of this gate. */
 export const isGroundGlassRawPilotBuildAuthorizedForFlags = (
   flags: Pick<GroundGlassM6BuildFlags, "developmentBuild" | "rawPilotFlag">,
@@ -59,6 +63,17 @@ export const isGroundGlassM6BuildAuthorizedForFlags = (
   flags: GroundGlassM6BuildFlags,
 ): boolean => isGroundGlassRawPilotBuildAuthorizedForFlags(flags) &&
   flags.m6PresentationFlag === "true";
+
+/** The calibration seam additionally requires the explicit development-test build gate. */
+export const isGroundGlassM6bFixtureBuildAuthorizedForFlags = (
+  flags: GroundGlassM6bTestBuildFlags,
+  explicitTestControl: boolean,
+  scene: Pick<GroundGlassFrameRequestInput["scene"], "id" | "bounds">,
+): boolean => explicitTestControl &&
+  flags.testSeamFlag === "true" &&
+  isGroundGlassM6BuildAuthorizedForFlags(flags) &&
+  scene.id === architectureRiseScene.id &&
+  sameBounds(scene.bounds, architectureRiseScene.bounds);
 
 const isArchitectureRiseRequest = (request: GroundGlassFrameRequestInput): boolean =>
   request.scene.id === architectureRiseScene.id &&
@@ -103,6 +118,17 @@ export const isGroundGlassM6PresentationBuildEnabled = (): boolean =>
     rawPilotFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT,
     m6PresentationFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION,
   });
+
+/** Runtime guard for the shared Stage fixture; it does not enable or select a renderer. */
+export const isGroundGlassM6bFixtureSceneEnabled = (
+  scene: Pick<GroundGlassFrameRequestInput["scene"], "id" | "bounds">,
+  explicitTestControl: boolean,
+): boolean => isGroundGlassM6bFixtureBuildAuthorizedForFlags({
+  developmentBuild: import.meta.env.DEV,
+  rawPilotFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT,
+  m6PresentationFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION,
+  testSeamFlag: import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM,
+}, explicitTestControl, scene);
 
 /** Narrow startup evidence for the M6 native test; does not expose other build environment. */
 export const getGroundGlassM6BuildConfigurationEvidence = () => Object.freeze({

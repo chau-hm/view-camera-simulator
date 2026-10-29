@@ -1,0 +1,856 @@
+{
+  "reviewFixRevision": "m6b-spatial-gate-r1",
+  "finding": "P2 — Enforce spatial tolerances for every alignment capture",
+  "reviewedHead": "3b920ed0f14d512e1e92d995f20d6e9226a8089f",
+  "baseCommit": "f831e48121a7e6fdb3106b3a59fcce716143f90a",
+  "implementationCommit": "f90537fce1f9be3978fc6ff0d9e83bed84b76bc4",
+  "nativeRunCommit": "f90537fce1f9be3978fc6ff0d9e83bed84b76bc4",
+  "evaluator": "evaluateGroundGlassM6bSpatialConformance",
+  "nativeRuntime": {
+    "browserProject": "chrome-native-webgpu",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "rendererRevision": "r186",
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1+m6-presentation-v1",
+    "fixtureRevision": "m6b-physical-overlay-v1",
+    "m6BuildFlags": {
+      "rawPilot": true,
+      "m6Presentation": true,
+      "m4PhysicalResearch": false,
+      "m5GatherResearch": false
+    }
+  },
+  "spatialGate": {
+    "revision": "m6b-spatial-gate-r1",
+    "sourceCommit": "f90537fce1f9be3978fc6ff0d9e83bed84b76bc4",
+    "requiredCaptureIds": [
+      "m6b-raw-full-film",
+      "m6b-upright-full-film",
+      "m6b-raw-round-trip",
+      "m6b-loupe-centered",
+      "m6b-loupe-horizontal-pan",
+      "m6b-loupe-vertical-pan",
+      "m6b-loupe-diagonal-pan",
+      "m6b-loupe-left-limit",
+      "m6b-loupe-right-limit",
+      "m6b-loupe-top-limit",
+      "m6b-loupe-bottom-limit",
+      "m6b-upright-cropped-loupe",
+      "m6b-loupe-reset-full-film",
+      "m6b-resized-standard-quality"
+    ],
+    "captureCount": 14,
+    "captureInventoryExactlyOnce": true,
+    "classification": "physical-overlay-conformant",
+    "allCaptureGatesPass": true,
+    "stateSpecificAssertionsPassed": true,
+    "evidenceScope": "controlled-calibration-fixture",
+    "registeredAppPhysicalOverlay": "not-evaluated",
+    "maximumSpatialErrorCssPx": 2,
+    "maximumSpatialRmsCssPx": 1.25,
+    "overallMaximumCaptureErrorCssPx": 1.5492044700919514,
+    "pooledSpatialErrorRmsCssPx": 0.6824450910748467,
+    "maximumPerCaptureRmsCssPx": 0.7301107934845426,
+    "totalMeasuredLandmarks": 77,
+    "totalOutsideCurrentCrop": 105,
+    "totalUnsupported": 0,
+    "failedCaptureIds": [],
+    "failureReasons": []
+  },
+  "captures": [
+    {
+      "captureId": "m6b-raw-full-film",
+      "previewMode": "raw",
+      "focusLoupeActive": false,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-3",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:a84fdbc5"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": false,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "widthFraction": 1,
+        "heightFraction": 1
+      },
+      "alignment": {
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 13,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-upright-full-film",
+      "previewMode": "upright",
+      "focusLoupeActive": false,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-10",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:b191fe66"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": false,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "widthFraction": 1,
+        "heightFraction": 1
+      },
+      "alignment": {
+        "maximumErrorPx": 1.3999607429559606,
+        "rmsErrorPx": 0.6351077079514105,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.3999607429559606,
+        "rmsErrorPx": 0.6351077079514105,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 13,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-raw-round-trip",
+      "previewMode": "raw",
+      "focusLoupeActive": false,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-11",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:a84fdbc5"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": false,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "widthFraction": 1,
+        "heightFraction": 1
+      },
+      "alignment": {
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 13,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-centered",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-12",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:f27af457",
+        "presentationState": "fnv1a32:f7bd2909"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 1.0413756654628028,
+        "rmsErrorPx": 0.650063910660135,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.0413756654628028,
+        "rmsErrorPx": 0.650063910660135,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 1,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-horizontal-pan",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-18",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:73deb11f",
+        "presentationState": "fnv1a32:5cd6579d"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.46988327679467107,
+        "centerV": 0.5,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 1.1068278556873594,
+        "rmsErrorPx": 0.6876606246666802,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.1068278556873594,
+        "rmsErrorPx": 0.6876606246666802,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 1,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-vertical-pan",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-24",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:2c8d511f",
+        "presentationState": "fnv1a32:7dbb800d"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.46988327679467107,
+        "centerV": 0.46986884792355726,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 0.9658408466432077,
+        "rmsErrorPx": 0.5937089489494227,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 0.9658408466432077,
+        "rmsErrorPx": 0.5937089489494227,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 1,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-diagonal-pan",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-30",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:06e6e5cf",
+        "presentationState": "fnv1a32:05add7cf"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.4397665535893422,
+        "centerV": 0.4924672259031421,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 0.9993823473613084,
+        "rmsErrorPx": 0.6996523466592943,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 0.9993823473613084,
+        "rmsErrorPx": 0.6996523466592943,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 1,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-left-limit",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-41",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:13c44d6b",
+        "presentationState": "fnv1a32:0e3c15fb"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.125,
+        "centerV": 0.4924672259031421,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 0.8185896874069835,
+        "rmsErrorPx": 0.5142157404175219,
+        "measuredLandmarkCount": 2,
+        "outsideCurrentCropCount": 11,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 0.8185896874069835,
+        "rmsErrorPx": 0.5142157404175219,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 2,
+        "measuredLandmarkCount": 2,
+        "outsideCurrentCropCount": 11,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-right-limit",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-65",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:d91c86d0",
+        "presentationState": "fnv1a32:92f58e75"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.875,
+        "centerV": 0.4924672259031421,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 0.39172088693122376,
+        "rmsErrorPx": 0.2716649738421047,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 0.39172088693122376,
+        "rmsErrorPx": 0.2716649738421047,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 1,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-top-limit",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-77",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:bade58e2",
+        "presentationState": "fnv1a32:4b6a4d99"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.875,
+        "centerV": 0.125,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 1.1011463811478008,
+        "rmsErrorPx": 0.7301107934845426,
+        "measuredLandmarkCount": 2,
+        "outsideCurrentCropCount": 11,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.1011463811478008,
+        "rmsErrorPx": 0.7301107934845426,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 2,
+        "measuredLandmarkCount": 2,
+        "outsideCurrentCropCount": 11,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-bottom-limit",
+      "previewMode": "raw",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-101",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:9f50f2ae",
+        "presentationState": "fnv1a32:8b09f859"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.875,
+        "centerV": 0.875,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 0.8305752026070832,
+        "rmsErrorPx": 0.419017115209674,
+        "measuredLandmarkCount": 2,
+        "outsideCurrentCropCount": 11,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 0.8305752026070832,
+        "rmsErrorPx": 0.419017115209674,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 2,
+        "measuredLandmarkCount": 2,
+        "outsideCurrentCropCount": 11,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-upright-cropped-loupe",
+      "previewMode": "upright",
+      "focusLoupeActive": true,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-102",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:04fa57c8",
+        "presentationState": "fnv1a32:8b331e16"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": true,
+        "centerU": 0.875,
+        "centerV": 0.875,
+        "widthFraction": 0.25,
+        "heightFraction": 0.25
+      },
+      "alignment": {
+        "maximumErrorPx": 0.4915982219702379,
+        "rmsErrorPx": 0.3370007012853922,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 0.4915982219702379,
+        "rmsErrorPx": 0.3370007012853922,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 1,
+        "measuredLandmarkCount": 1,
+        "outsideCurrentCropCount": 12,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-loupe-reset-full-film",
+      "previewMode": "raw",
+      "focusLoupeActive": false,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-104",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:a84fdbc5"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "previousInternalTargetSizePx": null,
+      "crop": {
+        "active": false,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "widthFraction": 1,
+        "heightFraction": 1
+      },
+      "alignment": {
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 13,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    },
+    {
+      "captureId": "m6b-resized-standard-quality",
+      "previewMode": "raw",
+      "focusLoupeActive": false,
+      "requestId": "gg-mvtijich-pqey672a6ql-default-request-105",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtijich-pqey672a6ql-default-generation-1",
+      "inputFingerprints": {
+        "sourceData": "fnv1a32:5be0e64a",
+        "presentationState": "fnv1a32:a84fdbc5"
+      },
+      "displaySizePx": {
+        "widthPx": 514,
+        "heightPx": 411
+      },
+      "internalTargetSizePx": {
+        "widthPx": 437,
+        "heightPx": 349
+      },
+      "previousInternalTargetSizePx": {
+        "widthPx": 334,
+        "heightPx": 267
+      },
+      "crop": {
+        "active": false,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "widthFraction": 1,
+        "heightFraction": 1
+      },
+      "alignment": {
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0
+      },
+      "spatialGate": {
+        "classification": "passed",
+        "maximumErrorPx": 1.5492044700919514,
+        "rmsErrorPx": 0.7171881755040718,
+        "maximumSpatialErrorPx": 2,
+        "maximumSpatialRmsPx": 1.25,
+        "expectedLandmarkCount": 13,
+        "expectedVisibleLandmarkCount": 13,
+        "measuredLandmarkCount": 13,
+        "outsideCurrentCropCount": 0,
+        "unsupportedCount": 0,
+        "metricsComplete": true,
+        "affectedLandmarkIds": [],
+        "issues": []
+      }
+    }
+  ],
+  "finalOutputRgbOracle": {
+    "caseCount": 9,
+    "sampleCount": 206,
+    "maximumChannelError": 1,
+    "maximumCaseRgbRmse": 0.2041241452319315
+  },
+  "alphaObservation": "unobservable",
+  "preservedM5q": {
+    "frozenThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "statuses": {
+      "Q1": "reference-not-converged",
+      "Q2": "insufficient-support",
+      "Q3": "bounded-qualified",
+      "Q4": "insufficient-support",
+      "Q5": "reference-not-converged",
+      "Q6": "reference-not-converged",
+      "Q7": "reference-not-converged"
+    },
+    "changed": false
+  },
+  "historicalComparison": {
+    "originalReportedRunSourceCommit": "bdbcd08",
+    "originalMeasurementSummary": {
+      "classification": "physical-overlay-conformant",
+      "captureCount": 14,
+      "measured": 77,
+      "outsideCurrentCrop": 105,
+      "unsupported": 0,
+      "maximumCaptureErrorCssPx": 1.5492044700919514,
+      "maximumCaptureRmsErrorCssPx": 0.7301107934845426
+    },
+    "correctedRunMeasurementSummary": {
+      "classification": "physical-overlay-conformant",
+      "captureCount": 14,
+      "measured": 77,
+      "outsideCurrentCrop": 105,
+      "unsupported": 0,
+      "maximumCaptureErrorCssPx": 1.5492044700919514,
+      "maximumPerCaptureRmsErrorCssPx": 0.7301107934845426,
+      "pooledSpatialErrorRmsCssPx": 0.6824450910748467
+    },
+    "numericMeasurementsRetained": true,
+    "captureRequestIdsChangedOnRerun": true,
+    "note": "The earlier report’s numbers remain intact as historical evidence. This fresh native run independently evaluates each of the same 14 capture states and uses new request identities; its result is the authoritative review-fix classification."
+  },
+  "validation": {
+    "focusedSpatialUnitTests": "44 passed",
+    "focusedPhysicalOverlayUnitTests": "18 passed",
+    "fullUnitAndIntegration": "297 files / 2,993 tests passed with NODE_OPTIONS=--localstorage-file=<temp> VITEST_MAX_FORKS=1 npm test -- --maxWorkers=1",
+    "nativeM6b": "1/1 passed; all 14 capture gates passed",
+    "nativeM6PresentationAndLifecycle": "8/8 passed",
+    "nativeM5qAndAppAdapter": "3/3 passed",
+    "productionPreviewIsolation": "2/2 passed",
+    "ciLocalE2e": {
+      "command": "NODE_OPTIONS=--localstorage-file=<temp> VITEST_MAX_FORKS=1 npm run ci:local:e2e",
+      "result": "stopped at known base E2E failure after CSS, lint, typecheck, 2,983 tests, and build passed",
+      "failedSpec": "src/tests/e2e/architecture-foreground-compound.spec.ts",
+      "failure": "Missing heading Complete the Photograph",
+      "laterE2eSpecsRun": false,
+      "baseReproductionCommit": "f831e48121a7e6fdb3106b3a59fcce716143f90a",
+      "baseResult": "same heading assertion failed on a clean origin/main snapshot"
+    },
+    "pointAndErrorComponentMutations": "10 nonfinite component mutations rejected"
+  },
+  "productionIsolation": "No production behavior was changed by the review-fix implementation; the separate production-preview suite passed.",
+  "limitations": [
+    "Physical overlay conformance applies only to the controlled calibration fixture and tested capture matrix.",
+    "The registered Architecture Rise scene has no physical target overlay; its physical overlay status remains not evaluated.",
+    "The visible canvas is opaque, so partial source alpha remains unobservable.",
+    "M6 architecture remains partial and photographic quality remains unqualified.",
+    "The broad local E2E run remains blocked by the same unrelated failure reproduced on origin/main; later specs were not run.",
+    "M5Q frozen thresholds and Q1–Q7 outcomes remain unchanged.",
+    "No M6C/alpha work, M7 work, or production WebGPU authorization is included."
+  ]
+}

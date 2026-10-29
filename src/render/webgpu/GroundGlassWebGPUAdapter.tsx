@@ -36,6 +36,7 @@ import {
 import { createGroundGlassDofRenderState } from "../groundGlassDofRenderState";
 import { getGroundGlassDofVisualSettings, resolveGroundGlassDisplayOpticsState } from "../groundGlassVisualSettings";
 import {
+  mapGroundGlassInspectionWindowToRttSourceCrop,
   type GroundGlassFrustum,
   type GroundGlassInspectionWindow,
 } from "../groundGlassInspectionWindow";
@@ -111,6 +112,10 @@ import {
   type GroundGlassGpuPassTiming,
   holdGroundGlassWebGpuPresentationQueueCompletion,
   holdGroundGlassWebGpuQueueCompletion,
+  isGroundGlassM6bCalibrationFixtureEnabledForRequest,
+  publishGroundGlassM6bPresentationEvidenceForTest,
+  recordGroundGlassM6bFixtureResourceDisposedForTest,
+  resolveGroundGlassM6bPresentationStateForTest,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
   publishGroundGlassPhysicalCocProbeReadbackForTest,
@@ -1299,6 +1304,41 @@ const createDisplayScene = (
   };
 };
 
+type GroundGlassM6bConformanceModule = typeof import("../groundGlassPhysicalOverlayConformance");
+
+const updateGroundGlassM6bCalibrationTexture = (
+  conformance: GroundGlassM6bConformanceModule,
+  texture: THREE.DataTexture | null,
+  requestSourceCrop: GroundGlassInspectionWindow,
+  previewMode: "raw" | "upright",
+): Readonly<{ texture: THREE.DataTexture; sourceFingerprint: string }> => {
+  const source = conformance.createGroundGlassM6bCalibrationSource({
+    inspectionWindow: mapGroundGlassInspectionWindowToRttSourceCrop(requestSourceCrop, previewMode),
+    previewMode,
+  });
+  const nextTexture = texture ?? new THREE.DataTexture(
+    source.rgba,
+    source.widthPx,
+    source.heightPx,
+    THREE.RGBAFormat,
+    THREE.FloatType,
+  );
+  if (texture) {
+    const targetData = nextTexture.image.data as Float32Array;
+    targetData.set(source.rgba);
+  }
+  nextTexture.colorSpace = THREE.NoColorSpace;
+  nextTexture.minFilter = THREE.NearestFilter;
+  nextTexture.magFilter = THREE.NearestFilter;
+  nextTexture.wrapS = THREE.ClampToEdgeWrapping;
+  nextTexture.wrapT = THREE.ClampToEdgeWrapping;
+  nextTexture.generateMipmaps = false;
+  nextTexture.flipY = false;
+  nextTexture.unpackAlignment = 1;
+  nextTexture.needsUpdate = true;
+  return { texture: nextTexture, sourceFingerprint: source.sourceFingerprint };
+};
+
 const resolvePresentationNodeState = (
   request: GroundGlassFrameRequest,
   camera: THREE.PerspectiveCamera,
@@ -1963,6 +2003,30 @@ export const GroundGlassWebGPUAdapter = ({
     let scene: THREE.Scene | null = null;
     let camera: THREE.PerspectiveCamera | null = null;
     let display: GroundGlassDisplayScene | null = null;
+    let calibrationSourceTexture: THREE.DataTexture | null = null;
+    let calibrationSourceDataFingerprint: string | null = null;
+    let currentM6bPresentationState: GroundGlassPresentationNodeState | null = null;
+    let m6bConformanceModule: GroundGlassM6bConformanceModule | null = null;
+    let m6bConformanceModulePromise: Promise<GroundGlassM6bConformanceModule | null> | null = null;
+    const loadM6bConformanceModule = async (): Promise<GroundGlassM6bConformanceModule | null> => {
+      if (!import.meta.env.DEV) return null;
+      if (m6bConformanceModule) return m6bConformanceModule;
+      if (!m6bConformanceModulePromise) {
+        // Resolve the fixture module only through Vite's dev server; never package its source data in production.
+        const moduleUrl = import.meta.url.replace(
+          /\/webgpu\/GroundGlassWebGPUAdapter\.tsx(?:\?.*)?$/,
+          "/groundGlassPhysicalOverlayConformance.ts",
+        );
+        if (moduleUrl === import.meta.url) return null;
+        m6bConformanceModulePromise = import(/* @vite-ignore */ moduleUrl)
+          .then((module) => module as GroundGlassM6bConformanceModule)
+          .then((module) => {
+            m6bConformanceModule = module;
+            return module;
+          });
+      }
+      return m6bConformanceModulePromise;
+    };
     let presentationDiagnostic: GroundGlassPresentationDiagnosticDetails | null = null;
     let subject: MountedSubject = null;
     let presentationLighting: ReturnType<typeof createPresentationLightingRig> | null = null;
@@ -1987,7 +2051,9 @@ export const GroundGlassWebGPUAdapter = ({
           request: requestRef.current,
           generation,
           status: "pending",
-          source: "m5-research-composite",
+          source: import.meta.env.DEV && isGroundGlassM6bCalibrationFixtureEnabledForRequest(requestRef.current)
+            ? "m6b-calibration-fixture"
+            : "m5-research-composite",
           throughputGain: null,
           naturalIllumination: "bypassed",
           coverage: "bypassed",
@@ -2009,14 +2075,15 @@ export const GroundGlassWebGPUAdapter = ({
       propsRef.current.onFailure(error instanceof Error ? error : new Error(errorMessage(error)), stage, failedPass);
     };
 
-    const createRequestDisplay = (
+    const createRequestDisplay = async (
       displayRequest: GroundGlassFrameRequest,
       displayCamera: THREE.PerspectiveCamera,
       widthPx: number,
       heightPx: number,
-    ): GroundGlassDisplayScene => {
+    ): Promise<GroundGlassDisplayScene> => {
       if (!target) throw new Error("Ground Glass display cannot initialize without its source target");
       if (!isGroundGlassM6PresentationRequest(displayRequest)) {
+        currentM6bPresentationState = null;
         presentationDiagnostic = null;
         setPresentationDiagnostics(null);
         return createDisplayScene(target, displayRequest.previewMode);
@@ -2025,19 +2092,44 @@ export const GroundGlassWebGPUAdapter = ({
       if (!composite) {
         throw new Error("M6 presentation requires the adapter-owned M5 composite target");
       }
-      const state = resolvePresentationNodeState(displayRequest, displayCamera, widthPx, heightPx);
+      const requestState = resolvePresentationNodeState(displayRequest, displayCamera, widthPx, heightPx);
+      const fixtureState = import.meta.env.DEV
+        ? resolveGroundGlassM6bPresentationStateForTest(displayRequest, requestState)
+        : null;
+      const state = fixtureState ?? requestState;
+      const fixtureEnabled = import.meta.env.DEV && fixtureState !== null &&
+        isGroundGlassM6bCalibrationFixtureEnabledForRequest(displayRequest);
+      currentM6bPresentationState = fixtureState;
+      const presentationSource = fixtureEnabled ? "m6b-calibration-fixture" : "m5-research-composite";
+      let sourceTexture: THREE.Texture;
+      if (fixtureEnabled) {
+        const conformance = await loadM6bConformanceModule();
+        if (!conformance) throw new Error("M6B calibration helper did not load from its development-only module path");
+        const updatedSource = updateGroundGlassM6bCalibrationTexture(
+          conformance,
+          calibrationSourceTexture,
+          displayRequest.inspectionWindow,
+          displayRequest.previewMode,
+        );
+        calibrationSourceTexture = updatedSource.texture;
+        calibrationSourceDataFingerprint = updatedSource.sourceFingerprint;
+        sourceTexture = updatedSource.texture;
+      } else {
+        calibrationSourceDataFingerprint = null;
+        sourceTexture = composite.texture;
+      }
       presentationDiagnostic = makePresentationDiagnostic({
         request: displayRequest,
         generation,
         status: "pending",
-        source: "m5-research-composite",
+        source: presentationSource,
         throughputGain: state.throughputGain,
         naturalIllumination: state.naturalIllumination.enabled ? "applied" : "bypassed",
         coverage: state.coverage.active ? "applied" : "bypassed",
       });
       setPresentationDiagnostics(presentationDiagnostic);
       return createDisplayScene(target, displayRequest.previewMode, {
-        sourceTexture: composite.texture,
+        sourceTexture,
         state,
       });
     };
@@ -2077,6 +2169,12 @@ export const GroundGlassWebGPUAdapter = ({
           await dispose(() => display?.material.dispose());
           await dispose(() => display?.geometry.dispose());
           display = null;
+        }
+        if (calibrationSourceTexture) {
+          await dispose(() => calibrationSourceTexture?.dispose());
+          calibrationSourceTexture = null;
+          calibrationSourceDataFingerprint = null;
+          recordGroundGlassM6bFixtureResourceDisposedForTest();
         }
         if (apertureGatherResources) {
           apertureGatherResources.scenes.forEach((ownedScene) => ownedScene.clear());
@@ -2294,23 +2392,44 @@ export const GroundGlassWebGPUAdapter = ({
             display.scene.clear();
             const previousMaterial = display.material;
             const previousGeometry = display.geometry;
-            display = createRequestDisplay(latest, camera, target.width, target.height);
+            display = await createRequestDisplay(latest, camera, target.width, target.height);
             displayMode = latest.previewMode;
             previousMaterial.dispose();
             previousGeometry.dispose();
           } else if (m6PresentationRequested) {
-            const presentationState = resolvePresentationNodeState(
+            const requestState = resolvePresentationNodeState(
               latest,
               camera,
               target.width,
               target.height,
             );
+            const fixtureState = import.meta.env.DEV
+              ? resolveGroundGlassM6bPresentationStateForTest(latest, requestState)
+              : null;
+            const presentationState = fixtureState ?? requestState;
+            currentM6bPresentationState = fixtureState;
+            const fixtureEnabled = import.meta.env.DEV && fixtureState !== null &&
+              isGroundGlassM6bCalibrationFixtureEnabledForRequest(latest);
+            if (fixtureEnabled) {
+              const conformance = await loadM6bConformanceModule();
+              if (!conformance) throw new Error("M6B calibration helper did not load from its development-only module path");
+              const updatedSource = updateGroundGlassM6bCalibrationTexture(
+                conformance,
+                calibrationSourceTexture,
+                latest.inspectionWindow,
+                latest.previewMode,
+              );
+              calibrationSourceTexture = updatedSource.texture;
+              calibrationSourceDataFingerprint = updatedSource.sourceFingerprint;
+            } else {
+              calibrationSourceDataFingerprint = null;
+            }
             display.updatePresentation?.(presentationState);
             presentationDiagnostic = makePresentationDiagnostic({
               request: latest,
               generation,
               status: "pending",
-              source: "m5-research-composite",
+              source: fixtureEnabled ? "m6b-calibration-fixture" : "m5-research-composite",
               throughputGain: presentationState.throughputGain,
               naturalIllumination: presentationState.naturalIllumination.enabled ? "applied" : "bypassed",
               coverage: presentationState.coverage.active ? "applied" : "bypassed",
@@ -3749,6 +3868,39 @@ export const GroundGlassWebGPUAdapter = ({
               passTiming: presentationPassTiming,
             };
             setPresentationDiagnostics(presentationDiagnostic);
+            const mountedRuntime = runtimeRef.current;
+            if (import.meta.env.DEV && currentM6bPresentationState && calibrationSourceTexture && calibrationSourceDataFingerprint &&
+                isGroundGlassM6bCalibrationFixtureEnabledForRequest(latest) &&
+                mountedRuntime.status === "mounted" &&
+                mountedRuntime.rendererFamily === "webgpu-renderer" &&
+                mountedRuntime.actualExecutionApi === "webgpu" &&
+                mountedRuntime.internalFallback === "none") {
+              const conformance = await loadM6bConformanceModule();
+              if (!isRequestCurrent()) return;
+              if (!conformance) throw new Error("M6B calibration helper did not load before evidence publication");
+              const source = calibrationSourceTexture.image;
+              publishGroundGlassM6bPresentationEvidenceForTest({
+                fixtureRevision: conformance.GROUND_GLASS_M6B_FIXTURE_REVISION,
+                requestId: latest.identity.requestId,
+                channelId: latest.identity.channelId,
+                sceneId: latest.identity.sceneId,
+                rendererGenerationId: generation.generationId,
+                rendererFamily: mountedRuntime.rendererFamily,
+                actualExecutionApi: mountedRuntime.actualExecutionApi,
+                internalFallback: mountedRuntime.internalFallback,
+                previewMode: latest.previewMode,
+                sourceSampling: "nearest",
+                sourceColorDomain: "linear-no-color-space",
+                sourceWidthPx: source.width,
+                sourceHeightPx: source.height,
+                sourceDataFingerprint: calibrationSourceDataFingerprint,
+                presentationStateFingerprint: conformance.fingerprintGroundGlassM6bPresentationState(currentM6bPresentationState),
+                outputWidthPx: latest.widthPx,
+                outputHeightPx: latest.heightPx,
+                sourceCrop: latest.inspectionWindow,
+                presentationState: currentM6bPresentationState,
+              });
+            }
           }
           failedPass = "textureDisplay";
           throwIfGroundGlassWebGpuFailureInjected("texture-display-after-submit");
@@ -4166,7 +4318,7 @@ export const GroundGlassWebGPUAdapter = ({
               })
             : null,
         );
-        display = createRequestDisplay(
+        display = await createRequestDisplay(
           currentRequest,
           camera,
           target.width,
