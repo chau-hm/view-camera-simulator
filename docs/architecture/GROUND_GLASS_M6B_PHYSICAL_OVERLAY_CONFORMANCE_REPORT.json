@@ -2788,12 +2788,27 @@
       "currentBaseComparisonCommit": "f831e48121a7e6fdb3106b3a59fcce716143f90a",
       "baseResult": "same failure at the same heading assertion",
       "notRunAfterFailure": "later broad E2E specs were not executed"
+    },
+    "reviewFix1NativeM6b": "1/1 passed on the current policy commit; 14 exact capture IDs gated individually; source commit f90537fce1f9be3978fc6ff0d9e83bed84b76bc4",
+    "reviewFix1M6Presentation": "8/8 passed on chrome-native-webgpu",
+    "reviewFix1M5qAndAdapter": "3/3 passed on chrome-native-webgpu; frozen Q1–Q7 unchanged",
+    "reviewFix1ProductionPreviewIsolation": "2/2 passed",
+    "reviewFix1BroadCiE2e": {
+      "command": "NODE_OPTIONS=--localstorage-file=<temp> VITEST_MAX_FORKS=1 npm run ci:local:e2e",
+      "result": "stopped at known base E2E failure after CSS, lint, typecheck, 2,983 tests, and build passed",
+      "failedSpec": "src/tests/e2e/architecture-foreground-compound.spec.ts",
+      "failure": "Missing heading Complete the Photograph",
+      "laterE2eSpecsRun": false,
+      "baseReproductionCommit": "f831e48121a7e6fdb3106b3a59fcce716143f90a",
+      "baseResult": "same heading assertion failed on a clean origin/main snapshot"
     }
   },
   "evidenceArtifacts": {
     "trackedReport": "docs/architecture/GROUND_GLASS_M6B_PHYSICAL_OVERLAY_CONFORMANCE_REPORT.json",
     "ignoredPlaywrightDirectory": "test-results/ground-glass-webgpu-m6b-co-38117-ent-and-final-canvas-output-chrome-native-webgpu",
-    "largeArtifactsAreTracked": false
+    "largeArtifactsAreTracked": false,
+    "reviewFix1Report": "docs/architecture/GROUND_GLASS_M6B_REVIEW_FIX_1_REPORT.json",
+    "reviewFix1IgnoredPlaywrightDirectory": "test-results/ground-glass-webgpu-m6b-co-38117-ent-and-final-canvas-output-chrome-native-webgpu"
   },
   "remainingLimitations": [
     "Source alpha cannot be independently measured through the opaque visible canvas.",
@@ -2802,5 +2817,20 @@
     "Native evidence is limited to the tested Chrome r186/macOS adapter and layout.",
     "Broad scene/material/device/performance coverage remains an M8 responsibility.",
     "Device loss, full retry and retirement recovery remain M7 responsibilities."
-  ]
+  ],
+  "reviewFix1": {
+    "report": "GROUND_GLASS_M6B_REVIEW_FIX_1_REPORT.json",
+    "revision": "m6b-spatial-gate-r1",
+    "sourceCommit": "f90537fce1f9be3978fc6ff0d9e83bed84b76bc4",
+    "classification": "physical-overlay-conformant",
+    "captureCount": 14,
+    "allCaptureGatesPass": true,
+    "totalMeasuredLandmarks": 77,
+    "totalOutsideCurrentCrop": 105,
+    "totalUnsupported": 0,
+    "maximumCaptureErrorCssPx": 1.5492044700919514,
+    "maximumPerCaptureRmsCssPx": 0.7301107934845426,
+    "pooledSpatialErrorRmsCssPx": 0.6824450910748467,
+    "note": "The original report measurements remain historical. Fresh capture identities, individual spatial metrics, per-capture gate results, and validation are in the versioned review-fix report."
+  }
 }

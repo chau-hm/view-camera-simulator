@@ -238,6 +238,34 @@ describe("M6B per-capture physical spatial conformance", () => {
     expect(result.issues.some(({ code }) => code === "visible-landmark-coordinate-missing")).toBe(true);
   });
 
+  it.each([
+    "imageErrorXPx",
+    "imageErrorYPx",
+    "imageMappingErrorPx",
+    "targetErrorXPx",
+    "targetErrorYPx",
+    "overlayMappingErrorPx",
+    "gridErrorXPx",
+    "gridErrorYPx",
+    "gridMappingErrorPx",
+    "gridToLandmarkErrorPx",
+  ] as const)("fails closed when the %s component is nonfinite", (field) => {
+    const valid = createCapture("m6b-raw-full-film");
+    const source = field.startsWith("grid")
+      ? valid.alignment!.measurements.find(({ expectedGridIntersectionPx }) => expectedGridIntersectionPx !== null)
+      : valid.alignment!.measurements[0];
+    if (!source) throw new Error(`Fixture omitted measurement for ${field}`);
+    const alignment = {
+      ...valid.alignment!,
+      measurements: valid.alignment!.measurements.map((measurement) => measurement.id === source.id
+        ? { ...measurement, [field]: Number.NaN }
+        : measurement),
+    };
+    const result = evaluateGroundGlassM6bCaptureSpatialConformance({ ...valid, alignment });
+    expect(result.classification).toBe("unsupported");
+    expect(result.metricsComplete).toBe(false);
+  });
+
   it("rejects zero observed landmarks", () => {
     const expected = expectedFor();
     const alignment = evaluateGroundGlassM6bAlignment({
