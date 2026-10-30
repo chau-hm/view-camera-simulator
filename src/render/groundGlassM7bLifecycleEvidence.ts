@@ -30,6 +30,7 @@ export type GroundGlassM7bEvidenceClass =
   | "native-webgpu-pre-mount-failure"
   | "native-webgpu-runtime"
   | "native-webgpu-runtime-failure"
+  | "native-webgpu-cleanup-failure"
   | "native-webgpu-device-loss-equivalent"
   | "native-webgpu-device-destroy-lost-promise"
   | "native-webgl2"
@@ -122,6 +123,7 @@ const evidenceClasses = new Set<GroundGlassM7bEvidenceClass>([
   "native-webgpu-pre-mount-failure",
   "native-webgpu-runtime",
   "native-webgpu-runtime-failure",
+  "native-webgpu-cleanup-failure",
   "native-webgpu-device-loss-equivalent",
   "native-webgpu-device-destroy-lost-promise",
   "native-webgl2",
@@ -139,7 +141,7 @@ const requiredEvidenceClassByScenario: Readonly<Record<GroundGlassM7bScenarioId,
   "m7b-b1-initialization-after-target": "native-webgpu-pre-mount-failure",
   "m7b-b2-runtime-failure-matrix": "native-webgpu-runtime-failure",
   "m7b-b3-async-retirement-and-latest-request": "native-webgpu-runtime-failure",
-  "m7b-b4-cleanup-failure-sticky": "native-webgpu-runtime-failure",
+  "m7b-b4-cleanup-failure-sticky": "native-webgpu-cleanup-failure",
   "m7b-c1-device-loss-equivalent": "native-webgpu-device-loss-equivalent",
   "m7b-c2-test-destroyed-gpu-device-lost-promise": "native-webgpu-device-destroy-lost-promise",
   "m7b-d1-d3-request-and-resize-freshness": "native-webgpu-runtime",
@@ -319,6 +321,7 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
       "native-webgpu-pre-mount-failure",
       "native-webgpu-runtime",
       "native-webgpu-runtime-failure",
+      "native-webgpu-cleanup-failure",
       "native-webgpu-device-loss-equivalent",
       "native-webgpu-device-destroy-lost-promise",
     ]);
@@ -423,6 +426,38 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
           !eventMatchesScenarioIdentity(scenario, eventFor(scenario, "renderer-mounted", generationId), true)) {
           errors.push(`invalid-native-runtime-observation-order:${requiredId}`);
         }
+      }
+    }
+    if (scenario.evidenceClass === "native-webgpu-cleanup-failure") {
+      const generationId = isObject(scenario.identity) && isNonEmptyString(scenario.identity.rendererGenerationId)
+        ? scenario.identity.rendererGenerationId
+        : undefined;
+      const attempt = eventSequence(scenario, "attempt", generationId);
+      const runtime = eventSequence(scenario, "runtime-observed", generationId);
+      const failure = eventSequence(scenario, "failure", generationId);
+      const cleanup = eventSequence(scenario, "cleanup", generationId);
+      const cleanupAcknowledged = eventSequence(scenario, "cleanup-acknowledged", generationId);
+      const cleanupEvidence = eventFor(scenario, "cleanup-acknowledged", generationId);
+      if (!isObject(scenario.runtime) || scenario.runtime.observed !== true || scenario.runtime.hostMounted !== false ||
+        scenario.runtime.rendererFamily !== "webgpu-renderer" || scenario.runtime.actualExecutionApi !== "webgpu" ||
+        scenario.runtime.internalFallback !== "none") {
+        errors.push(`cleanup-failure-runtime-identity-contradiction:${requiredId}`);
+      }
+      if (attempt === null || runtime === null || failure === null || cleanup === null || cleanupAcknowledged === null ||
+        !(attempt < runtime && runtime < failure && failure < cleanup && cleanup < cleanupAcknowledged) ||
+        !eventMatchesScenarioIdentity(scenario, eventFor(scenario, "attempt", generationId), true) ||
+        !eventMatchesScenarioIdentity(scenario, eventFor(scenario, "runtime-observed", generationId)) ||
+        !eventMatchesScenarioIdentity(scenario, eventFor(scenario, "failure", generationId), true) ||
+        !eventMatchesScenarioIdentity(scenario, eventFor(scenario, "cleanup", generationId)) ||
+        !cleanupEvidence || !isObject(scenario.identity) || cleanupEvidence.outcome !== "failed" ||
+        cleanupEvidence.channelId !== scenario.identity.channelId || cleanupEvidence.hostId !== scenario.identity.hostId) {
+        errors.push(`invalid-cleanup-failure-order:${requiredId}`);
+      }
+      if (hasEvent(scenario, "renderer-mounted", generationId)) {
+        errors.push(`cleanup-failure-claims-mounted-renderer:${requiredId}`);
+      }
+      if (scenario.cleanupOutcome !== "failed" || scenario.applicationFallback !== false || scenario.fallbackOutcome !== "unavailable") {
+        errors.push(`cleanup-failure-fallback-contradiction:${requiredId}`);
       }
     }
     if (

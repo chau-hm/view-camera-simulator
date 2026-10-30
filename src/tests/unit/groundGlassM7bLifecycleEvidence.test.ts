@@ -14,7 +14,7 @@ const evidenceClassByScenario: Readonly<Record<GroundGlassM7bScenarioId, GroundG
   "m7b-b1-initialization-after-target": "native-webgpu-pre-mount-failure",
   "m7b-b2-runtime-failure-matrix": "native-webgpu-runtime-failure",
   "m7b-b3-async-retirement-and-latest-request": "native-webgpu-runtime-failure",
-  "m7b-b4-cleanup-failure-sticky": "native-webgpu-runtime-failure",
+  "m7b-b4-cleanup-failure-sticky": "native-webgpu-cleanup-failure",
   "m7b-c1-device-loss-equivalent": "native-webgpu-device-loss-equivalent",
   "m7b-c2-test-destroyed-gpu-device-lost-promise": "native-webgpu-device-destroy-lost-promise",
   "m7b-d1-d3-request-and-resize-freshness": "native-webgpu-runtime",
@@ -163,6 +163,25 @@ const passedScenario = (id: GroundGlassM7bScenarioId): GroundGlassM7bScenarioEvi
         applicationFallback: true,
         fallbackOutcome: "webgl-mounted",
         events: [event(0, "attempt"), event(1, "runtime-observed"), event(2, "renderer-mounted"), event(3, "failure"), eventWithFields(4, "cleanup", { outcome: "confirmed" })],
+      };
+    case "native-webgpu-cleanup-failure":
+      return {
+        ...scenario,
+        runtime: {
+          observed: true,
+          hostMounted: false,
+          rendererFamily: "webgpu-renderer",
+          actualExecutionApi: "webgpu",
+          internalFallback: "none",
+        },
+        applicationFallback: false,
+        cleanupOutcome: "failed",
+        fallbackOutcome: "unavailable",
+        events: [
+          event(0, "attempt"), event(1, "runtime-observed"), event(2, "failure"),
+          eventWithFields(3, "cleanup", { outcome: "failed" }),
+          eventWithFields(4, "cleanup-acknowledged", { outcome: "failed", channelId: "default", hostId: "host-1" }),
+        ],
       };
     case "native-webgpu-device-loss-equivalent":
       return {
@@ -343,6 +362,21 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(`stale-or-duplicate-event-order:${scenario.id}`);
     expect(result.errors).toContain(`invalid-mounted-failure-order:${scenario.id}`);
+  });
+
+  it("rejects cleanup-failure evidence that claims successful disposal or fallback", () => {
+    const report = makeFullyQualifiedReport();
+    const scenarioIndex = report.scenarios.findIndex((scenario) => scenario.evidenceClass === "native-webgpu-cleanup-failure");
+    const scenario = report.scenarios[scenarioIndex];
+    report.scenarios[scenarioIndex] = {
+      ...scenario,
+      cleanupOutcome: "confirmed",
+      applicationFallback: true,
+      fallbackOutcome: "webgl-mounted",
+    };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain(`cleanup-failure-fallback-contradiction:${scenario.id}`);
   });
 
   it("rejects a current publication whose completed request is stale", () => {
