@@ -127,6 +127,7 @@ import {
   resolveGroundGlassM6bPresentationStateForTest,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
+  registerGroundGlassDeviceLossTriggerForTest,
   publishGroundGlassPhysicalCocProbeReadbackForTest,
   consumeGroundGlassApertureGatherCaptureForTest,
   consumeGroundGlassB1BoundaryProbeForTest,
@@ -1977,6 +1978,7 @@ export const GroundGlassWebGPUAdapter = ({
     effectTokenRef.current = effectToken;
     let retired = false;
     let failureReported = false;
+    let unregisterDeviceLossTestTrigger: () => void = () => undefined;
     let disposePromise: Promise<void> | null = null;
     let initialization = Promise.resolve();
     let renderer: WebGpuRenderer | null = null;
@@ -2810,6 +2812,7 @@ export const GroundGlassWebGPUAdapter = ({
           if (!device) throw new Error("Native WebGPU scene submission has no initialized GPU device");
           const sceneQueueWaitStartedAt = performance.now();
           await holdGroundGlassWebGpuQueueCompletion();
+          throwIfGroundGlassWebGpuFailureInjected("queue-completion");
           await device.queue.onSubmittedWorkDone();
           const sceneQueueCompletionWaitMs = performance.now() - sceneQueueWaitStartedAt;
           sceneRenderTiming = {
@@ -4225,6 +4228,7 @@ export const GroundGlassWebGPUAdapter = ({
           if (m6PresentationRequested) await holdGroundGlassWebGpuPresentationQueueCompletion();
           const presentationQueueWaitStartedAt = performance.now();
           await holdGroundGlassWebGpuQueueCompletion();
+          throwIfGroundGlassWebGpuFailureInjected("queue-completion");
           await device.queue.onSubmittedWorkDone();
           const presentationQueueCompletionWaitMs = performance.now() - presentationQueueWaitStartedAt;
           presentationPassTiming = m6PresentationRequested
@@ -4774,8 +4778,17 @@ export const GroundGlassWebGPUAdapter = ({
         setReady(true);
         const device = observed.device;
         if (!device) throw new Error("Native WebGPU backend exposed no initialized GPU device");
+        const reportDeviceLoss = (reason: string): boolean => {
+          if (retired || failureReported || !isGenerationActive()) return false;
+          reportFailure(new Error(reason), "runtime", null);
+          return true;
+        };
+        unregisterDeviceLossTestTrigger = registerGroundGlassDeviceLossTriggerForTest(
+          requestRef.current.channel,
+          () => reportDeviceLoss("Injected test-only WebGPU device-loss equivalent"),
+        );
         void device.lost?.then((info) => {
-          if (!retired) reportFailure(new Error(`WebGPU device lost: ${info.message ?? info.reason ?? "unknown reason"}`), "runtime", null);
+          reportDeviceLoss(`WebGPU device lost: ${info.message ?? info.reason ?? "unknown reason"}`);
         });
       } catch (error) {
         if (m6SessionProvisioningAllowed) {
@@ -4793,6 +4806,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (currentEffect !== effectToken && currentEffect?.generationId === generation.generationId) return;
         retired = true;
         activeRef.current = false;
+        unregisterDeviceLossTestTrigger();
         void disposeOwned().catch(() => undefined);
         renderNowRef.current = null;
         registerGroundGlassApertureGatherCaptureTriggerForTest(null);

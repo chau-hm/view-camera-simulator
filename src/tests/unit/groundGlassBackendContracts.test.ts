@@ -116,6 +116,20 @@ const authorizedAttempt = () => {
   return { input, selection };
 };
 
+const syntheticFailureContext = (retryEpoch = 0) => ({
+  hostId: "synthetic-host",
+  generation: {
+    generationId: `synthetic-generation-${retryEpoch}`,
+    channelId: SYNTHETIC_CHANNEL_ID,
+  },
+  request: {
+    requestId: `synthetic-request-${retryEpoch}`,
+    channelId: SYNTHETIC_CHANNEL_ID,
+    sceneId: SYNTHETIC_SCENE_ID,
+  },
+  failedOperation: "sceneRender" as const,
+});
+
 const consumeFailure = (
   retryState = createGroundGlassPilotRetryState(SYNTHETIC_CHANNEL_ID, SYNTHETIC_PILOT_SESSION_ID),
   stage: "initialization" | "runtime" = "initialization",
@@ -127,6 +141,7 @@ const consumeFailure = (
     SYNTHETIC_SCENE_ID,
     stage,
     "synthetic attempt failure",
+    syntheticFailureContext(retryState.retryEpoch),
   );
 };
 
@@ -151,10 +166,40 @@ describe("Ground Glass pilot-session retry contract", () => {
       requestedBackend: "webgl",
     });
     const state = createGroundGlassPilotRetryState(SYNTHETIC_CHANNEL_ID, SYNTHETIC_PILOT_SESSION_ID);
-    expect(consumeGroundGlassPilotRetry(state, webglSelection, SYNTHETIC_SCENE_ID, "runtime", "error"))
+    expect(consumeGroundGlassPilotRetry(
+      state,
+      webglSelection,
+      SYNTHETIC_SCENE_ID,
+      "runtime",
+      "error",
+      syntheticFailureContext(),
+    ))
       .toMatchObject({ status: "rejected", reason: "not-an-authorized-webgpu-attempt" });
     expect(selection.selectedBackend).toBe("webgpu");
     expect(state.status).toBe("available");
+  });
+
+  it("rejects retry consumption when the host failure identity is incomplete or belongs to another request", () => {
+    const { selection } = authorizedAttempt();
+    const state = createGroundGlassPilotRetryState(SYNTHETIC_CHANNEL_ID, SYNTHETIC_PILOT_SESSION_ID);
+    const invalidContexts = [
+      { ...syntheticFailureContext(), hostId: " " },
+      { ...syntheticFailureContext(), request: { ...syntheticFailureContext().request, requestId: " " } },
+      { ...syntheticFailureContext(), generation: { ...syntheticFailureContext().generation, channelId: "other" } },
+      { ...syntheticFailureContext(), request: { ...syntheticFailureContext().request, sceneId: "other-scene" } },
+    ];
+
+    for (const context of invalidContexts) {
+      expect(consumeGroundGlassPilotRetry(
+        state,
+        selection,
+        SYNTHETIC_SCENE_ID,
+        "runtime",
+        "synthetic identity failure",
+        context,
+      )).toMatchObject({ status: "rejected", reason: "failure-identity-mismatch" });
+    }
+    expect(state).toMatchObject({ status: "available", failureHistory: [] });
   });
 
   it("keeps the consumed latch across frame updates, resize, generation replacement, remount, and scene change", () => {
@@ -236,6 +281,49 @@ describe("Ground Glass pilot-session retry contract", () => {
       },
       selection: { selectedBackend: "webgpu" },
     });
+  });
+
+  it("rejects an unknown retry action before it can reset a consumed latch", () => {
+    const failure = consumeFailure();
+    if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");
+    const consumed = failure.retryState;
+    const result = authorizeGroundGlassPilotRetry(
+      consumed,
+      createWebGpuPolicyInput({ retryState: consumed }),
+      "force-retry" as never,
+      "confirmed",
+    );
+
+    expect(result).toEqual({ status: "rejected", reason: "invalid-recovery-action" });
+    expect(consumed).toMatchObject({
+      status: "consumed",
+      pilotSessionId: SYNTHETIC_PILOT_SESSION_ID,
+      retryEpoch: 0,
+      failureHistory: [{ failureReason: "synthetic attempt failure" }],
+    });
+  });
+
+  it("requires confirmed cleanup for both legal recovery actions", () => {
+    const failure = consumeFailure();
+    if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");
+    const state = failure.retryState;
+    const explicitRetry = createWebGpuPolicyInput({ retryState: state });
+    const newSession = createWebGpuPolicyInput({
+      retryState: state,
+      authorization: {
+        status: "authorized",
+        source: "application-configuration",
+        pilotSessionId: "m1-authorized-new-session",
+      },
+    });
+
+    for (const cleanup of ["failed", "uncertain"] as const) {
+      expect(authorizeGroundGlassPilotRetry(state, explicitRetry, "explicit-retry", cleanup))
+        .toEqual({ status: "rejected", reason: "cleanup-not-confirmed" });
+      expect(authorizeGroundGlassPilotRetry(state, newSession, "new-pilot-session", cleanup))
+        .toEqual({ status: "rejected", reason: "cleanup-not-confirmed" });
+    }
+    expect(state).toMatchObject({ status: "consumed", retryEpoch: 0, failureHistory: [{ failureReason: "synthetic attempt failure" }] });
   });
 
   it("allows a deliberate new pilot session and preserves prior failure history", () => {
@@ -413,6 +501,7 @@ describe("Ground Glass pilot-session retry contract", () => {
       SYNTHETIC_SCENE_ID,
       "runtime",
       "retry runtime failed",
+      syntheticFailureContext(retry.retryState.retryEpoch),
     );
     expect(secondFailure).toMatchObject({
       status: "consumed",
@@ -420,8 +509,24 @@ describe("Ground Glass pilot-session retry contract", () => {
         status: "consumed",
         retryEpoch: 1,
         failureHistory: [
-          { retryEpoch: 0, stage: "initialization" },
-          { retryEpoch: 1, stage: "runtime" },
+          {
+            retryEpoch: 0,
+            stage: "initialization",
+            hostId: "synthetic-host",
+            rendererGenerationId: "synthetic-generation-0",
+            requestId: "synthetic-request-0",
+            sceneId: SYNTHETIC_SCENE_ID,
+            failedOperation: "sceneRender",
+          },
+          {
+            retryEpoch: 1,
+            stage: "runtime",
+            hostId: "synthetic-host",
+            rendererGenerationId: "synthetic-generation-1",
+            requestId: "synthetic-request-1",
+            sceneId: SYNTHETIC_SCENE_ID,
+            failedOperation: "sceneRender",
+          },
         ],
       },
     });

@@ -10,6 +10,7 @@ const physicalResearchEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RES
 type FailurePoint =
   | "initialization-after-target"
   | "scene-render-after-submit"
+  | "queue-completion"
   | "physical-coc-after-submit"
   | "physical-validity-after-submit"
   | "texture-display-after-submit"
@@ -139,7 +140,8 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
 
   for (const scenario of [
     { name: "D2 controlled scene render submission rejection", point: "scene-render-after-submit" as const, operation: "sceneRender" },
-    { name: "D3 texture display submission", point: "texture-display-after-submit" as const, operation: "textureDisplay" },
+    { name: "D3 controlled queue completion rejection", point: "queue-completion" as const, operation: "sceneRender" },
+    { name: "D4 texture display submission", point: "texture-display-after-submit" as const, operation: "textureDisplay" },
   ]) {
     test(`${scenario.name} fails the whole frame and falls back only after confirmed cleanup`, async ({ page }) => {
       test.setTimeout(240_000);
@@ -240,6 +242,107 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       generationId: failedGeneration,
       requestId: failedRequestId,
     }));
+    expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
+      .toEqual([failedGeneration]);
+  });
+
+  test("M7A explicit retry and new session are developer actions, preserve history, and never loop", async ({ page }) => {
+    test.setTimeout(360_000);
+    const { glass, failedRequestId, failedGeneration } = await startNativePilot(page, ["initialization-after-target"]);
+    await assertConfirmedWebGlFallback(glass, page, failedRequestId, failedGeneration, "initialization", "unknown");
+    const firstSessionId = await glass.getAttribute("data-pilot-session-id");
+    await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
+    await expect(glass).toHaveAttribute("data-pilot-retry-failure-count", "1");
+
+    await writeControl(page, { failurePoints: ["initialization-after-target"] });
+    const explicitRetry = await page.evaluate(() =>
+      window.__groundGlassWebGpuM3TestControl?.requestGroundGlassPilotRecoveryAction?.("default", "explicit-retry") ?? null,
+    );
+    expect(explicitRetry).toMatchObject({
+      action: "explicit-retry",
+      status: "authorized",
+      pilotSessionId: firstSessionId,
+      retryEpoch: 1,
+      reason: null,
+    });
+    await expect(glass).toHaveAttribute("data-pilot-recovery-result", "authorized");
+    await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []), { timeout: 120_000 })
+      .toHaveLength(2);
+    const retryGeneration = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations?.[1] ?? null);
+    if (!retryGeneration) throw new Error("Explicit retry did not create its one authorized attempt");
+    await assertConfirmedWebGlFallback(glass, page, failedRequestId, retryGeneration, "initialization", "unknown");
+    await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
+    await expect(glass).toHaveAttribute("data-pilot-retry-epoch", "1");
+    await expect(glass).toHaveAttribute("data-pilot-retry-failure-count", "2");
+    expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
+      .toHaveLength(2);
+
+    const generationBeforeInvalidAction = await glass.getAttribute("data-renderer-generation");
+    const invalidAction = await page.evaluate(() =>
+      window.__groundGlassWebGpuM3TestControl?.requestGroundGlassPilotRecoveryAction?.("default", "force-retry") ?? null,
+    );
+    expect(invalidAction).toMatchObject({
+      action: "invalid",
+      invalidAction: "force-retry",
+      status: "rejected",
+      pilotSessionId: firstSessionId,
+      retryEpoch: 1,
+      reason: "invalid-recovery-action",
+    });
+    await expect(glass).toHaveAttribute("data-pilot-recovery-action", "invalid");
+    await expect(glass).toHaveAttribute("data-pilot-recovery-result", "rejected");
+    await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
+    await expect(glass).toHaveAttribute("data-pilot-retry-epoch", "1");
+    await expect(glass).toHaveAttribute("data-pilot-retry-failure-count", "2");
+    expect(await glass.getAttribute("data-renderer-generation")).toBe(generationBeforeInvalidAction);
+    expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
+      .toHaveLength(2);
+
+    const newSession = await page.evaluate(() =>
+      window.__groundGlassWebGpuM3TestControl?.requestGroundGlassPilotRecoveryAction?.("default", "new-pilot-session") ?? null,
+    );
+    expect(newSession).toMatchObject({
+      action: "new-pilot-session",
+      status: "authorized",
+      retryEpoch: 2,
+      reason: null,
+    });
+    expect(newSession?.pilotSessionId).toBeTruthy();
+    expect(newSession?.pilotSessionId).not.toBe(firstSessionId);
+    await expect(glass).toHaveAttribute("data-pilot-session-id", newSession!.pilotSessionId!);
+    await expect(glass).toHaveAttribute("data-pilot-retry-status", "explicit-retry-requested");
+    await expect(glass).toHaveAttribute("data-pilot-retry-failure-count", "2");
+    await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer", { timeout: 120_000 });
+    await expect(glass).toHaveAttribute("data-actual-execution-api", "webgpu");
+    await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []), { timeout: 120_000 })
+      .toHaveLength(3);
+  });
+
+  test("M7A injected device loss uses the native runtime failure and cleanup path", async ({ page }) => {
+    test.setTimeout(300_000);
+    const { glass, failedRequestId, failedGeneration } = await startNativePilot(page, []);
+    await expect(glass).toHaveAttribute("data-actual-execution-api", "webgpu");
+    await expect(glass).toHaveAttribute("data-last-completed-request-id", failedRequestId!, { timeout: 90_000 });
+    const accepted = await page.evaluate(() =>
+      window.__groundGlassWebGpuM3TestControl?.requestGroundGlassDeviceLoss?.("default") ?? false,
+    );
+    expect(accepted).toBe(true);
+    await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 120_000 })
+      .toContainEqual(expect.objectContaining({
+        kind: "failure",
+        generationId: failedGeneration,
+        stage: "runtime",
+        operation: "unknown",
+        reason: expect.stringContaining("device-loss equivalent"),
+      }));
+    await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 120_000 })
+      .toContainEqual(expect.objectContaining({ kind: "cleanup", generationId: failedGeneration, outcome: "confirmed" }));
+    await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer", { timeout: 120_000 });
+    await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 120_000 });
+    await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
+    await expect(glass).toHaveAttribute("data-pilot-failure-backend", "webgpu");
+    await expect(glass).toHaveAttribute("data-pilot-failure-stage", "runtime");
+    expect(await glass.getAttribute("data-last-completed-request-id")).toBe(failedRequestId);
     expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
       .toEqual([failedGeneration]);
   });
