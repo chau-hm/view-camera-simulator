@@ -1,0 +1,1639 @@
+{
+  "schemaVersion": "ground-glass-m7b-native-lifecycle-v1",
+  "milestone": "M7B",
+  "evaluatorRevision": "m7b-lifecycle-evidence-v1",
+  "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+  "base": {
+    "branch": "main",
+    "commit": "6725d6912adc20974fb78a7ef84821f487519cc0"
+  },
+  "predecessor": {
+    "pullRequest": 298,
+    "mergedCommit": "6725d6912adc20974fb78a7ef84821f487519cc0",
+    "reviewedM7AReviewFixCommit": "4ef94366620bca0b7e4962a3c693677e1f2c70bc"
+  },
+  "qualification": "partially-qualified",
+  "scenarioCounts": {
+    "passed": 12,
+    "failed": 0,
+    "blocked": 4,
+    "not-run": 1
+  },
+  "phaseA": {
+    "classification": "test-harness-defect",
+    "rootCause": "The earlier retry invocation omitted VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true. Trusted application policy therefore remained on WebGL. The test waited for runtime-observed native evidence that could not occur and timed out before recovery actions.",
+    "correctedInvocation": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+    "result": "Corrected suite passed 12; a new-session attempt reported WebGPURenderer / webgpu / no internal fallback. No initialization hang was observed.",
+    "initializationAfterTargetOrdering": "renderer.init() \u2192 runtime backend observation \u2192 target/display setup \u2192 injected failure \u2192 owned cleanup \u2192 host fallback; injection is before host renderer-mounted evidence by design."
+  },
+  "nativeRuntime": {
+    "browser": "Chrome 156.0.8078.76",
+    "platform": "macOS 10.15.7 user-agent",
+    "threeRevision": "r186",
+    "nativeIdentity": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none"
+    },
+    "webglCompatibilityControl": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgl2",
+      "internalFallback": "webgl2-compatibility",
+      "countedAsNativeWebGPU": false
+    }
+  },
+  "validation": {
+    "nativeFailureHost": {
+      "result": "12 passed, 3 skipped under Raw-only configuration"
+    },
+    "nativeM4FailureRows": {
+      "result": "3 passed"
+    },
+    "nativeM5Q": {
+      "result": "1 passed",
+      "thresholdRevision": "m5q-architecture-rise-r186-v3"
+    },
+    "nativeM6M6bM6c": {
+      "result": "12 passed"
+    },
+    "nativeM6d": {
+      "result": "1 passed",
+      "contractRevision": "m6d-opaque-presentation-v1"
+    },
+    "productionPreview": {
+      "result": "2 passed"
+    },
+    "standard": {
+      "css": "passed",
+      "lint": "passed",
+      "typecheck": "passed",
+      "unitIntegration": "301 files, 3077 tests passed",
+      "build": "passed"
+    },
+    "broadLocalE2e": {
+      "result": "blocked by unrelated baseline assertion",
+      "failure": "architecture-foreground-compound.spec.ts:35: heading \"Complete the Photograph\" absent",
+      "cleanMainReproduction": "Previously recorded in GROUND_GLASS_M7A_RECOVERY_REPORT.json."
+    },
+    "hostedCi": {
+      "status": "pending PR-head GitHub Actions",
+      "note": "Check after PR creation."
+    },
+    "reviewFixRerun": {
+      "focusedSuites": {
+        "command": "npm test -- --run src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassBackendPolicy.test.ts src/tests/unit/groundGlassBackendContracts.test.ts src/tests/unit/groundGlassBackendDiagnostics.test.ts src/tests/unit/groundGlassWebGpuTestSeam.test.ts",
+        "result": "6 files, 103 tests passed"
+      },
+      "fullUnitIntegration": {
+        "command": "npm test",
+        "result": "301 files, 3078 tests passed"
+      },
+      "typecheck": "passed",
+      "lint": "passed",
+      "css": "passed",
+      "productionBuild": "passed",
+      "nativeEvidenceRecaptured": false,
+      "note": "These checks run after adding the committed-report evaluator regression. The native lifecycle evidence above remains tied to sourceHeadSha c5e12ac6d9a6a42e2abcf0983d00a73f98481808."
+    }
+  },
+  "preservedBoundaries": {
+    "singleGroundGlassRenderHostStateOwner": true,
+    "productionWebGlBehaviorChanged": false,
+    "productionWebGpuEnabled": false,
+    "publicBackendSelectorAdded": false,
+    "sceneAllowlistExpanded": false,
+    "opticsOrM5AlgorithmsChanged": false,
+    "m5qThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "m5qOutcomes": {
+      "Q1": "reference-not-converged",
+      "Q2": "insufficient-support",
+      "Q3": "bounded-qualified",
+      "Q4": "insufficient-support",
+      "Q5": "reference-not-converged",
+      "Q6": "reference-not-converged",
+      "Q7": "reference-not-converged"
+    },
+    "m6dOutputContract": "m6d-opaque-presentation-v1",
+    "photographicQuality": "quality-unqualified",
+    "m8Started": false
+  },
+  "remainingLimitations": [
+    "Full B1/B2 device/target/pipeline/material, Far/Near gather, readback and genuine queue-rejection matrices are incomplete.",
+    "Full D1-D3 focus/aperture/Raw-Upright/crop/pan/resize lifecycle cross-product was not run as one native matrix.",
+    "Rapid request/resize/scene/unmount sequence not run.",
+    "Actual device.lost observed only after test-only destroy(); spontaneous driver loss and transitions during retirement/navigation remain unqualified.",
+    "Native multi-channel browser coverage unavailable; owner-level unit coverage exists.",
+    "Other browser/device combinations unqualified.",
+    "M7B remains partial; M7 incomplete; M8 and production authorization deferred."
+  ],
+  "scenarios": [
+    {
+      "id": "m7b-phase-a-timeout-diagnosis",
+      "title": "Diagnose prior M7A native timeout and confirm mounted runtime after authorization",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-runtime",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7A explicit retry and new session are developer actions, preserve history, and never loop",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-pilot:mvv98saf-5hfb556x26w:default:session-1",
+        "retryEpoch": 2,
+        "hostId": "gg-host-_r_d_-tj0ykz4u1n",
+        "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+        "rendererGenerationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+        "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": false,
+      "events": [
+        {
+          "sequence": 18,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 19,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 20,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-tj0ykz4u1n",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 22,
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+          "detail": null
+        }
+      ],
+      "cleanupOutcome": "not-required",
+      "fallbackOutcome": "none",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+        "completedRequestId": "gg-mvv98saf-5hfb556x26w-default-request-3"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
+      ],
+      "limitations": [
+        "Prior invocation omitted VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true; trusted policy stayed WebGL, so runtime-observed could not occur. Corrected run proves a test-harness configuration defect, not an initialization hang.",
+        "Selected new-session generation is proven by runtime-observed and renderer-mounted events."
+      ]
+    },
+    {
+      "id": "m7b-b1-initialization-after-target",
+      "title": "Initialization failure after render-target setup and confirmed cleanup",
+      "status": "blocked",
+      "evidenceClass": "native-webgpu-pre-mount-failure",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-0f677fcappz6",
+        "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+        "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": false,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "initialization",
+          "operation": "unknown",
+          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target"
+        },
+        {
+          "sequence": 7,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 8,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-0f677fcappz6",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98iiy-d20xa44fbp6-default-request-12",
+        "completedRequestId": "gg-mvv98iiy-d20xa44fbp6-default-request-12"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
+      ],
+      "limitations": [
+        "The bounded after-target injection passed with native adapter observation before host mount, then cleanup and one WebGL fallback.",
+        "Wider B1 remains incomplete: renderer/device initialization rejection, separate target allocation, pipeline/material failure and other partial-init paths were not all exercised."
+      ]
+    },
+    {
+      "id": "m7b-b2-runtime-failure-matrix",
+      "title": "Native runtime failure matrix: scene render, queue completion, display and physical-pass controls",
+      "status": "blocked",
+      "evidenceClass": "native-webgpu-runtime-failure",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D2 controlled scene render submission rejection fails the whole frame and falls back only after confirmed cleanup",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-rd6s7eyysfc",
+        "attemptId": "[\"default\",\"gg-mvv98klx-n27ri3l6gz-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+        "requestId": "gg-mvv98klx-n27ri3l6gz-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98klx-n27ri3l6gz-default-generation-2\"]",
+          "generationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+          "requestId": "gg-mvv98klx-n27ri3l6gz-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98klx-n27ri3l6gz-default-generation-2\"]",
+          "generationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98klx-n27ri3l6gz-default-generation-2\"]",
+          "generationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+          "requestId": "gg-mvv98klx-n27ri3l6gz-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-rd6s7eyysfc",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 7,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98klx-n27ri3l6gz-default-generation-2\"]",
+          "generationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+          "requestId": "gg-mvv98klx-n27ri3l6gz-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "sceneRender",
+          "reason": "Injected test-only Ground Glass WebGPU failure at scene-render-after-submit"
+        },
+        {
+          "sequence": 8,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98klx-n27ri3l6gz-default-generation-2\"]",
+          "generationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 9,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98klx-n27ri3l6gz-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-rd6s7eyysfc",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98klx-n27ri3l6gz-default-request-3",
+        "completedRequestId": "gg-mvv98klx-n27ri3l6gz-default-request-3"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "D3 queue-completion and D4 texture-display cases in this spec.",
+        "M4 physical writer/validity failure tests in this spec.",
+        "D8 WebGL2 compatibility negative control in this spec."
+      ],
+      "limitations": [
+        "Queue-completion rejection is a controlled injection at the existing boundary, not a genuine queue completion Promise rejection.",
+        "Far/Near gather failure, readback rejection and all distinct runtime failures remain incomplete. D8 observed WebGPURenderer with WebGL2 execution and was not counted as native WebGPU."
+      ]
+    },
+    {
+      "id": "m7b-b3-async-retirement-and-latest-request",
+      "title": "Held queue work, retirement and latest accepted request publication",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-runtime-failure",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-s8f36y4lqua",
+        "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+        "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-s8f36y4lqua",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 7,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "sceneRender",
+          "reason": "Injected test-only Ground Glass WebGPU failure at scene-render-after-submit"
+        },
+        {
+          "sequence": 8,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 9,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-s8f36y4lqua",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98y7o-cmpftsx259j-default-request-21",
+        "completedRequestId": "gg-mvv98y7o-cmpftsx259j-default-request-21"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "D5 native held queue/retirement case in this spec."
+      ],
+      "limitations": [
+        "The tested held-operation and out-of-order fallback controls prove latest request wins after confirmed cleanup; not every queue/readback race on every adapter."
+      ]
+    },
+    {
+      "id": "m7b-b4-cleanup-failure-sticky",
+      "title": "Target disposal failure prevents replacement and keeps the channel unavailable",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-cleanup-failure",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D4 failed disposal keeps the host unavailable and prevents a replacement generation",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-risljwj25yh",
+        "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
+        "requestId": "gg-mvv98okp-5lzebeokukv-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": false,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": false,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
+          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
+          "requestId": "gg-mvv98okp-5lzebeokukv-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
+          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
+          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
+          "requestId": "gg-mvv98okp-5lzebeokukv-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "initialization",
+          "operation": "unknown",
+          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target"
+        },
+        {
+          "sequence": 7,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
+          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "failed"
+        },
+        {
+          "sequence": 8,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-risljwj25yh",
+          "outcome": "failed",
+          "reason": "Injected test-only Ground Glass WebGPU failure at dispose-target"
+        }
+      ],
+      "cleanupOutcome": "failed",
+      "fallbackOutcome": "unavailable",
+      "publication": {
+        "status": "not-applicable",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "src/tests/unit/GroundGlassRenderHost.test.tsx"
+      ],
+      "limitations": [
+        "Native test covers the bounded dispose-target throw; owner tests cover failed/uncertain cleanup stickiness and late confirmation.",
+        "Cleanup describes application ownership, not driver-level GPU memory reclamation."
+      ]
+    },
+    {
+      "id": "m7b-c1-device-loss-equivalent",
+      "title": "Injected device-loss equivalent uses native adapter failure and cleanup",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-device-loss-equivalent",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7A injected device loss uses the native runtime failure and cleanup path",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-4dnaqyze46t",
+        "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+        "requestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-4dnaqyze46t",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 8,
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3",
+          "detail": null
+        },
+        {
+          "sequence": 9,
+          "kind": "device-loss-equivalent-requested",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "cause": "test-callback-equivalent"
+        },
+        {
+          "sequence": 10,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "unknown",
+          "reason": "Injected test-only WebGPU device-loss equivalent"
+        },
+        {
+          "sequence": 11,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98tsi-a4wwo07zxof-default-generation-2\"]",
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 12,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98tsi-a4wwo07zxof-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-4dnaqyze46t",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3",
+        "completedRequestId": "gg-mvv98tsi-a4wwo07zxof-default-request-3"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
+      ],
+      "limitations": [
+        "Controlled loss equivalent only; no spontaneous hardware/driver loss is claimed."
+      ]
+    },
+    {
+      "id": "m7b-c2-test-destroyed-gpu-device-lost-promise",
+      "title": "Test destroys owned GPUDevice while queue completion is held and observes device.lost",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-device-destroy-lost-promise",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-5d1xddyiuwe",
+        "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+        "requestId": "gg-mvv98v2y-ixu216hlt2k-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": "gg-mvv98v2y-ixu216hlt2k-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": "gg-mvv98v2y-ixu216hlt2k-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-5d1xddyiuwe",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 7,
+          "kind": "device-destroy-requested",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "cause": "test-destroy"
+        },
+        {
+          "sequence": 8,
+          "kind": "device-lost-observed",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "reason": "destroyed",
+          "cause": "test-destroy"
+        },
+        {
+          "sequence": 9,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": "gg-mvv98v2y-ixu216hlt2k-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "unknown",
+          "reason": "WebGPU device lost: Device was destroyed."
+        },
+        {
+          "sequence": 10,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98v2y-ixu216hlt2k-default-generation-2\"]",
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 11,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98v2y-ixu216hlt2k-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-5d1xddyiuwe",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98v2y-ixu216hlt2k-default-request-3",
+        "completedRequestId": "gg-mvv98v2y-ixu216hlt2k-default-request-3"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
+      ],
+      "limitations": [
+        "The actual GPUDevice.lost Promise resolved after test-only destroy(); distinct from spontaneous hardware/driver loss.",
+        "Held queue used the existing adapter failure callback, cleanup and WebGL fallback path."
+      ]
+    },
+    {
+      "id": "m7b-d1-d3-request-and-resize-freshness",
+      "title": "Request changes, resize and stale-result freshness under retirement",
+      "status": "blocked",
+      "evidenceClass": "native-webgpu-runtime",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-s8f36y4lqua",
+        "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+        "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-s8f36y4lqua",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 7,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": "gg-mvv98y7o-cmpftsx259j-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "sceneRender",
+          "reason": "Injected test-only Ground Glass WebGPU failure at scene-render-after-submit"
+        },
+        {
+          "sequence": 8,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98y7o-cmpftsx259j-default-generation-2\"]",
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 9,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98y7o-cmpftsx259j-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-s8f36y4lqua",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98y7o-cmpftsx259j-default-request-21",
+        "completedRequestId": "gg-mvv98y7o-cmpftsx259j-default-request-21"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "M6/M6C resize and stale-readback regressions are listed in the regression-lock scenario."
+      ],
+      "limitations": [
+        "M7B covers a focus update during held failure and held fallback frame; M6 suites cover resize and stale readback. Full M7B focus/aperture/Raw-Upright/crop/pan/resize interleavings during retirement and WebGL initialization were not run together."
+      ]
+    },
+    {
+      "id": "m7b-d4-d5-scene-navigation-and-remount",
+      "title": "Scene navigation away/back and incidental host remount preserve the consumed attempt",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-pre-mount-failure",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-0f677fcappz6",
+        "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+        "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": false,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": true,
+      "events": [
+        {
+          "sequence": 4,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 5,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 6,
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "stage": "initialization",
+          "operation": "unknown",
+          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target"
+        },
+        {
+          "sequence": 7,
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "outcome": "confirmed"
+        },
+        {
+          "sequence": 8,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-0f677fcappz6",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "webgl-mounted",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98iiy-d20xa44fbp6-default-request-12",
+        "completedRequestId": "gg-mvv98iiy-d20xa44fbp6-default-request-12"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "Terminal WebGL remount E6 in the same spec."
+      ],
+      "limitations": [
+        "After confirmed fallback browser navigated Architecture Rise \u2192 Interior Corner \u2192 Architecture Rise; adapter-attempt list remained the failed generation only.",
+        "No pending Architecture Rise readback crossed the scene switch."
+      ]
+    },
+    {
+      "id": "m7b-d6-rapid-transition-sequence",
+      "title": "Rapid request, resize, scene switch and unmount/remount interleaving",
+      "status": "not-run",
+      "evidenceClass": "not-run",
+      "sourceHeadSha": null,
+      "testId": null,
+      "testProject": null,
+      "browserIdentity": null,
+      "threeRevision": null,
+      "invocation": null,
+      "identity": {
+        "channelId": null,
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": null,
+        "attemptId": null,
+        "rendererGenerationId": null,
+        "requestId": null,
+        "sceneId": null
+      },
+      "requestedBackend": null,
+      "selectedBackend": null,
+      "runtime": {
+        "observed": false,
+        "hostMounted": false,
+        "rendererFamily": null,
+        "actualExecutionApi": null,
+        "internalFallback": null
+      },
+      "applicationFallback": null,
+      "events": [],
+      "cleanupOutcome": "not-observed",
+      "fallbackOutcome": "not-observed",
+      "publication": {
+        "status": "not-observed",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [],
+      "limitations": [
+        "No deterministic native rapid sequence combining request changes, resize, scene switching and unmount/remount was executed."
+      ]
+    },
+    {
+      "id": "m7b-e1-e4-retry-session-and-rejected-actions",
+      "title": "Explicit retry, failed retry, new session, unknown action rejection and owner authorization",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-runtime",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7A explicit retry and new session are developer actions, preserve history, and never loop",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-pilot:mvv98saf-5hfb556x26w:default:session-1",
+        "retryEpoch": 2,
+        "hostId": "gg-host-_r_d_-tj0ykz4u1n",
+        "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+        "rendererGenerationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+        "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": false,
+      "events": [
+        {
+          "sequence": 18,
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "186"
+        },
+        {
+          "sequence": 19,
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": null,
+          "detail": null,
+          "rendererRevision": "186",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu"
+        },
+        {
+          "sequence": 20,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-tj0ykz4u1n",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 22,
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvv98saf-5hfb556x26w-default-generation-6\"]",
+          "generationId": "gg-mvv98saf-5hfb556x26w-default-generation-6",
+          "requestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+          "detail": null
+        }
+      ],
+      "cleanupOutcome": "not-required",
+      "fallbackOutcome": "none",
+      "publication": {
+        "status": "current",
+        "acceptedRequestId": "gg-mvv98saf-5hfb556x26w-default-request-3",
+        "completedRequestId": "gg-mvv98saf-5hfb556x26w-default-request-3"
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "src/tests/unit/GroundGlassRenderHost.test.tsx",
+        "src/tests/unit/groundGlassBackendContracts.test.ts",
+        "src/tests/unit/groundGlassWebGpuTestSeam.test.ts"
+      ],
+      "limitations": [
+        "Native E2E verifies retry reuses the session at epoch 1; failed retry stays consumed with failure history count 2; force-retry is rejected without a generation change; new owner-issued session at epoch 2 mounts actual WebGPU.",
+        "Wrong-session, unconsumed budget, missing capability/eligibility, and failed/uncertain cleanup rejections are verified by pure owner/policy tests."
+      ]
+    },
+    {
+      "id": "m7b-e5-independent-channel-owner",
+      "title": "Independent retry and cleanup state across logical Ground Glass channels",
+      "status": "passed",
+      "evidenceClass": "unit-integration",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "GroundGlassRenderHost.test.tsx: per-channel sticky retry and independent host handovers",
+      "testProject": "vitest",
+      "browserIdentity": null,
+      "threeRevision": null,
+      "invocation": "npm test -- --run src/tests/unit/GroundGlassRenderHost.test.tsx",
+      "identity": {
+        "channelId": null,
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": null,
+        "attemptId": null,
+        "rendererGenerationId": null,
+        "requestId": null,
+        "sceneId": null
+      },
+      "requestedBackend": null,
+      "selectedBackend": null,
+      "runtime": {
+        "observed": false,
+        "hostMounted": false,
+        "rendererFamily": null,
+        "actualExecutionApi": null,
+        "internalFallback": null
+      },
+      "applicationFallback": null,
+      "events": [],
+      "cleanupOutcome": "not-required",
+      "fallbackOutcome": "none",
+      "publication": {
+        "status": "not-applicable",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "src/tests/unit/GroundGlassRenderHost.test.tsx",
+        "src/tests/unit/groundGlassBackendContracts.test.ts"
+      ],
+      "limitations": [
+        "Owner-level channel isolation is tested. App exposes no independent comparison channels for native multi-channel browser qualification."
+      ]
+    },
+    {
+      "id": "m7b-e6-terminal-webgl-context-loss",
+      "title": "Current WebGL context failure is terminal across client-side remount",
+      "status": "passed",
+      "evidenceClass": "native-webgl2",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7B current WebGL context loss is terminal across client-side remount",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": "gg-host-_r_d_-okaax73a4o",
+        "attemptId": "[\"default\",\"gg-mvv98whk-8yas25evdq9-default-generation-1\"]",
+        "rendererGenerationId": "gg-mvv98whk-8yas25evdq9-default-generation-1",
+        "requestId": "gg-mvv98whk-8yas25evdq9-default-request-2",
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgl-renderer",
+        "actualExecutionApi": "webgl2",
+        "internalFallback": "none"
+      },
+      "applicationFallback": false,
+      "events": [
+        {
+          "sequence": 2,
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvv98whk-8yas25evdq9-default-generation-1\"]",
+          "generationId": "gg-mvv98whk-8yas25evdq9-default-generation-1",
+          "requestId": "gg-mvv98whk-8yas25evdq9-default-request-2",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-okaax73a4o",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none"
+        },
+        {
+          "sequence": 3,
+          "kind": "failed-frame-result",
+          "attemptId": "[\"default\",\"gg-mvv98whk-8yas25evdq9-default-generation-1\"]",
+          "generationId": "gg-mvv98whk-8yas25evdq9-default-generation-1",
+          "requestId": "gg-mvv98whk-8yas25evdq9-default-request-2",
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-okaax73a4o",
+          "sceneId": "architecture-rise",
+          "acceptedByHost": true
+        },
+        {
+          "sequence": 4,
+          "kind": "cleanup-acknowledged",
+          "attemptId": null,
+          "generationId": "gg-mvv98whk-8yas25evdq9-default-generation-1",
+          "requestId": null,
+          "detail": null,
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-okaax73a4o",
+          "outcome": "confirmed",
+          "reason": null
+        }
+      ],
+      "cleanupOutcome": "confirmed",
+      "fallbackOutcome": "unavailable",
+      "publication": {
+        "status": "not-applicable",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
+      ],
+      "limitations": [
+        "WEBGL_lose_context triggered a current WebGL failure; unavailable state survived client navigation/remount with no WebGPU attempt or recursive mount.",
+        "A non-fatal warning reported that the extension was unavailable on a secondary canvas; owned-context assertions passed."
+      ]
+    },
+    {
+      "id": "m7b-f-production-preview-isolation",
+      "title": "Production preview keeps Architecture Rise on WebGL and denies URL-shaped activation",
+      "status": "passed",
+      "evidenceClass": "production-preview-webgl",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "architecture-rise-webgpu-production.spec.ts: two production-preview tests",
+      "testProject": "chromium-production-preview",
+      "browserIdentity": "Chromium production preview",
+      "threeRevision": "r186 build",
+      "invocation": "npm run test:e2e -- --config=playwright.production.config.ts src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+      "identity": {
+        "channelId": "default",
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": null,
+        "attemptId": null,
+        "rendererGenerationId": null,
+        "requestId": null,
+        "sceneId": "architecture-rise"
+      },
+      "requestedBackend": "default and URL-shaped WebGPU request",
+      "selectedBackend": "webgl",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgl-renderer",
+        "actualExecutionApi": "webgl2",
+        "internalFallback": "none"
+      },
+      "applicationFallback": false,
+      "events": [],
+      "cleanupOutcome": "not-required",
+      "fallbackOutcome": "none",
+      "publication": {
+        "status": "not-observed",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/architecture-rise-webgpu-production.spec.ts"
+      ],
+      "limitations": [
+        "Production-preview checks are bounded to these URLs/browser."
+      ]
+    },
+    {
+      "id": "m7b-f-m5q-and-m6-regression-locks",
+      "title": "Frozen M5Q, M6, M6B, M6C and M6D native regression locks",
+      "status": "passed",
+      "evidenceClass": "native-regression-suite",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "M4 rows (3), M5Q (1), M6/M6B/M6C (12), M6D (1)",
+      "testProject": "chrome-native-webgpu",
+      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
+      "threeRevision": "r186",
+      "invocation": "See native regression commands in the M7B companion report.",
+      "identity": {
+        "channelId": null,
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": null,
+        "attemptId": null,
+        "rendererGenerationId": null,
+        "requestId": null,
+        "sceneId": null
+      },
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgpu",
+      "runtime": {
+        "observed": true,
+        "hostMounted": true,
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none"
+      },
+      "applicationFallback": false,
+      "events": [],
+      "cleanupOutcome": "not-required",
+      "fallbackOutcome": "none",
+      "publication": {
+        "status": "not-observed",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts (M4)",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts (M5Q/M6D)",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts"
+      ],
+      "limitations": [
+        "M5Q remains m5q-architecture-rise-r186-v3 with Q1/Q5/Q6/Q7 reference-not-converged, Q2/Q4 insufficient-support, Q3 bounded-qualified.",
+        "M6D stays m6d-opaque-presentation-v1; no M5 thresholds or M6 quality decision changed."
+      ]
+    },
+    {
+      "id": "m7b-standard-validation",
+      "title": "Local CSS, lint, typecheck, full unit/integration and production build",
+      "status": "passed",
+      "evidenceClass": "unit-integration",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "npm run ci:local:e2e pre-E2E steps",
+      "testProject": "Node 24.22.1",
+      "browserIdentity": null,
+      "threeRevision": null,
+      "invocation": "npm run ci:local:e2e",
+      "identity": {
+        "channelId": null,
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": null,
+        "attemptId": null,
+        "rendererGenerationId": null,
+        "requestId": null,
+        "sceneId": null
+      },
+      "requestedBackend": null,
+      "selectedBackend": null,
+      "runtime": {
+        "observed": false,
+        "hostMounted": false,
+        "rendererFamily": null,
+        "actualExecutionApi": null,
+        "internalFallback": null
+      },
+      "applicationFallback": null,
+      "events": [],
+      "cleanupOutcome": "not-required",
+      "fallbackOutcome": "none",
+      "publication": {
+        "status": "not-applicable",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "CSS/lint/typecheck passed; 301 unit/integration files and 3077 tests passed; build passed."
+      ],
+      "limitations": [
+        "Integrated command stopped only at the unrelated E2E failure in the following scenario."
+      ]
+    },
+    {
+      "id": "m7b-broad-local-e2e",
+      "title": "Broad local E2E after standard validation",
+      "status": "blocked",
+      "evidenceClass": "environment-blocked",
+      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "testId": "architecture-foreground-compound.spec.ts: Architecture + Foreground compound task solves the photograph from neutral",
+      "testProject": "chromium",
+      "browserIdentity": "Chromium local Playwright",
+      "threeRevision": null,
+      "invocation": "npm run ci:local:e2e",
+      "identity": {
+        "channelId": null,
+        "pilotSessionId": null,
+        "retryEpoch": null,
+        "hostId": null,
+        "attemptId": null,
+        "rendererGenerationId": null,
+        "requestId": null,
+        "sceneId": "architecture-foreground"
+      },
+      "requestedBackend": null,
+      "selectedBackend": null,
+      "runtime": {
+        "observed": false,
+        "hostMounted": false,
+        "rendererFamily": null,
+        "actualExecutionApi": null,
+        "internalFallback": null
+      },
+      "applicationFallback": null,
+      "events": [],
+      "cleanupOutcome": "not-observed",
+      "fallbackOutcome": "not-observed",
+      "publication": {
+        "status": "not-observed",
+        "acceptedRequestId": null,
+        "completedRequestId": null
+      },
+      "supportingArtifacts": [
+        "test-results/architecture-foreground-compound.spec.ts error-context.md (generated, not committed)",
+        "docs/architecture/GROUND_GLASS_M7A_RECOVERY_REPORT.json: same failure on clean origin/main"
+      ],
+      "limitations": [
+        "After all standard checks passed, E2E failed at architecture-foreground-compound.spec.ts:35 because heading \"Complete the Photograph\" was absent.",
+        "Unrelated teaching-scene UI was not modified; same failure was previously reproduced on clean origin/main."
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   evaluateGroundGlassM7bLifecycleEvidence,
@@ -18,9 +19,9 @@ const evidenceClassByScenario: Readonly<Record<GroundGlassM7bScenarioId, GroundG
   "m7b-c1-device-loss-equivalent": "native-webgpu-device-loss-equivalent",
   "m7b-c2-test-destroyed-gpu-device-lost-promise": "native-webgpu-device-destroy-lost-promise",
   "m7b-d1-d3-request-and-resize-freshness": "native-webgpu-runtime",
-  "m7b-d4-d5-scene-navigation-and-remount": "native-webgpu-runtime-failure",
+  "m7b-d4-d5-scene-navigation-and-remount": "native-webgpu-pre-mount-failure",
   "m7b-d6-rapid-transition-sequence": "native-webgpu-runtime-failure",
-  "m7b-e1-e4-retry-session-and-rejected-actions": "native-webgpu-runtime-failure",
+  "m7b-e1-e4-retry-session-and-rejected-actions": "native-webgpu-runtime",
   "m7b-e5-independent-channel-owner": "unit-integration",
   "m7b-e6-terminal-webgl-context-loss": "native-webgl2",
   "m7b-f-production-preview-isolation": "production-preview-webgl",
@@ -403,6 +404,18 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     const result = evaluateGroundGlassM7bLifecycleEvidence(report);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(`webgl-failure-not-attributed-to-current-request:${scenario.id}`);
+  });
+
+  it("accepts the committed M7B report and its partial-qualification counts", () => {
+    const report = JSON.parse(readFileSync(
+      "docs/architecture/GROUND_GLASS_M7B_NATIVE_LIFECYCLE_REPORT.json",
+      "utf8",
+    )) as unknown;
+    expect(evaluateGroundGlassM7bLifecycleEvidence(report)).toMatchObject({
+      valid: true,
+      qualification: "partially-qualified",
+      counts: { passed: 12, failed: 0, blocked: 4, "not-run": 1 },
+    });
   });
 
   it("validates the JSON-serialized report with the same evidence decision", () => {
