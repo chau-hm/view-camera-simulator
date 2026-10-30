@@ -67,6 +67,7 @@ const reportedWebGpuAvailability = (): GroundGlassBackendPolicyInput["capability
 export const createGroundGlassRawWebGpuPolicyInput = (
   request: GroundGlassFrameRequestInput,
   retryState: GroundGlassPilotRetryState | null,
+  pilotSessionIdOverride?: string,
 ): GroundGlassBackendPolicyInput => {
   const m6BuildEnabled = isGroundGlassM6PresentationBuildEnabled();
   const m6Requested = m6BuildEnabled && !request.rawDebug;
@@ -77,7 +78,11 @@ export const createGroundGlassRawWebGpuPolicyInput = (
   // Raw Debug remains a distinct output mode, but when M6 is build-authorized it shares that
   // channel's pilot-session retry latch. Switching presentation modes must not look like a new
   // session or bypass an already-consumed WebGPU attempt.
-  const pilotSessionId = resolveGroundGlassRawWebGpuPilotSessionId(request.channel, m6BuildEnabled);
+  const pilotSessionId = pilotSessionIdOverride ?? (
+    retryState?.channelId === request.channel
+      ? retryState.pilotSessionId
+      : resolveGroundGlassRawWebGpuPilotSessionId(request.channel, m6BuildEnabled)
+  );
   const compatibility = requestedM6
     ? GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY
     : GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY;

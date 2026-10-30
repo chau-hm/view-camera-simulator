@@ -17,6 +17,8 @@ import type {
   GroundGlassBackendDiagnosticDetails,
   GroundGlassBackendDiagnostics,
   GroundGlassMountedRuntimeEvidence,
+  GroundGlassPilotRecoveryAction,
+  GroundGlassPilotRecoveryActionEvidence,
 } from "./backend/groundGlassBackendDiagnostics";
 import type {
   GroundGlassFrameResult,
@@ -25,7 +27,10 @@ import type {
 import { selectGroundGlassBackend, type GroundGlassBackendPolicyInput } from "./backend/groundGlassBackendPolicy";
 import type { GroundGlassFrameRequest, GroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { createGroundGlassFrameRequestFingerprint } from "./groundGlassFrameRequest";
-import { holdGroundGlassFrameResultForTest } from "./webgpu/groundGlassWebGpuTestSeam";
+import {
+  holdGroundGlassFrameResultForTest,
+  registerGroundGlassPilotRecoveryActionForTest,
+} from "./webgpu/groundGlassWebGpuTestSeam";
 import { GroundGlassWebGLAdapter } from "./GroundGlassWebGLAdapter";
 import type { GroundGlassRttRuntimeInfoChangeHandler } from "./groundGlassRttDimensions";
 import type { GroundGlassRuntimeInfoObservation } from "./groundGlassRuntimeObservation";
@@ -200,6 +205,48 @@ export const GroundGlassRenderHost = ({
   useEffect(() => {
     diagnosticsChangeRef.current?.(channel, diagnostics);
   }, [channel, diagnostics]);
+
+  const handlePilotRecoveryActionForTest = useCallback((
+    action: GroundGlassPilotRecoveryAction,
+  ): GroundGlassPilotRecoveryActionEvidence => {
+    const current = owner.getSnapshot(channel);
+    if (current.terminalWebGlFailure) {
+      return owner.recordPilotRecoveryAction(channel, action, "channel-terminally-unavailable");
+    }
+    const latestRequest = current.latestRequest;
+    if (current.activeHostId !== hostId || !latestRequest) {
+      return owner.recordPilotRecoveryAction(channel, action, "host-not-active");
+    }
+    const nextPilotSessionId = action === "new-pilot-session"
+      ? owner.createNewPilotSessionId(channel)
+      : current.retryState?.pilotSessionId;
+    const freshPolicyInput = createGroundGlassRawWebGpuPolicyInput(
+      latestRequest,
+      current.retryState,
+      nextPilotSessionId,
+    );
+    const authorization = owner.authorizePilotRetry(channel, freshPolicyInput, action);
+    if (authorization.status === "authorized") {
+      // Re-evaluate after this generation has safely retired before mounting the next attempt.
+      owner.acceptRequest(channel, hostId, latestRequest, freshPolicyInput);
+    }
+    return owner.getSnapshot(channel).pilotRecoveryAction ??
+      owner.recordPilotRecoveryAction(channel, action, "recovery-action-result-unavailable");
+  }, [channel, hostId, owner]);
+
+  useEffect(() => registerGroundGlassPilotRecoveryActionForTest(
+    channel,
+    hostId,
+    handlePilotRecoveryActionForTest,
+    () => {
+      const current = owner.getSnapshot(channel);
+      return current.activeHostId === hostId || (
+        current.terminalWebGlFailure &&
+        current.activeHostId === null &&
+        current.pendingHostId === null
+      );
+    },
+  ), [channel, handlePilotRecoveryActionForTest, hostId, owner]);
 
   const handleRendererMounted = useCallback((
     mountedGeneration: GroundGlassRendererGenerationIdentity,

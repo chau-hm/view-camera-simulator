@@ -84,12 +84,25 @@ export const canPublishGroundGlassFrame = (
 
 export type GroundGlassPilotFailureStage = "initialization" | "runtime";
 
+/** Runtime identity captured at the host boundary where a failed attempt is accepted. */
+export type GroundGlassPilotFailureContext = Readonly<{
+  hostId: string;
+  generation: GroundGlassRendererGenerationIdentity;
+  request: GroundGlassAcceptedRequestIdentity;
+  failedOperation: GroundGlassRenderOperationId | null;
+}>;
+
 export type GroundGlassPilotFailureRecord = Readonly<{
   channelId: string;
   pilotSessionId: string;
   retryEpoch: number;
+  hostId: string;
+  rendererGenerationId: string;
+  requestId: string;
+  sceneId: string;
   failedSceneId: string;
   stage: GroundGlassPilotFailureStage;
+  failedOperation: GroundGlassRenderOperationId | null;
   failureReason: string;
 }>;
 
@@ -218,7 +231,11 @@ export type GroundGlassRetryConsumeResult =
   | Readonly<{ status: "consumed"; retryState: GroundGlassPilotRetryState }>
   | Readonly<{
       status: "rejected";
-      reason: "not-an-authorized-webgpu-attempt" | "retry-state-identity-mismatch" | "retry-already-consumed";
+      reason:
+        | "not-an-authorized-webgpu-attempt"
+        | "retry-state-identity-mismatch"
+        | "failure-identity-mismatch"
+        | "retry-already-consumed";
     }>;
 
 /** Records an authorized initialization/runtime failure against its exact channel/session/scene attempt. */
@@ -228,6 +245,7 @@ export const consumeGroundGlassPilotRetry = (
   failedSceneId: string,
   stage: GroundGlassPilotFailureStage,
   failureReason: string,
+  failureContext: GroundGlassPilotFailureContext,
 ): GroundGlassRetryConsumeResult => {
   if (
     selection.status !== "selected" ||
@@ -238,6 +256,17 @@ export const consumeGroundGlassPilotRetry = (
     return { status: "rejected", reason: "not-an-authorized-webgpu-attempt" };
   }
   if (state.status === "consumed") return { status: "rejected", reason: "retry-already-consumed" };
+
+  if (
+    !failureContext.hostId.trim() ||
+    !failureContext.generation.generationId.trim() ||
+    !failureContext.request.requestId.trim() ||
+    failureContext.generation.channelId !== state.channelId ||
+    failureContext.request.channelId !== state.channelId ||
+    failureContext.request.sceneId !== failedSceneId
+  ) {
+    return { status: "rejected", reason: "failure-identity-mismatch" };
+  }
 
   const attempt = selection.authorizedAttempt;
   if (
@@ -253,8 +282,13 @@ export const consumeGroundGlassPilotRetry = (
     channelId: state.channelId,
     pilotSessionId: state.pilotSessionId,
     retryEpoch: state.retryEpoch,
+    hostId: failureContext.hostId,
+    rendererGenerationId: failureContext.generation.generationId,
+    requestId: failureContext.request.requestId,
+    sceneId: failureContext.request.sceneId,
     failedSceneId,
     stage,
+    failedOperation: failureContext.failedOperation,
     failureReason,
   };
 

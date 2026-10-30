@@ -1,5 +1,10 @@
 import type { GroundGlassFrameResult } from "../backend/groundGlassBackendContracts";
+import type {
+  GroundGlassPilotRecoveryAction,
+  GroundGlassPilotRecoveryActionEvidence,
+} from "../backend/groundGlassBackendDiagnostics";
 import type { GroundGlassFrameRequest } from "../groundGlassFrameRequest";
+import type { GroundGlassRttChannel } from "../groundGlassRttDimensions";
 import type { GroundGlassPresentationNodeState } from "./groundGlassPresentationNodes";
 import type { GroundGlassPhysicalCocProbeUv } from "./groundGlassPhysicalCocNodes";
 import type { GroundGlassDofRenderState } from "../groundGlassDofRenderState";
@@ -514,6 +519,7 @@ export type GroundGlassPhysicalCocProbeRequest = Readonly<{
 export type GroundGlassWebGpuTestFailurePoint =
   | "initialization-after-target"
   | "scene-render-after-submit"
+  | "queue-completion"
   | "physical-coc-after-submit"
   | "physical-validity-after-submit"
   | "aperture-far-after-submit"
@@ -564,6 +570,11 @@ export type GroundGlassWebGpuTestEvent =
       wallClockMs: number;
     }>;
 
+type GroundGlassPilotRecoveryActionRegistration = Readonly<{
+  handler: (action: GroundGlassPilotRecoveryAction) => GroundGlassPilotRecoveryActionEvidence;
+  isEligible: () => boolean;
+}>;
+
 /** Internal browser control object. It is read only by a Vite development build explicitly
  * started with VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; it is never read from URL or storage. */
 export type GroundGlassWebGpuTestControl = {
@@ -613,6 +624,15 @@ export type GroundGlassWebGpuTestControl = {
   requestGroundGlassB1BoundaryProbe?: (() => void) | undefined;
   /** Explicit test-only trigger for the adapter's current accepted request. */
   requestApertureGatherCapture?: (() => void) | undefined;
+  /** Explicit retry/new-session action, available only through the gated development seam. */
+  pilotRecoveryActionHandlers?: Partial<Record<GroundGlassRttChannel, Record<string, GroundGlassPilotRecoveryActionRegistration>>>;
+  requestGroundGlassPilotRecoveryAction?: (
+    channelId: GroundGlassRttChannel,
+    action: GroundGlassPilotRecoveryAction,
+  ) => GroundGlassPilotRecoveryActionEvidence | null;
+  /** Routes a test-only device-loss equivalent through the adapter's real loss handler. */
+  deviceLossTriggers?: Partial<Record<GroundGlassRttChannel, () => boolean>>;
+  requestGroundGlassDeviceLoss?: (channelId: GroundGlassRttChannel) => boolean;
 };
 
 declare global {
@@ -628,6 +648,72 @@ const getControl = (): GroundGlassWebGpuTestControl | null =>
   isEnabled && typeof window !== "undefined"
     ? window.__groundGlassWebGpuM3TestControl ?? null
     : null;
+
+export const registerGroundGlassPilotRecoveryActionForTest = (
+  channelId: GroundGlassRttChannel,
+  registrationId: string,
+  handler: ((action: GroundGlassPilotRecoveryAction) => GroundGlassPilotRecoveryActionEvidence) | null,
+  isEligible: () => boolean,
+): (() => void) => {
+  const control = getControl();
+  if (!control) return () => undefined;
+  const channelRegistrations = control.pilotRecoveryActionHandlers?.[channelId] ?? {};
+  if (handler) channelRegistrations[registrationId] = { handler, isEligible };
+  else delete channelRegistrations[registrationId];
+  control.pilotRecoveryActionHandlers = {
+    ...control.pilotRecoveryActionHandlers,
+    [channelId]: channelRegistrations,
+  };
+  if (handler) {
+    control.requestGroundGlassPilotRecoveryAction = (targetChannel, action) => {
+      const registrations = Object.values(control.pilotRecoveryActionHandlers?.[targetChannel] ?? {});
+      let activeRegistration: GroundGlassPilotRecoveryActionRegistration | null = null;
+      for (const registration of registrations) {
+        if (registration.isEligible()) activeRegistration = registration;
+      }
+      return activeRegistration?.handler(action) ?? null;
+    };
+  }
+  return () => {
+    const currentRegistrations = control.pilotRecoveryActionHandlers?.[channelId];
+    if (currentRegistrations?.[registrationId]?.handler !== handler) return;
+    delete currentRegistrations[registrationId];
+    if (Object.keys(currentRegistrations).length === 0) {
+      const remainingChannels = { ...control.pilotRecoveryActionHandlers };
+      delete remainingChannels[channelId];
+      control.pilotRecoveryActionHandlers = Object.keys(remainingChannels).length > 0
+        ? remainingChannels
+        : undefined;
+    }
+    if (!control.pilotRecoveryActionHandlers) {
+      control.requestGroundGlassPilotRecoveryAction = undefined;
+    }
+  };
+};
+
+export const registerGroundGlassDeviceLossTriggerForTest = (
+  channelId: GroundGlassRttChannel,
+  trigger: (() => boolean) | null,
+): (() => void) => {
+  const control = getControl();
+  if (!control) return () => undefined;
+  const triggers = control.deviceLossTriggers ?? {};
+  if (trigger) triggers[channelId] = trigger;
+  else delete triggers[channelId];
+  control.deviceLossTriggers = triggers;
+  if (trigger) {
+    control.requestGroundGlassDeviceLoss = (targetChannel) =>
+      control.deviceLossTriggers?.[targetChannel]?.() ?? false;
+  }
+  return () => {
+    if (control.deviceLossTriggers?.[channelId] !== trigger) return;
+    delete control.deviceLossTriggers[channelId];
+    if (Object.keys(control.deviceLossTriggers).length === 0) {
+      control.deviceLossTriggers = undefined;
+      control.requestGroundGlassDeviceLoss = undefined;
+    }
+  };
+};
 
 export const initialGroundGlassRawDebugForTest = (): boolean =>
   getControl()?.initialRawDebug === true;

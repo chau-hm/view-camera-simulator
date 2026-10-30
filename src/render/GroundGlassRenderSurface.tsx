@@ -80,6 +80,27 @@ export const GroundGlassRenderSurface = ({
         data-pilot-session-id={backendDiagnostics?.pilotSessionId ?? undefined}
         data-pilot-retry-status={backendDiagnostics?.retryState?.status ?? "none"}
         data-pilot-retry-epoch={backendDiagnostics?.retryState?.retryEpoch}
+        data-pilot-recovery-action={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.pilotRecoveryAction?.action
+          : undefined}
+        data-pilot-recovery-result={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.pilotRecoveryAction?.status
+          : undefined}
+        data-pilot-recovery-reason={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.pilotRecoveryAction?.reason ?? undefined
+          : undefined}
+        data-pilot-retry-failure-count={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.retryState?.failureHistory.length
+          : undefined}
+        data-pilot-failure-backend={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.lastFailure?.backend
+          : undefined}
+        data-pilot-failure-stage={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.lastFailure?.stage
+          : undefined}
+        data-pilot-failure-pass={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.lastFailure?.failedPass ?? undefined
+          : undefined}
         data-application-fallback={backendDiagnostics?.applicationFallback.status ?? "unknown"}
         data-mounted-renderer-family={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.rendererFamily : undefined}
         data-actual-execution-api={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.actualExecutionApi : undefined}

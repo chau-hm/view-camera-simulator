@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "ground-glass-m7a-recovery-report-v1",
+  "milestone": "M7A",
+  "implementationRevision": "m7a-pilot-session-recovery-r1",
+  "branch": "feature/ground-glass-m7a-pilot-recovery",
+  "baseCommit": "6f24b833566777220eccf8149f3266a40559dd86",
+  "scope": {
+    "status": "host integration implemented; M7 native lifecycle qualification remains pending",
+    "productionWebGpu": "disabled",
+    "publicGroundGlassBackend": "webgl",
+    "m6dArchitecture": "architecture-implemented for the scoped development Architecture Rise pilot",
+    "photographicQuality": "quality-unqualified",
+    "m5qFrozenThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "m5qOutcomes": {
+      "Q1": "reference-not-converged",
+      "Q2": "insufficient-support",
+      "Q3": "bounded-qualified",
+      "Q4": "insufficient-support",
+      "Q5": "reference-not-converged",
+      "Q6": "reference-not-converged",
+      "Q7": "reference-not-converged"
+    }
+  },
+  "contracts": {
+    "owner": "GroundGlassRenderHostState remains the single app-lifetime owner for channel request, generation, retry/session, cleanup, fallback, and publication state.",
+    "failureIdentity": [
+      "channelId",
+      "pilotSessionId",
+      "retryEpoch",
+      "hostId",
+      "rendererGenerationId",
+      "requestId",
+      "sceneId",
+      "stage",
+      "failedOperation",
+      "failureReason"
+    ],
+    "explicitRetry": "Available only through the gated development/test seam; reuses the consumed pilot session, requires a fresh trusted policy decision and confirmed cleanup, and creates one explicit attempt epoch.",
+    "newPilotSession": "Available only through the gated development/test seam; the app owner issues a fresh trusted session identity, then fresh policy and cleanup gates apply. Prior failure history remains intact.",
+    "rejectedAction": "Records an explicit rejection reason without resetting the consumed retry state.",
+    "webglFailure": "Initialization or runtime failure retires the generation and makes the channel terminally unavailable after confirmed cleanup. It never selects WebGPU or recursively mounts WebGL.",
+    "failureInjection": [
+      "queue-completion rejection at existing queue wait boundaries",
+      "device-loss equivalent routed through the same adapter failure callback as GPUDevice.lost"
+    ],
+    "runtimeEvidence": "Authorization, candidate policy, and preflight do not manufacture mounted renderer or actual execution identity; runtime identity remains based on adapter mount evidence."
+  },
+  "validation": {
+    "focusedUnit": {
+      "command": "npm test -- src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassBackendContracts.test.ts src/tests/unit/groundGlassBackendDiagnostics.test.ts",
+      "result": "passed",
+      "files": 3,
+      "tests": 55
+    },
+    "fullUnitAndIntegration": {
+      "command": "npm test",
+      "result": "passed",
+      "files": 299,
+      "tests": 3058
+    },
+    "static": {
+      "npm run typecheck": "passed",
+      "npm run lint": "passed",
+      "npm run check:css": "passed",
+      "npm run build": "passed",
+      "VITE_BASE_PATH=/ npm run build": "passed"
+    },
+    "nativeM7a": {
+      "project": "chrome-native-webgpu",
+      "commandFilter": "ground-glass-webgpu-failure-host.spec.ts -g M7A",
+      "result": "2 passed",
+      "runtimeIdentity": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false
+      },
+      "coverage": [
+        "one explicit retry and one authorized new pilot session; retry failure is consumed again and no automatic loop occurs",
+        "device-loss equivalent through the runtime failure and confirmed cleanup path"
+      ],
+      "deviceLossLimitation": "The test injects a device-loss equivalent through the real adapter failure callback; it does not claim to force a physical GPUDevice.lost event."
+    },
+    "nativeQueueCompletion": {
+      "project": "chrome-native-webgpu",
+      "test": "D3 controlled queue completion rejection fails the whole frame and falls back only after confirmed cleanup",
+      "result": "1 passed"
+    },
+    "nativeM5q": {
+      "project": "chrome-native-webgpu",
+      "test": "native M5Q applies frozen per-dimension R3 gates to independent optical states",
+      "result": "1 passed",
+      "thresholdRevision": "m5q-architecture-rise-r186-v3",
+      "outcomesUnchanged": true
+    },
+    "nativeM6Regressions": {
+      "project": "chrome-native-webgpu",
+      "m6M6bM6c": "6 passed",
+      "m6dOpaqueOutputContract": "1 passed"
+    },
+    "productionPreviewIsolation": {
+      "buildBasePath": "/",
+      "result": "2 passed",
+      "checks": [
+        "Architecture Rise remains on production WebGL for default and URL-shaped WebGPU requests",
+        "Anatomy candidate request remains denied in production"
+      ]
+    },
+    "broadLocalE2e": {
+      "command": "npm run ci:local:e2e",
+      "result": "stopped at the first development E2E failure after CSS, lint, typecheck, all unit/integration tests, and build passed",
+      "failure": {
+        "spec": "src/tests/e2e/architecture-foreground-compound.spec.ts",
+        "assertion": "heading Complete the Photograph was not found",
+        "attribution": "Known unrelated teaching-scene E2E failure, previously reported as reproduced on clean origin/main; this M7A change does not modify that route or teaching UI."
+      }
+    },
+    "hostedCi": "Use the GitHub Actions checks attached to the current PR head; this local evidence report does not substitute for hosted checks."
+  },
+  "preservedDecisions": {
+    "m5B1AlgorithmsChanged": false,
+    "m6PresentationOrM6dOutputChanged": false,
+    "m5qThresholdsOrOutcomesChanged": false,
+    "productionWebGlBehaviorChanged": false,
+    "publicWebGpuActivationAdded": false,
+    "m7Complete": false
+  },
+  "remainingLimitations": [
+    "M7B still owns the full native failure/lifecycle matrix, real device-loss behavior, route/remount races, cross-channel/device coverage, and final native qualification.",
+    "The native device-loss test uses a controlled equivalent, not an observed physical device-loss event.",
+    "Broad local E2E is blocked at the known unrelated Architecture + Foreground teaching heading assertion."
+  ]
+}
