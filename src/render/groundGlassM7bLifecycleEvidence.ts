@@ -46,6 +46,19 @@ export type GroundGlassM7bEvidenceEvent = Readonly<{
   generationId: string | null;
   requestId: string | null;
   detail: string | null;
+  channelId?: string | null;
+  hostId?: string | null;
+  sceneId?: string | null;
+  outcome?: "confirmed" | "failed" | "uncertain" | null;
+  stage?: "initialization" | "runtime" | null;
+  operation?: string | null;
+  reason?: string | null;
+  cause?: string | null;
+  rendererRevision?: string | null;
+  rendererFamily?: "webgpu-renderer" | "webgl-renderer" | null;
+  executionApi?: "webgpu" | "webgl2" | "webgl" | null;
+  internalFallback?: "none" | "webgl2-compatibility" | null;
+  acceptedByHost?: boolean;
 }>;
 
 export type GroundGlassM7bScenarioEvidence = Readonly<{
@@ -457,7 +470,7 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
         const scenarioEvents = Array.isArray(scenario.events) ? scenario.events : [];
         const lostEvent = scenarioEvents.find((event) => isObject(event) && event.kind === "device-lost-observed" &&
           event.generationId === identityGenerationId);
-        if (!isObject(lostEvent) || lostEvent.detail !== "test-destroy" ||
+        if (!isObject(lostEvent) || lostEvent.cause !== "test-destroy" ||
           !eventMatchesScenarioIdentity(scenario, lostEvent)) {
           errors.push(`device-loss-cause-not-distinguished:${requiredId}`);
         }

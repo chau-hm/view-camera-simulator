@@ -196,7 +196,7 @@ const passedScenario = (id: GroundGlassM7bScenarioId): GroundGlassM7bScenarioEvi
         events: [
           event(0, "attempt"), event(1, "runtime-observed"), event(2, "renderer-mounted"),
           event(3, "device-destroy-requested"), event(4, "device-lost-observed"), event(5, "failure"), eventWithFields(6, "cleanup", { outcome: "confirmed" }),
-        ].map((item) => item.kind === "device-lost-observed" ? { ...item, detail: "test-destroy" } : item),
+        ].map((item) => item.kind === "device-lost-observed" ? { ...item, cause: "test-destroy" } : item),
       };
     case "native-webgl2":
       return {
