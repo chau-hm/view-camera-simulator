@@ -623,6 +623,26 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     });
     expect(webGpuHarness.propsByGeneration.size).toBe(2);
 
+    const stateBeforeInvalidAction = owner.getSnapshot("default");
+    const activeGenerationBeforeInvalidAction = stateBeforeInvalidAction.activeGeneration;
+    const lastFailureBeforeInvalidAction = stateBeforeInvalidAction.lastFailure;
+    let invalidAction: GroundGlassPilotRecoveryActionEvidence | undefined;
+    act(() => { invalidAction = recoveryHandler("force-retry" as never); });
+    expect(invalidAction).toMatchObject({
+      action: "invalid",
+      invalidAction: "force-retry",
+      status: "rejected",
+      pilotSessionId: firstSessionId,
+      retryEpoch: 1,
+      reason: "invalid-recovery-action",
+    });
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeGeneration: activeGenerationBeforeInvalidAction,
+      retryState: stateBeforeInvalidAction.retryState,
+      lastFailure: lastFailureBeforeInvalidAction,
+    });
+    expect(webGpuHarness.propsByGeneration.size).toBe(2);
+
     let newSession: GroundGlassPilotRecoveryActionEvidence | undefined;
     act(() => { newSession = recoveryHandler("new-pilot-session"); });
     expect(newSession).toMatchObject({
@@ -1292,6 +1312,159 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     replacement.unmount();
     await act(async () => { await Promise.resolve(); });
     act(() => adapterHarness.cleanupCallbacks[1]?.());
+  });
+
+  it("rejects a stale WebGL failure after a newer request in the same mounted generation", () => {
+    const owner = new GroundGlassRenderHostState();
+    const hostId = "webgl-host";
+    const r1 = createGroundGlassRequestInput();
+    const r2 = createGroundGlassRequestInput({ camera: { focusDistanceMm: 1800 } });
+    owner.attachHost("default", hostId);
+    owner.acceptRequest("default", hostId, r1);
+    const initial = owner.getSnapshot("default");
+    const generation = initial.activeGeneration;
+    const acceptedR1 = initial.activeRequest;
+    if (!generation || !acceptedR1) throw new Error("Expected mounted WebGL generation and R1");
+    owner.markAdapterStarted("default", hostId, generation);
+    owner.reportRendererMounted("default", hostId, generation, "webgl2");
+
+    owner.acceptRequest("default", hostId, r2);
+    const updated = owner.getSnapshot("default");
+    const acceptedR2 = updated.activeRequest;
+    if (!acceptedR2) throw new Error("Expected R2 to become the active request");
+    const failureBeforeStaleResult = updated.lastFailure;
+    const staleR1Failure: Extract<GroundGlassFrameResult, { status: "failed" }> = {
+      status: "failed",
+      generation,
+      request: acceptedR1.identity,
+      failedStage: "nearGather",
+      failureReason: "delayed R1 WebGL frame failure",
+    };
+
+    expect(owner.receiveFrameResult("default", hostId, staleR1Failure)).toBe(false);
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: hostId,
+      activeGeneration: generation,
+      retiringGeneration: null,
+      terminalWebGlFailure: false,
+      activeRequest: { identity: acceptedR2.identity },
+      lastFailure: failureBeforeStaleResult,
+      frame: { current: { status: "pending", request: acceptedR2.identity } },
+    });
+
+    const r2Completion: Extract<GroundGlassFrameResult, { status: "completed" }> = {
+      status: "completed",
+      generation,
+      request: acceptedR2.identity,
+      frameId: "r2-current-frame",
+      requiredOperations: "all-completed",
+    };
+    expect(owner.receiveFrameResult("default", hostId, r2Completion)).toBe(true);
+    expect(owner.getSnapshot("default").frame.lastSuccessfullyCompleted).toMatchObject({
+      request: acceptedR2.identity,
+      generation,
+      frameId: "r2-current-frame",
+    });
+  });
+
+  it("retires a current WebGL frame failure once and becomes unavailable after confirmed cleanup", () => {
+    const owner = new GroundGlassRenderHostState();
+    const hostId = "webgl-host";
+    owner.attachHost("default", hostId);
+    owner.acceptRequest("default", hostId, createGroundGlassRequestInput());
+    const initial = owner.getSnapshot("default");
+    const generation = initial.activeGeneration;
+    const request = initial.activeRequest;
+    if (!generation || !request) throw new Error("Expected current WebGL generation and request");
+    owner.markAdapterStarted("default", hostId, generation);
+    owner.reportRendererMounted("default", hostId, generation, "webgl2");
+
+    const currentFailure: Extract<GroundGlassFrameResult, { status: "failed" }> = {
+      status: "failed",
+      generation,
+      request: request.identity,
+      failedStage: "sceneRender",
+      failureReason: "current WebGL frame failed",
+    };
+    expect(owner.receiveFrameResult("default", hostId, currentFailure)).toBe(true);
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      activeGeneration: null,
+      retiringGeneration: generation,
+      terminalWebGlFailure: true,
+      cleanupStatus: "pending",
+      lifecycleStatus: "retiring",
+      lastFailure: { backend: "webgl", stage: "runtime", reason: "current WebGL frame failed" },
+    });
+    expect(owner.receiveFrameResult("default", hostId, currentFailure)).toBe(false);
+    expect(owner.getSnapshot("default").retiringGeneration).toEqual(generation);
+
+    owner.reportAdapterDisposed("default", generation, "confirmed");
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: null,
+      activeGeneration: null,
+      pendingHostId: null,
+      retiringGeneration: null,
+      terminalWebGlFailure: true,
+      cleanupStatus: "confirmed",
+      lifecycleStatus: "unavailable",
+      mountedRuntime: { status: "unknown" },
+    });
+    expect(owner.requestSafeReplacement("default", hostId)).toBe(false);
+  });
+
+  it("ignores a delayed failure from a retired WebGPU generation after WebGL replacement", () => {
+    const owner = new GroundGlassRenderHostState();
+    const policyInput = architectureRiseWebGpuPolicyInput();
+    const authorization = policyInput.authorization;
+    if (authorization.status !== "authorized") throw new Error("Expected pilot authorization");
+    owner.beginPilotSession("default", authorization);
+    const r1 = createGroundGlassRequestInput({ rawDebug: true });
+    owner.attachHost("default", "pilot-host");
+    owner.acceptRequest("default", "pilot-host", r1, policyInput);
+    const initial = owner.getSnapshot("default");
+    const generation1 = initial.activeGeneration;
+    const request1 = initial.activeRequest;
+    if (!generation1 || !request1) throw new Error("Expected initial WebGPU generation and request");
+    owner.markAdapterStarted("default", "pilot-host", generation1);
+    owner.reportWebGpuRendererMounted(
+      "default",
+      "pilot-host",
+      generation1,
+      nativeRuntime(generation1),
+      webGpuDetails(request1),
+    );
+    owner.reportAdapterFailure("default", "pilot-host", generation1, "first WebGPU failure", "runtime", "nearGather");
+    owner.requestSafeReplacement("default", "pilot-host", policyInput);
+    owner.reportAdapterDisposed("default", generation1, "confirmed");
+
+    const replacement = owner.getSnapshot("default");
+    const generation2 = replacement.activeGeneration;
+    const request2 = replacement.activeRequest;
+    if (!generation2 || !request2) throw new Error("Expected replacement generation and request");
+    expect(generation2.generationId).not.toBe(generation1.generationId);
+    expect(replacement.selection).toMatchObject({ status: "selected", selectedBackend: "webgl" });
+    owner.markAdapterStarted("default", "pilot-host", generation2);
+    owner.reportRendererMounted("default", "pilot-host", generation2, "webgl2");
+    const beforeLateFailure = owner.getSnapshot("default");
+
+    expect(owner.receiveFrameResult("default", "pilot-host", {
+      status: "failed",
+      generation: generation1,
+      request: request1.identity,
+      failedStage: "nearGather",
+      failureReason: "late failure result from retired WebGPU generation",
+    })).toBe(false);
+    expect(owner.getSnapshot("default")).toMatchObject({
+      activeHostId: "pilot-host",
+      activeGeneration: generation2,
+      activeRequest: { identity: request2.identity },
+      retiringGeneration: null,
+      terminalWebGlFailure: false,
+      retryState: beforeLateFailure.retryState,
+      lastFailure: beforeLateFailure.lastFailure,
+      lifecycleStatus: "rendering",
+    });
   });
 
   it("uses the latest request after confirmed WebGPU cleanup and rejects late frame completions", () => {

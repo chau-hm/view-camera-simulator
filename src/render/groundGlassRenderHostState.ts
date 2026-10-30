@@ -3,6 +3,7 @@ import {
   canPublishGroundGlassFrame,
   consumeGroundGlassPilotRetry,
   createGroundGlassPilotRetryState,
+  matchesGroundGlassFrameIdentity,
   type GroundGlassFrameResult,
   type GroundGlassPilotFailureStage,
   type GroundGlassPilotFailureContext,
@@ -20,6 +21,7 @@ import type {
   GroundGlassPilotRecoveryAction,
   GroundGlassPilotRecoveryActionEvidence,
 } from "./backend/groundGlassBackendDiagnostics";
+import { isGroundGlassPilotRecoveryAction } from "./backend/groundGlassBackendDiagnostics";
 import {
   selectGroundGlassBackend,
   type GroundGlassBackendPolicyInput,
@@ -216,6 +218,32 @@ export class GroundGlassRenderHostState {
     this.states.set(channel, next);
     this.listeners.get(channel)?.forEach((listener) => listener());
     return next;
+  }
+
+  private isCurrentMountedFrameResult(
+    state: GroundGlassRenderHostChannelState,
+    channel: GroundGlassRttChannel,
+    hostId: string,
+    result: GroundGlassFrameResult,
+  ): boolean {
+    const runtime = state.mountedRuntime;
+    if (
+      state.activeHostId !== hostId ||
+      state.retiringGeneration !== null ||
+      state.lifecycleStatus === "failed" ||
+      state.lifecycleStatus === "retiring" ||
+      state.lifecycleStatus === "unavailable" ||
+      runtime.status !== "mounted" ||
+      runtime.generation.channelId !== channel ||
+      runtime.generation.generationId !== result.generation.generationId ||
+      runtime.generation.channelId !== result.generation.channelId
+    ) return false;
+
+    return matchesGroundGlassFrameIdentity(result, {
+      mounted: state.mounted,
+      activeGeneration: state.activeGeneration,
+      latestAcceptedRequest: state.activeRequest?.identity ?? null,
+    });
   }
 
   private allocateGeneration(channel: GroundGlassRttChannel): GroundGlassRendererGenerationIdentity {
@@ -561,6 +589,7 @@ export class GroundGlassRenderHostState {
     failureReason: string,
     explicitStage?: GroundGlassPilotFailureStage,
     failedPass: GroundGlassRenderOperationId | null = null,
+    failedFrame?: Extract<GroundGlassFrameResult, { status: "failed" }>,
   ): boolean => {
     let accepted = false;
     let finishTerminalCleanup = false;
@@ -568,7 +597,8 @@ export class GroundGlassRenderHostState {
       if (
         state.activeHostId !== hostId ||
         state.activeGeneration?.generationId !== generation.generationId ||
-        state.lifecycleStatus === "failed"
+        state.lifecycleStatus === "failed" ||
+        (failedFrame !== undefined && !this.isCurrentMountedFrameResult(state, channel, hostId, failedFrame))
       ) return state;
       accepted = true;
       const stage = explicitStage ?? (state.mounted ? "runtime" : "initialization");
@@ -701,6 +731,7 @@ export class GroundGlassRenderHostState {
     result: GroundGlassFrameResult,
   ): boolean => {
     const existingState = this.getSnapshot(channel);
+    if (!this.isCurrentMountedFrameResult(existingState, channel, hostId, result)) return false;
     if (
       result.status === "failed" &&
       existingState.selection?.status === "selected" &&
@@ -713,23 +744,20 @@ export class GroundGlassRenderHostState {
         result.failureReason,
         "runtime",
         result.failedStage,
+        result,
       );
     }
     let accepted = false;
     this.update(channel, (state) => {
       if (
-        state.activeHostId !== hostId ||
-        !state.mounted ||
-        state.mountedRuntime.status !== "mounted" ||
-        state.activeGeneration?.generationId !== result.generation.generationId ||
-        !state.activeRequest
+        !this.isCurrentMountedFrameResult(state, channel, hostId, result)
       ) return state;
 
       const mountedState = {
-        mounted: true,
+        mounted: state.mounted,
         activeGeneration: state.activeGeneration,
-        latestAcceptedRequest: state.activeRequest.identity,
-      } as const;
+        latestAcceptedRequest: state.activeRequest?.identity ?? null,
+      };
       if (result.status === "completed") {
         if (!canPublishGroundGlassFrame(result, mountedState)) return state;
         if (
@@ -756,13 +784,7 @@ export class GroundGlassRenderHostState {
         };
       }
 
-      const matchesCurrent =
-        result.generation.generationId === state.activeGeneration.generationId &&
-        result.generation.channelId === channel &&
-        result.request.requestId === state.activeRequest.identity.requestId &&
-        result.request.channelId === channel &&
-        result.request.sceneId === state.activeRequest.identity.sceneId;
-      if (!matchesCurrent || result.status !== "failed") return state;
+      if (result.status !== "failed") return state;
       accepted = true;
       return {
         ...state,
@@ -1058,6 +1080,13 @@ export class GroundGlassRenderHostState {
     status: "rejected";
     reason: "channel-terminally-unavailable";
   }> => {
+    if (!isGroundGlassPilotRecoveryAction(resetReason)) {
+      this.recordInvalidPilotRecoveryAction(channel, resetReason);
+      return {
+        status: "rejected",
+        reason: "invalid-recovery-action",
+      };
+    }
     const state = this.getSnapshot(channel);
     if (state.terminalWebGlFailure) {
       const result = { status: "rejected", reason: "channel-terminally-unavailable" } as const;
@@ -1112,6 +1141,29 @@ export class GroundGlassRenderHostState {
       return { ...state, pilotRecoveryAction: evidence };
     });
     if (!evidence) throw new Error("Pilot recovery action evidence was not recorded");
+    return evidence;
+  };
+
+  recordInvalidPilotRecoveryAction = (
+    channel: GroundGlassRttChannel,
+    action: unknown,
+  ): GroundGlassPilotRecoveryActionEvidence => {
+    let evidence: GroundGlassPilotRecoveryActionEvidence | null = null;
+    this.update(channel, (state) => {
+      const invalidAction = typeof action === "string"
+        ? action.slice(0, 128)
+        : action === null ? "null" : typeof action;
+      evidence = {
+        action: "invalid",
+        invalidAction,
+        status: "rejected",
+        pilotSessionId: state.retryState?.pilotSessionId ?? null,
+        retryEpoch: state.retryState?.retryEpoch ?? null,
+        reason: "invalid-recovery-action",
+      };
+      return { ...state, pilotRecoveryAction: evidence };
+    });
+    if (!evidence) throw new Error("Invalid pilot recovery action evidence was not recorded");
     return evidence;
   };
 

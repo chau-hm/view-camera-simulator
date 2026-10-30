@@ -3,6 +3,7 @@ import type {
   GroundGlassBackendPolicyInput,
   GroundGlassBackendSelection,
 } from "./groundGlassBackendPolicy";
+import { isGroundGlassPilotRecoveryAction } from "./groundGlassBackendDiagnostics";
 import type { GroundGlassRenderOperationId } from "../groundGlassPassGraph";
 
 /** requestId versions one complete immutable render-relevant input snapshot. */
@@ -64,16 +65,17 @@ export const canPublishGroundGlassFrame = (
   frame: GroundGlassFrameResult,
   current: GroundGlassMountedChannelState,
 ): boolean => {
-  if (
-    !current.mounted ||
-    !current.activeGeneration ||
-    !current.latestAcceptedRequest ||
-    frame.status !== "completed" ||
-    frame.requiredOperations !== "all-completed"
-  ) {
-    return false;
-  }
+  return frame.status === "completed" &&
+    frame.requiredOperations === "all-completed" &&
+    matchesGroundGlassFrameIdentity(frame, current);
+};
 
+/** Matches request and generation identities for either a completed or failed frame result. */
+export const matchesGroundGlassFrameIdentity = (
+  frame: GroundGlassFrameResult,
+  current: GroundGlassMountedChannelState,
+): boolean => {
+  if (!current.mounted || !current.activeGeneration || !current.latestAcceptedRequest) return false;
   return (
     frame.generation.channelId === frame.request.channelId &&
     current.activeGeneration.channelId === current.latestAcceptedRequest.channelId &&
@@ -166,6 +168,7 @@ export type GroundGlassRetryResetResult =
       status: "rejected";
       reason:
         | "retry-not-consumed"
+        | "invalid-recovery-action"
         | "channel-identity-mismatch"
         | "pilot-session-identity-mismatch"
         | "cleanup-not-confirmed"
@@ -180,6 +183,9 @@ export const authorizeGroundGlassPilotRetry = (
   resetReason: Exclude<GroundGlassPilotRetryResetReason, "none">,
   safePriorCleanup: "confirmed" | "failed" | "uncertain",
 ): GroundGlassRetryResetResult => {
+  if (!isGroundGlassPilotRecoveryAction(resetReason)) {
+    return { status: "rejected", reason: "invalid-recovery-action" };
+  }
   if (previous.status !== "consumed") return { status: "rejected", reason: "retry-not-consumed" };
   if (input.channelId !== previous.channelId) {
     return { status: "rejected", reason: "channel-identity-mismatch" };

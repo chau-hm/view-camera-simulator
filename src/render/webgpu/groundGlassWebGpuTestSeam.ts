@@ -3,6 +3,7 @@ import type {
   GroundGlassPilotRecoveryAction,
   GroundGlassPilotRecoveryActionEvidence,
 } from "../backend/groundGlassBackendDiagnostics";
+import { isGroundGlassPilotRecoveryAction } from "../backend/groundGlassBackendDiagnostics";
 import type { GroundGlassFrameRequest } from "../groundGlassFrameRequest";
 import type { GroundGlassRttChannel } from "../groundGlassRttDimensions";
 import type { GroundGlassPresentationNodeState } from "./groundGlassPresentationNodes";
@@ -572,6 +573,7 @@ export type GroundGlassWebGpuTestEvent =
 
 type GroundGlassPilotRecoveryActionRegistration = Readonly<{
   handler: (action: GroundGlassPilotRecoveryAction) => GroundGlassPilotRecoveryActionEvidence;
+  rejectInvalidAction: (action: unknown) => GroundGlassPilotRecoveryActionEvidence;
   isEligible: () => boolean;
 }>;
 
@@ -628,7 +630,7 @@ export type GroundGlassWebGpuTestControl = {
   pilotRecoveryActionHandlers?: Partial<Record<GroundGlassRttChannel, Record<string, GroundGlassPilotRecoveryActionRegistration>>>;
   requestGroundGlassPilotRecoveryAction?: (
     channelId: GroundGlassRttChannel,
-    action: GroundGlassPilotRecoveryAction,
+    action: unknown,
   ) => GroundGlassPilotRecoveryActionEvidence | null;
   /** Routes a test-only device-loss equivalent through the adapter's real loss handler. */
   deviceLossTriggers?: Partial<Record<GroundGlassRttChannel, () => boolean>>;
@@ -654,11 +656,12 @@ export const registerGroundGlassPilotRecoveryActionForTest = (
   registrationId: string,
   handler: ((action: GroundGlassPilotRecoveryAction) => GroundGlassPilotRecoveryActionEvidence) | null,
   isEligible: () => boolean,
+  rejectInvalidAction: (action: unknown) => GroundGlassPilotRecoveryActionEvidence,
 ): (() => void) => {
   const control = getControl();
   if (!control) return () => undefined;
   const channelRegistrations = control.pilotRecoveryActionHandlers?.[channelId] ?? {};
-  if (handler) channelRegistrations[registrationId] = { handler, isEligible };
+  if (handler) channelRegistrations[registrationId] = { handler, rejectInvalidAction, isEligible };
   else delete channelRegistrations[registrationId];
   control.pilotRecoveryActionHandlers = {
     ...control.pilotRecoveryActionHandlers,
@@ -671,7 +674,10 @@ export const registerGroundGlassPilotRecoveryActionForTest = (
       for (const registration of registrations) {
         if (registration.isEligible()) activeRegistration = registration;
       }
-      return activeRegistration?.handler(action) ?? null;
+      if (!activeRegistration) return null;
+      return isGroundGlassPilotRecoveryAction(action)
+        ? activeRegistration.handler(action)
+        : activeRegistration.rejectInvalidAction(action);
     };
   }
   return () => {

@@ -318,14 +318,29 @@ export type GroundGlassCleanupEvidence =
 
 export type GroundGlassPilotRecoveryAction = "explicit-retry" | "new-pilot-session";
 
+/** Runtime guard for JavaScript callers entering through the development browser seam. */
+export const isGroundGlassPilotRecoveryAction = (
+  value: unknown,
+): value is GroundGlassPilotRecoveryAction =>
+  value === "explicit-retry" || value === "new-pilot-session";
+
 /** Last development-only recovery action; it records policy outcome, not mounted runtime facts. */
-export type GroundGlassPilotRecoveryActionEvidence = Readonly<{
-  action: GroundGlassPilotRecoveryAction;
-  status: "authorized" | "rejected";
-  pilotSessionId: string | null;
-  retryEpoch: number | null;
-  reason: string | null;
-}>;
+export type GroundGlassPilotRecoveryActionEvidence =
+  | Readonly<{
+      action: GroundGlassPilotRecoveryAction;
+      status: "authorized" | "rejected";
+      pilotSessionId: string | null;
+      retryEpoch: number | null;
+      reason: string | null;
+    }>
+  | Readonly<{
+      action: "invalid";
+      invalidAction: string;
+      status: "rejected";
+      pilotSessionId: string | null;
+      retryEpoch: number | null;
+      reason: "invalid-recovery-action";
+    }>;
 
 /**
  * Common M2-facing diagnostic envelope. Runtime identity is populated only from mounted renderer

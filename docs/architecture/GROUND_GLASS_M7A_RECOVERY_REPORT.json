@@ -117,6 +117,65 @@
     },
     "hostedCi": "Use the GitHub Actions checks attached to the current PR head; this local evidence report does not substitute for hosted checks."
   },
+  "reviewFixRound1": {
+    "reviewedHead": "dd37873e7ba715e292eda45550bd38a80ca535db",
+    "findings": {
+      "staleWebGlFrameFailure": {
+        "result": "fixed",
+        "gate": "A failed frame must match the active host, mounted runtime, active generation/channel, and latest accepted request/channel/scene before terminal WebGL retirement.",
+        "adapterFailureCallbacks": "Initialization/runtime callbacks without a frame result retain the existing lifecycle path."
+      },
+      "unknownRecoveryAction": {
+        "result": "fixed",
+        "acceptedActions": ["explicit-retry", "new-pilot-session"],
+        "rejection": "Unknown runtime values are rejected at the browser seam, host handler, and pure authorization function; only the action diagnostic changes."
+      }
+    },
+    "validation": {
+      "focusedUnit": {
+        "command": "PATH=/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm test -- src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassBackendContracts.test.ts src/tests/unit/groundGlassWebGpuTestSeam.test.ts",
+        "result": "passed",
+        "files": 3,
+        "tests": 56
+      },
+      "fullUnitAndIntegration": {
+        "command": "PATH=/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm test",
+        "result": "passed",
+        "nodeVersion": "24.22.1",
+        "files": 300,
+        "tests": 3064
+      },
+      "static": {
+        "npm run typecheck": "passed",
+        "npm run lint": "passed",
+        "npm run check:css": "passed",
+        "npm run build": "passed",
+        "git diff --check": "passed"
+      },
+      "nativeRetry": {
+        "project": "chrome-native-webgpu",
+        "result": "no new native runtime evidence",
+        "detail": "The retry test did not observe a runtime-observed event within its 120-second gate, so it stopped before recovery actions ran.",
+        "runtimeIdentity": "not observed"
+      },
+      "productionPreviewIsolation": {
+        "command": "PATH=/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm run test:e2e -- --config=playwright.production.config.ts src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+        "result": "2 passed",
+        "checks": [
+          "Architecture Rise remains on WebGL for default and explicit WebGPU requests",
+          "Anatomy WebGPU candidate remains denied"
+        ]
+      },
+      "hostedCi": "Pending checks for the corrected PR head."
+    },
+    "scopePreserved": {
+      "singleGroundGlassRenderHostStateOwner": true,
+      "productionWebGlBehaviorChanged": false,
+      "publicWebGpuActivationAdded": false,
+      "m7bStarted": false,
+      "m7Complete": false
+    }
+  },
   "preservedDecisions": {
     "m5B1AlgorithmsChanged": false,
     "m6PresentationOrM6dOutputChanged": false,

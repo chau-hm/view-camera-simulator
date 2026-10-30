@@ -283,6 +283,49 @@ describe("Ground Glass pilot-session retry contract", () => {
     });
   });
 
+  it("rejects an unknown retry action before it can reset a consumed latch", () => {
+    const failure = consumeFailure();
+    if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");
+    const consumed = failure.retryState;
+    const result = authorizeGroundGlassPilotRetry(
+      consumed,
+      createWebGpuPolicyInput({ retryState: consumed }),
+      "force-retry" as never,
+      "confirmed",
+    );
+
+    expect(result).toEqual({ status: "rejected", reason: "invalid-recovery-action" });
+    expect(consumed).toMatchObject({
+      status: "consumed",
+      pilotSessionId: SYNTHETIC_PILOT_SESSION_ID,
+      retryEpoch: 0,
+      failureHistory: [{ failureReason: "synthetic attempt failure" }],
+    });
+  });
+
+  it("requires confirmed cleanup for both legal recovery actions", () => {
+    const failure = consumeFailure();
+    if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");
+    const state = failure.retryState;
+    const explicitRetry = createWebGpuPolicyInput({ retryState: state });
+    const newSession = createWebGpuPolicyInput({
+      retryState: state,
+      authorization: {
+        status: "authorized",
+        source: "application-configuration",
+        pilotSessionId: "m1-authorized-new-session",
+      },
+    });
+
+    for (const cleanup of ["failed", "uncertain"] as const) {
+      expect(authorizeGroundGlassPilotRetry(state, explicitRetry, "explicit-retry", cleanup))
+        .toEqual({ status: "rejected", reason: "cleanup-not-confirmed" });
+      expect(authorizeGroundGlassPilotRetry(state, newSession, "new-pilot-session", cleanup))
+        .toEqual({ status: "rejected", reason: "cleanup-not-confirmed" });
+    }
+    expect(state).toMatchObject({ status: "consumed", retryEpoch: 0, failureHistory: [{ failureReason: "synthetic attempt failure" }] });
+  });
+
   it("allows a deliberate new pilot session and preserves prior failure history", () => {
     const failure = consumeFailure();
     if (failure.status !== "consumed") throw new Error("Expected a consumed retry state");

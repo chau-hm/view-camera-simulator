@@ -277,6 +277,27 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
       .toHaveLength(2);
 
+    const generationBeforeInvalidAction = await glass.getAttribute("data-renderer-generation");
+    const invalidAction = await page.evaluate(() =>
+      window.__groundGlassWebGpuM3TestControl?.requestGroundGlassPilotRecoveryAction?.("default", "force-retry") ?? null,
+    );
+    expect(invalidAction).toMatchObject({
+      action: "invalid",
+      invalidAction: "force-retry",
+      status: "rejected",
+      pilotSessionId: firstSessionId,
+      retryEpoch: 1,
+      reason: "invalid-recovery-action",
+    });
+    await expect(glass).toHaveAttribute("data-pilot-recovery-action", "invalid");
+    await expect(glass).toHaveAttribute("data-pilot-recovery-result", "rejected");
+    await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
+    await expect(glass).toHaveAttribute("data-pilot-retry-epoch", "1");
+    await expect(glass).toHaveAttribute("data-pilot-retry-failure-count", "2");
+    expect(await glass.getAttribute("data-renderer-generation")).toBe(generationBeforeInvalidAction);
+    expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
+      .toHaveLength(2);
+
     const newSession = await page.evaluate(() =>
       window.__groundGlassWebGpuM3TestControl?.requestGroundGlassPilotRecoveryAction?.("default", "new-pilot-session") ?? null,
     );

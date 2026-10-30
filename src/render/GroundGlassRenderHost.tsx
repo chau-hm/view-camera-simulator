@@ -20,6 +20,7 @@ import type {
   GroundGlassPilotRecoveryAction,
   GroundGlassPilotRecoveryActionEvidence,
 } from "./backend/groundGlassBackendDiagnostics";
+import { isGroundGlassPilotRecoveryAction } from "./backend/groundGlassBackendDiagnostics";
 import type {
   GroundGlassFrameResult,
   GroundGlassRendererGenerationIdentity,
@@ -209,6 +210,9 @@ export const GroundGlassRenderHost = ({
   const handlePilotRecoveryActionForTest = useCallback((
     action: GroundGlassPilotRecoveryAction,
   ): GroundGlassPilotRecoveryActionEvidence => {
+    if (!isGroundGlassPilotRecoveryAction(action)) {
+      return owner.recordInvalidPilotRecoveryAction(channel, action);
+    }
     const current = owner.getSnapshot(channel);
     if (current.terminalWebGlFailure) {
       return owner.recordPilotRecoveryAction(channel, action, "channel-terminally-unavailable");
@@ -246,6 +250,7 @@ export const GroundGlassRenderHost = ({
         current.pendingHostId === null
       );
     },
+    (action) => owner.recordInvalidPilotRecoveryAction(channel, action),
   ), [channel, handlePilotRecoveryActionForTest, hostId, owner]);
 
   const handleRendererMounted = useCallback((
