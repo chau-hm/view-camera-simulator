@@ -537,21 +537,88 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "dispose-target";
 
 export type GroundGlassWebGpuTestEvent =
-  | Readonly<{ kind: "attempt"; generationId: string }>
+  | Readonly<{ kind: "host-attached"; channelId: string; hostId: string }>
+  | Readonly<{
+      kind: "attempt";
+      attemptId: string;
+      channelId: string;
+      generationId: string;
+      requestId: string;
+      sceneId: string;
+      rendererRevision: string;
+    }>
   | Readonly<{
       kind: "failure";
+      attemptId: string;
+      channelId: string;
       generationId: string;
+      requestId: string;
+      sceneId: string;
       stage: "initialization" | "runtime";
       operation: string;
       reason: string;
     }>
   | Readonly<{
       kind: "runtime-observed";
+      attemptId: string;
       generationId: string;
+      rendererRevision: string;
       rendererFamily: "webgpu-renderer" | "webgl-renderer";
       executionApi: "webgpu" | "webgl2" | "webgl";
     }>
-  | Readonly<{ kind: "frame-completed"; generationId: string; requestId: string }>
+  | Readonly<{
+      kind: "renderer-mounted";
+      attemptId: string;
+      channelId: string;
+      hostId: string;
+      generationId: string;
+      requestId: string;
+      sceneId: string;
+      rendererFamily: "webgpu-renderer" | "webgl-renderer";
+      executionApi: "webgpu" | "webgl2" | "webgl";
+      internalFallback: "none" | "webgl2-compatibility";
+    }>
+  | Readonly<{
+      kind: "failed-frame-result";
+      attemptId: string;
+      channelId: string;
+      hostId: string;
+      generationId: string;
+      requestId: string;
+      sceneId: string;
+      failedStage: string | null;
+      failureReason: string;
+      acceptedByHost: boolean;
+    }>
+  | Readonly<{
+      kind: "cleanup-acknowledged";
+      channelId: string;
+      hostId: string;
+      generationId: string;
+      outcome: "confirmed" | "failed" | "uncertain";
+      reason: string | null;
+    }>
+  | Readonly<{
+      kind: "device-destroy-requested";
+      attemptId: string;
+      generationId: string;
+      cause: "test-destroy";
+    }>
+  | Readonly<{
+      kind: "device-loss-equivalent-requested";
+      attemptId: string;
+      generationId: string;
+      cause: "test-callback-equivalent";
+    }>
+  | Readonly<{
+      kind: "device-lost-observed";
+      attemptId: string;
+      generationId: string;
+      cause: "test-destroy" | "runtime-loss";
+      reason: string;
+      message: string;
+    }>
+  | Readonly<{ kind: "frame-completed"; attemptId: string; generationId: string; requestId: string }>
   | Readonly<{
       kind: "gather-research";
       generationId: string;
@@ -566,10 +633,36 @@ export type GroundGlassWebGpuTestEvent =
     }>
   | Readonly<{
       kind: "cleanup";
+      attemptId: string;
       generationId: string;
       outcome: "confirmed" | "failed" | "uncertain";
       wallClockMs: number;
     }>;
+
+export type GroundGlassWebGpuTestEventWithSequence = GroundGlassWebGpuTestEvent & Readonly<{
+  sequence?: number;
+}>;
+
+export type GroundGlassWebGpuAttemptIdentity = Readonly<{
+  attemptId: string;
+  channelId: string;
+  generationId: string;
+  requestId: string;
+  sceneId: string;
+}>;
+
+export const createGroundGlassWebGpuAttemptIdentity = (
+  channelId: string,
+  generationId: string,
+  requestId: string,
+  sceneId: string,
+): GroundGlassWebGpuAttemptIdentity => ({
+  attemptId: JSON.stringify([channelId, generationId]),
+  channelId,
+  generationId,
+  requestId,
+  sceneId,
+});
 
 type GroundGlassPilotRecoveryActionRegistration = Readonly<{
   handler: (action: GroundGlassPilotRecoveryAction) => GroundGlassPilotRecoveryActionEvidence;
@@ -583,7 +676,8 @@ export type GroundGlassWebGpuTestControl = {
   /** Set the application's first accepted Ground Glass request to Raw Debug in an isolated test. */
   initialRawDebug?: boolean;
   adapterAttemptGenerations?: string[];
-  adapterEvents?: GroundGlassWebGpuTestEvent[];
+  adapterEvents?: GroundGlassWebGpuTestEventWithSequence[];
+  configuredFailurePoints?: GroundGlassWebGpuTestFailurePoint[];
   failurePoint?: GroundGlassWebGpuTestFailurePoint;
   /** Ordered controlled faults allow a runtime fault followed by a disposal fault. */
   failurePoints?: GroundGlassWebGpuTestFailurePoint[];
@@ -635,6 +729,9 @@ export type GroundGlassWebGpuTestControl = {
   /** Routes a test-only device-loss equivalent through the adapter's real loss handler. */
   deviceLossTriggers?: Partial<Record<GroundGlassRttChannel, () => boolean>>;
   requestGroundGlassDeviceLoss?: (channelId: GroundGlassRttChannel) => boolean;
+  /** Destroys only the adapter-owned test GPUDevice so its actual `lost` Promise can be observed. */
+  deviceDestroyTriggers?: Partial<Record<GroundGlassRttChannel, () => boolean>>;
+  requestGroundGlassDeviceDestroy?: (channelId: GroundGlassRttChannel) => boolean;
 };
 
 declare global {
@@ -717,6 +814,30 @@ export const registerGroundGlassDeviceLossTriggerForTest = (
     if (Object.keys(control.deviceLossTriggers).length === 0) {
       control.deviceLossTriggers = undefined;
       control.requestGroundGlassDeviceLoss = undefined;
+    }
+  };
+};
+
+export const registerGroundGlassDeviceDestroyTriggerForTest = (
+  channelId: GroundGlassRttChannel,
+  trigger: (() => boolean) | null,
+): (() => void) => {
+  const control = getControl();
+  if (!control) return () => undefined;
+  const triggers = control.deviceDestroyTriggers ?? {};
+  if (trigger) triggers[channelId] = trigger;
+  else delete triggers[channelId];
+  control.deviceDestroyTriggers = triggers;
+  if (trigger) {
+    control.requestGroundGlassDeviceDestroy = (targetChannel) =>
+      control.deviceDestroyTriggers?.[targetChannel]?.() ?? false;
+  }
+  return () => {
+    if (control.deviceDestroyTriggers?.[channelId] !== trigger) return;
+    delete control.deviceDestroyTriggers[channelId];
+    if (Object.keys(control.deviceDestroyTriggers).length === 0) {
+      control.deviceDestroyTriggers = undefined;
+      control.requestGroundGlassDeviceDestroy = undefined;
     }
   };
 };
@@ -844,20 +965,26 @@ export const forceGroundGlassWebGlCompatibilityBackendForTest = (): boolean =>
 export const forceGroundGlassPhysicalCocUnsupportedForTest = (): boolean =>
   getControl()?.forcePhysicalCocUnsupported === true;
 
-export const recordGroundGlassWebGpuAdapterAttemptForTest = (generationId: string): void => {
+export const recordGroundGlassWebGpuAdapterAttemptForTest = (
+  identity: GroundGlassWebGpuAttemptIdentity,
+  rendererRevision: string,
+): void => {
   const control = getControl();
   if (!control) return;
   control.adapterAttemptGenerations ??= [];
-  control.adapterAttemptGenerations.push(generationId);
-  control.adapterEvents ??= [];
-  control.adapterEvents.push({ kind: "attempt", generationId });
+  control.adapterAttemptGenerations.push(identity.generationId);
+  recordGroundGlassWebGpuTestEvent({
+    kind: "attempt",
+    ...identity,
+    rendererRevision,
+  });
 };
 
 export const recordGroundGlassWebGpuTestEvent = (event: GroundGlassWebGpuTestEvent): void => {
   const control = getControl();
   if (!control) return;
   control.adapterEvents ??= [];
-  control.adapterEvents.push(event);
+  control.adapterEvents.push({ ...event, sequence: control.adapterEvents.length });
 };
 
 export const consumeGroundGlassPhysicalCocProbeRequestForTest = ():
