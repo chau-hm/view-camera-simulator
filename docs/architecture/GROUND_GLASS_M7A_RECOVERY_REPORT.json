@@ -166,7 +166,14 @@
           "Anatomy WebGPU candidate remains denied"
         ]
       },
-      "hostedCi": "Pending checks for the corrected PR head."
+      "hostedCi": {
+        "runId": 41083897783,
+        "headSha": "4ef94366620bca0b7e4962a3c693677e1f2c70bc",
+        "url": "https://github.com/chau-hm/view-camera-simulator/actions/runs/41083897783",
+        "conclusion": "success",
+        "passedSteps": ["lint", "type-check", "unit-and-integration-tests"],
+        "deploy": "skipped"
+      }
     },
     "scopePreserved": {
       "singleGroundGlassRenderHostStateOwner": true,
