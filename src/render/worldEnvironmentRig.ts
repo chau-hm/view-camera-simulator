@@ -50,10 +50,10 @@ export const createWorldEnvironmentRig = (
   scene: THREE.Scene,
   renderer: THREE.WebGLRenderer,
   environment: WorldProceduralSkyGroundEnvironment,
-): WorldEnvironmentRig<THREE.WebGLCubeRenderTarget> => {
+): WorldEnvironmentRig<THREE.WebGLRenderTarget> => {
   const sourceTexture = createProceduralSkyGroundTexture(environment);
   let pmremGenerator: THREE.PMREMGenerator | undefined;
-  let renderTarget: THREE.WebGLCubeRenderTarget | undefined;
+  let renderTarget: THREE.WebGLRenderTarget | undefined;
   let failure: unknown;
 
   try {

@@ -75,6 +75,7 @@ import {
 import { runGroundGlassB1BoundaryProbe } from "./groundGlassB1BoundaryProbe";
 import {
   isGroundGlassApertureGatherResearchEnabled,
+  isGroundGlassApertureGatherR187QualificationHarnessEnabled,
   isGroundGlassApertureGatherResourceProvisioningEnabled,
   resolveGroundGlassApertureGatherSettings,
   resolveGroundGlassApertureGatherResearchEligibility,
@@ -3177,6 +3178,8 @@ export const GroundGlassWebGPUAdapter = ({
               physicalStatus: physicalDiagnostic?.status ?? "disabled",
               physicalRequestId: physicalDiagnostic?.requestId ?? null,
               expectedRendererRevision: `r${REVISION}`,
+              qualificationHarnessAuthorized:
+                isGroundGlassApertureGatherR187QualificationHarnessEnabled(latest),
             });
             apertureGatherCompletedPasses = [];
             apertureGatherFailureReason = null;
@@ -3239,7 +3242,12 @@ export const GroundGlassWebGPUAdapter = ({
                   resources.gatherCenterProvenanceTarget,
                   resources.selectedProvenanceTarget,
                   resources.b1DecisionTarget,
-                ].forEach((preflightTarget) => renderer!.initRenderTarget(preflightTarget));
+                ].forEach((preflightTarget) => {
+                  renderer!.initRenderTarget(preflightTarget);
+                  if (preflightTarget === resources.farTarget) {
+                    throwIfGroundGlassWebGpuFailureInjected("aperture-target-initialization");
+                  }
+                });
                 if (isGroundGlassM6PresentationRequest(latest)) {
                   throwIfGroundGlassWebGpuFailureInjected("m6-presentation-target-initialization");
                 }
@@ -3280,7 +3288,9 @@ export const GroundGlassWebGPUAdapter = ({
                   timingName: GroundGlassApertureGatherOperationName,
                   failurePoint?: "aperture-far-after-submit"
                     | "aperture-near-after-submit"
+                    | "aperture-provenance-after-submit"
                     | "aperture-b1-after-submit"
+                    | "aperture-decision-after-submit"
                     | "aperture-composite-after-submit",
                 ) => {
                   failedPass = operation;
@@ -3321,11 +3331,13 @@ export const GroundGlassWebGPUAdapter = ({
                     )
                   : null;
                 if (await runPass("composite", resources.selectedProvenanceTarget,
-                  resources.selectedProvenanceScene, "selectedProvenance", "selectedProvenance") === null) return;
+                  resources.selectedProvenanceScene, "selectedProvenance", "selectedProvenance",
+                  "aperture-provenance-after-submit") === null) return;
                 if (await runPass("composite", resources.b1Target,
                   resources.b1Scene, "farReconstructionB1", "b1Reconstruction", "aperture-b1-after-submit") === null) return;
                 if (await runPass("composite", resources.b1DecisionTarget,
-                  resources.b1DecisionScene, "farReconstructionB1", "b1Decision") === null) return;
+                  resources.b1DecisionScene, "farReconstructionB1", "b1Decision",
+                  "aperture-decision-after-submit") === null) return;
                 if (await runPass("composite", resources.researchCompositeTarget,
                   resources.researchCompositeScene, "researchComposite", "researchComposite", "aperture-composite-after-submit") === null) return;
                 apertureGatherStatus = "completed";
@@ -3784,6 +3796,7 @@ export const GroundGlassWebGPUAdapter = ({
                     rendererFamily: "webgpu-renderer",
                     actualExecutionApi: "webgpu",
                     internalFallback: "none",
+                    rendererRevision: `r${REVISION}`,
                     readbackOrigin,
                     sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
                     effectiveOpticalRequestFingerprint: createGroundGlassFrameRequestFingerprint(latest),
@@ -3818,6 +3831,18 @@ export const GroundGlassWebGPUAdapter = ({
                       composite: outputFormats.composite,
                       provenance: outputFormats.provenance,
                       decisions: outputFormats.decisions,
+                    },
+                    m4Input: {
+                      status: "completed",
+                      requestId: physicalDiagnostic.requestId,
+                      rendererGenerationId: generation.generationId,
+                      sceneId: latest.identity.sceneId,
+                      sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+                      targetFormats: {
+                        depth: outputFormats.depth,
+                        physical: outputFormats.physical,
+                        validity: outputFormats.validity,
+                      },
                     },
                     performance: {
                       sceneRender: captureSceneRenderTiming,
@@ -3897,6 +3922,7 @@ export const GroundGlassWebGPUAdapter = ({
                       validity,
                       depth,
                       farGatherRgba,
+                      farCpuReferenceRgba: gatherReference.farRgba,
                       nearRgba,
                       nearBeforeB1Rgba: nearBeforeRgba,
                       nearAfterB1Rgba,

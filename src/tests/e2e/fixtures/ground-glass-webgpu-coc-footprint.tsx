@@ -759,7 +759,7 @@ const createStorageHandle = async (
       const writerPass = makePass(geometry, writer);
       writerPasses.set(candidate, writerPass);
 
-      const stored = texture<"vec4">(storageAllocation.target.texture, uv());
+      const stored = texture(storageAllocation.target.texture, uv());
       const decoded = decodeStoredSample(candidate, stored);
       const decoder = createPassMaterial(
         `${candidate}:consumer-decode-material`,

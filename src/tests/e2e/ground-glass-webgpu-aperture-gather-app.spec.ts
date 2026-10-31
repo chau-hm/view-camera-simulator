@@ -1,9 +1,10 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { DataUtils, REVISION, PerspectiveCamera } from "three";
-import { gunzipSync } from "node:zlib";
+import { gzipSync, gunzipSync } from "node:zlib";
 import type {
   GroundGlassB1BoundaryProbeReadback,
   GroundGlassApertureGatherCaptureReadback,
@@ -95,6 +96,20 @@ import {
   type GroundGlassM5qPairedCapEvidence,
   type GroundGlassM5qQualification,
 } from "../../render/webgpu/groundGlassM5qQualification";
+import {
+  GROUND_GLASS_M7E_EVALUATOR_REVISION,
+  GROUND_GLASS_M7E_R187_GATHER_REVISION,
+  GROUND_GLASS_M7E_R187_B1_REVISION,
+  GROUND_GLASS_M7E_R187_THRESHOLDS,
+  evaluateGroundGlassM7eB1BoundaryProbe,
+  evaluateGroundGlassM7eNativeCapture,
+  evaluateGroundGlassM7eQuality,
+  validateGroundGlassM7eReportInventory,
+  type GroundGlassM7eCaptureEnvelope,
+  type GroundGlassM7eQualityMatrix,
+  type GroundGlassM7eRuntimeIdentity,
+  type GroundGlassM7eReportInventory,
+} from "../../render/webgpu/groundGlassM7eGatherB1Evidence";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 import {
@@ -159,8 +174,14 @@ const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const rawPilotEnabled = process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true";
 const physicalResearchEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1";
 const gatherResearchEnabled = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === "1";
-const M5_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && gatherResearchEnabled;
+const gatherR187QualificationEnabled = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION === "1";
+const physicalR187QualificationEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION === "1";
+const M5_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && gatherResearchEnabled
+  && !gatherR187QualificationEnabled && REVISION === "186";
+const M7E_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && gatherResearchEnabled
+  && gatherR187QualificationEnabled && physicalR187QualificationEnabled && REVISION === "187";
 const M4_RAW_BASELINE_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && !gatherResearchEnabled;
+const M7E_NATIVE_TEST_INVOCATION = "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true GROUND_GLASS_M7E_EVIDENCE_DIR=docs/architecture/ground-glass-m7e-r187-gather-b1 PLAYWRIGHT_WEB_SERVER_PORT=4173 npx playwright test src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'M7E native r187 requalifies|M7E r187 isolates optional M5 failures|native M5 rejects stale captures and recovers from a local gather failure'";
 
 type M5qCandidate = Readonly<{
   id: string;
@@ -1034,6 +1055,8 @@ const cpuM5rNearCapture = (capture: GroundGlassApertureGatherCaptureReadback):
 
 type M5qCaptureMatrixRun = Readonly<{
   r3: ReturnType<typeof evaluateGroundGlassApertureGatherR3>;
+  captures: Readonly<Record<GroundGlassR3QualityMode, GroundGlassApertureGatherCaptureReadback>>;
+  hostFrameResults: Readonly<Record<GroundGlassR3QualityMode, GroundGlassM7eCaptureEnvelope["hostFrameResult"]>>;
   captureSummary: readonly Readonly<{
     captureId: string;
     requestId: string;
@@ -1049,6 +1072,47 @@ type M5qCaptureMatrixRun = Readonly<{
   }> | null;
 }>;
 
+const writeM7eCaptureArtifacts = async (
+  testInfo: TestInfo,
+  envelope: GroundGlassM7eCaptureEnvelope,
+): Promise<Readonly<{ manifestPath: string; dataPath: string; sha256: string }>> => {
+  const buffers = envelope.capture.readbackBuffers;
+  if (!buffers) throw new Error(`M7E capture ${envelope.scenarioId} has no retained GPU/CPU readbacks`);
+  const fields: Array<Readonly<{ name: string; offset: number; byteLength: number; type: string }>> = [];
+  const chunks: Buffer[] = [];
+  let offset = 0;
+  for (const [name, values] of Object.entries(buffers)) {
+    const chunk = Buffer.from(values.buffer, values.byteOffset, values.byteLength);
+    fields.push({ name, offset, byteLength: chunk.byteLength, type: values.constructor.name });
+    chunks.push(chunk);
+    offset += chunk.byteLength;
+  }
+  const compressed = gzipSync(Buffer.concat(chunks), { level: 9 });
+  const sha256 = createHash("sha256").update(compressed).digest("hex");
+  const stem = envelope.scenarioId.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const evidenceDirectory = process.env.GROUND_GLASS_M7E_EVIDENCE_DIR
+    ? resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR, "captures")
+    : testInfo.outputPath("captures");
+  mkdirSync(evidenceDirectory, { recursive: true });
+  const manifestPath = resolve(evidenceDirectory, `${stem}.json`);
+  const dataPath = resolve(evidenceDirectory, `${stem}.bin.gz`);
+  const manifest = {
+    schemaVersion: 1,
+    scenarioId: envelope.scenarioId,
+    sourceCommitSha: envelope.sourceCommitSha,
+    testInvocation: envelope.testInvocation,
+    runtime: envelope.runtime,
+    hostFrameResult: envelope.hostFrameResult,
+    capture: { ...envelope.capture, readbackBuffers: null },
+    readbackPayload: { encoding: "gzip", file: `${stem}.bin.gz`, sha256, fields },
+  };
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  writeFileSync(dataPath, compressed);
+  await testInfo.attach(`${stem}.json`, { path: manifestPath, contentType: "application/json" });
+  await testInfo.attach(`${stem}.bin.gz`, { path: dataPath, contentType: "application/gzip" });
+  return { manifestPath, dataPath, sha256 };
+};
+
 const captureM5qMatrix = async (
   page: Page,
   candidate: M5qCandidate,
@@ -1056,6 +1120,7 @@ const captureM5qMatrix = async (
   tokenPrefix: string,
   mountedRendererRevision: string,
   retainSensitivityBuffers = false,
+  thresholds: GroundGlassApertureGatherR3Thresholds = M5Q_FROZEN_THRESHOLDS,
 ): Promise<M5qCaptureMatrixRun> => {
   const captures: Partial<Record<GroundGlassR3QualityMode, GroundGlassApertureGatherCaptureReadback>> = {};
   const summary: Array<{
@@ -1065,6 +1130,7 @@ const captureM5qMatrix = async (
     qualityMode: GroundGlassR3QualityMode;
     maximumRadiusPx: number;
   }> = [];
+  const hostFrameResults: Partial<Record<GroundGlassR3QualityMode, GroundGlassM7eCaptureEnvelope["hostFrameResult"]>> = {};
   let runtime: GroundGlassM5qEvidenceContext["runtime"] | null = null;
   for (const qualityMode of ["half32", "full32", "full64"] as const) {
     const capture = await captureGather(
@@ -1075,6 +1141,18 @@ const captureM5qMatrix = async (
       maximumRadiusPx,
     );
     await expectCaptureMatchesCurrentFrame(page, capture, false);
+    const pane = paneFor(page);
+    const requestId = await pane.getAttribute("data-frame-request-id");
+    const generationId = await pane.getAttribute("data-renderer-generation");
+    const lastCompletedRequestId = await pane.getAttribute("data-last-completed-request-id");
+    const frameStatus = await pane.getAttribute("data-frame-result-status");
+    hostFrameResults[qualityMode] = {
+      status: frameStatus === "completed" ? "completed" : frameStatus === "failed" ? "failed" : "pending",
+      accepted: requestId !== null && requestId === lastCompletedRequestId && requestId === capture.requestId,
+      requestId: requestId ?? "",
+      sceneId: page.url().includes("/architecture-rise") ? "architecture-rise" : "unknown",
+      rendererGenerationId: generationId ?? "",
+    };
     expect(capture.qualityMode).toBe(qualityMode);
     expect(capture.sampleCount).toBe(qualityMode === "full64" ? 64 : 32);
     expect(capture.maximumRadiusPx).toBe(maximumRadiusPx);
@@ -1099,17 +1177,28 @@ const captureM5qMatrix = async (
   if (!captures.half32 || !captures.full32 || !captures.full64 || !runtime) {
     throw new Error(`Incomplete M5Q capture matrix for ${candidate.id}`);
   }
-  const r3 = evaluateGroundGlassApertureGatherR3({
+  const captureMatrix = {
     half32: toR3Capture(captures.half32),
     full32: toR3Capture(captures.full32),
     full64: toR3Capture(captures.full64),
-  } satisfies GroundGlassApertureGatherR3CaptureMatrix, M5Q_FROZEN_THRESHOLDS);
+  } satisfies GroundGlassApertureGatherR3CaptureMatrix;
+  const r3 = evaluateGroundGlassApertureGatherR3(captureMatrix, thresholds);
   expect(r3.provenance.status, JSON.stringify(r3.provenance)).toBe("matched");
   const halfBuffers = captures.half32.readbackBuffers;
   const full32Buffers = captures.full32.readbackBuffers;
   if (!halfBuffers || !full32Buffers) throw new Error(`M5Q matrix ${candidate.id} lost retained readbacks`);
   return {
     r3,
+    captures: {
+      half32: captures.half32,
+      full32: captures.full32,
+      full64: captures.full64,
+    },
+    hostFrameResults: {
+      half32: hostFrameResults.half32!,
+      full32: hostFrameResults.full32!,
+      full64: hostFrameResults.full64!,
+    },
     captureSummary: summary,
     runtime,
     sensitivityBuffers: retainSensitivityBuffers ? {
@@ -1755,6 +1844,298 @@ test("native M5Q applies frozen per-dimension R3 gates to independent optical st
     },
   };
   await writeM5qArtifact(testInfo, "m5q-confirmatory-qualification.json", report);
+  expect(pageErrors).toEqual([]);
+});
+
+test("M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices", async ({ page, browser }, testInfo) => {
+  test.skip(!M7E_REQUIRED,
+    "Requires native-required Chrome WebGPU and the explicit r187 M5 qualification harness");
+  test.setTimeout(1_800_000);
+  expect(REVISION).toBe("187");
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const sourceCommitSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const testInvocation = M7E_NATIVE_TEST_INVOCATION;
+
+  const b1BoundaryProbe = await captureB1BoundaryProbe(page, `m7e-r187-b1-boundary-${Date.now()}`);
+  const boundaryEvaluation = evaluateGroundGlassM7eB1BoundaryProbe(b1BoundaryProbe);
+  expect(boundaryEvaluation.status, JSON.stringify(boundaryEvaluation.issues)).toBe("passed");
+  expect(b1BoundaryProbe.rendererRevision).toBe("r187");
+  const runtime: GroundGlassM7eRuntimeIdentity = {
+    rendererRevision: "r187",
+    rendererFamily: b1BoundaryProbe.rendererFamily,
+    actualExecutionApi: b1BoundaryProbe.actualExecutionApi,
+    internalFallback: b1BoundaryProbe.internalFallback,
+    applicationFallback: false,
+    browserVersion: browser.version(),
+    operatingSystem: `${process.platform} ${process.arch}`,
+    nodeVersion: process.version,
+    nativeRequired: true,
+  };
+  expect(runtime.rendererFamily).toBe("webgpu-renderer");
+  expect(runtime.actualExecutionApi).toBe("webgpu");
+  expect(runtime.internalFallback).toBe("none");
+
+  const q1Candidate = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-loupe4-rise0");
+  const q2Candidate = M5Q_CANDIDATES.find(({ id }) => id === "ar-f3200-f5p6-full-rise0");
+  const q3Candidate = M5Q_CANDIDATES.find(({ id }) => id === "ar-f5200-f5p6-full-rise0");
+  if (!q1Candidate || !q2Candidate || !q3Candidate) throw new Error("Frozen M5Q optical-state selection is incomplete");
+
+  await setM5qCandidateState(page, q1Candidate);
+  const q5Stress = await captureM5qMatrix(page, q1Candidate, 2, "m7e-q5-cap2", "r187", true, GROUND_GLASS_M7E_R187_THRESHOLDS);
+  const q1Control = await captureM5qMatrix(page, q1Candidate, 60, "m7e-q1-cap60", "r187", true, GROUND_GLASS_M7E_R187_THRESHOLDS);
+  const pairedCapEvidence = makeM5qPairedCapEvidence(q1Candidate.id, q5Stress, q1Control, 2, 60);
+  const q1Context = makeM5qEvidenceContext(
+    q1Candidate,
+    q1Control,
+    "Reused the optical-state identity selected in the historical M5Q registered-app search; this r187 run requalifies the state and does not perform a new quality-based candidate search.",
+  );
+  const q5Context = makeM5qEvidenceContext(
+    q1Candidate,
+    q5Stress,
+    "Same preselected optical state as Q1 under the frozen 2 px stress cap, paired with the 60 px control capture on r187.",
+  );
+
+  await setM5qCandidateState(page, q2Candidate);
+  const q2Run = await captureM5qMatrix(page, q2Candidate, 60, "m7e-q2-q7-cap60", "r187", false, GROUND_GLASS_M7E_R187_THRESHOLDS);
+  const q2Context = makeM5qEvidenceContext(
+    q2Candidate,
+    q2Run,
+    "Reused the preselected historical M5Q state for the r187 Q2/Q7 requalification; no quality-based candidate search was performed in this run.",
+  );
+
+  await setM5qCandidateState(page, q3Candidate);
+  const q3Run = await captureM5qMatrix(page, q3Candidate, 60, "m7e-q3-q4-cap60", "r187", false, GROUND_GLASS_M7E_R187_THRESHOLDS);
+  const q3Context = makeM5qEvidenceContext(
+    q3Candidate,
+    q3Run,
+    "Reused the preselected historical M5Q state for the r187 signed-boundary and Near evidence; no quality-based candidate search was performed in this run.",
+  );
+  const m7eQualityMatrices: readonly GroundGlassM7eQualityMatrix[] = [
+    { role: "q1-control", context: q1Context, r3: q1Control.r3, captures: {
+      half32: toR3Capture(q1Control.captures.half32), full32: toR3Capture(q1Control.captures.full32), full64: toR3Capture(q1Control.captures.full64),
+    } },
+    { role: "q5-stress", context: q5Context, r3: q5Stress.r3, captures: {
+      half32: toR3Capture(q5Stress.captures.half32), full32: toR3Capture(q5Stress.captures.full32), full64: toR3Capture(q5Stress.captures.full64),
+    }, pairedCapEvidence },
+    { role: "q2-q7", context: q2Context, r3: q2Run.r3, captures: {
+      half32: toR3Capture(q2Run.captures.half32), full32: toR3Capture(q2Run.captures.full32), full64: toR3Capture(q2Run.captures.full64),
+    } },
+    { role: "q3-q4", context: q3Context, r3: q3Run.r3, captures: {
+      half32: toR3Capture(q3Run.captures.half32), full32: toR3Capture(q3Run.captures.full32), full64: toR3Capture(q3Run.captures.full64),
+    } },
+  ];
+  const qualityEvaluation = evaluateGroundGlassM7eQuality(m7eQualityMatrices);
+  const invocation = testInvocation.includes("chrome-native-webgpu") ? testInvocation : "unknown";
+  const runCaptures = async (
+    role: string,
+    run: M5qCaptureMatrixRun,
+    radiusCapPx: number,
+  ): Promise<GroundGlassM7eCaptureEnvelope[]> => {
+    const envelopes: GroundGlassM7eCaptureEnvelope[] = [];
+    for (const mode of ["half32", "full32", "full64"] as const) {
+      const scenarioId = `${role}-${mode}`;
+      const envelope: GroundGlassM7eCaptureEnvelope = {
+        scenarioId,
+        capture: run.captures[mode],
+        runtime,
+        sourceCommitSha,
+        testInvocation: invocation,
+        supportingArtifact: `captures/${scenarioId}.json;captures/${scenarioId}.bin.gz`,
+        hostFrameResult: run.hostFrameResults[mode],
+      };
+      const captureEvaluation = evaluateGroundGlassM7eNativeCapture(envelope, radiusCapPx);
+      expect(captureEvaluation.status, `${scenarioId}: ${JSON.stringify(captureEvaluation.issues)}`).toBe("passed");
+      await writeM7eCaptureArtifacts(testInfo, envelope);
+      envelopes.push(envelope);
+    }
+    return envelopes;
+  };
+  const captureEnvelopes = [
+    ...await runCaptures("q5-stress-cap2", q5Stress, 2),
+    ...await runCaptures("q1-control-cap60", q1Control, 60),
+    ...await runCaptures("q2-q7-cap60", q2Run, 60),
+    ...await runCaptures("q3-q4-cap60", q3Run, 60),
+  ];
+  expect(new Set(captureEnvelopes.map(({ capture }) => capture.captureId)).size).toBe(12);
+  expect(new Set(captureEnvelopes.map(({ capture }) => capture.rendererGenerationId)).size).toBe(1);
+  const scenarios = captureEnvelopes.map((capture) => ({ id: capture.scenarioId, status: "passed" as const, capture }));
+  const reportInventory: GroundGlassM7eReportInventory = {
+    schemaVersion: 1,
+    reportId: "ground-glass-m7e-r187-gather-b1",
+    evaluatorRevision: GROUND_GLASS_M7E_EVALUATOR_REVISION,
+    sourceCommitSha,
+    runtime,
+    declaredCounts: { passed: 12, failed: 0, blocked: 0, "not-run": 0 },
+    scenarios,
+    b1BoundaryProbe,
+    m3RendererSelectionAuthority: "m3-raw-pilot",
+    m5RendererAttemptAuthorized: false,
+    m5GatherEvidenceStatus: "research-only",
+    m5B1EvidenceStatus: "research-only",
+    m6R187Authorized: false,
+    productionWebGpuEnabled: false,
+  };
+  expect(validateGroundGlassM7eReportInventory(reportInventory)).toEqual([]);
+  const sanitizedInventory = {
+    ...reportInventory,
+    scenarios: reportInventory.scenarios.map(({ capture, ...scenario }) => ({
+      ...scenario,
+      capture: capture ? { ...capture, capture: { ...capture.capture, readbackBuffers: null } } : undefined,
+    })),
+  };
+  const evidenceReport = {
+    schemaVersion: 1,
+    reportId: "ground-glass-m7e-r187-gather-b1",
+    stage: "native-r187-registered-app-m5-requalification",
+    evaluatorRevision: GROUND_GLASS_M7E_EVALUATOR_REVISION,
+    sourceCommitSha,
+    testInvocation,
+    runtime,
+    compatibilityEvidenceRevisions: {
+      apertureGather: GROUND_GLASS_M7E_R187_GATHER_REVISION,
+      farReconstructionB1: GROUND_GLASS_M7E_R187_B1_REVISION,
+      q1ToQ7: GROUND_GLASS_M7E_R187_THRESHOLDS.revision,
+      frozenHistoricalThresholdSource: GROUND_GLASS_M7E_R187_THRESHOLDS.sourceThresholdRevision,
+    },
+    qualification: qualityEvaluation,
+    thresholds: GROUND_GLASS_M7E_R187_THRESHOLDS,
+    b1BoundaryProbe: {
+      status: boundaryEvaluation.status,
+      observedCaseIds: boundaryEvaluation.observedCaseIds,
+      issues: boundaryEvaluation.issues,
+      readback: b1BoundaryProbe,
+    },
+    inventory: sanitizedInventory,
+    supportingArtifacts: captureEnvelopes.map((capture) => ({
+      scenarioId: capture.scenarioId,
+      files: capture.supportingArtifact,
+      sha256: createHash("sha256").update(readFileSync(resolve(
+        process.env.GROUND_GLASS_M7E_EVIDENCE_DIR
+          ? resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR, "captures")
+          : testInfo.outputPath("captures"),
+        `${capture.scenarioId.replace(/[^a-zA-Z0-9._-]/g, "_")}.bin.gz`,
+      ))).digest("hex"),
+    })),
+    lifecycleAndPolicy: {
+      m4InputIdentityMatched: true,
+      rawRttPreserved: true,
+      m5LifecycleFailureScenarios: "reported by the separate native M7E lifecycle test",
+      m5AndB1RemainResearchOnly: true,
+      m6R187Authorized: false,
+      productionWebGpuEnabled: false,
+    },
+    historicalM5qR186ReportPreserved: true,
+  };
+  await writeM5qArtifact(testInfo, "ground-glass-m7e-r187-gather-b1-report.json", evidenceReport);
+  if (process.env.GROUND_GLASS_M7E_EVIDENCE_DIR) {
+    const reportDirectory = resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR);
+    mkdirSync(reportDirectory, { recursive: true });
+    writeFileSync(resolve(reportDirectory, "GROUND_GLASS_M7E_R187_GATHER_B1_REPORT.json"), JSON.stringify(evidenceReport, null, 2));
+    writeFileSync(resolve(reportDirectory, "b1-boundary-probe.json"), JSON.stringify(b1BoundaryProbe, null, 2));
+  }
+  expect(pageErrors).toEqual([]);
+});
+
+test("M7E r187 isolates optional M5 failures from the completed M3 Raw frame", async ({ page }, testInfo) => {
+  test.skip(!M7E_REQUIRED,
+    "Requires native-required r187 M3/M4/M5 qualification gates");
+  test.setTimeout(900_000);
+  expect(REVISION).toBe("187");
+  const pageErrors = await prepareNativeM5F8Page(page);
+  const pane = paneFor(page);
+  const pilot = pilotFor(page);
+  const failurePoints = [
+    "aperture-target-initialization",
+    "aperture-provenance-after-submit",
+    "aperture-far-after-submit",
+    "aperture-near-after-submit",
+    "aperture-b1-after-submit",
+    "aperture-decision-after-submit",
+    "aperture-composite-after-submit",
+    "aperture-readback",
+  ] as const;
+  const observed = [] as Array<Readonly<Record<string, unknown>>>;
+  for (const failurePoint of failurePoints) {
+    const token = `m7e-failure-${failurePoint}-${Date.now()}`;
+    await page.evaluate(({ injectedFailurePoint, captureToken }) => {
+      const control = window.__groundGlassWebGpuM3TestControl;
+      if (!control?.requestApertureGatherCapture) throw new Error("M5 capture trigger unavailable");
+      control.failurePoint = injectedFailurePoint;
+      control.apertureGatherCaptureRequest = {
+        token: captureToken,
+        qualityMode: "half32",
+        retainReadbackBuffers: true,
+      };
+      control.apertureGatherCaptureReadback = null;
+      control.requestApertureGatherCapture();
+    }, { injectedFailurePoint: failurePoint, captureToken: token });
+    await expect(pilot).toHaveAttribute("data-aperture-gather-status", "failed", { timeout: 120_000 });
+    await waitForCurrentFrame(page);
+    const state = await page.evaluate(() => {
+      const surface = document.querySelector<HTMLElement>('[data-testid="ground-glass-rtt"]');
+      const gather = document.querySelector<HTMLElement>("[data-aperture-gather-status]");
+      return {
+        requestId: surface?.getAttribute("data-frame-request-id") ?? null,
+        lastCompletedRequestId: surface?.getAttribute("data-last-completed-request-id") ?? null,
+        frameResultStatus: surface?.getAttribute("data-frame-result-status") ?? null,
+        rendererFamily: surface?.getAttribute("data-mounted-renderer-family") ?? null,
+        executionApi: surface?.getAttribute("data-actual-execution-api") ?? null,
+        applicationFallback: surface?.getAttribute("data-application-fallback") ?? null,
+        rawContentful: surface?.getAttribute("data-rtt-raw-contentful") ?? null,
+        rawVariance: Number(surface?.getAttribute("data-rtt-raw-variance")),
+        rawNonBackgroundPixels: Number(surface?.getAttribute("data-rtt-raw-non-background")),
+        gatherStatus: gather?.getAttribute("data-aperture-gather-status") ?? null,
+        gatherFailureReason: gather?.getAttribute("data-aperture-gather-failure-reason") ?? null,
+        publishedCaptureToken: window.__groundGlassWebGpuM3TestControl?.apertureGatherCaptureReadback?.token ?? null,
+      };
+    });
+    expect(state.requestId).toBe(state.lastCompletedRequestId);
+    expect(state.frameResultStatus).toBe("completed");
+    expect(state.rendererFamily).toBe("webgpu-renderer");
+    expect(state.executionApi).toBe("webgpu");
+    expect(state.applicationFallback).not.toBe("activated");
+    expect(state.rawContentful).toBe("true");
+    expect(state.rawVariance).toBeGreaterThan(0);
+    expect(state.rawNonBackgroundPixels).toBeGreaterThan(0);
+    expect(state.gatherStatus).toBe("failed");
+    expect(state.gatherFailureReason).toContain(failurePoint);
+    expect(state.publishedCaptureToken).not.toBe(token);
+    observed.push({ failurePoint, ...state });
+  }
+  const recoveredCapture = await captureGather(page, "half32", `m7e-recovered-${Date.now()}`, false);
+  await expectCaptureMatchesCurrentFrame(page, recoveredCapture, false);
+  await expect(pilot).toHaveAttribute("data-aperture-gather-status", "completed");
+  const sourceCommitSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const lifecycleEvidence = {
+    schemaVersion: 1,
+    status: "passed",
+    rendererRevision: "r187",
+    rendererFamily: "webgpu-renderer",
+    actualExecutionApi: "webgpu",
+    internalFallback: "none",
+    scenarioId: "m7e-r187-m5-failure-isolation",
+    sceneSourceRevision: recoveredCapture.sceneSourceRevision,
+    sourceCommitSha,
+    testInvocation: M7E_REQUIRED ? M7E_NATIVE_TEST_INVOCATION : "historical-r186-confirmatory invocation outside M7E provenance",
+    runtime: { browserVersion: page.context().browser()?.version() ?? "unknown", operatingSystem: `${process.platform} ${process.arch}`, nodeVersion: process.version },
+    acceptedRequest: { requestId: recoveredCapture.requestId, channelId: recoveredCapture.channelId, rendererGenerationId: recoveredCapture.rendererGenerationId },
+    failurePointCount: observed.length,
+    failures: observed,
+    recoveryCaptureId: recoveredCapture.captureId,
+    recoveryRequestId: recoveredCapture.requestId,
+    rawRttAfterRecovery: await pane.getAttribute("data-rtt-raw-contentful"),
+    applicationFallbackAfterRecovery: await pane.getAttribute("data-application-fallback"),
+    adapterCleanupAuthority: "M7C-single-owner-adapter-lifecycle",
+  };
+  await testInfo.attach("ground-glass-m7e-r187-m5-failure-isolation.json", {
+    body: JSON.stringify(lifecycleEvidence, null, 2),
+    contentType: "application/json",
+  });
+  if (process.env.GROUND_GLASS_M7E_EVIDENCE_DIR) {
+    const reportDirectory = resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR);
+    mkdirSync(reportDirectory, { recursive: true });
+    writeFileSync(resolve(reportDirectory, "m5-failure-isolation.json"), JSON.stringify(lifecycleEvidence, null, 2));
+  }
   expect(pageErrors).toEqual([]);
 });
 
@@ -4518,8 +4899,9 @@ test("native M3/M4 Raw baseline records frame and physical pass timing with M5 d
 });
 
 test("native M5 rejects stale captures and recovers from a local gather failure", async ({ page }, testInfo) => {
-  test.skip(!M5_REQUIRED,
-    "Requires headed native WebGPU and the M3/M4/M5 development research gates");
+  test.skip(!M5_REQUIRED && !M7E_REQUIRED,
+    "Requires native WebGPU and the revision-matched M3/M4/M5 qualification gates");
+  if (M7E_REQUIRED) expect(REVISION).toBe("187");
   test.setTimeout(600_000);
   await page.addInitScript(() => {
     window.__groundGlassWebGpuM3TestControl = {};
@@ -4579,6 +4961,20 @@ test("native M5 rejects stale captures and recovers from a local gather failure"
   await expect(pilotFor(page)).toHaveAttribute("data-aperture-gather-request-id", latestRequestId ?? "");
   await expectCaptureMatchesCurrentFrame(page, currentCapture!);
   await waitForCurrentFrame(page);
+  const acceptedCurrentFrame = await page.evaluate(() => {
+    const surface = document.querySelector<HTMLElement>('[data-testid="ground-glass-rtt"]');
+    return {
+      requestId: surface?.getAttribute("data-frame-request-id") ?? null,
+      lastCompletedRequestId: surface?.getAttribute("data-last-completed-request-id") ?? null,
+      status: surface?.getAttribute("data-frame-result-status") ?? null,
+      rendererGenerationId: surface?.getAttribute("data-renderer-generation") ?? null,
+      rendererFamily: surface?.getAttribute("data-mounted-renderer-family") ?? null,
+      actualExecutionApi: surface?.getAttribute("data-actual-execution-api") ?? null,
+    };
+  });
+  expect(acceptedCurrentFrame.requestId).toBe(acceptedCurrentFrame.lastCompletedRequestId);
+  expect(acceptedCurrentFrame.status).toBe("completed");
+  expect(acceptedCurrentFrame.requestId).toBe(currentCapture?.requestId);
   expect(nextFocus).not.toBe(focusCurrent);
 
   await page.evaluate(() => {
@@ -4624,6 +5020,20 @@ test("native M5 rejects stale captures and recovers from a local gather failure"
   await expect.poll(() => pane.getAttribute("data-frame-request-id")).not.toBe(requestId);
   await expectFreshM5Frame(page);
 
+  const unmountStaleToken = `m5-unmount-stale-${Date.now()}`;
+  await page.evaluate((token) => {
+    const control = window.__groundGlassWebGpuM3TestControl;
+    if (!control?.requestApertureGatherCapture) throw new Error("M5 capture trigger unavailable");
+    control.holdApertureGatherReadback = true;
+    control.apertureGatherCaptureRequest = { token, qualityMode: "half16" };
+    control.apertureGatherCaptureReadback = null;
+    control.requestApertureGatherCapture();
+  }, unmountStaleToken);
+  await expect.poll(() => page.evaluate(() =>
+    window.__groundGlassWebGpuM3TestControl?.apertureGatherReadbackBarrierReached === true,
+  ), { timeout: 120_000 }).toBe(true);
+  const unmountHeldRequestId = await pane.getAttribute("data-frame-request-id");
+
   const retiredAdapter = await pilotFor(page).elementHandle();
   const retiredCanvas = await pilotFor(page).locator("canvas").elementHandle();
   if (!retiredAdapter || !retiredCanvas) throw new Error("M5 adapter/canvas handles are unavailable for SPA cleanup proof");
@@ -4632,6 +5042,7 @@ test("native M5 rejects stale captures and recovers from a local gather failure"
   await page.getByRole("link", { name: "All Scenes", exact: true }).click();
   await expect(page).toHaveURL(/\/scenes$/);
   await expect.poll(() => page.evaluate((element) => !element.isConnected, retiredCanvas)).toBe(true);
+  await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.releaseApertureGatherReadback?.());
   await expect.poll(() => retiredAdapter.getAttribute("data-cleanup-outcome"), { timeout: 120_000 })
     .toBe("confirmed");
   const cleanupEvent = await page.evaluate((generationId) =>
@@ -4644,10 +5055,38 @@ test("native M5 rejects stale captures and recovers from a local gather failure"
   expect(cleanupEvent.outcome).toBe("confirmed");
   expect(Number.isFinite(cleanupEvent.wallClockMs)).toBe(true);
   expect(cleanupEvent.wallClockMs).toBeGreaterThanOrEqual(0);
+  await expect.poll(() => page.evaluate((token) =>
+    window.__groundGlassWebGpuM3TestControl?.apertureGatherCaptureReadback?.token === token,
+  unmountStaleToken), { timeout: 20_000 }).toBe(false);
+  const m5LifecycleCapture = {
+    status: "passed",
+    rendererRevision: `r${REVISION}`,
+    rendererFamily: currentCapture?.rendererFamily,
+    actualExecutionApi: currentCapture?.actualExecutionApi,
+    internalFallback: currentCapture?.internalFallback,
+    sceneSourceRevision: currentCapture?.sceneSourceRevision,
+    sourceCommitSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    testInvocation: M7E_REQUIRED ? M7E_NATIVE_TEST_INVOCATION : "historical-r186-confirmatory invocation outside M7E provenance",
+    runtime: { browserVersion: page.context().browser()?.version() ?? "unknown", operatingSystem: `${process.platform} ${process.arch}`, nodeVersion: process.version },
+    acceptedFrame: acceptedCurrentFrame,
+    acceptedCapture: { requestId: currentCapture?.requestId, channelId: currentCapture?.channelId, rendererGenerationId: currentCapture?.rendererGenerationId },
+    sourceScene: "architecture-rise",
+    heldReadbackRequestId: unmountHeldRequestId,
+    retiredGenerationId,
+    cleanupOutcome: cleanupEvent.outcome,
+    unmountedBeforeReadbackRelease: true,
+    staleReadbackPublished: false,
+    evidenceBoundary: "M5 diagnostics only; M7C remains host lifecycle authority",
+  };
   await testInfo.attach("ground-glass-m5-native-cleanup-timing.json", {
-    body: JSON.stringify(cleanupEvent, null, 2),
+    body: JSON.stringify({ cleanupEvent, m5LifecycleCapture }, null, 2),
     contentType: "application/json",
   });
+  if (M7E_REQUIRED && process.env.GROUND_GLASS_M7E_EVIDENCE_DIR) {
+    const reportDirectory = resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR);
+    mkdirSync(reportDirectory, { recursive: true });
+    writeFileSync(resolve(reportDirectory, "m5-lifecycle-capture.json"), JSON.stringify({ cleanupEvent, m5LifecycleCapture }, null, 2));
+  }
   await page.locator('article.scene-feature-card a.btn--primary[href="/simulator/free/architecture-rise"]').click();
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-rise$/);
   await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 120_000 });
