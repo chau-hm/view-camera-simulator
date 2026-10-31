@@ -526,9 +526,11 @@ const createControlledKernelExpectations = (input: Readonly<{
   const positive = candidates.find((candidate) => candidate.cpu.signedCoCDiameterMm > 0);
   const negative = candidates.find((candidate) => candidate.cpu.signedCoCDiameterMm < 0);
   if (!positive || !negative) throw new Error("Canonical near-focus references did not produce both signed CoC sides");
-  const stableOverflowCandidates = candidates.filter((candidate) =>
-    Math.abs(candidate.distance / conjugateObjectDistanceMm - 1) >= 0.05,
-  );
+  const stableOverflowCandidates = [0.5, 2].map((focusRatio) => {
+    const distance = conjugateObjectDistanceMm * focusRatio;
+    const point = controlledPointMm(referenceOverride, distance);
+    return { distance, point, cpu: physicalOracleForOverride(referenceOverride, point) };
+  }).filter((candidate) => candidate.cpu.valid);
   const positiveOverflowSource = stableOverflowCandidates.find((candidate) => candidate.cpu.signedCoCDiameterMm > 0);
   const negativeOverflowSource = stableOverflowCandidates.find((candidate) => candidate.cpu.signedCoCDiameterMm < 0);
   if (!positiveOverflowSource || !negativeOverflowSource) {
@@ -575,8 +577,8 @@ const createControlledKernelExpectations = (input: Readonly<{
     defaultAperture / nearLimitScale,
   );
   addCase("storage-near-binary16-maximum", nearLimit, stableReference.point);
-  // Keep the storage-range controls away from the separate near-U=f vectors:
-  // huge pupil scaling amplifies tiny conjugate-distance precision differences.
+  // Keep storage-range controls well away from the focused image plane. Huge
+  // pupil scaling amplifies float32 cancellation near the conjugate boundary.
   const positiveOverflow = scaleApertureForSignedCoC(positiveOverflowSource, 66000);
   const negativeOverflow = scaleApertureForSignedCoC(negativeOverflowSource, 66000);
   addCase("storage-overrange-positive-coc", positiveOverflow.override, positiveOverflow.point);
