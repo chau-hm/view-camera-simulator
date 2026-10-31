@@ -69,6 +69,8 @@ type M7dCaptureFixture = {
   };
   acceptedHostFrameResult: Record<string, unknown>;
   hostFrameEventsForReadback: Record<string, unknown>[];
+  depthDerivedExactFocalReadback: Record<string, unknown>;
+  depthDerivedExactFocalHostFrameResult: Record<string, unknown>;
   probeSummary: Record<string, unknown>;
   controlledKernelReferences: Array<{
     id: string;
@@ -459,6 +461,17 @@ const captureFixture = (): M7dCaptureFixture => {
     samples,
     controlledKernelCases,
   };
+  const depthDerivedExactFocalReadback = {
+    ...probeReadback,
+    token: "m4-depth-exact-1",
+    requestId: "request-43",
+    samples: [samples.find((sample) => sample.id === "depth-derived-canonical-u-f-no-parallel-authority")!],
+  };
+  const depthDerivedExactFocalHostFrameResult = {
+    ...acceptedHostFrameResult,
+    requestId: "request-43",
+    latestAcceptedRequestId: "request-43",
+  };
   return {
     browserVersion: "Chrome 156.0.0.0",
     operatingSystem: "darwin arm64",
@@ -489,6 +502,8 @@ const captureFixture = (): M7dCaptureFixture => {
     probeReadback,
     acceptedHostFrameResult,
     hostFrameEventsForReadback: [acceptedHostFrameResult],
+    depthDerivedExactFocalReadback,
+    depthDerivedExactFocalHostFrameResult,
     probeSummary: { requestId: "request-42" },
     controlledKernelReferences,
   };
@@ -497,8 +512,8 @@ const captureFixture = (): M7dCaptureFixture => {
 describe("M7D r187 Physical CoC evidence evaluator", () => {
   it("accepts a complete native capture with independently paired CPU, storage, scene, and host evidence", () => {
     const result = evaluateGroundGlassM7dPhysicalCocCapture(captureFixture());
+    expect(result.status, JSON.stringify(result.issues)).toBe("passed");
     expect(result).toMatchObject({
-      status: "passed",
       evidenceRevision: GROUND_GLASS_M7D_PHYSICAL_COC_EVIDENCE_REVISION,
       requiredKernelCaseCount: 17,
       observedKernelCaseCount: 17,

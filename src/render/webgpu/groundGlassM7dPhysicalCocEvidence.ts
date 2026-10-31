@@ -259,10 +259,20 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     }
   }
 
-  const exactDepth = sampleById.get("depth-derived-canonical-u-f-no-parallel-authority");
-  if (!exactDepth) {
-    issue("missing-probe", "probeReadback.samples.depth-derived-canonical-u-f-no-parallel-authority", "depth-derived focal-boundary control is required");
+  const exactDepthReadback = record(capture.depthDerivedExactFocalReadback);
+  const exactDepthSamples = Array.isArray(exactDepthReadback?.samples)
+    ? exactDepthReadback.samples.map(record)
+    : [];
+  const exactDepth = exactDepthSamples[0] ?? null;
+  if (!exactDepthReadback || !exactDepth || exactDepth.id !== "depth-derived-canonical-u-f-no-parallel-authority") {
+    issue("missing-probe", "depthDerivedExactFocalReadback", "separate depth-derived focal-boundary control is required");
   } else {
+    if (exactDepthReadback.sceneId !== activeReadback.sceneId ||
+        exactDepthReadback.channelId !== activeReadback.channelId ||
+        exactDepthReadback.rendererGenerationId !== activeReadback.rendererGenerationId ||
+        exactDepthReadback.actualExecutionApi !== "webgpu" || exactDepthReadback.internalFallback !== "none") {
+      issue("request-identity", "depthDerivedExactFocalReadback", "focal-boundary readback must belong to the same current native generation and channel");
+    }
     const confidence = record(exactDepth.depthConfidence);
     if (!confidence || exactDepth.controlledObjectPoint !== false || confidence.status !== "depth-limited" ||
         confidence.scope !== "probe-only" || confidence.canonicalExpectedBranch !== "parallel-limit") {
@@ -271,6 +281,15 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
       exactDepth.focalBranchCode === 2 || confidence.kernelSelectedBranch === "parallel-limit") {
       issue("focal-branch", "probeReadback.samples.depth-derived-canonical-u-f-no-parallel-authority", "rounded depth cannot establish the exact parallel-image limit");
     }
+  }
+  const exactDepthHostFrame = record(capture.depthDerivedExactFocalHostFrameResult);
+  if (!exactDepthReadback || !exactDepthHostFrame || exactDepthHostFrame.kind !== "host-frame-result" ||
+      exactDepthHostFrame.acceptedByHost !== true || exactDepthHostFrame.requestId !== exactDepthReadback.requestId ||
+      exactDepthHostFrame.channelId !== exactDepthReadback.channelId || exactDepthHostFrame.sceneId !== exactDepthReadback.sceneId ||
+      exactDepthHostFrame.generationId !== exactDepthReadback.rendererGenerationId ||
+      exactDepthHostFrame.latestAcceptedRequestId !== exactDepthReadback.requestId ||
+      exactDepthHostFrame.activeGenerationId !== exactDepthReadback.rendererGenerationId) {
+    issue("host-frame-acceptance", "depthDerivedExactFocalHostFrameResult", "depth-boundary readback must have its own current host-accepted frame result");
   }
 
   const unreferenced = sampleById.get("unreferenced-visible-surface-pixel");

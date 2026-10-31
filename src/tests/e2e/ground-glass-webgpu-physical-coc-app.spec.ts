@@ -669,7 +669,6 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
   };
   const probes = [
     ...realSceneProbes,
-    depthDerivedExactFocalProbe,
     unreferencedVisibleProbe,
     ...createControlledProbes({
       optics,
@@ -755,24 +754,6 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
     scope: "probe-only",
     reason: "no-independent-reference",
   });
-
-  const depthDerivedExactFocalSample = readback.samples.find(
-    (sample) => sample.id === "depth-derived-canonical-u-f-no-parallel-authority",
-  );
-  if (!depthDerivedExactFocalSample) throw new Error("Depth-derived exact-U=f probe was not returned");
-  expect(depthDerivedExactFocalSample.controlledObjectPoint).toBe(false);
-  expect(depthDerivedExactFocalSample.depthConfidence).toMatchObject({
-    status: "depth-limited",
-    scope: "probe-only",
-    evidence: "paired-analytic-surface-reference",
-    canonicalExpectedBranch: "parallel-limit",
-  });
-  expect(depthDerivedExactFocalSample.depthConfidence.status).toBe("depth-limited");
-  if (depthDerivedExactFocalSample.depthConfidence.status !== "not-assessed") {
-    expect(Math.abs(depthDerivedExactFocalSample.depthConfidence.canonicalUMinusFmm)).toBeLessThan(1e-7);
-    expect(depthDerivedExactFocalSample.depthConfidence.kernelSelectedBranch).not.toBe("parallel-limit");
-  }
-  expect(depthDerivedExactFocalSample.focalBranchCode).not.toBe(2);
 
   const backgroundSamples = readback.samples.filter((sample) => sample.id.startsWith("background-"));
   expect(backgroundSamples).toHaveLength(3);
@@ -1096,6 +1077,62 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
   expect(summary.maximumKernelCoCErrorMm).toBeLessThanOrEqual(0.0005);
   expect(summary.maximumStorageCoCErrorMm).toBeLessThanOrEqual(0.06);
 
+  const depthFocalRequestIdBefore = await pane.getAttribute("data-frame-request-id");
+  const depthFocalToken = `m4-depth-exact-${Date.now()}`;
+  await page.evaluate((requested) => {
+    const control = window.__groundGlassWebGpuM3TestControl;
+    if (!control) throw new Error("The development-only Ground Glass test seam is unavailable");
+    control.physicalCocProbeReadback = null;
+    control.physicalCocProbeRequest = { token: requested.token, probes: [requested.probe] };
+  }, { token: depthFocalToken, probe: depthDerivedExactFocalProbe });
+  await aperture.getByRole("radio", { name: "f/8", exact: true }).check();
+  await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+    .not.toBe(depthFocalRequestIdBefore);
+  await waitForCompletedFrame(page);
+  await expect.poll(async () => (await readProbeResult(page, depthFocalToken))?.token ?? null, {
+    timeout: 90_000,
+  }).toBe(depthFocalToken);
+  const depthDerivedExactFocalReadback = await readProbeResult(page, depthFocalToken);
+  const depthDerivedExactFocalSample = depthDerivedExactFocalReadback?.samples[0];
+  if (!depthDerivedExactFocalReadback || !depthDerivedExactFocalSample) {
+    throw new Error("Depth-derived exact-U=f probe was not returned");
+  }
+  expect(depthDerivedExactFocalReadback.requestId).toBe(await pane.getAttribute("data-frame-request-id"));
+  expect(depthDerivedExactFocalSample.id).toBe(depthDerivedExactFocalProbe.id);
+  expect(depthDerivedExactFocalSample.controlledObjectPoint).toBe(false);
+  expect(depthDerivedExactFocalSample.depthConfidence).toMatchObject({
+    status: "depth-limited",
+    scope: "probe-only",
+    evidence: "paired-analytic-surface-reference",
+    canonicalExpectedBranch: "parallel-limit",
+  });
+  if (depthDerivedExactFocalSample.depthConfidence.status !== "depth-limited") {
+    throw new Error("Scene-depth focal equality must remain depth-limited");
+  }
+  expect(Math.abs(depthDerivedExactFocalSample.depthConfidence.canonicalUMinusFmm)).toBeLessThan(1e-7);
+  expect(depthDerivedExactFocalSample.depthConfidence.kernelSelectedBranch).not.toBe("parallel-limit");
+  expect(depthDerivedExactFocalSample.focalBranchCode).not.toBe(2);
+  const depthExactFrameEvents = await page.evaluate(
+    (expectedRequestId) => JSON.parse(JSON.stringify(
+      (window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []).filter((event) =>
+        event.kind === "host-frame-result" && event.requestId === expectedRequestId,
+      ),
+    )) as Array<Record<string, unknown>>,
+    depthDerivedExactFocalReadback.requestId,
+  );
+  const depthExactAcceptedFrame = depthExactFrameEvents.find((event) => event.acceptedByHost === true);
+  expect(depthExactAcceptedFrame).toMatchObject({
+    kind: "host-frame-result",
+    requestId: depthDerivedExactFocalReadback.requestId,
+    channelId: depthDerivedExactFocalReadback.channelId,
+    sceneId: depthDerivedExactFocalReadback.sceneId,
+    generationId: depthDerivedExactFocalReadback.rendererGenerationId,
+    acceptedByHost: true,
+    latestAcceptedRequestId: depthDerivedExactFocalReadback.requestId,
+    activeGenerationId: depthDerivedExactFocalReadback.rendererGenerationId,
+  });
+  if (!depthExactAcceptedFrame) throw new Error("Depth-boundary readback lacks host-accepted frame evidence");
+
   let boundarySource: (typeof realSamples)[number] | undefined;
   let boundaryErrorMm = -1;
   for (const sample of realSamples) {
@@ -1126,6 +1163,8 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
     : "finite-virtual";
   const reconstructedBranch = canonicalBranch === "finite-real" ? "finite-virtual" : "finite-real";
   const expectedKernelBranchCode = reconstructedBranch === "finite-virtual" ? 1 : 3;
+  await aperture.getByRole("radio", { name: "f/16", exact: true }).check();
+  await waitForCompletedFrame(page);
   const boundaryRequestId = await pane.getAttribute("data-frame-request-id");
   const boundaryToken = `m4-depth-boundary-${Date.now()}`;
   const boundaryProbe: GroundGlassPhysicalCocProbeUv = {
@@ -1315,6 +1354,8 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
         },
       ],
       probeReadback: readback,
+      depthDerivedExactFocalReadback,
+      depthDerivedExactFocalHostFrameResult: depthExactAcceptedFrame,
       acceptedHostFrameResult: acceptedFrameEvent,
       hostFrameEventsForReadback: frameEvents,
       lifecycleEvents: capturedAdapterEvents.filter((event) =>
