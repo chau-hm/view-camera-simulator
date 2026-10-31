@@ -579,6 +579,20 @@ export type GroundGlassWebGpuTestEvent =
       internalFallback: "none" | "webgl2-compatibility";
     }>
   | Readonly<{
+      kind: "host-frame-result";
+      attemptId: string;
+      channelId: string;
+      hostId: string;
+      generationId: string;
+      requestId: string;
+      sceneId: string;
+      frameStatus: "completed";
+      acceptedByHost: boolean;
+      latestAcceptedRequestId: string | null;
+      activeGenerationId: string | null;
+      rendererFamily: "webgl-renderer" | "webgpu-renderer" | null;
+    }>
+  | Readonly<{
       kind: "failed-frame-result";
       attemptId: string;
       channelId: string;
