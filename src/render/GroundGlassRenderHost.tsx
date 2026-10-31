@@ -338,6 +338,7 @@ export const GroundGlassRenderHost = ({
 
   const handleFrameResult = useCallback((result: GroundGlassFrameResult) => {
     const deliver = () => {
+      const beforeResult = owner.getSnapshot(channel);
       const accepted = owner.receiveFrameResult(channel, hostId, result);
       if (result.status === "failed") {
         recordGroundGlassWebGpuTestEvent({
@@ -358,12 +359,30 @@ export const GroundGlassRenderHost = ({
           acceptedByHost: accepted,
         });
       }
-      if (!accepted) return;
-      if (
-        result.status === "completed" &&
-        owner.canPublishFrameNow(channel, hostId, result)
-      ) {
-        framePublishedRef.current?.(result);
+      if (result.status === "completed") {
+        const publishable = accepted && owner.canPublishFrameNow(channel, hostId, result);
+        if (publishable) framePublishedRef.current?.(result);
+        recordGroundGlassWebGpuTestEvent({
+          kind: "host-frame-result",
+          attemptId: createGroundGlassWebGpuAttemptIdentity(
+            channel,
+            result.generation.generationId,
+            result.request.requestId,
+            result.request.sceneId,
+          ).attemptId,
+          channelId: channel,
+          hostId,
+          generationId: result.generation.generationId,
+          requestId: result.request.requestId,
+          sceneId: result.request.sceneId,
+          frameStatus: "completed",
+          acceptedByHost: publishable,
+          latestAcceptedRequestId: beforeResult.activeRequest?.identity.requestId ?? null,
+          activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+          rendererFamily: beforeResult.mountedRuntime.status === "mounted"
+            ? beforeResult.mountedRuntime.rendererFamily
+            : null,
+        });
       }
     };
     if (!holdGroundGlassFrameResultForTest(result, deliver)) deliver();
