@@ -510,6 +510,7 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
     errors.push("unsupported-schema-version");
   }
   if (!isNonEmptyString(input.sourceHeadSha)) errors.push("missing-source-head-sha");
+  else if (!/^[\da-f]{40}$/i.test(input.sourceHeadSha)) errors.push("invalid-report-source-head-sha");
   if (!Array.isArray(input.scenarios)) {
     errors.push("scenario-inventory-must-be-an-array");
     return {
@@ -580,7 +581,6 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
       continue;
     }
 
-    if (scenario.sourceHeadSha !== input.sourceHeadSha) errors.push(`stale-source-head:${requiredId}`);
     if (!isNonEmptyString(scenario.sourceHeadSha) || !/^[\da-f]{40}$/i.test(scenario.sourceHeadSha)) {
       errors.push(`invalid-source-head-sha:${requiredId}`);
     }

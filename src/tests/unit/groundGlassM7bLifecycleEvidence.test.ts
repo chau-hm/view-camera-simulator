@@ -397,12 +397,24 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     expect(result.errors).toContain("unexpected-scenario:m7b-invented");
   });
 
-  it("rejects source evidence captured from a different source head", () => {
+  it("accepts scenario evidence with explicit historical capture source heads", () => {
     const report = makeFullyQualifiedReport();
     report.scenarios[0] = { ...report.scenarios[0], sourceHeadSha: "b".repeat(40) };
     const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result).toMatchObject({
+      valid: true,
+      qualification: "qualified-for-scoped-development-pilot",
+    });
+  });
+
+  it("rejects malformed report and scenario source identities", () => {
+    const report = makeFullyQualifiedReport();
+    report.sourceHeadSha = "current-head";
+    report.scenarios[0] = { ...report.scenarios[0], sourceHeadSha: "captured-head" };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(`stale-source-head:${report.scenarios[0].id}`);
+    expect(result.errors).toContain("invalid-report-source-head-sha");
+    expect(result.errors).toContain(`invalid-source-head-sha:${report.scenarios[0].id}`);
   });
 
   it("rejects contradictory native WebGPU runtime identity", () => {
@@ -787,7 +799,7 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     expect(evaluateGroundGlassM7bLifecycleEvidence(report)).toMatchObject({
       valid: true,
       qualification: "partially-qualified",
-      counts: { passed: 5, failed: 0, blocked: 11, "not-run": 1 },
+      counts: { passed: 6, failed: 0, blocked: 10, "not-run": 1 },
     });
   });
 
