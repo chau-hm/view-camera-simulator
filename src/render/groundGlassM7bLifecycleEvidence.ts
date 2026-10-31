@@ -355,9 +355,11 @@ const validateM7bPublication = (
   } else if (result.acceptedByHost !== false || result.requestId === latest) {
     errors.push("stale-publication-not-rejected-by-host:" + scenarioId);
   }
+  const resultSequence = result?.sequence;
   const retirement = events.find((event) =>
-    event.kind === "cleanup-acknowledged" && event.generationId === result.generationId &&
-    typeof event.sequence === "number" && event.sequence < result.sequence
+    event.kind === "cleanup-acknowledged" && event.generationId === result?.generationId &&
+    typeof event.sequence === "number" && typeof resultSequence === "number" &&
+    event.sequence < resultSequence
   );
   if (retirement) errors.push("publication-after-generation-retirement:" + scenarioId);
   const retired = isObject(scenario.identity) ? scenario.identity.rendererGenerationId : null;
