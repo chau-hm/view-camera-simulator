@@ -67,10 +67,20 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
   await expect(glass).toHaveAttribute("data-policy-selected-backend", "webgpu", { timeout: 90_000 });
   await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer", { timeout: 90_000 });
   await expect(glass).toHaveAttribute("data-actual-execution-api", "webgpu");
+  await expect(glass).toHaveAttribute("data-policy-evidence-revisions", "m3-architecture-rise-raw-rtt-native-r187-v1");
+  await expect(glass).toHaveAttribute("data-mounted-renderer-revision", "r187");
+  const policyEvidenceRevision = await glass.getAttribute("data-policy-evidence-revisions");
+  expect(policyEvidenceRevision).toBe("m3-architecture-rise-raw-rtt-native-r187-v1");
+  await expect.poll(() => glass.getAttribute("data-mounted-verification-evidence-revision"))
+    .toBe(policyEvidenceRevision);
   await expect(glass).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
   await expect(glass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   const webGpuGeneration = await glass.getAttribute("data-renderer-generation");
   expect(webGpuGeneration).toBeTruthy();
+  const webGpuAdapter = glass.getByTestId("ground-glass-webgpu-pilot");
+  await expect(webGpuAdapter).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer");
+  await expect(webGpuAdapter).toHaveAttribute("data-actual-execution-api", "webgpu");
+  await expect(webGpuAdapter).toHaveAttribute("data-internal-fallback", "none");
 
   const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
   const focusValue = Number(await focus.inputValue());
@@ -88,10 +98,15 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
     contentType: "image/png",
   });
   const runtimeEvidence = await glass.evaluate((element) => ({
+    adapterInternalFallback: element.querySelector<HTMLElement>("[data-testid='ground-glass-webgpu-pilot']")
+      ?.getAttribute("data-internal-fallback"),
     threeRevision: element.getAttribute("data-three-revision"),
     selectedBackend: element.getAttribute("data-policy-selected-backend"),
     rendererFamily: element.getAttribute("data-mounted-renderer-family"),
     executionApi: element.getAttribute("data-actual-execution-api"),
+    policyEvidenceRevisions: element.getAttribute("data-policy-evidence-revisions"),
+    mountedRendererRevision: element.getAttribute("data-mounted-renderer-revision"),
+    mountedEvidenceRevision: element.getAttribute("data-mounted-verification-evidence-revision"),
     applicationFallback: element.getAttribute("data-application-fallback"),
     generation: element.getAttribute("data-renderer-generation"),
     rawContentful: element.getAttribute("data-rtt-raw-contentful"),
@@ -107,6 +122,10 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
     selectedBackend: "webgpu",
     rendererFamily: "webgpu-renderer",
     executionApi: "webgpu",
+    adapterInternalFallback: "none",
+    policyEvidenceRevisions: "m3-architecture-rise-raw-rtt-native-r187-v1",
+    mountedRendererRevision: "r187",
+    mountedEvidenceRevision: "m3-architecture-rise-raw-rtt-native-r187-v1",
     applicationFallback: "not-observed",
     rawContentful: "true",
     finalContentful: "true",

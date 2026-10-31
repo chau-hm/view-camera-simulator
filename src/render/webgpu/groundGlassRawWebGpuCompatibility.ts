@@ -1,6 +1,7 @@
-import type {
-  GroundGlassFeatureCompatibility,
-  GroundGlassSceneCompatibility,
+import {
+  resolveGroundGlassSceneEligibility,
+  type GroundGlassFeatureCompatibility,
+  type GroundGlassSceneCompatibility,
 } from "../backend/groundGlassSceneCompatibility";
 
 /**
@@ -186,4 +187,31 @@ export const resolveGroundGlassRawWebGpuCompatibility = (
     return GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY;
   }
   return null;
+};
+
+/** Returns only a Raw RTT qualification whose tested renderer revision matches the request. */
+export const resolveGroundGlassRawWebGpuEvidenceRevision = (
+  rendererRevision: string,
+): string | null => {
+  const compatibility = resolveGroundGlassRawWebGpuCompatibility(rendererRevision);
+  if (!compatibility) return null;
+  const eligibility = resolveGroundGlassSceneEligibility(
+    compatibility.sceneId,
+    ["raw-rtt"],
+    compatibility,
+    rendererRevision,
+  );
+  return eligibility.status === "eligible" && eligibility.evidenceRevisions.length === 1
+    ? eligibility.evidenceRevisions[0]
+    : null;
+};
+
+export const requireGroundGlassRawWebGpuEvidenceRevision = (
+  rendererRevision: string,
+): string => {
+  const evidenceRevision = resolveGroundGlassRawWebGpuEvidenceRevision(rendererRevision);
+  if (!evidenceRevision) {
+    throw new Error(`Ground Glass Raw RTT is not qualified for renderer ${rendererRevision}`);
+  }
+  return evidenceRevision;
 };

@@ -142,9 +142,12 @@ import {
   throwIfGroundGlassWebGpuFailureInjected,
 } from "./groundGlassWebGpuTestSeam";
 import {
-  ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
 } from "./groundGlassRawWebGpuCompatibility";
+import {
+  makeGroundGlassWebGpuDiagnosticDetails as makeDiagnosticDetails,
+  makeGroundGlassWebGpuPresentationDiagnostic as makePresentationDiagnostic,
+} from "./groundGlassWebGpuDiagnostics";
 import {
   assessGroundGlassPhysicalDepthConfidence,
   groundGlassPhysicalCocOrientationErrorModuloPi,
@@ -165,8 +168,6 @@ import {
   type GroundGlassM6cReadbackIdentity,
 } from "../groundGlassM6cAlphaConformance";
 import {
-  ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION,
-  ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
   getGroundGlassM6BuildConfigurationEvidence,
   isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationBuildEnabled,
@@ -1403,108 +1404,6 @@ const resolvePresentationNodeState = (
     coverage,
     naturalIllumination,
     throughputGain,
-  };
-};
-
-const makePresentationDiagnostic = (input: Readonly<{
-  request: GroundGlassFrameRequest;
-  generation: GroundGlassRendererGenerationIdentity;
-  status: GroundGlassPresentationDiagnosticDetails["status"];
-  source: GroundGlassPresentationDiagnosticDetails["source"];
-  throughputGain: number | null;
-  naturalIllumination: GroundGlassPresentationDiagnosticDetails["naturalIllumination"];
-  coverage: GroundGlassPresentationDiagnosticDetails["coverage"];
-  passTiming?: GroundGlassPresentationDiagnosticDetails["passTiming"];
-}>): GroundGlassPresentationDiagnosticDetails => ({
-  requestId: input.request.identity.requestId,
-  channelId: input.request.identity.channelId,
-  sceneId: input.request.identity.sceneId,
-  rendererGenerationId: input.generation.generationId,
-  mode: isGroundGlassM6PresentationRequest(input.request) ? "m6-experimental-dof" : "raw-diagnostic",
-  status: input.status,
-  source: input.source,
-  rendererRevision: `r${REVISION}`,
-  sceneSourceRevision: isGroundGlassM6PresentationRequest(input.request)
-    ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
-    : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
-  verificationEvidenceRevision: isGroundGlassM6PresentationRequest(input.request)
-    ? ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION
-    : ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
-  opticalQuality: isGroundGlassM6PresentationRequest(input.request) ? "unqualified" : "not-qualified",
-  colorDomain: "linear-no-color-space",
-  outputColorSpace: "srgb",
-  toneMapping: "none",
-  throughputGain: input.throughputGain,
-  naturalIllumination: input.naturalIllumination,
-  coverage: input.coverage,
-  outputWidthPx: input.request.widthPx,
-  outputHeightPx: input.request.heightPx,
-  additionalRenderTargetCount: 0,
-  additionalTargetAttachmentBytes: 0,
-  additionalFullscreenPassCount: 0,
-  passTiming: input.passTiming ?? null,
-});
-
-const makeDiagnosticDetails = (input: {
-  request: GroundGlassFrameRequest;
-  target: THREE.RenderTarget;
-  camera: GroundGlassFrustum;
-  subjectChildCount: number;
-  runtime: GroundGlassMountedRuntimeEvidence;
-  backend: WebGpuBackendLike;
-  completedPasses: readonly ("sceneRender" | "presentation" | "textureDisplay")[];
-  physicalCoc?: GroundGlassPhysicalCocDiagnosticDetails;
-  apertureGather?: GroundGlassApertureGatherDiagnosticDetails;
-  presentation?: GroundGlassPresentationDiagnosticDetails;
-  actualDepthFormat?: string | null;
-}): GroundGlassBackendDiagnosticDetails => {
-  if (input.runtime.status !== "mounted" || input.runtime.rendererFamily !== "webgpu-renderer") {
-    throw new Error("WebGPU diagnostic details require mounted renderer evidence");
-  }
-  return {
-    backend: "webgpu",
-    sceneId: input.request.scene.id,
-    requestId: input.request.identity.requestId,
-    rendererRevision: `r${REVISION}`,
-    sceneSourceRevision: isGroundGlassM6PresentationRequest(input.request)
-      ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
-      : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
-    verificationEvidenceRevision: isGroundGlassM6PresentationRequest(input.request)
-      ? ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION
-      : ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
-    sceneSubject: {
-      realization: "registered-ground-glass-profile",
-      mounted: true,
-      childCount: input.subjectChildCount,
-    },
-    camera: {
-      coordinateSystem: input.runtime.actualExecutionApi === "webgpu" ? "webgpu" : "webgl",
-      left: input.camera.left,
-      right: input.camera.right,
-      top: input.camera.top,
-      bottom: input.camera.bottom,
-      near: input.camera.near,
-      far: input.camera.far,
-    },
-    actualExecutionApi: input.runtime.actualExecutionApi,
-    internalFallback: input.runtime.internalFallback,
-    adapterFeatures: Array.from(input.backend.adapter?.features ?? []),
-    deviceFeatures: Array.from(input.backend.device?.features ?? []),
-    textureStorageFormats: [],
-    target: {
-      widthPx: input.target.width,
-      heightPx: input.target.height,
-      colorFormat: "rgba8unorm",
-      depthAttachment: "enabled",
-      depthFormat: input.actualDepthFormat === undefined ? "depth24plus" : input.actualDepthFormat,
-      textureColorSpace: "no-color-space",
-      rendererOutputColorSpace: "srgb",
-      toneMapping: "none",
-    },
-    completedPasses: input.completedPasses,
-    ...(input.physicalCoc ? { physicalCoc: input.physicalCoc } : {}),
-    ...(input.apertureGather ? { apertureGather: input.apertureGather } : {}),
-    ...(input.presentation ? { presentation: input.presentation } : {}),
   };
 };
 

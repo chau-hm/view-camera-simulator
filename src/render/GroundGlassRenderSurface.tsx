@@ -62,6 +62,13 @@ export const GroundGlassRenderSurface = ({
   const sceneId = scene.id;
   const [backendDiagnostics, setBackendDiagnostics] = useState<GroundGlassBackendDiagnostics | null>(null);
   const testEvidenceEnabled = import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true";
+  const policyDecision = backendDiagnostics?.policySelection.policyDecision;
+  const policyEvidenceRevisions = policyDecision?.status === "authorized" &&
+      policyDecision.sceneEligibility.status === "eligible"
+    ? policyDecision.sceneEligibility.evidenceRevisions.join(",")
+    : undefined;
+  const backendDetails = backendDiagnostics?.backendDetails;
+  const webGpuBackendDetails = backendDetails?.backend === "webgpu" ? backendDetails : null;
   const handleBackendDiagnosticsChange = useCallback((
     _channel: GroundGlassRttChannel,
     diagnostics: GroundGlassBackendDiagnostics | null,
@@ -81,6 +88,11 @@ export const GroundGlassRenderSurface = ({
         data-policy-selected-backend={backendDiagnostics?.policySelection.status === "selected"
           ? backendDiagnostics.policySelection.selectedBackend
           : "unavailable"}
+        data-policy-evidence-revisions={import.meta.env.DEV ? policyEvidenceRevisions : undefined}
+        data-mounted-renderer-revision={import.meta.env.DEV ? webGpuBackendDetails?.rendererRevision : undefined}
+        data-mounted-verification-evidence-revision={import.meta.env.DEV
+          ? webGpuBackendDetails?.verificationEvidenceRevision
+          : undefined}
         data-attempted-backend={testEvidenceEnabled ? backendDiagnostics?.attemptedBackend.status === "not-started"
           ? "not-started"
           : backendDiagnostics?.attemptedBackend.backend : undefined}
