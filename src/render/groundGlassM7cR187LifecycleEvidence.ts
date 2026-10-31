@@ -225,6 +225,7 @@ const validateSessionBoundary = (scenario: M7cScenario, errors: string[]): void 
 const validateAuthorizedRetrySession = (scenario: M7cScenario, errors: string[]): void => {
   if (scenario.id !== "m7c-r187-explicit-retry-new-session") return;
   const observation = readObservation(scenario, "authorized-recovery-actions");
+  const identity = scenario.identity;
   const initial = observation?.initialAttemptGenerations;
   const afterRetry = observation?.attemptsAfterExplicitRetry;
   const afterInvalid = observation?.attemptsAfterInvalidAction;
@@ -261,7 +262,7 @@ const validateAuthorizedRetrySession = (scenario: M7cScenario, errors: string[])
     event.generationId === newSessionGeneration && event.acceptedByHost === true &&
     event.latestAcceptedRequestId === event.requestId);
   if (
-    initial[0] !== scenario.identity?.rendererGenerationId ||
+    !isObject(identity) || initial[0] !== identity.rendererGenerationId ||
     JSON.stringify(observedNativeAttempts) !== JSON.stringify(afterNewSession) ||
     typeof initialAttempt !== "number" || typeof initialRuntime !== "number" ||
     typeof initialFailure !== "number" || typeof initialCleanup !== "number" ||
