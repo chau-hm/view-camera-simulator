@@ -1412,6 +1412,8 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer", { timeout: 120_000 });
   await expectPhysicalFrame(page);
+  const rendererGenerationId = await pane.getAttribute("data-renderer-generation");
+  expect(rendererGenerationId).toBeTruthy();
 
   const token = `m4-stale-resize-${Date.now()}`;
   await page.evaluate((request) => {
@@ -1439,6 +1441,23 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
   await expect(pilot).toHaveAttribute("data-physical-coc-request-id", resizedRequestId!);
   await expect(pilot).toHaveAttribute("data-physical-coc-probe-readback-status", "not-requested");
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null)).toBeNull();
+  const lifecycleEvents = await page.evaluate((generationId) => {
+    const events = JSON.parse(JSON.stringify(window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [])) as
+      Array<Record<string, unknown>>;
+    return events.filter((event) => event.generationId === generationId);
+  }, rendererGenerationId);
+  const hostFrameResults = lifecycleEvents.filter((event) =>
+    event.kind === "host-frame-result" &&
+    (event.requestId === probeRequestId || event.requestId === resizedRequestId),
+  );
+  expect(lifecycleEvents.length).toBeGreaterThan(0);
+  expect(hostFrameResults.some((event) =>
+    event.requestId === resizedRequestId && event.acceptedByHost === true &&
+    event.generationId === rendererGenerationId,
+  )).toBe(true);
+  const resizeEventSequences = lifecycleEvents.map((event) => Number(event.sequence));
+  expect(resizeEventSequences.every(Number.isFinite)).toBe(true);
+  expect(resizeEventSequences).toEqual([...resizeEventSequences].sort((left, right) => left - right));
   await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-stale-resize-evidence.json", {
       test: "M4 probe readback is stale after resize and cannot publish the superseded request",
       browserVersion: page.context().browser()?.version() ?? "unknown",
@@ -1451,12 +1470,15 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
       actualExecutionApi: await pane.getAttribute("data-actual-execution-api"),
       channelId: await pane.getAttribute("data-frame-channel-id"),
       sceneId: await pane.getAttribute("data-frame-scene-id"),
+      rendererGenerationId,
       oldProbeRequestId: probeRequestId,
       currentRequestId: resizedRequestId,
       physicalRequestId: await pilot.getAttribute("data-physical-coc-request-id"),
       readbackAfterRelease: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null),
       readbackStatus: await pilot.getAttribute("data-physical-coc-probe-readback-status"),
       stalePublicationRejected: true,
+      lifecycleEvents,
+      hostFrameResults,
   });
 });
 
@@ -1477,6 +1499,8 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer", { timeout: 120_000 });
   await expectPhysicalFrame(page);
+  const rendererGenerationId = await pane.getAttribute("data-renderer-generation");
+  expect(rendererGenerationId).toBeTruthy();
 
   const token = `m4-stale-unmount-${Date.now()}`;
   await page.evaluate((request) => {
@@ -1492,6 +1516,7 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
   const focusStep = Number(await focus.getAttribute("step"));
   await setStepRangeInput(page, "Focus distance", Number(await focus.inputValue()) + focusStep);
+  const probeRequestId = await waitForStableRequestId(page, pane);
   await expect.poll(async () => page.evaluate(() =>
     Boolean(window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadbackBarrierReached),
   ), { timeout: 120_000 }).toBe(true);
@@ -1504,6 +1529,20 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   await expect.poll(() => retiredPilot.getAttribute("data-cleanup-outcome"), { timeout: 90_000 }).toBe("confirmed");
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null)).toBeNull();
   expect(await retiredPilot.getAttribute("data-last-displayed-request-id")).not.toBeNull();
+  const lifecycleEvents = await page.evaluate((generationId) => {
+    const events = JSON.parse(JSON.stringify(window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [])) as
+      Array<Record<string, unknown>>;
+    return events.filter((event) => event.generationId === generationId);
+  }, rendererGenerationId);
+  const hostFrameResults = lifecycleEvents.filter((event) => event.kind === "host-frame-result");
+  expect(lifecycleEvents.length).toBeGreaterThan(0);
+  const cleanupEvent = lifecycleEvents.find((event) => event.kind === "cleanup");
+  expect(cleanupEvent).toMatchObject({ generationId: rendererGenerationId, outcome: "confirmed" });
+  const cleanupAcknowledgement = lifecycleEvents.find((event) => event.kind === "cleanup-acknowledged");
+  expect(cleanupAcknowledgement).toMatchObject({ generationId: rendererGenerationId, outcome: "confirmed" });
+  const unmountEventSequences = lifecycleEvents.map((event) => Number(event.sequence));
+  expect(unmountEventSequences.every(Number.isFinite)).toBe(true);
+  expect(unmountEventSequences).toEqual([...unmountEventSequences].sort((left, right) => left - right));
   await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-stale-unmount-evidence.json", {
       test: "M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles",
       browserVersion: page.context().browser()?.version() ?? "unknown",
@@ -1516,10 +1555,16 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
       retiredExecutionApi: await retiredPilot.getAttribute("data-actual-execution-api"),
       channelId: "default",
       sceneId: "architecture-rise",
+      rendererGenerationId,
       retiredGeneration: await retiredPilot.getAttribute("data-renderer-generation"),
+      oldProbeRequestId: probeRequestId,
       cleanupOutcome: await retiredPilot.getAttribute("data-cleanup-outcome"),
       lastDisplayedRequestId: await retiredPilot.getAttribute("data-last-displayed-request-id"),
       readbackAfterRelease: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null),
       stalePublicationRejected: true,
+      lifecycleEvents,
+      hostFrameResults,
+      cleanupEvent,
+      cleanupAcknowledgement,
   });
 });
