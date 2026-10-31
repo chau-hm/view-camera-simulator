@@ -245,6 +245,14 @@ const validateM7bObservedRuntime = (
   const observed = eventFor(scenario, "runtime-observed", generation);
   const mounted = eventFor(scenario, "renderer-mounted", generation);
   const preMount = kind === "native-webgpu-pre-mount-failure" || kind === "native-webgpu-cleanup-failure";
+  const generationEvents = Array.isArray(scenario.events)
+    ? scenario.events.filter(isObject).filter((event) => event.generationId === generation)
+    : [];
+  const count = (eventKind: string) => generationEvents.filter((event) => event.kind === eventKind).length;
+  if (count("attempt") !== 1 || count("runtime-observed") !== 1 ||
+      count("renderer-mounted") !== (preMount ? 0 : 1)) {
+    errors.push("duplicate-or-missing-native-runtime-events:" + scenarioId);
+  }
   const expectedRevision = scenario.threeRevision;
   if (
     !eventMatchesScenarioIdentity(scenario, attempt, true) ||
@@ -295,6 +303,14 @@ const validateM7bCleanupFallback = (
   const host = eventFor(scenario, "cleanup-acknowledged", generation);
   const adapterSeq = adapter?.sequence;
   const hostSeq = host?.sequence;
+  const generationEvents = Array.isArray(scenario.events)
+    ? scenario.events.filter(isObject).filter((event) => event.generationId === generation)
+    : [];
+  if (generationEvents.filter((event) => event.kind === "cleanup").length !== 1 ||
+      generationEvents.filter((event) => event.kind === "cleanup-acknowledged").length !== 1) {
+    errors.push("duplicate-or-missing-cleanup-acknowledgement:" + scenarioId);
+  }
+
   if (
     !eventMatchesScenarioIdentity(scenario, adapter) ||
     !host ||
@@ -391,6 +407,8 @@ const validateM7bPublication = (
       result.generationId === retired ||
       !hostCleanup ||
       !replacement ||
+      result.rendererFamily !== "webgl-renderer" ||
+      replacement.rendererFamily !== result.rendererFamily ||
       typeof result.sequence !== "number" ||
       typeof replacement.sequence !== "number" ||
       typeof hostCleanup.sequence !== "number" ||
