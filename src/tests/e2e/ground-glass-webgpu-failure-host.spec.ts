@@ -221,6 +221,9 @@ const assertConfirmedWebGlFallback = async (
   expect(failureEvent!.sequence).toBeGreaterThan(runtimeEvent!.sequence!);
   expect(cleanupEvent!.sequence).toBeGreaterThan(failureEvent!.sequence!);
   const backendObservation = runtimeEvent?.kind === "runtime-observed" ? runtimeEvent : undefined;
+  expect(backendObservation?.internalFallback).toBe(
+    backendObservation?.executionApi === "webgpu" ? "none" : "webgl2-compatibility",
+  );
   const hostMountExpected = failureStage === "runtime" || backendObservation?.executionApi === "webgl2";
   if (!hostMountExpected) {
     // The after-target initialization injection runs after backend observation but before host mount.
@@ -254,6 +257,33 @@ const assertConfirmedWebGlFallback = async (
   const currentGeneration = await glass.getAttribute("data-renderer-generation");
   expect(currentGeneration).toBeTruthy();
   expect(currentGeneration).not.toBe(failedGeneration);
+  const hostEvents = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+  const hostCleanup = hostEvents.find((event) =>
+    event.kind === "cleanup-acknowledged" && event.generationId === failedGeneration,
+  );
+  const replacementMount = hostEvents.find((event) =>
+    event.kind === "renderer-mounted" && event.generationId === currentGeneration &&
+    event.rendererFamily === "webgl-renderer",
+  );
+  const currentPublication = hostEvents.find((event) =>
+    event.kind === "host-frame-result" && event.generationId === currentGeneration &&
+    event.requestId === failedRequestId && event.acceptedByHost,
+  );
+  expect(hostCleanup).toBeTruthy();
+  expect(replacementMount).toBeTruthy();
+  expect(currentPublication).toBeTruthy();
+  expect(replacementMount!.sequence).toBeGreaterThan(hostCleanup!.sequence!);
+  expect(currentPublication!.sequence).toBeGreaterThan(replacementMount!.sequence!);
+  if (currentPublication?.kind === "host-frame-result") {
+    const currentSceneId = await glass.getAttribute("data-frame-scene-id");
+    expect(currentPublication).toMatchObject({
+      activeGenerationId: currentGeneration,
+      latestAcceptedRequestId: failedRequestId,
+      activeRendererFamily: "webgl-renderer",
+    });
+    expect(currentPublication.sceneId).toBe(currentSceneId);
+    expect(currentPublication.latestAcceptedSceneId).toBe(currentSceneId);
+  }
 };
 
 test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", () => {

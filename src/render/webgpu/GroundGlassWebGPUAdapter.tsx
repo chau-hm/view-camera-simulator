@@ -4427,6 +4427,7 @@ export const GroundGlassWebGPUAdapter = ({
             rendererRevision: THREE.REVISION,
             rendererFamily: runtime.rendererFamily,
             executionApi: runtime.actualExecutionApi,
+            internalFallback: runtime.internalFallback,
           });
         }
         setRuntimeApi(runtime.status === "mounted"

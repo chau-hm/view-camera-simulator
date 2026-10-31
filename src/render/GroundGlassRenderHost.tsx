@@ -378,8 +378,9 @@ export const GroundGlassRenderHost = ({
           frameStatus: "completed",
           acceptedByHost: publishable,
           latestAcceptedRequestId: beforeResult.activeRequest?.identity.requestId ?? null,
+          latestAcceptedSceneId: beforeResult.activeRequest?.identity.sceneId ?? null,
           activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
-          rendererFamily: beforeResult.mountedRuntime.status === "mounted"
+          activeRendererFamily: beforeResult.mountedRuntime.status === "mounted"
             ? beforeResult.mountedRuntime.rendererFamily
             : null,
         });

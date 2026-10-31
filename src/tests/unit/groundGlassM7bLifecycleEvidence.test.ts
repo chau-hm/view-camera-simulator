@@ -280,12 +280,19 @@ const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): G
     if (item.kind === "attempt") return { ...item, rendererRevision: source.threeRevision };
     if (item.kind === "runtime-observed") return {
       ...item,
+      channelId: source.identity.channelId,
+      hostId: source.identity.hostId,
+      sceneId: source.identity.sceneId,
       rendererRevision: source.threeRevision,
       rendererFamily: source.runtime.rendererFamily as "webgpu-renderer" | "webgl-renderer" | null,
       executionApi: source.runtime.actualExecutionApi as "webgpu" | "webgl2" | "webgl" | null,
+      internalFallback: source.runtime.internalFallback as "none" | "webgl2-compatibility" | null,
     };
     if (item.kind === "renderer-mounted") return {
       ...item,
+      channelId: source.identity.channelId,
+      hostId: source.identity.hostId,
+      sceneId: source.identity.sceneId,
       rendererFamily: source.runtime.rendererFamily as "webgpu-renderer" | "webgl-renderer" | null,
       executionApi: source.runtime.actualExecutionApi as "webgpu" | "webgl2" | "webgl" | null,
       internalFallback: source.runtime.internalFallback as "none" | "webgl2-compatibility" | null,
@@ -297,7 +304,7 @@ const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): G
       sequence: 0, kind: "runtime-observed", attemptId: "attempt-1",
       generationId: "generation-1", requestId: "request-1", detail: null,
       rendererRevision: source.threeRevision, rendererFamily: "webgpu-renderer",
-      executionApi: "webgpu",
+      executionApi: "webgpu", internalFallback: "none",
     });
     events.push({
       sequence: 0, kind: "renderer-mounted", attemptId: "attempt-1",
@@ -323,7 +330,7 @@ const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): G
   }
   const noPublicationRequired = new Set([
     "native-webgpu-cleanup-failure", "native-webgl2", "native-regression-suite",
-    "production-preview-webgl", "unit-integration",
+    "production-preview-webgl", "unit-integration", "environment-blocked",
   ]);
   const publication = noPublicationRequired.has(source.evidenceClass)
     ? { status: "not-applicable" as const, acceptedRequestId: null, completedRequestId: null }
@@ -336,9 +343,10 @@ const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): G
       generationId: replacement ? "generation-2" : "generation-1",
       activeGenerationId: replacement ? "generation-2" : "generation-1",
       requestId: "request-1", latestAcceptedRequestId: "request-1",
+      latestAcceptedSceneId: "architecture-rise",
       channelId: "default", hostId: "host-1", sceneId: "architecture-rise",
       frameStatus: "completed", acceptedByHost: true, detail: null,
-      rendererFamily: replacement ? "webgl-renderer" : "webgpu-renderer",
+      activeRendererFamily: replacement ? "webgl-renderer" : "webgpu-renderer",
     });
   }
   return { ...source, events: events.map((item, sequence) => ({ ...item, sequence })), publication };
@@ -548,6 +556,227 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     const result = evaluateGroundGlassM7bLifecycleEvidence(report);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain("publication-not-from-confirmed-replacement:" + scenario.id);
+  });
+
+  it("rejects native WebGPU claims when any observed runtime contract field is changed or absent", () => {
+    const mutations: Array<[
+      string,
+      (events: GroundGlassM7bScenarioEvidence["events"]) => GroundGlassM7bScenarioEvidence["events"],
+    ]> = [
+      ["runtime API", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, executionApi: "webgl2" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["mounted API", (events) => events.map((event) => event.kind === "renderer-mounted"
+        ? { ...event, executionApi: "webgl2" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["runtime renderer family", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, rendererFamily: "webgl-renderer" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["mounted renderer family", (events) => events.map((event) => event.kind === "renderer-mounted"
+        ? { ...event, rendererFamily: "webgl-renderer" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["runtime internal fallback", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, internalFallback: "webgl2-compatibility" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["mounted internal fallback", (events) => events.map((event) => event.kind === "renderer-mounted"
+        ? { ...event, internalFallback: "webgl2-compatibility" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["renderer revision", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, rendererRevision: "185" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["attempt revision", (events) => events.map((event) => event.kind === "attempt"
+        ? { ...event, rendererRevision: "185" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["runtime and mount disagreement", (events) => events.map((event) => event.kind === "renderer-mounted"
+        ? { ...event, executionApi: "webgl2" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["runtime attempt identity", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, attemptId: "other-attempt" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["runtime generation identity", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, generationId: "other-generation" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["mount attempt identity", (events) => events.map((event) => event.kind === "renderer-mounted"
+        ? { ...event, attemptId: "other-attempt" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["mount generation identity", (events) => events.map((event) => event.kind === "renderer-mounted"
+        ? { ...event, generationId: "other-generation" } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+      ["missing runtime observation", (events) => events.filter((event) => event.kind !== "runtime-observed")],
+      ["missing mount observation", (events) => events.filter((event) => event.kind !== "renderer-mounted")],
+      ["missing observed fallback", (events) => events.map((event) => event.kind === "runtime-observed"
+        ? { ...event, internalFallback: undefined } as GroundGlassM7bScenarioEvidence["events"][number] : event)],
+    ];
+
+    for (const [label, mutate] of mutations) {
+      const report = makeFullyQualifiedReport();
+      const index = report.scenarios.findIndex((item) => item.id === "m7b-phase-a-timeout-diagnosis");
+      const scenario = report.scenarios[index];
+      report.scenarios[index] = { ...scenario, events: mutate(scenario.events) };
+      expect(evaluateGroundGlassM7bLifecycleEvidence(report).valid, label).toBe(false);
+    }
+  });
+
+  it("rejects fallback unless cleanup agreement, host identity, and replacement ordering are valid", () => {
+    const mutations: Array<[
+      string,
+      (scenario: GroundGlassM7bScenarioEvidence) => GroundGlassM7bScenarioEvidence,
+    ]> = [
+      ["host cleanup disagrees", (scenario) => ({
+        ...scenario,
+        events: scenario.events.map((event) => event.kind === "cleanup-acknowledged"
+          ? { ...event, outcome: "failed" as const } : event),
+      })],
+      ["adapter cleanup precedes the failure", (scenario) => {
+        const failure = scenario.events.find((event) => event.kind === "failure")!;
+        const cleanup = scenario.events.find((event) => event.kind === "cleanup")!;
+        return { ...scenario, events: scenario.events.map((event) =>
+          event === failure ? { ...event, sequence: cleanup.sequence }
+            : event === cleanup ? { ...event, sequence: failure.sequence }
+              : event,
+        ) };
+      }],
+      ["replacement precedes acknowledgement", (scenario) => {
+        const acknowledgement = scenario.events.find((event) => event.kind === "cleanup-acknowledged")!;
+        const replacement = scenario.events.find((event) => event.kind === "renderer-mounted" && event.generationId !== "generation-1")!;
+        return { ...scenario, events: scenario.events.map((event) =>
+          event === acknowledgement ? { ...event, sequence: replacement.sequence + 1 }
+            : event === replacement ? { ...event, sequence: acknowledgement.sequence + 1 }
+              : event,
+        ) };
+      }],
+      ["uncertain cleanup claims fallback", (scenario) => ({
+        ...scenario,
+        cleanupOutcome: "uncertain",
+        events: scenario.events.map((event) => event.kind === "cleanup" || event.kind === "cleanup-acknowledged"
+          ? { ...event, outcome: "uncertain" as const } : event),
+      })],
+      ["replacement belongs to another host", (scenario) => ({
+        ...scenario,
+        events: scenario.events.map((event) => event.kind === "renderer-mounted" && event.generationId !== "generation-1"
+          ? { ...event, hostId: "other-host" } : event),
+      })],
+    ];
+
+    for (const [label, mutate] of mutations) {
+      const report = makeFullyQualifiedReport();
+      const index = report.scenarios.findIndex((item) => item.id === "m7b-b2-runtime-failure-matrix");
+      report.scenarios[index] = mutate(report.scenarios[index]);
+      expect(evaluateGroundGlassM7bLifecycleEvidence(report).valid, label).toBe(false);
+    }
+  });
+
+  it("does not allow a later generation after failed cleanup even when the summary says unavailable", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.id === "m7b-b4-cleanup-failure-sticky");
+    const scenario = report.scenarios[index];
+    report.scenarios[index] = {
+      ...scenario,
+      events: [...scenario.events, {
+        sequence: scenario.events.length,
+        kind: "renderer-mounted",
+        attemptId: "attempt-2",
+        generationId: "generation-2",
+        requestId: "request-1",
+        detail: null,
+        channelId: "default",
+        hostId: "host-1",
+        sceneId: "architecture-rise",
+        rendererFamily: "webgl-renderer",
+        executionApi: "webgl2",
+        internalFallback: "none",
+      } as GroundGlassM7bScenarioEvidence["events"][number]],
+    };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("failed-cleanup-allows-replacement:" + scenario.id);
+  });
+
+  it("rejects host publication evidence when channel, generation, host acceptance, freshness, or ordering contradicts it", () => {
+    const mutations: Array<[
+      string,
+      (scenario: GroundGlassM7bScenarioEvidence) => GroundGlassM7bScenarioEvidence,
+    ]> = [
+      ["wrong channel", (scenario) => ({
+        ...scenario,
+        events: scenario.events.map((event) => event.kind === "host-frame-result"
+          ? { ...event, channelId: "another-channel" } : event),
+      })],
+      ["retiring generation", (scenario) => ({
+        ...scenario,
+        events: scenario.events.map((event) => event.kind === "host-frame-result"
+          ? { ...event, generationId: "generation-1", activeGenerationId: "generation-1" } : event),
+      })],
+      ["host rejection reported as current", (scenario) => ({
+        ...scenario,
+        events: scenario.events.map((event) => event.kind === "host-frame-result"
+          ? { ...event, acceptedByHost: false } : event),
+      })],
+      ["latest request differs", (scenario) => ({
+        ...scenario,
+        publication: { ...scenario.publication, acceptedRequestId: "request-2" },
+      })],
+      ["latest accepted scene differs", (scenario) => ({
+        ...scenario,
+        events: scenario.events.map((event) => event.kind === "host-frame-result"
+          ? { ...event, latestAcceptedSceneId: "interior-corner" } : event),
+      })],
+      ["publication after retirement", (scenario) => {
+        const index = scenario.events.findIndex((event) => event.kind === "host-frame-result");
+        const result = scenario.events[index];
+        return {
+          ...scenario,
+          events: [
+            ...scenario.events.slice(0, index),
+            {
+              ...result,
+              kind: "cleanup-acknowledged",
+              sequence: result.sequence,
+              outcome: "confirmed",
+            } as GroundGlassM7bScenarioEvidence["events"][number],
+            { ...result, sequence: result.sequence + 1 },
+            ...scenario.events.slice(index + 1),
+          ],
+        };
+      }],
+      ["missing host publication event", (scenario) => ({
+        ...scenario,
+        events: scenario.events.filter((event) => event.kind !== "host-frame-result"),
+      })],
+    ];
+
+    for (const [label, mutate] of mutations) {
+      const report = makeFullyQualifiedReport();
+      const index = report.scenarios.findIndex((item) => item.id === "m7b-b3-async-retirement-and-latest-request");
+      report.scenarios[index] = mutate(report.scenarios[index]);
+      expect(evaluateGroundGlassM7bLifecycleEvidence(report).valid, label).toBe(false);
+    }
+  });
+
+  it("accepts an observed stale result rejected after a confirmed cross-generation replacement", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.id === "m7b-e5-independent-channel-owner");
+    const scenario = report.scenarios[index];
+    report.scenarios[index] = {
+      ...scenario,
+      publication: { status: "stale-rejected", acceptedRequestId: "request-current", completedRequestId: "request-stale" },
+      events: [
+        {
+          sequence: 0, kind: "renderer-mounted", attemptId: "attempt-1", generationId: "generation-1",
+          requestId: "request-stale", detail: null, channelId: "default", hostId: "host-1",
+          sceneId: "architecture-rise", rendererFamily: "webgpu-renderer", executionApi: "webgpu",
+          internalFallback: "none",
+        },
+        {
+          sequence: 1, kind: "cleanup-acknowledged", attemptId: null, generationId: "generation-1",
+          requestId: null, detail: null, channelId: "default", hostId: "host-1", outcome: "confirmed",
+        },
+        {
+          sequence: 2, kind: "renderer-mounted", attemptId: "attempt-2", generationId: "generation-2",
+          requestId: "request-current", detail: null, channelId: "default", hostId: "host-1",
+          sceneId: "interior-corner", rendererFamily: "webgl-renderer", executionApi: "webgl2",
+          internalFallback: "none",
+        },
+        {
+          sequence: 3, kind: "host-frame-result", attemptId: "attempt-1", generationId: "generation-1",
+          activeGenerationId: "generation-2", requestId: "request-stale", latestAcceptedRequestId: "request-current",
+          latestAcceptedSceneId: "interior-corner",
+          detail: null, channelId: "default", hostId: "host-1", sceneId: "architecture-rise",
+          frameStatus: "completed", acceptedByHost: false, activeRendererFamily: "webgl-renderer",
+        },
+      ] as GroundGlassM7bScenarioEvidence["events"],
+    };
+    expect(evaluateGroundGlassM7bLifecycleEvidence(report)).toMatchObject({
+      valid: true,
+      qualification: "qualified-for-scoped-development-pilot",
+    });
   });
 
   it("accepts the committed M7B report and its partial-qualification counts", () => {

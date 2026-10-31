@@ -60,6 +60,11 @@ export type GroundGlassM7bEvidenceEvent = Readonly<{
   executionApi?: "webgpu" | "webgl2" | "webgl" | null;
   internalFallback?: "none" | "webgl2-compatibility" | null;
   acceptedByHost?: boolean;
+  frameStatus?: "completed";
+  latestAcceptedRequestId?: string | null;
+  latestAcceptedSceneId?: string | null;
+  activeGenerationId?: string | null;
+  activeRendererFamily?: "webgl-renderer" | "webgpu-renderer" | null;
 }>;
 
 export type GroundGlassM7bScenarioEvidence = Readonly<{
@@ -230,10 +235,11 @@ const validateM7bObservedRuntime = (
       observed.generationId !== mounted.generationId ||
       observed.rendererFamily !== "webgpu-renderer" ||
       observed.executionApi !== "webgpu" ||
+      observed.internalFallback !== "none" ||
       observed.rendererRevision !== scenario.threeRevision ||
       mounted.rendererFamily !== "webgpu-renderer" ||
       mounted.executionApi !== "webgpu" ||
-      mounted.internalFallback !== "none"
+      mounted.internalFallback !== observed.internalFallback
     ) errors.push("suite-native-runtime-not-observed:" + scenarioId);
     return;
   }
@@ -260,11 +266,12 @@ const validateM7bObservedRuntime = (
     !observed ||
     observed.rendererFamily !== "webgpu-renderer" ||
     observed.executionApi !== "webgpu" ||
+    observed.internalFallback !== "none" ||
     observed.rendererRevision !== expectedRevision ||
     attempt?.rendererRevision !== expectedRevision ||
     scenario.runtime.rendererFamily !== observed.rendererFamily ||
     scenario.runtime.actualExecutionApi !== observed.executionApi ||
-    scenario.runtime.internalFallback !== "none"
+    scenario.runtime.internalFallback !== observed.internalFallback
   ) {
     errors.push("observed-native-runtime-contradiction:" + scenarioId);
   }
@@ -276,7 +283,7 @@ const validateM7bObservedRuntime = (
     !eventMatchesScenarioIdentity(scenario, mounted, true) ||
     mounted?.rendererFamily !== observed?.rendererFamily ||
     mounted?.executionApi !== observed?.executionApi ||
-    mounted?.internalFallback !== "none" ||
+    mounted?.internalFallback !== observed?.internalFallback ||
     scenario.runtime.hostMounted !== true
   ) {
     errors.push("mounted-native-runtime-contradiction:" + scenarioId);
@@ -297,12 +304,14 @@ const validateM7bCleanupFallback = (
     "native-webgpu-device-destroy-lost-promise",
   ]);
   if (!cleanupClasses.has(String(scenario.evidenceClass)) || !isObject(scenario.identity)) return;
-  const generation = scenario.identity.rendererGenerationId;
+  const identity = scenario.identity;
+  const generation = identity.rendererGenerationId;
   if (!isNonEmptyString(generation)) return;
   const adapter = eventFor(scenario, "cleanup", generation);
   const host = eventFor(scenario, "cleanup-acknowledged", generation);
   const adapterSeq = adapter?.sequence;
   const hostSeq = host?.sequence;
+  const failureSeq = eventSequence(scenario, "failure", generation);
   const generationEvents = Array.isArray(scenario.events)
     ? scenario.events.filter(isObject).filter((event) => event.generationId === generation)
     : [];
@@ -316,12 +325,13 @@ const validateM7bCleanupFallback = (
     !host ||
     host.generationId !== generation ||
     host.hostId !== scenario.identity.hostId ||
-    host.channelId !== scenario.identity.channelId ||
+    host.channelId !== identity.channelId ||
     adapter?.outcome !== scenario.cleanupOutcome ||
     host.outcome !== scenario.cleanupOutcome ||
+    typeof failureSeq !== "number" ||
     typeof adapterSeq !== "number" ||
     typeof hostSeq !== "number" ||
-    adapterSeq >= hostSeq
+    !(failureSeq < adapterSeq && adapterSeq < hostSeq)
   ) {
     errors.push("cleanup-host-acknowledgement-contradiction:" + scenarioId);
   }
@@ -338,7 +348,8 @@ const validateM7bCleanupFallback = (
     const replacement = events.find((event) =>
       event.kind === "renderer-mounted" &&
       event.generationId !== generation &&
-      event.channelId === scenario.identity.channelId &&
+      event.channelId === identity.channelId &&
+      event.hostId === identity.hostId &&
       event.rendererFamily === "webgl-renderer" &&
       (event.executionApi === "webgl" || event.executionApi === "webgl2") &&
       event.internalFallback === "none" &&
@@ -348,7 +359,21 @@ const validateM7bCleanupFallback = (
     );
     if (!replacement) errors.push("missing-confirmed-webgl-replacement:" + scenarioId);
   } else if (scenario.cleanupOutcome === "failed" || scenario.cleanupOutcome === "uncertain") {
-    if (scenario.applicationFallback !== false || scenario.fallbackOutcome !== "unavailable") {
+    const events = Array.isArray(scenario.events) ? scenario.events.filter(isObject) : [];
+    const replacementAfterFailure = events.some((event) =>
+      event.kind === "renderer-mounted" &&
+      event.generationId !== generation &&
+      event.channelId === identity.channelId &&
+      event.hostId === identity.hostId &&
+      typeof adapterSeq === "number" &&
+      typeof event.sequence === "number" &&
+      event.sequence > adapterSeq
+    );
+    if (
+      scenario.applicationFallback !== false ||
+      scenario.fallbackOutcome !== "unavailable" ||
+      replacementAfterFailure
+    ) {
       errors.push("failed-cleanup-allows-replacement:" + scenarioId);
     }
   }
@@ -370,50 +395,96 @@ const validateM7bPublication = (
     event.requestId === pub.completedRequestId
   );
   const latest = result?.latestAcceptedRequestId;
-  const identityMatches = result &&
+  const identityMatches = result && isObject(scenario.identity) &&
     result.channelId === (isObject(scenario.identity) ? scenario.identity.channelId : null) &&
     isNonEmptyString(result.generationId) &&
-    result.activeGenerationId === result.generationId &&
+    isNonEmptyString(result.attemptId) &&
     isNonEmptyString(result.sceneId) &&
+    isNonEmptyString(result.latestAcceptedSceneId) &&
     isNonEmptyString(result.hostId) &&
     result.latestAcceptedRequestId === pub.acceptedRequestId;
   if (!identityMatches || !isNonEmptyString(latest)) {
     errors.push("missing-host-publication-evidence:" + scenarioId);
     return;
   }
-  if (pub.status === "current") {
-    if (result.acceptedByHost !== true || result.requestId !== latest) {
-      errors.push("current-publication-not-accepted-by-host:" + scenarioId);
-    }
-  } else if (result.acceptedByHost !== false || result.requestId === latest) {
-    errors.push("stale-publication-not-rejected-by-host:" + scenarioId);
-  }
-  const resultSequence = result?.sequence;
-  const retirement = events.find((event) =>
-    event.kind === "cleanup-acknowledged" && event.generationId === result?.generationId &&
-    typeof event.sequence === "number" && typeof resultSequence === "number" &&
-    event.sequence < resultSequence
+  const mountFor = (generationId: unknown, attemptId?: unknown) => events.find((event) =>
+    event.kind === "renderer-mounted" &&
+    event.generationId === generationId &&
+    event.channelId === result.channelId &&
+    event.hostId === result.hostId &&
+    (attemptId === undefined || event.attemptId === attemptId)
   );
-  if (retirement) errors.push("publication-after-generation-retirement:" + scenarioId);
-  const retired = isObject(scenario.identity) ? scenario.identity.rendererGenerationId : null;
-  if (scenario.fallbackOutcome === "webgl-mounted" && retired) {
-    const hostCleanup = eventFor(scenario, "cleanup-acknowledged", String(retired));
-    const replacement = events.find((event) =>
-      event.kind === "renderer-mounted" && event.generationId === result.generationId &&
-      event.rendererFamily === "webgl-renderer" &&
-      (event.executionApi === "webgl" || event.executionApi === "webgl2")
+  if (pub.status === "current") {
+    const mounted = mountFor(result.generationId, result.attemptId);
+    const sequence = result.sequence;
+    const retiredBeforeResult = events.some((event) =>
+      (event.kind === "cleanup" || event.kind === "cleanup-acknowledged") &&
+      event.generationId === result.generationId &&
+      typeof event.sequence === "number" && typeof sequence === "number" &&
+      event.sequence < sequence
     );
     if (
-      result.generationId === retired ||
-      !hostCleanup ||
-      !replacement ||
-      result.rendererFamily !== "webgl-renderer" ||
-      replacement.rendererFamily !== result.rendererFamily ||
-      typeof result.sequence !== "number" ||
-      typeof replacement.sequence !== "number" ||
-      typeof hostCleanup.sequence !== "number" ||
-      !(hostCleanup.sequence < replacement.sequence && replacement.sequence < result.sequence)
-    ) errors.push("publication-not-from-confirmed-replacement:" + scenarioId);
+      result.acceptedByHost !== true ||
+      result.requestId !== latest ||
+      result.sceneId !== result.latestAcceptedSceneId ||
+      result.activeGenerationId !== result.generationId ||
+      !mounted ||
+      result.activeRendererFamily !== mounted.rendererFamily ||
+      retiredBeforeResult
+    ) {
+      errors.push("current-publication-not-accepted-by-host:" + scenarioId);
+    }
+    if (scenario.fallbackOutcome === "webgl-mounted") {
+      const retired = isObject(scenario.identity) ? scenario.identity.rendererGenerationId : null;
+      const hostCleanup = eventFor(scenario, "cleanup-acknowledged", String(retired));
+      if (
+        !retired || result.generationId === retired || !hostCleanup || !mounted ||
+        mounted.rendererFamily !== "webgl-renderer" ||
+        (mounted.executionApi !== "webgl" && mounted.executionApi !== "webgl2") ||
+        typeof result.sequence !== "number" || typeof mounted.sequence !== "number" ||
+        typeof hostCleanup.sequence !== "number" ||
+        !(hostCleanup.sequence < mounted.sequence && mounted.sequence < result.sequence)
+      ) errors.push("publication-not-from-confirmed-replacement:" + scenarioId);
+    }
+  } else {
+    const staleMount = mountFor(result.generationId, result.attemptId);
+    const activeMount = mountFor(result.activeGenerationId);
+    const generationChanged = result.activeGenerationId !== result.generationId;
+    const retiredStale = events.find((event) =>
+      event.kind === "cleanup-acknowledged" &&
+      event.generationId === result.generationId &&
+      event.hostId === result.hostId &&
+      event.channelId === result.channelId &&
+      event.outcome === "confirmed" &&
+      typeof event.sequence === "number" &&
+      typeof result.sequence === "number" && event.sequence < result.sequence
+    );
+    const replacementIsOrdered = !generationChanged || (
+      Boolean(retiredStale && activeMount) &&
+      typeof retiredStale?.sequence === "number" &&
+      typeof activeMount?.sequence === "number" &&
+      typeof result.sequence === "number" &&
+      retiredStale.sequence < activeMount.sequence &&
+      activeMount.sequence < result.sequence
+    );
+    const sameGenerationIsLive = generationChanged || !events.some((event) =>
+      (event.kind === "cleanup" || event.kind === "cleanup-acknowledged") &&
+      event.generationId === result.generationId &&
+      typeof event.sequence === "number" && typeof result.sequence === "number" &&
+      event.sequence < result.sequence
+    );
+    if (
+      result.acceptedByHost !== false ||
+      result.requestId === latest ||
+      !isNonEmptyString(result.activeGenerationId) ||
+      !staleMount ||
+      !activeMount ||
+      result.activeRendererFamily !== activeMount.rendererFamily ||
+      !replacementIsOrdered ||
+      !sameGenerationIsLive
+    ) {
+      errors.push("stale-publication-not-rejected-by-host:" + scenarioId);
+    }
   }
 };
 

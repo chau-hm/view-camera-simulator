@@ -565,6 +565,7 @@ export type GroundGlassWebGpuTestEvent =
       rendererRevision: string;
       rendererFamily: "webgpu-renderer" | "webgl-renderer";
       executionApi: "webgpu" | "webgl2" | "webgl";
+      internalFallback: "none" | "webgl2-compatibility";
     }>
   | Readonly<{
       kind: "renderer-mounted";
@@ -589,8 +590,9 @@ export type GroundGlassWebGpuTestEvent =
       frameStatus: "completed";
       acceptedByHost: boolean;
       latestAcceptedRequestId: string | null;
+      latestAcceptedSceneId: string | null;
       activeGenerationId: string | null;
-      rendererFamily: "webgl-renderer" | "webgpu-renderer" | null;
+      activeRendererFamily: "webgl-renderer" | "webgpu-renderer" | null;
     }>
   | Readonly<{
       kind: "failed-frame-result";
