@@ -8,6 +8,7 @@ import type {
   GroundGlassWebGpuTestControl,
   GroundGlassWebGpuTestEventWithSequence,
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
+import { attachGroundGlassM7dEvidence } from "./helpers/groundGlassM7dEvidence";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
@@ -1080,10 +1081,11 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       await expect(pilot).toHaveAttribute("data-physical-coc-passes", "sceneDepth,physicalCoc,validity");
       await expect(glass).toHaveAttribute("data-last-completed-request-id", recoveredRequestId!, { timeout: 90_000 });
       expect(await glass.getAttribute("data-renderer-generation")).toBe(initialGeneration);
-      await testInfo.attach(`ground-glass-m4-${scenario.point}-failure-evidence.json`, {
-        body: JSON.stringify({ ...failureEvidence, recoveredRequestId }, null, 2),
-        contentType: "application/json",
-      });
+      await attachGroundGlassM7dEvidence(
+        testInfo,
+        `ground-glass-m4-${scenario.point}-failure-evidence.json`,
+        { ...failureEvidence, recoveredRequestId },
+      );
     });
   }
 
@@ -1123,8 +1125,7 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       activeGenerationId: failedGeneration,
       activeRendererFamily: "webgpu-renderer",
     });
-    await testInfo.attach("ground-glass-m4-unsupported-storage-evidence.json", {
-      body: JSON.stringify({
+    await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-unsupported-storage-evidence.json", {
         test: "M4 unsupported physical storage reports unsupported while native Raw remains available",
         browserVersion: page.context().browser()?.version() ?? "unknown",
         operatingSystem: `${process.platform} ${process.arch}`,
@@ -1143,8 +1144,6 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
         rawLastCompletedRequestId: await glass.getAttribute("data-last-completed-request-id"),
         acceptedHostFrameResult: acceptedUnsupportedFrame,
         adapterEvents: events,
-      }, null, 2),
-      contentType: "application/json",
     });
   });
 

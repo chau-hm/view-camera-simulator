@@ -17,6 +17,7 @@ import { groundGlassPhysicalCocOrientationErrorModuloPi } from "../../render/web
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { Vec3 } from "../../types/optics";
 import { clickStageAt } from "./helpers/groundGlass";
+import { attachGroundGlassM7dEvidence } from "./helpers/groundGlassM7dEvidence";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
@@ -1308,8 +1309,7 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
       Array<Record<string, unknown>>,
   );
 
-  await testInfo.attach("ground-glass-m4-physical-coc-native-evidence.json", {
-    body: JSON.stringify({
+  await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-physical-coc-native-evidence.json", {
       browserVersion: page.context().browser()?.version() ?? "unknown",
       operatingSystem: `${process.platform} ${process.arch}`,
       threeRevision: REVISION,
@@ -1366,8 +1366,6 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
       probeSummary: summary,
       lifecycle: { beforeResize, afterResize, cleanupOutcome: await retiredPilot.getAttribute("data-cleanup-outcome") },
       pageErrors,
-    }, null, 2),
-    contentType: "application/json",
   });
   expect(pageErrors).toEqual([]);
 });
@@ -1416,8 +1414,7 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
   await expect(pilot).toHaveAttribute("data-physical-coc-request-id", resizedRequestId!);
   await expect(pilot).toHaveAttribute("data-physical-coc-probe-readback-status", "not-requested");
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null)).toBeNull();
-  await testInfo.attach("ground-glass-m4-stale-resize-evidence.json", {
-    body: JSON.stringify({
+  await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-stale-resize-evidence.json", {
       test: "M4 probe readback is stale after resize and cannot publish the superseded request",
       browserVersion: page.context().browser()?.version() ?? "unknown",
       operatingSystem: `${process.platform} ${process.arch}`,
@@ -1435,8 +1432,6 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
       readbackAfterRelease: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null),
       readbackStatus: await pilot.getAttribute("data-physical-coc-probe-readback-status"),
       stalePublicationRejected: true,
-    }, null, 2),
-    contentType: "application/json",
   });
 });
 
@@ -1484,8 +1479,7 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   await expect.poll(() => retiredPilot.getAttribute("data-cleanup-outcome"), { timeout: 90_000 }).toBe("confirmed");
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null)).toBeNull();
   expect(await retiredPilot.getAttribute("data-last-displayed-request-id")).not.toBeNull();
-  await testInfo.attach("ground-glass-m4-stale-unmount-evidence.json", {
-    body: JSON.stringify({
+  await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-stale-unmount-evidence.json", {
       test: "M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles",
       browserVersion: page.context().browser()?.version() ?? "unknown",
       operatingSystem: `${process.platform} ${process.arch}`,
@@ -1502,7 +1496,5 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
       lastDisplayedRequestId: await retiredPilot.getAttribute("data-last-displayed-request-id"),
       readbackAfterRelease: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null),
       stalePublicationRejected: true,
-    }, null, 2),
-    contentType: "application/json",
   });
 });
