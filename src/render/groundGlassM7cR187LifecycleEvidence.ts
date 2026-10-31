@@ -170,12 +170,16 @@ const validateLatestRequestEvidence = (scenario: M7cScenario, errors: string[]):
     event.acceptedByHost === true);
   const stale = events.find((event) => event.kind === "host-frame-result" && event.requestId === staleId &&
     event.acceptedByHost === false && event.latestAcceptedRequestId === latestId);
+  const finalState = readObservation(scenario, "final-publication-state-after-stale-rejection");
   if (
     !accepted || accepted.acceptedByHost !== true || accepted.generationId !== replacementId ||
     accepted.latestAcceptedRequestId !== latestId || accepted.activeGenerationId !== replacementId ||
     !stale || stale.acceptedByHost !== false || stale.generationId !== replacementId ||
     stale.latestAcceptedRequestId !== latestId || stale.activeGenerationId !== replacementId ||
     stale.activeRendererFamily !== "webgl-renderer" ||
+    !finalState || finalState.currentRequestId !== latestId || finalState.lastCompletedRequestId !== latestId ||
+    finalState.completedCurrentRequest !== true || finalState.frameResultStatus !== "completed" ||
+    finalState.lifecycle !== "ready" ||
     typeof accepted.sequence !== "number" || typeof stale.sequence !== "number" || accepted.sequence >= stale.sequence ||
     interleaving.hostAcceptedLatestBeforeRejectingStale !== true ||
     !Array.isArray(changedInputs) ||
@@ -183,6 +187,9 @@ const validateLatestRequestEvidence = (scenario: M7cScenario, errors: string[]):
       Array.isArray(changedInputs) && changedInputs.includes(input),
     )
   ) errors.push("latest-request-result-chain-contradiction:" + scenario.id);
+  if (finalState && (finalState.currentRequestId !== latestId || finalState.lastCompletedRequestId !== latestId)) {
+    errors.push("latest-request-final-state-overwritten-by-stale:" + scenario.id);
+  }
   const latestIdentity = interleaving.latestRequestIdentity;
   if (!isObject(latestIdentity) || latestIdentity.channelId !== accepted?.channelId ||
       latestIdentity.sceneId !== accepted?.sceneId || latestIdentity.rendererFamily !== "webgl-renderer" ||

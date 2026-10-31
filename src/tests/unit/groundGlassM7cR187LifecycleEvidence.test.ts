@@ -135,6 +135,19 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
     expectRejected(report, "latest-request-result-chain-contradiction:m7c-r187-latest-request-stale-rejection");
   });
 
+  it("rejects a stale completion that overwrites the final current publication state", () => {
+    const report = copyReport();
+    const scenario = scenarioFor(report, "m7c-r187-latest-request-stale-rejection");
+    const observations = (scenario.provenance as Record<string, unknown>).observations as Array<Record<string, unknown>>;
+    const interleaving = observations.find((observation) => observation.kind === "latest-request-interleaving");
+    const finalState = observations.find((observation) => observation.kind === "final-publication-state-after-stale-rejection");
+    if (!interleaving || typeof interleaving.requests !== "object" || interleaving.requests === null || !finalState) {
+      throw new Error("Positive control is missing the final publication-state observation");
+    }
+    finalState.lastCompletedRequestId = (interleaving.requests as Record<string, unknown>).staleRequestId;
+    expectRejected(report, "latest-request-final-state-overwritten-by-stale:m7c-r187-latest-request-stale-rejection");
+  });
+
   it("rejects a fabricated current request identity", () => {
     const report = copyReport();
     scenarioFor(report, "m7c-r187-scene-render-failure").identity = {
