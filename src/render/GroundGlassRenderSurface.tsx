@@ -60,6 +60,7 @@ export const GroundGlassRenderSurface = ({
   const runtimeInfoChange = explicitRuntimeInfoChange;
   const sceneId = scene.id;
   const [backendDiagnostics, setBackendDiagnostics] = useState<GroundGlassBackendDiagnostics | null>(null);
+  const testEvidenceEnabled = import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true";
   const handleBackendDiagnosticsChange = useCallback((
     _channel: GroundGlassRttChannel,
     diagnostics: GroundGlassBackendDiagnostics | null,
@@ -74,9 +75,14 @@ export const GroundGlassRenderSurface = ({
         data-frame-request-id={backendDiagnostics?.requestIdentity.requestId}
         data-frame-channel-id={backendDiagnostics?.requestIdentity.channelId}
         data-frame-scene-id={backendDiagnostics?.requestIdentity.sceneId}
+        data-policy-requested-backend={testEvidenceEnabled ? backendDiagnostics?.policySelection.requestedBackend ?? "default" : undefined}
         data-policy-selected-backend={backendDiagnostics?.policySelection.status === "selected"
           ? backendDiagnostics.policySelection.selectedBackend
           : "unavailable"}
+        data-attempted-backend={testEvidenceEnabled ? backendDiagnostics?.attemptedBackend.status === "not-started"
+          ? "not-started"
+          : backendDiagnostics?.attemptedBackend.backend : undefined}
+        data-backend-attempt-status={testEvidenceEnabled ? backendDiagnostics?.attemptedBackend.status : undefined}
         data-pilot-session-id={backendDiagnostics?.pilotSessionId ?? undefined}
         data-pilot-retry-status={backendDiagnostics?.retryState?.status ?? "none"}
         data-pilot-retry-epoch={backendDiagnostics?.retryState?.retryEpoch}
@@ -101,9 +107,18 @@ export const GroundGlassRenderSurface = ({
         data-pilot-failure-pass={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
           ? backendDiagnostics?.lastFailure?.failedPass ?? undefined
           : undefined}
+        data-last-failure-host-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.hostId : undefined}
+        data-last-failure-channel-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.generation.channelId : undefined}
+        data-last-failure-session-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.pilotSessionId ?? undefined : undefined}
+        data-last-failure-retry-epoch={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.retryEpoch ?? undefined : undefined}
+        data-last-failure-generation-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.generation.generationId : undefined}
+        data-last-failure-request-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.request?.requestId : undefined}
+        data-last-failure-scene-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.request?.sceneId : undefined}
+        data-last-failure-operation={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.failedPass ?? undefined : undefined}
         data-application-fallback={backendDiagnostics?.applicationFallback.status ?? "unknown"}
         data-mounted-renderer-family={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.rendererFamily : undefined}
         data-actual-execution-api={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.actualExecutionApi : undefined}
+        data-internal-fallback={testEvidenceEnabled && backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.internalFallback : undefined}
         data-render-host-lifecycle={backendDiagnostics?.lifecycleStatus}
         data-frame-result-status={backendDiagnostics?.frame.current?.status}
         data-last-completed-request-id={backendDiagnostics?.frame.lastSuccessfullyCompleted?.request.requestId}

@@ -128,6 +128,8 @@ import {
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
   registerGroundGlassDeviceLossTriggerForTest,
+  registerGroundGlassDeviceDestroyTriggerForTest,
+  createGroundGlassWebGpuAttemptIdentity,
   publishGroundGlassPhysicalCocProbeReadbackForTest,
   consumeGroundGlassApertureGatherCaptureForTest,
   consumeGroundGlassB1BoundaryProbeForTest,
@@ -1973,12 +1975,20 @@ export const GroundGlassWebGPUAdapter = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const attemptIdentity = createGroundGlassWebGpuAttemptIdentity(
+      requestRef.current.identity.channelId,
+      generation.generationId,
+      requestRef.current.identity.requestId,
+      requestRef.current.identity.sceneId,
+    );
     const adapterRoot = canvas.parentElement;
     const effectToken = { generationId: generation.generationId };
     effectTokenRef.current = effectToken;
     let retired = false;
     let failureReported = false;
     let unregisterDeviceLossTestTrigger: () => void = () => undefined;
+    let unregisterDeviceDestroyTestTrigger: () => void = () => undefined;
+    let testDeviceDestroyRequested = false;
     let disposePromise: Promise<void> | null = null;
     let initialization = Promise.resolve();
     let renderer: WebGpuRenderer | null = null;
@@ -2087,7 +2097,11 @@ export const GroundGlassWebGPUAdapter = ({
       }
       recordGroundGlassWebGpuTestEvent({
         kind: "failure",
+        attemptId: attemptIdentity.attemptId,
+        channelId: requestRef.current.identity.channelId,
         generationId: generation.generationId,
+        requestId: requestRef.current.identity.requestId,
+        sceneId: requestRef.current.identity.sceneId,
         stage,
         operation: failedPass ?? "unknown",
         reason: errorMessage(error),
@@ -2175,6 +2189,7 @@ export const GroundGlassWebGPUAdapter = ({
           adapterRoot?.setAttribute("data-cleanup-reason", reason);
           recordGroundGlassWebGpuTestEvent({
             kind: "cleanup",
+            attemptId: attemptIdentity.attemptId,
             generationId: generation.generationId,
             outcome: "uncertain",
             wallClockMs: performance.now() - cleanupStartedAt,
@@ -2259,6 +2274,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (reason) adapterRoot?.setAttribute("data-cleanup-reason", reason);
         recordGroundGlassWebGpuTestEvent({
           kind: "cleanup",
+          attemptId: attemptIdentity.attemptId,
           generationId: generation.generationId,
           outcome,
           wallClockMs: performance.now() - cleanupStartedAt,
@@ -4339,6 +4355,7 @@ export const GroundGlassWebGPUAdapter = ({
           });
           recordGroundGlassWebGpuTestEvent({
             kind: "frame-completed",
+            attemptId: attemptIdentity.attemptId,
             generationId: generation.generationId,
             requestId: latest.identity.requestId,
           });
@@ -4376,7 +4393,7 @@ export const GroundGlassWebGPUAdapter = ({
       // renderer until this effect instance survives that replay.
       if (effectTokenRef.current !== effectToken || !isGenerationActive()) return;
       try {
-        recordGroundGlassWebGpuAdapterAttemptForTest(generation.generationId);
+        recordGroundGlassWebGpuAdapterAttemptForTest(attemptIdentity, THREE.REVISION);
         renderer = new WebGPURenderer({
           canvas,
           antialias: false,
@@ -4405,9 +4422,12 @@ export const GroundGlassWebGPUAdapter = ({
         if (runtime.status === "mounted") {
           recordGroundGlassWebGpuTestEvent({
             kind: "runtime-observed",
+            attemptId: attemptIdentity.attemptId,
             generationId: generation.generationId,
+            rendererRevision: THREE.REVISION,
             rendererFamily: runtime.rendererFamily,
             executionApi: runtime.actualExecutionApi,
+            internalFallback: runtime.internalFallback,
           });
         }
         setRuntimeApi(runtime.status === "mounted"
@@ -4785,11 +4805,50 @@ export const GroundGlassWebGPUAdapter = ({
         };
         unregisterDeviceLossTestTrigger = registerGroundGlassDeviceLossTriggerForTest(
           requestRef.current.channel,
-          () => reportDeviceLoss("Injected test-only WebGPU device-loss equivalent"),
+          () => {
+            if (retired || failureReported || !isGenerationActive()) return false;
+            recordGroundGlassWebGpuTestEvent({
+              kind: "device-loss-equivalent-requested",
+              attemptId: attemptIdentity.attemptId,
+              generationId: generation.generationId,
+              cause: "test-callback-equivalent",
+            });
+            return reportDeviceLoss("Injected test-only WebGPU device-loss equivalent");
+          },
         );
         void device.lost?.then((info) => {
+          // Adapter-owned teardown also resolves GPUDevice.lost. Count an unrequested loss only
+          // while this generation is still active so normal cleanup cannot masquerade as device loss.
+          if (!testDeviceDestroyRequested && (retired || failureReported || disposePromise !== null || !isGenerationActive())) return;
+          const reason = info.reason ?? "unknown reason";
+          const message = info.message ?? "";
+          recordGroundGlassWebGpuTestEvent({
+            kind: "device-lost-observed",
+            attemptId: attemptIdentity.attemptId,
+            generationId: generation.generationId,
+            cause: testDeviceDestroyRequested ? "test-destroy" : "runtime-loss",
+            reason,
+            message,
+          });
           reportDeviceLoss(`WebGPU device lost: ${info.message ?? info.reason ?? "unknown reason"}`);
         });
+        unregisterDeviceDestroyTestTrigger = registerGroundGlassDeviceDestroyTriggerForTest(
+          requestRef.current.channel,
+          () => {
+            if (retired || failureReported || !isGenerationActive()) return false;
+            const destroyDevice = (device as typeof device & { destroy?: () => void }).destroy;
+            if (typeof destroyDevice !== "function") return false;
+            testDeviceDestroyRequested = true;
+            recordGroundGlassWebGpuTestEvent({
+              kind: "device-destroy-requested",
+              attemptId: attemptIdentity.attemptId,
+              generationId: generation.generationId,
+              cause: "test-destroy",
+            });
+            destroyDevice.call(device);
+            return true;
+          },
+        );
       } catch (error) {
         if (m6SessionProvisioningAllowed) {
           setM6ResourceProvisioning((current) => ({ ...current, status: "failed" }));
@@ -4807,6 +4866,7 @@ export const GroundGlassWebGPUAdapter = ({
         retired = true;
         activeRef.current = false;
         unregisterDeviceLossTestTrigger();
+        unregisterDeviceDestroyTestTrigger();
         void disposeOwned().catch(() => undefined);
         renderNowRef.current = null;
         registerGroundGlassApertureGatherCaptureTriggerForTest(null);

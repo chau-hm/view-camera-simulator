@@ -29,7 +29,9 @@ import { selectGroundGlassBackend, type GroundGlassBackendPolicyInput } from "./
 import type { GroundGlassFrameRequest, GroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { createGroundGlassFrameRequestFingerprint } from "./groundGlassFrameRequest";
 import {
+  createGroundGlassWebGpuAttemptIdentity,
   holdGroundGlassFrameResultForTest,
+  recordGroundGlassWebGpuTestEvent,
   registerGroundGlassPilotRecoveryActionForTest,
 } from "./webgpu/groundGlassWebGpuTestSeam";
 import { GroundGlassWebGLAdapter } from "./GroundGlassWebGLAdapter";
@@ -158,6 +160,7 @@ export const GroundGlassRenderHost = ({
   useLayoutEffect(() => {
     lifecycleEffectEpochRef.current += 1;
     owner.attachHost(channel, hostId);
+    recordGroundGlassWebGpuTestEvent({ kind: "host-attached", channelId: channel, hostId });
     return () => {
       const cleanupEpoch = ++lifecycleEffectEpochRef.current;
       // React StrictMode replays effect cleanup/setup in one commit. Deferring only the detach
@@ -258,6 +261,33 @@ export const GroundGlassRenderHost = ({
     actualExecutionApi: "webgl" | "webgl2",
   ) => {
     owner.reportRendererMounted(channel, hostId, mountedGeneration, actualExecutionApi);
+    const mountedState = owner.getSnapshot(channel);
+    const mountedRequest = mountedState.activeRequest;
+    const mountedRuntime = mountedState.mountedRuntime;
+    if (
+      mountedRequest &&
+      mountedState.activeHostId === hostId &&
+      mountedState.activeGeneration?.generationId === mountedGeneration.generationId &&
+      mountedRuntime.status === "mounted"
+    ) {
+      recordGroundGlassWebGpuTestEvent({
+        kind: "renderer-mounted",
+        attemptId: createGroundGlassWebGpuAttemptIdentity(
+          channel,
+          mountedGeneration.generationId,
+          mountedRequest.identity.requestId,
+          mountedRequest.identity.sceneId,
+        ).attemptId,
+        channelId: channel,
+        hostId,
+        generationId: mountedGeneration.generationId,
+        requestId: mountedRequest.identity.requestId,
+        sceneId: mountedRequest.identity.sceneId,
+        rendererFamily: mountedRuntime.rendererFamily,
+        executionApi: actualExecutionApi,
+        internalFallback: mountedRuntime.internalFallback,
+      });
+    }
   }, [channel, hostId, owner]);
 
   const handleWebGpuRendererMounted = useCallback((
@@ -266,6 +296,33 @@ export const GroundGlassRenderHost = ({
     details: GroundGlassBackendDiagnosticDetails,
   ) => {
     owner.reportWebGpuRendererMounted(channel, hostId, mountedGeneration, runtime, details);
+    const mountedState = owner.getSnapshot(channel);
+    const mountedRequest = mountedState.activeRequest;
+    const mountedRuntime = mountedState.mountedRuntime;
+    if (
+      mountedRequest &&
+      mountedState.activeHostId === hostId &&
+      mountedState.activeGeneration?.generationId === mountedGeneration.generationId &&
+      mountedRuntime.status === "mounted"
+    ) {
+      recordGroundGlassWebGpuTestEvent({
+        kind: "renderer-mounted",
+        attemptId: createGroundGlassWebGpuAttemptIdentity(
+          channel,
+          mountedGeneration.generationId,
+          mountedRequest.identity.requestId,
+          mountedRequest.identity.sceneId,
+        ).attemptId,
+        channelId: channel,
+        hostId,
+        generationId: mountedGeneration.generationId,
+        requestId: mountedRequest.identity.requestId,
+        sceneId: mountedRequest.identity.sceneId,
+        rendererFamily: mountedRuntime.rendererFamily,
+        executionApi: mountedRuntime.actualExecutionApi,
+        internalFallback: mountedRuntime.internalFallback,
+      });
+    }
   }, [channel, hostId, owner]);
 
   const handleWebGpuBackendDetails = useCallback((details: GroundGlassBackendDiagnosticDetails) => {
@@ -281,12 +338,52 @@ export const GroundGlassRenderHost = ({
 
   const handleFrameResult = useCallback((result: GroundGlassFrameResult) => {
     const deliver = () => {
-      if (!owner.receiveFrameResult(channel, hostId, result)) return;
-      if (
-        result.status === "completed" &&
-        owner.canPublishFrameNow(channel, hostId, result)
-      ) {
-        framePublishedRef.current?.(result);
+      const beforeResult = owner.getSnapshot(channel);
+      const accepted = owner.receiveFrameResult(channel, hostId, result);
+      if (result.status === "failed") {
+        recordGroundGlassWebGpuTestEvent({
+          kind: "failed-frame-result",
+          attemptId: createGroundGlassWebGpuAttemptIdentity(
+            channel,
+            result.generation.generationId,
+            result.request.requestId,
+            result.request.sceneId,
+          ).attemptId,
+          channelId: channel,
+          hostId,
+          generationId: result.generation.generationId,
+          requestId: result.request.requestId,
+          sceneId: result.request.sceneId,
+          failedStage: result.failedStage,
+          failureReason: result.failureReason,
+          acceptedByHost: accepted,
+        });
+      }
+      if (result.status === "completed") {
+        const publishable = accepted && owner.canPublishFrameNow(channel, hostId, result);
+        if (publishable) framePublishedRef.current?.(result);
+        recordGroundGlassWebGpuTestEvent({
+          kind: "host-frame-result",
+          attemptId: createGroundGlassWebGpuAttemptIdentity(
+            channel,
+            result.generation.generationId,
+            result.request.requestId,
+            result.request.sceneId,
+          ).attemptId,
+          channelId: channel,
+          hostId,
+          generationId: result.generation.generationId,
+          requestId: result.request.requestId,
+          sceneId: result.request.sceneId,
+          frameStatus: "completed",
+          acceptedByHost: publishable,
+          latestAcceptedRequestId: beforeResult.activeRequest?.identity.requestId ?? null,
+          latestAcceptedSceneId: beforeResult.activeRequest?.identity.sceneId ?? null,
+          activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+          activeRendererFamily: beforeResult.mountedRuntime.status === "mounted"
+            ? beforeResult.mountedRuntime.rendererFamily
+            : null,
+        });
       }
     };
     if (!holdGroundGlassFrameResultForTest(result, deliver)) deliver();
@@ -329,8 +426,21 @@ export const GroundGlassRenderHost = ({
     outcome: GroundGlassCleanupOutcome,
     reason?: string,
   ) => {
+    const beforeCleanup = owner.getSnapshot(channel);
+    const currentGeneration = beforeCleanup.retiringGeneration?.generationId === retiredGeneration.generationId ||
+      beforeCleanup.activeGeneration?.generationId === retiredGeneration.generationId;
     owner.reportAdapterDisposed(channel, retiredGeneration, outcome, reason);
-  }, [channel, owner]);
+    if (currentGeneration) {
+      recordGroundGlassWebGpuTestEvent({
+        kind: "cleanup-acknowledged",
+        channelId: channel,
+        hostId,
+        generationId: retiredGeneration.generationId,
+        outcome,
+        reason: reason ?? null,
+      });
+    }
+  }, [channel, hostId, owner]);
 
   const handleAdapterFailureAtStage = useCallback((
     error: Error,
