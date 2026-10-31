@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   evaluateGroundGlassM7bLifecycleEvidence,
+  GROUND_GLASS_M7B_EVALUATOR_REVISION,
   GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS,
   type GroundGlassM7bEvidenceClass,
   type GroundGlassM7bScenarioEvidence,
@@ -9,6 +10,12 @@ import {
 } from "../../render/groundGlassM7bLifecycleEvidence";
 
 const sourceHeadSha = "a".repeat(40);
+
+const scenarioCountsFor = (scenarios: readonly GroundGlassM7bScenarioEvidence[]) => {
+  const counts = { passed: 0, failed: 0, blocked: 0, "not-run": 0 };
+  for (const scenario of scenarios) counts[scenario.status] += 1;
+  return counts;
+};
 
 const evidenceClassByScenario: Readonly<Record<GroundGlassM7bScenarioId, GroundGlassM7bEvidenceClass>> = {
   "m7b-phase-a-timeout-diagnosis": "native-webgpu-runtime",
@@ -352,19 +359,36 @@ const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): G
   return { ...source, events: events.map((item, sequence) => ({ ...item, sequence })), publication };
 };
 
-const makePartialReport = () => ({
-  schemaVersion: "ground-glass-m7b-native-lifecycle-v1",
-  sourceHeadSha,
-  qualification: "partially-qualified",
-  scenarios: GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.map((id) => baseScenario(id)),
-});
+const makePartialReport = () => {
+  const scenarios = GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.map((id) => baseScenario(id));
+  return {
+    schemaVersion: "ground-glass-m7b-native-lifecycle-v1",
+    evaluatorRevision: GROUND_GLASS_M7B_EVALUATOR_REVISION,
+    sourceHeadSha,
+    qualification: "partially-qualified",
+    scenarioCounts: scenarioCountsFor(scenarios),
+    reviewFixRound1: { evaluatorRevision: GROUND_GLASS_M7B_EVALUATOR_REVISION },
+    scenarios,
+  };
+};
 
-const makeFullyQualifiedReport = () => ({
-  schemaVersion: "ground-glass-m7b-native-lifecycle-v1",
-  sourceHeadSha,
-  qualification: "qualified-for-scoped-development-pilot",
-  scenarios: GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.map(enrichPassedScenarioWithObservedEvents),
-});
+const makeFullyQualifiedReport = () => {
+  const scenarios = GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.map(enrichPassedScenarioWithObservedEvents);
+  return {
+    schemaVersion: "ground-glass-m7b-native-lifecycle-v1",
+    evaluatorRevision: GROUND_GLASS_M7B_EVALUATOR_REVISION,
+    sourceHeadSha,
+    qualification: "qualified-for-scoped-development-pilot",
+    scenarioCounts: scenarioCountsFor(scenarios),
+    reviewFixRound1: { evaluatorRevision: GROUND_GLASS_M7B_EVALUATOR_REVISION },
+    scenarios,
+  };
+};
+
+const readCommittedReport = (): Record<string, unknown> => JSON.parse(readFileSync(
+  "docs/architecture/GROUND_GLASS_M7B_NATIVE_LIFECYCLE_REPORT.json",
+  "utf8",
+)) as Record<string, unknown>;
 
 describe("Ground Glass M7B lifecycle evidence", () => {
   it("keeps a complete inventory with unrun entries only partially qualified", () => {
@@ -792,15 +816,77 @@ describe("Ground Glass M7B lifecycle evidence", () => {
   });
 
   it("accepts the committed M7B report and its partial-qualification counts", () => {
-    const report = JSON.parse(readFileSync(
-      "docs/architecture/GROUND_GLASS_M7B_NATIVE_LIFECYCLE_REPORT.json",
-      "utf8",
-    )) as unknown;
-    expect(evaluateGroundGlassM7bLifecycleEvidence(report)).toMatchObject({
+    const report = readCommittedReport();
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result).toMatchObject({
       valid: true,
       qualification: "partially-qualified",
       counts: { passed: 6, failed: 0, blocked: 10, "not-run": 1 },
     });
+    expect(report.evaluatorRevision).toBe(GROUND_GLASS_M7B_EVALUATOR_REVISION);
+    expect(report.scenarioCounts).toEqual(result.counts);
+  });
+
+  it("rejects a declared passed count that disagrees with the inventory", () => {
+    const report = readCommittedReport();
+    (report.scenarioCounts as Record<string, unknown>).passed = 5;
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("scenario-count-mismatch:passed");
+    expect(result.errors).toContain("scenario-count-total-mismatch");
+  });
+
+  it("rejects a declared blocked count that disagrees with the inventory", () => {
+    const report = readCommittedReport();
+    (report.scenarioCounts as Record<string, unknown>).blocked = 11;
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("scenario-count-mismatch:blocked");
+    expect(result.errors).toContain("scenario-count-total-mismatch");
+  });
+
+  it("rejects missing scenario count metadata and required count fields", () => {
+    const missingMetadata = readCommittedReport();
+    delete missingMetadata.scenarioCounts;
+    expect(evaluateGroundGlassM7bLifecycleEvidence(missingMetadata).errors).toContain("missing-scenario-counts");
+
+    const missingField = readCommittedReport();
+    delete (missingField.scenarioCounts as Record<string, unknown>).blocked;
+    expect(evaluateGroundGlassM7bLifecycleEvidence(missingField).errors).toContain("missing-scenario-count:blocked");
+  });
+
+  it.each([-1, 1.5, "6"])("rejects invalid scenario count values (%j)", (value) => {
+    const report = makeFullyQualifiedReport();
+    (report.scenarioCounts as unknown as Record<string, unknown>).passed = value;
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("invalid-scenario-count:passed");
+  });
+
+  it("rejects unexpected scenario count keys", () => {
+    const report = makeFullyQualifiedReport();
+    (report.scenarioCounts as unknown as Record<string, unknown>).unverified = 0;
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("unexpected-scenario-count-key:unverified");
+  });
+
+  it("rejects missing and unsupported evaluator revisions", () => {
+    const missingRevision = makeFullyQualifiedReport();
+    delete (missingRevision as unknown as Record<string, unknown>).evaluatorRevision;
+    expect(evaluateGroundGlassM7bLifecycleEvidence(missingRevision).errors).toContain("missing-evaluator-revision");
+
+    const unsupportedRevision = makeFullyQualifiedReport();
+    (unsupportedRevision as unknown as Record<string, unknown>).evaluatorRevision = "m7b-lifecycle-evidence-v2";
+    expect(evaluateGroundGlassM7bLifecycleEvidence(unsupportedRevision).errors).toContain("unsupported-evaluator-revision");
+  });
+
+  it("rejects evaluator revision conflicts in structured review metadata", () => {
+    const report = makeFullyQualifiedReport();
+    (report.reviewFixRound1 as Record<string, unknown>).evaluatorRevision = "m7b-lifecycle-evidence-v2";
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("conflicting-evaluator-revision-metadata");
   });
 
   it("validates the JSON-serialized report with the same evidence decision", () => {

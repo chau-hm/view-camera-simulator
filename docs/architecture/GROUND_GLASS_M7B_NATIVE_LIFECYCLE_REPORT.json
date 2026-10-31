@@ -1,7 +1,7 @@
 {
   "schemaVersion": "ground-glass-m7b-native-lifecycle-v1",
   "milestone": "M7B",
-  "evaluatorRevision": "m7b-lifecycle-evidence-v2",
+  "evaluatorRevision": "m7b-lifecycle-evidence-v3",
   "sourceHeadSha": "625c560bc095fa41c2a6a457d1169e727102df17",
   "base": {
     "branch": "main",
@@ -14,9 +14,9 @@
   },
   "qualification": "partially-qualified",
   "scenarioCounts": {
-    "passed": 5,
+    "passed": 6,
     "failed": 0,
-    "blocked": 11,
+    "blocked": 10,
     "not-run": 1
   },
   "phaseA": {

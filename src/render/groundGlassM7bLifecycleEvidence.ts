@@ -18,8 +18,11 @@ export const GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS = [
   "m7b-broad-local-e2e",
 ] as const;
 
+export const GROUND_GLASS_M7B_EVALUATOR_REVISION = "m7b-lifecycle-evidence-v3" as const;
+
 export type GroundGlassM7bScenarioId = typeof GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS[number];
 export type GroundGlassM7bScenarioStatus = "passed" | "failed" | "blocked" | "not-run";
+export type GroundGlassM7bScenarioCounts = Readonly<Record<GroundGlassM7bScenarioStatus, number>>;
 export type GroundGlassM7bQualification =
   | "qualified-for-scoped-development-pilot"
   | "partially-qualified"
@@ -112,8 +115,10 @@ export type GroundGlassM7bScenarioEvidence = Readonly<{
 
 export type GroundGlassM7bEvidenceReport = Readonly<{
   schemaVersion: "ground-glass-m7b-native-lifecycle-v1";
+  evaluatorRevision: typeof GROUND_GLASS_M7B_EVALUATOR_REVISION;
   sourceHeadSha: string;
   qualification: GroundGlassM7bQualification;
+  scenarioCounts: GroundGlassM7bScenarioCounts;
   scenarios: readonly GroundGlassM7bScenarioEvidence[];
 }>;
 
@@ -140,6 +145,7 @@ const evidenceClasses = new Set<GroundGlassM7bEvidenceClass>([
 ]);
 
 const statuses = new Set<GroundGlassM7bScenarioStatus>(["passed", "failed", "blocked", "not-run"]);
+const scenarioCountKeys = ["passed", "failed", "blocked", "not-run"] as const satisfies readonly GroundGlassM7bScenarioStatus[];
 
 const requiredEvidenceClassByScenario: Readonly<Record<GroundGlassM7bScenarioId, GroundGlassM7bEvidenceClass>> = {
   "m7b-phase-a-timeout-diagnosis": "native-webgpu-runtime",
@@ -509,8 +515,60 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
   if (input.schemaVersion !== "ground-glass-m7b-native-lifecycle-v1") {
     errors.push("unsupported-schema-version");
   }
+  if (!Object.prototype.hasOwnProperty.call(input, "evaluatorRevision")) {
+    errors.push("missing-evaluator-revision");
+  } else if (typeof input.evaluatorRevision !== "string" || input.evaluatorRevision.length === 0) {
+    errors.push("invalid-evaluator-revision");
+  } else if (input.evaluatorRevision !== GROUND_GLASS_M7B_EVALUATOR_REVISION) {
+    errors.push("unsupported-evaluator-revision");
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "reviewFixRound1")) {
+    if (!isObject(input.reviewFixRound1)) {
+      errors.push("invalid-review-fix-metadata");
+    } else if (Object.prototype.hasOwnProperty.call(input.reviewFixRound1, "evaluatorRevision") &&
+        input.reviewFixRound1.evaluatorRevision !== GROUND_GLASS_M7B_EVALUATOR_REVISION) {
+      errors.push("conflicting-evaluator-revision-metadata");
+    }
+  }
   if (!isNonEmptyString(input.sourceHeadSha)) errors.push("missing-source-head-sha");
   else if (!/^[\da-f]{40}$/i.test(input.sourceHeadSha)) errors.push("invalid-report-source-head-sha");
+
+  let declaredScenarioCounts: Partial<Record<GroundGlassM7bScenarioStatus, number>> | null = null;
+  if (!Object.prototype.hasOwnProperty.call(input, "scenarioCounts")) {
+    errors.push("missing-scenario-counts");
+  } else if (!isObject(input.scenarioCounts) || Array.isArray(input.scenarioCounts)) {
+    errors.push("invalid-scenario-counts");
+  } else {
+    const countMetadata = input.scenarioCounts;
+    const knownCountKeys = new Set<string>(scenarioCountKeys);
+    for (const key of Object.keys(countMetadata)) {
+      if (!knownCountKeys.has(key)) errors.push("unexpected-scenario-count-key:" + key);
+    }
+
+    declaredScenarioCounts = {};
+    let allRequiredCountsAreValid = true;
+    for (const key of scenarioCountKeys) {
+      if (!Object.prototype.hasOwnProperty.call(countMetadata, key)) {
+        errors.push("missing-scenario-count:" + key);
+        allRequiredCountsAreValid = false;
+        continue;
+      }
+      const value = countMetadata[key];
+      if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+        errors.push("invalid-scenario-count:" + key);
+        allRequiredCountsAreValid = false;
+        continue;
+      }
+      declaredScenarioCounts[key] = value;
+    }
+
+    if (allRequiredCountsAreValid) {
+      const declaredTotal = scenarioCountKeys.reduce((total, key) => total + (declaredScenarioCounts?.[key] ?? 0), 0);
+      if (declaredTotal !== GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.length) {
+        errors.push("scenario-count-total-mismatch");
+      }
+    }
+  }
   if (!Array.isArray(input.scenarios)) {
     errors.push("scenario-inventory-must-be-an-array");
     return {
@@ -862,6 +920,15 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
   for (const scenarioId of byId.keys()) {
     if (!(GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS as readonly string[]).includes(scenarioId)) {
       errors.push(`unexpected-scenario:${scenarioId}`);
+    }
+  }
+
+  if (declaredScenarioCounts) {
+    for (const key of scenarioCountKeys) {
+      const declared = declaredScenarioCounts[key];
+      if (declared !== undefined && declared !== counts[key]) {
+        errors.push("scenario-count-mismatch:" + key);
+      }
     }
   }
 

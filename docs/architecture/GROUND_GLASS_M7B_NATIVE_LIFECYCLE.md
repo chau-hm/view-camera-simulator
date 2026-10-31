@@ -57,3 +57,22 @@ The review-fix branch adds focused mutation coverage for runtime/backend/revisio
 The final PR HEAD includes the report/documentation update and is identified in the PR #299 handoff after publication. M7B's remaining native matrix is not completed by this change.
 
 The development-only observation is gated by the existing test seam. Production WebGPU remains disabled; M5Q and M6D decisions are unchanged. M7 remains incomplete.
+
+## M7B Review-Fix Round 2 — Report Metadata Consistency
+
+Reviewed HEAD: e16293d1cb223bbc98080541f34a5187fc21cc17.
+
+F4 came from stale top-level report fields: the inventory and Round 1 metadata recorded 6 passed / 10 blocked and evaluator v3, while the top-level declarations still said 5 passed / 11 blocked and evaluator v2. The evaluator computed inventory counts but did not compare the report declarations.
+
+The top-level report now declares evaluator revision m7b-lifecycle-evidence-v3 and scenario counts **6 passed, 0 failed, 10 blocked, 1 not run**. The evaluator uses one exported revision constant, rejects missing or unsupported revisions and conflicts with reviewFixRound1.evaluatorRevision, validates the four count keys and non-negative integer values, checks the total against all 17 required scenarios, and compares each declared count with the computed inventory.
+
+Mutation tests cover incorrect passed/blocked counts, missing metadata and keys, negative/fractional/string values, unexpected keys, unsupported or missing revisions, and conflicting structured revisions. The committed report and fully-qualified synthetic inventory remain valid. Historical source hashes and all scenario evidence, events, statuses, browser/runtime identities, invocations, artifacts, and limitations are unchanged; no native evidence was recaptured.
+
+The qualification remains **partially-qualified**: **6 passed, 0 failed, 10 blocked, 1 not run**. Round 2 validation results and the final PR HEAD are recorded in the PR #299 handoff.
+
+### Round 2 validation
+
+- Focused M7B evaluator and committed-report suite: **34/34 tests passed**.
+- Full npm test: **301 files, 3,098 tests passed**.
+- Typecheck, lint, CSS check, production build, and git diff check: **passed**.
+- No native capture or broad E2E rerun was needed for this metadata-only correction. Hosted CI on the new PR HEAD is recorded in the PR #299 handoff.
