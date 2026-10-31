@@ -5,7 +5,11 @@ import { computePhysicalBlurFootprint, deriveOrthonormalPlaneBasis } from "../..
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import geometry, { referenceObjects } from "../../scenes/architectureRiseGeometry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
+import {
+  ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+} from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
 import type { GroundGlassPhysicalCocProbeUv } from "../../render/webgpu/groundGlassPhysicalCocNodes";
 import type {
   GroundGlassPhysicalCocControlledKernelCase,
@@ -17,10 +21,12 @@ import { groundGlassPhysicalCocOrientationErrorModuloPi } from "../../render/web
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { Vec3 } from "../../types/optics";
 import { clickStageAt } from "./helpers/groundGlass";
+import { attachGroundGlassM7dEvidence } from "./helpers/groundGlassM7dEvidence";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const physicalResearchEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1";
+const r187QualificationEnabled = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION === "1";
 const rawPilotEnabled = process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true";
 
 type SurfaceProbe = Readonly<{
@@ -520,6 +526,16 @@ const createControlledKernelExpectations = (input: Readonly<{
   const positive = candidates.find((candidate) => candidate.cpu.signedCoCDiameterMm > 0);
   const negative = candidates.find((candidate) => candidate.cpu.signedCoCDiameterMm < 0);
   if (!positive || !negative) throw new Error("Canonical near-focus references did not produce both signed CoC sides");
+  const stableOverflowCandidates = [0.5, 2].map((focusRatio) => {
+    const distance = conjugateObjectDistanceMm * focusRatio;
+    const point = controlledPointMm(referenceOverride, distance);
+    return { distance, point, cpu: physicalOracleForOverride(referenceOverride, point) };
+  }).filter((candidate) => candidate.cpu.valid);
+  const positiveOverflowSource = stableOverflowCandidates.find((candidate) => candidate.cpu.signedCoCDiameterMm > 0);
+  const negativeOverflowSource = stableOverflowCandidates.find((candidate) => candidate.cpu.signedCoCDiameterMm < 0);
+  if (!positiveOverflowSource || !negativeOverflowSource) {
+    throw new Error("Stable binary16 overflow vectors did not preserve both signed CoC sides");
+  }
   const stableReferencePoint = controlledPointMm(referenceOverride, objectDistance);
   const stableReferenceCpu = physicalOracleForOverride(referenceOverride, stableReferencePoint);
   if (!stableReferenceCpu.valid || Math.abs(stableReferenceCpu.signedCoCDiameterMm) < 1e-6) {
@@ -561,19 +577,27 @@ const createControlledKernelExpectations = (input: Readonly<{
     defaultAperture / nearLimitScale,
   );
   addCase("storage-near-binary16-maximum", nearLimit, stableReference.point);
-  const positiveOverflow = scaleApertureForSignedCoC(positive, 66000);
-  const negativeOverflow = scaleApertureForSignedCoC(negative, 66000);
+  // Keep storage-range controls well away from the focused image plane. Huge
+  // pupil scaling amplifies float32 cancellation near the conjugate boundary.
+  const positiveOverflow = scaleApertureForSignedCoC(positiveOverflowSource, 66000);
+  const negativeOverflow = scaleApertureForSignedCoC(negativeOverflowSource, 66000);
   addCase("storage-overrange-positive-coc", positiveOverflow.override, positiveOverflow.point);
   addCase("storage-overrange-negative-coc", negativeOverflow.override, negativeOverflow.point);
-  const radiusScale = 66000 / positive.cpu.majorRadiusMm;
+  const radiusScale = 66000 / positiveOverflowSource.cpu.majorRadiusMm;
   const overrangeRadius = createPhysicalKernelOverride(
     neutralOptics,
     focalLengthMm,
     defaultAperture / radiusScale,
   );
-  addCase("storage-overrange-ellipse-radius", overrangeRadius, positive.point);
+  addCase("storage-overrange-ellipse-radius", overrangeRadius, positiveOverflowSource.point);
 
-  if (cases.length > 16) throw new Error("M4 controlled kernel test cases exceed the bounded test-seam limit");
+  const invalidLensBasis: GroundGlassPhysicalCocProbeKernelOverride = {
+    ...neutral,
+    lens: { ...neutral.lens, planeNormal: { x: 0, y: 0, z: 0 } },
+  };
+  addCase("invalid-geometry-lens-basis", invalidLensBasis, controlledPointMm(neutral, objectDistance));
+
+  if (cases.length > 17) throw new Error("M4 controlled kernel test cases exceed the bounded test-seam limit");
   return cases;
 };
 
@@ -587,11 +611,11 @@ const readProbeResult = async (page: Page, token: string): Promise<GroundGlassPh
 
 test("native M4 app adapter reconstructs Architecture Rise depth and writes physical CoC data", async ({ page }, testInfo) => {
   test.skip(
-    !nativeRequired || !physicalResearchEnabled || !rawPilotEnabled,
-    "Requires headed native WebGPU, the M3 Raw pilot, and the separate M4 research build gate",
+    !nativeRequired || !physicalResearchEnabled || !rawPilotEnabled || !r187QualificationEnabled,
+    "Requires native WebGPU, the M3 Raw pilot, and the explicit r187 M4 qualification harness",
   );
   test.setTimeout(600_000);
-  expect(REVISION).toBe("186");
+  expect(REVISION).toBe("187");
 
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -636,6 +660,24 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
   );
   expect(lensBasis).not.toBeNull();
   const realSceneProbes = createRealSceneProbes({ optics, targetWidth, targetHeight, crop });
+  const focalReference = realSceneProbes.find((probe) => probe.id === "off-axis-midground-checker");
+  if (!focalReference?.expectedWorldM) throw new Error("No independent midground surface reference for focal-boundary probe");
+  const normalizedLensNormal = normalize(optics.lensPlane.normal);
+  const canonicalWorldPointMm = {
+    x: focalReference.expectedWorldM[0] * 1000,
+    y: focalReference.expectedWorldM[1] * 1000,
+    z: focalReference.expectedWorldM[2] * 1000,
+  };
+  const depthDerivedExactFocalLengthMm = dot(
+    subtract(canonicalWorldPointMm, optics.lensCenterWorld),
+    normalizedLensNormal,
+  );
+  expect(depthDerivedExactFocalLengthMm).toBeGreaterThan(0);
+  const depthDerivedExactFocalProbe: GroundGlassPhysicalCocProbeUv = {
+    ...focalReference,
+    id: "depth-derived-canonical-u-f-no-parallel-authority",
+    focalLengthOverrideMm: depthDerivedExactFocalLengthMm,
+  };
   const unreferencedVisibleProbe: GroundGlassPhysicalCocProbeUv = {
     ...realSceneProbes[0]!,
     id: "unreferenced-visible-surface-pixel",
@@ -856,6 +898,14 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
     expect(sample.storedHalfFloatBits, `${sample.id} includes native half-float bits`).not.toBeNull();
     expect(sample.readbackFootprintMm, `${sample.id} includes decoded half-float readback`).not.toBeNull();
     expect(sample.sampledFootprintMm, `${sample.id} includes a GPU-sampled decoded value`).not.toBeNull();
+    if (entry.testCase.id === "invalid-geometry-lens-basis") {
+      expect(entry.cpu.valid, "invalid lens geometry is independently rejected by the CPU reference").toBe(false);
+      expect(sample.validityCode, "invalid geometry has validity code 3").toBe(3);
+      expect(sample.calculatedFootprintMm).toEqual([0, 0, 0, 0]);
+      expect(sample.readbackFootprintMm).toEqual([0, 0, 0, 0]);
+      expect(sample.storedHalfFloatBits).toEqual([0, 0, 0, 0]);
+      continue;
+    }
     assertStorageContract(sample.validityCode, sample.readbackFootprintMm, entry.cpu, sample.id);
     if (sample.validityCode === 2) {
       expect(entry.cpu.valid, `${sample.id} overflow reference has valid source geometry`).toBe(true);
@@ -1044,6 +1094,62 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
   expect(summary.maximumKernelCoCErrorMm).toBeLessThanOrEqual(0.0005);
   expect(summary.maximumStorageCoCErrorMm).toBeLessThanOrEqual(0.06);
 
+  const depthFocalRequestIdBefore = await pane.getAttribute("data-frame-request-id");
+  const depthFocalToken = `m4-depth-exact-${Date.now()}`;
+  await page.evaluate((requested) => {
+    const control = window.__groundGlassWebGpuM3TestControl;
+    if (!control) throw new Error("The development-only Ground Glass test seam is unavailable");
+    control.physicalCocProbeReadback = null;
+    control.physicalCocProbeRequest = { token: requested.token, probes: [requested.probe] };
+  }, { token: depthFocalToken, probe: depthDerivedExactFocalProbe });
+  await aperture.getByRole("radio", { name: "f/8", exact: true }).check();
+  await expect.poll(() => pane.getAttribute("data-frame-request-id"), { timeout: 60_000 })
+    .not.toBe(depthFocalRequestIdBefore);
+  await waitForCompletedFrame(page);
+  await expect.poll(async () => (await readProbeResult(page, depthFocalToken))?.token ?? null, {
+    timeout: 90_000,
+  }).toBe(depthFocalToken);
+  const depthDerivedExactFocalReadback = await readProbeResult(page, depthFocalToken);
+  const depthDerivedExactFocalSample = depthDerivedExactFocalReadback?.samples[0];
+  if (!depthDerivedExactFocalReadback || !depthDerivedExactFocalSample) {
+    throw new Error("Depth-derived exact-U=f probe was not returned");
+  }
+  expect(depthDerivedExactFocalReadback.requestId).toBe(await pane.getAttribute("data-frame-request-id"));
+  expect(depthDerivedExactFocalSample.id).toBe(depthDerivedExactFocalProbe.id);
+  expect(depthDerivedExactFocalSample.controlledObjectPoint).toBe(false);
+  expect(depthDerivedExactFocalSample.depthConfidence).toMatchObject({
+    status: "depth-limited",
+    scope: "probe-only",
+    evidence: "paired-analytic-surface-reference",
+    canonicalExpectedBranch: "parallel-limit",
+  });
+  if (depthDerivedExactFocalSample.depthConfidence.status !== "depth-limited") {
+    throw new Error("Scene-depth focal equality must remain depth-limited");
+  }
+  expect(Math.abs(depthDerivedExactFocalSample.depthConfidence.canonicalUMinusFmm)).toBeLessThan(1e-7);
+  expect(depthDerivedExactFocalSample.depthConfidence.kernelSelectedBranch).not.toBe("parallel-limit");
+  expect(depthDerivedExactFocalSample.focalBranchCode).not.toBe(2);
+  const depthExactFrameEvents = await page.evaluate(
+    (expectedRequestId) => JSON.parse(JSON.stringify(
+      (window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []).filter((event) =>
+        event.kind === "host-frame-result" && event.requestId === expectedRequestId,
+      ),
+    )) as Array<Record<string, unknown>>,
+    depthDerivedExactFocalReadback.requestId,
+  );
+  const depthExactAcceptedFrame = depthExactFrameEvents.find((event) => event.acceptedByHost === true);
+  expect(depthExactAcceptedFrame).toMatchObject({
+    kind: "host-frame-result",
+    requestId: depthDerivedExactFocalReadback.requestId,
+    channelId: depthDerivedExactFocalReadback.channelId,
+    sceneId: depthDerivedExactFocalReadback.sceneId,
+    generationId: depthDerivedExactFocalReadback.rendererGenerationId,
+    acceptedByHost: true,
+    latestAcceptedRequestId: depthDerivedExactFocalReadback.requestId,
+    activeGenerationId: depthDerivedExactFocalReadback.rendererGenerationId,
+  });
+  if (!depthExactAcceptedFrame) throw new Error("Depth-boundary readback lacks host-accepted frame evidence");
+
   let boundarySource: (typeof realSamples)[number] | undefined;
   let boundaryErrorMm = -1;
   for (const sample of realSamples) {
@@ -1074,6 +1180,8 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
     : "finite-virtual";
   const reconstructedBranch = canonicalBranch === "finite-real" ? "finite-virtual" : "finite-real";
   const expectedKernelBranchCode = reconstructedBranch === "finite-virtual" ? 1 : 3;
+  await aperture.getByRole("radio", { name: "f/16", exact: true }).check();
+  await waitForCompletedFrame(page);
   const boundaryRequestId = await pane.getAttribute("data-frame-request-id");
   const boundaryToken = `m4-depth-boundary-${Date.now()}`;
   const boundaryProbe: GroundGlassPhysicalCocProbeUv = {
@@ -1188,35 +1296,109 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
   expect(remountedGeneration).toBeTruthy();
   expect(remountedGeneration).not.toBe(retiredGeneration);
 
-  await testInfo.attach("ground-glass-m4-physical-coc-native-evidence.json", {
-    body: JSON.stringify({
+  const frameEvents = await page.evaluate(
+    (expectedRequestId) => JSON.parse(JSON.stringify(
+      (window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []).filter((event) =>
+        event.kind === "host-frame-result" && event.requestId === expectedRequestId,
+      ),
+    )) as Array<Record<string, unknown>>,
+    readback.requestId,
+  );
+  const acceptedFrameEvent = frameEvents.find((event) => event.acceptedByHost === true);
+  expect(acceptedFrameEvent).toMatchObject({
+    kind: "host-frame-result",
+    requestId: readback.requestId,
+    channelId: readback.channelId,
+    sceneId: readback.sceneId,
+    generationId: readback.rendererGenerationId,
+    frameStatus: "completed",
+    acceptedByHost: true,
+    latestAcceptedRequestId: readback.requestId,
+    activeGenerationId: readback.rendererGenerationId,
+    activeRendererFamily: "webgpu-renderer",
+  });
+  expect(typeof acceptedFrameEvent?.hostId).toBe("string");
+  expect((acceptedFrameEvent?.hostId as string | undefined)?.trim().length).toBeGreaterThan(0);
+
+  const capturedAdapterEvents = await page.evaluate(() =>
+    JSON.parse(JSON.stringify(window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [])) as
+      Array<Record<string, unknown>>,
+  );
+  const m4CompatibilityEvidence = GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+    (feature) => feature.feature === "physical-coc",
+  );
+  expect(m4CompatibilityEvidence).toMatchObject({
+    status: "research-only",
+    evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+    testedContext: { rendererFamily: "webgpu-renderer", executionApi: "webgpu", rendererRevision: "r187" },
+  });
+
+  await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-physical-coc-native-evidence.json", {
       browserVersion: page.context().browser()?.version() ?? "unknown",
       operatingSystem: `${process.platform} ${process.arch}`,
       threeRevision: REVISION,
       sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      sourceSha: process.env.GROUND_GLASS_EVIDENCE_SOURCE_SHA ?? "missing",
+      testProject: testInfo.project.name,
+      testInvocation: process.env.GROUND_GLASS_EVIDENCE_TEST_INVOCATION ?? "missing",
       environment: "headed native-required Chrome",
       sceneId: "architecture-rise",
+      m4CompatibilityEvidence,
       rendererFamily: readback.rendererFamily,
       actualExecutionApi: readback.actualExecutionApi,
       internalFallback: readback.internalFallback,
+      trustedDevelopmentAuthorization: {
+        nativeRequired: process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1",
+        rawPilotRequest: process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === "true",
+        physicalCocResearchBuildFlag: process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1",
+        r187QualificationFlag: process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION === "1",
+        testSeamFlag: process.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true",
+      },
       initialGeneration,
       retiredGeneration,
       remountedGeneration,
       nativeKernelMeasurements,
+      controlledKernelReferences: controlledKernelExpectations.map(({ testCase, cpu }) => ({
+        id: testCase.id,
+        testCase,
+        cpuReference: cpu,
+      })),
+      focalBoundaryReferences: [
+        {
+          id: depthDerivedExactFocalProbe.id,
+          inputSource: "scene-depth-with-independent-analytic-surface",
+          expectedWorldM: depthDerivedExactFocalProbe.expectedWorldM,
+          focalLengthOverrideMm: depthDerivedExactFocalProbe.focalLengthOverrideMm,
+          explicitParallelLimitIdentity: false,
+        },
+        {
+          id: "controlled-u-f-exact-authorized",
+          inputSource: "controlled-object-point",
+          focalLengthMm: cameraState.focalLengthMm,
+          explicitParallelLimitIdentity: true,
+        },
+      ],
       probeReadback: readback,
+      depthDerivedExactFocalReadback,
+      depthDerivedExactFocalHostFrameResult: depthExactAcceptedFrame,
+      acceptedHostFrameResult: acceptedFrameEvent,
+      hostFrameEventsForReadback: frameEvents,
+      lifecycleEvents: capturedAdapterEvents.filter((event) =>
+        event.generationId === readback.rendererGenerationId ||
+        event.generationId === retiredGeneration ||
+        event.generationId === remountedGeneration,
+      ),
       probeSummary: summary,
       lifecycle: { beforeResize, afterResize, cleanupOutcome: await retiredPilot.getAttribute("data-cleanup-outcome") },
       pageErrors,
-    }, null, 2),
-    contentType: "application/json",
   });
   expect(pageErrors).toEqual([]);
 });
 
-test("M4 probe readback is stale after resize and cannot publish the superseded request", async ({ page }) => {
+test("M4 probe readback is stale after resize and cannot publish the superseded request", async ({ page }, testInfo) => {
   test.skip(
-    !nativeRequired || !physicalResearchEnabled || !rawPilotEnabled,
-    "Requires headed native WebGPU, the M3 Raw pilot, and the separate M4 research build gate",
+    !nativeRequired || !physicalResearchEnabled || !rawPilotEnabled || !r187QualificationEnabled,
+    "Requires native WebGPU, the M3 Raw pilot, and the explicit r187 M4 qualification harness",
   );
   test.setTimeout(300_000);
   await page.addInitScript(() => {
@@ -1230,6 +1412,8 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer", { timeout: 120_000 });
   await expectPhysicalFrame(page);
+  const rendererGenerationId = await pane.getAttribute("data-renderer-generation");
+  expect(rendererGenerationId).toBeTruthy();
 
   const token = `m4-stale-resize-${Date.now()}`;
   await page.evaluate((request) => {
@@ -1257,12 +1441,51 @@ test("M4 probe readback is stale after resize and cannot publish the superseded 
   await expect(pilot).toHaveAttribute("data-physical-coc-request-id", resizedRequestId!);
   await expect(pilot).toHaveAttribute("data-physical-coc-probe-readback-status", "not-requested");
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null)).toBeNull();
+  const lifecycleEvents = await page.evaluate((generationId) => {
+    const events = JSON.parse(JSON.stringify(window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [])) as
+      Array<Record<string, unknown>>;
+    return events.filter((event) => event.generationId === generationId);
+  }, rendererGenerationId);
+  const hostFrameResults = lifecycleEvents.filter((event) =>
+    event.kind === "host-frame-result" &&
+    (event.requestId === probeRequestId || event.requestId === resizedRequestId),
+  );
+  expect(lifecycleEvents.length).toBeGreaterThan(0);
+  expect(hostFrameResults.some((event) =>
+    event.requestId === resizedRequestId && event.acceptedByHost === true &&
+    event.generationId === rendererGenerationId,
+  )).toBe(true);
+  const resizeEventSequences = lifecycleEvents.map((event) => Number(event.sequence));
+  expect(resizeEventSequences.every(Number.isFinite)).toBe(true);
+  expect(resizeEventSequences).toEqual([...resizeEventSequences].sort((left, right) => left - right));
+  await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-stale-resize-evidence.json", {
+      test: "M4 probe readback is stale after resize and cannot publish the superseded request",
+      browserVersion: page.context().browser()?.version() ?? "unknown",
+      operatingSystem: `${process.platform} ${process.arch}`,
+      threeRevision: REVISION,
+      sourceSha: process.env.GROUND_GLASS_EVIDENCE_SOURCE_SHA ?? "missing",
+      testProject: testInfo.project.name,
+      testInvocation: process.env.GROUND_GLASS_EVIDENCE_TEST_INVOCATION ?? "missing",
+      rendererFamily: await pane.getAttribute("data-mounted-renderer-family"),
+      actualExecutionApi: await pane.getAttribute("data-actual-execution-api"),
+      channelId: await pane.getAttribute("data-frame-channel-id"),
+      sceneId: await pane.getAttribute("data-frame-scene-id"),
+      rendererGenerationId,
+      oldProbeRequestId: probeRequestId,
+      currentRequestId: resizedRequestId,
+      physicalRequestId: await pilot.getAttribute("data-physical-coc-request-id"),
+      readbackAfterRelease: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null),
+      readbackStatus: await pilot.getAttribute("data-physical-coc-probe-readback-status"),
+      stalePublicationRejected: true,
+      lifecycleEvents,
+      hostFrameResults,
+  });
 });
 
-test("M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles", async ({ page }) => {
+test("M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles", async ({ page }, testInfo) => {
   test.skip(
-    !nativeRequired || !physicalResearchEnabled || !rawPilotEnabled,
-    "Requires headed native WebGPU, the M3 Raw pilot, and the separate M4 research build gate",
+    !nativeRequired || !physicalResearchEnabled || !rawPilotEnabled || !r187QualificationEnabled,
+    "Requires native WebGPU, the M3 Raw pilot, and the explicit r187 M4 qualification harness",
   );
   test.setTimeout(300_000);
   await page.addInitScript(() => {
@@ -1276,6 +1499,8 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   await page.getByLabel("Raw RTT — bypass DOF").check();
   await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer", { timeout: 120_000 });
   await expectPhysicalFrame(page);
+  const rendererGenerationId = await pane.getAttribute("data-renderer-generation");
+  expect(rendererGenerationId).toBeTruthy();
 
   const token = `m4-stale-unmount-${Date.now()}`;
   await page.evaluate((request) => {
@@ -1291,6 +1516,7 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
   const focusStep = Number(await focus.getAttribute("step"));
   await setStepRangeInput(page, "Focus distance", Number(await focus.inputValue()) + focusStep);
+  const probeRequestId = await waitForStableRequestId(page, pane);
   await expect.poll(async () => page.evaluate(() =>
     Boolean(window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadbackBarrierReached),
   ), { timeout: 120_000 }).toBe(true);
@@ -1303,4 +1529,42 @@ test("M4 unmount during a held probe prevents publication and confirms cleanup a
   await expect.poll(() => retiredPilot.getAttribute("data-cleanup-outcome"), { timeout: 90_000 }).toBe("confirmed");
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null)).toBeNull();
   expect(await retiredPilot.getAttribute("data-last-displayed-request-id")).not.toBeNull();
+  const lifecycleEvents = await page.evaluate((generationId) => {
+    const events = JSON.parse(JSON.stringify(window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [])) as
+      Array<Record<string, unknown>>;
+    return events.filter((event) => event.generationId === generationId);
+  }, rendererGenerationId);
+  const hostFrameResults = lifecycleEvents.filter((event) => event.kind === "host-frame-result");
+  expect(lifecycleEvents.length).toBeGreaterThan(0);
+  const cleanupEvent = lifecycleEvents.find((event) => event.kind === "cleanup");
+  expect(cleanupEvent).toMatchObject({ generationId: rendererGenerationId, outcome: "confirmed" });
+  const cleanupAcknowledgement = lifecycleEvents.find((event) => event.kind === "cleanup-acknowledged");
+  expect(cleanupAcknowledgement).toMatchObject({ generationId: rendererGenerationId, outcome: "confirmed" });
+  const unmountEventSequences = lifecycleEvents.map((event) => Number(event.sequence));
+  expect(unmountEventSequences.every(Number.isFinite)).toBe(true);
+  expect(unmountEventSequences).toEqual([...unmountEventSequences].sort((left, right) => left - right));
+  await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-stale-unmount-evidence.json", {
+      test: "M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles",
+      browserVersion: page.context().browser()?.version() ?? "unknown",
+      operatingSystem: `${process.platform} ${process.arch}`,
+      threeRevision: REVISION,
+      sourceSha: process.env.GROUND_GLASS_EVIDENCE_SOURCE_SHA ?? "missing",
+      testProject: testInfo.project.name,
+      testInvocation: process.env.GROUND_GLASS_EVIDENCE_TEST_INVOCATION ?? "missing",
+      retiredRendererFamily: await retiredPilot.getAttribute("data-mounted-renderer-family"),
+      retiredExecutionApi: await retiredPilot.getAttribute("data-actual-execution-api"),
+      channelId: "default",
+      sceneId: "architecture-rise",
+      rendererGenerationId,
+      retiredGeneration: await retiredPilot.getAttribute("data-renderer-generation"),
+      oldProbeRequestId: probeRequestId,
+      cleanupOutcome: await retiredPilot.getAttribute("data-cleanup-outcome"),
+      lastDisplayedRequestId: await retiredPilot.getAttribute("data-last-displayed-request-id"),
+      readbackAfterRelease: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.physicalCocProbeReadback ?? null),
+      stalePublicationRejected: true,
+      lifecycleEvents,
+      hostFrameResults,
+      cleanupEvent,
+      cleanupAcknowledgement,
+  });
 });

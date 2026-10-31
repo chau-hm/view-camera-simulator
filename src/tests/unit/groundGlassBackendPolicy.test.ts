@@ -5,8 +5,10 @@ import {
   ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+  GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
   resolveGroundGlassRawWebGpuCompatibility,
   resolveGroundGlassRawWebGpuEvidenceRevision,
@@ -122,12 +124,44 @@ describe("Ground Glass backend policy", () => {
       },
     });
 
-    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+    expect(GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.find(
       (feature) => feature.feature === "physical-coc",
     )).toMatchObject({
       status: "research-only",
       evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
       testedContext: { rendererRevision: "r186" },
+    });
+    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "physical-coc",
+    )).toMatchObject({
+      status: "research-only",
+      evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+      testedContext: { rendererRevision: "r187", executionApi: "webgpu" },
+      knownIncompatibilities: expect.arrayContaining([
+        expect.stringContaining("depth-limited near focal inversion"),
+      ]),
+    });
+    const m4OnlyResult = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["physical-coc"],
+      sceneCompatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      expectedCandidateRendererRevision: "r187",
+    }));
+    expect(m4OnlyResult.selectedBackend).toBe("webgl");
+    expect(m4OnlyResult.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: expect.arrayContaining(["feature-research-only"]) },
+    });
+    const combinedRawAndM4Result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["raw-rtt", "physical-coc"],
+      sceneCompatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      expectedCandidateRendererRevision: "r187",
+    }));
+    expect(combinedRawAndM4Result.selectedBackend).toBe("webgl");
+    expect(combinedRawAndM4Result.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: expect.arrayContaining(["feature-research-only"]) },
     });
     expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
       (feature) => feature.feature === "aperture-gather",

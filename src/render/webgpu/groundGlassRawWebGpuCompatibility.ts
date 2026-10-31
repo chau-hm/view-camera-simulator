@@ -27,6 +27,10 @@ export const ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION =
 export const ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION =
   "m4-architecture-rise-physical-coc-native-v1";
 
+/** r187 M4 evidence is a separate research record and does not expand feature authorization. */
+export const ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION =
+  "m4-architecture-rise-physical-coc-native-r187-v1";
+
 export const ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION =
   "m5-architecture-rise-aperture-gather-research-v1";
 
@@ -164,6 +168,39 @@ const architectureRiseRawRttR187Feature: Extract<
   knownIncompatibilities: [],
 };
 
+const architectureRisePhysicalCocR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "research-only" }
+> = {
+  feature: "physical-coc",
+  status: "research-only",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64",
+  },
+  evidence: [
+    "M7D native-required controlled M4 TSL kernel vectors compared with computePhysicalBlurFootprint at frozen tolerances, with captured RGBA16F half bits, decoded storage, and GPU sampled decode",
+    "registered Architecture Rise plinth, street sign, checker, sign edge, focus-chart, and clear-depth probes reconstructed from observed depth24plus and compared with independent analytical surface points",
+    "the M4 adapter observed depth24plus, rgba16float, and rgba8unorm allocations through the Three.js r187 WebGPU backend and rejected unsupported formats",
+    "native M4 physical and validity writer failures remained local to the optional pass while the M3 Raw frame completed and a later request recovered",
+    "r187 native M4 resize and unmount captures rejected stale diagnostic readbacks and recorded confirmed adapter cleanup",
+    "independently identifiable native captures and numerical/storage qualification are recorded in docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: ["depth24plus", "rgba16float", "rgba8unorm"],
+  },
+  knownIncompatibilities: [
+    "the depth24plus reconstruction remains depth-limited near focal inversion and does not establish exact U=f from rounded raster depth",
+    "M5 Gather/B1 and M6 presentation remain tied to r186 evidence and are not authorized on r187",
+    "photographic quality, cross-browser behavior, and production WebGPU are not qualified",
+  ],
+};
+
 /**
  * New native r187 evidence qualifies only M3 Raw RTT. Existing M4/M5 evidence remains bound
  * to r186 inside the original record and cannot be reused to authorize those research passes.
@@ -172,8 +209,9 @@ export const GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY: GroundGlassSceneCompati
   ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   features: [
     architectureRiseRawRttR187Feature,
+    architectureRisePhysicalCocR187Feature,
     ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.filter(
-      (feature) => feature.feature !== "raw-rtt",
+      (feature) => feature.feature !== "raw-rtt" && feature.feature !== "physical-coc",
     ),
   ],
 };

@@ -2886,7 +2886,7 @@ export const GroundGlassWebGPUAdapter = ({
                 probeRequest.probes.length > 0 &&
                 probeRequest.probes.length <= 16 &&
                 probeRequest.probes.every(validProbe) &&
-                (probeRequest.controlledKernelCases?.length ?? 0) <= 16 &&
+                (probeRequest.controlledKernelCases?.length ?? 0) <= 17 &&
                 (probeRequest.controlledKernelCases ?? []).every((testCase) =>
                   testCase.id.trim().length > 0 &&
                   Boolean(testCase.probe.controlledObjectPointMm) &&
