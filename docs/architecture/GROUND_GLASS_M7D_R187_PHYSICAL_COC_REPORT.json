@@ -1,0 +1,1213 @@
+{
+  "schemaVersion": "ground-glass-m7d-r187-physical-coc-report-v1",
+  "reportId": "ground-glass-m7d-r187-physical-coc",
+  "evaluatorRevision": "m7d-physical-coc-evidence-v1",
+  "qualification": "research-qualified-for-tested-environment",
+  "scope": {
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "feature": "physical-coc",
+    "rendererRevision": "r187",
+    "m4ResearchEvidenceRevision": "m4-architecture-rise-physical-coc-native-r187-v1",
+    "m4CompatibilityStatus": "research-only",
+    "m3RawRttEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+    "m5M6Authorization": "denied",
+    "productionGroundGlassBackend": "webgl-only",
+    "photographicQuality": "unqualified",
+    "m7Complete": false,
+    "m8Authorized": false
+  },
+  "nativeRuntime": {
+    "threePackageVersion": "0.187.0",
+    "threeRevision": "187",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "browser": "Chrome 156.0.8078.76",
+    "operatingSystemObservedByM4Captures": "darwin arm64",
+    "nodeRuntime": "v24.3.0",
+    "playwrightProject": "chrome-native-webgpu",
+    "trustedAuthorization": {
+      "nativeWebGpuRequired": true,
+      "rawPilot": true,
+      "physicalCocResearch": true,
+      "r187QualificationHarness": true,
+      "developmentTestSeam": true
+    },
+    "hardwareAccelerationClaim": "not-made"
+  },
+  "provenance": {
+    "nativeM4CaptureSourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+    "policyAndEvidenceEvaluatorSourceSha": "08e4a5d0394f37edb17705f0c4445c545ca5203e",
+    "nativeM4Invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+    "nativeM4FailureInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts -g M4",
+    "unitValidationSourceSha": "08e4a5d0394f37edb17705f0c4445c545ca5203e",
+    "unitValidationInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test -- --reporter=json --outputFile=docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts src/tests/unit/groundGlassPhysicalCocPolicy.test.ts src/tests/unit/groundGlassBackendPolicy.test.ts src/tests/unit/groundGlassPhysicalCocContract.test.ts src/tests/unit/groundGlassApertureGatherPolicy.test.ts src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassM6Presentation.test.ts",
+    "unitValidation": {
+      "testSuitesPassed": 22,
+      "testSuitesFailed": 0,
+      "testsPassed": 203,
+      "testsFailed": 0,
+      "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json"
+    },
+    "m3RawRttRegression": {
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7c-r187-native-raw-baseline.json",
+      "sourceSha": "1d91487094e90f0c9481bd839b3db4be62a7ba17",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts"
+    }
+  },
+  "physicalKernel": {
+    "cpuReference": "computePhysicalBlurFootprint()",
+    "canonicalOpticsAuthority": "deriveOpticsState() and the existing canonical optics pipeline",
+    "requiredControlledCaseCount": 17,
+    "controlledCases": [
+      "ellipse-circular",
+      "ellipse-film-tilt",
+      "ellipse-film-swing",
+      "ellipse-compound-tilt-swing",
+      "ellipse-off-axis",
+      "ellipse-negative-principal-angle",
+      "ellipse-near-pi-orientation",
+      "ellipse-near-circular",
+      "storage-exact-zero",
+      "storage-small-positive-coc",
+      "storage-small-negative-coc",
+      "storage-0.1mm-reference",
+      "storage-near-binary16-maximum",
+      "storage-overrange-positive-coc",
+      "storage-overrange-negative-coc",
+      "storage-overrange-ellipse-radius",
+      "invalid-geometry-lens-basis"
+    ],
+    "focalBoundaryCases": [
+      "controlled-u-f-minus-0.01",
+      "controlled-u-f-minus-0.001",
+      "controlled-u-f-exact-unresolved",
+      "controlled-u-f-exact-authorized",
+      "controlled-u-f-plus-0.001",
+      "controlled-u-f-plus-0.01"
+    ],
+    "validPhysicalCases": 13,
+    "overflowCases": 3,
+    "invalidGeometryCases": 1,
+    "frozenTolerance": {
+      "perValueMm": "max(0.0005, 0.00002 * abs(cpuValue))",
+      "orientationModuloPiRad": 0.003
+    },
+    "cpuToTsl": {
+      "maximumAbsoluteErrorMmAcrossAllCases": 0.8125,
+      "maximumRelativeErrorAcrossNonzeroValues": 0.03999683633446691,
+      "maximumRelativeErrorCase": "storage-small-positive-coc signed diameter: 0.01039996836334467 mm TSL vs 0.01 mm CPU (0.00039996836334466913 mm absolute error)",
+      "largestAbsoluteErrorCase": "storage-overrange-ellipse-radius signed diameter: 131999.1875 mm TSL vs 132000 mm CPU (relative error 0.000006155303030303031)",
+      "absoluteRelativeEnvelopePassed": true,
+      "note": "The 4% relative maximum is the small 0.01 mm control and is within the unchanged 0.0005 mm absolute floor. No threshold was changed."
+    },
+    "orientation": {
+      "maximumTslModuloPiErrorRad": 2.495068741614759e-7,
+      "maximumDecodedRgba16fModuloPiErrorRad": 0.001347984719040074,
+      "toleranceRad": 0.003,
+      "negativePrincipalAndNearPiCasesPassed": true,
+      "nearCircularOrientationUndefinedAndZero": true
+    },
+    "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json"
+  },
+  "depthReconstruction": {
+    "observedDepthRange": "[0,1]",
+    "sceneDepthFormat": "depth24plus",
+    "reconstruction": "TSL getViewPosition(sourceUv, sampledDepth, inverseProjection), view-to-world transform, then metres-to-millimetres once for the physical kernel",
+    "validDepthAndClearDepth": "clear depth 1 produced validity 0 and zero stored physical values; visible paired surfaces produced validity 1",
+    "maximumWorldReconstructionErrorMm": 4.078357668837163,
+    "maximumObjectDistanceErrorMm": 3.9414596557617188,
+    "surfaceProbes": [
+      {
+        "id": "near-foreground-plinth",
+        "surface": "plinth-foreground-left-front",
+        "sampledDepth": 0.9974762201309204,
+        "canonicalUmm": 3090,
+        "reconstructedUmm": 3090.0046825408936,
+        "canonicalUMinusFmm": 2940,
+        "reconstructedUMinusFmm": 2940.0046825408936,
+        "signedObjectDistanceErrorMm": 0.0046825408935546875,
+        "absoluteWorldReconstructionErrorMm": 0.004963252080935627,
+        "canonicalBranch": "finite-real",
+        "reconstructedBranch": "finite-real",
+        "kernelBranch": "finite-real",
+        "validityCode": 1,
+        "depthConfidence": "resolved-probe-only"
+      },
+      {
+        "id": "far-street-sign-face",
+        "surface": "street-sign-front-face",
+        "sampledDepth": 0.9989698529243469,
+        "canonicalUmm": 5735,
+        "reconstructedUmm": 5735.013008117676,
+        "canonicalUMinusFmm": 5585,
+        "reconstructedUMinusFmm": 5585.013008117676,
+        "signedObjectDistanceErrorMm": 0.01300811767578125,
+        "absoluteWorldReconstructionErrorMm": 0.013688933241875928,
+        "canonicalBranch": "finite-real",
+        "reconstructedBranch": "finite-real",
+        "kernelBranch": "finite-real",
+        "validityCode": 1,
+        "depthConfidence": "resolved-probe-only"
+      },
+      {
+        "id": "off-axis-midground-checker",
+        "surface": "plinth-mid-right-checker-cell",
+        "sampledDepth": 0.9987296462059021,
+        "canonicalUmm": 5045,
+        "reconstructedUmm": 5041.058540344238,
+        "canonicalUMinusFmm": 4895,
+        "reconstructedUMinusFmm": 4891.058540344238,
+        "signedObjectDistanceErrorMm": -3.9414596557617188,
+        "absoluteWorldReconstructionErrorMm": 4.078357668837163,
+        "canonicalBranch": "finite-real",
+        "reconstructedBranch": "finite-real",
+        "kernelBranch": "finite-real",
+        "validityCode": 1,
+        "depthConfidence": "resolved-probe-only"
+      },
+      {
+        "id": "asymmetric-sign-edge",
+        "surface": "street-sign-front-face-edge",
+        "sampledDepth": 0.9989698529243469,
+        "canonicalUmm": 5735,
+        "reconstructedUmm": 5735.013008117676,
+        "canonicalUMinusFmm": 5585,
+        "reconstructedUMinusFmm": 5585.013008117676,
+        "signedObjectDistanceErrorMm": 0.01300811767578125,
+        "absoluteWorldReconstructionErrorMm": 0.013908685703748494,
+        "canonicalBranch": "finite-real",
+        "reconstructedBranch": "finite-real",
+        "kernelBranch": "finite-real",
+        "validityCode": 1,
+        "depthConfidence": "resolved-probe-only"
+      },
+      {
+        "id": "far-focus-chart-cell",
+        "surface": "focus-chart-cell-63",
+        "sampledDepth": 0.9995884895324707,
+        "canonicalUmm": 8884,
+        "reconstructedUmm": 8885.09464263916,
+        "canonicalUMinusFmm": 8734,
+        "reconstructedUMinusFmm": 8735.09464263916,
+        "signedObjectDistanceErrorMm": 1.0946426391601562,
+        "absoluteWorldReconstructionErrorMm": 1.1056753826622483,
+        "canonicalBranch": "finite-real",
+        "reconstructedBranch": "finite-real",
+        "kernelBranch": "finite-real",
+        "validityCode": 1,
+        "depthConfidence": "resolved-probe-only"
+      }
+    ],
+    "rasterDerivedExactUf": {
+      "canonicalUMinusFmm": 0,
+      "reconstructedUMinusFmm": -3.9414596557617188,
+      "confidence": "depth-limited",
+      "canonicalExpectedBranch": "parallel-limit",
+      "kernelSelectedBranch": "finite-virtual",
+      "validityCode": 1,
+      "parallelLimitInferredFromRaster": false,
+      "controlledExactParallelLimit": "separately identified controlled vector only"
+    },
+    "confidenceVocabulary": [
+      "resolved",
+      "depth-limited",
+      "not-assessed"
+    ],
+    "confidenceScope": "probe-only; no confidence claim is propagated to arbitrary pixels",
+    "validityCodesUnchanged": {
+      "0": "no-depth",
+      "1": "valid physical computation/storage; does not prove canonical branch",
+      "2": "outside binary16 range",
+      "3": "invalid geometry",
+      "4": "unresolved focal boundary"
+    }
+  },
+  "storage": {
+    "observedFormats": {
+      "physicalCoCAndEllipse": "rgba16float",
+      "validity": "rgba8unorm",
+      "sceneDepth": "depth24plus"
+    },
+    "observationSource": "Three.js r187 WebGPU backend texture metadata after allocation plus native readback",
+    "physicalValues": {
+      "calculatedTsl": "retained independently from storage results",
+      "storedHalfBits": "observed RGBA16F bits; decoded with THREE.DataUtils.fromHalfFloat",
+      "gpuSample": "separately sampled from the stored diagnostic texture",
+      "maximumCalculatedToDecodedAbsoluteErrorMmOnValidStorage": 0.00390625,
+      "maximumGpuSampleToDecodedErrorMm": 0,
+      "binary16RoundingContract": "all valid stored channels matched THREE.DataUtils.toHalfFloat(calculatedValue)",
+      "signedCocAndMajorMinorOrdering": "preserved",
+      "orientationDecodedModuloPiErrorRad": 0.001347984719040074,
+      "nanOrInfinityAcceptedAsValid": false
+    },
+    "validityOutcomes": {
+      "clearDepthCode0": "observed with zero physical storage",
+      "validVisibleAndRepresentableCode1": "observed",
+      "binary16OverflowCode2": "observed for positive/negative CoC and ellipse radius; stored/readback/sample values all zero",
+      "invalidGeometryCode3": "observed with zero physical storage",
+      "unresolvedBoundaryCode4": "contract retained; the exact raster-derived canonical U=f case remained depth-limited and did not claim the parallel limit"
+    },
+    "overflowCalculationsRemainUnsaturatedAndInvalid": true
+  },
+  "lifecycle": {
+    "rawPilotWithoutM4": "native M3 Raw regression completed and accepted host frames while M4/M5 pass timings were null",
+    "m4WriterFailure": "physical-coc-after-submit failure remained local; Raw frame completed and was host-accepted; later request recovered",
+    "m4ValidityWriterFailure": "physical-validity-after-submit failure remained local; Raw frame completed and was host-accepted; later request recovered",
+    "unsupportedM4Storage": "reported unsupported; native Raw frame remained current and host-accepted",
+    "staleResizeReadback": "held old readback rejected after resize; current request identity replaced it; no stale publication",
+    "staleUnmountReadback": "held readback rejected after unmount; release produced no readback publication; cleanup confirmed",
+    "cleanupOwnership": "adapter cleanup disposes the M4-owned physical and validity render targets before disposing the source scene target and registered subject; all tested retirements reported confirmed cleanup and host acknowledgement",
+    "borrowedResources": "M4 reads the source target depth texture and registered scene data without owning or disposing them; native M4 and Raw passes remained valid. Resource ownership was verified in the adapter teardown path; no per-resource disposal counter was added.",
+    "lifecycleAuthority": "existing M7C single-owner host, generation, retry, cleanup, and publication authority unchanged",
+    "failureCaptures": [
+      "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-after-submit-failure-evidence.json",
+      "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-validity-after-submit-failure-evidence.json",
+      "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-unsupported-storage-evidence.json",
+      "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-resize-evidence.json",
+      "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json"
+    ]
+  },
+  "isolation": {
+    "m5M6Authorization": "denied",
+    "m4ResearchEvidenceDoesNotSelectWebGpu": "confirmed by backend policy tests: raw-rtt remains separately eligible; physical-coc alone and raw-rtt+physical-coc requests select WebGL",
+    "m5GatherB1Composite": "not executed; r187 Raw/M4 records do not match historical r186 M5 evidence",
+    "m6Presentation": "not executed; r186 M6 compatibility is revision-mismatched on r187; M6-triggered resource provisioning is denied",
+    "production": {
+      "backend": "webgl-only",
+      "normalProductionPreviewTestsPassed": 2,
+      "hostileViteFlagProductionPreviewTestsPassed": 2,
+      "hostileFlagsIncluded": [
+        "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=true",
+        "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true",
+        "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true",
+        "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true"
+      ],
+      "webgpuModuleRequests": 0,
+      "groundGlassPixels": "contentful"
+    },
+    "historicalEvidencePreserved": [
+      "m4-architecture-rise-physical-coc-native-v1",
+      "m5-architecture-rise-aperture-gather-research-v1",
+      "m5-architecture-rise-far-reconstruction-b1-research-v1",
+      "m5q-architecture-rise-r186-v3",
+      "m6d-opaque-presentation-v1"
+    ]
+  },
+  "limitations": [
+    "Only one native Chrome/macOS arm64 runtime was tested. No cross-browser, cross-device, or hardware acceleration claim is made.",
+    "The depth24plus raster reconstruction remains depth-limited near focal inversion; exact parallel-limit authority comes only from its separately controlled diagnostic vector.",
+    "M5 Far/Near Gather, B1 reconstruction, M5Q, and M6 presentation remain unqualified on r187.",
+    "Photographic quality, full M7 lifecycle qualification, M8, M9, and production WebGPU remain outside this evidence."
+  ],
+  "m4ResearchEvidenceRevision": "m4-architecture-rise-physical-coc-native-r187-v1",
+  "m5M6Authorization": "denied",
+  "productionGroundGlassBackend": "webgl-only",
+  "counts": {
+    "passed": 8,
+    "failed": 0,
+    "blocked": 0,
+    "not-run": 0
+  },
+  "scenarios": [
+    {
+      "id": "native-r187-physical-kernel",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+      "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+      "evidenceKind": "native",
+      "rendererRevision": "187",
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+        "requestIds": [
+          "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+          "gg-mvwlmuwl-zefo53ftyeh-default-request-6"
+        ]
+      },
+      "orderedEventEvidence": [
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "lifecycleEvents",
+          "sequenceNumbers": [
+            14,
+            15,
+            16,
+            17,
+            19,
+            20,
+            21,
+            23,
+            24,
+            25,
+            27,
+            28,
+            29,
+            31,
+            32,
+            33,
+            35,
+            36,
+            37,
+            39,
+            40,
+            41,
+            43,
+            44,
+            45,
+            46,
+            48,
+            49,
+            50,
+            52,
+            53,
+            54,
+            56,
+            57,
+            58,
+            59,
+            74,
+            75,
+            76,
+            77,
+            79,
+            80
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "cleanup",
+            "cleanup-acknowledged",
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "hostFrameEventsForReadback",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "acceptedHostFrameResult",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        }
+      ],
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json"
+      ],
+      "knownLimitations": [
+        "one Chrome/macOS arm64 environment",
+        "research-only; no M5/M6 or production authorization"
+      ]
+    },
+    {
+      "id": "real-scene-depth-reconstruction",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+      "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+      "evidenceKind": "native",
+      "rendererRevision": "187",
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+        "requestIds": [
+          "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+          "gg-mvwlmuwl-zefo53ftyeh-default-request-6"
+        ]
+      },
+      "orderedEventEvidence": [
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "lifecycleEvents",
+          "sequenceNumbers": [
+            14,
+            15,
+            16,
+            17,
+            19,
+            20,
+            21,
+            23,
+            24,
+            25,
+            27,
+            28,
+            29,
+            31,
+            32,
+            33,
+            35,
+            36,
+            37,
+            39,
+            40,
+            41,
+            43,
+            44,
+            45,
+            46,
+            48,
+            49,
+            50,
+            52,
+            53,
+            54,
+            56,
+            57,
+            58,
+            59,
+            74,
+            75,
+            76,
+            77,
+            79,
+            80
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "cleanup",
+            "cleanup-acknowledged",
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "hostFrameEventsForReadback",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "acceptedHostFrameResult",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "depthDerivedExactFocalHostFrameResult",
+          "sequenceNumbers": [
+            32
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        }
+      ],
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json"
+      ],
+      "knownLimitations": [
+        "raster depth does not resolve exact U=f",
+        "depth confidence remains probe-only"
+      ]
+    },
+    {
+      "id": "native-storage-and-validity",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+      "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+      "evidenceKind": "native",
+      "rendererRevision": "187",
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+        "requestIds": [
+          "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+          "gg-mvwlmuwl-zefo53ftyeh-default-request-6"
+        ]
+      },
+      "orderedEventEvidence": [
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "lifecycleEvents",
+          "sequenceNumbers": [
+            14,
+            15,
+            16,
+            17,
+            19,
+            20,
+            21,
+            23,
+            24,
+            25,
+            27,
+            28,
+            29,
+            31,
+            32,
+            33,
+            35,
+            36,
+            37,
+            39,
+            40,
+            41,
+            43,
+            44,
+            45,
+            46,
+            48,
+            49,
+            50,
+            52,
+            53,
+            54,
+            56,
+            57,
+            58,
+            59,
+            74,
+            75,
+            76,
+            77,
+            79,
+            80
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "cleanup",
+            "cleanup-acknowledged",
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "hostFrameEventsForReadback",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+          "collection": "acceptedHostFrameResult",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        }
+      ],
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json"
+      ],
+      "knownLimitations": [
+        "storage claims apply to captured native Chrome runtime"
+      ]
+    },
+    {
+      "id": "optional-pass-failure-raw-preservation",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-after-submit-failure-evidence.json",
+      "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts -g M4",
+      "evidenceKind": "native",
+      "rendererRevision": "187",
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-after-submit-failure-evidence.json",
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-validity-after-submit-failure-evidence.json",
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-unsupported-storage-evidence.json"
+      ],
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "requestIds": [
+          "gg-mvwln9yq-v55s6bh8ek-default-request-3",
+          "gg-mvwln9yq-v55s6bh8ek-default-request-4"
+        ],
+        "generationId": "gg-mvwln9yq-v55s6bh8ek-default-generation-2"
+      },
+      "orderedEventEvidence": [
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-after-submit-failure-evidence.json",
+          "collection": "adapterEventsAtFailure",
+          "sequenceNumbers": [
+            14,
+            15,
+            16,
+            17,
+            19,
+            20
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-after-submit-failure-evidence.json",
+          "collection": "acceptedHostFrameResult",
+          "sequenceNumbers": [
+            20
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-validity-after-submit-failure-evidence.json",
+          "collection": "adapterEventsAtFailure",
+          "sequenceNumbers": [
+            17,
+            18,
+            19,
+            20,
+            22,
+            23
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-validity-after-submit-failure-evidence.json",
+          "collection": "acceptedHostFrameResult",
+          "sequenceNumbers": [
+            23
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-unsupported-storage-evidence.json",
+          "collection": "adapterEvents",
+          "sequenceNumbers": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "eventKinds": [
+            "host-attached",
+            "host-attached",
+            "renderer-mounted",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "host-frame-result",
+            "cleanup-acknowledged",
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-performance",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-unsupported-storage-evidence.json",
+          "collection": "acceptedHostFrameResult",
+          "sequenceNumbers": [
+            26
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        }
+      ],
+      "knownLimitations": [
+        "bounded to M4 physical writer, validity writer, and unsupported storage controls"
+      ]
+    },
+    {
+      "id": "stale-readback-after-resize",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-resize-evidence.json",
+      "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+      "evidenceKind": "native",
+      "rendererRevision": "187",
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "generationId": "gg-mvwlmy50-waqcskn6uwp-default-generation-2",
+        "requestIds": [
+          "gg-mvwlmy50-waqcskn6uwp-default-request-4",
+          "gg-mvwlmy50-waqcskn6uwp-default-request-5",
+          "gg-mvwlmy50-waqcskn6uwp-default-request-5"
+        ]
+      },
+      "orderedEventEvidence": [
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-resize-evidence.json",
+          "collection": "lifecycleEvents",
+          "sequenceNumbers": [
+            17,
+            18,
+            19,
+            20,
+            22,
+            23,
+            24,
+            25,
+            27,
+            28
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-resize-evidence.json",
+          "collection": "hostFrameResults",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        }
+      ],
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-resize-evidence.json"
+      ],
+      "knownLimitations": [
+        "stale probe is rejected and status becomes not-requested; no claim about arbitrary readback failures"
+      ]
+    },
+    {
+      "id": "stale-readback-after-unmount",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json",
+      "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+      "evidenceKind": "native",
+      "rendererRevision": "187",
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "generationId": "gg-mvwlmzjr-6ab7kk9fjjc-default-generation-2",
+        "requestIds": [
+          "gg-mvwlmzjr-6ab7kk9fjjc-default-request-4",
+          "gg-mvwlmzjr-6ab7kk9fjjc-default-request-3"
+        ]
+      },
+      "orderedEventEvidence": [
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json",
+          "collection": "lifecycleEvents",
+          "sequenceNumbers": [
+            20,
+            21,
+            22,
+            23,
+            25,
+            26,
+            27,
+            28,
+            29
+          ],
+          "eventKinds": [
+            "attempt",
+            "runtime-observed",
+            "renderer-mounted",
+            "queue-completion-settled",
+            "frame-completed",
+            "host-frame-result",
+            "queue-completion-settled",
+            "cleanup",
+            "cleanup-acknowledged"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json",
+          "collection": "hostFrameResults",
+          "sequenceNumbers": [
+            26
+          ],
+          "eventKinds": [
+            "host-frame-result"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json",
+          "collection": "cleanupEvent",
+          "sequenceNumbers": [
+            28
+          ],
+          "eventKinds": [
+            "cleanup"
+          ]
+        },
+        {
+          "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json",
+          "collection": "cleanupAcknowledgement",
+          "sequenceNumbers": [
+            29
+          ],
+          "eventKinds": [
+            "cleanup-acknowledged"
+          ]
+        }
+      ],
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json"
+      ],
+      "knownLimitations": [
+        "readback settles after unmount and is rejected; retirement cleans up after the held operation settles"
+      ]
+    },
+    {
+      "id": "m5-m6-isolation",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json",
+      "sourceSha": "08e4a5d0394f37edb17705f0c4445c545ca5203e",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test -- --reporter=json --outputFile=docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts src/tests/unit/groundGlassPhysicalCocPolicy.test.ts src/tests/unit/groundGlassBackendPolicy.test.ts src/tests/unit/groundGlassPhysicalCocContract.test.ts src/tests/unit/groundGlassApertureGatherPolicy.test.ts src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassM6Presentation.test.ts",
+      "evidenceKind": "unit",
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json",
+        "src/tests/unit/groundGlassPhysicalCocPolicy.test.ts",
+        "src/tests/unit/groundGlassApertureGatherPolicy.test.ts",
+        "src/tests/unit/groundGlassBackendPolicy.test.ts"
+      ],
+      "knownLimitations": [
+        "unit policy evidence validates denial; no M5/M6 native execution was attempted"
+      ]
+    },
+    {
+      "id": "production-webgl-isolation",
+      "status": "passed",
+      "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/architecture-rise-production-webgl-isolation.json",
+      "sourceSha": "1d91487094e90f0c9481bd839b3db4be62a7ba17",
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview --workers=1 src/tests/e2e/architecture-rise-webgpu-production.spec.ts; repeated with hostile VITE_GROUND_GLASS_WEBGPU_* flags",
+      "evidenceKind": "production-preview",
+      "supportingArtifacts": [
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/architecture-rise-production-webgl-isolation.json",
+        "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/production-hostile-vite-flags/architecture-rise-production-webgl-isolation.json"
+      ],
+      "knownLimitations": [
+        "production preview browser was Chrome 149.0.7827.55; native M4 runtime evidence is Chrome 156.0.8078.76"
+      ],
+      "runtimeIdentity": {
+        "threeRevision": "187",
+        "browserVersion": "149.0.7827.55",
+        "operatingSystem": "darwin 27.0.0",
+        "rendererFamily": "webgl-renderer",
+        "actualExecutionApi": "webgl2",
+        "internalFallback": "none",
+        "sceneId": "architecture-rise",
+        "route": "/simulator/free/architecture-rise"
+      }
+    }
+  ],
+  "scenarioCount": 8,
+  "validation": {
+    "testedSourceSha": "08e4a5d0394f37edb17705f0c4445c545ca5203e",
+    "focusedUnit": {
+      "testSuitesPassed": 22,
+      "testsPassed": 203,
+      "testsFailed": 0,
+      "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json"
+    },
+    "fullUnitAndIntegration": {
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test",
+      "testFilesPassed": 305,
+      "testsPassed": 3206,
+      "failed": 0
+    },
+    "typecheck": {
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run lint",
+      "status": "passed"
+    },
+    "css": {
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run check:css",
+      "status": "passed"
+    },
+    "productionBuild": {
+      "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run build",
+      "status": "passed"
+    },
+    "nativePlaywright": [
+      {
+        "project": "chrome-native-webgpu",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+        "passed": 3,
+        "failed": 0,
+        "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e"
+      },
+      {
+        "project": "chrome-native-webgpu",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts -g M4",
+        "passed": 3,
+        "failed": 0,
+        "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e"
+      },
+      {
+        "project": "chrome-native-webgpu",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts",
+        "passed": 1,
+        "failed": 0,
+        "sourceSha": "1d91487094e90f0c9481bd839b3db4be62a7ba17",
+        "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7c-r187-native-raw-baseline.json"
+      },
+      {
+        "project": "chrome-native-webgpu",
+        "invocation": "OBSERVER_NATIVE_WEBGPU_REQUIRED=1 PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts",
+        "passed": 8,
+        "failed": 0,
+        "sourceRevision": "r187 Raw RTT compatibility regression"
+      }
+    ],
+    "productionPreview": {
+      "project": "chromium-production-preview",
+      "baseline": {
+        "passed": 2,
+        "failed": 0,
+        "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/architecture-rise-production-webgl-isolation.json"
+      },
+      "hostileDevelopmentFlags": {
+        "passed": 2,
+        "failed": 0,
+        "capture": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/production-hostile-vite-flags/architecture-rise-production-webgl-isolation.json"
+      },
+      "browser": "Chrome 149.0.7827.55",
+      "threeRevision": "187"
+    },
+    "broadLocalPlaywright": {
+      "status": "not-run",
+      "reason": "Focused native lifecycle and production-preview projects plus full unit/integration validation covered the bounded M4 change."
+    },
+    "hostedCI": {
+      "status": "pending PR publication"
+    }
+  }
+}
