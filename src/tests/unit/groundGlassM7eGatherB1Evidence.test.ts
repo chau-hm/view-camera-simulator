@@ -7,6 +7,7 @@ import type {
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import {
   GROUND_GLASS_M7E_EVALUATOR_REVISION,
+  GROUND_GLASS_M7E_R187_THRESHOLDS,
   GROUND_GLASS_M7E_REQUIRED_NATIVE_SCENARIO_IDS,
   evaluateGroundGlassM7eB1BoundaryProbe,
   evaluateGroundGlassM7eNativeCapture,
@@ -15,6 +16,7 @@ import {
   type GroundGlassM7eReportInventory,
   type GroundGlassM7eRuntimeIdentity,
 } from "../../render/webgpu/groundGlassM7eGatherB1Evidence";
+import { GROUND_GLASS_M5Q_R186_FROZEN_THRESHOLDS } from "../../render/webgpu/groundGlassM5qQualification";
 import { reconstructGroundGlassB1Reference } from "../../render/webgpu/groundGlassB1Reference";
 
 const runtime: GroundGlassM7eRuntimeIdentity = {
@@ -247,6 +249,13 @@ const makeReport = (envelope = makeEnvelope(), probe = makeBoundaryProbe()): Gro
 });
 
 describe("M7E r187 M5 evidence integrity", () => {
+  it("uses the exact historical M5Q thresholds under a distinct r187 evidence revision", () => {
+    const { revision, sourceThresholdRevision, ...r187Thresholds } = GROUND_GLASS_M7E_R187_THRESHOLDS;
+    expect({ ...r187Thresholds, revision: sourceThresholdRevision })
+      .toEqual(GROUND_GLASS_M5Q_R186_FROZEN_THRESHOLDS);
+    expect(revision).toBe("m5q-architecture-rise-r187-v1");
+  });
+
   it("accepts current native r187 Far/Near/B1 evidence with an independent CPU decision", () => {
     expect(evaluateGroundGlassM7eNativeCapture(makeEnvelope(), 60).status).toBe("passed");
   });

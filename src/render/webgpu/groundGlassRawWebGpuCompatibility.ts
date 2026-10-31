@@ -34,8 +34,16 @@ export const ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION =
 export const ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION =
   "m5-architecture-rise-aperture-gather-research-v1";
 
+/** Native r187 Gather research is independently revision-bound and remains research-only. */
+export const ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION =
+  "m5-architecture-rise-aperture-gather-r187-v1";
+
 export const ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION =
   "m5-architecture-rise-far-reconstruction-b1-research-v1";
+
+/** Native r187 B1 research is independently revision-bound and remains research-only. */
+export const ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION =
+  "m5-architecture-rise-far-reconstruction-b1-r187-v1";
 
 /**
  * This record authorizes only the Raw scene target and its separate texture display.
@@ -196,22 +204,88 @@ const architectureRisePhysicalCocR187Feature: Extract<
   },
   knownIncompatibilities: [
     "the depth24plus reconstruction remains depth-limited near focal inversion and does not establish exact U=f from rounded raster depth",
-    "M5 Gather/B1 and M6 presentation remain tied to r186 evidence and are not authorized on r187",
+    "M5 Gather/B1 have separate r187 research-only records with partially-qualified M5Q results; M6 presentation remains tied to r186 and is not authorized on r187",
     "photographic quality, cross-browser behavior, and production WebGPU are not qualified",
   ],
 };
 
+const architectureRiseApertureGatherR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "research-only" }
+> = {
+  feature: "aperture-gather",
+  status: "research-only",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64",
+  },
+  evidence: [
+    "M7E native-required registered Architecture Rise capture matrices observed r187 WebGPURenderer/webgpu execution, actual M4 inputs and native M5 target formats across Half32, Full32, and Full64 profiles",
+    "all twelve M7E Far/Near GPU outputs matched independent captured-input CPU references within the existing 0.001 comparison limit; Near output remained unchanged by B1",
+    "eight injected M5 initialization, submitted-pass, decision, composite, and readback failures left the M3 Raw host frame complete and contentful, rejected failed M5 capture publication, and recovered on a later capture",
+    "the independent M5Q r187 matrix is partially-qualified: Q3 passed; Q1 and Q5/Q6/Q7 did not converge; Q2/Q4 have insufficient support; the frozen r186 numeric thresholds were unchanged",
+    "M7E reports, exact source revision, native invocation, and compressed GPU/CPU readback artifacts are retained under docs/architecture/ground-glass-m7e-r187-gather-b1",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+  },
+  knownIncompatibilities: [
+    "M5Q quality evidence is only partially qualified on the tested r187 environment and remains research-only",
+    "M6 presentation, cross-browser behavior, photographic quality, and production WebGPU are not qualified",
+  ],
+};
+
+const architectureRiseB1R187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "research-only" }
+> = {
+  feature: "far-reconstruction-b1",
+  status: "research-only",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  evidenceRevision: ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64",
+  },
+  evidence: [
+    "M7E native B1 boundary probe exercised ten observed RGBA16F physical/Far storage cases and compared stored binary16 bits with Three.js conversion",
+    "GPU B1 eligibility, fallback reason, selected path, and output matched an independent CPU reconstruction using recorded RGBA8 source, M4 physical, validity, and Far inputs",
+    "all twelve registered-app M5 profiles independently recomputed B1 decisions from actual captured M3/M4/Far data and observed request/generation identities",
+    "M5Q r187 remains partially-qualified and cannot authorize M6 presentation or production WebGPU",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+  },
+  knownIncompatibilities: [
+    "M5Q dimensions Q1, Q2, Q4, Q5, Q6, and Q7 did not meet their frozen bounded qualification gates in the tested environment",
+    "M6 presentation, cross-browser behavior, photographic quality, and production WebGPU are not qualified",
+  ],
+};
+
 /**
- * New native r187 evidence qualifies only M3 Raw RTT. Existing M4/M5 evidence remains bound
- * to r186 inside the original record and cannot be reused to authorize those research passes.
+ * New native r187 evidence keeps M3 Raw RTT independently eligible and records M4/M5 as
+ * research-only. These records cannot authorize a renderer attempt or production WebGPU.
  */
 export const GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY: GroundGlassSceneCompatibility = {
   ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   features: [
     architectureRiseRawRttR187Feature,
     architectureRisePhysicalCocR187Feature,
+    architectureRiseApertureGatherR187Feature,
+    architectureRiseB1R187Feature,
     ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.filter(
-      (feature) => feature.feature !== "raw-rtt" && feature.feature !== "physical-coc",
+      (feature) => feature.feature !== "raw-rtt"
+        && feature.feature !== "physical-coc"
+        && feature.feature !== "aperture-gather"
+        && feature.feature !== "far-reconstruction-b1",
     ),
   ],
 };

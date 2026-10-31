@@ -5,6 +5,12 @@ import { getGroundGlassDofVisualSettings } from "../groundGlassVisualSettings";
 import { isGroundGlassRawWebGpuPilotRequest } from "./groundGlassRawWebGpuPolicyInput";
 import {
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
   resolveGroundGlassRawWebGpuCompatibility,
 } from "./groundGlassRawWebGpuCompatibility";
 import { isGroundGlassM6PresentationRevisionMatched } from "./groundGlassPhysicalCocPolicy";
@@ -107,13 +113,27 @@ export const isGroundGlassApertureGatherResearchEvidenceRevisionMatched = (
 ): boolean => {
   if (compatibility?.sceneId !== "architecture-rise"
       || compatibility.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION) return false;
+  const expectedEvidenceRevisions = rendererRevision === "r187"
+    ? {
+      "physical-coc": ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+      "aperture-gather": ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
+      "far-reconstruction-b1": ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
+    }
+    : rendererRevision === "r186"
+      ? {
+        "physical-coc": ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
+        "aperture-gather": ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
+        "far-reconstruction-b1": ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
+      }
+      : null;
+  if (!expectedEvidenceRevisions) return false;
   for (const featureName of ["physical-coc", "aperture-gather", "far-reconstruction-b1"] as const) {
     const matches = compatibility.features.filter((feature) => feature.feature === featureName);
     if (matches.length !== 1) return false;
     const [feature] = matches;
     if (feature.status !== "research-only"
         || feature.sourceRevision !== compatibility.sourceRevision
-        || !feature.evidenceRevision.trim()
+        || feature.evidenceRevision !== expectedEvidenceRevisions[featureName]
         || feature.testedContext.rendererFamily !== "webgpu-renderer"
         || feature.testedContext.executionApi !== "webgpu"
         || feature.testedContext.rendererRevision !== rendererRevision
@@ -205,6 +225,21 @@ export const resolveGroundGlassApertureGatherResearchEligibility = (
       revision === "r187" && !m6Request &&
       (featureName === "aperture-gather" || featureName === "far-reconstruction-b1");
     if (qualificationMayGatherWithoutM5Record) continue;
+    if (!m6Request) {
+      const expectedEvidenceRevision = revision === "r187"
+        ? featureName === "physical-coc" ? ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION
+          : featureName === "aperture-gather" ? ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION
+            : ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION
+        : revision === "r186"
+          ? featureName === "physical-coc" ? ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION
+            : featureName === "aperture-gather" ? ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION
+              : ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION
+          : null;
+      if (!expectedEvidenceRevision || feature.status !== "research-only"
+          || feature.evidenceRevision !== expectedEvidenceRevision) {
+        return { status: "unsupported", reason: `${featureName}-evidence-does-not-match-candidate` };
+      }
+    }
     const evidence = feature.status === "research-only"
       ? feature.evidence
       : feature.status === "implementation-verified"

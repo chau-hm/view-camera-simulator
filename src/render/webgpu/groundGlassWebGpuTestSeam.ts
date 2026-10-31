@@ -436,6 +436,15 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
   m6dCompositeContractProbe?: GroundGlassM6dCompositeContractProbeReadback | null;
 }>;
 
+export type GroundGlassApertureGatherCapturePublication = Readonly<{
+  token: string;
+  captureId: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
+}>;
+
 /** Synthetic-input evidence is always labeled separately from registered app captures. */
 export type GroundGlassM5rNearFixtureReadback = Readonly<{
   evidenceScope: "native-research-fixture";
@@ -752,6 +761,7 @@ export type GroundGlassWebGpuTestControl = {
   releasePhysicalCocProbeReadback?: (() => void) | undefined;
   apertureGatherCaptureRequest?: GroundGlassApertureGatherCaptureRequest | null;
   apertureGatherCaptureReadback?: GroundGlassApertureGatherCaptureReadback | null;
+  apertureGatherCapturePublications?: GroundGlassApertureGatherCapturePublication[];
   holdApertureGatherReadback?: boolean;
   apertureGatherReadbackBarrierReached?: boolean;
   releaseApertureGatherReadback?: (() => void) | undefined;
@@ -1054,7 +1064,17 @@ export const publishGroundGlassApertureGatherCaptureForTest = (
   readback: GroundGlassApertureGatherCaptureReadback,
 ): void => {
   const control = getControl();
-  if (control) control.apertureGatherCaptureReadback = readback;
+  if (!control) return;
+  control.apertureGatherCapturePublications ??= [];
+  control.apertureGatherCapturePublications.push({
+    token: readback.token,
+    captureId: readback.captureId,
+    requestId: readback.requestId,
+    channelId: readback.channelId,
+    sceneId: readback.sceneId,
+    rendererGenerationId: readback.rendererGenerationId,
+  });
+  control.apertureGatherCaptureReadback = readback;
 };
 
 export const clearGroundGlassApertureGatherCaptureForTest = (): void => {

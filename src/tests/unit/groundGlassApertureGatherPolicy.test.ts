@@ -69,15 +69,36 @@ describe("Ground Glass M5 aperture-gather research policy", () => {
     });
   });
 
-  it("does not let r187 Raw RTT or M4 research evidence authorize historical M5 research", () => {
+  it("does not let r187 Raw RTT or M4 research evidence reuse the historical r186 M5 records", () => {
+    const historicalGather = GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "aperture-gather",
+    );
+    if (!historicalGather) throw new Error("Historical M5 Gather record is unavailable");
+    const staleM5Compatibility = reviseFeature(
+      GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      "aperture-gather",
+      () => historicalGather,
+    );
     expect(resolveGroundGlassApertureGatherResearchEligibility({
       ...baseEligibilityInput(),
       expectedRendererRevision: "r187",
-      compatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      compatibility: staleM5Compatibility,
     })).toEqual({
       status: "unsupported",
       reason: "aperture-gather-evidence-does-not-match-candidate",
     });
+  });
+
+  it("allows the newly identified r187 M5 records only as revision-matched research", () => {
+    expect(resolveGroundGlassApertureGatherResearchEligibility({
+      ...baseEligibilityInput(),
+      expectedRendererRevision: "r187",
+      compatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+    })).toEqual({ status: "eligible" });
+    expect(isGroundGlassApertureGatherResearchEvidenceRevisionMatched(
+      GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      "r187",
+    )).toBe(true);
   });
 
   it("allows pre-evidence r187 M5 only through the explicit qualification harness after current M4", () => {
@@ -120,6 +141,11 @@ describe("Ground Glass M5 aperture-gather research policy", () => {
   it("keeps M5 evidence research-only and requires M6 compatibility to match before M6 provisioning", () => {
     expect(isGroundGlassApertureGatherResearchEvidenceRevisionMatched(
       GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      "r187",
+    )).toBe(true);
+    expect(isGroundGlassApertureGatherResearchEvidenceRevisionMatched(
+      reviseFeature(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY, "aperture-gather", (feature) =>
+        feature.status === "research-only" ? { ...feature, evidenceRevision: "wrong-r187-evidence" } : feature),
       "r187",
     )).toBe(false);
     expect(isGroundGlassM6PresentationRevisionMatched(

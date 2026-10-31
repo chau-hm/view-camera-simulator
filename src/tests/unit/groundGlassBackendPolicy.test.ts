@@ -3,7 +3,9 @@ import { selectGroundGlassBackend } from "../../render/backend/groundGlassBacken
 import type { GroundGlassFeatureCompatibility } from "../../render/backend/groundGlassSceneCompatibility";
 import {
   ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
@@ -163,19 +165,47 @@ describe("Ground Glass backend policy", () => {
       status: "denied",
       sceneEligibility: { status: "denied", reasons: expect.arrayContaining(["feature-research-only"]) },
     });
-    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+    expect(GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.find(
       (feature) => feature.feature === "aperture-gather",
     )).toMatchObject({
       status: "research-only",
       evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
       testedContext: { rendererRevision: "r186" },
     });
-    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+    expect(GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.find(
       (feature) => feature.feature === "far-reconstruction-b1",
     )).toMatchObject({
       status: "research-only",
       evidenceRevision: ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
       testedContext: { rendererRevision: "r186" },
+    });
+    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "aperture-gather",
+    )).toMatchObject({
+      status: "research-only",
+      evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
+      testedContext: { rendererRevision: "r187", executionApi: "webgpu" },
+      knownIncompatibilities: expect.arrayContaining([
+        expect.stringContaining("partially qualified"),
+      ]),
+    });
+    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "far-reconstruction-b1",
+    )).toMatchObject({
+      status: "research-only",
+      evidenceRevision: ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
+      testedContext: { rendererRevision: "r187", executionApi: "webgpu" },
+    });
+    const m5AttemptResult = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["raw-rtt", "physical-coc", "aperture-gather", "far-reconstruction-b1"],
+      sceneCompatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+      expectedCandidateRendererRevision: "r187",
+    }));
+    expect(m5AttemptResult.selectedBackend).toBe("webgl");
+    expect(m5AttemptResult.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: expect.arrayContaining(["feature-research-only"]) },
     });
     expect(GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY.features.every(
       (feature) => feature.status === "implementation-verified" &&

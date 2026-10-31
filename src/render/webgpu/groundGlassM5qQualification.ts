@@ -1,4 +1,5 @@
 import type {
+  GroundGlassApertureGatherR3Thresholds,
   GroundGlassApertureGatherR3Evaluation,
   GroundGlassR3RgbMetrics,
 } from "./groundGlassApertureGatherQuality";
@@ -127,6 +128,47 @@ export type GroundGlassM5qFrozenThresholds = Readonly<{
   maximumNearB1AlphaMaximumError: number;
   minimumMeaningfulBlurRgbDifference: number;
 }>;
+
+/** Frozen r186 registered-app M5Q contract reused unchanged for revision-specific requalification. */
+export const GROUND_GLASS_M5Q_R186_FROZEN_THRESHOLDS = Object.freeze({
+  revision: "m5q-architecture-rise-r186-v3",
+  evidenceScope: "single-native-state",
+  frozenBeforeConfirmatory: true,
+  minimumInteriorFarPixels: 1_000,
+  minimumDepthEdgePixels: 100,
+  minimumNearFarBoundaryPairs: 100,
+  minimumNearCoveragePixels: 100,
+  minimumFractionalCoveragePixels: 32,
+  minimumNearFarBoundaryCoveragePixels: 20,
+  minimumSpreadOutsideSharpNearPixels: 20,
+  minimumFallbackBoundaryPairs: 100,
+  minimumStrongOverrunPx: 4,
+  minimumFallbackPixels: 100,
+  minimumMeaningfulBlurFallbackPixels: 20,
+  minimumSignedBoundaryPairs: 100,
+  minimumSignedBoundarySidePixels: 100,
+  minimumCappedPixels: 100,
+  maximumReferenceRmse: 0.001,
+  maximumReferenceFullFrameRmse: 0.001,
+  maximumReferenceChannelError: 0.01,
+  maximumReferenceInteriorFarRmse: 0.001,
+  maximumReferenceDepthEdgeRmse: 0.001,
+  maximumB1FullFrameRmse: 0.05,
+  maximumB1InteriorFarRmse: 0.05,
+  maximumB1DepthEdgeRmse: 0.05,
+  maximumB1SignedBoundaryRmse: 0.1,
+  maximumB1FallbackRmse: 0.05,
+  maximumBlurGradientRelativeError: 0.25,
+  maximumMeaningfulBlurFallbackFraction: 0.1,
+  maximumFallbackBoundaryGradientRelativeError: 0.25,
+  maximumFallbackSourceError: 0.001,
+  maximumNearCpuRgbRmse: 0.001,
+  maximumNearCpuAlphaRmse: 0.001,
+  maximumNearB1RgbMaximumError: 0.001,
+  maximumNearB1AlphaMaximumError: 0.001,
+  minimumMeaningfulBlurRgbDifference: 0.01,
+  depthEdgeThreshold: 0.0001,
+} satisfies GroundGlassApertureGatherR3Thresholds & GroundGlassM5qFrozenThresholds);
 
 export type GroundGlassM5qCriterion = Readonly<{
   key: string;

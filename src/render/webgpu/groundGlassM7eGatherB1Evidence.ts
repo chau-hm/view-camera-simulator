@@ -6,6 +6,7 @@ import {
 } from "./groundGlassApertureGatherQuality";
 import {
   evaluateGroundGlassM5qDimensions,
+  GROUND_GLASS_M5Q_R186_FROZEN_THRESHOLDS,
   type GroundGlassM5qDimensionId,
   type GroundGlassM5qEvidenceContext,
   type GroundGlassM5qPairedCapEvidence,
@@ -18,6 +19,10 @@ import {
   type GroundGlassB1SelectedPath,
 } from "./groundGlassB1Reference";
 import { DataUtils } from "three";
+import {
+  ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
+} from "./groundGlassRawWebGpuCompatibility";
 import type {
   GroundGlassApertureGatherCaptureReadback,
   GroundGlassB1BoundaryProbeReadback,
@@ -25,8 +30,8 @@ import type {
 
 export const GROUND_GLASS_M7E_EVALUATOR_REVISION = "m7e-r187-gather-b1-evaluator-v1";
 export const GROUND_GLASS_M7E_R187_M5Q_REVISION = "m5q-architecture-rise-r187-v1";
-export const GROUND_GLASS_M7E_R187_GATHER_REVISION = "m5-architecture-rise-aperture-gather-native-r187-v1";
-export const GROUND_GLASS_M7E_R187_B1_REVISION = "m5-architecture-rise-far-reconstruction-b1-native-r187-v1";
+export const GROUND_GLASS_M7E_R187_GATHER_REVISION = ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION;
+export const GROUND_GLASS_M7E_R187_B1_REVISION = ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION;
 export const GROUND_GLASS_M7E_SCENE_ID = "architecture-rise";
 export const GROUND_GLASS_M7E_SCENE_SOURCE_REVISION = "architecture-rise-raw-rtt-v1";
 
@@ -37,7 +42,7 @@ export const GROUND_GLASS_M7E_SCENE_SOURCE_REVISION = "architecture-rise-raw-rtt
  */
 export const GROUND_GLASS_M7E_R187_THRESHOLDS = Object.freeze({
   revision: GROUND_GLASS_M7E_R187_M5Q_REVISION,
-  sourceThresholdRevision: "m5q-architecture-rise-r186-v3",
+  sourceThresholdRevision: GROUND_GLASS_M5Q_R186_FROZEN_THRESHOLDS.revision,
   frozenBeforeConfirmatory: true,
   evidenceScope: "single-native-state",
   minimumInteriorFarPixels: 1000,
