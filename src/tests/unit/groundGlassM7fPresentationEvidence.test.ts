@@ -171,6 +171,35 @@ const createFailureCapture = () => ({
   ],
 });
 
+const createRetiredM6cCapture = () => {
+  const frame = createM6dCapture();
+  const identity = {
+    requestId: "request-current",
+    channelId: "channel-default",
+    sceneId: "architecture-rise",
+    rendererGenerationId: "generation-current",
+  };
+  return {
+    scenarioId: "m6c-retired-generation-readback",
+    captureProvenance: { ...provenance },
+    events: frame.adapterEvents,
+    staleReadback: {
+      status: "stale",
+      samples: [],
+      identity,
+      resourceAccounting: {
+        targetDisposed: true,
+        previousRenderTargetRestored: true,
+        disposalOutcome: "confirmed",
+      },
+    },
+    cleanupOutcome: "confirmed",
+    currentHostMounted: false as boolean,
+    currentRequestId: null as string | null,
+    routeAfterNavigation: "http://127.0.0.1:4175/scenes",
+  };
+};
+
 const createRegisteredAppCapture = () => {
   const requestId = "request-app";
   const channelId = "channel-default";
@@ -367,6 +396,34 @@ describe("M7F r187 presentation evidence replay", () => {
       lifecycle: { "optical-resource-initialization-failure.json": createFailureCapture() },
     });
     expect(scenario(bundle, "optical-resource-initialization-failure").status).toBe("passed");
+  });
+
+  it("accepts stale M6C readback retirement only after SPA navigation unmounts the host", () => {
+    const capture = createRetiredM6cCapture();
+    expect(scenario(createBundle({
+      lifecycle: { "m6c-retired-generation.json": capture },
+    }), "m6c-retired-generation-readback").status).toBe("passed");
+  });
+
+  it.each([
+    ["a still-mounted host", (capture: ReturnType<typeof createRetiredM6cCapture>) => {
+      capture.currentHostMounted = true;
+    }],
+    ["a surviving current request", (capture: ReturnType<typeof createRetiredM6cCapture>) => {
+      capture.currentRequestId = "request-stale";
+    }],
+    ["a route that did not leave the scene", (capture: ReturnType<typeof createRetiredM6cCapture>) => {
+      capture.routeAfterNavigation = "http://127.0.0.1:4175/simulator/free/architecture-rise";
+    }],
+  ])("rejects retired readback evidence with %s", (_name, mutate) => {
+    const capture = createRetiredM6cCapture();
+    mutate(capture);
+    const result = scenario(createBundle({
+      lifecycle: { "m6c-retired-generation.json": capture },
+    }), "m6c-retired-generation-readback");
+
+    expect(result.status).toBe("failed");
+    expect(result.issues).toContain("retired-generation-host-still-published-after-navigation");
   });
 
   it.each([

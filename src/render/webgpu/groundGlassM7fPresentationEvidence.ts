@@ -735,6 +735,11 @@ const lifecycleIssues = (
     if (id === "m6c-retired-generation-readback" && artifact.cleanupOutcome !== "confirmed") {
       issues.push("retired-generation-cleanup-not-confirmed");
     }
+    if (id === "m6c-retired-generation-readback" &&
+        (artifact.currentHostMounted !== false || artifact.currentRequestId !== null ||
+         typeof artifact.routeAfterNavigation !== "string" || !artifact.routeAfterNavigation.includes("/scenes"))) {
+      issues.push("retired-generation-host-still-published-after-navigation");
+    }
     const identity = asRecord(readback?.identity);
     if (!identity) {
       issues.push("stale-readback-identity-missing");
