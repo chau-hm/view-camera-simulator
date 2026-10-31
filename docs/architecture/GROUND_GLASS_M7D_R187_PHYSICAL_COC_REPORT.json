@@ -1,7 +1,7 @@
 {
   "schemaVersion": "ground-glass-m7d-r187-physical-coc-report-v1",
   "reportId": "ground-glass-m7d-r187-physical-coc",
-  "evaluatorRevision": "m7d-physical-coc-evidence-v1",
+  "evaluatorRevision": "m7d-physical-coc-evidence-v2",
   "qualification": "research-qualified-for-tested-environment",
   "scope": {
     "sceneId": "architecture-rise",

@@ -1,8 +1,13 @@
 import * as THREE from "three";
+import { createHash } from "node:crypto";
+import {
+  computePhysicalBlurFootprint,
+  type PhysicalBlurFootprint,
+} from "../../core/optics/computePhysicalBlurFootprint";
 import { groundGlassPhysicalCocOrientationErrorModuloPi } from "./groundGlassPhysicalCocContract";
 
 export const GROUND_GLASS_M7D_PHYSICAL_COC_EVIDENCE_REVISION =
-  "m7d-physical-coc-evidence-v1" as const;
+  "m7d-physical-coc-evidence-v2" as const;
 
 export const GROUND_GLASS_M7D_REQUIRED_KERNEL_CASE_IDS = [
   "ellipse-circular",
@@ -35,6 +40,47 @@ export const GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS = [
   "production-webgl-isolation",
 ] as const;
 
+export const GROUND_GLASS_M7D_REQUIRED_SCENARIO_EVIDENCE_KINDS = {
+  "native-r187-physical-kernel": "native",
+  "real-scene-depth-reconstruction": "native",
+  "native-storage-and-validity": "native",
+  "optional-pass-failure-raw-preservation": "native",
+  "stale-readback-after-resize": "native",
+  "stale-readback-after-unmount": "native",
+  "m5-m6-isolation": "unit",
+  "production-webgl-isolation": "production-preview",
+} as const;
+
+const requiredScenarioEvidenceKinds: Readonly<Record<string, string>> =
+  GROUND_GLASS_M7D_REQUIRED_SCENARIO_EVIDENCE_KINDS;
+
+const REQUIRED_QUALIFICATION = "research-qualified-for-tested-environment" as const;
+
+/**
+ * Input digests bind each controlled case ID to the r187 capture's recorded
+ * vectors. They detect edited inputs even when a basis rotation is physically
+ * invariant. Oracle calculations still consume the captured vectors below.
+ */
+const requiredCapturedInputSha256: Readonly<Record<string, string>> = {
+  "ellipse-circular": "dd6f0e5ba213259f69b1d049cca45a7733012a349ac444581488f8c411b2ece7",
+  "ellipse-film-tilt": "a4193038898ce14e2cc6bb58f166af21ef57ce24e54d511f653c8bf9839b6aec",
+  "ellipse-film-swing": "b7f9da37ad8767f0ff1228935b10351f8b11fe1ee3e8922664c2c842ccb3bb0b",
+  "ellipse-compound-tilt-swing": "91c61b4fffe719e78e5374a64ccce417070268a7b6c46ef8963dae84752e384e",
+  "ellipse-off-axis": "8b85b08c4393d8105af2cbf3920f292084e6d758d946881c8f05f13932acf56f",
+  "ellipse-negative-principal-angle": "c260a6e3efee9c20caf535405c7e5b0c81676387f948ae3d642fd9d2bb0f7a8f",
+  "ellipse-near-pi-orientation": "26cadfc969c9bb6826c743b4063f9595a7868dea3e50e00830e0cc6692894f61",
+  "ellipse-near-circular": "fdba2e5a45c389bd698569e7aadae37df6188c8f44454c373ca3a5c68c01093c",
+  "storage-exact-zero": "1c4c0db11e738dd764e75423382deea92647cd1dcc451147ce2d5c6f9aad0437",
+  "storage-small-positive-coc": "cd2c11591f4d28c79b6e2f2d063e8a0002c2f3bb4502e3fd11cf8647680ea5cb",
+  "storage-small-negative-coc": "2c2371a5f845fe191f4b99dc5a41c051d285ef88cf4260f14b3057dbd8cf268b",
+  "storage-0.1mm-reference": "98eacea779e235468ef77ab63138e6b5bc0367f12434b169a813e008d7d33981",
+  "storage-near-binary16-maximum": "78dfbc1a9d56ebf5023aa5969d40c1ab7a910c0e192db86b068af19474ba0c3c",
+  "storage-overrange-positive-coc": "3872ef59fec537955c316cdaf0177423f08dd63fc402d7631d93cd24f2dc176b",
+  "storage-overrange-negative-coc": "bdd2558f58f0a60eaaaeebd9eece9e7c6df090fa8b6316d95bbd30cf86bb5eba",
+  "storage-overrange-ellipse-radius": "a9fd58d9720b64ba9f648a696f5ef4974c5350a650d6ce239ae85f406a3dbe1e",
+  "invalid-geometry-lens-basis": "69439d42b0062ddffe424e1fb6e72bf5771f8ab839bd1c1f36a866094039b1da",
+};
+
 export type GroundGlassM7dEvidenceIssue = Readonly<{
   code: string;
   path: string;
@@ -48,6 +94,8 @@ export type GroundGlassM7dCaptureEvaluation = Readonly<{
   observedKernelCaseCount: number;
   requiredSceneProbeCount: number;
   observedSceneProbeCount: number;
+  maximumCpuReferenceErrorMm: number | null;
+  maximumCpuReferenceOrientationErrorRad: number | null;
   maximumCpuToTslErrorMm: number | null;
   maximumOrientationErrorRad: number | null;
   issues: readonly GroundGlassM7dEvidenceIssue[];
@@ -56,6 +104,8 @@ export type GroundGlassM7dCaptureEvaluation = Readonly<{
 export type GroundGlassM7dReportEvaluation = Readonly<{
   status: "passed" | "failed";
   computedCounts: Readonly<Record<"passed" | "failed" | "blocked" | "not-run", number>>;
+  computedScenarioCount: number;
+  computedQualification: "research-qualified-for-tested-environment" | "partially-qualified" | "not-qualified";
   issues: readonly GroundGlassM7dEvidenceIssue[];
 }>;
 
@@ -70,6 +120,150 @@ const finite = (value: unknown): value is number => typeof value === "number" &&
 const nonEmpty = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const finiteTuple = (value: unknown, length: number): value is number[] =>
   Array.isArray(value) && value.length === length && value.every(finite);
+
+type NumericVector3 = Readonly<{ x: number; y: number; z: number }>;
+
+type CapturedPhysicalCocInputResult =
+  | Readonly<{
+      status: "computed";
+      footprint: PhysicalBlurFootprint;
+      inputSha256: string;
+    }>
+  | Readonly<{
+      status: "invalid-input";
+      code: "controlled-input-shape" | "controlled-input-value" | "controlled-input-identity";
+      path: string;
+      detail: string;
+    }>;
+
+const isFiniteVector3 = (value: unknown): value is NumericVector3 => {
+  const vector = record(value);
+  return vector !== null && finite(vector.x) && finite(vector.y) && finite(vector.z);
+};
+
+const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
+
+/**
+ * Rebuild the CPU oracle input exclusively from the serialized controlled
+ * vectors. The identity digest is checked separately from the numerical
+ * result so mathematically invariant input edits are still visible.
+ */
+export const recomputePhysicalCocReferenceFromCapturedInput = (
+  input: unknown,
+  expectedCaseId: string,
+): CapturedPhysicalCocInputResult => {
+  const invalid = (
+    code: Extract<CapturedPhysicalCocInputResult, { status: "invalid-input" }>['code'],
+    path: string,
+    detail: string,
+  ): CapturedPhysicalCocInputResult => ({ status: "invalid-input", code, path, detail });
+  const testCase = record(input);
+  if (!testCase) return invalid("controlled-input-shape", "testCase", "controlled case must be an object");
+  const probe = record(testCase.probe);
+  const override = record(testCase.kernelOverride);
+  if (!probe || !override) {
+    return invalid("controlled-input-shape", "testCase", "captured probe and kernel override are required");
+  }
+  if (testCase.id !== expectedCaseId || probe.id !== expectedCaseId) {
+    return invalid("controlled-input-identity", "testCase", "reference, test case, and probe IDs must match the required case");
+  }
+  if (!finite(probe.u) || probe.u < 0 || probe.u > 1 || !finite(probe.v) || probe.v < 0 || probe.v > 1) {
+    return invalid("controlled-input-value", "testCase.probe", "probe coordinates must be finite normalized values");
+  }
+  if (!finiteTuple(probe.controlledObjectPointMm, 3)) {
+    return invalid("controlled-input-shape", "testCase.probe.controlledObjectPointMm", "controlled object point must be a finite three-component millimetre vector");
+  }
+
+  const lens = record(override.lens);
+  const film = record(override.film);
+  const optics = record(override.optics);
+  if (!lens || !film || !optics) {
+    return invalid("controlled-input-shape", "testCase.kernelOverride", "lens, film, and optics inputs are required");
+  }
+  const vectors = [
+    ["lens.centerWorldM", lens.centerWorldM],
+    ["lens.planeNormal", lens.planeNormal],
+    ["lens.planeBasisX", lens.planeBasisX],
+    ["lens.planeBasisY", lens.planeBasisY],
+    ["film.planePointWorldM", film.planePointWorldM],
+    ["film.planeNormal", film.planeNormal],
+    ["film.planeBasisX", film.planeBasisX],
+    ["film.planeBasisY", film.planeBasisY],
+  ] as const;
+  for (const [path, value] of vectors) {
+    if (!record(value)) return invalid("controlled-input-shape", `testCase.kernelOverride.${path}`, "required vector is missing or malformed");
+    if (!isFiniteVector3(value)) return invalid("controlled-input-value", `testCase.kernelOverride.${path}`, "vector components must be finite numbers");
+  }
+  if (!finite(optics.focalLengthMm) || optics.focalLengthMm <= 0) {
+    return invalid("controlled-input-value", "testCase.kernelOverride.optics.focalLengthMm", "focal length must be finite and positive millimetres");
+  }
+  if (!finite(optics.apertureFNumber) || optics.apertureFNumber <= 0) {
+    return invalid("controlled-input-value", "testCase.kernelOverride.optics.apertureFNumber", "aperture f-number must be finite and positive");
+  }
+
+  const lensCenterWorldM = lens.centerWorldM as NumericVector3;
+  const lensPlaneNormal = lens.planeNormal as NumericVector3;
+  const lensPlaneBasisX = lens.planeBasisX as NumericVector3;
+  const lensPlaneBasisY = lens.planeBasisY as NumericVector3;
+  const filmPlanePointWorldM = film.planePointWorldM as NumericVector3;
+  const filmPlaneNormal = film.planeNormal as NumericVector3;
+  const filmPlaneBasisX = film.planeBasisX as NumericVector3;
+  const filmPlaneBasisY = film.planeBasisY as NumericVector3;
+  const toMillimetres = (value: NumericVector3): NumericVector3 => ({
+    x: value.x * 1000,
+    y: value.y * 1000,
+    z: value.z * 1000,
+  });
+  const lensCenter = toMillimetres(lensCenterWorldM);
+  const filmPoint = toMillimetres(filmPlanePointWorldM);
+  const convertedVectors = [lensCenter, filmPoint];
+  if (!convertedVectors.every((vector) => finite(vector.x) && finite(vector.y) && finite(vector.z))) {
+    return invalid("controlled-input-value", "testCase.kernelOverride", "metres-to-millimetres conversion must remain finite");
+  }
+  const filmDistance = filmPoint.x * filmPlaneNormal.x +
+    filmPoint.y * filmPlaneNormal.y + filmPoint.z * filmPlaneNormal.z;
+  if (!finite(filmDistance)) {
+    return invalid("controlled-input-value", "testCase.kernelOverride.film", "film-plane signed distance must remain finite");
+  }
+
+  const inputIdentity = [
+    expectedCaseId,
+    ...probe.controlledObjectPointMm,
+    lensCenterWorldM.x, lensCenterWorldM.y, lensCenterWorldM.z,
+    lensPlaneNormal.x, lensPlaneNormal.y, lensPlaneNormal.z,
+    lensPlaneBasisX.x, lensPlaneBasisX.y, lensPlaneBasisX.z,
+    lensPlaneBasisY.x, lensPlaneBasisY.y, lensPlaneBasisY.z,
+    filmPlanePointWorldM.x, filmPlanePointWorldM.y, filmPlanePointWorldM.z,
+    filmPlaneNormal.x, filmPlaneNormal.y, filmPlaneNormal.z,
+    filmPlaneBasisX.x, filmPlaneBasisX.y, filmPlaneBasisX.z,
+    filmPlaneBasisY.x, filmPlaneBasisY.y, filmPlaneBasisY.z,
+    optics.focalLengthMm,
+    optics.apertureFNumber,
+  ];
+  const inputSha256 = sha256(JSON.stringify(inputIdentity));
+  const footprint = computePhysicalBlurFootprint({
+    objectPoint: {
+      x: probe.controlledObjectPointMm[0]!,
+      y: probe.controlledObjectPointMm[1]!,
+      z: probe.controlledObjectPointMm[2]!,
+    },
+    lensCenter,
+    lensPlaneNormal,
+    lensPlaneBasisX,
+    lensPlaneBasisY,
+    filmPlane: {
+      point: filmPoint,
+      normal: filmPlaneNormal,
+      distance: filmDistance,
+    },
+    filmPlaneBasisX,
+    filmPlaneBasisY,
+    focalLengthMm: optics.focalLengthMm,
+    apertureFNumber: optics.apertureFNumber,
+  });
+  return { status: "computed", footprint, inputSha256 };
+};
+
 const branchFromCode = (code: unknown): string | null => {
   switch (code) {
     case 1: return "finite-virtual";
@@ -124,6 +318,8 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
       observedKernelCaseCount: 0,
       requiredSceneProbeCount: requiredSceneProbeIds.length,
       observedSceneProbeCount: 0,
+      maximumCpuReferenceErrorMm: null,
+      maximumCpuReferenceOrientationErrorRad: null,
       maximumCpuToTslErrorMm: null,
       maximumOrientationErrorRad: null,
       issues,
@@ -332,6 +528,8 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     }
   }
 
+  let maximumCpuReferenceErrorMm = 0;
+  let maximumCpuReferenceOrientationErrorRad = 0;
   let maximumCpuToTslErrorMm = 0;
   let maximumOrientationErrorRad = 0;
   for (const id of GROUND_GLASS_M7D_REQUIRED_KERNEL_CASE_IDS) {
@@ -349,7 +547,7 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     const probe = record(testCase?.probe);
     const override = record(testCase?.kernelOverride);
     const cpu = record(reference.cpuReference);
-    if (testCase?.id !== id || !probe || !override || !cpu || !finiteTuple(probe.controlledObjectPointMm, 3)) {
+    if (testCase?.id !== id || !probe || !override || !cpu) {
       issue("cpu-reference-shape", `controlledKernelReferences.${id}`, "controlled input vector, kernel override, and CPU reference are required");
       continue;
     }
@@ -357,9 +555,42 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
       issue("kernel-probe-identity", `probeReadback.controlledKernelCases.${id}.probeId`, "GPU result is not paired with its recorded controlled input");
     }
     if (typeof cpu.valid !== "boolean" || !finite(cpu.signedCoCDiameterMm) ||
-        !finite(cpu.majorRadiusMm) || !finite(cpu.minorRadiusMm) || !finite(cpu.orientationRad)) {
+        !finite(cpu.majorRadiusMm) || !finite(cpu.minorRadiusMm) ||
+        (cpu.valid && !finite(cpu.orientationRad))) {
       issue("cpu-reference", `controlledKernelReferences.${id}.cpuReference`, "CPU reference must contain finite millimetre values and validity");
       continue;
+    }
+    const oracleResult = recomputePhysicalCocReferenceFromCapturedInput(reference.testCase, id);
+    if (oracleResult.status !== "computed") {
+      issue(oracleResult.code, `controlledKernelReferences.${id}.${oracleResult.path}`, oracleResult.detail);
+      continue;
+    }
+    const expectedInputSha256 = requiredCapturedInputSha256[id];
+    if (!expectedInputSha256 || oracleResult.inputSha256 !== expectedInputSha256) {
+      issue("controlled-input-identity", `controlledKernelReferences.${id}.testCase`, "captured physical vectors differ from the recorded controlled input identity");
+    }
+    const oracle = oracleResult.footprint;
+    const cpuOracleDifferences = [
+      Math.abs(cpu.signedCoCDiameterMm - oracle.signedCoCDiameterMm),
+      Math.abs(cpu.majorRadiusMm - oracle.majorRadiusMm),
+      Math.abs(cpu.minorRadiusMm - oracle.minorRadiusMm),
+    ];
+    const orientationOracleError = cpu.valid && finite(cpu.orientationRad)
+      ? groundGlassPhysicalCocOrientationErrorModuloPi(cpu.orientationRad, oracle.orientationRad)
+      : null;
+    maximumCpuReferenceErrorMm = Math.max(maximumCpuReferenceErrorMm, ...cpuOracleDifferences);
+    if (orientationOracleError !== null) {
+      maximumCpuReferenceOrientationErrorRad = Math.max(maximumCpuReferenceOrientationErrorRad, orientationOracleError);
+    }
+    if (cpu.valid !== oracle.valid || cpuOracleDifferences.some((difference) => difference > 1e-12) ||
+        (cpu.valid && (orientationOracleError === null || orientationOracleError > 1e-12))) {
+      issue("cpu-oracle-mismatch", `controlledKernelReferences.${id}.cpuReference`, "serialized CPU reference does not match an independent recomputation from the captured controlled vectors within 1e-12");
+    }
+    if (id === "invalid-geometry-lens-basis" && oracle.valid) {
+      issue("invalid-geometry-control", `controlledKernelReferences.${id}.testCase`, "the required invalid-geometry control must independently remain invalid");
+    }
+    if (id !== "invalid-geometry-lens-basis" && !oracle.valid) {
+      issue("unexpected-invalid-geometry", `controlledKernelReferences.${id}.testCase`, "only the explicitly required invalid-geometry case may produce an invalid CPU footprint");
     }
     const calculated = actual.calculatedFootprintMm;
     if (!finiteTuple(calculated, 4)) {
@@ -369,7 +600,7 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     if (actual.storageFormat !== "rgba16float") {
       issue("storage-format", `probeReadback.controlledKernelCases.${id}.storageFormat`, "actual diagnostic target must be rgba16float");
     }
-    const sourceValues = [cpu.signedCoCDiameterMm, cpu.majorRadiusMm, cpu.minorRadiusMm];
+    const sourceValues = [oracle.signedCoCDiameterMm, oracle.majorRadiusMm, oracle.minorRadiusMm];
     const actualValues = [calculated[0]!, calculated[1]!, calculated[2]!];
     const valueErrors = actualValues.map((value, index) => Math.abs(value - sourceValues[index]!));
     maximumCpuToTslErrorMm = Math.max(maximumCpuToTslErrorMm, ...valueErrors);
@@ -379,17 +610,17 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     if (calculated[1]! < calculated[2]! || calculated[2]! < 0) {
       issue("ellipse-axes", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm`, "major/minor ellipse axes are swapped or invalid");
     }
-    if (Math.abs(cpu.signedCoCDiameterMm) >= 0.001 && Math.sign(calculated[0]!) !== Math.sign(cpu.signedCoCDiameterMm)) {
+    if (Math.abs(oracle.signedCoCDiameterMm) >= 0.001 && Math.sign(calculated[0]!) !== Math.sign(oracle.signedCoCDiameterMm)) {
       issue("signed-coc", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm[0]`, "signed CoC side differs from the CPU reference");
     }
     if (calculated[3]! < 0 || calculated[3]! >= 1) {
       issue("orientation-encoding", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm[3]`, "orientation storage must be normalized to [0,1)");
     }
-    const orientationDefined = cpu.valid && cpu.majorRadiusMm - cpu.minorRadiusMm > 1e-7;
+    const orientationDefined = oracle.valid && oracle.majorRadiusMm - oracle.minorRadiusMm > 1e-7;
     if (orientationDefined) {
       const orientationError = groundGlassPhysicalCocOrientationErrorModuloPi(
         calculated[3]! * Math.PI,
-        cpu.orientationRad,
+        oracle.orientationRad,
       );
       if (orientationError === null) {
         issue("orientation-encoding", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm[3]`, "orientation modulo pi is not finite");
@@ -397,15 +628,15 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
         maximumOrientationErrorRad = Math.max(maximumOrientationErrorRad, orientationError);
         if (orientationError >= 0.003) issue("orientation-error", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm[3]`, "orientation modulo-pi error exceeds 0.003 rad");
       }
-    } else if (calculated[3] !== 0 || (cpu.valid && actual.orientationDefined !== false)) {
+    } else if (calculated[3] !== 0 || (oracle.valid && actual.orientationDefined !== false)) {
       issue("orientation-encoding", `probeReadback.controlledKernelCases.${id}`, "near-circular ellipse must use undefined deterministic orientation zero");
     }
     if (id.startsWith("ellipse-film-") || id === "ellipse-compound-tilt-swing" || id === "ellipse-off-axis") {
-      if (cpu.majorRadiusMm - cpu.minorRadiusMm <= 1e-5) {
+      if (oracle.majorRadiusMm - oracle.minorRadiusMm <= 1e-5) {
         issue("ellipse-axes", `controlledKernelReferences.${id}.cpuReference`, "tilt, swing, compound, and off-axis controls must produce anisotropic footprints");
       }
     }
-    if (id === "ellipse-circular" && Math.abs(cpu.majorRadiusMm - cpu.minorRadiusMm) > 1e-7) {
+    if (id === "ellipse-circular" && Math.abs(oracle.majorRadiusMm - oracle.minorRadiusMm) > 1e-7) {
       issue("ellipse-axes", `controlledKernelReferences.${id}.cpuReference`, "symmetric circular control must remain circular");
     }
     if (id === "ellipse-negative-principal-angle" &&
@@ -417,8 +648,8 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     }
 
     const validity = actual.validityCode;
-    const overflow = Math.abs(cpu.signedCoCDiameterMm) > 65504 || cpu.majorRadiusMm > 65504 || cpu.minorRadiusMm > 65504;
-    const expectedValidity = !cpu.valid ? 3 : overflow ? 2 : 1;
+    const overflow = Math.abs(oracle.signedCoCDiameterMm) > 65504 || oracle.majorRadiusMm > 65504 || oracle.minorRadiusMm > 65504;
+    const expectedValidity = !oracle.valid ? 3 : overflow ? 2 : 1;
     if (validity !== expectedValidity) {
       issue("validity", `probeReadback.controlledKernelCases.${id}.validityCode`, `expected M4 validity code ${expectedValidity}, observed ${String(validity)}`);
     }
@@ -452,7 +683,7 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     if (orientationDefined && !mustStoreZero) {
       const storedOrientationError = groundGlassPhysicalCocOrientationErrorModuloPi(
         decoded[3]! * Math.PI,
-        cpu.orientationRad,
+        oracle.orientationRad,
       );
       if (storedOrientationError === null || storedOrientationError >= 0.003) {
         issue("orientation-error", `probeReadback.controlledKernelCases.${id}.readbackFootprintMm[3]`, "decoded RGBA16F orientation modulo-pi error exceeds 0.003 rad");
@@ -499,6 +730,10 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     observedKernelCaseCount: actualById.size,
     requiredSceneProbeCount: requiredSceneProbeIds.length,
     observedSceneProbeCount,
+    maximumCpuReferenceErrorMm: Number.isFinite(maximumCpuReferenceErrorMm) ? maximumCpuReferenceErrorMm : null,
+    maximumCpuReferenceOrientationErrorRad: Number.isFinite(maximumCpuReferenceOrientationErrorRad)
+      ? maximumCpuReferenceOrientationErrorRad
+      : null,
     maximumCpuToTslErrorMm: Number.isFinite(maximumCpuToTslErrorMm) ? maximumCpuToTslErrorMm : null,
     maximumOrientationErrorRad: Number.isFinite(maximumOrientationErrorRad) ? maximumOrientationErrorRad : null,
     issues,
@@ -514,6 +749,7 @@ export const evaluateGroundGlassM7dPhysicalCocReport = (
   const issue = (code: string, path: string, detail: string) => requireIssue(issues, code, path, detail);
   const statuses = ["passed", "failed", "blocked", "not-run"] as const;
   const computedCounts = { passed: 0, failed: 0, blocked: 0, "not-run": 0 };
+  let computedQualification: GroundGlassM7dReportEvaluation["computedQualification"] = "not-qualified";
   if (!report) {
     issue("report-shape", "$", "report must be a JSON object");
   } else {
@@ -538,11 +774,15 @@ export const evaluateGroundGlassM7dPhysicalCocReport = (
       } else {
         computedCounts[scenario.status as keyof typeof computedCounts] += 1;
       }
+      const expectedEvidenceKind = requiredScenarioEvidenceKinds[scenario.id];
+      if (scenario.evidenceKind !== expectedEvidenceKind) {
+        issue("evidence-kind", `scenarios.${scenario.id}.evidenceKind`, `scenario requires evidence kind ${String(expectedEvidenceKind)}`);
+      }
       if (!nonEmpty(scenario.capture) || typeof scenario.sourceSha !== "string" ||
           !/^[0-9a-f]{40}$/.test(scenario.sourceSha) || !nonEmpty(scenario.invocation)) {
         issue("capture-provenance", `scenarios.${scenario.id}`, "scenario capture, source SHA, and invocation are required");
       }
-      if (scenario.status === "passed" && scenario.evidenceKind === "native") {
+      if (scenario.status === "passed" && expectedEvidenceKind === "native") {
         const runtime = record(scenario.runtimeIdentity);
         if (scenario.rendererRevision !== "187" || runtime?.threeRevision !== "187" ||
             runtime.rendererFamily !== "webgpu-renderer" || runtime.actualExecutionApi !== "webgpu" ||
@@ -582,15 +822,45 @@ export const evaluateGroundGlassM7dPhysicalCocReport = (
     if (inventory.length !== GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS.length) {
       issue("scenario-count", "scenarios", "scenario inventory count must exactly match the required M7D inventory");
     }
+    const exactInventory = inventory.length === GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS.length &&
+      ids.size === GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS.length &&
+      GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS.every((id) => ids.has(id));
     const declared = record(report.counts);
-    if (!declared || statuses.some((status) => declared[status] !== computedCounts[status])) {
-      issue("report-counts", "counts", "declared scenario counts do not match the computed inventory");
+    const declaredKeys = declared ? Object.keys(declared).sort() : [];
+    const expectedKeys = [...statuses].sort();
+    if (!declared || declaredKeys.length !== expectedKeys.length ||
+        declaredKeys.some((key, index) => key !== expectedKeys[index]) ||
+        statuses.some((status) => !Number.isInteger(declared[status]) ||
+          !finite(declared[status]) || (declared[status] as number) < 0 ||
+          declared[status] !== computedCounts[status])) {
+      issue("report-counts", "counts", "declared status keys and non-negative integer counts must exactly match the computed inventory");
+    }
+    if (!Number.isInteger(report.scenarioCount) || report.scenarioCount !== inventory.length) {
+      issue("scenario-count", "scenarioCount", "declared scenarioCount must exactly match the computed inventory");
     }
     if (report.m4ResearchEvidenceRevision !== "m4-architecture-rise-physical-coc-native-r187-v1") {
       issue("revision-evidence", "m4ResearchEvidenceRevision", "exact r187 M4 research evidence revision is required");
     }
     if (report.m5M6Authorization !== "denied") issue("feature-boundary", "m5M6Authorization", "r187 M5/M6 authorization must remain denied");
     if (report.productionGroundGlassBackend !== "webgl-only") issue("production-isolation", "productionGroundGlassBackend", "production Ground Glass must remain WebGL-only");
+    if (issues.length > 0 || (exactInventory && computedCounts.failed > 0)) {
+      computedQualification = "not-qualified";
+    } else if (!exactInventory || computedCounts.blocked > 0 || computedCounts["not-run"] > 0) {
+      computedQualification = "partially-qualified";
+    } else if (exactInventory && computedCounts.passed === GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS.length) {
+      computedQualification = REQUIRED_QUALIFICATION;
+    } else {
+      computedQualification = "not-qualified";
+    }
+    if (report.qualification !== computedQualification) {
+      issue("qualification", "qualification", `declared qualification must match the computed ${computedQualification} decision`);
+    }
   }
-  return { status: issues.length === 0 ? "passed" : "failed", computedCounts, issues };
+  return {
+    status: issues.length === 0 ? "passed" : "failed",
+    computedCounts,
+    computedScenarioCount: report && Array.isArray(report.scenarios) ? report.scenarios.length : 0,
+    computedQualification,
+    issues,
+  };
 };
