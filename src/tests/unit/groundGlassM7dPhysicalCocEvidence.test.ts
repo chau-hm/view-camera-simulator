@@ -34,6 +34,7 @@ type ControlledReference = {
 };
 type KernelOutput = {
   id: string;
+  probeId: string;
   calculatedFootprintMm: number[];
   validityCode: number;
   storedHalfFloatBits: number[];
@@ -195,6 +196,20 @@ describe("M7D r187 Physical CoC evidence evaluator", () => {
   expectCaptureMutation("non-finite optical input inserted", (capture) => {
     kernelReference(capture, "ellipse-circular").testCase.kernelOverride.optics.focalLengthMm = Number.POSITIVE_INFINITY;
   }, "controlled-input-value");
+  expectCaptureMutation("non-positive focal length inserted", (capture) => {
+    kernelReference(capture, "ellipse-circular").testCase.kernelOverride.optics.focalLengthMm = 0;
+  }, "controlled-input-value");
+  expectCaptureMutation("non-positive aperture inserted", (capture) => {
+    kernelReference(capture, "ellipse-circular").testCase.kernelOverride.optics.apertureFNumber = -1;
+  }, "controlled-input-value");
+  expectCaptureMutation("degenerate lens bases substituted", (capture) => {
+    const lens = kernelReference(capture, "ellipse-circular").testCase.kernelOverride.lens;
+    lens.planeBasisX = { x: 0, y: 0, z: 1 };
+    lens.planeBasisY = { x: 0, y: 0, z: 1 };
+  }, "unexpected-invalid-geometry");
+  expectCaptureMutation("zero film normal substituted", (capture) => {
+    kernelReference(capture, "ellipse-circular").testCase.kernelOverride.film.planeNormal = { x: 0, y: 0, z: 0 };
+  }, "unexpected-invalid-geometry");
   expectCaptureMutation("zero lens normal substituted for the circular case", (capture) => {
     kernelReference(capture, "ellipse-circular").testCase.kernelOverride.lens.planeNormal = { x: 0, y: 0, z: 0 };
   }, "controlled-input-identity");
@@ -241,6 +256,21 @@ describe("M7D r187 Physical CoC evidence evaluator", () => {
   expectCaptureMutation("required controlled input identity contradicted", (capture) => {
     kernelReference(capture, "ellipse-circular").testCase.probe.id = "different-case";
   }, "controlled-input-identity");
+  expectCaptureMutation("reference controlled case ID contradicted", (capture) => {
+    kernelReference(capture, "ellipse-circular").testCase.id = "different-case";
+  }, "controlled-input-identity");
+  expectCaptureMutation("GPU probe ID paired with another input", (capture) => {
+    kernelOutput(capture, "ellipse-circular").probeId = "different-case";
+  }, "kernel-probe-identity");
+  expectCaptureMutation("unexpected CPU reference added", (capture) => {
+    capture.controlledKernelReferences.push({
+      ...kernelReference(capture, "ellipse-circular"),
+      id: "unexpected-cpu-case",
+    });
+  }, "unexpected-cpu-reference");
+  expectCaptureMutation("duplicate CPU reference added", (capture) => {
+    capture.controlledKernelReferences.push({ ...kernelReference(capture, "ellipse-circular") });
+  }, "duplicate-cpu-reference");
 
   it("reproduces F2: the prior evaluator accepted a native scenario relabeled as unit", () => {
     const report = loadReport();

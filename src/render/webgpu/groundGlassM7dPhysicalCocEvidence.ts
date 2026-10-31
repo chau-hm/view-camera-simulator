@@ -520,6 +520,9 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
   for (const reference of references) {
     if (!reference || !nonEmpty(reference.id)) continue;
     if (referenceById.has(reference.id)) issue("duplicate-cpu-reference", `controlledKernelReferences.${reference.id}`, "CPU reference identities must be unique");
+    if (!(GROUND_GLASS_M7D_REQUIRED_KERNEL_CASE_IDS as readonly string[]).includes(reference.id)) {
+      issue("unexpected-cpu-reference", `controlledKernelReferences.${reference.id}`, "unexpected CPU reference identity");
+    }
     referenceById.set(reference.id, reference);
   }
   for (const item of observedControlled) {
@@ -547,7 +550,7 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     const probe = record(testCase?.probe);
     const override = record(testCase?.kernelOverride);
     const cpu = record(reference.cpuReference);
-    if (testCase?.id !== id || !probe || !override || !cpu) {
+    if (!testCase || !probe || !override || !cpu) {
       issue("cpu-reference-shape", `controlledKernelReferences.${id}`, "controlled input vector, kernel override, and CPU reference are required");
       continue;
     }
