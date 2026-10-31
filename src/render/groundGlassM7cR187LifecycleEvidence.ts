@@ -54,6 +54,9 @@ export type GroundGlassM7cR187EvidenceEvaluation = Readonly<{
 
 const statusKeys = ["passed", "failed", "blocked", "not-run"] as const;
 const statusSet = new Set<string>(statusKeys);
+// Three.REVISION is reported by the installed runtime as "187"; the policy
+// record uses the human-readable compatibility tag "r187".
+const THREE_R187_PACKAGE_REVISION = ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION.slice(1);
 const nativeWebGpuClasses = new Set([
   "native-webgpu-pre-mount-failure",
   "native-webgpu-runtime",
@@ -61,6 +64,7 @@ const nativeWebGpuClasses = new Set([
   "native-webgpu-cleanup-failure",
   "native-webgpu-device-loss-equivalent",
   "native-webgpu-device-destroy-lost-promise",
+  "native-webgpu-retry-session",
 ]);
 const evidenceClassById: Readonly<Record<string, string>> = {
   "m7c-r187-native-raw-baseline": "native-webgpu-runtime",
@@ -74,7 +78,7 @@ const evidenceClassById: Readonly<Record<string, string>> = {
   "m7c-r187-pending-queue-retirement": "native-webgpu-runtime",
   "m7c-r187-latest-request-stale-rejection": "native-webgpu-runtime-failure",
   "m7c-r187-sticky-fallback-remount": "native-webgpu-pre-mount-failure",
-  "m7c-r187-explicit-retry-new-session": "native-webgpu-runtime",
+  "m7c-r187-explicit-retry-new-session": "native-webgpu-retry-session",
   "m7c-r187-webgl2-compatibility-negative-control": "native-webgpu-webgl2-compatibility-control",
   "m7c-r187-terminal-webgl-remount": "native-webgl-terminal-runtime",
   "m7c-r187-pending-cleanup-scene-navigation": "native-webgpu-runtime",
@@ -111,7 +115,8 @@ const validateNativeRuntime = (scenario: M7cScenario, errors: string[]): void =>
   const observations = events.filter((event) => event.kind === "runtime-observed" && event.generationId === generationId);
   const mounts = events.filter((event) => event.kind === "renderer-mounted" && event.generationId === generationId);
   const preMount = scenario.evidenceClass === "native-webgpu-pre-mount-failure" ||
-    scenario.evidenceClass === "native-webgpu-cleanup-failure";
+    scenario.evidenceClass === "native-webgpu-cleanup-failure" ||
+    id === "m7c-r187-explicit-retry-new-session";
   if (attempts.length !== 1 || observations.length !== 1 || mounts.length !== (preMount ? 0 : 1)) {
     errors.push(`native-runtime-event-count-mismatch:${id}`);
     return;
@@ -122,11 +127,11 @@ const validateNativeRuntime = (scenario: M7cScenario, errors: string[]): void =>
   if (
     runtime.observed !== true || attempt.attemptId !== identity.attemptId || attempt.requestId !== identity.requestId ||
     attempt.channelId !== identity.channelId || attempt.sceneId !== identity.sceneId ||
-    attempt.rendererRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION ||
+    attempt.rendererRevision !== THREE_R187_PACKAGE_REVISION ||
     observed.attemptId !== attempt.attemptId || observed.generationId !== attempt.generationId ||
-    observed.rendererRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION ||
+    observed.rendererRevision !== THREE_R187_PACKAGE_REVISION ||
     observed.rendererFamily !== "webgpu-renderer" || observed.executionApi !== "webgpu" ||
-    observed.internalFallback !== "none" || scenario.threeRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION ||
+    observed.internalFallback !== "none" || scenario.threeRevision !== THREE_R187_PACKAGE_REVISION ||
     runtime.rendererFamily !== observed.rendererFamily || runtime.actualExecutionApi !== observed.executionApi ||
     runtime.internalFallback !== observed.internalFallback || runtime.hostMounted !== !preMount
   ) errors.push(`native-runtime-identity-contradiction:${id}`);
@@ -215,6 +220,60 @@ const validateSessionBoundary = (scenario: M7cScenario, errors: string[]): void 
       !Array.isArray(observation.attemptsAfterNewSession) || observation.attemptsAfterNewSession.length !== 3
     ) errors.push("authorized-recovery-boundary-contradiction:" + scenario.id);
   }
+};
+
+const validateAuthorizedRetrySession = (scenario: M7cScenario, errors: string[]): void => {
+  if (scenario.id !== "m7c-r187-explicit-retry-new-session") return;
+  const observation = readObservation(scenario, "authorized-recovery-actions");
+  const initial = observation?.initialAttemptGenerations;
+  const afterRetry = observation?.attemptsAfterExplicitRetry;
+  const afterInvalid = observation?.attemptsAfterInvalidAction;
+  const afterNewSession = observation?.attemptsAfterNewSession;
+  if (!observation || !Array.isArray(initial) || !Array.isArray(afterRetry) ||
+      !Array.isArray(afterInvalid) || !Array.isArray(afterNewSession) ||
+      initial.length !== 1 || afterRetry.length !== 2 || afterInvalid.length !== 2 || afterNewSession.length !== 3 ||
+      JSON.stringify(afterInvalid) !== JSON.stringify(afterRetry) ||
+      JSON.stringify(afterNewSession.slice(0, 2)) !== JSON.stringify(afterRetry) ||
+      new Set(afterNewSession).size !== 3) {
+    errors.push("authorized-recovery-attempt-inventory-contradiction:" + scenario.id);
+    return;
+  }
+  const [initialGeneration, retryGeneration] = afterRetry;
+  const newSessionGeneration = afterNewSession[2];
+  const events = readEvents(scenario);
+  const seq = (kind: string, generation: unknown): number | null => {
+    const event = events.find((entry) => entry.kind === kind && entry.generationId === generation);
+    return typeof event?.sequence === "number" ? event.sequence : null;
+  };
+  const initialAttempt = seq("attempt", initialGeneration);
+  const initialRuntime = seq("runtime-observed", initialGeneration);
+  const initialFailure = seq("failure", initialGeneration);
+  const initialCleanup = seq("cleanup-acknowledged", initialGeneration);
+  const retryAttempt = seq("attempt", retryGeneration);
+  const retryRuntime = seq("runtime-observed", retryGeneration);
+  const retryFailure = seq("failure", retryGeneration);
+  const retryCleanup = seq("cleanup-acknowledged", retryGeneration);
+  const newSessionAttempt = seq("attempt", newSessionGeneration);
+  const newSessionRuntime = seq("runtime-observed", newSessionGeneration);
+  const newSessionMount = seq("renderer-mounted", newSessionGeneration);
+  const observedNativeAttempts = events.filter((event) => event.kind === "attempt").map((event) => event.generationId);
+  const currentPublication = events.find((event) => event.kind === "host-frame-result" &&
+    event.generationId === newSessionGeneration && event.acceptedByHost === true &&
+    event.latestAcceptedRequestId === event.requestId);
+  if (
+    initial[0] !== scenario.identity?.rendererGenerationId ||
+    JSON.stringify(observedNativeAttempts) !== JSON.stringify(afterNewSession) ||
+    typeof initialAttempt !== "number" || typeof initialRuntime !== "number" ||
+    typeof initialFailure !== "number" || typeof initialCleanup !== "number" ||
+    !(initialAttempt < initialRuntime && initialRuntime < initialFailure && initialFailure < initialCleanup) ||
+    typeof retryAttempt !== "number" || typeof retryRuntime !== "number" ||
+    typeof retryFailure !== "number" || typeof retryCleanup !== "number" ||
+    !(initialCleanup < retryAttempt && retryAttempt < retryRuntime && retryRuntime < retryFailure && retryFailure < retryCleanup) ||
+    typeof newSessionAttempt !== "number" || typeof newSessionRuntime !== "number" ||
+    typeof newSessionMount !== "number" || !(retryCleanup < newSessionAttempt && newSessionAttempt < newSessionRuntime &&
+      newSessionRuntime < newSessionMount) || !currentPublication ||
+    typeof currentPublication.sequence !== "number" || currentPublication.sequence <= newSessionMount
+  ) errors.push("authorized-recovery-event-order-contradiction:" + scenario.id);
 };
 
 const validateWebGl2NegativeControl = (scenario: M7cScenario, errors: string[]): void => {
@@ -402,9 +461,12 @@ export const evaluateGroundGlassM7cR187LifecycleEvidence = (input: unknown): Gro
       }
     }
     if (scenario.status === "passed" && nativeWebGpu) {
-      errors.push(...validateGroundGlassLifecycleScenarioContracts(scenario, id));
+      if (scenario.evidenceClass !== "native-webgpu-retry-session") {
+        errors.push(...validateGroundGlassLifecycleScenarioContracts(scenario, id));
+      }
       validateLatestRequestEvidence(scenario, errors);
       validateSessionBoundary(scenario, errors);
+      validateAuthorizedRetrySession(scenario, errors);
       validatePendingUnmount(scenario, errors);
     }
     if (scenario.status === "passed") {

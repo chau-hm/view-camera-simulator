@@ -7,7 +7,7 @@ type MutableScenario = Record<string, unknown>;
 type MutableReport = Record<string, unknown> & { scenarios: MutableScenario[] };
 
 const originalReport = JSON.parse(readFileSync(
-  new URL("../../../docs/architecture/GROUND_GLASS_M7C_R187_RAW_LIFECYCLE_REPORT.json", import.meta.url),
+  "docs/architecture/GROUND_GLASS_M7C_R187_RAW_LIFECYCLE_REPORT.json",
   "utf8",
 )) as MutableReport;
 
@@ -30,8 +30,8 @@ const expectRejected = (report: MutableReport, error: string) => {
 describe("M7C r187 lifecycle evidence evaluator", () => {
   it("accepts the committed revision-specific inventory and computed counts", () => {
     const result = evaluateGroundGlassM7cR187LifecycleEvidence(originalReport);
-    expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
     expect(result.qualification).toBe(originalReport.qualification);
     expect(result.counts).toEqual(originalReport.scenarioCounts);
   });
@@ -80,7 +80,9 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
   it("rejects host acknowledgement that contradicts adapter cleanup", () => {
     const report = copyReport();
     const scenario = scenarioFor(report, "m7c-r187-scene-render-failure");
-    const acknowledgement = eventsFor(scenario).find((event) => event.kind === "cleanup-acknowledged");
+    const identity = scenario.identity as Record<string, unknown>;
+    const acknowledgement = eventsFor(scenario).find((event) => event.kind === "cleanup-acknowledged" &&
+      event.generationId === identity.rendererGenerationId);
     if (!acknowledgement) throw new Error("Host cleanup acknowledgement is missing from the positive control");
     acknowledgement.outcome = "uncertain";
     expectRejected(report, "cleanup-host-acknowledgement-contradiction:m7c-r187-scene-render-failure");
@@ -90,8 +92,13 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
     const report = copyReport();
     const scenario = scenarioFor(report, "m7c-r187-scene-render-failure");
     const events = eventsFor(scenario);
-    const acknowledgement = events.find((event) => event.kind === "cleanup-acknowledged");
-    const replacement = events.find((event) => event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer");
+    const identity = scenario.identity as Record<string, unknown>;
+    const acknowledgement = events.find((event) => event.kind === "cleanup-acknowledged" &&
+      event.generationId === identity.rendererGenerationId);
+    const replacement = events.find((event) => event.kind === "renderer-mounted" &&
+      event.rendererFamily === "webgl-renderer" && event.hostId === identity.hostId &&
+      event.channelId === identity.channelId && typeof event.sequence === "number" &&
+      typeof acknowledgement?.sequence === "number" && event.sequence > acknowledgement.sequence);
     if (!acknowledgement || !replacement || typeof acknowledgement.sequence !== "number") {
       throw new Error("Positive control is missing replacement ordering evidence");
     }
@@ -102,7 +109,10 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
   it("rejects a current publication assigned to the wrong generation", () => {
     const report = copyReport();
     const scenario = scenarioFor(report, "m7c-r187-scene-render-failure");
-    const publication = eventsFor(scenario).find((event) => event.kind === "host-frame-result" && event.acceptedByHost === true);
+    const summary = scenario.publication as Record<string, unknown>;
+    const publication = eventsFor(scenario).find((event) => event.kind === "host-frame-result" &&
+      event.requestId === summary.completedRequestId && event.generationId === summary.rendererGenerationId &&
+      event.acceptedByHost === true);
     if (!publication) throw new Error("Positive control is missing host publication evidence");
     publication.activeGenerationId = "fabricated-generation";
     expectRejected(report, "current-publication-not-accepted-by-host:m7c-r187-scene-render-failure");
@@ -144,6 +154,30 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
     }
     remount.attemptGenerationsAfterRemount.push("unexpected-generation");
     expectRejected(report, "remount-implicitly-retried-pilot-session:m7c-r187-sticky-fallback-remount");
+  });
+
+  it("rejects a native attempt attributed to an unknown retry action", () => {
+    const report = copyReport();
+    const scenario = scenarioFor(report, "m7c-r187-explicit-retry-new-session");
+    const recovery = ((scenario.provenance as Record<string, unknown>).observations as Array<Record<string, unknown>>)
+      .find((observation) => observation.kind === "authorized-recovery-actions");
+    if (!recovery || !Array.isArray(recovery.attemptsAfterInvalidAction)) {
+      throw new Error("Positive control is missing the rejected-action observation");
+    }
+    recovery.attemptsAfterInvalidAction.push("unauthorized-native-attempt");
+    expectRejected(report, "authorized-recovery-attempt-inventory-contradiction:m7c-r187-explicit-retry-new-session");
+  });
+
+  it("rejects a new-session action that reuses the prior pilot session", () => {
+    const report = copyReport();
+    const scenario = scenarioFor(report, "m7c-r187-explicit-retry-new-session");
+    const recovery = ((scenario.provenance as Record<string, unknown>).observations as Array<Record<string, unknown>>)
+      .find((observation) => observation.kind === "authorized-recovery-actions");
+    if (!recovery || typeof recovery.newSession !== "object" || recovery.newSession === null) {
+      throw new Error("Positive control is missing new-session authorization evidence");
+    }
+    (recovery.newSession as Record<string, unknown>).pilotSessionId = recovery.initialSessionId;
+    expectRejected(report, "authorized-recovery-boundary-contradiction:m7c-r187-explicit-retry-new-session");
   });
 
   it("rejects successful host publication after terminal WebGL failure", () => {
