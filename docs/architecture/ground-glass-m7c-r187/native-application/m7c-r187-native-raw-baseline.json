@@ -1,0 +1,362 @@
+{
+  "schemaVersion": "ground-glass-m7c-r187-native-observation-v1",
+  "captureSourceSha": "5dc1339cca7dc0470a9883e8c870353b4fe0191c",
+  "scenarioId": "m7c-r187-native-raw-baseline",
+  "title": "r187 native M3 Raw RTT runs in the application and disposes on scene transition",
+  "result": {
+    "status": "passed",
+    "expectedStatus": "passed"
+  },
+  "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts",
+  "processArguments": [
+    "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+    "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7c-r187-lifecycle/node_modules/playwright/lib/worker/workerProcessEntry.js"
+  ],
+  "environment": {
+    "testProject": "chrome-native-webgpu",
+    "browserName": "chromium",
+    "browserVersion": "156.0.8078.76",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64",
+      "nodeVersion": "v24.3.0"
+    },
+    "threeRevision": "187",
+    "policyEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+    "mountedEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1"
+  },
+  "identity": {
+    "channelId": "default",
+    "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+    "hostId": "gg-host-_r_d_-caagkrsf4xe",
+    "pilotSessionId": "ground-glass-raw-m3:default",
+    "retryEpoch": 0,
+    "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+    "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+    "sceneId": "architecture-rise"
+  },
+  "runtime": {
+    "rendererFamily": "webgpu-renderer",
+    "executionApi": "webgpu",
+    "internalFallback": "none"
+  },
+  "transitions": {
+    "focusChanged": true,
+    "apertureChanged": true,
+    "sceneNavigationUnmounted": true,
+    "cleanupAcknowledged": {
+      "kind": "cleanup-acknowledged",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "outcome": "confirmed",
+      "reason": null,
+      "sequence": 36
+    },
+    "mountedRendererAfterNavigation": "webgl-renderer",
+    "adapterAttemptGenerations": [
+      "gg-mvwgwcym-kj4yng44tp-default-generation-2"
+    ]
+  },
+  "lifecycleEvents": [
+    {
+      "kind": "host-attached",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "sequence": 0
+    },
+    {
+      "kind": "host-attached",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "sequence": 1
+    },
+    {
+      "kind": "renderer-mounted",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-2",
+      "sceneId": "architecture-rise",
+      "rendererFamily": "webgl-renderer",
+      "executionApi": "webgl2",
+      "internalFallback": "none",
+      "sequence": 2
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-2",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-2",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "activeRendererFamily": "webgl-renderer",
+      "sequence": 3
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-3",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-3",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "activeRendererFamily": "webgl-renderer",
+      "sequence": 13
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-4",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-4",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "activeRendererFamily": "webgl-renderer",
+      "sequence": 16
+    },
+    {
+      "kind": "cleanup-acknowledged",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-1",
+      "outcome": "confirmed",
+      "reason": null,
+      "sequence": 22
+    },
+    {
+      "kind": "attempt",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "channelId": "default",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+      "sceneId": "architecture-rise",
+      "rendererRevision": "187",
+      "sequence": 23
+    },
+    {
+      "kind": "runtime-observed",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "rendererRevision": "187",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 24
+    },
+    {
+      "kind": "renderer-mounted",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+      "sceneId": "architecture-rise",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 25
+    },
+    {
+      "kind": "frame-performance",
+      "evidence": {
+        "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+        "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+        "sourceWidthPx": 450,
+        "sourceHeightPx": 360,
+        "sceneRender": {
+          "rendererCallCpuMs": 43.70000000298023,
+          "queueCompletionWaitMs": 6.100000001490116,
+          "wallClockMs": 50.100000001490116
+        },
+        "physicalCocFootprint": null,
+        "physicalValidity": null
+      },
+      "sequence": 26
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+      "sequence": 27
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-5",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 28
+    },
+    {
+      "kind": "frame-performance",
+      "evidence": {
+        "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+        "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-6",
+        "sourceWidthPx": 450,
+        "sourceHeightPx": 360,
+        "sceneRender": {
+          "rendererCallCpuMs": 4.5,
+          "queueCompletionWaitMs": 3.100000001490116,
+          "wallClockMs": 7.799999997019768
+        },
+        "physicalCocFootprint": null,
+        "physicalValidity": null
+      },
+      "sequence": 29
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-6",
+      "sequence": 30
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-6",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-6",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 31
+    },
+    {
+      "kind": "frame-performance",
+      "evidence": {
+        "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+        "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-7",
+        "sourceWidthPx": 450,
+        "sourceHeightPx": 360,
+        "sceneRender": {
+          "rendererCallCpuMs": 2,
+          "queueCompletionWaitMs": 3.2999999970197678,
+          "wallClockMs": 5.399999998509884
+        },
+        "physicalCocFootprint": null,
+        "physicalValidity": null
+      },
+      "sequence": 32
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-7",
+      "sequence": 33
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-7",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-7",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 34
+    },
+    {
+      "kind": "cleanup",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-2\"]",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "outcome": "confirmed",
+      "wallClockMs": 2.8000000044703484,
+      "sequence": 35
+    },
+    {
+      "kind": "cleanup-acknowledged",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-caagkrsf4xe",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-2",
+      "outcome": "confirmed",
+      "reason": null,
+      "sequence": 36
+    },
+    {
+      "kind": "host-attached",
+      "channelId": "default",
+      "hostId": "gg-host-_r_17_-d5ip0zm9wvo",
+      "sequence": 37
+    },
+    {
+      "kind": "host-attached",
+      "channelId": "default",
+      "hostId": "gg-host-_r_17_-d5ip0zm9wvo",
+      "sequence": 38
+    },
+    {
+      "kind": "renderer-mounted",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-3\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_17_-d5ip0zm9wvo",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-3",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-9",
+      "sceneId": "interior-corner",
+      "rendererFamily": "webgl-renderer",
+      "executionApi": "webgl2",
+      "internalFallback": "none",
+      "sequence": 39
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwgwcym-kj4yng44tp-default-generation-3\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_17_-d5ip0zm9wvo",
+      "generationId": "gg-mvwgwcym-kj4yng44tp-default-generation-3",
+      "requestId": "gg-mvwgwcym-kj4yng44tp-default-request-9",
+      "sceneId": "interior-corner",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwgwcym-kj4yng44tp-default-request-9",
+      "latestAcceptedSceneId": "interior-corner",
+      "activeGenerationId": "gg-mvwgwcym-kj4yng44tp-default-generation-3",
+      "activeRendererFamily": "webgl-renderer",
+      "sequence": 40
+    }
+  ],
+  "screenshotArtifact": "r187-native-application-raw-ground-glass.png",
+  "limitations": [
+    "One Chrome/macOS environment; no claim about hardware acceleration or spontaneous device loss."
+  ]
+}
