@@ -212,6 +212,174 @@ const evaluateQualification = (
   return "partially-qualified";
 };
 
+
+/** An event summary is never proof of native execution unless the observed events agree. */
+const validateM7bObservedRuntime = (
+  scenario: Record<string, unknown>,
+  scenarioId: string,
+  errors: string[],
+): void => {
+  const kind = scenario.evidenceClass;
+  if (typeof kind !== "string" || !kind.startsWith("native-webgpu-")) return;
+  if (!isObject(scenario.identity) || !isObject(scenario.runtime)) return;
+  const generation = scenario.identity.rendererGenerationId;
+  if (!isNonEmptyString(generation)) return;
+  const attempt = eventFor(scenario, "attempt", generation);
+  const observed = eventFor(scenario, "runtime-observed", generation);
+  const mounted = eventFor(scenario, "renderer-mounted", generation);
+  const preMount = kind === "native-webgpu-pre-mount-failure" || kind === "native-webgpu-cleanup-failure";
+  const expectedRevision = scenario.threeRevision;
+  if (
+    !eventMatchesScenarioIdentity(scenario, attempt, true) ||
+    !eventMatchesScenarioIdentity(scenario, observed) ||
+    !observed ||
+    observed.rendererFamily !== "webgpu-renderer" ||
+    observed.executionApi !== "webgpu" ||
+    observed.rendererRevision !== expectedRevision ||
+    attempt?.rendererRevision !== expectedRevision ||
+    scenario.runtime.rendererFamily !== observed.rendererFamily ||
+    scenario.runtime.actualExecutionApi !== observed.executionApi ||
+    scenario.runtime.internalFallback !== "none"
+  ) {
+    errors.push("observed-native-runtime-contradiction:" + scenarioId);
+  }
+  if (preMount) {
+    if (mounted !== null || scenario.runtime.hostMounted !== false) {
+      errors.push("pre-mount-renderer-observation-contradiction:" + scenarioId);
+    }
+  } else if (
+    !eventMatchesScenarioIdentity(scenario, mounted, true) ||
+    mounted?.rendererFamily !== observed?.rendererFamily ||
+    mounted?.executionApi !== observed?.executionApi ||
+    mounted?.internalFallback !== "none" ||
+    scenario.runtime.hostMounted !== true
+  ) {
+    errors.push("mounted-native-runtime-contradiction:" + scenarioId);
+  }
+};
+
+/** A replacement is never qualified if adapter and host cleanup disagree. */
+const validateM7bCleanupFallback = (
+  scenario: Record<string, unknown>,
+  scenarioId: string,
+  errors: string[],
+): void => {
+  const cleanupClasses = new Set([
+    "native-webgpu-pre-mount-failure",
+    "native-webgpu-runtime-failure",
+    "native-webgpu-cleanup-failure",
+    "native-webgpu-device-loss-equivalent",
+    "native-webgpu-device-destroy-lost-promise",
+  ]);
+  if (!cleanupClasses.has(String(scenario.evidenceClass)) || !isObject(scenario.identity)) return;
+  const generation = scenario.identity.rendererGenerationId;
+  if (!isNonEmptyString(generation)) return;
+  const adapter = eventFor(scenario, "cleanup", generation);
+  const host = eventFor(scenario, "cleanup-acknowledged", generation);
+  const adapterSeq = adapter?.sequence;
+  const hostSeq = host?.sequence;
+  if (
+    !eventMatchesScenarioIdentity(scenario, adapter) ||
+    !host ||
+    host.generationId !== generation ||
+    host.hostId !== scenario.identity.hostId ||
+    host.channelId !== scenario.identity.channelId ||
+    adapter?.outcome !== scenario.cleanupOutcome ||
+    host.outcome !== scenario.cleanupOutcome ||
+    typeof adapterSeq !== "number" ||
+    typeof hostSeq !== "number" ||
+    adapterSeq >= hostSeq
+  ) {
+    errors.push("cleanup-host-acknowledgement-contradiction:" + scenarioId);
+  }
+
+  if (scenario.fallbackOutcome === "webgl-mounted" || scenario.applicationFallback === true) {
+    if (
+      scenario.cleanupOutcome !== "confirmed" ||
+      scenario.fallbackOutcome !== "webgl-mounted" ||
+      scenario.applicationFallback !== true
+    ) {
+      errors.push("fallback-before-confirmed-cleanup:" + scenarioId);
+    }
+    const events = Array.isArray(scenario.events) ? scenario.events.filter(isObject) : [];
+    const replacement = events.find((event) =>
+      event.kind === "renderer-mounted" &&
+      event.generationId !== generation &&
+      event.channelId === scenario.identity.channelId &&
+      event.rendererFamily === "webgl-renderer" &&
+      (event.executionApi === "webgl" || event.executionApi === "webgl2") &&
+      event.internalFallback === "none" &&
+      typeof event.sequence === "number" &&
+      typeof hostSeq === "number" &&
+      event.sequence > hostSeq
+    );
+    if (!replacement) errors.push("missing-confirmed-webgl-replacement:" + scenarioId);
+  } else if (scenario.cleanupOutcome === "failed" || scenario.cleanupOutcome === "uncertain") {
+    if (scenario.applicationFallback !== false || scenario.fallbackOutcome !== "unavailable") {
+      errors.push("failed-cleanup-allows-replacement:" + scenarioId);
+    }
+  }
+};
+
+/** Host acceptance is distinct from an adapter's frame-completed notification. */
+const validateM7bPublication = (
+  scenario: Record<string, unknown>,
+  scenarioId: string,
+  errors: string[],
+): void => {
+  if (!isObject(scenario.publication)) return;
+  const pub = scenario.publication;
+  if (pub.status !== "current" && pub.status !== "stale-rejected") return;
+  const events = Array.isArray(scenario.events) ? scenario.events.filter(isObject) : [];
+  const result = events.findLast((event) =>
+    event.kind === "host-frame-result" &&
+    event.frameStatus === "completed" &&
+    event.requestId === pub.completedRequestId
+  );
+  const latest = result?.latestAcceptedRequestId;
+  const identityMatches = result &&
+    result.channelId === (isObject(scenario.identity) ? scenario.identity.channelId : null) &&
+    isNonEmptyString(result.generationId) &&
+    result.activeGenerationId === result.generationId &&
+    isNonEmptyString(result.sceneId) &&
+    isNonEmptyString(result.hostId) &&
+    result.latestAcceptedRequestId === pub.acceptedRequestId;
+  if (!identityMatches || !isNonEmptyString(latest)) {
+    errors.push("missing-host-publication-evidence:" + scenarioId);
+    return;
+  }
+  if (pub.status === "current") {
+    if (result.acceptedByHost !== true || result.requestId !== latest) {
+      errors.push("current-publication-not-accepted-by-host:" + scenarioId);
+    }
+  } else if (result.acceptedByHost !== false || result.requestId === latest) {
+    errors.push("stale-publication-not-rejected-by-host:" + scenarioId);
+  }
+  const retirement = events.find((event) =>
+    event.kind === "cleanup-acknowledged" && event.generationId === result.generationId &&
+    typeof event.sequence === "number" && event.sequence < result.sequence
+  );
+  if (retirement) errors.push("publication-after-generation-retirement:" + scenarioId);
+  const retired = isObject(scenario.identity) ? scenario.identity.rendererGenerationId : null;
+  if (scenario.fallbackOutcome === "webgl-mounted" && retired) {
+    const hostCleanup = eventFor(scenario, "cleanup-acknowledged", String(retired));
+    const replacement = events.find((event) =>
+      event.kind === "renderer-mounted" && event.generationId === result.generationId &&
+      event.rendererFamily === "webgl-renderer" &&
+      (event.executionApi === "webgl" || event.executionApi === "webgl2")
+    );
+    if (
+      result.generationId === retired ||
+      !hostCleanup ||
+      !replacement ||
+      typeof result.sequence !== "number" ||
+      typeof replacement.sequence !== "number" ||
+      typeof hostCleanup.sequence !== "number" ||
+      !(hostCleanup.sequence < replacement.sequence && replacement.sequence < result.sequence)
+    ) errors.push("publication-not-from-confirmed-replacement:" + scenarioId);
+  }
+};
+
 /** Validates the committed M7B evidence inventory before accepting its qualification label. */
 export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundGlassM7bEvidenceEvaluation => {
   const errors: string[] = [];
@@ -371,6 +539,9 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
     }
 
     if (status !== "passed") continue;
+    validateM7bObservedRuntime(scenario, requiredId, errors);
+    validateM7bCleanupFallback(scenario, requiredId, errors);
+    validateM7bPublication(scenario, requiredId, errors);
     if (scenario.evidenceClass === "native-webgpu-pre-mount-failure") {
       const identityGenerationId = isObject(scenario.identity) && isNonEmptyString(scenario.identity.rendererGenerationId)
         ? scenario.identity.rendererGenerationId
