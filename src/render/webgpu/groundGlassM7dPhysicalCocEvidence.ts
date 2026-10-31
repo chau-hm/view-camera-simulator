@@ -558,6 +558,7 @@ export const evaluateGroundGlassM7dPhysicalCocReport = (
             !nonEmpty(entry.artifact) || !nonEmpty(entry.collection))) {
           issue("event-provenance", `scenarios.${scenario.id}.orderedEventEvidence`, "passed native scenario must reference captured ordered lifecycle/host events");
         } else if (eventEvidence.some((entry) => {
+          if (!entry) return false;
           const sequences = entry.sequenceNumbers;
           return !Array.isArray(sequences) || sequences.length === 0 ||
             !sequences.every(finite) ||
