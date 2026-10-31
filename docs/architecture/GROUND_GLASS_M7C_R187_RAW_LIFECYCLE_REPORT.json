@@ -92,7 +92,14 @@
       "captureSourceSha": "5dc1339cca7dc0470a9883e8c870353b4fe0191c",
       "artifact": "docs/architecture/ground-glass-m7c-r187/production-preview/architecture-rise-production-webgl-isolation.json"
     },
-    "hostedCi": "pending PR publication",
+    "hostedCi": {
+      "workflow": "CI and Deploy to GitHub Pages",
+      "runNumber": 1803,
+      "runId": 41209560988,
+      "commitSha": "a453a406e1596838db409a97146a7e8774c31b49",
+      "ciJob": "passed",
+      "deployJob": "skipped-for-pull-request"
+    },
     "broadLocalE2e": "not run; no current clean-main baseline claim is made",
     "focusedUnitValidation": {
       "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test -- --reporter=json --outputFile=/tmp/m7c-r187-captures/unit-validation-final.json --run src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassBackendPolicy.test.ts src/tests/unit/groundGlassApertureGatherPolicy.test.ts src/tests/unit/groundGlassM6Presentation.test.ts",

@@ -66,7 +66,9 @@ npm run test:e2e -- --project=chrome-native-webgpu \
   src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts
 ```
 
-New captures are stored under [`ground-glass-m7c-r187/`](ground-glass-m7c-r187/): 13 failure-host event records, the application baseline, production preview evidence, and focused unit-validation summary. The report pins native/production capture source SHA `5dc1339cca7dc0470a9883e8c870353b4fe0191c`; evaluator and focused unit evidence use source SHA `8dd6e30fe9841804a0f1d7a726846cbba2dd86c9`. The top-level report source SHA identifies the evaluator code; scenario-level source SHAs identify their actual capture code.
+Hosted workflow run 1803 passed its CI job on published head `a453a406e1596838db409a97146a7e8774c31b49`; its deploy job was skipped because this was a pull request. The report records that run SHA explicitly.
+
+New captures are stored under [`ground-glass-m7c-r187/`](ground-glass-m7c-r187/): 13 failure-host event records, the application baseline, production preview evidence, and focused unit-validation summary. The report pins native/production capture source SHA `5dc1339cca7dc0470a9883e8c870353b4fe0191c`; evaluator and focused unit evidence use source SHA `e4c9f1d2b4875bd9c5dfe21841f061b42fde2f06`. The top-level report source SHA identifies the evaluator code; scenario-level source SHAs identify their actual capture code.
 
 ## Qualification limits and next stage
 
