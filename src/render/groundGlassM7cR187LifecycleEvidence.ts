@@ -192,6 +192,34 @@ const validateLatestRequestEvidence = (scenario: M7cScenario, errors: string[]):
   }
 };
 
+const validateFailureStageAndOperation = (scenario: M7cScenario, errors: string[]): void => {
+  const expectedById: Readonly<Record<string, Readonly<{ stage: string; operation: string }>>> = {
+    "m7c-r187-init-after-target-fallback": { stage: "initialization", operation: "unknown" },
+    "m7c-r187-scene-render-failure": { stage: "runtime", operation: "sceneRender" },
+    "m7c-r187-queue-completion-rejection": { stage: "runtime", operation: "sceneRender" },
+    "m7c-r187-presentation-failure": { stage: "runtime", operation: "textureDisplay" },
+    "m7c-r187-latest-request-stale-rejection": { stage: "runtime", operation: "sceneRender" },
+  };
+  const expected = expectedById[scenario.id];
+  if (!expected) return;
+  const identity = isObject(scenario.identity) ? scenario.identity : null;
+  const generationId = identity?.rendererGenerationId;
+  const failure = readEvents(scenario).find((event) => event.kind === "failure" &&
+    event.generationId === generationId);
+  if (!failure || failure.stage !== expected.stage || failure.operation !== expected.operation) {
+    errors.push(`failure-stage-operation-contradiction:${scenario.id}`);
+    return;
+  }
+  if (scenario.id === "m7c-r187-init-after-target-fallback") {
+    const limitation = Array.isArray(scenario.limitations) && scenario.limitations.some((entry) =>
+      typeof entry === "string" && entry.includes("operation=unknown"));
+    if (scenario.status !== "blocked" || !limitation ||
+        typeof failure.reason !== "string" || !failure.reason.includes("initialization-after-target")) {
+      errors.push(`initialization-operation-gap-not-blocked:${scenario.id}`);
+    }
+  }
+};
+
 const validateSessionBoundary = (scenario: M7cScenario, errors: string[]): void => {
   if (scenario.id === "m7c-r187-sticky-fallback-remount") {
     const observation = readObservation(scenario, "sticky-session-remount");
@@ -415,6 +443,7 @@ export const evaluateGroundGlassM7cR187LifecycleEvidence = (input: unknown): Gro
     if (scenario.status === "blocked" && (!Array.isArray(scenario.limitations) || scenario.limitations.length === 0)) {
       errors.push(`blocked-scenario-without-reason:${id}`);
     }
+    validateFailureStageAndOperation(scenario, errors);
     if (id === "m7c-r187-spontaneous-device-loss") {
       const events = readEvents(scenario);
       const loss = events.find((event) => event.kind === "device-lost-observed");

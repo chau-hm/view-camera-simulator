@@ -72,9 +72,9 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
 
   it("rejects a missing host cleanup acknowledgement", () => {
     const report = copyReport();
-    const scenario = scenarioFor(report, "m7c-r187-init-after-target-fallback");
+    const scenario = scenarioFor(report, "m7c-r187-scene-render-failure");
     scenario.events = eventsFor(scenario).filter((event) => event.kind !== "cleanup-acknowledged");
-    expectRejected(report, "cleanup-host-acknowledgement-contradiction:m7c-r187-init-after-target-fallback");
+    expectRejected(report, "cleanup-host-acknowledgement-contradiction:m7c-r187-scene-render-failure");
   });
 
   it("rejects host acknowledgement that contradicts adapter cleanup", () => {
@@ -213,5 +213,17 @@ describe("M7C r187 lifecycle evidence evaluator", () => {
     const report = copyReport();
     report.evaluatorRevision = "m7c-r187-lifecycle-evidence-v0";
     expectRejected(report, "unsupported-evaluator-revision");
+  });
+
+  it("rejects an initialization failure as qualified when its operation is unknown", () => {
+    const report = copyReport();
+    const scenario = scenarioFor(report, "m7c-r187-init-after-target-fallback");
+    scenario.status = "passed";
+    const counts = report.scenarioCounts as Record<string, number>;
+    counts.passed += 1;
+    counts.blocked -= 1;
+    const result = evaluateGroundGlassM7cR187LifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("initialization-operation-gap-not-blocked:m7c-r187-init-after-target-fallback");
   });
 });
