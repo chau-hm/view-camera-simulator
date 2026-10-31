@@ -3,7 +3,7 @@ import type { GroundGlassBackendPolicyInput } from "../backend/groundGlassBacken
 import type { GroundGlassPilotRetryState } from "../backend/groundGlassBackendContracts";
 import type { GroundGlassFrameRequestInput } from "../groundGlassFrameRequest";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY } from "./groundGlassRawWebGpuCompatibility";
+import { resolveGroundGlassRawWebGpuCompatibility } from "./groundGlassRawWebGpuCompatibility";
 import {
   GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
   GROUND_GLASS_M6_PRESENTATION_FEATURES,
@@ -85,7 +85,7 @@ export const createGroundGlassRawWebGpuPolicyInput = (
   );
   const compatibility = requestedM6
     ? GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY
-    : GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY;
+    : resolveGroundGlassRawWebGpuCompatibility(`r${REVISION}`);
 
   return {
     requestedBackend: requestedWebGpuMode ? "webgpu" : null,

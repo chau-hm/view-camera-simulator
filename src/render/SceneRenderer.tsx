@@ -1831,6 +1831,7 @@ export const SceneRenderer = ({
       ref={containerRef}
       data-testid="scene-canvas"
       data-observer-renderer-surface="observer"
+      data-observer-three-revision={import.meta.env.DEV ? THREE.REVISION : undefined}
       data-observer-verification-scene={
         import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
           ? "architecture-rise"

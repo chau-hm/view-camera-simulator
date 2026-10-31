@@ -15,6 +15,8 @@ type OutputGraphNode = {
   target?: string;
   colorNode?: unknown;
   exposureNode?: unknown;
+  nodes?: unknown[];
+  node?: { nodes?: unknown[] };
   getToneMapping?: () => number;
   setup?: (builder: never) => unknown;
 };
@@ -58,7 +60,12 @@ const expectOutputGraph = (
       },
     },
   } as never) as { node?: { nodes?: unknown[] } } | undefined;
-  expect(mappedVec4?.node?.nodes?.[1]).toBe((sourceOutput as { a: unknown }).a);
+  const mappedComponents = mappedVec4 as OutputGraphNode | undefined;
+  // r187 TSL promotes the tone-mapped RGB/alpha pair directly to JoinNode.nodes;
+  // r186 represented the same pair through a wrapper node. Both preserve alpha.
+  expect(mappedComponents?.nodes?.[1] ?? mappedComponents?.node?.nodes?.[1]).toBe(
+    (sourceOutput as { a: unknown }).a,
+  );
 };
 
 const texture = (colorSpace: THREE.ColorSpace): THREE.DataTexture => {

@@ -195,9 +195,20 @@ describe("Observer renderer selection policy", () => {
   });
 
   it("keeps verified scenes denied when their pilot approval is revoked", () => {
-    const architectureRise = resolveObserverSceneCompatibility("architecture-rise");
+    const r186 = resolveObserverSceneCompatibility("architecture-rise", "186");
+    expect(r186.webgpu).toMatchObject({
+      status: "verified",
+      rendererRevision: "186",
+      evidence: "pr-251-native-architecture-rise-e2e",
+    });
+    const architectureRise = resolveObserverSceneCompatibility("architecture-rise", "187");
+    expect(architectureRise.webgpu).toMatchObject({
+      status: "verified",
+      rendererRevision: "187",
+      evidence: "r187-native-architecture-rise-verification-e2e",
+    });
     const revoked = { ...architectureRise, developmentWebGpuPilot: "not-eligible" as const };
-    expect(revoked.webgpu).toMatchObject({ status: "verified", evidence: "pr-251-native-architecture-rise-e2e" });
+    expect(revoked.webgpu).toMatchObject({ status: "verified", evidence: "r187-native-architecture-rise-verification-e2e" });
     expect(selectObserverBackend({
       ...selectionInput,
       requestedRendererParam: "webgpu",

@@ -131,14 +131,12 @@ vi.mock("@react-three/fiber", () => ({
 }));
 
 const createTestPmremTarget = () => {
-  const target = new THREE.WebGLRenderTarget(336, 128, {
+  return new THREE.WebGLCubeRenderTarget(256, {
     format: THREE.RGBAFormat,
     type: THREE.HalfFloatType,
     colorSpace: THREE.LinearSRGBColorSpace,
     depthBuffer: false,
   });
-  target.texture.mapping = THREE.CubeUVReflectionMapping;
-  return target;
 };
 
 beforeEach(() => {

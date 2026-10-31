@@ -1,3 +1,5 @@
+import { REVISION } from "three";
+
 export type ObserverSceneRenderingRequirement =
   | "observer-scene-subject"
   | "presentation-lighting"
@@ -7,11 +9,25 @@ export type ObserverSceneRenderingRequirement =
 export type ObserverSceneBackendConstraint =
   | "procedural-world-environment-uses-webgl-pmrem";
 
+export type ObserverWebGpuEvidence =
+  | "pr-248-native-observer-e2e"
+  | "pr-251-native-architecture-rise-e2e"
+  | "r187-native-view-camera-anatomy-pilot-e2e"
+  | "r187-native-architecture-rise-verification-e2e";
+
+export type ObserverWebGpuQualification = Readonly<{
+  /** Three.js revision that was installed during the native runtime evidence run. */
+  rendererRevision: string;
+  evidence: ObserverWebGpuEvidence;
+  verifiedRequirements: readonly ObserverSceneRenderingRequirement[];
+}>;
+
 export type ObserverWebGpuCompatibility =
   | Readonly<{ status: "not-evaluated" }>
   | Readonly<{
       status: "verified";
-      evidence: "pr-248-native-observer-e2e" | "pr-251-native-architecture-rise-e2e";
+      rendererRevision: string;
+      evidence: ObserverWebGpuEvidence;
       verifiedRequirements: readonly ObserverSceneRenderingRequirement[];
     }>;
 
@@ -39,15 +55,26 @@ export const observerSceneCompatibilityRegistry = Object.freeze({
       "presentation-lighting",
       "shadow-maps",
     ] as const),
-    webgpu: Object.freeze({
-      status: "verified",
-      evidence: "pr-248-native-observer-e2e",
-      verifiedRequirements: Object.freeze([
-        "observer-scene-subject",
-        "presentation-lighting",
-        "shadow-maps",
-      ] as const),
-    }),
+    webgpuQualifications: Object.freeze([
+      Object.freeze({
+        rendererRevision: "186",
+        evidence: "pr-248-native-observer-e2e",
+        verifiedRequirements: Object.freeze([
+          "observer-scene-subject",
+          "presentation-lighting",
+          "shadow-maps",
+        ] as const),
+      }),
+      Object.freeze({
+        rendererRevision: "187",
+        evidence: "r187-native-view-camera-anatomy-pilot-e2e",
+        verifiedRequirements: Object.freeze([
+          "observer-scene-subject",
+          "presentation-lighting",
+          "shadow-maps",
+        ] as const),
+      }),
+    ]),
     knownBackendConstraints: Object.freeze([]),
     developmentWebGpuPilot: "eligible",
   }),
@@ -58,25 +85,57 @@ export const observerSceneCompatibilityRegistry = Object.freeze({
       "shadow-maps",
       "procedural-world-environment",
     ] as const),
-    webgpu: Object.freeze({
-      status: "verified",
-      evidence: "pr-251-native-architecture-rise-e2e",
-      verifiedRequirements: Object.freeze([
-        "observer-scene-subject",
-        "presentation-lighting",
-        "shadow-maps",
-        "procedural-world-environment",
-      ] as const),
-    }),
+    webgpuQualifications: Object.freeze([
+      Object.freeze({
+        rendererRevision: "186",
+        evidence: "pr-251-native-architecture-rise-e2e",
+        verifiedRequirements: Object.freeze([
+          "observer-scene-subject",
+          "presentation-lighting",
+          "shadow-maps",
+          "procedural-world-environment",
+        ] as const),
+      }),
+      Object.freeze({
+        rendererRevision: "187",
+        evidence: "r187-native-architecture-rise-verification-e2e",
+        verifiedRequirements: Object.freeze([
+          "observer-scene-subject",
+          "presentation-lighting",
+          "shadow-maps",
+          "procedural-world-environment",
+        ] as const),
+      }),
+    ]),
     knownBackendConstraints: Object.freeze([]),
     developmentWebGpuPilot: "eligible",
   }),
-} satisfies Readonly<Record<string, ObserverSceneCompatibility>>);
+} satisfies Readonly<Record<string, Readonly<{
+  requirements: readonly ObserverSceneRenderingRequirement[];
+  webgpuQualifications: readonly ObserverWebGpuQualification[];
+  knownBackendConstraints: readonly ObserverSceneBackendConstraint[];
+  developmentWebGpuPilot: "eligible" | "not-eligible";
+}>>>);
 
-/** Missing scene declarations are explicitly unevaluated and never pilot-eligible. */
+/** Missing scene or renderer qualifications are explicitly unevaluated and never pilot-eligible. */
 export const resolveObserverSceneCompatibility = (
   sceneId: string,
-): ObserverSceneCompatibility =>
-  observerSceneCompatibilityRegistry[
+  rendererRevision: string = REVISION,
+): ObserverSceneCompatibility => {
+  const declaration = observerSceneCompatibilityRegistry[
     sceneId as keyof typeof observerSceneCompatibilityRegistry
-  ] ?? UNREVIEWED_SCENE;
+  ];
+  if (!declaration) return UNREVIEWED_SCENE;
+
+  const qualification = declaration.webgpuQualifications.find(
+    (entry) => entry.rendererRevision === rendererRevision,
+  );
+  return {
+    requirements: declaration.requirements,
+    webgpu: qualification
+      ? { status: "verified", ...qualification }
+      : { status: "not-evaluated" },
+    knownBackendConstraints: declaration.knownBackendConstraints,
+    developmentWebGpuPilot: qualification ? declaration.developmentWebGpuPilot : "not-eligible",
+  };
+};

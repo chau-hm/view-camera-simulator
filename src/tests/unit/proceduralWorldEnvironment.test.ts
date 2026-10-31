@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import * as THREE from "three";
+import { CubeRenderTarget } from "three/webgpu";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import {
@@ -71,14 +72,12 @@ describe("procedural world environment source", () => {
 
 describe("renderer-owned world environment resources", () => {
   const createProcessedTarget = () => {
-    const target = new THREE.WebGLRenderTarget(336, 128, {
+    return new THREE.WebGLCubeRenderTarget(256, {
       format: THREE.RGBAFormat,
       type: THREE.HalfFloatType,
       colorSpace: THREE.LinearSRGBColorSpace,
       depthBuffer: false,
     });
-    target.texture.mapping = THREE.CubeUVReflectionMapping;
-    return target;
   };
 
   it("applies a PMREM target without changing the visible background and restores prior scene state", () => {
@@ -116,8 +115,11 @@ describe("renderer-owned world environment resources", () => {
     expect(sourceTexture?.colorSpace).toBe(THREE.SRGBColorSpace);
     expect(sourceTexture?.mapping).toBe(THREE.EquirectangularReflectionMapping);
     expect(generatorDispose).toHaveBeenCalledTimes(1);
+    expect(rig.renderTarget).toBeInstanceOf(THREE.WebGLCubeRenderTarget);
+    expect(rig.renderTarget.isWebGLCubeRenderTarget).toBe(true);
+    expect(rig.renderTarget.texture.isRenderTargetTexture).toBe(true);
     expect(rig.renderTarget.texture.colorSpace).toBe(THREE.LinearSRGBColorSpace);
-    expect(rig.renderTarget.texture.mapping).toBe(THREE.CubeUVReflectionMapping);
+    expect(rig.renderTarget.texture.mapping).toBe(THREE.CubeReflectionMapping);
     expect(scene.environment).toBe(rig.environmentTexture);
     expect(scene.environmentIntensity).toBe(environment.intensity);
     expect(scene.background).toBe(background);
@@ -298,7 +300,7 @@ describe("backend-aware Observer world environment realization", () => {
       THREE.WebGLCoordinateSystem,
     ]) {
       const scene = new THREE.Scene();
-      const target = new THREE.WebGLRenderTarget(32, 32);
+      const target = new CubeRenderTarget(32);
       const targetDispose = vi.spyOn(target, "dispose");
       const fromEquirectangular = vi.fn(() => target);
       const generatorDispose = vi.fn();
@@ -326,6 +328,9 @@ describe("backend-aware Observer world environment realization", () => {
       expect(fromEquirectangular).toHaveBeenCalledTimes(1);
       expect(generatorDispose).toHaveBeenCalledTimes(1);
       expect(legacyConversion).not.toHaveBeenCalled();
+      expect(target.isCubeRenderTarget).toBe(true);
+      expect(target.texture.isRenderTargetTexture).toBe(true);
+      expect(target.texture.mapping).toBe(THREE.CubeReflectionMapping);
       expect(rig?.renderTarget).toBe(target);
       expect(scene.environment).toBe(target.texture);
       expect(scene.environmentIntensity).toBe(environment.intensity);
@@ -340,7 +345,7 @@ describe("backend-aware Observer world environment realization", () => {
 
   it("keeps the WebGL PMREM implementation and does not load the WebGPU module", async () => {
     const scene = new THREE.Scene();
-    const target = new THREE.WebGLRenderTarget(32, 32);
+    const target = new THREE.WebGLCubeRenderTarget(32);
     const fromEquirectangular = vi
       .spyOn(THREE.PMREMGenerator.prototype, "fromEquirectangular")
       .mockReturnValue(target);

@@ -18,7 +18,8 @@ describe("Observer scene backend compatibility declarations", () => {
       ],
       webgpu: {
         status: "verified",
-        evidence: "pr-248-native-observer-e2e",
+        rendererRevision: "187",
+        evidence: "r187-native-view-camera-anatomy-pilot-e2e",
       },
       knownBackendConstraints: [],
       developmentWebGpuPilot: "eligible",
@@ -40,7 +41,8 @@ describe("Observer scene backend compatibility declarations", () => {
       ],
       webgpu: {
         status: "verified",
-        evidence: "pr-251-native-architecture-rise-e2e",
+        rendererRevision: "187",
+        evidence: "r187-native-architecture-rise-verification-e2e",
         verifiedRequirements: [
           "observer-scene-subject",
           "presentation-lighting",
@@ -67,6 +69,25 @@ describe("Observer scene backend compatibility declarations", () => {
       knownBackendConstraints: [],
       developmentWebGpuPilot: "not-eligible",
     } satisfies ObserverSceneCompatibility);
+  });
+
+  it("keeps historical r186 evidence and requires a matching renderer revision", () => {
+    expect(resolveObserverSceneCompatibility("view-camera-anatomy", "186").webgpu)
+      .toMatchObject({
+        status: "verified",
+        rendererRevision: "186",
+        evidence: "pr-248-native-observer-e2e",
+      });
+    expect(resolveObserverSceneCompatibility("architecture-rise", "186").webgpu)
+      .toMatchObject({
+        status: "verified",
+        rendererRevision: "186",
+        evidence: "pr-251-native-architecture-rise-e2e",
+      });
+    expect(resolveObserverSceneCompatibility("architecture-rise", "188")).toMatchObject({
+      webgpu: { status: "not-evaluated" },
+      developmentWebGpuPilot: "not-eligible",
+    });
   });
 
   it("does not let scene-registry membership grant pilot eligibility", () => {

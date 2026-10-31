@@ -50,15 +50,15 @@ export const createWorldEnvironmentRig = (
   scene: THREE.Scene,
   renderer: THREE.WebGLRenderer,
   environment: WorldProceduralSkyGroundEnvironment,
-): WorldEnvironmentRig<THREE.WebGLRenderTarget> => {
+): WorldEnvironmentRig<THREE.WebGLCubeRenderTarget> => {
   const sourceTexture = createProceduralSkyGroundTexture(environment);
   let pmremGenerator: THREE.PMREMGenerator | undefined;
-  let renderTarget: THREE.WebGLRenderTarget | undefined;
+  let renderTarget: THREE.WebGLCubeRenderTarget | undefined;
   let failure: unknown;
 
   try {
     pmremGenerator = new THREE.PMREMGenerator(renderer);
-    // Three.js r186 writes a linear-sRGB CubeUV target. WebGL decodes the
+    // Three.js r187 writes a linear-sRGB cube target. WebGL decodes the
     // sRGB-encoded DataTexture while sampling it for PMREM conversion.
     renderTarget = pmremGenerator.fromEquirectangular(sourceTexture);
   } catch (error) {

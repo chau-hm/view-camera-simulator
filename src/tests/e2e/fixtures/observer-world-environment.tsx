@@ -91,6 +91,7 @@ const ObserverEnvironmentEvidence = ({ enabled }: { enabled: boolean }) => {
   }, [environmentStatus]);
 
   useEffect(() => {
+    body.dataset.threeRevision = THREE.REVISION;
     body.dataset.rendererFamily = runtime.rendererFamily;
     body.dataset.executionBackend = runtime.executionBackend;
     body.dataset.hardwareAcceleration = "unconfirmed";
@@ -123,6 +124,12 @@ const ObserverEnvironmentEvidence = ({ enabled }: { enabled: boolean }) => {
     body.dataset.sceneEnvironmentTargetTexture = String(
       scene.environment?.isRenderTargetTexture === true,
     );
+    body.dataset.sceneEnvironmentTextureIsCube = String(
+      scene.environment instanceof THREE.CubeTexture,
+    );
+    body.dataset.sceneEnvironmentMapping = scene.environment?.mapping === THREE.CubeReflectionMapping
+      ? "cube-reflection"
+      : String(scene.environment?.mapping ?? "none");
     if (runtime.rendererFamily !== "unknown" && frameCount.current >= 2) {
       body.dataset.fixtureReady = "true";
     }

@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { REVISION } from "three";
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRenderHost } from "./GroundGlassRenderHost";
 import type { GroundGlassBackendDiagnostics } from "./backend/groundGlassBackendDiagnostics";
@@ -61,6 +62,13 @@ export const GroundGlassRenderSurface = ({
   const sceneId = scene.id;
   const [backendDiagnostics, setBackendDiagnostics] = useState<GroundGlassBackendDiagnostics | null>(null);
   const testEvidenceEnabled = import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true";
+  const policyDecision = backendDiagnostics?.policySelection.policyDecision;
+  const policyEvidenceRevisions = policyDecision?.status === "authorized" &&
+      policyDecision.sceneEligibility.status === "eligible"
+    ? policyDecision.sceneEligibility.evidenceRevisions.join(",")
+    : undefined;
+  const backendDetails = backendDiagnostics?.backendDetails;
+  const webGpuBackendDetails = backendDetails?.backend === "webgpu" ? backendDetails : null;
   const handleBackendDiagnosticsChange = useCallback((
     _channel: GroundGlassRttChannel,
     diagnostics: GroundGlassBackendDiagnostics | null,
@@ -69,6 +77,7 @@ export const GroundGlassRenderSurface = ({
     return (
       <div
         data-testid="ground-glass-rtt"
+        data-three-revision={import.meta.env.DEV ? REVISION : undefined}
         data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
         data-renderer-generation={backendDiagnostics?.rendererGeneration?.generationId}
@@ -79,6 +88,11 @@ export const GroundGlassRenderSurface = ({
         data-policy-selected-backend={backendDiagnostics?.policySelection.status === "selected"
           ? backendDiagnostics.policySelection.selectedBackend
           : "unavailable"}
+        data-policy-evidence-revisions={import.meta.env.DEV ? policyEvidenceRevisions : undefined}
+        data-mounted-renderer-revision={import.meta.env.DEV ? webGpuBackendDetails?.rendererRevision : undefined}
+        data-mounted-verification-evidence-revision={import.meta.env.DEV
+          ? webGpuBackendDetails?.verificationEvidenceRevision
+          : undefined}
         data-attempted-backend={testEvidenceEnabled ? backendDiagnostics?.attemptedBackend.status === "not-started"
           ? "not-started"
           : backendDiagnostics?.attemptedBackend.backend : undefined}
@@ -162,6 +176,8 @@ export const GroundGlassRenderSurface = ({
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
         data-rtt-logical-width={rttRuntimeInfo?.logicalWidthPx}
         data-rtt-logical-height={rttRuntimeInfo?.logicalHeightPx}
+        data-rtt-resolution-scale={rttRuntimeInfo?.resolutionScale}
+        data-rtt-effective-device-pixel-ratio={rttRuntimeInfo?.effectiveDevicePixelRatio}
         data-rtt-internal-width={rttRuntimeInfo?.internalWidthPx}
         data-rtt-internal-height={rttRuntimeInfo?.internalHeightPx}
         data-rtt-canvas-css-width={rttRuntimeInfo?.canvasCssWidthPx}
