@@ -52,7 +52,7 @@ The 13 native failure-host test results were **13 passed, 3 skipped**; the skipp
 
 M7C reuses the M7B runtime, cleanup and publication validators. The revision-specific evaluator additionally checks r187 policy authorization, exact inventory counts, native runtime provenance, the latest-request chain, the retry/session attempt inventory, pending unmount behavior, WebGL2 negative-control identity, terminal WebGL behavior, and complete capture provenance.
 
-The evaluator unit suite contains one positive committed-report control and 19 evidence mutations. It rejects WebGL2 misclassified as native, wrong Three.js and policy revisions, r186 evidence reuse, failed or contradictory cleanup, replacement before confirmation, wrong-generation publication, stale acceptance, stale overwrite of final publication state, fabricated request identity, implicit retry, terminal WebGL publication, count mismatch, missing provenance, evaluator revision mismatch, and treating the initialization failure with an unknown operation as fully qualified. The focused M7B/M7C and host/policy suites passed **150 tests across 6 files**. The standalone M7C evaluator suite passed **20 tests**.
+The original M7C v1 evaluator unit evidence contained one positive committed-report control and 19 evidence mutations. The review-fix validation below supersedes its evaluator revision and test counts while preserving the original capture provenance.
 
 The exact raw native test invocation used trusted gates and the `chrome-native-webgpu` Playwright project:
 
@@ -67,6 +67,22 @@ npm run test:e2e -- --project=chrome-native-webgpu \
 ```
 
 Hosted workflow run 1803 passed its CI job on published head `a453a406e1596838db409a97146a7e8774c31b49`; its deploy job was skipped because this was a pull request. The report records that run SHA explicitly.
+
+## M7C Review-Fix Round 1 — Event Integrity
+
+The v2 evaluator closes the review findings without changing M7B's evaluator or the renderer lifecycle:
+
+- **F1:** The test-destroy scenario now requires exactly one `device-destroy-requested` and one `device-lost-observed` event for its native generation and attempt, both caused by `test-destroy`. The lost event must carry `reason=destroyed` and a message. Destroy, observed loss, runtime failure, adapter cleanup, host acknowledgement, WebGL replacement and current replacement publication must appear in that order. The adapter event is emitted by the `GPUDevice.lost` Promise callback.
+- **F2:** Intentional retirement now requires an observed held queue, release request, and `queue-completion-settled` event recorded after the real `device.queue.onSubmittedWorkDone()` resolves. Adapter cleanup and host acknowledgement must both be confirmed before the replacement mount. Missing, duplicate, contradictory or misattributed events fail the scenario.
+- **F3:** The loss-equivalent scenario requires one `device-loss-equivalent-requested` event with `cause=test-callback-equivalent`, tied to the mounted generation and attempt and ordered before failure and the same cleanup/publication chain. It rejects substitution of the test-destroy Promise path.
+- **F4:** The initial, explicit-retry and new-session native generations are each checked for r187 `webgpu-renderer` / `webgpu` / `none` identity, attempt, request and scene attribution. Failed attempts require runtime failure, confirmed adapter cleanup, confirmed host acknowledgement and an intervening WebGL replacement before the next native attempt. The final new-session generation must mount natively and publish its accepted current frame.
+- **Pending cleanup navigation:** The event chain must independently match the summary acknowledgement, place unmount before confirmed adapter cleanup and host acknowledgement, reject retired output after unmount, and show a WebGL remount on a host attached after acknowledgement without another native attempt.
+
+Before these evaluator changes, ten targeted evidence mutations were executed against v1 and all ten were accepted: three F1, two F2, two F3, two F4 and one pending-cleanup acknowledgement mutation. The permanent v2 suite now passes **59 tests**: two positive controls and 57 rejection tests. It includes those reproduced cases plus identity, chronology, duplicate-event, cleanup, replacement, publication, retry and remount mutations. The focused M7B/M7C, backend-policy, presentation-policy and host suites pass **155 tests across five files**; M7B's 34-test evaluator suite remains unchanged and passes.
+
+F1, F3, F4 and pending-cleanup navigation use their existing captures. The original D5 pending-queue capture did not contain a durable observation of the held state and actual queue settlement, so one bounded native recapture was performed. The test-only adapter event is recorded only after the actual `onSubmittedWorkDone()` Promise resolves. The new capture is [M7C D5 retirement-integrity R1](ground-glass-m7c-r187/native-failure-host/m7c-r187-d5-pending-queue-retirement-integrity-r1.json), from source SHA `fd096b74a031579c89b3b474907c9a6a3ea45637`, with Chrome `156.0.8078.76`, Three.js `187`, native WebGPU required, and project `chrome-native-webgpu`; the focused scenario passed. The original D5 artifact and source SHA remain preserved alongside it. No other native scenario was recaptured in this review-fix round.
+
+The report uses evaluator revision `m7c-r187-lifecycle-evidence-v2`; the 21-scenario inventory remains **18 passed, 0 failed, 2 blocked, 1 not run**, `partially-qualified`. The blocked initialization operation and spontaneous/external device-loss cases remain unchanged. This review fix does not qualify r187 M4/M5/M6, change production WebGL, complete M7, or authorize M8/M9.
 
 New captures are stored under [`ground-glass-m7c-r187/`](ground-glass-m7c-r187/): 13 failure-host event records, the application baseline, production preview evidence, and focused unit-validation summary. The report pins native/production capture source SHA `5dc1339cca7dc0470a9883e8c870353b4fe0191c`; evaluator and focused unit evidence use source SHA `e4c9f1d2b4875bd9c5dfe21841f061b42fde2f06`. The top-level report source SHA identifies the evaluator code; scenario-level source SHAs identify their actual capture code.
 
