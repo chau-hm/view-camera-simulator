@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
   GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
 } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
@@ -36,7 +37,7 @@ describe("Ground Glass Physical CoC revision research policy", () => {
     expect(isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
       GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
       "r187",
-    )).toBe(false);
+    )).toBe(true);
     expect(isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
       GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
       "r187",
@@ -45,6 +46,13 @@ describe("Ground Glass Physical CoC revision research policy", () => {
       GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
       "r186",
     )).toBe(true);
+    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "physical-coc",
+    )).toMatchObject({
+      evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+      status: "research-only",
+      testedContext: { rendererRevision: "r187", executionApi: "webgpu" },
+    });
 
     const webgl2ResearchRecord = {
       ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,

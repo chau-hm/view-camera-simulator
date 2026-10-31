@@ -5,7 +5,11 @@ import { computePhysicalBlurFootprint, deriveOrthonormalPlaneBasis } from "../..
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import geometry, { referenceObjects } from "../../scenes/architectureRiseGeometry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
-import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
+import {
+  ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+} from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
 import type { GroundGlassPhysicalCocProbeUv } from "../../render/webgpu/groundGlassPhysicalCocNodes";
 import type {
   GroundGlassPhysicalCocControlledKernelCase,
@@ -1308,6 +1312,14 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
     JSON.parse(JSON.stringify(window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [])) as
       Array<Record<string, unknown>>,
   );
+  const m4CompatibilityEvidence = GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+    (feature) => feature.feature === "physical-coc",
+  );
+  expect(m4CompatibilityEvidence).toMatchObject({
+    status: "research-only",
+    evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+    testedContext: { rendererFamily: "webgpu-renderer", executionApi: "webgpu", rendererRevision: "r187" },
+  });
 
   await attachGroundGlassM7dEvidence(testInfo, "ground-glass-m4-physical-coc-native-evidence.json", {
       browserVersion: page.context().browser()?.version() ?? "unknown",
@@ -1319,6 +1331,7 @@ test("native M4 app adapter reconstructs Architecture Rise depth and writes phys
       testInvocation: process.env.GROUND_GLASS_EVIDENCE_TEST_INVOCATION ?? "missing",
       environment: "headed native-required Chrome",
       sceneId: "architecture-rise",
+      m4CompatibilityEvidence,
       rendererFamily: readback.rendererFamily,
       actualExecutionApi: readback.actualExecutionApi,
       internalFallback: readback.internalFallback,

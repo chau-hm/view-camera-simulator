@@ -64,14 +64,14 @@ describe("Ground Glass M5 aperture-gather research policy", () => {
     });
   });
 
-  it("does not let the new r187 Raw RTT qualification authorize historical M4/M5 research", () => {
+  it("does not let r187 Raw RTT or M4 research evidence authorize historical M5 research", () => {
     expect(resolveGroundGlassApertureGatherResearchEligibility({
       ...baseEligibilityInput(),
       expectedRendererRevision: "r187",
       compatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
     })).toEqual({
       status: "unsupported",
-      reason: "physical-coc-evidence-does-not-match-candidate",
+      reason: "aperture-gather-evidence-does-not-match-candidate",
     });
   });
 
