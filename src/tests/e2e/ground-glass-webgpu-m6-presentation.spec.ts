@@ -1069,6 +1069,11 @@ const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (
   page: Page,
   failurePoint: GroundGlassWebGpuTestFailurePoint,
   failedOperation: "presentation" | "textureDisplay" | "composite",
+  options: Readonly<{
+    scenarioId?: string;
+    failureReasonIncludes?: string;
+    requireInjectionConsumed?: boolean;
+  }> = {},
 ): Promise<void> => {
   await startM6NativeLowPage(page);
   const pane = paneFor(page);
@@ -1101,15 +1106,18 @@ const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (
     operation: failedOperation,
   });
   if (failure?.kind !== "failure") throw new Error("M6 injected failure was not observed");
-  expect(failure.reason).toContain(`at ${failurePoint}`);
+  expect(failure.reason).toContain(options.failureReasonIncludes ?? `at ${failurePoint}`);
+  if (options.requireInjectionConsumed) {
+    expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.failurePoint ?? null)).toBeNull();
+  }
   expect(events.some((event) => event.kind === "frame-completed" &&
     event.generationId === failure.generationId && event.requestId === failedRequestId)).toBe(false);
   expect(new Set(events.filter((event) => event.kind === "attempt").map((event) => event.generationId)))
     .toEqual(new Set([failure.generationId]));
   expect(await pane.getAttribute("data-actual-execution-api")).not.toBe("webgpu");
-  const scenarioId = failedOperation === "presentation" ? "presentation-pass-failure"
+  const scenarioId = options.scenarioId ?? (failedOperation === "presentation" ? "presentation-pass-failure"
     : failedOperation === "composite" ? "m5-composite-incomplete-failure"
-      : "final-display-failure";
+      : "final-display-failure");
   await persistM7fLifecycleEvidence(page, scenarioId, {
     failurePoint,
     failedOperation,
@@ -1171,7 +1179,12 @@ test("native M6 rejects an incomplete M5 composite before WebGL fallback", async
   await assertM6RuntimeFailureFallsBackWithoutPublishingDoF(
     page,
     "aperture-composite-after-submit",
-    "composite",
+    "presentation",
+    {
+      scenarioId: "m5-composite-incomplete-failure",
+      failureReasonIncludes: "M6 presentation requires completed M4 and M5 inputs",
+      requireInjectionConsumed: true,
+    },
   );
 });
 

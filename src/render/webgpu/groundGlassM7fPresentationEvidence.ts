@@ -865,10 +865,16 @@ const lifecycleIssues = (
     }
     const expectedOperation = id === "optical-resource-initialization-failure" ? "initialize-m6-optical-resources"
       : id === "presentation-node-initialization-failure" ? "initialize-m6-presentation-node"
-        : id === "m5-composite-incomplete-failure" ? "composite"
-          : id === "presentation-pass-failure" ? "presentation"
-            : id === "final-display-failure" ? "textureDisplay"
-              : null;
+        : id === "m5-composite-incomplete-failure" || id === "presentation-pass-failure" ? "presentation"
+          : id === "final-display-failure" ? "textureDisplay"
+            : null;
+    if (id === "m5-composite-incomplete-failure" &&
+        (artifact.failurePoint !== "aperture-composite-after-submit" ||
+         artifact.failedOperation !== "presentation" ||
+         typeof failure?.reason !== "string" ||
+         !failure.reason.includes("M6 presentation requires completed M4 and M5 inputs"))) {
+      issues.push("incomplete-m5-composite-not-rejected-before-presentation");
+    }
     if (!text(failure?.attemptId) || !text(failure?.generationId) || !text(failure?.requestId) ||
         !text(failure?.operation) || (expectedOperation !== null && failure.operation !== expectedOperation) ||
         !text(failure?.reason) || cleanup?.generationId !== failure?.generationId ||

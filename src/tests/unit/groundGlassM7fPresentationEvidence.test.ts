@@ -277,8 +277,8 @@ const createM5CompositeFailureCapture = () => {
   const failure = capture.events.find((event) => event.kind === "failure");
   if (!failure) throw new Error("M5 composite failure fixture is incomplete");
   failure.stage = "runtime";
-  failure.operation = "composite";
-  failure.reason = "injected failure at aperture-composite-after-submit";
+  failure.operation = "presentation";
+  failure.reason = "M6 presentation requires completed M4 and M5 inputs for the exact accepted request and renderer generation";
   capture.events.splice(1, 0, {
     kind: "renderer-mounted",
     attemptId: "attempt-failure",
@@ -290,7 +290,11 @@ const createM5CompositeFailureCapture = () => {
     executionApi: "webgpu",
     internalFallback: "none",
   } as unknown as typeof capture.events[number]);
-  return capture;
+  return {
+    ...capture,
+    failurePoint: "aperture-composite-after-submit",
+    failedOperation: "presentation",
+  };
 };
 
 const createRetiredM6cCapture = () => {
@@ -725,9 +729,9 @@ describe("M7F r187 presentation evidence replay", () => {
     });
     expect(scenario(bundle, "m5-composite-incomplete-failure").status).toBe("passed");
 
-    capture.events.find((event) => event.kind === "failure")!.operation = "presentation";
+    capture.failurePoint = "m6-presentation-before-render";
     expect(scenario(bundle, "m5-composite-incomplete-failure").issues)
-      .toContain("m6-failure-cleanup-generation-or-operation-identity-invalid");
+      .toContain("incomplete-m5-composite-not-rejected-before-presentation");
   });
 
   it("accepts stale M6C readback retirement only after SPA navigation unmounts the host", () => {
