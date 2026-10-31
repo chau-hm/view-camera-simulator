@@ -39,7 +39,7 @@ The scoped result is **research-qualified for the tested environment**. Eight re
 | Actual API / internal fallback | `webgpu` / `none` |
 | Trusted harness | Native-required, Raw pilot, M4 research, explicit r187 qualification and test seam flags all observed true |
 | Native capture source | `7118694af4a32a0827e5575519dc49be82c3b23e` |
-| Evaluator | `m7d-physical-coc-evidence-v1`; it independently checks runtime identity, CPU vectors, readback, storage bits, host acceptance and report inventory |
+| Evaluator | `m7d-physical-coc-evidence-v2`; it independently recomputes the CPU oracle from persisted inputs and checks runtime identity, readback, storage bits, host acceptance and report inventory |
 
 The application test file also contains historical r186 assertions. Those tests were not relabeled or run as r187 evidence. The r187 run used `ground-glass-webgpu-physical-coc-app.spec.ts` with the exact trusted flags stored in each capture. The focused M4 failure-host invocation separately exercised the physical writer, validity writer, and unsupported-storage cases. No native test was skipped for missing WebGPU; the required native project completed all selected tests.
 
@@ -116,6 +116,40 @@ Production-preview isolation passed 2 tests normally and 2 more with hostile Raw
 The focused evidence run passed **203 tests in 22 suites**, including the M7D capture/report evaluator, M4 policy and contract, backend selection, M5 denial, M6 presentation policy, M7C lifecycle and host-state tests. The full `npm test` run passed **305 files / 3,206 tests**. `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build` all passed. Native E2E passed **3/3 M4 application tests**, **3/3 M4 failure-host tests**, **1/1 M3 Raw pilot regression**, and **8/8 Raw RTT regressions**. Production preview passed **2/2 baseline** and **2/2 hostile-flag** tests. The broad local Playwright suite was not run; focused native lifecycle and production-preview projects exercised this bounded change. Both hosted CI runs passed for published source head `e2e046bfc1d34f70dd20eb6eb6eed504008aa78d` (run IDs `41219180500` and `41219124788`); deployment jobs were skipped.
 
 Qualification is limited to the captured Chrome/macOS arm64 environment. Cross-browser/device behavior and hardware acceleration are not claimed. The M4 code path does not run M5 Gather, B1 reconstruction, the M5 research composite, or M6 presentation. M5/M6 require their own r187 numerical, storage, depth-confidence, lifecycle, and presentation evidence. M4 r187 research qualification does not complete M7, authorize M8/M9, or enable production WebGPU.
+
+## M7D Review-Fix Round 1 — Independent Oracle and Report Integrity
+
+This review-fix closes three report-integrity findings without changing the native renderer, M4 shader, stored measurements, optical math, or frozen GPU tolerances. The persisted native capture remains sourced from `7118694af4a32a0827e5575519dc49be82c3b23e`; no GPU recapture was needed. The report now names evaluator contract `m7d-physical-coc-evidence-v2`, separately from M4 feature evidence `m4-architecture-rise-physical-coc-native-r187-v1`.
+
+### F1 — Recomputed CPU oracle and input integrity
+
+Before the correction, executed mutation tests confirmed the evaluator accepted the committed `ellipse-circular` result after its recorded lens normal was changed to zero and after it was changed to a materially different finite direction. The serialized CPU reference, GPU calculation, storage, and validity fields had remained untouched. The evaluator was using the serialized CPU object as its oracle.
+
+The v2 evaluator rebuilds the `computePhysicalBlurFootprint()` input from each case's persisted controlled object point and full recorded lens/film geometry. It validates all required vector shapes and finite components, positive focal length and f-number, normalized sample coordinates, and finite metre-to-millimetre conversions. Lens centre and film point are converted from metres to millimetres once; the film-plane signed distance is recomputed from the converted point and recorded normal. Normals and bases stay dimensionless. The evaluator does not regenerate fixture values from a case ID and does not use GPU values to calculate the oracle.
+
+Each of the 17 captured vectors is also compared with its committed SHA-256 input identity. This detects edited vectors even when a changed basis is numerically invariant for a circular aperture. These digests identify the controlled vectors; they are not signatures or a substitute for the capture's source SHA and test provenance.
+
+The recomputed `valid`, signed CoC, and ellipse radii must match the serialized CPU reference within `1e-12 mm`; valid orientation is compared modulo π within `1e-12 rad`. The evaluator reports the maximum reference discrepancies separately. GPU values are then checked against the recomputed result using the existing `max(0.0005 mm, 0.00002 × |CPU|)` tolerance and `0.003 rad` modulo-π limit. Those limits were not changed. The required `invalid-geometry-lens-basis` control remains a valid negative-control test only when recomputation independently returns invalid, GPU validity is `3`, and all stored channels are zero. An invalid result in another case, or valid geometry substituted into this control, is rejected.
+
+The permanent tests use the persisted capture, not a second test-only optics implementation. They reject mutated lens/film normals and bases, film point, focal length, aperture, object point, lens centre and unit scale; altered CPU references (including CPU/GPU values changed together); missing or non-finite inputs; invalid-control substitution; unexpected/duplicate CPU references; mismatched GPU probe identity; GPU sign/axis/orientation mutations; and storage/focal-contract violations. Positive controls retain all 17 cases, invalid geometry, exact zero, signed-small values, representable near-limit storage, and zeroed over-range storage.
+
+### F2 — Scenario identity fixes the evidence kind
+
+The report now fixes the eight required scenario IDs to their evidence classes: six native scenarios, `m5-m6-isolation` as `unit`, and `production-webgl-isolation` as `production-preview`. Each report value must match this mapping exactly. Native runtime, ordered-event, artifact, and limitation checks are selected from the trusted scenario mapping, so changing a native scenario's serialized kind cannot bypass those checks. The executed pre-fix mutation changed `native-r187-physical-kernel` from `native` to `unit`; the old evaluator accepted it. New negative controls cover all wrong-kind directions, missing and unknown kinds, unknown/duplicate IDs, and missing runtime evidence after a native label is altered. The unit and production-preview scenarios are not required to provide native GPU identity.
+
+### F3 — Computed inventory and qualification
+
+Before the correction, executed mutations showed that the prior evaluator accepted an independently altered `qualification` and an independently altered `scenarioCount` (including omitted/unknown qualification and 7/9/missing count variants). The v2 evaluator returns report validation status, computed status counts, computed scenario count, and computed qualification as separate fields. It requires exactly the eight known scenario identities, exact status-count keys with finite non-negative integers, and `scenarioCount` equal to the inventory length.
+
+Qualification is derived only after inventory, evidence provenance, runtime requirements, report counts, M4 revision, M5/M6 denial, and production isolation have been validated. A structurally consistent inventory with eight passed scenarios and no evidence issues derives `research-qualified-for-tested-environment`; a consistent inventory containing blocked or not-run cases derives `partially-qualified`; a failed scenario or invalid report/evidence derives `not-qualified`. A declared value that differs from the computed decision fails report validation. Tests cover all three decisions and the requested count, qualification, and passed-to-blocked/failed mutations.
+
+### Review-fix validation and preserved boundaries
+
+The F1, F2, and F3 defects were reproduced with executed tests before the evaluator change. The v2 evaluator and persisted capture/report then passed the focused M7D integrity suite. The M7D evaluator suite contains 71 tests: 65 invalid-evidence mutation cases and six positive/provenance controls. The broader focused validation passed **247 tests in 22 suites**; the full `npm test` passed **3,250 tests in 305 files**. Typecheck, lint, CSS structure, and production build all passed. The focused Vitest JSON artifact, source commit `2538a0f5bcdff247d1bd356140c5e0e61dd8a0d4`, and computed evaluator results are recorded in the machine-readable report. The existing native capture's source SHA and original evaluator provenance `08e4a5d0394f37edb17705f0c4445c545ca5203e` remain historical and unchanged.
+
+No native GPU E2E suite was rerun: the correction changes only the Node-side evidence evaluator, unit regressions, report contract metadata and this document. The checked-in r187 native capture passes v2 with zero CPU-reference recomputation error and zero modulo-π reference orientation error; its existing native provenance is preserved. The report still computes **8 passed, 0 failed, 0 blocked, 0 not-run**, with qualification `research-qualified-for-tested-environment` and compatibility status `research-only`.
+
+M4 remains research-only. M3 Raw RTT retains its separate development authorization. r187 M5/M6 remain unqualified and denied; historical r186 M4/M5/M5Q/M6 records are unchanged. M7 remains incomplete, M8/M9 are not authorized, and production Ground Glass remains WebGL-only.
 
 ## Revision-bound decision
 

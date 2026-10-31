@@ -1128,6 +1128,55 @@
   "scenarioCount": 8,
   "validation": {
     "testedSourceSha": "08e4a5d0394f37edb17705f0c4445c545ca5203e",
+    "reviewFixRound1": {
+      "evaluatorRevision": "m7d-physical-coc-evidence-v2",
+      "evaluatorSourceSha": "2538a0f5bcdff247d1bd356140c5e0e61dd8a0d4",
+      "historicalEvaluatorSourceSha": "08e4a5d0394f37edb17705f0c4445c545ca5203e",
+      "nativeCaptureSourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "nativeRecapture": "not-run; evaluator, report validation, tests, and documentation only",
+      "preFixReproduction": {
+        "reviewedSourceSha": "8acd181031d9f91efe78ff1bd7e503abee3ac42a",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test -- src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts",
+        "testsPassed": 37,
+        "testsFailed": 0,
+        "f1ZeroNormalAccepted": true,
+        "f1MaterialFiniteNormalAccepted": true,
+        "f2NativeToUnitRelabelAccepted": true,
+        "f3QualificationMutationAccepted": true,
+        "f3ScenarioCountMutationAccepted": true
+      },
+      "focusedMutationValidation": {
+        "testSuitesPassed": 22,
+        "testSuitesFailed": 0,
+        "testsPassed": 247,
+        "testsFailed": 0,
+        "negativeMutationTests": 65,
+        "positiveControls": 6,
+        "artifact": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-review-fix-focused-vitest.json",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test -- --reporter=json --outputFile=docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-review-fix-focused-vitest.json src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts src/tests/unit/groundGlassPhysicalCocPolicy.test.ts src/tests/unit/groundGlassBackendPolicy.test.ts src/tests/unit/groundGlassPhysicalCocContract.test.ts src/tests/unit/groundGlassApertureGatherPolicy.test.ts src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassM6Presentation.test.ts"
+      },
+      "oracleRevalidation": {
+        "captureEvaluation": "passed",
+        "recomputedCases": 17,
+        "maximumCpuReferenceErrorMm": 0,
+        "maximumCpuReferenceOrientationErrorModuloPiRad": 0,
+        "reportEvaluation": "passed",
+        "computedCounts": { "passed": 8, "failed": 0, "blocked": 0, "not-run": 0 },
+        "computedScenarioCount": 8,
+        "computedQualification": "research-qualified-for-tested-environment"
+      },
+      "fullValidation": {
+        "sourceSha": "2538a0f5bcdff247d1bd356140c5e0e61dd8a0d4",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test",
+        "testFilesPassed": 305,
+        "testsPassed": 3250,
+        "testsFailed": 0,
+        "typecheck": "passed",
+        "lint": "passed",
+        "css": "passed",
+        "productionBuild": "passed"
+      }
+    },
     "focusedUnit": {
       "testSuitesPassed": 22,
       "testsPassed": 203,
