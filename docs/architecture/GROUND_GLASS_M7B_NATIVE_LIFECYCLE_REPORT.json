@@ -1,7 +1,7 @@
 {
   "schemaVersion": "ground-glass-m7b-native-lifecycle-v1",
   "milestone": "M7B",
-  "evaluatorRevision": "m7b-lifecycle-evidence-v1",
+  "evaluatorRevision": "m7b-lifecycle-evidence-v2",
   "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
   "base": {
     "branch": "main",
@@ -14,9 +14,9 @@
   },
   "qualification": "partially-qualified",
   "scenarioCounts": {
-    "passed": 12,
+    "passed": 6,
     "failed": 0,
-    "blocked": 4,
+    "blocked": 10,
     "not-run": 1
   },
   "phaseA": {
@@ -24,7 +24,7 @@
     "rootCause": "The earlier retry invocation omitted VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true. Trusted application policy therefore remained on WebGL. The test waited for runtime-observed native evidence that could not occur and timed out before recovery actions.",
     "correctedInvocation": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
     "result": "Corrected suite passed 12; a new-session attempt reported WebGPURenderer / webgpu / no internal fallback. No initialization hang was observed.",
-    "initializationAfterTargetOrdering": "renderer.init() \u2192 runtime backend observation \u2192 target/display setup \u2192 injected failure \u2192 owned cleanup \u2192 host fallback; injection is before host renderer-mounted evidence by design."
+    "initializationAfterTargetOrdering": "renderer.init() → runtime backend observation → target/display setup → injected failure → owned cleanup → host fallback; injection is before host renderer-mounted evidence by design."
   },
   "nativeRuntime": {
     "browser": "Chrome 156.0.8078.76",
@@ -130,10 +130,10 @@
     {
       "id": "m7b-phase-a-timeout-diagnosis",
       "title": "Diagnose prior M7A native timeout and confirm mounted runtime after authorization",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-webgpu-runtime",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7A explicit retry and new session are developer actions, preserve history, and never loop",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › M7A explicit retry and new session are developer actions, preserve history, and never loop",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -217,7 +217,8 @@
       ],
       "limitations": [
         "Prior invocation omitted VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true; trusted policy stayed WebGL, so runtime-observed could not occur. Corrected run proves a test-harness configuration defect, not an initialization hang.",
-        "Selected new-session generation is proven by runtime-observed and renderer-mounted events."
+        "Selected new-session generation is proven by runtime-observed and renderer-mounted events.",
+        "Review-Fix Round 1: historical summary claims current publication, but this retained capture omits the host-frame-result and (when applicable) replacement WebGL mount events required by the strengthened fail-closed evaluator. Native tests were not rerun; publication qualification remains blocked pending trustworthy recapture."
       ]
     },
     {
@@ -226,7 +227,7 @@
       "status": "blocked",
       "evidenceClass": "native-webgpu-pre-mount-failure",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -331,7 +332,7 @@
       "status": "blocked",
       "evidenceClass": "native-webgpu-runtime-failure",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D2 controlled scene render submission rejection fails the whole frame and falls back only after confirmed cleanup",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D2 controlled scene render submission rejection fails the whole frame and falls back only after confirmed cleanup",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -450,10 +451,10 @@
     {
       "id": "m7b-b3-async-retirement-and-latest-request",
       "title": "Held queue work, retirement and latest accepted request publication",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-webgpu-runtime-failure",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -563,7 +564,8 @@
         "D5 native held queue/retirement case in this spec."
       ],
       "limitations": [
-        "The tested held-operation and out-of-order fallback controls prove latest request wins after confirmed cleanup; not every queue/readback race on every adapter."
+        "The tested held-operation and out-of-order fallback controls prove latest request wins after confirmed cleanup; not every queue/readback race on every adapter.",
+        "Review-Fix Round 1: historical summary claims current publication, but this retained capture omits the host-frame-result and (when applicable) replacement WebGL mount events required by the strengthened fail-closed evaluator. Native tests were not rerun; publication qualification remains blocked pending trustworthy recapture."
       ]
     },
     {
@@ -572,7 +574,7 @@
       "status": "passed",
       "evidenceClass": "native-webgpu-cleanup-failure",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D4 failed disposal keeps the host unavailable and prevents a replacement generation",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D4 failed disposal keeps the host unavailable and prevents a replacement generation",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -675,10 +677,10 @@
     {
       "id": "m7b-c1-device-loss-equivalent",
       "title": "Injected device-loss equivalent uses native adapter failure and cleanup",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-webgpu-device-loss-equivalent",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7A injected device loss uses the native runtime failure and cleanup path",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › M7A injected device loss uses the native runtime failure and cleanup path",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -804,16 +806,17 @@
         "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
       ],
       "limitations": [
-        "Controlled loss equivalent only; no spontaneous hardware/driver loss is claimed."
+        "Controlled loss equivalent only; no spontaneous hardware/driver loss is claimed.",
+        "Review-Fix Round 1: historical summary claims current publication, but this retained capture omits the host-frame-result and (when applicable) replacement WebGL mount events required by the strengthened fail-closed evaluator. Native tests were not rerun; publication qualification remains blocked pending trustworthy recapture."
       ]
     },
     {
       "id": "m7b-c2-test-destroyed-gpu-device-lost-promise",
       "title": "Test destroys owned GPUDevice while queue completion is held and observes device.lost",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-webgpu-device-destroy-lost-promise",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -942,7 +945,8 @@
       ],
       "limitations": [
         "The actual GPUDevice.lost Promise resolved after test-only destroy(); distinct from spontaneous hardware/driver loss.",
-        "Held queue used the existing adapter failure callback, cleanup and WebGL fallback path."
+        "Held queue used the existing adapter failure callback, cleanup and WebGL fallback path.",
+        "Review-Fix Round 1: historical summary claims current publication, but this retained capture omits the host-frame-result and (when applicable) replacement WebGL mount events required by the strengthened fail-closed evaluator. Native tests were not rerun; publication qualification remains blocked pending trustworthy recapture."
       ]
     },
     {
@@ -951,7 +955,7 @@
       "status": "blocked",
       "evidenceClass": "native-webgpu-runtime",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -1067,10 +1071,10 @@
     {
       "id": "m7b-d4-d5-scene-navigation-and-remount",
       "title": "Scene navigation away/back and incidental host remount preserve the consumed attempt",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-webgpu-pre-mount-failure",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -1166,8 +1170,9 @@
         "Terminal WebGL remount E6 in the same spec."
       ],
       "limitations": [
-        "After confirmed fallback browser navigated Architecture Rise \u2192 Interior Corner \u2192 Architecture Rise; adapter-attempt list remained the failed generation only.",
-        "No pending Architecture Rise readback crossed the scene switch."
+        "After confirmed fallback browser navigated Architecture Rise → Interior Corner → Architecture Rise; adapter-attempt list remained the failed generation only.",
+        "No pending Architecture Rise readback crossed the scene switch.",
+        "Review-Fix Round 1: historical summary claims current publication, but this retained capture omits the host-frame-result and (when applicable) replacement WebGL mount events required by the strengthened fail-closed evaluator. Native tests were not rerun; publication qualification remains blocked pending trustworthy recapture."
       ]
     },
     {
@@ -1217,10 +1222,10 @@
     {
       "id": "m7b-e1-e4-retry-session-and-rejected-actions",
       "title": "Explicit retry, failed retry, new session, unknown action rejection and owner authorization",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-webgpu-runtime",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7A explicit retry and new session are developer actions, preserve history, and never loop",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › M7A explicit retry and new session are developer actions, preserve history, and never loop",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -1307,7 +1312,8 @@
       ],
       "limitations": [
         "Native E2E verifies retry reuses the session at epoch 1; failed retry stays consumed with failure history count 2; force-retry is rejected without a generation change; new owner-issued session at epoch 2 mounts actual WebGPU.",
-        "Wrong-session, unconsumed budget, missing capability/eligibility, and failed/uncertain cleanup rejections are verified by pure owner/policy tests."
+        "Wrong-session, unconsumed budget, missing capability/eligibility, and failed/uncertain cleanup rejections are verified by pure owner/policy tests.",
+        "Review-Fix Round 1: historical summary claims current publication, but this retained capture omits the host-frame-result and (when applicable) replacement WebGL mount events required by the strengthened fail-closed evaluator. Native tests were not rerun; publication qualification remains blocked pending trustworthy recapture."
       ]
     },
     {
@@ -1363,7 +1369,7 @@
       "status": "passed",
       "evidenceClass": "native-webgl2",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
-      "testId": "ground-glass-webgpu-failure-host.spec.ts \u203a native M3 WebGPU adapter-to-host controlled failure recovery \u203a M7B current WebGL context loss is terminal across client-side remount",
+      "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › M7B current WebGL context loss is terminal across client-side remount",
       "testProject": "chrome-native-webgpu",
       "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
       "threeRevision": "r186",
@@ -1635,5 +1641,39 @@
         "Unrelated teaching-scene UI was not modified; same failure was previously reproduced on clean origin/main."
       ]
     }
-  ]
+  ],
+  "reviewFixRound1": {
+    "reviewedHead": "f98124f4ec5bd02b3b281b85cbdf96f3450df90e",
+    "evaluatorRevision": "m7b-lifecycle-evidence-v2",
+    "findings": [
+      "native-runtime-event-consistency",
+      "cleanup-host-acknowledgement-and-replacement-order",
+      "host-observed-publication-freshness"
+    ],
+    "captureProvenance": "Historical sourceHeadSha and original event observations retained. No native recapture performed in this patch. Newly added host-frame-result events apply to future native runs only.",
+    "qualificationImpact": {
+      "original": {
+        "passed": 12,
+        "failed": 0,
+        "blocked": 4,
+        "not-run": 1
+      },
+      "current": {
+        "passed": 6,
+        "failed": 0,
+        "blocked": 10,
+        "not-run": 1
+      },
+      "downgradedDueToMissingPublicationEvidence": [
+        "m7b-phase-a-timeout-diagnosis",
+        "m7b-b3-async-retirement-and-latest-request",
+        "m7b-c1-device-loss-equivalent",
+        "m7b-c2-test-destroyed-gpu-device-lost-promise",
+        "m7b-d4-d5-scene-navigation-and-remount",
+        "m7b-e1-e4-retry-session-and-rejected-actions"
+      ]
+    },
+    "verification": "New unit mutation coverage added; final hosted CI outcome must be checked on the review-fix HEAD.",
+    "boundaries": "M7 remains incomplete; production WebGPU disabled."
+  }
 }
