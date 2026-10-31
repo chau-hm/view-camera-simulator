@@ -1,4 +1,7 @@
-import type { GroundGlassSceneCompatibility } from "../backend/groundGlassSceneCompatibility";
+import type {
+  GroundGlassFeatureCompatibility,
+  GroundGlassSceneCompatibility,
+} from "../backend/groundGlassSceneCompatibility";
 
 /**
  * Manual scene-source revision for the narrowly verified Architecture Rise Raw RTT path.
@@ -9,6 +12,12 @@ export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION =
 
 /** Verification evidence is bound to the installed r186 renderer API/runtime. */
 export const ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION = "r186";
+
+/** Native r187 evidence is separate and qualifies only the Raw RTT feature. */
+export const ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION = "r187";
+
+export const ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION =
+  "m3-architecture-rise-raw-rtt-native-r187-v1";
 
 export const ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION =
   "m3-architecture-rise-raw-rtt-native-v1";
@@ -126,4 +135,55 @@ export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibilit
       ],
     },
   ],
+};
+
+const architectureRiseRawRttR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "verified" }
+> = {
+  feature: "raw-rtt",
+  status: "verified",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 WebGPURenderer native WebGPU backend in Chrome 156 on macOS 27 arm64",
+  },
+  verificationEvidence: [
+    "native-required r187 application-host run rendered Raw RTT on WebGPURenderer/webgpu with no internal fallback, preserved contentful output during focus/aperture changes, and confirmed cleanup on SPA scene transition",
+    "native-required r187 Raw RTT fixture verified asymmetric Raw/Upright landmarks, full and off-center crop, and inspection-window source correspondence",
+    "the r187 fixture verified target resize, stale-request rejection, exact resource cleanup, readback rejection, and allocation-failure disposal without publishing retired output",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: [],
+  },
+  knownIncompatibilities: [],
+};
+
+/**
+ * New native r187 evidence qualifies only M3 Raw RTT. Existing M4/M5 evidence remains bound
+ * to r186 inside the original record and cannot be reused to authorize those research passes.
+ */
+export const GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY: GroundGlassSceneCompatibility = {
+  ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
+  features: [
+    architectureRiseRawRttR187Feature,
+    ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.filter(
+      (feature) => feature.feature !== "raw-rtt",
+    ),
+  ],
+};
+
+/** Selects renderer evidence by the installed Three.js revision; unknown revisions fail closed. */
+export const resolveGroundGlassRawWebGpuCompatibility = (
+  rendererRevision: string,
+): GroundGlassSceneCompatibility | null => {
+  if (rendererRevision === "r186") return GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY;
+  if (rendererRevision === ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION) {
+    return GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY;
+  }
+  return null;
 };

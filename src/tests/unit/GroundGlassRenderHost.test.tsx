@@ -177,9 +177,9 @@ const webGpuDetails = (
   backend: "webgpu" as const,
   sceneId: request.identity.sceneId,
   requestId: request.identity.requestId,
-  rendererRevision: "r186",
+  rendererRevision: "r187",
   sceneSourceRevision: "architecture-rise-raw-rtt-v1",
-  verificationEvidenceRevision: "m3-architecture-rise-raw-rtt-native-v1",
+  verificationEvidenceRevision: "m3-architecture-rise-raw-rtt-native-r187-v1",
   sceneSubject: {
     realization: "registered-ground-glass-profile" as const,
     mounted: true as const,
@@ -559,10 +559,9 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
 
   it("routes explicit retry and new-session actions through the app owner and preserves failed epochs", async () => {
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_RAW_PILOT", "true");
-    vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION", "true");
     Object.defineProperty(navigator, "gpu", { value: {}, configurable: true });
     const owner = new GroundGlassRenderHostState();
-    const request = createGroundGlassRequestInput({ rawDebug: false });
+    const request = createGroundGlassRequestInput({ rawDebug: true });
     const view = render(hostTree(owner, request));
 
     await waitFor(() => expect(recoveryActionHarness.handlers.has("default")).toBe(true));

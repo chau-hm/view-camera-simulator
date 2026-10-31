@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { REVISION } from "three";
 import type { DerivedOpticsState } from "../types/optics";
 import { GroundGlassRenderHost } from "./GroundGlassRenderHost";
 import type { GroundGlassBackendDiagnostics } from "./backend/groundGlassBackendDiagnostics";
@@ -69,6 +70,7 @@ export const GroundGlassRenderSurface = ({
     return (
       <div
         data-testid="ground-glass-rtt"
+        data-three-revision={import.meta.env.DEV ? REVISION : undefined}
         data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
         data-renderer-generation={backendDiagnostics?.rendererGeneration?.generationId}
@@ -162,6 +164,8 @@ export const GroundGlassRenderSurface = ({
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
         data-rtt-logical-width={rttRuntimeInfo?.logicalWidthPx}
         data-rtt-logical-height={rttRuntimeInfo?.logicalHeightPx}
+        data-rtt-resolution-scale={rttRuntimeInfo?.resolutionScale}
+        data-rtt-effective-device-pixel-ratio={rttRuntimeInfo?.effectiveDevicePixelRatio}
         data-rtt-internal-width={rttRuntimeInfo?.internalWidthPx}
         data-rtt-internal-height={rttRuntimeInfo?.internalHeightPx}
         data-rtt-canvas-css-width={rttRuntimeInfo?.canvasCssWidthPx}

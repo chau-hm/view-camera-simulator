@@ -856,7 +856,7 @@ test("Ground Glass WebGL control renders the registered subject through an offsc
   expect(targetReadback.sampleCount).toBeGreaterThan(0);
   expect(targetReadback.luminanceRange).toBeGreaterThan(20);
   expect(targetReadback.contentfulSampleCount).toBeGreaterThan(0);
-  expect(diagnostics.browser.threeRevision).toBe("186");
+  expect(diagnostics.browser.threeRevision).toBe("187");
   await testInfo.attach("ground-glass-webgl-target-and-display-evidence.json", {
     body: JSON.stringify(diagnostics, null, 2),
     contentType: "application/json",
@@ -908,6 +908,7 @@ test("native-required WebGPU Ground Glass RTT samples and presents an offscreen 
   const fixture = page.getByTestId("ground-glass-webgpu-fixture");
   await expect(fixture).not.toHaveAttribute("data-status", "starting", { timeout: 120_000 });
   const diagnostics = await readDiagnostics(page);
+  expect(diagnostics.browser.threeRevision).toBe("187");
   expect(diagnostics.webgpu.runtime?.rendererFamily).toBe("webgpu-renderer");
   expect(diagnostics.webgpu.runtime?.executionBackend).toBe("webgpu");
   expect(diagnostics.webgpu.runtime?.targetKind).toBe("THREE.RenderTarget");

@@ -616,6 +616,54 @@ test("normal Architecture Rise route keeps WebGL as default and runs an explicit
   expect(consoleErrors).toEqual([]);
 });
 
+test("r187 native public Architecture Rise Observer pilot preserves WebGL Ground Glass", async ({ page }, testInfo) => {
+  test.skip(!nativeWebGpuRequired, "Requires OBSERVER_NATIVE_WEBGPU_REQUIRED=1 and headed Chrome native WebGPU");
+  test.setTimeout(180_000);
+  expect(REVISION).toBe("187");
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
+
+  const observer = page.getByTestId("scene-canvas");
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
+  await expect(observer).toHaveAttribute("data-observer-selection-reason", "webgpu-pilot-approved");
+  await expect(observer).toHaveAttribute("data-observer-three-revision", "187");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgpu-renderer");
+  await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgpu");
+  await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-api-present", "true");
+  await expect(observer).toHaveAttribute("data-observer-adapter-availability", "available");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
+  await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
+  await expect(observer).toHaveAttribute("data-observer-environment-status", "active", { timeout: 90_000 });
+  await expect(observer).toHaveAttribute("data-observer-shadow-map-status", "active");
+  await expect(observer).toHaveAttribute("data-observer-shadow-map-type", "pcf");
+  await expect(observer).toHaveAttribute("data-scene-subject-id", "architecture-rise");
+
+  const groundGlass = page.getByTestId("ground-glass-rtt").first();
+  await expect(groundGlass).toHaveAttribute("data-three-revision", "187");
+  await expect(groundGlass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
+  await expect(groundGlass).toHaveAttribute("data-actual-execution-api", "webgl2");
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
+
+  const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
+  await focus.focus();
+  await focus.press("End");
+  await expect(focus).toHaveValue("13000");
+  await page.getByRole("radiogroup", { name: "Aperture", exact: true })
+    .getByRole("radio", { name: "f/5.6" }).check();
+  await setStepRangeInput(page, "Rise", 22);
+  await setStepRangeInput(page, "Tilt", 0.4);
+  await setStepRangeInput(page, "Swing", -1.1);
+  await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
+  await captureCanvas(observer, testInfo, "r187-native-public-architecture-rise-observer");
+  await attachMountedObserverEvidence(testInfo, observer);
+  expect(pageErrors).toEqual([]);
+});
+
 test("full Architecture Rise scene has measurable subject, material, environment, lighting, interaction and lifecycle evidence", async ({ page, browser }, testInfo) => {
   // The real-framebuffer negative controls compile and render several material variants.
   test.setTimeout(900_000);

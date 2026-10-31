@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { selectGroundGlassBackend } from "../../render/backend/groundGlassBackendPolicy";
 import type { GroundGlassFeatureCompatibility } from "../../render/backend/groundGlassSceneCompatibility";
+import { resolveGroundGlassRawWebGpuCompatibility } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
 import {
   completeCapabilityPreflight,
   createSyntheticCompatibility,
@@ -67,6 +68,38 @@ describe("Ground Glass backend policy", () => {
   it("accepts the explicit development/test request path in test environment", () => {
     const result = selectGroundGlassBackend(createWebGpuPolicyInput({ environment: "test" }));
     expect(result).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
+  });
+
+  it("uses r187 native evidence for Raw RTT while keeping later revisions fail-closed", () => {
+    const r187Compatibility = resolveGroundGlassRawWebGpuCompatibility("r187");
+    expect(r187Compatibility).toBeTruthy();
+    const rawResult = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["raw-rtt"],
+      sceneCompatibility: r187Compatibility,
+      expectedCandidateRendererRevision: "r187",
+    }));
+    expect(rawResult).toMatchObject({
+      status: "selected",
+      selectedBackend: "webgpu",
+      policyDecision: {
+        status: "authorized",
+        sceneEligibility: { status: "eligible", evidenceRevisions: ["m3-architecture-rise-raw-rtt-native-r187-v1"] },
+      },
+    });
+
+    expect(resolveGroundGlassRawWebGpuCompatibility("r188")).toBeNull();
+    const unknownRevisionResult = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["raw-rtt"],
+      sceneCompatibility: resolveGroundGlassRawWebGpuCompatibility("r188"),
+      expectedCandidateRendererRevision: "r188",
+    }));
+    expect(unknownRevisionResult.selectedBackend).toBe("webgl");
+    expect(unknownRevisionResult.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["unknown-scene"] },
+    });
   });
 
   it("fails closed on an unknown request value", () => {

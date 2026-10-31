@@ -9,7 +9,10 @@ import {
   resolveGroundGlassApertureGatherSettings,
   type GroundGlassApertureGatherEligibilityInput,
 } from "../../render/webgpu/groundGlassApertureGatherPolicy";
-import { GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
+import {
+  GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
+  GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+} from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
 import type { GroundGlassSceneCompatibility } from "../../render/backend/groundGlassSceneCompatibility";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { createGroundGlassRequestInput } from "./groundGlassFrameRequestFixtures";
@@ -49,6 +52,27 @@ describe("Ground Glass M5 aperture-gather research policy", () => {
   it("allows the native M5 attempt only for the exact Architecture Rise request and matching research evidence", () => {
     expect(resolveGroundGlassApertureGatherResearchEligibility(baseEligibilityInput()))
       .toEqual({ status: "eligible" });
+  });
+
+  it("does not reuse the historical r186 research evidence for an r187 candidate", () => {
+    expect(resolveGroundGlassApertureGatherResearchEligibility({
+      ...baseEligibilityInput(),
+      expectedRendererRevision: "r187",
+    })).toEqual({
+      status: "unsupported",
+      reason: "physical-coc-evidence-does-not-match-candidate",
+    });
+  });
+
+  it("does not let the new r187 Raw RTT qualification authorize historical M4/M5 research", () => {
+    expect(resolveGroundGlassApertureGatherResearchEligibility({
+      ...baseEligibilityInput(),
+      expectedRendererRevision: "r187",
+      compatibility: GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+    })).toEqual({
+      status: "unsupported",
+      reason: "physical-coc-evidence-does-not-match-candidate",
+    });
   });
 
   it("requires the same native renderer revision for every M5 feature evidence record", () => {

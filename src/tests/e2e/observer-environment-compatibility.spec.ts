@@ -177,9 +177,12 @@ for (const renderer of ["webgl", "webgpu"] as const) {
       browser: navigator.userAgent,
       rendererFamily: element.getAttribute("data-renderer-family"),
       executionBackend: element.getAttribute("data-execution-backend"),
+      threeRevision: element.getAttribute("data-three-revision"),
       initialization: element.getAttribute("data-renderer-initialization"),
       environmentStatus: element.getAttribute("data-environment-status"),
       environmentTextureId: element.getAttribute("data-scene-environment-texture-id"),
+      environmentTextureIsCube: element.getAttribute("data-scene-environment-texture-is-cube"),
+      environmentMapping: element.getAttribute("data-scene-environment-mapping"),
       browserWebGpuApiPresent: element.getAttribute("data-browser-web-gpu-api-present"),
       background: element.getAttribute("data-visible-background"),
       shadowMapStatus: element.getAttribute("data-shadow-map-status"),
@@ -195,6 +198,9 @@ for (const renderer of ["webgl", "webgpu"] as const) {
       hostArchitecture: process.arch,
     };
     expect(runtime.rendererFamily).toBe(renderer === "webgpu" ? "webgpu-renderer" : "webgl-renderer");
+    expect(runtime.threeRevision).toBe("187");
+    expect(runtime.environmentTextureIsCube).toBe("true");
+    expect(runtime.environmentMapping).toBe("cube-reflection");
     expect(typeof runtime.executionBackend).toBe("string");
     expect(["true", "false"]).toContain(runtime.browserWebGpuApiPresent);
     if (renderer === "webgpu") {

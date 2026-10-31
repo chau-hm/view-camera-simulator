@@ -19,6 +19,7 @@ import {
   uv,
   vec4,
 } from "three/tsl";
+import type { Node } from "three/webgpu";
 import { groundGlassFootprintAxesToRttPixels } from "../../../render/groundGlassFootprintCoordinates";
 import {
   FULL_GROUND_GLASS_INSPECTION_WINDOW,
@@ -504,7 +505,7 @@ const buildBinary16RangeWriterNode = () => {
   return vec4(cocMm, majorMm, minorMm, fract(orientationRad.div(float(Math.PI))));
 };
 
-const decodeStoredSample = (candidate: StorageCandidate, sampled: ReturnType<typeof texture>) => {
+const decodeStoredSample = (candidate: StorageCandidate, sampled: Node<"vec4">) => {
   if (candidate === "half-float-mm") {
     return {
       cocMm: sampled.r,
@@ -666,7 +667,7 @@ const createStorageHandle = async (
     return errors;
   };
 
-  const createPassMaterial = (role: string, colorNode: ReturnType<typeof vec4>) => {
+  const createPassMaterial = (role: string, colorNode: Node<"vec4">) => {
     const material = new MeshBasicNodeMaterial({ toneMapped: false });
     // The built-in material color path clamps negative light and forces alpha
     // opaque. This fixture is a numeric storage probe, so use the explicit
@@ -758,7 +759,7 @@ const createStorageHandle = async (
       const writerPass = makePass(geometry, writer);
       writerPasses.set(candidate, writerPass);
 
-      const stored = texture(storageAllocation.target.texture, uv());
+      const stored = texture<"vec4">(storageAllocation.target.texture, uv());
       const decoded = decodeStoredSample(candidate, stored);
       const decoder = createPassMaterial(
         `${candidate}:consumer-decode-material`,

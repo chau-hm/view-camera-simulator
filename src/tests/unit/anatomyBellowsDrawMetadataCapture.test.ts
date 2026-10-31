@@ -101,6 +101,21 @@ const pipelineDescriptor = (blend?: Readonly<Record<string, unknown>>) => ({
   primitive: { topology: "triangle-list", frontFace: "ccw", cullMode: "back" },
 });
 
+const expectR187FailClosed = (
+  result: Awaited<ReturnType<typeof runAnatomyBellowsDrawMetadataCapture>>,
+) => {
+  expect(THREE.REVISION).toBe("187");
+  expect(result).toMatchObject({ status: "ok", feasibility: "F0", drawCount: 1 });
+  expect(result.drawObservations).toMatchObject([{
+    gpuBlendEnabled: null,
+    gpuBlendDescriptor: null,
+    nativePipelineBlendQualification: {
+      status: "unsupported",
+      reason: "unsupported-three-revision",
+    },
+  }]);
+};
+
 const nativeObservers: Array<Readonly<{
   observer: { restoreDevice: (device: object, generation: number, generationIdentity: object) => boolean; restoreAll: () => void };
   device: object;
@@ -157,7 +172,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     selected.geometry.dispose();
   });
 
-  it("records actual native pipeline blend state without copying or readback", async () => {
+  it("keeps the r186 native blend evidence fail-closed on r187 without copying or readback", async () => {
     const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16, side: THREE.DoubleSide });
     const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16, side: THREE.BackSide });
     linkObserverOutputSourceMaterial(activeOutput, source);
@@ -195,7 +210,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     backend.finishRender(context);
 
     const result = await capture;
-    expect(result).toMatchObject({ status: "ok", feasibility: "F1", drawCount: 1 });
+    expectR187FailClosed(result);
     expect(result.readbackStarted).toBe(false);
     expect(result.framebufferCopyStarted).toBe(false);
     expect(result.drawObservations).toMatchObject([{
@@ -203,16 +218,6 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
       sourceMaterialId: source.uuid,
       material: { id: activeOutput.uuid, side: THREE.BackSide, opacity: 0.16 },
       drawParameters: { indexCount: 240, instanceCount: 1 },
-      gpuBlendEnabled: true,
-      gpuBlendDescriptor: {
-        color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha", operation: "add" },
-        alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" },
-      },
-      nativePipelineBlendQualification: {
-        status: "qualified",
-        evidence: "bound-pipeline-creation-descriptor",
-        bindingProvenance: "three-r186-WebGPUBackend.draw-renderObject-pipeline-to-_draw",
-      },
       nativeDrawExecution: { backendDrawReturned: true, completed: true },
     }]);
     expect(backend.draw).toBe(originalDraw);
@@ -222,7 +227,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     selected.geometry.dispose();
   });
 
-  it("fails closed when a native pipeline creation descriptor was not observed", async () => {
+  it("rejects r186 native qualification on r187 even when a descriptor is unavailable", async () => {
     const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     activeOutput.blending = THREE.NoBlending;
@@ -247,21 +252,16 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     backend.finishRender(context);
 
     const result = await capture;
-    expect(result).toMatchObject({ status: "ok", feasibility: "F0", drawCount: 1 });
+    expectR187FailClosed(result);
     expect(result.drawObservations).toMatchObject([{
       material: { blending: THREE.NoBlending },
-      gpuBlendEnabled: null,
-      nativePipelineBlendQualification: {
-        status: "unsupported",
-        reason: "native-gpu-pipeline-unavailable",
-      },
     }]);
     source.dispose();
     activeOutput.dispose();
     selected.geometry.dispose();
   });
 
-  it("reports actual pipeline blending when it contradicts material flags", async () => {
+  it("does not accept an r186 blend descriptor that contradicts material flags on r187", async () => {
     const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16, blending: THREE.NoBlending });
     linkObserverOutputSourceMaterial(activeOutput, source);
@@ -284,18 +284,16 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     fixture.backend.draw({ object: selected, material: activeOutput, context, pipeline: fixture.pipelineKey }, { render: { drawCalls: 0 } });
     fixture.backend.finishRender(context);
     const result = await capture;
-    expect(result).toMatchObject({ status: "ok", feasibility: "F1" });
+    expectR187FailClosed(result);
     expect(result.drawObservations).toMatchObject([{
-      gpuBlendEnabled: true,
-      inferredMaterialBlendEnabled: false,
-      inferredMaterialBlendEvidence: "material-flags-inference-F3",
+      effectiveMaterialState: { blending: THREE.NoBlending },
     }]);
     source.dispose();
     activeOutput.dispose();
     selected.geometry.dispose();
   });
 
-  it("does not reuse a recorded descriptor for a different backend pipeline association", async () => {
+  it("does not reuse an r186 descriptor association as r187 qualification", async () => {
     const source = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     const activeOutput = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.16 });
     linkObserverOutputSourceMaterial(activeOutput, source);
@@ -319,14 +317,7 @@ describe("Anatomy Bellows metadata-only draw capture", () => {
     fixture.backend.draw({ object: selected, material: activeOutput, context, pipeline: fixture.pipelineKey }, { render: { drawCalls: 0 } });
     fixture.backend.finishRender(context);
     const result = await capture;
-    expect(result).toMatchObject({ status: "ok", feasibility: "F0" });
-    expect(result.drawObservations).toMatchObject([{
-      nativePipelineBlendQualification: {
-        status: "unsupported",
-        reason: "pipeline-creation-descriptor-not-observed",
-      },
-      gpuBlendEnabled: null,
-    }]);
+    expectR187FailClosed(result);
     source.dispose();
     activeOutput.dispose();
     selected.geometry.dispose();

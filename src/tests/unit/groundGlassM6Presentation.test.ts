@@ -439,6 +439,43 @@ describe("M6 development-only compatibility policy", () => {
     expect(selection).not.toHaveProperty("actualExecutionApi");
   });
 
+  it("keeps the historical r186 M6 presentation record ineligible for an r187 candidate", () => {
+    const sessionId = groundGlassM6PilotSessionId("default");
+    const selection = selectGroundGlassBackend({
+      requestedBackend: "webgpu",
+      environment: "development",
+      authorization: { status: "authorized", source: "application-configuration", pilotSessionId: sessionId },
+      channelId: "default",
+      sceneId: architectureRiseScene.id,
+      requestedFeatures: GROUND_GLASS_M6_PRESENTATION_FEATURES,
+      sceneCompatibility: GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
+      expectedCandidateRendererRevision: "r187",
+      capabilityPreflight: {
+        webgpuAvailability: "reported-available",
+        adapterFeatures: [],
+        textureStorageFormats: [],
+      },
+      retryState: createGroundGlassPilotRetryState("default", sessionId),
+      webglAvailable: true,
+    });
+
+    expect(selection).toMatchObject({
+      status: "selected",
+      selectedBackend: "webgl",
+      policyDecision: {
+        status: "denied",
+        sceneEligibility: {
+          status: "denied",
+          reasons: expect.arrayContaining(["renderer-revision-mismatch"]),
+        },
+      },
+    });
+    expect(GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY.features.every((feature) =>
+      feature.status === "implementation-verified" && feature.qualityQualification === "unqualified" &&
+      feature.testedContext.rendererRevision === "r186",
+    )).toBe(true);
+  });
+
   it("keeps unsupported scenes on WebGL even when the M6 build gate requests WebGPU", () => {
     const sessionId = groundGlassM6PilotSessionId("default");
     const selection = selectGroundGlassBackend({
