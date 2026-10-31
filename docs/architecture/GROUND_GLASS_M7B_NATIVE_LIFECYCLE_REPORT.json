@@ -14,9 +14,9 @@
   },
   "qualification": "partially-qualified",
   "scenarioCounts": {
-    "passed": 6,
+    "passed": 5,
     "failed": 0,
-    "blocked": 10,
+    "blocked": 11,
     "not-run": 1
   },
   "phaseA": {
@@ -1499,7 +1499,7 @@
     {
       "id": "m7b-f-m5q-and-m6-regression-locks",
       "title": "Frozen M5Q, M6, M6B, M6C and M6D native regression locks",
-      "status": "passed",
+      "status": "blocked",
       "evidenceClass": "native-regression-suite",
       "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
       "testId": "M4 rows (3), M5Q (1), M6/M6B/M6C (12), M6D (1)",
@@ -1544,7 +1544,8 @@
       ],
       "limitations": [
         "M5Q remains m5q-architecture-rise-r186-v3 with Q1/Q5/Q6/Q7 reference-not-converged, Q2/Q4 insufficient-support, Q3 bounded-qualified.",
-        "M6D stays m6d-opaque-presentation-v1; no M5 thresholds or M6 quality decision changed."
+        "M6D stays m6d-opaque-presentation-v1; no M5 thresholds or M6 quality decision changed.",
+        "Review-Fix Round 1: retained regression-suite aggregate references historical native tests but does not contain event-level runtime-observed and renderer-mounted evidence. Execution passed historically; native qualification requires capture/provenance, not an uncorroborated summary."
       ]
     },
     {
@@ -1659,9 +1660,9 @@
         "not-run": 1
       },
       "current": {
-        "passed": 6,
+        "passed": 5,
         "failed": 0,
-        "blocked": 10,
+        "blocked": 11,
         "not-run": 1
       },
       "downgradedDueToMissingPublicationEvidence": [
@@ -1671,7 +1672,8 @@
         "m7b-c2-test-destroyed-gpu-device-lost-promise",
         "m7b-d4-d5-scene-navigation-and-remount",
         "m7b-e1-e4-retry-session-and-rejected-actions"
-      ]
+      ],
+      "regressionSuiteNativeObservationGap": "m7b-f-m5q-and-m6-regression-locks"
     },
     "verification": "New unit mutation coverage added; final hosted CI outcome must be checked on the review-fix HEAD.",
     "boundaries": "M7 remains incomplete; production WebGPU disabled."
