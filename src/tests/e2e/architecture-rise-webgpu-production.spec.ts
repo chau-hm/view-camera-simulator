@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { execFileSync } from "node:child_process";
+import { dirname, join } from "node:path";
 import { release } from "node:os";
 import { REVISION } from "three";
 import { expect, test, type Page } from "@playwright/test";
@@ -9,6 +10,11 @@ const attachJson = async (testInfo: import("@playwright/test").TestInfo, name: s
   const outputPath = testInfo.outputPath(name);
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, body);
+  const captureDirectory = process.env.GROUND_GLASS_M7C_CAPTURE_DIR;
+  if (captureDirectory) {
+    await mkdir(captureDirectory, { recursive: true });
+    await writeFile(join(captureDirectory, name), body);
+  }
   await testInfo.attach(name, { body, contentType: "application/json" });
 };
 
@@ -183,6 +189,12 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   }
   await attachJson(testInfo, "architecture-rise-production-webgl-isolation.json", {
     build: "Vite production preview",
+    captureSourceSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    testId: testInfo.titlePath.join(" › "),
+    testProject: testInfo.project.name,
+    invocation: process.env.GROUND_GLASS_M7C_TEST_INVOCATION ??
+      "npm run test:e2e -- --project=chromium src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+    processArguments: process.argv,
     browserVersion: page.context().browser()?.version() ?? "unknown",
     operatingSystem: `${process.platform} ${release()}`,
     threeRevision: REVISION,

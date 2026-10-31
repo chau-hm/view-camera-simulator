@@ -636,6 +636,13 @@ export type GroundGlassWebGpuTestEvent =
     }>
   | Readonly<{ kind: "frame-completed"; attemptId: string; generationId: string; requestId: string }>
   | Readonly<{
+      kind: "queue-completion-settled";
+      attemptId: string;
+      generationId: string;
+      requestId: string;
+      operation: "sceneRender";
+    }>
+  | Readonly<{
       kind: "gather-research";
       generationId: string;
       requestId: string;

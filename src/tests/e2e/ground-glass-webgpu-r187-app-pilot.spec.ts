@@ -1,3 +1,7 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { arch, release } from "node:os";
+import { execFileSync } from "node:child_process";
+import { join } from "node:path";
 import { REVISION } from "three";
 import { expect, test } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -74,6 +78,8 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
   await expect.poll(() => glass.getAttribute("data-mounted-verification-evidence-revision"))
     .toBe(policyEvidenceRevision);
   await expect(glass).toHaveAttribute("data-rtt-raw-contentful", "true", { timeout: 60_000 });
+  const finalNativeRequestId = await glass.getAttribute("data-frame-request-id");
+  await expect(glass).toHaveAttribute("data-last-completed-request-id", finalNativeRequestId!, { timeout: 90_000 });
   await expect(glass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   const webGpuGeneration = await glass.getAttribute("data-renderer-generation");
   expect(webGpuGeneration).toBeTruthy();
@@ -108,6 +114,11 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
     mountedRendererRevision: element.getAttribute("data-mounted-renderer-revision"),
     mountedEvidenceRevision: element.getAttribute("data-mounted-verification-evidence-revision"),
     applicationFallback: element.getAttribute("data-application-fallback"),
+    pilotSessionId: element.getAttribute("data-pilot-session-id"),
+    retryEpoch: element.getAttribute("data-pilot-retry-epoch"),
+    channelId: element.getAttribute("data-frame-channel-id"),
+    sceneId: element.getAttribute("data-frame-scene-id"),
+    requestId: element.getAttribute("data-frame-request-id"),
     generation: element.getAttribute("data-renderer-generation"),
     rawContentful: element.getAttribute("data-rtt-raw-contentful"),
     finalContentful: element.getAttribute("data-rtt-final-contentful"),
@@ -130,6 +141,7 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
     rawContentful: "true",
     finalContentful: "true",
   });
+  expect(runtimeEvidence.mountedEvidenceRevision).toBe(runtimeEvidence.policyEvidenceRevisions);
   await testInfo.attach("r187-native-application-raw-ground-glass-runtime.json", {
     body: JSON.stringify(runtimeEvidence, null, 2),
     contentType: "application/json",
@@ -149,12 +161,111 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
     const testWindow = window as Window & {
       __groundGlassWebGpuM3TestControl?: { adapterEvents?: Array<Record<string, unknown>> };
     };
-    return testWindow.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [];
+    const events = testWindow.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [];
+    return events.filter((event) => event.kind !== "host-frame-result" ||
+      event.acceptedByHost === true ||
+      (event.acceptedByHost === false && event.requestId !== event.latestAcceptedRequestId));
   });
   expect(lifecycle).toContainEqual(expect.objectContaining({
     kind: "cleanup-acknowledged",
     generationId: webGpuGeneration,
     outcome: "confirmed",
   }));
+  const nativeAttempt = lifecycle.find((event) => event.kind === "attempt" && event.generationId === webGpuGeneration);
+  const nativeRuntime = lifecycle.find((event) => event.kind === "runtime-observed" && event.generationId === webGpuGeneration);
+  const nativeMount = lifecycle.find((event) => event.kind === "renderer-mounted" && event.generationId === webGpuGeneration);
+  const acceptedNativeFrame = lifecycle.find((event) =>
+    event.kind === "host-frame-result" && event.generationId === webGpuGeneration &&
+    event.requestId === finalNativeRequestId && event.acceptedByHost === true,
+  );
+  const nativeCleanup = lifecycle.find((event) =>
+    event.kind === "cleanup-acknowledged" && event.generationId === webGpuGeneration && event.outcome === "confirmed",
+  );
+  const nativeAttemptEvent = nativeAttempt?.kind === "attempt" ? nativeAttempt : undefined;
+  const nativeMountEvent = nativeMount?.kind === "renderer-mounted" ? nativeMount : undefined;
+  expect(nativeAttempt).toMatchObject({ rendererRevision: "187", sceneId: "architecture-rise" });
+  expect(nativeRuntime).toMatchObject({
+    rendererRevision: "187",
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    internalFallback: "none",
+  });
+  expect(nativeMount).toMatchObject({
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    internalFallback: "none",
+    generationId: webGpuGeneration,
+  });
+  expect(acceptedNativeFrame).toMatchObject({
+    channelId: "default",
+    sceneId: "architecture-rise",
+    latestAcceptedRequestId: finalNativeRequestId,
+    activeGenerationId: webGpuGeneration,
+    activeRendererFamily: "webgpu-renderer",
+  });
+  expect(Number(nativeCleanup?.sequence)).toBeGreaterThan(Number(acceptedNativeFrame?.sequence ?? Number.POSITIVE_INFINITY));
+  expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
+    .toEqual([webGpuGeneration]);
+  const lifecycleCapture = {
+      schemaVersion: "ground-glass-m7c-r187-native-observation-v1",
+      captureSourceSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+      scenarioId: "m7c-r187-native-raw-baseline",
+      title: testInfo.title,
+      result: { status: testInfo.status, expectedStatus: testInfo.expectedStatus },
+      invocation: process.env.GROUND_GLASS_M7C_TEST_INVOCATION ??
+        "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts",
+      processArguments: process.argv,
+      environment: {
+        testProject: testInfo.project.name,
+        browserName: page.context().browser()?.browserType().name() ?? null,
+        browserVersion: page.context().browser()?.version() ?? null,
+        userAgent: await page.evaluate(() => navigator.userAgent),
+        operatingSystem: {
+          platform: process.platform,
+          release: release(),
+          architecture: arch(),
+          nodeVersion: process.version,
+        },
+        threeRevision: REVISION,
+        policyEvidenceRevision: runtimeEvidence.policyEvidenceRevisions,
+        mountedEvidenceRevision: runtimeEvidence.mountedEvidenceRevision,
+      },
+      identity: {
+        channelId: "default",
+        attemptId: nativeAttemptEvent?.attemptId ?? null,
+        hostId: nativeMountEvent?.hostId ?? null,
+        pilotSessionId: runtimeEvidence.pilotSessionId,
+        retryEpoch: Number(runtimeEvidence.retryEpoch),
+        generationId: webGpuGeneration,
+        requestId: finalNativeRequestId,
+        sceneId: runtimeEvidence.sceneId,
+      },
+      runtime: {
+        rendererFamily: runtimeEvidence.rendererFamily,
+        executionApi: runtimeEvidence.executionApi,
+        internalFallback: runtimeEvidence.adapterInternalFallback,
+      },
+      transitions: {
+        focusChanged: true,
+        apertureChanged: true,
+        sceneNavigationUnmounted: true,
+        cleanupAcknowledged: nativeCleanup,
+        mountedRendererAfterNavigation: await transitionedGlass.getAttribute("data-mounted-renderer-family"),
+        adapterAttemptGenerations: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []),
+      },
+      lifecycleEvents: lifecycle,
+      screenshotArtifact: "r187-native-application-raw-ground-glass.png",
+      limitations: ["One Chrome/macOS environment; no claim about hardware acceleration or spontaneous device loss."],
+    };
+  const lifecycleCaptureBody = JSON.stringify(lifecycleCapture, null, 2);
+  await testInfo.attach("r187-native-application-lifecycle.json", {
+    body: lifecycleCaptureBody,
+    contentType: "application/json",
+  });
+  const captureDirectory = process.env.GROUND_GLASS_M7C_CAPTURE_DIR;
+  if (captureDirectory) {
+    await mkdir(captureDirectory, { recursive: true });
+    await writeFile(join(captureDirectory, "m7c-r187-native-raw-baseline.json"), lifecycleCaptureBody);
+  }
   expect(pageErrors).toEqual([]);
 });

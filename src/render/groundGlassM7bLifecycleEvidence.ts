@@ -494,6 +494,22 @@ const validateM7bPublication = (
   }
 };
 
+/**
+ * Reusable, read-only lifecycle contract checks for revision-specific evidence inventories.
+ * The M7B evaluator keeps calling the same three validators through this wrapper so its
+ * inventory, qualification result, and validation behavior remain unchanged.
+ */
+export const validateGroundGlassLifecycleScenarioContracts = (
+  scenario: Record<string, unknown>,
+  scenarioId: string,
+): readonly string[] => {
+  const errors: string[] = [];
+  validateM7bObservedRuntime(scenario, scenarioId, errors);
+  validateM7bCleanupFallback(scenario, scenarioId, errors);
+  validateM7bPublication(scenario, scenarioId, errors);
+  return errors;
+};
+
 /** Validates the committed M7B evidence inventory before accepting its qualification label. */
 export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundGlassM7bEvidenceEvaluation => {
   const errors: string[] = [];
@@ -705,9 +721,7 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
     }
 
     if (status !== "passed") continue;
-    validateM7bObservedRuntime(scenario, requiredId, errors);
-    validateM7bCleanupFallback(scenario, requiredId, errors);
-    validateM7bPublication(scenario, requiredId, errors);
+    errors.push(...validateGroundGlassLifecycleScenarioContracts(scenario, requiredId));
     const publicationRequired = new Set<string>([
       "m7b-phase-a-timeout-diagnosis",
       "m7b-b1-initialization-after-target",
