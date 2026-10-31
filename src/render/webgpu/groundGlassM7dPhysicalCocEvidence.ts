@@ -449,6 +449,15 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
         }
       }
     }
+    if (orientationDefined && !mustStoreZero) {
+      const storedOrientationError = groundGlassPhysicalCocOrientationErrorModuloPi(
+        decoded[3]! * Math.PI,
+        cpu.orientationRad,
+      );
+      if (storedOrientationError === null || storedOrientationError >= 0.003) {
+        issue("orientation-error", `probeReadback.controlledKernelCases.${id}.readbackFootprintMm[3]`, "decoded RGBA16F orientation modulo-pi error exceeds 0.003 rad");
+      }
+    }
     if (id.startsWith("storage-overrange-") && validity !== 2) {
       issue("storage-overflow", `probeReadback.controlledKernelCases.${id}.validityCode`, "over-range physical data must use validity code 2");
     }
