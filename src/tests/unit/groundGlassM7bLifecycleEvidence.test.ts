@@ -292,6 +292,20 @@ const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): G
     };
     return item;
   });
+  if (source.evidenceClass === "native-regression-suite") {
+    events.push({
+      sequence: 0, kind: "runtime-observed", attemptId: "attempt-1",
+      generationId: "generation-1", requestId: "request-1", detail: null,
+      rendererRevision: source.threeRevision, rendererFamily: "webgpu-renderer",
+      executionApi: "webgpu",
+    });
+    events.push({
+      sequence: 0, kind: "renderer-mounted", attemptId: "attempt-1",
+      generationId: "generation-1", requestId: "request-1", detail: null,
+      channelId: "default", hostId: "host-1", sceneId: "architecture-rise",
+      rendererFamily: "webgpu-renderer", executionApi: "webgpu", internalFallback: "none",
+    });
+  }
   if (source.fallbackOutcome === "webgl-mounted") {
     events = events.filter((item) => item.kind !== "cleanup-acknowledged");
     if (!events.some((item) => item.kind === "cleanup")) {
@@ -544,7 +558,7 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     expect(evaluateGroundGlassM7bLifecycleEvidence(report)).toMatchObject({
       valid: true,
       qualification: "partially-qualified",
-      counts: { passed: 6, failed: 0, blocked: 10, "not-run": 1 },
+      counts: { passed: 5, failed: 0, blocked: 11, "not-run": 1 },
     });
   });
 
