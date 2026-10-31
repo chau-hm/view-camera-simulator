@@ -2,7 +2,7 @@
   "schemaVersion": "ground-glass-m7b-native-lifecycle-v1",
   "milestone": "M7B",
   "evaluatorRevision": "m7b-lifecycle-evidence-v2",
-  "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+  "sourceHeadSha": "625c560bc095fa41c2a6a457d1169e727102df17",
   "base": {
     "branch": "main",
     "commit": "6725d6912adc20974fb78a7ef84821f487519cc0"
@@ -224,26 +224,26 @@
     {
       "id": "m7b-b1-initialization-after-target",
       "title": "Initialization failure after render-target setup and confirmed cleanup",
-      "status": "blocked",
+      "status": "passed",
       "evidenceClass": "native-webgpu-pre-mount-failure",
-      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "sourceHeadSha": "ff73a5e35bdddbac9f7dd6b55b64b06ee2fcfef9",
       "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
       "testProject": "chrome-native-webgpu",
-      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
-      "threeRevision": "r186",
-      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "browserIdentity": "Chrome 156.0.8078.76",
+      "threeRevision": "186",
+      "invocation": "env PATH=\"/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH\" GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true /Users/homan/.nvm/versions/node/v24.3.0/bin/node node_modules/playwright/cli.js test --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --grep 'D1 initialization failure|D4 failed disposal'",
       "identity": {
         "channelId": "default",
         "pilotSessionId": "ground-glass-raw-m3:default",
         "retryEpoch": 0,
-        "hostId": "gg-host-_r_d_-0f677fcappz6",
-        "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
-        "rendererGenerationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
-        "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
+        "hostId": "gg-host-_r_d_-uab1dqlkig8",
+        "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvvpa666-9aa77hnj23-default-generation-2",
+        "requestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
         "sceneId": "architecture-rise"
       },
-      "requestedBackend": "webgpu",
-      "selectedBackend": "webgpu",
+      "requestedBackend": "default",
+      "selectedBackend": "webgl",
       "runtime": {
         "observed": true,
         "hostMounted": false,
@@ -254,72 +254,93 @@
       "applicationFallback": true,
       "events": [
         {
-          "sequence": 4,
           "kind": "attempt",
-          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
-          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
-          "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
-          "detail": null,
+          "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-2\"]",
           "channelId": "default",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-2",
+          "requestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
           "sceneId": "architecture-rise",
-          "rendererRevision": "186"
+          "rendererRevision": "186",
+          "sequence": 13
         },
         {
-          "sequence": 5,
           "kind": "runtime-observed",
-          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
-          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
-          "requestId": null,
-          "detail": null,
+          "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-2\"]",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-2",
           "rendererRevision": "186",
           "rendererFamily": "webgpu-renderer",
-          "executionApi": "webgpu"
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 14
         },
         {
-          "sequence": 6,
           "kind": "failure",
-          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
-          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
-          "requestId": "gg-mvv98iiy-d20xa44fbp6-default-request-3",
-          "detail": null,
+          "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-2\"]",
           "channelId": "default",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-2",
+          "requestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
           "sceneId": "architecture-rise",
           "stage": "initialization",
           "operation": "unknown",
-          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target"
+          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target",
+          "sequence": 15
         },
         {
-          "sequence": 7,
           "kind": "cleanup",
-          "attemptId": "[\"default\",\"gg-mvv98iiy-d20xa44fbp6-default-generation-2\"]",
-          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
-          "requestId": null,
-          "detail": null,
-          "outcome": "confirmed"
+          "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-2\"]",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-2",
+          "outcome": "confirmed",
+          "sequence": 16
         },
         {
-          "sequence": 8,
           "kind": "cleanup-acknowledged",
-          "attemptId": null,
-          "generationId": "gg-mvv98iiy-d20xa44fbp6-default-generation-2",
-          "requestId": null,
-          "detail": null,
           "channelId": "default",
-          "hostId": "gg-host-_r_d_-0f677fcappz6",
+          "hostId": "gg-host-_r_d_-uab1dqlkig8",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-2",
           "outcome": "confirmed",
-          "reason": null
+          "reason": null,
+          "sequence": 17
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-uab1dqlkig8",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-3",
+          "requestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 18
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvvpa666-9aa77hnj23-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-uab1dqlkig8",
+          "generationId": "gg-mvvpa666-9aa77hnj23-default-generation-3",
+          "requestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvvpa666-9aa77hnj23-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 19
         }
       ],
       "cleanupOutcome": "confirmed",
       "fallbackOutcome": "webgl-mounted",
       "publication": {
         "status": "current",
-        "acceptedRequestId": "gg-mvv98iiy-d20xa44fbp6-default-request-12",
-        "completedRequestId": "gg-mvv98iiy-d20xa44fbp6-default-request-12"
+        "acceptedRequestId": "gg-mvvpa666-9aa77hnj23-default-request-3",
+        "completedRequestId": "gg-mvvpa666-9aa77hnj23-default-request-3"
       },
       "supportingArtifacts": [
         "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
-        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)"
+        "test-results/ground-glass-webgpu-failur-20e35-fallback-and-remains-sticky-chrome-native-webgpu/ground-glass-m7b-lifecycle-evidence.json (generated native Playwright attachment; source ff73a5e35bdddbac9f7dd6b55b64b06ee2fcfef9)"
       ],
       "limitations": [
         "The bounded after-target injection passed with native adapter observation before host mount, then cleanup and one WebGL fallback.",
@@ -573,20 +594,20 @@
       "title": "Target disposal failure prevents replacement and keeps the channel unavailable",
       "status": "passed",
       "evidenceClass": "native-webgpu-cleanup-failure",
-      "sourceHeadSha": "c5e12ac6d9a6a42e2abcf0983d00a73f98481808",
+      "sourceHeadSha": "ff73a5e35bdddbac9f7dd6b55b64b06ee2fcfef9",
       "testId": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › D4 failed disposal keeps the host unavailable and prevents a replacement generation",
       "testProject": "chrome-native-webgpu",
-      "browserIdentity": "Chrome 156.0.8078.76 on macOS 10.15.7",
-      "threeRevision": "r186",
-      "invocation": "npm run test:e2e -- --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
+      "browserIdentity": "Chrome 156.0.8078.76",
+      "threeRevision": "186",
+      "invocation": "env PATH=\"/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH\" GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true /Users/homan/.nvm/versions/node/v24.3.0/bin/node node_modules/playwright/cli.js test --project=chrome-native-webgpu src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --grep 'D1 initialization failure|D4 failed disposal'",
       "identity": {
         "channelId": "default",
         "pilotSessionId": "ground-glass-raw-m3:default",
         "retryEpoch": 0,
-        "hostId": "gg-host-_r_d_-risljwj25yh",
-        "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
-        "rendererGenerationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
-        "requestId": "gg-mvv98okp-5lzebeokukv-default-request-3",
+        "hostId": "gg-host-_r_d_-5gf8ciaevj8",
+        "attemptId": "[\"default\",\"gg-mvvpa8br-6wd9a4ed3rm-default-generation-2\"]",
+        "rendererGenerationId": "gg-mvvpa8br-6wd9a4ed3rm-default-generation-2",
+        "requestId": "gg-mvvpa8br-6wd9a4ed3rm-default-request-3",
         "sceneId": "architecture-rise"
       },
       "requestedBackend": "webgpu",
@@ -601,60 +622,52 @@
       "applicationFallback": false,
       "events": [
         {
-          "sequence": 4,
           "kind": "attempt",
-          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
-          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
-          "requestId": "gg-mvv98okp-5lzebeokukv-default-request-3",
-          "detail": null,
+          "attemptId": "[\"default\",\"gg-mvvpa8br-6wd9a4ed3rm-default-generation-2\"]",
           "channelId": "default",
+          "generationId": "gg-mvvpa8br-6wd9a4ed3rm-default-generation-2",
+          "requestId": "gg-mvvpa8br-6wd9a4ed3rm-default-request-3",
           "sceneId": "architecture-rise",
-          "rendererRevision": "186"
+          "rendererRevision": "186",
+          "sequence": 20
         },
         {
-          "sequence": 5,
           "kind": "runtime-observed",
-          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
-          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
-          "requestId": null,
-          "detail": null,
+          "attemptId": "[\"default\",\"gg-mvvpa8br-6wd9a4ed3rm-default-generation-2\"]",
+          "generationId": "gg-mvvpa8br-6wd9a4ed3rm-default-generation-2",
           "rendererRevision": "186",
           "rendererFamily": "webgpu-renderer",
-          "executionApi": "webgpu"
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 21
         },
         {
-          "sequence": 6,
           "kind": "failure",
-          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
-          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
-          "requestId": "gg-mvv98okp-5lzebeokukv-default-request-3",
-          "detail": null,
+          "attemptId": "[\"default\",\"gg-mvvpa8br-6wd9a4ed3rm-default-generation-2\"]",
           "channelId": "default",
+          "generationId": "gg-mvvpa8br-6wd9a4ed3rm-default-generation-2",
+          "requestId": "gg-mvvpa8br-6wd9a4ed3rm-default-request-3",
           "sceneId": "architecture-rise",
           "stage": "initialization",
           "operation": "unknown",
-          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target"
+          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target",
+          "sequence": 22
         },
         {
-          "sequence": 7,
           "kind": "cleanup",
-          "attemptId": "[\"default\",\"gg-mvv98okp-5lzebeokukv-default-generation-2\"]",
-          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
-          "requestId": null,
-          "detail": null,
-          "outcome": "failed"
+          "attemptId": "[\"default\",\"gg-mvvpa8br-6wd9a4ed3rm-default-generation-2\"]",
+          "generationId": "gg-mvvpa8br-6wd9a4ed3rm-default-generation-2",
+          "outcome": "failed",
+          "sequence": 23
         },
         {
-          "sequence": 8,
           "kind": "cleanup-acknowledged",
-          "attemptId": null,
-          "generationId": "gg-mvv98okp-5lzebeokukv-default-generation-2",
-          "requestId": null,
-          "detail": null,
           "channelId": "default",
-          "hostId": "gg-host-_r_d_-risljwj25yh",
+          "hostId": "gg-host-_r_d_-5gf8ciaevj8",
+          "generationId": "gg-mvvpa8br-6wd9a4ed3rm-default-generation-2",
           "outcome": "failed",
-          "reason": "Injected test-only Ground Glass WebGPU failure at dispose-target"
+          "reason": "Injected test-only Ground Glass WebGPU failure at dispose-target",
+          "sequence": 24
         }
       ],
       "cleanupOutcome": "failed",
@@ -666,7 +679,7 @@
       },
       "supportingArtifacts": [
         "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts",
-        "Playwright attachment: ground-glass-m7b-lifecycle-evidence.json (generated per run)",
+        "test-results/ground-glass-webgpu-failur-dabbc-ts-a-replacement-generation-chrome-native-webgpu/ground-glass-m7b-lifecycle-evidence.json (generated native Playwright attachment; source ff73a5e35bdddbac9f7dd6b55b64b06ee2fcfef9)",
         "src/tests/unit/GroundGlassRenderHost.test.tsx"
       ],
       "limitations": [
@@ -1645,13 +1658,13 @@
   ],
   "reviewFixRound1": {
     "reviewedHead": "f98124f4ec5bd02b3b281b85cbdf96f3450df90e",
-    "evaluatorRevision": "m7b-lifecycle-evidence-v2",
+    "evaluatorRevision": "m7b-lifecycle-evidence-v3",
     "findings": [
       "native-runtime-event-consistency",
       "cleanup-host-acknowledgement-and-replacement-order",
       "host-observed-publication-freshness"
     ],
-    "captureProvenance": "Historical sourceHeadSha and original event observations retained. No native recapture performed in this patch. Newly added host-frame-result events apply to future native runs only.",
+    "captureProvenance": "Historical native captures remain pinned to their original per-scenario sourceHeadSha. D1 and D4 were recaptured on ff73a5e35bdddbac9f7dd6b55b64b06ee2fcfef9 after adding runtime internal-fallback observation; D1 also records the host-frame-result decision. Only these two entries were updated. Other native captures were not rerun. The top-level sourceHeadSha identifies the evaluator implementation used for this report revision; each scenario sourceHeadSha identifies the source used by that capture. Commit 625c560 changes only source-provenance validation and does not alter the captured renderer lifecycle.",
     "qualificationImpact": {
       "original": {
         "passed": 12,
@@ -1660,9 +1673,9 @@
         "not-run": 1
       },
       "current": {
-        "passed": 5,
+        "passed": 6,
         "failed": 0,
-        "blocked": 11,
+        "blocked": 10,
         "not-run": 1
       },
       "downgradedDueToMissingPublicationEvidence": [
@@ -1673,9 +1686,13 @@
         "m7b-d4-d5-scene-navigation-and-remount",
         "m7b-e1-e4-retry-session-and-rejected-actions"
       ],
-      "regressionSuiteNativeObservationGap": "m7b-f-m5q-and-m6-regression-locks"
+      "regressionSuiteNativeObservationGap": "m7b-f-m5q-and-m6-regression-locks",
+      "requalifiedAfterNativeRecapture": [
+        "m7b-b1-initialization-after-target"
+      ]
     },
-    "verification": "New unit mutation coverage added; final hosted CI outcome must be checked on the review-fix HEAD.",
-    "boundaries": "M7 remains incomplete; production WebGPU disabled."
+    "verification": "Focused M7B evaluator: 25/25 tests passed. Related host, diagnostics, runtime seam, cleanup and frame tests: 61/61 across 7 files. Production-preview isolation: 2/2 passed. Native D1 and D4 recaptures: 2/2 passed. Full npm test: 301 files and 3,089 tests passed. Typecheck, lint, CSS check, build and git diff --check passed. Hosted CI is verified on the published PR head and recorded in the PR #299 handoff.",
+    "boundaries": "M7 remains incomplete; production WebGPU disabled.",
+    "implementationCommit": "625c560bc095fa41c2a6a457d1169e727102df17"
   }
 }
