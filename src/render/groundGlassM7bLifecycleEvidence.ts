@@ -331,7 +331,7 @@ const validateM7bPublication = (
   const pub = scenario.publication;
   if (pub.status !== "current" && pub.status !== "stale-rejected") return;
   const events = Array.isArray(scenario.events) ? scenario.events.filter(isObject) : [];
-  const result = events.findLast((event) =>
+  const result = [...events].reverse().find((event) =>
     event.kind === "host-frame-result" &&
     event.frameStatus === "completed" &&
     event.requestId === pub.completedRequestId
@@ -542,6 +542,21 @@ export const evaluateGroundGlassM7bLifecycleEvidence = (input: unknown): GroundG
     validateM7bObservedRuntime(scenario, requiredId, errors);
     validateM7bCleanupFallback(scenario, requiredId, errors);
     validateM7bPublication(scenario, requiredId, errors);
+    const publicationRequired = new Set<string>([
+      "m7b-phase-a-timeout-diagnosis",
+      "m7b-b1-initialization-after-target",
+      "m7b-b2-runtime-failure-matrix",
+      "m7b-b3-async-retirement-and-latest-request",
+      "m7b-c1-device-loss-equivalent",
+      "m7b-c2-test-destroyed-gpu-device-lost-promise",
+      "m7b-d1-d3-request-and-resize-freshness",
+      "m7b-d4-d5-scene-navigation-and-remount",
+      "m7b-e1-e4-retry-session-and-rejected-actions",
+    ]);
+    if (publicationRequired.has(requiredId) &&
+        (!isObject(scenario.publication) || scenario.publication.status !== "current")) {
+      errors.push("passed-scenario-without-current-publication-evidence:" + requiredId);
+    }
     if (scenario.evidenceClass === "native-webgpu-pre-mount-failure") {
       const identityGenerationId = isObject(scenario.identity) && isNonEmptyString(scenario.identity.rendererGenerationId)
         ? scenario.identity.rendererGenerationId
