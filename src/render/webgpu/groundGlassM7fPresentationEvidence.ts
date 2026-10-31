@@ -35,6 +35,7 @@ export const GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS = Object.freeze([
   "m6c-opaque-target-alpha",
   "registered-architecture-rise-m3-m6",
   "raw-first-resource-provisioning",
+  "m5-composite-incomplete-failure",
   "optical-resource-initialization-failure",
   "presentation-node-initialization-failure",
   "presentation-pass-failure",
@@ -864,9 +865,10 @@ const lifecycleIssues = (
     }
     const expectedOperation = id === "optical-resource-initialization-failure" ? "initialize-m6-optical-resources"
       : id === "presentation-node-initialization-failure" ? "initialize-m6-presentation-node"
-        : id === "presentation-pass-failure" ? "presentation"
-          : id === "final-display-failure" ? "textureDisplay"
-            : null;
+        : id === "m5-composite-incomplete-failure" ? "composite"
+          : id === "presentation-pass-failure" ? "presentation"
+            : id === "final-display-failure" ? "textureDisplay"
+              : null;
     if (!text(failure?.attemptId) || !text(failure?.generationId) || !text(failure?.requestId) ||
         !text(failure?.operation) || (expectedOperation !== null && failure.operation !== expectedOperation) ||
         !text(failure?.reason) || cleanup?.generationId !== failure?.generationId ||
@@ -976,6 +978,7 @@ export const evaluateGroundGlassM7fPresentationEvidence = (
 
   const lifecycleMapping: Partial<Record<typeof GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS[number], string>> = {
     "raw-first-resource-provisioning": "raw-first-provisioning.json",
+    "m5-composite-incomplete-failure": "m5-composite-incomplete-failure.json",
     "optical-resource-initialization-failure": "optical-resource-initialization-failure.json",
     "presentation-node-initialization-failure": "presentation-node-initialization-failure.json",
     "presentation-pass-failure": "presentation-pass-failure.json",

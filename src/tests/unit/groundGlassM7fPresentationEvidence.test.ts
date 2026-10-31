@@ -271,6 +271,28 @@ const createFailureCapture = () => ({
   ],
 });
 
+const createM5CompositeFailureCapture = () => {
+  const capture = createFailureCapture();
+  capture.scenarioId = "m5-composite-incomplete-failure";
+  const failure = capture.events.find((event) => event.kind === "failure");
+  if (!failure) throw new Error("M5 composite failure fixture is incomplete");
+  failure.stage = "runtime";
+  failure.operation = "composite";
+  failure.reason = "injected failure at aperture-composite-after-submit";
+  capture.events.splice(1, 0, {
+    kind: "renderer-mounted",
+    attemptId: "attempt-failure",
+    generationId: "generation-failed",
+    requestId: "request-failed",
+    channelId: "channel-default",
+    sceneId: "architecture-rise",
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    internalFallback: "none",
+  } as unknown as typeof capture.events[number]);
+  return capture;
+};
+
 const createRetiredM6cCapture = () => {
   const frame = createM6dCapture();
   const identity = {
@@ -694,6 +716,18 @@ describe("M7F r187 presentation evidence replay", () => {
       lifecycle: { "optical-resource-initialization-failure.json": createFailureCapture() },
     });
     expect(scenario(bundle, "optical-resource-initialization-failure").status).toBe("passed");
+  });
+
+  it("qualifies an incomplete M5 composite only after its current M6 attempt fails and cleanup precedes WebGL", () => {
+    const capture = createM5CompositeFailureCapture();
+    const bundle = createBundle({
+      lifecycle: { "m5-composite-incomplete-failure.json": capture },
+    });
+    expect(scenario(bundle, "m5-composite-incomplete-failure").status).toBe("passed");
+
+    capture.events.find((event) => event.kind === "failure")!.operation = "presentation";
+    expect(scenario(bundle, "m5-composite-incomplete-failure").issues)
+      .toContain("m6-failure-cleanup-generation-or-operation-identity-invalid");
   });
 
   it("accepts stale M6C readback retirement only after SPA navigation unmounts the host", () => {

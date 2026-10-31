@@ -1068,7 +1068,7 @@ test("native M6 flags leave an unsupported Ground Glass scene on WebGL without a
 const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (
   page: Page,
   failurePoint: GroundGlassWebGpuTestFailurePoint,
-  failedOperation: "presentation" | "textureDisplay",
+  failedOperation: "presentation" | "textureDisplay" | "composite",
 ): Promise<void> => {
   await startM6NativeLowPage(page);
   const pane = paneFor(page);
@@ -1107,9 +1107,10 @@ const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (
   expect(new Set(events.filter((event) => event.kind === "attempt").map((event) => event.generationId)))
     .toEqual(new Set([failure.generationId]));
   expect(await pane.getAttribute("data-actual-execution-api")).not.toBe("webgpu");
-  await persistM7fLifecycleEvidence(page, failedOperation === "presentation"
-    ? "presentation-pass-failure"
-    : "final-display-failure", {
+  const scenarioId = failedOperation === "presentation" ? "presentation-pass-failure"
+    : failedOperation === "composite" ? "m5-composite-incomplete-failure"
+      : "final-display-failure";
+  await persistM7fLifecycleEvidence(page, scenarioId, {
     failurePoint,
     failedOperation,
     failedRequestId,
@@ -1160,6 +1161,17 @@ test("native M6 presentation-pass failure never publishes a completed M6 frame",
     page,
     "m6-presentation-before-render",
     "presentation",
+  );
+});
+
+test("native M6 rejects an incomplete M5 composite before WebGL fallback", async ({ page }) => {
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
+    "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
+  test.setTimeout(180_000);
+  await assertM6RuntimeFailureFallsBackWithoutPublishingDoF(
+    page,
+    "aperture-composite-after-submit",
+    "composite",
   );
 });
 

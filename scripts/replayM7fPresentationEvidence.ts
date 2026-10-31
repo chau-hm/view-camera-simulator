@@ -12,6 +12,7 @@ const EVIDENCE_DIRECTORY = "docs/architecture/ground-glass-m7f-r187-presentation
 const REPORT_OUTPUT = "docs/architecture/GROUND_GLASS_M7F_R187_PRESENTATION_REPORT.json";
 const lifecycleFiles = [
   "raw-first-provisioning.json",
+  "m5-composite-incomplete-failure.json",
   "optical-resource-initialization-failure.json",
   "presentation-node-initialization-failure.json",
   "presentation-pass-failure.json",
