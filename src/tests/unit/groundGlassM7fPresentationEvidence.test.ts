@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   evaluateGroundGlassM7fPresentationEvidence,
   GROUND_GLASS_M7F_EVALUATOR_REVISION,
   GROUND_GLASS_M7F_REPORT_ID,
   type GroundGlassM7fPresentationEvidenceBundle,
 } from "../../render/webgpu/groundGlassM7fPresentationEvidence";
+import { fingerprintGroundGlassM6bPresentationState } from "../../render/groundGlassPhysicalOverlayConformance";
+import { evaluateGroundGlassM6bSpatialConformance } from "../../render/groundGlassM6bSpatialConformance";
+import type { GroundGlassPresentationNodeState } from "../../render/webgpu/groundGlassPresentationNodes";
 
 const sourceCommitSha = "a".repeat(40);
 const invocation = "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 npm run test:e2e -- --project=chrome-native-webgpu";
@@ -29,6 +33,111 @@ const provenance = {
   internalFallback: "none",
   nodeVersion: "v24.3.0",
   operatingSystem: "darwin 26.1",
+};
+type MutableRecord = Record<string, unknown>;
+const asMutableRecord = (value: unknown): MutableRecord => value as MutableRecord;
+const asMutableArray = (value: unknown): unknown[] => value as unknown[];
+const readEvidenceFixture = (path: string): MutableRecord => JSON.parse(readFileSync(path, "utf8")) as MutableRecord;
+const cloneEvidenceFixture = (path: string): MutableRecord => structuredClone(readEvidenceFixture(path));
+const m6bFixturePath = "docs/architecture/ground-glass-m7f-r187-presentation/m6b-conformance.json";
+const m6cFixturePath = "docs/architecture/ground-glass-m7f-r187-presentation/m6c-alpha-conformance.json";
+const productionFixturePath = "docs/architecture/ground-glass-m7f-r187-presentation/production-isolation.json";
+const persistedBundle = (
+  field: "m6bConformance" | "m6cAlpha" | "productionIsolation",
+  fixture: MutableRecord,
+  overrides: Partial<GroundGlassM7fPresentationEvidenceBundle> = {},
+) => {
+  const captureProvenance = asMutableRecord(fixture.captureProvenance ?? fixture.sourceProvenance);
+  return createBundle({
+    sourceCommitSha: String(captureProvenance.sourceCommitSha),
+    testInvocation: String(captureProvenance.testInvocation),
+    [field]: fixture,
+    ...overrides,
+  });
+};
+const persistedScenario = (
+  artifact: MutableRecord,
+  scenarioId: string,
+  field: "m6bConformance" | "m6cAlpha" | "productionIsolation" = "m6bConformance",
+) => scenario(persistedBundle(field, artifact), scenarioId);
+const rgbCase = (artifact: MutableRecord, name: string): MutableRecord => {
+  const item = asMutableArray(artifact.pixelOracleCases)
+    .map(asMutableRecord)
+    .find((candidate) => candidate.name === name);
+  if (!item) throw new Error(`Missing RGB case ${name}`);
+  return item;
+};
+const rgbSample = (capture: MutableRecord, id: string): MutableRecord => {
+  const oracle = asMutableRecord(capture.oracle);
+  const sample = asMutableArray(oracle.samples).map(asMutableRecord).find((candidate) => candidate.id === id);
+  if (!sample) throw new Error(`Missing RGB sample ${id}`);
+  return sample;
+};
+const refreshPresentationStateFingerprint = (capture: MutableRecord): void => {
+  const state = capture.presentationState as GroundGlassPresentationNodeState;
+  asMutableRecord(capture.inputFingerprints).presentationState = fingerprintGroundGlassM6bPresentationState(state);
+};
+const shiftSpatialMeasurement = (measurement: MutableRecord, dx: number, dy = 0): void => {
+  const expectedImage = asMutableRecord(measurement.expectedImagePx);
+  const expectedTarget = asMutableRecord(measurement.expectedTargetPx);
+  const measuredImage = asMutableRecord(measurement.measuredImagePx);
+  const measuredTarget = asMutableRecord(measurement.measuredTargetPx);
+  measuredImage.x = Number(expectedImage.x) + dx;
+  measuredImage.y = Number(expectedImage.y) + dy;
+  measuredTarget.x = Number(expectedTarget.x) + dx;
+  measuredTarget.y = Number(expectedTarget.y) + dy;
+  measurement.imageErrorXPx = Number(measuredImage.x) - Number(expectedImage.x);
+  measurement.imageErrorYPx = Number(measuredImage.y) - Number(expectedImage.y);
+  measurement.imageMappingErrorPx = Math.hypot(Number(measurement.imageErrorXPx), Number(measurement.imageErrorYPx));
+  measurement.targetErrorXPx = Number(measuredTarget.x) - Number(expectedTarget.x);
+  measurement.targetErrorYPx = Number(measuredTarget.y) - Number(expectedTarget.y);
+  measurement.overlayMappingErrorPx = Math.hypot(Number(measurement.targetErrorXPx), Number(measurement.targetErrorYPx));
+  const measuredGridValue = measurement.measuredGridIntersectionPx;
+  if (measuredGridValue && typeof measuredGridValue === "object") {
+    const expectedGrid = asMutableRecord(measurement.expectedGridIntersectionPx);
+    const measuredGrid = asMutableRecord(measuredGridValue);
+    measuredGrid.x = Number(expectedGrid.x) + dx;
+    measuredGrid.y = Number(expectedGrid.y) + dy;
+    measurement.gridErrorXPx = Number(measuredGrid.x) - Number(expectedGrid.x);
+    measurement.gridErrorYPx = Number(measuredGrid.y) - Number(expectedGrid.y);
+    measurement.gridMappingErrorPx = Math.hypot(Number(measurement.gridErrorXPx), Number(measurement.gridErrorYPx));
+    measurement.gridToLandmarkErrorPx = Math.hypot(
+      Number(measuredGrid.x) - Number(measuredImage.x),
+      Number(measuredGrid.y) - Number(measuredImage.y),
+    );
+  }
+};
+const refreshSpatialReplaySnapshots = (artifact: MutableRecord): void => {
+  const inputs = asMutableArray(artifact.spatialConformanceInputs);
+  for (const value of inputs) {
+    const input = asMutableRecord(value);
+    const alignment = asMutableRecord(input.alignment);
+    const errors: number[] = [];
+    for (const measurementValue of asMutableArray(alignment.measurements)) {
+      const measurement = asMutableRecord(measurementValue);
+      if (measurement.status !== "measured") continue;
+      errors.push(Number(measurement.imageMappingErrorPx), Number(measurement.overlayMappingErrorPx));
+      if (measurement.measuredGridIntersectionPx) {
+        errors.push(Number(measurement.gridMappingErrorPx), Number(measurement.gridToLandmarkErrorPx));
+      }
+    }
+    alignment.maximumErrorPx = Math.max(...errors);
+    alignment.rmsErrorPx = Math.sqrt(errors.reduce((sum, error) => sum + error * error, 0) / errors.length);
+  }
+  const result = evaluateGroundGlassM6bSpatialConformance({
+    captures: inputs as unknown as Parameters<typeof evaluateGroundGlassM6bSpatialConformance>[0]["captures"],
+    stateSpecificAssertionsPassed: false,
+  });
+  artifact.spatialConformance = result;
+  for (const classification of result.perCaptureClassifications) {
+    const observed = asMutableArray(artifact.captures).map(asMutableRecord)
+      .find((capture) => capture.captureId === classification.captureId);
+    const input = inputs.map(asMutableRecord).find((capture) => capture.captureId === classification.captureId);
+    if (observed && input) {
+      observed.alignment = structuredClone(input.alignment);
+      observed.spatialConformance = classification;
+    }
+  }
 };
 
 const createM6dCapture = () => {
@@ -137,17 +246,6 @@ const createFailureCapture = () => ({
       internalFallback: "none",
     },
     {
-      kind: "renderer-mounted",
-      attemptId: "attempt-failure",
-      generationId: "generation-failed",
-      requestId: "request-failed",
-      channelId: "channel-default",
-      sceneId: "architecture-rise",
-      rendererFamily: "webgpu-renderer",
-      executionApi: "webgpu",
-      internalFallback: "none",
-    },
-    {
       kind: "failure",
       stage: "initialization",
       attemptId: "attempt-failure",
@@ -155,7 +253,7 @@ const createFailureCapture = () => ({
       requestId: "request-failed",
       channelId: "channel-default",
       sceneId: "architecture-rise",
-      operation: "initialize-optical-resources",
+      operation: "initialize-m6-optical-resources",
       reason: "injected-failure",
     },
     { kind: "cleanup", outcome: "confirmed", generationId: "generation-failed" },
@@ -167,6 +265,8 @@ const createFailureCapture = () => ({
       channelId: "channel-default",
       sceneId: "architecture-rise",
       rendererFamily: "webgl-renderer",
+      executionApi: "webgl2",
+      internalFallback: "none",
     },
   ],
 });
@@ -240,8 +340,14 @@ const createRegisteredAppCapture = () => {
       requestId,
       rendererGenerationId: generationId,
       sourceRevision: "architecture-rise-raw-rtt-v1",
-      completedPasses: ["physicalCoC", "farGather", "nearGather", "farReconstructionB1", "researchComposite"],
-      targetFormats: { composite: "rgba16float" },
+      completedPasses: ["farGather", "nearGather", "farReconstructionB1", "researchComposite"],
+      targetFormats: { composite: "rgba16float", physical: "rgba16float", validity: "rgba8unorm" },
+      physicalDataFingerprint: "physical-fingerprint",
+      inputFingerprints: {
+        physical: "physical-fingerprint",
+        depth: "depth-fingerprint",
+        validity: "validity-fingerprint",
+      },
     },
     comparisons: { orientationMetrics: {
       correct180DegreeMatchMeanRgbError: 1,
@@ -274,6 +380,15 @@ const createRegisteredAppCapture = () => {
         latestAcceptedSceneId: sceneId,
         activeGenerationId: generationId,
         activeRendererFamily: "webgpu-renderer",
+      },
+      {
+        kind: "frame-performance",
+        evidence: {
+          requestId,
+          generationId,
+          physicalCocFootprint: { wallClockMs: 0.4 },
+          physicalValidity: { wallClockMs: 0.3 },
+        },
       },
     ],
   };
@@ -334,8 +449,14 @@ describe("M7F r187 presentation evidence replay", () => {
     ["M3 Raw source substituted for M5", (capture: ReturnType<typeof createRegisteredAppCapture>) => {
       capture.presentationSource = "m3-raw";
     }, "m6-source-is-not-current-m5-composite"],
+    ["raw M5 Near texture substituted for the completed composite", (capture: ReturnType<typeof createRegisteredAppCapture>) => {
+      capture.presentationSource = "m5-near";
+    }, "m6-source-is-not-current-m5-composite"],
     ["M5 composite pass omitted", (capture: ReturnType<typeof createRegisteredAppCapture>) => {
       capture.opticalReadback.completedPasses = capture.opticalReadback.completedPasses.filter((pass) => pass !== "researchComposite");
+    }, "registered-m5-composite-incomplete-or-stale"],
+    ["M6 completion claimed before the current M5 composite", (capture: ReturnType<typeof createRegisteredAppCapture>) => {
+      capture.opticalReadback.requestId = "previous-m5-request";
     }, "registered-m5-composite-incomplete-or-stale"],
     ["stale M6 request identity", (capture: ReturnType<typeof createRegisteredAppCapture>) => {
       capture.presentationRequestId = "retired-request";
@@ -353,6 +474,183 @@ describe("M7F r187 presentation evidence replay", () => {
       expect(result.scenarios.find((item) => item.id === "registered-architecture-rise-m3-m6")?.issues)
         .toContain(expectedIssue);
     }
+  });
+
+  it("requires observed current-request M4 physical pass evidence", () => {
+    const app = createRegisteredAppCapture();
+    app.adapterEvents = app.adapterEvents.filter((event) => event.kind !== "frame-performance");
+    const result = scenario(createBundle({ registeredApp: app }), "registered-architecture-rise-m3-m6");
+
+    expect(result.issues).toContain("registered-m4-physical-passes-not-observed-for-current-request");
+  });
+
+  it("requires the registered M4 physical storage fingerprint to match its readback", () => {
+    const app = createRegisteredAppCapture();
+    app.opticalReadback.inputFingerprints.physical = "different-physical-texture";
+    const result = scenario(createBundle({ registeredApp: app }), "registered-architecture-rise-m3-m6");
+
+    expect(result.issues).toContain("registered-m5-composite-incomplete-or-stale");
+  });
+
+  it("replays all persisted M6B spatial and visible RGB measurements as a positive control", () => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    const result = replay(persistedBundle("m6bConformance", artifact));
+
+    expect(scenario(persistedBundle("m6bConformance", cloneEvidenceFixture(m6bFixturePath)), "m6b-spatial-fixture").status)
+      .toBe("passed");
+    expect(result.scenarios.find((item) => item.id === "m6b-final-rgb")?.status).toBe("passed");
+  });
+
+  it.each([
+    ["Raw horizontal flip", "neutral-raw", "black", "u"],
+    ["Upright vertical flip", "m6b-throughput-half", "black", "v"],
+    ["Focus Loupe crop-origin inversion", "loupe-centered-crop", "black", "v"],
+  ])("rejects %s through the source/display coordinate contract", (_name, caseName, sampleId, axis) => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    const sample = rgbSample(rgbCase(artifact, caseName), sampleId);
+    const sourceUv = asMutableRecord(sample.sourceUvTopOrigin);
+    sourceUv[axis] = 1 - Number(sourceUv[axis]);
+
+    expect(persistedScenario(artifact, "m6b-final-rgb").issues)
+      .toContain(`rgb-orientation-or-crop-origin-invalid:${caseName}:${sampleId}`);
+  });
+
+  it("rejects a Focus Loupe pan offset that differs from its measured spatial crop", () => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    const capture = rgbCase(artifact, "loupe-centered-crop");
+    const crop = asMutableRecord(capture.sourceCrop);
+    crop.centerU = Number(crop.centerU) + 0.1;
+
+    expect(persistedScenario(artifact, "m6b-final-rgb").issues)
+      .toContain("rgb-crop-does-not-match-spatial-capture:m6b-loupe-centered");
+  });
+
+  it.each([
+    ["shifted Image Circle optical-axis sign", "m6b-circle-shifted", (state: MutableRecord) => {
+      const coverage = asMutableRecord(state.coverage);
+      const geometry = asMutableRecord(coverage.geometry);
+      geometry.opticalAxisOffsetXMm = -Number(geometry.opticalAxisOffsetXMm);
+    }, "rgb-linear-output-or-gain-invalid:m6b-circle-shifted:asymmetric-rgb"],
+    ["nonparallel conic image-side orientation", "m6b-conic-coverage", (state: MutableRecord) => {
+      const coverage = asMutableRecord(state.coverage);
+      const geometry = asMutableRecord(coverage.geometry);
+      const axial = asMutableRecord(geometry.axial);
+      axial.x = -2;
+    }, "rgb-linear-output-or-gain-invalid:m6b-conic-coverage:field-right"],
+    ["natural-illumination physical optical axis", "m6b-combined-effects", (state: MutableRecord) => {
+      const illumination = asMutableRecord(state.naturalIllumination);
+      const geometry = asMutableRecord(illumination.geometry);
+      geometry.opticalAxisOffsetXMm = -Number(geometry.opticalAxisOffsetXMm);
+    }, "rgb-linear-output-or-gain-invalid:m6b-combined-effects:asymmetric-rgb"],
+  ])("rejects %s when its independently replayed physical output changes", (_name, caseName, mutateState, expectedIssue) => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    const capture = rgbCase(artifact, caseName);
+    const state = asMutableRecord(capture.presentationState);
+    mutateState(state);
+    refreshPresentationStateFingerprint(capture);
+
+    expect(persistedScenario(artifact, "m6b-final-rgb").issues).toContain(expectedIssue);
+  });
+
+  it.each([
+    ["RGB gain applied twice", "m6b-throughput-half", "middle-gray", "rgb-linear-output-or-gain-invalid:m6b-throughput-half:middle-gray"],
+    ["incorrect linear-to-sRGB conversion", "neutral-raw", "middle-gray", "rgb-linear-srgb-or-gain-reference-invalid:neutral-raw:middle-gray"],
+    ["actual final RGB outside the frozen channel limit", "neutral-raw", "middle-gray", "rgb-channel-error-exceeds-frozen-limit:neutral-raw"],
+  ])("rejects %s using the per-sample CPU presentation replay", (_name, caseName, sampleId, expectedIssue) => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    const sample = rgbSample(rgbCase(artifact, caseName), sampleId);
+    if (expectedIssue.includes("rgb-linear-output")) {
+      const output = asMutableArray(sample.expectedOutputLinearRgba);
+      output[0] = Number(output[0]) + 0.25;
+    } else if (expectedIssue.includes("rgb-linear-srgb")) {
+      const expected = asMutableArray(sample.expectedSrgbRgb);
+      expected[0] = Number(expected[0]) + 8;
+    } else {
+      const measured = asMutableArray(sample.measuredSrgbRgba);
+      const expected = asMutableArray(sample.expectedSrgbRgb);
+      measured[0] = Number(expected[0]) + 10;
+      const errors = asMutableArray(sample.absoluteChannelError);
+      errors[0] = 10;
+    }
+
+    expect(persistedScenario(artifact, "m6b-final-rgb").issues).toContain(expectedIssue);
+  });
+
+  it("rejects missing RGB samples instead of trusting the nine-state summary", () => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    const samples = asMutableArray(asMutableRecord(rgbCase(artifact, "neutral-raw").oracle).samples);
+    samples.pop();
+
+    expect(persistedScenario(artifact, "m6b-final-rgb").issues)
+      .toContain("rgb-sample-inventory-incomplete:neutral-raw");
+  });
+
+  it.each([
+    ["stale request", (capture: MutableRecord) => { capture.requestId = "retired-request"; }],
+    ["stale renderer generation", (capture: MutableRecord) => { capture.rendererGenerationId = "retired-generation"; }],
+  ])("rejects M6B %s evidence without a matching accepted host frame", (_name, mutate) => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    mutate(rgbCase(artifact, "neutral-raw"));
+
+    expect(persistedScenario(artifact, "m6b-final-rgb").issues)
+      .toContain("rgb-neutral-raw-no-host-accepted-current-frame-result");
+  });
+
+  it.each([
+    ["a missing capture", (artifact: MutableRecord) => { asMutableArray(artifact.spatialConformanceInputs).pop(); }, "spatial-capture-inventory-invalid"],
+    ["a duplicate capture", (artifact: MutableRecord) => {
+      const inputs = asMutableArray(artifact.spatialConformanceInputs);
+      inputs.push(structuredClone(inputs[0]));
+    }, "spatial-capture-identity-duplicate-or-missing"],
+    ["a visible landmark marked unsupported", (artifact: MutableRecord) => {
+      const input = asMutableRecord(asMutableArray(artifact.spatialConformanceInputs)[0]);
+      const measurements = asMutableArray(asMutableRecord(input.alignment).measurements);
+      asMutableRecord(measurements[0]).status = "unsupported";
+    }, "spatial-per-capture-threshold-or-landmark-gate-failed"],
+    ["a spatial error above two CSS pixels", (artifact: MutableRecord) => {
+      const input = asMutableRecord(asMutableArray(artifact.spatialConformanceInputs)[0]);
+      const measurements = asMutableArray(asMutableRecord(input.alignment).measurements);
+      shiftSpatialMeasurement(asMutableRecord(measurements[0]), 5);
+    }, "spatial-per-capture-threshold-or-landmark-gate-failed"],
+    ["a per-capture RMS above 1.25 CSS pixels", (artifact: MutableRecord) => {
+      const input = asMutableRecord(asMutableArray(artifact.spatialConformanceInputs)[0]);
+      const measurements = asMutableArray(asMutableRecord(input.alignment).measurements);
+      for (const value of measurements) {
+        shiftSpatialMeasurement(asMutableRecord(value), 1.5);
+      }
+      refreshSpatialReplaySnapshots(artifact);
+    }, "spatial-per-capture-error-exceeds-frozen-limit"],
+  ])("rejects %s in the replayed per-capture spatial gate", (_name, mutate, expectedIssue) => {
+    const artifact = cloneEvidenceFixture(m6bFixturePath);
+    mutate(artifact);
+
+    const issues = persistedScenario(artifact, "m6b-spatial-fixture").issues;
+    if (!issues.includes(expectedIssue)) throw new Error(JSON.stringify({ expectedIssue, issues }));
+  });
+
+  it.each([
+    ["a substituted material", (readback: MutableRecord) => {
+      asMutableRecord(readback.material).uuid = "different-material-instance";
+    }],
+    ["the rejected NoBlending variant", (readback: MutableRecord) => {
+      asMutableRecord(readback.material).blending = "none";
+    }],
+    ["nonopaque actual target alpha", (readback: MutableRecord) => {
+      const samples = asMutableArray(readback.samples);
+      const bytes = asMutableArray(asMutableRecord(samples[0]).actualTargetBytes);
+      bytes[3] = 128;
+    }],
+    ["tone mapping silently enabled", (readback: MutableRecord) => {
+      asMutableRecord(readback.material).toneMapped = true;
+    }],
+  ])("rejects M6C %s under the actual target/material contract", (_name, mutate) => {
+    const artifact = cloneEvidenceFixture(m6cFixturePath);
+    const firstCapture = asMutableRecord(asMutableArray(artifact.captures)[0]);
+    mutate(asMutableRecord(firstCapture.readback));
+
+    const issues = persistedScenario(artifact, "m6c-opaque-target-alpha", "m6cAlpha").issues;
+    expect(issues.some((issue) => issue.startsWith("m6c-material-equivalence-invalid:") ||
+      issue.startsWith("m6c-opaque-alpha-or-rgb-contract-failed:"))).toBe(true);
   });
 
   it.each([
@@ -428,14 +726,14 @@ describe("M7F r187 presentation evidence replay", () => {
 
   it.each([
     ["missing host acknowledgement", (capture: ReturnType<typeof createFailureCapture>) => {
-      capture.events.splice(4, 1);
+      capture.events.splice(3, 1);
     }, "host-cleanup-acknowledgement-missing-or-contradictory"],
     ["replacement before host acknowledgement", (capture: ReturnType<typeof createFailureCapture>) => {
       const replacement = capture.events.pop()!;
       capture.events.splice(3, 0, replacement);
     }, "fallback-mounted-before-confirmed-cleanup"],
     ["failed cleanup represented as confirmed", (capture: ReturnType<typeof createFailureCapture>) => {
-      capture.events[3]!.outcome = "failed";
+      capture.events[2]!.outcome = "failed";
     }, "confirmed-cleanup-not-observed-after-failure"],
     ["failed request published", (capture: ReturnType<typeof createFailureCapture>) => {
       capture.events.push({
@@ -445,6 +743,8 @@ describe("M7F r187 presentation evidence replay", () => {
         sceneId: "architecture-rise",
         generationId: "generation-failed",
         rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        internalFallback: "none",
       });
     }, "failed-m6-request-published-as-complete"],
   ])("rejects %s in lifecycle evidence", (_name, mutate, expectedIssue) => {
@@ -482,6 +782,14 @@ describe("M7F r187 presentation evidence replay", () => {
     });
     expect(contradictory.inventoryConsistent).toBe(false);
     expect(contradictory.decisions.m6DevelopmentAuthorization).toBe(false);
+  });
+
+  it("rejects a production capture claiming WebGPU despite the WebGL-only boundary", () => {
+    const artifact = cloneEvidenceFixture(productionFixturePath);
+    artifact.productionWebGpuEnabled = true;
+    const result = persistedScenario(artifact, "production-webgl-isolation", "productionIsolation");
+
+    expect(result.issues).toContain("production-webgpu-enabled-or-runtime-revision-invalid");
   });
 
   it("keeps M6 evidence from becoming renderer-attempt authority or later-stage authorization", () => {

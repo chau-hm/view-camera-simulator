@@ -1025,7 +1025,11 @@ test("native M6 optical-resource initialization failure cleans up the Raw-first 
   const events = await readM6TestEvents(page);
   const failure = events.find((event) => event.kind === "failure" &&
     event.reason.includes("m6-optical-resource-initialization"));
-  expect(failure).toMatchObject({ kind: "failure", stage: "initialization" });
+  expect(failure).toMatchObject({
+    kind: "failure",
+    stage: "initialization",
+    operation: "initialize-m6-optical-resources",
+  });
   if (failure?.kind !== "failure") throw new Error("Raw-first M6 resource initialization failure was not observed");
   expect(events.some((event) => event.kind === "frame-completed" &&
     event.generationId === failure.generationId)).toBe(false);
@@ -1037,6 +1041,7 @@ test("native M6 optical-resource initialization failure cleans up the Raw-first 
     failureOperation: failure.operation,
     failureGenerationId: failure.generationId,
     cleanupOutcome: cleanupEvent?.kind === "cleanup" ? cleanupEvent.outcome : null,
+    fallbackBackend: await pane.getAttribute("data-mounted-renderer-family"),
   });
 });
 
@@ -1131,7 +1136,11 @@ test("native M6 presentation node initialization failure selects the existing We
   const events = await readM6TestEvents(page);
   const failure = events.find((event) => event.kind === "failure" &&
     event.reason.includes("m6-presentation-node-initialization"));
-  expect(failure).toMatchObject({ kind: "failure", stage: "initialization" });
+  expect(failure).toMatchObject({
+    kind: "failure",
+    stage: "initialization",
+    operation: "initialize-m6-presentation-node",
+  });
   if (failure?.kind !== "failure") throw new Error("M6 presentation node initialization failure was not observed");
   expect(events.some((event) => event.kind === "frame-completed" &&
     event.generationId === failure.generationId)).toBe(false);

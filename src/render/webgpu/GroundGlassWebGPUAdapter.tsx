@@ -1887,6 +1887,7 @@ export const GroundGlassWebGPUAdapter = ({
     effectTokenRef.current = effectToken;
     let retired = false;
     let failureReported = false;
+    let initializationOperation: string | null = "initialize-webgpu-renderer";
     let unregisterDeviceLossTestTrigger: () => void = () => undefined;
     let unregisterDeviceDestroyTestTrigger: () => void = () => undefined;
     let testDeviceDestroyRequested = false;
@@ -1971,11 +1972,16 @@ export const GroundGlassWebGPUAdapter = ({
       initialRawDebug: firstAcceptedRequest.rawDebug,
     }));
 
-    const reportFailure = (error: unknown, stage: "initialization" | "runtime", failedPass: GroundGlassRenderOperationId | null) => {
+    const reportFailure = (
+      error: unknown,
+      stage: "initialization" | "runtime",
+      failedOperation: string | null,
+      failedPass: GroundGlassRenderOperationId | null = null,
+    ) => {
       if (failureReported || retired || !isGenerationActive()) return;
       failureReported = true;
       adapterRoot?.setAttribute("data-failure-stage", stage);
-      adapterRoot?.setAttribute("data-failure-operation", failedPass ?? "unknown");
+      adapterRoot?.setAttribute("data-failure-operation", failedOperation ?? "unknown");
       adapterRoot?.setAttribute("data-failure-reason", errorMessage(error));
       if (isGroundGlassM6PresentationRequest(requestRef.current)) {
         const previousPresentation = presentationDiagnostic ?? makePresentationDiagnostic({
@@ -2004,7 +2010,7 @@ export const GroundGlassWebGPUAdapter = ({
         requestId: requestRef.current.identity.requestId,
         sceneId: requestRef.current.identity.sceneId,
         stage,
-        operation: failedPass ?? "unknown",
+        operation: failedOperation ?? "unknown",
         reason: errorMessage(error),
       });
       propsRef.current.onFailure(error instanceof Error ? error : new Error(errorMessage(error)), stage, failedPass);
@@ -4304,7 +4310,7 @@ export const GroundGlassWebGPUAdapter = ({
           });
         } catch (error) {
           activeRef.current = false;
-          reportFailure(error, "runtime", failedPass);
+          reportFailure(error, "runtime", failedPass, failedPass);
           await holdGroundGlassWebGpuOperationAfterFailure();
         }
       });
@@ -4593,6 +4599,7 @@ export const GroundGlassWebGPUAdapter = ({
               validityTarget,
               ...apertureGatherResources.targets,
             ];
+            initializationOperation = "initialize-m6-optical-resources";
             m6OwnedTargets.forEach((ownedTarget) => {
               renderer!.initRenderTarget(ownedTarget);
               if (ownedTarget === apertureGatherResources?.farTarget) {
@@ -4627,6 +4634,7 @@ export const GroundGlassWebGPUAdapter = ({
               throw new Error(`Authorized M6 session target preflight failed: ${formatEligibility.reason}`);
             }
             apertureGatherFormats = observedFormats;
+            initializationOperation = null;
           } catch (error) {
             setM6ResourceProvisioning((current) => ({ ...current, status: "failed" }));
             throw new Error(`M6 optical resource initialization failed: ${errorMessage(error)}`);
@@ -4669,6 +4677,9 @@ export const GroundGlassWebGPUAdapter = ({
               })
             : null,
         );
+        initializationOperation = isGroundGlassM6PresentationRequest(currentRequest)
+          ? "initialize-m6-presentation-node"
+          : "initialize-texture-display-node";
         display = await createRequestDisplay(
           currentRequest,
           camera,
@@ -4678,6 +4689,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (isGroundGlassM6PresentationRequest(currentRequest)) {
           throwIfGroundGlassWebGpuFailureInjected("m6-presentation-node-initialization");
         }
+        initializationOperation = null;
         throwIfGroundGlassWebGpuFailureInjected("initialization-after-target");
         renderer.setSize(Math.max(1, currentRequest.widthPx), Math.max(1, currentRequest.heightPx), false);
         setTargetSize({ width: target.width, height: target.height });
@@ -4736,7 +4748,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (!device) throw new Error("Native WebGPU backend exposed no initialized GPU device");
         const reportDeviceLoss = (reason: string): boolean => {
           if (retired || failureReported || !isGenerationActive()) return false;
-          reportFailure(new Error(reason), "runtime", null);
+          reportFailure(new Error(reason), "runtime", "device-loss", null);
           return true;
         };
         unregisterDeviceLossTestTrigger = registerGroundGlassDeviceLossTriggerForTest(
@@ -4789,7 +4801,7 @@ export const GroundGlassWebGPUAdapter = ({
         if (m6SessionProvisioningAllowed) {
           setM6ResourceProvisioning((current) => ({ ...current, status: "failed" }));
         }
-        reportFailure(error, "initialization", null);
+        reportFailure(error, "initialization", initializationOperation);
       }
     });
 

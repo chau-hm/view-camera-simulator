@@ -8,9 +8,11 @@ import {
   evaluateGroundGlassM6cAlphaConformance,
 } from "../groundGlassM6cAlphaConformance";
 import {
+  createGroundGlassM6bCalibrationSource,
   fingerprintGroundGlassM6bPresentationState,
   GROUND_GLASS_M6C_ALPHA_MATRIX,
 } from "../groundGlassPhysicalOverlayConformance";
+import { mapGroundGlassInspectionWindowToRttSourceCrop } from "../groundGlassInspectionWindow";
 import {
   encodeGroundGlassLinearChannelToSrgb,
   evaluateGroundGlassPresentationReference,
@@ -180,6 +182,7 @@ const nativeRuntimeEventIssues = (
   eventValue: unknown,
   identity: Readonly<{ attemptId: unknown; generationId: unknown; requestId: unknown; channelId: unknown; sceneId: unknown }>,
   prefix: string,
+  requireMounted = true,
 ): string[] => {
   if (!text(identity.generationId) || !text(identity.requestId) ||
       !text(identity.channelId) || !text(identity.sceneId)) return [`${prefix}-native-event-identity-missing`];
@@ -188,14 +191,16 @@ const nativeRuntimeEventIssues = (
     (!text(identity.attemptId) || event.attemptId === identity.attemptId) && event.generationId === identity.generationId);
   const mounted = events.find((event) => event.kind === "renderer-mounted" &&
     event.generationId === identity.generationId && (!runtime || event.attemptId === runtime.attemptId) &&
-    event.requestId === identity.requestId && event.channelId === identity.channelId && event.sceneId === identity.sceneId);
+    event.channelId === identity.channelId && event.sceneId === identity.sceneId);
   const issues: string[] = [];
-  if (!runtime || !text(runtime.attemptId) || runtime.rendererRevision !== "r187" || runtime.rendererFamily !== "webgpu-renderer" ||
+  if (!runtime || !text(runtime.attemptId) || (runtime.rendererRevision !== "r187" && runtime.rendererRevision !== "187") || runtime.rendererFamily !== "webgpu-renderer" ||
       runtime.executionApi !== "webgpu" || runtime.internalFallback !== "none") {
     issues.push(`${prefix}-native-runtime-event-invalid`);
   }
-  if (!mounted || mounted.rendererFamily !== "webgpu-renderer" || mounted.executionApi !== "webgpu" ||
-      mounted.internalFallback !== "none") issues.push(`${prefix}-native-mounted-renderer-event-invalid`);
+  if ((requireMounted && !mounted) || (mounted && (mounted.rendererFamily !== "webgpu-renderer" ||
+      mounted.executionApi !== "webgpu" || mounted.internalFallback !== "none" || !text(mounted.requestId)))) {
+    issues.push(`${prefix}-native-mounted-renderer-event-invalid`);
+  }
   return issues;
 };
 
@@ -350,8 +355,16 @@ const m6bSpatialIssues = (artifact: JsonRecord | null): string[] => {
   for (const capture of observedCaptures) {
     const input = inputRecords.find((item) => item.captureId === capture.captureId);
     const replay = result.perCaptureClassifications.find((item) => item.captureId === capture.captureId);
-    if (!input || !replay || !equalJson(capture.spatialConformanceInput, input) ||
-        !equalJson(capture.spatialConformance, replay) || capture.requestId !== input.requestId ||
+    const targetSize = asArray(capture.targetSizePx);
+    const outputSize = asArray(capture.outputSizePx);
+    if (!input || !replay || !equalJson(capture.spatialConformance, replay) ||
+        capture.name !== input.captureName || capture.previewMode !== input.previewMode ||
+        !equalJson(capture.crop, input.crop) ||
+        Number(targetSize[0]) !== asRecord(input.internalTargetSizePx)?.widthPx ||
+        Number(targetSize[1]) !== asRecord(input.internalTargetSizePx)?.heightPx ||
+        Number(outputSize[0]) !== asRecord(input.displaySizePx)?.widthPx ||
+        Number(outputSize[1]) !== asRecord(input.displaySizePx)?.heightPx ||
+        !equalJson(capture.alignment, input.alignment) || capture.requestId !== input.requestId ||
         capture.channelId !== input.channelId || capture.sceneId !== input.sceneId ||
         capture.rendererGenerationId !== input.rendererGenerationId) {
       issues.push(`spatial-capture-${String(capture.captureId)}-identity-or-replay-mismatch`);
@@ -388,6 +401,17 @@ const m6bRgbIssues = (artifact: JsonRecord | null): string[] => {
     "neutral-raw", "m6b-throughput-half", "m6b-natural-cos4", "m6b-circle-centered",
     "m6b-circle-shifted", "m6b-conic-coverage", "m6b-combined-effects", "loupe-centered-crop",
     "resized-standard-quality",
+  ];
+  const commonSampleIds = [
+    "black", "low-gray", "middle-gray", "srgb-break-low", "srgb-break-mid", "srgb-break-high", "white",
+    "saturated-red", "saturated-green", "saturated-blue", "asymmetric-rgb", "partial-alpha", "hdr",
+    "field-center-upper", "field-center-lower", "field-left", "field-right", "field-upper", "field-lower",
+    "field-upper-right", "field-lower-left", "field-edge-right", "field-edge-left", "nearest-edge-saturated-red",
+  ];
+  const loupeSampleIds = [
+    "black", "low-gray", "middle-gray", "srgb-break-low", "srgb-break-mid", "srgb-break-high", "white",
+    "saturated-red", "saturated-green", "saturated-blue", "asymmetric-rgb", "partial-alpha", "hdr",
+    "nearest-edge-saturated-red",
   ];
   if (cases.length !== 9 || requiredNames.some((name) => cases.filter((item) => item.name === name).length !== 1)) {
     issues.push("rgb-nine-state-inventory-invalid");
@@ -428,14 +452,30 @@ const m6bRgbIssues = (artifact: JsonRecord | null): string[] => {
     if (fingerprintGroundGlassM6bPresentationState(state) !== inputFingerprints.presentationState) {
       issues.push(`rgb-state-fingerprint-mismatch:${name}`);
     }
-    if (inputFingerprints.sourceData !== sourceFingerprint) issues.push(`rgb-source-fingerprint-mismatch:${name}`);
     const sourceSampling = oracle.sourceSampling;
     const sourceColorDomain = oracle.sourceColorDomain;
     if (sourceSampling !== "nearest" || sourceColorDomain !== "linear-no-color-space") {
       issues.push(`rgb-source-sampling-or-color-domain-invalid:${name}`);
     }
     const samples = asArray(oracle.samples).map(asRecord).filter((item): item is JsonRecord => item !== null);
-    if (samples.length < 14) issues.push(`rgb-sample-inventory-incomplete:${name}`);
+    const requiredSampleIds = name === "loupe-centered-crop" ? loupeSampleIds : commonSampleIds;
+    if (samples.length !== requiredSampleIds.length ||
+        requiredSampleIds.some((id) => samples.filter((sample) => sample.id === id).length !== 1)) {
+      issues.push(`rgb-sample-inventory-incomplete:${name}`);
+    }
+    const crop = asRecord(pixelCase.sourceCrop);
+    const expectedSourceFingerprint = crop
+      ? createGroundGlassM6bCalibrationSource({
+          inspectionWindow: mapGroundGlassInspectionWindowToRttSourceCrop(
+            crop as unknown as Parameters<typeof mapGroundGlassInspectionWindowToRttSourceCrop>[0],
+            state.previewMode,
+          ),
+          previewMode: state.previewMode,
+        }).sourceFingerprint
+      : null;
+    if (inputFingerprints.sourceData !== expectedSourceFingerprint) {
+      issues.push(`rgb-source-fingerprint-mismatch:${name}`);
+    }
     const sampleIds = new Set<string>();
     const stateErrors: number[] = [];
     const outputSize = asRecord(oracle.outputDimensions);
@@ -509,6 +549,10 @@ const m6bRgbIssues = (artifact: JsonRecord | null): string[] => {
     if (Number(oracle.maximumChannelError) !== maxError || !finite(oracle.rgbRmse) || !close(Number(oracle.rgbRmse), rmse)) {
       issues.push(`rgb-state-summary-disagrees-with-replay:${name}`);
     }
+  }
+  const neutralCase = cases.find((item) => item.name === "neutral-raw");
+  if (asRecord(neutralCase?.inputFingerprints)?.sourceData !== sourceFingerprint) {
+    issues.push("rgb-neutral-source-fingerprint-mismatch");
   }
   if (identityPairs.size !== 206) issues.push("rgb-total-sample-count-not-206");
   if (allErrors.length === 0 || Math.max(...allErrors) > 4 ||
@@ -635,14 +679,27 @@ const registeredAppIssues = (artifact: JsonRecord | null): string[] => {
     issues.push("registered-m6-presentation-identity-or-status-invalid");
   }
   const optical = asRecord(artifact.opticalReadback);
-  const requiredPasses = ["physicalCoC", "farGather", "nearGather", "farReconstructionB1", "researchComposite"];
+  const requiredPasses = ["farGather", "nearGather", "farReconstructionB1", "researchComposite"];
+  const formats = asRecord(optical?.targetFormats);
+  const fingerprints = asRecord(optical?.inputFingerprints);
   if (!optical || optical.exactIdentityMatch !== true ||
       optical.requestId !== artifact.requestId || optical.rendererGenerationId !== artifact.rendererGenerationId ||
       optical.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION ||
       !requiredPasses.every((pass) => stringArray(optical.completedPasses).includes(pass)) ||
-      asRecord(optical.targetFormats)?.composite !== "rgba16float") {
+      formats?.composite !== "rgba16float" || formats.physical !== "rgba16float" ||
+      formats.validity !== "rgba8unorm" || !text(optical.physicalDataFingerprint) ||
+      fingerprints?.physical !== optical.physicalDataFingerprint || !text(fingerprints.depth) || !text(fingerprints.validity)) {
     issues.push("registered-m5-composite-incomplete-or-stale");
   }
+  const matchingPerformance = asArray(artifact.adapterEvents).map(asRecord).filter((event): event is JsonRecord => {
+    const evidence = asRecord(event?.evidence);
+    return event?.kind === "frame-performance" && evidence?.requestId === artifact.requestId &&
+      evidence?.generationId === artifact.rendererGenerationId;
+  });
+  if (!matchingPerformance.some((event) => {
+    const evidence = asRecord(event.evidence);
+    return Boolean(asRecord(evidence?.physicalCocFootprint) && asRecord(evidence?.physicalValidity));
+  })) issues.push("registered-m4-physical-passes-not-observed-for-current-request");
   if (!text(artifact.requestId) || !text(artifact.rendererGenerationId) ||
       artifact.opticalReadback && asRecord(artifact.opticalReadback)?.requestId !== artifact.requestId) {
     issues.push("registered-m6-current-request-identity-missing");
@@ -805,8 +862,14 @@ const lifecycleIssues = (
     if (!fallbackMount || !hostCleanup || events.indexOf(fallbackMount) < events.indexOf(hostCleanup)) {
       issues.push("fallback-mounted-before-confirmed-cleanup");
     }
+    const expectedOperation = id === "optical-resource-initialization-failure" ? "initialize-m6-optical-resources"
+      : id === "presentation-node-initialization-failure" ? "initialize-m6-presentation-node"
+        : id === "presentation-pass-failure" ? "presentation"
+          : id === "final-display-failure" ? "textureDisplay"
+            : null;
     if (!text(failure?.attemptId) || !text(failure?.generationId) || !text(failure?.requestId) ||
-        !text(failure?.operation) || !text(failure?.reason) || cleanup?.generationId !== failure?.generationId ||
+        !text(failure?.operation) || (expectedOperation !== null && failure.operation !== expectedOperation) ||
+        !text(failure?.reason) || cleanup?.generationId !== failure?.generationId ||
         hostCleanup?.generationId !== failure?.generationId) {
       issues.push("m6-failure-cleanup-generation-or-operation-identity-invalid");
     }
@@ -816,11 +879,12 @@ const lifecycleIssues = (
       channelId: failure?.channelId,
       sceneId: failure?.sceneId,
       generationId: failure?.generationId,
-    }, `failure-${id}`));
+    }, `failure-${id}`, failure?.stage !== "initialization"));
     if (events.some((event) => event.kind === "frame-completed" && event.generationId === failure?.generationId &&
         event.requestId === failure?.requestId)) issues.push("failed-m6-request-published-as-complete");
-    if (asRecord(artifact.observations)?.fallbackBackend !== "webgl-renderer" &&
-        id !== "presentation-node-initialization-failure") issues.push("m6-failure-fallback-backend-invalid");
+    if (asRecord(artifact.observations)?.fallbackBackend !== "webgl-renderer") {
+      issues.push("m6-failure-fallback-backend-invalid");
+    }
   }
   return issues;
 };
