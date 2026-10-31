@@ -1207,7 +1207,20 @@
       "reason": "Focused native lifecycle and production-preview projects plus full unit/integration validation covered the bounded M4 change."
     },
     "hostedCI": {
-      "status": "pending PR publication"
+      "status": "passed",
+      "checkedHeadSha": "e2e046bfc1d34f70dd20eb6eb6eed504008aa78d",
+      "workflowRuns": [
+        {
+          "id": 41219180500,
+          "ci": "success",
+          "deployment": "skipped"
+        },
+        {
+          "id": 41219124788,
+          "ci": "success",
+          "deployment": "skipped"
+        }
+      ]
     }
   }
 }
