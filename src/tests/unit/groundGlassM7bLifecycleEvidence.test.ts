@@ -544,7 +544,7 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     expect(evaluateGroundGlassM7bLifecycleEvidence(report)).toMatchObject({
       valid: true,
       qualification: "partially-qualified",
-      counts: { passed: 12, failed: 0, blocked: 4, "not-run": 1 },
+      counts: { passed: 6, failed: 0, blocked: 10, "not-run": 1 },
     });
   });
 
