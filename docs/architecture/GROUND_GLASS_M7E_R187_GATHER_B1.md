@@ -79,6 +79,24 @@ The native B1 probe accepted all 10 controlled cases. It exercised positive and 
 
 The explicit overflow case observed `65536` CoC represented by the finite half-float maximum `65504` while retaining M4 validity code `2`. The B1 decision rejected the pixel and selected source fallback, matching the M4 validity contract; the saturated stored value was not treated as valid physical evidence.
 
+## M7E Review-Fix Round 1 — Persisted Evidence Integrity
+
+The review-fix round added a repeatable offline replay command:
+
+```bash
+npm run evidence:replay:m7e
+```
+
+It verifies all 12 manifest and gzip artifact pairs, checks manifest and compressed-payload SHA-256 values, bounds and typed-array schemas, restores the typed arrays, and reruns the capture evaluator, the standalone and embedded B1 boundary evaluator, and the Q1–Q7 quality evaluator. The replay needs no browser, application server, GPU, or temporary artifact files. The report inventory records the B1 probe only once; the lossless standalone and embedded probe envelopes carry the source SHA and numeric-recovery provenance.
+
+The native captures remain from source SHA `9382217c7820be87a596124fd78c28239d416653`. The committed artifact bundle had been written in `478e19f4b473540a575a18e4498e289644f305fe`; review fix v2 records each pre-repack payload SHA and preserves the capture source SHA. The twelve binary payloads were realigned to typed-array element boundaries by copying their original bytes without numeric conversion. The old JSON writer had converted non-finite B1 values to `null`; the v2 migration recovers those values only from the controlled case IDs and recorded binary16 bits, marks that provenance explicitly, and rejects unexplained nulls or disagreement with the bits. No GPU captures were relabeled or regenerated.
+
+The regressions reproduce all three findings: feeding the legacy null B1 values to the boundary evaluator yields `physical-half-storage`, `boundary-cpu-classification`, and `gather-half-decode`; passing the persisted twelve-row report shape with `readbackBuffers: null` yields twelve `invalid-passed-capture` results containing `missing-readback`; and coordinated edits to stored GPU/CPU outputs, or changes to source color, signed CoC, ellipse axes, depth, film, projection, observed gather IDs/UVs, sample count, or radius cap, are rejected by the independent CPU replay. The full persisted probe now decodes and passes all ten controlled B1 cases, and its standalone and embedded copies compare equal while preserving `NaN`, both infinities, and negative zero.
+
+Replay result: **12 passed, 0 failed, 0 blocked, 0 not-run**, with report counts matching the inventory and no evaluator issues. Recomputed Far and Near CPU reference arrays matched the persisted CPU arrays bit-for-bit in all 12 cases (`maximum absolute difference = 0`). Against those recomputed Far CPU references, the maximum native Far channel error was `0.000779212`; the maximum native Near RGB and alpha channel errors were `0.000482560`. B1 GPU/CPU maximum channel error was `0.000482560`, with maximum B1 RGB RMSE `0.000199295`. The old B1 `0.05` comparison was a photographic-quality style threshold and was not a numerical correctness contract. Evaluator v2 applies `0.001` RMSE and maximum channel error to B1, based on the existing native B1 boundary contract's `0.001` CPU/GPU error limit; actual stored B1 output remains checked against its binary16 bits. The quality replay reproduced the stored Q decisions and remains **partially-qualified**: Q3 bounded-qualified, Q1/Q5/Q6/Q7 reference-not-converged, and Q2/Q4 insufficient-support. The frozen M5Q thresholds and `0.05` quality gate were not changed; Far/Near/B1 native GPU/CPU comparisons use `0.001` limits.
+
+The review-fix evaluator revision is `m7e-r187-gather-b1-evaluator-v2`. The replay record is [M7E_OFFLINE_REPLAY_REPORT.json](ground-glass-m7e-r187-gather-b1/M7E_OFFLINE_REPLAY_REPORT.json). The deterministic artifact repack can be reproduced from its recorded source commits with `npm run evidence:migrate:m7e` before running the offline replay.
+
 ## Failure isolation and lifecycle
 
 The M5-specific native failure test passed eight injected points: target initialization, provenance submission, Far submission, Near submission, B1 submission, decision submission, composite submission, and readback. For every point, the M3 Raw frame remained completed and contentful, no application backend fallback occurred, and the failed M5 capture was not published. A later capture recovered.
@@ -130,3 +148,4 @@ M7 remains incomplete. M5Q dimensions that did not pass require further bounded 
 - M5 failure isolation: `ground-glass-m7e-r187-gather-b1/m5-failure-isolation.json`
 - M5 stale-readback/cleanup capture: `ground-glass-m7e-r187-gather-b1/m5-lifecycle-capture.json`
 - Twelve paired JSON metadata and compressed GPU/CPU readback artifacts: `ground-glass-m7e-r187-gather-b1/captures/`
+- Offline replay report: `ground-glass-m7e-r187-gather-b1/M7E_OFFLINE_REPLAY_REPORT.json`

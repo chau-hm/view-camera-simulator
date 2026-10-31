@@ -18,6 +18,7 @@ import {
   type GroundGlassB1FallbackReason,
   type GroundGlassB1SelectedPath,
 } from "./groundGlassB1Reference";
+import { referenceGroundGlassApertureGather } from "./groundGlassApertureGatherReference";
 import { DataUtils } from "three";
 import {
   ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
@@ -28,7 +29,12 @@ import type {
   GroundGlassB1BoundaryProbeReadback,
 } from "./groundGlassWebGpuTestSeam";
 
-export const GROUND_GLASS_M7E_EVALUATOR_REVISION = "m7e-r187-gather-b1-evaluator-v1";
+export const GROUND_GLASS_M7E_EVALUATOR_REVISION = "m7e-r187-gather-b1-evaluator-v2";
+/** Persisted CPU buffers are recomputed bit-for-bit from their captured inputs. */
+export const GROUND_GLASS_M7E_CPU_REFERENCE_MAX_ABSOLUTE_ERROR = 0;
+/** Native output comparisons retain the established 0.001 numerical contract. */
+export const GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_RMSE = 0.001;
+export const GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR = 0.001;
 export const GROUND_GLASS_M7E_R187_M5Q_REVISION = "m5q-architecture-rise-r187-v1";
 export const GROUND_GLASS_M7E_R187_GATHER_REVISION = ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION;
 export const GROUND_GLASS_M7E_R187_B1_REVISION = ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION;
@@ -124,11 +130,17 @@ export type GroundGlassM7eCaptureEvaluation = Readonly<{
   measured: Readonly<{
     farRgbRmse: number | null;
     farMaximumChannelError: number | null;
+    farCpuReferenceMaximumError: number | null;
     nearRgbRmse: number | null;
+    nearRgbMaximumChannelError: number | null;
     nearAlphaRmse: number | null;
+    nearAlphaMaximumError: number | null;
+    nearCpuReferenceMaximumError: number | null;
     nearB1RgbMaximumError: number | null;
     nearB1AlphaMaximumError: number | null;
+    b1RgbMaximumChannelError: number | null;
     b1FullFrameRmse: number | null;
+    b1MaximumChannelError: number | null;
     b1InvalidPixels: number | null;
   }>;
 }>;
@@ -227,6 +239,14 @@ const selectedChannelMaxAbsError = (
   }
   return maximum;
 };
+const maximumAbsoluteError = (actual: ArrayLike<number>, expected: ArrayLike<number>): number | null => {
+  if (actual.length !== expected.length || actual.length === 0) return null;
+  let maximum = 0;
+  for (let index = 0; index < actual.length; index += 1) {
+    maximum = Math.max(maximum, Math.abs(actual[index]! - expected[index]!));
+  }
+  return maximum;
+};
 
 /** Validate one registered-app native capture from observed values, not test labels. */
 export const evaluateGroundGlassM7eNativeCapture = (
@@ -301,11 +321,17 @@ export const evaluateGroundGlassM7eNativeCapture = (
   const measured = {
     farRgbRmse: null as number | null,
     farMaximumChannelError: null as number | null,
+    farCpuReferenceMaximumError: null as number | null,
     nearRgbRmse: null as number | null,
+    nearRgbMaximumChannelError: null as number | null,
     nearAlphaRmse: null as number | null,
+    nearAlphaMaximumError: null as number | null,
+    nearCpuReferenceMaximumError: null as number | null,
     nearB1RgbMaximumError: null as number | null,
     nearB1AlphaMaximumError: null as number | null,
+    b1RgbMaximumChannelError: null as number | null,
     b1FullFrameRmse: null as number | null,
+    b1MaximumChannelError: null as number | null,
     b1InvalidPixels: null as number | null,
   };
   if (!b) {
@@ -324,8 +350,19 @@ export const evaluateGroundGlassM7eNativeCapture = (
       ["nearCpuReferenceRgba", b.nearCpuReferenceRgba, gatherPixels * 4],
       ["nearBeforeB1Rgba", b.nearBeforeB1Rgba, gatherPixels * 4],
       ["nearAfterB1Rgba", b.nearAfterB1Rgba, gatherPixels * 4],
+      ["nearCpuCenterIsNear", b.nearCpuCenterIsNear, gatherPixels],
+      ["nearCpuEvaluatedProposalCount", b.nearCpuEvaluatedProposalCount, gatherPixels],
+      ["nearCpuAcceptedProposalCount", b.nearCpuAcceptedProposalCount, gatherPixels],
+      ["nearCpuNonzeroMembershipCount", b.nearCpuNonzeroMembershipCount, gatherPixels],
+      ["nearCpuWeightSum", b.nearCpuWeightSum, gatherPixels],
+      ["nearCpuCoverageMass", b.nearCpuCoverageMass, gatherPixels],
+      ["nearCpuEstimatedCoverage", b.nearCpuEstimatedCoverage, gatherPixels],
+      ["nearCpuAcceptedAreaRatioMean", b.nearCpuAcceptedAreaRatioMean, gatherPixels],
+      ["nearCpuAcceptedCompensationMaximum", b.nearCpuAcceptedCompensationMaximum, gatherPixels],
       ["b1FarRgba", b.b1FarRgba, sourcePixels * 4],
+      ["researchCompositeRgba", b.researchCompositeRgba, sourcePixels * 4],
       ["observedGatherCenterSourceIds", b.observedGatherCenterSourceIds, gatherPixels * 2],
+      ["observedGatherCenterSourceUvs", b.observedGatherCenterSourceUvs, gatherPixels * 2],
       ["observedSelectedGatherIds", b.observedSelectedGatherIds, sourcePixels * 2],
       ["observedSelectedCenterSourceIds", b.observedSelectedCenterSourceIds, sourcePixels * 2],
       ["b1Decision", b.b1Decision, sourcePixels * 4],
@@ -334,20 +371,76 @@ export const evaluateGroundGlassM7eNativeCapture = (
       if (!values || values.length !== expected) add("readback-length", `capture.readbackBuffers.${name}`, `expected ${expected} values, observed ${values?.length ?? "missing"}`);
       else if (!isFiniteArray(values)) add("non-finite-readback", `capture.readbackBuffers.${name}`, "readback contains NaN or infinity");
     }
-    measured.farRgbRmse = selectedChannelRmse(b.farGatherRgba, b.farCpuReferenceRgba, [0, 1, 2]);
-    measured.farMaximumChannelError = selectedChannelMaxAbsError(b.farGatherRgba, b.farCpuReferenceRgba, [0, 1, 2]);
-    measured.nearRgbRmse = selectedChannelRmse(b.nearRgba, b.nearCpuReferenceRgba, [0, 1, 2]);
-    measured.nearAlphaRmse = selectedChannelRmse(b.nearRgba, b.nearCpuReferenceRgba, [3]);
+    const validBuffers = expectedLengths.every(([, values, expected]) => values && values.length === expected && isFiniteArray(values));
+    let recomputedFar: Float32Array | null = null;
+    let recomputedNear: Float32Array | null = null;
+    if (capture.nearGatherWidthPx !== capture.farGatherWidthPx || capture.nearGatherHeightPx !== capture.farGatherHeightPx) {
+      add("gather-dimension-mismatch", "capture.nearGatherWidthPx", "M7E Far and Near CPU reference inputs require the same gather dimensions");
+    } else if (validBuffers) {
+      try {
+        const cpuGather = referenceGroundGlassApertureGather({
+          source: { widthPx: capture.sourceWidthPx, heightPx: capture.sourceHeightPx },
+          gather: { widthPx: capture.farGatherWidthPx, heightPx: capture.farGatherHeightPx },
+          film: capture.sampledFilmDimensionsMm,
+          sourceRgba: b.sourceRgba,
+          physicalRgba: b.physicalRgba,
+          validity: b.validity,
+          depth: b.depth,
+          observedGatherCenterSourceIds: b.observedGatherCenterSourceIds,
+          observedGatherCenterSourceUvs: b.observedGatherCenterSourceUvs,
+          inverseProjectionMatrix: capture.inverseProjectionMatrix,
+          sampleCount: capture.sampleCount,
+          maximumRadiusPx: capture.maximumRadiusPx,
+        });
+        recomputedFar = cpuGather.farRgba;
+        recomputedNear = cpuGather.nearRgba;
+      } catch (error) {
+        add("cpu-reference-recompute", "capture.readbackBuffers", error instanceof Error ? error.message : "CPU aperture-gather recomputation failed");
+      }
+    }
+    if (recomputedFar && recomputedNear) {
+      measured.farCpuReferenceMaximumError = maximumAbsoluteError(b.farCpuReferenceRgba, recomputedFar);
+      measured.nearCpuReferenceMaximumError = maximumAbsoluteError(b.nearCpuReferenceRgba, recomputedNear);
+      if (measured.farCpuReferenceMaximumError !== GROUND_GLASS_M7E_CPU_REFERENCE_MAX_ABSOLUTE_ERROR) {
+        add("far-cpu-reference-recomputation", "capture.readbackBuffers.farCpuReferenceRgba", "persisted Far CPU reference differs from recomputation using the canonical aperture-gather oracle");
+      }
+      if (measured.nearCpuReferenceMaximumError !== GROUND_GLASS_M7E_CPU_REFERENCE_MAX_ABSOLUTE_ERROR) {
+        add("near-cpu-reference-recomputation", "capture.readbackBuffers.nearCpuReferenceRgba", "persisted Near CPU reference differs from recomputation using the canonical aperture-gather oracle");
+      }
+      measured.farRgbRmse = selectedChannelRmse(b.farGatherRgba, recomputedFar, [0, 1, 2]);
+      measured.farMaximumChannelError = selectedChannelMaxAbsError(b.farGatherRgba, recomputedFar, [0, 1, 2]);
+      measured.nearRgbRmse = selectedChannelRmse(b.nearRgba, recomputedNear, [0, 1, 2]);
+      measured.nearRgbMaximumChannelError = selectedChannelMaxAbsError(b.nearRgba, recomputedNear, [0, 1, 2]);
+      measured.nearAlphaRmse = selectedChannelRmse(b.nearRgba, recomputedNear, [3]);
+      measured.nearAlphaMaximumError = selectedChannelMaxAbsError(b.nearRgba, recomputedNear, [3]);
+      let farPixelsOverMaximumErrorTolerance = 0;
+      for (let pixel = 0; pixel < gatherPixels; pixel += 1) {
+        const offset = pixel * 4;
+        if ([0, 1, 2].some((channel) => Math.abs(b.farGatherRgba[offset + channel]! - recomputedFar![offset + channel]!) > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR)) {
+          farPixelsOverMaximumErrorTolerance += 1;
+        }
+      }
+      if (capture.farGatherCpuReference.rgbRmse !== measured.farRgbRmse
+          || capture.farGatherCpuReference.rgbMaximumError !== measured.farMaximumChannelError
+          || capture.farGatherCpuReference.pixelsOverMaximumErrorTolerance !== farPixelsOverMaximumErrorTolerance) {
+        add("far-cpu-summary-mismatch", "capture.farGatherCpuReference", "published Far comparison summary disagrees with GPU output and the recomputed CPU reference");
+      }
+    }
     if (b.nearRgba.length === b.nearBeforeB1Rgba.length && b.nearRgba.length === b.nearAfterB1Rgba.length) {
       measured.nearB1RgbMaximumError = selectedChannelMaxAbsError(b.nearBeforeB1Rgba, b.nearAfterB1Rgba, [0, 1, 2]);
       measured.nearB1AlphaMaximumError = selectedChannelMaxAbsError(b.nearRgba, b.nearAfterB1Rgba, [3]);
     }
     if (measured.farRgbRmse === null || measured.farMaximumChannelError === null
-        || measured.farRgbRmse > 0.001 || measured.farMaximumChannelError > 0.001) {
+        || measured.farRgbRmse > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_RMSE
+        || measured.farMaximumChannelError > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR) {
       add("far-cpu-comparison", "capture.readbackBuffers.farGatherRgba", "native Far GPU output exceeds the frozen CPU comparison limits");
     }
     if (measured.nearRgbRmse === null || measured.nearAlphaRmse === null
-        || measured.nearRgbRmse > 0.001 || measured.nearAlphaRmse > 0.001) {
+        || measured.nearRgbMaximumChannelError === null || measured.nearAlphaMaximumError === null
+        || measured.nearRgbRmse > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_RMSE
+        || measured.nearRgbMaximumChannelError > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR
+        || measured.nearAlphaRmse > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_RMSE
+        || measured.nearAlphaMaximumError > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR) {
       add("near-cpu-comparison", "capture.readbackBuffers.nearRgba", "native Near GPU output exceeds the frozen CPU comparison limits");
     }
     if (measured.nearB1RgbMaximumError === null || measured.nearB1RgbMaximumError > 0.001
@@ -355,7 +448,7 @@ export const evaluateGroundGlassM7eNativeCapture = (
       add("near-b1-independence", "capture.readbackBuffers.nearAfterB1Rgba", "B1 changed Near output or Near alpha beyond the frozen limit");
     }
 
-    if (expectedLengths.every(([, values, expected]) => values && values.length === expected)) {
+    if (validBuffers) {
       const cpu = reconstructGroundGlassB1Reference({
         source: { widthPx: capture.sourceWidthPx, heightPx: capture.sourceHeightPx },
         gather: { widthPx: capture.farGatherWidthPx, heightPx: capture.farGatherHeightPx },
@@ -368,26 +461,47 @@ export const evaluateGroundGlassM7eNativeCapture = (
         observedGatherCenterSourceIds: b.observedGatherCenterSourceIds,
       });
       measured.b1FullFrameRmse = selectedChannelRmse(b.b1FarRgba, cpu.farRgba, [0, 1, 2]);
+      measured.b1RgbMaximumChannelError = selectedChannelMaxAbsError(b.b1FarRgba, cpu.farRgba, [0, 1, 2]);
+      measured.b1MaximumChannelError = maximumAbsoluteError(b.b1FarRgba, cpu.farRgba);
       measured.b1InvalidPixels = cpu.counts.invalidOrUnresolvedCenter;
-      if (measured.b1FullFrameRmse === null || measured.b1FullFrameRmse > 0.05) {
+      if (measured.b1FullFrameRmse === null || measured.b1FullFrameRmse > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_RMSE
+          || measured.b1MaximumChannelError === null
+          || measured.b1MaximumChannelError > GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR) {
         add("b1-cpu-comparison", "capture.readbackBuffers.b1FarRgba", "native B1 output differs from the independent CPU reconstruction");
       }
       const decisions = b.b1Decision;
+      let eligibilityMismatchCount = 0;
+      let fallbackReasonMismatchCount = 0;
+      let selectedPathMismatchCount = 0;
+      let fallbackSourceMaximumError = 0;
       for (let pixel = 0; pixel < sourcePixels; pixel += 1) {
         const offset = pixel * 4;
         const expectedPath: GroundGlassB1SelectedPath = cpu.selectedPath[pixel] as GroundGlassB1SelectedPath;
         const expectedReason: GroundGlassB1FallbackReason = cpu.fallbackReason[pixel] as GroundGlassB1FallbackReason;
-        if (decisions[offset] !== (cpu.eligible[pixel] ? 1 : 0)
-            || decisions[offset + 1] !== expectedReason
-            || decisions[offset + 2] !== expectedPath) {
-          add("b1-decision-mismatch", `capture.readbackBuffers.b1Decision[${pixel}]`, "GPU validity, fallback reason, or selected path differs from the independent B1 decision");
-          break;
+        if (decisions[offset] !== (cpu.eligible[pixel] ? 1 : 0)) eligibilityMismatchCount += 1;
+        if (decisions[offset + 1] !== expectedReason) fallbackReasonMismatchCount += 1;
+        if (decisions[offset + 2] !== expectedPath) selectedPathMismatchCount += 1;
+        if (expectedPath === 0) {
+          for (let channel = 0; channel < 3; channel += 1) {
+            fallbackSourceMaximumError = Math.max(fallbackSourceMaximumError,
+              Math.abs(b.b1FarRgba[offset + channel]! - b.sourceRgba[offset + channel]!));
+          }
         }
       }
+      if (eligibilityMismatchCount || fallbackReasonMismatchCount || selectedPathMismatchCount) {
+        add("b1-decision-mismatch", "capture.readbackBuffers.b1Decision", "GPU validity, fallback reason, or selected path differs from the independent B1 decision");
+      }
       if (capture.cpuB1Conformance.selectedCenterProvenanceMismatchCount !== cpu.counts.selectedCenterProvenanceMismatch
-          || capture.cpuB1Conformance.eligibilityMismatchCount !== 0
-          || capture.cpuB1Conformance.fallbackReasonMismatchCount !== 0
-          || capture.cpuB1Conformance.selectedPathMismatchCount !== 0) {
+          || capture.cpuB1Conformance.eligibilityMismatchCount !== eligibilityMismatchCount
+          || capture.cpuB1Conformance.fallbackReasonMismatchCount !== fallbackReasonMismatchCount
+          || capture.cpuB1Conformance.selectedPathMismatchCount !== selectedPathMismatchCount
+          || capture.cpuB1Conformance.rgbRmse !== measured.b1FullFrameRmse
+          || capture.cpuB1Conformance.rgbMaximumError !== measured.b1RgbMaximumChannelError
+          || capture.cpuB1Conformance.fallbackSourceMaximumError !== fallbackSourceMaximumError
+          || capture.cpuB1Conformance.status !== (eligibilityMismatchCount === 0 && fallbackReasonMismatchCount === 0
+            && selectedPathMismatchCount === 0 && measured.b1RgbMaximumChannelError !== null
+            && measured.b1RgbMaximumChannelError <= GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR
+            && fallbackSourceMaximumError <= GROUND_GLASS_M7E_NATIVE_REFERENCE_MAX_CHANNEL_ERROR ? "passed" : "failed")) {
         add("b1-summary-mismatch", "capture.cpuB1Conformance", "published B1 summary disagrees with the independent reconstruction of captured inputs");
       }
     }

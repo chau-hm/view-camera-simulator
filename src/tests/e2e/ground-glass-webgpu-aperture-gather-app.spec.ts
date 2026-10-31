@@ -111,6 +111,10 @@ import {
   type GroundGlassM7eRuntimeIdentity,
   type GroundGlassM7eReportInventory,
 } from "../../render/webgpu/groundGlassM7eGatherB1Evidence";
+import {
+  encodeGroundGlassM7eLosslessJson,
+  stringifyGroundGlassM7eLosslessJson,
+} from "../../render/webgpu/groundGlassM7eLosslessEvidenceJson";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 import {
@@ -1039,12 +1043,18 @@ const writeM7eCaptureArtifacts = async (
 ): Promise<Readonly<{ manifestPath: string; dataPath: string; sha256: string }>> => {
   const buffers = envelope.capture.readbackBuffers;
   if (!buffers) throw new Error(`M7E capture ${envelope.scenarioId} has no retained GPU/CPU readbacks`);
-  const fields: Array<Readonly<{ name: string; offset: number; byteLength: number; type: string }>> = [];
+  const fields: Array<Readonly<{ name: string; offset: number; byteLength: number; elementCount: number; type: string }>> = [];
   const chunks: Buffer[] = [];
   let offset = 0;
   for (const [name, values] of Object.entries(buffers)) {
+    const byteAlignment = values.BYTES_PER_ELEMENT;
+    const alignedOffset = Math.ceil(offset / byteAlignment) * byteAlignment;
+    if (alignedOffset !== offset) {
+      chunks.push(Buffer.alloc(alignedOffset - offset));
+      offset = alignedOffset;
+    }
     const chunk = Buffer.from(values.buffer, values.byteOffset, values.byteLength);
-    fields.push({ name, offset, byteLength: chunk.byteLength, type: values.constructor.name });
+    fields.push({ name, offset, byteLength: chunk.byteLength, elementCount: values.length, type: values.constructor.name });
     chunks.push(chunk);
     offset += chunk.byteLength;
   }
@@ -1065,7 +1075,7 @@ const writeM7eCaptureArtifacts = async (
     runtime: envelope.runtime,
     hostFrameResult: envelope.hostFrameResult,
     capture: { ...envelope.capture, readbackBuffers: null },
-    readbackPayload: { encoding: "gzip", file: `${stem}.bin.gz`, sha256, fields },
+    readbackPayload: { schemaVersion: 2, encoding: "gzip", file: `${stem}.bin.gz`, sha256, uncompressedByteLength: offset, fields },
   };
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   writeFileSync(dataPath, compressed);
@@ -1939,6 +1949,7 @@ test("M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices", async ({
   expect(validateGroundGlassM7eReportInventory(reportInventory)).toEqual([]);
   const sanitizedInventory = {
     ...reportInventory,
+    b1BoundaryProbe: null,
     scenarios: reportInventory.scenarios.map(({ capture, ...scenario }) => ({
       ...scenario,
       capture: capture ? { ...capture, capture: { ...capture.capture, readbackBuffers: null } } : undefined,
@@ -1965,7 +1976,10 @@ test("M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices", async ({
       status: boundaryEvaluation.status,
       observedCaseIds: boundaryEvaluation.observedCaseIds,
       issues: boundaryEvaluation.issues,
-      readback: b1BoundaryProbe,
+      readback: encodeGroundGlassM7eLosslessJson(b1BoundaryProbe, {
+        captureSourceCommitSha: sourceCommitSha,
+        valueRecovery: "captured-before-json",
+      }),
     },
     inventory: sanitizedInventory,
     supportingArtifacts: captureEnvelopes.map((capture) => ({
@@ -1976,6 +1990,12 @@ test("M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices", async ({
           ? resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR, "captures")
           : testInfo.outputPath("captures"),
         `${capture.scenarioId.replace(/[^a-zA-Z0-9._-]/g, "_")}.bin.gz`,
+      ))).digest("hex"),
+      manifestSha256: createHash("sha256").update(readFileSync(resolve(
+        process.env.GROUND_GLASS_M7E_EVIDENCE_DIR
+          ? resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR, "captures")
+          : testInfo.outputPath("captures"),
+        `${capture.scenarioId.replace(/[^a-zA-Z0-9._-]/g, "_")}.json`,
       ))).digest("hex"),
     })),
     lifecycleAndPolicy: {
@@ -1993,7 +2013,10 @@ test("M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices", async ({
     const reportDirectory = resolve(process.cwd(), process.env.GROUND_GLASS_M7E_EVIDENCE_DIR);
     mkdirSync(reportDirectory, { recursive: true });
     writeFileSync(resolve(reportDirectory, "GROUND_GLASS_M7E_R187_GATHER_B1_REPORT.json"), JSON.stringify(evidenceReport, null, 2));
-    writeFileSync(resolve(reportDirectory, "b1-boundary-probe.json"), JSON.stringify(b1BoundaryProbe, null, 2));
+    writeFileSync(resolve(reportDirectory, "b1-boundary-probe.json"), stringifyGroundGlassM7eLosslessJson(b1BoundaryProbe, {
+      captureSourceCommitSha: sourceCommitSha,
+      valueRecovery: "captured-before-json",
+    }));
   }
   expect(pageErrors).toEqual([]);
 });

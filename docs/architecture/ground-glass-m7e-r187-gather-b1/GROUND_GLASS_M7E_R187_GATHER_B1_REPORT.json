@@ -3,7 +3,7 @@
   "nativeRunId": "1793469232731-57086",
   "reportId": "ground-glass-m7e-r187-gather-b1",
   "stage": "native-r187-registered-app-m5-requalification",
-  "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v1",
+  "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
   "sourceCommitSha": "9382217c7820be87a596124fd78c28239d416653",
   "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true GROUND_GLASS_M7E_EVIDENCE_DIR=docs/architecture/ground-glass-m7e-r187-gather-b1 PLAYWRIGHT_WEB_SERVER_PORT=4173 npx playwright test src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'M7E native r187 requalifies|M7E r187 isolates optional M5 failures|native M5 rejects stale captures and recovers from a local gather failure'",
   "runtime": {
@@ -2930,722 +2930,750 @@
     ],
     "issues": [],
     "readback": {
-      "token": "m7e-r187-b1-boundary-1793469234834",
-      "requestId": "gg-mvwp9x8q-1mukku3hp1c-default-request-4",
-      "channelId": "default",
-      "sceneId": "architecture-rise",
-      "rendererGenerationId": "gg-mvwp9x8q-1mukku3hp1c-default-generation-2",
-      "rendererFamily": "webgpu-renderer",
-      "actualExecutionApi": "webgpu",
-      "internalFallback": "none",
-      "rendererRevision": "r187",
-      "targetFormats": {
-        "sourceColor": "rgba8unorm",
-        "physical": "rgba16float",
-        "validity": "rgba8unorm",
-        "farGather": "rgba16float",
-        "provenance": "rgba32float",
-        "b1": "rgba16float",
-        "decision": "rgba8unorm"
+      "schemaVersion": 1,
+      "codec": "m7e-lossless-number-v1",
+      "payload": {
+        "actualExecutionApi": "webgpu",
+        "cases": [
+          {
+            "cpuB1Rgba": [
+              65504,
+              65504,
+              65504,
+              1
+            ],
+            "cpuEligible": 1,
+            "cpuFallbackReason": 0,
+            "cpuSelectedPath": 1,
+            "gpuB1HalfBits": [
+              31743,
+              31743,
+              31743,
+              15360
+            ],
+            "gpuB1Rgba": [
+              65504,
+              65504,
+              65504,
+              1
+            ],
+            "gpuCpuMaximumError": 0,
+            "gpuDecisionRgba8": [
+              1,
+              0,
+              1,
+              255
+            ],
+            "id": "physical-positive-half-maximum-and-gather-rgba-maximum",
+            "inputFarRgba": [
+              65504,
+              65504,
+              65504,
+              1
+            ],
+            "inputSignedCocMm": 65504,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              31743,
+              31743,
+              31743,
+              15360
+            ],
+            "storedGatherRgba": [
+              65504,
+              65504,
+              65504,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              31743,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              65504,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 4,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              4,
+              0,
+              255
+            ],
+            "id": "physical-negative-half-maximum-is-near-side",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": -65504,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              64511,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              -65504,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "cpuEligible": 1,
+            "cpuFallbackReason": 0,
+            "cpuSelectedPath": 1,
+            "gpuB1HalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "gpuCpuMaximumError": 0,
+            "gpuDecisionRgba8": [
+              1,
+              0,
+              1,
+              255
+            ],
+            "id": "physical-largest-half-value-below-maximum",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": 65472,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              31742,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              65472,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 3,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              3,
+              0,
+              255
+            ],
+            "id": "m4-unrepresentable-overflow-preserves-validity-code-two",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": 65536,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 2,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              31743,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              65504,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 3,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              3,
+              0,
+              255
+            ],
+            "id": "physical-nan",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": {
+              "$m7eNumber": "NaN"
+            },
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              32256,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              {
+                "$m7eNumber": "NaN"
+              },
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 3,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              3,
+              0,
+              255
+            ],
+            "id": "physical-positive-infinity",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": {
+              "$m7eNumber": "+Infinity"
+            },
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              31744,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              {
+                "$m7eNumber": "+Infinity"
+              },
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 3,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              3,
+              0,
+              255
+            ],
+            "id": "physical-negative-infinity",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": {
+              "$m7eNumber": "-Infinity"
+            },
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              64512,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              {
+                "$m7eNumber": "-Infinity"
+              },
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 3,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              3,
+              0,
+              255
+            ],
+            "id": "m4-validity-code-two-remains-authoritative",
+            "inputFarRgba": [
+              0.6,
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": 65504,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 2,
+            "storedGatherHalfBits": [
+              14540,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              31743,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              65504,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 5,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              5,
+              0,
+              255
+            ],
+            "id": "far-gather-nan-channel-fails-closed",
+            "inputFarRgba": [
+              {
+                "$m7eNumber": "NaN"
+              },
+              0.2,
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": 1,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              32256,
+              12902,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              {
+                "$m7eNumber": "NaN"
+              },
+              0.199951171875,
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              15360,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          {
+            "cpuB1Rgba": [
+              0.250980406999588,
+              0.501960813999176,
+              0.7529411911964417,
+              1
+            ],
+            "cpuEligible": 0,
+            "cpuFallbackReason": 5,
+            "cpuSelectedPath": 0,
+            "gpuB1HalfBits": [
+              13316,
+              14340,
+              14854,
+              15360
+            ],
+            "gpuB1Rgba": [
+              0.2509765625,
+              0.501953125,
+              0.7529296875,
+              1
+            ],
+            "gpuCpuMaximumError": 0.00001150369644165039,
+            "gpuDecisionRgba8": [
+              0,
+              5,
+              0,
+              255
+            ],
+            "id": "far-gather-infinity-channel-fails-closed",
+            "inputFarRgba": [
+              0.6,
+              {
+                "$m7eNumber": "+Infinity"
+              },
+              0.1,
+              1
+            ],
+            "inputSignedCocMm": 1,
+            "inputSourceRgba": [
+              0.25098039215686274,
+              0.5019607843137255,
+              0.7529411764705882,
+              1
+            ],
+            "inputValidityCode": 1,
+            "storedGatherHalfBits": [
+              14540,
+              31744,
+              11878,
+              15360
+            ],
+            "storedGatherRgba": [
+              0.599609375,
+              {
+                "$m7eNumber": "+Infinity"
+              },
+              0.0999755859375,
+              1
+            ],
+            "storedPhysicalHalfBits": [
+              15360,
+              15360,
+              15360,
+              15360
+            ],
+            "storedPhysicalRgba": [
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        ],
+        "channelId": "default",
+        "internalFallback": "none",
+        "rendererFamily": "webgpu-renderer",
+        "rendererGenerationId": "gg-mvwp9x8q-1mukku3hp1c-default-generation-2",
+        "rendererRevision": "r187",
+        "requestId": "gg-mvwp9x8q-1mukku3hp1c-default-request-4",
+        "sceneId": "architecture-rise",
+        "targetFormats": {
+          "b1": "rgba16float",
+          "decision": "rgba8unorm",
+          "farGather": "rgba16float",
+          "physical": "rgba16float",
+          "provenance": "rgba32float",
+          "sourceColor": "rgba8unorm",
+          "validity": "rgba8unorm"
+        },
+        "token": "m7e-r187-b1-boundary-1793469234834"
       },
-      "cases": [
-        {
-          "id": "physical-positive-half-maximum-and-gather-rgba-maximum",
-          "inputSignedCocMm": 65504,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31743,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            31743,
-            31743,
-            31743,
-            15360
-          ],
-          "storedGatherRgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            1,
-            0,
-            1,
-            255
-          ],
-          "gpuB1HalfBits": [
-            31743,
-            31743,
-            31743,
-            15360
-          ],
-          "gpuB1Rgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "cpuEligible": 1,
-          "cpuFallbackReason": 0,
-          "cpuSelectedPath": 1,
-          "cpuB1Rgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "gpuCpuMaximumError": 0
-        },
-        {
-          "id": "physical-negative-half-maximum-is-near-side",
-          "inputSignedCocMm": -65504,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            64511,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            -65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            4,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 4,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-largest-half-value-below-maximum",
-          "inputSignedCocMm": 65472,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31742,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65472,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            1,
-            0,
-            1,
-            255
-          ],
-          "gpuB1HalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "cpuEligible": 1,
-          "cpuFallbackReason": 0,
-          "cpuSelectedPath": 1,
-          "cpuB1Rgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuCpuMaximumError": 0
-        },
-        {
-          "id": "m4-unrepresentable-overflow-preserves-validity-code-two",
-          "inputSignedCocMm": 65536,
-          "inputValidityCode": 2,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31743,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-nan",
-          "inputSignedCocMm": null,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            32256,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            null,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-positive-infinity",
-          "inputSignedCocMm": null,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31744,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            null,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-negative-infinity",
-          "inputSignedCocMm": null,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            64512,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            null,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "m4-validity-code-two-remains-authoritative",
-          "inputSignedCocMm": 65504,
-          "inputValidityCode": 2,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31743,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "far-gather-nan-channel-fails-closed",
-          "inputSignedCocMm": 1,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            null,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            15360,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            1,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            32256,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            null,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            5,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 5,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "far-gather-infinity-channel-fails-closed",
-          "inputSignedCocMm": 1,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            null,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            15360,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            1,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            31744,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            null,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            5,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 5,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        }
-      ]
+      "provenance": {
+        "captureSourceCommitSha": "9382217c7820be87a596124fd78c28239d416653",
+        "valueRecovery": "controlled-case-and-half-bits"
+      }
     }
   },
   "inventory": {
     "schemaVersion": 1,
     "reportId": "ground-glass-m7e-r187-gather-b1",
-    "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v1",
+    "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
     "sourceCommitSha": "9382217c7820be87a596124fd78c28239d416653",
     "runtime": {
       "rendererRevision": "r187",
@@ -7938,718 +7966,7 @@
         }
       }
     ],
-    "b1BoundaryProbe": {
-      "token": "m7e-r187-b1-boundary-1793469234834",
-      "requestId": "gg-mvwp9x8q-1mukku3hp1c-default-request-4",
-      "channelId": "default",
-      "sceneId": "architecture-rise",
-      "rendererGenerationId": "gg-mvwp9x8q-1mukku3hp1c-default-generation-2",
-      "rendererFamily": "webgpu-renderer",
-      "actualExecutionApi": "webgpu",
-      "internalFallback": "none",
-      "rendererRevision": "r187",
-      "targetFormats": {
-        "sourceColor": "rgba8unorm",
-        "physical": "rgba16float",
-        "validity": "rgba8unorm",
-        "farGather": "rgba16float",
-        "provenance": "rgba32float",
-        "b1": "rgba16float",
-        "decision": "rgba8unorm"
-      },
-      "cases": [
-        {
-          "id": "physical-positive-half-maximum-and-gather-rgba-maximum",
-          "inputSignedCocMm": 65504,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31743,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            31743,
-            31743,
-            31743,
-            15360
-          ],
-          "storedGatherRgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            1,
-            0,
-            1,
-            255
-          ],
-          "gpuB1HalfBits": [
-            31743,
-            31743,
-            31743,
-            15360
-          ],
-          "gpuB1Rgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "cpuEligible": 1,
-          "cpuFallbackReason": 0,
-          "cpuSelectedPath": 1,
-          "cpuB1Rgba": [
-            65504,
-            65504,
-            65504,
-            1
-          ],
-          "gpuCpuMaximumError": 0
-        },
-        {
-          "id": "physical-negative-half-maximum-is-near-side",
-          "inputSignedCocMm": -65504,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            64511,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            -65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            4,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 4,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-largest-half-value-below-maximum",
-          "inputSignedCocMm": 65472,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31742,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65472,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            1,
-            0,
-            1,
-            255
-          ],
-          "gpuB1HalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "cpuEligible": 1,
-          "cpuFallbackReason": 0,
-          "cpuSelectedPath": 1,
-          "cpuB1Rgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuCpuMaximumError": 0
-        },
-        {
-          "id": "m4-unrepresentable-overflow-preserves-validity-code-two",
-          "inputSignedCocMm": 65536,
-          "inputValidityCode": 2,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31743,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-nan",
-          "inputSignedCocMm": null,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            32256,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            null,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-positive-infinity",
-          "inputSignedCocMm": null,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31744,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            null,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "physical-negative-infinity",
-          "inputSignedCocMm": null,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            64512,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            null,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "m4-validity-code-two-remains-authoritative",
-          "inputSignedCocMm": 65504,
-          "inputValidityCode": 2,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            31743,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            65504,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            3,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 3,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "far-gather-nan-channel-fails-closed",
-          "inputSignedCocMm": 1,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            null,
-            0.2,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            15360,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            1,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            32256,
-            12902,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            null,
-            0.199951171875,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            5,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 5,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        },
-        {
-          "id": "far-gather-infinity-channel-fails-closed",
-          "inputSignedCocMm": 1,
-          "inputValidityCode": 1,
-          "inputSourceRgba": [
-            0.25098039215686274,
-            0.5019607843137255,
-            0.7529411764705882,
-            1
-          ],
-          "inputFarRgba": [
-            0.6,
-            null,
-            0.1,
-            1
-          ],
-          "storedPhysicalHalfBits": [
-            15360,
-            15360,
-            15360,
-            15360
-          ],
-          "storedPhysicalRgba": [
-            1,
-            1,
-            1,
-            1
-          ],
-          "storedGatherHalfBits": [
-            14540,
-            31744,
-            11878,
-            15360
-          ],
-          "storedGatherRgba": [
-            0.599609375,
-            null,
-            0.0999755859375,
-            1
-          ],
-          "gpuDecisionRgba8": [
-            0,
-            5,
-            0,
-            255
-          ],
-          "gpuB1HalfBits": [
-            13316,
-            14340,
-            14854,
-            15360
-          ],
-          "gpuB1Rgba": [
-            0.2509765625,
-            0.501953125,
-            0.7529296875,
-            1
-          ],
-          "cpuEligible": 0,
-          "cpuFallbackReason": 5,
-          "cpuSelectedPath": 0,
-          "cpuB1Rgba": [
-            0.250980406999588,
-            0.501960813999176,
-            0.7529411911964417,
-            1
-          ],
-          "gpuCpuMaximumError": 0.00001150369644165039
-        }
-      ]
-    },
+    "b1BoundaryProbe": null,
     "m3RendererSelectionAuthority": "m3-raw-pilot",
     "m5RendererAttemptAuthorized": false,
     "m5GatherEvidenceStatus": "research-only",
@@ -8661,62 +7978,74 @@
     {
       "scenarioId": "q5-stress-cap2-half32",
       "files": "captures/q5-stress-cap2-half32.json;captures/q5-stress-cap2-half32.bin.gz",
-      "sha256": "c1a850e54ef5ade3649e4cff5a2d3d2dba38984418bde9d5692ebe8275d55bec"
+      "sha256": "310e92b44aada89f0c8afa92f79ae344425ccc7b73c9c70942a759396b31ad23",
+      "manifestSha256": "e4c1ff9c5848ef1a573ee1f39a12172d95ea6cdb7c65a8285b2f422e8c0b8910"
     },
     {
       "scenarioId": "q5-stress-cap2-full32",
       "files": "captures/q5-stress-cap2-full32.json;captures/q5-stress-cap2-full32.bin.gz",
-      "sha256": "26b161da7c11abdba129ad2e3d225e4e24e9acd66d10b6dac64e0cc374f3f712"
+      "sha256": "b2fad78ff225a84e4439fcedd430e4ad89af6647ce2e8cb632b400c3e6d8c92b",
+      "manifestSha256": "f7585f0e3520599d0d3f151aa529de7d039a0641d3e8f7b46f534687e10a77ab"
     },
     {
       "scenarioId": "q5-stress-cap2-full64",
       "files": "captures/q5-stress-cap2-full64.json;captures/q5-stress-cap2-full64.bin.gz",
-      "sha256": "e0a09f3c306d3918bc36a9cda8857cc03e8b00c73c88b9919432e36311e2b475"
+      "sha256": "14a539ee38a2bf8ab213e8b8844c194bd4049343f25beb6bff89ab2698396ff7",
+      "manifestSha256": "60a4a91ca8e11146304ba1dbf3c963a1d3aba6616dbaa59b378827374286d50c"
     },
     {
       "scenarioId": "q1-control-cap60-half32",
       "files": "captures/q1-control-cap60-half32.json;captures/q1-control-cap60-half32.bin.gz",
-      "sha256": "eafc6767e7ce992ad7f94a90f0a499357bf2628710f6f51724f48a04f93e2416"
+      "sha256": "bc45b9f08a7c67547f9b2d021798ca15b8bd496941f563d05bb45091a263c30f",
+      "manifestSha256": "6b241fc6b072d3165e7a098d3bd2c9d371c8f490af07ba20aacc0a67ad5afc59"
     },
     {
       "scenarioId": "q1-control-cap60-full32",
       "files": "captures/q1-control-cap60-full32.json;captures/q1-control-cap60-full32.bin.gz",
-      "sha256": "c21eddbf456c2ca09f1b4d1e4fd2a6d0b6dc7774fad833e8c0fc127cb4ac93d8"
+      "sha256": "da448839399fce6e005d8a01dfada03df2e538ad8a78958839616ab4be1af952",
+      "manifestSha256": "3f43894e3f214bf31bb9f9f6fa9660b5a3fb0c116625aef3f30ad0939b12db91"
     },
     {
       "scenarioId": "q1-control-cap60-full64",
       "files": "captures/q1-control-cap60-full64.json;captures/q1-control-cap60-full64.bin.gz",
-      "sha256": "a2119bc1523d8d01cebe9bcbef5eace6b8fab07192a7da277359a2b2d43ddbd7"
+      "sha256": "2a4aa9b28d66fc7f127597ab6cfc5b5612adb6e8d5e1dfe22810d13d5f977d5f",
+      "manifestSha256": "e5b350ae67277186378c0365bcb57d6569a447151e88e129c658b671b981553d"
     },
     {
       "scenarioId": "q2-q7-cap60-half32",
       "files": "captures/q2-q7-cap60-half32.json;captures/q2-q7-cap60-half32.bin.gz",
-      "sha256": "4212564804d50bf795a56d2168882d1665d75f84993c938b20fb1670b35f0d48"
+      "sha256": "ad0a61c39191563df67620614119f2893b6f7b4791b9ff51318b246ff6c5860b",
+      "manifestSha256": "a6be674dbba86b79449e107885e845b1c3b551b3a826d0bc70c91726540f2f9d"
     },
     {
       "scenarioId": "q2-q7-cap60-full32",
       "files": "captures/q2-q7-cap60-full32.json;captures/q2-q7-cap60-full32.bin.gz",
-      "sha256": "43bb7b750db48e22caac200a0df553b185668b66fff8e684d38122072256c860"
+      "sha256": "c7aef1a90bb8851211d37ce49792df5d86e0983d9d0ec81dac276dbe7498ce02",
+      "manifestSha256": "b3d7c59ac01b3fbea1ec6c0bb5f91d314ba13fdc8ac8bc1f6575680cf5ca048b"
     },
     {
       "scenarioId": "q2-q7-cap60-full64",
       "files": "captures/q2-q7-cap60-full64.json;captures/q2-q7-cap60-full64.bin.gz",
-      "sha256": "cf4992b61bf15e6dd71e60133217ca57393196c2b4fba2f3fd97a7fc4664fb76"
+      "sha256": "a7a454863a0e7c86f38bab3c6c155bd6d424378e265ce45b8e222fe72a2d8447",
+      "manifestSha256": "f0c071a2aad09670d1c87f95eb7ca2701bacdfb4b268b6b0643443de72f1925d"
     },
     {
       "scenarioId": "q3-q4-cap60-half32",
       "files": "captures/q3-q4-cap60-half32.json;captures/q3-q4-cap60-half32.bin.gz",
-      "sha256": "2688ae0685672d3e9886bf66ee77c7797b4856b2ca746221fbf6b79eb3238eb1"
+      "sha256": "6d40dd37290038491b0b52280e59943fe7ebf1dde6476979e4571100e6bcc14e",
+      "manifestSha256": "40afcf78cd33482d650ac73d2351833da71dc46d3aaa4be33c7e14d5e64d329f"
     },
     {
       "scenarioId": "q3-q4-cap60-full32",
       "files": "captures/q3-q4-cap60-full32.json;captures/q3-q4-cap60-full32.bin.gz",
-      "sha256": "9f1ae5f65e436934641214fd29114b0b373cc1463c1d08fffa3c4706a6122a03"
+      "sha256": "1ad138183a4644850870b27fc79e5fa6fac516f08a095ff179120e7d0184e0d8",
+      "manifestSha256": "0b06ec750acde0b04b2b21ab477708a3cfb66f96c02c8693f1ef644144b7faf4"
     },
     {
       "scenarioId": "q3-q4-cap60-full64",
       "files": "captures/q3-q4-cap60-full64.json;captures/q3-q4-cap60-full64.bin.gz",
-      "sha256": "cabed0b1ec50af324d4880a2a6290296a75196186c07be5ba477ae1a7104ea1e"
+      "sha256": "7f457381500ffee007a84d329ad317b54a0891bdd6604c94e50e44bc72ab0876",
+      "manifestSha256": "2197d182894e257e5f852a63eb49c58a6ca85c8ba8494b64b2cb97f6777df18a"
     }
   ],
   "lifecycleAndPolicy": {
@@ -8750,5 +8079,29 @@
       "productionWebGpuEnabled": false
     }
   },
-  "historicalM5qR186ReportPreserved": true
+  "historicalM5qR186ReportPreserved": true,
+  "artifactRepack": {
+    "sourceCaptureCommitSha": "9382217c7820be87a596124fd78c28239d416653",
+    "originalArtifactCommitSha": "478e19f4b473540a575a18e4498e289644f305fe",
+    "originalEvaluatorRevision": "m7e-r187-gather-b1-evaluator-v1",
+    "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
+    "numericRecovery": "controlled-case-and-half-bits",
+    "nativeCaptureRerun": false,
+    "claim": "Lossless repack of persisted native readbacks; typed-array bytes were copied without numerical conversion, and non-finite B1 values were recovered only from the controlled case contract and persisted binary16 bit patterns.",
+    "captureCount": 12,
+    "previousPayloadSha256": {
+      "q5-stress-cap2-half32": "c1a850e54ef5ade3649e4cff5a2d3d2dba38984418bde9d5692ebe8275d55bec",
+      "q5-stress-cap2-full32": "26b161da7c11abdba129ad2e3d225e4e24e9acd66d10b6dac64e0cc374f3f712",
+      "q5-stress-cap2-full64": "e0a09f3c306d3918bc36a9cda8857cc03e8b00c73c88b9919432e36311e2b475",
+      "q1-control-cap60-half32": "eafc6767e7ce992ad7f94a90f0a499357bf2628710f6f51724f48a04f93e2416",
+      "q1-control-cap60-full32": "c21eddbf456c2ca09f1b4d1e4fd2a6d0b6dc7774fad833e8c0fc127cb4ac93d8",
+      "q1-control-cap60-full64": "a2119bc1523d8d01cebe9bcbef5eace6b8fab07192a7da277359a2b2d43ddbd7",
+      "q2-q7-cap60-half32": "4212564804d50bf795a56d2168882d1665d75f84993c938b20fb1670b35f0d48",
+      "q2-q7-cap60-full32": "43bb7b750db48e22caac200a0df553b185668b66fff8e684d38122072256c860",
+      "q2-q7-cap60-full64": "cf4992b61bf15e6dd71e60133217ca57393196c2b4fba2f3fd97a7fc4664fb76",
+      "q3-q4-cap60-half32": "2688ae0685672d3e9886bf66ee77c7797b4856b2ca746221fbf6b79eb3238eb1",
+      "q3-q4-cap60-full32": "9f1ae5f65e436934641214fd29114b0b373cc1463c1d08fffa3c4706a6122a03",
+      "q3-q4-cap60-full64": "cabed0b1ec50af324d4880a2a6290296a75196186c07be5ba477ae1a7104ea1e"
+    }
+  }
 }

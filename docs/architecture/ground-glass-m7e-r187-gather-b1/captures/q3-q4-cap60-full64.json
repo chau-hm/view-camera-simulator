@@ -350,164 +350,193 @@
     "readbackBuffers": null
   },
   "readbackPayload": {
+    "schemaVersion": 2,
     "encoding": "gzip",
     "file": "q3-q4-cap60-full64.bin.gz",
-    "sha256": "cabed0b1ec50af324d4880a2a6290296a75196186c07be5ba477ae1a7104ea1e",
+    "sha256": "7f457381500ffee007a84d329ad317b54a0891bdd6604c94e50e44bc72ab0876",
+    "previousPayloadSha256": "cabed0b1ec50af324d4880a2a6290296a75196186c07be5ba477ae1a7104ea1e",
+    "uncompressedByteLength": 40959292,
     "fields": [
       {
         "name": "sourceRgba",
         "offset": 0,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "physicalRgba",
         "offset": 2874336,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "validity",
         "offset": 5748672,
         "byteLength": 179646,
+        "elementCount": 179646,
         "type": "Uint8Array"
       },
       {
         "name": "depth",
-        "offset": 5928318,
+        "offset": 5928320,
         "byteLength": 718584,
+        "elementCount": 179646,
         "type": "Float32Array"
       },
       {
         "name": "farGatherRgba",
-        "offset": 6646902,
+        "offset": 6646904,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "farCpuReferenceRgba",
-        "offset": 9521238,
+        "offset": 9521240,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "nearRgba",
-        "offset": 12395574,
+        "offset": 12395576,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "nearBeforeB1Rgba",
-        "offset": 15269910,
+        "offset": 15269912,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "nearAfterB1Rgba",
-        "offset": 18144246,
+        "offset": 18144248,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "nearCpuReferenceRgba",
-        "offset": 21018582,
+        "offset": 21018584,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "nearCpuCenterIsNear",
-        "offset": 23892918,
+        "offset": 23892920,
         "byteLength": 179646,
+        "elementCount": 179646,
         "type": "Uint8Array"
       },
       {
         "name": "nearCpuEvaluatedProposalCount",
-        "offset": 24072564,
+        "offset": 24072566,
         "byteLength": 359292,
+        "elementCount": 179646,
         "type": "Uint16Array"
       },
       {
         "name": "nearCpuAcceptedProposalCount",
-        "offset": 24431856,
+        "offset": 24431858,
         "byteLength": 359292,
+        "elementCount": 179646,
         "type": "Uint16Array"
       },
       {
         "name": "nearCpuNonzeroMembershipCount",
-        "offset": 24791148,
+        "offset": 24791150,
         "byteLength": 359292,
+        "elementCount": 179646,
         "type": "Uint16Array"
       },
       {
         "name": "nearCpuWeightSum",
-        "offset": 25150440,
+        "offset": 25150444,
         "byteLength": 718584,
+        "elementCount": 179646,
         "type": "Float32Array"
       },
       {
         "name": "nearCpuCoverageMass",
-        "offset": 25869024,
+        "offset": 25869028,
         "byteLength": 718584,
+        "elementCount": 179646,
         "type": "Float32Array"
       },
       {
         "name": "nearCpuEstimatedCoverage",
-        "offset": 26587608,
+        "offset": 26587612,
         "byteLength": 718584,
+        "elementCount": 179646,
         "type": "Float32Array"
       },
       {
         "name": "nearCpuAcceptedAreaRatioMean",
-        "offset": 27306192,
+        "offset": 27306196,
         "byteLength": 718584,
+        "elementCount": 179646,
         "type": "Float32Array"
       },
       {
         "name": "nearCpuAcceptedCompensationMaximum",
-        "offset": 28024776,
+        "offset": 28024780,
         "byteLength": 718584,
+        "elementCount": 179646,
         "type": "Float32Array"
       },
       {
         "name": "b1FarRgba",
-        "offset": 28743360,
+        "offset": 28743364,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "researchCompositeRgba",
-        "offset": 31617696,
+        "offset": 31617700,
         "byteLength": 2874336,
+        "elementCount": 718584,
         "type": "Float32Array"
       },
       {
         "name": "observedSelectedGatherIds",
-        "offset": 34492032,
+        "offset": 34492036,
         "byteLength": 1437168,
+        "elementCount": 359292,
         "type": "Int32Array"
       },
       {
         "name": "observedSelectedCenterSourceIds",
-        "offset": 35929200,
+        "offset": 35929204,
         "byteLength": 1437168,
+        "elementCount": 359292,
         "type": "Int32Array"
       },
       {
         "name": "observedGatherCenterSourceIds",
-        "offset": 37366368,
+        "offset": 37366372,
         "byteLength": 1437168,
+        "elementCount": 359292,
         "type": "Int32Array"
       },
       {
         "name": "observedGatherCenterSourceUvs",
-        "offset": 38803536,
+        "offset": 38803540,
         "byteLength": 1437168,
+        "elementCount": 359292,
         "type": "Float32Array"
       },
       {
         "name": "b1Decision",
-        "offset": 40240704,
+        "offset": 40240708,
         "byteLength": 718584,
+        "elementCount": 718584,
         "type": "Uint8Array"
       }
     ]
