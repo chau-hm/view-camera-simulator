@@ -997,7 +997,7 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       completedPasses: "sceneDepth,physicalCoc",
     },
   ]) {
-    test(`M4 ${scenario.name} failure stays local while Raw completes and the next request recovers`, async ({ page }) => {
+    test(`M4 ${scenario.name} failure stays local while Raw completes and the next request recovers`, async ({ page }, testInfo) => {
       test.skip(!physicalResearchEnabled, "Requires the separate M4 physical research build gate");
       test.setTimeout(300_000);
       const { glass, failedRequestId, failedGeneration } = await startNativePilot(page, [scenario.point]);
@@ -1026,6 +1026,48 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
         kind: "cleanup",
         generationId: failedGeneration,
       }));
+      const acceptedFailureFrame = events.find((event) =>
+        event.kind === "host-frame-result" && event.requestId === failedRequestId,
+      );
+      expect(acceptedFailureFrame).toMatchObject({
+        kind: "host-frame-result",
+        requestId: failedRequestId,
+        generationId: failedGeneration,
+        sceneId: "architecture-rise",
+        channelId: "default",
+        frameStatus: "completed",
+        acceptedByHost: true,
+        latestAcceptedRequestId: failedRequestId,
+        activeGenerationId: failedGeneration,
+        activeRendererFamily: "webgpu-renderer",
+      });
+      const failureEvidence = {
+        scenario: scenario.name,
+        failurePoint: scenario.point,
+        browserVersion: page.context().browser()?.version() ?? "unknown",
+        operatingSystem: `${process.platform} ${process.arch}`,
+        threeRevision: REVISION,
+        sourceSha: process.env.GROUND_GLASS_EVIDENCE_SOURCE_SHA ?? "missing",
+        testProject: testInfo.project.name,
+        testInvocation: process.env.GROUND_GLASS_EVIDENCE_TEST_INVOCATION ?? "missing",
+        rendererFamily: await glass.getAttribute("data-mounted-renderer-family"),
+        actualExecutionApi: await glass.getAttribute("data-actual-execution-api"),
+        internalFallback: await glass.getAttribute("data-internal-fallback"),
+        requestId: failedRequestId,
+        channelId: await glass.getAttribute("data-frame-channel-id"),
+        sceneId: await glass.getAttribute("data-frame-scene-id"),
+        generationId: failedGeneration,
+        physicalStatusAtInjectedFailure: await pilot.getAttribute("data-physical-coc-status"),
+        completedPhysicalPassesAtInjectedFailure: await pilot.getAttribute("data-physical-coc-passes"),
+        rawFrameCompleted: events.some((event) =>
+          event.kind === "frame-completed" && event.requestId === failedRequestId && event.generationId === failedGeneration,
+        ),
+        acceptedHostFrameResult: acceptedFailureFrame,
+        adapterEventsAtFailure: events.filter((event) =>
+          "generationId" in event && event.generationId === failedGeneration &&
+          (!("requestId" in event) || event.requestId === failedRequestId),
+        ),
+      };
 
       const focus = page.getByRole("slider", { name: "Focus distance" });
       const currentFocus = Number(await focus.inputValue());
@@ -1038,10 +1080,14 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       await expect(pilot).toHaveAttribute("data-physical-coc-passes", "sceneDepth,physicalCoc,validity");
       await expect(glass).toHaveAttribute("data-last-completed-request-id", recoveredRequestId!, { timeout: 90_000 });
       expect(await glass.getAttribute("data-renderer-generation")).toBe(initialGeneration);
+      await testInfo.attach(`ground-glass-m4-${scenario.point}-failure-evidence.json`, {
+        body: JSON.stringify({ ...failureEvidence, recoveredRequestId }, null, 2),
+        contentType: "application/json",
+      });
     });
   }
 
-  test("M4 unsupported physical storage reports unsupported while native Raw remains available", async ({ page }) => {
+  test("M4 unsupported physical storage reports unsupported while native Raw remains available", async ({ page }, testInfo) => {
     test.skip(!physicalResearchEnabled, "Requires the separate M4 physical research build gate");
     test.setTimeout(240_000);
     const { glass, failedRequestId, failedGeneration } = await startNativePilot(
@@ -1065,6 +1111,41 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     }));
     expect(events).not.toContainEqual(expect.objectContaining({ kind: "failure", generationId: failedGeneration }));
     expect(events).not.toContainEqual(expect.objectContaining({ kind: "cleanup", generationId: failedGeneration }));
+    const acceptedUnsupportedFrame = events.find((event) =>
+      event.kind === "host-frame-result" && event.requestId === failedRequestId,
+    );
+    expect(acceptedUnsupportedFrame).toMatchObject({
+      kind: "host-frame-result",
+      requestId: failedRequestId,
+      generationId: failedGeneration,
+      frameStatus: "completed",
+      acceptedByHost: true,
+      activeGenerationId: failedGeneration,
+      activeRendererFamily: "webgpu-renderer",
+    });
+    await testInfo.attach("ground-glass-m4-unsupported-storage-evidence.json", {
+      body: JSON.stringify({
+        test: "M4 unsupported physical storage reports unsupported while native Raw remains available",
+        browserVersion: page.context().browser()?.version() ?? "unknown",
+        operatingSystem: `${process.platform} ${process.arch}`,
+        threeRevision: REVISION,
+        sourceSha: process.env.GROUND_GLASS_EVIDENCE_SOURCE_SHA ?? "missing",
+        testProject: testInfo.project.name,
+        testInvocation: process.env.GROUND_GLASS_EVIDENCE_TEST_INVOCATION ?? "missing",
+        rendererFamily: await glass.getAttribute("data-mounted-renderer-family"),
+        actualExecutionApi: await glass.getAttribute("data-actual-execution-api"),
+        requestId: failedRequestId,
+        channelId: await glass.getAttribute("data-frame-channel-id"),
+        sceneId: await glass.getAttribute("data-frame-scene-id"),
+        generationId: failedGeneration,
+        physicalStatus: await pilot.getAttribute("data-physical-coc-status"),
+        physicalCompletedPasses: await pilot.getAttribute("data-physical-coc-passes"),
+        rawLastCompletedRequestId: await glass.getAttribute("data-last-completed-request-id"),
+        acceptedHostFrameResult: acceptedUnsupportedFrame,
+        adapterEvents: events,
+      }, null, 2),
+      contentType: "application/json",
+    });
   });
 
   test("D6 latest request wins after a held adapter failure and an out-of-order fallback completion", async ({ page }) => {
