@@ -661,4 +661,16 @@ describe("M7D r187 Physical CoC evidence evaluator", () => {
     expect(result.status).toBe("failed");
     expect(result.issues.map((issue) => issue.code)).toContain("report-counts");
   });
+
+  it("accepts the persisted M7D report only when its declared inventory is exact", () => {
+    const reportPath = resolve(
+      process.cwd(),
+      "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json",
+    );
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as unknown;
+    const result = evaluateGroundGlassM7dPhysicalCocReport(report);
+    expect(result.status, JSON.stringify(result.issues)).toBe("passed");
+    expect(result.computedCounts).toEqual({ passed: 8, failed: 0, blocked: 0, "not-run": 0 });
+    expect(result.issues).toEqual([]);
+  });
 });
