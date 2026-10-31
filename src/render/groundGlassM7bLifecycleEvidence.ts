@@ -220,6 +220,23 @@ const validateM7bObservedRuntime = (
   errors: string[],
 ): void => {
   const kind = scenario.evidenceClass;
+  if (kind === "native-regression-suite") {
+    const observations = Array.isArray(scenario.events) ? scenario.events.filter(isObject) : [];
+    const observed = observations.find((event) => event.kind === "runtime-observed");
+    const mounted = observations.find((event) => event.kind === "renderer-mounted");
+    if (
+      !observed || !mounted ||
+      observed.attemptId !== mounted.attemptId ||
+      observed.generationId !== mounted.generationId ||
+      observed.rendererFamily !== "webgpu-renderer" ||
+      observed.executionApi !== "webgpu" ||
+      observed.rendererRevision !== scenario.threeRevision ||
+      mounted.rendererFamily !== "webgpu-renderer" ||
+      mounted.executionApi !== "webgpu" ||
+      mounted.internalFallback !== "none"
+    ) errors.push("suite-native-runtime-not-observed:" + scenarioId);
+    return;
+  }
   if (typeof kind !== "string" || !kind.startsWith("native-webgpu-")) return;
   if (!isObject(scenario.identity) || !isObject(scenario.runtime)) return;
   const generation = scenario.identity.rendererGenerationId;
