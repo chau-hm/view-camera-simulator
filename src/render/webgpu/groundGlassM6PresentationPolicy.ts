@@ -49,19 +49,29 @@ export const GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY: GroundGlassSceneCompati
   })),
 };
 
-/**
- * The r187 record is deliberately unqualified until native M6 evidence is
- * accepted. Its single feature never grants renderer-attempt authority; M3 Raw
- * RTT remains the sole r187 WebGPU attempt record.
- */
+/** This r187 presentation record qualifies only the tested development pilot. */
 export const GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY: GroundGlassSceneCompatibility = {
   sceneId: architectureRiseScene.id,
   sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
   features: [{
     feature: "full-presentation",
     sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
-    status: "not-evaluated",
-    knownIncompatibilities: ["M7F native r187 presentation qualification has not been accepted"],
+    evidenceRevision: ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION,
+    status: "implementation-verified",
+    qualityQualification: "unqualified",
+    testedContext: {
+      rendererFamily: "webgpu-renderer",
+      executionApi: "webgpu",
+      rendererRevision: "r187",
+      runtimeDescription: "Three.js 0.187.0 native WebGPU presentation on Chrome 156.0.8078.76, Architecture Rise development pilot",
+    },
+    verificationEvidence: [
+      "M7F persisted native r187 presentation report: 16 of 16 scenarios passed",
+      "M6D five-case native opaque composite, M6B 14-state spatial and nine-state RGB, M6C alpha readback, and registered M3-M6 integration captures",
+      "Photographic quality and M5Q remain independently unqualified for promotion",
+    ],
+    requiredCapabilities: { adapterFeatures: [], textureStorageFormats: [] },
+    knownIncompatibilities: [],
   }],
 };
 

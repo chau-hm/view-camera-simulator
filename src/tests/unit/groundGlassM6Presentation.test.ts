@@ -4,6 +4,7 @@ import type { GroundGlassCoverageState } from "../../types/optics";
 import { calculateGroundGlassNaturalIlluminationGain } from "../../core/optics/groundGlassNaturalIllumination";
 import { createGroundGlassPilotRetryState } from "../../render/backend/groundGlassBackendContracts";
 import { selectGroundGlassBackend } from "../../render/backend/groundGlassBackendPolicy";
+import type { GroundGlassSceneCompatibility } from "../../render/backend/groundGlassSceneCompatibility";
 import {
   ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
   ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION,
@@ -71,7 +72,6 @@ const acceptedM6R187PresentationCompatibility = {
     knownIncompatibilities: [],
   }],
 } as const;
-
 const makeCoverage = (
   state: GroundGlassCoverageState,
   crop = fullWindow,
@@ -368,28 +368,35 @@ describe("M6 development-only compatibility policy", () => {
     expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(m6R187QualificationFlags, "188")).toBe(false);
   });
 
-  it("keeps r187 M6 unavailable until its distinct presentation record is accepted", () => {
-    expect(isGroundGlassM6R187PresentationEvidenceMatched(
-      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
-      "r187",
-    )).toBe(false);
+  it("accepts the scoped r187 presentation record only after its evidence is verified", () => {
+    const unqualifiedCompatibility: GroundGlassSceneCompatibility = {
+      sceneId: architectureRiseScene.id,
+      sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+      features: [{
+        feature: "full-presentation",
+        sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+        status: "not-evaluated",
+        knownIncompatibilities: ["M7F native r187 presentation qualification has not been accepted"],
+      }],
+    };
+    expect(isGroundGlassM6R187PresentationEvidenceMatched(unqualifiedCompatibility, "r187")).toBe(false);
     expect(isGroundGlassM6PresentationBuildEnabledForRevision(
       { ...m6R187QualificationFlags, qualificationFlag: "false" },
-      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      unqualifiedCompatibility,
       "r187",
     )).toBe(false);
     expect(isGroundGlassM6PresentationBuildEnabledForRevision(
       m6R187QualificationFlags,
-      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      unqualifiedCompatibility,
       "r187",
     )).toBe(true);
     expect(isGroundGlassM6R187PresentationEvidenceMatched(
-      acceptedM6R187PresentationCompatibility,
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
       "r187",
     )).toBe(true);
     expect(isGroundGlassM6PresentationBuildEnabledForRevision(
       { ...m6R187QualificationFlags, qualificationFlag: "false" },
-      acceptedM6R187PresentationCompatibility,
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
       "r187",
     )).toBe(true);
     expect(isGroundGlassM6R187PresentationEvidenceMatched(

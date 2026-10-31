@@ -9,6 +9,7 @@ import {
   makeGroundGlassWebGpuPresentationDiagnostic,
 } from "../../render/webgpu/groundGlassWebGpuDiagnostics";
 import { resolveGroundGlassRawWebGpuEvidenceRevision } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
+import { ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION } from "../../render/webgpu/groundGlassM6PresentationPolicy";
 import { createGroundGlassRequestInput } from "./groundGlassFrameRequestFixtures";
 
 const createRawRttDiagnosticFixture = () => {
@@ -96,7 +97,7 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
     });
   });
 
-  it("keeps M6 diagnostics on the separate historical presentation evidence", () => {
+  it("keeps M6 diagnostics on the distinct r187 presentation evidence", () => {
     vi.stubEnv("DEV", true);
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_RAW_PILOT", "true");
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION", "true");
@@ -143,13 +144,13 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
       expect(backendDetails).toMatchObject({
         rendererRevision: "r187",
         sceneSourceRevision: "architecture-rise-raw-rtt-v1+m6-presentation-v1",
-        verificationEvidenceRevision: "m6-architecture-rise-native-presentation-v1",
+        verificationEvidenceRevision: ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION,
       });
       expect(presentationDiagnostic).toMatchObject({
         mode: "m6-experimental-dof",
         rendererRevision: "r187",
         sceneSourceRevision: "architecture-rise-raw-rtt-v1+m6-presentation-v1",
-        verificationEvidenceRevision: "m6-architecture-rise-native-presentation-v1",
+        verificationEvidenceRevision: ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION,
       });
     } finally {
       target.dispose();
