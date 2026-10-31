@@ -1,6 +1,13 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
+import { release } from "node:os";
 import { clickStageAt, readFreshElementBounds } from "./helpers/groundGlass";
+import {
+  groundGlassM7fCaptureProvenance,
+  groundGlassM7fSourceProvenance,
+  isGroundGlassM7fRequired,
+  writeGroundGlassM7fCapture,
+} from "./helpers/groundGlassM7fEvidence";
 import type {
   GroundGlassApertureGatherCaptureReadback,
   GroundGlassWebGpuTestFailurePoint,
@@ -9,6 +16,13 @@ import type {
 
 const nativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const m6PresentationRequired = process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === "1";
+const m7fRequired = isGroundGlassM7fRequired();
+const m6NativeRunRequired = m6PresentationRequired &&
+  process.env.GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED === "1";
+const expectedM6RendererRevision = m7fRequired ? "r187" : "r186";
+const expectedM6EvidenceRevision = m7fRequired
+  ? "m6-architecture-rise-native-presentation-r187-v1"
+  : "m6-architecture-rise-native-presentation-v1";
 const webServerPort = process.env.PLAYWRIGHT_WEB_SERVER_PORT ?? "4175";
 const baselinePort = process.env.GROUND_GLASS_M6_WEBGL_BASELINE_PORT ?? String(Number(webServerPort) + 1);
 
@@ -238,8 +252,57 @@ const readM6TestEvents = (page: Page): Promise<GroundGlassWebGpuTestEvent[]> => 
   window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? [],
 );
 
+const persistM7fLifecycleEvidence = async (
+  page: Page,
+  scenarioId: string,
+  observations: Readonly<Record<string, unknown>> = {},
+): Promise<void> => {
+  if (!m7fRequired) return;
+  const pane = paneFor(page);
+  const pilot = pilotFor(page);
+  const [events, host, renderer] = await Promise.all([
+    readM6TestEvents(page),
+    pane.evaluate((element) => Object.fromEntries([
+      "data-render-host-lifecycle", "data-policy-selected-backend", "data-application-fallback",
+      "data-mounted-renderer-family", "data-actual-execution-api", "data-renderer-generation",
+      "data-frame-request-id", "data-frame-channel-id", "data-frame-scene-id", "data-frame-result-status",
+      "data-last-completed-request-id", "data-render-cleanup-status", "data-pilot-retry-status",
+      "data-pilot-session-id",
+    ].map((name) => [name, element.getAttribute(name)]))),
+    pilot.count().then(async (count) => count === 0 ? null : pilot.evaluate((element) => Object.fromEntries([
+      "data-mounted-renderer-family", "data-actual-execution-api", "data-internal-fallback",
+      "data-renderer-generation", "data-frame-request-id", "data-frame-scene-id", "data-preview-mode",
+      "data-presentation-status", "data-presentation-source", "data-presentation-request-id",
+      "data-presentation-renderer-generation", "data-presentation-evidence-revision",
+      "data-physical-coc-status", "data-aperture-gather-status",
+    ].map((name) => [name, element.getAttribute(name)])))),
+  ]);
+  writeGroundGlassM7fCapture(`lifecycle/${scenarioId}.json`, {
+    schemaVersion: 1,
+    scenarioId,
+    captureProvenance: {
+      ...groundGlassM7fSourceProvenance(),
+      browserProject: "chrome-native-webgpu",
+    },
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${release()} ${process.arch}`,
+    runtime: (() => {
+      const runtime = events.find((event) => event.kind === "runtime-observed");
+      return runtime ? { ...runtime, actualExecutionApi: runtime.executionApi } : null;
+    })(),
+    host,
+    renderer,
+    events,
+    sceneId: host["data-frame-scene-id"],
+    rendererGenerationId: host["data-renderer-generation"],
+    pilotSessionId: host["data-pilot-session-id"],
+    ...observations,
+    observations,
+  });
+};
+
 test("native M6 displays the M5 composite with shared crop and presentation behavior", async ({ page, context }, testInfo) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(600_000);
 
@@ -262,14 +325,14 @@ test("native M6 displays the M5 composite with shared crop and presentation beha
   await expect(pilot).toHaveAttribute("data-internal-fallback", "none");
   await expect(pilot).toHaveAttribute("data-presentation-mode", "m6-experimental-dof");
   await expect(pilot).toHaveAttribute("data-presentation-source", "m5-research-composite");
-  await expect(pilot).toHaveAttribute("data-presentation-renderer-revision", "r186");
+  await expect(pilot).toHaveAttribute("data-presentation-renderer-revision", expectedM6RendererRevision);
   await expect(pilot).toHaveAttribute(
     "data-presentation-scene-source-revision",
     "architecture-rise-raw-rtt-v1+m6-presentation-v1",
   );
   await expect(pilot).toHaveAttribute(
     "data-presentation-evidence-revision",
-    "m6-architecture-rise-native-presentation-v1",
+    expectedM6EvidenceRevision,
   );
   await expect(pilot).toHaveAttribute("data-presentation-quality", "unqualified");
   await expect(pilot).toHaveAttribute("data-presentation-status", "completed", { timeout: 120_000 });
@@ -527,44 +590,82 @@ test("native M6 displays the M5 composite with shared crop and presentation beha
   expect(Number.isFinite(presentationPerformance.queueCompletionWaitMs)).toBe(true);
   expect(Number.isFinite(presentationPerformance.wallClockMs)).toBe(true);
 
+  const finalDisplayIdentity = {
+    requestId: await pane.getAttribute("data-frame-request-id"),
+    channelId: await pane.getAttribute("data-rtt-channel"),
+    sceneId: await pane.getAttribute("data-frame-scene-id"),
+    rendererGenerationId: await pane.getAttribute("data-renderer-generation"),
+  };
+  const finalM5CompositeCapture = await captureM5CompositeReadback(
+    page,
+    `m6-final-composite-${Date.now()}`,
+    testInfo.outputPath("ground-glass-m6-final-optical-readback.bin.gz"),
+  );
+  expect(finalM5CompositeCapture.summary.requestId).toBe(finalDisplayIdentity.requestId);
+  expect(finalM5CompositeCapture.summary.channelId).toBe(finalDisplayIdentity.channelId);
+  expect(finalM5CompositeCapture.summary.sceneId).toBe(finalDisplayIdentity.sceneId);
+  expect(finalM5CompositeCapture.summary.rendererGenerationId).toBe(finalDisplayIdentity.rendererGenerationId);
+  expect(await pilot.getAttribute("data-presentation-status")).toBe("completed");
+
+  const m7fProvenance = m7fRequired ? groundGlassM7fCaptureProvenance() : null;
   const finalM6Report = {
-    evaluatorRevision: "m6-native-presentation-v1",
-    sourceCommit: process.env.GROUND_GLASS_M6_SOURCE_COMMIT ?? "uncommitted-worktree",
+    evaluatorRevision: m7fRequired ? "m7f-r187-registered-app-v1" : "m6-native-presentation-v1",
+    sourceCommit: m7fProvenance?.sourceCommitSha ?? process.env.GROUND_GLASS_M6_SOURCE_COMMIT ?? "uncommitted-worktree",
+    captureProvenance: m7fProvenance,
+    threePackageVersion: m7fProvenance?.threePackageVersion ?? null,
+    nodeVersion: m7fProvenance?.nodeVersion ?? process.version,
+    browserVersion: context.browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${release()} ${process.arch}`,
     renderQuality: "low",
     sceneId: await pilot.getAttribute("data-frame-scene-id"),
     requestId: await pane.getAttribute("data-frame-request-id"),
+    channelId: await pane.getAttribute("data-frame-channel-id"),
     rendererGenerationId: await pane.getAttribute("data-renderer-generation"),
+    presentationRequestId: await pilot.getAttribute("data-presentation-request-id"),
+    presentationChannelId: await pilot.getAttribute("data-presentation-channel-id"),
+    presentationSceneId: await pilot.getAttribute("data-presentation-scene-id"),
+    presentationRendererGenerationId: await pilot.getAttribute("data-presentation-renderer-generation"),
     rendererFamily: await pane.getAttribute("data-mounted-renderer-family"),
     actualExecutionApi: await pane.getAttribute("data-actual-execution-api"),
     rendererRevision: await pilot.getAttribute("data-presentation-renderer-revision"),
     sceneSourceRevision: await pilot.getAttribute("data-presentation-scene-source-revision"),
     verificationEvidenceRevision: await pilot.getAttribute("data-presentation-evidence-revision"),
     internalFallback: await pilot.getAttribute("data-internal-fallback"),
+    applicationFallback: await pane.getAttribute("data-application-fallback"),
     presentationMode: await pilot.getAttribute("data-presentation-mode"),
     presentationStatus: await pilot.getAttribute("data-presentation-status"),
     presentationSource: await pilot.getAttribute("data-presentation-source"),
     presentationQuality: await pilot.getAttribute("data-presentation-quality"),
+    previewMode: await pilot.getAttribute("data-preview-mode"),
+    sourceDimensionsPx: {
+      width: finalM5CompositeCapture.summary.sourceWidthPx,
+      height: finalM5CompositeCapture.summary.sourceHeightPx,
+    },
+    displayDimensionsPx: {
+      width: Number(await pilot.getAttribute("data-presentation-output-width")),
+      height: Number(await pilot.getAttribute("data-presentation-output-height")),
+    },
     naturalIllumination: await pilot.getAttribute("data-presentation-natural-illumination"),
     imageCircleCoverage: await pilot.getAttribute("data-presentation-coverage"),
     opticalReadback: {
-      captureId: m5CompositeCapture.summary.captureId,
-      requestId: m5CompositeCapture.summary.requestId,
-      rendererGenerationId: m5CompositeCapture.summary.rendererGenerationId,
-      sourceRevision: m5CompositeCapture.summary.sceneSourceRevision,
-      effectiveOpticalRequestFingerprint: m5CompositeCapture.summary.effectiveOpticalRequestFingerprint,
-      cameraStateFingerprint: m5CompositeCapture.summary.cameraStateFingerprint,
+      captureId: finalM5CompositeCapture.summary.captureId,
+      requestId: finalM5CompositeCapture.summary.requestId,
+      rendererGenerationId: finalM5CompositeCapture.summary.rendererGenerationId,
+      sourceRevision: finalM5CompositeCapture.summary.sceneSourceRevision,
+      effectiveOpticalRequestFingerprint: finalM5CompositeCapture.summary.effectiveOpticalRequestFingerprint,
+      cameraStateFingerprint: finalM5CompositeCapture.summary.cameraStateFingerprint,
       sourceDimensionsPx: {
-        width: m5CompositeCapture.summary.sourceWidthPx,
-        height: m5CompositeCapture.summary.sourceHeightPx,
+        width: finalM5CompositeCapture.summary.sourceWidthPx,
+        height: finalM5CompositeCapture.summary.sourceHeightPx,
       },
-      targetFormats: m5CompositeCapture.summary.targetFormats,
-      completedPasses: m5CompositeCapture.summary.completedPasses,
-      readbackColorDomain: m5CompositeCapture.summary.colorDomain,
-      inputFingerprints: m5CompositeCapture.summary.inputFingerprints,
-      physicalDataFingerprint: m5CompositeCapture.summary.physicalDataFingerprint,
-      sourceToGatherMappingConformance: m5CompositeCapture.summary.sourceToGatherMappingConformance,
-      nominalGatherCenterMappingConformance: m5CompositeCapture.summary.nominalGatherCenterMappingConformance,
-      displayFrameAtCapture: displayFrameAtOpticalReadback,
+      targetFormats: finalM5CompositeCapture.summary.targetFormats,
+      completedPasses: finalM5CompositeCapture.summary.completedPasses,
+      readbackColorDomain: finalM5CompositeCapture.summary.colorDomain,
+      inputFingerprints: finalM5CompositeCapture.summary.inputFingerprints,
+      physicalDataFingerprint: finalM5CompositeCapture.summary.physicalDataFingerprint,
+      sourceToGatherMappingConformance: finalM5CompositeCapture.summary.sourceToGatherMappingConformance,
+      nominalGatherCenterMappingConformance: finalM5CompositeCapture.summary.nominalGatherCenterMappingConformance,
+      displayFrameAtCapture: finalDisplayIdentity,
       exactIdentityMatch: true,
     },
     f22ThroughputGain: f22Gain,
@@ -591,6 +692,7 @@ test("native M6 displays the M5 composite with shared crop and presentation beha
     },
     qualityQualification: "unqualified",
     productionAuthorization: "disabled",
+    adapterEvents: await readM6TestEvents(page),
   };
   await attachM6Evidence(
     testInfo,
@@ -598,13 +700,14 @@ test("native M6 displays the M5 composite with shared crop and presentation beha
     JSON.stringify(finalM6Report, null, 2),
     "application/json",
   );
+  writeGroundGlassM7fCapture("registered-app-m6.json", finalM6Report);
   expect(pageErrors).toEqual([]);
   await webglPage.close();
   console.log("[M6 E2E] comparison page closed; test body complete");
 });
 
 test("native M6 provisions once from initial Raw Debug and completes Raw/M6/loupe/resize transitions", async ({ page }, testInfo) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(600_000);
   const pageErrors: string[] = [];
@@ -831,7 +934,22 @@ test("native M6 provisions once from initial Raw Debug and completes Raw/M6/loup
   expect(events.some((event) => event.kind === "frame-completed" && event.requestId === heldM6Request)).toBe(false);
   expect(events.some((event) => event.kind === "frame-completed" && event.requestId === finalM6Request)).toBe(true);
   expect(pageErrors).toEqual([]);
-  await attachM6Evidence(testInfo, "ground-glass-m6-raw-first-lifecycle-evidence.json", JSON.stringify({
+  const rawFirstLifecycleEvidence = {
+    schemaVersion: 1,
+    scenarioId: "raw-first-resource-provisioning",
+    captureProvenance: m7fRequired ? groundGlassM7fCaptureProvenance() : null,
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${release()} ${process.arch}`,
+    threePackageVersion: m7fRequired ? groundGlassM7fCaptureProvenance().threePackageVersion : null,
+    nodeVersion: process.version,
+    sceneId: await pane.getAttribute("data-frame-scene-id"),
+    rendererGenerationId: generation,
+    pilotSessionId,
+    runtime: (() => {
+      const runtime = events.find((event) => event.kind === "runtime-observed");
+      return runtime ? { ...runtime, actualExecutionApi: runtime.executionApi } : null;
+    })(),
+    events,
     effectiveBuildConfiguration: {
       rawPilotEnabled: true,
       m6PresentationEnabled: true,
@@ -881,24 +999,19 @@ test("native M6 provisions once from initial Raw Debug and completes Raw/M6/loup
       { requestId: finalRawRequest, rawDebug: true, resized: true, opticalPassesBypassed: true },
       { requestId: finalM6Request, rawDebug: false, m4M5M6Completed: true },
     ],
-    rendererGenerationId: generation,
-    pilotSessionId,
     retryStateAfterValidTransitions: {
       status: await pane.getAttribute("data-pilot-retry-status"),
       epoch: Number(await pane.getAttribute("data-pilot-retry-epoch")),
     },
     adapterAttempts: events.filter((event) => event.kind === "attempt").map((event) => event.generationId),
     failures: events.filter((event) => event.kind === "failure"),
-    runtime: {
-      rendererFamily: await pilot.getAttribute("data-mounted-renderer-family"),
-      actualExecutionApi: await pilot.getAttribute("data-actual-execution-api"),
-      internalFallback: await pilot.getAttribute("data-internal-fallback"),
-    },
-  }, null, 2), "application/json");
+  };
+  await attachM6Evidence(testInfo, "ground-glass-m6-raw-first-lifecycle-evidence.json", JSON.stringify(rawFirstLifecycleEvidence, null, 2), "application/json");
+  writeGroundGlassM7fCapture("lifecycle/raw-first-provisioning.json", rawFirstLifecycleEvidence);
 });
 
 test("native M6 optical-resource initialization failure cleans up the Raw-first adapter and falls back", async ({ page }) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(180_000);
   await startM6NativeLowPage(page, "m6-optical-resource-initialization", true);
@@ -918,10 +1031,17 @@ test("native M6 optical-resource initialization failure cleans up the Raw-first 
     event.generationId === failure.generationId)).toBe(false);
   expect(events.filter((event) => event.kind === "cleanup" && event.generationId === failure.generationId))
     .toEqual([expect.objectContaining({ outcome: "confirmed" })]);
+  const cleanupEvent = events.find((event) => event.kind === "cleanup" && event.generationId === failure.generationId);
+  await persistM7fLifecycleEvidence(page, "optical-resource-initialization-failure", {
+    failureStage: failure.stage,
+    failureOperation: failure.operation,
+    failureGenerationId: failure.generationId,
+    cleanupOutcome: cleanupEvent?.kind === "cleanup" ? cleanupEvent.outcome : null,
+  });
 });
 
 test("native M6 flags leave an unsupported Ground Glass scene on WebGL without attempting WebGPU", async ({ page }) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and both trusted M6 development build flags");
   await page.addInitScript(() => {
     window.__groundGlassWebGpuM3TestControl = {};
@@ -937,6 +1057,7 @@ test("native M6 flags leave an unsupported Ground Glass scene on WebGL without a
   await expect(pane).toHaveAttribute("data-application-fallback", "not-observed");
   await expect(page.getByTestId("ground-glass-webgpu-pilot")).toHaveCount(0);
   expect((await readM6TestEvents(page)).filter((event) => event.kind === "attempt")).toEqual([]);
+  await persistM7fLifecycleEvidence(page, "unsupported-scene-denied", { sceneId: "macro-depth-of-field", attemptCount: 0 });
 });
 
 const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (
@@ -981,10 +1102,23 @@ const assertM6RuntimeFailureFallsBackWithoutPublishingDoF = async (
   expect(new Set(events.filter((event) => event.kind === "attempt").map((event) => event.generationId)))
     .toEqual(new Set([failure.generationId]));
   expect(await pane.getAttribute("data-actual-execution-api")).not.toBe("webgpu");
+  await persistM7fLifecycleEvidence(page, failedOperation === "presentation"
+    ? "presentation-pass-failure"
+    : "final-display-failure", {
+    failurePoint,
+    failedOperation,
+    failedRequestId,
+    failureStage: failure.stage,
+    failureGenerationId: failure.generationId,
+    fallbackBackend: await pane.getAttribute("data-mounted-renderer-family"),
+    frameCompletedForFailedRequest: events.some((event) => event.kind === "frame-completed" &&
+      event.generationId === failure.generationId && event.requestId === failedRequestId),
+    attemptGenerations: [...new Set(events.filter((event) => event.kind === "attempt").map((event) => event.generationId))],
+  });
 };
 
 test("native M6 presentation node initialization failure selects the existing WebGL host", async ({ page }) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(180_000);
   await startM6NativeLowPage(page, "m6-presentation-node-initialization");
@@ -1001,10 +1135,16 @@ test("native M6 presentation node initialization failure selects the existing We
   if (failure?.kind !== "failure") throw new Error("M6 presentation node initialization failure was not observed");
   expect(events.some((event) => event.kind === "frame-completed" &&
     event.generationId === failure.generationId)).toBe(false);
+  await persistM7fLifecycleEvidence(page, "presentation-node-initialization-failure", {
+    failureStage: failure.stage,
+    failureOperation: failure.operation,
+    failureGenerationId: failure.generationId,
+    fallbackBackend: await pane.getAttribute("data-mounted-renderer-family"),
+  });
 });
 
 test("native M6 presentation-pass failure never publishes a completed M6 frame", async ({ page }) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(180_000);
   await assertM6RuntimeFailureFallsBackWithoutPublishingDoF(
@@ -1015,7 +1155,7 @@ test("native M6 presentation-pass failure never publishes a completed M6 frame",
 });
 
 test("native M6 final-display failure never publishes a completed M6 frame", async ({ page }) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(180_000);
   await assertM6RuntimeFailureFallsBackWithoutPublishingDoF(
@@ -1026,7 +1166,7 @@ test("native M6 final-display failure never publishes a completed M6 frame", asy
 });
 
 test("native M6 rejects presentation work made stale by resize before queue completion", async ({ page }) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires headed chrome-native-webgpu and the trusted M6 development build flag");
   test.setTimeout(180_000);
   await startM6NativeLowPage(page);
@@ -1069,4 +1209,10 @@ test("native M6 rejects presentation work made stale by resize before queue comp
   expect(events.some((event) => event.kind === "frame-completed" &&
     event.requestId === newestRequestId)).toBe(true);
   expect(await pane.getAttribute("data-last-completed-request-id")).toBe(newestRequestId);
+  await persistM7fLifecycleEvidence(page, "presentation-stale-resize", {
+    staleRequestId: heldRequestId,
+    latestRequestId: newestRequestId,
+    staleRequestPublished: events.some((event) => event.kind === "frame-completed" && event.requestId === heldRequestId),
+    latestRequestPublished: events.some((event) => event.kind === "frame-completed" && event.requestId === newestRequestId),
+  });
 });

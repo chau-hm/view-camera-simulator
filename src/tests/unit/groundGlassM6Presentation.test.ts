@@ -5,6 +5,9 @@ import { calculateGroundGlassNaturalIlluminationGain } from "../../core/optics/g
 import { createGroundGlassPilotRetryState } from "../../render/backend/groundGlassBackendContracts";
 import { selectGroundGlassBackend } from "../../render/backend/groundGlassBackendPolicy";
 import {
+  ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+  ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION,
+  GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
   GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
   GROUND_GLASS_M6_PRESENTATION_FEATURES,
   groundGlassM6PilotSessionId,
@@ -12,6 +15,10 @@ import {
   isGroundGlassM6bFixtureBuildAuthorizedForFlags,
   isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationRequestForBuild,
+  isGroundGlassM6PresentationBuildEnabledForRevision,
+  isGroundGlassM6R187PresentationEvidenceMatched,
+  isGroundGlassM6R187QualificationBuildAuthorizedForFlags,
+  isGroundGlassM6R187SessionAuthorizedForRequest,
   isGroundGlassRawPilotBuildAuthorizedForFlags,
 } from "../../render/webgpu/groundGlassM6PresentationPolicy";
 import {
@@ -37,6 +44,33 @@ import { resolveGroundGlassRawWebGpuPilotSessionId } from "../../render/webgpu/g
 
 const fullWindow = { active: false, centerU: 0.5, centerV: 0.5, widthFraction: 1, heightFraction: 1 };
 const filmWindow = { centerXMm: 0, centerYMm: 0, widthMm: 127, heightMm: 101.6 };
+const m6R187QualificationFlags = {
+  developmentBuild: true,
+  rawPilotFlag: "true",
+  m6PresentationFlag: "true",
+  testSeamFlag: "true",
+  qualificationFlag: "true",
+} as const;
+const acceptedM6R187PresentationCompatibility = {
+  sceneId: architectureRiseScene.id,
+  sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+  features: [{
+    feature: "full-presentation",
+    status: "implementation-verified",
+    qualityQualification: "unqualified",
+    sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+    evidenceRevision: ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION,
+    testedContext: {
+      rendererFamily: "webgpu-renderer",
+      executionApi: "webgpu",
+      rendererRevision: "r187",
+      runtimeDescription: "Chrome native WebGPU M6 presentation qualification fixture",
+    },
+    verificationEvidence: ["Native r187 final presentation and lifecycle capture"],
+    requiredCapabilities: { adapterFeatures: [], textureStorageFormats: [] },
+    knownIncompatibilities: [],
+  }],
+} as const;
 
 const makeCoverage = (
   state: GroundGlassCoverageState,
@@ -75,7 +109,7 @@ const noNatural = resolveGroundGlassNaturalIlluminationRenderState({
 });
 
 describe("M6 Ground Glass presentation reference", () => {
-  it("keeps the actual M6 material opaque with Three.js r186's default NormalBlending contract", () => {
+  it("keeps the actual M6 material opaque with Three.js's default NormalBlending contract", () => {
     const source = new THREE.DataTexture(
       new Float32Array([0.2, 0.4, 0.6, 0.35]),
       1,
@@ -319,6 +353,78 @@ const makeRequest = (options: import("./groundGlassFrameRequestFixtures").Ground
   );
 
 describe("M6 development-only compatibility policy", () => {
+  it("requires the explicit development-only r187 qualification controls", () => {
+    expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(m6R187QualificationFlags, "187")).toBe(true);
+    expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(
+      { ...m6R187QualificationFlags, qualificationFlag: "false" }, "187",
+    )).toBe(false);
+    expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(
+      { ...m6R187QualificationFlags, testSeamFlag: "false" }, "187",
+    )).toBe(false);
+    expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(
+      { ...m6R187QualificationFlags, developmentBuild: false }, "187",
+    )).toBe(false);
+    expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(m6R187QualificationFlags, "186")).toBe(false);
+    expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(m6R187QualificationFlags, "188")).toBe(false);
+  });
+
+  it("keeps r187 M6 unavailable until its distinct presentation record is accepted", () => {
+    expect(isGroundGlassM6R187PresentationEvidenceMatched(
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      "r187",
+    )).toBe(false);
+    expect(isGroundGlassM6PresentationBuildEnabledForRevision(
+      { ...m6R187QualificationFlags, qualificationFlag: "false" },
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      "r187",
+    )).toBe(false);
+    expect(isGroundGlassM6PresentationBuildEnabledForRevision(
+      m6R187QualificationFlags,
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      "r187",
+    )).toBe(true);
+    expect(isGroundGlassM6R187PresentationEvidenceMatched(
+      acceptedM6R187PresentationCompatibility,
+      "r187",
+    )).toBe(true);
+    expect(isGroundGlassM6PresentationBuildEnabledForRevision(
+      { ...m6R187QualificationFlags, qualificationFlag: "false" },
+      acceptedM6R187PresentationCompatibility,
+      "r187",
+    )).toBe(true);
+    expect(isGroundGlassM6R187PresentationEvidenceMatched(
+      { ...acceptedM6R187PresentationCompatibility, features: [{
+        ...acceptedM6R187PresentationCompatibility.features[0],
+        testedContext: { ...acceptedM6R187PresentationCompatibility.features[0].testedContext, rendererRevision: "r186" },
+      }] },
+      "r187",
+    )).toBe(false);
+  });
+
+  it("scopes the r187 session to the registered scene and keeps M3-only attempts independent", () => {
+    expect(isGroundGlassM6R187SessionAuthorizedForRequest(
+      makeRequest({ rawDebug: true }),
+      m6R187QualificationFlags,
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      "187",
+    )).toBe(true);
+    expect(isGroundGlassM6R187SessionAuthorizedForRequest(
+      makeRequest({ scene: understandingCameraMovementsScene }),
+      m6R187QualificationFlags,
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      "187",
+    )).toBe(false);
+    expect(isGroundGlassM6R187SessionAuthorizedForRequest(
+      makeRequest(),
+      { ...m6R187QualificationFlags, rawPilotFlag: "false" },
+      GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
+      "187",
+    )).toBe(false);
+    expect(GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY.features.every((feature) =>
+      feature.status === "implementation-verified" && feature.testedContext.rendererRevision === "r186",
+    )).toBe(true);
+  });
+
   it.each([
     { label: "both flags disabled", developmentBuild: true, rawPilotFlag: "false", m6PresentationFlag: "false", expected: false },
     { label: "Raw pilot only", developmentBuild: true, rawPilotFlag: "true", m6PresentationFlag: "false", expected: false },

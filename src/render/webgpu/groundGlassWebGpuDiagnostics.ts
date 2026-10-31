@@ -14,8 +14,8 @@ import {
   requireGroundGlassRawWebGpuEvidenceRevision,
 } from "./groundGlassRawWebGpuCompatibility";
 import {
-  ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
+  getGroundGlassM6PresentationEvidenceRevisionForInstalledRenderer,
   isGroundGlassM6PresentationRequest,
 } from "./groundGlassM6PresentationPolicy";
 
@@ -49,7 +49,7 @@ export const makeGroundGlassWebGpuPresentationDiagnostic = (input: Readonly<{
       ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
       : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
     verificationEvidenceRevision: m6Presentation
-      ? ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION
+      ? getGroundGlassM6PresentationEvidenceRevisionForInstalledRenderer()
       : requireGroundGlassRawWebGpuEvidenceRevision(rendererRevision),
     opticalQuality: m6Presentation ? "unqualified" : "not-qualified",
     colorDomain: "linear-no-color-space",
@@ -94,7 +94,7 @@ export const makeGroundGlassWebGpuDiagnosticDetails = (input: {
       ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
       : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
     verificationEvidenceRevision: m6Presentation
-      ? ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION
+      ? getGroundGlassM6PresentationEvidenceRevisionForInstalledRenderer()
       : requireGroundGlassRawWebGpuEvidenceRevision(rendererRevision),
     sceneSubject: {
       realization: "registered-ground-glass-profile",

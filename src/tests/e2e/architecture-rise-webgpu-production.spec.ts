@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { release } from "node:os";
 import { REVISION } from "three";
 import { expect, test, type Page } from "@playwright/test";
+import { writeGroundGlassM7fCapture } from "./helpers/groundGlassM7fEvidence";
 
 const attachJson = async (testInfo: import("@playwright/test").TestInfo, name: string, value: unknown) => {
   const body = JSON.stringify(value, null, 2);
@@ -175,6 +176,14 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   expect(evidence.hasTestProbeAttribute).toBe(false);
   expect(evidence.rendererGenerationAttributeAvailable).toBe(false);
   const finalUrl = page.url();
+  const groundGlassEvidence = await groundGlass.evaluate((element) => ({
+    policySelectedBackend: element.getAttribute("data-policy-selected-backend"),
+    rendererFamily: element.getAttribute("data-mounted-renderer-family"),
+    actualExecutionApi: element.getAttribute("data-actual-execution-api"),
+    lifecycle: element.getAttribute("data-render-host-lifecycle"),
+    pilotCount: document.querySelectorAll('[data-testid="ground-glass-webgpu-pilot"]').length,
+    testSeamGlobal: typeof window.__groundGlassWebGpuM3TestControl !== "undefined",
+  }));
   for (const [name, body] of [
     ["architecture-rise-production-observer-default.png", defaultObserverScreenshot],
     ["architecture-rise-production-ground-glass-default.png", defaultGroundGlassScreenshot],
@@ -187,7 +196,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   ] as const) {
     await testInfo.attach(name, { body, contentType: "image/png" });
   }
-  await attachJson(testInfo, "architecture-rise-production-webgl-isolation.json", {
+  const productionIsolationEvidence = {
     build: "Vite production preview",
     captureSourceSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
     testId: testInfo.titlePath.join(" › "),
@@ -197,9 +206,11 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     processArguments: process.argv,
     browserVersion: page.context().browser()?.version() ?? "unknown",
     operatingSystem: `${process.platform} ${release()}`,
+    productionWebGpuEnabled: false,
     threeRevision: REVISION,
     route: new URL(finalUrl).pathname + new URL(finalUrl).search,
     evidence,
+    groundGlassEvidence,
     groundGlassDiagnostics: "rttDiagnostics attributes are development-only; production captures are pixel-analyzed",
     defaultObserverPixels,
     defaultGroundGlassPixels,
@@ -212,6 +223,34 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     webgpuModuleRequests,
     pageErrors,
     consoleErrors,
+  };
+  await attachJson(testInfo, "architecture-rise-production-webgl-isolation.json", productionIsolationEvidence);
+  writeGroundGlassM7fCapture("production-isolation.json", {
+    schemaVersion: 1,
+    captureSourceSha: productionIsolationEvidence.captureSourceSha,
+    sourceProvenance: {
+      sourceCommitSha: productionIsolationEvidence.captureSourceSha,
+      testInvocation: process.env.GROUND_GLASS_M7F_PRODUCTION_TEST_INVOCATION ??
+        process.env.GROUND_GLASS_M7F_TEST_INVOCATION ?? productionIsolationEvidence.invocation,
+      browserProject: "production-preview",
+      threePackageVersion: "0.187.0",
+      rendererRevision: "r187",
+      nodeVersion: process.version,
+      operatingSystem: productionIsolationEvidence.operatingSystem,
+    },
+    testInvocation: process.env.GROUND_GLASS_M7F_PRODUCTION_TEST_INVOCATION ??
+      process.env.GROUND_GLASS_M7F_TEST_INVOCATION ?? productionIsolationEvidence.invocation,
+    testProject: testInfo.project.name,
+    build: productionIsolationEvidence.build,
+    threeRevision: REVISION,
+    browserVersion: productionIsolationEvidence.browserVersion,
+    operatingSystem: productionIsolationEvidence.operatingSystem,
+    productionWebGpuEnabled: false,
+    webglOnlyDecision: evidence.rendererAttempt === "webgl" && evidence.executionBackend === "webgl2",
+    evidence,
+    groundGlassEvidence,
+    webgpuModuleRequests,
+    productionIsolationEvidence,
   });
 });
 

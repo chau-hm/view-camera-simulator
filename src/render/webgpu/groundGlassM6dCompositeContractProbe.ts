@@ -95,13 +95,17 @@ export const runGroundGlassM6dCompositeContractProbe = async (input: Readonly<{
   let rendererStateRestored = false;
   let cases: GroundGlassM6dCompositeContractProbeCase[] | null = null;
   let sourceTextureFormat: string | null = null;
+  let nearTextureFormat: string | null = null;
   let targetFormat: string | null = null;
+  let targetAllocationObserved = false;
+  let temporaryResourcesDisposed = false;
 
   try {
     if (!input.isCurrent()) throw new Error("M6D composite contract probe request became stale before rendering");
     input.renderer.initTexture(farTexture);
     input.renderer.initTexture(nearTexture);
     input.renderer.initRenderTarget(target);
+    targetAllocationObserved = true;
     input.renderer.setRenderTarget(target);
     input.renderer.setViewport(0, 0, PROBE_COVERAGES.length, 1);
     input.renderer.setScissorTest(false);
@@ -145,6 +149,7 @@ export const runGroundGlassM6dCompositeContractProbe = async (input: Readonly<{
       };
     });
     sourceTextureFormat = input.textureFormat(farTexture);
+    nearTextureFormat = input.textureFormat(nearTexture);
     targetFormat = input.textureFormat(target.texture);
   } finally {
     if (!safeToDispose) {
@@ -174,6 +179,7 @@ export const runGroundGlassM6dCompositeContractProbe = async (input: Readonly<{
         target.dispose();
         farTexture.dispose();
         nearTexture.dispose();
+        temporaryResourcesDisposed = true;
       }
     }
   }
@@ -192,10 +198,15 @@ export const runGroundGlassM6dCompositeContractProbe = async (input: Readonly<{
     actualExecutionApi: "webgpu",
     internalFallback: "none",
     applicationFallback: false,
+    sourceTextureIdentity: { farUuid: farTexture.uuid, nearUuid: nearTexture.uuid },
     sourceTextureFormat,
+    nearTextureFormat,
+    targetIdentity: { uuid: target.texture.uuid, widthPx: target.width, heightPx: target.height },
     targetFormat,
     targetColorSpace: "no-color-space",
+    targetAllocationObserved,
     rendererStateRestored,
+    temporaryResourcesDisposed,
     cases,
   };
 };

@@ -173,6 +173,7 @@ import {
   isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationBuildEnabled,
   isGroundGlassM6PresentationRequest,
+  isGroundGlassM6R187SessionAuthorized,
 } from "./groundGlassM6PresentationPolicy";
 
 type WebGpuRenderer = InstanceType<typeof WebGPURenderer>;
@@ -2243,7 +2244,9 @@ export const GroundGlassWebGPUAdapter = ({
         !isGroundGlassM6cAlphaFixtureEnabledForRequest(acceptedRequest) ||
         !isGroundGlassM6PresentationRequest(acceptedRequest) ||
         !mountedNativeWebGpu ||
-        REVISION !== "186" ||
+        !(REVISION === "186" || (
+          REVISION === "187" && isGroundGlassM6R187SessionAuthorized(acceptedRequest)
+        )) ||
         !renderer ||
         !target ||
         !display ||
@@ -2253,7 +2256,7 @@ export const GroundGlassWebGPUAdapter = ({
         !currentM6bPresentationState ||
         !m6bConformanceModule
       ) {
-        publishUnavailable("unsupported", "M6C requires the authorized Architecture Rise calibration fixture and mounted Three.js r186 native WebGPU M6 material");
+        publishUnavailable("unsupported", "M6C requires the authorized Architecture Rise calibration fixture and a revision-qualified native WebGPU M6 material");
         return;
       }
 
@@ -2304,6 +2307,7 @@ export const GroundGlassWebGPUAdapter = ({
         colorWrite: material.colorWrite,
         alphaTest: material.alphaTest,
         premultipliedAlpha: material.premultipliedAlpha,
+        toneMapped: material.toneMapped,
         samePresentationMaterialInstance: true as const,
       };
       const materialEquivalent = isGroundGlassM6cMaterialEquivalent(materialEvidence);

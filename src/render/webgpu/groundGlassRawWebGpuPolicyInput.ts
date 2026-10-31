@@ -9,6 +9,7 @@ import {
   GROUND_GLASS_M6_PRESENTATION_FEATURES,
   groundGlassM6PilotSessionId,
   isGroundGlassM6PresentationBuildEnabled,
+  resolveGroundGlassM6RendererAttemptCompatibility,
   isGroundGlassRawPilotBuildAuthorizedForFlags,
 } from "./groundGlassM6PresentationPolicy";
 
@@ -75,6 +76,7 @@ export const createGroundGlassRawWebGpuPolicyInput = (
   const m3RawRequested = m3PilotEnabled && isGroundGlassRawWebGpuPilotRequest(request);
   const requestedM6 = m6Requested;
   const requestedWebGpuMode = requestedM6 || m3RawRequested;
+  const revisionBoundM6RendererAttempt = requestedM6 && REVISION === "187";
   // Raw Debug remains a distinct output mode, but when M6 is build-authorized it shares that
   // channel's pilot-session retry latch. Switching presentation modes must not look like a new
   // session or bypass an already-consumed WebGPU attempt.
@@ -83,8 +85,10 @@ export const createGroundGlassRawWebGpuPolicyInput = (
       ? retryState.pilotSessionId
       : resolveGroundGlassRawWebGpuPilotSessionId(request.channel, m6BuildEnabled)
   );
-  const compatibility = requestedM6
-    ? GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY
+  const compatibility = revisionBoundM6RendererAttempt
+    ? resolveGroundGlassM6RendererAttemptCompatibility()
+    : requestedM6
+      ? GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY
     : resolveGroundGlassRawWebGpuCompatibility(`r${REVISION}`);
 
   return {
@@ -102,8 +106,10 @@ export const createGroundGlassRawWebGpuPolicyInput = (
         },
     channelId: request.channel,
     sceneId: request.scene.id,
-    requestedFeatures: requestedM6
-      ? GROUND_GLASS_M6_PRESENTATION_FEATURES
+    requestedFeatures: revisionBoundM6RendererAttempt
+      ? ["raw-rtt"]
+      : requestedM6
+        ? GROUND_GLASS_M6_PRESENTATION_FEATURES
       : m3RawRequested ? ["raw-rtt"] : [],
     // An explicit M6 build request still reaches policy for unsupported scenes; exact scene
     // compatibility then denies it and preserves the established WebGL selection.
