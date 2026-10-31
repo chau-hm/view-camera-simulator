@@ -2729,6 +2729,13 @@ export const GroundGlassWebGPUAdapter = ({
           await holdGroundGlassWebGpuQueueCompletion();
           throwIfGroundGlassWebGpuFailureInjected("queue-completion");
           await device.queue.onSubmittedWorkDone();
+          recordGroundGlassWebGpuTestEvent({
+            kind: "queue-completion-settled",
+            attemptId: attemptIdentity.attemptId,
+            generationId: generation.generationId,
+            requestId: latest.identity.requestId,
+            operation: "sceneRender",
+          });
           const sceneQueueCompletionWaitMs = performance.now() - sceneQueueWaitStartedAt;
           sceneRenderTiming = {
             rendererCallCpuMs: sceneRendererCallCpuMs,

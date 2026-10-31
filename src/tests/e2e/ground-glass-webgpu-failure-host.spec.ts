@@ -531,6 +531,10 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     const adapter = page.getByTestId("ground-glass-webgpu-pilot");
     await expect(adapter).toHaveAttribute("data-actual-execution-api", "webgpu", { timeout: 120_000 });
     await expect.poll(async () => page.evaluate(() => Boolean(window.__groundGlassWebGpuM3TestControl?.queueCompletionBarrierReached))).toBe(true);
+    const queueCompletionBarrierReachedBeforeRetirement = await page.evaluate(() =>
+      window.__groundGlassWebGpuM3TestControl?.queueCompletionBarrierReached === true,
+    );
+    expect(queueCompletionBarrierReachedBeforeRetirement).toBe(true);
     const retiredGeneration = await glass.getAttribute("data-renderer-generation");
     if (!retiredGeneration) throw new Error("Native generation identity was not captured");
     await recordNativePolicyObservation(page, glass, retiredGeneration, authorizedPolicyEvidence);
@@ -539,7 +543,30 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     await expect(glass).toHaveAttribute("data-render-cleanup-status", "pending");
     expect(await glass.getAttribute("data-renderer-generation")).toBe(retiredGeneration);
     await expect(glass).not.toHaveAttribute("data-mounted-renderer-family", "webgl-renderer");
-    await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.releaseQueueCompletion?.());
+    const retirementWhileHeld = await glass.evaluate((element) => ({
+      lifecycle: element.getAttribute("data-render-host-lifecycle"),
+      cleanupStatus: element.getAttribute("data-render-cleanup-status"),
+      rendererGeneration: element.getAttribute("data-renderer-generation"),
+      mountedRendererFamily: element.getAttribute("data-mounted-renderer-family"),
+    }));
+    expect(retirementWhileHeld).toMatchObject({
+      lifecycle: "retiring",
+      cleanupStatus: "pending",
+      rendererGeneration: retiredGeneration,
+    });
+    const releaseRequested = await page.evaluate(() => {
+      const control = window.__groundGlassWebGpuM3TestControl;
+      if (control?.queueCompletionBarrierReached !== true || !control.releaseQueueCompletion) return false;
+      control.releaseQueueCompletion();
+      return true;
+    });
+    expect(releaseRequested).toBe(true);
+    await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 90_000 })
+      .toContainEqual(expect.objectContaining({
+        kind: "queue-completion-settled",
+        generationId: retiredGeneration,
+        operation: "sceneRender",
+      }));
     await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 90_000 })
       .toContainEqual(expect.objectContaining({
         kind: "cleanup",
@@ -549,10 +576,49 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     await expect(glass).toHaveAttribute("data-mounted-renderer-family", "webgl-renderer", { timeout: 90_000 });
     await expect(glass).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 90_000 });
     const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+    const attempt = events.find((event) => event.kind === "attempt" && event.generationId === retiredGeneration);
+    const queueSettled = events.find((event) => event.kind === "queue-completion-settled" &&
+      event.generationId === retiredGeneration);
+    const adapterCleanup = events.find((event) => event.kind === "cleanup" && event.generationId === retiredGeneration);
+    const hostAcknowledgement = events.find((event) => event.kind === "cleanup-acknowledged" &&
+      event.generationId === retiredGeneration);
+    const replacement = events.find((event) => event.kind === "renderer-mounted" &&
+      event.rendererFamily === "webgl-renderer" && event.generationId !== retiredGeneration &&
+      typeof event.sequence === "number" && hostAcknowledgement?.kind === "cleanup-acknowledged" &&
+      typeof hostAcknowledgement.sequence === "number" &&
+      event.sequence > hostAcknowledgement.sequence && event.channelId === hostAcknowledgement.channelId &&
+      event.hostId === hostAcknowledgement.hostId);
+    if (attempt?.kind !== "attempt" || queueSettled?.kind !== "queue-completion-settled" ||
+        adapterCleanup?.kind !== "cleanup" || hostAcknowledgement?.kind !== "cleanup-acknowledged" ||
+        replacement?.kind !== "renderer-mounted" || typeof queueSettled.sequence !== "number" ||
+        typeof adapterCleanup.sequence !== "number" || typeof hostAcknowledgement.sequence !== "number" ||
+        typeof replacement.sequence !== "number") {
+      throw new Error("Pending queue retirement did not produce its full settlement and cleanup chain");
+    }
+    expect(queueSettled.sequence).toBeLessThan(adapterCleanup.sequence);
+    expect(adapterCleanup.sequence).toBeLessThan(hostAcknowledgement.sequence);
+    expect(hostAcknowledgement.sequence).toBeLessThan(replacement.sequence);
     expect(events).not.toContainEqual(expect.objectContaining({
       kind: "device-lost-observed",
       generationId: retiredGeneration,
     }));
+    await recordM7cObservation(page, {
+      kind: "pending-queue-retirement",
+      generationId: retiredGeneration,
+      attemptId: attempt.attemptId,
+      requestId: attempt.requestId,
+      channelId: attempt.channelId,
+      sceneId: attempt.sceneId,
+      hostId: hostAcknowledgement.hostId,
+      queueCompletionBarrierReachedBeforeRelease: queueCompletionBarrierReachedBeforeRetirement,
+      retirementWhileHeld,
+      releaseRequested,
+      queueCompletionSettledSequence: queueSettled?.sequence ?? null,
+      adapterCleanupSequence: adapterCleanup?.sequence ?? null,
+      hostAcknowledgementSequence: hostAcknowledgement?.sequence ?? null,
+      replacementGenerationId: replacement.generationId,
+      replacementMountSequence: replacement.sequence,
+    });
   });
 
   test("M7C scene navigation during pending cleanup does not publish retired output or retry on remount", async ({ page }) => {
