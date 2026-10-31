@@ -557,6 +557,13 @@ export const evaluateGroundGlassM7dPhysicalCocReport = (
         if (eventEvidence.length === 0 || eventEvidence.some((entry) => !entry ||
             !nonEmpty(entry.artifact) || !nonEmpty(entry.collection))) {
           issue("event-provenance", `scenarios.${scenario.id}.orderedEventEvidence`, "passed native scenario must reference captured ordered lifecycle/host events");
+        } else if (eventEvidence.some((entry) => {
+          const sequences = entry.sequenceNumbers;
+          return !Array.isArray(sequences) || sequences.length === 0 ||
+            !sequences.every(finite) ||
+            sequences.some((sequence, index) => index > 0 && sequence <= (sequences[index - 1] as number));
+        })) {
+          issue("event-order", `scenarios.${scenario.id}.orderedEventEvidence`, "captured event sequence numbers must be finite, non-empty, and strictly ordered");
         }
         const supportingArtifacts = Array.isArray(scenario.supportingArtifacts) ? scenario.supportingArtifacts : [];
         if (supportingArtifacts.length === 0 || supportingArtifacts.some((artifact) => !nonEmpty(artifact))) {

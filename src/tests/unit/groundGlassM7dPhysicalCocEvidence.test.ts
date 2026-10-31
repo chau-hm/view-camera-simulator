@@ -685,6 +685,18 @@ describe("M7D r187 Physical CoC evidence evaluator", () => {
     expect(result.issues.map((issue) => issue.code)).toContain("event-provenance");
   });
 
+  it("rejects native report events whose recorded sequence is out of order", () => {
+    const reportPath = resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as {
+      scenarios: Array<Record<string, unknown>>;
+    };
+    const eventEvidence = report.scenarios[0]!.orderedEventEvidence as Array<Record<string, unknown>>;
+    eventEvidence[0]!.sequenceNumbers = [9, 4];
+    const result = evaluateGroundGlassM7dPhysicalCocReport(report);
+    expect(result.status).toBe("failed");
+    expect(result.issues.map((issue) => issue.code)).toContain("event-order");
+  });
+
   it("rejects a report scenario with incomplete source SHA provenance", () => {
     const reportPath = resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json");
     const report = JSON.parse(readFileSync(reportPath, "utf8")) as {
