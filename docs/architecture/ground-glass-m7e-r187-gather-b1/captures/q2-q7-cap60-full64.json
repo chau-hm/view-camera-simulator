@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "q2-q7-cap60-full64",
+  "sourceCommitSha": "9382217c7820be87a596124fd78c28239d416653",
+  "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true GROUND_GLASS_M7E_EVIDENCE_DIR=docs/architecture/ground-glass-m7e-r187-gather-b1 PLAYWRIGHT_WEB_SERVER_PORT=4173 npx playwright test src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'M7E native r187 requalifies|M7E r187 isolates optional M5 failures|native M5 rejects stale captures and recovers from a local gather failure'",
+  "runtime": {
+    "rendererRevision": "r187",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "browserVersion": "156.0.8078.76",
+    "operatingSystem": "darwin arm64",
+    "nodeVersion": "v24.3.0",
+    "nativeRequired": true
+  },
+  "hostFrameResult": {
+    "status": "completed",
+    "accepted": true,
+    "requestId": "gg-mvwp9x8q-1mukku3hp1c-default-request-8",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvwp9x8q-1mukku3hp1c-default-generation-2"
+  },
+  "capture": {
+    "token": "m7e-q2-q7-cap60-full64-1793469253492",
+    "captureId": "m7e-q2-q7-cap60-full64-1793469253492",
+    "requestId": "gg-mvwp9x8q-1mukku3hp1c-default-request-8",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvwp9x8q-1mukku3hp1c-default-generation-2",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "rendererRevision": "r187",
+    "readbackOrigin": "top",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[false,0.5,0.5,1,1],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":114.34111916149942,\\\"imageCircleDiameterMm\\\":228.68223832299884,\\\"imageDistanceMm\\\":157.37704918032787},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":157.37704918032787,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":114.34111916149942,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3200},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3200},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":3200},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2975.004116581591},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":2975.004116581591},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3461.812607779268},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":3461.812607779268},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}}},\\\"offAxisProjectionMatrix\\\":[2.4783787272492575,0,0,0,0,3.0979734090615723,0,0,0,0,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":5690,\\\"sharpness\\\":0,\\\"status\\\":\\\"soft\\\",\\\"pointSharpness\\\":0,\\\"pointStatus\\\":\\\"soft\\\",\\\"patchSharpness\\\":0,\\\"patchStatus\\\":\\\"soft\\\",\\\"physicalPointSharpness\\\":0,\\\"physicalPointStatus\\\":\\\"soft\\\",\\\"physicalPatchSharpness\\\":0,\\\"physicalPatchStatus\\\":\\\"soft\\\",\\\"pointEquivalentCoCDiameterMm\\\":0.8431506073450402,\\\"patchEquivalentCoCDiameterMm\\\":0.8431506073450402,\\\"pointNormalizedDefocus\\\":21.733101580796237,\\\"patchNormalizedDefocus\\\":21.733101580796237,\\\"insideDepthOfField\\\":false,\\\"targetRayDistanceMm\\\":8935.44067184154,\\\"nearBoundaryDistanceMm\\\":2990.2106616646975,\\\"focusBoundaryDistanceMm\\\":3216.356597288294,\\\"farBoundaryDistanceMm\\\":3479.5074436270756,\\\"normalizedDefocus\\\":21.733101580796237}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":2975.004116581591,\\\"farU\\\":3461.812607779268,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":3200,\\\"imageDistanceMm\\\":157.37704918032787}}\"]",
+    "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[2.478378727249258,0,0,0,0,3.0979734090615727,0,0,0,0,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.40348958333333335,0,0,0,0,0.3227916666666666,0,0,0,0,0,-99.92857142857143,0,0,-1,100]]",
+    "inverseProjectionMatrix": [
+      0.40348958333333335,
+      0,
+      0,
+      0,
+      0,
+      0.3227916666666666,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -99.92857142857143,
+      0,
+      0,
+      -1,
+      100
+    ],
+    "sampledFilmDimensionsMm": {
+      "widthMm": 127,
+      "heightMm": 101.6
+    },
+    "colorDomain": "source-target-readback-values",
+    "qualityMode": "full64",
+    "sampleCount": 64,
+    "maximumRadiusPx": 60,
+    "sourceWidthPx": 474,
+    "sourceHeightPx": 379,
+    "farGatherWidthPx": 474,
+    "farGatherHeightPx": 379,
+    "nearGatherWidthPx": 474,
+    "nearGatherHeightPx": 379,
+    "targetFormats": {
+      "sourceColor": "rgba8unorm",
+      "physical": "rgba16float",
+      "validity": "rgba8unorm",
+      "far": "rgba16float",
+      "near": "rgba16float",
+      "b1": "rgba16float",
+      "composite": "rgba16float",
+      "provenance": "rgba32float",
+      "decisions": "rgba8unorm"
+    },
+    "m4Input": {
+      "status": "completed",
+      "requestId": "gg-mvwp9x8q-1mukku3hp1c-default-request-8",
+      "rendererGenerationId": "gg-mvwp9x8q-1mukku3hp1c-default-generation-2",
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "targetFormats": {
+        "depth": "depth24plus",
+        "physical": "rgba16float",
+        "validity": "rgba8unorm"
+      }
+    },
+    "performance": {
+      "sceneRender": {
+        "rendererCallCpuMs": 1.3000000044703484,
+        "queueCompletionWaitMs": 0.8999999985098839,
+        "wallClockMs": 2.3000000044703484
+      },
+      "physicalCocFootprint": {
+        "rendererCallCpuMs": 0.10000000149011612,
+        "queueCompletionWaitMs": 0.5999999940395355,
+        "wallClockMs": 0.6999999955296516
+      },
+      "physicalValidity": {
+        "rendererCallCpuMs": 0,
+        "queueCompletionWaitMs": 0.4000000059604645,
+        "wallClockMs": 0.4000000059604645
+      },
+      "operations": [
+        {
+          "name": "sourceIdentity",
+          "timing": {
+            "rendererCallCpuMs": 0,
+            "queueCompletionWaitMs": 0.5,
+            "wallClockMs": 0.5
+          }
+        },
+        {
+          "name": "gatherIdentity",
+          "timing": {
+            "rendererCallCpuMs": 0,
+            "queueCompletionWaitMs": 0.5,
+            "wallClockMs": 0.6000000014901161
+          }
+        },
+        {
+          "name": "gatherCenterProvenance",
+          "timing": {
+            "rendererCallCpuMs": 0,
+            "queueCompletionWaitMs": 0.6000000014901161,
+            "wallClockMs": 0.6000000014901161
+          }
+        },
+        {
+          "name": "farGather",
+          "timing": {
+            "rendererCallCpuMs": 0.10000000149011612,
+            "queueCompletionWaitMs": 2.6999999955296516,
+            "wallClockMs": 2.899999998509884
+          }
+        },
+        {
+          "name": "nearGather",
+          "timing": {
+            "rendererCallCpuMs": 0.10000000149011612,
+            "queueCompletionWaitMs": 3.2999999970197678,
+            "wallClockMs": 3.399999998509884
+          }
+        },
+        {
+          "name": "selectedProvenance",
+          "timing": {
+            "rendererCallCpuMs": 0.10000000149011612,
+            "queueCompletionWaitMs": 0.5,
+            "wallClockMs": 0.6000000014901161
+          }
+        },
+        {
+          "name": "b1Reconstruction",
+          "timing": {
+            "rendererCallCpuMs": 0.10000000149011612,
+            "queueCompletionWaitMs": 0.29999999701976776,
+            "wallClockMs": 0.3999999985098839
+          }
+        },
+        {
+          "name": "b1Decision",
+          "timing": {
+            "rendererCallCpuMs": 0.10000000149011612,
+            "queueCompletionWaitMs": 0.5,
+            "wallClockMs": 0.6000000014901161
+          }
+        },
+        {
+          "name": "researchComposite",
+          "timing": {
+            "rendererCallCpuMs": 0,
+            "queueCompletionWaitMs": 0.5,
+            "wallClockMs": 0.5
+          }
+        },
+        {
+          "name": "depthReadback",
+          "timing": {
+            "rendererCallCpuMs": 0.10000000149011612,
+            "queueCompletionWaitMs": 0.5,
+            "wallClockMs": 0.6000000014901161
+          }
+        }
+      ],
+      "readPixelsWaitWallMs": 4.0999999940395355,
+      "readbackConversionCpuMs": 37.900000005960464,
+      "cpuReferenceWallClockMs": 3383.9000000059605,
+      "gpuTimestampQueries": "not-collected"
+    },
+    "resourceInventory": {
+      "m5OwnedRenderTargetCount": 10,
+      "adapterOwnedFullscreenMaterialCount": 10,
+      "adapterOwnedFullscreenSceneCount": 10,
+      "adapterOwnedFullscreenGeometryCount": 1,
+      "estimatedTargetAttachmentBytes": 20838936,
+      "memoryScope": "m5-owned-target-attachments-only",
+      "targetAllocations": [
+        {
+          "name": "sourceIdentity",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba32float",
+          "bytesPerPixel": 16,
+          "estimatedBytes": 2874336
+        },
+        {
+          "name": "gatherIdentity",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba32float",
+          "bytesPerPixel": 16,
+          "estimatedBytes": 2874336
+        },
+        {
+          "name": "gatherCenterProvenance",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba32float",
+          "bytesPerPixel": 16,
+          "estimatedBytes": 2874336
+        },
+        {
+          "name": "farGather",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba16float",
+          "bytesPerPixel": 8,
+          "estimatedBytes": 1437168
+        },
+        {
+          "name": "nearGather",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba16float",
+          "bytesPerPixel": 8,
+          "estimatedBytes": 1437168
+        },
+        {
+          "name": "selectedProvenance",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba32float",
+          "bytesPerPixel": 16,
+          "estimatedBytes": 2874336
+        },
+        {
+          "name": "b1Reconstruction",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba16float",
+          "bytesPerPixel": 8,
+          "estimatedBytes": 1437168
+        },
+        {
+          "name": "b1Decision",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba8unorm",
+          "bytesPerPixel": 4,
+          "estimatedBytes": 718584
+        },
+        {
+          "name": "researchComposite",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba16float",
+          "bytesPerPixel": 8,
+          "estimatedBytes": 1437168
+        },
+        {
+          "name": "depthReadback",
+          "widthPx": 474,
+          "heightPx": 379,
+          "format": "rgba32float",
+          "bytesPerPixel": 16,
+          "estimatedBytes": 2874336
+        }
+      ]
+    },
+    "m6dCompositeContractProbe": null,
+    "completedPasses": [
+      "sourceIdentity",
+      "gatherIdentity",
+      "gatherCenterProvenance",
+      "farGather",
+      "nearGather",
+      "selectedProvenance",
+      "farReconstructionB1",
+      "farReconstructionB1",
+      "researchComposite"
+    ],
+    "cpuB1Conformance": {
+      "status": "passed",
+      "selectedCenterProvenanceMismatchCount": 0,
+      "eligibilityMismatchCount": 0,
+      "fallbackReasonMismatchCount": 0,
+      "selectedPathMismatchCount": 0,
+      "rgbRmse": 0.0001881802302011961,
+      "rgbMaximumError": 0.00043851137161254883,
+      "fallbackSourceMaximumError": 0.00043851137161254883
+    },
+    "farGatherCpuReference": {
+      "rgbRmse": 0.0002259103051870011,
+      "rgbMaximumError": 0.0007792115211486816,
+      "pixelsOverMaximumErrorTolerance": 0
+    },
+    "sourceToGatherMappingConformance": {
+      "status": "passed",
+      "mismatchCount": 0
+    },
+    "nominalGatherCenterMappingConformance": {
+      "status": "exact",
+      "mismatchCount": 0
+    },
+    "physicalDataFingerprint": "92736c61",
+    "nearCoveragePixelCount": 434,
+    "nearCoverageNontrivial": true,
+    "nearCoverageFractionalPixelCount": 0,
+    "nearReferenceCoverageNontrivial": true,
+    "nearReferenceCoveragePixelCount": 434,
+    "nearReferenceCoverageFractionalPixelCount": 0,
+    "nearReferenceAlphaMaximumError": 0,
+    "nearRgbInvariantMaximumError": 0,
+    "nearAlphaInvariantMaximumError": 0,
+    "inputFingerprints": {
+      "sourceColor": "5ff86ac0",
+      "depth": "88205d0e",
+      "physical": "92736c61",
+      "validity": "c3d94854"
+    },
+    "m5rDiagnostics": {
+      "status": "not-requested",
+      "diagnosticTargetFormat": null,
+      "diagnosticTargetCount": 0,
+      "nearFinalAlphaMaximumError": null
+    },
+    "m5rNearFixture": null,
+    "radius": {
+      "maximumUncappedRadiusPx": 1.8433616818405512,
+      "cappedPixelCount": 0,
+      "physicalValuesUnchanged": true
+    },
+    "readbackBuffers": null
+  },
+  "readbackPayload": {
+    "schemaVersion": 2,
+    "encoding": "gzip",
+    "file": "q2-q7-cap60-full64.bin.gz",
+    "sha256": "a7a454863a0e7c86f38bab3c6c155bd6d424378e265ce45b8e222fe72a2d8447",
+    "previousPayloadSha256": "cf4992b61bf15e6dd71e60133217ca57393196c2b4fba2f3fd97a7fc4664fb76",
+    "uncompressedByteLength": 40959292,
+    "fields": [
+      {
+        "name": "sourceRgba",
+        "offset": 0,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "physicalRgba",
+        "offset": 2874336,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "validity",
+        "offset": 5748672,
+        "byteLength": 179646,
+        "elementCount": 179646,
+        "type": "Uint8Array"
+      },
+      {
+        "name": "depth",
+        "offset": 5928320,
+        "byteLength": 718584,
+        "elementCount": 179646,
+        "type": "Float32Array"
+      },
+      {
+        "name": "farGatherRgba",
+        "offset": 6646904,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "farCpuReferenceRgba",
+        "offset": 9521240,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearRgba",
+        "offset": 12395576,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearBeforeB1Rgba",
+        "offset": 15269912,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearAfterB1Rgba",
+        "offset": 18144248,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearCpuReferenceRgba",
+        "offset": 21018584,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearCpuCenterIsNear",
+        "offset": 23892920,
+        "byteLength": 179646,
+        "elementCount": 179646,
+        "type": "Uint8Array"
+      },
+      {
+        "name": "nearCpuEvaluatedProposalCount",
+        "offset": 24072566,
+        "byteLength": 359292,
+        "elementCount": 179646,
+        "type": "Uint16Array"
+      },
+      {
+        "name": "nearCpuAcceptedProposalCount",
+        "offset": 24431858,
+        "byteLength": 359292,
+        "elementCount": 179646,
+        "type": "Uint16Array"
+      },
+      {
+        "name": "nearCpuNonzeroMembershipCount",
+        "offset": 24791150,
+        "byteLength": 359292,
+        "elementCount": 179646,
+        "type": "Uint16Array"
+      },
+      {
+        "name": "nearCpuWeightSum",
+        "offset": 25150444,
+        "byteLength": 718584,
+        "elementCount": 179646,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearCpuCoverageMass",
+        "offset": 25869028,
+        "byteLength": 718584,
+        "elementCount": 179646,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearCpuEstimatedCoverage",
+        "offset": 26587612,
+        "byteLength": 718584,
+        "elementCount": 179646,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearCpuAcceptedAreaRatioMean",
+        "offset": 27306196,
+        "byteLength": 718584,
+        "elementCount": 179646,
+        "type": "Float32Array"
+      },
+      {
+        "name": "nearCpuAcceptedCompensationMaximum",
+        "offset": 28024780,
+        "byteLength": 718584,
+        "elementCount": 179646,
+        "type": "Float32Array"
+      },
+      {
+        "name": "b1FarRgba",
+        "offset": 28743364,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "researchCompositeRgba",
+        "offset": 31617700,
+        "byteLength": 2874336,
+        "elementCount": 718584,
+        "type": "Float32Array"
+      },
+      {
+        "name": "observedSelectedGatherIds",
+        "offset": 34492036,
+        "byteLength": 1437168,
+        "elementCount": 359292,
+        "type": "Int32Array"
+      },
+      {
+        "name": "observedSelectedCenterSourceIds",
+        "offset": 35929204,
+        "byteLength": 1437168,
+        "elementCount": 359292,
+        "type": "Int32Array"
+      },
+      {
+        "name": "observedGatherCenterSourceIds",
+        "offset": 37366372,
+        "byteLength": 1437168,
+        "elementCount": 359292,
+        "type": "Int32Array"
+      },
+      {
+        "name": "observedGatherCenterSourceUvs",
+        "offset": 38803540,
+        "byteLength": 1437168,
+        "elementCount": 359292,
+        "type": "Float32Array"
+      },
+      {
+        "name": "b1Decision",
+        "offset": 40240708,
+        "byteLength": 718584,
+        "elementCount": 718584,
+        "type": "Uint8Array"
+      }
+    ]
+  }
+}

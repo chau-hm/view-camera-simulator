@@ -175,6 +175,7 @@ export type GroundGlassB1BoundaryProbeCaseReadback = Readonly<{
   id: string;
   inputSignedCocMm: number;
   inputValidityCode: number;
+  inputSourceRgba: readonly [number, number, number, number];
   inputFarRgba: readonly [number, number, number, number];
   storedPhysicalHalfBits: readonly [number, number, number, number];
   storedPhysicalRgba: readonly [number, number, number, number];
@@ -276,6 +277,7 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
   rendererFamily: "webgpu-renderer";
   actualExecutionApi: "webgpu";
   internalFallback: "none";
+  rendererRevision: string;
   readbackOrigin: "top" | "bottom" | "unresolved";
   sceneSourceRevision: string;
   effectiveOpticalRequestFingerprint: string;
@@ -303,6 +305,18 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     composite: string | null;
     provenance: string | null;
     decisions: string | null;
+  }>;
+  m4Input: Readonly<{
+    status: "completed";
+    requestId: string;
+    rendererGenerationId: string;
+    sceneId: string;
+    sceneSourceRevision: string;
+    targetFormats: Readonly<{
+      depth: string | null;
+      physical: string | null;
+      validity: string | null;
+    }>;
   }>;
   completedPasses: readonly (
     | "sourceIdentity"
@@ -383,6 +397,7 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     depth: Float32Array;
     farGatherRgba: Float32Array;
     nearRgba: Float32Array;
+    farCpuReferenceRgba: Float32Array;
     nearBeforeB1Rgba: Float32Array;
     nearAfterB1Rgba: Float32Array;
     nearCpuReferenceRgba: Float32Array;
@@ -419,6 +434,15 @@ export type GroundGlassApertureGatherCaptureReadback = Readonly<{
     m5rFixtureNearAlphaHalfBits?: Uint16Array;
   }> | null;
   m6dCompositeContractProbe?: GroundGlassM6dCompositeContractProbeReadback | null;
+}>;
+
+export type GroundGlassApertureGatherCapturePublication = Readonly<{
+  token: string;
+  captureId: string;
+  requestId: string;
+  channelId: string;
+  sceneId: string;
+  rendererGenerationId: string;
 }>;
 
 /** Synthetic-input evidence is always labeled separately from registered app captures. */
@@ -525,8 +549,11 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "physical-validity-after-submit"
   | "aperture-far-after-submit"
   | "aperture-near-after-submit"
+  | "aperture-provenance-after-submit"
   | "aperture-b1-after-submit"
+  | "aperture-decision-after-submit"
   | "aperture-composite-after-submit"
+  | "aperture-target-initialization"
   | "m6-presentation-target-initialization"
   | "m6-optical-resource-initialization"
   | "m6-presentation-node-initialization"
@@ -734,6 +761,7 @@ export type GroundGlassWebGpuTestControl = {
   releasePhysicalCocProbeReadback?: (() => void) | undefined;
   apertureGatherCaptureRequest?: GroundGlassApertureGatherCaptureRequest | null;
   apertureGatherCaptureReadback?: GroundGlassApertureGatherCaptureReadback | null;
+  apertureGatherCapturePublications?: GroundGlassApertureGatherCapturePublication[];
   holdApertureGatherReadback?: boolean;
   apertureGatherReadbackBarrierReached?: boolean;
   releaseApertureGatherReadback?: (() => void) | undefined;
@@ -1036,7 +1064,17 @@ export const publishGroundGlassApertureGatherCaptureForTest = (
   readback: GroundGlassApertureGatherCaptureReadback,
 ): void => {
   const control = getControl();
-  if (control) control.apertureGatherCaptureReadback = readback;
+  if (!control) return;
+  control.apertureGatherCapturePublications ??= [];
+  control.apertureGatherCapturePublications.push({
+    token: readback.token,
+    captureId: readback.captureId,
+    requestId: readback.requestId,
+    channelId: readback.channelId,
+    sceneId: readback.sceneId,
+    rendererGenerationId: readback.rendererGenerationId,
+  });
+  control.apertureGatherCaptureReadback = readback;
 };
 
 export const clearGroundGlassApertureGatherCaptureForTest = (): void => {

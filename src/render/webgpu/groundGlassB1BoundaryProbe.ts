@@ -314,6 +314,7 @@ export const runGroundGlassB1BoundaryProbe = async (input: Readonly<{
         id: probeCase.id,
         inputSignedCocMm: probeCase.physicalValueMm,
         inputValidityCode: probeCase.validityCode,
+        inputSourceRgba: Array.from(sourceBytes, (value) => value / 255) as [number, number, number, number],
         inputFarRgba: probeCase.farValues,
         storedPhysicalHalfBits,
         storedPhysicalRgba,

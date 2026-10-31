@@ -115,8 +115,8 @@ describe("renderer-owned world environment resources", () => {
     expect(sourceTexture?.colorSpace).toBe(THREE.SRGBColorSpace);
     expect(sourceTexture?.mapping).toBe(THREE.EquirectangularReflectionMapping);
     expect(generatorDispose).toHaveBeenCalledTimes(1);
-    expect(rig.renderTarget).toBeInstanceOf(THREE.WebGLCubeRenderTarget);
-    expect(rig.renderTarget.isWebGLCubeRenderTarget).toBe(true);
+    expect(rig.renderTarget).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(rig.renderTarget.isWebGLRenderTarget).toBe(true);
     expect(rig.renderTarget.texture.isRenderTargetTexture).toBe(true);
     expect(rig.renderTarget.texture.colorSpace).toBe(THREE.LinearSRGBColorSpace);
     expect(rig.renderTarget.texture.mapping).toBe(THREE.CubeReflectionMapping);
