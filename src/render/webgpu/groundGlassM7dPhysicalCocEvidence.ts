@@ -385,7 +385,7 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
     if (calculated[3]! < 0 || calculated[3]! >= 1) {
       issue("orientation-encoding", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm[3]`, "orientation storage must be normalized to [0,1)");
     }
-    const orientationDefined = cpu.majorRadiusMm - cpu.minorRadiusMm > 1e-7;
+    const orientationDefined = cpu.valid && cpu.majorRadiusMm - cpu.minorRadiusMm > 1e-7;
     if (orientationDefined) {
       const orientationError = groundGlassPhysicalCocOrientationErrorModuloPi(
         calculated[3]! * Math.PI,
@@ -397,7 +397,7 @@ export const evaluateGroundGlassM7dPhysicalCocCapture = (
         maximumOrientationErrorRad = Math.max(maximumOrientationErrorRad, orientationError);
         if (orientationError >= 0.003) issue("orientation-error", `probeReadback.controlledKernelCases.${id}.calculatedFootprintMm[3]`, "orientation modulo-pi error exceeds 0.003 rad");
       }
-    } else if (calculated[3] !== 0 || actual.orientationDefined !== false) {
+    } else if (calculated[3] !== 0 || (cpu.valid && actual.orientationDefined !== false)) {
       issue("orientation-encoding", `probeReadback.controlledKernelCases.${id}`, "near-circular ellipse must use undefined deterministic orientation zero");
     }
     if (id.startsWith("ellipse-film-") || id === "ellipse-compound-tilt-swing" || id === "ellipse-off-axis") {

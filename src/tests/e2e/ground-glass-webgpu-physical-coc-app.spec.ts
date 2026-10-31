@@ -526,6 +526,14 @@ const createControlledKernelExpectations = (input: Readonly<{
   const positive = candidates.find((candidate) => candidate.cpu.signedCoCDiameterMm > 0);
   const negative = candidates.find((candidate) => candidate.cpu.signedCoCDiameterMm < 0);
   if (!positive || !negative) throw new Error("Canonical near-focus references did not produce both signed CoC sides");
+  const stableOverflowCandidates = candidates.filter((candidate) =>
+    Math.abs(candidate.distance / conjugateObjectDistanceMm - 1) >= 0.05,
+  );
+  const positiveOverflowSource = stableOverflowCandidates.find((candidate) => candidate.cpu.signedCoCDiameterMm > 0);
+  const negativeOverflowSource = stableOverflowCandidates.find((candidate) => candidate.cpu.signedCoCDiameterMm < 0);
+  if (!positiveOverflowSource || !negativeOverflowSource) {
+    throw new Error("Stable binary16 overflow vectors did not preserve both signed CoC sides");
+  }
   const stableReferencePoint = controlledPointMm(referenceOverride, objectDistance);
   const stableReferenceCpu = physicalOracleForOverride(referenceOverride, stableReferencePoint);
   if (!stableReferenceCpu.valid || Math.abs(stableReferenceCpu.signedCoCDiameterMm) < 1e-6) {
@@ -567,17 +575,19 @@ const createControlledKernelExpectations = (input: Readonly<{
     defaultAperture / nearLimitScale,
   );
   addCase("storage-near-binary16-maximum", nearLimit, stableReference.point);
-  const positiveOverflow = scaleApertureForSignedCoC(positive, 66000);
-  const negativeOverflow = scaleApertureForSignedCoC(negative, 66000);
+  // Keep the storage-range controls away from the separate near-U=f vectors:
+  // huge pupil scaling amplifies tiny conjugate-distance precision differences.
+  const positiveOverflow = scaleApertureForSignedCoC(positiveOverflowSource, 66000);
+  const negativeOverflow = scaleApertureForSignedCoC(negativeOverflowSource, 66000);
   addCase("storage-overrange-positive-coc", positiveOverflow.override, positiveOverflow.point);
   addCase("storage-overrange-negative-coc", negativeOverflow.override, negativeOverflow.point);
-  const radiusScale = 66000 / positive.cpu.majorRadiusMm;
+  const radiusScale = 66000 / positiveOverflowSource.cpu.majorRadiusMm;
   const overrangeRadius = createPhysicalKernelOverride(
     neutralOptics,
     focalLengthMm,
     defaultAperture / radiusScale,
   );
-  addCase("storage-overrange-ellipse-radius", overrangeRadius, positive.point);
+  addCase("storage-overrange-ellipse-radius", overrangeRadius, positiveOverflowSource.point);
 
   const invalidLensBasis: GroundGlassPhysicalCocProbeKernelOverride = {
     ...neutral,

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import * as THREE from "three";
 import { computePhysicalBlurFootprint, type PhysicalBlurFootprint } from "../../core/optics/computePhysicalBlurFootprint";
 import {
@@ -517,6 +519,24 @@ describe("M7D r187 Physical CoC evidence evaluator", () => {
       evidenceRevision: GROUND_GLASS_M7D_PHYSICAL_COC_EVIDENCE_REVISION,
       requiredKernelCaseCount: 17,
       observedKernelCaseCount: 17,
+      requiredSceneProbeCount: 5,
+      observedSceneProbeCount: 5,
+    });
+    expect(result.issues).toEqual([]);
+  });
+
+  it("accepts the persisted native r187 M4 capture artifact", () => {
+    const capturePath = resolve(
+      process.cwd(),
+      "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+    );
+    const capture = JSON.parse(readFileSync(capturePath, "utf8")) as unknown;
+    const result = evaluateGroundGlassM7dPhysicalCocCapture(capture);
+    expect(result.status, JSON.stringify(result.issues)).toBe("passed");
+    expect(result).toMatchObject({
+      status: "passed",
+      requiredKernelCaseCount: GROUND_GLASS_M7D_REQUIRED_KERNEL_CASE_IDS.length,
+      observedKernelCaseCount: GROUND_GLASS_M7D_REQUIRED_KERNEL_CASE_IDS.length,
       requiredSceneProbeCount: 5,
       observedSceneProbeCount: 5,
     });
