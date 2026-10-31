@@ -1,5 +1,7 @@
+import { mkdir, writeFile } from "node:fs/promises";
 import { arch, release } from "node:os";
 import { execFileSync } from "node:child_process";
+import { join } from "node:path";
 import { REVISION } from "three";
 import { expect, test } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -204,8 +206,7 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
   expect(Number(nativeCleanup?.sequence)).toBeGreaterThan(Number(acceptedNativeFrame?.sequence ?? Number.POSITIVE_INFINITY));
   expect(await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []))
     .toEqual([webGpuGeneration]);
-  await testInfo.attach("r187-native-application-lifecycle.json", {
-    body: JSON.stringify({
+  const lifecycleCapture = {
       schemaVersion: "ground-glass-m7c-r187-native-observation-v1",
       captureSourceSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
       scenarioId: "m7c-r187-native-raw-baseline",
@@ -255,8 +256,16 @@ test("r187 native M3 Raw RTT runs in the application and disposes on scene trans
       lifecycleEvents: lifecycle,
       screenshotArtifact: "r187-native-application-raw-ground-glass.png",
       limitations: ["One Chrome/macOS environment; no claim about hardware acceleration or spontaneous device loss."],
-    }, null, 2),
+    };
+  const lifecycleCaptureBody = JSON.stringify(lifecycleCapture, null, 2);
+  await testInfo.attach("r187-native-application-lifecycle.json", {
+    body: lifecycleCaptureBody,
     contentType: "application/json",
   });
+  const captureDirectory = process.env.GROUND_GLASS_M7C_CAPTURE_DIR;
+  if (captureDirectory) {
+    await mkdir(captureDirectory, { recursive: true });
+    await writeFile(join(captureDirectory, "m7c-r187-native-raw-baseline.json"), lifecycleCaptureBody);
+  }
   expect(pageErrors).toEqual([]);
 });

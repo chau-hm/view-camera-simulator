@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { release } from "node:os";
 import { REVISION } from "three";
 import { expect, test, type Page } from "@playwright/test";
@@ -10,6 +10,11 @@ const attachJson = async (testInfo: import("@playwright/test").TestInfo, name: s
   const outputPath = testInfo.outputPath(name);
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, body);
+  const captureDirectory = process.env.GROUND_GLASS_M7C_CAPTURE_DIR;
+  if (captureDirectory) {
+    await mkdir(captureDirectory, { recursive: true });
+    await writeFile(join(captureDirectory, name), body);
+  }
   await testInfo.attach(name, { body, contentType: "application/json" });
 };
 

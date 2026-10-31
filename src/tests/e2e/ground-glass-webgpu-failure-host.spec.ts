@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { arch, release } from "node:os";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { REVISION } from "three";
 import { expect, test, type Page } from "@playwright/test";
@@ -270,6 +270,11 @@ const attachLifecycleEvidence = async (page: Page, testInfo: import("@playwright
   const outputPath = testInfo.outputPath("ground-glass-m7c-r187-lifecycle-evidence.json");
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, body);
+  const captureDirectory = process.env.GROUND_GLASS_M7C_CAPTURE_DIR;
+  if (captureDirectory) {
+    await mkdir(captureDirectory, { recursive: true });
+    await writeFile(join(captureDirectory, `${evidence.scenarioId}.json`), body);
+  }
   await testInfo.attach("ground-glass-m7c-r187-lifecycle-evidence", {
     path: outputPath,
     contentType: "application/json",
