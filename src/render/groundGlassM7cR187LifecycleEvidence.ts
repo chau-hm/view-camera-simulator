@@ -28,7 +28,7 @@ export const GROUND_GLASS_M7C_R187_REQUIRED_SCENARIO_IDS = [
   "m7c-r187-broad-local-e2e",
 ] as const;
 
-export const GROUND_GLASS_M7C_R187_EVALUATOR_REVISION = "m7c-r187-lifecycle-evidence-v1" as const;
+export const GROUND_GLASS_M7C_R187_EVALUATOR_REVISION = "m7c-r187-lifecycle-evidence-v2" as const;
 export const GROUND_GLASS_M7C_R187_SCHEMA_VERSION = "ground-glass-m7c-r187-raw-lifecycle-v1" as const;
 
 export type GroundGlassM7cScenarioStatus = "passed" | "failed" | "blocked" | "not-run";
@@ -96,13 +96,17 @@ const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 const readEvents = (scenario: Record<string, unknown>): M7cEvent[] =>
   Array.isArray(scenario.events) ? scenario.events.filter(isObject) : [];
-const readObservation = (scenario: Record<string, unknown>, kind: string): Record<string, unknown> | null => {
+const readObservations = (scenario: Record<string, unknown>, kind: string): Record<string, unknown>[] => {
   const provenance = scenario.provenance;
   const observation = isObject(provenance) && Array.isArray(provenance.observations)
-    ? provenance.observations.find((item) => isObject(item) && item.kind === kind)
-    : undefined;
-  return isObject(observation) ? observation : null;
+    ? provenance.observations.filter((item) => isObject(item) && item.kind === kind)
+    : [];
+  return observation.filter(isObject);
 };
+const readObservation = (scenario: Record<string, unknown>, kind: string): Record<string, unknown> | null =>
+  readObservations(scenario, kind)[0] ?? null;
+const eventSequence = (event: M7cEvent | undefined): number | null =>
+  event && Number.isInteger(event.sequence) ? event.sequence as number : null;
 
 const validateNativeRuntime = (scenario: M7cScenario, errors: string[]): void => {
   const id = scenario.id;
@@ -150,6 +154,238 @@ const validateNativeRuntime = (scenario: M7cScenario, errors: string[]): void =>
     provenance.actualExecutionApi !== "webgpu" || provenance.rendererFamily !== "webgpu-renderer" ||
     provenance.internalFallback !== "none" || provenance.policyEvidenceRevision !== scenario.policyEvidenceRevision
   ) errors.push(`native-provenance-runtime-contradiction:${id}`);
+};
+
+type LossTriggerContract = Readonly<{
+  kind: string;
+  cause: string;
+  reason?: string;
+}>;
+
+const validateNativeLossFallbackChain = (
+  scenario: M7cScenario,
+  errors: string[],
+  errorCode: string,
+  triggers: readonly LossTriggerContract[],
+  forbiddenTriggerKinds: readonly string[],
+): void => {
+  const identity = isObject(scenario.identity) ? scenario.identity : null;
+  if (!identity) {
+    errors.push(`${errorCode}:${scenario.id}`);
+    return;
+  }
+  const generationId = identity.rendererGenerationId;
+  const attemptId = identity.attemptId;
+  const channelId = identity.channelId;
+  const hostId = identity.hostId;
+  const requestId = identity.requestId;
+  const sceneId = identity.sceneId;
+  const events = readEvents(scenario);
+  const all = (kind: string) => events.filter((event) => event.kind === kind);
+  const forGeneration = (kind: string) => events.filter((event) =>
+    event.kind === kind && event.generationId === generationId);
+  const exactlyOne = (kind: string) => {
+    const matches = forGeneration(kind);
+    return matches.length === 1 ? matches[0] : undefined;
+  };
+  let valid = true;
+  for (const trigger of triggers) {
+    const matches = all(trigger.kind);
+    if (matches.length !== 1 || matches[0]?.generationId !== generationId ||
+        matches[0]?.attemptId !== attemptId || matches[0]?.cause !== trigger.cause ||
+        (trigger.reason !== undefined && matches[0]?.reason !== trigger.reason)) valid = false;
+  }
+  if (forbiddenTriggerKinds.some((kind) => all(kind).length !== 0)) valid = false;
+
+  const attempt = exactlyOne("attempt");
+  const runtime = exactlyOne("runtime-observed");
+  const mount = exactlyOne("renderer-mounted");
+  const failure = exactlyOne("failure");
+  const cleanup = exactlyOne("cleanup");
+  const acknowledgement = exactlyOne("cleanup-acknowledged");
+  const triggerEvents = triggers.map((trigger) => all(trigger.kind)[0]);
+  const adapterCleanupEvents = forGeneration("cleanup");
+  const acknowledgementEvents = forGeneration("cleanup-acknowledged");
+  const attemptSequence = eventSequence(attempt);
+  const runtimeSequence = eventSequence(runtime);
+  const mountSequence = eventSequence(mount);
+  const failureSequence = eventSequence(failure);
+  const cleanupSequence = eventSequence(cleanup);
+  const acknowledgementSequence = eventSequence(acknowledgement);
+  const triggerSequences = triggerEvents.map(eventSequence);
+  const replacementCandidates = events.filter((event) =>
+    event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" &&
+    event.generationId !== generationId && event.channelId === channelId && event.hostId === hostId &&
+    typeof acknowledgementSequence === "number" && typeof event.sequence === "number" &&
+    event.sequence > acknowledgementSequence);
+  const replacement = replacementCandidates.length === 1 ? replacementCandidates[0] : undefined;
+  const replacementSequence = eventSequence(replacement);
+  const publicationCandidates = events.filter((event) =>
+    event.kind === "host-frame-result" && event.generationId === replacement?.generationId &&
+    event.activeGenerationId === replacement?.generationId && event.acceptedByHost === true &&
+    event.latestAcceptedRequestId === requestId && event.requestId === requestId &&
+    event.channelId === channelId && event.hostId === hostId && event.sceneId === sceneId &&
+    event.activeRendererFamily === "webgl-renderer");
+  const publication = publicationCandidates.length === 1 ? publicationCandidates[0] : undefined;
+  const publicationSequence = eventSequence(publication);
+  const publicationSummary = scenario.publication;
+  if (
+    !attempt || !runtime || !mount || !failure || !cleanup || !acknowledgement ||
+    attempt.attemptId !== attemptId || attempt.requestId !== requestId || attempt.channelId !== channelId ||
+    attempt.sceneId !== sceneId || runtime.attemptId !== attemptId || runtime.generationId !== generationId ||
+    runtime.rendererRevision !== THREE_R187_PACKAGE_REVISION || runtime.rendererFamily !== "webgpu-renderer" ||
+    runtime.executionApi !== "webgpu" || runtime.internalFallback !== "none" ||
+    mount.attemptId !== attemptId || mount.channelId !== channelId || mount.hostId !== hostId ||
+    mount.requestId !== requestId || mount.sceneId !== sceneId || mount.rendererFamily !== "webgpu-renderer" ||
+    mount.executionApi !== "webgpu" || mount.internalFallback !== "none" ||
+    failure.attemptId !== attemptId || failure.channelId !== channelId || failure.requestId !== requestId ||
+    failure.sceneId !== sceneId || failure.stage !== "runtime" ||
+    cleanup.attemptId !== attemptId || cleanup.outcome !== "confirmed" ||
+    acknowledgement.channelId !== channelId || acknowledgement.hostId !== hostId ||
+    acknowledgement.outcome !== "confirmed" || acknowledgementEvents.length !== 1 || adapterCleanupEvents.length !== 1 ||
+    !replacement || replacement.attemptId !== JSON.stringify([channelId, replacement.generationId]) ||
+    replacement.requestId !== requestId || replacement.sceneId !== sceneId ||
+    replacement.executionApi !== "webgl2" || replacement.internalFallback !== "none" ||
+    !publication || publication.attemptId !== replacement.attemptId || typeof publicationSequence !== "number" ||
+    !isObject(publicationSummary) || publicationSummary.status !== "current" ||
+    publicationSummary.completedRequestId !== requestId || publicationSummary.acceptedRequestId !== requestId ||
+    publicationSummary.rendererGenerationId !== replacement.generationId ||
+    publicationSummary.publicationSequence !== publicationSequence ||
+    scenario.cleanupOutcome !== "confirmed" || scenario.applicationFallback !== true ||
+    scenario.fallbackOutcome !== "webgl-mounted" ||
+    typeof attemptSequence !== "number" || typeof runtimeSequence !== "number" || typeof mountSequence !== "number" ||
+    typeof failureSequence !== "number" || typeof cleanupSequence !== "number" ||
+    typeof acknowledgementSequence !== "number" || typeof replacementSequence !== "number" ||
+    !(attemptSequence < runtimeSequence && runtimeSequence < mountSequence &&
+      triggerSequences.every((sequence) => typeof sequence === "number" && mountSequence < sequence && sequence < failureSequence) &&
+      triggerSequences.every((sequence, index) => index === 0 ||
+        typeof sequence === "number" && typeof triggerSequences[index - 1] === "number" &&
+        triggerSequences[index - 1]! < sequence) &&
+      failureSequence < cleanupSequence && cleanupSequence < acknowledgementSequence &&
+      acknowledgementSequence < replacementSequence && replacementSequence < publicationSequence)
+  ) valid = false;
+
+  if (!valid) errors.push(`${errorCode}:${scenario.id}`);
+};
+
+const validateTestDestroyedDeviceLoss = (scenario: M7cScenario, errors: string[]): void => {
+  if (scenario.id !== "m7c-r187-test-destroyed-device-loss-promise") return;
+  const events = readEvents(scenario);
+  const lost = events.find((event) => event.kind === "device-lost-observed");
+  if (!lost || lost.reason !== "destroyed" || !isNonEmptyString(lost.message)) {
+    errors.push(`test-destroyed-device-loss-chain-contradiction:${scenario.id}`);
+    return;
+  }
+  validateNativeLossFallbackChain(
+    scenario,
+    errors,
+    "test-destroyed-device-loss-chain-contradiction",
+    [
+      { kind: "device-destroy-requested", cause: "test-destroy" },
+      { kind: "device-lost-observed", cause: "test-destroy" },
+    ],
+    ["device-loss-equivalent-requested"],
+  );
+};
+
+const validateDeviceLossEquivalent = (scenario: M7cScenario, errors: string[]): void => {
+  if (scenario.id !== "m7c-r187-device-loss-equivalent") return;
+  validateNativeLossFallbackChain(
+    scenario,
+    errors,
+    "loss-equivalent-trigger-chain-contradiction",
+    [{ kind: "device-loss-equivalent-requested", cause: "test-callback-equivalent" }],
+    ["device-destroy-requested", "device-lost-observed"],
+  );
+};
+
+const validatePendingQueueRetirement = (scenario: M7cScenario, errors: string[]): void => {
+  if (scenario.id !== "m7c-r187-pending-queue-retirement") return;
+  const identity = isObject(scenario.identity) ? scenario.identity : null;
+  const observations = readObservations(scenario, "pending-queue-retirement");
+  const observation = observations.length === 1 ? observations[0] : null;
+  const events = readEvents(scenario);
+  if (!identity || !observation) {
+    errors.push(`pending-retirement-cleanup-chain-contradiction:${scenario.id}`);
+    return;
+  }
+  const generationId = identity.rendererGenerationId;
+  const attemptId = identity.attemptId;
+  const channelId = identity.channelId;
+  const hostId = identity.hostId;
+  const requestId = identity.requestId;
+  const sceneId = identity.sceneId;
+  const forGeneration = (kind: string) => events.filter((event) =>
+    event.kind === kind && event.generationId === generationId);
+  const single = (kind: string) => {
+    const matches = forGeneration(kind);
+    return matches.length === 1 ? matches[0] : undefined;
+  };
+  const attempt = single("attempt");
+  const runtime = single("runtime-observed");
+  const mount = single("renderer-mounted");
+  const settledEvents = forGeneration("queue-completion-settled");
+  const queueSettled = settledEvents.length === 1 ? settledEvents[0] : undefined;
+  const cleanupEvents = forGeneration("cleanup");
+  const cleanup = cleanupEvents.length === 1 ? cleanupEvents[0] : undefined;
+  const acknowledgementEvents = forGeneration("cleanup-acknowledged");
+  const acknowledgement = acknowledgementEvents.length === 1 ? acknowledgementEvents[0] : undefined;
+  const attemptSequence = eventSequence(attempt);
+  const runtimeSequence = eventSequence(runtime);
+  const mountSequence = eventSequence(mount);
+  const settledSequence = eventSequence(queueSettled);
+  const cleanupSequence = eventSequence(cleanup);
+  const acknowledgementSequence = eventSequence(acknowledgement);
+  const replacementCandidates = events.filter((event) =>
+    event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" &&
+    event.generationId !== generationId && event.channelId === channelId && event.hostId === hostId &&
+    typeof mountSequence === "number" && typeof event.sequence === "number" && event.sequence > mountSequence);
+  const replacement = replacementCandidates.length === 1 ? replacementCandidates[0] : undefined;
+  const replacementSequence = eventSequence(replacement);
+  const held = observation.retirementWhileHeld;
+  const valid =
+    scenario.failureStage === null && scenario.failureOperation === null &&
+    scenario.cleanupOutcome === "confirmed" && scenario.applicationFallback === false && scenario.fallbackOutcome === "none" &&
+    events.filter((event) => event.kind === "failure" && event.generationId === generationId).length === 0 &&
+    events.filter((event) => ["device-destroy-requested", "device-lost-observed", "device-loss-equivalent-requested"]
+      .includes(String(event.kind)) && event.generationId === generationId).length === 0 &&
+    !!attempt && !!runtime && !!mount && !!queueSettled && !!cleanup && !!acknowledgement && !!replacement &&
+    attempt.attemptId === attemptId && attempt.requestId === requestId && attempt.channelId === channelId &&
+    attempt.sceneId === sceneId && attempt.rendererRevision === THREE_R187_PACKAGE_REVISION &&
+    runtime.attemptId === attemptId && runtime.generationId === generationId &&
+    runtime.rendererRevision === THREE_R187_PACKAGE_REVISION && runtime.rendererFamily === "webgpu-renderer" &&
+    runtime.executionApi === "webgpu" && runtime.internalFallback === "none" &&
+    mount.attemptId === attemptId && mount.channelId === channelId && mount.hostId === hostId &&
+    mount.requestId === requestId && mount.sceneId === sceneId && mount.rendererFamily === "webgpu-renderer" &&
+    mount.executionApi === "webgpu" && mount.internalFallback === "none" &&
+    settledEvents.length === 1 && queueSettled.kind === "queue-completion-settled" &&
+    queueSettled.attemptId === attemptId && queueSettled.requestId === requestId && queueSettled.operation === "sceneRender" &&
+    cleanupEvents.length === 1 && cleanup.attemptId === attemptId && cleanup.outcome === "confirmed" &&
+    acknowledgementEvents.length === 1 && acknowledgement.channelId === channelId &&
+    acknowledgement.hostId === hostId && acknowledgement.outcome === "confirmed" &&
+    replacementCandidates.length === 1 && replacement.generationId !== generationId &&
+    replacement.attemptId === JSON.stringify([channelId, replacement.generationId]) &&
+    replacement.sceneId === sceneId && replacement.requestId !== requestId &&
+    replacement.executionApi === "webgl2" && replacement.internalFallback === "none" &&
+    observation.generationId === generationId && observation.attemptId === attemptId &&
+    observation.requestId === requestId && observation.channelId === channelId &&
+    observation.sceneId === sceneId && observation.hostId === hostId &&
+    observation.queueCompletionBarrierReachedBeforeRelease === true && observation.releaseRequested === true &&
+    isObject(held) && held.lifecycle === "retiring" && held.cleanupStatus === "pending" &&
+    held.rendererGeneration === generationId && held.mountedRendererFamily === "webgpu-renderer" &&
+    observation.queueCompletionSettledSequence === settledSequence &&
+    observation.adapterCleanupSequence === cleanupSequence &&
+    observation.hostAcknowledgementSequence === acknowledgementSequence &&
+    observation.replacementGenerationId === replacement.generationId &&
+    observation.replacementMountSequence === replacementSequence &&
+    typeof attemptSequence === "number" && typeof runtimeSequence === "number" &&
+    typeof mountSequence === "number" && typeof settledSequence === "number" &&
+    typeof cleanupSequence === "number" && typeof acknowledgementSequence === "number" &&
+    typeof replacementSequence === "number" &&
+    attemptSequence < runtimeSequence && runtimeSequence < mountSequence && mountSequence < settledSequence &&
+    settledSequence < cleanupSequence && cleanupSequence < acknowledgementSequence &&
+    acknowledgementSequence < replacementSequence;
+  if (!valid) errors.push(`pending-retirement-cleanup-chain-contradiction:${scenario.id}`);
 };
 
 const validateLatestRequestEvidence = (scenario: M7cScenario, errors: string[]): void => {
@@ -260,7 +496,7 @@ const validateSessionBoundary = (scenario: M7cScenario, errors: string[]): void 
 const validateAuthorizedRetrySession = (scenario: M7cScenario, errors: string[]): void => {
   if (scenario.id !== "m7c-r187-explicit-retry-new-session") return;
   const observation = readObservation(scenario, "authorized-recovery-actions");
-  const identity = scenario.identity;
+  const identity = isObject(scenario.identity) ? scenario.identity : null;
   const initial = observation?.initialAttemptGenerations;
   const afterRetry = observation?.attemptsAfterExplicitRetry;
   const afterInvalid = observation?.attemptsAfterInvalidAction;
@@ -274,42 +510,118 @@ const validateAuthorizedRetrySession = (scenario: M7cScenario, errors: string[])
     errors.push("authorized-recovery-attempt-inventory-contradiction:" + scenario.id);
     return;
   }
-  const [initialGeneration, retryGeneration] = afterRetry;
-  const newSessionGeneration = afterNewSession[2];
   const events = readEvents(scenario);
-  const seq = (kind: string, generation: unknown): number | null => {
-    const event = events.find((entry) => entry.kind === kind && entry.generationId === generation);
-    return typeof event?.sequence === "number" ? event.sequence : null;
-  };
-  const initialAttempt = seq("attempt", initialGeneration);
-  const initialRuntime = seq("runtime-observed", initialGeneration);
-  const initialFailure = seq("failure", initialGeneration);
-  const initialCleanup = seq("cleanup-acknowledged", initialGeneration);
-  const retryAttempt = seq("attempt", retryGeneration);
-  const retryRuntime = seq("runtime-observed", retryGeneration);
-  const retryFailure = seq("failure", retryGeneration);
-  const retryCleanup = seq("cleanup-acknowledged", retryGeneration);
-  const newSessionAttempt = seq("attempt", newSessionGeneration);
-  const newSessionRuntime = seq("runtime-observed", newSessionGeneration);
-  const newSessionMount = seq("renderer-mounted", newSessionGeneration);
-  const observedNativeAttempts = events.filter((event) => event.kind === "attempt").map((event) => event.generationId);
-  const currentPublication = events.find((event) => event.kind === "host-frame-result" &&
-    event.generationId === newSessionGeneration && event.acceptedByHost === true &&
-    event.latestAcceptedRequestId === event.requestId);
+  const generations = afterNewSession as string[];
+  const attemptEvents = events.filter((event) => event.kind === "attempt");
+  let valid = !!identity && initial[0] === identity.rendererGenerationId &&
+    attemptEvents.length === generations.length &&
+    JSON.stringify(attemptEvents.map((event) => event.generationId)) === JSON.stringify(generations);
+  if (!identity || !generations.every(isNonEmptyString)) {
+    errors.push(`authorized-recovery-native-generation-contradiction:${scenario.id}`);
+    return;
+  }
+  const seq = (event: M7cEvent | undefined) => eventSequence(event);
+  const generationRecords: Array<{
+    generationId: string;
+    attempt: M7cEvent;
+    runtime: M7cEvent;
+    mount?: M7cEvent;
+    failure?: M7cEvent;
+    cleanup?: M7cEvent;
+    acknowledgement?: M7cEvent;
+  }> = [];
+  for (const [index, generationId] of generations.entries()) {
+    const forGeneration = (kind: string) => events.filter((event) =>
+      event.kind === kind && event.generationId === generationId);
+    const attempts = forGeneration("attempt");
+    const runtimes = forGeneration("runtime-observed");
+    const mounts = forGeneration("renderer-mounted");
+    const failures = forGeneration("failure");
+    const cleanups = forGeneration("cleanup");
+    const acknowledgements = forGeneration("cleanup-acknowledged");
+    const attempt = attempts.length === 1 ? attempts[0] : undefined;
+    const runtime = runtimes.length === 1 ? runtimes[0] : undefined;
+    const failedAttempt = index < generations.length - 1;
+    const mount = mounts.length === 1 ? mounts[0] : undefined;
+    const failure = failures.length === 1 ? failures[0] : undefined;
+    const cleanup = cleanups.length === 1 ? cleanups[0] : undefined;
+    const acknowledgement = acknowledgements.length === 1 ? acknowledgements[0] : undefined;
+    const expectedAttemptId = JSON.stringify([identity.channelId, generationId]);
+    if (
+      attempts.length !== 1 || runtimes.length !== 1 || !attempt || !runtime ||
+      attempt.attemptId !== expectedAttemptId || attempt.requestId !== identity.requestId ||
+      attempt.channelId !== identity.channelId || attempt.sceneId !== identity.sceneId ||
+      attempt.rendererRevision !== THREE_R187_PACKAGE_REVISION ||
+      runtime.attemptId !== expectedAttemptId || runtime.generationId !== generationId ||
+      runtime.rendererRevision !== THREE_R187_PACKAGE_REVISION || runtime.rendererFamily !== "webgpu-renderer" ||
+      runtime.executionApi !== "webgpu" || runtime.internalFallback !== "none" ||
+      typeof seq(attempt) !== "number" || typeof seq(runtime) !== "number" || seq(attempt)! >= seq(runtime)!
+    ) valid = false;
+    if (failedAttempt) {
+      if (
+        mounts.length !== 0 || failures.length !== 1 || cleanups.length !== 1 || acknowledgements.length !== 1 ||
+        !failure || !cleanup || !acknowledgement ||
+        failure.attemptId !== expectedAttemptId || failure.channelId !== identity.channelId ||
+        failure.requestId !== identity.requestId || failure.sceneId !== identity.sceneId ||
+        failure.stage !== "initialization" || cleanup.attemptId !== expectedAttemptId || cleanup.outcome !== "confirmed" ||
+        acknowledgement.channelId !== identity.channelId || acknowledgement.hostId !== identity.hostId ||
+        acknowledgement.outcome !== "confirmed" ||
+        !(seq(runtime)! < seq(failure)! && seq(failure)! < seq(cleanup)! && seq(cleanup)! < seq(acknowledgement)!)
+      ) valid = false;
+    } else if (
+      mounts.length !== 1 || failures.length !== 0 || cleanups.length !== 0 || acknowledgements.length !== 0 || !mount ||
+      mount.attemptId !== expectedAttemptId || mount.channelId !== identity.channelId ||
+      mount.hostId !== identity.hostId || mount.requestId !== identity.requestId || mount.sceneId !== identity.sceneId ||
+      mount.rendererFamily !== "webgpu-renderer" || mount.executionApi !== "webgpu" || mount.internalFallback !== "none" ||
+      !(seq(runtime)! < seq(mount)!)
+    ) valid = false;
+    generationRecords.push({ generationId, attempt: attempt!, runtime: runtime!, mount, failure, cleanup, acknowledgement });
+  }
+
+  for (let index = 0; index < generationRecords.length - 1; index += 1) {
+    const current = generationRecords[index]!;
+    const next = generationRecords[index + 1]!;
+    const cleanupSequence = seq(current.acknowledgement);
+    const nextAttemptSequence = seq(next.attempt);
+    const replacementCandidates = events.filter((event) =>
+      event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" &&
+      event.channelId === identity.channelId && event.hostId === identity.hostId &&
+      event.requestId === identity.requestId && event.sceneId === identity.sceneId &&
+      event.generationId !== current.generationId && typeof cleanupSequence === "number" &&
+      typeof event.sequence === "number" && event.sequence > cleanupSequence &&
+      typeof nextAttemptSequence === "number" && event.sequence < nextAttemptSequence);
+    const replacement = replacementCandidates.length === 1 ? replacementCandidates[0] : undefined;
+    if (
+      !replacement || replacement.generationId === current.generationId ||
+      replacement.attemptId !== JSON.stringify([identity.channelId, replacement.generationId]) ||
+      replacement.executionApi !== "webgl2" || replacement.internalFallback !== "none" ||
+      typeof cleanupSequence !== "number" || typeof nextAttemptSequence !== "number" ||
+      seq(replacement)! >= nextAttemptSequence
+    ) valid = false;
+  }
+
+  const finalGenerationId = generations.at(-1);
+  const final = generationRecords.at(-1);
+  const finalPublicationCandidates = events.filter((event) =>
+    event.kind === "host-frame-result" && event.generationId === finalGenerationId &&
+    event.activeGenerationId === finalGenerationId && event.acceptedByHost === true &&
+    event.latestAcceptedRequestId === identity.requestId && event.requestId === identity.requestId &&
+    event.channelId === identity.channelId && event.hostId === identity.hostId &&
+    event.sceneId === identity.sceneId && event.activeRendererFamily === "webgpu-renderer" &&
+    event.frameStatus === "completed");
+  const finalPublication = finalPublicationCandidates.length === 1 ? finalPublicationCandidates[0] : undefined;
+  const publicationSummary = scenario.publication;
+  const finalPublicationSequence = seq(finalPublication);
+  const finalMountSequence = seq(final?.mount);
   if (
-    !isObject(identity) || initial[0] !== identity.rendererGenerationId ||
-    JSON.stringify(observedNativeAttempts) !== JSON.stringify(afterNewSession) ||
-    typeof initialAttempt !== "number" || typeof initialRuntime !== "number" ||
-    typeof initialFailure !== "number" || typeof initialCleanup !== "number" ||
-    !(initialAttempt < initialRuntime && initialRuntime < initialFailure && initialFailure < initialCleanup) ||
-    typeof retryAttempt !== "number" || typeof retryRuntime !== "number" ||
-    typeof retryFailure !== "number" || typeof retryCleanup !== "number" ||
-    !(initialCleanup < retryAttempt && retryAttempt < retryRuntime && retryRuntime < retryFailure && retryFailure < retryCleanup) ||
-    typeof newSessionAttempt !== "number" || typeof newSessionRuntime !== "number" ||
-    typeof newSessionMount !== "number" || !(retryCleanup < newSessionAttempt && newSessionAttempt < newSessionRuntime &&
-      newSessionRuntime < newSessionMount) || !currentPublication ||
-    typeof currentPublication.sequence !== "number" || currentPublication.sequence <= newSessionMount
-  ) errors.push("authorized-recovery-event-order-contradiction:" + scenario.id);
+    finalPublicationCandidates.length !== 1 || !finalPublication || !final?.mount ||
+    !isObject(publicationSummary) || publicationSummary.status !== "current" ||
+    publicationSummary.rendererGenerationId !== finalGenerationId ||
+    publicationSummary.completedRequestId !== identity.requestId || publicationSummary.acceptedRequestId !== identity.requestId ||
+    typeof finalPublicationSequence !== "number" || typeof finalMountSequence !== "number" ||
+    publicationSummary.publicationSequence !== finalPublicationSequence || finalPublicationSequence <= finalMountSequence
+  ) valid = false;
+  if (!valid) errors.push(`authorized-recovery-native-generation-contradiction:${scenario.id}`);
 };
 
 const validateWebGl2NegativeControl = (scenario: M7cScenario, errors: string[]): void => {
@@ -361,22 +673,93 @@ const validatePendingUnmount = (scenario: M7cScenario, errors: string[]): void =
   if (scenario.id !== "m7c-r187-pending-cleanup-scene-navigation") return;
   const observation = readObservation(scenario, "pending-cleanup-scene-remount");
   const events = readEvents(scenario);
-  const unmountSequence = observation?.unmountSequence;
+  const identity = isObject(scenario.identity) ? scenario.identity : null;
   const retiredGeneration = observation?.retiredGeneration;
-  const acceptedAfterUnmount = events.some((event) =>
-    event.kind === "host-frame-result" && event.generationId === retiredGeneration && event.acceptedByHost === true &&
-    typeof unmountSequence === "number" && typeof event.sequence === "number" && event.sequence > unmountSequence,
-  );
-  if (!observation || !isObject(observation.cleanupAcknowledgement) ||
-      observation.cleanupAcknowledgement.outcome !== "confirmed" ||
-      !Number.isInteger(unmountSequence) || acceptedAfterUnmount ||
-      !Array.isArray(observation.postRetirementAcceptedPublications) || observation.postRetirementAcceptedPublications.length !== 0 ||
-      observation.remountedRendererFamily !== "webgl-renderer" ||
-      !Array.isArray(observation.adapterAttemptGenerationsAfterRemount) ||
-      observation.adapterAttemptGenerationsAfterRemount.length !== 1 ||
-      observation.adapterAttemptGenerationsAfterRemount[0] !== retiredGeneration) {
-    errors.push("pending-unmount-retirement-contradiction:" + scenario.id);
+  if (!observation || !identity || !isNonEmptyString(retiredGeneration) ||
+      typeof observation.unmountSequence !== "number" || !Number.isInteger(observation.unmountSequence)) {
+    errors.push("pending-unmount-event-cleanup-contradiction:" + scenario.id);
+    return;
   }
+  const unmountSequence = observation.unmountSequence;
+  const forGeneration = (kind: string) => events.filter((event) =>
+    event.kind === kind && event.generationId === retiredGeneration);
+  const single = (kind: string) => {
+    const matches = forGeneration(kind);
+    return matches.length === 1 ? matches[0] : undefined;
+  };
+  const attempt = single("attempt");
+  const runtime = single("runtime-observed");
+  const mount = single("renderer-mounted");
+  const cleanupEvents = forGeneration("cleanup");
+  const cleanup = cleanupEvents.length === 1 ? cleanupEvents[0] : undefined;
+  const acknowledgementEvents = forGeneration("cleanup-acknowledged");
+  const acknowledgement = acknowledgementEvents.length === 1 ? acknowledgementEvents[0] : undefined;
+  const mountSequence = eventSequence(mount);
+  const cleanupSequence = eventSequence(cleanup);
+  const acknowledgementSequence = eventSequence(acknowledgement);
+  const acceptedAfterUnmount = events.some((event) =>
+    (event.kind === "host-frame-result" && event.generationId === retiredGeneration && event.acceptedByHost === true ||
+      event.kind === "frame-completed" && event.generationId === retiredGeneration) &&
+    typeof event.sequence === "number" && event.sequence > unmountSequence,
+  );
+  const acknowledgementSummary = observation.cleanupAcknowledgement;
+  const matchesAcknowledgement = isObject(acknowledgementSummary) && !!acknowledgement &&
+    acknowledgementSummary.kind === "cleanup-acknowledged" &&
+    acknowledgementSummary.generationId === acknowledgement.generationId &&
+    acknowledgementSummary.channelId === acknowledgement.channelId &&
+    acknowledgementSummary.hostId === acknowledgement.hostId &&
+    acknowledgementSummary.outcome === acknowledgement.outcome &&
+    acknowledgementSummary.reason === acknowledgement.reason &&
+    acknowledgementSummary.sequence === acknowledgement.sequence;
+  const newHosts = events.filter((event) => event.kind === "host-attached" &&
+    event.channelId === identity.channelId && event.hostId !== identity.hostId &&
+    typeof acknowledgementSequence === "number" && typeof event.sequence === "number" &&
+    event.sequence > acknowledgementSequence);
+  const replacementCandidates = events.filter((event) =>
+    event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" &&
+    event.generationId !== retiredGeneration && event.channelId === identity.channelId &&
+    event.hostId !== identity.hostId && typeof acknowledgementSequence === "number" &&
+    typeof event.sequence === "number" && event.sequence > acknowledgementSequence);
+  const replacement = replacementCandidates.length === 1 ? replacementCandidates[0] : undefined;
+  const observedAttempts = events.filter((event) => event.kind === "attempt").map((event) => event.generationId);
+  const attemptGenerationsAfterRemount = observation.adapterAttemptGenerationsAfterRemount;
+  const heldRequestMatches = observation.heldRequestId === identity.requestId &&
+    observation.heldSessionId === identity.pilotSessionId;
+  const valid =
+    !!attempt && !!runtime && !!mount && !!cleanup && !!acknowledgement && !!replacement &&
+    identity.rendererGenerationId === retiredGeneration && identity.attemptId === attempt?.attemptId &&
+    identity.requestId === attempt?.requestId && identity.channelId === attempt?.channelId &&
+    identity.sceneId === attempt?.sceneId && identity.hostId === acknowledgement?.hostId &&
+    heldRequestMatches &&
+    attempt?.attemptId === JSON.stringify([identity.channelId, retiredGeneration]) &&
+    runtime.attemptId === attempt.attemptId && runtime.generationId === retiredGeneration &&
+    runtime.rendererRevision === THREE_R187_PACKAGE_REVISION && runtime.rendererFamily === "webgpu-renderer" &&
+    runtime.executionApi === "webgpu" && runtime.internalFallback === "none" &&
+    mount.attemptId === attempt.attemptId && mount.channelId === identity.channelId &&
+    mount.hostId === identity.hostId && mount.requestId === identity.requestId &&
+    mount.rendererFamily === "webgpu-renderer" && mount.executionApi === "webgpu" && mount.internalFallback === "none" &&
+    cleanupEvents.length === 1 && cleanup.attemptId === attempt.attemptId && cleanup.outcome === "confirmed" &&
+    acknowledgementEvents.length === 1 && acknowledgement.channelId === identity.channelId &&
+    acknowledgement.hostId === identity.hostId && acknowledgement.outcome === "confirmed" && matchesAcknowledgement &&
+    scenario.cleanupOutcome === "confirmed" && scenario.failureStage === null &&
+    Number.isInteger(unmountSequence) && typeof mountSequence === "number" && mountSequence <= unmountSequence &&
+    typeof cleanupSequence === "number" && unmountSequence < cleanupSequence &&
+    typeof acknowledgementSequence === "number" && cleanupSequence < acknowledgementSequence &&
+    !acceptedAfterUnmount &&
+    Array.isArray(observation.postRetirementAcceptedPublications) &&
+    observation.postRetirementAcceptedPublications.length === 0 &&
+    observation.remountedRendererFamily === "webgl-renderer" && newHosts.length > 0 &&
+    !!replacement && newHosts.every((event) => event.hostId === replacement.hostId) &&
+    replacementCandidates.length === 1 && replacement.hostId !== identity.hostId &&
+    replacement.attemptId === JSON.stringify([identity.channelId, replacement.generationId]) &&
+    replacement.executionApi === "webgl2" && replacement.internalFallback === "none" &&
+    isNonEmptyString(replacement.requestId) && replacement.sceneId === identity.sceneId &&
+    typeof replacement.sequence === "number" && replacement.sequence > acknowledgementSequence &&
+    replacement.sequence > Math.max(...newHosts.map((event) => Number(event.sequence))) &&
+    Array.isArray(attemptGenerationsAfterRemount) && attemptGenerationsAfterRemount.length === 1 &&
+    attemptGenerationsAfterRemount[0] === retiredGeneration && observedAttempts.length === 1 &&
+    observedAttempts[0] === retiredGeneration;
+  if (!valid) errors.push("pending-unmount-event-cleanup-contradiction:" + scenario.id);
 };
 
 const qualificationFor = (counts: GroundGlassM7cScenarioCounts): GroundGlassM7cQualification => {
@@ -503,7 +886,10 @@ export const evaluateGroundGlassM7cR187LifecycleEvidence = (input: unknown): Gro
       }
       validateLatestRequestEvidence(scenario, errors);
       validateSessionBoundary(scenario, errors);
+      validateDeviceLossEquivalent(scenario, errors);
+      validateTestDestroyedDeviceLoss(scenario, errors);
       validateAuthorizedRetrySession(scenario, errors);
+      validatePendingQueueRetirement(scenario, errors);
       validatePendingUnmount(scenario, errors);
     }
     if (scenario.status === "passed") {
