@@ -538,8 +538,34 @@ export const evaluateGroundGlassM7dPhysicalCocReport = (
       } else {
         computedCounts[scenario.status as keyof typeof computedCounts] += 1;
       }
-      if (!nonEmpty(scenario.capture) || !nonEmpty(scenario.sourceSha) || !nonEmpty(scenario.invocation)) {
+      if (!nonEmpty(scenario.capture) || typeof scenario.sourceSha !== "string" ||
+          !/^[0-9a-f]{40}$/.test(scenario.sourceSha) || !nonEmpty(scenario.invocation)) {
         issue("capture-provenance", `scenarios.${scenario.id}`, "scenario capture, source SHA, and invocation are required");
+      }
+      if (scenario.status === "passed" && scenario.evidenceKind === "native") {
+        const runtime = record(scenario.runtimeIdentity);
+        if (scenario.rendererRevision !== "187" || runtime?.threeRevision !== "187" ||
+            runtime.rendererFamily !== "webgpu-renderer" || runtime.actualExecutionApi !== "webgpu" ||
+            runtime.internalFallback !== "none" || !nonEmpty(runtime.browserVersion) ||
+            !nonEmpty(runtime.operatingSystem) || runtime.sceneId !== "architecture-rise" ||
+            !nonEmpty(runtime.channelId) || !nonEmpty(runtime.generationId) ||
+            !Array.isArray(runtime.requestIds) || runtime.requestIds.length === 0 ||
+            runtime.requestIds.some((requestId) => !nonEmpty(requestId))) {
+          issue("runtime-identity", `scenarios.${scenario.id}.runtimeIdentity`, "passed native scenario requires exact r187 native WebGPU scene/request/generation identity");
+        }
+        const eventEvidence = Array.isArray(scenario.orderedEventEvidence) ? scenario.orderedEventEvidence.map(record) : [];
+        if (eventEvidence.length === 0 || eventEvidence.some((entry) => !entry ||
+            !nonEmpty(entry.artifact) || !nonEmpty(entry.collection))) {
+          issue("event-provenance", `scenarios.${scenario.id}.orderedEventEvidence`, "passed native scenario must reference captured ordered lifecycle/host events");
+        }
+        const supportingArtifacts = Array.isArray(scenario.supportingArtifacts) ? scenario.supportingArtifacts : [];
+        if (supportingArtifacts.length === 0 || supportingArtifacts.some((artifact) => !nonEmpty(artifact))) {
+          issue("artifact-provenance", `scenarios.${scenario.id}.supportingArtifacts`, "passed native scenario must identify supporting artifacts");
+        }
+        const knownLimitations = Array.isArray(scenario.knownLimitations) ? scenario.knownLimitations : [];
+        if (knownLimitations.length === 0 || knownLimitations.some((limitation) => !nonEmpty(limitation))) {
+          issue("known-limitations", `scenarios.${scenario.id}.knownLimitations`, "passed native scenario must declare known limitations");
+        }
       }
     }
     for (const id of GROUND_GLASS_M7D_REQUIRED_SCENARIO_IDS) {

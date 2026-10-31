@@ -673,4 +673,26 @@ describe("M7D r187 Physical CoC evidence evaluator", () => {
     expect(result.computedCounts).toEqual({ passed: 8, failed: 0, blocked: 0, "not-run": 0 });
     expect(result.issues).toEqual([]);
   });
+
+  it("rejects a passed native report scenario with missing ordered-event provenance", () => {
+    const reportPath = resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as {
+      scenarios: Array<Record<string, unknown>>;
+    };
+    delete report.scenarios[0]!.orderedEventEvidence;
+    const result = evaluateGroundGlassM7dPhysicalCocReport(report);
+    expect(result.status).toBe("failed");
+    expect(result.issues.map((issue) => issue.code)).toContain("event-provenance");
+  });
+
+  it("rejects a report scenario with incomplete source SHA provenance", () => {
+    const reportPath = resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json");
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as {
+      scenarios: Array<Record<string, unknown>>;
+    };
+    report.scenarios[0]!.sourceSha = "short-sha";
+    const result = evaluateGroundGlassM7dPhysicalCocReport(report);
+    expect(result.status).toBe("failed");
+    expect(result.issues.map((issue) => issue.code)).toContain("capture-provenance");
+  });
 });
