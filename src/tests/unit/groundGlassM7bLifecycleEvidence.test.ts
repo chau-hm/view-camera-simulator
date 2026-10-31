@@ -272,6 +272,64 @@ const eventWithFields = (
   ...fields,
 } as unknown as GroundGlassM7bScenarioEvidence["events"][number]);
 
+
+/** Preserve independent event facts in full-inventory synthetic fixtures. */
+const enrichPassedScenarioWithObservedEvents = (id: GroundGlassM7bScenarioId): GroundGlassM7bScenarioEvidence => {
+  const source = passedScenario(id);
+  let events: GroundGlassM7bScenarioEvidence["events"][number][] = source.events.map((item) => {
+    if (item.kind === "attempt") return { ...item, rendererRevision: source.threeRevision };
+    if (item.kind === "runtime-observed") return {
+      ...item,
+      rendererRevision: source.threeRevision,
+      rendererFamily: source.runtime.rendererFamily as "webgpu-renderer" | "webgl-renderer" | null,
+      executionApi: source.runtime.actualExecutionApi as "webgpu" | "webgl2" | "webgl" | null,
+    };
+    if (item.kind === "renderer-mounted") return {
+      ...item,
+      rendererFamily: source.runtime.rendererFamily as "webgpu-renderer" | "webgl-renderer" | null,
+      executionApi: source.runtime.actualExecutionApi as "webgpu" | "webgl2" | "webgl" | null,
+      internalFallback: source.runtime.internalFallback as "none" | "webgl2-compatibility" | null,
+    };
+    return item;
+  });
+  if (source.fallbackOutcome === "webgl-mounted") {
+    events = events.filter((item) => item.kind !== "cleanup-acknowledged");
+    if (!events.some((item) => item.kind === "cleanup")) {
+      events.push(eventWithFields(0, "cleanup", { outcome: "confirmed" }));
+    }
+    events.push(eventWithFields(0, "cleanup-acknowledged", {
+      outcome: "confirmed", channelId: "default", hostId: "host-1",
+    }));
+    events.push({
+      sequence: 0, kind: "renderer-mounted", attemptId: "replacement-attempt",
+      generationId: "generation-2", requestId: "request-1", detail: null,
+      channelId: "default", hostId: "host-1", sceneId: "architecture-rise",
+      rendererFamily: "webgl-renderer", executionApi: "webgl2", internalFallback: "none",
+    });
+  }
+  const noPublicationRequired = new Set([
+    "native-webgpu-cleanup-failure", "native-webgl2", "native-regression-suite",
+    "production-preview-webgl", "unit-integration",
+  ]);
+  const publication = noPublicationRequired.has(source.evidenceClass)
+    ? { status: "not-applicable" as const, acceptedRequestId: null, completedRequestId: null }
+    : source.publication;
+  if (publication.status === "current") {
+    const replacement = source.fallbackOutcome === "webgl-mounted";
+    events.push({
+      sequence: 0, kind: "host-frame-result",
+      attemptId: replacement ? "replacement-attempt" : "attempt-1",
+      generationId: replacement ? "generation-2" : "generation-1",
+      activeGenerationId: replacement ? "generation-2" : "generation-1",
+      requestId: "request-1", latestAcceptedRequestId: "request-1",
+      channelId: "default", hostId: "host-1", sceneId: "architecture-rise",
+      frameStatus: "completed", acceptedByHost: true, detail: null,
+      rendererFamily: replacement ? "webgl-renderer" : "webgpu-renderer",
+    });
+  }
+  return { ...source, events: events.map((item, sequence) => ({ ...item, sequence })), publication };
+};
+
 const makePartialReport = () => ({
   schemaVersion: "ground-glass-m7b-native-lifecycle-v1",
   sourceHeadSha,
@@ -283,7 +341,7 @@ const makeFullyQualifiedReport = () => ({
   schemaVersion: "ground-glass-m7b-native-lifecycle-v1",
   sourceHeadSha,
   qualification: "qualified-for-scoped-development-pilot",
-  scenarios: GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.map(passedScenario),
+  scenarios: GROUND_GLASS_M7B_REQUIRED_SCENARIO_IDS.map(enrichPassedScenarioWithObservedEvents),
 });
 
 describe("Ground Glass M7B lifecycle evidence", () => {
@@ -404,6 +462,78 @@ describe("Ground Glass M7B lifecycle evidence", () => {
     const result = evaluateGroundGlassM7bLifecycleEvidence(report);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(`webgl-failure-not-attributed-to-current-request:${scenario.id}`);
+  });
+
+
+  it("rejects WebGL2 event evidence even when the native scenario summary remains unchanged", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.evidenceClass === "native-webgpu-runtime");
+    const scenario = report.scenarios[index];
+    report.scenarios[index] = { ...scenario, events: scenario.events.map((event) =>
+      event.kind === "runtime-observed" ? {
+        ...event, rendererFamily: "webgpu-renderer", executionApi: "webgl2",
+      } as GroundGlassM7bScenarioEvidence["events"][number] : event,
+    ) };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("observed-native-runtime-contradiction:" + scenario.id);
+  });
+
+  it("rejects host-confirmed fallback after failed adapter cleanup", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.evidenceClass === "native-webgpu-runtime-failure");
+    const scenario = report.scenarios[index];
+    report.scenarios[index] = {
+      ...scenario, cleanupOutcome: "failed",
+      events: scenario.events.map((event) => event.kind === "cleanup"
+        ? { ...event, outcome: "failed" as const } : event),
+    };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("cleanup-host-acknowledgement-contradiction:" + scenario.id);
+    expect(result.errors).toContain("fallback-before-confirmed-cleanup:" + scenario.id);
+  });
+
+  it("rejects fallback when the host acknowledgement is absent or belongs to another generation", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.evidenceClass === "native-webgpu-runtime-failure");
+    const scenario = report.scenarios[index];
+    for (const mutation of [
+      scenario.events.filter((event) => event.kind !== "cleanup-acknowledged"),
+      scenario.events.map((event) => event.kind === "cleanup-acknowledged"
+        ? { ...event, generationId: "incorrect-generation" } : event),
+    ]) {
+      report.scenarios[index] = { ...scenario, events: mutation };
+      expect(evaluateGroundGlassM7bLifecycleEvidence(report).errors).toContain(
+        "cleanup-host-acknowledgement-contradiction:" + scenario.id,
+      );
+    }
+  });
+
+  it("rejects current publication with matching but fabricated summary request IDs", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.id === "m7b-b3-async-retirement-and-latest-request");
+    const scenario = report.scenarios[index];
+    report.scenarios[index] = { ...scenario, publication: {
+      status: "current", acceptedRequestId: "fabricated", completedRequestId: "fabricated",
+    } };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("missing-host-publication-evidence:" + scenario.id);
+  });
+
+  it("rejects a fallback frame attributed to the retiring WebGPU generation", () => {
+    const report = makeFullyQualifiedReport();
+    const index = report.scenarios.findIndex((item) => item.id === "m7b-b3-async-retirement-and-latest-request");
+    const scenario = report.scenarios[index];
+    report.scenarios[index] = { ...scenario, events: scenario.events.map((event) =>
+      event.kind === "host-frame-result" ? {
+        ...event, generationId: "generation-1", activeGenerationId: "generation-1",
+      } : event,
+    ) };
+    const result = evaluateGroundGlassM7bLifecycleEvidence(report);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("publication-not-from-confirmed-replacement:" + scenario.id);
   });
 
   it("accepts the committed M7B report and its partial-qualification counts", () => {
