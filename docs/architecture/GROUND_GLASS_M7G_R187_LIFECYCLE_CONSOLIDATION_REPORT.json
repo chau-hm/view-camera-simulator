@@ -1,0 +1,1874 @@
+{
+  "schemaVersion": 1,
+  "reportId": "ground-glass-m7g-r187-lifecycle-consolidation",
+  "evaluatorRevision": "m7g-r187-consolidation-evaluator-v2",
+  "generatedAt": "2026-11-01T12:01:35.138Z",
+  "reportGenerationSourceSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+  "mode": "strict-qualification-replay",
+  "evidenceSources": {
+    "docs/architecture/GROUND_GLASS_M7C_R187_RAW_LIFECYCLE_REPORT.json": {
+      "present": true,
+      "sha256": "9d4a0be611230cf55792f02e2b9043a5e794d08bfdd5c20e143dd32ebc69f16d"
+    },
+    "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json": {
+      "present": true,
+      "sha256": "1fb7b1fc780112c986cbbb1fb1bc4be316bc34cc9d4a4e7c228ad410354714df"
+    },
+    "docs/architecture/ground-glass-m7e-r187-gather-b1/GROUND_GLASS_M7E_R187_GATHER_B1_REPORT.json": {
+      "present": true,
+      "sha256": "5f309fc2116b572048c10538e4876d70f81ab50265efd35d11722d9d88f460dc"
+    },
+    "docs/architecture/GROUND_GLASS_M7F_R187_PRESENTATION_REPORT.json": {
+      "present": true,
+      "sha256": "c8c43b5beb1be9b830641fddf5a9b8373ecc90edc6bac6fae9e4dcaf05574655"
+    },
+    "docs/architecture/ground-glass-m7g-r187/native/initialization/init-after-target-recheck.json": {
+      "present": true,
+      "sha256": "885f7c3242660457ec698bed8e681cf57c682d0809484c991ea5f5c23788f7f0"
+    },
+    "docs/architecture/ground-glass-m7g-r187/native/device-loss/device-loss-equivalent.json": {
+      "present": true,
+      "sha256": "69476f7d25dfe801e78dc164a00f11064586dce9528f455c5320e22321ce81af"
+    },
+    "docs/architecture/ground-glass-m7g-r187/native/device-loss/test-destroyed-device-lost-promise.json": {
+      "present": true,
+      "sha256": "f15455ccdb19c23f6d3f2b5664daed34b8719a1547b3575ff2dcee2625fc2ec6"
+    },
+    "docs/architecture/ground-glass-m7g-r187/native/device-loss/external-loss-observation.json": {
+      "present": true,
+      "sha256": "35c1f5f34cd08a9343284013cf2a9b6e32aa287ee7fe31c72e81cd9f8f842303"
+    },
+    "docs/architecture/ground-glass-m7g-r187/native/m5-composite-latest-request.json": {
+      "present": true,
+      "sha256": "c8a56fcbcf97aed2df2bc2e577b1341498dd486cba017d4d1b031df5f79a2ba8"
+    },
+    "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e.json": {
+      "present": true,
+      "sha256": "d92a9a6775234fcb8da92b457e5176b7dbb5465ae55035bcedd6f7e406ae0fe0"
+    },
+    "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json": {
+      "present": true,
+      "sha256": "393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6"
+    },
+    "docs/architecture/ground-glass-m7g-r187/validation/production-isolation.json": {
+      "present": true,
+      "sha256": "db4e81e51f5065f33cb285a6c79ef4c43a5b2bdd3e73e4b1a08f88031fd08254"
+    }
+  },
+  "predecessorEvidence": {
+    "m7c": {
+      "reportId": "m7c-r187-native-raw-lifecycle-qualification-2026-10-31",
+      "evaluatorRevision": "m7c-r187-lifecycle-evidence-v2",
+      "sourceSha": "c5940393ad3877373f2d2b4ac833ba4fa7413e98",
+      "qualification": "partially-qualified",
+      "scenarioCounts": {
+        "passed": 18,
+        "failed": 0,
+        "blocked": 2,
+        "not-run": 1
+      },
+      "openScenarios": {
+        "initialization": "blocked",
+        "spontaneousLoss": "blocked",
+        "broadE2e": "not-run"
+      }
+    },
+    "m7d": {
+      "reportId": "ground-glass-m7d-r187-physical-coc",
+      "evaluatorRevision": "m7d-physical-coc-evidence-v2",
+      "nativeCaptureSourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+      "qualification": "research-qualified-for-tested-environment",
+      "counts": {
+        "passed": 8,
+        "failed": 0,
+        "blocked": 0,
+        "not-run": 0
+      }
+    },
+    "m7e": {
+      "reportId": "ground-glass-m7e-r187-gather-b1",
+      "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
+      "nativeCaptureSourceSha": "9382217c7820be87a596124fd78c28239d416653",
+      "nativeRunId": "1793469232731-57086",
+      "runtime": {
+        "rendererRevision": "r187",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false,
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin arm64",
+        "nodeVersion": "v24.3.0",
+        "nativeRequired": true
+      },
+      "qualification": "partially-qualified",
+      "qualityStatuses": [
+        "reference-not-converged",
+        "insufficient-support",
+        "bounded-qualified",
+        "insufficient-support",
+        "reference-not-converged",
+        "reference-not-converged",
+        "reference-not-converged"
+      ]
+    },
+    "m7eOfflineReplay": {
+      "reportId": "ground-glass-m7e-r187-offline-replay",
+      "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
+      "status": "passed",
+      "counts": {
+        "passed": 12,
+        "failed": 0,
+        "blocked": 0,
+        "not-run": 0
+      },
+      "noBrowser": true,
+      "freshExecution": {
+        "kind": "m7e",
+        "script": "scripts/run-m7e-offline-replay.mjs",
+        "expectedSourceSha": "9382217c7820be87a596124fd78c28239d416653",
+        "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+        "timeoutMs": 600000,
+        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
+        "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
+        "spawned": true,
+        "exitCode": 0,
+        "signal": null,
+        "spawnError": null,
+        "outputWasAbsentBeforeSpawn": true,
+        "reportPresent": true,
+        "reportParsed": true,
+        "reportParseError": null,
+        "reportSha256": "1ebf2a4d45a95c4edae93e53b393910d388bb9479cfdb7efc664fb4dfcfa122b",
+        "reportIdentity": {
+          "reportId": "ground-glass-m7e-r187-offline-replay",
+          "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
+          "sourceCaptureSha": "9382217c7820be87a596124fd78c28239d416653",
+          "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
+        },
+        "reportValidated": true,
+        "reportValidationIssues": [],
+        "stderrExcerpt": "",
+        "stdoutExcerpt": "bc45b9f08a7c67547f9b2d021798ca15b8bd496941f563d05bb45091a263c30f\"\n    },\n    {\n      \"scenarioId\": \"q1-control-cap60-full32\",\n      \"manifestSha256\": \"3f43894e3f214bf31bb9f9f6fa9660b5a3fb0c116625aef3f30ad0939b12db91\",\n      \"payloadSha256\": \"da448839399fce6e005d8a01dfada03df2e538ad8a78958839616ab4be1af952\"\n    },\n    {\n      \"scenarioId\": \"q1-control-cap60-full64\",\n      \"manifestSha256\": \"e5b350ae67277186378c0365bcb57d6569a447151e88e129c658b671b981553d\",\n      \"payloadSha256\": \"2a4aa9b28d66fc7f127597ab6cfc5b5612adb6e8d5e1dfe22810d13d5f977d5f\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-half32\",\n      \"manifestSha256\": \"a6be674dbba86b79449e107885e845b1c3b551b3a826d0bc70c91726540f2f9d\",\n      \"payloadSha256\": \"ad0a61c39191563df67620614119f2893b6f7b4791b9ff51318b246ff6c5860b\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-full32\",\n      \"manifestSha256\": \"b3d7c59ac01b3fbea1ec6c0bb5f91d314ba13fdc8ac8bc1f6575680cf5ca048b\",\n      \"payloadSha256\": \"c7aef1a90bb8851211d37ce49792df5d86e0983d9d0ec81dac276dbe7498ce02\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-full64\",\n      \"manifestSha256\": \"f0c071a2aad09670d1c87f95eb7ca2701bacdfb4b268b6b0643443de72f1925d\",\n      \"payloadSha256\": \"a7a454863a0e7c86f38bab3c6c155bd6d424378e265ce45b8e222fe72a2d8447\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-half32\",\n      \"manifestSha256\": \"40afcf78cd33482d650ac73d2351833da71dc46d3aaa4be33c7e14d5e64d329f\",\n      \"payloadSha256\": \"6d40dd37290038491b0b52280e59943fe7ebf1dde6476979e4571100e6bcc14e\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-full32\",\n      \"manifestSha256\": \"0b06ec750acde0b04b2b21ab477708a3cfb66f96c02c8693f1ef644144b7faf4\",\n      \"payloadSha256\": \"1ad138183a4644850870b27fc79e5fa6fac516f08a095ff179120e7d0184e0d8\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-full64\",\n      \"manifestSha256\": \"2197d182894e257e5f852a63eb49c58a6ca85c8ba8494b64b2cb97f6777df18a\",\n      \"payloadSha256\": \"7f457381500ffee007a84d329ad317b54a0891bdd6604c94e50e44bc72ab0876\"\n    }\n  ],\n  \"issues\": []\n}\n",
+        "valid": true
+      }
+    },
+    "m7f": {
+      "reportId": "ground-glass-m7f-r187-presentation",
+      "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+      "nativeCaptureSourceSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+      "qualification": "passed",
+      "counts": {
+        "declared": {
+          "passed": 17,
+          "failed": 0,
+          "blocked": 0,
+          "not-run": 0
+        },
+        "computed": {
+          "passed": 17,
+          "failed": 0,
+          "blocked": 0,
+          "not-run": 0
+        },
+        "inventoryConsistent": true
+      },
+      "runtime": {
+        "threePackageVersion": "0.187.0",
+        "rendererRevision": "r187",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin 27.0.0 arm64"
+      },
+      "physicalOverlayScope": "M6B evidence remains a controlled calibration fixture, not registered-scene alignment.",
+      "alphaEvidenceScope": "controlled-native-presentation-fixture"
+    },
+    "m7fOfflineReplay": {
+      "reportId": "ground-glass-m7f-r187-presentation",
+      "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+      "status": "passed",
+      "counts": {
+        "declared": {
+          "passed": 17,
+          "failed": 0,
+          "blocked": 0,
+          "not-run": 0
+        },
+        "computed": {
+          "passed": 17,
+          "failed": 0,
+          "blocked": 0,
+          "not-run": 0
+        },
+        "inventoryConsistent": true
+      },
+      "qualificationPass": true,
+      "freshExecution": {
+        "kind": "m7f",
+        "script": "scripts/run-m7f-presentation-evidence-replay.mjs",
+        "expectedSourceSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+        "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+        "timeoutMs": 600000,
+        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
+        "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
+        "spawned": true,
+        "exitCode": 0,
+        "signal": null,
+        "spawnError": null,
+        "outputWasAbsentBeforeSpawn": true,
+        "reportPresent": true,
+        "reportParsed": true,
+        "reportParseError": null,
+        "reportSha256": "e4ace4df27905530e690ba35784604fca65647e6d2c2ad83c482e616f548fa1c",
+        "reportIdentity": {
+          "reportId": "ground-glass-m7f-r187-presentation",
+          "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+          "sourceCaptureSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+          "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
+        },
+        "reportValidated": true,
+        "reportValidationIssues": [],
+        "stderrExcerpt": "",
+        "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json\"\n}\n",
+        "valid": true
+      }
+    },
+    "m6PresentationScenarioCount": 17
+  },
+  "scenarioCounts": {
+    "declared": {
+      "passed": 5,
+      "failed": 0,
+      "blocked": 2,
+      "not-run": 0
+    },
+    "computed": {
+      "passed": 5,
+      "failed": 0,
+      "blocked": 2,
+      "not-run": 0
+    },
+    "inventoryConsistent": true
+  },
+  "scenarios": [
+    {
+      "id": "m7g-r187-init-after-target-operation-recheck",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-initialization-failure",
+      "sourceCommitSha": "8dfc6e10baf5d03ceb06826a1a9a7ca4498e782d",
+      "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npx playwright test src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"D1 initialization failure|M7A injected device loss|M7B test-destroyed GPUDevice\"",
+      "rendererRevision": "r187",
+      "runtimeIdentity": {
+        "kind": "runtime-observed",
+        "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-2\"]",
+        "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-2",
+        "rendererRevision": "187",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none",
+        "sequence": 16
+      },
+      "supportingArtifacts": [
+        "m7g-r187-init-after-target-operation-recheck"
+      ],
+      "orderedEvents": [
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "sequence": 0
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "sequence": 1
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-1",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-2",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 2
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-1",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-2",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-1",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 3
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-1",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 14
+        },
+        {
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-2",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "187",
+          "sequence": 15
+        },
+        {
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-2\"]",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-2",
+          "rendererRevision": "187",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 16
+        },
+        {
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-2",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-3",
+          "sceneId": "architecture-rise",
+          "stage": "initialization",
+          "operation": "initialize-render-target-state",
+          "reason": "Injected test-only Ground Glass WebGPU failure at initialization-after-target",
+          "sequence": 17
+        },
+        {
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-2\"]",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-2",
+          "outcome": "confirmed",
+          "wallClockMs": 0.5,
+          "sequence": 18
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-2",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 19
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 20
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-3",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 21
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-4",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-4",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 27
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-5",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-5",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 32
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-6",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-6",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 38
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-7",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-7",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 41
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-7",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": false,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-8",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 43
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-8",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-8",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 44
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-f7qxn7rk4sb",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-3",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 49
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_1a_-mep0teecydo",
+          "sequence": 50
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_1a_-mep0teecydo",
+          "sequence": 51
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_27_-zwcja1ddjgq",
+          "sequence": 52
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_27_-zwcja1ddjgq",
+          "sequence": 53
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-5\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_27_-zwcja1ddjgq",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-5",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-12",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 54
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3fhs-ofs08vfgkk-default-generation-5\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_27_-zwcja1ddjgq",
+          "generationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-5",
+          "requestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-12",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3fhs-ofs08vfgkk-default-request-12",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3fhs-ofs08vfgkk-default-generation-5",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 55
+        }
+      ],
+      "knownLimitations": [
+        "Tested on Chrome 156.0.8078.76, macOS 27 arm64; no hardware acceleration claim is made."
+      ],
+      "issues": []
+    },
+    {
+      "id": "m7g-r187-device-loss-equivalent",
+      "status": "passed",
+      "evidenceClass": "injected-device-loss-equivalent",
+      "sourceCommitSha": "8dfc6e10baf5d03ceb06826a1a9a7ca4498e782d",
+      "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npx playwright test src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"D1 initialization failure|M7A injected device loss|M7B test-destroyed GPUDevice\"",
+      "rendererRevision": "r187",
+      "runtimeIdentity": {
+        "kind": "runtime-observed",
+        "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+        "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+        "rendererRevision": "187",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none",
+        "sequence": 19
+      },
+      "supportingArtifacts": [
+        "m7g-r187-device-loss-equivalent"
+      ],
+      "orderedEvents": [
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "sequence": 0
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "sequence": 1
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-1",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-2",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 2
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-1",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-2",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3hje-ulyab1srbji-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3hje-ulyab1srbji-default-generation-1",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 3
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-1",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 17
+        },
+        {
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "187",
+          "sequence": 18
+        },
+        {
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "rendererRevision": "187",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 19
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 20
+        },
+        {
+          "kind": "queue-completion-settled",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "operation": "sceneRender",
+          "sequence": 21
+        },
+        {
+          "kind": "frame-performance",
+          "evidence": {
+            "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+            "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+            "sourceWidthPx": 514,
+            "sourceHeightPx": 411,
+            "sceneRender": {
+              "rendererCallCpuMs": 44.29999999701977,
+              "queueCompletionWaitMs": 7.200000002980232,
+              "wallClockMs": 51.70000000298023
+            },
+            "physicalCocFootprint": null,
+            "physicalValidity": null
+          },
+          "sequence": 22
+        },
+        {
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sequence": 23
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "activeRendererFamily": "webgpu-renderer",
+          "sequence": 24
+        },
+        {
+          "kind": "device-loss-equivalent-requested",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "cause": "test-callback-equivalent",
+          "sequence": 25
+        },
+        {
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "device-loss",
+          "reason": "Injected test-only WebGPU device-loss equivalent",
+          "sequence": 26
+        },
+        {
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-2\"]",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "outcome": "confirmed",
+          "wallClockMs": 2.9000000059604645,
+          "sequence": 27
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-2",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 28
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-3",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 29
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3hje-ulyab1srbji-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-lnu7ujwftlh",
+          "generationId": "gg-mvxb3hje-ulyab1srbji-default-generation-3",
+          "requestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3hje-ulyab1srbji-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3hje-ulyab1srbji-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 30
+        }
+      ],
+      "knownLimitations": [
+        "Tested on Chrome 156.0.8078.76, macOS 27 arm64; no hardware acceleration claim is made."
+      ],
+      "issues": []
+    },
+    {
+      "id": "m7g-r187-test-destroyed-device-loss-promise",
+      "status": "passed",
+      "evidenceClass": "test-induced-gpu-device-lost-promise",
+      "sourceCommitSha": "8dfc6e10baf5d03ceb06826a1a9a7ca4498e782d",
+      "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npx playwright test src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"D1 initialization failure|M7A injected device loss|M7B test-destroyed GPUDevice\"",
+      "rendererRevision": "r187",
+      "runtimeIdentity": {
+        "kind": "runtime-observed",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "rendererRevision": "187",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none",
+        "sequence": 20
+      },
+      "supportingArtifacts": [
+        "m7g-r187-test-destroyed-device-loss-promise"
+      ],
+      "orderedEvents": [
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "sequence": 0
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "sequence": 1
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 2
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 3
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 18
+        },
+        {
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "187",
+          "sequence": 19
+        },
+        {
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "rendererRevision": "187",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 20
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 21
+        },
+        {
+          "kind": "device-destroy-requested",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "cause": "test-destroy",
+          "sequence": 22
+        },
+        {
+          "kind": "device-lost-observed",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "cause": "test-destroy",
+          "reason": "destroyed",
+          "message": "Device was destroyed.",
+          "sequence": 23
+        },
+        {
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "device-loss",
+          "reason": "WebGPU device lost: Device was destroyed.",
+          "sequence": 24
+        },
+        {
+          "kind": "queue-completion-settled",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "operation": "sceneRender",
+          "sequence": 25
+        },
+        {
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "outcome": "confirmed",
+          "wallClockMs": 5.5,
+          "sequence": 26
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 27
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 28
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+          "activeRendererFamily": "webgl-renderer",
+          "sequence": 29
+        }
+      ],
+      "knownLimitations": [
+        "Tested on Chrome 156.0.8078.76, macOS 27 arm64; no hardware acceleration claim is made."
+      ],
+      "issues": []
+    },
+    {
+      "id": "m7g-r187-spontaneous-external-device-loss",
+      "status": "blocked",
+      "evidenceClass": "unobserved-external-device-loss",
+      "sourceCommitSha": null,
+      "testInvocation": null,
+      "rendererRevision": "r187",
+      "runtimeIdentity": null,
+      "supportingArtifacts": [
+        "native/device-loss/external-loss-observation.json"
+      ],
+      "orderedEvents": [],
+      "knownLimitations": [
+        "The available r187 environment exposed the explicit callback-equivalent and adapter-owned GPUDevice.destroy() controls, but no independent external device-loss trigger. No spontaneous or driver-caused loss is inferred from either test-induced path."
+      ],
+      "issues": []
+    },
+    {
+      "id": "m7g-r187-held-m5-composite-latest-request",
+      "status": "passed",
+      "evidenceClass": "native-webgpu-m3-m6-request-interleaving",
+      "sourceCommitSha": "291974a520b3fc092988b019191f2e2fa3e1b3f5",
+      "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts",
+      "rendererRevision": "r187",
+      "runtimeIdentity": {
+        "kind": "runtime-observed",
+        "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+        "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+        "rendererRevision": "187",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none",
+        "sequence": 9
+      },
+      "supportingArtifacts": [
+        "native/m5-composite-latest-request.json"
+      ],
+      "orderedEvents": [
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "sequence": 0
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-1",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-1",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 1
+        },
+        {
+          "kind": "host-attached",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "sequence": 2
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-1",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-1",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 3
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 4
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 5
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 6
+        },
+        {
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "187",
+          "sequence": 7
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 8
+        },
+        {
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "rendererRevision": "187",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 9
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 10
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 11
+        },
+        {
+          "kind": "queue-completion-settled",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "operation": "sceneRender",
+          "sequence": 12
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "submitted",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "completedPassesBeforeSubmission": [
+            "sourceIdentity",
+            "gatherIdentity",
+            "gatherCenterProvenance",
+            "farGather",
+            "nearGather",
+            "selectedProvenance",
+            "farReconstructionB1",
+            "farReconstructionB1"
+          ],
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 13
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "queue-settled",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 14
+        },
+        {
+          "kind": "gather-research",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "status": "completed",
+          "qualityMode": "half32",
+          "failureReason": null,
+          "sequence": 15
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 16
+        },
+        {
+          "kind": "frame-performance",
+          "evidence": {
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+            "sourceWidthPx": 314,
+            "sourceHeightPx": 251,
+            "sceneRender": {
+              "rendererCallCpuMs": 46.099999994039536,
+              "queueCompletionWaitMs": 7,
+              "wallClockMs": 53.3999999910593
+            },
+            "physicalCocFootprint": {
+              "rendererCallCpuMs": 2.7000000029802322,
+              "queueCompletionWaitMs": 8.900000005960464,
+              "wallClockMs": 11.600000008940697
+            },
+            "physicalValidity": {
+              "rendererCallCpuMs": 2,
+              "queueCompletionWaitMs": 4,
+              "wallClockMs": 6.0999999940395355
+            }
+          },
+          "sequence": 17
+        },
+        {
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sequence": 18
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "activeRendererFamily": "webgpu-renderer",
+          "sequence": 19
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-2",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 20
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 21
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 22
+        },
+        {
+          "kind": "queue-completion-settled",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "operation": "sceneRender",
+          "sequence": 23
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "submitted",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "completedPassesBeforeSubmission": [
+            "sourceIdentity",
+            "gatherIdentity",
+            "gatherCenterProvenance",
+            "farGather",
+            "nearGather",
+            "selectedProvenance",
+            "farReconstructionB1",
+            "farReconstructionB1"
+          ],
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 24
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "queue-settled",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 25
+        },
+        {
+          "kind": "gather-research",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "status": "completed",
+          "qualityMode": "half32",
+          "failureReason": null,
+          "sequence": 26
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 27
+        },
+        {
+          "kind": "frame-performance",
+          "evidence": {
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+            "sourceWidthPx": 204,
+            "sourceHeightPx": 163,
+            "sceneRender": {
+              "rendererCallCpuMs": 4.700000002980232,
+              "queueCompletionWaitMs": 4.700000002980232,
+              "wallClockMs": 9.5
+            },
+            "physicalCocFootprint": {
+              "rendererCallCpuMs": 0.29999999701976776,
+              "queueCompletionWaitMs": 1.9000000059604645,
+              "wallClockMs": 2.2000000029802322
+            },
+            "physicalValidity": {
+              "rendererCallCpuMs": 0,
+              "queueCompletionWaitMs": 1.199999988079071,
+              "wallClockMs": 1.199999988079071
+            }
+          },
+          "sequence": 28
+        },
+        {
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "sequence": 29
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "activeRendererFamily": "webgpu-renderer",
+          "sequence": 30
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-3",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 31
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 32
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 33
+        },
+        {
+          "kind": "queue-completion-settled",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+          "operation": "sceneRender",
+          "sequence": 34
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "submitted",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "completedPassesBeforeSubmission": [
+            "sourceIdentity",
+            "gatherIdentity",
+            "gatherCenterProvenance",
+            "farGather",
+            "nearGather",
+            "selectedProvenance",
+            "farReconstructionB1",
+            "farReconstructionB1"
+          ],
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 35
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "hold-reached",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 36
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 37
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 38
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "hold-released",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 39
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "queue-settled",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 40
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "stale-discarded",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-4",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 41
+        },
+        {
+          "kind": "queue-completion-settled",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "operation": "sceneRender",
+          "sequence": 42
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "submitted",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "completedPassesBeforeSubmission": [
+            "sourceIdentity",
+            "gatherIdentity",
+            "gatherCenterProvenance",
+            "farGather",
+            "nearGather",
+            "selectedProvenance",
+            "farReconstructionB1",
+            "farReconstructionB1"
+          ],
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 43
+        },
+        {
+          "kind": "m5-composite-lifecycle",
+          "phase": "queue-settled",
+          "identity": {
+            "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+            "channelId": "default",
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+            "sceneId": "architecture-rise",
+            "targetUuid": "ed06c46f-3039-4cb1-b5a2-7fba969d49e1"
+          },
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 44
+        },
+        {
+          "kind": "gather-research",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "status": "completed",
+          "qualityMode": "half32",
+          "failureReason": null,
+          "sequence": 45
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 46
+        },
+        {
+          "kind": "frame-performance",
+          "evidence": {
+            "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+            "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+            "sourceWidthPx": 204,
+            "sourceHeightPx": 163,
+            "sceneRender": {
+              "rendererCallCpuMs": 1.8999999910593033,
+              "queueCompletionWaitMs": 0.7999999970197678,
+              "wallClockMs": 2.7999999970197678
+            },
+            "physicalCocFootprint": {
+              "rendererCallCpuMs": 0,
+              "queueCompletionWaitMs": 0.4000000059604645,
+              "wallClockMs": 0.4000000059604645
+            },
+            "physicalValidity": {
+              "rendererCallCpuMs": 0.09999999403953552,
+              "queueCompletionWaitMs": 0.20000000298023224,
+              "wallClockMs": 0.29999999701976776
+            }
+          },
+          "sequence": 47
+        },
+        {
+          "kind": "frame-completed",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "sequence": 48
+        },
+        {
+          "kind": "host-frame-result",
+          "attemptId": "[\"default\",\"gg-mvxbjtw5-p27ym0gvqt-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "generationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "sceneId": "architecture-rise",
+          "frameStatus": "completed",
+          "acceptedByHost": true,
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "latestAcceptedSceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "activeRendererFamily": "webgpu-renderer",
+          "sequence": 49
+        },
+        {
+          "kind": "host-request-accepted",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-zp0noe71pz",
+          "requestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "sceneId": "architecture-rise",
+          "activeGenerationId": "gg-mvxbjtw5-p27ym0gvqt-default-generation-1",
+          "latestAcceptedRequestId": "gg-mvxbjtw5-p27ym0gvqt-default-request-5",
+          "latestAcceptedSceneId": "architecture-rise",
+          "sequence": 50
+        }
+      ],
+      "knownLimitations": [
+        "The controlled hold delays adapter settlement after native submission; it does not claim the GPU queue remained physically busy for the full hold interval."
+      ],
+      "issues": []
+    },
+    {
+      "id": "m7g-r187-broad-application-e2e",
+      "status": "blocked",
+      "evidenceClass": "broad-application-e2e",
+      "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+      "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4282 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json npm run test:e2e -- --project=chromium --workers=4 --reporter=json",
+      "rendererRevision": null,
+      "runtimeIdentity": {
+        "environment": {
+          "browserVersion": "149.0.7827.55",
+          "operatingSystem": "darwin 27.0.0 arm64",
+          "threeRevision": "187",
+          "nativeWebGpuRequired": false,
+          "executionNote": "Standard Chromium E2E only; observed WebGPU renderer cases used WebGL2 compatibility and are not native WebGPU evidence."
+        },
+        "playwrightReportValidation": {
+          "artifact": "validation/broad-e2e-playwright.json",
+          "sha256": "393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6",
+          "valid": true,
+          "issues": [],
+          "projectIds": [
+            "chromium"
+          ],
+          "testsDiscovered": 277,
+          "testsWithResults": 277,
+          "incompleteTests": 0,
+          "counts": {
+            "expected": 103,
+            "unexpected": 99,
+            "skipped": 75,
+            "flaky": 0
+          },
+          "reportStats": {
+            "expected": 103,
+            "unexpected": 99,
+            "skipped": 75,
+            "flaky": 0
+          }
+        }
+      },
+      "supportingArtifacts": [
+        "validation/broad-e2e.json",
+        "validation/broad-e2e-playwright.json"
+      ],
+      "orderedEvents": [],
+      "knownLimitations": [
+        "The broad current-head suite has 99 unexpected outcomes across UI visibility, long-running renderer/resource tests, stale r186 revision assertions, and Vite optimized-module loading; these are outside the M7G lifecycle scenarios.",
+        "The named Architecture + Foreground missing-heading failure and two r187 baseline assertion failures were reproduced on a clean origin/main snapshot.",
+        "The other broad-suite failures were not individually replayed on clean main and remain unclassified baseline/application failures; broad E2E is therefore blocked rather than treated as M7G pass evidence."
+      ],
+      "issues": []
+    },
+    {
+      "id": "m7g-r187-production-preview-isolation",
+      "status": "passed",
+      "evidenceClass": "production-preview-webgl-isolation",
+      "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+      "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION=true GROUND_GLASS_M7G_CAPTURE_DIR=docs/architecture/ground-glass-m7g-r187 npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+      "rendererRevision": "r187",
+      "runtimeIdentity": {
+        "status": "passed",
+        "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+        "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION=true GROUND_GLASS_M7G_CAPTURE_DIR=docs/architecture/ground-glass-m7g-r187 npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+        "browserProject": "chromium-production-preview",
+        "browserVersion": "149.0.7827.55",
+        "operatingSystem": "darwin 27.0.0",
+        "threeRevision": "187",
+        "productionWebGpuEnabled": false,
+        "testSeamExposed": false,
+        "webGpuAttemptCount": 0,
+        "policySelectedBackend": "webgl",
+        "rendererFamily": "webgl-renderer",
+        "actualExecutionApi": "webgl2",
+        "webGpuModuleRequests": []
+      },
+      "supportingArtifacts": [
+        "validation/production-isolation.json"
+      ],
+      "orderedEvents": [],
+      "knownLimitations": [],
+      "issues": []
+    }
+  ],
+  "decisions": {
+    "rawLifecycle": "partially-qualified",
+    "physicalCocResearch": "research-qualified",
+    "gatherB1Research": "research-qualified",
+    "m5OpticalQuality": "partially-qualified",
+    "presentationConformance": "passed",
+    "crossStageRequestIntegrity": "passed",
+    "initializationFailureIntegrity": "passed",
+    "runtimeFailureRecovery": "passed",
+    "deviceLossHandling": "partially-qualified",
+    "resourceCleanup": "passed",
+    "stickyFallback": "passed",
+    "retryAndSessionOwnership": "passed",
+    "resizeAndRemount": "passed",
+    "sceneTransition": "passed",
+    "productionIsolation": "passed",
+    "consolidatedM7": "partially-qualified",
+    "m8EntryGate": "denied"
+  },
+  "qualificationStatus": "partially-qualified",
+  "qualificationPass": false,
+  "evidenceIntegrity": "passed",
+  "valid": true,
+  "issues": [],
+  "authorization": {
+    "m3RawRttRendererAttemptAuthority": "m3-raw-pilot",
+    "r187M4Status": "research-only",
+    "r187M5Status": "research-only",
+    "r187M6Status": "development-only",
+    "m5qStatus": "partially-qualified",
+    "m6EvidenceUsedForRendererSelection": false,
+    "productionWebGpuEnabled": false,
+    "productionGroundGlass": "WebGL-only",
+    "m8Authorized": false,
+    "m9Authorized": false,
+    "productionTestSeamExposed": false
+  },
+  "replayExecution": {
+    "m7e": {
+      "kind": "m7e",
+      "script": "scripts/run-m7e-offline-replay.mjs",
+      "expectedSourceSha": "9382217c7820be87a596124fd78c28239d416653",
+      "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+      "timeoutMs": 600000,
+      "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
+      "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+      "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
+      "spawned": true,
+      "exitCode": 0,
+      "signal": null,
+      "spawnError": null,
+      "outputWasAbsentBeforeSpawn": true,
+      "reportPresent": true,
+      "reportParsed": true,
+      "reportParseError": null,
+      "reportSha256": "1ebf2a4d45a95c4edae93e53b393910d388bb9479cfdb7efc664fb4dfcfa122b",
+      "reportIdentity": {
+        "reportId": "ground-glass-m7e-r187-offline-replay",
+        "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
+        "sourceCaptureSha": "9382217c7820be87a596124fd78c28239d416653",
+        "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
+      },
+      "reportValidated": true,
+      "reportValidationIssues": [],
+      "stderrExcerpt": "",
+      "stdoutExcerpt": "bc45b9f08a7c67547f9b2d021798ca15b8bd496941f563d05bb45091a263c30f\"\n    },\n    {\n      \"scenarioId\": \"q1-control-cap60-full32\",\n      \"manifestSha256\": \"3f43894e3f214bf31bb9f9f6fa9660b5a3fb0c116625aef3f30ad0939b12db91\",\n      \"payloadSha256\": \"da448839399fce6e005d8a01dfada03df2e538ad8a78958839616ab4be1af952\"\n    },\n    {\n      \"scenarioId\": \"q1-control-cap60-full64\",\n      \"manifestSha256\": \"e5b350ae67277186378c0365bcb57d6569a447151e88e129c658b671b981553d\",\n      \"payloadSha256\": \"2a4aa9b28d66fc7f127597ab6cfc5b5612adb6e8d5e1dfe22810d13d5f977d5f\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-half32\",\n      \"manifestSha256\": \"a6be674dbba86b79449e107885e845b1c3b551b3a826d0bc70c91726540f2f9d\",\n      \"payloadSha256\": \"ad0a61c39191563df67620614119f2893b6f7b4791b9ff51318b246ff6c5860b\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-full32\",\n      \"manifestSha256\": \"b3d7c59ac01b3fbea1ec6c0bb5f91d314ba13fdc8ac8bc1f6575680cf5ca048b\",\n      \"payloadSha256\": \"c7aef1a90bb8851211d37ce49792df5d86e0983d9d0ec81dac276dbe7498ce02\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-full64\",\n      \"manifestSha256\": \"f0c071a2aad09670d1c87f95eb7ca2701bacdfb4b268b6b0643443de72f1925d\",\n      \"payloadSha256\": \"a7a454863a0e7c86f38bab3c6c155bd6d424378e265ce45b8e222fe72a2d8447\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-half32\",\n      \"manifestSha256\": \"40afcf78cd33482d650ac73d2351833da71dc46d3aaa4be33c7e14d5e64d329f\",\n      \"payloadSha256\": \"6d40dd37290038491b0b52280e59943fe7ebf1dde6476979e4571100e6bcc14e\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-full32\",\n      \"manifestSha256\": \"0b06ec750acde0b04b2b21ab477708a3cfb66f96c02c8693f1ef644144b7faf4\",\n      \"payloadSha256\": \"1ad138183a4644850870b27fc79e5fa6fac516f08a095ff179120e7d0184e0d8\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-full64\",\n      \"manifestSha256\": \"2197d182894e257e5f852a63eb49c58a6ca85c8ba8494b64b2cb97f6777df18a\",\n      \"payloadSha256\": \"7f457381500ffee007a84d329ad317b54a0891bdd6604c94e50e44bc72ab0876\"\n    }\n  ],\n  \"issues\": []\n}\n",
+      "valid": true
+    },
+    "m7f": {
+      "kind": "m7f",
+      "script": "scripts/run-m7f-presentation-evidence-replay.mjs",
+      "expectedSourceSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+      "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+      "timeoutMs": 600000,
+      "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
+      "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+      "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
+      "spawned": true,
+      "exitCode": 0,
+      "signal": null,
+      "spawnError": null,
+      "outputWasAbsentBeforeSpawn": true,
+      "reportPresent": true,
+      "reportParsed": true,
+      "reportParseError": null,
+      "reportSha256": "e4ace4df27905530e690ba35784604fca65647e6d2c2ad83c482e616f548fa1c",
+      "reportIdentity": {
+        "reportId": "ground-glass-m7f-r187-presentation",
+        "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+        "sourceCaptureSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+        "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
+      },
+      "reportValidated": true,
+      "reportValidationIssues": [],
+      "stderrExcerpt": "",
+      "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json\"\n}\n",
+      "valid": true
+    }
+  }
+}

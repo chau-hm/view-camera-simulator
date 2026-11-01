@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "ground-glass-m7g-r187-validation-v1",
+  "sourceCommitSha": "f6ee3fceb17ca16c9de15a2a9e2ea5788af80678",
+  "testedTreeMatchesCommit": true,
+  "unitAndIntegration": {
+    "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test",
+    "status": "passed",
+    "testFiles": 311,
+    "testsPassed": 3453,
+    "testsFailed": 0
+  },
+  "focusedEvidenceEvaluators": {
+    "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npx vitest run src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts src/tests/unit/groundGlassM7gConsolidatedEvidence.test.ts",
+    "status": "passed",
+    "testFiles": 3,
+    "testsPassed": 130,
+    "testsFailed": 0
+  },
+  "staticAndBuild": [
+    {
+      "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run lint",
+      "status": "passed"
+    },
+    {
+      "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run check:css",
+      "status": "passed"
+    },
+    {
+      "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run build",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "nativeE2e": [
+    {
+      "artifact": "../native/initialization/init-after-target-recheck.json",
+      "sourceCommitSha": "8dfc6e10baf5d03ceb06826a1a9a7ca4498e782d",
+      "testProject": "chrome-native-webgpu",
+      "testGroup": "initialization failure, device-loss equivalent, test-destroyed GPUDevice",
+      "status": "passed",
+      "testsPassed": 3,
+      "testsFailed": 0,
+      "runtime": {
+        "threeRevision": "187",
+        "browserVersion": "156.0.8078.76",
+        "operatingSystem": "darwin 27.0.0 arm64",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none"
+      }
+    },
+    {
+      "artifact": "../native/m5-composite-latest-request.json",
+      "sourceCommitSha": "291974a520b3fc092988b019191f2e2fa3e1b3f5",
+      "testProject": "chrome-native-webgpu",
+      "status": "passed",
+      "testsPassed": 1,
+      "testsFailed": 0
+    },
+    {
+      "artifact": "production-isolation.json",
+      "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+      "testProject": "chromium-production-preview",
+      "browserVersion": "149.0.7827.55",
+      "status": "passed",
+      "testsPassed": 2,
+      "testsFailed": 0,
+      "observedBackend": "webgl",
+      "webGpuAttemptCount": 0
+    }
+  ],
+  "broadE2e": {
+    "artifact": "broad-e2e-playwright.json",
+    "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+    "testProject": "chromium",
+    "status": "blocked",
+    "testsExecuted": 277,
+    "passed": 103,
+    "failed": 99,
+    "skipped": 75,
+    "flaky": 0,
+    "cleanMainComparison": "Known hidden-heading failure and two representative r186/development-module failures reproduced on clean origin/main; remaining failures are unclassified."
+  },
+  "evidenceReplay": {
+    "reportGenerationSourceSha": "f6ee3fceb17ca16c9de15a2a9e2ea5788af80678",
+    "diagnosticCommand": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run evidence:report:m7g",
+    "diagnosticStatus": "valid-partial-report",
+    "strictCommand": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run evidence:replay:m7g",
+    "strictExitCode": 1,
+    "strictExitMeaning": "Evidence inventory is valid and count-consistent, but the required consolidated qualification pass is false because two scenarios are blocked.",
+    "counts": {
+      "passed": 5,
+      "failed": 0,
+      "blocked": 2,
+      "not-run": 0
+    },
+    "predecessorReplay": {
+      "m7e": "12 passed, 0 failed, 0 blocked, 0 not-run",
+      "m7f": "17 passed, 0 failed, 0 blocked, 0 not-run"
+    }
+  }
+}

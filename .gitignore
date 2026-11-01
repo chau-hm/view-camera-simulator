@@ -29,6 +29,8 @@ playwright-report/
 test-results/
 .test-results/
 .dream-loop/
+.m7g-predecessor-replay-*/
+.m7g-consolidation-*/
 
 # Editor/OS files
 .DS_Store

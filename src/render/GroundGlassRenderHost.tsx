@@ -182,6 +182,20 @@ export const GroundGlassRenderHost = ({
       retryState: owner.getSnapshot(channel).retryState,
     };
     owner.acceptRequest(channel, hostId, request, acceptedPolicyInput);
+    const acceptedState = owner.getSnapshot(channel);
+    const acceptedRequest = acceptedState.activeHostId === hostId ? acceptedState.activeRequest : null;
+    if (acceptedRequest) {
+      recordGroundGlassWebGpuTestEvent({
+        kind: "host-request-accepted",
+        channelId: channel,
+        hostId,
+        requestId: acceptedRequest.identity.requestId,
+        sceneId: acceptedRequest.identity.sceneId,
+        activeGenerationId: acceptedState.activeGeneration?.generationId ?? null,
+        latestAcceptedRequestId: acceptedRequest.identity.requestId,
+        latestAcceptedSceneId: acceptedRequest.identity.sceneId,
+      });
+    }
   }, [channel, fingerprint, hostId, owner, policyInput, policyInputIdentity, request]);
 
   const generation = state.activeGeneration;

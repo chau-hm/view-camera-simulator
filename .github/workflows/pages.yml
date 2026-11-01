@@ -23,6 +23,17 @@ jobs:
         with:
           fetch-depth: 50
 
+      # M7E native captures name a source commit from PR #303. That PR was
+      # squash-merged, so fetch its retained head ref for strict source checks.
+      - name: Fetch M7E native capture source history
+        run: git fetch --no-tags --depth=50 origin refs/pull/303/head
+
+      # M7F native captures name a source commit from PR #304. That PR was
+      # squash-merged, so the capture commit is not reachable from main; fetch
+      # its retained head ref so strict source-commit verification can inspect it.
+      - name: Fetch M7F native capture source history
+        run: git fetch --no-tags --depth=50 origin refs/pull/304/head
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -46,6 +57,13 @@ jobs:
           M7F_REPLAY_REPORT="$GITHUB_WORKSPACE/.m7f-presentation-replay.json"
           trap 'rm -f "$M7F_REPLAY_REPORT"' EXIT
           npm run evidence:replay:m7f -- --report-output="$M7F_REPLAY_REPORT"
+
+      - name: Validate M7G consolidated evidence integrity
+        run: |
+          M7G_REPORT="$GITHUB_WORKSPACE/.m7g-consolidation-report.json"
+          M7G_EVALUATION="$GITHUB_WORKSPACE/.m7g-consolidation-evaluation.json"
+          trap 'rm -f "$M7G_REPORT" "$M7G_EVALUATION"' EXIT
+          npm run evidence:report:m7g -- --report-output="$M7G_REPORT" --evaluation-output="$M7G_EVALUATION"
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'

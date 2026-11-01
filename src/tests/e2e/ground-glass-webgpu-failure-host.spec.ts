@@ -11,6 +11,7 @@ import type {
 import { attachGroundGlassM7dEvidence } from "./helpers/groundGlassM7dEvidence";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { groundGlassM7gSourceProvenance } from "./helpers/groundGlassM7gEvidence";
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const failureIntegrationEnabled = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
@@ -276,6 +277,25 @@ const attachLifecycleEvidence = async (page: Page, testInfo: import("@playwright
     await mkdir(captureDirectory, { recursive: true });
     await writeFile(join(captureDirectory, `${evidence.scenarioId}.json`), body);
   }
+  const m7gCaptureDirectory = process.env.GROUND_GLASS_M7G_CAPTURE_DIR;
+  const m7gCapture = testInfo.title === "D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky"
+    ? { relativePath: "native/initialization/init-after-target-recheck.json", scenarioId: "m7g-r187-init-after-target-operation-recheck" }
+    : testInfo.title === "M7A injected device loss uses the native runtime failure and cleanup path"
+      ? { relativePath: "native/device-loss/device-loss-equivalent.json", scenarioId: "m7g-r187-device-loss-equivalent" }
+      : testInfo.title === "M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path"
+        ? { relativePath: "native/device-loss/test-destroyed-device-lost-promise.json", scenarioId: "m7g-r187-test-destroyed-device-loss-promise" }
+        : null;
+  if (process.env.GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED === "1" && m7gCaptureDirectory && m7gCapture) {
+    const m7gOutput = join(m7gCaptureDirectory, m7gCapture.relativePath);
+    await mkdir(dirname(m7gOutput), { recursive: true });
+    await writeFile(m7gOutput, JSON.stringify({
+      ...evidence,
+      schemaVersion: "ground-glass-m7g-r187-native-observation-v1",
+      scenarioId: m7gCapture.scenarioId,
+      invocation: process.env.GROUND_GLASS_M7G_TEST_INVOCATION ?? evidence.invocation,
+      captureProvenance: groundGlassM7gSourceProvenance(),
+    }, null, 2));
+  }
   await testInfo.attach("ground-glass-m7c-r187-lifecycle-evidence", {
     path: outputPath,
     contentType: "application/json",
@@ -438,7 +458,9 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
     const initialSessionId = await glass.getAttribute("data-pilot-session-id");
     const initialRetryEpoch = Number(await glass.getAttribute("data-pilot-retry-epoch"));
     const initialAttemptGenerations = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []);
-    await assertConfirmedWebGlFallback(glass, page, failedRequestId, failedGeneration, "initialization", "unknown");
+    await assertConfirmedWebGlFallback(
+      glass, page, failedRequestId, failedGeneration, "initialization", "initialize-render-target-state",
+    );
 
     const slider = page.getByRole("slider", { name: "Focus distance" });
     const currentFocus = Number(await slider.inputValue());
@@ -725,7 +747,9 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       } : null,
       nativeWebGpuQualified: false,
     });
-    await assertConfirmedWebGlFallback(glass, page, failedRequestId, failedGeneration, "initialization", "unknown");
+    await assertConfirmedWebGlFallback(
+      glass, page, failedRequestId, failedGeneration, "initialization", "verify-native-webgpu-execution-api",
+    );
 
     const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
     expect(events).toContainEqual(expect.objectContaining({
@@ -746,7 +770,9 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
   test("M7A explicit retry and new session are developer actions, preserve history, and never loop", async ({ page }) => {
     test.setTimeout(360_000);
     const { glass, failedRequestId, failedGeneration } = await startNativePilot(page, ["initialization-after-target"]);
-    await assertConfirmedWebGlFallback(glass, page, failedRequestId, failedGeneration, "initialization", "unknown");
+    await assertConfirmedWebGlFallback(
+      glass, page, failedRequestId, failedGeneration, "initialization", "initialize-render-target-state",
+    );
     const firstSessionId = await glass.getAttribute("data-pilot-session-id");
     const firstAttemptGenerations = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations ?? []);
     await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
@@ -769,7 +795,9 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
       .toHaveLength(2);
     const retryGeneration = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterAttemptGenerations?.[1] ?? null);
     if (!retryGeneration) throw new Error("Explicit retry did not create its one authorized attempt");
-    await assertConfirmedWebGlFallback(glass, page, failedRequestId, retryGeneration, "initialization", "unknown");
+    await assertConfirmedWebGlFallback(
+      glass, page, failedRequestId, retryGeneration, "initialization", "initialize-render-target-state",
+    );
     await expect(glass).toHaveAttribute("data-pilot-retry-status", "consumed");
     await expect(glass).toHaveAttribute("data-pilot-retry-epoch", "1");
     await expect(glass).toHaveAttribute("data-pilot-retry-failure-count", "2");
@@ -844,7 +872,7 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
         kind: "failure",
         generationId: failedGeneration,
         stage: "runtime",
-        operation: "unknown",
+        operation: "device-loss",
         reason: expect.stringContaining("device-loss equivalent"),
       }));
     await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 120_000 })
@@ -879,7 +907,7 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
         cause: "test-destroy",
       }));
     await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.releaseQueueCompletion?.());
-    await assertConfirmedWebGlFallback(glass, page, activeRequestId!, failedGeneration, "runtime", "unknown");
+    await assertConfirmedWebGlFallback(glass, page, activeRequestId!, failedGeneration, "runtime", "device-loss");
     const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
     const destroyEvent = events.find((event) => event.kind === "device-destroy-requested" && event.generationId === failedGeneration);
     const lostEvent = events.find((event) => event.kind === "device-lost-observed" && event.generationId === failedGeneration);

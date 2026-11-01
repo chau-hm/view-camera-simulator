@@ -114,6 +114,7 @@ import {
   type GroundGlassM6cAlphaCaptureReadback,
   type GroundGlassM6dCompositeContractProbeReadback,
   holdGroundGlassWebGpuPresentationQueueCompletion,
+  holdGroundGlassM5CompositeForTest,
   holdGroundGlassWebGpuQueueCompletion,
   isGroundGlassM6bCalibrationFixtureEnabledForRequest,
   isGroundGlassM6cAlphaFixtureEnabledForRequest,
@@ -128,6 +129,7 @@ import {
   resolveGroundGlassM6bPresentationStateForTest,
   recordGroundGlassWebGpuAdapterAttemptForTest,
   recordGroundGlassWebGpuTestEvent,
+  type GroundGlassM5CompositeLifecycleIdentity,
   registerGroundGlassDeviceLossTriggerForTest,
   registerGroundGlassDeviceDestroyTriggerForTest,
   createGroundGlassWebGpuAttemptIdentity,
@@ -813,6 +815,10 @@ const runGroundGlassApertureGatherPass = async (input: Readonly<{
   scene: THREE.Scene;
   camera: THREE.OrthographicCamera;
   isCurrent: () => boolean;
+  onSubmitted?: () => void;
+  holdAfterSubmit?: () => Promise<void>;
+  onQueueSettled?: () => void;
+  onStale?: () => void;
 }>): Promise<GroundGlassGpuPassTiming | null> => {
   const startedAt = performance.now();
   input.renderer.setRenderTarget(input.target);
@@ -823,9 +829,20 @@ const runGroundGlassApertureGatherPass = async (input: Readonly<{
   input.renderer.render(input.scene, input.camera);
   const rendererCallCpuMs = performance.now() - rendererCallStartedAt;
   const queueWaitStartedAt = performance.now();
-  await submitGatherWork(input.device);
+  const queueCompletion = submitGatherWork(input.device).then(
+    () => ({ status: "completed" as const }),
+    (error: unknown) => ({ status: "failed" as const, error }),
+  );
+  input.onSubmitted?.();
+  if (input.holdAfterSubmit) await input.holdAfterSubmit();
+  const queueResult = await queueCompletion;
+  if (queueResult.status === "failed") throw queueResult.error;
+  input.onQueueSettled?.();
   const queueCompletionWaitMs = performance.now() - queueWaitStartedAt;
-  if (!input.isCurrent()) return null;
+  if (!input.isCurrent()) {
+    input.onStale?.();
+    return null;
+  }
   return {
     rendererCallCpuMs,
     queueCompletionWaitMs,
@@ -3304,6 +3321,32 @@ export const GroundGlassWebGPUAdapter = ({
                     | "aperture-composite-after-submit",
                 ) => {
                   failedPass = operation;
+                  const m5CompositeLifecycleIdentity: GroundGlassM5CompositeLifecycleIdentity | null =
+                    timingName === "researchComposite" && m6PresentationRequested
+                      ? {
+                          attemptId: attemptIdentity.attemptId,
+                          channelId: latest.identity.channelId,
+                          generationId: generation.generationId,
+                          requestId: latest.identity.requestId,
+                          sceneId: latest.identity.sceneId,
+                          targetUuid: targetToRender.texture.uuid,
+                        }
+                      : null;
+                  const recordM5CompositePhase = (
+                    phase: "submitted" | "hold-reached" | "hold-released" | "hold-timeout" | "queue-settled" | "stale-discarded",
+                  ) => {
+                    if (!m5CompositeLifecycleIdentity) return;
+                    recordGroundGlassWebGpuTestEvent({
+                      kind: "m5-composite-lifecycle",
+                      phase,
+                      identity: m5CompositeLifecycleIdentity,
+                      ...(phase === "submitted"
+                        ? { completedPassesBeforeSubmission: [...apertureGatherCompletedPasses] }
+                        : {}),
+                      executionApi: "webgpu",
+                      internalFallback: "none",
+                    });
+                  };
                   const timing = await runGroundGlassApertureGatherPass({
                     renderer: renderer!,
                     device,
@@ -3311,6 +3354,21 @@ export const GroundGlassWebGPUAdapter = ({
                     scene: sceneToRender,
                     camera: physicalCamera!,
                     isCurrent: isApertureRequestCurrent,
+                    ...(m5CompositeLifecycleIdentity
+                      ? {
+                          onSubmitted: () => recordM5CompositePhase("submitted"),
+                          holdAfterSubmit: async () => {
+                            const outcome = await holdGroundGlassM5CompositeForTest(
+                              m5CompositeLifecycleIdentity,
+                              () => recordM5CompositePhase("hold-reached"),
+                            );
+                            if (outcome === "released") recordM5CompositePhase("hold-released");
+                            if (outcome === "timeout") recordM5CompositePhase("hold-timeout");
+                          },
+                          onQueueSettled: () => recordM5CompositePhase("queue-settled"),
+                          onStale: () => recordM5CompositePhase("stale-discarded"),
+                        }
+                      : {}),
                   });
                   if (timing === null) return null;
                   apertureGatherCompletedPasses = [...apertureGatherCompletedPasses, passName];
@@ -4690,9 +4748,14 @@ export const GroundGlassWebGPUAdapter = ({
           throwIfGroundGlassWebGpuFailureInjected("m6-presentation-node-initialization");
         }
         initializationOperation = null;
+        // This controlled fault occurs while the adapter finalizes the initialized surface,
+        // before the first frame is submitted. Keep it distinct from render-pass IDs and
+        // from renderer construction.
+        initializationOperation = "initialize-render-target-state";
         throwIfGroundGlassWebGpuFailureInjected("initialization-after-target");
         renderer.setSize(Math.max(1, currentRequest.widthPx), Math.max(1, currentRequest.heightPx), false);
         setTargetSize({ width: target.width, height: target.height });
+        initializationOperation = null;
 
         const details = makeDiagnosticDetails({
           request: currentRequest,
@@ -4737,9 +4800,11 @@ export const GroundGlassWebGPUAdapter = ({
         if (retired || !isGenerationActive()) return;
         propsRef.current.onRendererMounted(generation, runtime, details);
 
+        initializationOperation = "verify-native-webgpu-execution-api";
         if (runtime.actualExecutionApi !== "webgpu") {
           throw new Error("WebGPURenderer initialized with its internal WebGL2 backend; native WebGPU is required for this pilot");
         }
+        initializationOperation = null;
 
         activeRef.current = true;
         readyRef.current = true;
