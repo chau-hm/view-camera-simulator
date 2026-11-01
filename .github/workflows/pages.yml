@@ -23,6 +23,11 @@ jobs:
         with:
           fetch-depth: 50
 
+      # M7E native captures name a source commit from PR #303. That PR was
+      # squash-merged, so fetch its retained head ref for strict source checks.
+      - name: Fetch M7E native capture source history
+        run: git fetch --no-tags --depth=50 origin refs/pull/303/head
+
       # M7F native captures name a source commit from PR #304. That PR was
       # squash-merged, so the capture commit is not reachable from main; fetch
       # its retained head ref so strict source-commit verification can inspect it.
