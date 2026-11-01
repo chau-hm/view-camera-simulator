@@ -35,15 +35,15 @@ test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass contro
   const rtt = viewport.getByTestId("ground-glass-rtt");
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
   await expect(rtt.locator("canvas")).toBeVisible();
-  await expect(viewport.getByRole("radio", { name: "Raw Ground Glass" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Raw Ground Glass", exact: true })).toBeChecked();
 
   const stage = viewport.locator("[data-focus-loupe-active]");
   await viewport.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
   await expect(stage).toHaveAttribute("data-focus-loupe-active", "true");
   await expect(stage).toHaveAttribute("data-focus-loupe-scale", "4");
 
-  await viewport.getByRole("radio", { name: "Upright Assist" }).check();
-  await expect(viewport.getByRole("radio", { name: "Upright Assist" })).toBeChecked();
+  await page.getByRole("radio", { name: "Upright Assist", exact: true }).check();
+  await expect(page.getByRole("radio", { name: "Upright Assist", exact: true })).toBeChecked();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
   await viewport.getByRole("button", { name: "Reset Ground Glass view" }).click();
   await expect(stage).toHaveAttribute("data-focus-loupe-active", "false");
