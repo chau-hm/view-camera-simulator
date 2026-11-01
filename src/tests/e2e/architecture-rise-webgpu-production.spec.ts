@@ -123,10 +123,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   expect(defaultGroundGlassPixels.contentful).toBe(true);
   expect(webgpuModuleRequests).toEqual([]);
 
-  await page.evaluate((nextPath) => {
-    window.history.pushState(window.history.state, "", nextPath);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
-  }, "/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
+  await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&rttDiagnostics=1");
 
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
@@ -139,10 +136,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
   await expect(observer).not.toHaveAttribute("data-observer-renderer-failure-stage");
-  await page.evaluate((nextPath) => {
-    window.history.pushState(window.history.state, "", nextPath);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
-  }, "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");
+  await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "development-gate-disabled");
@@ -154,10 +148,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   expect(await observer.getAttribute("data-observer-output-policy-selected")).toBeNull();
   expect(await observer.getAttribute("data-observer-material-inventory")).toBeNull();
 
-  await page.evaluate((nextPath) => {
-    window.history.pushState(window.history.state, "", nextPath);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
-  }, "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=standard&rttDiagnostics=1");
+  await page.goto("/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=standard&rttDiagnostics=1");
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "development-gate-disabled");
