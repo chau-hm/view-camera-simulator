@@ -1,11 +1,16 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { release } from "node:os";
 import { REVISION } from "three";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { writeGroundGlassM7fCapture } from "./helpers/groundGlassM7fEvidence";
 import { writeGroundGlassM7gCapture } from "./helpers/groundGlassM7gEvidence";
+
+type DecodedPng = { width: number; height: number; data: Uint8Array };
+type PlaywrightPngDecoder = { PNG: { sync: { read: (buffer: Buffer) => DecodedPng } } };
+const { PNG } = createRequire(import.meta.url)("playwright-core/lib/utilsBundle") as PlaywrightPngDecoder;
 
 const attachJson = async (testInfo: import("@playwright/test").TestInfo, name: string, value: unknown) => {
   const body = JSON.stringify(value, null, 2);
@@ -20,23 +25,15 @@ const attachJson = async (testInfo: import("@playwright/test").TestInfo, name: s
   await testInfo.attach(name, { body, contentType: "application/json" });
 };
 
-const analyzeScreenshot = async (page: Page, screenshot: Buffer) => page.evaluate(async (base64Png) => {
-  const image = new Image();
-  image.src = `data:image/png;base64,${base64Png}`;
-  await image.decode();
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Could not decode the production preview screenshot");
-  context.drawImage(image, 0, 0);
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const samplingStride = Math.max(1, Math.ceil(Math.sqrt((canvas.width * canvas.height) / 100_000)));
+const analyzeScreenshot = (screenshot: Buffer) => {
+  const image = PNG.sync.read(screenshot);
+  const pixels = image.data;
+  const samplingStride = Math.max(1, Math.ceil(Math.sqrt((image.width * image.height) / 100_000)));
   const colorCounts = new Uint32Array(4096);
   let sampleCount = 0;
-  for (let y = 0; y < canvas.height; y += samplingStride) {
-    for (let x = 0; x < canvas.width; x += samplingStride) {
-      const index = (y * canvas.width + x) * 4;
+  for (let y = 0; y < image.height; y += samplingStride) {
+    for (let x = 0; x < image.width; x += samplingStride) {
+      const index = (y * image.width + x) * 4;
       const bucket = (((pixels[index] ?? 0) >> 4) << 8) |
         (((pixels[index + 1] ?? 0) >> 4) << 4) |
         ((pixels[index + 2] ?? 0) >> 4);
@@ -52,18 +49,18 @@ const analyzeScreenshot = async (page: Page, screenshot: Buffer) => page.evaluat
     dominantColorSamples = Math.max(dominantColorSamples, count);
   }
   const foregroundPixelEstimate = Math.min(
-    canvas.width * canvas.height,
+    image.width * image.height,
     (sampleCount - dominantColorSamples) * samplingStride ** 2,
   );
   return {
-    width: canvas.width,
-    height: canvas.height,
+    width: image.width,
+    height: image.height,
     samplingStride,
     distinctColorBuckets,
     foregroundPixelEstimate,
     contentful: distinctColorBuckets >= 12 && foregroundPixelEstimate >= 20,
   };
-}, screenshot.toString("base64"));
+};
 
 const screenshotElement = async (page: Page, locator: Locator) => {
   const box = await locator.evaluate((element) => {
@@ -82,7 +79,7 @@ const screenshotElement = async (page: Page, locator: Locator) => {
   if (width <= 0 || height <= 0) {
     throw new Error("The production preview screenshot target is outside the browser viewport");
   }
-  return page.screenshot({ clip: { x, y, width, height } });
+  return page.screenshot({ clip: { x, y, width, height }, scale: "css" });
 };
 
 test("production preview keeps Architecture Rise on WebGL for default and explicit WebGPU requests", async ({ page }, testInfo) => {
@@ -120,8 +117,8 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   expect(await page.evaluate(() => typeof window.__groundGlassWebGpuM3TestControl)).toBe("undefined");
   const defaultObserverScreenshot = await screenshotElement(page, observer.locator("canvas"));
   const defaultGroundGlassScreenshot = await screenshotElement(page, groundGlass);
-  const defaultObserverPixels = await analyzeScreenshot(page, defaultObserverScreenshot);
-  const defaultGroundGlassPixels = await analyzeScreenshot(page, defaultGroundGlassScreenshot);
+  const defaultObserverPixels = analyzeScreenshot(defaultObserverScreenshot);
+  const defaultGroundGlassPixels = analyzeScreenshot(defaultGroundGlassScreenshot);
   expect(defaultObserverPixels.contentful).toBe(true);
   expect(defaultGroundGlassPixels.contentful).toBe(true);
   expect(webgpuModuleRequests).toEqual([]);
@@ -308,8 +305,8 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
   await expect(observer).not.toHaveAttribute("data-observer-anatomy-output-intervention-hook");
   const observerScreenshot = await screenshotElement(page, observer.locator("canvas"));
   const groundGlassScreenshot = await screenshotElement(page, groundGlass);
-  const observerPixels = await analyzeScreenshot(page, observerScreenshot);
-  const groundGlassPixels = await analyzeScreenshot(page, groundGlassScreenshot);
+  const observerPixels = analyzeScreenshot(observerScreenshot);
+  const groundGlassPixels = analyzeScreenshot(groundGlassScreenshot);
   expect(observerPixels.contentful).toBe(true);
   expect(groundGlassPixels.contentful).toBe(true);
   expect(webgpuModuleRequests).toEqual([]);
