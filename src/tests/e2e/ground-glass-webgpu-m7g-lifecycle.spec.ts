@@ -96,7 +96,7 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     physicalRequestId: r1RequestId,
     physicalStatus: "completed",
     apertureGatherRequestId: r1RequestId,
-    apertureGatherStatus: "completed",
+    apertureGatherStatus: "ready",
   });
   expect([r1DiagnosticsAtHold.presentationRequestId, r1DiagnosticsAtHold.lastDisplayedRequestId])
     .not.toContain(r1RequestId);
@@ -157,6 +157,9 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     event.identity.generationId === generationId && event.identity.channelId === "default" &&
     event.identity.sceneId === "architecture-rise" && event.executionApi === "webgpu" &&
     event.internalFallback === "none" && event.identity.targetUuid === heldIdentity?.targetUuid)).toBe(true);
+  expect(r1Phases[0]?.completedPassesBeforeSubmission).toEqual(expect.arrayContaining([
+    "farGather", "nearGather", "farReconstructionB1",
+  ]));
   expect(events.some((event) => event.kind === "frame-completed" && event.requestId === r1RequestId)).toBe(false);
   expect(events.some((event) => event.kind === "host-frame-result" && event.requestId === r1RequestId &&
     event.acceptedByHost)).toBe(false);

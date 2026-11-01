@@ -698,6 +698,7 @@ export type GroundGlassWebGpuTestEvent =
       kind: "m5-composite-lifecycle";
       phase: "submitted" | "hold-reached" | "hold-released" | "hold-timeout" | "queue-settled" | "stale-discarded";
       identity: GroundGlassM5CompositeLifecycleIdentity;
+      completedPassesBeforeSubmission?: readonly string[];
       executionApi: "webgpu";
       internalFallback: "none";
     }>

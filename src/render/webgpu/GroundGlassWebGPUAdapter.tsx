@@ -3340,6 +3340,9 @@ export const GroundGlassWebGPUAdapter = ({
                       kind: "m5-composite-lifecycle",
                       phase,
                       identity: m5CompositeLifecycleIdentity,
+                      ...(phase === "submitted"
+                        ? { completedPassesBeforeSubmission: [...apertureGatherCompletedPasses] }
+                        : {}),
                       executionApi: "webgpu",
                       internalFallback: "none",
                     });
