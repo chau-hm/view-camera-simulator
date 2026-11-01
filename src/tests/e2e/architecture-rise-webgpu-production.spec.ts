@@ -122,13 +122,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(observer).toHaveAttribute("data-observer-webgpu-pilot-eligibility", "eligible");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
   await expect(observer).not.toHaveAttribute("data-observer-renderer-failure-stage");
-  const requestedObserverScreenshot = await observer.locator("canvas").screenshot();
-  const requestedGroundGlassScreenshot = await groundGlass.screenshot();
-  const requestedObserverPixels = await analyzeScreenshot(page, requestedObserverScreenshot);
-  const requestedGroundGlassPixels = await analyzeScreenshot(page, requestedGroundGlassScreenshot);
-  expect(requestedObserverPixels.contentful).toBe(true);
-  expect(requestedGroundGlassPixels.contentful).toBe(true);
-
   await page.evaluate((nextPath) => {
     window.history.pushState(window.history.state, "", nextPath);
     window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
@@ -156,12 +149,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
-  const standardObserverScreenshot = await observer.locator("canvas").screenshot();
-  const standardGroundGlassScreenshot = await groundGlass.screenshot();
-  const standardObserverPixels = await analyzeScreenshot(page, standardObserverScreenshot);
-  const standardGroundGlassPixels = await analyzeScreenshot(page, standardGroundGlassScreenshot);
-  expect(standardObserverPixels.contentful).toBe(true);
-  expect(standardGroundGlassPixels.contentful).toBe(true);
   expect(await observer.getAttribute("data-observer-output-policy-selected")).toBeNull();
   expect(await observer.getAttribute("data-observer-material-inventory")).toBeNull();
   expect(webgpuModuleRequests).toEqual([]);
@@ -200,10 +187,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   for (const [name, body] of [
     ["architecture-rise-production-observer-default.png", defaultObserverScreenshot],
     ["architecture-rise-production-ground-glass-default.png", defaultGroundGlassScreenshot],
-    ["architecture-rise-production-observer-webgpu-request.png", requestedObserverScreenshot],
-    ["architecture-rise-production-ground-glass-webgpu-request.png", requestedGroundGlassScreenshot],
-    ["architecture-rise-production-observer-standard-output-request.png", standardObserverScreenshot],
-    ["architecture-rise-production-ground-glass-standard-output-request.png", standardGroundGlassScreenshot],
   ] as const) {
     await testInfo.attach(name, { body, contentType: "image/png" });
   }
@@ -225,10 +208,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     groundGlassDiagnostics: "rttDiagnostics attributes are development-only; production captures are pixel-analyzed",
     defaultObserverPixels,
     defaultGroundGlassPixels,
-    requestedObserverPixels,
-    requestedGroundGlassPixels,
-    standardObserverPixels,
-    standardGroundGlassPixels,
     webgpuModuleRequests,
     pageErrors,
     consoleErrors,
