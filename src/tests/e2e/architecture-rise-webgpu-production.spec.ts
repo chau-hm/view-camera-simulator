@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { release } from "node:os";
 import { REVISION } from "three";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { writeGroundGlassM7fCapture } from "./helpers/groundGlassM7fEvidence";
 import { writeGroundGlassM7gCapture } from "./helpers/groundGlassM7gEvidence";
 
@@ -65,6 +65,27 @@ const analyzeScreenshot = async (page: Page, screenshot: Buffer) => page.evaluat
   };
 }, screenshot.toString("base64"));
 
+const screenshotElement = async (page: Page, locator: Locator) => {
+  const box = await locator.evaluate(async (element) => {
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const rect = element.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+  });
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error("The production preview page has no fixed viewport for screenshot evidence");
+  const x = Math.max(0, Math.floor(box.x));
+  const y = Math.max(0, Math.floor(box.y));
+  const right = Math.min(viewport.width, Math.ceil(box.x + box.width));
+  const bottom = Math.min(viewport.height, Math.ceil(box.y + box.height));
+  const width = right - x;
+  const height = bottom - y;
+  if (width <= 0 || height <= 0) {
+    throw new Error("The production preview screenshot target is outside the browser viewport");
+  }
+  return page.screenshot({ clip: { x, y, width, height }, animations: "disabled" });
+};
+
 test("production preview keeps Architecture Rise on WebGL for default and explicit WebGPU requests", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const pageErrors: string[] = [];
@@ -98,8 +119,8 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(groundGlass).toHaveAttribute("data-actual-execution-api", "webgl2");
   await expect(page.getByTestId("ground-glass-webgpu-pilot")).toHaveCount(0);
   expect(await page.evaluate(() => typeof window.__groundGlassWebGpuM3TestControl)).toBe("undefined");
-  const defaultObserverScreenshot = await observer.locator("canvas").screenshot();
-  const defaultGroundGlassScreenshot = await groundGlass.screenshot();
+  const defaultObserverScreenshot = await screenshotElement(page, observer.locator("canvas"));
+  const defaultGroundGlassScreenshot = await screenshotElement(page, groundGlass);
   const defaultObserverPixels = await analyzeScreenshot(page, defaultObserverScreenshot);
   const defaultGroundGlassPixels = await analyzeScreenshot(page, defaultGroundGlassScreenshot);
   expect(defaultObserverPixels.contentful).toBe(true);
@@ -286,8 +307,8 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
   await expect(observer).toHaveAttribute("data-scene-subject-id", "view-camera-anatomy");
   await expect(observer).not.toHaveAttribute("data-observer-anatomy-output-intervention-hook");
-  const observerScreenshot = await observer.locator("canvas").screenshot();
-  const groundGlassScreenshot = await groundGlass.screenshot();
+  const observerScreenshot = await screenshotElement(page, observer.locator("canvas"));
+  const groundGlassScreenshot = await screenshotElement(page, groundGlass);
   const observerPixels = await analyzeScreenshot(page, observerScreenshot);
   const groundGlassPixels = await analyzeScreenshot(page, groundGlassScreenshot);
   expect(observerPixels.contentful).toBe(true);
