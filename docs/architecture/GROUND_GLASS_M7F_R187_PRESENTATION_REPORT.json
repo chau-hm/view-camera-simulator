@@ -1,13 +1,21 @@
 {
   "schemaVersion": 1,
   "reportId": "ground-glass-m7f-r187-presentation",
-  "evaluatorRevision": "m7f-r187-presentation-evaluator-v1",
+  "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+  "m6ImplementationEvidenceRevision": "m6-architecture-rise-native-presentation-r187-v1",
   "replayMode": "offline-persisted-json-evidence",
   "replayHasNoLiveBrowserOrGpu": true,
-  "sourceCommitSha": "b10118bd0f656296451520ba10f4d32347a9a552",
-  "replayCodeCommitSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+  "nativeCaptureSourceSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+  "sourceCommitVerification": {
+    "verified": true,
+    "error": null
+  },
+  "replayCodeCommitSha": "b572ce657e9a6ebdf06bcf32c3a8553e34e9cc52",
+  "reportGenerationCommitSha": "b572ce657e9a6ebdf06bcf32c3a8553e34e9cc52",
   "testInvocation": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npx playwright test src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"native M6\"",
+  "evidenceReadIssues": [],
   "qualificationStatus": "passed",
+  "qualificationPass": true,
   "runtimeIdentity": {
     "threePackageVersion": "0.187.0",
     "rendererRevision": "r187",
@@ -16746,7 +16754,8 @@
     }
   ],
   "limitations": [
-    "Offline replay recomputes recorded numerical expectations and event contracts; it does not reproduce GPU execution.",
+    "Offline replay recomputes persisted numerical expectations and event contracts; it does not reproduce GPU execution.",
+    "The native capture source SHA is preserved independently from the replay implementation and report-generation commit.",
     "Physical overlay evidence is limited to the controlled M6B calibration fixture.",
     "M5Q photographic quality remains separately qualified and is not promoted by M6 presentation conformance."
   ]
