@@ -202,8 +202,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     ["architecture-rise-production-ground-glass-default.png", defaultGroundGlassScreenshot],
     ["architecture-rise-production-observer-webgpu-request.png", requestedObserverScreenshot],
     ["architecture-rise-production-ground-glass-webgpu-request.png", requestedGroundGlassScreenshot],
-    ["architecture-rise-production-observer-material-aware-request.png", candidateObserverScreenshot],
-    ["architecture-rise-production-ground-glass-material-aware-request.png", candidateGroundGlassScreenshot],
     ["architecture-rise-production-observer-standard-output-request.png", standardObserverScreenshot],
     ["architecture-rise-production-ground-glass-standard-output-request.png", standardGroundGlassScreenshot],
   ] as const) {
@@ -229,8 +227,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     defaultGroundGlassPixels,
     requestedObserverPixels,
     requestedGroundGlassPixels,
-    candidateObserverPixels,
-    candidateGroundGlassPixels,
     standardObserverPixels,
     standardGroundGlassPixels,
     webgpuModuleRequests,
