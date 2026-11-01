@@ -10,19 +10,20 @@ import {
 import {
   createGroundGlassM6bCalibrationSource,
   fingerprintGroundGlassM6bPresentationState,
+  GROUND_GLASS_M6B_SOURCE_HEIGHT_PX,
+  GROUND_GLASS_M6B_SOURCE_WIDTH_PX,
   GROUND_GLASS_M6C_ALPHA_MATRIX,
 } from "../groundGlassPhysicalOverlayConformance";
 import { mapGroundGlassInspectionWindowToRttSourceCrop } from "../groundGlassInspectionWindow";
 import {
   encodeGroundGlassLinearChannelToSrgb,
   evaluateGroundGlassPresentationReference,
-  type GroundGlassPresentationRgba,
 } from "./groundGlassPresentationReference";
 import type { GroundGlassM6cReadbackIdentity } from "../groundGlassM6cAlphaConformance";
 import type { GroundGlassPresentationNodeState } from "./groundGlassPresentationNodes";
 import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "./groundGlassRawWebGpuCompatibility";
 
-export const GROUND_GLASS_M7F_EVALUATOR_REVISION = "m7f-r187-presentation-evaluator-v1";
+export const GROUND_GLASS_M7F_EVALUATOR_REVISION = "m7f-r187-presentation-evaluator-v2";
 export const GROUND_GLASS_M7F_REPORT_ID = "ground-glass-m7f-r187-presentation";
 export const GROUND_GLASS_M7F_PRESENTATION_EVIDENCE_REVISION =
   "m6-architecture-rise-native-presentation-r187-v1";
@@ -86,6 +87,63 @@ export type GroundGlassM7fPresentationEvaluation = Readonly<{
   }>;
   inventoryConsistent: boolean;
 }>;
+
+export const isGroundGlassM7fQualificationPass = (input: Readonly<{
+  evaluation: GroundGlassM7fPresentationEvaluation;
+  qualificationStatus: string;
+  sourceCommitVerified: boolean;
+  evidenceReadIssues: readonly unknown[];
+}>): boolean => {
+  const { evaluation } = input;
+  if (typeof evaluation !== "object" || evaluation === null) return false;
+  const declaredCounts = asRecord(evaluation.declaredCounts);
+  const computedCounts = asRecord(evaluation.computedCounts);
+  const scenarioRecords = asArray(evaluation.scenarios).map(asRecord);
+  const decisions = asRecord(evaluation.decisions);
+  if (!declaredCounts || !computedCounts || !decisions) return false;
+  const scenariosMatch = scenarioRecords.length === GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS.length &&
+    scenarioRecords.every((scenario, index) => {
+      if (!scenario) return false;
+      const identity = asRecord(scenario.runtimeIdentity);
+      const nativeExecutionExpected = scenario.id !== "production-webgl-isolation" &&
+        scenario.id !== "unsupported-scene-denied";
+      const nativeIdentityValid = !nativeExecutionExpected || (
+        identity?.threePackageVersion === "0.187.0" &&
+        (identity.rendererRevision === "r187" || identity.rendererRevision === "187") &&
+        identity.rendererFamily === "webgpu-renderer" &&
+        (identity.actualExecutionApi === "webgpu" || identity.executionApi === "webgpu") &&
+        identity.internalFallback === "none" && identity.browserProject === "chrome-native-webgpu" &&
+        text(identity.operatingSystem) && text(identity.nodeVersion)
+      );
+      return scenario.id === GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS[index] &&
+        scenario.status === "passed" && Array.isArray(scenario.issues) && scenario.issues.length === 0 &&
+        validSha(scenario.sourceCommitSha) && scenario.sourceCommitSha === evaluation.sourceCommitSha &&
+        text(scenario.testInvocation) && Array.isArray(scenario.supportingArtifacts) &&
+        scenario.supportingArtifacts.length > 0 && nativeIdentityValid;
+    });
+  return input.qualificationStatus === "passed" &&
+    input.sourceCommitVerified === true && Array.isArray(input.evidenceReadIssues) && input.evidenceReadIssues.length === 0 &&
+    evaluation.reportId === GROUND_GLASS_M7F_REPORT_ID &&
+    evaluation.evaluatorRevision === GROUND_GLASS_M7F_EVALUATOR_REVISION &&
+    validSha(evaluation.sourceCommitSha) &&
+    evaluation.inventoryConsistent === true &&
+    scenariosMatch &&
+    declaredCounts.passed === GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS.length &&
+    computedCounts.passed === GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS.length &&
+    declaredCounts.failed === 0 && computedCounts.failed === 0 &&
+    declaredCounts.blocked === 0 && computedCounts.blocked === 0 &&
+    declaredCounts["not-run"] === 0 && computedCounts["not-run"] === 0 &&
+    decisions.implementationConformance === "passed" &&
+    decisions.spatialConformance === "passed" &&
+    decisions.finalRgbConformance === "passed" &&
+    decisions.opaqueAlphaConformance === "passed" &&
+    decisions.lifecycleConformance === "passed" &&
+    decisions.productionIsolation === "passed" &&
+    decisions.m6DevelopmentAuthorization === true &&
+    decisions.photographicQuality === "unqualified" &&
+    decisions.productionWebGpuEnabled === false &&
+    decisions.m8M9Authorized === false && decisions.m5qChanged === false;
+};
 
 export type GroundGlassM7fPresentationEvidenceBundle = Readonly<{
   schemaVersion: number;
@@ -465,26 +523,64 @@ const m6bRgbIssues = (artifact: JsonRecord | null): string[] => {
       issues.push(`rgb-sample-inventory-incomplete:${name}`);
     }
     const crop = asRecord(pixelCase.sourceCrop);
-    const expectedSourceFingerprint = crop
-      ? createGroundGlassM6bCalibrationSource({
-          inspectionWindow: mapGroundGlassInspectionWindowToRttSourceCrop(
-            crop as unknown as Parameters<typeof mapGroundGlassInspectionWindowToRttSourceCrop>[0],
-            state.previewMode,
-          ),
-          previewMode: state.previewMode,
-        }).sourceFingerprint
-      : null;
-    if (inputFingerprints.sourceData !== expectedSourceFingerprint) {
+    const outputSize = asRecord(oracle.outputDimensions);
+    const sourceSize = asRecord(oracle.sourceDimensions);
+    let sourceTexture: ReturnType<typeof createGroundGlassM6bCalibrationSource> | null = null;
+    try {
+      sourceTexture = crop
+        ? createGroundGlassM6bCalibrationSource({
+            inspectionWindow: mapGroundGlassInspectionWindowToRttSourceCrop(
+              crop as unknown as Parameters<typeof mapGroundGlassInspectionWindowToRttSourceCrop>[0],
+              state.previewMode,
+            ),
+            previewMode: state.previewMode,
+          })
+        : null;
+    } catch {
+      issues.push(`rgb-source-fixture-reconstruction-failed:${name}`);
+    }
+    if (!sourceTexture || inputFingerprints.sourceData !== sourceTexture.sourceFingerprint) {
       issues.push(`rgb-source-fingerprint-mismatch:${name}`);
+    }
+    if (!sourceTexture) continue;
+    if (!sourceSize || Number(sourceSize.widthPx) !== GROUND_GLASS_M6B_SOURCE_WIDTH_PX ||
+        Number(sourceSize.heightPx) !== GROUND_GLASS_M6B_SOURCE_HEIGHT_PX ||
+        Number(sourceSize.widthPx) !== sourceTexture?.widthPx ||
+        Number(sourceSize.heightPx) !== sourceTexture?.heightPx) {
+      issues.push(`rgb-source-dimensions-do-not-match-deterministic-fixture:${name}`);
+    }
+    const observedCapture = asArray(artifact.captures).map(asRecord)
+      .find((capture) => capture?.captureId === pixelCase.captureId) ?? null;
+    const spatialInput = asArray(artifact.spatialConformanceInputs).map(asRecord)
+      .find((capture) => capture?.captureId === pixelCase.captureId) ?? null;
+    const targetSize = asArray(observedCapture?.targetSizePx);
+    const recordedOutputSize = asArray(observedCapture?.outputSizePx);
+    const internalTargetSize = asRecord(spatialInput?.internalTargetSizePx);
+    const displaySize = asRecord(spatialInput?.displaySizePx);
+    const persistedOracle = asRecord(artifact.pixelOracle);
+    const persistedOutputSize = asRecord(persistedOracle?.outputDimensions);
+    const persistedSourceSize = asRecord(persistedOracle?.sourceDimensions);
+    const hasObservedSpatialCapture = observedCapture !== null || spatialInput !== null;
+    if (!outputSize || !finite(outputSize.widthPx) || !finite(outputSize.heightPx) ||
+        !persistedOutputSize || Number(outputSize.widthPx) !== Number(persistedOutputSize.widthPx) ||
+        Number(outputSize.heightPx) !== Number(persistedOutputSize.heightPx) ||
+        !persistedSourceSize || Number(persistedSourceSize.widthPx) !== sourceTexture.widthPx ||
+        Number(persistedSourceSize.heightPx) !== sourceTexture.heightPx ||
+        (hasObservedSpatialCapture && (!observedCapture || !spatialInput || targetSize.length !== 2 ||
+          recordedOutputSize.length !== 2 ||
+          Number(targetSize[0]) !== internalTargetSize?.widthPx ||
+          Number(targetSize[1]) !== internalTargetSize?.heightPx ||
+          Number(recordedOutputSize[0]) !== Number(outputSize.widthPx) ||
+          Number(recordedOutputSize[1]) !== Number(outputSize.heightPx) ||
+          Number(displaySize?.widthPx) !== Number(outputSize.widthPx) ||
+          Number(displaySize?.heightPx) !== Number(outputSize.heightPx) ||
+          !equalJson(pixelCase.sourceCrop, observedCapture.crop) ||
+          !equalJson(pixelCase.sourceCrop, spatialInput.crop) ||
+          state.previewMode !== observedCapture.previewMode || state.previewMode !== spatialInput.previewMode))) {
+      issues.push(`rgb-capture-dimensions-invalid:${name}`);
     }
     const sampleIds = new Set<string>();
     const stateErrors: number[] = [];
-    const outputSize = asRecord(oracle.outputDimensions);
-    const sourceSize = asRecord(oracle.sourceDimensions);
-    if (!outputSize || !finite(outputSize.widthPx) || !finite(outputSize.heightPx) ||
-        !sourceSize || !finite(sourceSize.widthPx) || !finite(sourceSize.heightPx)) {
-      issues.push(`rgb-capture-dimensions-invalid:${name}`);
-    }
     for (const sample of samples) {
       const id = sample.id;
       if (!text(id) || sampleIds.has(id)) issues.push(`rgb-sample-identity-invalid:${name}`);
@@ -495,25 +591,63 @@ const m6bRgbIssues = (artifact: JsonRecord | null): string[] => {
         identityPairs.add(pair);
       }
       const displayUv = asRecord(sample.displayUvTopOrigin);
+      const displayPixel = asRecord(sample.displayPixel);
       const inputRgba = asArray(sample.inputLinearRgba);
       const measuredRgba = asArray(sample.measuredSrgbRgba);
-      if (!displayUv || !finite(displayUv.u) || !finite(displayUv.v) || inputRgba.length !== 4 ||
+      if (!displayUv || !finite(displayUv.u) || !finite(displayUv.v) ||
+          !displayPixel || !finite(displayPixel.x) || !finite(displayPixel.y) ||
+          !outputSize || !finite(outputSize.widthPx) || !finite(outputSize.heightPx) ||
+          !Number.isInteger(displayPixel.x) || !Number.isInteger(displayPixel.y) ||
+          Number(displayPixel.x) < 0 || Number(displayPixel.x) >= Number(outputSize.widthPx) ||
+          Number(displayPixel.y) < 0 || Number(displayPixel.y) >= Number(outputSize.heightPx) ||
+          inputRgba.length !== 4 ||
           inputRgba.some((value) => !finite(value)) || measuredRgba.length !== 4 ||
           measuredRgba.some((value) => !finite(value) || Number(value) < 0 || Number(value) > 255)) {
         issues.push(`rgb-sample-values-invalid:${name}:${String(id)}`);
         continue;
       }
+      const displayUvFromPixel = {
+        u: (Number(displayPixel.x) + 0.5) / Number(outputSize.widthPx),
+        v: (Number(displayPixel.y) + 0.5) / Number(outputSize.heightPx),
+      };
+      if (!close(Number(displayUv.u), displayUvFromPixel.u) || !close(Number(displayUv.v), displayUvFromPixel.v)) {
+        issues.push(`rgb-display-pixel-coordinate-mismatch:${name}:${String(id)}`);
+      }
       const reference = evaluateGroundGlassPresentationReference({
-        displayUvTopOrigin: { u: Number(displayUv.u), v: Number(displayUv.v) },
+        displayUvTopOrigin: displayUvFromPixel,
         previewMode: state.previewMode,
         filmWindow: state.coverage.filmWindow,
         coverage: state.coverage,
         naturalIllumination: state.naturalIllumination,
         throughputGain: state.throughputGain,
-        sampleSource: () => inputRgba as unknown as GroundGlassPresentationRgba,
+        sampleSource: (sourceUv) => {
+          const x = Math.max(0, Math.min(sourceTexture.widthPx - 1, Math.floor(sourceUv.u * sourceTexture.widthPx)));
+          const y = Math.max(0, Math.min(sourceTexture.heightPx - 1, Math.floor(sourceUv.v * sourceTexture.heightPx)));
+          const offset = (y * sourceTexture.widthPx + x) * 4;
+          return [sourceTexture.rgba[offset], sourceTexture.rgba[offset + 1],
+            sourceTexture.rgba[offset + 2], sourceTexture.rgba[offset + 3]];
+        },
       });
       const recordedSourceUv = asRecord(sample.sourceUvTopOrigin);
       const recordedFilmPoint = asRecord(sample.physicalFilmPointMm);
+      const recordedSourceTexel = asRecord(sample.sourceTexelPx);
+      const sourceTexel = {
+        x: Math.max(0, Math.min(sourceTexture.widthPx - 1,
+          Math.floor(reference.sourceUvTopOrigin.u * sourceTexture.widthPx))),
+        y: Math.max(0, Math.min(sourceTexture.heightPx - 1,
+          Math.floor(reference.sourceUvTopOrigin.v * sourceTexture.heightPx))),
+      };
+      const sourceOffset = (sourceTexel.y * sourceTexture.widthPx + sourceTexel.x) * 4;
+      const reconstructedInput = [sourceTexture.rgba[sourceOffset], sourceTexture.rgba[sourceOffset + 1],
+        sourceTexture.rgba[sourceOffset + 2], sourceTexture.rgba[sourceOffset + 3]];
+      if (!recordedSourceTexel || Number(recordedSourceTexel.x) !== sourceTexel.x ||
+          Number(recordedSourceTexel.y) !== sourceTexel.y) {
+        issues.push(`rgb-source-texel-mapping-invalid:${name}:${String(id)}`);
+      }
+      if (reconstructedInput.some((value, channel) => !close(Number(inputRgba[channel]), value)) ||
+          reference.inputLinearRgba.some((value, channel) => !close(Number(inputRgba[channel]), value))) {
+        issues.push(`rgb-source-sample-does-not-match-deterministic-fixture:${name}:${String(id)}`);
+      }
       if (!recordedSourceUv || !close(Number(recordedSourceUv.u), reference.sourceUvTopOrigin.u) ||
           !close(Number(recordedSourceUv.v), reference.sourceUvTopOrigin.v)) {
         issues.push(`rgb-orientation-or-crop-origin-invalid:${name}:${String(id)}`);
@@ -537,6 +671,22 @@ const m6bRgbIssues = (artifact: JsonRecord | null): string[] => {
         issues.push(`rgb-linear-output-or-gain-invalid:${name}:${String(id)}`);
       }
       if (measuredRgba[3] !== 255) issues.push(`rgb-visible-canvas-not-opaque:${name}:${String(id)}`);
+      if (id === "nearest-edge-saturated-red") {
+        const boundary = sourceTexture.samplingBoundaries.find((item) => item.id === id);
+        if (!boundary || sourceTexel.x !== boundary.expectedNearestTexel.x ||
+            sourceTexel.y !== boundary.expectedNearestTexel.y) {
+          issues.push(`rgb-nearest-boundary-texel-invalid:${name}`);
+        } else {
+          const expectedOffset = (boundary.expectedNearestTexel.y * sourceTexture.widthPx + boundary.expectedNearestTexel.x) * 4;
+          const adjacentOffset = (boundary.adjacentTexel.y * sourceTexture.widthPx + boundary.adjacentTexel.x) * 4;
+          const expectedTexel = Array.from(sourceTexture.rgba.slice(expectedOffset, expectedOffset + 4));
+          const adjacentTexel = Array.from(sourceTexture.rgba.slice(adjacentOffset, adjacentOffset + 4));
+          if (reconstructedInput.some((value, channel) => !close(value, expectedTexel[channel])) ||
+              expectedTexel.every((value, channel) => value === adjacentTexel[channel])) {
+            issues.push(`rgb-nearest-boundary-sampling-not-distinguished:${name}`);
+          }
+        }
+      }
       const measuredErrors = asArray(sample.absoluteChannelError);
       if (measuredErrors.length !== 3 || errors.some((value, channel) => Number(measuredErrors[channel]) !== value)) {
         issues.push(`rgb-recorded-error-disagrees-with-observation:${name}:${String(id)}`);
@@ -825,27 +975,130 @@ const lifecycleIssues = (
       }, "m6c-stale-request-latest"));
     }
   } else if (id === "presentation-stale-resize") {
-    if (!text(artifact.staleRequestId) || !text(artifact.latestRequestId) ||
-        artifact.staleRequestId === artifact.latestRequestId || artifact.staleRequestPublished !== false ||
-        artifact.latestRequestPublished !== true) issues.push("stale-presentation-result-published-or-current-missing");
-    const currentResult = events.find((event) => event.kind === "host-frame-result" && event.requestId === artifact.latestRequestId);
-    if (currentResult) {
-      issues.push(...nativeRuntimeEventIssues(events, {
-        attemptId: currentResult.attemptId,
-        requestId: currentResult.requestId,
-        channelId: currentResult.channelId,
-        sceneId: currentResult.sceneId,
-        generationId: currentResult.generationId,
-      }, "presentation-stale-resize"));
+    const staleRequestId = artifact.staleRequestId;
+    const latestRequestId = artifact.latestRequestId;
+    if (!text(staleRequestId) || !text(latestRequestId) || staleRequestId === latestRequestId) {
+      issues.push("stale-presentation-request-identity-invalid");
     } else {
-      issues.push("presentation-stale-resize-latest-frame-event-missing");
+      const sequenced = events.map((event, index) => ({ event, index, sequence: event.sequence }));
+      if (sequenced.some(({ sequence }) => !finite(sequence) || !Number.isInteger(sequence)) ||
+          sequenced.some((item, index) => index > 0 && Number(sequenced[index - 1].sequence) >= Number(item.sequence))) {
+        issues.push("presentation-stale-resize-event-order-invalid");
+      }
+      // The first event for the latest request is the observable boundary after which
+      // a stale completion must be explicitly rejected by the host.
+      const latestBoundary = sequenced.findIndex(({ event }) => event.requestId === latestRequestId);
+      if (latestBoundary < 0) issues.push("presentation-stale-resize-latest-request-boundary-missing");
+      const afterBoundary = latestBoundary < 0 ? [] : sequenced.slice(latestBoundary + 1);
+      const host = asRecord(artifact.host);
+      const hostIdentity = {
+        channelId: host?.["data-frame-channel-id"],
+        sceneId: host?.["data-frame-scene-id"],
+        generationId: host?.["data-renderer-generation"],
+        hostId: events.find((event) => event.kind === "renderer-mounted" &&
+          event.generationId === host?.["data-renderer-generation"])?.hostId,
+      };
+      const staleFrameCompletions = afterBoundary.filter(({ event }) =>
+        event.kind === "frame-completed" && event.requestId === staleRequestId);
+      const postBoundaryHostResults = afterBoundary.filter(({ event }) => event.kind === "host-frame-result");
+      if (postBoundaryHostResults.some(({ event }) => event.acceptedByHost === true &&
+          event.requestId !== latestRequestId)) {
+        issues.push("stale-frame-accepted-after-latest-request");
+      }
+      if (postBoundaryHostResults.some(({ event }) => event.latestAcceptedRequestId !== latestRequestId)) {
+        issues.push("stale-host-event-contradicts-latest-accepted-request");
+      }
+      for (const completion of staleFrameCompletions) {
+        const hostOutcome = afterBoundary.find(({ event, sequence }) => event.kind === "host-frame-result" &&
+          event.requestId === staleRequestId && Number(sequence) > Number(completion.sequence));
+        if (completion.event.generationId !== hostIdentity.generationId ||
+            !hostOutcome || hostOutcome.event.acceptedByHost !== false ||
+            hostOutcome.event.latestAcceptedRequestId !== latestRequestId ||
+            hostOutcome.event.attemptId !== completion.event.attemptId ||
+            hostOutcome.event.channelId !== hostIdentity.channelId ||
+            hostOutcome.event.sceneId !== hostIdentity.sceneId ||
+            hostOutcome.event.generationId !== hostIdentity.generationId ||
+            hostOutcome.event.hostId !== hostIdentity.hostId ||
+            hostOutcome.event.activeGenerationId !== hostIdentity.generationId ||
+            hostOutcome.event.activeRendererFamily !== "webgpu-renderer") {
+          issues.push("stale-frame-completion-host-rejection-missing");
+        }
+      }
+      const observedStaleCompletion = events.some((event) => event.kind === "frame-completed" &&
+        event.requestId === staleRequestId);
+      const observedLatestCompletion = events.some((event) => event.kind === "frame-completed" &&
+        event.requestId === latestRequestId);
+      if (artifact.staleRequestPublished !== observedStaleCompletion ||
+          artifact.latestRequestPublished !== observedLatestCompletion) {
+        issues.push("stale-presentation-summary-disagrees-with-observed-frame-completions");
+      }
+      const latestQueue = sequenced.find(({ event }) => event.kind === "queue-completion-settled" &&
+        event.requestId === latestRequestId && event.operation === "sceneRender");
+      const latestCompletion = sequenced.find(({ event }) => event.kind === "frame-completed" &&
+        event.requestId === latestRequestId);
+      const currentResult = sequenced.find(({ event }) => event.kind === "host-frame-result" &&
+        event.requestId === latestRequestId && event.acceptedByHost === true);
+      const runtime = sequenced.find(({ event }) => event.kind === "runtime-observed" &&
+        event.generationId === hostIdentity.generationId);
+      const mounted = sequenced.find(({ event }) => event.kind === "renderer-mounted" &&
+        event.generationId === hostIdentity.generationId);
+      if (!latestQueue || !latestCompletion || !currentResult || !runtime || !mounted ||
+          Number(runtime.sequence) >= Number(mounted.sequence) ||
+          Number(mounted.sequence) >= Number(latestQueue.sequence) ||
+          Number(latestQueue.sequence) >= Number(latestCompletion.sequence) ||
+          Number(latestCompletion.sequence) >= Number(currentResult.sequence)) {
+        issues.push("presentation-stale-resize-current-publication-order-invalid");
+      }
+      if (latestQueue && latestCompletion && currentResult &&
+          (latestQueue.event.attemptId !== currentResult.event.attemptId ||
+           latestCompletion.event.attemptId !== currentResult.event.attemptId ||
+           latestQueue.event.generationId !== currentResult.event.generationId ||
+           latestCompletion.event.generationId !== currentResult.event.generationId)) {
+        issues.push("presentation-stale-resize-current-generation-chain-mismatch");
+      }
+      const currentAcceptedResults = postBoundaryHostResults.filter(({ event }) => event.acceptedByHost === true);
+      if (currentAcceptedResults.some(({ event, sequence }) =>
+        event.requestId !== latestRequestId || event.frameStatus !== "completed" ||
+        event.channelId !== hostIdentity.channelId || event.sceneId !== hostIdentity.sceneId ||
+        event.generationId !== hostIdentity.generationId || event.hostId !== hostIdentity.hostId ||
+        event.latestAcceptedRequestId !== latestRequestId || event.latestAcceptedSceneId !== hostIdentity.sceneId ||
+        event.activeGenerationId !== hostIdentity.generationId || event.activeRendererFamily !== "webgpu-renderer" ||
+        !latestCompletion || event.attemptId !== latestCompletion.event.attemptId ||
+        Number(sequence) <= Number(latestCompletion?.sequence))) {
+        issues.push("presentation-stale-resize-host-acceptance-contradicts-current-frame");
+      }
+      if (!host || host["data-frame-request-id"] !== latestRequestId ||
+          host["data-last-completed-request-id"] !== latestRequestId ||
+          host["data-frame-result-status"] !== "completed") {
+        issues.push("presentation-stale-resize-host-snapshot-not-current");
+      }
+      if (currentResult) {
+        const event = currentResult.event;
+        if (event.channelId !== hostIdentity.channelId || event.sceneId !== hostIdentity.sceneId ||
+            event.generationId !== hostIdentity.generationId || event.hostId !== hostIdentity.hostId ||
+            event.latestAcceptedRequestId !== latestRequestId ||
+            event.latestAcceptedSceneId !== hostIdentity.sceneId ||
+            event.activeGenerationId !== hostIdentity.generationId ||
+            event.activeRendererFamily !== "webgpu-renderer") {
+          issues.push("presentation-stale-resize-current-host-identity-mismatch");
+        }
+        issues.push(...nativeRuntimeEventIssues(events, {
+          attemptId: event.attemptId,
+          requestId: latestRequestId,
+          channelId: hostIdentity.channelId,
+          sceneId: hostIdentity.sceneId,
+          generationId: hostIdentity.generationId,
+        }, "presentation-stale-resize"));
+      } else {
+        issues.push("presentation-stale-resize-latest-frame-event-missing");
+      }
+      issues.push(...acceptedFrameIssues(events, {
+        requestId: latestRequestId,
+        channelId: hostIdentity.channelId,
+        sceneId: hostIdentity.sceneId,
+        generationId: hostIdentity.generationId,
+      }, "presentation-stale-resize-latest"));
     }
-    issues.push(...acceptedFrameIssues(events, {
-      requestId: artifact.latestRequestId,
-      channelId: asRecord(artifact.host)?.["data-frame-channel-id"],
-      sceneId: asRecord(artifact.host)?.["data-frame-scene-id"],
-      generationId: asRecord(artifact.host)?.["data-renderer-generation"],
-    }, "presentation-stale-resize-latest"));
   } else {
     const failure = events.find((event) => event.kind === "failure");
     const cleanup = events.find((event) => event.kind === "cleanup" && event.outcome === "confirmed");
@@ -1032,7 +1285,7 @@ export const evaluateGroundGlassM7fPresentationEvidence = (
     const runtimeIdentity = nativeRuntime ? {
       ...nativeRuntime,
       browserProject: provenance?.browserProject ?? artifact?.testProject ?? null,
-      browserVersion: artifact?.browserVersion ?? null,
+      browserVersion: artifact?.browserVersion ?? provenance?.browserVersion ?? null,
       operatingSystem: artifact?.operatingSystem ?? provenance?.operatingSystem ?? null,
       nodeVersion: provenance?.nodeVersion ?? null,
       threePackageVersion: provenance?.threePackageVersion ?? null,

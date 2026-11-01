@@ -113,3 +113,9 @@ M9, and production WebGPU unqualified.
 ## M7F authorization decision
 
 The implementation uses a distinct, initially `not-evaluated` r187 M6 compatibility entry. The qualification harness can gather evidence only for the exact Architecture Rise request in a development build with the M3 Raw, M6 presentation, test seam, and r187 qualification controls. On r187 the M6 request passes `["raw-rtt"]` as its renderer request feature set and uses the existing r187 M3 compatibility record. M4 and M5 pass authorization remains tied to their separate r187 research records and the exact M6 qualification session. A completed M6 report cannot select or retry a renderer, promote M4/M5, qualify M5Q, enable M8/M9, or enable production WebGPU.
+
+## Review-Fix Round 1 — Replay integrity corrections
+
+This review-fix did not change the architecture audit or native capture set. It corrected the offline evaluator and command around four reproduced failures: incomplete replay could exit successfully; a contradictory stale host acceptance could pass based on a false summary; M6B RGB replay trusted persisted input colors; and the M6 policy record understated the 17-scenario inventory.
+
+The v2 evaluator now derives freshness from ordered event sequences and validates host rejection and current host publication identities. RGB replay regenerates the fixture texture and samples it from recorded display-pixel coordinates. The CLI reports parse and source-commit verification errors, writes a diagnostic report, and exits nonzero unless the exact complete inventory qualifies. The policy statement is 17/17 and is tested against the shared scenario inventory. Native measurements, M6 implementation, and all rendering thresholds are unchanged; evidence provenance retains capture SHA `b10118bd0f656296451520ba10f4d32347a9a552` independently from the replay-code and report-generation commits.

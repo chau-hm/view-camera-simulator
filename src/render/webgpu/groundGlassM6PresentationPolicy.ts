@@ -66,7 +66,7 @@ export const GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY: GroundGlassSceneCo
       runtimeDescription: "Three.js 0.187.0 native WebGPU presentation on Chrome 156.0.8078.76, Architecture Rise development pilot",
     },
     verificationEvidence: [
-      "M7F persisted native r187 presentation report: 16 of 16 scenarios passed",
+      "M7F persisted native r187 presentation report: 17 of 17 scenarios passed",
       "M6D five-case native opaque composite, M6B 14-state spatial and nine-state RGB, M6C alpha readback, and registered M3-M6 integration captures",
       "Photographic quality and M5Q remain independently unqualified for promotion",
     ],

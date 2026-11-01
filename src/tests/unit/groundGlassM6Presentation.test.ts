@@ -42,6 +42,7 @@ import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { createGroundGlassFrameRequest } from "../../render/groundGlassFrameRequest";
 import { createGroundGlassRequestInput } from "./groundGlassFrameRequestFixtures";
 import { resolveGroundGlassRawWebGpuPilotSessionId } from "../../render/webgpu/groundGlassRawWebGpuPolicyInput";
+import { GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS } from "../../render/webgpu/groundGlassM7fPresentationEvidence";
 
 const fullWindow = { active: false, centerU: 0.5, centerV: 0.5, widthFraction: 1, heightFraction: 1 };
 const filmWindow = { centerXMm: 0, centerYMm: 0, widthMm: 127, heightMm: 101.6 };
@@ -353,6 +354,14 @@ const makeRequest = (options: import("./groundGlassFrameRequestFixtures").Ground
   );
 
 describe("M6 development-only compatibility policy", () => {
+  it("keeps the M7F policy record scenario count aligned with its evaluator inventory", () => {
+    const feature = GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY.features[0];
+    if (!("verificationEvidence" in feature)) throw new Error("M7F compatibility record has no evidence summary");
+    expect(feature.verificationEvidence).toContain(
+      `M7F persisted native r187 presentation report: ${GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS.length} of ${GROUND_GLASS_M7F_REQUIRED_SCENARIO_IDS.length} scenarios passed`,
+    );
+  });
+
   it("requires the explicit development-only r187 qualification controls", () => {
     expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(m6R187QualificationFlags, "187")).toBe(true);
     expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(
