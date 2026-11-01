@@ -66,9 +66,8 @@ const analyzeScreenshot = async (page: Page, screenshot: Buffer) => page.evaluat
 }, screenshot.toString("base64"));
 
 const screenshotElement = async (page: Page, locator: Locator) => {
-  const box = await locator.evaluate(async (element) => {
+  const box = await locator.evaluate((element) => {
     element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const rect = element.getBoundingClientRect();
     return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
   });
