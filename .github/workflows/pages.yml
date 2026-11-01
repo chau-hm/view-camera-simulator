@@ -42,7 +42,10 @@ jobs:
         run: npm run test
 
       - name: Replay persisted M7F presentation evidence
-        run: npm run evidence:replay:m7f -- --report-output="$RUNNER_TEMP/m7f-presentation-replay.json"
+        run: |
+          M7F_REPLAY_REPORT="$GITHUB_WORKSPACE/.m7f-presentation-replay.json"
+          trap 'rm -f "$M7F_REPLAY_REPORT"' EXIT
+          npm run evidence:replay:m7f -- --report-output="$M7F_REPLAY_REPORT"
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
