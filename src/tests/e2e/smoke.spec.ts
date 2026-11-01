@@ -9,7 +9,8 @@ test("smoke: app boots at home", async ({ page }) => {
 });
 
 test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls", async ({ page }) => {
-  test.setTimeout(90_000);
+  // First WebGL RTT readiness varies substantially on hosted Linux runners.
+  test.setTimeout(150_000);
   await page.goto("/");
   await page.getByTestId("landing-hero-cta").click();
   await expect(page).toHaveURL(/\/scenes$/);
