@@ -46,6 +46,13 @@ const captureEvents = (capture: JsonRecord, ...path: string[]): JsonRecord[] => 
   for (const key of path) value = isRecord(value) ? value[key] : undefined;
   return arrayOfRecords(value);
 };
+const mutableCaptureEvents = (capture: JsonRecord, ...path: string[]): JsonRecord[] => {
+  let value: unknown = capture;
+  for (const key of path) value = isRecord(value) ? value[key] : undefined;
+  if (!Array.isArray(value)) throw new TypeError(`Expected event array at ${path.join(".")}`);
+  if (value.some((event) => !isRecord(event))) throw new TypeError(`Expected record events at ${path.join(".")}`);
+  return value as JsonRecord[];
+};
 
 const createEvidenceInput = (): JsonRecord => {
   const input: JsonRecord = {
@@ -202,7 +209,7 @@ describe("M7G consolidated r187 evidence integrity", () => {
     {
       name: "rejects failed resource cleanup reported as confirmed",
       expectedIssue: "predecessor-report-invalid:m7c",
-      m7cError: "cleanup-failure-fallback-contradiction:m7c-r187-adapter-disposal-failure",
+      m7cError: "cleanup-host-acknowledgement-contradiction:m7c-r187-adapter-disposal-failure",
       mutate: (input) => {
         const scenario = getScenario(m7c(input), "m7c-r187-adapter-disposal-failure");
         const cleanup = eventOf(scenario, "cleanup");
@@ -222,8 +229,9 @@ describe("M7G consolidated r187 evidence integrity", () => {
         const observation = getRecord(init, "observation");
         const generation = getRecord(observation, "identities").generationId;
         const events = captureEvents(observation, "runtime", "hostMountObservations");
-        const replacement = events.find((event) => event.kind === "renderer-mounted" && event.generationId !== generation);
         const ack = captureEvents(observation, "cleanup", "events").find((event) => event.kind === "cleanup-acknowledged" && event.generationId === generation);
+        const replacement = events.find((event) => event.kind === "renderer-mounted" && event.generationId !== generation &&
+          ack && Number(event.sequence) > Number(ack.sequence));
         if (!replacement || !ack) throw new Error("Missing cleanup/replacement events");
         replacement.sequence = Number(ack.sequence) - 1;
       },
@@ -233,9 +241,13 @@ describe("M7G consolidated r187 evidence integrity", () => {
       expectedIssue: "predecessor-report-invalid:m7c",
       m7cError: "latest-request-result-chain-contradiction:m7c-r187-latest-request-stale-rejection",
       mutate: (input) => {
-        const stale = eventOf(getScenario(m7c(input), "m7c-r187-latest-request-stale-rejection"), "host-frame-result");
-        const summary = getObservation(getScenario(m7c(input), "m7c-r187-latest-request-stale-rejection"), "latest-request-interleaving");
-        stale.requestId = getRecord(summary, "requests").staleRequestId;
+        const scenario = getScenario(m7c(input), "m7c-r187-latest-request-stale-rejection");
+        const summary = getObservation(scenario, "latest-request-interleaving");
+        const staleRequestId = getRecord(summary, "requests").staleRequestId;
+        const stale = arrayOfRecords(scenario.events).find((event) =>
+          event.kind === "host-frame-result" && event.requestId === staleRequestId && event.acceptedByHost === false,
+        );
+        if (!stale) throw new Error("Missing rejected stale host frame result");
         stale.acceptedByHost = true;
       },
     },
@@ -260,7 +272,8 @@ describe("M7G consolidated r187 evidence integrity", () => {
       expectedIssue: "stale-m5-result-published-or-r2-not-accepted:m7g-r187-held-m5-composite-latest-request",
       mutate: (input) => {
         const event = captureEvents(capture(input, "heldComposite"), "orderedEvents")
-          .find((candidate) => candidate.kind === "host-frame-result" && candidate.acceptedByHost === true);
+          .find((candidate) => candidate.kind === "host-frame-result" && candidate.requestId === capture(input, "heldComposite").r2RequestId &&
+            candidate.acceptedByHost === true);
         if (event) event.generationId = "retired-generation";
       },
     },
@@ -315,7 +328,7 @@ describe("M7G consolidated r187 evidence integrity", () => {
       name: "rejects duplicate cleanup after one test-induced device loss",
       expectedIssue: "duplicate-or-missing-cleanup:m7g-r187-test-destroyed-device-loss-promise",
       mutate: (input) => {
-        const events = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "cleanup", "events");
+        const events = mutableCaptureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "cleanup", "events");
         const cleanup = events.find((event) => event.kind === "cleanup");
         if (cleanup) events.push({ ...cleanup });
       },
@@ -361,9 +374,12 @@ describe("M7G consolidated r187 evidence integrity", () => {
       m7cError: "webgl-terminal-publication-after-terminal-failure:m7c-r187-terminal-webgl-remount",
       mutate: (input) => {
         const scenario = getScenario(m7c(input), "m7c-r187-terminal-webgl-remount");
-        const event = eventOf(scenario, "failure");
+        const observation = getObservation(scenario, "terminal-webgl-context-loss");
+        const failureSequence = Number(observation.failureSequence);
+        const currentMaxSequence = Math.max(...arrayOfRecords(scenario.events).map((event) => Number(event.sequence)));
         scenario.events = [...arrayOfRecords(scenario.events), {
-          kind: "host-frame-result", acceptedByHost: true, sequence: Number(event.sequence) + 1,
+          kind: "host-frame-result", acceptedByHost: true,
+          sequence: Math.max(failureSequence, currentMaxSequence) + 1,
         }];
       },
     },

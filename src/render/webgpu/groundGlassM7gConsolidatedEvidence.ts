@@ -147,6 +147,8 @@ const validateConfirmedFallback = (capture: JsonRecord, id: string, issues: stri
   const acknowledgementSequence = seq(hostAck?.sequence);
   const fallbackMount = mountEvents.find((event) => event.kind === "renderer-mounted" &&
     event.rendererFamily === "webgl-renderer" && event.generationId !== generationId &&
+    event.requestId === identity?.requestId && event.channelId === identity?.channelId &&
+    event.hostId === identity?.hostId && event.sceneId === identity?.sceneId &&
     acknowledgementSequence !== null && (seq(event.sequence) ?? -1) > acknowledgementSequence);
   const replacementSequence = seq(fallbackMount?.sequence);
   const latestPublication = lifecycleEvents.find((event) => event.kind === "host-frame-result" &&
