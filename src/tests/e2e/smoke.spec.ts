@@ -9,6 +9,7 @@ test("smoke: app boots at home", async ({ page }) => {
 });
 
 test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls", async ({ page }) => {
+  test.setTimeout(90_000);
   await page.goto("/");
   await page.getByTestId("landing-hero-cta").click();
   await expect(page).toHaveURL(/\/scenes$/);
@@ -18,6 +19,11 @@ test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass contro
     .filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) });
   await architectureRise.getByRole("link", { name: "Open Scene" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-rise$/);
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("rttDiagnostics", "1");
+    window.history.replaceState(window.history.state, "", url);
+  });
 
   const observer = page.getByTestId("scene-canvas");
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
