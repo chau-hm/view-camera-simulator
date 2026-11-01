@@ -1,5 +1,5 @@
 export const GROUND_GLASS_M7H_REPORT_ID = "ground-glass-m7h-broad-e2e-triage" as const;
-export const GROUND_GLASS_M7H_EVALUATOR_REVISION = "m7h-broad-e2e-triage-evaluator-v1" as const;
+export const GROUND_GLASS_M7H_EVALUATOR_REVISION = "m7h-broad-e2e-triage-evaluator-v2" as const;
 export const GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH =
   "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json" as const;
 export const GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256 =
@@ -67,7 +67,7 @@ export type GroundGlassM7hReproductionRun = Readonly<{
   workers: number;
   browserVersion: string;
   environmentFingerprint: string;
-  executionClassification: "ordinary-chromium-non-native";
+  executionClassification: "ordinary-chromium-non-native" | "production-preview-non-native";
   reportPath: string;
   reportSha256: string;
   comparableWith: string | null;
@@ -75,6 +75,7 @@ export type GroundGlassM7hReproductionRun = Readonly<{
 
 export type GroundGlassM7hFailureClassification = Readonly<{
   testId: string;
+  historicalOutcome: GroundGlassM7hRawOutcome;
   cohortId: string;
   originClassification: GroundGlassM7hOriginClassification;
   causeClassification: GroundGlassM7hCauseClassification;
@@ -273,8 +274,13 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
   const extractedById = new Map(extractedTests.map((test) => [test.testId, test]));
   for (const testValue of rawInventory) {
     const test = extractedById.get(string(testValue.testId));
-    if (!test || testValue.resultStatus !== test.resultStatus || testValue.specFile !== test.specFile ||
-        testValue.testTitle !== test.testTitle || testValue.projectName !== test.projectName ||
+    if (!test || [
+      "testId", "specFile", "testTitle", "projectName", "expectedStatus", "actualStatus",
+      "resultStatus", "retryCount", "durationMs", "errorMessage", "errorCategory",
+      "sourceArtifactSha256", "historicalSourceCommitSha",
+    ].some((key) => testValue[key] !== test[key as keyof typeof test]) ||
+        JSON.stringify(testValue.describePath) !== JSON.stringify(test.describePath) ||
+        JSON.stringify(testValue.attachments) !== JSON.stringify(test.attachments) ||
         testValue.sourceArtifactSha256 !== GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256) {
       issues.push("historical-inventory-outcome-does-not-match-source");
       break;
@@ -297,6 +303,8 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
   const validConfidence = new Set<string>(GROUND_GLASS_M7H_CONFIDENCE_LEVELS);
   const validRemediation = new Set(["unchanged", "test-contract-updated", "harness-updated", "partially-addressed", "unresolved"]);
   const artifactIssues = new Set<string>();
+  const classifiedCauseCounts: Record<string, number> = {};
+  const classifiedOriginCounts: Record<string, number> = {};
   for (const run of reproductionRuns) {
     const artifact = reproductionArtifacts[string(run.reportPath)];
     const raw = isRecord(artifact?.report) ? artifact.report : {};
@@ -307,12 +315,15 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
     const commandWorkers = typeof run.invocation === "string"
       ? run.invocation.match(/--workers(?:=|\s+)(\d+)/)?.[1]
       : null;
+    const nonNativeProjectIdentity = (run.projectName === "chromium" &&
+      run.executionClassification === "ordinary-chromium-non-native") ||
+      (run.projectName === "chromium-production-preview" &&
+        run.executionClassification === "production-preview-non-native");
     if (!artifact || !sha256(run.reportSha256) || artifact.sha256 !== run.reportSha256 ||
         !sha(run.sourceCommitSha) || typeof run.invocation !== "string" || !run.invocation.trim() ||
-        run.projectName !== "chromium" || rawProjects.length !== 1 || rawProjects[0].id !== run.projectName ||
+        !nonNativeProjectIdentity || rawProjects.length !== 1 || rawProjects[0].id !== run.projectName ||
         !Number.isInteger(run.workers) || numeric(run.workers) <= 0 || rawConfig.workers !== run.workers ||
         !commandHasProject || commandWorkers !== String(run.workers) ||
-        run.executionClassification !== "ordinary-chromium-non-native" ||
         !string(run.browserVersion) || !string(run.environmentFingerprint)) {
       artifactIssues.add("reproduction-provenance-or-artifact-invalid");
     }
@@ -324,10 +335,13 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
     const confidence = entry.confidence;
     if (!sourceTest || !validOrigin.has(string(origin)) || !validCause.has(string(cause)) ||
         !validConfidence.has(string(confidence)) || !validRemediation.has(string(entry.remediationStatus)) ||
+        entry.historicalOutcome !== sourceTest.resultStatus ||
         entry.historicalErrorSignature !== sourceTest.errorCategory) {
       issues.push("failure-classification-schema-or-source-mismatch");
       continue;
     }
+    classifiedCauseCounts[string(cause)] = (classifiedCauseCounts[string(cause)] ?? 0) + 1;
+    classifiedOriginCounts[string(origin)] = (classifiedOriginCounts[string(origin)] ?? 0) + 1;
     if (confidence === "verified") counts.verified += 1;
     else if (confidence === "tentative" || confidence === "strongly-supported") counts.inferred += 1;
     else counts.unclassified += 1;
@@ -393,6 +407,35 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
     if (confidence === "unclassified" && cause !== "unknown") issues.push("unclassified-entry-has-specific-cause");
   }
   if (artifactIssues.size > 0) issues.push(...artifactIssues);
+
+  const classificationSummary = isRecord(report.classificationSummary) ? report.classificationSummary : {};
+  const declaredOriginCounts = isRecord(classificationSummary.byOrigin) ? classificationSummary.byOrigin : {};
+  const declaredCauseCounts = isRecord(classificationSummary.byCause) ? classificationSummary.byCause : {};
+  const declaredErrorCounts = isRecord(classificationSummary.byErrorCategory) ? classificationSummary.byErrorCategory : {};
+  const declaredSpecCounts = isRecord(classificationSummary.bySpec) ? classificationSummary.bySpec : {};
+  const computedErrorCounts: Record<string, number> = {};
+  const computedSpecCounts: Record<string, number> = {};
+  for (const test of extractedTests.filter((item) => item.resultStatus === "unexpected")) {
+    computedErrorCounts[test.errorCategory] = (computedErrorCounts[test.errorCategory] ?? 0) + 1;
+    computedSpecCounts[test.specFile] = (computedSpecCounts[test.specFile] ?? 0) + 1;
+  }
+  const matchesCounts = (declaredValue: JsonRecord, computedValue: Readonly<Record<string, number>>): boolean =>
+    Object.keys(declaredValue).length === Object.keys(computedValue).length &&
+    Object.entries(computedValue).every(([key, count]) => declaredValue[key] === count);
+  if (classificationSummary.failureCount !== counts.failureInventory ||
+      !matchesCounts(declaredOriginCounts, classifiedOriginCounts) ||
+      !matchesCounts(declaredCauseCounts, classifiedCauseCounts) ||
+      !matchesCounts(declaredErrorCounts, computedErrorCounts) ||
+      !matchesCounts(declaredSpecCounts, computedSpecCounts) ||
+      classificationSummary.verifiedFixed !== counts.verifiedFixed ||
+      classificationSummary.verifiedExistingOnBase !== counts.verifiedExistingOnBase ||
+      classificationSummary.verifiedIntroduced !== counts.verifiedIntroduced ||
+      classificationSummary.tentativeCohortMembers !== failureInventory.filter((entry) => entry.confidence === "tentative").length ||
+      classificationSummary.unclassified !== counts.unclassified ||
+      classificationSummary.partiallyAddressed !== counts.partiallyAddressed ||
+      classificationSummary.remediated !== counts.remediated) {
+    issues.push("classification-aggregate-counts-do-not-match-inventory");
+  }
 
   const discovery = isRecord(report.currentDiscovery) ? report.currentDiscovery : {};
   const discoveryArtifact = typeof discovery.artifactPath === "string"

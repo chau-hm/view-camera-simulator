@@ -19,20 +19,40 @@ const sourceReport = JSON.parse(sourceBytes.toString("utf8")) as Record<string, 
 const sourceTests = extractGroundGlassM7hPlaywrightTests(sourceReport, sourceSha);
 const sourceFailures = sourceTests.filter((test) => test.resultStatus === "unexpected");
 
-const baseReport = () => ({
-  schemaVersion: 1,
-  reportId: GROUND_GLASS_M7H_REPORT_ID,
-  evaluatorRevision: GROUND_GLASS_M7H_EVALUATOR_REVISION,
-  historicalReportPath: GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH,
-  historicalReportSha256: GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256,
-  historicalSourceCommitSha: GROUND_GLASS_M7H_HISTORICAL_SOURCE_SHA,
-  historicalCounts: {
-    declared: { discovered: 277, expected: 103, unexpected: 99, skipped: 75, flaky: 0 },
-    computed: { discovered: 277, expected: 103, unexpected: 99, skipped: 75, flaky: 0 },
-  },
-  historicalInventory: sourceTests,
-  failureInventory: sourceFailures.map((test) => ({
+const countBy = (entries: readonly Record<string, unknown>[], key: string): Record<string, number> =>
+  entries.reduce<Record<string, number>>((counts, entry) => {
+    const value = entry[key];
+    if (typeof value === "string") counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
+
+const summarizeClassifications = (entries: readonly Record<string, unknown>[]) => {
+  const sourceById = new Map(sourceTests.map((test) => [test.testId, test]));
+  const bySpec = entries.reduce<Record<string, number>>((counts, entry) => {
+    const specFile = sourceById.get(String(entry.testId))?.specFile;
+    if (specFile) counts[specFile] = (counts[specFile] ?? 0) + 1;
+    return counts;
+  }, {});
+  return {
+    failureCount: entries.length,
+    byOrigin: countBy(entries, "originClassification"),
+    byCause: countBy(entries, "causeClassification"),
+    byErrorCategory: countBy(entries, "historicalErrorSignature"),
+    bySpec,
+    verifiedFixed: entries.filter((entry) => entry.originClassification === "verified-fixed-on-head").length,
+    verifiedExistingOnBase: entries.filter((entry) => entry.originClassification === "verified-existing-on-base").length,
+    verifiedIntroduced: entries.filter((entry) => entry.originClassification === "verified-introduced-on-head").length,
+    tentativeCohortMembers: entries.filter((entry) => entry.confidence === "tentative").length,
+    unclassified: entries.filter((entry) => entry.confidence === "unclassified").length,
+    partiallyAddressed: entries.filter((entry) => entry.remediationStatus === "partially-addressed").length,
+    remediated: entries.filter((entry) => entry.remediationStatus === "test-contract-updated" || entry.remediationStatus === "harness-updated").length,
+  };
+};
+
+const baseReport = () => {
+  const failureInventory = sourceFailures.map((test) => ({
     testId: test.testId,
+    historicalOutcome: test.resultStatus,
     historicalErrorSignature: test.errorCategory,
     cohortId: "unclassified-historical-failure",
     originClassification: "not-compared",
@@ -43,28 +63,43 @@ const baseReport = () => ({
     reason: "The retained failure is inventoried, but this specific case has no comparable reproduction evidence.",
     remediationStatus: "unresolved",
     followUpRecommendation: "Select a representative or targeted case before assigning cause or regression origin.",
-  })),
-  reproductionRuns: [] as Array<Record<string, unknown>>,
-  currentDiscovery: {
-    disclosed: true,
-    discoveredTests: 278,
-    artifactPath: "docs/architecture/ground-glass-m7h-broad-e2e/validation/current-chromium-discovery.json",
-    artifactSha256: discoverySha,
-    command: "npm run test:e2e -- --project=chromium --list",
-    added: ["chromium::smoke.spec.ts::smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls"],
-    removed: [],
-    renamed: [],
-  },
-  productionIsolationControls: ["production-preview-webgl-only"],
-  broadE2eQualification: "not-qualified",
-  nativeWebGpuQualified: false,
-  authorization: {
-    m7Overall: "partially-qualified",
-    m8Entry: "denied",
-    productionGroundGlass: "WebGL-only",
-    productionWebGpuEnabled: false,
-  },
-});
+  }));
+  return {
+    schemaVersion: 1,
+    reportId: GROUND_GLASS_M7H_REPORT_ID,
+    evaluatorRevision: GROUND_GLASS_M7H_EVALUATOR_REVISION,
+    historicalReportPath: GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH,
+    historicalReportSha256: GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256,
+    historicalSourceCommitSha: GROUND_GLASS_M7H_HISTORICAL_SOURCE_SHA,
+    historicalCounts: {
+      declared: { discovered: 277, expected: 103, unexpected: 99, skipped: 75, flaky: 0 },
+      computed: { discovered: 277, expected: 103, unexpected: 99, skipped: 75, flaky: 0 },
+    },
+    historicalInventory: sourceTests,
+    failureInventory,
+    classificationSummary: summarizeClassifications(failureInventory),
+    reproductionRuns: [] as Array<Record<string, unknown>>,
+    currentDiscovery: {
+      disclosed: true,
+      discoveredTests: 278,
+      artifactPath: "docs/architecture/ground-glass-m7h-broad-e2e/validation/current-chromium-discovery.json",
+      artifactSha256: discoverySha,
+      command: "npm run test:e2e -- --project=chromium --list",
+      added: ["chromium::smoke.spec.ts::smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls"],
+      removed: [],
+      renamed: [],
+    },
+    productionIsolationControls: ["production-preview-webgl-only"],
+    broadE2eQualification: "not-qualified",
+    nativeWebGpuQualified: false,
+    authorization: {
+      m7Overall: "partially-qualified",
+      m8Entry: "denied",
+      productionGroundGlass: "WebGL-only",
+      productionWebGpuEnabled: false,
+    },
+  };
+};
 
 const digest = (value: unknown): string =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -166,6 +201,7 @@ const withFixedRevisionEvidence = () => {
     remediationStatus: "test-contract-updated",
     followUpRecommendation: "Keep native r186 evidence assertions fixed to their historical record.",
   });
+  report.classificationSummary = summarizeClassifications(report.failureInventory);
   return {
     report,
     artifacts: {
@@ -206,6 +242,14 @@ describe("M7H broad E2E triage evidence", () => {
     expect(evaluate({ ...report, currentDiscovery: { ...report.currentDiscovery, artifactSha256: discoverySha } }, { [discoveryPath]: { sha256: "0".repeat(64), report: currentDiscoveryArtifact } }).valid).toBe(false);
     const changedSource = { ...report, historicalSourceCommitSha: "1".repeat(40) };
     expect(evaluate(changedSource).valid).toBe(false);
+  });
+
+  it("rejects altered normalized historical outcomes", () => {
+    const report = baseReport();
+    const historicalInventory = report.historicalInventory.map((test, index) =>
+      index === 0 ? { ...test, actualStatus: test.actualStatus === "passed" ? "failed" : "passed" } : test);
+    const evaluation = evaluate({ ...report, historicalInventory });
+    expect(evaluation.issues).toContain("historical-inventory-outcome-does-not-match-source");
   });
 
   it("rejects missing, duplicate, invented, or passing-test failure entries", () => {
@@ -250,6 +294,7 @@ describe("M7H broad E2E triage evidence", () => {
   it("records a partially addressed test without counting it as remediated", () => {
     const report = baseReport();
     report.failureInventory[0].remediationStatus = "partially-addressed";
+    report.classificationSummary = summarizeClassifications(report.failureInventory);
     const evaluation = evaluate(report);
     expect(evaluation.valid, evaluation.issues.join(", ")).toBe(true);
     expect(evaluation.counts).toMatchObject({ partiallyAddressed: 1, remediated: 0 });
@@ -265,6 +310,55 @@ describe("M7H broad E2E triage evidence", () => {
     const evaluation = evaluate(workerMismatch.report, workerMismatch.artifacts);
     expect(evaluation.valid).toBe(false);
     expect(evaluation.issues).toContain("baseline-candidate-environments-not-comparable");
+  });
+
+  it("rejects invented baseline commits and ordinary WebGL2 runs relabeled as native", () => {
+    const inventedBaseline = withFixedRevisionEvidence();
+    inventedBaseline.report.reproductionRuns[0].sourceCommitSha = "2".repeat(40);
+    expect(evaluate(inventedBaseline.report, inventedBaseline.artifacts).issues)
+      .toContain("verified-baseline-commit-is-not-an-identified-main-revision");
+
+    const nativeRelabel = withFixedRevisionEvidence();
+    nativeRelabel.report.reproductionRuns[1].executionClassification = "native-webgpu";
+    expect(evaluate(nativeRelabel.report, nativeRelabel.artifacts).issues)
+      .toContain("reproduction-provenance-or-artifact-invalid");
+  });
+
+  it("accepts production-preview evidence only with its separate non-native project identity", () => {
+    const report = baseReport();
+    const testId = sourceFailures[0]?.testId;
+    if (!testId) throw new Error("Historical failure fixture is missing");
+    const productionRawReport = singleTestReport(testId, "passed");
+    productionRawReport.config.projects[0]!.id = "chromium-production-preview";
+    productionRawReport.suites[0]!.specs[0]!.tests[0]!.projectId = "chromium-production-preview";
+    productionRawReport.suites[0]!.specs[0]!.tests[0]!.projectName = "chromium-production-preview";
+    const path = "docs/architecture/ground-glass-m7h-broad-e2e/reproduction/production-preview-control.json";
+    const sha = digest(productionRawReport);
+    report.reproductionRuns.push({
+      id: "production-preview-isolation-control",
+      sourceCommitSha: "1111111111111111111111111111111111111111",
+      invocation: "npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview --workers=1",
+      projectName: "chromium-production-preview",
+      workers: 1,
+      browserVersion: "Chromium 149.0.7827.55",
+      environmentFingerprint: "macOS27-arm64-chromium149-production-preview-workers1",
+      executionClassification: "production-preview-non-native",
+      reportPath: path,
+      reportSha256: sha,
+      comparableWith: null,
+    });
+    const artifacts = { [path]: { sha256: sha, report: productionRawReport } };
+    expect(evaluate(report, artifacts).valid).toBe(true);
+
+    report.reproductionRuns[0]!.executionClassification = "native-webgpu";
+    expect(evaluate(report, artifacts).issues).toContain("reproduction-provenance-or-artifact-invalid");
+  });
+
+  it("rejects classification totals edited independently of the inventory", () => {
+    const report = baseReport();
+    report.classificationSummary.failureCount -= 1;
+    const evaluation = evaluate(report);
+    expect(evaluation.issues).toContain("classification-aggregate-counts-do-not-match-inventory");
   });
 
   it("rejects tentative verified diagnoses, removed tests counted as fixed, and invented clean-main results", () => {
