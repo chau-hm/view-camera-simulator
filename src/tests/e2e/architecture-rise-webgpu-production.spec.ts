@@ -96,7 +96,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
       webgpuModuleRequests.push(request.url());
     }
   });
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 1024, height: 768 });
   // URL-shaped backend and raw-debug values are not trusted activation inputs.
   await page.goto("/simulator/free/architecture-rise?groundGlassBackend=webgpu&rawDebug=true&rttDiagnostics=1");
 
@@ -289,7 +289,7 @@ test("production preview denies the Anatomy material-aware WebGPU candidate", as
   page.on("request", (request) => {
     if (/GroundGlassWebGPUAdapter|three[/._-]webgpu|\/webgpu\//i.test(request.url())) webgpuModuleRequests.push(request.url());
   });
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto("/simulator/free/view-camera-anatomy?observerRenderer=webgpu&observerOutput=material-aware&rttDiagnostics=1");
   const observer = page.getByTestId("scene-canvas");
   const groundGlass = page.getByTestId("ground-glass-rtt").first();
