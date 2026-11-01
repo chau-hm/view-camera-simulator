@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -6,6 +7,7 @@ import {
   GROUND_GLASS_M7G_EVALUATOR_REVISION,
   GROUND_GLASS_M7G_REPORT_ID,
   evaluateGroundGlassM7gConsolidation,
+  validateGroundGlassM7gPlaywrightReport,
 } from "../../render/webgpu/groundGlassM7gConsolidatedEvidence";
 
 type JsonRecord = Record<string, unknown>;
@@ -18,6 +20,32 @@ const readJson = (relativePath: string): JsonRecord => {
   return value;
 };
 const clone = <T,>(value: T): T => structuredClone(value);
+const sha256 = (bytes: Buffer): string => createHash("sha256").update(bytes).digest("hex");
+const makeReplayExecution = (kind: "m7e" | "m7f", replay: JsonRecord): JsonRecord => {
+  const script = kind === "m7e" ? "scripts/run-m7e-offline-replay.mjs" : "scripts/run-m7f-presentation-evidence-replay.mjs";
+  const outputPath = resolve(root, `.m7g-predecessor-replay-unit/${kind}-current.json`);
+  const reportId = replay.reportId;
+  const sourceCaptureSha = kind === "m7e" ? replay.captureSourceCommitSha : replay.nativeCaptureSourceSha;
+  return {
+    kind, script, outputPath,
+    nodeExecutable: process.execPath,
+    invocation: `${process.execPath} ${script} --report-output=${outputPath}`,
+    spawned: true, exitCode: 0, signal: null, spawnError: null,
+    outputWasAbsentBeforeSpawn: true, reportPresent: true, reportParsed: true, reportParseError: null,
+    reportSha256: "a".repeat(64),
+    reportIdentity: {
+      reportId,
+      evaluatorRevision: replay.evaluatorRevision,
+      sourceCaptureSha,
+      replayCodeSha: replay.replayCodeCommitSha,
+    },
+    reportValidated: true, reportValidationIssues: [], stderrExcerpt: "", stdoutExcerpt: "", valid: true,
+  };
+};
+const rawPlaywrightBytes = readFileSync(resolve(root, "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json"));
+const rawPlaywrightValue: unknown = JSON.parse(rawPlaywrightBytes.toString("utf8"));
+const broadE2eFixture = readJson("docs/architecture/ground-glass-m7g-r187/validation/broad-e2e.json");
+broadE2eFixture.playwrightReportValidation = validateGroundGlassM7gPlaywrightReport(rawPlaywrightValue, sha256(rawPlaywrightBytes));
 const getRecord = (value: unknown, key: string): JsonRecord => {
   const result = isRecord(value) ? value[key] : undefined;
   if (!isRecord(result)) throw new TypeError(`Expected object field ${key}`);
@@ -65,17 +93,15 @@ const createEvidenceInput = (): JsonRecord => {
       m7e: readJson("docs/architecture/ground-glass-m7e-r187-gather-b1/GROUND_GLASS_M7E_R187_GATHER_B1_REPORT.json"),
       m7f: readJson("docs/architecture/GROUND_GLASS_M7F_R187_PRESENTATION_REPORT.json"),
     },
-    predecessorReplays: {
-      m7e: readJson("docs/architecture/ground-glass-m7g-r187/replay/m7e-offline-replay.json"),
-      m7f: readJson("docs/architecture/ground-glass-m7g-r187/replay/m7f-offline-replay.json"),
-    },
+    predecessorReplays: {},
+    predecessorReplayExecutions: {},
     captures: {
       initialization: readJson("docs/architecture/ground-glass-m7g-r187/native/initialization/init-after-target-recheck.json"),
       deviceLossEquivalent: readJson("docs/architecture/ground-glass-m7g-r187/native/device-loss/device-loss-equivalent.json"),
       testDestroyedDeviceLoss: readJson("docs/architecture/ground-glass-m7g-r187/native/device-loss/test-destroyed-device-lost-promise.json"),
       externalLoss: readJson("docs/architecture/ground-glass-m7g-r187/native/device-loss/external-loss-observation.json"),
       heldComposite: readJson("docs/architecture/ground-glass-m7g-r187/native/m5-composite-latest-request.json"),
-      broadE2e: readJson("docs/architecture/ground-glass-m7g-r187/validation/broad-e2e.json"),
+      broadE2e: clone(broadE2eFixture),
       productionIsolation: readJson("docs/architecture/ground-glass-m7g-r187/validation/production-isolation.json"),
     },
     authorization: {
@@ -91,6 +117,42 @@ const createEvidenceInput = (): JsonRecord => {
       m9Authorized: false,
       productionTestSeamExposed: false,
     },
+  };
+  const predecessorReports = getRecord(input, "predecessorReports");
+  const m7eSourceSha = getRecord(predecessorReports, "m7e").sourceCommitSha;
+  const m7fSourceSha = getRecord(predecessorReports, "m7f").nativeCaptureSourceSha;
+  input.predecessorReplays = {
+    m7e: {
+      reportId: "ground-glass-m7e-r187-offline-replay",
+      evaluatorRevision: "m7e-r187-gather-b1-evaluator-v2",
+      replayStatus: "passed",
+      captureSourceCommitSha: m7eSourceSha,
+      replayCodeCommitSha: "3".repeat(40),
+      scenarioCounts: { passed: 12, failed: 0, blocked: 0, "not-run": 0 },
+      issues: [],
+      runtimeIdentity: { rendererRevision: "r187", actualExecutionApi: "webgpu" },
+      authorization: { productionWebGpuEnabled: false },
+    },
+    m7f: {
+      reportId: "ground-glass-m7f-r187-presentation",
+      evaluatorRevision: "m7f-r187-presentation-evaluator-v2",
+      qualificationPass: true,
+      qualificationStatus: "passed",
+      nativeCaptureSourceSha: m7fSourceSha,
+      replayCodeCommitSha: "4".repeat(40),
+      scenarioCounts: {
+        inventoryConsistent: true,
+        declared: { passed: 17, failed: 0, blocked: 0, "not-run": 0 },
+        computed: { passed: 17, failed: 0, blocked: 0, "not-run": 0 },
+      },
+      runtimeIdentity: { rendererRevision: "r187", actualExecutionApi: "webgpu" },
+      authorization: { m8Authorized: false, productionWebGpuEnabled: false },
+    },
+  };
+  const replays = getRecord(input, "predecessorReplays");
+  input.predecessorReplayExecutions = {
+    m7e: makeReplayExecution("m7e", getRecord(replays, "m7e")),
+    m7f: makeReplayExecution("m7f", getRecord(replays, "m7f")),
   };
   const first = evaluateGroundGlassM7gConsolidation(input);
   input.scenarios = first.scenarios.map(({ id, status }) => ({ id, status }));
@@ -317,7 +379,7 @@ describe("M7G consolidated r187 evidence integrity", () => {
     },
     {
       name: "rejects test-destroyed GPUDevice loss relabeled as external",
-      expectedIssue: "test-destroyed-device-loss-chain-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
       mutate: (input) => {
         const lost = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents")
           .find((event) => event.kind === "device-lost-observed");
@@ -335,12 +397,215 @@ describe("M7G consolidated r187 evidence integrity", () => {
     },
     {
       name: "rejects device loss attributed to a retired generation",
-      expectedIssue: "test-destroyed-device-loss-chain-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
       mutate: (input) => {
         const lost = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents")
           .find((event) => event.kind === "device-lost-observed");
         if (lost) lost.generationId = "retired-generation";
       },
+    },
+    {
+      name: "rejects destroy and loss events jointly moved to an unrelated generation",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const events = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents");
+        for (const event of events.filter((candidate) => candidate.kind === "device-destroy-requested" || candidate.kind === "device-lost-observed")) {
+          event.generationId = "unrelated-generation";
+        }
+      },
+    },
+    {
+      name: "rejects a destroy event whose attempt identity is unrelated",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const destroy = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents")
+          .find((event) => event.kind === "device-destroy-requested");
+        if (destroy) destroy.attemptId = "unrelated-attempt";
+      },
+    },
+    {
+      name: "rejects a native runtime observation detached from the owned attempt",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const runtime = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "runtime", "adapterObservations")
+          .find((event) => event.kind === "runtime-observed");
+        if (runtime) runtime.executionApi = "webgl2";
+      },
+    },
+    {
+      name: "rejects policy runtime identity from another channel or pilot session",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const policy = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "m7cObservations")
+          .find((event) => event.kind === "native-policy-runtime-identity");
+        if (policy) {
+          policy.channelId = "comparison";
+          policy.pilotSessionId = "another-session";
+        }
+      },
+    },
+    {
+      name: "rejects a runtime failure from another host request or scene",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const failure = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "failure", "adapterEvents")
+          .find((event) => event.kind === "failure");
+        if (failure) {
+          failure.requestId = "another-request";
+          failure.sceneId = "another-scene";
+        }
+      },
+    },
+    {
+      name: "rejects a runtime failure detached from the destroyed generation request",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const failure = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "failure", "adapterEvents")
+          .find((event) => event.kind === "failure");
+        if (failure) failure.requestId = "unrelated-request";
+      },
+    },
+    {
+      name: "rejects cleanup and acknowledgement attributed to the wrong generation",
+      expectedIssue: "cleanup-acknowledgement-mismatch:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const events = mutableCaptureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "cleanup", "events");
+        const cleanup = events.find((event) => event.kind === "cleanup");
+        const acknowledgement = events.find((event) => event.kind === "cleanup-acknowledged" &&
+          event.generationId === getRecord(getRecord(capture(input, "testDestroyedDeviceLoss"), "observation"), "identities").generationId);
+        if (cleanup) cleanup.generationId = "unrelated-generation";
+        if (acknowledgement) acknowledgement.generationId = "unrelated-generation";
+      },
+    },
+    {
+      name: "rejects an acknowledgement attributed to the wrong host",
+      expectedIssue: "cleanup-acknowledgement-mismatch:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const acknowledgement = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "cleanup", "events")
+          .find((event) => event.kind === "cleanup-acknowledged" && event.generationId ===
+            getRecord(getRecord(capture(input, "testDestroyedDeviceLoss"), "observation"), "identities").generationId);
+        if (acknowledgement) acknowledgement.hostId = "unrelated-host";
+      },
+    },
+    {
+      name: "rejects cleanup acknowledgement from another channel",
+      expectedIssue: "cleanup-acknowledgement-mismatch:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const observation = getRecord(capture(input, "testDestroyedDeviceLoss"), "observation");
+        const generation = getRecord(observation, "identities").generationId;
+        const acknowledgement = captureEvents(observation, "cleanup", "events").find((event) =>
+          event.kind === "cleanup-acknowledged" && event.generationId === generation);
+        if (acknowledgement) acknowledgement.channelId = "comparison";
+      },
+    },
+    {
+      name: "rejects duplicate device-destroy and loss events",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const events = mutableCaptureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents");
+        const destroy = events.find((event) => event.kind === "device-destroy-requested");
+        const loss = events.find((event) => event.kind === "device-lost-observed");
+        if (destroy) events.push({ ...destroy, sequence: 30 });
+        if (loss) events.push({ ...loss, sequence: 31 });
+      },
+    },
+    {
+      name: "rejects loss observed before the test destroy request",
+      expectedIssue: "test-destroyed-device-loss-event-chronology-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const events = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents");
+        const destroy = events.find((event) => event.kind === "device-destroy-requested");
+        const loss = events.find((event) => event.kind === "device-lost-observed");
+        if (destroy && loss) destroy.sequence = Number(loss.sequence) + 1;
+      },
+    },
+    {
+      name: "rejects runtime failure observed before the actual loss promise",
+      expectedIssue: "test-destroyed-device-loss-event-chronology-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const events = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "qualificationEvents");
+        const loss = events.find((event) => event.kind === "device-lost-observed");
+        const failure = events.find((event) => event.kind === "failure" && event.operation === "device-loss");
+        if (loss && failure) failure.sequence = Number(loss.sequence) - 1;
+      },
+    },
+    {
+      name: "rejects cleanup that predates the runtime loss failure",
+      expectedIssue: "test-destroyed-device-loss-event-chronology-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const cleanup = captureEvents(capture(input, "testDestroyedDeviceLoss"), "observation", "cleanup", "events")
+          .find((event) => event.kind === "cleanup");
+        if (cleanup) cleanup.sequence = 23;
+      },
+    },
+    {
+      name: "rejects WebGL replacement mounted before cleanup acknowledgement",
+      expectedIssue: "cleanup-fallback-order-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const observation = getRecord(capture(input, "testDestroyedDeviceLoss"), "observation");
+        const generation = getRecord(observation, "identities").generationId;
+        const acknowledgement = captureEvents(observation, "cleanup", "events").find((event) =>
+          event.kind === "cleanup-acknowledged" && event.generationId === generation);
+        const replacement = captureEvents(observation, "runtime", "hostMountObservations").find((event) =>
+          event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" && event.generationId !== generation && event.requestId === getRecord(observation, "identities").requestId);
+        if (acknowledgement && replacement) replacement.sequence = Number(acknowledgement.sequence) - 1;
+      },
+    },
+    {
+      name: "rejects replacement renderer mounted on another host",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const observation = getRecord(capture(input, "testDestroyedDeviceLoss"), "observation");
+        const identities = getRecord(observation, "identities");
+        const generation = identities.generationId;
+        const replacement = captureEvents(observation, "runtime", "hostMountObservations").find((event) =>
+          event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" &&
+          event.generationId !== generation && event.requestId === identities.requestId);
+        if (replacement) replacement.hostId = "another-host";
+      },
+    },
+    {
+      name: "rejects a current replacement frame for a different request",
+      expectedIssue: "test-destroyed-device-loss-native-generation-identity-invalid:m7g-r187-test-destroyed-device-loss-promise",
+      mutate: (input) => {
+        const observation = getRecord(capture(input, "testDestroyedDeviceLoss"), "observation");
+        const identities = getRecord(observation, "identities");
+        const generation = identities.generationId;
+        const replacement = captureEvents(observation, "runtime", "hostMountObservations").find((event) =>
+          event.kind === "renderer-mounted" && event.rendererFamily === "webgl-renderer" &&
+          event.generationId !== generation && event.requestId === identities.requestId);
+        const frame = captureEvents(observation, "qualificationEvents").find((event) =>
+          event.kind === "host-frame-result" && event.generationId === replacement?.generationId && event.acceptedByHost === true);
+        if (frame) frame.latestAcceptedRequestId = "stale-request";
+      },
+    },
+    {
+      name: "rejects a failed M7E replay process even if it emitted a passing report",
+      expectedIssue: "predecessor-replay-execution-invalid:m7e",
+      mutate: (input) => { getRecord(getRecord(input, "predecessorReplayExecutions"), "m7e").exitCode = 1; },
+    },
+    {
+      name: "rejects a signaled M7F replay process",
+      expectedIssue: "predecessor-replay-execution-invalid:m7f",
+      mutate: (input) => {
+        const execution = getRecord(getRecord(input, "predecessorReplayExecutions"), "m7f");
+        execution.exitCode = null;
+        execution.signal = "SIGTERM";
+      },
+    },
+    {
+      name: "rejects a predecessor report path that reused the committed replay snapshot",
+      expectedIssue: "predecessor-replay-execution-invalid:m7e",
+      mutate: (input) => {
+        const execution = getRecord(getRecord(input, "predecessorReplayExecutions"), "m7e");
+        execution.outputPath = resolve(root, "docs/architecture/ground-glass-m7g-r187/replay/m7e-offline-replay.json");
+        execution.invocation = `${process.execPath} ${execution.script} --report-output=${execution.outputPath}`;
+      },
+    },
+    {
+      name: "rejects a replay execution whose output was not absent before the child started",
+      expectedIssue: "predecessor-replay-execution-invalid:m7f",
+      mutate: (input) => { getRecord(getRecord(input, "predecessorReplayExecutions"), "m7f").outputWasAbsentBeforeSpawn = false; },
     },
     {
       name: "rejects sticky fallback remount that creates an implicit WebGPU attempt",
@@ -392,6 +657,64 @@ describe("M7G consolidated r187 evidence integrity", () => {
         const claim = claims.find((item) => item.id === "m7g-r187-broad-application-e2e");
         if (claim) claim.status = "passed";
       },
+    },
+    {
+      name: "rejects broad-suite pass status while the raw capture records 99 failures and 75 skipped tests",
+      expectedIssue: "broad-e2e-passing-status-contradicts-outcomes:m7g-r187-broad-application-e2e",
+      mutate: (input) => { capture(input, "broadE2e").status = "passed"; },
+    },
+    {
+      name: "rejects a self-consistent passed summary with one unexpected result",
+      expectedIssue: "broad-e2e-passing-status-contradicts-outcomes:m7g-r187-broad-application-e2e",
+      mutate: (input) => {
+        const broad = capture(input, "broadE2e");
+        const validation = getRecord(broad, "playwrightReportValidation");
+        const rawSha = "b".repeat(64);
+        broad.status = "passed";
+        getRecord(broad, "counts").passed = 276;
+        getRecord(broad, "counts").failed = 1;
+        getRecord(broad, "counts")["not-run"] = 0;
+        getRecord(broad, "playwrightSummary").expected = 276;
+        getRecord(broad, "playwrightSummary").unexpected = 1;
+        getRecord(broad, "playwrightSummary").skipped = 0;
+        getRecord(broad, "playwrightSummary").flaky = 0;
+        getRecord(validation, "counts").expected = 276;
+        getRecord(validation, "counts").unexpected = 1;
+        getRecord(validation, "counts").skipped = 0;
+        getRecord(validation, "counts").flaky = 0;
+        getRecord(validation, "reportStats").expected = 276;
+        getRecord(validation, "reportStats").unexpected = 1;
+        getRecord(validation, "reportStats").skipped = 0;
+        getRecord(validation, "reportStats").flaky = 0;
+        validation.sha256 = rawSha;
+        getRecord(broad, "playwrightReport").sha256 = rawSha;
+        const comparison = getRecord(broad, "cleanMainComparison");
+        comparison.results = [];
+        getRecord(broad, "failureClassification").unexpectedFailureCount = 1;
+        getRecord(broad, "failureClassification").cleanMainReproducedFailureCount = 0;
+        getRecord(broad, "failureClassification").unclassifiedUnexpectedFailureCount = 1;
+        getRecord(broad, "failureClassification").comparisonCoverage = "partial";
+      },
+    },
+    {
+      name: "rejects a summary that drops one unexpected Playwright failure",
+      expectedIssue: "broad-e2e-provenance-or-counts-invalid:m7g-r187-broad-application-e2e",
+      mutate: (input) => { getRecord(capture(input, "broadE2e"), "counts").failed = 98; },
+    },
+    {
+      name: "rejects broad E2E report digest detached from the raw Playwright JSON",
+      expectedIssue: "broad-e2e-provenance-or-counts-invalid:m7g-r187-broad-application-e2e",
+      mutate: (input) => { getRecord(capture(input, "broadE2e"), "playwrightReport").sha256 = "0".repeat(64); },
+    },
+    {
+      name: "rejects skipped cases relabeled as an intentional pass exemption",
+      expectedIssue: "broad-e2e-provenance-or-counts-invalid:m7g-r187-broad-application-e2e",
+      mutate: (input) => { capture(input, "broadE2e").intentionalSkippedExclusions = ["native-only tests"]; },
+    },
+    {
+      name: "rejects clean-main failures labeled complete while 96 failures remain unclassified",
+      expectedIssue: "broad-e2e-clean-main-classification-invalid:m7g-r187-broad-application-e2e",
+      mutate: (input) => { getRecord(capture(input, "broadE2e"), "failureClassification").comparisonCoverage = "complete"; },
     },
     {
       name: "rejects a controlled presentation fixture represented as registered-scene alignment",
@@ -453,5 +776,121 @@ describe("M7G consolidated r187 evidence integrity", () => {
       expect(legacyEvaluation.errors).toContain(m7cError);
     }
     expectM7gIssue(input, expectedIssue);
+  });
+});
+
+describe("M7G raw Playwright broad-suite evidence", () => {
+  it("accepts the byte-digested report only with counts derived from its 277 test records", () => {
+    const validation = validateGroundGlassM7gPlaywrightReport(rawPlaywrightValue, sha256(rawPlaywrightBytes));
+    expect(validation.valid).toBe(true);
+    expect(validation.testsDiscovered).toBe(277);
+    expect(validation.counts).toEqual({ expected: 103, unexpected: 99, skipped: 75, flaky: 0 });
+  });
+
+  it("rejects an unexpected result changed without updating Playwright's summary", () => {
+    const report = clone(rawPlaywrightValue) as JsonRecord;
+    const visitSuite = (value: unknown): JsonRecord | null => {
+      if (!isRecord(value)) return null;
+      for (const spec of arrayOfRecords(value.specs)) {
+        for (const test of arrayOfRecords(spec.tests)) {
+          const result = Array.isArray(test.results) ? test.results[test.results.length - 1] : null;
+          if (test.expectedStatus === "passed" && isRecord(result) && result.status === "failed") return result;
+        }
+      }
+      for (const nested of Array.isArray(value.suites) ? value.suites : []) {
+        const found = visitSuite(nested);
+        if (found) return found;
+      }
+      return null;
+    };
+    const result = visitSuite(report);
+    if (!result) throw new Error("No unexpected Playwright result found in captured report");
+    result.status = "passed";
+    const validation = validateGroundGlassM7gPlaywrightReport(report, sha256(rawPlaywrightBytes));
+    expect(validation.valid).toBe(false);
+    expect(validation.issues).toContain("playwright-report-summary-disagrees-with-test-tree");
+  });
+
+  it("rejects a missing test and a duplicate test identity", () => {
+    expect(validateGroundGlassM7gPlaywrightReport(null, null).issues).toContain("playwright-report-schema-invalid");
+
+    const missing = clone(rawPlaywrightValue) as JsonRecord;
+    const removeOne = (value: unknown): boolean => {
+      if (!isRecord(value)) return false;
+      for (const spec of arrayOfRecords(value.specs)) {
+        if (Array.isArray(spec.tests) && spec.tests.length > 0) {
+          spec.tests.pop();
+          return true;
+        }
+      }
+      for (const nested of Array.isArray(value.suites) ? value.suites : []) if (removeOne(nested)) return true;
+      return false;
+    };
+    expect(removeOne(missing)).toBe(true);
+    expect(validateGroundGlassM7gPlaywrightReport(missing, sha256(rawPlaywrightBytes)).issues)
+      .toContain("playwright-required-test-inventory-incomplete");
+
+    const duplicate = clone(rawPlaywrightValue) as JsonRecord;
+    const duplicateOne = (value: unknown): boolean => {
+      if (!isRecord(value)) return false;
+      for (const spec of arrayOfRecords(value.specs)) {
+        if (Array.isArray(spec.tests) && spec.tests.length > 0) {
+          spec.tests.push(clone(spec.tests[0]));
+          return true;
+        }
+      }
+      for (const nested of Array.isArray(value.suites) ? value.suites : []) if (duplicateOne(nested)) return true;
+      return false;
+    };
+    expect(duplicateOne(duplicate)).toBe(true);
+    expect(validateGroundGlassM7gPlaywrightReport(duplicate, sha256(rawPlaywrightBytes)).issues)
+      .toContain("playwright-test-inventory-duplicate");
+  });
+
+  it("rejects an invalid report digest and accepts a complete synthetic all-passing control", () => {
+    expect(validateGroundGlassM7gPlaywrightReport(rawPlaywrightValue, "wrong-digest").issues)
+      .toContain("playwright-report-digest-invalid");
+
+    const passing = clone(rawPlaywrightValue) as JsonRecord;
+    const visit = (value: unknown): void => {
+      if (!isRecord(value)) return;
+      for (const spec of arrayOfRecords(value.specs)) {
+        for (const test of arrayOfRecords(spec.tests)) {
+          test.expectedStatus = "passed";
+          test.results = [{ status: "passed" }];
+        }
+      }
+      for (const nested of Array.isArray(value.suites) ? value.suites : []) visit(nested);
+    };
+    visit(passing);
+    getRecord(passing, "stats").expected = 277;
+    getRecord(passing, "stats").unexpected = 0;
+    getRecord(passing, "stats").skipped = 0;
+    getRecord(passing, "stats").flaky = 0;
+    const validation = validateGroundGlassM7gPlaywrightReport(passing, "a".repeat(64));
+    expect(validation.valid).toBe(true);
+    expect(validation.counts).toEqual({ expected: 277, unexpected: 0, skipped: 0, flaky: 0 });
+  });
+
+  it("does not allow a skipped native test to be relabeled as an executed pass", () => {
+    const report = clone(rawPlaywrightValue) as JsonRecord;
+    const relabelSkipped = (value: unknown): boolean => {
+      if (!isRecord(value)) return false;
+      for (const spec of arrayOfRecords(value.specs)) {
+        for (const test of arrayOfRecords(spec.tests)) {
+          if (test.expectedStatus === "skipped") {
+            test.expectedStatus = "passed";
+            test.results = [{ status: "passed" }];
+            return true;
+          }
+        }
+      }
+      for (const nested of Array.isArray(value.suites) ? value.suites : []) if (relabelSkipped(nested)) return true;
+      return false;
+    };
+    expect(relabelSkipped(report)).toBe(true);
+    const validation = validateGroundGlassM7gPlaywrightReport(report, sha256(rawPlaywrightBytes));
+    expect(validation.valid).toBe(false);
+    expect(validation.issues).toContain("playwright-report-summary-disagrees-with-test-tree");
   });
 });

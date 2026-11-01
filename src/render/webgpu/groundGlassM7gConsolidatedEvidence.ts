@@ -3,7 +3,7 @@ import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "./groundGlassRawWebGp
 import { evaluateGroundGlassM7dPhysicalCocReport } from "./groundGlassM7dPhysicalCocEvidence";
 
 export const GROUND_GLASS_M7G_REPORT_ID = "ground-glass-m7g-r187-lifecycle-consolidation" as const;
-export const GROUND_GLASS_M7G_EVALUATOR_REVISION = "m7g-r187-consolidation-evaluator-v1" as const;
+export const GROUND_GLASS_M7G_EVALUATOR_REVISION = "m7g-r187-consolidation-evaluator-v2" as const;
 export const GROUND_GLASS_M7G_SCHEMA_VERSION = 1 as const;
 
 export const GROUND_GLASS_M7G_REQUIRED_SCENARIO_IDS = Object.freeze([
@@ -80,6 +80,7 @@ const isRecord = (value: unknown): value is JsonRecord =>
 const record = (value: unknown): JsonRecord | null => isRecord(value) ? value : null;
 const nonEmpty = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const isSha = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{40}$/i.test(value);
+const isSha256 = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{64}$/i.test(value);
 const isStatus = (value: unknown): value is GroundGlassM7gScenarioStatus =>
   value === "passed" || value === "failed" || value === "blocked" || value === "not-run";
 const countKeys = ["passed", "failed", "blocked", "not-run"] as const;
@@ -96,6 +97,166 @@ const get = (value: unknown, ...keys: string[]): unknown => {
   let cursor = value;
   for (const key of keys) cursor = record(cursor)?.[key];
   return cursor;
+};
+
+const validReplayExecution = (executionValue: unknown, replay: JsonRecord | null, kind: "m7e" | "m7f"): boolean => {
+  const execution = record(executionValue);
+  const identity = record(execution?.reportIdentity);
+  const expectedReportId = kind === "m7e" ? "ground-glass-m7e-r187-offline-replay" : "ground-glass-m7f-r187-presentation";
+  const expectedEvaluator = kind === "m7e" ? "m7e-r187-gather-b1-evaluator-v2" : "m7f-r187-presentation-evaluator-v2";
+  const sourceSha = replay ? (kind === "m7e" ? replay.captureSourceCommitSha : replay.nativeCaptureSourceSha) : null;
+  const outputPath = execution?.outputPath;
+  const invocation = execution?.invocation;
+  const freshOutputPattern = new RegExp(`[/\\\\]\\.m7g-predecessor-replay-[^/\\\\]+[/\\\\]${kind}-current\\.json$`);
+  const outputPathValid = typeof outputPath === "string" &&
+    freshOutputPattern.test(outputPath) &&
+    execution?.nodeExecutable === process.execPath &&
+    invocation === `${process.execPath} ${execution?.script} --report-output=${outputPath}`;
+  return !!execution && !!replay && execution.kind === kind &&
+    execution.script === (kind === "m7e" ? "scripts/run-m7e-offline-replay.mjs" : "scripts/run-m7f-presentation-evidence-replay.mjs") &&
+    outputPathValid && execution.spawned === true && execution.exitCode === 0 && execution.signal === null &&
+    execution.spawnError === null && execution.outputWasAbsentBeforeSpawn === true && execution.reportPresent === true &&
+    execution.reportParsed === true && execution.reportParseError === null && isSha256(execution.reportSha256) &&
+    execution.reportValidated === true && Array.isArray(execution.reportValidationIssues) &&
+    execution.reportValidationIssues.length === 0 && execution.valid === true &&
+    identity?.reportId === expectedReportId && identity.evaluatorRevision === expectedEvaluator &&
+    identity.sourceCaptureSha === sourceSha && isSha(sourceSha) &&
+    identity.replayCodeSha === replay.replayCodeCommitSha && isSha(replay.replayCodeCommitSha);
+};
+
+const PLAYWRIGHT_RESULT_STATUSES = new Set(["passed", "failed", "timedOut", "interrupted", "skipped"]);
+
+export type GroundGlassM7gPlaywrightReportValidation = Readonly<{
+  artifact: "validation/broad-e2e-playwright.json";
+  sha256: string | null;
+  valid: boolean;
+  issues: readonly string[];
+  projectIds: readonly string[];
+  testsDiscovered: number;
+  testsWithResults: number;
+  incompleteTests: number;
+  counts: Readonly<{ expected: number; unexpected: number; skipped: number; flaky: number }>;
+  reportStats: Readonly<{ expected: number; unexpected: number; skipped: number; flaky: number }> | null;
+}>;
+
+/**
+ * Derives Playwright outcomes from the original JSON report tree. `sha256` is
+ * computed by the Node loader from the exact file bytes before JSON parsing.
+ */
+export const validateGroundGlassM7gPlaywrightReport = (
+  reportValue: unknown,
+  sha256: unknown,
+  expectedProject = "chromium",
+): GroundGlassM7gPlaywrightReportValidation => {
+  const issues: string[] = [];
+  const report = record(reportValue);
+  const config = record(report?.config);
+  const projects = Array.isArray(config?.projects) ? config.projects.filter(isRecord) : [];
+  const projectIds = projects.map((project) => nonEmpty(project.id) ? project.id : "");
+  const stats = record(report?.stats);
+  const countFromStats = (key: "expected" | "unexpected" | "skipped" | "flaky"): number | null =>
+    Number.isInteger(stats?.[key]) && (stats?.[key] as number) >= 0 ? stats?.[key] as number : null;
+  const reportStats = stats && countFromStats("expected") !== null && countFromStats("unexpected") !== null &&
+      countFromStats("skipped") !== null && countFromStats("flaky") !== null
+    ? {
+      expected: countFromStats("expected") as number,
+      unexpected: countFromStats("unexpected") as number,
+      skipped: countFromStats("skipped") as number,
+      flaky: countFromStats("flaky") as number,
+    }
+    : null;
+  const counts = { expected: 0, unexpected: 0, skipped: 0, flaky: 0 };
+  const seenTestIds = new Set<string>();
+  let testsDiscovered = 0;
+  let testsWithResults = 0;
+  let incompleteTests = 0;
+
+  if (!report || !config || !Array.isArray(report.suites) || !reportStats || !nonEmpty(config.version)) {
+    issues.push("playwright-report-schema-invalid");
+  }
+  if (projectIds.length !== 1 || projectIds[0] !== expectedProject) {
+    issues.push("playwright-report-project-inventory-invalid");
+  }
+  if (!Array.isArray(report?.errors) || report.errors.length !== 0) {
+    issues.push("playwright-report-has-run-errors");
+  }
+  if (!isSha256(sha256)) issues.push("playwright-report-digest-invalid");
+
+  const visitSuite = (suiteValue: unknown): void => {
+    const suite = record(suiteValue);
+    if (!suite) {
+      issues.push("playwright-suite-entry-invalid");
+      return;
+    }
+    const specs = suite.specs ?? [];
+    const nestedSuites = suite.suites ?? [];
+    if (!Array.isArray(specs) || !Array.isArray(nestedSuites)) {
+      issues.push("playwright-suite-inventory-invalid");
+      return;
+    }
+    for (const specValue of specs) {
+      const spec = record(specValue);
+      if (!spec || !nonEmpty(spec.id) || !Array.isArray(spec.tests) || spec.tests.length === 0) {
+        issues.push("playwright-spec-inventory-invalid");
+        continue;
+      }
+      for (const testValue of spec.tests) {
+        const test = record(testValue);
+        testsDiscovered += 1;
+        if (!test || !nonEmpty(test.projectId) || test.projectId !== expectedProject ||
+            !nonEmpty(test.projectName) || test.projectName !== expectedProject ||
+            !Array.isArray(test.results) || test.results.length === 0 ||
+            !(test.expectedStatus === "passed" || test.expectedStatus === "failed" || test.expectedStatus === "skipped")) {
+          incompleteTests += 1;
+          issues.push("playwright-test-result-incomplete");
+          continue;
+        }
+        const testIdentity = `${test.projectId}:${spec.id}`;
+        if (seenTestIds.has(testIdentity)) issues.push("playwright-test-inventory-duplicate");
+        seenTestIds.add(testIdentity);
+        const results = test.results.filter(isRecord);
+        if (results.length !== test.results.length || results.some((result) =>
+          !PLAYWRIGHT_RESULT_STATUSES.has(String(result.status)))) {
+          incompleteTests += 1;
+          issues.push("playwright-test-result-status-invalid");
+          continue;
+        }
+        testsWithResults += 1;
+        const finalStatus = results[results.length - 1]?.status;
+        if (test.expectedStatus === "skipped" || finalStatus === "skipped") {
+          counts.skipped += 1;
+        } else if (finalStatus === test.expectedStatus) {
+          if (results.slice(0, -1).some((result) => result.status !== test.expectedStatus)) counts.flaky += 1;
+          else counts.expected += 1;
+        } else {
+          counts.unexpected += 1;
+        }
+      }
+    }
+    for (const nested of nestedSuites) visitSuite(nested);
+  };
+
+  for (const suite of Array.isArray(report?.suites) ? report.suites : []) visitSuite(suite);
+  if (reportStats && (reportStats.expected !== counts.expected || reportStats.unexpected !== counts.unexpected ||
+      reportStats.skipped !== counts.skipped || reportStats.flaky !== counts.flaky)) {
+    issues.push("playwright-report-summary-disagrees-with-test-tree");
+  }
+  if (testsDiscovered === 0 || testsDiscovered !== 277 || testsWithResults + incompleteTests !== testsDiscovered) {
+    issues.push("playwright-required-test-inventory-incomplete");
+  }
+
+  return {
+    artifact: "validation/broad-e2e-playwright.json",
+    sha256: isSha256(sha256) ? sha256 : null,
+    valid: issues.length === 0,
+    issues,
+    projectIds,
+    testsDiscovered,
+    testsWithResults,
+    incompleteTests,
+    counts,
+    reportStats,
+  };
 };
 
 const requireM7gCaptureProvenance = (capture: JsonRecord, id: string, issues: string[]): JsonRecord | null => {
@@ -185,6 +346,149 @@ const validateConfirmedFallback = (capture: JsonRecord, id: string, issues: stri
   if (duplicateCleanups.length !== 1) issues.push(`duplicate-or-missing-cleanup:${id}`);
 };
 
+const strictlyIncreasingSequences = (events: readonly JsonRecord[]): boolean => {
+  let previous = -1;
+  for (const event of events) {
+    const current = seq(event.sequence);
+    if (current === null || current <= previous) return false;
+    previous = current;
+  }
+  return true;
+};
+
+const sameEventIdentity = (left: JsonRecord | null, right: JsonRecord | null,
+  fields: readonly string[]): boolean => !!left && !!right && fields.every((field) => left[field] === right[field]);
+
+const validateTestDestroyedDeviceLossChain = (capture: JsonRecord, id: string, issues: string[]): void => {
+  const observation = record(capture.observation);
+  const identity = record(observation?.identities);
+  const qualificationEvents = eventList(observation?.qualificationEvents);
+  const cleanupEvents = eventList(get(observation, "cleanup", "events"));
+  const failureAdapterEvents = eventList(get(observation, "failure", "adapterEvents"));
+  const hostMountEvents = eventList(get(observation, "runtime", "hostMountObservations"));
+  const runtimeEvents = eventList(get(observation, "runtime", "adapterObservations"));
+  const m7cObservations = eventList(observation?.m7cObservations);
+  const attempts = eventList(identity?.attempts);
+  const failedGenerationId = identity?.generationId;
+  const failedAttemptId = identity?.attemptId;
+  const byKind = (events: readonly JsonRecord[], kind: string): JsonRecord[] =>
+    events.filter((event) => event.kind === kind);
+  const single = (events: readonly JsonRecord[], kind: string): JsonRecord | null => {
+    const matches = byKind(events, kind);
+    return matches.length === 1 ? matches[0]! : null;
+  };
+
+  const policy = single(m7cObservations, "native-policy-runtime-identity");
+  const attempt = attempts.filter((event) => event.kind === "attempt" && event.generationId === failedGenerationId &&
+    event.attemptId === failedAttemptId);
+  const nativeMount = hostMountEvents.filter((event) => event.kind === "renderer-mounted" &&
+    event.generationId === failedGenerationId && event.rendererFamily === "webgpu-renderer");
+  const nativeMountEvent = nativeMount.length === 1 ? nativeMount[0]! : null;
+  const nativeRuntimeEvents = runtimeEvents.filter((event) => event.kind === "runtime-observed" &&
+    event.generationId === failedGenerationId && event.attemptId === failedAttemptId);
+  const nativeRuntimeEvent = nativeRuntimeEvents.length === 1 ? nativeRuntimeEvents[0]! : null;
+  const timelineMount = qualificationEvents.filter((event) => event.kind === "renderer-mounted" &&
+    event.generationId === failedGenerationId && event.rendererFamily === "webgpu-renderer");
+  const destroy = single(qualificationEvents, "device-destroy-requested");
+  const loss = single(qualificationEvents, "device-lost-observed");
+  const timelineFailure = single(qualificationEvents, "failure");
+  const adapterFailure = single(failureAdapterEvents, "failure");
+  const cleanup = cleanupEvents.filter((event) => event.kind === "cleanup" && event.generationId === failedGenerationId);
+  const acknowledgement = cleanupEvents.filter((event) =>
+    event.kind === "cleanup-acknowledged" && event.generationId === failedGenerationId);
+  const timelineCleanup = qualificationEvents.filter((event) => event.kind === "cleanup" &&
+    event.generationId === failedGenerationId);
+  const timelineAcknowledgement = qualificationEvents.filter((event) => event.kind === "cleanup-acknowledged" &&
+    event.generationId === failedGenerationId);
+  const replacementMount = hostMountEvents.filter((event) => event.kind === "renderer-mounted" &&
+    event.rendererFamily === "webgl-renderer" && event.generationId !== failedGenerationId &&
+    event.requestId === identity?.requestId);
+  const replacement = replacementMount.length === 1 ? replacementMount[0]! : null;
+  const acceptedFrames = qualificationEvents.filter((event) => event.kind === "host-frame-result" &&
+    event.generationId === replacement?.generationId && event.acceptedByHost === true);
+  const currentFrame = acceptedFrames.length === 1 ? acceptedFrames[0]! : null;
+
+  const identityValid = !!identity && nonEmpty(identity.channelId) && nonEmpty(identity.pilotSessionId) &&
+    (typeof identity.retryEpoch === "string" || Number.isInteger(identity.retryEpoch)) &&
+    nonEmpty(identity.hostId) && nonEmpty(identity.generationId) && nonEmpty(identity.attemptId) &&
+    nonEmpty(identity.requestId) && nonEmpty(identity.sceneId) && identity.sceneId === "architecture-rise" &&
+    attempt.length === 1 && attempt[0]?.attemptId === identity.attemptId &&
+    attempt[0]?.generationId === identity.generationId && attempt[0]?.channelId === identity.channelId &&
+    attempt[0]?.requestId === identity.requestId && attempt[0]?.sceneId === identity.sceneId &&
+    Array.isArray(identity.attemptIds) && identity.attemptIds.length === 1 && identity.attemptIds[0] === identity.attemptId &&
+    policy?.attemptId === identity.attemptId && policy.generationId === identity.generationId &&
+    policy.requestId === identity.requestId && policy.sceneId === identity.sceneId &&
+    policy.channelId === identity.channelId && policy.hostId === identity.hostId &&
+    policy.pilotSessionId === identity.pilotSessionId && Number(policy.retryEpoch) === Number(identity.retryEpoch) &&
+    get(policy, "runtimeIdentity", "rendererRevision") === "187" &&
+    get(policy, "runtimeIdentity", "rendererFamily") === "webgpu-renderer" &&
+    get(policy, "runtimeIdentity", "executionApi") === "webgpu" &&
+    get(policy, "runtimeIdentity", "internalFallback") === "none" &&
+    nativeRuntimeEvent?.rendererRevision === "187" && nativeRuntimeEvent.rendererFamily === "webgpu-renderer" &&
+    nativeRuntimeEvent.executionApi === "webgpu" && nativeRuntimeEvent.internalFallback === "none" &&
+    nativeRuntimeEvent.sequence === policy.runtimeEventSequence &&
+    nativeMountEvent?.attemptId === identity.attemptId && nativeMountEvent.channelId === identity.channelId &&
+    nativeMountEvent.hostId === identity.hostId && nativeMountEvent.requestId === identity.requestId &&
+    nativeMountEvent.sceneId === identity.sceneId && nativeMountEvent.executionApi === "webgpu" &&
+    nativeMountEvent.rendererFamily === "webgpu-renderer" && nativeMountEvent.internalFallback === "none" &&
+    timelineMount.length === 1 && sameEventIdentity(timelineMount[0] ?? null, nativeMountEvent,
+      ["attemptId", "channelId", "hostId", "generationId", "requestId", "sceneId", "sequence"]);
+
+  const failedEventIdentityValid = !!identity && destroy?.cause === "test-destroy" && loss?.cause === "test-destroy" &&
+    destroy.generationId === identity.generationId && loss.generationId === identity.generationId &&
+    destroy.attemptId === identity.attemptId && loss.attemptId === identity.attemptId &&
+    loss.reason === "destroyed" && typeof loss.message === "string" && loss.message.toLowerCase().includes("destroy") &&
+    adapterFailure?.stage === "runtime" && adapterFailure.operation === "device-loss" &&
+    timelineFailure?.stage === "runtime" && timelineFailure.operation === "device-loss" &&
+    sameEventIdentity(adapterFailure, timelineFailure,
+      ["attemptId", "channelId", "generationId", "requestId", "sceneId", "stage", "operation", "sequence"]) &&
+    adapterFailure?.attemptId === identity.attemptId && adapterFailure.channelId === identity.channelId &&
+    adapterFailure.generationId === identity.generationId && adapterFailure.requestId === identity.requestId &&
+    adapterFailure.sceneId === identity.sceneId &&
+    cleanup.length === 1 && cleanup[0]?.attemptId === identity.attemptId &&
+    cleanup[0]?.outcome === "confirmed" && acknowledgement.length === 1 &&
+    acknowledgement[0]?.channelId === identity.channelId && acknowledgement[0]?.hostId === identity.hostId &&
+    acknowledgement[0]?.outcome === "confirmed" &&
+    timelineCleanup.length === 1 && timelineAcknowledgement.length === 1 &&
+    sameEventIdentity(cleanup[0] ?? null, timelineCleanup[0] ?? null,
+      ["attemptId", "generationId", "outcome", "sequence"]) &&
+    sameEventIdentity(acknowledgement[0] ?? null, timelineAcknowledgement[0] ?? null,
+      ["channelId", "hostId", "generationId", "outcome", "sequence"]);
+
+  const replacementIdentityValid = !!identity && !!replacement && !!currentFrame &&
+    nonEmpty(replacement.generationId) && replacement.generationId !== identity.generationId &&
+    nonEmpty(replacement.attemptId) && replacement.attemptId !== identity.attemptId &&
+    replacement.channelId === identity.channelId && replacement.hostId === identity.hostId &&
+    replacement.requestId === identity.requestId && replacement.sceneId === identity.sceneId &&
+    replacement.executionApi === "webgl2" && currentFrame.attemptId === replacement.attemptId &&
+    currentFrame.channelId === identity.channelId && currentFrame.hostId === identity.hostId &&
+    currentFrame.generationId === replacement.generationId && currentFrame.requestId === identity.requestId &&
+    currentFrame.latestAcceptedRequestId === identity.requestId &&
+    currentFrame.latestAcceptedSceneId === identity.sceneId && currentFrame.activeGenerationId === replacement.generationId &&
+    currentFrame.activeRendererFamily === "webgl-renderer" && currentFrame.frameStatus === "completed";
+
+  const attemptSequence = attempt.length === 1 ? seq(attempt[0]?.sequence) : null;
+  const runtimeIdentitySequence = seq(policy?.runtimeEventSequence);
+  const chain = [nativeMountEvent, destroy, loss, adapterFailure, cleanup[0] ?? null,
+    acknowledgement[0] ?? null, replacement, currentFrame];
+  const chainSequences = chain.map((event) => event ? seq(event.sequence) : null);
+  const chronologyValid = attemptSequence !== null && runtimeIdentitySequence !== null &&
+    attemptSequence < runtimeIdentitySequence && runtimeIdentitySequence < (seq(nativeMountEvent?.sequence) ?? -1) &&
+    chainSequences.every((sequence) => sequence !== null) &&
+    chainSequences.every((sequence, index) => index === 0 ||
+      (sequence as number) > (chainSequences[index - 1] as number)) &&
+    strictlyIncreasingSequences(qualificationEvents) && strictlyIncreasingSequences(cleanupEvents) &&
+    strictlyIncreasingSequences(hostMountEvents) &&
+    byKind(qualificationEvents, "device-destroy-requested").length === 1 &&
+    byKind(qualificationEvents, "device-lost-observed").length === 1 &&
+    byKind(failureAdapterEvents, "failure").length === 1;
+
+  if (!identityValid || !failedEventIdentityValid || !replacementIdentityValid) {
+    issues.push(`test-destroyed-device-loss-native-generation-identity-invalid:${id}`);
+  }
+  if (!chronologyValid) issues.push(`test-destroyed-device-loss-event-chronology-invalid:${id}`);
+};
+
 const evaluateNativeCapture = (
   captureValue: unknown,
   id: typeof GROUND_GLASS_M7G_REQUIRED_SCENARIO_IDS[number],
@@ -241,22 +545,8 @@ const evaluateNativeCapture = (
     }
     validateConfirmedFallback(capture, id, issues);
   } else if (id === "m7g-r187-test-destroyed-device-loss-promise") {
-    const allEvents = [
-      ...eventList(get(capture, "observation", "qualificationEvents")),
-      ...eventList(get(capture, "observation", "cleanup", "events")),
-    ].sort(bySequence);
-    const destroy = allEvents.filter((event) => event.kind === "device-destroy-requested");
-    const losses = allEvents.filter((event) => event.kind === "device-lost-observed");
-    const failure = eventList(get(capture, "observation", "failure", "adapterEvents"))
-      .find((event) => event.kind === "failure");
-    if (capture.scenarioId !== id || destroy.length !== 1 || losses.length !== 1 ||
-        destroy[0]?.cause !== "test-destroy" || losses[0]?.cause !== "test-destroy" ||
-        destroy[0]?.generationId !== losses[0]?.generationId ||
-        seq(destroy[0]?.sequence) === null || seq(losses[0]?.sequence) === null ||
-        (seq(destroy[0]?.sequence) as number) >= (seq(losses[0]?.sequence) as number) ||
-        failure?.stage !== "runtime" || failure.operation !== "device-loss") {
-      issues.push(`test-destroyed-device-loss-chain-invalid:${id}`);
-    }
+    if (capture.scenarioId !== id) issues.push(`test-destroyed-device-loss-scenario-identity-invalid:${id}`);
+    validateTestDestroyedDeviceLossChain(capture, id, issues);
     validateConfirmedFallback(capture, id, issues);
   }
   const status: GroundGlassM7gScenarioStatus = issues.length === before ? "passed" : "failed";
@@ -419,17 +709,104 @@ const evaluateExternalLoss = (captureValue: unknown, issues: string[]): GroundGl
 const evaluateBroadE2e = (captureValue: unknown, issues: string[]): GroundGlassM7gScenario => {
   const id = "m7g-r187-broad-application-e2e" as const;
   const capture = record(captureValue);
-  if (!capture) return {
+  if (!capture) {
+    issues.push(`broad-e2e-capture-missing:${id}`);
+    return {
     id, status: "not-run", evidenceClass: "broad-application-e2e", sourceCommitSha: null,
     testInvocation: null, rendererRevision: null, runtimeIdentity: null, supportingArtifacts: [],
-    orderedEvents: [], knownLimitations: ["The broad application E2E suite has no persisted current-run result."], issues: [],
-  };
+    orderedEvents: [], knownLimitations: ["The broad application E2E suite has no persisted current-run result."],
+    issues: [`broad-e2e-capture-missing:${id}`],
+    };
+  }
   const localIssues: string[] = [];
   const counts = record(capture.counts);
-  if (!nonEmpty(capture.command) || !isSha(capture.sourceCommitSha) || !nonEmpty(capture.browserProject) ||
+  const reportLink = record(capture.playwrightReport);
+  const reportValidation = record(capture.playwrightReportValidation);
+  const resultMapping = record(capture.playwrightResultMapping);
+  const validatedCounts = record(reportValidation?.counts);
+  const reportedStats = record(reportValidation?.reportStats);
+  const playwrightSummary = record(capture.playwrightSummary);
+  const summaryCounts = playwrightSummary ? {
+    expected: playwrightSummary.expected,
+    unexpected: playwrightSummary.unexpected,
+    skipped: playwrightSummary.skipped,
+    flaky: playwrightSummary.flaky,
+    artifact: playwrightSummary.artifact,
+  } : null;
+  const derivedCountsValid = !!validatedCounts && !!reportedStats &&
+    ["expected", "unexpected", "skipped", "flaky"].every((key) =>
+      Number.isInteger(validatedCounts[key]) && (validatedCounts[key] as number) >= 0 &&
+      Number.isInteger(reportedStats[key]) && validatedCounts[key] === reportedStats[key]) &&
+    Number.isInteger(reportValidation?.testsWithResults) &&
+    Number.isInteger(reportValidation?.incompleteTests) &&
+    Number(reportValidation?.testsWithResults) + Number(reportValidation?.incompleteTests) === reportValidation?.testsDiscovered &&
+    Number(validatedCounts?.expected ?? 0) + Number(validatedCounts?.unexpected ?? 0) +
+      Number(validatedCounts?.skipped ?? 0) + Number(validatedCounts?.flaky ?? 0) +
+      Number(reportValidation?.incompleteTests ?? 0) === reportValidation?.testsDiscovered &&
+    Array.isArray(reportValidation?.projectIds) && reportValidation.projectIds.length === 1 &&
+    reportValidation.projectIds[0] === "chromium";
+  const outcomeCountsValid = !!counts && derivedCountsValid &&
+    counts.passed === validatedCounts.expected &&
+    counts.failed === (Number(validatedCounts.unexpected) + Number(validatedCounts.flaky)) &&
+    counts.blocked === Number(reportValidation?.incompleteTests) &&
+    counts["not-run"] === validatedCounts.skipped;
+  const skippedExclusions = capture.intentionalSkippedExclusions;
+  if (capture.schemaVersion !== "ground-glass-m7g-r187-broad-e2e-v2" ||
+      !nonEmpty(capture.command) || !isSha(capture.sourceCommitSha) || capture.browserProject !== "chromium" ||
       !counts || !countKeys.every((key) => Number.isInteger(counts[key]) && (counts[key] as number) >= 0) ||
-      !isStatus(capture.status) || capture.testsExecuted !== countKeys.reduce((sum, key) => sum + Number(counts[key]), 0)) {
+      !isStatus(capture.status) || capture.testsExecuted !== reportValidation?.testsDiscovered ||
+      capture.testsExecuted !== 277 || !reportValidation || reportValidation.valid !== true ||
+      !Array.isArray(reportValidation.issues) || reportValidation.issues.length !== 0 ||
+      reportValidation.artifact !== "validation/broad-e2e-playwright.json" ||
+      !isSha256(reportValidation.sha256) || !reportLink || reportLink.artifact !== reportValidation.artifact ||
+      reportLink.sha256 !== reportValidation.sha256 || !derivedCountsValid || !outcomeCountsValid || !resultMapping ||
+      resultMapping.passed !== "Playwright stats.expected" ||
+      resultMapping.failed !== "Playwright stats.unexpected plus stats.flaky" ||
+      resultMapping.blocked !== "Test cases without a complete usable result" ||
+      resultMapping["not-run"] !== "Playwright stats.skipped; no skipped tests are exempted by this capture" ||
+      !summaryCounts || summaryCounts.expected !== validatedCounts?.expected ||
+      summaryCounts.unexpected !== validatedCounts?.unexpected || summaryCounts.skipped !== validatedCounts?.skipped ||
+      summaryCounts.flaky !== validatedCounts?.flaky || summaryCounts.artifact !== reportValidation.artifact ||
+      !Array.isArray(skippedExclusions) || skippedExclusions.length !== 0) {
     localIssues.push(`broad-e2e-provenance-or-counts-invalid:${id}`);
+  }
+  if (isStatus(capture.status)) {
+    const failureCount = Number(counts?.failed ?? 0);
+    const blockedCount = Number(counts?.blocked ?? 0);
+    const notRunCount = Number(counts?.["not-run"] ?? 0);
+    if (capture.status === "passed" && (failureCount > 0 || blockedCount > 0 || notRunCount > 0 ||
+        reportValidation?.valid !== true || reportValidation?.testsDiscovered !== 277)) {
+      localIssues.push(`broad-e2e-passing-status-contradicts-outcomes:${id}`);
+    }
+    if (capture.status === "blocked" && failureCount === 0 && blockedCount === 0 && notRunCount === 0) {
+      localIssues.push(`broad-e2e-blocked-status-has-no-blocker:${id}`);
+    }
+    if (capture.status === "failed" && failureCount === 0) {
+      localIssues.push(`broad-e2e-failed-status-has-no-failures:${id}`);
+    }
+    if (capture.status === "not-run" && (capture.testsExecuted !== 0 ||
+        countKeys.some((key) => Number(counts?.[key] ?? 0) !== 0))) {
+      localIssues.push(`broad-e2e-not-run-status-contradicts-outcomes:${id}`);
+    }
+  }
+
+  const comparison = record(capture.cleanMainComparison);
+  const comparisonResults = Array.isArray(comparison?.results) ? comparison.results.filter(isRecord) : [];
+  const comparedTests = comparisonResults.map((item) => item.test);
+  const reproducedCount = comparisonResults.length;
+  const failureClassification = record(capture.failureClassification);
+  const unclassifiedFailureCount = Number(counts?.failed ?? 0) - reproducedCount;
+  const comparisonValid = !!comparison && isSha(comparison.sourceSha) && nonEmpty(comparison.checkout) &&
+    Array.isArray(comparison.results) && comparisonResults.length === comparison.results.length &&
+    comparedTests.every(nonEmpty) && new Set(comparedTests).size === reproducedCount &&
+    comparisonResults.every((item) => item.status === "failed" && nonEmpty(item.sameObservedFailure) &&
+      nonEmpty(item.invocation)) && unclassifiedFailureCount >= 0 && !!failureClassification &&
+    failureClassification.unexpectedFailureCount === Number(counts?.failed ?? 0) &&
+    failureClassification.cleanMainReproducedFailureCount === reproducedCount &&
+    failureClassification.unclassifiedUnexpectedFailureCount === unclassifiedFailureCount &&
+    failureClassification.comparisonCoverage === (unclassifiedFailureCount === 0 ? "complete" : "partial");
+  if (!comparisonValid) {
+    localIssues.push(`broad-e2e-clean-main-classification-invalid:${id}`);
   }
   if (localIssues.length > 0) issues.push(...localIssues);
   return {
@@ -439,8 +816,8 @@ const evaluateBroadE2e = (captureValue: unknown, issues: string[]): GroundGlassM
     sourceCommitSha: isSha(capture.sourceCommitSha) ? capture.sourceCommitSha : null,
     testInvocation: nonEmpty(capture.command) ? capture.command : null,
     rendererRevision: null,
-    runtimeIdentity: record(capture.environment),
-    supportingArtifacts: ["validation/broad-e2e.json"], orderedEvents: [],
+    runtimeIdentity: { environment: record(capture.environment), playwrightReportValidation: reportValidation },
+    supportingArtifacts: ["validation/broad-e2e.json", "validation/broad-e2e-playwright.json"], orderedEvents: [],
     knownLimitations: Array.isArray(capture.limitations) ? capture.limitations.filter(nonEmpty) : [],
     issues: localIssues,
   };
@@ -473,6 +850,7 @@ const evaluateProductionIsolation = (captureValue: unknown, issues: string[]): G
 const summarizePredecessors = (input: JsonRecord, issues: string[]): JsonRecord => {
   const reports = record(input.predecessorReports);
   const replays = record(input.predecessorReplays);
+  const replayExecutions = record(input.predecessorReplayExecutions);
   if (!reports) {
     issues.push("predecessor-reports-missing");
     return {};
@@ -483,6 +861,8 @@ const summarizePredecessors = (input: JsonRecord, issues: string[]): JsonRecord 
   const m7f = record(reports.m7f);
   const m7eReplay = record(replays?.m7e);
   const m7fReplay = record(replays?.m7f);
+  const m7eReplayExecution = record(replayExecutions?.m7e);
+  const m7fReplayExecution = record(replayExecutions?.m7f);
   if (!m7c) issues.push("predecessor-report-missing:m7c");
   else {
     const evaluated = evaluateGroundGlassM7cR187LifecycleEvidence(m7c);
@@ -559,6 +939,12 @@ const summarizePredecessors = (input: JsonRecord, issues: string[]): JsonRecord 
       get(m7fReplay, "authorization", "productionWebGpuEnabled") !== false) {
     issues.push("predecessor-replay-invalid:m7f");
   }
+  if (!validReplayExecution(m7eReplayExecution, m7eReplay, "m7e")) {
+    issues.push("predecessor-replay-execution-invalid:m7e");
+  }
+  if (!validReplayExecution(m7fReplayExecution, m7fReplay, "m7f")) {
+    issues.push("predecessor-replay-execution-invalid:m7f");
+  }
   const quality = record(m7e?.qualification);
   const dimensions = record(quality?.dimensions);
   const expectedQuality = [
@@ -586,7 +972,8 @@ const summarizePredecessors = (input: JsonRecord, issues: string[]): JsonRecord 
       nativeCaptureSourceSha: m7e.sourceCommitSha, nativeRunId: m7e.nativeRunId,
       runtime: m7e.runtime, qualification: get(m7e, "qualification", "status"), qualityStatuses: observedQuality } : null,
     m7eOfflineReplay: m7eReplay ? { reportId: m7eReplay.reportId, evaluatorRevision: m7eReplay.evaluatorRevision,
-      status: m7eReplay.replayStatus, counts: m7eReplay.scenarioCounts, noBrowser: m7eReplay.noBrowser } : null,
+      status: m7eReplay.replayStatus, counts: m7eReplay.scenarioCounts, noBrowser: m7eReplay.noBrowser,
+      freshExecution: m7eReplayExecution } : null,
     m7f: m7f ? { reportId: m7f.reportId, evaluatorRevision: m7f.evaluatorRevision,
       nativeCaptureSourceSha: m7f.nativeCaptureSourceSha, qualification: m7f.qualificationStatus,
       counts: m7f.scenarioCounts, runtime: m7f.runtimeIdentity,
@@ -594,7 +981,8 @@ const summarizePredecessors = (input: JsonRecord, issues: string[]): JsonRecord 
       alphaEvidenceScope: get(m7fScenarios.find((scenario) => scenario.id === "m6c-opaque-target-alpha"),
         "runtimeIdentity", "evidenceScope") } : null,
     m7fOfflineReplay: m7fReplay ? { reportId: m7fReplay.reportId, evaluatorRevision: m7fReplay.evaluatorRevision,
-      status: m7fReplay.qualificationStatus, counts: m7fReplay.scenarioCounts, qualificationPass: m7fReplay.qualificationPass } : null,
+      status: m7fReplay.qualificationStatus, counts: m7fReplay.scenarioCounts,
+      qualificationPass: m7fReplay.qualificationPass, freshExecution: m7fReplayExecution } : null,
     m6PresentationScenarioCount: m7fCounts?.passed ?? null,
   };
 };

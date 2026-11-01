@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "ground-glass-m7g-r187-broad-e2e-v1",
+  "schemaVersion": "ground-glass-m7g-r187-broad-e2e-v2",
   "status": "blocked",
   "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
   "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4282 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json npm run test:e2e -- --project=chromium --workers=4 --reporter=json",
@@ -25,6 +25,23 @@
     "flaky": 0,
     "durationMs": 2616155.548,
     "artifact": "validation/broad-e2e-playwright.json"
+  },
+  "playwrightReport": {
+    "artifact": "validation/broad-e2e-playwright.json",
+    "sha256": "393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6"
+  },
+  "intentionalSkippedExclusions": [],
+  "playwrightResultMapping": {
+    "passed": "Playwright stats.expected",
+    "failed": "Playwright stats.unexpected plus stats.flaky",
+    "blocked": "Test cases without a complete usable result",
+    "not-run": "Playwright stats.skipped; no skipped tests are exempted by this capture"
+  },
+  "failureClassification": {
+    "unexpectedFailureCount": 99,
+    "cleanMainReproducedFailureCount": 3,
+    "unclassifiedUnexpectedFailureCount": 96,
+    "comparisonCoverage": "partial"
   },
   "cleanMainComparison": {
     "sourceSha": "bda4ce9244111517e0898a0ead3b61d5faba7eb2",

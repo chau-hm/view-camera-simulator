@@ -53,6 +53,13 @@ jobs:
           trap 'rm -f "$M7F_REPLAY_REPORT"' EXIT
           npm run evidence:replay:m7f -- --report-output="$M7F_REPLAY_REPORT"
 
+      - name: Validate M7G consolidated evidence integrity
+        run: |
+          M7G_REPORT="$GITHUB_WORKSPACE/.m7g-consolidation-report.json"
+          M7G_EVALUATION="$GITHUB_WORKSPACE/.m7g-consolidation-evaluation.json"
+          trap 'rm -f "$M7G_REPORT" "$M7G_EVALUATION"' EXIT
+          npm run evidence:report:m7g -- --report-output="$M7G_REPORT" --evaluation-output="$M7G_EVALUATION"
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci

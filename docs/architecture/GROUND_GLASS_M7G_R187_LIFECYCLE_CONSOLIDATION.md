@@ -6,7 +6,7 @@
 
 This qualification covers the development-only Architecture Rise M3–M6 pilot on Three.js `0.187.0`. Native captures were collected in Playwright's `chrome-native-webgpu` project with Chrome `156.0.8078.76` on macOS `27.0.0` arm64. The observed renderer was `webgpu-renderer`, the execution API was `webgpu`, and internal fallback was `none`. This establishes native WebGPU execution in the tested browser environment; it makes no claim about hardware acceleration or other browser/device combinations.
 
-The M7G report uses evaluator `m7g-r187-consolidation-evaluator-v1`. Run the strict replay with `npm run evidence:replay:m7g`; the diagnostic report command is `npm run evidence:report:m7g`. Strict replay correctly returns a nonzero result while the qualification remains partial. The machine-readable result is [GROUND_GLASS_M7G_R187_LIFECYCLE_CONSOLIDATION_REPORT.json](GROUND_GLASS_M7G_R187_LIFECYCLE_CONSOLIDATION_REPORT.json).
+The M7G report uses evaluator `m7g-r187-consolidation-evaluator-v2`. Run the strict replay with `npm run evidence:replay:m7g`; the diagnostic report command is `npm run evidence:report:m7g`. Strict replay correctly returns a nonzero result while the qualification remains partial. Diagnostic mode succeeds only when evidence integrity is valid. The machine-readable result is [GROUND_GLASS_M7G_R187_LIFECYCLE_CONSOLIDATION_REPORT.json](GROUND_GLASS_M7G_R187_LIFECYCLE_CONSOLIDATION_REPORT.json).
 
 ## Lifecycle ownership audit
 
@@ -45,17 +45,26 @@ The M5 hold occurs after GPU submission, at the adapter's asynchronous settlemen
 | Independent channels | M7C's focused channel scenario preserves separate request, generation, publication, and retry identity. |
 | Production isolation | M7C production-preview evidence is retained; M7G reruns production preview under hostile M3–M6/test-seam build flags and confirms WebGL-only behavior. |
 
-The M7G evaluator status means the consolidated evidence inventory is internally valid; it does not convert blocked native/environment gaps to passes.
+The M7G evaluator status means the consolidated evidence inventory is internally valid; it does not convert blocked native/environment gaps to passes. Version 2 derives the broad E2E outcome counts from the persisted Playwright test tree and binds the summary to the exact raw JSON SHA-256. A claimed pass cannot override the 99 recorded unexpected outcomes or 75 skipped tests. The current capture remains blocked, with 3 unexpected failures reproduced on clean `main` and 96 still unclassified.
 
 ### Device-loss event sequence
 
-The native test-destroy capture records `device-destroy-requested(test-destroy)` → actual `device-lost-observed(test-destroy)` → runtime failure → adapter cleanup → host acknowledgement → WebGL replacement → accepted WebGL frame. A spontaneous/external device loss remains unobserved. Duplicate cleanup, wrong-generation loss, and relabeling test-caused loss are rejected by mutation-sensitive evaluator tests.
+The native test-destroy capture records `device-destroy-requested(test-destroy)` → actual `device-lost-observed(test-destroy)` → runtime failure → adapter cleanup → host acknowledgement → WebGL replacement → accepted WebGL frame. Version 2 anchors both device events to the captured attempt and generation, then checks their sequence against the native mount, cleanup acknowledgement, replacement generation, and accepted frame. A spontaneous/external device loss remains unobserved. Duplicate events, joint or individual wrong-generation changes, changed attempt identity, broken chronology, and relabeling test-caused loss are rejected by mutation-sensitive evaluator tests.
 
 ## Consolidated predecessor evidence
 
 M7G replays predecessor records without rewriting their historical captures. M7C remains **18 passed, 0 failed, 2 blocked, 1 not-run**. M7D remains scoped r187 M4 research qualification; M7E remains r187 M5 Gather/B1 research qualification with partially-qualified M5Q; and M7F remains scoped r187 presentation conformance with photographic quality unqualified. Offline M7E replay accepted 12/12 persisted scenarios and M7F replay accepted 17/17. The original M7B final strict inventory remains **6 passed, 0 failed, 10 blocked, 1 not-run**; earlier 12/4/1 figures are pre-review-fix history.
 
 The M7G evaluator verifies the seven-scenario inventory and counts, replays M7C lifecycle contracts, and checks M7E/M7F offline replay results. Its focused mutation suite covers runtime identity, cleanup and fallback order, generation/request freshness, loss cause, predecessor replay integrity, production isolation, authorization boundaries, and report metadata. Historical M7B–M7F reports and r186 evidence were not relabeled or overwritten.
+
+## Review-fix round 1 — evidence integrity
+
+- **F1 — Broad E2E status:** the reviewed v1 evaluator accepted a mutation that changed only `status` to `passed`, despite 99 failures and 75 skips. Version 2 reads and hashes the raw Playwright JSON, derives expected/unexpected/skipped/flaky outcomes from its 277 test records, and requires the summary, scenario status, and clean-main classification to agree. Raw report SHA-256 is `393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6`. Skipped cases remain `not-run`; no exclusions are accepted. The current scenario stays blocked.
+- **F2 — Device-loss ownership:** the reviewed v1 comparison accepted a mutation that changed the destroy and loss generations together while leaving the failed capture identity unchanged. Version 2 binds test destruction and the resulting `GPUDevice.lost` observation to the native attempt/generation, then orders them through failure, confirmed cleanup, host acknowledgement, WebGL replacement, and the accepted replacement frame. Cause labels distinguish `test-destroy` from external loss.
+- **F3 — Fresh predecessor replay:** the former fixed report paths allowed a previous success to remain available after a failed subprocess. M7E and M7F now replay as child processes into unique, initially absent paths under a temporary repository directory. A process-level regression writes a valid report and exits 7; the replay is rejected despite that report. The evaluator also requires no signal/spawn error, a newly written and parsed report, matching report/source identities, valid scenario counts, and a report digest. The committed M7E/M7F snapshots are preserved as historical artifacts and are not inputs to the current replay.
+- **F4 — Hosted diagnostic:** CI runs the M7G diagnostic report after tests and M7F replay, writes report/evaluation outputs to temporary workspace paths, removes them on exit, and prints evidence integrity, partial qualification, M8 denial, and production WebGPU status. Corrupt or missing evidence exits nonzero; the valid partially-qualified report exits successfully in diagnostic mode. Local process validation observed diagnostic exit 0 and strict replay exit 1 while M7 remains partial.
+
+Focused evidence integrity validation: 82 tests passed across the M7G evaluator and subprocess-orchestration suites, including raw-report mutations, device-loss identity/chronology mutations, source-revision binding, and process-level replay failure controls. The full local suite passed 3,498 tests across 312 files; typecheck, lint, CSS structure, and production build also passed. No native captures or predecessor replay snapshots were rewritten in this review-fix round.
 
 ## Broad E2E assessment
 
