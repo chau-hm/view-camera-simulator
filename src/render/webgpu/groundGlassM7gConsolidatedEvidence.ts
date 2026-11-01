@@ -739,4 +739,3 @@ export const evaluateGroundGlassM7gConsolidation = (inputValue: unknown): Ground
     authorization: authorized,
   };
 };
-
