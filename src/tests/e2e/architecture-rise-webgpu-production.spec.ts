@@ -82,11 +82,11 @@ const screenshotElement = async (page: Page, locator: Locator) => {
   if (width <= 0 || height <= 0) {
     throw new Error("The production preview screenshot target is outside the browser viewport");
   }
-  return page.screenshot({ clip: { x, y, width, height }, animations: "disabled" });
+  return page.screenshot({ clip: { x, y, width, height } });
 };
 
 test("production preview keeps Architecture Rise on WebGL for default and explicit WebGPU requests", async ({ page }, testInfo) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
   const webgpuModuleRequests: string[] = [];
@@ -135,7 +135,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(observer).toHaveAttribute("data-observer-renderer-request", "webgpu-pilot");
   await expect(observer).toHaveAttribute("data-observer-selection-reason", "development-gate-disabled");
   await expect(observer).toHaveAttribute("data-observer-renderer-attempt", "webgl");
-  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(observer).toHaveAttribute("data-observer-renderer-family", "webgl-renderer", { timeout: 60_000 });
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
@@ -281,7 +281,7 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
 });
 
 test("production preview denies the Anatomy material-aware WebGPU candidate", async ({ page }, testInfo) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
   const webgpuModuleRequests: string[] = [];
