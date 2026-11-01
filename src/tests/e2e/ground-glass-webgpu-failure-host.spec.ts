@@ -11,6 +11,7 @@ import type {
 import { attachGroundGlassM7dEvidence } from "./helpers/groundGlassM7dEvidence";
 import { clickStageAt } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { groundGlassM7gSourceProvenance } from "./helpers/groundGlassM7gEvidence";
 
 const nativeRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const failureIntegrationEnabled = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
@@ -292,6 +293,7 @@ const attachLifecycleEvidence = async (page: Page, testInfo: import("@playwright
       schemaVersion: "ground-glass-m7g-r187-native-observation-v1",
       scenarioId: m7gCapture.scenarioId,
       invocation: process.env.GROUND_GLASS_M7G_TEST_INVOCATION ?? evidence.invocation,
+      captureProvenance: groundGlassM7gSourceProvenance(),
     }, null, 2));
   }
   await testInfo.attach("ground-glass-m7c-r187-lifecycle-evidence", {
@@ -870,7 +872,7 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
         kind: "failure",
         generationId: failedGeneration,
         stage: "runtime",
-        operation: "unknown",
+        operation: "device-loss",
         reason: expect.stringContaining("device-loss equivalent"),
       }));
     await expect.poll(async () => page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []), { timeout: 120_000 })
@@ -905,7 +907,7 @@ test.describe("native M3 WebGPU adapter-to-host controlled failure recovery", ()
         cause: "test-destroy",
       }));
     await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.releaseQueueCompletion?.());
-    await assertConfirmedWebGlFallback(glass, page, activeRequestId!, failedGeneration, "runtime", "unknown");
+    await assertConfirmedWebGlFallback(glass, page, activeRequestId!, failedGeneration, "runtime", "device-loss");
     const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
     const destroyEvent = events.find((event) => event.kind === "device-destroy-requested" && event.generationId === failedGeneration);
     const lostEvent = events.find((event) => event.kind === "device-lost-observed" && event.generationId === failedGeneration);
