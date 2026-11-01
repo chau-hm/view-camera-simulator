@@ -45,6 +45,5 @@ test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass contro
   await page.getByRole("radio", { name: "Upright Assist", exact: true }).check();
   await expect(page.getByRole("radio", { name: "Upright Assist", exact: true })).toBeChecked();
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
-  await page.getByRole("button", { name: "Reset Ground Glass view", exact: true }).click();
   await expect(stage).toHaveAttribute("data-focus-loupe-active", "false");
 });
