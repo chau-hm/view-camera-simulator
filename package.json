@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "evidence:replay:m7e": "node ./scripts/run-m7e-offline-replay.mjs",
+    "evidence:replay:m7f": "node ./scripts/run-m7f-presentation-evidence-replay.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",

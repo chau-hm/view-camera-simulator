@@ -10,6 +10,7 @@ import {
   isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationBuildEnabled,
   isGroundGlassM6PresentationRequest,
+  isGroundGlassM6R187SessionAuthorized,
 } from "./groundGlassM6PresentationPolicy";
 import {
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
@@ -99,8 +100,15 @@ export const isGroundGlassPhysicalCocProvisioningEnabledForPolicy = (
   ? input.m6CompatibilityRevisionMatched
   : isGroundGlassPhysicalCocResearchEnabledForPolicy(input);
 
-const m6CompatibilityMatchesInstalledRenderer = (): boolean =>
-  isGroundGlassM6PresentationRevisionMatched(
+const m6CompatibilityMatchesInstalledRenderer = (
+  request: GroundGlassFrameRequestInput,
+): boolean => REVISION === "187"
+  ? isGroundGlassM6R187SessionAuthorized(request) &&
+    isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
+      resolveGroundGlassRawWebGpuCompatibility("r187"),
+      "r187",
+    )
+  : isGroundGlassM6PresentationRevisionMatched(
     GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
     `r${REVISION}`,
   );
@@ -129,7 +137,7 @@ const getPhysicalCocResearchPolicyInput = (
   request: GroundGlassFrameRequestInput,
 ): GroundGlassPhysicalCocResearchPolicyInput => ({
   m6PresentationRequest: isGroundGlassM6PresentationRequest(request),
-  m6CompatibilityRevisionMatched: m6CompatibilityMatchesInstalledRenderer(),
+  m6CompatibilityRevisionMatched: m6CompatibilityMatchesInstalledRenderer(request),
   developmentBuild: import.meta.env.DEV,
   rawPilotBuildAuthorized: isGroundGlassRawWebGpuPilotBuildEnabled(),
   physicalCocResearchBuildEnabled:

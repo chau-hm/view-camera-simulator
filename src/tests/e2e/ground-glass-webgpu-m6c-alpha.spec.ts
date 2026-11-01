@@ -16,9 +16,17 @@ import type {
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import { mapGroundGlassInspectionWindowToRttSourceCrop } from "../../render/groundGlassInspectionWindow";
 import { readFreshElementBounds } from "./helpers/groundGlass";
+import {
+  groundGlassM7fCaptureProvenance,
+  isGroundGlassM7fRequired,
+  writeGroundGlassM7fCapture,
+} from "./helpers/groundGlassM7fEvidence";
 
 const nativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const m6PresentationRequired = process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === "1";
+const m6NativeRunRequired = m6PresentationRequired &&
+  process.env.GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED === "1";
+const m7fRequired = isGroundGlassM7fRequired();
 
 const paneFor = (page: Page) => page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
 const pilotFor = (page: Page) => page.getByTestId("ground-glass-webgpu-pilot");
@@ -84,7 +92,7 @@ const setEffectOverrides = async (
 }, effectOverrides);
 
 test("native M6C captures actual presentation alpha across effects, orientation, crop and resize", async ({ page }, testInfo) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires chrome-native-webgpu and trusted M6 development build flags");
   test.setTimeout(600_000);
   await page.addInitScript(() => {
@@ -148,7 +156,7 @@ test("native M6C captures actual presentation alpha across effects, orientation,
     captures.push(item);
     await attachJson(testInfo, `${id}-alpha-readback.json`, item);
     expect(readback.status, readback.failureReason ?? id).toBe("measured");
-    expect(readback.rendererRevision).toBe("186");
+    expect(readback.rendererRevision).toBe(m7fRequired ? "187" : "186");
     expect(readback.rendererFamily).toBe("webgpu-renderer");
     expect(readback.actualExecutionApi).toBe("webgpu");
     expect(readback.internalFallback).toBe("none");
@@ -181,6 +189,7 @@ test("native M6C captures actual presentation alpha across effects, orientation,
       colorWrite: true,
       alphaTest: 0,
       premultipliedAlpha: false,
+      toneMapped: false,
       samePresentationMaterialInstance: true,
     });
     expect(readback.samples).toHaveLength(GROUND_GLASS_M6C_ALPHA_MATRIX.length);
@@ -328,10 +337,14 @@ test("native M6C captures actual presentation alpha across effects, orientation,
 
   await attachJson(testInfo, "m6c-alpha-conformance-report-fragment.json", {
     evaluatorRevision: GROUND_GLASS_M6C_ALPHA_GATE_REVISION,
+    captureProvenance: m7fRequired ? groundGlassM7fCaptureProvenance() : null,
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${process.arch}`,
     sourceAlphaMatrix: GROUND_GLASS_M6C_ALPHA_MATRIX,
     browserUserAgent,
     captureIds: captures.map(({ id }) => id),
     captures,
+    adapterEvents: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []),
     resourceAccounting: {
       ...finalResourceAccounting,
       normalFrameAllocationsBeforeCapture: allocationBeforeCapture.allocations,
@@ -340,11 +353,26 @@ test("native M6C captures actual presentation alpha across effects, orientation,
     m6bPhysicalOverlayEvidence: "retained separately by the M6B native regression",
     qualityDecision: "quality-unqualified",
   });
+  writeGroundGlassM7fCapture("m6c-alpha-conformance.json", {
+    evaluatorRevision: GROUND_GLASS_M6C_ALPHA_GATE_REVISION,
+    captureProvenance: m7fRequired ? groundGlassM7fCaptureProvenance() : null,
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${process.arch}`,
+    sourceAlphaMatrix: GROUND_GLASS_M6C_ALPHA_MATRIX,
+    captures,
+    adapterEvents: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []),
+    resourceAccounting: {
+      ...finalResourceAccounting,
+      normalFrameAllocationsBeforeCapture: allocationBeforeCapture.allocations,
+    },
+    visibleCanvas: { alphaMode: canvasAlphaMode, remainsOpaque: true },
+    qualityDecision: "quality-unqualified",
+  });
   await expect(pilot).toHaveAttribute("data-actual-execution-api", "webgpu");
 });
 
 test("native M6C rejects a held alpha result after the accepted request changes", async ({ page }, testInfo) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires chrome-native-webgpu and trusted M6 development build flags");
   test.setTimeout(300_000);
   await page.addInitScript(() => {
@@ -384,16 +412,29 @@ test("native M6C rejects a held alpha result after the accepted request changes"
     return readback;
   }, token);
   await attachJson(testInfo, "m6c-stale-readback-control.json", stale);
+  await waitForCurrentFrame(page);
+  const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+  writeGroundGlassM7fCapture("lifecycle/m6c-stale-request.json", {
+    schemaVersion: 1,
+    scenarioId: "m6c-stale-request-readback",
+    captureProvenance: groundGlassM7fCaptureProvenance(),
+    initialRequestId,
+    currentRequestId: await pane.getAttribute("data-frame-request-id"),
+    channelId: await pane.getAttribute("data-frame-channel-id"),
+    sceneId: await pane.getAttribute("data-frame-scene-id"),
+    rendererGenerationId: await pane.getAttribute("data-renderer-generation"),
+    staleReadback: stale,
+    events,
+  });
   expect(stale.samples).toHaveLength(0);
   expect(stale.resourceAccounting.targetDisposed).toBe(true);
   expect(stale.resourceAccounting.allocationCount).toBe(1);
   expect(stale.resourceAccounting.disposalCount).toBe(1);
   expect(stale.resourceAccounting.previousRenderTargetRestored).toBe(true);
-  await waitForCurrentFrame(page);
 });
 
 test("native M6C discards held alpha readback when SPA navigation retires its renderer generation", async ({ page }, testInfo) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires chrome-native-webgpu and trusted M6 development build flags");
   test.setTimeout(300_000);
   await page.addInitScript(() => {
@@ -439,6 +480,22 @@ test("native M6C discards held alpha readback when SPA navigation retires its re
     return readback;
   }, token);
   await attachJson(testInfo, "m6c-retired-generation-readback-control.json", stale);
+  const events = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
+  writeGroundGlassM7fCapture("lifecycle/m6c-retired-generation.json", {
+    schemaVersion: 1,
+    scenarioId: "m6c-retired-generation-readback",
+    captureProvenance: groundGlassM7fCaptureProvenance(),
+    initialRequestId: stale.identity?.requestId ?? null,
+    currentRequestId: null,
+    currentHostMounted: false,
+    routeAfterNavigation: page.url(),
+    channelId: stale.identity?.channelId ?? null,
+    sceneId: stale.identity?.sceneId ?? null,
+    rendererGenerationId: stale.identity?.rendererGenerationId ?? null,
+    cleanupOutcome: await retiredPilot.getAttribute("data-cleanup-outcome"),
+    staleReadback: stale,
+    events,
+  });
   expect(stale.samples).toHaveLength(0);
   expect(stale.resourceAccounting.targetDisposed).toBe(true);
   expect(stale.resourceAccounting.allocationCount).toBe(1);

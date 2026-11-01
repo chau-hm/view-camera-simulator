@@ -457,11 +457,13 @@ describe("M6C alpha conformance contract", () => {
       alphaTest: 0,
       premultipliedAlpha: false,
       colorWrite: true,
+      toneMapped: false,
     };
     expect(isGroundGlassM6cMaterialEquivalent(material)).toBe(true);
     expect(isGroundGlassM6cMaterialEquivalent({ ...material, transparent: true })).toBe(false);
     expect(isGroundGlassM6cMaterialEquivalent({ ...material, samePresentationMaterialInstance: false })).toBe(false);
     expect(isGroundGlassM6cMaterialEquivalent({ ...material, blending: "none" })).toBe(false);
+    expect(isGroundGlassM6cMaterialEquivalent({ ...material, toneMapped: true })).toBe(false);
     expect(isGroundGlassM6cTargetLifecycleComplete({
       allocated: true, disposed: true, previousRenderTargetRestored: true, outstandingCaptureCount: 0,
     })).toBe(true);

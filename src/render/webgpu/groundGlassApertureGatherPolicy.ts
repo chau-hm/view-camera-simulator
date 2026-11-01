@@ -20,6 +20,7 @@ import {
   isGroundGlassM6CapablePilotSessionForBuild,
   isGroundGlassM6PresentationBuildEnabled,
   isGroundGlassM6PresentationRequest,
+  isGroundGlassM6R187SessionAuthorized,
 } from "./groundGlassM6PresentationPolicy";
 
 export type GroundGlassApertureGatherQualityMode =
@@ -143,10 +144,18 @@ export const isGroundGlassApertureGatherResearchEvidenceRevisionMatched = (
   return true;
 };
 
-const isM6EvidenceRevisionMatched = (): boolean => isGroundGlassM6PresentationRevisionMatched(
-  GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
-  `r${REVISION}`,
-);
+const isM6EvidenceRevisionMatched = (
+  request: GroundGlassFrameRequestInput,
+): boolean => REVISION === "187"
+  ? isGroundGlassM6R187SessionAuthorized(request) &&
+    isGroundGlassApertureGatherResearchEvidenceRevisionMatched(
+      resolveGroundGlassRawWebGpuCompatibility("r187"),
+      "r187",
+    )
+  : isGroundGlassM6PresentationRevisionMatched(
+    GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY,
+    `r${REVISION}`,
+  );
 
 const QUALITY: Readonly<Record<GroundGlassApertureGatherQualityMode, Omit<GroundGlassApertureGatherSettings, "maximumRadiusPx" | "qualityMode">>> = {
   full32: { gatherScale: 1, sampleCount: 32 },
@@ -164,7 +173,7 @@ const QUALITY: Readonly<Record<GroundGlassApertureGatherQualityMode, Omit<Ground
 export const isGroundGlassApertureGatherResearchEnabled = (
   request: GroundGlassFrameRequestInput,
 ): boolean => {
-  if (isGroundGlassM6PresentationRequest(request)) return isM6EvidenceRevisionMatched();
+  if (isGroundGlassM6PresentationRequest(request)) return isM6EvidenceRevisionMatched(request);
   if (!import.meta.env.DEV
       || import.meta.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH !== "true"
       || !isGroundGlassRawWebGpuPilotRequest(request)) return false;
@@ -185,7 +194,7 @@ export const isGroundGlassApertureGatherResourceProvisioningEnabled = (
     "webgpu",
     "webgpu",
   );
-  if (m6CapableSession) return isM6EvidenceRevisionMatched();
+  if (m6CapableSession) return isM6EvidenceRevisionMatched(request);
   return isGroundGlassApertureGatherResearchEnabled(request);
 };
 
@@ -203,11 +212,19 @@ export const resolveGroundGlassApertureGatherResearchEligibility = (
     return { status: "unsupported", reason: "request-outside-architecture-rise-raw-pilot" };
   }
   if (!revision) return { status: "unsupported", reason: "candidate-renderer-revision-unresolved" };
-  const compatibility = input.compatibility ?? (m6Request
+  const m6R187ResearchPath = m6Request && revision === "r187" &&
+    isGroundGlassM6R187SessionAuthorized(input.request);
+  if (m6Request && revision === "r187" && !m6R187ResearchPath) {
+    return { status: "unsupported", reason: "m6-r187-qualification-or-presentation-evidence-required" };
+  }
+  const usesRawResearchEvidence = !m6Request || m6R187ResearchPath;
+  const compatibility = input.compatibility ?? (usesRawResearchEvidence
+    ? resolveGroundGlassRawWebGpuCompatibility(revision)
+    : m6Request
     ? GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY
     : resolveGroundGlassRawWebGpuCompatibility(revision));
   if (!compatibility) return { status: "unsupported", reason: "candidate-renderer-revision-unsupported" };
-  const expectedSourceRevision = m6Request
+  const expectedSourceRevision = m6Request && !m6R187ResearchPath
     ? ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION
     : ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION;
   if (compatibility.sceneId !== input.request.scene.id
@@ -225,7 +242,7 @@ export const resolveGroundGlassApertureGatherResearchEligibility = (
       revision === "r187" && !m6Request &&
       (featureName === "aperture-gather" || featureName === "far-reconstruction-b1");
     if (qualificationMayGatherWithoutM5Record) continue;
-    if (!m6Request) {
+    if (usesRawResearchEvidence) {
       const expectedEvidenceRevision = revision === "r187"
         ? featureName === "physical-coc" ? ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION
           : featureName === "aperture-gather" ? ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION
@@ -245,7 +262,7 @@ export const resolveGroundGlassApertureGatherResearchEligibility = (
       : feature.status === "implementation-verified"
         ? feature.verificationEvidence
         : [];
-    const expectedStatus = m6Request ? "implementation-verified" : "research-only";
+    const expectedStatus = usesRawResearchEvidence ? "research-only" : "implementation-verified";
     if (feature.status !== expectedStatus
         || feature.sourceRevision !== compatibility.sourceRevision
         || !feature.evidenceRevision.trim()

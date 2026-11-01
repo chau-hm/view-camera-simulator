@@ -9,6 +9,11 @@ import type {
   GroundGlassB1BoundaryProbeReadback,
   GroundGlassApertureGatherCaptureReadback,
 } from "../../render/webgpu/groundGlassWebGpuTestSeam";
+import {
+  groundGlassM7fCaptureProvenance,
+  isGroundGlassM7fRequired,
+  writeGroundGlassM7fCapture,
+} from "./helpers/groundGlassM7fEvidence";
 import type { GroundGlassApertureGatherQualityMode } from "../../render/webgpu/groundGlassApertureGatherPolicy";
 import {
   GROUND_GLASS_APERTURE_SIGN_EPSILON_MM,
@@ -185,6 +190,10 @@ const M5_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled
   && !gatherR187QualificationEnabled && REVISION === "186";
 const M7E_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && gatherResearchEnabled
   && gatherR187QualificationEnabled && physicalR187QualificationEnabled && REVISION === "187";
+const M7F_REQUIRED = nativeRequired && rawPilotEnabled &&
+  process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === "1" &&
+  isGroundGlassM7fRequired() && REVISION === "187";
+const M6D_REQUIRED = M5_REQUIRED || M7F_REQUIRED;
 const M4_RAW_BASELINE_REQUIRED = nativeRequired && rawPilotEnabled && physicalResearchEnabled && !gatherResearchEnabled;
 const M7E_NATIVE_TEST_INVOCATION = "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true GROUND_GLASS_M7E_EVIDENCE_DIR=docs/architecture/ground-glass-m7e-r187-gather-b1 PLAYWRIGHT_WEB_SERVER_PORT=4173 npx playwright test src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'M7E native r187 requalifies|M7E r187 isolates optional M5 failures|native M5 rejects stale captures and recovers from a local gather failure'";
 const M7E_NATIVE_RUN_ID = `${Date.now()}-${process.pid}`;
@@ -1468,6 +1477,30 @@ const prepareNativeM5F8Page = async (page: Page): Promise<string[]> => {
   return pageErrors;
 };
 
+const prepareNativeM6R187Page = async (page: Page): Promise<string[]> => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    window.__groundGlassWebGpuM3TestControl = {};
+  });
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+  const pane = paneFor(page);
+  const pilot = pilotFor(page);
+  await expect(pane).toHaveAttribute("data-render-host-lifecycle", "ready", { timeout: 150_000 });
+  await expect(pane).toHaveAttribute("data-policy-selected-backend", "webgpu");
+  await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer");
+  await expect(pane).toHaveAttribute("data-actual-execution-api", "webgpu");
+  await expect(pilot).toHaveAttribute("data-internal-fallback", "none");
+  await expect(pilot).toHaveAttribute("data-presentation-mode", "m6-experimental-dof");
+  await expect(pilot).toHaveAttribute("data-presentation-status", "completed", { timeout: 150_000 });
+  await page.getByRole("radiogroup", { name: "Aperture", exact: true })
+    .getByRole("radio", { name: "f/8", exact: true }).check();
+  await waitForCurrentFrame(page);
+  await expect(pilot).toHaveAttribute("data-presentation-status", "completed");
+  return pageErrors;
+};
+
 test("native M5Q explores a bounded Architecture Rise optical-state catalog before confirmation", async ({ page }, testInfo) => {
   test.skip(!M5_REQUIRED,
     "Requires headed native WebGPU, the M3 Raw pilot, the M4 physical research gate, and the separate M5 gather research gate");
@@ -2129,12 +2162,14 @@ test("M7E r187 isolates optional M5 failures from the completed M3 Raw frame", a
 });
 
 test("native M6D confirms the actual M5 composite completes Near coverage as opaque RGB", async ({ page }, testInfo) => {
-  test.skip(!M5_REQUIRED,
-    "Requires headed native WebGPU and the development-only M3/M4/M5 adapter gates");
+  test.skip(!M6D_REQUIRED,
+    "Requires the historical native M5 gates or the explicit r187 M6 qualification harness");
   test.setTimeout(600_000);
-  expect(REVISION).toBe("186");
+  expect(REVISION).toBe(M7F_REQUIRED ? "187" : "186");
 
-  const pageErrors = await prepareNativeM5F8Page(page);
+  const pageErrors = M7F_REQUIRED
+    ? await prepareNativeM6R187Page(page)
+    : await prepareNativeM5F8Page(page);
   const capture = await captureGather(
     page,
     "half16",
@@ -2160,6 +2195,7 @@ test("native M6D confirms the actual M5 composite completes Near coverage as opa
         requestId: capture.requestId,
         channelId: capture.channelId,
         sceneId: capture.sceneId,
+        sourceRevision: capture.sceneSourceRevision,
         rendererGenerationId: capture.rendererGenerationId,
         rendererFamily: capture.rendererFamily,
         actualExecutionApi: capture.actualExecutionApi,
@@ -2171,6 +2207,26 @@ test("native M6D confirms the actual M5 composite completes Near coverage as opa
     }, null, 2),
     contentType: "application/json",
   });
+  writeGroundGlassM7fCapture("m6d-composite.json", {
+    captureProvenance: M7F_REQUIRED ? groundGlassM7fCaptureProvenance() : null,
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${process.arch}`,
+    adapterEvents: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []),
+    registeredM5Capture: {
+      captureId: capture.captureId,
+      requestId: capture.requestId,
+      channelId: capture.channelId,
+      sceneId: capture.sceneId,
+      sourceRevision: capture.sceneSourceRevision,
+      rendererGenerationId: capture.rendererGenerationId,
+      rendererFamily: capture.rendererFamily,
+      actualExecutionApi: capture.actualExecutionApi,
+      internalFallback: capture.internalFallback,
+      completedPasses: capture.completedPasses,
+      compositeTargetFormat: capture.targetFormats.composite,
+    },
+    controlledCompositeProbe: probe,
+  });
   expect(probe.contractRevision).toBe("m6d-opaque-presentation-v1");
   expect(probe.rendererRevision).toBe(`r${REVISION}`);
   expect(probe.rendererFamily).toBe("webgpu-renderer");
@@ -2181,10 +2237,16 @@ test("native M6D confirms the actual M5 composite completes Near coverage as opa
   expect(probe.channelId).toBe(capture.channelId);
   expect(probe.sceneId).toBe(capture.sceneId);
   expect(probe.rendererGenerationId).toBe(capture.rendererGenerationId);
+  expect(probe.sourceTextureIdentity.farUuid).not.toBe(probe.sourceTextureIdentity.nearUuid);
   expect(probe.sourceTextureFormat).toBe("rgba16float");
+  expect(probe.nearTextureFormat).toBe("rgba16float");
+  expect(probe.targetIdentity.widthPx).toBe(5);
+  expect(probe.targetIdentity.heightPx).toBe(1);
+  expect(probe.targetAllocationObserved).toBe(true);
   expect(probe.targetFormat).toBe("rgba16float");
   expect(probe.targetColorSpace).toBe("no-color-space");
   expect(probe.rendererStateRestored).toBe(true);
+  expect(probe.temporaryResourcesDisposed).toBe(true);
   expect(probe.cases.map(({ coverage }) => coverage)).toEqual([0, 0.25, 0.5, 0.75, 1]);
 
   const expectedRgb = [

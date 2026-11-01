@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -38,6 +40,12 @@ jobs:
 
       - name: Unit and integration tests
         run: npm run test
+
+      - name: Replay persisted M7F presentation evidence
+        run: |
+          M7F_REPLAY_REPORT="$GITHUB_WORKSPACE/.m7f-presentation-replay.json"
+          trap 'rm -f "$M7F_REPLAY_REPORT"' EXIT
+          npm run evidence:replay:m7f -- --report-output="$M7F_REPLAY_REPORT"
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'

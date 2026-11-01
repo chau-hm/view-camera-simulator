@@ -99,6 +99,7 @@ export type GroundGlassM6cAlphaCaptureReadback = Readonly<{
     colorWrite: boolean;
     alphaTest: number;
     premultipliedAlpha: boolean;
+    toneMapped: boolean;
     samePresentationMaterialInstance: true;
   }> | null;
   samples: readonly GroundGlassM6cAlphaSampleInput[];
@@ -159,10 +160,15 @@ export type GroundGlassM6dCompositeContractProbeReadback = Readonly<{
   actualExecutionApi: "webgpu";
   internalFallback: "none";
   applicationFallback: false;
+  sourceTextureIdentity: Readonly<{ farUuid: string; nearUuid: string }>;
   sourceTextureFormat: string | null;
+  nearTextureFormat: string | null;
+  targetIdentity: Readonly<{ uuid: string; widthPx: number; heightPx: number }>;
   targetFormat: string | null;
   targetColorSpace: "no-color-space";
+  targetAllocationObserved: boolean;
   rendererStateRestored: boolean;
+  temporaryResourcesDisposed: boolean;
   cases: readonly GroundGlassM6dCompositeContractProbeCase[];
 }>;
 

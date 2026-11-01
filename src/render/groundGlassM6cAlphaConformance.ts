@@ -79,6 +79,7 @@ export type GroundGlassM6cMaterialEvidence = Readonly<{
   alphaTest: number;
   premultipliedAlpha: boolean;
   colorWrite: boolean;
+  toneMapped: boolean;
 }>;
 
 export const isGroundGlassM6cBuildAuthorized = (input: Readonly<{
@@ -95,7 +96,8 @@ export const isGroundGlassM6cMaterialEquivalent = (
   material: GroundGlassM6cMaterialEvidence,
 ): boolean => material.samePresentationMaterialInstance &&
   material.transparent === false && material.opacity === 1 && material.blending === "normal" &&
-  material.alphaTest === 0 && material.premultipliedAlpha === false && material.colorWrite === true;
+  material.alphaTest === 0 && material.premultipliedAlpha === false && material.colorWrite === true &&
+  material.toneMapped === false;
 
 export const isGroundGlassM6cTargetLifecycleComplete = (input: Readonly<{
   allocated: boolean;

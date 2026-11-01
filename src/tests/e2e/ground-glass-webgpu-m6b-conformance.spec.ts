@@ -28,9 +28,17 @@ import type {
 import { mapGroundGlassInspectionWindowToRttSourceCrop } from "../../render/groundGlassInspectionWindow";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
 import { readFreshElementBounds } from "./helpers/groundGlass";
+import {
+  groundGlassM7fCaptureProvenance,
+  isGroundGlassM7fRequired,
+  writeGroundGlassM7fCapture,
+} from "./helpers/groundGlassM7fEvidence";
 
 const nativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 const m6PresentationRequired = process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === "1";
+const m7fRequired = isGroundGlassM7fRequired();
+const m6NativeRunRequired = m6PresentationRequired &&
+  process.env.GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED === "1";
 
 const paneFor = (page: Page) => page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
 const pilotFor = (page: Page) => page.getByTestId("ground-glass-webgpu-pilot");
@@ -596,7 +604,7 @@ const runPixelOracle = async (page: Page, png: Buffer, evidence: GroundGlassM6bP
 };
 
 test("native M6B measures physical overlay alignment and final canvas output", async ({ page }, testInfo) => {
-  test.skip(!nativeWebGpuRequired || !m6PresentationRequired,
+  test.skip(!nativeWebGpuRequired || !m6NativeRunRequired,
     "Requires chrome-native-webgpu and both trusted M6 development flags");
   test.setTimeout(600_000);
   const pageErrors: string[] = [];
@@ -617,6 +625,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   await expect(pane).toHaveAttribute("data-mounted-renderer-family", "webgpu-renderer");
   await expect(pane).toHaveAttribute("data-actual-execution-api", "webgpu");
   await expect(pilot).toHaveAttribute("data-internal-fallback", "none");
+  await expect(pilot).toHaveAttribute("data-presentation-renderer-revision", m7fRequired ? "r187" : "r186");
   await expect(pilot).toHaveAttribute("data-presentation-source", "m6b-calibration-fixture");
   await expect(pilot).toHaveAttribute("data-presentation-status", "completed", { timeout: 150_000 });
   await expect(stage.getByTestId("ground-glass-grid")).toHaveAttribute("data-grid-mode", "physical");
@@ -653,6 +662,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
     sceneId: string;
     rendererGenerationId: string | null;
     inputFingerprints: Readonly<{ sourceData: string; presentationState: string }>;
+    sourceCrop: GroundGlassM6bPresentationFixtureEvidence["sourceCrop"];
     presentationState: GroundGlassM6bPresentationFixtureEvidence["presentationState"];
     oracle: Awaited<ReturnType<typeof runPixelOracle>>;
   }>> = [{
@@ -666,6 +676,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
       sourceData: raw.evidence!.sourceDataFingerprint,
       presentationState: raw.evidence!.presentationStateFingerprint,
     },
+    sourceCrop: raw.evidence!.sourceCrop,
     presentationState: raw.evidence!.presentationState,
     oracle: pixelOracle,
   }];
@@ -697,6 +708,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
         sourceData: evidence!.sourceDataFingerprint,
         presentationState: evidence!.presentationStateFingerprint,
       },
+      sourceCrop: evidence!.sourceCrop,
       presentationState: evidence!.presentationState,
       oracle,
     };
@@ -811,6 +823,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
       sourceData: centeredLoupe.evidence!.sourceDataFingerprint,
       presentationState: centeredLoupe.evidence!.presentationStateFingerprint,
     },
+    sourceCrop: centeredLoupe.evidence!.sourceCrop,
     presentationState: centeredLoupe.evidence!.presentationState,
     oracle: centeredLoupePixelOracle,
   });
@@ -952,6 +965,7 @@ test("native M6B measures physical overlay alignment and final canvas output", a
       sourceData: resized.evidence!.sourceDataFingerprint,
       presentationState: resized.evidence!.presentationStateFingerprint,
     },
+    sourceCrop: resized.evidence!.sourceCrop,
     presentationState: resized.evidence!.presentationState,
     oracle: resizedPixelOracle,
   });
@@ -968,8 +982,18 @@ test("native M6B measures physical overlay alignment and final canvas output", a
     captures: captures.map(({ spatialConformanceInput }) => spatialConformanceInput),
     stateSpecificAssertionsPassed: true,
   });
+  const aggregateRgbErrors = pixelOracleCases.flatMap(({ oracle }) =>
+    oracle.samples.flatMap(({ absoluteChannelError }) => absoluteChannelError),
+  );
+  const pixelOracleAggregate = {
+    sampleCount: pixelOracleCases.reduce((count, { oracle }) => count + oracle.samples.length, 0),
+    maximumChannelError: Math.max(...aggregateRgbErrors),
+    rgbRmse: Math.sqrt(aggregateRgbErrors.reduce((sum, error) => sum + error * error, 0) / aggregateRgbErrors.length),
+  };
   const spatialConformanceEvidence = {
-    sourceCommit: process.env.GROUND_GLASS_M6B_SOURCE_COMMIT ?? null,
+    sourceCommit: m7fRequired
+      ? groundGlassM7fCaptureProvenance().sourceCommitSha
+      : process.env.GROUND_GLASS_M6B_SOURCE_COMMIT ?? null,
     nativeRuntime: {
       rendererFamily: await pane.getAttribute("data-mounted-renderer-family"),
       actualExecutionApi: await pane.getAttribute("data-actual-execution-api"),
@@ -984,9 +1008,15 @@ test("native M6B measures physical overlay alignment and final canvas output", a
 
   const report = {
     schemaVersion: 1,
+    captureProvenance: m7fRequired ? groundGlassM7fCaptureProvenance() : null,
+    browserVersion: page.context().browser()?.version() ?? "unknown",
+    operatingSystem: `${process.platform} ${process.arch}`,
+    adapterEvents: await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []),
     spatialGateRevision: GROUND_GLASS_M6B_SPATIAL_GATE_REVISION,
     spatialConformance,
-    sourceCommit: process.env.GROUND_GLASS_M6B_SOURCE_COMMIT ?? null,
+    sourceCommit: m7fRequired
+      ? groundGlassM7fCaptureProvenance().sourceCommitSha
+      : process.env.GROUND_GLASS_M6B_SOURCE_COMMIT ?? null,
     fixtureRevision: raw.evidence?.fixtureRevision,
     physicalFilmContract: {
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
@@ -1050,8 +1080,10 @@ test("native M6B measures physical overlay alignment and final canvas output", a
       alignment: capture.alignment,
       spatialConformance: capture.spatialConformance,
     })),
+    spatialConformanceInputs: captures.map((capture) => capture.spatialConformanceInput),
     resize: { before: resizeBefore, after: resizeAfter },
     pixelOracle,
+    pixelOracleAggregate,
     pixelOracleCases,
     alphaObservation: pixelOracle.alphaObservation,
     evidenceScopes: {
@@ -1085,6 +1117,8 @@ test("native M6B measures physical overlay alignment and final canvas output", a
   )).toBe(true);
   await expect(pilot).toHaveCount(0);
   expect(pageErrors).toEqual([]);
+  report.adapterEvents = await page.evaluate(() => window.__groundGlassWebGpuM3TestControl?.adapterEvents ?? []);
   report.resourceAccounting.fixtureResourceDisposedAfterRetirement = true;
   await attachEvidence(testInfo, "m6b-native-conformance.json", JSON.stringify(report, null, 2), "application/json");
+  writeGroundGlassM7fCapture("m6b-conformance.json", report);
 });
