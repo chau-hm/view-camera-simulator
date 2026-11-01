@@ -106,9 +106,9 @@ describe("M7G consolidated r187 evidence integrity", () => {
     expect(evaluation.qualificationStatus).toBe("partially-qualified");
     expect(evaluation.qualificationPass).toBe(false);
     expect(evaluation.scenarioCounts.computed).toEqual({
-      passed: 6,
+      passed: 5,
       failed: 0,
-      blocked: 1,
+      blocked: 2,
       "not-run": 0,
     });
     expect(evaluation.decisions.m8EntryGate).toBe("denied");

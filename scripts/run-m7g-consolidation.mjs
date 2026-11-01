@@ -1,12 +1,11 @@
 import { build } from "esbuild";
 import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const scratchDir = mkdtempSync(join(tmpdir(), "m7g-consolidation-"));
+const scratchDir = mkdtempSync(join(repoRoot, ".m7g-consolidation-"));
 const bundlePath = join(scratchDir, "evaluateM7gConsolidation.mjs");
 
 try {
