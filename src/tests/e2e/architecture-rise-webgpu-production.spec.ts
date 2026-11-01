@@ -31,19 +31,37 @@ const analyzeScreenshot = async (page: Page, screenshot: Buffer) => page.evaluat
   if (!context) throw new Error("Could not decode the production preview screenshot");
   context.drawImage(image, 0, 0);
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const colors = new Map<string, number>();
-  for (let index = 0; index < pixels.length; index += 4) {
-    const bucket = `${(pixels[index] ?? 0) >> 4}:${(pixels[index + 1] ?? 0) >> 4}:${(pixels[index + 2] ?? 0) >> 4}`;
-    colors.set(bucket, (colors.get(bucket) ?? 0) + 1);
+  const samplingStride = Math.max(1, Math.ceil(Math.sqrt((canvas.width * canvas.height) / 100_000)));
+  const colorCounts = new Uint32Array(4096);
+  let sampleCount = 0;
+  for (let y = 0; y < canvas.height; y += samplingStride) {
+    for (let x = 0; x < canvas.width; x += samplingStride) {
+      const index = (y * canvas.width + x) * 4;
+      const bucket = (((pixels[index] ?? 0) >> 4) << 8) |
+        (((pixels[index + 1] ?? 0) >> 4) << 4) |
+        ((pixels[index + 2] ?? 0) >> 4);
+      colorCounts[bucket] = (colorCounts[bucket] ?? 0) + 1;
+      sampleCount += 1;
+    }
   }
-  const dominantColorSamples = Math.max(...colors.values());
-  const foregroundPixelSamples = canvas.width * canvas.height - dominantColorSamples;
+  let distinctColorBuckets = 0;
+  let dominantColorSamples = 0;
+  for (const count of colorCounts) {
+    if (count === 0) continue;
+    distinctColorBuckets += 1;
+    dominantColorSamples = Math.max(dominantColorSamples, count);
+  }
+  const foregroundPixelEstimate = Math.min(
+    canvas.width * canvas.height,
+    (sampleCount - dominantColorSamples) * samplingStride ** 2,
+  );
   return {
     width: canvas.width,
     height: canvas.height,
-    distinctColorBuckets: colors.size,
-    foregroundPixelSamples,
-    contentful: colors.size >= 12 && foregroundPixelSamples >= 20,
+    samplingStride,
+    distinctColorBuckets,
+    foregroundPixelEstimate,
+    contentful: distinctColorBuckets >= 12 && foregroundPixelEstimate >= 20,
   };
 }, screenshot.toString("base64"));
 
