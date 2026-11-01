@@ -82,7 +82,7 @@ export type GroundGlassM7hFailureClassification = Readonly<{
   baselineEvidence: string | null;
   candidateEvidence: string | null;
   reason: string;
-  remediationStatus: "unchanged" | "test-contract-updated" | "harness-updated" | "unresolved";
+  remediationStatus: "unchanged" | "test-contract-updated" | "harness-updated" | "partially-addressed" | "unresolved";
   followUpRecommendation: string;
 }>;
 
@@ -201,6 +201,7 @@ export type GroundGlassM7hTriageEvaluation = Readonly<{
     verifiedIntroduced: number;
     verifiedFixed: number;
     remediated: number;
+    partiallyAddressed: number;
   }>;
   extractedTests: readonly GroundGlassM7hTest[];
 }>;
@@ -246,6 +247,7 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
     verifiedIntroduced: 0,
     verifiedFixed: 0,
     remediated: 0,
+    partiallyAddressed: 0,
   };
   const sourceCountsValid = counts.discovered === 277 && counts.expected === 103 &&
     counts.unexpected === 99 && counts.skipped === 75 && counts.flaky === 0 &&
@@ -293,7 +295,7 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
   const validOrigin = new Set<string>(GROUND_GLASS_M7H_ORIGIN_CLASSIFICATIONS);
   const validCause = new Set<string>(GROUND_GLASS_M7H_CAUSE_CLASSIFICATIONS);
   const validConfidence = new Set<string>(GROUND_GLASS_M7H_CONFIDENCE_LEVELS);
-  const validRemediation = new Set(["unchanged", "test-contract-updated", "harness-updated", "unresolved"]);
+  const validRemediation = new Set(["unchanged", "test-contract-updated", "harness-updated", "partially-addressed", "unresolved"]);
   const artifactIssues = new Set<string>();
   for (const run of reproductionRuns) {
     const artifact = reproductionArtifacts[string(run.reportPath)];
@@ -336,6 +338,7 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
       counts.remediated += 1;
       if (origin !== "verified-fixed-on-head") issues.push("unverified-or-removed-test-counted-as-remediated");
     }
+    if (entry.remediationStatus === "partially-addressed") counts.partiallyAddressed += 1;
     if (typeof entry.reason !== "string" || !entry.reason.trim() ||
         typeof entry.followUpRecommendation !== "string" || !entry.followUpRecommendation.trim()) {
       issues.push("failure-classification-reason-or-follow-up-missing");

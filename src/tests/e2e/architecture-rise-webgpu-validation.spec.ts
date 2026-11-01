@@ -373,7 +373,7 @@ test("normal Architecture Rise route keeps WebGL as default and runs an explicit
   const defaultObserver = await waitForPublicArchitectureRise(page);
   await expect(defaultObserver).toHaveAttribute("data-observer-renderer-request", "webgl");
   await expect(defaultObserver).toHaveAttribute("data-observer-selection-reason", "default-webgl-request");
-  await expect(defaultObserver).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
+  await expect(defaultObserver).toHaveAttribute("data-observer-renderer-attempt", "webgl");
   await expect(defaultObserver).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
   await expect(defaultObserver).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(defaultObserver).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");

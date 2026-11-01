@@ -247,6 +247,14 @@ describe("M7H broad E2E triage evidence", () => {
     expect(evaluation.issues).toContain("fixed-on-head-claim-not-observed");
   });
 
+  it("records a partially addressed test without counting it as remediated", () => {
+    const report = baseReport();
+    report.failureInventory[0].remediationStatus = "partially-addressed";
+    const evaluation = evaluate(report);
+    expect(evaluation.valid, evaluation.issues.join(", ")).toBe(true);
+    expect(evaluation.counts).toMatchObject({ partiallyAddressed: 1, remediated: 0 });
+  });
+
   it("rejects incomplete or non-comparable reproduction provenance", () => {
     const fixture = withFixedRevisionEvidence();
     fixture.report.reproductionRuns[0].invocation = "  ";
