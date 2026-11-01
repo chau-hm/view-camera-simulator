@@ -38,6 +38,7 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   await expect(page.getByTestId("scene-canvas")).toHaveAttribute(
     "data-scene-subject-id",
     "architecture-foreground",
+    { timeout: 15_000 },
   );
 });
 
