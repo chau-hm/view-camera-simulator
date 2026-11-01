@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "reportId": "ground-glass-m7g-r187-lifecycle-consolidation",
   "evaluatorRevision": "m7g-r187-consolidation-evaluator-v2",
-  "generatedAt": "2026-11-01T11:31:58.461Z",
-  "reportGenerationSourceSha": "bc2b9efde80530c8db478f14ac8771be1e437714",
+  "generatedAt": "2026-11-01T12:01:35.138Z",
+  "reportGenerationSourceSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
   "mode": "strict-qualification-replay",
   "evidenceSources": {
     "docs/architecture/GROUND_GLASS_M7C_R187_RAW_LIFECYCLE_REPORT.json": {
@@ -126,9 +126,12 @@
       "freshExecution": {
         "kind": "m7e",
         "script": "scripts/run-m7e-offline-replay.mjs",
-        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7e-current.json",
+        "expectedSourceSha": "9382217c7820be87a596124fd78c28239d416653",
+        "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+        "timeoutMs": 600000,
+        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
         "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
-        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7e-current.json",
+        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
         "spawned": true,
         "exitCode": 0,
         "signal": null,
@@ -137,12 +140,12 @@
         "reportPresent": true,
         "reportParsed": true,
         "reportParseError": null,
-        "reportSha256": "93a24edfd9bcb962af366b899967f2600508d675c603bbf5374f8397ead63d83",
+        "reportSha256": "1ebf2a4d45a95c4edae93e53b393910d388bb9479cfdb7efc664fb4dfcfa122b",
         "reportIdentity": {
           "reportId": "ground-glass-m7e-r187-offline-replay",
           "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
           "sourceCaptureSha": "9382217c7820be87a596124fd78c28239d416653",
-          "replayCodeSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
+          "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
         },
         "reportValidated": true,
         "reportValidationIssues": [],
@@ -206,9 +209,12 @@
       "freshExecution": {
         "kind": "m7f",
         "script": "scripts/run-m7f-presentation-evidence-replay.mjs",
-        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json",
+        "expectedSourceSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+        "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+        "timeoutMs": 600000,
+        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
         "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
-        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json",
+        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
         "spawned": true,
         "exitCode": 0,
         "signal": null,
@@ -217,17 +223,17 @@
         "reportPresent": true,
         "reportParsed": true,
         "reportParseError": null,
-        "reportSha256": "e392f43d5926c69f0afe1c5d6965a2ec51de4500fbeccdfe1a385d4d6b3ea318",
+        "reportSha256": "e4ace4df27905530e690ba35784604fca65647e6d2c2ad83c482e616f548fa1c",
         "reportIdentity": {
           "reportId": "ground-glass-m7f-r187-presentation",
           "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
           "sourceCaptureSha": "b10118bd0f656296451520ba10f4d32347a9a552",
-          "replayCodeSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
+          "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
         },
         "reportValidated": true,
         "reportValidationIssues": [],
         "stderrExcerpt": "",
-        "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json\"\n}\n",
+        "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json\"\n}\n",
         "valid": true
       }
     },
@@ -1807,9 +1813,12 @@
     "m7e": {
       "kind": "m7e",
       "script": "scripts/run-m7e-offline-replay.mjs",
-      "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7e-current.json",
+      "expectedSourceSha": "9382217c7820be87a596124fd78c28239d416653",
+      "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+      "timeoutMs": 600000,
+      "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
       "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
-      "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7e-current.json",
+      "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7e-current.json",
       "spawned": true,
       "exitCode": 0,
       "signal": null,
@@ -1818,12 +1827,12 @@
       "reportPresent": true,
       "reportParsed": true,
       "reportParseError": null,
-      "reportSha256": "93a24edfd9bcb962af366b899967f2600508d675c603bbf5374f8397ead63d83",
+      "reportSha256": "1ebf2a4d45a95c4edae93e53b393910d388bb9479cfdb7efc664fb4dfcfa122b",
       "reportIdentity": {
         "reportId": "ground-glass-m7e-r187-offline-replay",
         "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
         "sourceCaptureSha": "9382217c7820be87a596124fd78c28239d416653",
-        "replayCodeSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
+        "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
       },
       "reportValidated": true,
       "reportValidationIssues": [],
@@ -1834,9 +1843,12 @@
     "m7f": {
       "kind": "m7f",
       "script": "scripts/run-m7f-presentation-evidence-replay.mjs",
-      "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json",
+      "expectedSourceSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+      "expectedReplayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb",
+      "timeoutMs": 600000,
+      "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
       "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
-      "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json",
+      "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json",
       "spawned": true,
       "exitCode": 0,
       "signal": null,
@@ -1845,17 +1857,17 @@
       "reportPresent": true,
       "reportParsed": true,
       "reportParseError": null,
-      "reportSha256": "e392f43d5926c69f0afe1c5d6965a2ec51de4500fbeccdfe1a385d4d6b3ea318",
+      "reportSha256": "e4ace4df27905530e690ba35784604fca65647e6d2c2ad83c482e616f548fa1c",
       "reportIdentity": {
         "reportId": "ground-glass-m7f-r187-presentation",
         "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
         "sourceCaptureSha": "b10118bd0f656296451520ba10f4d32347a9a552",
-        "replayCodeSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
+        "replayCodeSha": "98044c9e2234080bd55eb03c2ff7fe2c1a8d28eb"
       },
       "reportValidated": true,
       "reportValidationIssues": [],
       "stderrExcerpt": "",
-      "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json\"\n}\n",
+      "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-IG6EU1/m7f-current.json\"\n}\n",
       "valid": true
     }
   }
