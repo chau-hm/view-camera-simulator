@@ -1,10 +1,12 @@
 export type M7gReplayKind = "m7e" | "m7f";
+export const M7G_REPLAY_PROCESS_TIMEOUT_MS: number;
 
 export type M7gReplayExecution = Readonly<{
   kind: M7gReplayKind;
   script: string;
   expectedSourceSha: string;
   expectedReplayCodeSha: string;
+  timeoutMs: number;
   outputPath: string;
   nodeExecutable: string;
   invocation: string;
@@ -41,4 +43,5 @@ export function runFreshReplay(args: Readonly<{
   expectedReplayCodeSha: string;
   env?: NodeJS.ProcessEnv;
   nodeExecutable?: string;
+  timeoutMs?: number;
 }>): M7gReplayRun;

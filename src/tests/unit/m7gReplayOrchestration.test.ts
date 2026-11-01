@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createFreshReplayDirectory, runFreshReplay, type M7gReplayKind } from "../../../scripts/m7gReplayOrchestration.mjs";
+import { createFreshReplayDirectory, M7G_REPLAY_PROCESS_TIMEOUT_MS, runFreshReplay, type M7gReplayKind } from "../../../scripts/m7gReplayOrchestration.mjs";
 
 const roots: string[] = [];
 const sourceSha = "1".repeat(40);
@@ -51,18 +51,20 @@ const makeChild = (repoRoot: string, report: Record<string, unknown> | null, opt
   exitCode?: number;
   signal?: boolean;
   malformed?: boolean;
+  hang?: boolean;
 } = {}): string => {
   const script = resolve(repoRoot, "fake-predecessor-replay.mjs");
   const write = report === null && !options.malformed ? "" :
     `writeFileSync(output, ${JSON.stringify(options.malformed ? "{ malformed" : JSON.stringify(report))});`;
-  const ending = options.signal ? "process.kill(process.pid, 'SIGTERM');" : `process.exit(${options.exitCode ?? 0});`;
+  const ending = options.signal ? "process.kill(process.pid, 'SIGTERM');" :
+    options.hang ? "setInterval(() => {}, 1000);" : `process.exit(${options.exitCode ?? 0});`;
   writeFileSync(script,
     `import { writeFileSync } from 'node:fs';\nconst outputArg = process.argv.find((arg) => arg.startsWith('--report-output='));\nconst output = outputArg?.slice('--report-output='.length);\n${write}\n${ending}\n`);
   return script;
 };
 
 const run = (repoRoot: string, kind: M7gReplayKind, report: Record<string, unknown> | null,
-  options: { exitCode?: number; signal?: boolean; malformed?: boolean } = {}) => {
+  options: { exitCode?: number; signal?: boolean; malformed?: boolean; hang?: boolean; timeoutMs?: number } = {}) => {
   const replayDirectory = createFreshReplayDirectory(repoRoot);
   const script = makeChild(repoRoot, report, options);
   const result = runFreshReplay({
@@ -72,6 +74,7 @@ const run = (repoRoot: string, kind: M7gReplayKind, report: Record<string, unkno
     script: script.slice(repoRoot.length + 1),
     expectedSourceSha: sourceSha,
     expectedReplayCodeSha: replayCodeSha,
+    timeoutMs: options.timeoutMs,
   });
   return { ...result, replayDirectory };
 };
@@ -90,6 +93,7 @@ describe("M7G predecessor replay process orchestration", () => {
     expect(result.execution.reportValidated).toBe(true);
     expect(result.execution.expectedSourceSha).toBe(sourceSha);
     expect(result.execution.expectedReplayCodeSha).toBe(replayCodeSha);
+    expect(result.execution.timeoutMs).toBe(M7G_REPLAY_PROCESS_TIMEOUT_MS);
     expect(result.execution.outputPath).toMatch(/\.m7g-predecessor-replay-.*-current\.json$/);
   });
 
@@ -103,6 +107,13 @@ describe("M7G predecessor replay process orchestration", () => {
   it("does not let a child terminated by signal count as a completed replay", () => {
     const result = run(makeRepo(), "m7f", reportFor("m7f"), { signal: true });
     expect(result.execution.signal).toBe("SIGTERM");
+    expect(result.execution.valid).toBe(false);
+  });
+
+  it("rejects a child that exceeds its bounded replay timeout", () => {
+    const result = run(makeRepo(), "m7e", null, { hang: true, timeoutMs: 25 });
+    expect(result.execution.spawnError).toContain("ETIMEDOUT");
+    expect(result.execution.signal).not.toBeNull();
     expect(result.execution.valid).toBe(false);
   });
 

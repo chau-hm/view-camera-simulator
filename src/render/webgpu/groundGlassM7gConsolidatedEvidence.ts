@@ -84,6 +84,7 @@ const isSha256 = (value: unknown): value is string => typeof value === "string" 
 const isStatus = (value: unknown): value is GroundGlassM7gScenarioStatus =>
   value === "passed" || value === "failed" || value === "blocked" || value === "not-run";
 const countKeys = ["passed", "failed", "blocked", "not-run"] as const;
+const M7G_REPLAY_PROCESS_TIMEOUT_MS = 600_000;
 const emptyCounts = (): Record<GroundGlassM7gScenarioStatus, number> => ({
   passed: 0,
   failed: 0,
@@ -119,6 +120,7 @@ const validReplayExecution = (executionValue: unknown, replay: JsonRecord | null
     execution.reportParsed === true && execution.reportParseError === null && isSha256(execution.reportSha256) &&
     execution.reportValidated === true && Array.isArray(execution.reportValidationIssues) &&
     execution.reportValidationIssues.length === 0 && execution.valid === true &&
+    execution.timeoutMs === M7G_REPLAY_PROCESS_TIMEOUT_MS &&
     identity?.reportId === expectedReportId && identity.evaluatorRevision === expectedEvaluator &&
     execution.expectedSourceSha === sourceSha && execution.expectedReplayCodeSha === replay.replayCodeCommitSha &&
     identity.sourceCaptureSha === sourceSha && isSha(sourceSha) &&

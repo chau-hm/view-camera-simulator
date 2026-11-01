@@ -30,6 +30,7 @@ const makeReplayExecution = (kind: "m7e" | "m7f", replay: JsonRecord): JsonRecor
     kind, script, outputPath,
     expectedSourceSha: sourceCaptureSha,
     expectedReplayCodeSha: replay.replayCodeCommitSha,
+    timeoutMs: 600_000,
     nodeExecutable: process.execPath,
     invocation: `${process.execPath} ${script} --report-output=${outputPath}`,
     spawned: true, exitCode: 0, signal: null, spawnError: null,
@@ -590,6 +591,11 @@ describe("M7G consolidated r187 evidence integrity", () => {
       name: "rejects a replay execution with the wrong expected source identity",
       expectedIssue: "predecessor-replay-execution-invalid:m7e",
       mutate: (input) => { getRecord(getRecord(input, "predecessorReplayExecutions"), "m7e").expectedSourceSha = "f".repeat(40); },
+    },
+    {
+      name: "rejects a replay execution with a weakened process timeout",
+      expectedIssue: "predecessor-replay-execution-invalid:m7f",
+      mutate: (input) => { getRecord(getRecord(input, "predecessorReplayExecutions"), "m7f").timeoutMs = 120_000; },
     },
     {
       name: "rejects a signaled M7F replay process",

@@ -10,6 +10,8 @@ const isEmptyIssues = (value) => Array.isArray(value) && value.length === 0;
 const countsEqual = (actual, expected) => isRecord(actual) &&
   Object.entries(expected).every(([key, value]) => actual[key] === value);
 
+export const M7G_REPLAY_PROCESS_TIMEOUT_MS = 600_000;
+
 const validateReplayReport = (kind, reportValue, expectedSourceSha, expectedReplayCodeSha) => {
   const report = isRecord(reportValue) ? reportValue : null;
   const issues = [];
@@ -53,11 +55,12 @@ export const createFreshReplayDirectory = (repoRoot) =>
 
 /** Runs the real predecessor CLI at a unique, initially empty report path. */
 export const runFreshReplay = ({ repoRoot, replayDirectory, kind, script, expectedSourceSha, expectedReplayCodeSha,
-  env = process.env, nodeExecutable = process.execPath }) => {
+  env = process.env, nodeExecutable = process.execPath, timeoutMs = M7G_REPLAY_PROCESS_TIMEOUT_MS }) => {
   const root = resolve(repoRoot);
   const outputPath = join(resolve(replayDirectory), `${kind}-current.json`);
   const isInsideRepo = outputPath.startsWith(`${root}${sep}`);
   const outputWasAbsentBeforeSpawn = !existsSync(outputPath);
+  const timeoutIsValid = Number.isInteger(timeoutMs) && timeoutMs > 0 && timeoutMs <= M7G_REPLAY_PROCESS_TIMEOUT_MS;
   const invocation = [nodeExecutable, script, `--report-output=${outputPath}`];
   let result = null;
   let spawnError = null;
@@ -66,15 +69,17 @@ export const runFreshReplay = ({ repoRoot, replayDirectory, kind, script, expect
   let reportParseError = null;
   let reportValidation = { valid: false, issues: ["replay-report-not-generated"] };
 
-  if (!isInsideRepo || !outputWasAbsentBeforeSpawn) {
-    spawnError = !isInsideRepo ? "replay output is outside the repository" : "fresh replay output path already exists";
+  if (!isInsideRepo || !outputWasAbsentBeforeSpawn || !timeoutIsValid) {
+    spawnError = !isInsideRepo ? "replay output is outside the repository" :
+      !outputWasAbsentBeforeSpawn ? "fresh replay output path already exists" :
+        "replay process timeout must be a positive value no greater than 600000 ms";
   } else {
     result = spawnSync(nodeExecutable, [resolve(root, script), `--report-output=${outputPath}`], {
       cwd: root,
       env,
       encoding: "utf8",
       maxBuffer: 32 * 1024 * 1024,
-      timeout: 120_000,
+      timeout: timeoutMs,
     });
     spawnError = result.error?.message ?? null;
   }
@@ -105,6 +110,7 @@ export const runFreshReplay = ({ repoRoot, replayDirectory, kind, script, expect
     script,
     expectedSourceSha,
     expectedReplayCodeSha,
+    timeoutMs,
     outputPath,
     nodeExecutable,
     invocation: invocation.join(" "),
@@ -124,7 +130,7 @@ export const runFreshReplay = ({ repoRoot, replayDirectory, kind, script, expect
     stdoutExcerpt: (result?.stdout ?? "").slice(-2_000),
   };
   execution.valid = spawned && exitCode === 0 && signal === null && spawnError === null &&
-    outputWasAbsentBeforeSpawn && reportPresent && report !== null && reportValidation.valid;
+    timeoutIsValid && outputWasAbsentBeforeSpawn && reportPresent && report !== null && reportValidation.valid;
 
   return { execution, report, outputPath };
 };
