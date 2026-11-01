@@ -81,6 +81,25 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     window.__groundGlassWebGpuM3TestControl?.heldM5CompositeIdentity ?? null,
   );
   expect(heldIdentity).toMatchObject({ generationId, requestId: r1RequestId, channelId: "default", sceneId: "architecture-rise" });
+  const r1DiagnosticsAtHold = {
+    frameRequestId: await pane.getAttribute("data-frame-request-id"),
+    lastCompletedRequestId: await pane.getAttribute("data-last-completed-request-id"),
+    physicalRequestId: await pilot.getAttribute("data-physical-coc-request-id"),
+    physicalStatus: await pilot.getAttribute("data-physical-coc-status"),
+    apertureGatherRequestId: await pilot.getAttribute("data-aperture-gather-request-id"),
+    apertureGatherStatus: await pilot.getAttribute("data-aperture-gather-status"),
+    presentationRequestId: await pilot.getAttribute("data-presentation-request-id"),
+    lastDisplayedRequestId: await pilot.getAttribute("data-last-displayed-request-id"),
+  };
+  expect(r1DiagnosticsAtHold).toMatchObject({
+    frameRequestId: r1RequestId,
+    physicalRequestId: r1RequestId,
+    physicalStatus: "completed",
+    apertureGatherRequestId: r1RequestId,
+    apertureGatherStatus: "completed",
+  });
+  expect([r1DiagnosticsAtHold.presentationRequestId, r1DiagnosticsAtHold.lastDisplayedRequestId])
+    .not.toContain(r1RequestId);
 
   let r2RequestId: string | null = null;
   try {
@@ -91,6 +110,10 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
       .not.toBe(r1RequestId);
     r2RequestId = await pane.getAttribute("data-frame-request-id");
     if (!r2RequestId) throw new Error("R2 request was not accepted while the M5 composite hold was active");
+    await expect.poll(async () => (await readEvents(page)).some((event) =>
+      event.kind === "host-request-accepted" && event.requestId === r2RequestId &&
+      event.activeGenerationId === generationId && event.channelId === "default" && event.sceneId === "architecture-rise",
+    )).toBe(true);
     await page.evaluate((token) => {
       const control = window.__groundGlassWebGpuM3TestControl!;
       control.apertureGatherCaptureRequest = {
@@ -161,6 +184,7 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     rendererFamily: "webgpu-renderer",
     actualExecutionApi: "webgpu",
     internalFallback: "none",
+    sceneSourceRevision: expect.any(String),
   });
   expect(capture.summary?.inputFingerprints).toMatchObject({
     sourceColor: expect.any(String),
@@ -171,11 +195,27 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
   expect(capture.summary?.physicalDataFingerprint).toEqual(expect.any(String));
   expect(pageErrors).toEqual([]);
 
+  const captureProvenance = groundGlassM7gSourceProvenance();
+  const browser = page.context().browser();
   const evidence = {
     schemaVersion: 1,
     scenarioId: "m7g-r187-held-m5-composite-latest-request",
-    captureProvenance: groundGlassM7gSourceProvenance(),
-    browserVersion: page.context().browser()?.version() ?? "unknown",
+    route: new URL(page.url()).pathname,
+    sourceHeadSha: captureProvenance.sourceCommitSha,
+    invocation: captureProvenance.testInvocation,
+    captureProvenance,
+    environment: {
+      testProject: "chrome-native-webgpu",
+      browserName: browser?.browserType().name() ?? null,
+      browserVersion: browser?.version() ?? null,
+      threeRevision: "187",
+      operatingSystem: {
+        platform: process.platform,
+        release: release(),
+        architecture: process.arch,
+      },
+    },
+    browserVersion: browser?.version() ?? "unknown",
     operatingSystem: `${process.platform} ${release()} ${process.arch}`,
     runtime: events.find((event) => event.kind === "runtime-observed") ?? null,
     rendererGenerationId: generationId,
@@ -184,6 +224,7 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     r1RequestId,
     r2RequestId,
     heldIdentity,
+    r1DiagnosticsAtHold,
     r1Phases,
     orderedEvents: events,
     hostFrameResults: events.filter((event) => event.kind === "host-frame-result"),

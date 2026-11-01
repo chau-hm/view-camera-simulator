@@ -581,6 +581,16 @@ export type GroundGlassM5CompositeLifecycleIdentity = Readonly<{
 export type GroundGlassWebGpuTestEvent =
   | Readonly<{ kind: "host-attached"; channelId: string; hostId: string }>
   | Readonly<{
+      kind: "host-request-accepted";
+      channelId: string;
+      hostId: string;
+      requestId: string;
+      sceneId: string;
+      activeGenerationId: string | null;
+      latestAcceptedRequestId: string;
+      latestAcceptedSceneId: string;
+    }>
+  | Readonly<{
       kind: "attempt";
       attemptId: string;
       channelId: string;
