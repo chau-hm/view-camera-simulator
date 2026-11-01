@@ -829,11 +829,11 @@ const runGroundGlassApertureGatherPass = async (input: Readonly<{
   input.renderer.render(input.scene, input.camera);
   const rendererCallCpuMs = performance.now() - rendererCallStartedAt;
   const queueWaitStartedAt = performance.now();
-  input.onSubmitted?.();
   const queueCompletion = submitGatherWork(input.device).then(
     () => ({ status: "completed" as const }),
     (error: unknown) => ({ status: "failed" as const, error }),
   );
+  input.onSubmitted?.();
   if (input.holdAfterSubmit) await input.holdAfterSubmit();
   const queueResult = await queueCompletion;
   if (queueResult.status === "failed") throw queueResult.error;
