@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "ground-glass-m7g-r187-broad-e2e-v1",
+  "status": "blocked",
+  "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+  "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4282 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json npm run test:e2e -- --project=chromium --workers=4 --reporter=json",
+  "browserProject": "chromium",
+  "environment": {
+    "browserVersion": "149.0.7827.55",
+    "operatingSystem": "darwin 27.0.0 arm64",
+    "threeRevision": "187",
+    "nativeWebGpuRequired": false,
+    "executionNote": "Standard Chromium E2E only; observed WebGPU renderer cases used WebGL2 compatibility and are not native WebGPU evidence."
+  },
+  "counts": {
+    "passed": 103,
+    "failed": 99,
+    "blocked": 0,
+    "not-run": 75
+  },
+  "testsExecuted": 277,
+  "playwrightSummary": {
+    "expected": 103,
+    "unexpected": 99,
+    "skipped": 75,
+    "flaky": 0,
+    "durationMs": 2616155.548,
+    "artifact": "validation/broad-e2e-playwright.json"
+  },
+  "cleanMainComparison": {
+    "sourceSha": "bda4ce9244111517e0898a0ead3b61d5faba7eb2",
+    "checkout": "clean git archive snapshot of origin/main",
+    "results": [
+      {
+        "test": "Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+        "status": "failed",
+        "sameObservedFailure": "Objective paragraph resolved but was hidden",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4284 npm run test:e2e -- --project=chromium --workers=1 src/tests/e2e/architecture-foreground.spec.ts --grep='cumulative photographic problem'"
+      },
+      {
+        "test": "ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU",
+        "status": "failed",
+        "sameObservedFailure": "Installed Three.js reported 187 while the historical fallback smoke assertion expected 186",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4283 npm run test:e2e -- --project=chromium --workers=1 src/tests/e2e/architecture-foreground.spec.ts src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts src/tests/e2e/architecture-rise-webgpu-validation.spec.ts --grep='Architecture + Foreground exposes the cumulative|ordinary Chromium can execute the isolated aperture-gather fixture|normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot'"
+      },
+      {
+        "test": "normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot",
+        "status": "failed",
+        "sameObservedFailure": "Expected no WebGPU source requests but observed four development-only policy/seam module requests",
+        "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4283 npm run test:e2e -- --project=chromium --workers=1 src/tests/e2e/architecture-foreground.spec.ts src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts src/tests/e2e/architecture-rise-webgpu-validation.spec.ts --grep='Architecture + Foreground exposes the cumulative|ordinary Chromium can execute the isolated aperture-gather fixture|normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot'"
+      }
+    ]
+  },
+  "limitations": [
+    "The broad current-head suite has 99 unexpected outcomes across UI visibility, long-running renderer/resource tests, stale r186 revision assertions, and Vite optimized-module loading; these are outside the M7G lifecycle scenarios.",
+    "The named Architecture + Foreground missing-heading failure and two r187 baseline assertion failures were reproduced on a clean origin/main snapshot.",
+    "The other broad-suite failures were not individually replayed on clean main and remain unclassified baseline/application failures; broad E2E is therefore blocked rather than treated as M7G pass evidence."
+  ]
+}
