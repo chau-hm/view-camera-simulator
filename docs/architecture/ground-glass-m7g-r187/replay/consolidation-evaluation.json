@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reportId": "ground-glass-m7g-r187-lifecycle-consolidation",
-  "evaluatorRevision": "m7g-r187-consolidation-evaluator-v1",
+  "evaluatorRevision": "m7g-r187-consolidation-evaluator-v2",
   "valid": true,
   "evidenceIntegrity": "passed",
   "issues": [],
@@ -1465,14 +1465,41 @@
       "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH PLAYWRIGHT_WEB_SERVER_PORT=4282 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json npm run test:e2e -- --project=chromium --workers=4 --reporter=json",
       "rendererRevision": null,
       "runtimeIdentity": {
-        "browserVersion": "149.0.7827.55",
-        "operatingSystem": "darwin 27.0.0 arm64",
-        "threeRevision": "187",
-        "nativeWebGpuRequired": false,
-        "executionNote": "Standard Chromium E2E only; observed WebGPU renderer cases used WebGL2 compatibility and are not native WebGPU evidence."
+        "environment": {
+          "browserVersion": "149.0.7827.55",
+          "operatingSystem": "darwin 27.0.0 arm64",
+          "threeRevision": "187",
+          "nativeWebGpuRequired": false,
+          "executionNote": "Standard Chromium E2E only; observed WebGPU renderer cases used WebGL2 compatibility and are not native WebGPU evidence."
+        },
+        "playwrightReportValidation": {
+          "artifact": "validation/broad-e2e-playwright.json",
+          "sha256": "393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6",
+          "valid": true,
+          "issues": [],
+          "projectIds": [
+            "chromium"
+          ],
+          "testsDiscovered": 277,
+          "testsWithResults": 277,
+          "incompleteTests": 0,
+          "counts": {
+            "expected": 103,
+            "unexpected": 99,
+            "skipped": 75,
+            "flaky": 0
+          },
+          "reportStats": {
+            "expected": 103,
+            "unexpected": 99,
+            "skipped": 75,
+            "flaky": 0
+          }
+        }
       },
       "supportingArtifacts": [
-        "validation/broad-e2e.json"
+        "validation/broad-e2e.json",
+        "validation/broad-e2e-playwright.json"
       ],
       "orderedEvents": [],
       "knownLimitations": [
@@ -1580,7 +1607,34 @@
         "blocked": 0,
         "not-run": 0
       },
-      "noBrowser": true
+      "noBrowser": true,
+      "freshExecution": {
+        "kind": "m7e",
+        "script": "scripts/run-m7e-offline-replay.mjs",
+        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7e-current.json",
+        "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7e-offline-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7e-current.json",
+        "spawned": true,
+        "exitCode": 0,
+        "signal": null,
+        "spawnError": null,
+        "outputWasAbsentBeforeSpawn": true,
+        "reportPresent": true,
+        "reportParsed": true,
+        "reportParseError": null,
+        "reportSha256": "93a24edfd9bcb962af366b899967f2600508d675c603bbf5374f8397ead63d83",
+        "reportIdentity": {
+          "reportId": "ground-glass-m7e-r187-offline-replay",
+          "evaluatorRevision": "m7e-r187-gather-b1-evaluator-v2",
+          "sourceCaptureSha": "9382217c7820be87a596124fd78c28239d416653",
+          "replayCodeSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
+        },
+        "reportValidated": true,
+        "reportValidationIssues": [],
+        "stderrExcerpt": "",
+        "stdoutExcerpt": "bc45b9f08a7c67547f9b2d021798ca15b8bd496941f563d05bb45091a263c30f\"\n    },\n    {\n      \"scenarioId\": \"q1-control-cap60-full32\",\n      \"manifestSha256\": \"3f43894e3f214bf31bb9f9f6fa9660b5a3fb0c116625aef3f30ad0939b12db91\",\n      \"payloadSha256\": \"da448839399fce6e005d8a01dfada03df2e538ad8a78958839616ab4be1af952\"\n    },\n    {\n      \"scenarioId\": \"q1-control-cap60-full64\",\n      \"manifestSha256\": \"e5b350ae67277186378c0365bcb57d6569a447151e88e129c658b671b981553d\",\n      \"payloadSha256\": \"2a4aa9b28d66fc7f127597ab6cfc5b5612adb6e8d5e1dfe22810d13d5f977d5f\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-half32\",\n      \"manifestSha256\": \"a6be674dbba86b79449e107885e845b1c3b551b3a826d0bc70c91726540f2f9d\",\n      \"payloadSha256\": \"ad0a61c39191563df67620614119f2893b6f7b4791b9ff51318b246ff6c5860b\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-full32\",\n      \"manifestSha256\": \"b3d7c59ac01b3fbea1ec6c0bb5f91d314ba13fdc8ac8bc1f6575680cf5ca048b\",\n      \"payloadSha256\": \"c7aef1a90bb8851211d37ce49792df5d86e0983d9d0ec81dac276dbe7498ce02\"\n    },\n    {\n      \"scenarioId\": \"q2-q7-cap60-full64\",\n      \"manifestSha256\": \"f0c071a2aad09670d1c87f95eb7ca2701bacdfb4b268b6b0643443de72f1925d\",\n      \"payloadSha256\": \"a7a454863a0e7c86f38bab3c6c155bd6d424378e265ce45b8e222fe72a2d8447\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-half32\",\n      \"manifestSha256\": \"40afcf78cd33482d650ac73d2351833da71dc46d3aaa4be33c7e14d5e64d329f\",\n      \"payloadSha256\": \"6d40dd37290038491b0b52280e59943fe7ebf1dde6476979e4571100e6bcc14e\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-full32\",\n      \"manifestSha256\": \"0b06ec750acde0b04b2b21ab477708a3cfb66f96c02c8693f1ef644144b7faf4\",\n      \"payloadSha256\": \"1ad138183a4644850870b27fc79e5fa6fac516f08a095ff179120e7d0184e0d8\"\n    },\n    {\n      \"scenarioId\": \"q3-q4-cap60-full64\",\n      \"manifestSha256\": \"2197d182894e257e5f852a63eb49c58a6ca85c8ba8494b64b2cb97f6777df18a\",\n      \"payloadSha256\": \"7f457381500ffee007a84d329ad317b54a0891bdd6604c94e50e44bc72ab0876\"\n    }\n  ],\n  \"issues\": []\n}\n",
+        "valid": true
+      }
     },
     "m7f": {
       "reportId": "ground-glass-m7f-r187-presentation",
@@ -1633,7 +1687,34 @@
         },
         "inventoryConsistent": true
       },
-      "qualificationPass": true
+      "qualificationPass": true,
+      "freshExecution": {
+        "kind": "m7f",
+        "script": "scripts/run-m7f-presentation-evidence-replay.mjs",
+        "outputPath": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json",
+        "nodeExecutable": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "invocation": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json",
+        "spawned": true,
+        "exitCode": 0,
+        "signal": null,
+        "spawnError": null,
+        "outputWasAbsentBeforeSpawn": true,
+        "reportPresent": true,
+        "reportParsed": true,
+        "reportParseError": null,
+        "reportSha256": "e392f43d5926c69f0afe1c5d6965a2ec51de4500fbeccdfe1a385d4d6b3ea318",
+        "reportIdentity": {
+          "reportId": "ground-glass-m7f-r187-presentation",
+          "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+          "sourceCaptureSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+          "replayCodeSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
+        },
+        "reportValidated": true,
+        "reportValidationIssues": [],
+        "stderrExcerpt": "",
+        "stdoutExcerpt": "{\n  \"reportId\": \"ground-glass-m7f-r187-presentation\",\n  \"evaluatorRevision\": \"m7f-r187-presentation-evaluator-v2\",\n  \"qualificationStatus\": \"passed\",\n  \"qualificationPass\": true,\n  \"scenarioCounts\": {\n    \"declared\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"computed\": {\n      \"passed\": 17,\n      \"failed\": 0,\n      \"blocked\": 0,\n      \"not-run\": 0\n    },\n    \"inventoryConsistent\": true\n  },\n  \"sourceCommitVerification\": {\n    \"verified\": true,\n    \"error\": null\n  },\n  \"evidenceReadIssues\": [],\n  \"reportOutput\": \"/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/.m7g-predecessor-replay-MD6ScL/m7f-current.json\"\n}\n",
+        "valid": true
+      }
     },
     "m6PresentationScenarioCount": 17
   },
@@ -1669,5 +1750,5 @@
     "m9Authorized": false,
     "productionTestSeamExposed": false
   },
-  "generatedFromSha": "f6ee3fceb17ca16c9de15a2a9e2ea5788af80678"
+  "generatedFromSha": "bc2b9efde80530c8db478f14ac8771be1e437714"
 }
