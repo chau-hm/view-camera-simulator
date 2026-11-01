@@ -3,6 +3,8 @@ export type M7gReplayKind = "m7e" | "m7f";
 export type M7gReplayExecution = Readonly<{
   kind: M7gReplayKind;
   script: string;
+  expectedSourceSha: string;
+  expectedReplayCodeSha: string;
   outputPath: string;
   nodeExecutable: string;
   invocation: string;

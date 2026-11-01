@@ -103,6 +103,8 @@ export const runFreshReplay = ({ repoRoot, replayDirectory, kind, script, expect
   const execution = {
     kind,
     script,
+    expectedSourceSha,
+    expectedReplayCodeSha,
     outputPath,
     nodeExecutable,
     invocation: invocation.join(" "),

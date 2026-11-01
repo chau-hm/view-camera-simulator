@@ -88,6 +88,8 @@ describe("M7G predecessor replay process orchestration", () => {
     expect(result.execution.exitCode).toBe(0);
     expect(result.execution.outputWasAbsentBeforeSpawn).toBe(true);
     expect(result.execution.reportValidated).toBe(true);
+    expect(result.execution.expectedSourceSha).toBe(sourceSha);
+    expect(result.execution.expectedReplayCodeSha).toBe(replayCodeSha);
     expect(result.execution.outputPath).toMatch(/\.m7g-predecessor-replay-.*-current\.json$/);
   });
 

@@ -222,6 +222,22 @@ const main = (): void => {
         m7e: m7eReplayRun.execution.valid,
         m7f: m7fReplayRun.execution.valid,
       },
+      predecessorReplayDiagnostics: Object.fromEntries(
+        [m7eReplayRun.execution, m7fReplayRun.execution]
+          .filter((execution) => !execution.valid)
+          .map((execution) => [execution.kind, {
+            expectedSourceSha: execution.expectedSourceSha,
+            expectedReplayCodeSha: execution.expectedReplayCodeSha,
+            exitCode: execution.exitCode,
+            signal: execution.signal,
+            spawnError: execution.spawnError,
+            reportParseError: execution.reportParseError,
+            reportIdentity: execution.reportIdentity,
+            reportValidationIssues: execution.reportValidationIssues,
+            stderrExcerpt: execution.stderrExcerpt,
+            stdoutExcerpt: execution.stdoutExcerpt,
+          }]),
+      ),
     }, null, 2)}\n`);
 
     if (diagnostic) {

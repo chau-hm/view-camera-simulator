@@ -28,6 +28,8 @@ const makeReplayExecution = (kind: "m7e" | "m7f", replay: JsonRecord): JsonRecor
   const sourceCaptureSha = kind === "m7e" ? replay.captureSourceCommitSha : replay.nativeCaptureSourceSha;
   return {
     kind, script, outputPath,
+    expectedSourceSha: sourceCaptureSha,
+    expectedReplayCodeSha: replay.replayCodeCommitSha,
     nodeExecutable: process.execPath,
     invocation: `${process.execPath} ${script} --report-output=${outputPath}`,
     spawned: true, exitCode: 0, signal: null, spawnError: null,
@@ -583,6 +585,11 @@ describe("M7G consolidated r187 evidence integrity", () => {
       name: "rejects a failed M7E replay process even if it emitted a passing report",
       expectedIssue: "predecessor-replay-execution-invalid:m7e",
       mutate: (input) => { getRecord(getRecord(input, "predecessorReplayExecutions"), "m7e").exitCode = 1; },
+    },
+    {
+      name: "rejects a replay execution with the wrong expected source identity",
+      expectedIssue: "predecessor-replay-execution-invalid:m7e",
+      mutate: (input) => { getRecord(getRecord(input, "predecessorReplayExecutions"), "m7e").expectedSourceSha = "f".repeat(40); },
     },
     {
       name: "rejects a signaled M7F replay process",

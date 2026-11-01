@@ -120,6 +120,7 @@ const validReplayExecution = (executionValue: unknown, replay: JsonRecord | null
     execution.reportValidated === true && Array.isArray(execution.reportValidationIssues) &&
     execution.reportValidationIssues.length === 0 && execution.valid === true &&
     identity?.reportId === expectedReportId && identity.evaluatorRevision === expectedEvaluator &&
+    execution.expectedSourceSha === sourceSha && execution.expectedReplayCodeSha === replay.replayCodeCommitSha &&
     identity.sourceCaptureSha === sourceSha && isSha(sourceSha) &&
     identity.replayCodeSha === replay.replayCodeCommitSha && isSha(replay.replayCodeCommitSha);
 };
