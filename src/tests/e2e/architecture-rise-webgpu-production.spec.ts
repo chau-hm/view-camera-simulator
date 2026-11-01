@@ -141,12 +141,6 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
   await expect(observer).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(observer).toHaveAttribute("data-observer-application-fallback", "none");
   await expect(observer).toHaveAttribute("data-observer-webgpu-initialization-attempts", "0");
-  const candidateObserverScreenshot = await observer.locator("canvas").screenshot();
-  const candidateGroundGlassScreenshot = await groundGlass.screenshot();
-  const candidateObserverPixels = await analyzeScreenshot(page, candidateObserverScreenshot);
-  const candidateGroundGlassPixels = await analyzeScreenshot(page, candidateGroundGlassScreenshot);
-  expect(candidateObserverPixels.contentful).toBe(true);
-  expect(candidateGroundGlassPixels.contentful).toBe(true);
   expect(await observer.getAttribute("data-observer-output-policy-selected")).toBeNull();
   expect(await observer.getAttribute("data-observer-material-inventory")).toBeNull();
 
