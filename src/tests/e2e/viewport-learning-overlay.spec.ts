@@ -107,7 +107,7 @@ test("Scene-local learning drawer leaves the paired workspace layout intact", as
 
 test("learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content", async ({ page }) => {
   test.setTimeout(120_000);
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 1440, height: 720 });
   await page.goto("/simulator/guided/oblique-architecture/oblique-rise-01?lesson=1");
 
   const drawer = getLearningDrawer(page);

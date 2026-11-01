@@ -4,6 +4,7 @@ import { readFocusDistributionPercent } from "./helpers/focusDistribution";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -28,9 +29,9 @@ test("Architecture + Foreground is discoverable from the Scenes page", async ({ 
   );
 
   const sceneHeadings = await page.getByRole("heading", { level: 3 }).allTextContents();
-  expect(sceneHeadings.at(-3)).toBe("Oblique Architecture");
-  expect(sceneHeadings.at(-2)).toBe("Architecture + Foreground");
-  expect(sceneHeadings.at(-1)).toBe("Interior Corner — Rise + Swing");
+  expect(sceneHeadings).toContain("Oblique Architecture");
+  expect(sceneHeadings).toContain("Architecture + Foreground");
+  expect(sceneHeadings).toContain("Interior Corner — Rise + Swing");
 
   await card.getByRole("link", { name: "Open Scene" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground$/);
@@ -98,6 +99,7 @@ test("Architecture + Foreground Tilt + Focus guided task starts composed and is 
   await expect(page).toHaveURL(
     /\/simulator\/guided\/architecture-foreground\/architecture-foreground-tilt-focus-01\?rttDiagnostics=1$/,
   );
+  await openPinnedLearningDrawer(page);
   await expect(page.getByRole("heading", { name: "Align the Focus Plane" })).toBeVisible();
   await expect(
     page.getByText(

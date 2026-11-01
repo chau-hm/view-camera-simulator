@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 import {
   APERTURE_GATHER_CASES,
   requireGatherReferenceProbePair,
@@ -303,7 +304,8 @@ test("Phase G ordinary Chromium compatibility control does not claim native exec
   await expect(page.getByTestId("phase-g-controls")).toBeVisible();
   const handle = await waitForInitialRender(page);
   expect(handle.runtime?.initialized).toBe(true);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
+  expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   expect(handle.dimensions).toMatchObject({ sourceWidthPx: 128, sourceHeightPx: 96 });
   expect(handle.metrics?.validPhysicalPixelCount).toBeGreaterThan(0);
   await captureCanvas(page, test.info(), "phase-g-ordinary-chromium-control.png");

@@ -3,13 +3,18 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  getLearningDrawer,
   getLearningOverlay,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const expectLessonStage = async (page: Page, step: string, label: string) => {
+  const drawer = getLearningDrawer(page);
+  await expect(drawer).toContainText(step);
+  await openPinnedLearningDrawer(page);
   const progress = page.getByRole("region", { name: "Guided lesson progress" });
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(step);

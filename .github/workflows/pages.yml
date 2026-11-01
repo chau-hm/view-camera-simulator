@@ -65,6 +65,9 @@ jobs:
           trap 'rm -f "$M7G_REPORT" "$M7G_EVALUATION"' EXIT
           npm run evidence:report:m7g -- --report-output="$M7G_REPORT" --evaluation-output="$M7G_EVALUATION"
 
+      - name: Validate M7H historical broad E2E triage integrity
+        run: npm run evidence:check:m7h
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci

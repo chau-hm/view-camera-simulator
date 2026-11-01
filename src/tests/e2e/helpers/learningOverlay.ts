@@ -10,10 +10,33 @@ export const getLearningDrawer = (page: Page): Locator =>
   getLearningOverlay(page).getByTestId("learning-overlay-drawer");
 
 export const openLearningDrawer = async (page: Page): Promise<Locator> => {
+  const overlay = getLearningOverlay(page);
   const drawer = getLearningDrawer(page);
   if (!(await drawer.isVisible())) {
-    await getLearningRail(page).click();
+    await getLearningRail(page).hover();
   }
+  await expect(drawer).toBeVisible();
+  if (await overlay.getAttribute("data-drawer-state") === "transient") {
+    await expect(drawer).toHaveCSS("transform", /^matrix\(1, 0, 0, 1, 0, 0\)$/);
+  }
+  return drawer;
+};
+
+export const openPinnedLearningDrawer = async (page: Page): Promise<Locator> => {
+  const overlay = getLearningOverlay(page);
+  const drawer = getLearningDrawer(page);
+  const currentState = await overlay.getAttribute("data-drawer-state");
+  if (currentState === "flow") {
+    await expect(drawer).toBeVisible();
+    return drawer;
+  }
+  if (currentState !== "pinned") {
+    await getLearningRail(page).focus();
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toHaveCSS("transform", /^matrix\(1, 0, 0, 1, 0, 0\)$/);
+    await page.getByRole("button", { name: "Keep Task and Feedback open" }).click();
+  }
+  await expect(overlay).toHaveAttribute("data-drawer-state", "pinned");
   await expect(drawer).toBeVisible();
   return drawer;
 };

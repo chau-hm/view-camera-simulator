@@ -1,6 +1,7 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
+import { openLearningDrawer } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
@@ -23,12 +24,15 @@ test("Architecture + Foreground exposes the cumulative photographic problem in F
 
   await page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1");
   await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground\?rttDiagnostics=1$/);
-  await expect(
-    page.getByText(
-      "Explore the cumulative Architecture + Foreground problem: use Rise for framing, Tilt and Focus for focus-plane alignment, and Aperture for usable depth across the full photograph.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  const objective = page.getByText(
+    "Explore the cumulative Architecture + Foreground problem: use Rise for framing, Tilt and Focus for focus-plane alignment, and Aperture for usable depth across the full photograph.",
+    { exact: true },
+  );
+  await expect(objective).toHaveCount(1);
+  await expect(objective).toBeHidden();
+  const drawer = await openLearningDrawer(page);
+  await expect(drawer).toContainText("Explore the cumulative Architecture + Foreground problem");
+  await expect(objective).toBeVisible();
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).not.toBeVisible();
 
   const sceneCanvas = page.getByTestId("scene-canvas");
