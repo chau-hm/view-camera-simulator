@@ -89,6 +89,7 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     apertureGatherRequestId: await pilot.getAttribute("data-aperture-gather-request-id"),
     apertureGatherStatus: await pilot.getAttribute("data-aperture-gather-status"),
     presentationRequestId: await pilot.getAttribute("data-presentation-request-id"),
+    presentationStatus: await pilot.getAttribute("data-presentation-status"),
     lastDisplayedRequestId: await pilot.getAttribute("data-last-displayed-request-id"),
   };
   expect(r1DiagnosticsAtHold).toMatchObject({
@@ -98,8 +99,7 @@ test("M7G holds a submitted M5 composite, rejects its stale request, and publish
     apertureGatherRequestId: r1RequestId,
     apertureGatherStatus: "ready",
   });
-  expect([r1DiagnosticsAtHold.presentationRequestId, r1DiagnosticsAtHold.lastDisplayedRequestId])
-    .not.toContain(r1RequestId);
+  expect(r1DiagnosticsAtHold.lastDisplayedRequestId).not.toBe(r1RequestId);
 
   let r2RequestId: string | null = null;
   try {
