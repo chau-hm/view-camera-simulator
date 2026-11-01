@@ -569,6 +569,15 @@ export type GroundGlassWebGpuTestFailurePoint =
   | "texture-display-after-submit"
   | "dispose-target";
 
+export type GroundGlassM5CompositeLifecycleIdentity = Readonly<{
+  attemptId: string;
+  channelId: string;
+  generationId: string;
+  requestId: string;
+  sceneId: string;
+  targetUuid: string;
+}>;
+
 export type GroundGlassWebGpuTestEvent =
   | Readonly<{ kind: "host-attached"; channelId: string; hostId: string }>
   | Readonly<{
@@ -676,6 +685,13 @@ export type GroundGlassWebGpuTestEvent =
       operation: "sceneRender";
     }>
   | Readonly<{
+      kind: "m5-composite-lifecycle";
+      phase: "submitted" | "hold-reached" | "hold-released" | "hold-timeout" | "queue-settled" | "stale-discarded";
+      identity: GroundGlassM5CompositeLifecycleIdentity;
+      executionApi: "webgpu";
+      internalFallback: "none";
+    }>
+  | Readonly<{
       kind: "gather-research";
       generationId: string;
       requestId: string;
@@ -755,6 +771,11 @@ export type GroundGlassWebGpuTestControl = {
   holdPresentationQueueCompletion?: boolean;
   presentationQueueCompletionBarrierReached?: boolean;
   releasePresentationQueueCompletion?: (() => void) | undefined;
+  /** One-shot M5 composite hold scoped to the current renderer generation. */
+  holdNextM5CompositeGenerationId?: string | null;
+  m5CompositeBarrierReached?: boolean;
+  heldM5CompositeIdentity?: GroundGlassM5CompositeLifecycleIdentity | null;
+  releaseM5Composite?: (() => void) | undefined;
   holdFrameRequestId?: string | null;
   holdNextCompletedFrame?: boolean;
   heldFrameRequestId?: string | null;
@@ -1186,6 +1207,39 @@ export const holdGroundGlassWebGpuPresentationQueueCompletion = async (): Promis
       resolve();
     };
   });
+};
+
+/** Holds after the M5 composite draw has been submitted, with a bounded automatic release. */
+export const holdGroundGlassM5CompositeForTest = async (
+  identity: GroundGlassM5CompositeLifecycleIdentity,
+  onBarrierReached: () => void,
+): Promise<"not-armed" | "released" | "timeout"> => {
+  const control = getControl();
+  if (!control || control.holdNextM5CompositeGenerationId !== identity.generationId) return "not-armed";
+
+  control.holdNextM5CompositeGenerationId = null;
+  control.m5CompositeBarrierReached = true;
+  control.heldM5CompositeIdentity = identity;
+  onBarrierReached();
+
+  const result = await new Promise<"released" | "timeout">((resolve) => {
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve("timeout");
+    }, 20_000);
+    control.releaseM5Composite = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      resolve("released");
+    };
+  });
+  control.m5CompositeBarrierReached = false;
+  control.heldM5CompositeIdentity = null;
+  control.releaseM5Composite = undefined;
+  return result;
 };
 
 export const holdGroundGlassWebGpuOperationAfterFailure = async (): Promise<void> => {
