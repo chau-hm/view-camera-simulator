@@ -5,6 +5,7 @@ import { release } from "node:os";
 import { REVISION } from "three";
 import { expect, test, type Page } from "@playwright/test";
 import { writeGroundGlassM7fCapture } from "./helpers/groundGlassM7fEvidence";
+import { writeGroundGlassM7gCapture } from "./helpers/groundGlassM7gEvidence";
 
 const attachJson = async (testInfo: import("@playwright/test").TestInfo, name: string, value: unknown) => {
   const body = JSON.stringify(value, null, 2);
@@ -224,6 +225,24 @@ test("production preview keeps Architecture Rise on WebGL for default and explic
     pageErrors,
     consoleErrors,
   };
+  writeGroundGlassM7gCapture("validation/production-isolation.json", {
+    status: "passed",
+    sourceCommitSha: productionIsolationEvidence.captureSourceSha,
+    command: process.env.GROUND_GLASS_M7G_PRODUCTION_TEST_INVOCATION ??
+      "npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+    browserProject: testInfo.project.name,
+    browserVersion: productionIsolationEvidence.browserVersion,
+    operatingSystem: productionIsolationEvidence.operatingSystem,
+    threeRevision: REVISION,
+    productionWebGpuEnabled: false,
+    testSeamExposed: groundGlassEvidence.testSeamGlobal || groundGlassEvidence.pilotCount !== 0 ||
+      evidence.hasTestProbeAttribute,
+    webGpuAttemptCount: Number(evidence.initializationAttempts),
+    policySelectedBackend: groundGlassEvidence.policySelectedBackend,
+    rendererFamily: groundGlassEvidence.rendererFamily,
+    actualExecutionApi: groundGlassEvidence.actualExecutionApi,
+    webGpuModuleRequests: webgpuModuleRequests,
+  });
   await attachJson(testInfo, "architecture-rise-production-webgl-isolation.json", productionIsolationEvidence);
   writeGroundGlassM7fCapture("production-isolation.json", {
     schemaVersion: 1,
