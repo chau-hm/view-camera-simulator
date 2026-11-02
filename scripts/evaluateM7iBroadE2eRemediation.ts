@@ -7,6 +7,7 @@ import {
 } from "../src/render/testing/groundGlassM7hBroadE2eTriage";
 import {
   GROUND_GLASS_M7I_EVALUATOR_REVISION,
+  GROUND_GLASS_M7I_MUTATION_SUITE_REVISION,
   GROUND_GLASS_M7I_REPORT_ID,
   evaluateGroundGlassM7iBroadE2eRemediation,
   type GroundGlassM7iArtifact,
@@ -37,21 +38,26 @@ const readJson = (path: string): unknown => {
 
 const main = (): void => {
   const args = process.argv.slice(2);
-  if (args.some((argument) => argument !== "--diagnostic") ||
-      args.filter((argument) => argument === "--diagnostic").length > 1) {
-    process.stderr.write("Supported M7I option: --diagnostic\n");
+  const reportOptions = args.filter((argument) => argument.startsWith("--report-path="));
+  if (args.some((argument) => argument !== "--diagnostic" && !argument.startsWith("--report-path=")) ||
+      args.filter((argument) => argument === "--diagnostic").length > 1 || reportOptions.length > 1 ||
+      reportOptions.some((argument) => argument.slice("--report-path=".length).trim().length === 0)) {
+    process.stderr.write("Supported M7I options: --diagnostic, --report-path=<path>\n");
     process.exitCode = 2;
     return;
   }
+  const selectedReportPath = reportOptions.length > 0
+    ? reportOptions[0].slice("--report-path=".length)
+    : reportPath;
 
   const historicalRawBytes = readBytes(GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH);
   const historicalTriageBytes = readBytes(m7hReportPath);
   const historicalRawReport = historicalRawBytes ? readJson(GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH) : null;
   const historicalTriage = historicalTriageBytes ? readJson(m7hReportPath) : null;
   const historicalRawSha = historicalRawBytes ? sha256(historicalRawBytes) : "";
-  const reportValue = readJson(reportPath);
+  const reportValue = readJson(selectedReportPath);
   if (!isRecord(reportValue)) {
-    process.stderr.write(`M7I report missing or malformed: ${reportPath}\n`);
+    process.stderr.write(`M7I report missing or malformed: ${selectedReportPath}\n`);
     process.exitCode = 1;
     return;
   }
@@ -91,7 +97,12 @@ const main = (): void => {
     process.exitCode = 1;
   }
   if (reportValue.evaluatorRevision !== GROUND_GLASS_M7I_EVALUATOR_REVISION ||
-      reportValue.reportId !== GROUND_GLASS_M7I_REPORT_ID) process.exitCode = 1;
+      reportValue.reportId !== GROUND_GLASS_M7I_REPORT_ID ||
+      reportValue.validation && isRecord(reportValue.validation) &&
+      isRecord(reportValue.validation.m7iEvaluatorMutationTests) &&
+      reportValue.validation.m7iEvaluatorMutationTests.suiteRevision !== GROUND_GLASS_M7I_MUTATION_SUITE_REVISION) {
+    process.exitCode = 1;
+  }
 };
 
 main();

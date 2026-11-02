@@ -15,7 +15,7 @@
       "command": "npm test",
       "passed": true,
       "files": 315,
-      "tests": 3585
+      "tests": 3613
     },
     "typecheck": {
       "command": "npm run typecheck",
@@ -36,7 +36,36 @@
     "m7iEvaluatorMutationTests": {
       "command": "npm test -- src/tests/unit/groundGlassM7iBroadE2eRemediation.test.ts",
       "passed": true,
-      "tests": 27
+      "tests": 55,
+      "suiteRevision": "m7i-broad-qualification-mutations-v1",
+      "requiredCases": [
+        "executed-baseline-report",
+        "executed-candidate-report",
+        "executed-partial-selected-run",
+        "executed-without-run-result",
+        "executed-unknown-run-id",
+        "executed-valid-inventory",
+        "executed-all-passing-outcomes",
+        "executed-one-unexpected-failure",
+        "executed-277-unexpected-failures",
+        "executed-skipped-required-test",
+        "executed-flaky-results",
+        "executed-incomplete-results",
+        "qualified-while-not-run",
+        "qualified-while-not-ready",
+        "not-ready-non-null-run-result",
+        "not-ready-validation-passed",
+        "not-ready-validation-executed",
+        "not-ready-missing-validation-status",
+        "not-ready-missing-qualification",
+        "not-ready-empty-blockers",
+        "not-ready-missing-blockers",
+        "not-ready-empty-reasons",
+        "not-ready-missing-reasons",
+        "invented-broad-decision-status",
+        "positive-not-ready-contract",
+        "positive-selected-run-evidence"
+      ]
     }
   },
   "evidenceChecks": {
@@ -137,5 +166,12 @@
     "retries": 0,
     "rawReportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-compound.json",
     "rawReportSha256": "a2712bbe595177afa71a94047dc4768c24297c8f66067e536e6d3116a8084cb7"
+  },
+  "cliNegativeControl": {
+    "command": "scripts/run-m7i-remediation.mjs --diagnostic --report-path=<temporary-report>",
+    "passed": true,
+    "expectedExitCode": 1,
+    "observedExitCode": 1,
+    "case": "278-test baseline fixture, 277 unexpected, executed + qualified"
   }
 }

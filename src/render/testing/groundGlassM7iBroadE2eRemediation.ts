@@ -11,7 +11,36 @@ import {
 } from "./groundGlassM7hBroadE2eTriage";
 
 export const GROUND_GLASS_M7I_REPORT_ID = "ground-glass-m7i-broad-e2e-remediation" as const;
-export const GROUND_GLASS_M7I_EVALUATOR_REVISION = "m7i-broad-e2e-remediation-evaluator-v1" as const;
+export const GROUND_GLASS_M7I_EVALUATOR_REVISION = "m7i-broad-e2e-remediation-evaluator-v2" as const;
+export const GROUND_GLASS_M7I_MUTATION_SUITE_REVISION = "m7i-broad-qualification-mutations-v1" as const;
+export const GROUND_GLASS_M7I_REQUIRED_MUTATION_CASES = [
+  "executed-baseline-report",
+  "executed-candidate-report",
+  "executed-partial-selected-run",
+  "executed-without-run-result",
+  "executed-unknown-run-id",
+  "executed-valid-inventory",
+  "executed-all-passing-outcomes",
+  "executed-one-unexpected-failure",
+  "executed-277-unexpected-failures",
+  "executed-skipped-required-test",
+  "executed-flaky-results",
+  "executed-incomplete-results",
+  "qualified-while-not-run",
+  "qualified-while-not-ready",
+  "not-ready-non-null-run-result",
+  "not-ready-validation-passed",
+  "not-ready-validation-executed",
+  "not-ready-missing-validation-status",
+  "not-ready-missing-qualification",
+  "not-ready-empty-blockers",
+  "not-ready-missing-blockers",
+  "not-ready-empty-reasons",
+  "not-ready-missing-reasons",
+  "invented-broad-decision-status",
+  "positive-not-ready-contract",
+  "positive-selected-run-evidence",
+] as const;
 export const GROUND_GLASS_M7I_BASE_COMMIT_SHA = "57eacc0d7c41014a3288cbee63a8b58a7aa08557" as const;
 export const GROUND_GLASS_M7H_TRIAGE_REPORT_SHA256 = "88545c33a32ed57f6ebbf5bdfbcf9e1320cca32d918c2c08d3fbee1c4efc72d8" as const;
 export const GROUND_GLASS_M7I_HISTORICAL_FAILURE_COUNT = 99 as const;
@@ -365,13 +394,18 @@ export const evaluateGroundGlassM7iBroadE2eRemediation = (
   }
   const validation = isRecord(report.validation) ? report.validation : {};
   const testValidation = isRecord(validation.unitIntegrationTests) ? validation.unitIntegrationTests : {};
-  if (testValidation.passed !== true || testValidation.files !== 315 || testValidation.tests !== 3585) {
+  if (testValidation.passed !== true || testValidation.files !== 315 || testValidation.tests !== 3613) {
     issues.push("unit-integration-validation-missing-or-inconsistent");
   }
   const mutationValidation = isRecord(validation.m7iEvaluatorMutationTests)
     ? validation.m7iEvaluatorMutationTests
     : {};
-  if (mutationValidation.passed !== true || mutationValidation.tests !== 27) {
+  const reportedMutationCases = readStringList(mutationValidation.requiredCases);
+  if (mutationValidation.passed !== true ||
+      mutationValidation.suiteRevision !== GROUND_GLASS_M7I_MUTATION_SUITE_REVISION ||
+      !Number.isInteger(mutationValidation.tests) || Number(mutationValidation.tests) < GROUND_GLASS_M7I_REQUIRED_MUTATION_CASES.length ||
+      !sameStrings(reportedMutationCases, GROUND_GLASS_M7I_REQUIRED_MUTATION_CASES) ||
+      new Set(reportedMutationCases).size !== reportedMutationCases.length) {
     issues.push("m7i-mutation-tests-missing-or-inconsistent");
   }
   for (const key of ["typecheck", "lint", "css", "build", "m7hEvidence", "m7iEvidence"] as const) {
@@ -419,21 +453,16 @@ export const evaluateGroundGlassM7iBroadE2eRemediation = (
     ? validation.productionPreviewIsolation
     : {};
   validateE2eRawReport(productionValidation, "chromium-production-preview", 4, "production-preview-isolation");
-  if (validation.fullBroadE2eRun !== "not-run") issues.push("full-broad-e2e-run-status-missing-or-invalid");
-
   const broadDecision = isRecord(report.broadRunDecision) ? report.broadRunDecision : {};
-  if (broadDecision.status === "not-ready") {
-    if (report.broadRunResult !== null || report.broadE2eQualification !== "not-qualified" ||
-        array(broadDecision.blockers).length === 0) issues.push("broad-not-ready-decision-inconsistent");
-  } else if (broadDecision.status === "executed") {
-    const broadRun = getRun(runEntries, string(isRecord(report.broadRunResult)
-      ? report.broadRunResult.runId
-      : null));
-    const rawCount = broadRun ? runOutcomes.get(string(broadRun.id))?.length ?? 0 : 0;
-    if (!broadRun || rawCount !== discovery.discoveredTests) issues.push("partial-run-labeled-as-broad");
-  } else {
-    issues.push("broad-run-decision-missing-or-invalid");
-  }
+  const hasNonEmptyString = (value: unknown): boolean =>
+    array(value).some((entry) => typeof entry === "string" && entry.trim().length > 0);
+  const broadQualificationContractValid = broadDecision.status === "not-ready" &&
+    report.broadRunResult === null &&
+    report.broadE2eQualification === "not-qualified" &&
+    validation.fullBroadE2eRun === "not-run" &&
+    hasNonEmptyString(broadDecision.reasons) &&
+    hasNonEmptyString(broadDecision.blockers);
+  if (!broadQualificationContractValid) issues.push("m7i-broad-qualification-contract-invalid");
 
   const authorization = isRecord(report.productionAuthorization) ? report.productionAuthorization : {};
   if (report.m7Qualification !== "partially-qualified" || report.m8Entry !== "denied" ||

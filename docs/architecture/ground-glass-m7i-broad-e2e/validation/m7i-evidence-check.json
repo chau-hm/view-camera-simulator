@@ -1,6 +1,6 @@
 {
   "reportId": "ground-glass-m7i-broad-e2e-remediation",
-  "evaluatorRevision": "m7i-broad-e2e-remediation-evaluator-v1",
+  "evaluatorRevision": "m7i-broad-e2e-remediation-evaluator-v2",
   "passed": true,
   "historicalFailureCount": 99,
   "tentativeDrawerCount": 15,
@@ -16,6 +16,19 @@
       "counts": {
         "discovered": 16,
         "expected": 16,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "actualWorkers": 1
+    },
+    {
+      "id": "candidate-compound-w1",
+      "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+      "rawReportSha256": "a2712bbe595177afa71a94047dc4768c24297c8f66067e536e6d3116a8084cb7",
+      "counts": {
+        "discovered": 1,
+        "expected": 1,
         "unexpected": 0,
         "skipped": 0,
         "flaky": 0

@@ -65,7 +65,7 @@ The worker-count comparison shows a worker-sensitive renderer/browser execution 
 
 ## Disposition of the original 67 unclassified failures
 
-All 67 identities and original error messages remain in the historical inventory. Two have matched M7I candidate evidence and are recorded as verified fixes: Fringe Observer remount readiness and the drawer pointer-out interaction. One other representative, Scene View Focus, progressed beyond startup but remains incomplete. The controls and Table Tilt representatives remain unresolved or comparison-inconclusive. The other 63 unclassified failures have no M7I reproduction evidence.
+All 67 identities and original error messages remain in the historical inventory. Two have matched M7I candidate evidence and are recorded as verified fixes: Fringe Observer remount readiness and the drawer pointer-out interaction. One other representative, Scene View Focus, progressed beyond startup but remains incomplete. The controls and Table Tilt representatives remain unresolved or comparison-inconclusive. The other 62 unclassified failures have no M7I reproduction evidence.
 
 The report therefore retains all 67 original entries, with **2 newly verified fixes and 65 unresolved**. The other 62 unclassified cases have no M7I reproduction evidence. The 15 drawer cases remain separate and are not silently promoted from tentative to verified shared-cause fixes.
 
@@ -87,7 +87,7 @@ Validation results are tracked in the machine-readable report and supporting art
 - the 278-test discovery artifact and broad-run readiness decision;
 - the unchanged M7, M8, M5Q, external-device-loss, and production authorization boundary.
 
-On the implementation candidate, `npm test` passed **3,583 tests across 315 files**; typecheck, lint, CSS checks, and production build passed. M7H integrity passed with the accepted 277 / 103 / 99 / 75 / 0 historical counts. The 25 M7I evaluator mutation tests passed. M7F replay passed **17/17**; M7G integrity passed with **5 passed and 2 blocked**, M7 partially qualified, and M8 denied. Ordinary Chromium smoke passed **2/2**. Production-preview isolation passed **4/4**, including the WebGL-only default and hostile WebGPU-selection denials.
+On the original implementation candidate, `npm test` passed **3,585 tests across 315 files**; typecheck, lint, CSS checks, and production build passed. M7H integrity passed with the accepted 277 / 103 / 99 / 75 / 0 historical counts. The original 27 M7I evaluator tests passed. M7F replay passed **17/17**; M7G integrity passed with **5 passed and 2 blocked**, M7 partially qualified, and M8 denied. Ordinary Chromium smoke passed **2/2**. Production-preview isolation passed **4/4**, including the WebGL-only default and hostile WebGPU-selection denials.
 
 The mutation suite exercises invented passes, expected failures, retry passes, skips, missing/duplicate identities, contradictory stats, mismatched source/environment, omitted historical entries, partial-run-as-broad claims, and unauthorized production/M8 changes.
 
@@ -100,3 +100,44 @@ The mutation suite exercises invented passes, expected failures, retry passes, s
 M7 overall remains **partially-qualified**. Spontaneous/external device loss remains **blocked**. M5Q quality remains **partially-qualified**. M8 entry remains **denied**. Production Ground Glass remains **WebGL-only**.
 
 See the [machine-readable M7I report](GROUND_GLASS_M7I_BROAD_E2E_REMEDIATION_REPORT.json), [raw reproductions](ground-glass-m7i-broad-e2e/reproduction/), [current discovery](ground-glass-m7i-broad-e2e/validation/current-chromium-discovery.txt), [validation summary](ground-glass-m7i-broad-e2e/validation/validation-summary.json), and [accepted M7H report](GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json).
+
+## M7I Review-Fix Round 1 — Fail-Closed Broad Qualification
+
+GitHub review finding: [PR #307 discussion 4443543078](https://github.com/chau-hm/view-camera-simulator/pull/307#discussion_r4443543078). The reviewed v1 evaluator accepted an `executed` decision when a referenced run contained 278 tests, without requiring candidate provenance, passing outcomes, or consistency with `broadE2eQualification` and `validation.fullBroadE2eRun`.
+
+### Reproduction before the fix
+
+The repository contains the accepted historical 277-test raw capture at `docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json` (SHA-256 `393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6`). It does not contain a persisted 278-result full-suite run. The mutation test therefore built an isolated temporary fixture from the accepted 277-test raw tree, added one synthetic discovered test while retaining its 80 root spec suites, and recomputed the fixture report digest as `399c1a2683ff8af072fc845e5433cf0b3cbe7d0864c12cd5cb5420e2a25f08ed`. The synthetic report was not written to committed evidence.
+
+The reviewed v1 source was replayed against four mutations. Results below are direct evaluator outputs:
+
+| Mutation | Pre-fix result |
+|---|---|
+| A. 278-test baseline fixture, 277 unexpected failures, `executed` + `qualified`, validation says `not-run` | **Accepted**: `passed: true`, `issues: []` |
+| B. Existing persisted five-test candidate cohort, `executed` + `not-qualified` | Rejected as partial: `partial-run-labeled-as-broad` |
+| B control. 278-test all-pass baseline fixture, `executed` + `not-qualified` | **Accepted**: `passed: true`, `issues: []` |
+| C. Qualification changed to `qualified` while decision remains `not-ready` | Rejected by `broad-not-ready-decision-inconsistent` |
+| D. Validation changed to `passed` while decision remains `not-ready` | Rejected by `full-broad-e2e-run-status-missing-or-invalid` |
+
+This reproduces the reported acceptance defect and confirms the two existing checks rejected their own contradictions. The persisted selected run was not misrepresented as a full-suite result.
+
+### Corrected M7I contract
+
+The evaluator now accepts only the submitted partial-remediation state, with all four fields agreeing:
+
+```text
+broadRunDecision.status = not-ready
+broadRunResult = null
+broadE2eQualification = not-qualified
+validation.fullBroadE2eRun = not-run
+```
+
+The `not-ready` decision must also contain at least one non-empty reason and blocker. Every `executed` decision is rejected, including a hypothetical 278-test candidate report whose tests all pass. A future full-suite qualification milestone must define and independently review its own candidate, inventory, outcome, retry, skip, flake, and qualification contract; M7I does not implement that pathway.
+
+The evaluator revision is now `m7i-broad-e2e-remediation-evaluator-v2`. The versioned mutation manifest `m7i-broad-qualification-mutations-v1` requires all 26 named positive and negative cases. They cover baseline and candidate reports, partial and unknown references, passing and failing outcomes, skipped/flaky/incomplete results, contradictory validation fields, absent qualification fields, empty or missing readiness reasons/blockers, and an invented status. The CLI integration test invokes `scripts/run-m7i-remediation.mjs --diagnostic --report-path=<temporary-report>` and verifies process exit code **1** for the original P2 attack.
+
+The positive controls continue to accept the submitted M7I report and its selected one-worker/four-worker evidence, including the three unresolved or inconclusive four-worker outcomes. The 99 historical failures, two verified M7I fixes, 15 tentative drawer identities, 67 original unknown identities, and 80 unresolved identities remain unchanged. The original M7H, M7I selected-run, and production-preview artifacts retain their recorded digests.
+
+Review-fix validation on the updated tree passed `npm test` (**3,613 tests across 315 files**), the focused M7I suite (**55/55**), typecheck, lint, CSS check, production build, M7H integrity, M7I integrity, M7F replay (**17/17**), and M7G integrity (**5 passed, 2 blocked**). The CLI negative control returned exit code **1** for the contradictory 278-test qualification claim. The final-head hosted CI result is linked from PR #307's implementation handoff; the earlier success on the reviewed v1 HEAD is not treated as final-head evidence.
+
+A green M7I integrity result means this partial report is internally consistent; it does not mean the 278-test Broad E2E suite passed. M7 stays partially qualified, M8 stays denied, M5Q stays partially qualified, spontaneous/external device loss stays blocked, and production Ground Glass remains WebGL-only with production WebGPU disabled. Future full-suite qualification requires a separate evidence contract and review.

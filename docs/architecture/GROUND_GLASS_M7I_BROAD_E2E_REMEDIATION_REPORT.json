@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reportId": "ground-glass-m7i-broad-e2e-remediation",
-  "evaluatorRevision": "m7i-broad-e2e-remediation-evaluator-v1",
+  "evaluatorRevision": "m7i-broad-e2e-remediation-evaluator-v2",
   "baseCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
   "candidateCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
   "historicalM7h": {
@@ -2969,7 +2969,7 @@
     {
       "artifactType": "offline-evidence-check",
       "path": "docs/architecture/ground-glass-m7i-broad-e2e/validation/m7i-evidence-check.json",
-      "sha256": "85be5e8dbcdc3d3bf1c24a2b417e64ccc3650a2b380b7e2135fb7cbc37955190"
+      "sha256": "69632ddb00462420b52c10b8d4ec2e3bc3c37ff9bfbdfe5883bdb106ec644061"
     },
     {
       "artifactType": "ordinary-chromium-smoke",
@@ -2984,14 +2984,14 @@
     {
       "artifactType": "validation-summary",
       "path": "docs/architecture/ground-glass-m7i-broad-e2e/validation/validation-summary.json",
-      "sha256": "aacef9329d01b5789b6ac7a7e7af29932025a0baefcccf334c8c545f2a4f80ac"
+      "sha256": "ffceeed21e5e6dd57b97076e44c527b7f72def91efef83141482dfac9b994c40"
     }
   ],
   "validation": {
     "unitIntegrationTests": {
       "passed": true,
       "files": 315,
-      "tests": 3585
+      "tests": 3613
     },
     "typecheck": "passed",
     "lint": "passed",
@@ -3023,10 +3023,39 @@
     },
     "fullBroadE2eRun": "not-run",
     "validationSummaryPath": "docs/architecture/ground-glass-m7i-broad-e2e/validation/validation-summary.json",
-    "validationSummarySha256": "aacef9329d01b5789b6ac7a7e7af29932025a0baefcccf334c8c545f2a4f80ac",
+    "validationSummarySha256": "ffceeed21e5e6dd57b97076e44c527b7f72def91efef83141482dfac9b994c40",
     "m7iEvaluatorMutationTests": {
       "passed": true,
-      "tests": 27
+      "tests": 55,
+      "suiteRevision": "m7i-broad-qualification-mutations-v1",
+      "requiredCases": [
+        "executed-baseline-report",
+        "executed-candidate-report",
+        "executed-partial-selected-run",
+        "executed-without-run-result",
+        "executed-unknown-run-id",
+        "executed-valid-inventory",
+        "executed-all-passing-outcomes",
+        "executed-one-unexpected-failure",
+        "executed-277-unexpected-failures",
+        "executed-skipped-required-test",
+        "executed-flaky-results",
+        "executed-incomplete-results",
+        "qualified-while-not-run",
+        "qualified-while-not-ready",
+        "not-ready-non-null-run-result",
+        "not-ready-validation-passed",
+        "not-ready-validation-executed",
+        "not-ready-missing-validation-status",
+        "not-ready-missing-qualification",
+        "not-ready-empty-blockers",
+        "not-ready-missing-blockers",
+        "not-ready-empty-reasons",
+        "not-ready-missing-reasons",
+        "invented-broad-decision-status",
+        "positive-not-ready-contract",
+        "positive-selected-run-evidence"
+      ]
     },
     "selectedCompoundCandidate": {
       "runId": "candidate-compound-w1",
@@ -3036,6 +3065,147 @@
       "workers": 1,
       "actualPass": true,
       "retries": 0
+    }
+  },
+  "reviewFixRound1": {
+    "findingUrl": "https://github.com/chau-hm/view-camera-simulator/pull/307#discussion_r4443543078",
+    "reviewedHeadSha": "29ae78f1e13bfab838326aab589799aafc1a7d63",
+    "evaluatorRevisionBefore": "m7i-broad-e2e-remediation-evaluator-v1",
+    "evaluatorRevisionAfter": "m7i-broad-e2e-remediation-evaluator-v2",
+    "reproduction": {
+      "result": "reproduced",
+      "persistedHistoricalArtifact": {
+        "path": "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json",
+        "sha256": "393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6",
+        "testCount": 277
+      },
+      "persistedCurrentDiscovery": {
+        "testCount": 278,
+        "specFiles": 80,
+        "kind": "discovery-only; no persisted complete 278-result capture is present in this worktree"
+      },
+      "syntheticIsolatedFixture": {
+        "path": "system-temp fixture; not committed",
+        "sourceTestCount": 277,
+        "syntheticTestsAdded": 1,
+        "rootSuiteCount": 80,
+        "discovered": 278,
+        "expected": 1,
+        "unexpected": 277,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "rawReportSha256": "399c1a2683ff8af072fc845e5433cf0b3cbe7d0864c12cd5cb5420e2a25f08ed"
+      },
+      "preFix": [
+        {
+          "case": "executed + qualified + validation not-run, baseline-sized 278 tree with 277 unexpected",
+          "passed": true,
+          "issues": []
+        },
+        {
+          "case": "executed + not-qualified, persisted five-test candidate cohort",
+          "passed": false,
+          "issues": [
+            "partial-run-labeled-as-broad"
+          ]
+        },
+        {
+          "case": "executed + not-qualified, 278-tree all-pass baseline fixture",
+          "passed": true,
+          "issues": []
+        },
+        {
+          "case": "qualified while decision remains not-ready",
+          "passed": false,
+          "issues": [
+            "broad-not-ready-decision-inconsistent"
+          ]
+        },
+        {
+          "case": "validation fullBroadE2eRun passed while decision remains not-ready",
+          "passed": false,
+          "issues": [
+            "full-broad-e2e-run-status-missing-or-invalid"
+          ]
+        }
+      ]
+    },
+    "contract": {
+      "status": "not-ready",
+      "broadRunResult": null,
+      "broadE2eQualification": "not-qualified",
+      "fullBroadE2eRun": "not-run",
+      "requiresNonEmptyReasons": true,
+      "requiresNonEmptyBlockers": true,
+      "allExecutedClaimsRejected": true
+    },
+    "mutationSuite": {
+      "revision": "m7i-broad-qualification-mutations-v1",
+      "requiredCases": [
+        "executed-baseline-report",
+        "executed-candidate-report",
+        "executed-partial-selected-run",
+        "executed-without-run-result",
+        "executed-unknown-run-id",
+        "executed-valid-inventory",
+        "executed-all-passing-outcomes",
+        "executed-one-unexpected-failure",
+        "executed-277-unexpected-failures",
+        "executed-skipped-required-test",
+        "executed-flaky-results",
+        "executed-incomplete-results",
+        "qualified-while-not-run",
+        "qualified-while-not-ready",
+        "not-ready-non-null-run-result",
+        "not-ready-validation-passed",
+        "not-ready-validation-executed",
+        "not-ready-missing-validation-status",
+        "not-ready-missing-qualification",
+        "not-ready-empty-blockers",
+        "not-ready-missing-blockers",
+        "not-ready-empty-reasons",
+        "not-ready-missing-reasons",
+        "invented-broad-decision-status",
+        "positive-not-ready-contract",
+        "positive-selected-run-evidence"
+      ],
+      "focusedTestCount": 55,
+      "cliNegativeControlExitCode": 1
+    },
+    "postFix": {
+      "evaluatorRevision": "m7i-broad-e2e-remediation-evaluator-v2",
+      "broadQualificationIssue": "m7i-broad-qualification-contract-invalid",
+      "m7iEvidenceIntegrity": "passed",
+      "historicalFailureCount": 99,
+      "m7iVerifiedFixCount": 2,
+      "tentativeDrawerCount": 15,
+      "unknownFailureCount": 67,
+      "unresolvedCount": 80,
+      "fullBroadE2eRun": "not-run",
+      "localValidation": {
+        "unitIntegrationTests": {
+          "passed": true,
+          "files": 315,
+          "tests": 3613
+        },
+        "focusedMutationTests": {
+          "passed": true,
+          "tests": 55
+        },
+        "typecheck": "passed",
+        "lint": "passed",
+        "css": "passed",
+        "build": "passed",
+        "m7hEvidence": "passed",
+        "m7iEvidence": "passed",
+        "m7fReplayPassedScenarios": 17,
+        "m7gEvidenceIntegrity": "passed",
+        "m7gPassedScenarios": 5,
+        "m7gBlockedScenarios": 2,
+        "cliNegativeControlExitCode": 1
+      },
+      "finalHeadHostedCi": "See current required checks on PR #307; verify against the final PR HEAD."
     }
   }
 }
