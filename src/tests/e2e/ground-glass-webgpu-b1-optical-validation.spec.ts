@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseJ=1";
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -269,7 +270,8 @@ test("ordinary Chromium can execute the canonical Macro fixture without claiming
   test.skip(nativeRequired, "This control is run separately from the native-required headed Chrome gate");
   await page.goto(FIXTURE_PATH);
   const handle = await waitForInitialHandle(page);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
+  expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   expect(handle.runtime?.initialized).toBe(true);
   const { operation } = await runCase(page, "phase-j-macro-focus-middle-f5_6-full32");
   expect(operation.appliedState?.scene).toBe("macro-depth-of-field");

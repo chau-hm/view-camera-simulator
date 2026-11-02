@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 import { planeFromPointNormal } from "../../core/math/plane";
 import { vec } from "../../core/math/vec";
 import { computePhysicalBlurFootprint } from "../../core/optics/computePhysicalBlurFootprint";
@@ -297,7 +298,8 @@ test("ordinary Chromium can execute the isolated aperture-gather fixture without
   await expect(page.getByRole("heading", { name: "Native WebGPU physical aperture gather" })).toBeVisible();
   const handle = await waitForLatestCompletedHandle(page);
   expect(handle.runtime?.initialized).toBe(true);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
+  expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   expect(handle.runtime?.applicationFallback).toBe(false);
   expect(handle.formats?.sceneColor.requested).toBe("rgba16float");
   expect(handle.formats?.physicalCoC.requested).toContain("rgba16float");

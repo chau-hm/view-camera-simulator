@@ -356,26 +356,28 @@ test("normal Architecture Rise route keeps WebGL as default and runs an explicit
   test.setTimeout(300_000);
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
-  const webgpuRequests: string[] = [];
   const documentNavigations: string[] = [];
+  const developmentWebGpuModuleRequests: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("request", (request) => {
-    if (/three[/_-]webgpu|\/webgpu\//i.test(request.url())) webgpuRequests.push(request.url());
     if (request.isNavigationRequest() && request.resourceType() === "document") {
       documentNavigations.push(request.url());
     }
+    if (request.url().includes("/render/webgpu/")) developmentWebGpuModuleRequests.push(request.url());
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
 
   const defaultObserver = await waitForPublicArchitectureRise(page);
   await expect(defaultObserver).toHaveAttribute("data-observer-renderer-request", "webgl");
   await expect(defaultObserver).toHaveAttribute("data-observer-selection-reason", "default-webgl-request");
+  await expect(defaultObserver).toHaveAttribute("data-observer-renderer-attempt", "webgl");
+  await expect(defaultObserver).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(defaultObserver).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(defaultObserver).toHaveAttribute("data-observer-webgpu-scene-compatibility", "verified");
   await expect(defaultObserver).toHaveAttribute("data-observer-scene-rendering-requirements", "observer-scene-subject,presentation-lighting,shadow-maps,procedural-world-environment");
-  expect(webgpuRequests).toEqual([]);
 
   const closePosition = [4.8, 2.7, 4.2] as const;
   const closeTarget = [0, 1.25, 9.3] as const;
@@ -447,7 +449,6 @@ test("normal Architecture Rise route keeps WebGL as default and runs an explicit
   await expect(pilotObserver).toHaveAttribute("data-scene-subject-id", "architecture-rise");
   const pilotGeneration = await pilotObserver.getAttribute("data-observer-renderer-generation");
   expect(pilotGeneration).not.toBe(defaultEvidence.generation);
-  expect(webgpuRequests.length).toBeGreaterThan(0);
   const groundGlass = page.getByTestId("ground-glass-rtt").first();
   await expect(groundGlass).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 90_000 });
 
@@ -605,7 +606,7 @@ test("normal Architecture Rise route keeps WebGL as default and runs an explicit
     groundGlassContentful: await groundGlass.getAttribute("data-rtt-final-contentful"),
     groundGlassControlResponse: groundGlassControlResponse.regions.wholeFrame,
     screenshots: ["architecture-rise-normal-route-webgl-default.png", "architecture-rise-normal-route-webgpu-pilot.png", "architecture-rise-normal-route-interactive-final.png"],
-    moduleRequests: webgpuRequests,
+    developmentWebGpuModuleRequests,
     documentNavigations,
     pageErrors,
     consoleErrors,

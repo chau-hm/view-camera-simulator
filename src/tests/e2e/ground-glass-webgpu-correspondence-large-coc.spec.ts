@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 import { assertB1LargeCocReferenceAdvantage } from "./fixtures/ground-glass-webgpu-correspondence-large-coc-cases";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseK=1";
@@ -292,7 +293,8 @@ test("ordinary Chromium executes Phase K controls without claiming native WebGPU
   test.skip(nativeRequired, "Ordinary Chromium control is run separately from the native-required gate");
   await page.goto(FIXTURE_PATH);
   const handle = await waitForInitialHandle(page);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
+  expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   const { operation } = await runCase(page, "phase-k-s0-full32");
   expect(operation.appliedState?.scene).toBe("macro-depth-of-field");
   const runtime = record(record(operation.phaseJ).phaseK).nativeRuntime;

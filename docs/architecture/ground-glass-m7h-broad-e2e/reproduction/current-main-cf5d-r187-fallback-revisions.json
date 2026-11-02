@@ -1,0 +1,988 @@
+{
+  "config": {
+    "argv": [
+      "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+      "/private/tmp/m7h-current-main-cf5d/node_modules/.bin/playwright",
+      "test",
+      "--project=chromium",
+      "--workers=1",
+      "--reporter=json",
+      "--grep",
+      "ordinary Chromium can execute the isolated aperture-gather fixture|ordinary Chromium can execute the canonical Macro fixture|GPU CoC/footprint writers and TSL consumers match the CPU codec contract|successful readback retirement and handle-owned resource cleanup survive SPA remount|a rejected accepted readback remains a failure while SPA cleanup succeeds|post-writer failure is explicit and does not prevent resource cleanup|ordinary Chromium executes Phase K controls without claiming native WebGPU|ordinary Chromium Phase I fixture remains a fallback-only control|ordinary Chromium Phase H control records fallback-compatible behavior only|Phase G ordinary Chromium compatibility control does not claim native execution|ordinary Chromium Phase L route remains an isolated research fixture|native scene depth and TSL physical footprints match independent geometry and CPU optics"
+    ],
+    "configFile": "/private/tmp/m7h-current-main-cf5d/playwright.config.ts",
+    "rootDir": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/private/tmp/m7h-current-main-cf5d/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e",
+        "testIgnore": [
+          "**/*-production.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 4340 --strictPort",
+      "url": "http://127.0.0.1:4340",
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "env": {
+        "CODEX_SANDBOX_NETWORK_DISABLED": "1",
+        "NODE": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "INIT_CWD": "/private/tmp/m7h-current-main-cf5d",
+        "TERM": "dumb",
+        "PLAYWRIGHT_JSON_OUTPUT_NAME": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/docs/architecture/ground-glass-m7h-broad-e2e/reproduction/current-main-cf5d-r187-fallback-revisions.json",
+        "HOMEBREW_REPOSITORY": "/opt/homebrew",
+        "npm_config_global_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "CODEX_APPLY_PATCH_PRESERVE_LINE_ENDINGS": "1",
+        "FPATH": "/opt/homebrew/share/zsh/site-functions:/usr/local/share/zsh/site-functions:/usr/share/zsh/site-functions:/usr/share/zsh/5.9/functions",
+        "COLOR": "0",
+        "NO_COLOR": "1",
+        "npm_config_noproxy": "",
+        "npm_config_local_prefix": "/private/tmp/m7h-current-main-cf5d",
+        "LC_ALL": "C.UTF-8",
+        "npm_config_globalconfig": "/Users/homan/.nvm/versions/node/v24.3.0/etc/npmrc",
+        "PLAYWRIGHT_WEB_SERVER_PORT": "4340",
+        "__CF_USER_TEXT_ENCODING": "0x1F7:0x0:0x0",
+        "CODEX_PERMISSION_PROFILE": ":workspace",
+        "npm_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/bin/npm-cli.js",
+        "PAGER": "cat",
+        "PATH": "/private/tmp/m7h-current-main-cf5d/node_modules/.bin:/private/tmp/node_modules/.bin:/private/node_modules/.bin:/node_modules/.bin:/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/homan/.nvm/versions/node/v24.3.0/bin:/Applications/Blender.app/Contents/MacOS:/opt/homebrew/bin:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/usr/local/go/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/homan/.codex/tmp/arg0-macos/codex-arg0leyLBF:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/homan/.local/bin:/Applications/Obsidian.app/Contents/MacOS",
+        "npm_package_json": "/private/tmp/m7h-current-main-cf5d/package.json",
+        "_": "/private/tmp/m7h-current-main-cf5d/node_modules/.bin/playwright",
+        "npm_config_userconfig": "/Users/homan/.npmrc",
+        "npm_config_init_module": "/Users/homan/.npm-init.js",
+        "CODEX_THREAD_ID": "01a19227-5af7-7123-8439-9c3066c9c84a",
+        "npm_command": "run",
+        "PWD": "/private/tmp/m7h-current-main-cf5d",
+        "npm_lifecycle_event": "test:e2e",
+        "EDITOR": "vi",
+        "npm_package_name": "view-camera-simulator",
+        "LANG": "C.UTF-8",
+        "npm_config_npm_version": "11.12.0",
+        "CODEX_TOOL_CALL_ID": "exec-998c670b-5e7e-416f-8f03-3d74bae6c497",
+        "CODEX_CI": "1",
+        "npm_config_node_gyp": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
+        "npm_package_version": "0.0.0",
+        "CODEX_VERSION": "0.166.0-alpha.5.1",
+        "SHLVL": "1",
+        "HOME": "/Users/homan",
+        "HOMEBREW_PREFIX": "/opt/homebrew",
+        "GH_PAGER": "cat",
+        "npm_config_cache": "/Users/homan/.npm",
+        "LOGNAME": "homan",
+        "npm_lifecycle_script": "playwright test",
+        "LC_CTYPE": "C.UTF-8",
+        "npm_config_user_agent": "npm/11.12.0 node/v24.3.0 darwin arm64 workspaces/false",
+        "INFOPATH": "/opt/homebrew/share/info:",
+        "HOMEBREW_CELLAR": "/opt/homebrew/Cellar",
+        "GIT_PAGER": "cat",
+        "CODEX_SESSION_ID": "01a19227-5af7-7123-8439-9c3066c9c84a",
+        "npm_node_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "npm_config_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "COLORTERM": "",
+        "BROWSERSLIST_IGNORE_OLD_DATA": "true",
+        "VITE_BASE_PATH": "/",
+        "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM": "false",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH": "false",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH": "false",
+        "VITE_GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT": "false",
+        "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION": "false"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "ground-glass-webgpu-aperture-gather.spec.ts",
+      "file": "ground-glass-webgpu-aperture-gather.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1739,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts:300:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts",
+                      "column": 41,
+                      "line": 300
+                    },
+                    "snippet": "  298 |   const handle = await waitForLatestCompletedHandle(page);\n  299 |   expect(handle.runtime?.initialized).toBe(true);\n> 300 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  301 |   expect(handle.runtime?.applicationFallback).toBe(false);\n  302 |   expect(handle.formats?.sceneColor.requested).toBe(\"rgba16float\");\n  303 |   expect(handle.formats?.physicalCoC.requested).toContain(\"rgba16float\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts",
+                        "column": 41,
+                        "line": 300
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  298 |   const handle = await waitForLatestCompletedHandle(page);\n  299 |   expect(handle.runtime?.initialized).toBe(true);\n> 300 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  301 |   expect(handle.runtime?.applicationFallback).toBe(false);\n  302 |   expect(handle.formats?.sceneColor.requested).toBe(\"rgba16float\");\n  303 |   expect(handle.formats?.physicalCoC.requested).toContain(\"rgba16float\");\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts:300:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:22.037Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-apertu-4bc1a-hout-claiming-native-WebGPU-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts",
+                    "column": 41,
+                    "line": 300
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "edaa7014d6426cc31919-9767433f4cf8a39db8ed",
+          "file": "ground-glass-webgpu-aperture-gather.spec.ts",
+          "line": 293,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-b1-optical-validation.spec.ts",
+      "file": "ground-glass-webgpu-b1-optical-validation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1653,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts:272:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts",
+                      "column": 41,
+                      "line": 272
+                    },
+                    "snippet": "  270 |   await page.goto(FIXTURE_PATH);\n  271 |   const handle = await waitForInitialHandle(page);\n> 272 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  273 |   expect(handle.runtime?.initialized).toBe(true);\n  274 |   const { operation } = await runCase(page, \"phase-j-macro-focus-middle-f5_6-full32\");\n  275 |   expect(operation.appliedState?.scene).toBe(\"macro-depth-of-field\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts",
+                        "column": 41,
+                        "line": 272
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  270 |   await page.goto(FIXTURE_PATH);\n  271 |   const handle = await waitForInitialHandle(page);\n> 272 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  273 |   expect(handle.runtime?.initialized).toBe(true);\n  274 |   const { operation } = await runCase(page, \"phase-j-macro-focus-middle-f5_6-full32\");\n  275 |   expect(operation.appliedState?.scene).toBe(\"macro-depth-of-field\");\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts:272:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:24.325Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-b1-opt-c1cf6-hout-claiming-native-WebGPU-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts",
+                    "column": 41,
+                    "line": 272
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "6b4460fd3dd61f4a9f8e-20f9c493e2e02071ba5b",
+          "file": "ground-glass-webgpu-b1-optical-validation.spec.ts",
+          "line": 268,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-coc-footprint.spec.ts",
+      "file": "ground-glass-webgpu-coc-footprint.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GPU CoC/footprint writers and TSL consumers match the CPU codec contract",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1063,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:481:3",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                      "column": 41,
+                      "line": 452
+                    },
+                    "snippet": "  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                        "column": 41,
+                        "line": 452
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:481:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:26.411Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-coc-fo-ed9c6-atch-the-CPU-codec-contract-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                    "column": 41,
+                    "line": 452
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "479e4ee7272e348614df-76ff972527657be895e3",
+          "file": "ground-glass-webgpu-coc-footprint.spec.ts",
+          "line": 466,
+          "column": 1
+        },
+        {
+          "title": "successful readback retirement and handle-owned resource cleanup survive SPA remount",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1061,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:655:3",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                      "column": 41,
+                      "line": 452
+                    },
+                    "snippet": "  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                        "column": 41,
+                        "line": 452
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:655:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:27.900Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-coc-fo-4ce70-cleanup-survive-SPA-remount-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                    "column": 41,
+                    "line": 452
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "479e4ee7272e348614df-2a209ca1cb37b7c5a3b5",
+          "file": "ground-glass-webgpu-coc-footprint.spec.ts",
+          "line": 647,
+          "column": 1
+        },
+        {
+          "title": "a rejected accepted readback remains a failure while SPA cleanup succeeds",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1086,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:736:3",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                      "column": 41,
+                      "line": 452
+                    },
+                    "snippet": "  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                        "column": 41,
+                        "line": 452
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:736:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:29.416Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-coc-fo-da0cb--while-SPA-cleanup-succeeds-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                    "column": 41,
+                    "line": 452
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "479e4ee7272e348614df-ebe9c5db3de6eb18d611",
+          "file": "ground-glass-webgpu-coc-footprint.spec.ts",
+          "line": 728,
+          "column": 1
+        },
+        {
+          "title": "post-writer failure is explicit and does not prevent resource cleanup",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1060,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:801:3",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                      "column": 41,
+                      "line": 452
+                    },
+                    "snippet": "  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                        "column": 41,
+                        "line": 452
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  450 |   expect(handle.runtime?.initialized).toBe(true);\n  451 |   expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n> 452 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  453 |   if (nativeWebGpuRequired) {\n  454 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n  455 |     expect(handle.runtime?.applicationFallback).toBe(false);\n    at assertNativeExecutionWhenRequired (/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:452:41)\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts:801:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:30.953Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-coc-fo-7725f-ot-prevent-resource-cleanup-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts",
+                    "column": 41,
+                    "line": 452
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "479e4ee7272e348614df-eaff852db89da0287701",
+          "file": "ground-glass-webgpu-coc-footprint.spec.ts",
+          "line": 793,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-correspondence-large-coc.spec.ts",
+      "file": "ground-glass-webgpu-correspondence-large-coc.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary Chromium executes Phase K controls without claiming native WebGPU",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1927,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts:295:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts",
+                      "column": 41,
+                      "line": 295
+                    },
+                    "snippet": "  293 |   await page.goto(FIXTURE_PATH);\n  294 |   const handle = await waitForInitialHandle(page);\n> 295 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  296 |   const { operation } = await runCase(page, \"phase-k-s0-full32\");\n  297 |   expect(operation.appliedState?.scene).toBe(\"macro-depth-of-field\");\n  298 |   const runtime = record(record(operation.phaseJ).phaseK).nativeRuntime;"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts",
+                        "column": 41,
+                        "line": 295
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  293 |   await page.goto(FIXTURE_PATH);\n  294 |   const handle = await waitForInitialHandle(page);\n> 295 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  296 |   const { operation } = await runCase(page, \"phase-k-s0-full32\");\n  297 |   expect(operation.appliedState?.scene).toBe(\"macro-depth-of-field\");\n  298 |   const runtime = record(record(operation.phaseJ).phaseK).nativeRuntime;\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts:295:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:32.520Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-corres-7ec2a-hout-claiming-native-WebGPU-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts",
+                    "column": 41,
+                    "line": 295
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "1e20c495004a7d16144e-a50b09002379dbda61d0",
+          "file": "ground-glass-webgpu-correspondence-large-coc.spec.ts",
+          "line": 291,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-far-reconstruction-i.spec.ts",
+      "file": "ground-glass-webgpu-far-reconstruction-i.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary Chromium Phase I fixture remains a fallback-only control",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1848,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts:279:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts",
+                      "column": 41,
+                      "line": 279
+                    },
+                    "snippet": "  277 |   const handle = await waitForInitial(page);\n  278 |   expect(handle.runtime?.initialized).toBe(true);\n> 279 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  280 |   expect(handle.runtime?.executionBackend).not.toBe(\"webgpu\");\n  281 | });\n  282 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts",
+                        "column": 41,
+                        "line": 279
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  277 |   const handle = await waitForInitial(page);\n  278 |   expect(handle.runtime?.initialized).toBe(true);\n> 279 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  280 |   expect(handle.runtime?.executionBackend).not.toBe(\"webgpu\");\n  281 | });\n  282 |\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts:279:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:34.905Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-far-re-a8fa7-ins-a-fallback-only-control-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts",
+                    "column": 41,
+                    "line": 279
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "424167ea46771c9cbac8-bd69199fe8981462bc0b",
+          "file": "ground-glass-webgpu-far-reconstruction-i.spec.ts",
+          "line": 273,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-far-reconstruction.spec.ts",
+      "file": "ground-glass-webgpu-far-reconstruction.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary Chromium Phase H control records fallback-compatible behavior only",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2115,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts:213:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts",
+                      "column": 41,
+                      "line": 213
+                    },
+                    "snippet": "  211 |   const handle = await waitForInitial(page);\n  212 |   expect(handle.runtime?.initialized).toBe(true);\n> 213 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  214 |   assertNativeSampling(handle);\n  215 | });\n  216 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts",
+                        "column": 41,
+                        "line": 213
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  211 |   const handle = await waitForInitial(page);\n  212 |   expect(handle.runtime?.initialized).toBe(true);\n> 213 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  214 |   assertNativeSampling(handle);\n  215 | });\n  216 |\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts:213:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:37.251Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-far-re-3ea9e-ck-compatible-behavior-only-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts",
+                    "column": 41,
+                    "line": 213
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "174fb7013830233c1549-0765b829c079d60e7587",
+          "file": "ground-glass-webgpu-far-reconstruction.spec.ts",
+          "line": 207,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-gather-quality.spec.ts",
+      "file": "ground-glass-webgpu-gather-quality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Phase G ordinary Chromium compatibility control does not claim native execution",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1451,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts:306:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts",
+                      "column": 41,
+                      "line": 306
+                    },
+                    "snippet": "  304 |   const handle = await waitForInitialRender(page);\n  305 |   expect(handle.runtime?.initialized).toBe(true);\n> 306 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  307 |   expect(handle.dimensions).toMatchObject({ sourceWidthPx: 128, sourceHeightPx: 96 });\n  308 |   expect(handle.metrics?.validPhysicalPixelCount).toBeGreaterThan(0);\n  309 |   await captureCanvas(page, test.info(), \"phase-g-ordinary-chromium-control.png\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts",
+                        "column": 41,
+                        "line": 306
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  304 |   const handle = await waitForInitialRender(page);\n  305 |   expect(handle.runtime?.initialized).toBe(true);\n> 306 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  307 |   expect(handle.dimensions).toMatchObject({ sourceWidthPx: 128, sourceHeightPx: 96 });\n  308 |   expect(handle.metrics?.validPhysicalPixelCount).toBeGreaterThan(0);\n  309 |   await captureCanvas(page, test.info(), \"phase-g-ordinary-chromium-control.png\");\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts:306:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:39.829Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-gather-3418e--not-claim-native-execution-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts",
+                    "column": 41,
+                    "line": 306
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "da9b87277fb15007cc51-6496dc68fdac9a692cea",
+          "file": "ground-glass-webgpu-gather-quality.spec.ts",
+          "line": 299,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-interior-coc-quality.spec.ts",
+      "file": "ground-glass-webgpu-interior-coc-quality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ordinary Chromium Phase L route remains an isolated research fixture",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1985,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts:625:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts",
+                      "column": 41,
+                      "line": 625
+                    },
+                    "snippet": "  623 |   await page.goto(FIXTURE_PATH);\n  624 |   const handle = await waitForActiveHandle(page);\n> 625 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  626 |   await expect(page.getByTestId(\"phase-l-controls\")).toBeVisible();\n  627 |   const publicRoutes = await page.locator(\"a\").allTextContents();\n  628 |   expect(publicRoutes).toContain(\"Navigate away (SPA)\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts",
+                        "column": 41,
+                        "line": 625
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  623 |   await page.goto(FIXTURE_PATH);\n  624 |   const handle = await waitForActiveHandle(page);\n> 625 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  626 |   await expect(page.getByTestId(\"phase-l-controls\")).toBeVisible();\n  627 |   const publicRoutes = await page.locator(\"a\").allTextContents();\n  628 |   expect(publicRoutes).toContain(\"Navigate away (SPA)\");\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts:625:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:41.767Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-interi-79070-n-isolated-research-fixture-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts",
+                    "column": 41,
+                    "line": 625
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "505f054fe38ed6a3acb9-43fa2f154b3383c4216a",
+          "file": "ground-glass-webgpu-interior-coc-quality.spec.ts",
+          "line": 621,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "ground-glass-webgpu-physical-coc.spec.ts",
+      "file": "ground-glass-webgpu-physical-coc.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "native scene depth and TSL physical footprints match independent geometry and CPU optics",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 11,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2027,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts:196:41",
+                    "location": {
+                      "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts",
+                      "column": 41,
+                      "line": 196
+                    },
+                    "snippet": "  194 |   expect(handle.error).toBeNull();\n  195 |   expect(handle.runtime?.initialized).toBe(true);\n> 196 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  197 |   if (nativeWebGpuRequired) {\n  198 |     expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n  199 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts",
+                        "column": 41,
+                        "line": 196
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"18\u001b[7m6\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"18\u001b[7m7\u001b[27m\"\u001b[39m\n\n  194 |   expect(handle.error).toBeNull();\n  195 |   expect(handle.runtime?.initialized).toBe(true);\n> 196 |   expect(handle.runtime?.threeRevision).toBe(\"186\");\n      |                                         ^\n  197 |   if (nativeWebGpuRequired) {\n  198 |     expect(handle.runtime?.rendererFamily).toBe(\"webgpu-renderer\");\n  199 |     expect(handle.runtime?.executionBackend).toBe(\"webgpu\");\n    at /private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts:196:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:28:44.225Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/m7h-current-main-cf5d/test-results/ground-glass-webgpu-physic-472e3-ent-geometry-and-CPU-optics-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/m7h-current-main-cf5d/src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts",
+                    "column": 41,
+                    "line": 196
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8a15bb7a48623ffd77cd-58550732177af1fa9f42",
+          "file": "ground-glass-webgpu-physical-coc.spec.ts",
+          "line": 190,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-01T13:28:19.229Z",
+    "duration": 27193.262,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 12,
+    "flaky": 0
+  }
+}

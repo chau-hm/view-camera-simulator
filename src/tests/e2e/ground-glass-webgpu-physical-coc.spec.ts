@@ -193,7 +193,7 @@ test("native scene depth and TSL physical footprints match independent geometry 
   const { handle } = await waitForCompletedHandle(page);
   expect(handle.error).toBeNull();
   expect(handle.runtime?.initialized).toBe(true);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(nativeWebGpuRequired ? "186" : THREE.REVISION);
   if (nativeWebGpuRequired) {
     expect(handle.runtime?.rendererFamily).toBe("webgpu-renderer");
     expect(handle.runtime?.executionBackend).toBe("webgpu");

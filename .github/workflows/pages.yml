@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Chromium for focused E2E regressions
+        run: npx playwright install --with-deps chromium
+
       - name: Lint
         run: npm run lint
 
@@ -51,6 +54,15 @@ jobs:
 
       - name: Unit and integration tests
         run: npm run test
+
+      - name: Run ordinary Chromium application smoke
+        run: npm run test:e2e -- --project=chromium --workers=1 src/tests/e2e/smoke.spec.ts
+
+      - name: Verify production preview WebGL isolation
+        run: >-
+          npm run test:e2e -- --config=playwright.production.config.ts
+          --project=chromium-production-preview --workers=1
+          src/tests/e2e/architecture-rise-webgpu-production.spec.ts
 
       - name: Replay persisted M7F presentation evidence
         run: |
@@ -64,6 +76,9 @@ jobs:
           M7G_EVALUATION="$GITHUB_WORKSPACE/.m7g-consolidation-evaluation.json"
           trap 'rm -f "$M7G_REPORT" "$M7G_EVALUATION"' EXIT
           npm run evidence:report:m7g -- --report-output="$M7G_REPORT" --evaluation-output="$M7G_EVALUATION"
+
+      - name: Validate M7H historical broad E2E triage integrity
+        run: npm run evidence:check:m7h
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'

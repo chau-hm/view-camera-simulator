@@ -4,6 +4,7 @@ import { setRangeDirect } from "./helpers/rangeInput";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -32,6 +33,7 @@ test("Architecture + Foreground compound task solves the photograph from neutral
   await expect(page).toHaveURL(
     /\/simulator\/guided\/architecture-foreground\/architecture-foreground-compound-01\?rttDiagnostics=1$/,
   );
+  await openPinnedLearningDrawer(page);
   await expect(page.getByRole("heading", { name: "Complete the Photograph" })).toBeVisible();
   await expect(
     page.getByText(

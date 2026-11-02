@@ -4,6 +4,7 @@ import { readFocusDistributionPercent } from "./helpers/focusDistribution";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -64,6 +65,7 @@ test("Architecture + Foreground Rise guided task is observable, reachable, and r
   await expect(page).toHaveURL(
     /\/simulator\/guided\/architecture-foreground\/architecture-foreground-rise-01\?rttDiagnostics=1$/,
   );
+  await openPinnedLearningDrawer(page);
   await expect(page.getByRole("heading", { name: "Frame the Building" })).toBeVisible();
   await expect(
     page.getByText(

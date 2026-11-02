@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 import {
   buildPhaseLCandidateSearchArtifact,
   buildPhaseLNoCandidateReport,
@@ -622,7 +623,8 @@ test("ordinary Chromium Phase L route remains an isolated research fixture", asy
   test.skip(nativeRequired, "Ordinary compatibility control runs separately from native-required validation");
   await page.goto(FIXTURE_PATH);
   const handle = await waitForActiveHandle(page);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
+  expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   await expect(page.getByTestId("phase-l-controls")).toBeVisible();
   const publicRoutes = await page.locator("a").allTextContents();
   expect(publicRoutes).toContain("Navigate away (SPA)");
