@@ -85,6 +85,7 @@ test("Scene-local learning drawer leaves the paired workspace layout intact", as
     x: Math.min(stageBounds.x + stageBounds.width - 2, drawerBounds.x + drawerBounds.width + 8),
     y: stageBounds.y + stageBounds.height * 0.55,
   };
+  await page.getByRole("button", { name: "Scene", exact: true }).focus();
   await page.mouse.move(outsidePoint.x, outsidePoint.y);
   await expect(learning).toHaveAttribute("data-drawer-state", "peek", { timeout: 2_000 });
   await expect(drawer).not.toBeVisible({ timeout: 2_000 });

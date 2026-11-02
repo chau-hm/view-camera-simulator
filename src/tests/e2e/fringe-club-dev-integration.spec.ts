@@ -687,7 +687,11 @@ test("Stage 2N-A Observer and RTT instances survive independent sibling removal"
   expect(rttAfterObserverRemoval.finalContentful).toBe(true);
 
   await modeSelect.selectOption("both");
-  await expect(rendererMetrics).toHaveAttribute("data-observer-candidate-id", "stage2n-a");
+  await expect(rendererMetrics).toHaveAttribute(
+    "data-observer-candidate-id",
+    "stage2n-a",
+    { timeout: 30_000 },
+  );
   await expect(rendererMetrics).toHaveAttribute("data-instance-leases", "2");
   await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
   const remountedObserver = await readObserverMetrics(page);

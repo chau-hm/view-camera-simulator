@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "baseCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+  "candidateCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+  "rawRuns": [
+    {
+      "id": "drawer-compound-w1",
+      "runKind": "baseline",
+      "sourceCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+      "workers": 1,
+      "projectName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "invocation": "PLAYWRIGHT_WEB_SERVER_PORT=4461 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/baseline-57eacc0-drawer-and-compound.json npm run test:e2e -- --project=chromium --workers=1 --reporter=json --grep 'Architecture \\+ Foreground DOF task starts solved through PR7C and completes with Aperture only|Architecture \\+ Foreground completes its five-stage Guided Lesson from the Scenes page|Architecture \\+ Foreground lesson entry resets after Free Practice and direct task routes stay standalone|Architecture \\+ Foreground Rise guided task is observable, reachable, and restartable|Architecture \\+ Foreground Tilt \\+ Focus guided task starts composed and is restartable|Interior Corner completes the public Compose → Swing → Refine → Aperture lesson|Interior Corner keeps the solved focus state when returning to Swing|Oblique Architecture guided Rise task solves observable framing and restarts to neutral|Oblique Architecture guided Swing \\+ Focus task starts from solved Rise and restarts deterministically|Oblique Architecture compound task solves Rise, Swing, and Focus from neutral|Oblique Architecture guided lesson progresses through the four stages|Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson|Shelf Swing routes reject mismatched and free-mode task IDs|Shelf Swing guided task teaches negative swing and restores its initial state|Table Tilt zero-tilt point focus moves from near to middle to far|Architecture \\+ Foreground compound task solves the photograph from neutral'",
+      "reportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/baseline-57eacc0-drawer-and-compound.json",
+      "rawReportSha256": "c703d0894baf21183fee31656a1fe0923747a7ee8a4798c3fe786513a177a1dc",
+      "testIds": [
+        "chromium::architecture-foreground-compound.spec.ts::Architecture + Foreground compound task solves the photograph from neutral",
+        "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground completes its five-stage Guided Lesson from the Scenes page",
+        "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "chromium::architecture-foreground-rise.spec.ts::Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+        "chromium::architecture-foreground-tilt-focus.spec.ts::Architecture + Foreground Tilt + Focus guided task starts composed and is restartable",
+        "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Swing + Focus task starts from solved Rise and restarts deterministically",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+        "chromium::oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+        "chromium::shelf-swing.spec.ts::Shelf Swing routes reject mismatched and free-mode task IDs",
+        "chromium::shelf-swing.spec.ts::Shelf Swing guided task teaches negative swing and restores its initial state",
+        "chromium::table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+      ],
+      "counts": {
+        "expected": 16,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "environment": {
+        "os": "macOS 27.0.1",
+        "architecture": "arm64",
+        "nodeVersion": "24.3.0",
+        "npmVersion": "11.12.0",
+        "playwrightVersion": "1.61.1",
+        "browserVersion": "149.0.7827.55",
+        "threeRevision": "187",
+        "project": "chromium",
+        "workerCount": 1,
+        "viewport": "Test-defined; mixed within the selected cases; Desktop Chrome default is 1280x720.",
+        "viteFlags": "VITE_BASE_PATH=/; VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=false; native WebGPU requirement flags unset.",
+        "serverPort": "4461",
+        "retries": 0
+      }
+    },
+    {
+      "id": "candidate-compound-w1",
+      "runKind": "candidate",
+      "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+      "workers": 1,
+      "projectName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "invocation": "PLAYWRIGHT_WEB_SERVER_PORT=4467 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-compound.json npm run test:e2e -- --project=chromium --workers=1 --reporter=list,json src/tests/e2e/architecture-foreground-compound.spec.ts",
+      "reportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-compound.json",
+      "rawReportSha256": "a2712bbe595177afa71a94047dc4768c24297c8f66067e536e6d3116a8084cb7",
+      "testIds": [
+        "chromium::architecture-foreground-compound.spec.ts::Architecture + Foreground compound task solves the photograph from neutral"
+      ],
+      "counts": {
+        "expected": 1,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "environment": {
+        "os": "macOS 27.0.1",
+        "architecture": "arm64",
+        "nodeVersion": "24.3.0",
+        "npmVersion": "11.12.0",
+        "playwrightVersion": "1.61.1",
+        "browserVersion": "149.0.7827.55",
+        "threeRevision": "187",
+        "project": "chromium",
+        "workerCount": 1,
+        "viewport": "Test-defined; mixed within the selected cases; Desktop Chrome default is 1280x720.",
+        "viteFlags": "VITE_BASE_PATH=/; VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=false; native WebGPU requirement flags unset.",
+        "serverPort": "4467",
+        "retries": 0
+      }
+    },
+    {
+      "id": "cohorts-w1",
+      "runKind": "baseline",
+      "sourceCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+      "workers": 1,
+      "projectName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "invocation": "PLAYWRIGHT_WEB_SERVER_PORT=4462 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/baseline-57eacc0-cohorts-w1.json npm run test:e2e -- --project=chromium --workers=1 --reporter=list,json --grep 'Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|View Focus preserves independent Scene and Camera views and resets the active preset|camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|Scene-local learning drawer leaves the paired workspace layout intact'",
+      "reportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/baseline-57eacc0-cohorts-w1.json",
+      "rawReportSha256": "b8add3f7f58621752fdf61cb46de1c366cde587a1370bfd0121712f8fc2eae15",
+      "testIds": [
+        "chromium::camera-controls-compact.spec.ts::camera control rows keep useful rendered tracks across rail widths",
+        "chromium::fringe-club-dev-integration.spec.ts::Stage 2N-A Observer and RTT instances survive independent sibling removal",
+        "chromium::scene-view-focus.spec.ts::View Focus preserves independent Scene and Camera views and resets the active preset",
+        "chromium::table-tilt.spec.ts::Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress",
+        "chromium::viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ],
+      "counts": {
+        "expected": 5,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "environment": {
+        "os": "macOS 27.0.1",
+        "architecture": "arm64",
+        "nodeVersion": "24.3.0",
+        "npmVersion": "11.12.0",
+        "playwrightVersion": "1.61.1",
+        "browserVersion": "149.0.7827.55",
+        "threeRevision": "187",
+        "project": "chromium",
+        "workerCount": 1,
+        "viewport": "Test-defined; mixed within the selected cases; Desktop Chrome default is 1280x720.",
+        "viteFlags": "VITE_BASE_PATH=/; VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=false; native WebGPU requirement flags unset.",
+        "serverPort": "4462",
+        "retries": 0
+      }
+    },
+    {
+      "id": "cohorts-w4",
+      "runKind": "baseline",
+      "sourceCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+      "workers": 4,
+      "projectName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "invocation": "PLAYWRIGHT_WEB_SERVER_PORT=4463 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/baseline-57eacc0-cohorts-w4.json npm run test:e2e -- --project=chromium --workers=4 --reporter=list,json --grep 'Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|View Focus preserves independent Scene and Camera views and resets the active preset|camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|Scene-local learning drawer leaves the paired workspace layout intact'",
+      "reportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/baseline-57eacc0-cohorts-w4.json",
+      "rawReportSha256": "812a711d9609b6a3d9e4cad24050f9c226f6d3b595148da9bec9ef72ff92f1b8",
+      "testIds": [
+        "chromium::camera-controls-compact.spec.ts::camera control rows keep useful rendered tracks across rail widths",
+        "chromium::fringe-club-dev-integration.spec.ts::Stage 2N-A Observer and RTT instances survive independent sibling removal",
+        "chromium::scene-view-focus.spec.ts::View Focus preserves independent Scene and Camera views and resets the active preset",
+        "chromium::table-tilt.spec.ts::Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress",
+        "chromium::viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ],
+      "counts": {
+        "expected": 1,
+        "unexpected": 4,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "environment": {
+        "os": "macOS 27.0.1",
+        "architecture": "arm64",
+        "nodeVersion": "24.3.0",
+        "npmVersion": "11.12.0",
+        "playwrightVersion": "1.61.1",
+        "browserVersion": "149.0.7827.55",
+        "threeRevision": "187",
+        "project": "chromium",
+        "workerCount": 4,
+        "viewport": "Test-defined; mixed within the selected cases; Desktop Chrome default is 1280x720.",
+        "viteFlags": "VITE_BASE_PATH=/; VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=false; native WebGPU requirement flags unset.",
+        "serverPort": "4463",
+        "retries": 0
+      }
+    },
+    {
+      "id": "candidate-cohorts-w1",
+      "runKind": "candidate",
+      "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+      "workers": 1,
+      "projectName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "invocation": "PLAYWRIGHT_WEB_SERVER_PORT=4464 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-cohorts-w1.json npm run test:e2e -- --project=chromium --workers=1 --reporter=list,json --grep 'Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|View Focus preserves independent Scene and Camera views and resets the active preset|camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|Scene-local learning drawer leaves the paired workspace layout intact'",
+      "reportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-cohorts-w1.json",
+      "rawReportSha256": "86638bd1ae00700e30d02df065b52818555aa223269be429f8ea877a32f0c7b6",
+      "testIds": [
+        "chromium::camera-controls-compact.spec.ts::camera control rows keep useful rendered tracks across rail widths",
+        "chromium::fringe-club-dev-integration.spec.ts::Stage 2N-A Observer and RTT instances survive independent sibling removal",
+        "chromium::scene-view-focus.spec.ts::View Focus preserves independent Scene and Camera views and resets the active preset",
+        "chromium::table-tilt.spec.ts::Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress",
+        "chromium::viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ],
+      "counts": {
+        "expected": 5,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "environment": {
+        "os": "macOS 27.0.1",
+        "architecture": "arm64",
+        "nodeVersion": "24.3.0",
+        "npmVersion": "11.12.0",
+        "playwrightVersion": "1.61.1",
+        "browserVersion": "149.0.7827.55",
+        "threeRevision": "187",
+        "project": "chromium",
+        "workerCount": 1,
+        "viewport": "Test-defined; mixed within the selected cases; Desktop Chrome default is 1280x720.",
+        "viteFlags": "VITE_BASE_PATH=/; VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=false; native WebGPU requirement flags unset.",
+        "serverPort": "4464",
+        "retries": 0
+      }
+    },
+    {
+      "id": "candidate-cohorts-w4",
+      "runKind": "candidate",
+      "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+      "workers": 4,
+      "projectName": "chromium",
+      "browserVersion": "149.0.7827.55",
+      "invocation": "PLAYWRIGHT_WEB_SERVER_PORT=4465 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-cohorts-w4.json npm run test:e2e -- --project=chromium --workers=4 --reporter=list,json --grep 'Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|View Focus preserves independent Scene and Camera views and resets the active preset|camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|Scene-local learning drawer leaves the paired workspace layout intact'",
+      "reportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-cohorts-w4.json",
+      "rawReportSha256": "9ebb83700b6e783df270f4de54895c538d5935a92af1590e14dffeee39113b89",
+      "testIds": [
+        "chromium::camera-controls-compact.spec.ts::camera control rows keep useful rendered tracks across rail widths",
+        "chromium::fringe-club-dev-integration.spec.ts::Stage 2N-A Observer and RTT instances survive independent sibling removal",
+        "chromium::scene-view-focus.spec.ts::View Focus preserves independent Scene and Camera views and resets the active preset",
+        "chromium::table-tilt.spec.ts::Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress",
+        "chromium::viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ],
+      "counts": {
+        "expected": 2,
+        "unexpected": 3,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "environment": {
+        "os": "macOS 27.0.1",
+        "architecture": "arm64",
+        "nodeVersion": "24.3.0",
+        "npmVersion": "11.12.0",
+        "playwrightVersion": "1.61.1",
+        "browserVersion": "149.0.7827.55",
+        "threeRevision": "187",
+        "project": "chromium",
+        "workerCount": 4,
+        "viewport": "Test-defined; mixed within the selected cases; Desktop Chrome default is 1280x720.",
+        "viteFlags": "VITE_BASE_PATH=/; VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=false; native WebGPU requirement flags unset.",
+        "serverPort": "4465",
+        "retries": 0
+      }
+    }
+  ],
+  "matchedFixes": [
+    {
+      "testId": "chromium::fringe-club-dev-integration.spec.ts::Stage 2N-A Observer and RTT instances survive independent sibling removal",
+      "evidenceKind": "m7i-matched",
+      "baselineRunId": "cohorts-w4",
+      "candidateRunId": "candidate-cohorts-w4",
+      "cause": "renderer remount readiness used an unboundedly short generic expectation window",
+      "change": "Use a test-specific 30-second observable wait for the remounted Observer candidate identity."
+    },
+    {
+      "testId": "chromium::viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact",
+      "evidenceKind": "m7i-matched",
+      "baselineRunId": "cohorts-w4",
+      "candidateRunId": "candidate-cohorts-w4",
+      "cause": "pointer-out auto-hide assertion did not move focus outside the focus-retaining drawer",
+      "change": "Focus the public Scene button before asserting pointer-out collapse; retain the existing focus-preservation behavior."
+    }
+  ],
+  "selectedPartialOrInconclusive": [
+    {
+      "testId": "chromium::scene-view-focus.spec.ts::View Focus preserves independent Scene and Camera views and resets the active preset",
+      "status": "partially-addressed",
+      "baselineRunId": "cohorts-w4",
+      "candidateRunId": "candidate-cohorts-w4",
+      "baselineFailure": "canvas count remained zero at 5 seconds",
+      "candidateLaterFailure": "Reset 3D view locator timed out at 90 seconds",
+      "verifiedFix": false
+    },
+    {
+      "testId": "chromium::camera-controls-compact.spec.ts::camera control rows keep useful rendered tracks across rail widths",
+      "status": "unresolved-worker-sensitive",
+      "baselineRunId": "cohorts-w4",
+      "candidateRunId": "candidate-cohorts-w4",
+      "candidateFailure": "browser-side responsive row evaluation timed out at 120 seconds",
+      "verifiedFix": false
+    },
+    {
+      "testId": "chromium::table-tilt.spec.ts::Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress",
+      "status": "comparison-inconclusive",
+      "baselineRunId": "cohorts-w4",
+      "candidateRunId": "candidate-cohorts-w4",
+      "candidateFailure": "browser-side WebGL context query timed out at 120 seconds",
+      "verifiedFix": false
+    }
+  ],
+  "broadRunDecision": {
+    "status": "not-ready",
+    "reasons": [
+      "The matched four-worker representative cohort still has three candidate timeouts (Scene View Focus, Camera Controls, Table Tilt resource stress).",
+      "The 64 other unclassified cases have not received comparable reproduction evidence; two of 67 are now verified matched fixes.",
+      "The 15 tentative drawer cases pass on merged main but their historical common cause is not reproduced or established."
+    ],
+    "blockers": [
+      "Resolve or isolate worker-sensitive Scene View, responsive controls, and renderer-stress execution before an interpretable four-worker broad run.",
+      "Continue selected matched investigation of remaining historical failures; retain all 67 original unknown identities.",
+      "Do not infer broad qualification from selected tests or one-worker passes."
+    ]
+  },
+  "broadRunResult": null,
+  "compoundTaskComparison": {
+    "testId": "chromium::architecture-foreground-compound.spec.ts::Architecture + Foreground compound task solves the photograph from neutral",
+    "baselineRunId": "drawer-compound-w1",
+    "candidateRunId": "candidate-compound-w1",
+    "baselineActualPass": true,
+    "candidateActualPass": true,
+    "retries": {
+      "baseline": 0,
+      "candidate": 0
+    },
+    "outcome": "not-reproduced",
+    "verifiedFix": false
+  }
+}
