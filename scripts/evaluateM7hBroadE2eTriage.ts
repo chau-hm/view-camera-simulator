@@ -6,6 +6,7 @@ import {
   GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH,
   GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256,
   GROUND_GLASS_M7H_REPORT_ID,
+  deriveGroundGlassM7hPlaywrightReportOutcomes,
   evaluateGroundGlassM7hBroadE2eTriage,
   extractGroundGlassM7hPlaywrightTests,
 } from "../src/render/testing/groundGlassM7hBroadE2eTriage";
@@ -16,7 +17,6 @@ type JsonRecord = Record<string, unknown>;
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const string = (value: unknown): string => typeof value === "string" ? value : "";
-const numeric = (value: unknown): number => typeof value === "number" && Number.isFinite(value) ? value : 0;
 const sha256 = (bytes: Buffer): string => createHash("sha256").update(bytes).digest("hex");
 const readBytes = (path: string): Buffer | null => {
   try {
@@ -112,10 +112,34 @@ const main = (): void => {
     const browserVersion = browserVersionOption?.slice("--browser-version=".length).trim() ?? "";
     const invocation = invocationOption?.slice("--invocation=".length).trim() ?? "";
     if (!runBytes || !runReport || !/^[0-9a-f]{40}$/i.test(sourceCommitSha) || !browserVersion || !invocation) {
-      fail("Comparing a Playwright run requires a readable raw report, source SHA, browser version, and exact invocation");
+      process.stdout.write(`${JSON.stringify({
+        reportId: GROUND_GLASS_M7H_REPORT_ID,
+        sourceCommitSha,
+        invocation,
+        browserVersion,
+        rawReportPath: runPath,
+        reportedCounts: null,
+        derivedCounts: null,
+        discoveredTests: 0,
+        testsWithUsableResults: 0,
+        incompleteTests: [],
+        duplicateTestIds: [],
+        statsConsistent: false,
+        inventoryConsistent: false,
+        unexpectedTests: [],
+        flakyTests: [],
+        skippedTests: [],
+        addedSinceInventory: [],
+        missingFromRun: [],
+        qualificationDecision: "not-qualified",
+        issues: ["comparison-report-or-provenance-missing-or-malformed"],
+      }, null, 2)}\n`);
+      process.exitCode = 1;
+      return;
     }
     const runSha = sha256(runBytes);
-    const runTests = extractGroundGlassM7hPlaywrightTests(runReport, runSha);
+    const derived = deriveGroundGlassM7hPlaywrightReportOutcomes(runReport, runSha);
+    const runTests = derived.tests;
     const runProjects = isRecord((runReport as { config?: unknown }).config) &&
         Array.isArray((runReport as { config: { projects?: unknown } }).config.projects)
       ? (runReport as { config: { projects: Array<{ id?: unknown }> } }).config.projects.map((project) => project.id)
@@ -123,16 +147,86 @@ const main = (): void => {
     const runConfig = isRecord((runReport as { config?: unknown }).config) ?
       (runReport as { config: Record<string, unknown> }).config : {};
     const project = runProjects.length === 1 ? runProjects[0] : null;
-    if (project !== "chromium") fail("M7H broad run comparison accepts only the ordinary chromium project");
     const discoveryValue = isRecord(artifacts[string(discovery?.artifactPath)]?.report)
       ? artifacts[string(discovery?.artifactPath)].report as { tests?: unknown }
       : {};
-    const recordedIds = new Set(Array.isArray(discoveryValue.tests)
-      ? discoveryValue.tests.filter(isRecord).map((test) => string(test.testId))
-      : []);
+    const discoveryArtifact = artifacts[string(discovery?.artifactPath)];
+    const discoveryTests = Array.isArray(discoveryValue.tests) ? discoveryValue.tests.filter(isRecord) : [];
+    const discoveryIds = discoveryTests.map((test) => string(test.testId));
+    const recordedIds = new Set(discoveryIds);
     const runIds = new Set(runTests.map((test) => test.testId));
     const runStats = isRecord((runReport as { stats?: unknown }).stats) ?
       (runReport as { stats: Record<string, unknown> }).stats : {};
+    const statKeys = ["expected", "unexpected", "skipped", "flaky"] as const;
+    const reportedCounts = Object.fromEntries(statKeys.map((key) => {
+      const value = runStats[key];
+      return [key, typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null];
+    })) as Record<(typeof statKeys)[number], number | null>;
+    const statsPresentAndValid = statKeys.every((key) => reportedCounts[key] !== null);
+    const statsMatchDerived = statsPresentAndValid && statKeys.every((key) =>
+      reportedCounts[key] === derived.counts[key]);
+    const statsConsistent = statsMatchDerived && derived.counts.incomplete === 0 &&
+      statKeys.reduce<number>((total, key) => total + (reportedCounts[key] ?? 0), 0) === derived.counts.discovered;
+    const reportCurrentDiscovery = isRecord(report) && isRecord(report.currentDiscovery) ? report.currentDiscovery : {};
+    const discoveryDigestMatches = Boolean(discoveryArtifact) &&
+      discoveryArtifact?.sha256 === reportCurrentDiscovery.artifactSha256;
+    const discoveryIdentitiesValid = discoveryTests.every((test) => {
+      const validDescribePath = Array.isArray(test.describePath) &&
+        test.describePath.every((part) => typeof part === "string");
+      const parts = [
+        string(test.projectName),
+        string(test.specFile),
+        ...(validDescribePath ? test.describePath as string[] : []),
+        string(test.testTitle),
+      ];
+      return validDescribePath && parts.every(Boolean) && string(test.testId) === parts.join("::") && test.projectName === "chromium";
+    });
+    const duplicateDiscoveryIds = new Set(discoveryIds).size !== discoveryIds.length;
+    const duplicateTestIds = [...new Set([...derived.duplicateTestIds, ...(duplicateDiscoveryIds ? discoveryIds.filter((id, index) => discoveryIds.indexOf(id) !== index) : [])])].sort();
+    const discoveryCountMatches = Number.isInteger(reportCurrentDiscovery.discoveredTests) &&
+      reportCurrentDiscovery.discoveredTests === discoveryTests.length;
+    const addedSinceInventory = [...runIds].filter((id) => !recordedIds.has(id)).sort();
+    const missingFromRun = [...recordedIds].filter((id) => !runIds.has(id)).sort();
+    const testProjectsValid = runTests.every((test) => test.projectName === "chromium");
+    const inventoryConsistent = discoveryDigestMatches && discoveryIdentitiesValid && !duplicateDiscoveryIds &&
+      discoveryCountMatches && addedSinceInventory.length === 0 && missingFromRun.length === 0 &&
+      duplicateTestIds.length === 0 && testProjectsValid && derived.counts.discovered === discoveryTests.length;
+    const unexpectedTests = runTests.filter((test) => test.resultStatus === "unexpected").map((test) => ({
+      testId: test.testId,
+      expectedStatus: test.expectedStatus,
+      actualStatus: test.actualStatus,
+      errorCategory: test.errorCategory,
+    }));
+    const flakyTests = runTests.filter((test) => test.resultStatus === "flaky").map((test) => ({
+      testId: test.testId,
+      expectedStatus: test.expectedStatus,
+      actualStatus: test.actualStatus,
+      attemptStatuses: test.attemptStatuses,
+    }));
+    const skippedTests = runTests.filter((test) => test.resultStatus === "skipped").map((test) => ({
+      testId: test.testId,
+      expectedStatus: test.expectedStatus,
+      actualStatus: test.actualStatus,
+    }));
+    const actualPassingTests = runTests.filter((test) => test.actualPass).length;
+    const issues = [
+      ...derived.issues,
+      ...(project === "chromium" ? [] : ["ordinary-chromium-project-required"]),
+      ...(!testProjectsValid ? ["non-chromium-test-identity-present"] : []),
+      ...(derived.counts.incomplete ? ["incomplete-test-results-present"] : []),
+      ...(duplicateTestIds.length ? ["duplicate-test-identities-present"] : []),
+      ...(!statsPresentAndValid ? ["aggregate-playwright-stats-missing-or-invalid"] : []),
+      ...(statsPresentAndValid && !statsMatchDerived ? ["aggregate-playwright-stats-disagree-with-raw-tree"] : []),
+      ...(!statsConsistent && statsMatchDerived ? ["aggregate-playwright-stats-do-not-reconcile-with-discovered-tests"] : []),
+      ...(!discoveryDigestMatches ? ["current-discovery-artifact-digest-mismatch"] : []),
+      ...(!discoveryIdentitiesValid || !discoveryCountMatches ? ["current-discovery-inventory-invalid"] : []),
+      ...(!inventoryConsistent && (addedSinceInventory.length || missingFromRun.length) ? ["test-inventory-does-not-match-current-discovery"] : []),
+      ...(unexpectedTests.length ? ["unexpected-test-outcomes-present"] : []),
+      ...(flakyTests.length ? ["flaky-test-outcomes-present"] : []),
+      ...(skippedTests.length ? ["required-tests-skipped"] : []),
+      ...(actualPassingTests !== derived.counts.discovered ? ["required-tests-not-actually-passing"] : []),
+      ...(!Number.isInteger(runConfig.workers) || Number(runConfig.workers) <= 0 ? ["invalid-worker-count"] : []),
+    ];
     const comparison = {
       reportId: GROUND_GLASS_M7H_REPORT_ID,
       sourceCommitSha,
@@ -142,24 +236,26 @@ const main = (): void => {
       browserVersion,
       rawReportPath: runPath,
       rawReportSha256: runSha,
-      testsDiscovered: runTests.length,
-      expected: numeric(runStats.expected),
-      unexpected: numeric(runStats.unexpected),
-      skipped: numeric(runStats.skipped),
-      flaky: numeric(runStats.flaky),
-      addedSinceInventory: [...runIds].filter((id) => !recordedIds.has(id)).sort(),
-      missingFromRun: [...recordedIds].filter((id) => !runIds.has(id)).sort(),
-      unexpectedTests: runTests.filter((test) => test.resultStatus === "unexpected").map((test) => ({
-        testId: test.testId,
-        status: test.actualStatus,
-        errorCategory: test.errorCategory,
-      })),
-      note: "Comparison reports outcomes and inventory drift only; it does not assign regression origin or qualify the broad suite.",
+      reportedCounts,
+      derivedCounts: derived.counts,
+      discoveredTests: derived.counts.discovered,
+      testsWithUsableResults: derived.testsWithUsableResults,
+      incompleteTests: derived.incompleteTests,
+      duplicateTestIds,
+      statsConsistent,
+      inventoryConsistent,
+      unexpectedTests,
+      flakyTests,
+      skippedTests,
+      addedSinceInventory,
+      missingFromRun,
+      actualPassingTests,
+      qualificationDecision: issues.length === 0 ? "passed" : "not-qualified",
+      issues: [...new Set(issues)],
+      note: "Raw per-test results are authoritative. A consistent expected failure remains an expected outcome, but does not count as an actual passing test.",
     };
     process.stdout.write(`${JSON.stringify(comparison, null, 2)}\n`);
-    if (comparison.addedSinceInventory.length || comparison.missingFromRun.length || comparison.unexpected > 0 || comparison.flaky > 0) {
-      process.exitCode = 1;
-    }
+    if (comparison.qualificationDecision !== "passed") process.exitCode = 1;
     return;
   }
   const evaluation = evaluateGroundGlassM7hBroadE2eTriage(report, historical, historicalSha, artifacts);

@@ -110,7 +110,7 @@ npm run test:e2e -- --config=playwright.production.config.ts \
 
 The CLI is offline unless an explicit raw report is supplied. It does not run browser tests. Live Playwright runs require the local browser and a Vite server bound to loopback.
 
-## Validation
+## Initial PR #306 validation at the reviewed HEAD
 
 - `npm test`: **313 files, 3,514 tests passed**.
 - `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`: all passed on the final test implementation.
@@ -122,7 +122,7 @@ The CLI is offline unless an explicit raw report is supplied. It does not run br
 - `npm run evidence:replay:m7f`: passed all **17/17** presentation scenarios.
 - `npm run evidence:report:m7g`: evidence integrity passed; **5 passed, 2 blocked**, M7 `partially-qualified`, M8 denied. Replay-generated changes to historical M7F/M7G reports were restored; those files remain unchanged in this PR.
 - The 277-test broad Playwright suite was not rerun. The new selected smoke and production-preview runs are recorded separately and do not qualify the full suite.
-- Hosted CI has not yet run for this branch; its focused checks are defined in the Pages workflow.
+- Hosted run `41326981743` passed all configured checks on reviewed HEAD `264007ab84b48a5b1f90ce668c4ec8f7c56ee3f3`; that prior result does not validate the v3 review-fix commit.
 
 ## Outstanding backlog and priority
 
@@ -135,6 +135,40 @@ The CLI is offline unless an explicit raw report is supplied. It does not run br
 
 Spontaneous/external GPU device loss remains the separate M7G blocker. M5Q remains partially qualified, M6 photographic quality remains unqualified, M8 entry remains denied, and production WebGPU remains disabled.
 
+## M7H Review-Fix Round 1 — Verified Fix and Raw Outcome Integrity
+
+### F1 — Verified fixes require an actual deterministic pass
+
+The review reproduction changed a matched candidate from an ordinary pass to `expectedStatus: "failed"` with a final raw `failed` result, then recomputed the attached artifact digest. The v2 evaluator still accepted the `verified-fixed-on-head` classification because it only compared Playwright's expected/unexpected label. This isolated mutation did not alter any committed capture.
+
+Evaluator v3 now requires the candidate's declared expectation and final result to both be `passed`, its Playwright outcome to be expected, and its result history to have no retries. The baseline must show a corresponding expected-pass failure, timeout, or interruption-only run; the raw status remains distinct from Playwright's aggregate skipped label. Expected failures, skips, unexpected passes, timeouts, interruptions, missing results, invalid statuses, and retry-dependent passes cannot satisfy the candidate-pass predicate. Existing-on-base and introduced-on-head classifications also require the appropriate raw failure/pass pair.
+
+The mutation suite rejects the expected-failure attack and the other candidate outcome variants while retaining positive controls for a single actual pass and matched existing-on-base failures. Replaying the accepted M7H report keeps all **16 verified fixes**, **16 remediated entries**, **1 existing/partially addressed failure**, **15 tentative cohort members**, and **67 unclassified failures**. The stronger predicate did not require downgrading a submitted fixed claim.
+
+### F2 — Raw test results are the comparison authority
+
+The review reproduction supplied a complete 278-test ordinary-Chromium report with one actual failure while declaring `stats.unexpected: 0`. The old CLI exited successfully. The inverse all-pass raw tree with `stats.unexpected: 1` was also added as a negative control.
+
+Evaluator v3 derives `expected`, `unexpected`, `skipped`, `flaky`, and `incomplete` from ordered raw test results, validates stable identities and duplicates, and checks every declared Playwright statistic against the derived counts. The implementation follows the installed Playwright 1.61.1 `computeTestCaseOutcome` semantics: retries are flaky only when the history contains both expected and unexpected attempts; an interruption-only history is reported as skipped while its raw status remains visible. Missing or malformed results are incomplete and block qualification.
+
+The comparison CLI emits machine-readable diagnostics for invalid reports and exits nonzero when raw outcomes, summary statistics, or the expected current inventory disagree. A statistics-consistent expected failure remains classified as an expected Playwright outcome, but it is not counted as an actual passing test. The process-level CLI cases cover all-pass success, hidden and contradictory failures, missing/malformed stats and results, flaky/skipped outcomes, inventory drift, duplicate identities, project mismatch, expected-failure behavior, and digest recomputation.
+
+### Provenance and remaining limitations
+
+The evaluator revision is `m7h-broad-e2e-triage-evaluator-v3`. The retained historical M7G report remains SHA-256 `393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6`, sourced from `095d9725a1ddb272bf780bd5e7e9e2a2b8f61837`; the accepted PR #305 base identity remains `cf5d91ab879208ea123a5b9a5d046cb5178217cf`. Baseline and candidate source commits and report digests in the selected-run inventory are unchanged.
+
+This was an offline evaluator correction. No new browser or native GPU capture was taken, and the 277-test broad suite was not rerun. Therefore broad E2E remains `not-qualified`; the 15 tentative and 67 unclassified outcomes remain open. M7 remains `partially-qualified`, spontaneous/external device loss remains blocked, M8 entry remains denied, and production Ground Glass remains WebGL-only.
+
+### Review-fix validation
+
+- Focused evaluator and process-level CLI tests: **57 passed** (28 evaluator tests and 29 CLI process cases).
+- `npm test`: **314 files, 3,558 tests passed**.
+- `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`: passed.
+- `npm run evidence:check:m7h`: passed; 277 discovered, 103 expected, 99 unexpected, 75 skipped, 0 flaky; 99 failure classifications reconcile; 16 verified fixed, 1 partially addressed, 15 tentative, and 67 unclassified.
+- `npm run evidence:replay:m7f`: **17/17 passed**. The regenerated report was directed to a temporary output path; the committed M7F report was not rewritten.
+- `npm run evidence:report:m7g`: result is recorded after this review-fix commit; generated report and evaluation use temporary worktree paths so historical M7G records remain unchanged.
+- `git diff --check`: passed. No browser tests or full broad E2E rerun were required for this offline evaluator-only correction.
+
 ## Machine-readable evidence
 
-See [the M7H report JSON](GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json) and [persisted selected-run artifacts](ground-glass-m7h-broad-e2e/). The report's evaluator is `m7h-broad-e2e-triage-evaluator-v2`; inventory, classification, and reproduction integrity all pass, while `broadE2eQualification` remains `not-qualified`.
+The report's evaluator is `m7h-broad-e2e-triage-evaluator-v3`; inventory, classification, and reproduction integrity pass, while `broadE2eQualification` remains `not-qualified`. See [the M7H report JSON](GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json) and [persisted selected-run artifacts](ground-glass-m7h-broad-e2e/).

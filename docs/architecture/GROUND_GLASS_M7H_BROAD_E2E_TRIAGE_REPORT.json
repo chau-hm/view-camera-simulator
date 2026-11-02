@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reportId": "ground-glass-m7h-broad-e2e-triage",
-  "evaluatorRevision": "m7h-broad-e2e-triage-evaluator-v2",
+  "evaluatorRevision": "m7h-broad-e2e-triage-evaluator-v3",
   "generatedAt": "2026-11-01",
   "scope": "Triage of the persisted M7G broad ordinary-Chromium run and bounded matched reproductions; no full broad-suite rerun.",
   "historicalReportPath": "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json",

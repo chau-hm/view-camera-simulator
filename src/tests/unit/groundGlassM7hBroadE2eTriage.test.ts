@@ -9,6 +9,7 @@ import {
   GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256,
   GROUND_GLASS_M7H_HISTORICAL_SOURCE_SHA,
   GROUND_GLASS_M7H_REPORT_ID,
+  deriveGroundGlassM7hPlaywrightOutcome,
   evaluateGroundGlassM7hBroadE2eTriage,
   extractGroundGlassM7hPlaywrightTests,
 } from "../../render/testing/groundGlassM7hBroadE2eTriage";
@@ -103,6 +104,12 @@ const baseReport = () => {
 
 const digest = (value: unknown): string =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
+type ReproductionArtifact = Readonly<{ sha256: string; report: unknown }>;
+type FixedEvidenceFixture = Readonly<{
+  report: ReturnType<typeof baseReport>;
+  artifacts: Record<string, ReproductionArtifact>;
+  testId: string;
+}>;
 
 const addedSmokeTest = {
   testId: "chromium::smoke.spec.ts::smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls",
@@ -150,7 +157,7 @@ const singleTestReport = (testId: string, status: "passed" | "failed" | "skipped
   };
 };
 
-const withFixedRevisionEvidence = () => {
+const withFixedRevisionEvidence = (): FixedEvidenceFixture => {
   const report = baseReport();
   const fixed = sourceFailures.find((test) => test.errorCategory === "renderer-revision-assertion");
   if (!fixed) throw new Error("Historical revision failure fixture is missing");
@@ -212,6 +219,31 @@ const withFixedRevisionEvidence = () => {
   };
 };
 
+const withCandidateOutcome = (
+  fixture: ReturnType<typeof withFixedRevisionEvidence>,
+  expectedStatus: string,
+  statuses: readonly string[],
+) => {
+  const candidateRun = fixture.report.reproductionRuns.find((run) => run.id === "m7h-head-r187-revision-check");
+  if (!candidateRun) throw new Error("Candidate reproduction fixture is missing");
+  const candidatePath = String(candidateRun.reportPath);
+  const candidate = structuredClone(fixture.artifacts[candidatePath]!.report) as ReturnType<typeof singleTestReport>;
+  const candidateTest = candidate.suites[0]!.specs[0]!.tests[0]!;
+  candidateTest.expectedStatus = expectedStatus;
+  candidateTest.results = statuses.map((status) => ({
+    status,
+    duration: 11,
+    attachments: [],
+    ...(status === "failed" || status === "timedOut" || status === "interrupted"
+      ? { error: { message: "Synthetic candidate failure" } }
+      : {}),
+  }));
+  const candidateSha = digest(candidate);
+  candidateRun.reportSha256 = candidateSha;
+  fixture.artifacts[candidatePath] = { sha256: candidateSha, report: candidate };
+  return fixture;
+};
+
 describe("M7H broad E2E triage evidence", () => {
   it("extracts and preserves the exact historical inventory", () => {
     expect(sourceSha).toBe(GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256);
@@ -235,6 +267,115 @@ describe("M7H broad E2E triage evidence", () => {
       unclassified: 98,
     });
     expect(evaluation.broadE2eQualification).toBe("not-qualified");
+  });
+
+  it.each([
+    ["expected failure", "failed", ["failed"]],
+    ["expected skip", "skipped", ["skipped"]],
+    ["unexpected failure", "passed", ["failed"]],
+    ["timeout", "passed", ["timedOut"]],
+    ["interruption", "passed", ["interrupted"]],
+    ["unexpected pass for a test declared to fail", "failed", ["passed"]],
+    ["retry-dependent pass", "passed", ["failed", "passed"]],
+    ["missing result", "passed", []],
+    ["invalid result status", "passed", ["unknown"]],
+  ] as const)("rejects a candidate %s as a verified fix", (_label, expectedStatus, statuses) => {
+    const fixture = withCandidateOutcome(withFixedRevisionEvidence(), expectedStatus, statuses);
+    const evaluation = evaluate(fixture.report, fixture.artifacts);
+    expect(evaluation.valid).toBe(false);
+    expect(evaluation.issues).toContain("fixed-on-head-claim-not-observed");
+  });
+
+  it("preserves a valid expected-failure observation without counting it as an actual pass", () => {
+    const outcome = deriveGroundGlassM7hPlaywrightOutcome("failed", [{ status: "failed" }]);
+    expect(outcome).toMatchObject({ resultStatus: "expected", actualStatus: "failed", actualPass: false });
+    const fixture = withCandidateOutcome(withFixedRevisionEvidence(), "failed", ["failed"]);
+    expect(evaluate(fixture.report, fixture.artifacts).issues)
+      .toContain("fixed-on-head-claim-not-observed");
+  });
+
+  it("rejects a removed candidate test or a changed stable identity", () => {
+    const removed = withFixedRevisionEvidence();
+    const removedRun = removed.report.reproductionRuns[1];
+    if (!removedRun) throw new Error("Candidate reproduction fixture is missing");
+    const removedPath = String(removedRun.reportPath);
+    const removedReport = structuredClone(removed.artifacts[removedPath]!.report) as ReturnType<typeof singleTestReport>;
+    removedReport.suites[0]!.specs[0]!.tests = [];
+    const removedSha = digest(removedReport);
+    removedRun.reportSha256 = removedSha;
+    removed.artifacts[removedPath] = { sha256: removedSha, report: removedReport };
+    expect(evaluate(removed.report, removed.artifacts).issues)
+      .toContain("verified-origin-test-absent-from-reproduction");
+
+    const renamed = withFixedRevisionEvidence();
+    const renamedRun = renamed.report.reproductionRuns[1];
+    if (!renamedRun) throw new Error("Candidate reproduction fixture is missing");
+    const renamedPath = String(renamedRun.reportPath);
+    const renamedReport = structuredClone(renamed.artifacts[renamedPath]!.report) as ReturnType<typeof singleTestReport>;
+    renamedReport.suites[0]!.specs[0]!.title = "changed test identity";
+    const renamedSha = digest(renamedReport);
+    renamedRun.reportSha256 = renamedSha;
+    renamed.artifacts[renamedPath] = { sha256: renamedSha, report: renamedReport };
+    expect(evaluate(renamed.report, renamed.artifacts).issues)
+      .toContain("verified-origin-test-absent-from-reproduction");
+  });
+
+  it("requires a genuine unexpected baseline failure and distinct source commits", () => {
+    for (const [expectedStatus, status] of [["failed", "failed"], ["passed", "passed"]] as const) {
+      const fixture = withFixedRevisionEvidence();
+      const baseline = fixture.report.reproductionRuns[0];
+      if (!baseline) throw new Error("Baseline reproduction fixture is missing");
+      const path = String(baseline.reportPath);
+      const mutated = singleTestReport(fixture.testId, status);
+      const test = mutated.suites[0]!.specs[0]!.tests[0]!;
+      test.expectedStatus = expectedStatus;
+      const sha = digest(mutated);
+      baseline.reportSha256 = sha;
+      fixture.artifacts[path] = { sha256: sha, report: mutated };
+      expect(evaluate(fixture.report, fixture.artifacts).issues)
+        .toContain("fixed-on-head-claim-not-observed");
+    }
+
+    const sameSource = withFixedRevisionEvidence();
+    sameSource.report.reproductionRuns[1]!.sourceCommitSha = sameSource.report.reproductionRuns[0]!.sourceCommitSha;
+    expect(evaluate(sameSource.report, sameSource.artifacts).issues)
+      .toContain("candidate-reproduction-does-not-identify-a-distinct-source-commit");
+  });
+
+  it("retains an expected-pass interruption as a distinct baseline observation", () => {
+    const fixture = withFixedRevisionEvidence();
+    const baseline = fixture.report.reproductionRuns[0];
+    if (!baseline) throw new Error("Baseline reproduction fixture is missing");
+    const path = String(baseline.reportPath);
+    const interrupted = singleTestReport(fixture.testId, "passed");
+    interrupted.suites[0]!.specs[0]!.tests[0]!.results[0]!.status = "interrupted";
+    const sha = digest(interrupted);
+    baseline.reportSha256 = sha;
+    fixture.artifacts[path] = { sha256: sha, report: interrupted };
+
+    const evaluation = evaluate(fixture.report, fixture.artifacts);
+    expect(evaluation.valid, evaluation.issues.join(", ")).toBe(true);
+    expect(evaluation.counts.verifiedFixed).toBe(1);
+  });
+
+  it("rejects a failed verification even when an edited classification summary hides the fixed count", () => {
+    const fixture = withCandidateOutcome(withFixedRevisionEvidence(), "passed", ["failed"]);
+    fixture.report.classificationSummary.verifiedFixed = 0;
+    const evaluation = evaluate(fixture.report, fixture.artifacts);
+    expect(evaluation.issues).toContain("fixed-on-head-claim-not-observed");
+    expect(evaluation.issues).toContain("classification-aggregate-counts-do-not-match-inventory");
+  });
+
+  it("accepts matched existing-on-base evidence only while both runs still fail", () => {
+    const fixture = withCandidateOutcome(withFixedRevisionEvidence(), "passed", ["failed"]);
+    const entry = fixture.report.failureInventory.find((item) => item.testId === fixture.testId);
+    if (!entry) throw new Error("Classification fixture is missing");
+    entry.originClassification = "verified-existing-on-base";
+    entry.remediationStatus = "unresolved";
+    fixture.report.classificationSummary = summarizeClassifications(fixture.report.failureInventory);
+    const evaluation = evaluate(fixture.report, fixture.artifacts);
+    expect(evaluation.valid, evaluation.issues.join(", ")).toBe(true);
+    expect(evaluation.counts.verifiedExistingOnBase).toBe(1);
   });
 
   it("rejects a changed historical digest or source commit", () => {

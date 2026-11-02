@@ -1,5 +1,5 @@
 export const GROUND_GLASS_M7H_REPORT_ID = "ground-glass-m7h-broad-e2e-triage" as const;
-export const GROUND_GLASS_M7H_EVALUATOR_REVISION = "m7h-broad-e2e-triage-evaluator-v2" as const;
+export const GROUND_GLASS_M7H_EVALUATOR_REVISION = "m7h-broad-e2e-triage-evaluator-v3" as const;
 export const GROUND_GLASS_M7H_HISTORICAL_REPORT_PATH =
   "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json" as const;
 export const GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256 =
@@ -38,8 +38,17 @@ export const GROUND_GLASS_M7H_CONFIDENCE_LEVELS = Object.freeze([
 export type GroundGlassM7hOriginClassification = typeof GROUND_GLASS_M7H_ORIGIN_CLASSIFICATIONS[number];
 export type GroundGlassM7hCauseClassification = typeof GROUND_GLASS_M7H_CAUSE_CLASSIFICATIONS[number];
 export type GroundGlassM7hConfidence = typeof GROUND_GLASS_M7H_CONFIDENCE_LEVELS[number];
-export type GroundGlassM7hRawOutcome = "expected" | "unexpected" | "skipped";
-export type GroundGlassM7hRunStatus = "passed" | "failed" | "timedOut" | "interrupted" | "skipped";
+export type GroundGlassM7hRawOutcome = "expected" | "unexpected" | "skipped" | "flaky" | "incomplete";
+export type GroundGlassM7hRunStatus = "passed" | "failed" | "timedOut" | "interrupted" | "skipped" | "unknown";
+
+export type GroundGlassM7hOutcomeDerivation = Readonly<{
+  resultStatus: GroundGlassM7hRawOutcome;
+  actualStatus: GroundGlassM7hRunStatus;
+  attemptStatuses: readonly GroundGlassM7hRunStatus[];
+  retryCount: number;
+  actualPass: boolean;
+  issue: string | null;
+}>;
 
 export type GroundGlassM7hTest = Readonly<{
   testId: string;
@@ -50,7 +59,9 @@ export type GroundGlassM7hTest = Readonly<{
   expectedStatus: string;
   actualStatus: GroundGlassM7hRunStatus;
   resultStatus: GroundGlassM7hRawOutcome;
+  attemptStatuses: readonly GroundGlassM7hRunStatus[];
   retryCount: number;
+  actualPass: boolean;
   durationMs: number;
   errorMessage: string | null;
   errorCategory: string;
@@ -95,6 +106,84 @@ const sha = (value: unknown): value is string => typeof value === "string" && /^
 const sha256 = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{64}$/i.test(value);
 const numeric = (value: unknown): number => typeof value === "number" && Number.isFinite(value) ? value : 0;
 const ANSI_COLOR_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+const PLAYWRIGHT_STATUSES = new Set<GroundGlassM7hRunStatus>([
+  "passed", "failed", "timedOut", "interrupted", "skipped",
+]);
+const PLAYWRIGHT_EXPECTED_STATUSES = new Set(["passed", "failed", "skipped"]);
+
+/** Derives Playwright's per-test expected outcome from its declared status and ordered attempts. */
+export const deriveGroundGlassM7hPlaywrightOutcome = (
+  expectedStatusValue: unknown,
+  rawResults: unknown,
+): GroundGlassM7hOutcomeDerivation => {
+  const expectedStatus = string(expectedStatusValue);
+  const results = Array.isArray(rawResults) ? rawResults : null;
+  const rawStatuses = results?.map((result) => isRecord(result) ? string(result.status) : "") ?? [];
+  const attemptStatuses = rawStatuses.map((status) =>
+    PLAYWRIGHT_STATUSES.has(status as GroundGlassM7hRunStatus)
+      ? status as GroundGlassM7hRunStatus
+      : "unknown");
+  const retryCount = results ? Math.max(0, results.length - 1) : 0;
+  const actualStatus = attemptStatuses[attemptStatuses.length - 1] ?? "unknown";
+  const invalidExpectedStatus = !PLAYWRIGHT_EXPECTED_STATUSES.has(expectedStatus);
+  const invalidResults = !results || results.length === 0 || attemptStatuses.some((status) => status === "unknown");
+  if (invalidExpectedStatus || invalidResults) {
+    return {
+      resultStatus: "incomplete",
+      actualStatus,
+      attemptStatuses,
+      retryCount,
+      actualPass: false,
+      issue: invalidExpectedStatus ? "invalid-expected-status" : "missing-or-malformed-result-status",
+    };
+  }
+
+  let expectedAttempts = 0;
+  let unexpectedAttempts = 0;
+  let expectedSkippedAttempts = 0;
+  for (const status of attemptStatuses) {
+    if (status === "interrupted") continue;
+    if (status === "skipped" && expectedStatus === "skipped") {
+      expectedSkippedAttempts += 1;
+    } else if (status === "skipped") {
+      continue;
+    } else if (status === expectedStatus) {
+      expectedAttempts += 1;
+    } else {
+      unexpectedAttempts += 1;
+    }
+  }
+  let resultStatus: GroundGlassM7hRawOutcome;
+  if (expectedAttempts === 0 && unexpectedAttempts === 0) resultStatus = "skipped";
+  else if (unexpectedAttempts === 0) resultStatus = "expected";
+  else if (expectedAttempts === 0 && expectedSkippedAttempts === 0) resultStatus = "unexpected";
+  else resultStatus = "flaky";
+  return {
+    resultStatus,
+    actualStatus,
+    attemptStatuses,
+    retryCount,
+    actualPass: expectedStatus === "passed" && actualStatus === "passed" &&
+      resultStatus === "expected" && retryCount === 0,
+    issue: null,
+  };
+};
+
+export const isGroundGlassM7hActualPass = (test: GroundGlassM7hTest): boolean =>
+  test.expectedStatus === "passed" && test.actualStatus === "passed" &&
+  test.resultStatus === "expected" && test.retryCount === 0 && test.actualPass;
+
+export const isGroundGlassM7hUnexpectedFailure = (test: GroundGlassM7hTest): boolean =>
+  test.expectedStatus === "passed" &&
+  (test.actualStatus === "failed" || test.actualStatus === "timedOut") &&
+  test.resultStatus === "unexpected";
+
+/** An interruption-only run has Playwright's skipped aggregate outcome but remains visible as interrupted. */
+export const isGroundGlassM7hBaselineFailure = (test: GroundGlassM7hTest): boolean =>
+  isGroundGlassM7hUnexpectedFailure(test) ||
+  (test.expectedStatus === "passed" && test.actualStatus === "interrupted" &&
+    test.attemptStatuses.length > 0 && test.attemptStatuses.every((status) => status === "interrupted") &&
+    test.resultStatus === "skipped");
 
 const errorCategory = (message: string): string => {
   if (!message) return "no-error-message";
@@ -142,17 +231,17 @@ export const extractGroundGlassM7hPlaywrightTests = (
       const describePath = normalizedSuitePath(path, specFile);
       for (const testValue of Array.isArray(specValue.tests) ? specValue.tests : []) {
         if (!isRecord(testValue)) continue;
-        const results = Array.isArray(testValue.results) ? testValue.results.filter(isRecord) : [];
+        const rawResults = testValue.results;
+        const results = Array.isArray(rawResults) ? rawResults.filter(isRecord) : [];
         const finalResult = results[results.length - 1] ?? {};
-        const expectedStatus = string(testValue.expectedStatus) || "passed";
-        const actualStatus = string(finalResult.status) as GroundGlassM7hRunStatus;
-        const skipped = expectedStatus === "skipped" || actualStatus === "skipped";
-        const expected = !skipped && actualStatus === expectedStatus;
+        const expectedStatus = string(testValue.expectedStatus);
+        const outcome = deriveGroundGlassM7hPlaywrightOutcome(testValue.expectedStatus, rawResults);
         const message = (string(isRecord(finalResult.error) ? finalResult.error.message : null) ||
           (Array.isArray(finalResult.errors) && isRecord(finalResult.errors[0]) ? string(finalResult.errors[0].message) : ""))
           .replace(ANSI_COLOR_PATTERN, "");
         const testTitle = string(specValue.title);
         const projectName = string(testValue.projectName) || string(testValue.projectId);
+        const identityValid = Boolean(specFile && testTitle && projectName);
         const attachments = Array.isArray(finalResult.attachments)
           ? finalResult.attachments.filter(isRecord).map((attachment) => string(attachment.name)).filter(Boolean)
           : [];
@@ -163,9 +252,11 @@ export const extractGroundGlassM7hPlaywrightTests = (
           testTitle,
           projectName,
           expectedStatus,
-          actualStatus,
-          resultStatus: skipped ? "skipped" : expected ? "expected" : "unexpected",
-          retryCount: Math.max(0, results.length - 1),
+          actualStatus: outcome.actualStatus,
+          resultStatus: identityValid ? outcome.resultStatus : "incomplete",
+          attemptStatuses: outcome.attemptStatuses,
+          retryCount: outcome.retryCount,
+          actualPass: identityValid && outcome.actualPass,
           durationMs: results.reduce((total, result) => total + numeric(result.duration), 0),
           errorMessage: message || null,
           errorCategory: errorCategory(message),
@@ -179,6 +270,92 @@ export const extractGroundGlassM7hPlaywrightTests = (
   };
   for (const suite of reportValue.suites) visit(suite, []);
   return tests;
+};
+
+export type GroundGlassM7hPlaywrightReportOutcomes = Readonly<{
+  tests: readonly GroundGlassM7hTest[];
+  counts: Readonly<{
+    discovered: number;
+    expected: number;
+    unexpected: number;
+    skipped: number;
+    flaky: number;
+    incomplete: number;
+  }>;
+  testsWithUsableResults: number;
+  incompleteTests: readonly Readonly<{ testId: string | null; issue: string }>[];
+  duplicateTestIds: readonly string[];
+  issues: readonly string[];
+}>;
+
+/** Validates the raw suite tree and derives counts without trusting Playwright's aggregate stats. */
+export const deriveGroundGlassM7hPlaywrightReportOutcomes = (
+  reportValue: unknown,
+  sourceArtifactSha256: unknown,
+): GroundGlassM7hPlaywrightReportOutcomes => {
+  const issues: string[] = [];
+  let discovered = 0;
+  let malformedTestNodes = 0;
+  const report = isRecord(reportValue) ? reportValue : null;
+  if (!report || !Array.isArray(report.suites)) {
+    issues.push("missing-or-malformed-suite-tree");
+  }
+  const visit = (suiteValue: unknown): void => {
+    if (!isRecord(suiteValue)) {
+      issues.push("malformed-suite-entry");
+      return;
+    }
+    const specs = suiteValue.specs;
+    if (specs !== undefined && !Array.isArray(specs)) issues.push("malformed-spec-list");
+    for (const specValue of Array.isArray(specs) ? specs : []) {
+      if (!isRecord(specValue)) {
+        issues.push("malformed-spec-entry");
+        continue;
+      }
+      if (!Array.isArray(specValue.tests)) {
+        issues.push("missing-or-malformed-test-list");
+        continue;
+      }
+      for (const testValue of specValue.tests) {
+        discovered += 1;
+        if (!isRecord(testValue)) malformedTestNodes += 1;
+      }
+    }
+    const nested = suiteValue.suites;
+    if (nested !== undefined && !Array.isArray(nested)) issues.push("malformed-nested-suite-list");
+    for (const child of Array.isArray(nested) ? nested : []) visit(child);
+  };
+  for (const suite of report && Array.isArray(report.suites) ? report.suites : []) visit(suite);
+
+  const tests = extractGroundGlassM7hPlaywrightTests(reportValue, sourceArtifactSha256);
+  const idCounts = new Map<string, number>();
+  for (const test of tests) idCounts.set(test.testId, (idCounts.get(test.testId) ?? 0) + 1);
+  const duplicateTestIds = [...idCounts].filter(([, count]) => count > 1).map(([id]) => id).sort();
+  if (duplicateTestIds.length) issues.push("duplicate-stable-test-identities");
+  const incompleteTests: Array<{ testId: string | null; issue: string }> = tests
+    .filter((test) => test.resultStatus === "incomplete")
+    .map((test) => ({ testId: test.testId, issue: "missing-or-malformed-test-identity-or-result" }));
+  for (let index = 0; index < malformedTestNodes; index += 1) {
+    incompleteTests.push({ testId: null, issue: "malformed-test-entry" });
+  }
+  const counts = {
+    discovered,
+    expected: tests.filter((test) => test.resultStatus === "expected").length,
+    unexpected: tests.filter((test) => test.resultStatus === "unexpected").length,
+    skipped: tests.filter((test) => test.resultStatus === "skipped").length,
+    flaky: tests.filter((test) => test.resultStatus === "flaky").length,
+    incomplete: incompleteTests.length,
+  };
+  if (tests.length + malformedTestNodes !== discovered) issues.push("raw-tree-test-count-does-not-match-extracted-tests");
+  if (counts.incomplete > 0) issues.push("incomplete-test-results-present");
+  return {
+    tests,
+    counts,
+    testsWithUsableResults: tests.filter((test) => test.resultStatus !== "incomplete").length,
+    incompleteTests,
+    duplicateTestIds,
+    issues: [...new Set(issues)],
+  };
 };
 
 export type GroundGlassM7hTriageEvaluation = Readonly<{
@@ -231,15 +408,16 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
     historicalReportSha256 === GROUND_GLASS_M7H_HISTORICAL_REPORT_SHA256;
   if (!reportIdentityValid) issues.push("historical-report-identity-or-digest-invalid");
 
-  const extractedTests = extractGroundGlassM7hPlaywrightTests(historical, historicalReportSha256);
+  const historicalOutcomes = deriveGroundGlassM7hPlaywrightReportOutcomes(historical, historicalReportSha256);
+  const extractedTests = historicalOutcomes.tests;
   const extractedIds = new Set(extractedTests.map((test) => test.testId));
   const duplicateExtractedIds = extractedIds.size !== extractedTests.length;
   const counts = {
-    discovered: extractedTests.length,
-    expected: extractedTests.filter((test) => test.resultStatus === "expected").length,
-    unexpected: extractedTests.filter((test) => test.resultStatus === "unexpected").length,
-    skipped: extractedTests.filter((test) => test.resultStatus === "skipped").length,
-    flaky: extractedTests.filter((test) => test.retryCount > 0 && test.resultStatus === "expected").length,
+    discovered: historicalOutcomes.counts.discovered,
+    expected: historicalOutcomes.counts.expected,
+    unexpected: historicalOutcomes.counts.unexpected,
+    skipped: historicalOutcomes.counts.skipped,
+    flaky: historicalOutcomes.counts.flaky,
     failureInventory: 0,
     verified: 0,
     inferred: 0,
@@ -252,9 +430,10 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
   };
   const sourceCountsValid = counts.discovered === 277 && counts.expected === 103 &&
     counts.unexpected === 99 && counts.skipped === 75 && counts.flaky === 0 &&
-    counts.discovered === numeric(stats.expected) + numeric(stats.unexpected) + numeric(stats.skipped) &&
+    counts.discovered === numeric(stats.expected) + numeric(stats.unexpected) + numeric(stats.skipped) + numeric(stats.flaky) &&
     numeric(stats.expected) === counts.expected && numeric(stats.unexpected) === counts.unexpected &&
     numeric(stats.skipped) === counts.skipped && numeric(stats.flaky) === counts.flaky &&
+    historicalOutcomes.counts.incomplete === 0 && historicalOutcomes.issues.length === 0 &&
     !duplicateExtractedIds;
   if (!sourceCountsValid) issues.push("historical-source-counts-or-test-identities-invalid");
   const declaredCounts = isRecord(report.historicalCounts) ? report.historicalCounts : {};
@@ -378,17 +557,19 @@ export const evaluateGroundGlassM7hBroadE2eTriage = (
         .find((test) => test.testId === sourceTest.testId);
       if (!baseTest || !candidateTest) artifactIssues.add("verified-origin-test-absent-from-reproduction");
       else if (origin === "verified-existing-on-base" &&
-          (baseTest.resultStatus !== "unexpected" || candidateTest.resultStatus !== "unexpected")) {
+          (!isGroundGlassM7hUnexpectedFailure(baseTest) || !isGroundGlassM7hUnexpectedFailure(candidateTest))) {
         artifactIssues.add("existing-on-base-claim-not-observed");
       } else if (origin === "verified-introduced-on-head" &&
-          (baseTest.resultStatus !== "expected" || candidateTest.resultStatus !== "unexpected")) {
+          (!isGroundGlassM7hActualPass(baseTest) || !isGroundGlassM7hUnexpectedFailure(candidateTest))) {
         artifactIssues.add("introduced-on-head-claim-not-observed");
       } else if (origin === "verified-fixed-on-head" &&
-          (baseTest.resultStatus !== "unexpected" || candidateTest.resultStatus !== "expected")) {
+          (!isGroundGlassM7hBaselineFailure(baseTest) || !isGroundGlassM7hActualPass(candidateTest))) {
         artifactIssues.add("fixed-on-head-claim-not-observed");
       }
       if (baseline.workers !== candidate.workers || baseline.projectName !== candidate.projectName ||
-          baseline.environmentFingerprint !== candidate.environmentFingerprint) {
+          baseline.environmentFingerprint !== candidate.environmentFingerprint ||
+          baseline.browserVersion !== candidate.browserVersion ||
+          baseline.executionClassification !== candidate.executionClassification) {
         artifactIssues.add("baseline-candidate-environments-not-comparable");
       }
       if (baseline.sourceCommitSha !== GROUND_GLASS_M7H_CLEAN_BASELINE_SHA &&
