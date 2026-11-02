@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "candidateImplementationCommit": "5c909376489e44e4c247c8e69372c84f52688421",
+  "runtime": {
+    "os": "macOS 27.0.1",
+    "architecture": "arm64",
+    "nodeVersion": "24.3.0",
+    "npmVersion": "11.12.0",
+    "playwrightVersion": "1.61.1",
+    "browserVersion": "149.0.7827.55",
+    "threeRevision": "187"
+  },
+  "staticChecks": {
+    "unitIntegrationTests": {
+      "command": "npm test",
+      "passed": true,
+      "files": 315,
+      "tests": 3585
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "css": {
+      "command": "npm run check:css",
+      "status": "passed"
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed"
+    },
+    "m7iEvaluatorMutationTests": {
+      "command": "npm test -- src/tests/unit/groundGlassM7iBroadE2eRemediation.test.ts",
+      "passed": true,
+      "tests": 27
+    }
+  },
+  "evidenceChecks": {
+    "m7h": {
+      "command": "npm run evidence:check:m7h",
+      "status": "passed",
+      "discovered": 277,
+      "expected": 103,
+      "unexpected": 99,
+      "skipped": 75,
+      "flaky": 0
+    },
+    "m7i": {
+      "command": "npm run evidence:check:m7i",
+      "status": "passed",
+      "historicalFailures": 99,
+      "tentativeDrawer": 15,
+      "unknownFailures": 67,
+      "m7iVerifiedFixes": 2
+    }
+  },
+  "regressionLocks": {
+    "m7f": {
+      "command": "npm run evidence:replay:m7f -- --report-output=<temporary path inside worktree>",
+      "status": "passed",
+      "passedScenarios": 17,
+      "sourceCommitVerified": true
+    },
+    "m7g": {
+      "command": "npm run evidence:report:m7g -- --report-output=<temporary path inside worktree> --evaluation-output=<temporary path inside worktree>",
+      "evidenceIntegrity": "passed",
+      "passedScenarios": 5,
+      "blockedScenarios": 2,
+      "productionWebGpuEnabled": false
+    }
+  },
+  "ordinaryChromiumSmoke": {
+    "command": "PLAYWRIGHT_WEB_SERVER_PORT=4466 PLAYWRIGHT_JSON_OUTPUT_NAME=<report> npm run test:e2e -- --project=chromium --workers=1 --reporter=list,json src/tests/e2e/smoke.spec.ts",
+    "project": "chromium",
+    "workers": 1,
+    "passed": 2,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "rawReportPath": "docs/architecture/ground-glass-m7i-broad-e2e/validation/ordinary-chromium-smoke.json",
+    "rawReportSha256": "806bf590880333bdbef82d571e08b46dbbd78e3ab1fd5f18757db21126b0822e"
+  },
+  "productionPreviewIsolation": {
+    "command": "PLAYWRIGHT_JSON_OUTPUT_NAME=<report> npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview --workers=1 --reporter=list,json src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+    "project": "chromium-production-preview",
+    "workers": 1,
+    "passed": 4,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "rawReportPath": "docs/architecture/ground-glass-m7i-broad-e2e/validation/production-preview-isolation.json",
+    "rawReportSha256": "a8b7a2af44899558baa7050ee68afa031cb2ba6d87dbed13c9bb5a9e8a348fc7",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpuEnabled": false
+  },
+  "selectedCohorts": {
+    "baselineWorkers1": {
+      "passed": 5,
+      "unexpected": 0
+    },
+    "baselineWorkers4": {
+      "passed": 1,
+      "unexpected": 4
+    },
+    "candidateWorkers1": {
+      "passed": 5,
+      "unexpected": 0
+    },
+    "candidateWorkers4": {
+      "passed": 2,
+      "unexpected": 3
+    },
+    "drawerAndCompoundBaselineWorkers1": {
+      "passed": 16,
+      "unexpected": 0
+    }
+  },
+  "fullBroadE2e": {
+    "status": "not-run",
+    "currentDiscovery": 278,
+    "specFiles": 80,
+    "qualification": "not-qualified"
+  },
+  "selectedCompoundRestartCandidate": {
+    "command": "PLAYWRIGHT_WEB_SERVER_PORT=4467 PLAYWRIGHT_JSON_OUTPUT_NAME=docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-compound.json npm run test:e2e -- --project=chromium --workers=1 --reporter=list,json src/tests/e2e/architecture-foreground-compound.spec.ts",
+    "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+    "project": "chromium",
+    "workers": 1,
+    "passed": 1,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "retries": 0,
+    "rawReportPath": "docs/architecture/ground-glass-m7i-broad-e2e/reproduction/candidate-5c90937-compound.json",
+    "rawReportSha256": "a2712bbe595177afa71a94047dc4768c24297c8f66067e536e6d3116a8084cb7"
+  }
+}

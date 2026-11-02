@@ -1,0 +1,79 @@
+{
+  "reportId": "ground-glass-m7i-broad-e2e-remediation",
+  "evaluatorRevision": "m7i-broad-e2e-remediation-evaluator-v1",
+  "passed": true,
+  "historicalFailureCount": 99,
+  "tentativeDrawerCount": 15,
+  "unknownFailureCount": 67,
+  "verifiedFixCount": 18,
+  "m7iVerifiedFixCount": 2,
+  "unresolvedCount": 80,
+  "reproductionRuns": [
+    {
+      "id": "drawer-compound-w1",
+      "sourceCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+      "rawReportSha256": "c703d0894baf21183fee31656a1fe0923747a7ee8a4798c3fe786513a177a1dc",
+      "counts": {
+        "discovered": 16,
+        "expected": 16,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "actualWorkers": 1
+    },
+    {
+      "id": "cohorts-w1",
+      "sourceCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+      "rawReportSha256": "b8add3f7f58621752fdf61cb46de1c366cde587a1370bfd0121712f8fc2eae15",
+      "counts": {
+        "discovered": 5,
+        "expected": 5,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "actualWorkers": 1
+    },
+    {
+      "id": "cohorts-w4",
+      "sourceCommitSha": "57eacc0d7c41014a3288cbee63a8b58a7aa08557",
+      "rawReportSha256": "812a711d9609b6a3d9e4cad24050f9c226f6d3b595148da9bec9ef72ff92f1b8",
+      "counts": {
+        "discovered": 5,
+        "expected": 1,
+        "unexpected": 4,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "actualWorkers": 4
+    },
+    {
+      "id": "candidate-cohorts-w1",
+      "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+      "rawReportSha256": "86638bd1ae00700e30d02df065b52818555aa223269be429f8ea877a32f0c7b6",
+      "counts": {
+        "discovered": 5,
+        "expected": 5,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "actualWorkers": 1
+    },
+    {
+      "id": "candidate-cohorts-w4",
+      "sourceCommitSha": "5c909376489e44e4c247c8e69372c84f52688421",
+      "rawReportSha256": "9ebb83700b6e783df270f4de54895c538d5935a92af1590e14dffeee39113b89",
+      "counts": {
+        "discovered": 5,
+        "expected": 2,
+        "unexpected": 3,
+        "skipped": 0,
+        "flaky": 0
+      },
+      "actualWorkers": 4
+    }
+  ],
+  "issues": []
+}

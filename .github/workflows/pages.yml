@@ -80,6 +80,9 @@ jobs:
       - name: Validate M7H historical broad E2E triage integrity
         run: npm run evidence:check:m7h
 
+      - name: Validate M7I broad E2E remediation evidence integrity
+        run: npm run evidence:check:m7i
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci
