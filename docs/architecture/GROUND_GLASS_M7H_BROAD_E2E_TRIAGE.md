@@ -166,7 +166,7 @@ This was an offline evaluator correction. No new browser or native GPU capture w
 - `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`: passed.
 - `npm run evidence:check:m7h`: passed; 277 discovered, 103 expected, 99 unexpected, 75 skipped, 0 flaky; 99 failure classifications reconcile; 16 verified fixed, 1 partially addressed, 15 tentative, and 67 unclassified.
 - `npm run evidence:replay:m7f`: **17/17 passed**. The regenerated report was directed to a temporary output path; the committed M7F report was not rewritten.
-- `npm run evidence:report:m7g`: result is recorded after this review-fix commit; generated report and evaluation use temporary worktree paths so historical M7G records remain unchanged.
+- `npm run evidence:report:m7g` after implementation commit `34b0598`: integrity passed with **5 passed / 2 blocked**, M7 `partially-qualified`, M8 denied, and production WebGPU disabled. Temporary worktree outputs were removed; historical M7G records remain unchanged.
 - `git diff --check`: passed. No browser tests or full broad E2E rerun were required for this offline evaluator-only correction.
 
 ## Machine-readable evidence
