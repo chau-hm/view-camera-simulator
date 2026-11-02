@@ -8,6 +8,7 @@ import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  openLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
@@ -83,6 +84,7 @@ test("Table Tilt card exposes free and guided navigation", async ({ page }) => {
 
   await card.getByRole("link", { name: "Start Guided Task" }).click();
   await expect(page).toHaveURL(/\/simulator\/guided\/table-tilt\/tilt-01$/);
+  await openLearningDrawer(page);
   await expect(page.getByText("Align the tabletop plane of sharp focus")).toBeVisible();
 });
 
@@ -248,6 +250,7 @@ test("Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT cro
 test("Table Tilt zero-tilt point focus moves from near to middle to far", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/simulator/free/table-tilt");
+  await openLearningDrawer(page);
   await setRangeDirect(page, "Tilt", 0);
   await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
   await expect(page.getByRole("heading", { name: /Focus distribution/i })).toBeVisible();

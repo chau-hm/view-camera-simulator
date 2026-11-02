@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseI=1";
 const nativeRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -276,7 +277,7 @@ test("ordinary Chromium Phase I fixture remains a fallback-only control", async 
   await expect(page.getByTestId("phase-i-controls")).toBeVisible();
   const handle = await waitForInitial(page);
   expect(handle.runtime?.initialized).toBe(true);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
   expect(handle.runtime?.executionBackend).not.toBe("webgpu");
 });
 

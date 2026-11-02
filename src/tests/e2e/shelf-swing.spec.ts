@@ -10,6 +10,8 @@ import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
   getLearningOverlay,
+  openLearningDrawer,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
@@ -119,6 +121,7 @@ test("Shelf Swing routes reject mismatched and free-mode task IDs", async ({ pag
 
   await page.goto("/simulator/guided/shelf-swing/swing-01");
   await expect(page).toHaveURL(/\/simulator\/guided\/shelf-swing\/swing-01$/);
+  await openLearningDrawer(page);
   await expect(page.getByText("Align the diagonal plane of sharp focus")).toBeVisible();
 });
 
@@ -145,7 +148,6 @@ test("Shelf Swing free and guided workflows stay accessible without console erro
   await expect(page.getByLabel("Tilt")).toBeDisabled();
   await expect(page.getByLabel("Rise").locator("..")).toContainText("Disabled for this guided task");
   await expect(page.getByLabel("Tilt").locator("..")).toContainText("Disabled for this guided task");
-  await expect(page.getByText("Align the diagonal plane of sharp focus", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).toHaveCount(0);
 
   const overlayTrigger = page.getByRole("button", { name: "View overlays" }).first();
@@ -153,6 +155,8 @@ test("Shelf Swing free and guided workflows stay accessible without console erro
   const focusPlaneToggle = page.getByRole("button", { name: /focus plane/i }).first();
   await expect(focusPlaneToggle).toHaveAttribute("aria-pressed", /true|false/);
   await expect(page.getByRole("button", { name: "Expand 2D Geometry" })).toBeVisible();
+  await openLearningDrawer(page);
+  await expect(page.getByText("Align the diagonal plane of sharp focus", { exact: true })).toBeVisible();
 
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
@@ -280,6 +284,7 @@ test("Shelf Swing guided task teaches negative swing and restores its initial st
   await page.goto("/scenes");
   await shelfCard(page).getByRole("link", { name: "Start Guided Task" }).click();
   await expect(page).toHaveURL(/\/simulator\/guided\/shelf-swing\/swing-01$/);
+  await openPinnedLearningDrawer(page);
   await expect(
     page.getByText("Align the diagonal plane of sharp focus"),
   ).toBeVisible();

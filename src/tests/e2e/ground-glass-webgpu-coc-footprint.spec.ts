@@ -449,10 +449,12 @@ const assertNativeExecutionWhenRequired = (handle: Handle) => {
   expect(handle.runtime, `runtime evidence for ${handle.instanceId}`).not.toBeNull();
   expect(handle.runtime?.initialized).toBe(true);
   expect(handle.runtime?.rendererFamily).toBe("webgpu-renderer");
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(nativeWebGpuRequired ? "186" : THREE.REVISION);
   if (nativeWebGpuRequired) {
     expect(handle.runtime?.executionBackend).toBe("webgpu");
     expect(handle.runtime?.applicationFallback).toBe(false);
+  } else {
+    expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   }
 };
 
@@ -480,7 +482,6 @@ test("GPU CoC/footprint writers and TSL consumers match the CPU codec contract",
   const handle = lastHandle(diagnostics);
   assertNativeExecutionWhenRequired(handle);
   expect(handle.runtime?.applicationFallback).toBe(false);
-  expect(handle.runtime?.threeRevision).toBe("186");
   for (const candidateName of ["half-float-mm", "encoded-byte"] as const) {
     const candidate = handle.candidates.find((item) => item.candidate === candidateName);
     expect(candidate, `${candidateName} candidate evidence`).toBeDefined();

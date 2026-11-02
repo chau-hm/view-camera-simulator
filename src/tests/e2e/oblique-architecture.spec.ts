@@ -4,7 +4,9 @@ import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  getLearningDrawer,
   getLearningOverlay,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
@@ -18,6 +20,13 @@ const openCompletedFeedback = async (page: Page) => {
   const feedback = await openLearningFeedback(page);
   await expect(feedback.getByRole("heading", { name: "Task completed" })).toBeVisible();
   return feedback;
+};
+
+const openLessonProgress = async (page: Page, label: string) => {
+  const currentStep = page.locator('[aria-current="step"]');
+  await expect(getLearningDrawer(page).locator('[aria-current="step"]')).toHaveText(new RegExp(label));
+  await openPinnedLearningDrawer(page);
+  await expect(currentStep).toHaveText(new RegExp(label));
 };
 
 const inspectCompletedFeedbackAndReturnToTask = async (page: Page) => {
@@ -136,6 +145,7 @@ test("Oblique Architecture guided Rise task solves observable framing and restar
   test.setTimeout(120_000);
   await page.goto("/simulator/guided/oblique-architecture/oblique-rise-01?rttDiagnostics=1");
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-rise-01\?rttDiagnostics=1$/);
+  await openPinnedLearningDrawer(page);
   await expect(page.getByText("Frame the Building", { exact: true })).toBeVisible();
   await expect(
     page.getByText(
@@ -173,6 +183,7 @@ test("Oblique Architecture guided Swing + Focus task starts from solved Rise and
   test.setTimeout(120_000);
   await page.goto("/simulator/guided/oblique-architecture/oblique-swing-focus-01?rttDiagnostics=1");
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-swing-focus-01\?rttDiagnostics=1$/);
+  await openPinnedLearningDrawer(page);
   await expect(page.getByText("Align the Façade Focus", { exact: true })).toBeVisible();
   await expect(
     page.getByText(
@@ -222,6 +233,7 @@ test("Oblique Architecture compound task solves Rise, Swing, and Focus from neut
   test.setTimeout(120_000);
   await page.goto("/simulator/guided/oblique-architecture/oblique-compound-01?rttDiagnostics=1");
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-compound-01\?rttDiagnostics=1$/);
+  await openPinnedLearningDrawer(page);
   await expect(page.getByText("Complete the Photograph", { exact: true })).toBeVisible();
   await expect(
     page.getByText(
@@ -290,6 +302,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   );
   await obliqueCard.getByRole("link", { name: "Guided Lesson" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?lesson=1$/);
+  await openLessonProgress(page, "Observe");
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Observe the Problem" })).toBeVisible();
   await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
@@ -309,13 +322,14 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
     .filter({ has: page.getByRole("heading", { name: "Oblique Architecture" }) });
   await reentryCard.getByRole("link", { name: "Guided Lesson" }).click();
   await expect(page).toHaveURL(/\/simulator\/free\/oblique-architecture\?lesson=1$/);
-  await expect(page.locator('[aria-current="step"]')).toHaveText(/Observe/);
+  await openLessonProgress(page, "Observe");
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-rise-01\?lesson=1$/);
+  await openLessonProgress(page, "Compose");
   await expect(page.locator('[aria-current="step"]')).toHaveText(/Compose/);
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await setStepRangeInput(page, "Rise", 20);
@@ -324,6 +338,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-swing-focus-01\?lesson=1$/);
+  await openLessonProgress(page, "Align Focus");
   await expect(page.locator('[aria-current="step"]')).toHaveText(/Align Focus/);
   await expect(page.getByLabel("Focus distance")).toHaveValue("13200");
   await setStepRangeInput(page, "Swing", 9.8);
@@ -333,6 +348,7 @@ test("Oblique Architecture guided lesson progresses through the four stages", as
   await page.getByRole("link", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/simulator\/guided\/oblique-architecture\/oblique-compound-01\?lesson=1$/);
+  await openLessonProgress(page, "Final Challenge");
   await expect(page.locator('[aria-current="step"]')).toHaveText(/Final Challenge/);
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");

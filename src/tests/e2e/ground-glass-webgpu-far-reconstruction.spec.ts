@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { REVISION } from "three";
 
 const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-aperture-gather.html?phaseH=1";
 const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
@@ -210,7 +211,8 @@ test("ordinary Chromium Phase H control records fallback-compatible behavior onl
   await expect(page.getByTestId("phase-h-controls")).toBeVisible();
   const handle = await waitForInitial(page);
   expect(handle.runtime?.initialized).toBe(true);
-  expect(handle.runtime?.threeRevision).toBe("186");
+  expect(handle.runtime?.threeRevision).toBe(REVISION);
+  expect(handle.runtime?.executionBackend).not.toBe("webgpu");
   assertNativeSampling(handle);
 });
 
