@@ -103,3 +103,22 @@ On the M7J implementation worktree, the final local checks recorded:
 - Renderer serial lane: 4/4 passed, zero retries, one actual worker.
 
 The exact commands, raw report digests, and run logs are retained in the machine-readable report and validation directory. The 278-test broad suite was not run. The final hosted CI status will be recorded in the PR handoff against the final PR HEAD; a passing integrity check still does not qualify Broad E2E.
+
+## M7J Review-Fix Round 1 — Squash-Merge Provenance Preservation
+
+The P1 review finding on [PR #308](https://github.com/chau-hm/view-camera-simulator/pull/308) identified a checkout-provenance gap. The M7J evaluator correctly requires the original candidate capture commit, `17a2616b151aa50ad34b2d137eee0a43c5759ad3`, to exist in Git. A PR-branch checkout contains that commit in its history, but a shallow checkout of a squash-merged `main` may contain only the squash commit and therefore omit the original capture object. The former workflow fetched retained M7E and M7F source history but not M7J, so the M7J gate could fail with `source-commit-missing` and block the dependent production deployment job.
+
+The defect was reproduced in an independent shallow checkout with its own Git object database. Starting from `main` at `b917ad46f99d8de339adbd028f0ae57c4922df1f`, the PR tree was applied and committed as a synthetic squash (`11a23cd10e34123b610863b5517cc9ebc36a993d`). Before any retained-source fetch, `git cat-file -e '17a2616b151aa50ad34b2d137eee0a43c5759ad3^{commit}'` exited **128**. The actual `npm run evidence:check:m7j` exited **1** and reported `source-commit-missing:17a2616b151aa50ad34b2d137eee0a43c5759ad3`.
+
+The CI workflow now fetches the exact retained PR ref before Node setup and before any evidence gate:
+
+```bash
+git fetch --no-tags --depth=50 origin refs/pull/308/head
+git cat-file -e '17a2616b151aa50ad34b2d137eee0a43c5759ad3^{commit}'
+```
+
+This preserves the evaluator’s exact pinned source identity and strict object check. It does not substitute the PR head, synthetic squash commit, or a SHA-format check for the capture source. The M7E/M7F fetches remain in place; the M7J gate remains unconditional in the shared CI job, and the Pages deploy job still has `needs: ci`.
+
+The same fetch command was then run in the isolated shallow checkout. The pinned candidate became available, and `npm run evidence:check:m7j` passed with 15 experiments, 39 raw tests, 278 discovered tests, and 80 unresolved historical identities. Negative controls also confirmed that a malformed candidate SHA and the real but unrelated baseline SHA are rejected (CLI exit **1**); a shallow control containing the candidate object but not the pinned baseline is rejected with `source-commit-missing:b917ad46f99d8de339adbd028f0ae57c4922df1f` (CLI exit **1**); and fetching a nonexistent retained PR ref exits **128**. Existing M7J mutation tests continue to reject wrong experiment source attribution and altered raw artifact digests.
+
+The evaluator remains `m7j-four-worker-stability-evaluator-v1`. The M7J base and candidate capture SHAs, M7I report digest, raw Playwright evidence, and 4/4 serial-lane result are unchanged. Unrestricted four-worker stability remains `unstable`; the complete Broad E2E suite remains unrun and not qualified; M7 remains partially qualified; M8 remains denied; production Ground Glass remains WebGL-only and production WebGPU disabled. Final-head hosted CI status is recorded in the PR #308 handoff after verification.
