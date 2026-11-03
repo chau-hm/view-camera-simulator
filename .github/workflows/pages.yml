@@ -34,6 +34,14 @@ jobs:
       - name: Fetch M7F native capture source history
         run: git fetch --no-tags --depth=50 origin refs/pull/304/head
 
+      # M7J records a candidate capture from PR #308. The PR may be squash-merged,
+      # leaving its original capture commit outside main's history. Keep strict
+      # provenance checks by fetching the retained PR head and verifying that SHA.
+      - name: Fetch M7J retained capture source history
+        run: |
+          git fetch --no-tags --depth=50 origin refs/pull/308/head
+          git cat-file -e '17a2616b151aa50ad34b2d137eee0a43c5759ad3^{commit}'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -82,6 +90,9 @@ jobs:
 
       - name: Validate M7I broad E2E remediation evidence integrity
         run: npm run evidence:check:m7i
+
+      - name: Validate M7J four-worker stability evidence integrity
+        run: npm run evidence:check:m7j
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'

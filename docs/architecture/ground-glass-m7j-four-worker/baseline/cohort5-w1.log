@@ -1,0 +1,52 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium --workers=1 --retries=0 --reporter=list,json --grep=(camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|View Focus preserves independent Scene and Camera views and resets the active preset|Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|Scene-local learning drawer leaves the paired workspace layout intact) src/tests/e2e/camera-controls-compact.spec.ts src/tests/e2e/fringe-club-dev-integration.spec.ts src/tests/e2e/scene-view-focus.spec.ts src/tests/e2e/table-tilt.spec.ts src/tests/e2e/viewport-learning-overlay.spec.ts
+
+[WebServer] (node:8371) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:8380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:42:17 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:42:17 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  1 [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths (1.6m)
+[WebServer] 7:43:54 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:43:58 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:44:23 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  2 [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal (37.3s)
+(node:9975) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:44:32 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:44:32 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  3 [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset (1.1m)
+[WebServer] 7:45:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:45:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  4 [chromium] › src/tests/e2e/table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress (46.8s)
+[WebServer] 7:46:22 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:46:22 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  5 [chromium] › src/tests/e2e/viewport-learning-overlay.spec.ts:28:1 › Scene-local learning drawer leaves the paired workspace layout intact (55.0s)
+
+
+  1) [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 2
+    Received:    0
+
+      737 |   await releaseCandidate();
+      738 |   const settledRendererTextureCount = (await readObserverMetrics(page)).textures;
+    > 739 |   expect(settledRendererTextureCount).toBeGreaterThanOrEqual(baseline.textures);
+          |                                       ^
+      740 |
+      741 |   // A repeated load/release cycle must reuse any stable renderer-owned transmission cache.
+      742 |   await page.getByRole("button", { name: "Load selected candidate" }).click();
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/fringe-club-dev-integration.spec.ts:739:39
+
+    Error Context: test-results/fringe-club-dev-integratio-782d3-independent-sibling-removal-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal
+  4 passed (5.0m)

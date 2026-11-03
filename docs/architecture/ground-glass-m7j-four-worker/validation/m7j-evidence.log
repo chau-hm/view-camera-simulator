@@ -1,0 +1,24 @@
+
+> view-camera-simulator@0.0.0 evidence:check:m7j
+> node ./scripts/run-m7j-four-worker-stability.mjs
+
+{
+  "reportId": "ground-glass-m7j-four-worker-stability",
+  "evaluatorRevision": "m7j-four-worker-stability-evaluator-v1",
+  "passed": true,
+  "evidenceIntegrity": "passed",
+  "experimentRecordIntegrity": "passed",
+  "comparability": "passed",
+  "rawOutcomes": "passed",
+  "hypothesisSupport": "passed",
+  "readinessDecision": "ready-for-controlled-broad-run",
+  "fourWorkerStability": "unstable",
+  "fullBroadE2eQualification": "not-qualified",
+  "counts": {
+    "experiments": 15,
+    "rawTests": 39,
+    "discoveredTests": 278,
+    "unresolvedHistoricalIdentities": 80
+  },
+  "issues": []
+}

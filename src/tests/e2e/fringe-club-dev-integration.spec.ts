@@ -644,7 +644,9 @@ test("Stage 2H and Stage 2N-A render through all VCS modes and candidate/probe d
   expect(errors.consoleProblems).toEqual([]);
 });
 
-test("Stage 2N-A Observer and RTT instances survive independent sibling removal", async ({ page }) => {
+test("Stage 2N-A Observer and RTT instances survive independent sibling removal", {
+  tag: "@m7j-renderer-contention",
+}, async ({ page }) => {
   test.setTimeout(240_000);
   const errors = installBrowserErrorCapture(page);
   await page.goto("/__dev/fringe-club-rtt?rttDiagnostics=1");
