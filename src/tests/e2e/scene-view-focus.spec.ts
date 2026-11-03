@@ -95,7 +95,9 @@ const openOverlayMenuIfNeeded = async (page: Page) => {
   if (await trigger.isVisible()) await trigger.click();
 };
 
-test("View Focus preserves independent Scene and Camera views and resets the active preset", async ({ page }) => {
+test("View Focus preserves independent Scene and Camera views and resets the active preset", {
+  tag: "@m7j-renderer-contention",
+}, async ({ page }) => {
   test.setTimeout(90_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];

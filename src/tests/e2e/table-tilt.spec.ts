@@ -318,7 +318,9 @@ test("Table Tilt raw and final RTT diagnostics contain scene pixels before and a
   expect(await rtt.getAttribute("data-rtt-resource-generation")).toBe(initialGeneration);
 });
 
-test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress", async ({ page }) => {
+test("Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress", {
+  tag: "@m7j-renderer-contention",
+}, async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/table-tilt");
   const viewport = page.getByLabel("GroundGlassViewport");

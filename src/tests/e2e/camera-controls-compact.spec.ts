@@ -100,7 +100,9 @@ test("responsive workspace keeps the primary simulator wider than the controls r
   }
 });
 
-test("camera control rows keep useful rendered tracks across rail widths", async ({ page }) => {
+test("camera control rows keep useful rendered tracks across rail widths", {
+  tag: "@m7j-renderer-contention",
+}, async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/simulator/free/architecture-foreground");
   for (const viewport of [

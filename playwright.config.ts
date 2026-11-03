@@ -17,6 +17,7 @@ const groundGlassM6NativeRequired = groundGlassM6PresentationRequired || groundG
 const headedNativeWebGpuRequired = nativeWebGpuRequired || groundGlassNativeWebGpuRequired || groundGlassM6NativeRequired;
 const isolatedWebServerPort = process.env.PLAYWRIGHT_WEB_SERVER_PORT;
 const webServerPort = isolatedWebServerPort ?? (groundGlassM6NativeRequired ? "4175" : "4173");
+const m7jRendererContentionTag = /@m7j-renderer-contention/;
 const baselineWebServerPort = process.env.GROUND_GLASS_M6_WEBGL_BASELINE_PORT ?? String(Number(webServerPort) + 1);
 const webServerEnvironment = {
   ...process.env,
@@ -75,9 +76,9 @@ export default defineConfig({
         env: webServerEnvironment,
       },
 
-  projects: [
-    headedNativeWebGpuRequired
-      ? {
+  projects: headedNativeWebGpuRequired
+    ? [
+        {
           name: "chrome-native-webgpu",
           use: {
             channel: "chrome",
@@ -86,10 +87,21 @@ export default defineConfig({
               ignoreDefaultArgs: ["--no-sandbox", "--enable-unsafe-swiftshader"],
             },
           },
-        }
-      : {
+        },
+      ]
+    : [
+        {
           name: "chromium",
+          grepInvert: m7jRendererContentionTag,
           use: { ...devices["Desktop Chrome"] },
         },
-  ],
+        {
+          name: "chromium-renderer-serial",
+          dependencies: ["chromium"],
+          grep: m7jRendererContentionTag,
+          workers: 1,
+          fullyParallel: false,
+          use: { ...devices["Desktop Chrome"] },
+        },
+      ],
 });

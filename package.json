@@ -23,6 +23,7 @@
     "test": "node ./scripts/test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:m7j-renderer": "playwright test --project=chromium-renderer-serial --no-deps --workers=1 --retries=0 --reporter=list,json",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -b",
     "check:css": "node ./scripts/check-css-structure.mjs",
