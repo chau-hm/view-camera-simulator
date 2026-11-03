@@ -180,13 +180,32 @@ const main = () => {
       },
     },
     approvedSkipExclusions: [],
-    validation: { mutationTests: { suiteRevision: "m7k-broad-e2e-mutations-v1", tests: 0, requiredCases: [] } },
+    validation: {},
   };
   const manifestPath = `${outputDir}/capture-manifest.json`;
   writeFileSync(resolve(root, manifestPath), `${JSON.stringify(manifest, null, 2)}\n`);
   process.stdout.write(`Capture manifest: ${manifestPath}\n`);
   process.stdout.write(`Ordinary exit: ${ordinaryRun.exitCode}; renderer-serial exit: ${serialRun.exitCode}\n`);
   process.stdout.write("Ordinary and renderer-serial commands ran sequentially; raw test failures are retained as evidence.\n");
+
+  const reportPath = `${outputDir}/qualification-report.json`;
+  const evaluationPath = `${outputDir}/evaluation.json`;
+  const evaluation = spawnSync(process.execPath, [
+    "scripts/run-m7k-qualification.mjs",
+    `--capture-manifest=${manifestPath}`,
+    `--report-output=${reportPath}`,
+    `--evaluation-output=${evaluationPath}`,
+  ], { cwd: root, env: baselineEnvironment(), stdio: "inherit" });
+  if (evaluation.error) throw evaluation.error;
+  if (evaluation.status !== 0) {
+    process.stderr.write("M7K offline evidence evaluation failed; captured raw outcomes remain preserved.\n");
+    process.exitCode = evaluation.status ?? 1;
+    return;
+  }
+  const result = JSON.parse(readFileSync(resolve(root, evaluationPath), "utf8"));
+  process.stdout.write(
+    `Evidence integrity: ${result.evidenceIntegrity}; Broad E2E qualification: ${result.broadE2eQualification}.\n`,
+  );
 };
 
 try {

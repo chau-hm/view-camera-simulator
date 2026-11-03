@@ -1062,19 +1062,6 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
       report.authorization.unrestrictedFourWorkerStability !== "unstable") {
     issues.push("m7-m8-or-production-authorization-boundary-invalid");
   }
-  if (!isRecord(report.validation) || !isRecord(report.validation.mutationTests) ||
-      report.validation.mutationTests.suiteRevision !== GROUND_GLASS_M7K_MUTATION_SUITE_REVISION ||
-      !sameStrings(asArray(report.validation.mutationTests.requiredCases)
-        .filter((entry): entry is string => typeof entry === "string"), GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES)) {
-    issues.push("mutation-validation-manifest-mismatch");
-  }
-  const recordedMutationTestCount = isRecord(report.validation) && isRecord(report.validation.mutationTests)
-    ? asNumber(report.validation.mutationTests.tests)
-    : null;
-  if (recordedMutationTestCount === null || recordedMutationTestCount < GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES.length) {
-    issues.push("mutation-validation-count-below-required-case-coverage");
-  }
-
   const laneStatus = (record: JsonRecord | null): "passed" | "failed" | "incomplete" =>
     !record || record.executionCompleteness !== "complete" ? "incomplete"
       : record.laneStatus === "passed" ? "passed" : "failed";

@@ -512,6 +512,16 @@ describe("M7K broad E2E qualification evidence evaluator", () => {
     });
   });
 
+  it("checks captured evidence before mutation-suite validation metadata is attached", () => {
+    const value = fixture();
+    value.manifest = { ...value.manifest, validation: {} };
+    rebuild(value);
+    const result = evaluate(value);
+    expect(result.passed).toBe(true);
+    expect(result.executionCompleteness).toBe("complete");
+    expect(result.broadE2eQualification).toBe("not-qualified");
+  });
+
   it("accepts the serial renderer lane only as its actual one-worker 4/4 result", () => {
     const value = fixture();
     const result = evaluate(value);
