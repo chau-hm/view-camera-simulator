@@ -96,6 +96,9 @@ const main = () => {
   if (Number(process.versions.node.split(".")[0]) < 24) throw new Error("M7K capture requires Node.js 24");
   const sourceCommitSha = git(["rev-parse", "--verify", "HEAD"]);
   if (!/^[0-9a-f]{40}$/.test(sourceCommitSha)) throw new Error("Could not resolve the execution source commit");
+  if (sourceCommitSha !== baseCommitSha) {
+    throw new Error(`M7K baseline must execute on pinned main source ${baseCommitSha}; found ${sourceCommitSha}`);
+  }
   const outputRoot = resolve(root, outputDir);
   if (existsSync(outputRoot)) throw new Error(`Output directory already exists: ${outputDir}`);
   mkdirSync(outputRoot, { recursive: true });

@@ -57,6 +57,8 @@ export const GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES = [
   "raw-summary-counts-disagree",
   "baseline-attributed-to-candidate",
   "mismatched-browser-environment",
+  "browser-version-disagrees-with-runtime-capture",
+  "three-revision-disagrees-with-runtime-capture",
   "serial-one-worker-relabeled-as-four-worker-stability",
   "ordinary-four-workers-mislabeled-as-serial",
   "missing-invocation-exit-code",
@@ -789,6 +791,21 @@ const getRawAndDiscoveryArtifacts = (
   return selected;
 };
 
+const observerRuntimeEvidence = (consoleOutput: string, renderer: "webgl" | "webgpu"): JsonRecord[] => {
+  const results: JsonRecord[] = [];
+  for (const line of consoleOutput.split(/\r?\n/)) {
+    const match = line.match(new RegExp(`Observer environment evidence ${renderer}: (\\{.*\\})`));
+    if (!match) continue;
+    try {
+      const value: unknown = JSON.parse(match[1]);
+      if (isRecord(value) && isRecord(value.runtime)) results.push(value.runtime);
+    } catch {
+      // Malformed runtime diagnostics are not usable environment evidence.
+    }
+  }
+  return results;
+};
+
 export const evaluateGroundGlassM7kBroadE2eQualification = (
   reportValue: unknown,
   artifactsValue: GroundGlassM7kArtifacts,
@@ -987,6 +1004,7 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
       issues.push(`production-preview-test-in-${laneName}-inventory`);
     }
     const raw = refs[asString(record.rawReportPath)]?.value;
+    const consoleOutput = asString(refs[asString(record.consolePath)]?.value);
     const rawProjectNames = isRecord(raw) && isRecord(raw.config)
       ? asArray(raw.config.projects).filter(isRecord).map((project) => asString(project.name))
       : [];
@@ -1010,6 +1028,26 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
     }
     if (isRecord(raw) && isRecord(raw.config) && asString(raw.config.version) !== asString(isRecord(report.environment) ? report.environment.playwrightVersion : null)) {
       issues.push(`playwright-environment-mismatch:${laneName}`);
+    }
+    if (laneName === "ordinary") {
+      const environment = isRecord(report.environment) ? report.environment : {};
+      const expectedBrowser = asString(environment.browserVersion);
+      const expectedThreeVersion = asString(environment.threeJsVersion);
+      const expectedThreeRevision = expectedThreeVersion.match(/^0\.(\d+)\./)?.[1] ?? "";
+      const webglRuntime = observerRuntimeEvidence(consoleOutput, "webgl");
+      const webgpuRuntime = observerRuntimeEvidence(consoleOutput, "webgpu");
+      const runtimeEvidence = [...webglRuntime, ...webgpuRuntime];
+      if (!expectedBrowser || webglRuntime.length === 0 || webgpuRuntime.length === 0 ||
+          runtimeEvidence.some((runtime) => runtime.browserVersion !== expectedBrowser ||
+            !asString(runtime.browser).includes(`Chrome/${expectedBrowser}`) ||
+            runtime.hostPlatform !== environment.platform ||
+            runtime.hostArchitecture !== environment.architecture)) {
+        issues.push("browser-runtime-environment-mismatch");
+      }
+      if (!expectedThreeRevision || runtimeEvidence.length === 0 ||
+          runtimeEvidence.some((runtime) => runtime.threeRevision !== expectedThreeRevision)) {
+        issues.push("three-runtime-revision-mismatch");
+      }
     }
     if (asString(isRecord(report.environment) ? report.environment.browserMode : null) !== "headless" ||
         asString(isRecord(report.environment) ? report.environment.webglBackend : null) !== "webgl2-fallback") {

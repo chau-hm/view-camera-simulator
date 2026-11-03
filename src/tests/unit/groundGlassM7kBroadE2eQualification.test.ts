@@ -346,6 +346,22 @@ const negativeCases: Array<{ name: string; run: () => void }> = [
     },
   },
   {
+    name: "browser-version-disagrees-with-runtime-capture",
+    run: () => {
+      const value = fixture();
+      record(value.report.environment).browserVersion = "0.0.0";
+      rejectFor(value, "browser-runtime-environment-mismatch");
+    },
+  },
+  {
+    name: "three-revision-disagrees-with-runtime-capture",
+    run: () => {
+      const value = fixture();
+      record(value.report.environment).threeJsVersion = "0.186.0";
+      rejectFor(value, "three-runtime-revision-mismatch");
+    },
+  },
+  {
     name: "serial-one-worker-relabeled-as-four-worker-stability",
     run: () => {
       const value = fixture();
