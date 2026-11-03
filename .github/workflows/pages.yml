@@ -42,6 +42,14 @@ jobs:
           git fetch --no-tags --depth=50 origin refs/pull/308/head
           git cat-file -e '17a2616b151aa50ad34b2d137eee0a43c5759ad3^{commit}'
 
+      # M7K's controlled broad run is pinned to the accepted M7J merge baseline.
+      # Fetch main explicitly so the source object remains available in shallow
+      # PR, main, and production checkouts for strict offline evidence validation.
+      - name: Fetch M7K execution source history
+        run: |
+          git fetch --no-tags --depth=50 origin refs/heads/main
+          git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -93,6 +101,9 @@ jobs:
 
       - name: Validate M7J four-worker stability evidence integrity
         run: npm run evidence:check:m7j
+
+      - name: Validate M7K broad E2E qualification evidence integrity
+        run: npm run evidence:check:m7k
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
