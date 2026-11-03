@@ -1,0 +1,10 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium-renderer-serial --no-deps --workers=4 --list
+
+Listing tests:
+  [chromium-renderer-serial] › camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths
+  [chromium-renderer-serial] › fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal
+  [chromium-renderer-serial] › scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+  [chromium-renderer-serial] › table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress
+Total: 4 tests in 4 files

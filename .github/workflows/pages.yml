@@ -83,6 +83,9 @@ jobs:
       - name: Validate M7I broad E2E remediation evidence integrity
         run: npm run evidence:check:m7i
 
+      - name: Validate M7J four-worker stability evidence integrity
+        run: npm run evidence:check:m7j
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci

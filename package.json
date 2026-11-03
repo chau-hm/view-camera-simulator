@@ -14,6 +14,7 @@
     "e2e:compare:m7h": "node ./scripts/run-m7h-triage.mjs",
     "evidence:check:m7h": "node ./scripts/run-m7h-triage.mjs --diagnostic",
     "evidence:check:m7i": "node ./scripts/run-m7i-remediation.mjs --diagnostic",
+    "evidence:check:m7j": "node ./scripts/run-m7j-four-worker-stability.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",

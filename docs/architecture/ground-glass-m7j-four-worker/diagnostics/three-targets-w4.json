@@ -1,0 +1,340 @@
+{
+  "config": {
+    "argv": [
+      "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+      "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/node_modules/.bin/playwright",
+      "test",
+      "--project=chromium",
+      "--workers=4",
+      "--retries=0",
+      "--reporter=list,json",
+      "--grep=(camera control rows keep useful rendered tracks across rail widths|View Focus preserves independent Scene and Camera views and resets the active preset|Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress)",
+      "src/tests/e2e/camera-controls-compact.spec.ts",
+      "src/tests/e2e/scene-view-focus.spec.ts",
+      "src/tests/e2e/table-tilt.spec.ts"
+    ],
+    "configFile": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/playwright.config.ts",
+    "rootDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 3
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 3
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e",
+        "testIgnore": [
+          "**/*-production.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 4187 --strictPort",
+      "url": "http://127.0.0.1:4187",
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "env": {
+        "CODEX_SANDBOX_NETWORK_DISABLED": "1",
+        "NODE": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "INIT_CWD": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability",
+        "TERM": "dumb",
+        "PLAYWRIGHT_JSON_OUTPUT_NAME": "docs/architecture/ground-glass-m7j-four-worker/diagnostics/three-targets-w4.json",
+        "HOMEBREW_REPOSITORY": "/opt/homebrew",
+        "npm_config_global_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "CODEX_APPLY_PATCH_PRESERVE_LINE_ENDINGS": "1",
+        "FPATH": "/opt/homebrew/share/zsh/site-functions:/usr/local/share/zsh/site-functions:/usr/share/zsh/site-functions:/usr/share/zsh/5.9/functions",
+        "COLOR": "0",
+        "NO_COLOR": "1",
+        "npm_config_noproxy": "",
+        "npm_config_local_prefix": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability",
+        "LC_ALL": "C.UTF-8",
+        "npm_config_globalconfig": "/Users/homan/.nvm/versions/node/v24.3.0/etc/npmrc",
+        "PLAYWRIGHT_WEB_SERVER_PORT": "4187",
+        "__CF_USER_TEXT_ENCODING": "0x1F7:0x0:0x0",
+        "CODEX_PERMISSION_PROFILE": ":workspace",
+        "npm_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/bin/npm-cli.js",
+        "PAGER": "cat",
+        "PATH": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/node_modules/.bin:/Users/homan/repo/view-camera-simulator/.worktrees/node_modules/.bin:/Users/homan/repo/view-camera-simulator/node_modules/.bin:/Users/homan/repo/node_modules/.bin:/Users/homan/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/homan/.nvm/versions/node/v24.3.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/usr/local/go/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/homan/.codex/tmp/arg0-macos/codex-arg01qLSa3:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/homan/miniconda3/bin:/Users/homan/miniconda3/condabin:/usr/local/sbin:/Users/homan/.nvm/versions/node/v26.12.1/bin:/Applications/Blender.app/Contents/MacOS:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Users/homan/.local/bin:/Applications/Obsidian.app/Contents/MacOS:/Users/homan/.lmstudio/bin:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/homan/.local/bin:/Applications/Obsidian.app/Contents/MacOS",
+        "npm_package_json": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/package.json",
+        "_": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/node_modules/.bin/playwright",
+        "npm_config_userconfig": "/Users/homan/.npmrc",
+        "npm_config_init_module": "/Users/homan/.npm-init.js",
+        "CODEX_THREAD_ID": "01a19c67-52b2-7872-a0dd-7ffec4125072",
+        "npm_command": "run",
+        "PWD": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability",
+        "npm_lifecycle_event": "test:e2e",
+        "EDITOR": "vi",
+        "npm_package_name": "view-camera-simulator",
+        "LANG": "C.UTF-8",
+        "M7J_STALL_PROBE": "1",
+        "npm_config_npm_version": "11.12.0",
+        "CODEX_TOOL_CALL_ID": "exec-961a83ec-294e-48b8-a4df-ee537b197ed7",
+        "CODEX_CI": "1",
+        "npm_config_node_gyp": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
+        "npm_package_version": "0.0.0",
+        "CODEX_VERSION": "0.166.0-alpha.5.1",
+        "SHLVL": "1",
+        "HOME": "/Users/homan",
+        "HOMEBREW_PREFIX": "/opt/homebrew",
+        "GH_PAGER": "cat",
+        "npm_config_cache": "/Users/homan/.npm",
+        "LOGNAME": "homan",
+        "npm_lifecycle_script": "playwright test",
+        "LC_CTYPE": "C.UTF-8",
+        "npm_config_user_agent": "npm/11.12.0 node/v24.3.0 darwin arm64 workspaces/false",
+        "INFOPATH": "/opt/homebrew/share/info:",
+        "HOMEBREW_CELLAR": "/opt/homebrew/Cellar",
+        "GIT_PAGER": "cat",
+        "CODEX_SESSION_ID": "01a19c67-52b2-7872-a0dd-7ffec4125072",
+        "npm_node_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "npm_config_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "COLORTERM": "",
+        "VITE_BASE_PATH": "/",
+        "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM": "false",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH": "false",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH": "false",
+        "VITE_GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT": "false",
+        "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION": "false"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "camera-controls-compact.spec.ts",
+      "file": "camera-controls-compact.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "camera control rows keep useful rendered tracks across rail widths",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 120542,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/camera-controls-compact.spec.ts",
+                        "column": 16,
+                        "line": 171
+                      },
+                      "message": "Error: locator.focus: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Tilt' })\u001b[22m\n\u001b[2m    - locator resolved to <input max=\"10\" min=\"-10\" step=\"0.1\" id=\"_r_i_\" value=\"0.8\" type=\"range\" aria-label=\"Tilt\" class=\"range-slider compact-range-row__slider\"/>\u001b[22m\n\n\n  169 |     const tilt = controls.getByRole(\"slider\", { name: \"Tilt\" });\n  170 |     const tiltBefore = await tilt.inputValue();\n> 171 |     await tilt.focus();\n      |                ^\n  172 |     await tilt.press(\"ArrowRight\");\n  173 |     await expect(tilt).not.toHaveValue(tiltBefore);\n  174 |\n    at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/camera-controls-compact.spec.ts:171:16"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-02T23:57:18.756Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "m7j-stall-probe.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0ZXN0SWQiOiAiZTA3NWY1YjFiY2E0NDU4NzNjMGMtZDkyZWQwNDBlYWViZGJkYzI0ZjkiLAogICJ0aXRsZSI6ICJjYW1lcmEgY29udHJvbCByb3dzIGtlZXAgdXNlZnVsIHJlbmRlcmVkIHRyYWNrcyBhY3Jvc3MgcmFpbCB3aWR0aHMiLAogICJzdGF0dXMiOiAidGltZWRPdXQiLAogICJleHBlY3RlZFN0YXR1cyI6ICJwYXNzZWQiLAogICJ3b3JrZXJJbmRleCI6IDAsCiAgInBhcmFsbGVsSW5kZXgiOiAwLAogICJwcm9iZUV2YWx1YXRpb25EdXJhdGlvbk1zIjogMTc4LAogICJwcm9iZVJlc3VsdCI6IHsKICAgICJzdGF0dXMiOiAiY29tcGxldGVkIiwKICAgICJ2YWx1ZSI6IHsKICAgICAgInByb2JlIjogewogICAgICAgICJwcm9iZVN0YXJ0ZWRBdCI6IDYuNTk5OTk5OTk0MDM5NTM1NSwKICAgICAgICAicHJvYmVOb3ciOiAxMTkwOTIsCiAgICAgICAgInRpbWVyVGlja3MiOiA4MSwKICAgICAgICAidGltZXJNYXhHYXBNcyI6IDQxMTEuMTk5OTk5OTg4MDc5LAogICAgICAgICJhbmltYXRpb25GcmFtZUNhbGxiYWNrcyI6IDMxNCwKICAgICAgICAiYW5pbWF0aW9uRnJhbWVNYXhHYXBNcyI6IDMwMTYuMywKICAgICAgICAiYW5pbWF0aW9uRnJhbWVTbG93SW50ZXJ2YWxzIjogMjQwLAogICAgICAgICJsb25nVGFza0NvdW50IjogMjQ0LAogICAgICAgICJsb25nVGFza1RvdGFsTXMiOiAxMTc4NzAsCiAgICAgICAgImNvbnRleHRMb3N0RXZlbnRzIjogMCwKICAgICAgICAiY29udGV4dFJlc3RvcmVkRXZlbnRzIjogMCwKICAgICAgICAiY2FudmFzQ291bnQiOiAwLAogICAgICAgICJ2aXNpYmlsaXR5U3RhdGUiOiAidmlzaWJsZSIsCiAgICAgICAgInJlbmRlcmVyIjogbnVsbCwKICAgICAgICAiZ3JvdW5kR2xhc3MiOiBudWxsCiAgICAgIH0sCiAgICAgICJyZW5kZXJlciI6IHsKICAgICAgICAiZGF0YS1vYnNlcnZlci1yZW5kZXJlci1zdGF0dXMiOiAiYWN0aXZlIiwKICAgICAgICAiZGF0YS1vYnNlcnZlci1yZW5kZXJlci1nZW5lcmF0aW9uIjogIjEiLAogICAgICAgICJkYXRhLW9ic2VydmVyLXJlbmRlcmVyLWZhbWlseSI6ICJ3ZWJnbC1yZW5kZXJlciIsCiAgICAgICAgImRhdGEtb2JzZXJ2ZXItZXhlY3V0aW9uLWJhY2tlbmQiOiAid2ViZ2wyIiwKICAgICAgICAiZGF0YS12aWV3LWZvY3VzIjogInNjZW5lIgogICAgICB9LAogICAgICAiZ3JvdW5kR2xhc3MiOiB7CiAgICAgICAgImRhdGEtcmVuZGVyLWhvc3QtbGlmZWN5Y2xlIjogInJlYWR5IiwKICAgICAgICAiZGF0YS1mcmFtZS1yZXN1bHQtc3RhdHVzIjogImNvbXBsZXRlZCIsCiAgICAgICAgImRhdGEtZnJhbWUtcmVxdWVzdC1pZCI6ICJnZy1tdnp4NTAxMC1pdWFwYjI3NDN1Yi1kZWZhdWx0LXJlcXVlc3QtMTYiLAogICAgICAgICJkYXRhLWxhc3QtY29tcGxldGVkLXJlcXVlc3QtaWQiOiAiZ2ctbXZ6eDUwMTAtaXVhcGIyNzQzdWItZGVmYXVsdC1yZXF1ZXN0LTE2IiwKICAgICAgICAiZGF0YS1yZW5kZXJlci1nZW5lcmF0aW9uIjogImdnLW12eng1MDEwLWl1YXBiMjc0M3ViLWRlZmF1bHQtZ2VuZXJhdGlvbi0xIiwKICAgICAgICAiZGF0YS1ydHQtcmVzb3VyY2UtZ2VuZXJhdGlvbiI6ICIxIgogICAgICB9LAogICAgICAiY2FudmFzQ291bnQiOiAyLAogICAgICAidmlzaWJpbGl0eVN0YXRlIjogInZpc2libGUiCiAgICB9CiAgfSwKICAicHJvYmVQZXJ0dXJic0FuaW1hdGlvblNjaGVkdWxpbmciOiB0cnVlLAogICJob3N0UHJvY2Vzc0NwdUFuZEdwdU1ldHJpY3MiOiAidW5hdmFpbGFibGUiCn0="
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e075f5b1bca445873c0c-d92ed040eaebdbdc24f9",
+          "file": "camera-controls-compact.spec.ts",
+          "line": 106,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "scene-view-focus.spec.ts",
+      "file": "scene-view-focus.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "View Focus preserves independent Scene and Camera views and resets the active preset",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 91668,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts",
+                        "column": 41,
+                        "line": 22
+                      },
+                      "message": "Error: locator.getAttribute: Test timeout of 90000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('scene-canvas')\u001b[22m\n\n\n  20 | const readViewState = async (sceneCanvas: Locator): Promise<ViewState> => ({\n  21 |   position: parseVector(await sceneCanvas.getAttribute(\"data-observer-camera-position\")),\n> 22 |   target: parseVector(await sceneCanvas.getAttribute(\"data-orbit-target\")),\n     |                                         ^\n  23 | });\n  24 |\n  25 | const readStableViewState = async (sceneCanvas: Locator): Promise<ViewState> => {\n    at readViewState (/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:22:41)\n    at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:175:36\n    at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:175:5"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-02T23:57:18.756Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "m7j-stall-probe.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0ZXN0SWQiOiAiNjM1MTM0MDM3ZDIxMjcyZjAwZmQtYjdmZjUxOWQyMGQxM2VhODZhOWIiLAogICJ0aXRsZSI6ICJWaWV3IEZvY3VzIHByZXNlcnZlcyBpbmRlcGVuZGVudCBTY2VuZSBhbmQgQ2FtZXJhIHZpZXdzIGFuZCByZXNldHMgdGhlIGFjdGl2ZSBwcmVzZXQiLAogICJzdGF0dXMiOiAidGltZWRPdXQiLAogICJleHBlY3RlZFN0YXR1cyI6ICJwYXNzZWQiLAogICJ3b3JrZXJJbmRleCI6IDEsCiAgInBhcmFsbGVsSW5kZXgiOiAxLAogICJwcm9iZUV2YWx1YXRpb25EdXJhdGlvbk1zIjogMTE0NCwKICAicHJvYmVSZXN1bHQiOiB7CiAgICAic3RhdHVzIjogImNvbXBsZXRlZCIsCiAgICAidmFsdWUiOiB7CiAgICAgICJwcm9iZSI6IHsKICAgICAgICAicHJvYmVTdGFydGVkQXQiOiA2LjkwMDAwMDAwNTk2MDQ2NDUsCiAgICAgICAgInByb2JlTm93IjogOTEwODcuOTAwMDAwMDA1OTYsCiAgICAgICAgInRpbWVyVGlja3MiOiA1NiwKICAgICAgICAidGltZXJNYXhHYXBNcyI6IDU3MjAuMDk5OTk5OTk0MDM5NSwKICAgICAgICAiYW5pbWF0aW9uRnJhbWVDYWxsYmFja3MiOiAyMDcsCiAgICAgICAgImFuaW1hdGlvbkZyYW1lTWF4R2FwTXMiOiA0ODg2LjUsCiAgICAgICAgImFuaW1hdGlvbkZyYW1lU2xvd0ludGVydmFscyI6IDE0MCwKICAgICAgICAibG9uZ1Rhc2tDb3VudCI6IDE0NCwKICAgICAgICAibG9uZ1Rhc2tUb3RhbE1zIjogODk4NTMsCiAgICAgICAgImNvbnRleHRMb3N0RXZlbnRzIjogMCwKICAgICAgICAiY29udGV4dFJlc3RvcmVkRXZlbnRzIjogMCwKICAgICAgICAiY2FudmFzQ291bnQiOiAwLAogICAgICAgICJ2aXNpYmlsaXR5U3RhdGUiOiAidmlzaWJsZSIsCiAgICAgICAgInJlbmRlcmVyIjogbnVsbCwKICAgICAgICAiZ3JvdW5kR2xhc3MiOiBudWxsCiAgICAgIH0sCiAgICAgICJyZW5kZXJlciI6IHsKICAgICAgICAiZGF0YS1vYnNlcnZlci1yZW5kZXJlci1zdGF0dXMiOiAiYWN0aXZlIiwKICAgICAgICAiZGF0YS1vYnNlcnZlci1yZW5kZXJlci1nZW5lcmF0aW9uIjogIjAiLAogICAgICAgICJkYXRhLW9ic2VydmVyLXJlbmRlcmVyLWZhbWlseSI6ICJ3ZWJnbC1yZW5kZXJlciIsCiAgICAgICAgImRhdGEtb2JzZXJ2ZXItZXhlY3V0aW9uLWJhY2tlbmQiOiAid2ViZ2wyIiwKICAgICAgICAiZGF0YS12aWV3LWZvY3VzIjogImNhbWVyYSIKICAgICAgfSwKICAgICAgImdyb3VuZEdsYXNzIjogewogICAgICAgICJkYXRhLXJlbmRlci1ob3N0LWxpZmVjeWNsZSI6ICJyZWFkeSIsCiAgICAgICAgImRhdGEtZnJhbWUtcmVzdWx0LXN0YXR1cyI6ICJjb21wbGV0ZWQiLAogICAgICAgICJkYXRhLWZyYW1lLXJlcXVlc3QtaWQiOiAiZ2ctbXZ6eDUwMTktbTl4eTZ3Y2JnMmstZGVmYXVsdC1yZXF1ZXN0LTQiLAogICAgICAgICJkYXRhLWxhc3QtY29tcGxldGVkLXJlcXVlc3QtaWQiOiAiZ2ctbXZ6eDUwMTktbTl4eTZ3Y2JnMmstZGVmYXVsdC1yZXF1ZXN0LTQiLAogICAgICAgICJkYXRhLXJlbmRlcmVyLWdlbmVyYXRpb24iOiAiZ2ctbXZ6eDUwMTktbTl4eTZ3Y2JnMmstZGVmYXVsdC1nZW5lcmF0aW9uLTEiLAogICAgICAgICJkYXRhLXJ0dC1yZXNvdXJjZS1nZW5lcmF0aW9uIjogIjEiCiAgICAgIH0sCiAgICAgICJjYW52YXNDb3VudCI6IDIsCiAgICAgICJ2aXNpYmlsaXR5U3RhdGUiOiAidmlzaWJsZSIKICAgIH0KICB9LAogICJwcm9iZVBlcnR1cmJzQW5pbWF0aW9uU2NoZWR1bGluZyI6IHRydWUsCiAgImhvc3RQcm9jZXNzQ3B1QW5kR3B1TWV0cmljcyI6ICJ1bmF2YWlsYWJsZSIKfQ=="
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/test-results/scene-view-focus-View-Focu-01f56-nd-resets-the-active-preset-chromium/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "635134037d21272f00fd-b7ff519d20d13ea86a9b",
+          "file": "scene-view-focus.spec.ts",
+          "line": 101,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "table-tilt.spec.ts",
+      "file": "table-tilt.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 103237,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-02T23:57:18.763Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "m7j-stall-probe.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0ZXN0SWQiOiAiY2IwODIxM2VjN2M1ZTZlMDQzMmMtNzFjMzVlZDBkZmVjYmJmOWM5YmQiLAogICJ0aXRsZSI6ICJUYWJsZSBUaWx0IFJUVCBzdXJ2aXZlcyBmb2N1cywgcHJldmlldywgem9vbSwgcXVhbGl0eSwgYW5kIHRpbHQgcmVzb3VyY2Ugc3RyZXNzIiwKICAic3RhdHVzIjogInBhc3NlZCIsCiAgImV4cGVjdGVkU3RhdHVzIjogInBhc3NlZCIsCiAgIndvcmtlckluZGV4IjogMiwKICAicGFyYWxsZWxJbmRleCI6IDIsCiAgInByb2JlRXZhbHVhdGlvbkR1cmF0aW9uTXMiOiA0NDcsCiAgInByb2JlUmVzdWx0IjogewogICAgInN0YXR1cyI6ICJjb21wbGV0ZWQiLAogICAgInZhbHVlIjogewogICAgICAicHJvYmUiOiB7CiAgICAgICAgInByb2JlU3RhcnRlZEF0IjogNi4wOTk5OTk5OTQwMzk1MzU1LAogICAgICAgICJwcm9iZU5vdyI6IDEwMjc0My45MDAwMDAwMDU5NiwKICAgICAgICAidGltZXJUaWNrcyI6IDcwLAogICAgICAgICJ0aW1lck1heEdhcE1zIjogMjc1Mi41LAogICAgICAgICJhbmltYXRpb25GcmFtZUNhbGxiYWNrcyI6IDI4MiwKICAgICAgICAiYW5pbWF0aW9uRnJhbWVNYXhHYXBNcyI6IDIxNDIuNSwKICAgICAgICAiYW5pbWF0aW9uRnJhbWVTbG93SW50ZXJ2YWxzIjogMTkyLAogICAgICAgICJsb25nVGFza0NvdW50IjogMTk3LAogICAgICAgICJsb25nVGFza1RvdGFsTXMiOiAxMDA4NzUsCiAgICAgICAgImNvbnRleHRMb3N0RXZlbnRzIjogMCwKICAgICAgICAiY29udGV4dFJlc3RvcmVkRXZlbnRzIjogMCwKICAgICAgICAiY2FudmFzQ291bnQiOiAwLAogICAgICAgICJ2aXNpYmlsaXR5U3RhdGUiOiAidmlzaWJsZSIsCiAgICAgICAgInJlbmRlcmVyIjogbnVsbCwKICAgICAgICAiZ3JvdW5kR2xhc3MiOiBudWxsCiAgICAgIH0sCiAgICAgICJyZW5kZXJlciI6IHsKICAgICAgICAiZGF0YS1vYnNlcnZlci1yZW5kZXJlci1zdGF0dXMiOiAiYWN0aXZlIiwKICAgICAgICAiZGF0YS1vYnNlcnZlci1yZW5kZXJlci1nZW5lcmF0aW9uIjogIjEiLAogICAgICAgICJkYXRhLW9ic2VydmVyLXJlbmRlcmVyLWZhbWlseSI6ICJ3ZWJnbC1yZW5kZXJlciIsCiAgICAgICAgImRhdGEtb2JzZXJ2ZXItZXhlY3V0aW9uLWJhY2tlbmQiOiAid2ViZ2wyIiwKICAgICAgICAiZGF0YS12aWV3LWZvY3VzIjogInNjZW5lIgogICAgICB9LAogICAgICAiZ3JvdW5kR2xhc3MiOiB7CiAgICAgICAgImRhdGEtcmVuZGVyLWhvc3QtbGlmZWN5Y2xlIjogInJlYWR5IiwKICAgICAgICAiZGF0YS1mcmFtZS1yZXN1bHQtc3RhdHVzIjogImNvbXBsZXRlZCIsCiAgICAgICAgImRhdGEtZnJhbWUtcmVxdWVzdC1pZCI6ICJnZy1tdnp4NTAxcS02bzI5N2s0dTRhOC1kZWZhdWx0LXJlcXVlc3QtMTciLAogICAgICAgICJkYXRhLWxhc3QtY29tcGxldGVkLXJlcXVlc3QtaWQiOiAiZ2ctbXZ6eDUwMXEtNm8yOTdrNHU0YTgtZGVmYXVsdC1yZXF1ZXN0LTE3IiwKICAgICAgICAiZGF0YS1yZW5kZXJlci1nZW5lcmF0aW9uIjogImdnLW12eng1MDFxLTZvMjk3azR1NGE4LWRlZmF1bHQtZ2VuZXJhdGlvbi0xIiwKICAgICAgICAiZGF0YS1ydHQtcmVzb3VyY2UtZ2VuZXJhdGlvbiI6ICIxIgogICAgICB9LAogICAgICAiY2FudmFzQ291bnQiOiAyLAogICAgICAidmlzaWJpbGl0eVN0YXRlIjogInZpc2libGUiCiAgICB9CiAgfSwKICAicHJvYmVQZXJ0dXJic0FuaW1hdGlvblNjaGVkdWxpbmciOiB0cnVlLAogICJob3N0UHJvY2Vzc0NwdUFuZEdwdU1ldHJpY3MiOiAidW5hdmFpbGFibGUiCn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cb08213ec7c5e6e0432c-71c35ed0dfecbbf9c9bd",
+          "file": "table-tilt.spec.ts",
+          "line": 324,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-02T23:57:17.986Z",
+    "duration": 121469.28499999999,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}
