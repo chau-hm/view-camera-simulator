@@ -1,0 +1,88 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium --workers=2 --retries=0 --reporter=list,json --grep=(camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|View Focus preserves independent Scene and Camera views and resets the active preset|Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|Scene-local learning drawer leaves the paired workspace layout intact) src/tests/e2e/camera-controls-compact.spec.ts src/tests/e2e/fringe-club-dev-integration.spec.ts src/tests/e2e/scene-view-focus.spec.ts src/tests/e2e/table-tilt.spec.ts src/tests/e2e/viewport-learning-overlay.spec.ts
+
+[WebServer] (node:12208) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 2 workers
+
+(node:12212) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12211) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:47:34 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:47:34 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:47:34 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:47:39 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:48:19 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:48:40 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  2 [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal (1.4m)
+[WebServer] 7:48:58 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:48:58 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  1 [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths (2.0m)
+(node:13742) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:49:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:49:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  3 [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset (1.5m)
+(node:14419) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:50:29 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:50:29 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  4 [chromium] › src/tests/e2e/table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress (1.2m)
+  ✓  5 [chromium] › src/tests/e2e/viewport-learning-overlay.spec.ts:28:1 › Scene-local learning drawer leaves the paired workspace layout intact (45.7s)
+
+
+  1) [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths
+
+    Test timeout of 120000ms exceeded.
+
+    Error: expect(locator).not.toHaveValue(expected) failed
+
+    Locator:  getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Tilt' })
+    Expected: not "1"
+    Received: ""
+
+    Call log:
+      - Expect "not toHaveValue" with timeout 5000ms
+      - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Tilt' })
+
+
+      168 |     await tilt.focus();
+      169 |     await tilt.press("ArrowRight");
+    > 170 |     await expect(tilt).not.toHaveValue(tiltBefore);
+          |                            ^
+      171 |
+      172 |     const aperture = controls.getByRole("radiogroup", { name: "Aperture" });
+      173 |     await expect(aperture.getByRole("radio")).toHaveCount(6);
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/camera-controls-compact.spec.ts:170:28
+
+    Error Context: test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/error-context.md
+
+  2) [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+
+    Test timeout of 90000ms exceeded.
+
+    Error: locator.click: Test timeout of 90000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'View overlays' })
+        - locator resolved to <button id="_r_5_" type="button" aria-expanded="false" aria-controls="_r_4_" class="scene-overlay-menu__trigger btn btn--compact">…</button>
+
+
+      93 | const openOverlayMenuIfNeeded = async (page: Page) => {
+      94 |   const trigger = page.getByRole("button", { name: "View overlays" });
+    > 95 |   if (await trigger.isVisible()) await trigger.click();
+         |                                                ^
+      96 | };
+      97 |
+      98 | test("View Focus preserves independent Scene and Camera views and resets the active preset", async ({ page }) => {
+        at openOverlayMenuIfNeeded (/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:95:48)
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:196:3
+
+    Error Context: test-results/scene-view-focus-View-Focu-01f56-nd-resets-the-active-preset-chromium/error-context.md
+
+  2 failed
+    [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths
+    [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+  3 passed (3.7m)

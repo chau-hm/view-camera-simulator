@@ -1,0 +1,19 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --config=playwright.production.config.ts --project=chromium-production-preview --workers=1 --retries=0 --reporter=list,json src/tests/e2e/architecture-rise-webgpu-production.spec.ts
+
+[WebServer] (node:53384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:53427) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:53442) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium-production-preview] › src/tests/e2e/architecture-rise-webgpu-production.spec.ts:85:1 › production preview renders Architecture Rise on WebGL and excludes WebGPU from the default bundle (12.5s)
+  ✓  2 [chromium-production-preview] › src/tests/e2e/architecture-rise-webgpu-production.spec.ts:276:1 › production preview denies explicit standard WebGPU selection on Architecture Rise (7.1s)
+  ✓  3 [chromium-production-preview] › src/tests/e2e/architecture-rise-webgpu-production.spec.ts:284:1 › production preview denies the Architecture Rise material-aware WebGPU candidate (7.1s)
+  ✓  4 [chromium-production-preview] › src/tests/e2e/architecture-rise-webgpu-production.spec.ts:292:1 › production preview denies the Anatomy material-aware WebGPU candidate (10.3s)
+
+  4 passed (46.3s)

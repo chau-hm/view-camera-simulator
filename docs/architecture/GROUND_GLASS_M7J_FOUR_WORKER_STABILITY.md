@@ -102,4 +102,4 @@ On the M7J implementation worktree, the final local checks recorded:
 - Production-preview WebGL isolation: 4/4 passed, zero retries.
 - Renderer serial lane: 4/4 passed, zero retries, one actual worker.
 
-The exact commands, raw report digests, and logs are retained in the machine-readable report and validation directory. The 278-test broad suite was not run. Hosted CI status is added after the PR is published and checks the final PR HEAD; until then, no hosted result is claimed.
+The exact commands, raw report digests, and run logs are retained in the machine-readable report and validation directory. The 278-test broad suite was not run. The final hosted CI status will be recorded in the PR handoff against the final PR HEAD; a passing integrity check still does not qualify Broad E2E.

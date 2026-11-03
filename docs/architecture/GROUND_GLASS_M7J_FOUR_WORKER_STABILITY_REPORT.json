@@ -1512,7 +1512,6 @@
       "actualWorkers": 1
     },
     "fullBroadE2eRun": "not-run",
-    "finalHeadHostedCi": null,
     "browserControls": [
       {
         "id": "ordinary-chromium-smoke",

@@ -1,0 +1,31 @@
+
+> view-camera-simulator@0.0.0 evidence:check:m7h
+> node ./scripts/run-m7h-triage.mjs --diagnostic
+
+{
+  "reportId": "ground-glass-m7h-broad-e2e-triage",
+  "evaluatorRevision": "m7h-broad-e2e-triage-evaluator-v3",
+  "reportPath": "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json",
+  "valid": true,
+  "inventoryIntegrity": "passed",
+  "classificationIntegrity": "passed",
+  "reproductionIntegrity": "passed",
+  "broadE2eQualification": "not-qualified",
+  "counts": {
+    "discovered": 277,
+    "expected": 103,
+    "unexpected": 99,
+    "skipped": 75,
+    "flaky": 0,
+    "failureInventory": 99,
+    "verified": 17,
+    "inferred": 15,
+    "unclassified": 67,
+    "verifiedExistingOnBase": 1,
+    "verifiedIntroduced": 0,
+    "verifiedFixed": 16,
+    "remediated": 16,
+    "partiallyAddressed": 1
+  },
+  "issues": []
+}
