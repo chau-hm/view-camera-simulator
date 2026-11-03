@@ -108,6 +108,19 @@ The first attempted capture was superseded because the isolated worktree initial
 
 A later Three.js 0.187 attempt discovered the expected tests but both Vite servers failed before any tests ran because the sandbox denied binding to `127.0.0.1` (`EPERM`). Those zero-test reports are retained under `execution/superseded-r187-sandbox-bind-failure/` and are not treated as test outcomes. The final capture ran with the authorized local runner and independent ports.
 
+## Shallow post-squash provenance check
+
+I created a disposable synthetic squash snapshot whose tree contains the M7K report and whose parent is the pinned execution source. A separate shallow clone started at depth 1 with no shared object store. Before fetching, `git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'` exited 128, and `npm run evidence:check:m7k` exited 1 with `execution-source-commit-missing`.
+
+The clone then ran the same source-history step as CI:
+
+```bash
+git fetch --no-tags --depth=50 origin refs/heads/main
+git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'
+```
+
+The pinned commit became available and the unchanged M7K evidence check passed with exit 0. The simulation used a temporary bare remote and checkout; it did not add or remove objects in any active repository. The Pages deploy job remains dependent on successful CI, and this correction does not deploy or promote production.
+
 Accepted M7K raw artifacts:
 
 | Artifact | SHA-256 |

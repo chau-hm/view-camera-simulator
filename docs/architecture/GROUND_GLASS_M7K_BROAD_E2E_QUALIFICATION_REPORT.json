@@ -9776,6 +9776,16 @@
         "status": "passed",
         "exitCode": 0
       }
+    },
+    "postSquashSourceAvailability": {
+      "method": "synthetic-squash-shallow-clone-depth-1-without-shared-object-store",
+      "initialSourceAvailable": false,
+      "initialGitCatFileExitCode": 128,
+      "initialEvidenceCheckExitCode": 1,
+      "initialIssue": "execution-source-commit-missing",
+      "fetchCommand": "git fetch --no-tags --depth=50 origin refs/heads/main",
+      "postFetchSourceAvailable": true,
+      "postFetchEvidenceCheckExitCode": 0
     }
   }
 }
