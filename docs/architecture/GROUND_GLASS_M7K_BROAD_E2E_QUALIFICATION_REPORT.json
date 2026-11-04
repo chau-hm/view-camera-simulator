@@ -9778,14 +9778,220 @@
       }
     },
     "postSquashSourceAvailability": {
-      "method": "synthetic-squash-shallow-clone-depth-1-without-shared-object-store",
-      "initialSourceAvailable": false,
-      "initialGitCatFileExitCode": 128,
-      "initialEvidenceCheckExitCode": 1,
-      "initialIssue": "execution-source-commit-missing",
-      "fetchCommand": "git fetch --no-tags --depth=50 origin refs/heads/main",
-      "postFetchSourceAvailable": true,
-      "postFetchEvidenceCheckExitCode": 0
+      "method": "synthetic-future-main-history-depth-1-isolated-clones",
+      "pinnedSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+      "commitsAfterPinnedSource": 60,
+      "initialSourceAvailableInBothClones": false,
+      "exactCommitFetch": {
+        "status": "passed",
+        "exitCode": 0,
+        "sourceCommitAvailable": true,
+        "treeEntryAvailable": true
+      },
+      "fullMainHistoryFallback": {
+        "status": "passed",
+        "exitCode": 0,
+        "sourceCommitAvailable": true,
+        "treeEntryAvailable": true
+      },
+      "unknownSha": {
+        "status": "rejected",
+        "exitCode": 1,
+        "sourceCommitAvailable": false
+      },
+      "helper": "scripts/fetch-m7k-execution-source.mjs"
+    },
+    "reviewFixRound1": {
+      "status": "passed-locally",
+      "originalFixedDepthSimulation": {
+        "method": "synthetic-squash-shallow-clone-depth-1-without-shared-object-store",
+        "initialSourceAvailable": false,
+        "initialGitCatFileExitCode": 128,
+        "initialEvidenceCheckExitCode": 1,
+        "initialIssue": "execution-source-commit-missing",
+        "fetchCommand": "git fetch --no-tags --depth=50 origin refs/heads/main",
+        "postFetchSourceAvailable": true,
+        "postFetchEvidenceCheckExitCode": 0
+      },
+      "evaluatorRevision": "m7k-broad-e2e-qualification-evaluator-v2",
+      "correctionCommit": "23104069bc3acb2078722979b9591b0293e4fa39",
+      "sourceRoles": {
+        "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+        "toolingCommitSha": "23104069bc3acb2078722979b9591b0293e4fa39",
+        "evaluationCommitSha": "23104069bc3acb2078722979b9591b0293e4fa39",
+        "evaluatorSourcePath": "src/render/testing/groundGlassM7kBroadE2eQualification.ts"
+      },
+      "originalRawCaptureReproduction": {
+        "manifestPath": "docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187/capture-manifest.json",
+        "command": "npm run evidence:check:m7k -- --capture-manifest=docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187/capture-manifest.json --report-output=/tmp/m7k-r1-original-manifest-report.json --evaluation-output=/tmp/m7k-r1-original-manifest-evaluation.json",
+        "exitCode": 1,
+        "issues": [
+          "evaluation-commit-sha-invalid",
+          "playwright-environment-mismatch:ordinary",
+          "browser-runtime-environment-mismatch",
+          "three-runtime-revision-mismatch",
+          "playwright-environment-mismatch:rendererSerial"
+        ]
+      },
+      "worktreeReproduction": {
+        "pinnedExecutionSourceContainsRunner": false,
+        "gitCatFileExitCode": 128,
+        "wrongExecutionHeadRejected": true,
+        "wrongExecutionHeadExitCode": 1,
+        "toolingExecutionWorktreesSeparated": true
+      },
+      "preflight": {
+        "status": "passed",
+        "path": "docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/preflight/preflight.json",
+        "toolingCommitSha": "23104069bc3acb2078722979b9591b0293e4fa39",
+        "evaluationCommitSha": "23104069bc3acb2078722979b9591b0293e4fa39",
+        "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+        "testCasesExecuted": 0,
+        "ordinaryDiscovery": {
+          "tests": 274,
+          "specFiles": 80
+        },
+        "rendererSerialDiscovery": {
+          "tests": 4,
+          "specFiles": 4
+        },
+        "combinedUniqueIdentities": 278,
+        "environment": {
+          "toolingNodeVersion": "v24.3.0",
+          "executionNodeVersion": "v24.3.0",
+          "npmVersion": "11.12.0",
+          "playwrightVersion": "1.61.1",
+          "browserVersion": "149.0.7827.55",
+          "threeJsVersion": "0.187.0",
+          "threeRevision": "187",
+          "viewport": "1280x720",
+          "webgl": "WebGL2 SwiftShader compatibility path"
+        },
+        "rawPreflightSha256": "cdbf0cd16d3014a76da2f3322828679386dbf6dad71b2277347f6bca2caff74f",
+        "ordinaryDiscoverySha256": "6b339b0f67ea6ce495ecc2d5d95d2944a45d7b29f38ba99f8dcee275c2713f9d",
+        "rendererSerialDiscoverySha256": "7f459699b90d51432e363a01f250626aad9c488459b6c091a23452d063f11f8d"
+      },
+      "selectedCapture": {
+        "status": "passed-as-partial-evidence",
+        "path": "docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected",
+        "generatedAt": "2026-11-04T01:04:49.090Z",
+        "captureMode": "selected",
+        "toolingCommitSha": "23104069bc3acb2078722979b9591b0293e4fa39",
+        "evaluationCommitSha": "23104069bc3acb2078722979b9591b0293e4fa39",
+        "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+        "selection": {
+          "ordinaryGrep": "webgl Observer PMREM changes only the reflective subject region|webgpu Observer PMREM changes only the reflective subject region",
+          "rendererSerialGrep": "@m7j-renderer-contention"
+        },
+        "ordinaryLane": {
+          "selectedTests": 2,
+          "passed": 2,
+          "configuredWorkers": 4,
+          "actualWorkers": 1,
+          "exitCode": 0,
+          "rawReportSha256": "d51c456c0f2bc616284bd1290deea6eee02c907ad73c2e5489d55b48b5dee2fd"
+        },
+        "rendererSerialLane": {
+          "selectedTests": 4,
+          "passed": 4,
+          "configuredWorkers": 1,
+          "actualWorkers": 1,
+          "exitCode": 0,
+          "rawReportSha256": "96ea0adb2534624c7b299c272ac57f12d56b7247de934562ec070739f59e82fd"
+        },
+        "totalSelectedTestsPassed": 6,
+        "directCli": {
+          "command": "npm run evidence:check:m7k -- --report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json",
+          "exitCode": 0,
+          "evidenceIntegrity": "passed",
+          "executionCompleteness": "incomplete",
+          "ordinaryLane": "incomplete",
+          "rendererSerialLane": "passed",
+          "broadE2eQualification": "blocked",
+          "issues": []
+        },
+        "manifestSha256": "4fbfde0ca4323fac4fbb0e4b7f5d8a265d6ec641da03f91065f3745a57d655d5",
+        "qualificationReportSha256": "02e2bd10a62e16b240cb3f51ffef02e0a9c9f94004bc8f65242e9a674ac84fe4"
+      },
+      "wrongThreeJsVersionNegativeControl": {
+        "installedVersion": "0.186.0",
+        "expectedVersion": "0.187.0",
+        "status": "rejected-before-capture",
+        "exitCode": 1,
+        "restoredAfterTest": true
+      },
+      "focusedTests": {
+        "command": "npm test -- --run src/tests/unit/groundGlassM7kBroadE2eQualification.test.ts src/tests/unit/m7kCaptureWorkflow.test.ts",
+        "status": "passed",
+        "evaluatorTests": 60,
+        "runnerWorkflowTests": 6,
+        "totalTests": 66,
+        "mutationSuiteRevision": "m7k-broad-e2e-mutations-v2"
+      },
+      "localChecks": {
+        "unitIntegration": {
+          "command": "npm test",
+          "status": "passed",
+          "testFiles": 318,
+          "tests": 3701
+        },
+        "typecheck": {
+          "command": "npm run typecheck",
+          "status": "passed"
+        },
+        "lint": {
+          "command": "npm run lint",
+          "status": "passed"
+        },
+        "css": {
+          "command": "npm run check:css",
+          "status": "passed"
+        },
+        "build": {
+          "command": "npm run build",
+          "status": "passed"
+        },
+        "evidenceCheckM7h": {
+          "status": "passed"
+        },
+        "evidenceCheckM7i": {
+          "status": "passed"
+        },
+        "evidenceCheckM7j": {
+          "status": "passed"
+        },
+        "acceptedEvidenceCheckM7k": {
+          "status": "passed",
+          "discovered": 278,
+          "passed": 121,
+          "unexpected": 82,
+          "skipped": 75,
+          "flaky": 0,
+          "incomplete": 0,
+          "broadE2eQualification": "not-qualified"
+        },
+        "m7fReplay": {
+          "status": "passed",
+          "passedScenarios": 17,
+          "outputPath": "/tmp/m7k-review-fix-m7f-replay-report.json"
+        },
+        "m7gReport": {
+          "status": "passed",
+          "passedScenarios": 5,
+          "blockedScenarios": 2,
+          "m8Entry": "denied",
+          "temporaryOutputsRemoved": true
+        },
+        "requireQualified": {
+          "exitCode": 3,
+          "expected": true,
+          "broadE2eQualification": "not-qualified"
+        }
+      },
+      "hostedCi": {
+        "status": "awaiting-final-pr-head",
+        "checksUrl": "https://github.com/chau-hm/view-camera-simulator/pull/309/checks"
+      }
     }
   }
 }

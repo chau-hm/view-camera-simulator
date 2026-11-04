@@ -25,7 +25,7 @@ This is a complete, reviewable failing baseline. It is not a passing 278-test ru
 | Native WebGPU / test seam | Not required; disabled for this capture |
 | Production-preview tests | Excluded from this development inventory |
 
-The M7K runner pins execution to the merge source above and refuses to start from another `HEAD`. It uses isolated Vite ports 4471 and 4472. The raw ordinary runtime diagnostics bind the reported Chromium version, Three.js revision, platform, and architecture to captured browser output.
+The accepted capture is attributed to the pinned execution source above. The original one-worktree description was not reproducible: that source predates the M7K runner and evaluator. Review-Fix Round 1 separates current M7K tooling from an isolated execution worktree pinned to this source. It preserves ports 4471 and 4472, and binds browser and Three.js claims to measured runtime evidence.
 
 The Vite command is `npm run dev -- --host 127.0.0.1 --port <4471|4472> --strictPort`; `VITE_BASE_PATH=/`, the raw WebGPU pilot, test seam, physical CoC, gather, M6 presentation, and M6 qualification flags are false. Native-required and research-only environment switches are cleared by the runner.
 
@@ -36,13 +36,15 @@ npm run test:e2e -- --project=chromium --workers=4 --list
 npm run test:e2e -- --project=chromium-renderer-serial --no-deps --workers=1 --list
 ```
 
-The capture runner was invoked on the pinned merge source:
+The original report documented this one-worktree invocation:
 
 ```bash
 PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH \
 npm run e2e:run:m7k -- \
   --output-dir=docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187
 ```
+
+Review-Fix Round 1 confirmed that this documented invocation could not work: the pinned execution commit predates the runner and the runner required its own source to be at that commit. The accepted raw capture predates the runner commit. The reproducible two-worktree command is documented in the review-fix section below; no full capture was repeated during this round.
 
 The exact test commands were:
 
@@ -56,7 +58,7 @@ PLAYWRIGHT_JSON_OUTPUT_NAME=<absolute-path>/renderer-serial-playwright.json \
 npm run test:e2e -- --project=chromium-renderer-serial --no-deps --workers=1 --retries=0 --reporter=list,json
 ```
 
-The runner stores the absolute report destinations in its capture manifest. The execution lanes ran sequentially. The renderer-serial invocation used `--no-deps`, so the ordinary lane's nonzero result could not suppress it.
+The new runner stores report paths relative to the tooling worktree and passes absolute destinations to Playwright. It invokes both execution lanes sequentially. The renderer-serial invocation uses `--no-deps`, so a nonzero ordinary result cannot suppress it.
 
 ## Discovery and execution results
 
@@ -108,18 +110,18 @@ The first attempted capture was superseded because the isolated worktree initial
 
 A later Three.js 0.187 attempt discovered the expected tests but both Vite servers failed before any tests ran because the sandbox denied binding to `127.0.0.1` (`EPERM`). Those zero-test reports are retained under `execution/superseded-r187-sandbox-bind-failure/` and are not treated as test outcomes. The final capture ran with the authorized local runner and independent ports.
 
-## Shallow post-squash provenance check
+## Initial shallow post-squash provenance check
 
 I created a disposable synthetic squash snapshot whose tree contains the M7K report and whose parent is the pinned execution source. A separate shallow clone started at depth 1 with no shared object store. Before fetching, `git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'` exited 128, and `npm run evidence:check:m7k` exited 1 with `execution-source-commit-missing`.
 
-The clone then ran the same source-history step as CI:
+The original workflow then fetched a fixed 50-commit window:
 
 ```bash
 git fetch --no-tags --depth=50 origin refs/heads/main
 git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'
 ```
 
-The pinned commit became available and the unchanged M7K evidence check passed with exit 0. The simulation used a temporary bare remote and checkout; it did not add or remove objects in any active repository. The Pages deploy job remains dependent on successful CI, and this correction does not deploy or promote production.
+The pinned commit became available in that simulation, but this did not prove availability after main advanced beyond the arbitrary fetch depth. Review-Fix Round 1 replaces this step with exact pinned-source retrieval and an unshallow-main fallback, then tests a synthetic history more than 50 commits beyond the source. The earlier temporary simulation did not modify an active repository. The Pages deploy job remains dependent on successful CI, and this correction does not deploy or promote production.
 
 Accepted M7K raw artifacts:
 
@@ -136,15 +138,63 @@ The complete lane and discovery metadata, console digests, per-test outcomes, sk
 
 ## Evaluator, CI, and validation
 
-The offline evaluator is `m7k-broad-e2e-qualification-evaluator-v1`. It derives outcomes from the two persisted raw reports, reconciles Playwright summary counts, validates every discovery identity and source attribution, binds browser and Three.js claims to raw runtime diagnostics, and separates evidence integrity from qualification. `npm run evidence:check:m7k` exits 0 for this internally consistent failing baseline. `npm run evidence:require-qualified:m7k` exits 3 because the report is valid but not qualified.
+The accepted historical report remains schema 1 and records `m7k-broad-e2e-qualification-evaluator-v1`. The current evaluator is v2: it keeps that report readable and validates new schema-v2 capture manifests with separate execution, tooling, and evaluator source identities, measured runtime metadata, and output-directory-scoped raw artifacts. It derives outcomes from raw reports, reconciles Playwright summary counts, validates every discovery identity and source attribution, binds browser and Three.js claims to raw runtime diagnostics, and separates evidence integrity from qualification. `npm run evidence:check:m7k` exits 0 for the internally consistent failing baseline. `npm run evidence:require-qualified:m7k` exits 3 because the report is valid but not qualified.
 
-The 45-test focused suite covers 40 named mutation controls plus positive controls. The runner captures both lanes even when ordinary Chromium exits nonzero, then invokes the offline evaluator. Hosted CI adds the deterministic M7K evidence check but does not automatically rerun the 278-test suite. Before evidence validation, CI runs:
+The original 45-test suite covered 40 named mutation controls plus positive controls. Review-Fix Round 1 adds metadata, source-provenance, output-boundary, and fetch-workflow controls. The runner captures both lanes even when ordinary Chromium exits nonzero, then invokes the offline evaluator. Hosted CI adds deterministic M7K evidence validation but does not automatically rerun the 278-test suite. The original source fetch was:
 
 ```bash
-git fetch --no-tags --depth=50 origin refs/heads/main
-git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'
+node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
 ```
 
 The existing M7E, M7F, and M7J source fetches remain, and the deploy job still depends on successful CI.
 
-Local validation passed: `npm test` (317 files / 3,680 tests), the focused M7K suite (45/45), typecheck, lint, CSS structure, build, M7H/M7I/M7J/M7K evidence checks, M7F replay (17/17), and M7G integrity report (5 passed / 2 blocked, M8 denied). The full Chromium capture is the run reported above; it is not repeated to seek a different result. Final hosted CI status is tracked on the M7K PR's final head.
+The earlier validation snapshot recorded `npm test` at 317 files / 3,680 tests and the original focused M7K suite at 45 tests. Those counts predate Review-Fix Round 1. The accepted full Chromium capture is the run reported above; it was not repeated to seek a different result.
+
+## M7K Review-Fix Round 1 — Capture Reproducibility and Durable Provenance
+
+Review-Fix Round 1 addresses the P2 metadata finding and the independent worktree and source-fetch defects. The original retained raw manifest lacks `playwrightVersion`, `browserVersion`, and `threeJsVersion`, and its `evaluationCommitSha` is empty. Re-running `npm run evidence:check:m7k -- --capture-manifest=docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187/capture-manifest.json --report-output=/tmp/m7k-r1-original-manifest-report.json --evaluation-output=/tmp/m7k-r1-original-manifest-evaluation.json` against that manifest exited 1 with `evaluation-commit-sha-invalid`, `playwright-environment-mismatch:ordinary`, `browser-runtime-environment-mismatch`, `three-runtime-revision-mismatch`, and `playwright-environment-mismatch:rendererSerial`. The separately enriched top-level accepted report remains valid; neither it nor the accepted raw capture was rewritten.
+
+The pinned execution commit `e6066a244510387c32995c1e973a771667b04d10` does not contain the M7K runner, evaluator, or `e2e:run:m7k` script. M7K now requires distinct clean worktrees: the tooling worktree contains the runner and evaluator, and the execution worktree is detached at the pinned application source. The runner rejects a wrong execution `HEAD`, a shared tooling/execution directory, dirty worktrees, missing execution-local `node_modules`, dependency/lock mismatches, and any Three.js version other than 0.187.0. The reviewed one-worktree command therefore could not execute from either role: the historical source lacks the command, while the tooling branch is not the pinned execution SHA.
+
+Prepare the execution worktree with its own lockfile installation:
+
+```bash
+git worktree add --detach /path/to/m7k-execution e6066a244510387c32995c1e973a771667b04d10
+cd /path/to/m7k-execution
+PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm ci
+```
+
+Then, from a clean tooling worktree, run the discovery/browser preflight without executing test cases:
+
+```bash
+PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH \
+npm run e2e:run:m7k -- \
+  --execution-worktree=/path/to/m7k-execution \
+  --output-dir=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/preflight \
+  --preflight-only
+```
+
+A bounded six-test capture can be requested with the ordinary WebGL/WebGPU Observer pair and all four required renderer-serial tests:
+
+```bash
+PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH \
+npm run e2e:run:m7k -- \
+  --execution-worktree=/path/to/m7k-execution \
+  --output-dir=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected \
+  --ordinary-grep='webgl Observer PMREM changes only the reflective subject region|webgpu Observer PMREM changes only the reflective subject region' \
+  --renderer-serial-grep='@m7j-renderer-contention'
+```
+
+Selected captures record `captureMode: selected`, the filter expressions, raw report paths and digests, both lane exit codes, and a partial/blocked qualification. They cannot claim full-suite completeness. The runner gathers installed Playwright, Chromium, and Three.js versions from the execution worktree; checks the installed dependency tree against that worktree's lockfile; launches Chromium to measure browser version, viewport, and WebGL2 availability; and binds the browser and Three.js versions to raw Observer runtime diagnostics. It records the tooling commit and the commit containing the evaluator separately from the pinned execution commit. Uncommitted tooling is rejected. The v2 CLI verifies the referenced Git commit and source file for each declared tooling/evaluator identity before accepting evidence.
+
+The manifest is evaluated directly by the offline CLI after capture, without hand-editing metadata. To evaluate later, use `npm run evidence:check:m7k -- --report-path=<report>`; no browser is needed. Runner output directories must be new and inside the tooling worktree, and raw/discovery paths must remain beneath the manifest's declared output directory. Existing outputs are not overwritten.
+
+The final bounded run used tooling and evaluator commit `23104069bc3acb2078722979b9591b0293e4fa39`, with evaluator source path `src/render/testing/groundGlassM7kBroadE2eQualification.ts`; execution remained pinned at `e6066a244510387c32995c1e973a771667b04d10`. The runner-generated manifest recorded Node `v24.3.0`, npm `11.12.0`, Playwright `1.61.1`, Chromium `149.0.7827.55`, Three.js `0.187.0` / revision `187`, a 1280×720 viewport, and WebGL2 SwiftShader fallback. The evaluator accepted the direct runner output with exit 0, evidence integrity passed, execution completeness incomplete, and Broad E2E blocked. The two selected ordinary Observer tests passed 2/2; Playwright configured four workers but used one actual worker for this two-test selection, so the ordinary lane remains incomplete. The required renderer-serial lane passed all 4/4 tests on one worker. This six-test sample does not reclassify historical failures or qualify the full suite.
+
+The final discovery-only preflight used the same tooling/evaluator and execution commits, executed no Playwright test cases, and passed with 274 ordinary identities across 80 spec files plus all 4 renderer-serial identities (278 unique total). It measured the installed dependency versions and Chromium/WebGL runtime above. A real runner invocation pointed at the wrong execution `HEAD` exited 1 before discovery. A disposable execution worktree with Three.js temporarily changed to `0.186.0` was rejected before capture with exit 1; the dependency was restored to `0.187.0` afterward. Focused test coverage includes wrong-source, worktree collision, output-scope/overwrite, dependency mismatch, evaluator provenance, and selected-capture mutations.
+
+CI now fetches the exact execution SHA first and verifies it with `git cat-file`. If the remote rejects a direct SHA fetch, the helper unshallows `refs/heads/main` and verifies the same pinned object. It never substitutes current main for the source SHA and fails if the exact commit remains unavailable. The regression test created a bare remote with the pinned source followed by 60 future main commits, then two independent depth-1 clones with no shared object store. In both clones the pinned commit was initially unavailable. The helper's exact-commit fetch and full-main-history fallback each made the pinned commit and its tree entry available; a nonexistent SHA remained unavailable and the helper exited 1. The workflow uses this helper without a fixed history-depth assumption. The existing M7E, M7F, and M7J fetches remain, and production deployment still requires successful `ci`.
+
+On the corrected tree, `npm test` passed 318 files / 3,701 tests. The focused M7K evaluator and runner suites passed 66/66 (60 evaluator tests and 6 workflow tests). Typecheck, lint, CSS structure, and production build passed. M7H, M7I, M7J, and the accepted M7K evidence checks passed; the generated selected M7K report also passed the CLI with exit 0. M7F replay passed 17/17, and M7G integrity reported 5 passed / 2 blocked, M8 denied. `npm run evidence:require-qualified:m7k` returned its expected exit code 3 because the valid accepted 278-test report remains not qualified. The final-head hosted status is tracked at [PR #309 checks](https://github.com/chau-hm/view-camera-simulator/pull/309/checks); it must pass before this PR is ready for re-review.
+
+The accepted 278-test result remains unchanged at 121 passed, 82 unexpected, 75 skipped, zero flaky, and zero incomplete. No new full capture is claimed here. Broad E2E remains not qualified; M7 remains partially qualified; M8 remains denied; external GPU device loss remains blocked; production Ground Glass remains WebGL-only and production WebGPU remains disabled. Future Broad E2E qualification requires its own complete capture and independent evidence review.
