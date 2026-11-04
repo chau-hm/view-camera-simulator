@@ -200,3 +200,29 @@ On the corrected tree, `npm test` passed 318 files / 3,701 tests. The focused M7
 Hosted CI run [41753120709](https://github.com/chau-hm/view-camera-simulator/actions/runs/41753120709) passed on code head `0e0a3f2f6948590066af9f1f587c29ecf771ccff`. Its M7E/M7F/M7J/M7K source fetches, lint, typecheck, unit/integration, ordinary Chromium smoke, production-preview WebGL isolation, M7F replay, and M7G/M7H/M7I/M7J/M7K evidence checks all passed. The deploy job was skipped for the PR event; production-push deployment remains gated on successful CI. The current final PR-head run is linked from [PR #309 checks](https://github.com/chau-hm/view-camera-simulator/pull/309/checks).
 
 The accepted 278-test result remains unchanged at 121 passed, 82 unexpected, 75 skipped, zero flaky, and zero incomplete. No new full capture is claimed here. Broad E2E remains not qualified; M7 remains partially qualified; M8 remains denied; external GPU device loss remains blocked; production Ground Glass remains WebGL-only and production WebGPU remains disabled. Future Broad E2E qualification requires its own complete capture and independent evidence review.
+
+## M7K Review-Fix Round 2 — Squash-Safe Schema-v2 Evidence Replay
+
+Review-Fix Round 1 retained a schema-v2 selected capture whose tooling and evaluator source is commit `23104069bc3acb2078722979b9591b0293e4fa39`. The original execution source remains `e6066a244510387c32995c1e973a771667b04d10`; the accepted schema-v1 evaluator source remains `0bef49c208030de8870262ef64895934ff215666`. These roles are independent. A squash merge retains the report and evidence tree but need not retain the original tooling commit in `main` history. The M7K evaluator correctly rejects unavailable source objects; CI previously fetched only the execution source and checked only schema v1.
+
+The defect was reproduced in a disposable synthetic squash checkout. I copied the tracked PR tree into a new root commit, served that snapshot and the retained PR head from an isolated bare remote, and cloned synthetic `main` with depth 1 over `file://`; this clone shared no object store with the worktree. Before retrieving tooling, `git cat-file -e '23104069bc3acb2078722979b9591b0293e4fa39^{commit}'` returned 128. The runner and evaluator tree-entry checks at that SHA also returned 128. After fetching the pinned execution source, the schema-v1 CLI passed. The actual schema-v2 command exited 1 with `tooling-source-file-unavailable` and `evaluator-source-file-unavailable`.
+
+CI now attempts exact-SHA retrieval first. If the exact object is unavailable, it fetches the full retained PR #309 history, then verifies the exact commit and both required tree entries:
+
+```bash
+node scripts/fetch-m7k-execution-source.mjs \
+  --sha=23104069bc3acb2078722979b9591b0293e4fa39 \
+  --retained-ref=refs/pull/309/head \
+  --verify-path=scripts/run-m7k-broad-e2e.mjs \
+  --verify-path=src/render/testing/groundGlassM7kBroadE2eQualification.ts
+```
+
+The helper fails if the pinned SHA is unavailable from both retrieval paths, if a successful fetch does not make that exact commit available, or if either source path is absent at that commit. It never substitutes the latest `main`, PR head, execution source, or a squash commit. An isolated depth-1 replay forced the retained-ref fallback: commit `23104069bc3acb2078722979b9591b0293e4fa39` and both tree entries became available, and the same schema-v2 offline evaluation then exited 0 with evidence integrity passed, execution completeness incomplete, and Broad E2E blocked. The report still records six selected passes; that sample does not qualify the suite.
+
+The regression test also creates a retained PR source alongside a `main` history advanced by 60 commits, then uses independent shallow clones. It verifies initial source absence, exact-SHA retrieval, retained-ref fallback, both source tree entries, unavailable-SHA rejection, missing-path rejection, and invalid-ref rejection. No fetch relies on an arbitrary `main` history depth.
+
+CI now has separate required offline checks for the accepted schema-v1 full-suite report and schema-v2 selected report. The selected check uses `npm run evidence:check:m7k -- --report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json`; it requires no browser execution. Both checks run in the `ci` job for PRs and pushes, including production-branch pushes. Existing M7E/M7F/M7J source checks, production-preview WebGL isolation, and `deploy.needs: ci` remain enabled. The current final-head result is available from [PR #309 checks](https://github.com/chau-hm/view-camera-simulator/pull/309/checks).
+
+F5, safe handling of generated preflight output, is deferred. The runner's clean-worktree and output-scope checks remain strict; generated preflight output must be removed, moved outside the tooling worktree, or committed as intentional evidence before a subsequent capture. This round does not broaden ignore rules or relax provenance checks.
+
+The accepted schema-v1 report remains complete at 278 tests: 121 passed, 82 unexpected, 75 skipped, zero flaky, and zero incomplete; its qualification remains not-qualified. The schema-v2 selected report remains integrity-passed, incomplete, and blocked. M7 remains partially qualified, M8 remains denied, external GPU device loss remains blocked, production Ground Glass remains WebGL-only, and production WebGPU remains disabled.

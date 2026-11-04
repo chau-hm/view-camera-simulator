@@ -47,6 +47,18 @@ jobs:
       - name: Fetch M7K execution source history
         run: node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
 
+      # Schema-v2 selected evidence also names its original tooling/evaluator
+      # commit. It is an ancestor of PR #309, not necessarily of squash-merged
+      # main, so fetch that exact commit or its retained PR history and verify
+      # both source tree entries before either M7K report is evaluated.
+      - name: Fetch M7K schema-v2 tooling and evaluator source history
+        run: >-
+          node scripts/fetch-m7k-execution-source.mjs
+          --sha=23104069bc3acb2078722979b9591b0293e4fa39
+          --retained-ref=refs/pull/309/head
+          --verify-path=scripts/run-m7k-broad-e2e.mjs
+          --verify-path=src/render/testing/groundGlassM7kBroadE2eQualification.ts
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -99,8 +111,13 @@ jobs:
       - name: Validate M7J four-worker stability evidence integrity
         run: npm run evidence:check:m7j
 
-      - name: Validate M7K broad E2E qualification evidence integrity
+      - name: Validate M7K accepted schema-v1 full-suite evidence integrity
         run: npm run evidence:check:m7k
+
+      - name: Validate M7K schema-v2 selected evidence integrity
+        run: >-
+          npm run evidence:check:m7k --
+          --report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
