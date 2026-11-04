@@ -4,8 +4,9 @@ import {
 } from "./groundGlassM7hBroadE2eTriage";
 
 export const GROUND_GLASS_M7K_REPORT_ID = "ground-glass-m7k-broad-e2e-qualification" as const;
-export const GROUND_GLASS_M7K_EVALUATOR_REVISION = "m7k-broad-e2e-qualification-evaluator-v1" as const;
-export const GROUND_GLASS_M7K_MUTATION_SUITE_REVISION = "m7k-broad-e2e-mutations-v1" as const;
+export const GROUND_GLASS_M7K_LEGACY_EVALUATOR_REVISION = "m7k-broad-e2e-qualification-evaluator-v1" as const;
+export const GROUND_GLASS_M7K_EVALUATOR_REVISION = "m7k-broad-e2e-qualification-evaluator-v2" as const;
+export const GROUND_GLASS_M7K_MUTATION_SUITE_REVISION = "m7k-broad-e2e-mutations-v2" as const;
 export const GROUND_GLASS_M7K_BASE_COMMIT_SHA = "e6066a244510387c32995c1e973a771667b04d10" as const;
 export const GROUND_GLASS_M7K_EXECUTION_SOURCE_SHA = "e6066a244510387c32995c1e973a771667b04d10" as const;
 export const GROUND_GLASS_M7K_M7G_SOURCE_SHA = "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837" as const;
@@ -72,12 +73,24 @@ export const GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES = [
   "broad-qualification-authorizes-m8",
   "broad-qualification-enables-production-webgpu",
   "squash-merge-sha-replaces-execution-source",
+  "v2-missing-playwright-version",
+  "v2-missing-browser-version",
+  "v2-missing-three-version",
+  "v2-wrong-three-version",
+  "v2-evaluator-sha-missing",
+  "v2-tooling-sha-attributed-to-execution-source",
+  "v2-evaluator-sha-attributed-to-execution-source",
+  "v2-tooling-source-file-unavailable",
+  "v2-evaluator-source-file-unavailable",
+  "v2-selected-capture-cannot-qualify",
+  "v2-raw-artifact-path-escapes-output-directory",
   "positive-complete-passing-two-lane-report",
   "positive-complete-failing-report-not-qualified",
   "positive-reviewed-skip-exclusion-policy",
   "positive-partial-report-labeled-incomplete",
   "positive-historical-m7g-failure-record",
   "positive-four-test-serial-lane",
+  "v2-accepted-full-capture-remains-valid",
 ] as const;
 
 type JsonRecord = Record<string, unknown>;
@@ -100,10 +113,16 @@ export type GroundGlassM7kCaptureLane = Readonly<{
 }>;
 
 export type GroundGlassM7kCaptureManifest = Readonly<{
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   baseCommitSha: string;
   executionSourceCommitSha: string;
+  toolingCommitSha?: string;
   evaluationCommitSha: string;
+  captureMode?: "full" | "selected";
+  outputDirectory?: string;
+  selection?: Readonly<{ ordinaryGrep: string; rendererSerialGrep: string }> | null;
+  toolingSourcePath?: string;
+  evaluatorSourcePath?: string;
   generatedAt: string;
   environment: JsonRecord;
   discovery: Readonly<{
@@ -156,6 +175,19 @@ const sameStrings = (left: readonly string[], right: readonly string[]): boolean
   JSON.stringify(sort(left)) === JSON.stringify(sort(right));
 const sameValue = (left: unknown, right: unknown): boolean =>
   JSON.stringify(left) === JSON.stringify(right);
+const safeRelativeSegments = (value: string): string[] | null => {
+  const normalized = value.replaceAll("\\", "/");
+  if (!normalized || normalized.startsWith("/") || /^[a-zA-Z]:/.test(normalized)) return null;
+  const segments = normalized.split("/");
+  if (segments.some((segment) => !segment || segment === "." || segment === "..")) return null;
+  return segments;
+};
+const isInsideRelativeDirectory = (directory: string, path: string): boolean => {
+  const directorySegments = safeRelativeSegments(directory);
+  const pathSegments = safeRelativeSegments(path);
+  return Boolean(directorySegments && pathSegments && pathSegments.length > directorySegments.length &&
+    directorySegments.every((segment, index) => segment === pathSegments[index]));
+};
 const canonicalTestId = (test: GroundGlassM7hTest): string =>
   test.testId.split("::").slice(1).join("::");
 const rawIdentity = (file: string, describePath: readonly string[], title: string): string =>
@@ -576,7 +608,8 @@ export const buildGroundGlassM7kQualificationReport = (
   const executionCompleteness = currentLaneStatuses.length === 2 &&
     currentLaneStatuses.every((lane) => lane.executionCompleteness === "complete") &&
     overlaps.length === 0 && duplicates.length === 0 &&
-    sameStrings(combinedIds, sort(m7jIds))
+    sameStrings(combinedIds, sort(m7jIds)) &&
+    (manifest.schemaVersion === 1 || manifest.captureMode === "full")
     ? "complete"
     : "incomplete";
   const laneOutcomes = [ordinary, serial];
@@ -615,13 +648,24 @@ export const buildGroundGlassM7kQualificationReport = (
         ...(unapprovedSkipped.length > 0 ? [`${unapprovedSkipped.length} skipped tests lack an accepted exclusion decision`] : []),
         ...(staleSkipExclusions.length > 0 ? [`${staleSkipExclusions.length} accepted exclusions do not identify current skipped tests`] : []),
       ];
+  const legacyManifest = manifest.schemaVersion === 1;
   const evaluationRef = asString(manifest.evaluationCommitSha);
   const report: JsonRecord = {
-    schemaVersion: 1,
+    schemaVersion: legacyManifest ? 1 : 2,
     reportId: GROUND_GLASS_M7K_REPORT_ID,
-    evaluatorRevision: GROUND_GLASS_M7K_EVALUATOR_REVISION,
+    evaluatorRevision: legacyManifest
+      ? GROUND_GLASS_M7K_LEGACY_EVALUATOR_REVISION
+      : GROUND_GLASS_M7K_EVALUATOR_REVISION,
     baseCommitSha: manifest.baseCommitSha,
     executionSourceCommitSha: manifest.executionSourceCommitSha,
+    ...(legacyManifest ? {} : {
+      toolingCommitSha: manifest.toolingCommitSha,
+      captureMode: manifest.captureMode,
+      selection: manifest.selection ?? null,
+      outputDirectory: manifest.outputDirectory,
+      toolingSourcePath: manifest.toolingSourcePath,
+      evaluatorSourcePath: manifest.evaluatorSourcePath,
+    }),
     evaluationCommitSha: evaluationRef,
     generatedAt: manifest.generatedAt,
     sourceProvenance: {
@@ -629,6 +673,16 @@ export const buildGroundGlassM7kQualificationReport = (
       sourceRole: "accepted-main-baseline-before-M7K-evaluator-and-report-changes",
       sourceCommitAvailable: true,
       sourceCommitVerification: "git-cat-file-commit-object",
+      ...(!legacyManifest ? {
+        toolingCommitSha: manifest.toolingCommitSha,
+        toolingSourcePath: manifest.toolingSourcePath,
+        toolingSourceAvailable: true,
+        toolingSourceVerification: "git-cat-file-tree-entry",
+        evaluationCommitSha: manifest.evaluationCommitSha,
+        evaluatorSourcePath: manifest.evaluatorSourcePath,
+        evaluatorSourceAvailable: true,
+        evaluatorSourceVerification: "git-cat-file-tree-entry",
+      } : {}),
     },
     historicalEvidence: {
       m7gSourceCommitSha: GROUND_GLASS_M7K_M7G_SOURCE_SHA,
@@ -810,13 +864,22 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
   reportValue: unknown,
   artifactsValue: GroundGlassM7kArtifacts,
   sourceCommitAvailable: boolean,
+  sourceFileAvailability: Readonly<{ tooling: boolean; evaluator: boolean }> = { tooling: false, evaluator: false },
 ): GroundGlassM7kEvaluation => {
   const issues: string[] = [];
   const report = isRecord(reportValue) ? reportValue : {};
   const artifacts = isRecord(artifactsValue) ? artifactsValue : {};
   if (report.reportId !== GROUND_GLASS_M7K_REPORT_ID) issues.push("report-id-mismatch");
-  if (report.evaluatorRevision !== GROUND_GLASS_M7K_EVALUATOR_REVISION) issues.push("evaluator-revision-mismatch");
-  if (report.schemaVersion !== 1) issues.push("report-schema-version-mismatch");
+  const schemaVersion = report.schemaVersion;
+  const legacyReport = schemaVersion === 1;
+  const schemaV2Report = schemaVersion === 2;
+  if (!legacyReport && !schemaV2Report) issues.push("report-schema-version-mismatch");
+  if (legacyReport && report.evaluatorRevision !== GROUND_GLASS_M7K_LEGACY_EVALUATOR_REVISION) {
+    issues.push("evaluator-revision-mismatch");
+  }
+  if (schemaV2Report && report.evaluatorRevision !== GROUND_GLASS_M7K_EVALUATOR_REVISION) {
+    issues.push("evaluator-revision-mismatch");
+  }
   if (report.baseCommitSha !== GROUND_GLASS_M7K_BASE_COMMIT_SHA) issues.push("m7k-base-commit-mismatch");
   const sourceSha = asString(report.executionSourceCommitSha);
   if (sourceSha !== GROUND_GLASS_M7K_EXECUTION_SOURCE_SHA) issues.push("execution-source-sha-mismatch");
@@ -824,11 +887,51 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
   const evaluationSha = asString(report.evaluationCommitSha);
   if (!sha(evaluationSha)) issues.push("evaluation-commit-sha-invalid");
   if (sourceSha === evaluationSha) issues.push("execution-source-replaced-by-evaluation-or-squash-commit");
+  const toolingSha = asString(report.toolingCommitSha);
+  if (schemaV2Report) {
+    if (!sha(toolingSha)) issues.push("tooling-commit-sha-invalid");
+    if (toolingSha === sourceSha) issues.push("execution-source-replaced-by-tooling-or-squash-commit");
+    if (evaluationSha === sourceSha) issues.push("execution-source-replaced-by-evaluator-or-squash-commit");
+    if (!sourceFileAvailability.tooling) issues.push("tooling-source-file-unavailable");
+    if (!sourceFileAvailability.evaluator) issues.push("evaluator-source-file-unavailable");
+    if (report.captureMode !== "full" && report.captureMode !== "selected") {
+      issues.push("capture-mode-invalid");
+    }
+    if (report.toolingSourcePath !== "scripts/run-m7k-broad-e2e.mjs") {
+      issues.push("tooling-source-path-invalid");
+    }
+    if (report.evaluatorSourcePath !== "scripts/evaluateM7kBroadE2eQualification.ts") {
+      issues.push("evaluator-source-path-invalid");
+    }
+    const outputDirectory = asString(report.outputDirectory);
+    if (!safeRelativeSegments(outputDirectory)) issues.push("output-directory-invalid");
+    const discoveryRecords = isRecord(report.discovery) ? report.discovery : {};
+    const executionRecords = isRecord(report.execution) ? report.execution : {};
+    const laneRecords = isRecord(executionRecords.lanes) ? executionRecords.lanes : {};
+    const outputPaths = [
+      asString(isRecord(discoveryRecords.ordinary) ? discoveryRecords.ordinary.outputPath : null),
+      asString(isRecord(discoveryRecords.rendererSerial) ? discoveryRecords.rendererSerial.outputPath : null),
+      ...[laneRecords.ordinary, laneRecords.rendererSerial].filter(isRecord).flatMap((lane) => [
+        asString(lane.rawReportPath),
+        asString(lane.consolePath),
+      ]),
+    ];
+    if (outputPaths.some((path) => !isInsideRelativeDirectory(outputDirectory, path))) {
+      issues.push("raw-artifact-path-outside-output-directory");
+    }
+  }
   const provenance = isRecord(report.sourceProvenance) ? report.sourceProvenance : {};
   if (provenance.executionSourceCommitSha !== GROUND_GLASS_M7K_EXECUTION_SOURCE_SHA ||
       provenance.sourceRole !== "accepted-main-baseline-before-M7K-evaluator-and-report-changes" ||
       provenance.sourceCommitAvailable !== true || provenance.sourceCommitVerification !== "git-cat-file-commit-object") {
     issues.push("execution-source-provenance-claim-invalid");
+  }
+  if (schemaV2Report && (provenance.toolingCommitSha !== toolingSha ||
+      provenance.toolingSourcePath !== report.toolingSourcePath || provenance.toolingSourceAvailable !== true ||
+      provenance.toolingSourceVerification !== "git-cat-file-tree-entry" ||
+      provenance.evaluationCommitSha !== evaluationSha || provenance.evaluatorSourcePath !== report.evaluatorSourcePath ||
+      provenance.evaluatorSourceAvailable !== true || provenance.evaluatorSourceVerification !== "git-cat-file-tree-entry")) {
+    issues.push("tooling-or-evaluator-source-provenance-claim-invalid");
   }
   const executionRecord = isRecord(report.execution) ? report.execution : {};
   if (executionRecord.sourceCommitSha !== GROUND_GLASS_M7K_EXECUTION_SOURCE_SHA) {
@@ -888,9 +991,19 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
     ? reportExecution.lanes
     : {};
   const captureManifest: GroundGlassM7kCaptureManifest = {
-    schemaVersion: 1,
+    schemaVersion: schemaVersion as 1 | 2,
     baseCommitSha: asString(report.baseCommitSha),
     executionSourceCommitSha: sourceSha,
+    ...(schemaV2Report ? {
+      toolingCommitSha: toolingSha,
+      captureMode: report.captureMode as "full" | "selected",
+      selection: isRecord(report.selection)
+        ? { ordinaryGrep: asString(report.selection.ordinaryGrep), rendererSerialGrep: asString(report.selection.rendererSerialGrep) }
+        : null,
+      outputDirectory: asString(report.outputDirectory),
+      toolingSourcePath: asString(report.toolingSourcePath),
+      evaluatorSourcePath: asString(report.evaluatorSourcePath),
+    } : {}),
     evaluationCommitSha: evaluationSha,
     generatedAt: asString(report.generatedAt),
     environment: isRecord(report.environment) ? report.environment : {},
@@ -1063,6 +1176,44 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
   }
 
   const reportEnvironment = isRecord(report.environment) ? report.environment : {};
+  if (schemaV2Report) {
+    if (!asString(reportEnvironment.playwrightVersion)) issues.push("playwright-version-missing");
+    if (!asString(reportEnvironment.browserVersion)) issues.push("browser-version-missing");
+    if (!asString(reportEnvironment.threeJsVersion)) issues.push("three-js-version-missing");
+    if (!asString(reportEnvironment.npmVersion)) issues.push("npm-version-missing");
+    if (!asString(reportEnvironment.nodeVersion) || !asString(reportEnvironment.toolingNodeVersion)) {
+      issues.push("node-version-missing");
+    }
+    if (reportEnvironment.threeJsVersion !== "0.187.0") issues.push("three-js-version-out-of-scope");
+    if (reportEnvironment.testSeamEnabled !== false || reportEnvironment.nativeWebGpuRequested !== false) {
+      issues.push("execution-environment-out-of-qualification-scope");
+    }
+    if (reportEnvironment.browserMode !== "headless" || reportEnvironment.browserProject !== "chromium" ||
+        reportEnvironment.webglBackend !== "webgl2-fallback") {
+      issues.push("ordinary-chromium-environment-out-of-scope");
+    }
+    if (!asString(reportEnvironment.platform) || !asString(reportEnvironment.architecture)) {
+      issues.push("host-platform-metadata-missing");
+    }
+    if (!isRecord(reportEnvironment.viewport) ||
+        asNumber(reportEnvironment.viewport.width) !== 1280 || asNumber(reportEnvironment.viewport.height) !== 720) {
+      issues.push("browser-viewport-missing-or-mismatched");
+    }
+    const browserProbe = isRecord(reportEnvironment.browserWebGlProbe) ? reportEnvironment.browserWebGlProbe : {};
+    if (browserProbe.webgl2Available !== true || !asString(browserProbe.webglVersion)) {
+      issues.push("browser-webgl2-probe-missing");
+    }
+    const dependencyLock = isRecord(reportEnvironment.dependencyLock) ? reportEnvironment.dependencyLock : {};
+    if (dependencyLock.playwright !== reportEnvironment.playwrightVersion ||
+        dependencyLock.three !== reportEnvironment.threeJsVersion) {
+      issues.push("installed-dependencies-do-not-match-lockfile");
+    }
+    if (report.captureMode === "selected" &&
+        (!isRecord(report.selection) || !asString(report.selection.ordinaryGrep) || !asString(report.selection.rendererSerialGrep))) {
+      issues.push("selected-capture-selection-missing");
+    }
+    if (report.captureMode === "full" && report.selection !== null) issues.push("full-capture-has-selection-filter");
+  }
   if (reportEnvironment.nativeWebGpuRequested !== false ||
       reportEnvironment.webglBackend !== "webgl2-fallback" ||
       reportEnvironment.productionPreviewTestsIncluded !== false) {
@@ -1073,6 +1224,10 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
   const recomputedCompleteness = execution.executionCompleteness;
   const qualification = isRecord(recomputed.qualification) ? recomputed.qualification : {};
   const submittedQualification = isRecord(report.qualification) ? report.qualification : {};
+  if (schemaV2Report && report.captureMode === "selected" &&
+      (qualification.executionCompleteness !== "incomplete" || qualification.broadE2eQualification !== "blocked")) {
+    issues.push("selected-capture-must-remain-incomplete-and-blocked");
+  }
   if (submittedQualification.broadE2eQualification === "qualified" &&
       qualification.broadE2eQualification !== "qualified") {
     issues.push("broad-qualification-claim-unsupported-by-outcomes");

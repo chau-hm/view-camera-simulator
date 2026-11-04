@@ -42,13 +42,10 @@ jobs:
           git fetch --no-tags --depth=50 origin refs/pull/308/head
           git cat-file -e '17a2616b151aa50ad34b2d137eee0a43c5759ad3^{commit}'
 
-      # M7K's controlled broad run is pinned to the accepted M7J merge baseline.
-      # Fetch main explicitly so the source object remains available in shallow
-      # PR, main, and production checkouts for strict offline evidence validation.
+      # Fetch the exact M7K baseline commit. If the remote does not permit a
+      # direct SHA fetch, the helper unshallows main and verifies the same SHA.
       - name: Fetch M7K execution source history
-        run: |
-          git fetch --no-tags --depth=50 origin refs/heads/main
-          git cat-file -e 'e6066a244510387c32995c1e973a771667b04d10^{commit}'
+        run: node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

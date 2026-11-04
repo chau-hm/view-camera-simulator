@@ -58,12 +58,79 @@ const fixture = (): Fixture => ({
 const rebuild = (value: Fixture): void => {
   value.report = buildGroundGlassM7kQualificationReport(value.manifest, value.artifacts);
 };
-const evaluate = (value: Fixture, sourceAvailable = true) =>
-  evaluateGroundGlassM7kBroadE2eQualification(value.report, value.artifacts, sourceAvailable);
+const evaluate = (
+  value: Fixture,
+  sourceAvailable = true,
+  sourceFileAvailability = { tooling: true, evaluator: true },
+) => evaluateGroundGlassM7kBroadE2eQualification(
+  value.report,
+  value.artifacts,
+  sourceAvailable,
+  sourceFileAvailability,
+);
+const schemaV2Fixture = (captureMode: "full" | "selected" = "full"): Fixture => {
+  const value = fixture();
+  const outputDirectory = "docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1-fixtures";
+  const alias = (sourcePath: string, outputPath: string): void => {
+    value.artifacts[outputPath] = value.artifacts[sourcePath];
+  };
+  const discovery = {
+    ordinary: {
+      ...value.manifest.discovery.ordinary,
+      outputPath: `${outputDirectory}/discovery/ordinary.txt`,
+    },
+    rendererSerial: {
+      ...value.manifest.discovery.rendererSerial,
+      outputPath: `${outputDirectory}/discovery/renderer-serial.txt`,
+    },
+  };
+  alias(value.manifest.discovery.ordinary.outputPath, discovery.ordinary.outputPath);
+  alias(value.manifest.discovery.rendererSerial.outputPath, discovery.rendererSerial.outputPath);
+  const lanes = Object.fromEntries(Object.entries(value.manifest.lanes).map(([name, lane]) => {
+    if (!lane) return [name, lane];
+    const rawReportPath = `${outputDirectory}/execution/${name}/playwright.json`;
+    const consolePath = `${outputDirectory}/execution/${name}/console.log`;
+    alias(lane.rawReportPath, rawReportPath);
+    alias(lane.consolePath, consolePath);
+    return [name, { ...lane, rawReportPath, consolePath }];
+  })) as GroundGlassM7kCaptureManifest["lanes"];
+  const oldEnvironment = value.manifest.environment;
+  value.manifest = {
+    ...value.manifest,
+    schemaVersion: 2,
+    toolingCommitSha: "1".repeat(40),
+    evaluationCommitSha: "2".repeat(40),
+    captureMode,
+    selection: captureMode === "selected"
+      ? { ordinaryGrep: "representative observer test", rendererSerialGrep: "@m7j-renderer-contention" }
+      : null,
+    outputDirectory,
+    toolingSourcePath: "scripts/run-m7k-broad-e2e.mjs",
+    evaluatorSourcePath: "scripts/evaluateM7kBroadE2eQualification.ts",
+    environment: {
+      ...oldEnvironment,
+      toolingNodeVersion: "v24.3.0",
+      browserProject: "chromium",
+      viewport: { width: 1280, height: 720 },
+      browserWebGlProbe: { webgl2Available: true, webglVersion: "WebGL 2.0 (OpenGL ES 3.0 Chromium)" },
+      dependencyLock: { playwright: text(oldEnvironment.playwrightVersion), three: text(oldEnvironment.threeJsVersion) },
+      testSeamEnabled: false,
+    },
+    discovery,
+    lanes,
+  };
+  rebuild(value);
+  return value;
+};
 const rejectFor = (value: Fixture, issue: string): void => {
   const result = evaluate(value);
   expect(result.passed).toBe(false);
   expect(result.issues.some((candidate) => candidate === issue || candidate.startsWith(`${issue}:`))).toBe(true);
+};
+const rejectV2For = (value: Fixture, issue: string, sourceFiles = { tooling: true, evaluator: true }): void => {
+  const result = evaluate(value, true, sourceFiles);
+  expect(result.passed).toBe(false);
+  expect(result.issues).toContain(issue);
 };
 const laneRecord = (value: Fixture, lane: GroundGlassM7kLaneName): JsonRecord => {
   const execution = record(value.report.execution);
@@ -488,23 +555,122 @@ const negativeCases: Array<{ name: string; run: () => void }> = [
   },
 ];
 
+const v2NegativeCases: Array<{ name: string; run: () => void }> = [
+  {
+    name: "v2-missing-playwright-version",
+    run: () => {
+      const value = schemaV2Fixture();
+      delete value.manifest.environment.playwrightVersion;
+      rebuild(value);
+      rejectV2For(value, "playwright-version-missing");
+    },
+  },
+  {
+    name: "v2-missing-browser-version",
+    run: () => {
+      const value = schemaV2Fixture();
+      delete value.manifest.environment.browserVersion;
+      rebuild(value);
+      rejectV2For(value, "browser-version-missing");
+    },
+  },
+  {
+    name: "v2-missing-three-version",
+    run: () => {
+      const value = schemaV2Fixture();
+      delete value.manifest.environment.threeJsVersion;
+      rebuild(value);
+      rejectV2For(value, "three-js-version-missing");
+    },
+  },
+  {
+    name: "v2-wrong-three-version",
+    run: () => {
+      const value = schemaV2Fixture();
+      value.manifest.environment.threeJsVersion = "0.186.0";
+      rebuild(value);
+      rejectV2For(value, "three-js-version-out-of-scope");
+    },
+  },
+  {
+    name: "v2-evaluator-sha-missing",
+    run: () => {
+      const value = schemaV2Fixture();
+      value.manifest = { ...value.manifest, evaluationCommitSha: "" };
+      rebuild(value);
+      rejectV2For(value, "evaluation-commit-sha-invalid");
+    },
+  },
+  {
+    name: "v2-tooling-sha-attributed-to-execution-source",
+    run: () => {
+      const value = schemaV2Fixture();
+      value.manifest = { ...value.manifest, toolingCommitSha: GROUND_GLASS_M7K_BASE_COMMIT_SHA };
+      rebuild(value);
+      rejectV2For(value, "execution-source-replaced-by-tooling-or-squash-commit");
+    },
+  },
+  {
+    name: "v2-evaluator-sha-attributed-to-execution-source",
+    run: () => {
+      const value = schemaV2Fixture();
+      value.manifest = { ...value.manifest, evaluationCommitSha: GROUND_GLASS_M7K_BASE_COMMIT_SHA };
+      rebuild(value);
+      rejectV2For(value, "execution-source-replaced-by-evaluator-or-squash-commit");
+    },
+  },
+  {
+    name: "v2-tooling-source-file-unavailable",
+    run: () => rejectV2For(schemaV2Fixture(), "tooling-source-file-unavailable", { tooling: false, evaluator: true }),
+  },
+  {
+    name: "v2-evaluator-source-file-unavailable",
+    run: () => rejectV2For(schemaV2Fixture(), "evaluator-source-file-unavailable", { tooling: true, evaluator: false }),
+  },
+  {
+    name: "v2-selected-capture-cannot-qualify",
+    run: () => {
+      const value = schemaV2Fixture("selected");
+      record(value.report.qualification).broadE2eQualification = "qualified";
+      rejectV2For(value, "broad-qualification-claim-unsupported-by-outcomes");
+    },
+  },
+  {
+    name: "v2-raw-artifact-path-escapes-output-directory",
+    run: () => {
+      const value = schemaV2Fixture();
+      const lane = value.manifest.lanes.ordinary;
+      if (!lane) throw new Error("Missing ordinary capture lane");
+      value.manifest = {
+        ...value.manifest,
+        lanes: { ...value.manifest.lanes, ordinary: { ...lane, rawReportPath: "../outside.json" } },
+      };
+      rebuild(value);
+      rejectV2For(value, "raw-artifact-path-outside-output-directory");
+    },
+  },
+];
+
 describe("M7K broad E2E qualification evidence evaluator", () => {
   it("pins the evaluator and stable mutation coverage manifest", () => {
     expect(GROUND_GLASS_M7K_BASE_COMMIT_SHA).toBe("e6066a244510387c32995c1e973a771667b04d10");
-    expect(GROUND_GLASS_M7K_EVALUATOR_REVISION).toBe("m7k-broad-e2e-qualification-evaluator-v1");
-    expect(GROUND_GLASS_M7K_MUTATION_SUITE_REVISION).toBe("m7k-broad-e2e-mutations-v1");
+    expect(GROUND_GLASS_M7K_EVALUATOR_REVISION).toBe("m7k-broad-e2e-qualification-evaluator-v2");
+    expect(GROUND_GLASS_M7K_MUTATION_SUITE_REVISION).toBe("m7k-broad-e2e-mutations-v2");
     expect(GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES).toEqual([
       ...negativeCases.map((test) => test.name),
+      ...v2NegativeCases.map((test) => test.name),
       "positive-complete-passing-two-lane-report",
       "positive-complete-failing-report-not-qualified",
       "positive-reviewed-skip-exclusion-policy",
       "positive-partial-report-labeled-incomplete",
       "positive-historical-m7g-failure-record",
       "positive-four-test-serial-lane",
+      "v2-accepted-full-capture-remains-valid",
     ]);
   });
 
   it.each(negativeCases)("rejects mutation: $name", ({ run }) => run());
+  it.each(v2NegativeCases)("rejects schema-v2 mutation: $name", ({ run }) => run());
 
   it("accepts the complete captured report while keeping qualification not-qualified", () => {
     const value = fixture();
@@ -526,6 +692,17 @@ describe("M7K broad E2E qualification evidence evaluator", () => {
       historicalStillFailing: 68,
       newUnexpectedFailures: 14,
     });
+  });
+
+  it("accepts a complete schema-v2 capture without manual metadata enrichment", () => {
+    const value = schemaV2Fixture();
+    const result = evaluate(value);
+    expect(result.issues).toEqual([]);
+    expect(result.passed).toBe(true);
+    expect(result.evaluatorRevision).toBe(GROUND_GLASS_M7K_EVALUATOR_REVISION);
+    expect(result.executionCompleteness).toBe("complete");
+    expect(result.broadE2eQualification).toBe("not-qualified");
+    expect(result.counts).toMatchObject({ discovered: 278, passed: 121, failed: 82, skipped: 75, flaky: 0, incomplete: 0 });
   });
 
   it("checks captured evidence before mutation-suite validation metadata is attached", () => {

@@ -44,6 +44,34 @@ const record = (value: unknown): JsonRecord =>
 const string = (value: unknown): string => typeof value === "string" ? value : "";
 const sha256 = (bytes: Buffer): string => createHash("sha256").update(bytes).digest("hex");
 const readBytes = (path: string): Buffer => readFileSync(resolve(root, path));
+const safeRelativeSegments = (path: string): string[] | null => {
+  const normalized = path.replaceAll("\\", "/");
+  if (!normalized || normalized.startsWith("/") || /^[a-zA-Z]:/.test(normalized)) return null;
+  const segments = normalized.split("/");
+  return segments.some((segment) => !segment || segment === "." || segment === "..") ? null : segments;
+};
+const isInsideRelativeDirectory = (directory: string, path: string): boolean => {
+  const parent = safeRelativeSegments(directory);
+  const child = safeRelativeSegments(path);
+  return Boolean(parent && child && child.length > parent.length &&
+    parent.every((segment, index) => segment === child[index]));
+};
+const validateSchemaV2ArtifactPaths = (value: JsonRecord): void => {
+  if (value.schemaVersion !== 2) return;
+  const outputDirectory = string(value.outputDirectory);
+  const discovery = record(value.discovery);
+  const execution = record(value.execution);
+  const lanes = record(value.lanes ?? execution.lanes);
+  const paths = [
+    string(record(discovery.ordinary).outputPath),
+    string(record(discovery.rendererSerial).outputPath),
+    ...[lanes.ordinary, lanes.rendererSerial].filter((lane) => lane && typeof lane === "object")
+      .flatMap((lane) => [string(record(lane).rawReportPath), string(record(lane).consolePath)]),
+  ];
+  if (!safeRelativeSegments(outputDirectory) || paths.some((path) => !isInsideRelativeDirectory(outputDirectory, path))) {
+    throw new Error("M7K schema-v2 raw and discovery artifacts must remain inside the declared output directory");
+  }
+};
 const parseArtifact = (path: string, bytes: Buffer): unknown => {
   if (path.endsWith(".txt") || path.endsWith(".log")) return bytes.toString("utf8");
   try {
@@ -63,6 +91,11 @@ const loadArtifacts = (paths: readonly string[]): Record<string, GroundGlassM7kA
 const sourceCommitAvailable = (sha: string): boolean => spawnSync(
   "git",
   ["cat-file", "-e", `${sha}^{commit}`],
+  { cwd: root, stdio: "ignore" },
+).status === 0;
+const sourceFileAvailable = (sha: string, path: string): boolean => /^[0-9a-f]{40}$/.test(sha) && Boolean(path) && spawnSync(
+  "git",
+  ["cat-file", "-e", `${sha}:${path}`],
   { cwd: root, stdio: "ignore" },
 ).status === 0;
 const usage = (): void => {
@@ -101,6 +134,7 @@ const main = (): void => {
     let artifactPaths: string[];
     if (manifestPath) {
       const manifest = JSON.parse(readBytes(manifestPath).toString("utf8")) as GroundGlassM7kCaptureManifest;
+      validateSchemaV2ArtifactPaths(manifest as unknown as JsonRecord);
       artifactPaths = manifestArtifacts(manifest);
       const artifacts = loadArtifacts(artifactPaths);
       const report = buildGroundGlassM7kQualificationReport(manifest, artifacts);
@@ -109,15 +143,23 @@ const main = (): void => {
     } else {
       const reportBytes = readBytes(reportPath);
       reportValue = JSON.parse(reportBytes.toString("utf8")) as unknown;
+      validateSchemaV2ArtifactPaths(record(reportValue));
       artifactPaths = reportArtifacts(record(reportValue));
     }
     const artifacts = loadArtifacts(artifactPaths);
     const report = record(reportValue);
     const source = string(report.executionSourceCommitSha);
+    const schemaVersion = report.schemaVersion;
     const evaluation = evaluateGroundGlassM7kBroadE2eQualification(
       reportValue,
       artifacts,
       sourceCommitAvailable(source),
+      schemaVersion === 2
+        ? {
+            tooling: sourceFileAvailable(string(report.toolingCommitSha), string(report.toolingSourcePath)),
+            evaluator: sourceFileAvailable(string(report.evaluationCommitSha), string(report.evaluatorSourcePath)),
+          }
+        : undefined,
     );
     if (evaluationOutputPath) {
       writeFileSync(resolve(root, evaluationOutputPath), `${JSON.stringify(evaluation, null, 2)}\n`);
