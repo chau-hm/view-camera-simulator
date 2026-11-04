@@ -9989,8 +9989,13 @@
         }
       },
       "hostedCi": {
-        "status": "awaiting-final-pr-head",
-        "checksUrl": "https://github.com/chau-hm/view-camera-simulator/pull/309/checks"
+        "status": "passed",
+        "verifiedHeadSha": "0e0a3f2f6948590066af9f1f587c29ecf771ccff",
+        "runId": 41753120709,
+        "runUrl": "https://github.com/chau-hm/view-camera-simulator/actions/runs/41753120709",
+        "requiredCiJobs": "passed",
+        "deploymentJob": "skipped-for-pull-request-event",
+        "currentHeadChecksUrl": "https://github.com/chau-hm/view-camera-simulator/pull/309/checks"
       }
     }
   }
