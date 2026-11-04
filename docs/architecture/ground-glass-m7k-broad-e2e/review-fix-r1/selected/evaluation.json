@@ -1,0 +1,26 @@
+{
+  "reportId": "ground-glass-m7k-broad-e2e-qualification",
+  "evaluatorRevision": "m7k-broad-e2e-qualification-evaluator-v2",
+  "passed": true,
+  "evidenceIntegrity": "passed",
+  "executionCompleteness": "incomplete",
+  "ordinaryLane": "incomplete",
+  "rendererSerialLane": "passed",
+  "broadE2eQualification": "blocked",
+  "m7Overall": "partially-qualified",
+  "m8Entry": "denied",
+  "productionWebGpuEnabled": false,
+  "counts": {
+    "discovered": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "historicalFailures": 99,
+    "historicalNowPassing": 4,
+    "historicalStillFailing": 0,
+    "newUnexpectedFailures": 0
+  },
+  "issues": []
+}
