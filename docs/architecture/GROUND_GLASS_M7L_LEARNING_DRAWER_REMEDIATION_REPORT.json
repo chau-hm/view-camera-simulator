@@ -635,9 +635,10 @@
       ]
     },
     "hostedCi": {
-      "status": "pending-final-pr-head",
-      "url": null,
-      "verifiedHeadSha": null
+      "status": "passed",
+      "runNumber": 1892,
+      "url": "https://github.com/chau-hm/view-camera-simulator/actions/runs/41857402027",
+      "verifiedHeadSha": "0950b612ec609e14ab28631ee32f01dc6a8929f3"
     }
   }
 }

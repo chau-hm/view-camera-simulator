@@ -80,6 +80,8 @@ The new `m7l-learning-drawer-remediation-evaluator-v1` checker validates the pin
 
 The GitHub Actions workflow now requires `evidence:check:m7l` after the existing M7K v1/v2 checks. The ordinary Chromium smoke, production-preview WebGL isolation, M7F–M7K gates, and `deploy.needs: ci` remain enabled. The 278-test Broad E2E suite is not added to hosted CI.
 
+The first hosted run passed on PR head `0950b612ec609e14ab28631ee32f01dc6a8929f3`: [CI run 1892](https://github.com/chau-hm/view-camera-simulator/actions/runs/41857402027). It passed unit/integration, Chromium smoke, production-preview WebGL isolation, M7F replay, and all M7G–M7L evidence checks. The production deploy job was correctly skipped for this pull request. This run is recorded in the machine-readable report; CI is being rerun after that metadata-only update.
+
 ## Qualification
 
 M7L’s finding is **scheduling-sensitive and unresolved**, with zero verified fixes. M7K evidence integrity and completeness remain accepted; its Broad E2E qualification remains **not-qualified**. M7 remains **partially-qualified**, M8 entry stays **denied**, spontaneous/external GPU loss remains blocked, M5Q remains partially qualified, M6 remains development-only, Production Ground Glass remains WebGL-only, and Production WebGPU remains disabled.
