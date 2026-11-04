@@ -17,7 +17,7 @@ No application or assertion change is justified by this evidence. M7L records **
 - Configured worker limits and actual maximum overlapping test pages agreed: 1, 2, and 4. Playwright restarted workers after failures, so its worker indexes reached 10 in the four-worker report; worker indexes are not used as the concurrency measurement.
 - The accepted M7K full-suite reports and raw captures remain unchanged.
 
-The original Playwright JSON capture digests are stored as `sourceCaptureSha256` in the normalized evidence reports. Persisted evidence keeps the exact test identities, outcome statuses, errors, durations, worker IDs, retries, and timestamps used for overlap calculation. It omits local runner environment variables, output paths, and attachments. The focused controlled traces keep bounded state, frame, and transition events rather than repeated pointer-entry logs.
+The normalized evidence files retain the original values in `sourceCaptureSha256`; these are recorded source-capture digests, not proof that the original bytes remain available. Persisted evidence keeps the test identities, outcome statuses, errors, durations, worker IDs, retries, and timestamps used for overlap calculation. It omits local runner environment variables, output paths, and attachments. The focused controlled traces keep bounded state, frame, and transition events rather than repeated pointer-entry logs.
 
 | Run | Configured / actual overlap | Result | Duration | Source capture SHA-256 |
 | --- | ---: | ---: | ---: | --- |
@@ -76,11 +76,35 @@ Recommended next cohort: the 12 historical cases grouped by explicit scene/rende
 
 ## Evidence gate and CI
 
-The new `m7l-learning-drawer-remediation-evaluator-v1` checker validates the pinned M7K report and raw digests, all 82 identities and historical messages, the exact eleven-case cohort, all persisted Playwright result digests, configured workers, actual overlap derived from start times/durations, retry/flaky/incomplete outcomes, focused regression evidence, and unchanged M7/M8 authorization. Twenty-two named mutation cases cover digest tampering, identity loss/addition, false worker/concurrency claims, hidden retries/incomplete runs, unverified fixes, promoted outcomes, and qualification-boundary changes. A CLI regression verifies that a mutated full-suite qualification exits nonzero.
+The `m7l-learning-drawer-remediation-evaluator-v2` checker validates the persisted normalized artifact bytes, pinned M7K raw artifacts and report, all 82 identities and historical messages, the exact eleven-case cohort, configured workers, overlap derived from start times/durations, retry/flaky/incomplete outcomes, focused regression evidence, and unchanged M7/M8 authorization. It reports normalized artifact integrity separately from the original M7L raw-capture and raw-to-normalized statuses. Twenty-nine named mutation cases cover digest tampering, identity loss/addition, false worker/concurrency claims, hidden retries/incomplete runs, unverified fixes, promoted outcomes, and raw-provenance overclaims. CLI regressions verify that false Broad E2E qualification and false raw-verification claims exit nonzero.
 
 The GitHub Actions workflow now requires `evidence:check:m7l` after the existing M7K v1/v2 checks. The ordinary Chromium smoke, production-preview WebGL isolation, M7F–M7K gates, and `deploy.needs: ci` remain enabled. The 278-test Broad E2E suite is not added to hosted CI.
 
-The first hosted run passed on PR head `0950b612ec609e14ab28631ee32f01dc6a8929f3`: [CI run 1892](https://github.com/chau-hm/view-camera-simulator/actions/runs/41857402027). It passed unit/integration, Chromium smoke, production-preview WebGL isolation, M7F replay, and all M7G–M7L evidence checks. The production deploy job was correctly skipped for this pull request. This run is recorded in the machine-readable report; CI is being rerun after that metadata-only update.
+The original M7L implementation passed hosted CI on reviewed HEAD `7a184c46df10c409324997f05293ab23f71d0b23`: [CI run 1894](https://github.com/chau-hm/view-camera-simulator/actions/runs/41859951700). That run predates evaluator v2 and does not validate this review fix. Round 1's final-head CI result is recorded below after the updated branch is checked.
+
+## M7L Review-Fix Round 1 — Raw Capture Provenance Verification Boundary
+
+The review finding was that the evaluator compared each normalized artifact's `sourceCaptureSha256` metadata with a pinned string but did not have the original M7L Playwright bytes to recompute that digest or replay a raw-to-normalized transformation. The normalized bytes and their pinned artifact digests were independently checked; the original raw-to-normalized relationship was not.
+
+During this review, all seven original Playwright JSON files were found under `/private/tmp`. Their local byte lengths and recomputed SHA-256 values matched the recorded source digests. None was unavailable during this local audit. However, the files contain developer-specific absolute paths, complete process environment values, and local Codex session identifiers. They are not committed, no durable external raw-artifact store exists, and the offline CI evaluator cannot retrieve them. No deterministic M7L normalizer was found, and raw-to-normalized replay was not performed. The local digest checks are recorded for traceability; they are not presented as a reproducible CI verification.
+
+| Experiment | Local raw path | Bytes | Expected and locally computed raw SHA-256 | Normalized artifact SHA-256 | Offline raw / normalization status |
+| --- | --- | ---: | --- | --- | --- |
+| `single-case-w1` | `/private/tmp/m7l-baseline-single-architecture-foreground.json` | 9,857 | `c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8` | `27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04` | Unverified / unverified |
+| `cohort-w1` | `/private/tmp/m7l-baseline-w1-attempt-1.json` | 22,612 | `34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3` | `6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7` | Unverified / unverified |
+| `cohort-w2` | `/private/tmp/m7l-baseline-w2-attempt-1.json` | 27,358 | `0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621` | `42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26` | Unverified / unverified |
+| `cohort-w4` | `/private/tmp/m7l-baseline-w4-clean-attempt-1.json` | 64,803 | `ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99` | `dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef` | Unverified / unverified |
+| `controlled-heavy-free-w4` | `/private/tmp/m7l-controlled-heavy.json` | 32,754 | `c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048` | `070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1` | Unverified / unverified |
+| `controlled-heavy-guided-w4` | `/private/tmp/m7l-controlled-heavy-guided.json` | 38,726 | `d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c` | `e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c` | Unverified / unverified |
+| `controlled-light-guided-w4` | `/private/tmp/m7l-controlled-light.json` | 38,717 | `d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a` | `c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1` | Unverified / unverified |
+
+Evaluator v2 accepts `evidenceIntegrity: passed` only for the stated scope of persisted normalized M7L artifacts and the independently retained M7K evidence. It separately returns `normalizedArtifactIntegrity: passed`, `originalRawCaptureProvenance: unverified`, and `rawToNormalizedNormalization: unverified`. The seven source SHA values remain in the report as recorded metadata. A claim that the raw sources are available to the offline evaluator or that normalization was reproduced is rejected.
+
+The CLI prints all three statuses and labels the overall pass as normalized-scope evidence integrity. The expanded 29-case mutation manifest includes false raw and normalization verification claims, a changed local audit digest, contradictory availability/retention claims, and replacing a source digest with a normalized artifact digest. The focused M7L suite passed 33/33 tests. The unchanged normalized artifact digests and M7L results remain 11/11, 9/11, and 4/11; six focused regressions pass, and verified application fixes remain zero.
+
+Local validation passed: `npm test` (319 files, 3,736 tests), typecheck, lint, CSS structure, build, and M7H/I/J/K/L evidence checks. M7F replay passed 17 scenarios, and the M7G diagnostic report passed evidence integrity with 5 passed and 2 blocked scenarios. Both generated reports used temporary output files that were removed afterward. No browser suite or new capture was run for this provenance correction.
+
+The correction does not establish raw-to-normalized reproducibility or change the causal interpretation. Concurrency sensitivity remains observed, CSS transition scheduling remains a supported contributor, renderer contention remains plausible, the shared application root cause remains unestablished, and Broad E2E remains not-qualified. Final Round 1 validation and hosted CI are recorded in the final reviewer handoff.
 
 ## Qualification
 

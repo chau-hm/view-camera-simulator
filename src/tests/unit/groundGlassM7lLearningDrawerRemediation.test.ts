@@ -124,13 +124,20 @@ const mutations: ReadonlyArray<readonly [string, (fixture: Fixture) => void, str
   ["cohort-promoted-to-full-broad-qualified", (fixture) => { record(fixture.report.qualification).fullBroadE2eStatus = "qualified"; }, "qualification-boundary-mismatch"],
   ["m8-authorization-enabled", (fixture) => { record(fixture.report.qualification).m8Entry = "allowed"; }, "qualification-boundary-mismatch"],
   ["production-webgpu-enabled", (fixture) => { record(fixture.report.qualification).productionWebGpuEnabled = true; }, "qualification-boundary-mismatch"],
-  ["evaluator-revision-changed", (fixture) => { fixture.report.evaluatorRevision = "m7l-learning-drawer-remediation-evaluator-v2"; }, "evaluator-revision-mismatch"],
+  ["evaluator-revision-changed", (fixture) => { fixture.report.evaluatorRevision = "m7l-learning-drawer-remediation-evaluator-v1"; }, "evaluator-revision-mismatch"],
   ["historical-full-suite-count-altered", (fixture) => { record(record(fixture.report.historicalM7k).fullSuiteCounts).discovered = 277; }, "historical-full-suite-counts-mismatch"],
   ["accepted-m7k-counts-altered", (fixture) => { record(record(fixture.evidence.historicalM7kReport).execution).combinedOutcomes = { ...record(record(fixture.evidence.historicalM7kReport).execution).combinedOutcomes as JsonRecord, passed: 120 }; }, "accepted-m7k-full-suite-counts-changed"],
   ["captured-outcome-promoted-to-pass", (fixture) => { setExperiment(fixture, "cohort-w4", (experiment) => { record(experiment.outcomes).passed = 11; record(experiment.outcomes).failed = 0; }); }, "experiment-outcomes-mismatch:cohort-w4"],
   ["candidate-source-replaced", (fixture) => { fixture.report.candidateCommitSha = "0".repeat(40); }, "baseline-candidate-source-mismatch"],
   ["reported-worker-matrix-altered", (fixture) => { const inventory = record(fixture.evidence.historicalInventory); const row = array(inventory.outcomes).find((value) => record(value).currentWorkerMatrix !== null); record(row).currentWorkerMatrix = { ...record(record(row).currentWorkerMatrix), w4: "failed" }; }, "cohort-worker-outcome-mismatch:"],
   ["raw-failed-outcome-promoted-to-pass", (fixture) => { setRun(fixture, "cohort-w4", (run) => { mutateFirstResultWithStatus(run, "failed", (result) => { result.status = "passed"; }); }); }, "experiment-outcome-does-not-match-captured-run:cohort-w4"],
+  ["raw-provenance-promoted-to-verified", (fixture) => { record(fixture.report.rawCaptureProvenance).originalRawCaptureProvenance = "verified"; }, "raw-capture-provenance-overstated"],
+  ["raw-to-normalized-provenance-promoted-to-verified", (fixture) => { record(fixture.report.rawCaptureProvenance).rawToNormalizedNormalization = "verified"; }, "raw-to-normalized-provenance-overstated"],
+  ["raw-capture-local-audit-digest-changed", (fixture) => { const audit = record(fixture.report.rawCaptureProvenance); const row = array(audit.experiments).find((value) => record(value).experimentId === "cohort-w2"); record(row).originalRawSha256Computed = "0".repeat(64); }, "raw-capture-local-audit-mismatch:cohort-w2"],
+  ["raw-capture-declared-retained-for-offline-replay", (fixture) => { record(fixture.report.rawCaptureProvenance).rawFilesRetainedForOfflineReplay = true; }, "raw-capture-offline-retention-claim-mismatch"],
+  ["raw-capture-per-artifact-retention-overstated", (fixture) => { const audit = record(fixture.report.rawCaptureProvenance); const row = array(audit.experiments).find((value) => record(value).experimentId === "cohort-w1"); record(row).rawRetainedForOfflineReplay = true; }, "raw-capture-local-audit-mismatch:cohort-w1"],
+  ["raw-capture-local-availability-contradiction", (fixture) => { const audit = record(fixture.report.rawCaptureProvenance); const row = array(audit.experiments).find((value) => record(value).experimentId === "cohort-w4"); record(row).originalRawAvailableDuringReview = false; }, "raw-capture-local-audit-mismatch:cohort-w4"],
+  ["normalized-digest-substituted-for-source-capture-digest", (fixture) => { const experiment = array(fixture.report.experiments).map(record).find((candidate) => candidate.id === "single-case-w1"); if (!experiment) throw new Error("Missing single-case experiment"); experiment.recordedSourceCaptureSha256 = experiment.artifactSha256; }, "experiment-source-capture-digest-mismatch:single-case-w1"],
 ];
 
 describe("Ground Glass M7L Learning Drawer evidence integrity", () => {
@@ -140,6 +147,10 @@ describe("Ground Glass M7L Learning Drawer evidence integrity", () => {
     expect(evaluation).toMatchObject({
       passed: true,
       evidenceIntegrity: "passed",
+      evidenceIntegrityScope: "persisted-normalized-artifacts-and-m7k-evidence",
+      normalizedArtifactIntegrity: "passed",
+      originalRawCaptureProvenance: "unverified",
+      rawToNormalizedNormalization: "unverified",
       historicalUnexpectedCount: 82,
       cohortIdentityCount: 11,
       verifiedFixCount: 0,
@@ -171,8 +182,28 @@ describe("Ground Glass M7L Learning Drawer evidence integrity", () => {
     expect(coverage.revision).toBe(GROUND_GLASS_M7L_MUTATION_SUITE_REVISION);
     expect(coverage.testCount).toBe(GROUND_GLASS_M7L_REQUIRED_MUTATION_CASES.length);
     expect(coverage.requiredCases).toEqual(GROUND_GLASS_M7L_REQUIRED_MUTATION_CASES);
-    expect(GROUND_GLASS_M7L_EVALUATOR_REVISION).toBe("m7l-learning-drawer-remediation-evaluator-v1");
+    expect(GROUND_GLASS_M7L_EVALUATOR_REVISION).toBe("m7l-learning-drawer-remediation-evaluator-v2");
     expect(mutations.map(([name]) => name)).toEqual(GROUND_GLASS_M7L_REQUIRED_MUTATION_CASES);
+  });
+
+  it("rejects a CLI report that claims original raw provenance is verified", () => {
+    const directory = mkdtempSync(join(process.cwd(), ".m7l-cli-negative-"));
+    const mutatedPath = join(directory, "mutated-report.json");
+    const relativePath = relative(process.cwd(), mutatedPath).replaceAll("\\", "/");
+    try {
+      const report = readJson(reportPath);
+      record(report.rawCaptureProvenance).originalRawCaptureProvenance = "verified";
+      writeFileSync(mutatedPath, `${JSON.stringify(report, null, 2)}\n`);
+      const result = spawnSync(process.execPath, [
+        resolve(process.cwd(), "scripts/run-m7l-learning-drawer-remediation.mjs"),
+        `--report-path=${relativePath}`,
+      ], { cwd: process.cwd(), encoding: "utf8" });
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain("raw-capture-provenance-overstated");
+      expect(result.stdout).toContain('"originalRawCaptureProvenance": "unverified"');
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("makes the CLI exit nonzero for a false Broad E2E qualification claim", () => {

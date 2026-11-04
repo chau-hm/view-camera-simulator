@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "reportId": "ground-glass-m7l-learning-drawer-remediation",
-  "evaluatorRevision": "m7l-learning-drawer-remediation-evaluator-v1",
-  "generatedAt": "2026-11-04T14:58:25Z",
+  "evaluatorRevision": "m7l-learning-drawer-remediation-evaluator-v2",
+  "generatedAt": "2026-11-04T16:53:36Z",
   "baseCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
   "candidateCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
   "candidateCommitMeaning": "The application and existing E2E assertions under test are unchanged from the M7L base. The PR adds report/evaluator/tests only; no product fix is claimed.",
@@ -138,7 +138,6 @@
       "loadProfile": "single-test",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8",
       "artifactSha256": "27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 1,
@@ -159,7 +158,8 @@
       "runStatus": "passed",
       "targetIdentities": [
         "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only"
-      ]
+      ],
+      "recordedSourceCaptureSha256": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8"
     },
     {
       "id": "cohort-w1",
@@ -169,7 +169,6 @@
       "loadProfile": "baseline",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3",
       "artifactSha256": "6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 1,
@@ -200,7 +199,8 @@
         "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
         "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
         "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
-      ]
+      ],
+      "recordedSourceCaptureSha256": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3"
     },
     {
       "id": "cohort-w2",
@@ -210,7 +210,6 @@
       "loadProfile": "baseline",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621",
       "artifactSha256": "42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 2,
@@ -241,7 +240,8 @@
         "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
         "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
         "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
-      ]
+      ],
+      "recordedSourceCaptureSha256": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621"
     },
     {
       "id": "cohort-w4",
@@ -251,7 +251,6 @@
       "loadProfile": "baseline-clean-no-instrumentation",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99",
       "artifactSha256": "dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 4,
@@ -282,7 +281,8 @@
         "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
         "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
         "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
-      ]
+      ],
+      "recordedSourceCaptureSha256": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99"
     },
     {
       "id": "controlled-heavy-free-w4",
@@ -292,7 +292,6 @@
       "loadProfile": "renderer-heavy",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048",
       "artifactSha256": "070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 4,
@@ -310,7 +309,8 @@
         "timedOut": 0
       },
       "durationMs": 21084.453,
-      "runStatus": "passed"
+      "runStatus": "passed",
+      "recordedSourceCaptureSha256": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048"
     },
     {
       "id": "controlled-heavy-guided-w4",
@@ -320,7 +320,6 @@
       "loadProfile": "renderer-heavy",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c",
       "artifactSha256": "e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 4,
@@ -338,7 +337,8 @@
         "timedOut": 0
       },
       "durationMs": 28667.986,
-      "runStatus": "passed"
+      "runStatus": "passed",
+      "recordedSourceCaptureSha256": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c"
     },
     {
       "id": "controlled-light-guided-w4",
@@ -348,7 +348,6 @@
       "loadProfile": "lightweight",
       "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
       "sourceRole": "M7L current-main baseline; no application candidate changes",
-      "rawCaptureSha256": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a",
       "artifactSha256": "c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1",
       "playwrightVersion": "1.61.1",
       "playwrightActualWorkers": 4,
@@ -366,7 +365,8 @@
         "timedOut": 0
       },
       "durationMs": 12676.952000000001,
-      "runStatus": "passed"
+      "runStatus": "passed",
+      "recordedSourceCaptureSha256": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a"
     }
   ],
   "diagnosis": {
@@ -535,7 +535,7 @@
     "m7kHistoricalArtifactsUnchanged": true,
     "fullBroadE2e": "not-run",
     "mutationCoverage": {
-      "revision": "m7l-learning-drawer-evidence-mutations-v1",
+      "revision": "m7l-learning-drawer-evidence-mutations-v2",
       "requiredCases": [
         "historical-report-digest-changed",
         "historical-inventory-count-changed",
@@ -558,19 +558,26 @@
         "captured-outcome-promoted-to-pass",
         "candidate-source-replaced",
         "reported-worker-matrix-altered",
-        "raw-failed-outcome-promoted-to-pass"
+        "raw-failed-outcome-promoted-to-pass",
+        "raw-provenance-promoted-to-verified",
+        "raw-to-normalized-provenance-promoted-to-verified",
+        "raw-capture-local-audit-digest-changed",
+        "raw-capture-declared-retained-for-offline-replay",
+        "raw-capture-per-artifact-retention-overstated",
+        "raw-capture-local-availability-contradiction",
+        "normalized-digest-substituted-for-source-capture-digest"
       ],
-      "testCount": 22,
-      "suiteTestsPassed": 25
+      "testCount": 29,
+      "suiteTestsPassed": 33
     },
     "unitIntegration": {
       "command": "npm test",
       "status": "passed",
       "testFiles": 319,
-      "tests": 3728
+      "tests": 3736
     },
     "typecheck": {
-      "command": "npm run typecheck (also run by npm run build)",
+      "command": "npm run typecheck",
       "status": "passed"
     },
     "lint": {
@@ -614,14 +621,17 @@
       },
       "m7l": {
         "status": "passed",
-        "evaluatorRevision": "m7l-learning-drawer-remediation-evaluator-v1",
+        "evaluatorRevision": "m7l-learning-drawer-remediation-evaluator-v2",
+        "normalizedArtifactIntegrity": "passed",
+        "originalRawCaptureProvenance": "unverified",
+        "rawToNormalizedNormalization": "unverified",
         "verifiedFixes": 0
       }
     },
     "m7fReplay": {
       "status": "passed",
       "scenarios": 17,
-      "outputPath": ".m7l-validation-m7f-replay.json",
+      "outputPath": ".m7l-review-fix-r1-m7f-replay.json",
       "temporaryOutput": true
     },
     "m7gReport": {
@@ -630,15 +640,134 @@
       "blockedScenarios": 2,
       "m8Entry": "denied",
       "temporaryOutputs": [
-        ".m7l-validation-m7g-report.json",
-        ".m7l-validation-m7g-evaluation.json"
+        ".m7l-review-fix-r1-m7g-report.json",
+        ".m7l-review-fix-r1-m7g-evaluation.json"
       ]
     },
     "hostedCi": {
       "status": "passed",
       "runNumber": 1892,
       "url": "https://github.com/chau-hm/view-camera-simulator/actions/runs/41857402027",
-      "verifiedHeadSha": "0950b612ec609e14ab28631ee32f01dc6a8929f3"
+      "verifiedHeadSha": "0950b612ec609e14ab28631ee32f01dc6a8929f3",
+      "context": "Historical run from the pre-review-fix implementation; it is not evidence for the M7L Round 1 evaluator update."
     }
+  },
+  "rawCaptureProvenance": {
+    "offlineVerificationStatus": "unverified",
+    "originalRawCaptureProvenance": "unverified",
+    "rawToNormalizedNormalization": "unverified",
+    "normalizationReplay": "not-established",
+    "rawFilesRetainedForOfflineReplay": false,
+    "offlineEvaluatorHasOriginalRawBytes": false,
+    "retentionReason": "The original Playwright JSON files contain developer-specific absolute paths, complete process environment values, and local Codex session identifiers. They are not retained in the repository, and no durable external raw-artifact store is configured.",
+    "localReviewAudit": {
+      "status": "local-digest-check-only",
+      "performedAt": "2026-11-04T16:40:30Z",
+      "location": "/private/tmp",
+      "allSevenDigestChecksMatched": true,
+      "normalizationReplay": "not-performed",
+      "rawFilesRetained": false,
+      "scope": "The original bytes were available during this review and their SHA-256 values were recomputed. This local audit is recorded for traceability; the bytes and check are not independently replayable by CI."
+    },
+    "experiments": [
+      {
+        "experimentId": "single-case-w1",
+        "originalRawPath": "/private/tmp/m7l-baseline-single-architecture-foreground.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 9857,
+        "originalRawSha256Expected": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8",
+        "originalRawSha256Computed": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/single-architecture-foreground-w1.json",
+        "normalizedArtifactSha256": "27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "cohort-w1",
+        "originalRawPath": "/private/tmp/m7l-baseline-w1-attempt-1.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 22612,
+        "originalRawSha256Expected": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3",
+        "originalRawSha256Computed": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w1.json",
+        "normalizedArtifactSha256": "6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "cohort-w2",
+        "originalRawPath": "/private/tmp/m7l-baseline-w2-attempt-1.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 27358,
+        "originalRawSha256Expected": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621",
+        "originalRawSha256Computed": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w2.json",
+        "normalizedArtifactSha256": "42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "cohort-w4",
+        "originalRawPath": "/private/tmp/m7l-baseline-w4-clean-attempt-1.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 64803,
+        "originalRawSha256Expected": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99",
+        "originalRawSha256Computed": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w4.json",
+        "normalizedArtifactSha256": "dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "controlled-heavy-free-w4",
+        "originalRawPath": "/private/tmp/m7l-controlled-heavy.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 32754,
+        "originalRawSha256Expected": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048",
+        "originalRawSha256Computed": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-heavy-free-w4.json",
+        "normalizedArtifactSha256": "070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "controlled-heavy-guided-w4",
+        "originalRawPath": "/private/tmp/m7l-controlled-heavy-guided.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 38726,
+        "originalRawSha256Expected": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c",
+        "originalRawSha256Computed": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-heavy-guided-w4.json",
+        "normalizedArtifactSha256": "e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "controlled-light-guided-w4",
+        "originalRawPath": "/private/tmp/m7l-controlled-light.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 38717,
+        "originalRawSha256Expected": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a",
+        "originalRawSha256Computed": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-light-guided-w4.json",
+        "normalizedArtifactSha256": "c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      }
+    ]
   }
 }

@@ -90,7 +90,10 @@ const main = (): void => {
     };
     const evaluation = evaluateGroundGlassM7lLearningDrawerRemediation(reportValue, evidence);
     process.stdout.write(`${JSON.stringify(evaluation, null, 2)}\n`);
-    process.stdout.write(`M7L evidence integrity: ${evaluation.evidenceIntegrity.toUpperCase()}\n`);
+    process.stdout.write(`M7L normalized artifact integrity: ${evaluation.normalizedArtifactIntegrity.toUpperCase()}\n`);
+    process.stdout.write(`M7L original raw capture provenance: ${evaluation.originalRawCaptureProvenance.toUpperCase()}\n`);
+    process.stdout.write(`M7L raw-to-normalized verification: ${evaluation.rawToNormalizedNormalization.toUpperCase()}\n`);
+    process.stdout.write(`M7L evidence integrity (normalized scope): ${evaluation.evidenceIntegrity.toUpperCase()}\n`);
     process.stdout.write(`Historical unexpected failures: ${evaluation.historicalUnexpectedCount}\n`);
     process.stdout.write(`M7L cohort identities: ${evaluation.cohortIdentityCount}\n`);
     process.stdout.write(`Verified fixes: ${evaluation.verifiedFixCount}\n`);

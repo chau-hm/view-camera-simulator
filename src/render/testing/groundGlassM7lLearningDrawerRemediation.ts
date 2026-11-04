@@ -1,6 +1,6 @@
 export const GROUND_GLASS_M7L_REPORT_ID = "ground-glass-m7l-learning-drawer-remediation" as const;
-export const GROUND_GLASS_M7L_EVALUATOR_REVISION = "m7l-learning-drawer-remediation-evaluator-v1" as const;
-export const GROUND_GLASS_M7L_MUTATION_SUITE_REVISION = "m7l-learning-drawer-evidence-mutations-v1" as const;
+export const GROUND_GLASS_M7L_EVALUATOR_REVISION = "m7l-learning-drawer-remediation-evaluator-v2" as const;
+export const GROUND_GLASS_M7L_MUTATION_SUITE_REVISION = "m7l-learning-drawer-evidence-mutations-v2" as const;
 export const GROUND_GLASS_M7L_BASE_COMMIT_SHA = "ed51a370689421befc9e33b8367f05e2e71308eb" as const;
 export const GROUND_GLASS_M7K_EXECUTION_SOURCE_SHA = "e6066a244510387c32995c1e973a771667b04d10" as const;
 export const GROUND_GLASS_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f" as const;
@@ -11,13 +11,22 @@ export const GROUND_GLASS_M7L_FOCUSED_VALIDATION_SHA256 = "f7ec6f84c1f221ff79985
 export const GROUND_GLASS_M7L_INVENTORY_PATH = "docs/architecture/ground-glass-m7l-learning-drawer/historical-82-failure-inventory.json" as const;
 export const GROUND_GLASS_M7L_FOCUSED_VALIDATION_PATH = "docs/architecture/ground-glass-m7l-learning-drawer/validation/focused-drawer-regressions.json" as const;
 export const GROUND_GLASS_M7L_EXPERIMENT_ARTIFACTS = Object.freeze({
-  "single-case-w1": { raw: "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8", artifact: "27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04" },
-  "cohort-w1": { raw: "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3", artifact: "6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7" },
-  "cohort-w2": { raw: "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621", artifact: "42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26" },
-  "cohort-w4": { raw: "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99", artifact: "dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef" },
-  "controlled-heavy-free-w4": { raw: "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048", artifact: "070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1" },
-  "controlled-heavy-guided-w4": { raw: "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c", artifact: "e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c" },
-  "controlled-light-guided-w4": { raw: "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a", artifact: "c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1" },
+  "single-case-w1": { recordedSourceCaptureSha256: "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8", normalizedArtifactSha256: "27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04" },
+  "cohort-w1": { recordedSourceCaptureSha256: "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3", normalizedArtifactSha256: "6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7" },
+  "cohort-w2": { recordedSourceCaptureSha256: "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621", normalizedArtifactSha256: "42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26" },
+  "cohort-w4": { recordedSourceCaptureSha256: "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99", normalizedArtifactSha256: "dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef" },
+  "controlled-heavy-free-w4": { recordedSourceCaptureSha256: "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048", normalizedArtifactSha256: "070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1" },
+  "controlled-heavy-guided-w4": { recordedSourceCaptureSha256: "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c", normalizedArtifactSha256: "e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c" },
+  "controlled-light-guided-w4": { recordedSourceCaptureSha256: "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a", normalizedArtifactSha256: "c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1" },
+} as const);
+export const GROUND_GLASS_M7L_RAW_CAPTURE_LOCAL_AUDIT = Object.freeze({
+  "single-case-w1": { originalRawPath: "/private/tmp/m7l-baseline-single-architecture-foreground.json", originalRawBytes: 9857 },
+  "cohort-w1": { originalRawPath: "/private/tmp/m7l-baseline-w1-attempt-1.json", originalRawBytes: 22612 },
+  "cohort-w2": { originalRawPath: "/private/tmp/m7l-baseline-w2-attempt-1.json", originalRawBytes: 27358 },
+  "cohort-w4": { originalRawPath: "/private/tmp/m7l-baseline-w4-clean-attempt-1.json", originalRawBytes: 64803 },
+  "controlled-heavy-free-w4": { originalRawPath: "/private/tmp/m7l-controlled-heavy.json", originalRawBytes: 32754 },
+  "controlled-heavy-guided-w4": { originalRawPath: "/private/tmp/m7l-controlled-heavy-guided.json", originalRawBytes: 38726 },
+  "controlled-light-guided-w4": { originalRawPath: "/private/tmp/m7l-controlled-light.json", originalRawBytes: 38717 },
 } as const);
 export const GROUND_GLASS_M7L_EXPECTED_OUTCOMES = Object.freeze({
   "single-case-w1": { discovered: 1, passed: 1, failed: 0, skipped: 0, flaky: 0, incomplete: 0, retries: 0, maxConcurrentTests: 1 },
@@ -76,6 +85,13 @@ export const GROUND_GLASS_M7L_REQUIRED_MUTATION_CASES = [
   "candidate-source-replaced",
   "reported-worker-matrix-altered",
   "raw-failed-outcome-promoted-to-pass",
+  "raw-provenance-promoted-to-verified",
+  "raw-to-normalized-provenance-promoted-to-verified",
+  "raw-capture-local-audit-digest-changed",
+  "raw-capture-declared-retained-for-offline-replay",
+  "raw-capture-per-artifact-retention-overstated",
+  "raw-capture-local-availability-contradiction",
+  "normalized-digest-substituted-for-source-capture-digest",
 ] as const;
 
 type JsonRecord = Record<string, unknown>;
@@ -93,6 +109,10 @@ export type GroundGlassM7lEvaluation = Readonly<{
   evaluatorRevision: string;
   passed: boolean;
   evidenceIntegrity: "passed" | "failed";
+  evidenceIntegrityScope: "persisted-normalized-artifacts-and-m7k-evidence";
+  normalizedArtifactIntegrity: "passed" | "failed";
+  originalRawCaptureProvenance: "unverified";
+  rawToNormalizedNormalization: "unverified";
   historicalUnexpectedCount: number;
   cohortIdentityCount: number;
   verifiedFixCount: number;
@@ -208,11 +228,12 @@ const validateExperiment = (
   }
   if (artifact.sha256 !== experiment.artifactSha256) issueOnce(issues, `experiment-artifact-digest-mismatch:${id}`);
   const expectedDigest = GROUND_GLASS_M7L_EXPERIMENT_ARTIFACTS[id as keyof typeof GROUND_GLASS_M7L_EXPERIMENT_ARTIFACTS];
-  if (!expectedDigest || artifact.sha256 !== expectedDigest.artifact || text(artifact.value.sourceCaptureSha256) !== expectedDigest.raw) {
+  if (!expectedDigest || artifact.sha256 !== expectedDigest.normalizedArtifactSha256 ||
+      text(artifact.value.sourceCaptureSha256) !== expectedDigest.recordedSourceCaptureSha256) {
     issueOnce(issues, `experiment-artifact-pinned-digest-mismatch:${id}`);
   }
   if (text(artifact.value.schema) !== "m7l-playwright-outcomes-v1") issueOnce(issues, `experiment-artifact-schema-invalid:${id}`);
-  if (text(artifact.value.sourceCaptureSha256) !== experiment.rawCaptureSha256) issueOnce(issues, `experiment-source-capture-digest-mismatch:${id}`);
+  if (text(artifact.value.sourceCaptureSha256) !== experiment.recordedSourceCaptureSha256) issueOnce(issues, `experiment-source-capture-digest-mismatch:${id}`);
   const config = isRecord(artifact.value.config) ? artifact.value.config : {};
   const actual = summarize(artifact.value);
   const recordedOutcomes = isRecord(experiment.outcomes) ? experiment.outcomes : {};
@@ -235,6 +256,49 @@ const validateExperiment = (
   return actual;
 };
 
+// Validate the disclosure and recorded audit manifest only; the original M7L bytes are not evaluator inputs.
+const validateRawCaptureProvenance = (report: JsonRecord, issues: string[]): void => {
+  const provenance = isRecord(report.rawCaptureProvenance) ? report.rawCaptureProvenance : {};
+  if (provenance.offlineVerificationStatus !== "unverified" || provenance.originalRawCaptureProvenance !== "unverified") {
+    issueOnce(issues, "raw-capture-provenance-overstated");
+  }
+  if (provenance.rawToNormalizedNormalization !== "unverified" || provenance.normalizationReplay !== "not-established") {
+    issueOnce(issues, "raw-to-normalized-provenance-overstated");
+  }
+  if (provenance.rawFilesRetainedForOfflineReplay !== false || provenance.offlineEvaluatorHasOriginalRawBytes !== false) {
+    issueOnce(issues, "raw-capture-offline-retention-claim-mismatch");
+  }
+  const localAudit = isRecord(provenance.localReviewAudit) ? provenance.localReviewAudit : {};
+  if (localAudit.status !== "local-digest-check-only" || localAudit.allSevenDigestChecksMatched !== true ||
+      localAudit.normalizationReplay !== "not-performed" || localAudit.rawFilesRetained !== false) {
+    issueOnce(issues, "raw-capture-local-audit-manifest-mismatch");
+  }
+
+  const auditRows = array(provenance.experiments).filter(isRecord);
+  if (!sameStrings(auditRows.map((row) => text(row.experimentId)), GROUND_GLASS_M7L_EXPERIMENT_IDS)) {
+    issueOnce(issues, "raw-capture-local-audit-experiment-set-mismatch");
+  }
+  const reportExperiments = array(report.experiments).filter(isRecord);
+  for (const id of GROUND_GLASS_M7L_EXPERIMENT_IDS) {
+    const audit = auditRows.find((row) => row.experimentId === id);
+    const experiment = reportExperiments.find((row) => row.id === id);
+    const pinned = GROUND_GLASS_M7L_EXPERIMENT_ARTIFACTS[id];
+    const local = GROUND_GLASS_M7L_RAW_CAPTURE_LOCAL_AUDIT[id];
+    if (!audit || !experiment || !pinned || !local) {
+      issueOnce(issues, `raw-capture-local-audit-missing:${id}`);
+      continue;
+    }
+    if (audit.originalRawPath !== local.originalRawPath || audit.originalRawBytes !== local.originalRawBytes ||
+        audit.originalRawAvailableDuringReview !== true || audit.originalRawSha256Expected !== pinned.recordedSourceCaptureSha256 ||
+        audit.originalRawSha256Computed !== pinned.recordedSourceCaptureSha256 || audit.originalRawDigestMatches !== true ||
+        audit.normalizedArtifactPath !== experiment.artifactPath || audit.normalizedArtifactSha256 !== pinned.normalizedArtifactSha256 ||
+        audit.normalizationReproducible !== false || audit.rawRetainedForOfflineReplay !== false ||
+        audit.verificationStatus !== "digest-verified-locally; offline-unverified; normalization-unverified") {
+      issueOnce(issues, `raw-capture-local-audit-mismatch:${id}`);
+    }
+  }
+};
+
 export const evaluateGroundGlassM7lLearningDrawerRemediation = (
   reportValue: unknown,
   evidence: GroundGlassM7lEvidence,
@@ -242,11 +306,12 @@ export const evaluateGroundGlassM7lLearningDrawerRemediation = (
   const issues: string[] = [];
   const report = isRecord(reportValue) ? reportValue : {};
   if (report.reportId !== GROUND_GLASS_M7L_REPORT_ID) issueOnce(issues, "report-id-mismatch");
-  if (report.schemaVersion !== 1) issueOnce(issues, "report-schema-version-mismatch");
+  if (report.schemaVersion !== 2) issueOnce(issues, "report-schema-version-mismatch");
   if (report.evaluatorRevision !== GROUND_GLASS_M7L_EVALUATOR_REVISION) issueOnce(issues, "evaluator-revision-mismatch");
   if (report.baseCommitSha !== GROUND_GLASS_M7L_BASE_COMMIT_SHA || report.candidateCommitSha !== GROUND_GLASS_M7L_BASE_COMMIT_SHA) {
     issueOnce(issues, "baseline-candidate-source-mismatch");
   }
+  validateRawCaptureProvenance(report, issues);
 
   const historical = isRecord(report.historicalM7k) ? report.historicalM7k : {};
   if (historical.executionSourceCommitSha !== GROUND_GLASS_M7K_EXECUTION_SOURCE_SHA) issueOnce(issues, "historical-execution-source-mismatch");
@@ -325,6 +390,7 @@ export const evaluateGroundGlassM7lLearningDrawerRemediation = (
     }
   }
 
+  const normalizedArtifactIssueStart = issues.length;
   const experiments = array(report.experiments);
   const experimentIds = experiments.filter(isRecord).map((experiment) => text(experiment.id));
   if (!sameStrings(experimentIds, GROUND_GLASS_M7L_EXPERIMENT_IDS)) issueOnce(issues, "experiment-id-set-mismatch");
@@ -363,6 +429,7 @@ export const evaluateGroundGlassM7lLearningDrawerRemediation = (
     for (const worker of ["w1", "w2", "w4"]) if (recorded[worker] !== actual[worker]) issueOnce(issues, `cohort-worker-outcome-mismatch:${text(row.testId)}:${worker}`);
     if (row.reproductionStatus === "verified-fixed") issueOnce(issues, `non-matched-case-labeled-verified-fixed:${text(row.testId)}`);
   }
+  const normalizedArtifactIntegrity = issues.slice(normalizedArtifactIssueStart).length === 0 ? "passed" : "failed";
 
   const remediation = isRecord(report.remediation) ? report.remediation : {};
   if (array(remediation.verifiedFixIdentities).length !== 0 || remediation.verifiedFixCount !== 0) issueOnce(issues, "unmatched-fix-claim-present");
@@ -398,6 +465,10 @@ export const evaluateGroundGlassM7lLearningDrawerRemediation = (
     evaluatorRevision: GROUND_GLASS_M7L_EVALUATOR_REVISION,
     passed,
     evidenceIntegrity: passed ? "passed" : "failed",
+    evidenceIntegrityScope: "persisted-normalized-artifacts-and-m7k-evidence",
+    normalizedArtifactIntegrity,
+    originalRawCaptureProvenance: "unverified",
+    rawToNormalizedNormalization: "unverified",
     historicalUnexpectedCount: historicalUnexpected.length,
     cohortIdentityCount: ids.length,
     verifiedFixCount: array(remediation.verifiedFixIdentities).length,
