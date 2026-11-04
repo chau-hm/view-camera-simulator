@@ -106,7 +106,7 @@ const schemaV2Fixture = (captureMode: "full" | "selected" = "full"): Fixture => 
       : null,
     outputDirectory,
     toolingSourcePath: "scripts/run-m7k-broad-e2e.mjs",
-    evaluatorSourcePath: "scripts/evaluateM7kBroadE2eQualification.ts",
+    evaluatorSourcePath: "src/render/testing/groundGlassM7kBroadE2eQualification.ts",
     environment: {
       ...oldEnvironment,
       toolingNodeVersion: "v24.3.0",
@@ -636,6 +636,15 @@ const v2NegativeCases: Array<{ name: string; run: () => void }> = [
   {
     name: "v2-evaluator-source-file-unavailable",
     run: () => rejectV2For(schemaV2Fixture(), "evaluator-source-file-unavailable", { tooling: true, evaluator: false }),
+  },
+  {
+    name: "v2-cli-wrapper-cannot-substitute-for-evaluator-implementation-source",
+    run: () => {
+      const value = schemaV2Fixture();
+      value.manifest = { ...value.manifest, evaluatorSourcePath: "scripts/evaluateM7kBroadE2eQualification.ts" };
+      rebuild(value);
+      rejectV2For(value, "evaluator-source-path-invalid");
+    },
   },
   {
     name: "v2-selected-capture-cannot-qualify",

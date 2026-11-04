@@ -82,6 +82,7 @@ export const GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES = [
   "v2-evaluator-sha-attributed-to-execution-source",
   "v2-tooling-source-file-unavailable",
   "v2-evaluator-source-file-unavailable",
+  "v2-cli-wrapper-cannot-substitute-for-evaluator-implementation-source",
   "v2-selected-capture-cannot-qualify",
   "v2-selected-ordinary-worker-count-out-of-range",
   "v2-raw-artifact-path-escapes-output-directory",
@@ -902,7 +903,7 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
     if (report.toolingSourcePath !== "scripts/run-m7k-broad-e2e.mjs") {
       issues.push("tooling-source-path-invalid");
     }
-    if (report.evaluatorSourcePath !== "scripts/evaluateM7kBroadE2eQualification.ts") {
+    if (report.evaluatorSourcePath !== "src/render/testing/groundGlassM7kBroadE2eQualification.ts") {
       issues.push("evaluator-source-path-invalid");
     }
     const outputDirectory = asString(report.outputDirectory);

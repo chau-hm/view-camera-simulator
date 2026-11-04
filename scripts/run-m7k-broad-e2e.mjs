@@ -10,7 +10,7 @@ const toolingRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const pinnedExecutionSha = "e6066a244510387c32995c1e973a771667b04d10";
 const reportDir = "docs/architecture/ground-glass-m7k-broad-e2e";
 const runnerSourcePath = "scripts/run-m7k-broad-e2e.mjs";
-const evaluatorSourcePath = "scripts/evaluateM7kBroadE2eQualification.ts";
+const evaluatorSourcePath = "src/render/testing/groundGlassM7kBroadE2eQualification.ts";
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const inside = (parent, child) => {
   const path = relative(parent, child);
