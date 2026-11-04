@@ -1,0 +1,324 @@
+{
+  "schema": "m7l-playwright-outcomes-v1",
+  "sourceCaptureSha256": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3",
+  "captureKind": "ordinary",
+  "config": {
+    "version": "1.61.1",
+    "workers": 1,
+    "retries": 0,
+    "actualWorkerMetadata": 1,
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "fullyParallel": false
+  },
+  "stats": {
+    "startTime": "2026-11-04T13:51:13.344Z",
+    "duration": 861969.366,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "suites": [
+    {
+      "title": "architecture-foreground-dof.spec.ts",
+      "file": "architecture-foreground-dof.spec.ts",
+      "specs": [
+        {
+          "file": "architecture-foreground-dof.spec.ts",
+          "title": "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 34023,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:51:14.352Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "architecture-foreground-guided-lesson.spec.ts",
+      "file": "architecture-foreground-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "architecture-foreground-guided-lesson.spec.ts",
+          "title": "Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 37919,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:51:49.693Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "interior-corner-guided-lesson.spec.ts",
+      "file": "interior-corner-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "interior-corner-guided-lesson.spec.ts",
+          "title": "Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 120009,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:52:27.623Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "interior-corner-guided-lesson.spec.ts",
+          "title": "Interior Corner keeps the solved focus state when returning to Swing",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 132570,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:54:27.637Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "interior-corner-rise-composition.spec.ts",
+      "file": "interior-corner-rise-composition.spec.ts",
+      "specs": [
+        {
+          "file": "interior-corner-rise-composition.spec.ts",
+          "title": "Interior Corner free mode exposes reachable Rise composition feedback",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 22903,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:56:40.219Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "mirror-shift-guided-lesson.spec.ts",
+      "file": "mirror-shift-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "mirror-shift-guided-lesson.spec.ts",
+          "title": "Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 61237,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:57:03.132Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "oblique-architecture.spec.ts",
+      "file": "oblique-architecture.spec.ts",
+      "specs": [
+        {
+          "file": "oblique-architecture.spec.ts",
+          "title": "Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 40973,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:58:04.385Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "oblique-architecture.spec.ts",
+          "title": "Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 76573,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:58:45.362Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "oblique-architecture.spec.ts",
+          "title": "Oblique Architecture guided lesson progresses through the four stages",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 167279,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:00:01.939Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "oblique-tabletop-guided-lesson.spec.ts",
+      "file": "oblique-tabletop-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "oblique-tabletop-guided-lesson.spec.ts",
+          "title": "Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 122099,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:02:49.230Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "table-tilt.spec.ts",
+      "file": "table-tilt.spec.ts",
+      "specs": [
+        {
+          "file": "table-tilt.spec.ts",
+          "title": "Table Tilt zero-tilt point focus moves from near to middle to far",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 43889,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:04:51.366Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    }
+  ]
+}

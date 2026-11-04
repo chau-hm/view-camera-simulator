@@ -1,0 +1,1542 @@
+{
+  "schemaVersion": 1,
+  "sourceReport": "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json",
+  "sourceReportSha256": "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f",
+  "historicalSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+  "historicalUnexpectedCount": 82,
+  "cohortTestIds": [
+    "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+    "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+    "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+    "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+    "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+    "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+    "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+    "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+    "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+    "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+    "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+  ],
+  "outcomes": [
+    {
+      "testId": "architecture-foreground-compound.spec.ts::Architecture + Foreground compound task solves the photograph from neutral",
+      "sourceSpec": "architecture-foreground-compound.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+      "sourceSpec": "architecture-foreground-dof.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -214.475, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -274.254, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -214.475, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "not-reproduced-in-current-matrix",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "passed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground completes its five-stage Guided Lesson from the Scenes page",
+      "sourceSpec": "architecture-foreground-guided-lesson.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 360000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+      "sourceSpec": "architecture-foreground-guided-lesson.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -223.464, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -279.392, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -223.464, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "not-reproduced-in-current-matrix",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "passed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "architecture-foreground-tilt-focus.spec.ts::Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Aperture",
+      "sourceSpec": "architecture-foreground-tilt-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "other-timeout",
+      "failureMessage": "Error: expect(locator).toBeEnabled() failed\n\nLocator: getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\nExpected: enabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" with timeout 5000ms\n  - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\n",
+      "failureStage": "unspecified timeout",
+      "componentOrSubsystem": "Camera Controls / responsive workspace",
+      "candidateSharedCause": "Unestablished; Camera Controls / responsive workspace is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Camera Controls / responsive workspace without inferring a cause."
+    },
+    {
+      "testId": "architecture-foreground-tilt-focus.spec.ts::Architecture + Foreground Tilt + Focus guided task starts composed and is restartable",
+      "sourceSpec": "architecture-foreground-tilt-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "sourceSpec": "architecture-rise-focus-range.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "count-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByTestId('scene-canvas').locator('canvas')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for getByTestId('scene-canvas').locator('canvas')\n    5 × locator resolved to 0 elements\n      - unexpected value \"0\"\n",
+      "failureStage": "count assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "architecture-rise-focus-range.spec.ts::Architecture Rise exposes visible blur for the reported strong-defocus state",
+      "sourceSpec": "architecture-rise-focus-range.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "architecture-rise-webgpu-validation.spec.ts::normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot",
+      "sourceSpec": "architecture-rise-webgpu-validation.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 300000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "architecture-rise-webgpu-validation.spec.ts::full Architecture Rise scene has measurable subject, material, environment, lighting, interaction and lifecycle evidence",
+      "sourceSpec": "architecture-rise-webgpu-validation.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 900000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "camera-controls-compact.spec.ts::compact common camera controls stay usable at desktop and narrow widths",
+      "sourceSpec": "camera-controls-compact.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Camera Controls / responsive workspace",
+      "candidateSharedCause": "Unestablished; Camera Controls / responsive workspace is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Camera Controls / responsive workspace without inferring a cause."
+    },
+    {
+      "testId": "camera-controls-compact.spec.ts::responsive workspace keeps the primary simulator wider than the controls rail",
+      "sourceSpec": "camera-controls-compact.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Camera Controls / responsive workspace",
+      "candidateSharedCause": "Unestablished; Camera Controls / responsive workspace is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Camera Controls / responsive workspace without inferring a cause."
+    },
+    {
+      "testId": "camera-controls-compact.spec.ts::Focus slider and Infinity Reset stay usable across rail widths",
+      "sourceSpec": "camera-controls-compact.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Camera Controls / responsive workspace",
+      "candidateSharedCause": "Unestablished; Camera Controls / responsive workspace is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Camera Controls / responsive workspace without inferring a cause."
+    },
+    {
+      "testId": "camera-movement-calibration-workbench.spec.ts::session calibration separates geometry, optics, rig, reset, and SPA lifecycle",
+      "sourceSpec": "camera-movement-calibration-workbench.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('region', { name: 'Camera movement calibration workbench' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByRole('region', { name: 'Camera movement calibration workbench' })\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "camera-movement-ground-glass-comparison.spec.ts::public camera-movement Ground Glass renders one live Current view through the default RTT channel",
+      "sourceSpec": "camera-movement-ground-glass-comparison.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 150000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "camera-movement-public-controls.spec.ts::public camera movement controls on the normal route",
+      "sourceSpec": "camera-movement-public-controls.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 150000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "camera-movement-public-controls.spec.ts::3D Scene layout stays stable across continuous movement sliders",
+      "sourceSpec": "camera-movement-public-controls.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "focus-fundamentals-selectable-focus.spec.ts::Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources",
+      "sourceSpec": "focus-fundamentals-selectable-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  locator('[data-testid=\"ground-glass-rtt\"][data-rtt-channel=\"default\"]')\nExpected: \"180\"\nReceived: \"\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for locator('[data-testid=\"ground-glass-rtt\"][data-rtt-channel=\"default\"]')\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "focus-fundamentals-selectable-focus.spec.ts::Focus Fundamentals rear reference station keeps physical blur and lens position",
+      "sourceSpec": "focus-fundamentals-selectable-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "value-assertion",
+      "failureMessage": "Error: expect(locator).toHaveValue(expected) failed\n\nLocator: getByLabel('Focus distance')\nExpected: \"1200\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveValue\" with timeout 5000ms\n  - waiting for getByLabel('Focus distance')\n",
+      "failureStage": "value assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "focus-fundamentals-selectable-focus.spec.ts::Focus Fundamentals controls remain usable at responsive viewports",
+      "sourceSpec": "focus-fundamentals-selectable-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('region', { name: 'Camera Controls' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByRole('region', { name: 'Camera Controls' })\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Camera Controls / responsive workspace",
+      "candidateSharedCause": "Unestablished; Camera Controls / responsive workspace is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Camera Controls / responsive workspace without inferring a cause."
+    },
+    {
+      "testId": "fringe-club-dev-integration.spec.ts::Stage 2H and Stage 2N-A render through all VCS modes and candidate/probe diagnostics remain current",
+      "sourceSpec": "fringe-club-dev-integration.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  getByTestId('fringe-renderer-metrics')\nExpected: \"1\"\nReceived: \"0\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for getByTestId('fringe-renderer-metrics')\n    2 × locator resolved to <div data-calls=\"\" data-lines=\"\" data-points=\"\" data-textures=\"\" data-triangles=\"\" data-geometries=\"\" data-fetch-ms=\"55\" data-fringe-meshes=\"\" data-webgl-version=\"\" data-three-version=\"\" data-owner-leases=\"1\" data-anisotropy-max=\"\" data-source-assets=\"1\" data-renderer-vendor=\"\" data-renderer-device=\"\" data-image-backings=\"7\" data-observer-root-id=\"\" data-instance-leases=\"0\" data-source-textures=\"7\" data-stage2h-requests=\"2\" data-baseline-textures=\"2\" data-source-materials=\"15\" data-source-geometrie…>…</div>\n      - unexpected value \"0\"\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "fringe-club-dev-integration.spec.ts::Stage 2N-A join probes retain fresh RTT identity through bounded motion",
+      "sourceSpec": "fringe-club-dev-integration.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 1200000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "fringe-club-dev-integration.spec.ts::rapid H/N-A selection aborts delayed stale fetches and only the final candidate attaches",
+      "sourceSpec": "fringe-club-dev-integration.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  getByTestId('fringe-load-state')\nExpected: \"ready\"\nReceived: \"loading\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for getByTestId('fringe-load-state')\n    2 × locator resolved to <p role=\"status\" data-state=\"loading\" data-candidate-id=\"stage2n-a\" data-testid=\"fringe-load-state\">Loading selected Fringe Club candidate…</p>\n      - unexpected value \"loading\"\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "ground-glass-dof-profiling.spec.ts::Ground Glass profiling populates finite snapshots across representative scenes",
+      "sourceSpec": "ground-glass-dof-profiling.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByTestId('ground-glass-rtt')\nExpected: \"focus-fundamentals-two-targets\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for getByTestId('ground-glass-rtt')\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "ground-glass-dof-profiling.spec.ts::profiling preserves Raw RTT bypass and can be disabled",
+      "sourceSpec": "ground-glass-dof-profiling.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  getByTestId('ground-glass-rtt')\nExpected: \"true\"\nReceived: \"\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for getByTestId('ground-glass-rtt')\n    2 × locator resolved to <div data-three-revision=\"187\" data-rtt-channel=\"default\" data-testid=\"ground-glass-rtt\" data-pilot-retry-status=\"none\" data-frame-channel-id=\"default\" data-frame-result-status=\"pending\" data-policy-selected-backend=\"webgl\" data-application-fallback=\"not-observed\" data-render-host-lifecycle=\"initializing\" data-render-cleanup-status=\"not-required\" data-rtt-scene-id=\"architecture-foreground\" data-frame-scene-id=\"architecture-foreground\" data-frame-request-id=\"gg-mw0zv8v1-wt37vge08b-default-request-2\"…>…</div>\n      - unexpected value \"null\"\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "ground-glass-dof-stability.spec.ts::Architecture + Foreground DOF regression stays finite across Raw RTT toggles",
+      "sourceSpec": "ground-glass-dof-stability.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "ground-glass-dof-stability.spec.ts::Architecture + Foreground DOF remains finite through a transition sequence",
+      "sourceSpec": "ground-glass-dof-stability.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "groundglass-interaction.spec.ts::Ground Glass interaction::Architecture Rise: Reset view preserves the contentful RTT resource graph",
+      "sourceSpec": "groundglass-interaction.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Error: Test timeout of 180000ms exceeded",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "groundglass-interaction.spec.ts::Ground Glass interaction::Architecture Rise: off-center anchor, drag pan, short-click preservation, and immediate re-zoom",
+      "sourceSpec": "groundglass-interaction.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: Timeout 8000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "sourceSpec": "interior-corner-guided-lesson.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -272.194, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -272.194, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+      "sourceSpec": "interior-corner-guided-lesson.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -179.171, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -274.182, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -179.171, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+      "sourceSpec": "interior-corner-rise-composition.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -288, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "not-reproduced-in-current-matrix",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "passed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+      "sourceSpec": "interior-corner-swing-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "lens-catalog-ui.spec.ts::lens catalog selection keeps finite coverage across published simulator profiles",
+      "sourceSpec": "lens-catalog-ui.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "lesson-zero-anatomy.spec.ts::Lesson 0 presents the anatomy sequence and isolates its presentation state",
+      "sourceSpec": "lesson-zero-anatomy.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "lesson-zero-image-circle-coverage.spec.ts::Lesson 0 shows the same film-relative coverage model for Image Circle, Rise, and Shift",
+      "sourceSpec": "lesson-zero-image-circle-coverage.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 90000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "macro-bellows-extension.spec.ts::Macro 1 tracks canonical Image Circle growth and bellows exposure across focus",
+      "sourceSpec": "macro-bellows-extension.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 100000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "sourceSpec": "macro-bellows-extension.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "count-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByTestId('scene-canvas').locator('canvas')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for getByTestId('scene-canvas').locator('canvas')\n    5 × locator resolved to 0 elements\n      - unexpected value \"0\"\n",
+      "failureStage": "count assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "sourceSpec": "macro-compound-movements.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "count-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByTestId('scene-canvas').locator('canvas')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for getByTestId('scene-canvas').locator('canvas')\n    5 × locator resolved to 0 elements\n      - unexpected value \"0\"\n",
+      "failureStage": "count assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "macro-depth-of-field-orientation.spec.ts::Macro depth targets, Focus Distribution, and Raw/Upright raster stay aligned",
+      "sourceSpec": "macro-depth-of-field-orientation.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "macro-depth-of-field.spec.ts::Macro 2 teaches shallow physical depth of field across a 3D subject",
+      "sourceSpec": "macro-depth-of-field.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 90000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "macro-oblique-plane.spec.ts::Macro 3 aligns the oblique planar subject with Front Tilt and Focus",
+      "sourceSpec": "macro-oblique-plane.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+      "sourceSpec": "mirror-shift-guided-lesson.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -288, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -288, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "sourceSpec": "mirror-shift-rig-lateral.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "count-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('[data-testid=\"scene-canvas\"]').locator('canvas')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for locator('[data-testid=\"scene-canvas\"]').locator('canvas')\n    5 × locator resolved to 0 elements\n      - unexpected value \"0\"\n",
+      "failureStage": "count assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "mirror-shift-teaching-geometry.spec.ts::Mirror Shift top-view geometry follows canonical A/B/C state relationships",
+      "sourceSpec": "mirror-shift-teaching-geometry.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 90000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "nonparallel-coverage.spec.ts::Oblique Architecture transitions between the parallel circle and non-parallel conic",
+      "sourceSpec": "nonparallel-coverage.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 150000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "oblique-architecture.spec.ts::Oblique Architecture free practice exposes Rise, Swing, and Focus",
+      "sourceSpec": "oblique-architecture.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+      "sourceSpec": "oblique-architecture.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -213.401, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -280.707, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -213.401, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "oblique-architecture.spec.ts::Oblique Architecture guided Swing + Focus task starts from solved Rise and restarts deterministically",
+      "sourceSpec": "oblique-architecture.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+      "sourceSpec": "oblique-architecture.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -276.039, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -288, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -276.039, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "timedOut",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+      "sourceSpec": "oblique-architecture.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -247.258, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -288, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -247.258, 0)\"\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "timedOut",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+      "sourceSpec": "oblique-tabletop-guided-lesson.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "text-assertion",
+      "failureMessage": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected substring: \"Step 1 of 6\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n",
+      "failureStage": "text assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Learning-task content/readiness issue; relationship to drawer-transform failures is unproven.",
+      "reproductionStatus": "reproduced-under-concurrency",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "failed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Investigate expected step/content readiness separately from transform timing before changing drawer or task behavior."
+    },
+    {
+      "testId": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "sourceSpec": "observer-webgpu-pilot.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  getByTestId('scene-canvas')\nExpected: \"webgl-renderer\"\nReceived: \"\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for getByTestId('scene-canvas')\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "observer-webgpu-pilot.spec.ts::material-aware output adapts the Architecture Rise Observer and stays scene-scoped across navigation",
+      "sourceSpec": "observer-webgpu-pilot.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "sourceSpec": "phase13-guided-tasks.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('heading', { name: '3D Scene' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByRole('heading', { name: '3D Scene' })\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "phase13-guided-tasks.spec.ts::TST-E2E-003: rise task starts in failed state",
+      "sourceSpec": "phase13-guided-tasks.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "phase13-guided-tasks.spec.ts::TST-E2E-004: rise task can be completed with valid rise",
+      "sourceSpec": "phase13-guided-tasks.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "phase13-guided-tasks.spec.ts::TST-E2E-005: restart resets Architecture Rise guided task",
+      "sourceSpec": "phase13-guided-tasks.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Error: Test timeout of 30000ms exceeded",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "physical-image-circle.spec.ts::3D Image Circle consumes the Ground Glass finite coverage state",
+      "sourceSpec": "physical-image-circle.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "scene-switching.spec.ts::public SPA scene switching keeps one current scene and its RTT renderer channels without reloads",
+      "sourceSpec": "scene-switching.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 480000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "sourceSpec": "scene-view-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 90000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "sourceSpec": "scene-view-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "sourceSpec": "scene-view-focus.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "sourceSpec": "scene-viewport-expansion.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "other-assertion",
+      "failureMessage": "Error: expect(received).toBeCloseTo(expected, precision)\n\nExpected: 1.25\nReceived: 1.1988203216292916\n\nExpected precision:    2\nExpected difference: < 0.005\nReceived difference:   0.05117967837070836",
+      "failureStage": "other assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+      "sourceSpec": "secondary-workspace-pairing.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByTestId('scene-canvas')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByTestId('scene-canvas')\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "secondary-workspace-pairing.spec.ts::normal Geometry uses a compact diagram height while expanded Geometry remains full-size",
+      "sourceSpec": "secondary-workspace-pairing.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Expand 2D Geometry' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByRole('button', { name: 'Expand 2D Geometry' })\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Simulator workspace layout",
+      "candidateSharedCause": "Unestablished; Simulator workspace layout is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Simulator workspace layout without inferring a cause."
+    },
+    {
+      "testId": "shelf-swing.spec.ts::Shelf Swing free and guided workflows stay accessible without console errors",
+      "sourceSpec": "shelf-swing.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "text-assertion",
+      "failureMessage": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByLabel('Rise').locator('..')\nExpected substring: \"Disabled for this guided task\"\nReceived string:    \"Rise0.0 mm\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toContainText\" with timeout 5000ms\n  - waiting for getByLabel('Rise').locator('..')\n    4 × locator resolved to <div data-active=\"false\" class=\"compact-range-row\">…</div>\n      - unexpected value \"Rise0.0 mm\"\n",
+      "failureStage": "text assertion",
+      "componentOrSubsystem": "Guided task / scene state",
+      "candidateSharedCause": "Unestablished; Guided task / scene state is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Guided task / scene state without inferring a cause."
+    },
+    {
+      "testId": "shelf-swing.spec.ts::Shelf Swing expanded Geometry keeps controls interactive and restores the normal layout",
+      "sourceSpec": "shelf-swing.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "count-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('section.geometry-viewport')\nExpected: 0\nReceived: 1\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for locator('section.geometry-viewport')\n    3 × locator resolved to 1 element\n      - unexpected value \"1\"\n",
+      "failureStage": "count assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Focus Distribution follows the displayed Raw/Upright orientation",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Focus Distribution keeps a same-cell target stack co-equal",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "count-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByTestId('focus-distribution-panel').locator('.focus-distribution-cell--stacked')\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for getByTestId('focus-distribution-panel').locator('.focus-distribution-cell--stacked')\n    5 × locator resolved to 0 elements\n      - unexpected value \"0\"\n",
+      "failureStage": "count assertion",
+      "componentOrSubsystem": "Focus Distribution UI",
+      "candidateSharedCause": "Unestablished; Focus Distribution UI is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Focus Distribution UI without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Focus Distribution stays compact when its panel is constrained",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: expect(received).toBeLessThan(expected)\n\nExpected: < 440\nReceived:   480\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT crop",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -16.8924, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n",
+      "failureStage": "drawer-open-transform assertion",
+      "componentOrSubsystem": "Learning Drawer / Learning Overlay",
+      "candidateSharedCause": "Possible drawer transition/frame-scheduling sensitivity; shared application defect not established.",
+      "reproductionStatus": "not-reproduced-in-current-matrix",
+      "currentWorkerMatrix": {
+        "w1": "passed",
+        "w2": "passed",
+        "w4": "passed"
+      },
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Preserve the completed-position assertion; collect a further bounded matched scheduling trace before changing app behavior or lane policy."
+    },
+    {
+      "testId": "table-tilt.spec.ts::3D overlay controls switch responsively without wrapping or blocking the scene",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator:  locator('.scene-overlay-responsive').first()\nExpected: \"inline\"\nReceived: \"collapsed\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for locator('.scene-overlay-responsive').first()\n    3 × locator resolved to <div class=\"scene-overlay-responsive\" data-overlay-presentation=\"collapsed\">…</div>\n      - unexpected value \"collapsed\"\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByLabel('GroundGlassViewport').getByTestId('ground-glass-rtt')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByLabel('GroundGlassViewport').getByTestId('ground-glass-rtt')\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Ground Glass survives optics, preview, and quality changes",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Table Tilt Ground Glass responsive overlays remain separate and centered",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "predicate-timeout",
+      "failureMessage": "Error: Timeout 5000ms exceeded while waiting on the predicate",
+      "failureStage": "wait predicate",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "table-tilt.spec.ts::Ground Glass zoom state resets across free/guided and scene navigation",
+      "sourceSpec": "table-tilt.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "attribute-assertion",
+      "failureMessage": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByLabel('GroundGlassViewport').locator('[data-zoomed]')\nExpected: \"false\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveAttribute\" with timeout 5000ms\n  - waiting for getByLabel('GroundGlassViewport').locator('[data-zoomed]')\n",
+      "failureStage": "attribute assertion",
+      "componentOrSubsystem": "Ground Glass preview / RTT",
+      "candidateSharedCause": "Unestablished; Ground Glass preview / RTT is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Ground Glass preview / RTT without inferring a cause."
+    },
+    {
+      "testId": "understanding-camera-movements.spec.ts::camera movements scene loads and renders valid Ground Glass content",
+      "sourceSpec": "understanding-camera-movements.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 30000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "understanding-camera-movements.spec.ts::canonical lattice remains stable across controls and SPA routes",
+      "sourceSpec": "understanding-camera-movements.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "timedOut"
+      },
+      "failureSignature": "test-timeout",
+      "failureMessage": "Test timeout of 120000ms exceeded.",
+      "failureStage": "whole-test timeout",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    },
+    {
+      "testId": "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact",
+      "sourceSpec": "viewport-learning-overlay.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "visibility-assertion",
+      "failureMessage": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('heading', { name: '3D Scene', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for getByRole('heading', { name: '3D Scene', exact: true })\n",
+      "failureStage": "visibility assertion",
+      "componentOrSubsystem": "Scene mount / renderer readiness",
+      "candidateSharedCause": "Unestablished; Scene mount / renderer readiness is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Scene mount / renderer readiness without inferring a cause."
+    },
+    {
+      "testId": "viewport-learning-overlay.spec.ts::constrained desktop Scenes move overlay controls below the host without menu clipping",
+      "sourceSpec": "viewport-learning-overlay.spec.ts",
+      "lane": "ordinary",
+      "historicalOutcome": {
+        "disposition": "unexpected",
+        "actualStatus": "failed"
+      },
+      "failureSignature": "css-assertion",
+      "failureMessage": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.scene-overlay-controls-wrap')\nExpected: \"static\"\nReceived: \"absolute\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.scene-overlay-controls-wrap')\n    2 × locator resolved to <div class=\"scene-overlay-controls-wrap\">…</div>\n      - unexpected value \"absolute\"\n",
+      "failureStage": "css assertion",
+      "componentOrSubsystem": "Test-specific UI / E2E assertion",
+      "candidateSharedCause": "Unestablished; Test-specific UI / E2E assertion is a candidate grouping based only on identity/error surface.",
+      "reproductionStatus": "not-run-in-m7l-primary-cohort",
+      "currentWorkerMatrix": null,
+      "confidence": "high for historical signature; low for causal attribution",
+      "recommendedAction": "Keep identity in backlog; group for targeted triage around Test-specific UI / E2E assertion without inferring a cause."
+    }
+  ]
+}
