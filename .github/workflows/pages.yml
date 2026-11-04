@@ -119,6 +119,9 @@ jobs:
           npm run evidence:check:m7k --
           --report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json
 
+      - name: Validate M7L Learning Drawer remediation evidence integrity
+        run: npm run evidence:check:m7l
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci

@@ -18,6 +18,7 @@
     "e2e:run:m7k": "node ./scripts/run-m7k-broad-e2e.mjs",
     "evidence:check:m7k": "node ./scripts/run-m7k-qualification.mjs",
     "evidence:require-qualified:m7k": "node ./scripts/run-m7k-qualification.mjs --require-qualified",
+    "evidence:check:m7l": "node ./scripts/run-m7l-learning-drawer-remediation.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",
