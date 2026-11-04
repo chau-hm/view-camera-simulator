@@ -209,6 +209,16 @@ const refreshRawStats = (raw: JsonRecord): void => {
   });
   raw.stats = { ...record(raw.stats), expected, unexpected, skipped, flaky };
 };
+const setActualWorkers = (value: Fixture, lane: GroundGlassM7kLaneName, workers: number): void => {
+  mutateRaw(value, lane, (raw) => {
+    const config = record(raw.config);
+    config.metadata = { ...record(config.metadata), actualWorkers: workers };
+    const projectName = lane === "ordinary" ? "chromium" : "chromium-renderer-serial";
+    const projects = Array.isArray(config.projects) ? config.projects : [];
+    const project = projects.find((entry) => isRecord(entry) && entry.name === projectName);
+    if (isRecord(project)) project.metadata = { ...record(project.metadata), actualWorkers: workers };
+  });
+};
 const allCurrentUnexpectedToPass = (
   value: Fixture,
   lane: GroundGlassM7kLaneName,
@@ -636,6 +646,15 @@ const v2NegativeCases: Array<{ name: string; run: () => void }> = [
     },
   },
   {
+    name: "v2-selected-ordinary-worker-count-out-of-range",
+    run: () => {
+      const value = schemaV2Fixture("selected");
+      setActualWorkers(value, "ordinary", 5);
+      rebuild(value);
+      rejectV2For(value, "ordinary-worker-count-mismatch");
+    },
+  },
+  {
     name: "v2-raw-artifact-path-escapes-output-directory",
     run: () => {
       const value = schemaV2Fixture();
@@ -666,6 +685,7 @@ describe("M7K broad E2E qualification evidence evaluator", () => {
       "positive-historical-m7g-failure-record",
       "positive-four-test-serial-lane",
       "v2-accepted-full-capture-remains-valid",
+      "v2-selected-one-actual-worker-remains-incomplete",
     ]);
   });
 
@@ -703,6 +723,17 @@ describe("M7K broad E2E qualification evidence evaluator", () => {
     expect(result.executionCompleteness).toBe("complete");
     expect(result.broadE2eQualification).toBe("not-qualified");
     expect(result.counts).toMatchObject({ discovered: 278, passed: 121, failed: 82, skipped: 75, flaky: 0, incomplete: 0 });
+  });
+
+  it("accepts a selected schema-v2 capture with one actual ordinary worker as incomplete", () => {
+    const value = schemaV2Fixture("selected");
+    setActualWorkers(value, "ordinary", 1);
+    rebuild(value);
+    const result = evaluate(value);
+    expect(result.issues).toEqual([]);
+    expect(result.passed).toBe(true);
+    expect(result.executionCompleteness).toBe("incomplete");
+    expect(result.broadE2eQualification).toBe("blocked");
   });
 
   it("checks captured evidence before mutation-suite validation metadata is attached", () => {

@@ -83,6 +83,7 @@ export const GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES = [
   "v2-tooling-source-file-unavailable",
   "v2-evaluator-source-file-unavailable",
   "v2-selected-capture-cannot-qualify",
+  "v2-selected-ordinary-worker-count-out-of-range",
   "v2-raw-artifact-path-escapes-output-directory",
   "positive-complete-passing-two-lane-report",
   "positive-complete-failing-report-not-qualified",
@@ -91,6 +92,7 @@ export const GROUND_GLASS_M7K_REQUIRED_MUTATION_CASES = [
   "positive-historical-m7g-failure-record",
   "positive-four-test-serial-lane",
   "v2-accepted-full-capture-remains-valid",
+  "v2-selected-one-actual-worker-remains-incomplete",
 ] as const;
 
 type JsonRecord = Record<string, unknown>;
@@ -1105,8 +1107,15 @@ export const evaluateGroundGlassM7kBroadE2eQualification = (
     if (laneName === "rendererSerial" && (record.configuredWorkers !== 1 || record.actualWorkers !== 1)) {
       issues.push("renderer-serial-worker-count-mismatch");
     }
-    if (laneName === "ordinary" && (record.configuredWorkers !== 4 || record.actualWorkers !== 4)) {
-      issues.push("ordinary-worker-count-mismatch");
+    if (laneName === "ordinary") {
+      const selectedCapture = schemaV2Report && report.captureMode === "selected";
+      const actualOrdinaryWorkers = asNumber(record.actualWorkers);
+      const actualWorkerCountInvalid = selectedCapture
+        ? actualOrdinaryWorkers === null || actualOrdinaryWorkers < 1 || actualOrdinaryWorkers > 4
+        : actualOrdinaryWorkers !== 4;
+      if (record.configuredWorkers !== 4 || actualWorkerCountInvalid) {
+        issues.push("ordinary-worker-count-mismatch");
+      }
     }
     if (record.configuredRetries !== 0) issues.push(`retries-not-disabled:${laneName}`);
     if (!record.statsReconciled) issues.push(`playwright-summary-counts-disagree:${laneName}`);
