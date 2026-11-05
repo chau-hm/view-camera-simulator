@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, join, resolve } from "node:path";
+import { basename, join, relative, resolve, sep } from "node:path";
 
 const args = new Map(process.argv.slice(2).map((argument) => {
   const separator = argument.indexOf("=");
@@ -162,6 +162,7 @@ if (!definition.tracingEnabled && lifecycleSnapshot.observed?.applicationTrace) 
 const outputCaptureId = args.get("capture-id");
 const diagnosticsPath = `${outputCaptureId}.diagnostics.json`;
 const outcomesPath = `${outputCaptureId}.outcomes.json`;
+const diagnosticsArtifactPath = relative(process.cwd(), join(outputDirectory, diagnosticsPath)).split(sep).join("/");
 const diagnosticsBody = lifecycleSnapshot ? `${JSON.stringify(lifecycleSnapshot, null, 2)}\n` : null;
 const diagnosticsSha256 = diagnosticsBody
   ? createHash("sha256").update(diagnosticsBody).digest("hex")
@@ -187,7 +188,7 @@ const report = {
     offlineReplayAvailable: false,
   },
   normalizedTrace: diagnosticsBody ? {
-    artifactPath: diagnosticsPath,
+    artifactPath: diagnosticsArtifactPath,
     sha256: diagnosticsSha256,
     eventSchemaVersion: lifecycleSnapshot.observed.applicationTrace?.schemaVersion ?? null,
     eventCount: lifecycleSnapshot.observed.applicationTrace?.events.length ?? 0,
