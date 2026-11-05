@@ -298,22 +298,36 @@ export const evaluateM7nRendererLifecycleEvidence = async (
         previousSequence = sequence ?? previousSequence;
         previousTimestamp = timestamp ?? previousTimestamp;
       }
-      const lifecycleOrder = [
-        "simulator-route-component-committed",
+      const firstSceneTrace = events.filter((event) => event.sceneId === "architecture-rise");
+      const orderedEvents = [
         "workspace-module-load-started",
+        "simulator-route-component-committed",
         "workspace-module-load-completed",
-        "simulator-workspace-committed",
-        "observer-renderer-requested",
+      ];
+      const rendererEvents = [
+        "scene-renderer-component-committed",
         "observer-canvas-dom-attached",
+        "observer-renderer-requested",
         "observer-r3f-renderer-created",
         "observer-capabilities-published",
       ];
-      const firstSceneTrace = events.filter((event) => event.sceneId === "architecture-rise");
-      const indexes = lifecycleOrder
+      for (const lifecycleOrder of [orderedEvents, rendererEvents]) {
+        const indexes = lifecycleOrder
         .map((eventName) => firstSceneTrace.findIndex((event) => event.event === eventName))
         .filter((index) => index >= 0);
-      if (indexes.some((index, position) => position > 0 && index < (indexes[position - 1] ?? -1))) {
-        issue("m7n-observed-lifecycle-order-invalid");
+        if (indexes.some((index, position) => position > 0 && index < (indexes[position - 1] ?? -1))) {
+          issue("m7n-observed-lifecycle-order-invalid");
+        }
+      }
+      const groundGlassEvents = events.filter((event) => event.surface === "ground-glass");
+      const generationActiveIndex = groundGlassEvents.findIndex((event) => event.event === "ground-glass-generation-active");
+      const firstPublishedFrameIndex = groundGlassEvents.findIndex((event) => event.event === "ground-glass-current-frame-published");
+      if (
+        generationActiveIndex >= 0 &&
+        firstPublishedFrameIndex >= 0 &&
+        firstPublishedFrameIndex < generationActiveIndex
+      ) {
+        issue("m7n-ground-glass-publication-order-invalid");
       }
       const observerEventsWithoutGeneration = events.filter((event) =>
         event.surface === "observer" && event.rendererGeneration === null,
