@@ -1,9 +1,13 @@
 # M7N — Renderer Initialization Lifecycle Trace
 
-**Capture date:** 2026-11-06  
-**Base:** `8a383e740d6a3f14b7673ae3adb18471b7d55d4c` (PR #311 merge)  
-**Three.js:** `0.187.0`  
-**Runtime:** Node `v26.12.1`, headless Playwright Chromium `149.0.7827.55`, macOS arm64  
+**Capture date:** 2026-11-06
+
+**Base:** `8a383e740d6a3f14b7673ae3adb18471b7d55d4c` (PR #311 merge)
+
+**Three.js:** `0.187.0`
+
+**Runtime:** Node `v26.12.1`, headless Playwright Chromium `149.0.7827.55`, macOS arm64
+
 **Rendering path:** production-default WebGL; no WebGPU research flags
 
 ## Result
