@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import "../i18n";
@@ -13,6 +13,10 @@ import { useAppStore } from "../state/appStore";
 import { getGroupedPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
 import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "../render/testing/m7nRendererLifecycleTrace";
 
 import { LandingHero } from "../components/marketing/LandingHero";
 import { LandingFundamentalsSection } from "../components/marketing/LandingFundamentalsSection";
@@ -24,9 +28,47 @@ import { SceneCard } from "../components/marketing/SceneCard";
 import { DesktopExperienceNotice } from "../components/marketing/DesktopExperienceNotice";
 import { FaqSection } from "../components/marketing/FaqSection";
 
-const SimulatorWorkspace = lazy(() =>
-  import("../components/layout/SimulatorWorkspace").then((module) => ({ default: module.SimulatorWorkspace })),
-);
+const SimulatorWorkspace = lazy(() => {
+  const routeId = rendererLifecycleTraceEnabled && typeof window !== "undefined"
+    ? window.location.pathname
+    : null;
+  const sceneId = routeId?.split("/")[3] ?? null;
+  if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+    surface: "route",
+    event: "workspace-module-load-started",
+    routeId,
+    sceneId,
+  });
+  return import("../components/layout/SimulatorWorkspace").then((module) => {
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+      surface: "route",
+      event: "workspace-module-load-completed",
+      routeId,
+      sceneId,
+    });
+    return { default: module.SimulatorWorkspace };
+  });
+});
+
+const WorkspaceSuspenseFallback = ({
+  routeId,
+  sceneId,
+}: {
+  routeId: string;
+  sceneId: string;
+}) => {
+  useEffect(() => {
+    recordRendererLifecycleEvent({
+      surface: "simulator",
+      event: "workspace-suspense-fallback-committed",
+      routeId,
+      sceneId,
+      status: "visible",
+    });
+  }, [routeId, sceneId]);
+
+  return <p>Loading simulator workspace…</p>;
+};
 
 export const HomePage = () => {
   useLandingMotion();
@@ -131,19 +173,37 @@ export const SimulatorRoutePage = () => {
   const anatomyLessonEnabled = publicEntry?.lesson?.kind === "anatomy";
   const guidedLessonEnabled =
     searchParams.get("lesson") === "1" && Boolean(publicEntry?.guidedLesson);
+  const routeIsValid = Boolean(
+    scene &&
+    publicEntry &&
+    publicEntry.availability === "available" &&
+    parsedMode &&
+    isValidSimulatorRoute({
+      mode: parsedMode,
+      taskId,
+      sceneId: resolvedSceneId,
+      publicEntry,
+      task: resolvedTask,
+    }),
+  );
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled || !routeIsValid || !parsedMode) return;
+    recordRendererLifecycleEvent({
+      surface: "route",
+      event: "simulator-route-component-committed",
+      routeId: `/simulator/${parsedMode}/${resolvedSceneId}`,
+      sceneId: resolvedSceneId,
+      detail: { taskRequested: Boolean(taskId) },
+    });
+  }, [parsedMode, resolvedSceneId, routeIsValid, taskId]);
 
   if (
     !scene ||
     !publicEntry ||
     publicEntry.availability !== "available" ||
     !parsedMode ||
-    !isValidSimulatorRoute({
-      mode: parsedMode,
-      taskId,
-      sceneId: resolvedSceneId,
-      publicEntry,
-      task: resolvedTask,
-    })
+    !routeIsValid
   ) {
     return <Navigate to="/scenes" replace />;
   }
@@ -165,7 +225,12 @@ export const SimulatorRoutePage = () => {
 
   return (
     <AppShell title="" fullBleed>
-      <Suspense fallback={<p>Loading simulator workspace…</p>}>
+      <Suspense fallback={rendererLifecycleTraceEnabled
+        ? <WorkspaceSuspenseFallback
+            routeId={`/simulator/${parsedMode}/${resolvedSceneId}`}
+            sceneId={resolvedSceneId}
+          />
+        : <p>Loading simulator workspace…</p>}>
         <SimulatorWorkspace
           mode={parsedMode}
           sceneId={resolvedSceneId}

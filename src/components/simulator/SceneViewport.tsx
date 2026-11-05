@@ -32,6 +32,11 @@ import {
 } from "../../render/sceneViewFraming";
 import { useAppStore } from "../../state/appStore";
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
+import {
+  allocateRendererLifecycleMountIdentity,
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "../../render/testing/m7nRendererLifecycleTrace";
 
 type SceneViewportProps = {
   scene: SceneDefinition;
@@ -91,6 +96,11 @@ export const SceneViewport = ({
   viewResetKey,
   onSubjectCapacityChange,
 }: SceneViewportProps) => {
+  const viewportMountIdRef = useRef<string | null>(null);
+  if (rendererLifecycleTraceEnabled && viewportMountIdRef.current === null) {
+    viewportMountIdRef.current = allocateRendererLifecycleMountIdentity("observer-viewport");
+  }
+  const viewportMountId = viewportMountIdRef.current ?? "trace-disabled";
   const { t } = useTranslation();
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -270,7 +280,13 @@ export const SceneViewport = ({
       message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
     });
   }, [scene.id, t]);
+  const routeId = rendererLifecycleTraceEnabled && typeof window !== "undefined"
+    ? window.location.pathname
+    : null;
   const rendererLifecycle = useObserverRendererLifecycle({
+    sceneId: scene.id,
+    routeId: routeId ?? `/simulator/${scene.id}`,
+    viewportMountId,
     requestIdentity,
     backendSelection,
     rendererMountKey,
@@ -278,6 +294,61 @@ export const SceneViewport = ({
     onFallbackRemount,
     onCanvasFailure,
   });
+  const rendererMountIdentity = rendererLifecycleTraceEnabled
+    ? `${viewportMountId}:renderer-${rendererLifecycle.mountGeneration}`
+    : "trace-disabled";
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    recordRendererLifecycleEvent({
+      surface: "scene",
+      event: "scene-viewport-effect-setup",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: viewportMountId,
+    });
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-backend-selected",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: viewportMountId,
+      rendererGeneration: rendererLifecycle.mountGeneration,
+      status: backendSelection.status,
+      detail: {
+        requestedRenderer: backendSelection.requestedRenderer,
+        rendererAttempt: backendSelection.rendererAttempt,
+        selectionReason: backendSelection.selectionReason,
+        applicationFallback: backendSelection.applicationFallback,
+      },
+    });
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-renderer-requested",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: viewportMountId,
+      rendererGeneration: rendererLifecycle.mountGeneration,
+      status: backendSelection.rendererAttempt ?? backendSelection.status,
+      detail: { requestIdentity },
+    });
+    return () => {
+      recordRendererLifecycleEvent({
+        surface: "scene",
+        event: "scene-viewport-effect-cleanup",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: viewportMountId,
+      });
+    };
+  }, [
+    backendSelection,
+    rendererLifecycle.mountGeneration,
+    requestIdentity,
+    routeId,
+    scene.id,
+    viewportMountId,
+  ]);
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -409,6 +480,7 @@ export const SceneViewport = ({
             architectureRiseVerificationHarness={architectureRiseVerificationHarness}
             sceneCompatibility={sceneCompatibility}
             rendererMountGeneration={rendererLifecycle.mountGeneration}
+            rendererTraceMountIdentity={rendererMountIdentity}
             observerCapabilities={rendererLifecycle.observerCapabilities}
             onObserverCapabilitiesChange={rendererLifecycle.onObserverCapabilitiesChange}
             webgpuApiPresent={webgpuApiPresent}
@@ -440,7 +512,18 @@ export const SceneViewport = ({
             viewFocus={viewFocus}
             observerViews={observerViews}
             simulateAssetFailure={simulateAssetFailure}
-            onAssetError={(message) => setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message })}
+            onAssetError={(message) => {
+              recordRendererLifecycleEvent({
+                surface: "scene",
+                event: "scene-asset-failure-reported",
+                routeId,
+                sceneId: scene.id,
+                mountGeneration: viewportMountId,
+                rendererGeneration: rendererLifecycle.mountGeneration,
+                status: "failed",
+              });
+              setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message });
+            }}
             containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
             onSubjectCapacityChange={onSubjectCapacityChange}
           />

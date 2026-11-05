@@ -99,6 +99,10 @@ test("production preview renders Architecture Rise on WebGL and excludes WebGPU 
   await page.setViewportSize({ width: 1024, height: 768 });
   // URL-shaped backend and raw-debug values are not trusted activation inputs.
   await page.goto("/simulator/free/architecture-rise?groundGlassBackend=webgpu&rawDebug=true&rttDiagnostics=1");
+  const m7nTraceGlobalPresent = await page.evaluate(
+    () => "__m7nRendererLifecycleTrace" in window,
+  );
+  expect(m7nTraceGlobalPresent).toBe(false);
 
   const observer = page.getByTestId("scene-canvas");
   const groundGlass = page.getByTestId("ground-glass-rtt").first();
@@ -171,6 +175,7 @@ test("production preview renders Architecture Rise on WebGL and excludes WebGPU 
     browserVersion: page.context().browser()?.version() ?? "unknown",
     operatingSystem: `${process.platform} ${release()}`,
     productionWebGpuEnabled: false,
+    m7nTraceGlobalPresent,
     threeRevision: REVISION,
     route: new URL(finalUrl).pathname + new URL(finalUrl).search,
     evidence,

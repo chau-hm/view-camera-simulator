@@ -1,0 +1,70 @@
+{
+  "schema": "m7n-playwright-outcomes-v1",
+  "captureId": "target-solo-w1-trace-on",
+  "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+  "toolingSourceCommitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+  "rawCapture": {
+    "sha256": "a60b11c227b90fce261e382a4232ce0d42287b1ffb04482daeac5e34cb877627",
+    "bytes": 125223,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "normalizedTrace": {
+    "artifactPath": "target-solo-w1-trace-on.diagnostics.json",
+    "sha256": "53055276a7c4ff65e7fee0ae46d344bddd3a257660586ff0f4b0ac511c1c1529",
+    "eventSchemaVersion": 1,
+    "eventCount": 66,
+    "droppedEventCount": 0,
+    "unavailable": false
+  },
+  "config": {
+    "projectName": "chromium",
+    "configuredWorkers": 1,
+    "configuredRetries": 0,
+    "traceEnabled": true
+  },
+  "experiment": {
+    "workload": "canvas-target-alone",
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+    ],
+    "maxConcurrentTests": 1,
+    "actualWorkerIndices": [
+      0
+    ],
+    "durationMs": 11874.304
+  },
+  "outcomes": {
+    "discovered": 1,
+    "passed": 1,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0
+  },
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "outcome": "passed",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startTime": "2026-11-05T15:42:05.111Z",
+          "durationMs": 11156,
+          "failureSignature": null
+        }
+      ],
+      "sourceSpecFile": "architecture-rise-focus-range.spec.ts"
+    }
+  ],
+  "environment": {
+    "nodeVersion": "v16.5.0",
+    "platform": "darwin",
+    "browserName": "Chromium",
+    "browserVersion": "149.0.7827.55"
+  }
+}

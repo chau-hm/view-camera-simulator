@@ -86,8 +86,13 @@ import { AnatomyGpuBlendIntermediateProbe } from "./AnatomyGpuBlendIntermediateP
 import { ObserverCanvasErrorBoundary } from "./backend/ObserverCanvasErrorBoundary";
 import {
   resolveObserverVisualPipelineCapabilities,
+  resolveObserverRendererRuntime,
   type ObserverVisualPipelineCapabilities,
 } from "./backend/observerVisualPipelineCapabilities";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "./testing/m7nRendererLifecycleTrace";
 import type { ObserverWebGpuAdapterAvailability } from "./backend/observerWebGpuDiagnostic";
 import type { ObserverOutputPolicySelection } from "./backend/observerOutputPolicy";
 
@@ -97,6 +102,7 @@ type SceneRendererProps = {
   backendSelection: SelectedObserverBackend;
   sceneCompatibility: ObserverSceneCompatibility;
   rendererMountGeneration: number;
+  rendererTraceMountIdentity: string;
   observerCapabilities: ObserverVisualPipelineCapabilities | null;
   onObserverCapabilitiesChange: (
     generation: number,
@@ -1558,6 +1564,7 @@ export const SceneRenderer = ({
   backendSelection,
   sceneCompatibility,
   rendererMountGeneration,
+  rendererTraceMountIdentity,
   observerCapabilities,
   onObserverCapabilitiesChange,
   webgpuApiPresent,
@@ -1743,6 +1750,49 @@ export const SceneRenderer = ({
   );
 
   useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    const routeId = typeof window === "undefined" ? null : window.location.pathname;
+    recordRendererLifecycleEvent({
+      surface: "scene",
+      event: "scene-renderer-component-committed",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: rendererTraceMountIdentity,
+      rendererGeneration: rendererMountGeneration,
+      status: "committed",
+    });
+    return () => {
+      recordRendererLifecycleEvent({
+        surface: "scene",
+        event: "scene-renderer-component-effect-cleanup",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+      });
+    };
+  }, [rendererTraceMountIdentity, rendererMountGeneration, scene.id]);
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    const routeId = typeof window === "undefined" ? null : window.location.pathname;
+    recordRendererLifecycleEvent({
+      surface: "scene",
+      event: "scene-asset-configuration-committed",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: rendererTraceMountIdentity,
+      rendererGeneration: rendererMountGeneration,
+      status: "configured",
+      detail: {
+        declaredAssetCount: scene.assets.length,
+        selectedAssetCount: activeAssets.length,
+        lazyAssetsDeferred: !loadLazyAssets,
+      },
+    });
+  }, [activeAssets.length, loadLazyAssets, rendererTraceMountIdentity, rendererMountGeneration, scene.assets.length, scene.id]);
+
+  useEffect(() => {
     setLoadLazyAssets(false);
     const timer = setTimeout(() => setLoadLazyAssets(true), 0);
     return () => clearTimeout(timer);
@@ -1757,6 +1807,70 @@ export const SceneRenderer = ({
   const defaultContainerStyle: React.CSSProperties = { height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    const routeId = typeof window === "undefined" ? null : window.location.pathname;
+    const container = containerRef.current;
+    if (!container) {
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: "observer-scene-container-absent-after-commit",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+        status: "absent",
+        detail: { assetFailureRequested: simulateAssetFailure },
+      });
+      return;
+    }
+
+    let lastCanvasCount: number | null = null;
+    const reportCanvasPresence = () => {
+      const canvases = container.querySelectorAll("canvas");
+      if (canvases.length === lastCanvasCount) return;
+      lastCanvasCount = canvases.length;
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: canvases.length > 0
+          ? "observer-canvas-dom-attached"
+          : "observer-canvas-dom-absent-at-observation",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+        status: canvases.length > 0 ? "attached" : "absent",
+        detail: { canvasCount: canvases.length },
+      });
+    };
+
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-scene-container-dom-attached",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: rendererTraceMountIdentity,
+      rendererGeneration: rendererMountGeneration,
+      status: "attached",
+    });
+    reportCanvasPresence();
+    const observer = typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver(reportCanvasPresence);
+    observer?.observe(container, { childList: true, subtree: true });
+    return () => {
+      observer?.disconnect();
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: "observer-scene-container-observation-stopped",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+        status: "observation-stopped",
+      });
+    };
+  }, [rendererMountGeneration, rendererTraceMountIdentity, scene.id, simulateAssetFailure]);
   const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
   // legends and optical geometry controlled by parent (SceneViewport)
   // showLegends and showOpticalGeometry are received as props
@@ -2109,6 +2223,23 @@ export const SceneRenderer = ({
         style={{ width: "100%", height: "100%" }}
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
+        onCreated={rendererLifecycleTraceEnabled ? ({ gl }) => {
+          const runtime = resolveObserverRendererRuntime(gl);
+          recordRendererLifecycleEvent({
+            surface: "observer",
+            event: "observer-r3f-renderer-created",
+            routeId: typeof window === "undefined" ? null : window.location.pathname,
+            sceneId: scene.id,
+            mountGeneration: rendererTraceMountIdentity,
+            rendererGeneration: rendererMountGeneration,
+            status: "created",
+            detail: {
+              rendererFamily: runtime.rendererFamily,
+              executionBackend: runtime.executionBackend,
+              canvasDomAttached: gl.domElement.isConnected,
+            },
+          });
+        } : undefined}
         {...observerCanvasInitialization.canvasProps}
         shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
