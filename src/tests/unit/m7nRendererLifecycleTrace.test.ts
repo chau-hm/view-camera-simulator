@@ -145,6 +145,40 @@ describe("M7N renderer lifecycle trace", () => {
     expect(events.some((event) => event.event === "observer-capabilities-published")).toBe(false);
   });
 
+  it("preserves failed renderer state without synthesizing a ready event", () => {
+    const trace = createRendererLifecycleTraceCollector({ now: () => 3, timeOriginMs: 5 });
+    trace.record({
+      surface: "observer",
+      event: "observer-canvas-error-boundary-reported",
+      sceneId: "architecture-rise",
+      mountGeneration: "viewport-2",
+      rendererGeneration: 8,
+      status: "failed",
+      detail: { failureStage: "initialization" },
+    });
+
+    const events = trace.snapshot().events;
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      event: "observer-canvas-error-boundary-reported",
+      sceneId: "architecture-rise",
+      mountGeneration: "viewport-2",
+      rendererGeneration: 8,
+      status: "failed",
+    });
+    expect(events.some((event) => event.status === "active")).toBe(false);
+  });
+
+  it("keeps recorded details independent of later caller mutation", () => {
+    const trace = createRendererLifecycleTraceCollector({ now: () => 3, timeOriginMs: 5 });
+    const detail = { frameRequestId: "frame-4", state: "accepted" as string };
+    trace.record({ surface: "ground-glass", event: "request-accepted", detail });
+    detail.frameRequestId = "frame-5";
+    detail.state = "rejected";
+
+    expect(trace.snapshot().events[0]?.detail).toEqual({ frameRequestId: "frame-4", state: "accepted" });
+  });
+
   it("does not add a readiness event or retry for an unobserved transition", () => {
     const trace = createRendererLifecycleTraceCollector({ now: () => 1, timeOriginMs: 0 });
     trace.record({ surface: "route", event: "simulator-route-component-committed" });

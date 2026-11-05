@@ -86,8 +86,12 @@ export const evaluateM7nRendererLifecycleEvidence = async (
   }
   const executionSourceSha = stringValue(report.executionSourceCommitSha);
   const toolingSourceSha = stringValue(report.toolingSourceCommitSha);
+  const normalizationSourceSha = stringValue(report.normalizationSourceCommitSha);
+  const evaluatorSourceSha = stringValue(report.evaluatorSourceCommitSha);
   if (!executionSourceSha || !shaPattern.test(executionSourceSha)) issue("m7n-execution-source-sha-invalid");
   if (!toolingSourceSha || !shaPattern.test(toolingSourceSha)) issue("m7n-tooling-source-sha-invalid");
+  if (!normalizationSourceSha || !shaPattern.test(normalizationSourceSha)) issue("m7n-normalizer-source-sha-invalid");
+  if (!evaluatorSourceSha || !shaPattern.test(evaluatorSourceSha)) issue("m7n-evaluator-source-sha-invalid");
 
   const gitExists = (sha: string) => {
     try {
@@ -103,8 +107,16 @@ export const evaluateM7nRendererLifecycleEvidence = async (
   if (toolingSourceSha && shaPattern.test(toolingSourceSha) && !gitExists(toolingSourceSha)) {
     issue("m7n-tooling-source-commit-unavailable");
   }
+  if (normalizationSourceSha && shaPattern.test(normalizationSourceSha) && !gitExists(normalizationSourceSha)) {
+    issue("m7n-normalizer-source-commit-unavailable");
+  }
+  if (evaluatorSourceSha && shaPattern.test(evaluatorSourceSha) && !gitExists(evaluatorSourceSha)) {
+    issue("m7n-evaluator-source-commit-unavailable");
+  }
 
   const sourceFiles = asArray(report.sourceFiles);
+  const verifiedSourceRoles = new Set<string>();
+  const verifiedSourcePaths = new Set<string>();
   for (const sourceFileValue of sourceFiles) {
     const sourceFile = asRecord(sourceFileValue);
     if (!sourceFile) {
@@ -131,8 +143,25 @@ export const evaluateM7nRendererLifecycleEvidence = async (
       issue("m7n-source-file-tree-entry-unavailable");
     }
     if (role === "execution" && sha !== executionSourceSha) issue("m7n-execution-source-file-role-mismatch");
-    if (role === "tooling" && sha !== toolingSourceSha) issue("m7n-tooling-source-file-role-mismatch");
+    if (role === "capture-tooling" && sha !== toolingSourceSha) issue("m7n-tooling-source-file-role-mismatch");
+    if (role === "normalizer" && sha !== normalizationSourceSha) issue("m7n-normalizer-source-file-role-mismatch");
+    if (role === "evaluator" && sha !== evaluatorSourceSha) issue("m7n-evaluator-source-file-role-mismatch");
+    if (!["execution", "capture-tooling", "normalizer", "evaluator"].includes(role ?? "")) issue("m7n-source-file-role-invalid");
+    if (role && path) verifiedSourceRoles.add(`${role}:${path}`);
+    if (path) verifiedSourcePaths.add(path);
   }
+  const requiredSourceFiles = [
+    "execution:src/render/testing/m7nRendererLifecycleTrace.ts",
+    "execution:src/render/SceneRenderer.tsx",
+    "capture-tooling:src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
+    "capture-tooling:src/tests/e2e/architecture-rise-focus-range.spec.ts",
+    "capture-tooling:scripts/m7n-spa-generation-probe.mjs",
+    "capture-tooling:scripts/run-m7n-renderer-lifecycle.mjs",
+    "normalizer:scripts/normalizeM7nRendererLifecycleCapture.mjs",
+    "evaluator:scripts/evaluateM7nRendererLifecycle.ts",
+  ];
+  if (requiredSourceFiles.some((source) => !verifiedSourceRoles.has(source))) issue("m7n-required-source-provenance-missing");
+  if (verifiedSourcePaths.size !== sourceFiles.length) issue("m7n-source-file-path-duplicated");
 
   const safeReadArtifact = async (artifactPath: unknown, expectedDigest: unknown) => {
     const path = stringValue(artifactPath);
@@ -193,7 +222,11 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     const recordedOutcomes = asRecord(outcomes.outcomes);
     const identities = asArray(recordedExperiment?.selectedIdentities).map(stringValue);
     if (outcomes.schema !== "m7n-playwright-outcomes-v1" || outcomes.captureId !== captureId) issue("m7n-outcome-artifact-schema-or-identity-invalid");
-    if (outcomes.executionSourceCommitSha !== executionSourceSha || outcomes.toolingSourceCommitSha !== toolingSourceSha) issue("m7n-outcome-source-identity-mismatch");
+    if (
+      outcomes.executionSourceCommitSha !== executionSourceSha ||
+      outcomes.toolingSourceCommitSha !== toolingSourceSha ||
+      outcomes.normalizerSourceCommitSha !== normalizationSourceSha
+    ) issue("m7n-outcome-source-identity-mismatch");
     if (config?.configuredWorkers !== contract.workers || config.configuredRetries !== 0 || config.traceEnabled !== contract.traceEnabled) issue("m7n-workload-configuration-invalid");
     if (recordedExperiment?.maxConcurrentTests !== contract.workers) issue("m7n-measured-concurrency-invalid");
     if (identities.length !== contract.identities.length || identities.some((identity, index) => identity !== contract.identities[index])) {
@@ -203,6 +236,13 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     if (experiment.configuredWorkers !== contract.workers || experiment.retries !== 0) issue("m7n-experiment-summary-invalid");
 
     const testRows = asArray(outcomes.tests).map(asRecord).filter((test): test is JsonRecord => test !== null);
+    const targetOutcome = testRows.find((test) => test.identity === contract.identities[0]);
+    const expectedSnapshotPhase =
+      (captureId === "target-light-peers-w4" || captureId === "target-renderer-heavy-peers-w4") &&
+      targetOutcome?.outcome === "unexpected"
+        ? "canvas-count-assertion-failure"
+        : "after-test";
+    if (outcomes.diagnosticSnapshotPhase !== expectedSnapshotPhase) issue("m7n-diagnostic-snapshot-boundary-invalid");
     const counts = { passed: 0, unexpected: 0, skipped: 0, flaky: 0, incomplete: 0 };
     for (const test of testRows) {
       const outcome = stringValue(test.outcome);
@@ -227,6 +267,7 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     const tracePath = stringValue(experiment.traceArtifactPath);
     const traceDigest = stringValue(experiment.traceDigest);
     if (experiment.traceArtifactPath !== tracePath || experiment.traceDigest !== traceDigest) issue("m7n-trace-reference-invalid");
+    if (traceEvidence?.artifactPath !== tracePath || traceEvidence.sha256 !== traceDigest) issue("m7n-normalized-trace-reference-inconsistent");
     const diagnostics = await safeReadArtifact(tracePath, traceDigest);
     const observed = asRecord(asRecord(diagnostics)?.observed);
     const applicationTrace = asRecord(observed?.applicationTrace);

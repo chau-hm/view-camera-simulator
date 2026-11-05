@@ -5,7 +5,7 @@ import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 import { installM7nRendererLifecycleCapture } from "./helpers/m7nRendererLifecycleCapture";
 
-let finishM7nCapture: (() => Promise<void>) | null = null;
+let finishM7nCapture: ((capturePhase?: "after-test" | "canvas-count-assertion-failure") => Promise<void>) | null = null;
 
 test.beforeEach(async ({ page }, testInfo) => {
   if (process.env.M7N_CAPTURE_DIAGNOSTICS !== "1") return;
@@ -41,7 +41,12 @@ test("Architecture Rise focus control stays within scene depth and preserves thi
 
   const scene = page.getByTestId("scene-canvas");
   const focus = page.getByRole("slider", { name: "Focus distance", exact: true });
-  await expect(scene.locator("canvas")).toHaveCount(1);
+  try {
+    await expect(scene.locator("canvas")).toHaveCount(1);
+  } catch (error) {
+    await finishM7nCapture?.("canvas-count-assertion-failure");
+    throw error;
+  }
   await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
   await expect(focus).toBeEnabled();
   await expect(focus).toHaveValue("8890");

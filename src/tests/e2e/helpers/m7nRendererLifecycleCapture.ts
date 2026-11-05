@@ -188,7 +188,7 @@ export const installM7nRendererLifecycleCapture = async (
     });
   });
 
-  return async () => {
+  return async (capturePhase: "after-test" | "canvas-count-assertion-failure" = "after-test") => {
     let observed: Record<string, unknown> | null = null;
     let snapshotRetrievalError: string | null = null;
     try {
@@ -247,8 +247,11 @@ export const installM7nRendererLifecycleCapture = async (
     const failureSnapshot = {
       schemaVersion: 1,
       runId,
+      capturePhase,
       testIdentity: testInfo.titlePath.join(" › "),
-      testOutcome: testInfo.status,
+      testOutcome: capturePhase === "canvas-count-assertion-failure"
+        ? "failure-boundary"
+        : testInfo.status,
       expectedStatus: testInfo.expectedStatus,
       browserVersion: page.context().browser()?.version() ?? "unknown",
       projectName: testInfo.project.name,
@@ -267,7 +270,10 @@ export const installM7nRendererLifecycleCapture = async (
       },
       snapshotRetrievalError,
     };
-    await testInfo.attach(`m7n-${runId}-lifecycle-snapshot.json`, {
+    const attachmentName = capturePhase === "after-test"
+      ? `m7n-${runId}-lifecycle-snapshot.json`
+      : `m7n-${runId}-${capturePhase}-lifecycle-snapshot.json`;
+    await testInfo.attach(attachmentName, {
       body: JSON.stringify(failureSnapshot, null, 2),
       contentType: "application/json",
     });

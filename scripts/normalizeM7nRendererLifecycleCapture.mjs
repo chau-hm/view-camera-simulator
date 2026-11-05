@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 
@@ -136,9 +137,10 @@ const targetSpec = gatheredSpecs.find(({ spec, file }) =>
   `${basename(file ?? "unknown.spec.ts")}::${spec.title}` === definition.identities[0],
 );
 const targetTest = targetSpec?.spec.tests?.find((candidate) => candidate.projectName === "chromium") ?? targetSpec?.spec.tests?.[0];
-const snapshotAttachment = targetTest?.results
-  ?.flatMap((result) => result.attachments ?? [])
-  .find((attachment) => attachment.name === `m7n-${runId}-lifecycle-snapshot.json`);
+const snapshotAttachments = targetTest?.results?.flatMap((result) => result.attachments ?? []) ?? [];
+const snapshotAttachment = snapshotAttachments.find((attachment) =>
+  attachment.name === `m7n-${runId}-canvas-count-assertion-failure-lifecycle-snapshot.json`,
+) ?? snapshotAttachments.find((attachment) => attachment.name === `m7n-${runId}-lifecycle-snapshot.json`);
 let lifecycleSnapshot = null;
 if (snapshotAttachment?.body) {
   try {
@@ -177,6 +179,7 @@ const report = {
   captureId: outputCaptureId,
   executionSourceCommitSha: args.get("execution-source-sha"),
   toolingSourceCommitSha: args.get("tooling-source-sha"),
+  normalizerSourceCommitSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   rawCapture: {
     sha256: rawCaptureSha256,
     bytes: rawCaptureByteCount,
@@ -186,9 +189,9 @@ const report = {
   normalizedTrace: diagnosticsBody ? {
     artifactPath: diagnosticsPath,
     sha256: diagnosticsSha256,
-    eventSchemaVersion: lifecycleSnapshot.observed.applicationTrace.schemaVersion,
-    eventCount: lifecycleSnapshot.observed.applicationTrace.events.length,
-    droppedEventCount: lifecycleSnapshot.observed.applicationTrace.droppedEventCount,
+    eventSchemaVersion: lifecycleSnapshot.observed.applicationTrace?.schemaVersion ?? null,
+    eventCount: lifecycleSnapshot.observed.applicationTrace?.events.length ?? 0,
+    droppedEventCount: lifecycleSnapshot.observed.applicationTrace?.droppedEventCount ?? 0,
     unavailable: false,
   } : {
     artifactPath: null,
@@ -220,6 +223,7 @@ const report = {
     incomplete: statusCounts.incomplete ?? 0,
     retries: normalizedTests.reduce((total, test) => total + Math.max(0, test.attempts.length - 1), 0),
   },
+  diagnosticSnapshotPhase: lifecycleSnapshot.capturePhase ?? "unknown",
   tests: normalizedTests,
   environment: {
     nodeVersion: process.version,
