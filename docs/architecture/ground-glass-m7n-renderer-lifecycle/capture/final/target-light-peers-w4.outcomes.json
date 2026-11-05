@@ -1,0 +1,126 @@
+{
+  "schema": "m7n-playwright-outcomes-v1",
+  "captureId": "target-light-peers-w4",
+  "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+  "toolingSourceCommitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+  "normalizerSourceCommitSha": "efdd29ddcea206b07a2dbd197ff813ccfb2479b1",
+  "rawCapture": {
+    "sha256": "35cddb5610051456868a2e4bab8ce7f1b46df4f594d9a52df8b18b87db017227",
+    "bytes": 192600,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "normalizedTrace": {
+    "artifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-light-peers-w4.diagnostics.json",
+    "sha256": "0b107eb5674ff1bd626ed5c21614134b741d52df398ec889a40247a6f78248e7",
+    "eventSchemaVersion": 1,
+    "eventCount": 46,
+    "droppedEventCount": 0,
+    "unavailable": false
+  },
+  "config": {
+    "projectName": "chromium",
+    "configuredWorkers": 4,
+    "configuredRetries": 0,
+    "traceEnabled": true
+  },
+  "experiment": {
+    "workload": "canvas-target-plus-three-light-peers",
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+      "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+      "smoke.spec.ts::smoke: app boots at home"
+    ],
+    "maxConcurrentTests": 4,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "durationMs": 8061.518
+  },
+  "outcomes": {
+    "discovered": 4,
+    "passed": 3,
+    "unexpected": 1,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0
+  },
+  "diagnosticSnapshotPhase": "canvas-count-assertion-failure",
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "outcome": "unexpected",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startTime": "2026-11-05T15:56:28.919Z",
+          "durationMs": 7059,
+          "failureSignature": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed"
+        }
+      ],
+      "sourceSpecFile": "architecture-rise-focus-range.spec.ts"
+    },
+    {
+      "identity": "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+      "outcome": "passed",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startTime": "2026-11-05T15:56:28.919Z",
+          "durationMs": 1334,
+          "failureSignature": null
+        }
+      ],
+      "sourceSpecFile": "home.spec.ts"
+    },
+    {
+      "identity": "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+      "outcome": "passed",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 2,
+          "startTime": "2026-11-05T15:56:28.918Z",
+          "durationMs": 7066,
+          "failureSignature": null
+        }
+      ],
+      "sourceSpecFile": "simulator-header.spec.ts"
+    },
+    {
+      "identity": "smoke.spec.ts::smoke: app boots at home",
+      "outcome": "passed",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startTime": "2026-11-05T15:56:28.918Z",
+          "durationMs": 784,
+          "failureSignature": null
+        }
+      ],
+      "sourceSpecFile": "smoke.spec.ts"
+    }
+  ],
+  "environment": {
+    "nodeVersion": "v26.12.1",
+    "platform": "darwin",
+    "browserName": "Chromium",
+    "browserVersion": "149.0.7827.55"
+  }
+}

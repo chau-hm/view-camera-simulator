@@ -69,6 +69,46 @@ jobs:
           git update-ref refs/m7m/retained-tooling e6c139ef60974a544f75a45d062b92101d31d115
           git cat-file -e 'e6c139ef60974a544f75a45d062b92101d31d115^{commit}'
 
+      # M7N retains application execution, capture tooling, normalization, and
+      # evaluation at distinct PR commits. Retrieve each pinned source from the
+      # retained M7N head so the offline evidence check remains valid after a
+      # squash merge removes those commits from main's reachable history.
+      - name: Fetch M7N renderer lifecycle evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=5034edf1551466649623a920024057b57f8dddbf \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=src/app/pages.tsx \
+            --verify-path=src/components/layout/SimulatorWorkspace.tsx \
+            --verify-path=src/components/simulator/SceneViewport.tsx \
+            --verify-path=src/components/simulator/useObserverRendererLifecycle.ts \
+            --verify-path=src/render/GroundGlassRenderHost.tsx \
+            --verify-path=src/render/SceneRenderer.tsx \
+            --verify-path=src/render/testing/m7nRendererLifecycleTrace.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=3ec85599c3cd28019126ce00cff6115c1bcdf059 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/architecture-rise-webgpu-production.spec.ts \
+            --verify-path=scripts/m7n-spa-generation-probe.mjs \
+            --verify-path=package.json \
+            --verify-path=src/tests/unit/m7nRendererLifecycleTrace.test.ts \
+            --verify-path=src/tests/unit/m7nRendererLifecycleEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=efdd29ddcea206b07a2dbd197ff813ccfb2479b1 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=scripts/normalizeM7nRendererLifecycleCapture.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=ef79ee9886dacc0a1402fd9271318564e7ccfae6 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=scripts/evaluateM7nRendererLifecycle.ts \
+            --verify-path=scripts/run-m7n-renderer-lifecycle.mjs
+
       # Schema-v2 selected evidence also names its original tooling/evaluator
       # commit. It is an ancestor of PR #309, not necessarily of squash-merged
       # main, so fetch that exact commit or its retained PR history and verify
@@ -146,6 +186,9 @@ jobs:
 
       - name: Validate M7M Scene / Ground Glass readiness evidence integrity
         run: npm run evidence:check:m7m
+
+      - name: Validate M7N renderer lifecycle evidence integrity
+        run: npm run evidence:check:m7n
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'

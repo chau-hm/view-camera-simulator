@@ -1,0 +1,1867 @@
+{
+  "schemaVersion": 1,
+  "runId": "target-light-peers-w4-r1",
+  "testIdentity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+  "testOutcome": "failed",
+  "expectedStatus": "passed",
+  "browserVersion": "149.0.7827.55",
+  "projectName": "chromium",
+  "captureStartedAtNodeMonotonicMs": 366.850958,
+  "captureEndedAtNodeMonotonicMs": 6913.611708,
+  "observed": {
+    "observedAtPageMonotonicMs": 6528.399999976158,
+    "route": "/simulator/free/architecture-rise",
+    "documentReadyState": "complete",
+    "expectedScene": "architecture-rise",
+    "observedScene": "architecture-rise",
+    "workspaceFallbackVisible": false,
+    "sceneContainerExists": true,
+    "observerCanvasCount": 1,
+    "observerAttributes": {
+      "data-observer-renderer-surface": "observer",
+      "data-observer-three-revision": "187",
+      "data-observer-renderer-generation": "0",
+      "data-observer-renderer-status": "active",
+      "data-observer-renderer-request": "webgl",
+      "data-observer-renderer-attempt": "webgl",
+      "data-observer-selection-reason": "default-webgl-request",
+      "data-observer-application-fallback": "none",
+      "data-observer-webgpu-scene-compatibility": "verified",
+      "data-observer-webgpu-pilot-eligibility": "eligible",
+      "data-observer-scene-requirements-status": "declared",
+      "data-observer-scene-rendering-requirements": "observer-scene-subject,presentation-lighting,shadow-maps,procedural-world-environment",
+      "data-observer-scene-known-backend-constraints": "none",
+      "data-observer-webgpu-api-present": "true",
+      "data-observer-adapter-availability": "not-requested",
+      "data-observer-output-policy-requested": "standard",
+      "data-observer-output-policy-requested-param": "unspecified",
+      "data-observer-output-policy-selected": "standard",
+      "data-observer-output-policy-selection-reason": "standard-default",
+      "data-observer-environment-status": "active",
+      "data-scene-subject-id": "architecture-rise",
+      "data-observer-camera-position": "6.500000,3.000000,-6.500000",
+      "data-observer-renderer-family": "webgl-renderer",
+      "data-observer-execution-backend": "webgl2",
+      "data-observer-output-policy-installed": "standard",
+      "data-observer-shadow-map-status": "active",
+      "data-observer-shadow-map-type": "pcf",
+      "data-observer-tone-mapping-active": "true",
+      "data-observer-tone-mapping": "aces-filmic",
+      "data-observer-tone-mapping-exposure": "1.000000",
+      "data-observer-output-color-space": "srgb"
+    },
+    "groundGlassAttributes": {
+      "data-rtt-channel": "default",
+      "data-rtt-scene-id": "architecture-rise",
+      "data-frame-request-id": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+      "data-frame-channel-id": "default",
+      "data-frame-scene-id": "architecture-rise",
+      "data-render-host-lifecycle": "ready",
+      "data-frame-result-status": "completed",
+      "data-render-cleanup-status": "not-required",
+      "data-rtt-depth-available": "true",
+      "data-rtt-resource-generation": "1",
+      "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+      "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+      "data-rtt-logical-width": "450",
+      "data-rtt-logical-height": "360",
+      "data-rtt-resolution-scale": "1",
+      "data-rtt-effective-device-pixel-ratio": "2",
+      "data-rtt-internal-width": "900",
+      "data-rtt-internal-height": "720",
+      "data-rtt-canvas-css-width": "450",
+      "data-rtt-canvas-css-height": "360",
+      "data-rtt-color-target-width": "900",
+      "data-rtt-color-target-height": "720",
+      "data-rtt-depth-target-width": "900",
+      "data-rtt-depth-target-height": "720",
+      "data-rtt-blur-target-width": "900",
+      "data-rtt-blur-target-height": "720",
+      "data-rtt-gather-scale": "1",
+      "data-rtt-final-target-width": "900",
+      "data-rtt-final-target-height": "720",
+      "data-rtt-horizontal-shader-width": "900",
+      "data-rtt-horizontal-shader-height": "720",
+      "data-rtt-vertical-shader-width": "900",
+      "data-rtt-vertical-shader-height": "720",
+      "data-rtt-was-clamped": "false",
+      "data-rtt-inspection-window-active": "false",
+      "data-rtt-inspection-center-u": "0.5",
+      "data-rtt-inspection-center-v": "0.5",
+      "data-rtt-sampled-film-width-mm": "127",
+      "data-rtt-sampled-film-height-mm": "101.6",
+      "data-rtt-profiling-enabled": "false",
+      "data-rtt-profiling-backend": "disabled",
+      "data-rtt-camera-ok": "true",
+      "data-rtt-ground-glass-illuminance-gain": "0.966538912669662",
+      "data-rtt-natural-illumination-enabled": "true",
+      "data-rtt-natural-illumination-kind": "parallel-cos4",
+      "data-rtt-natural-illumination-image-distance-mm": "152.57437070938215",
+      "data-rtt-natural-illumination-offset-x-mm": "0",
+      "data-rtt-natural-illumination-offset-y-mm": "0",
+      "data-rtt-coverage-enabled": "true",
+      "data-rtt-coverage-kind": "parallel-circle",
+      "data-rtt-coverage-radius-mm": "110.85176900402158",
+      "data-rtt-coverage-offset-x-mm": "0",
+      "data-rtt-coverage-offset-y-mm": "0",
+      "data-rtt-camera-position": "0,0,0",
+      "data-rtt-camera-up": "0,1,0",
+      "data-rtt-camera-forward": "0,0,1"
+    },
+    "pageNavigationAndLongTaskTiming": {
+      "navigation": [
+        {
+          "startTimeMs": 0,
+          "durationMs": 448.69999998807907,
+          "domInteractiveMs": 76.69999998807907,
+          "domContentLoadedMs": 447.89999997615814,
+          "loadEventEndMs": 448.69999998807907
+        }
+      ],
+      "longTasks": [
+        {
+          "startTimeMs": 394.19999998807907,
+          "durationMs": 54
+        },
+        {
+          "startTimeMs": 829.3000000119209,
+          "durationMs": 60
+        },
+        {
+          "startTimeMs": 1043.6000000238419,
+          "durationMs": 667
+        },
+        {
+          "startTimeMs": 1711.199999988079,
+          "durationMs": 3883
+        }
+      ],
+      "droppedLongTasks": 0,
+      "longTaskObserverAvailable": true,
+      "lifecycleMilestones": [
+        {
+          "event": "document-start-observed",
+          "timestampMs": 8.699999988079071,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": null,
+          "canvasCount": 0,
+          "rendererStatus": null,
+          "rendererGeneration": null,
+          "workspaceMounted": false,
+          "suspenseVisible": false
+        },
+        {
+          "event": "workspace-suspense-visible",
+          "timestampMs": 463.69999998807907,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": null,
+          "canvasCount": 0,
+          "rendererStatus": null,
+          "rendererGeneration": null,
+          "workspaceMounted": false,
+          "suspenseVisible": true
+        },
+        {
+          "event": "workspace-dom-mounted",
+          "timestampMs": 962.1999999880791,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "scene-identity-observed",
+          "timestampMs": 962.1999999880791,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "observer-canvas-dom-attached",
+          "timestampMs": 962.1999999880791,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "observer-status-pending",
+          "timestampMs": 962.1999999880791,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "observer-status-active",
+          "timestampMs": 1710.6000000238419,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "active",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        }
+      ],
+      "droppedLifecycleMilestones": 0,
+      "lifecycleMutationObserverAvailable": true
+    },
+    "applicationTrace": {
+      "schemaVersion": 1,
+      "pageId": "m7n-qwgcj9fp",
+      "timeOriginMs": 1793893353522.4,
+      "capacity": 512,
+      "droppedEventCount": 0,
+      "events": [
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 1,
+          "timestampMs": 455.69999998807907,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "route",
+          "event": "workspace-module-load-started",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 2,
+          "timestampMs": 468.69999998807907,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "workspace-suspense-fallback-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": "visible"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 3,
+          "timestampMs": 468.80000001192093,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "route",
+          "event": "simulator-route-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null,
+          "detail": {
+            "taskRequested": false
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 4,
+          "timestampMs": 469.19999998807907,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "workspace-suspense-fallback-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": "visible"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 5,
+          "timestampMs": 469.19999998807907,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "route",
+          "event": "simulator-route-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null,
+          "detail": {
+            "taskRequested": false
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 6,
+          "timestampMs": 889.3999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "route",
+          "event": "workspace-module-load-completed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 7,
+          "timestampMs": 939.3000000119209,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-generation-authority-activated",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "awaiting-capabilities",
+          "detail": {
+            "backendStatus": "selected",
+            "rendererAttempt": "webgl",
+            "requestIdentity": "architecture-rise:default:public:standard",
+            "generationNumber": 0
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 8,
+          "timestampMs": 961.8000000119209,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-1",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 9,
+          "timestampMs": 965.6999999880791,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-renderer-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "committed"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 10,
+          "timestampMs": 965.6999999880791,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-asset-configuration-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "configured",
+          "detail": {
+            "declaredAssetCount": 3,
+            "selectedAssetCount": 2,
+            "lazyAssetsDeferred": true
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 11,
+          "timestampMs": 965.8000000119209,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-scene-container-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 12,
+          "timestampMs": 965.8999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-canvas-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached",
+          "detail": {
+            "canvasCount": 1
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 13,
+          "timestampMs": 966,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-viewport-effect-setup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 14,
+          "timestampMs": 966,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-backend-selected",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "selected",
+          "detail": {
+            "requestedRenderer": "webgl",
+            "rendererAttempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "applicationFallback": "none"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 15,
+          "timestampMs": 966,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-renderer-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "webgl",
+          "detail": {
+            "requestIdentity": "architecture-rise:default:public:standard"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 16,
+          "timestampMs": 966.6000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "simulator-workspace-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 17,
+          "timestampMs": 966.6000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-started",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 18,
+          "timestampMs": 967,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 19,
+          "timestampMs": 967.3999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "simulator-workspace-effect-cleanup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 20,
+          "timestampMs": 967.3999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-viewport-effect-cleanup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 21,
+          "timestampMs": 967.3999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-renderer-component-effect-cleanup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 22,
+          "timestampMs": 967.3999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-scene-container-observation-stopped",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "observation-stopped"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 23,
+          "timestampMs": 967.8000000119209,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-1",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 24,
+          "timestampMs": 968,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-renderer-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "committed"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 25,
+          "timestampMs": 968,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-asset-configuration-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "configured",
+          "detail": {
+            "declaredAssetCount": 3,
+            "selectedAssetCount": 2,
+            "lazyAssetsDeferred": true
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 26,
+          "timestampMs": 968,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-scene-container-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached"
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 27,
+          "timestampMs": 968,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-canvas-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached",
+          "detail": {
+            "canvasCount": 1
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 28,
+          "timestampMs": 968.1000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-viewport-effect-setup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 29,
+          "timestampMs": 968.1000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-backend-selected",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "selected",
+          "detail": {
+            "requestedRenderer": "webgl",
+            "rendererAttempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "applicationFallback": "none"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 30,
+          "timestampMs": 968.1000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-renderer-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "webgl",
+          "detail": {
+            "requestIdentity": "architecture-rise:default:public:standard"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 31,
+          "timestampMs": 968.1999999880791,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "simulator-workspace-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 32,
+          "timestampMs": 968.1999999880791,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-started",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 33,
+          "timestampMs": 968.3000000119209,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 34,
+          "timestampMs": 990.1000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 35,
+          "timestampMs": 991.1000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-generation-active",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "active",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 36,
+          "timestampMs": 992.6999999880791,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 37,
+          "timestampMs": 997.6000000238419,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 38,
+          "timestampMs": 997.8999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "scene",
+          "event": "scene-asset-configuration-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "configured",
+          "detail": {
+            "declaredAssetCount": 3,
+            "selectedAssetCount": 3,
+            "lazyAssetsDeferred": false
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 39,
+          "timestampMs": 1146.300000011921,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-r3f-renderer-created",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "created",
+          "detail": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2",
+            "canvasDomAttached": true
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 40,
+          "timestampMs": 1146.699999988079,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "observer",
+          "event": "observer-capabilities-published",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "active",
+          "detail": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 41,
+          "timestampMs": 1673.5,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-renderer-mounted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "mounted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "rendererFamily": "webgl-renderer",
+            "executionApi": "webgl2"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 42,
+          "timestampMs": 1709.8999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 43,
+          "timestampMs": 1970,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-current-frame-published",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "published",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 44,
+          "timestampMs": 1983.8999999761581,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 45,
+          "timestampMs": 5611.300000011921,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-qwgcj9fp",
+          "sequence": 46,
+          "timestampMs": 5629,
+          "timeOriginMs": 1793893353522.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+          "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+            "activeRequestId": "gg-mw3psanq-boj6l45cp1t-default-request-2"
+          }
+        }
+      ]
+    },
+    "traceUnavailable": false,
+    "traceOverflowCount": 0,
+    "lastLifecycleEvents": [
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 27,
+        "timestampMs": 968,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "observer",
+        "event": "observer-canvas-dom-attached",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+        "rendererGeneration": 0,
+        "status": "attached",
+        "detail": {
+          "canvasCount": 1
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 28,
+        "timestampMs": 968.1000000238419,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "scene",
+        "event": "scene-viewport-effect-setup",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1",
+        "rendererGeneration": null,
+        "status": null
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 29,
+        "timestampMs": 968.1000000238419,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "observer",
+        "event": "observer-backend-selected",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1",
+        "rendererGeneration": 0,
+        "status": "selected",
+        "detail": {
+          "requestedRenderer": "webgl",
+          "rendererAttempt": "webgl",
+          "selectionReason": "default-webgl-request",
+          "applicationFallback": "none"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 30,
+        "timestampMs": 968.1000000238419,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "observer",
+        "event": "observer-renderer-requested",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1",
+        "rendererGeneration": 0,
+        "status": "webgl",
+        "detail": {
+          "requestIdentity": "architecture-rise:default:public:standard"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 31,
+        "timestampMs": 968.1999999880791,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "simulator",
+        "event": "simulator-workspace-committed",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "free:architecture-rise:free",
+        "rendererGeneration": null,
+        "status": null
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 32,
+        "timestampMs": 968.1999999880791,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "simulator",
+        "event": "scene-route-initialization-started",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "free:architecture-rise:free",
+        "rendererGeneration": null,
+        "status": null
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 33,
+        "timestampMs": 968.3000000119209,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "simulator",
+        "event": "scene-route-initialization-requested",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "free:architecture-rise:free",
+        "rendererGeneration": null,
+        "status": null
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 34,
+        "timestampMs": 990.1000000238419,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 35,
+        "timestampMs": 991.1000000238419,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-generation-active",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "active",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 36,
+        "timestampMs": 992.6999999880791,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 37,
+        "timestampMs": 997.6000000238419,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 38,
+        "timestampMs": 997.8999999761581,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "scene",
+        "event": "scene-asset-configuration-committed",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+        "rendererGeneration": 0,
+        "status": "configured",
+        "detail": {
+          "declaredAssetCount": 3,
+          "selectedAssetCount": 3,
+          "lazyAssetsDeferred": false
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 39,
+        "timestampMs": 1146.300000011921,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "observer",
+        "event": "observer-r3f-renderer-created",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+        "rendererGeneration": 0,
+        "status": "created",
+        "detail": {
+          "rendererFamily": "webgl-renderer",
+          "executionBackend": "webgl2",
+          "canvasDomAttached": true
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 40,
+        "timestampMs": 1146.699999988079,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "observer",
+        "event": "observer-capabilities-published",
+        "routeId": "/simulator/free/architecture-rise",
+        "sceneId": "architecture-rise",
+        "mountGeneration": "m7n-observer-viewport-1",
+        "rendererGeneration": 0,
+        "status": "active",
+        "detail": {
+          "rendererFamily": "webgl-renderer",
+          "executionBackend": "webgl2"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 41,
+        "timestampMs": 1673.5,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-renderer-mounted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "mounted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 42,
+        "timestampMs": 1709.8999999761581,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 43,
+        "timestampMs": 1970,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-current-frame-published",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "published",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 44,
+        "timestampMs": 1983.8999999761581,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 45,
+        "timestampMs": 5611.300000011921,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-qwgcj9fp",
+        "sequence": 46,
+        "timestampMs": 5629,
+        "timeOriginMs": 1793893353522.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-ujgm1qy44cf",
+        "rendererGeneration": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3psanq-boj6l45cp1t-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3psanq-boj6l45cp1t-default-generation-1",
+          "activeRequestId": "gg-mw3psanq-boj6l45cp1t-default-request-2"
+        }
+      }
+    ]
+  },
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failedRequests": [],
+  "relevantResources": [
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/OpticalSectionDiagram.tsx",
+      "startedAtMs": 517.645125,
+      "completedAtMs": 611.443417,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/opticalSectionProjection.ts",
+      "startedAtMs": 517.148958,
+      "completedAtMs": 611.486,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/MirrorShiftTeachingDiagram.tsx",
+      "startedAtMs": 517.6504170000001,
+      "completedAtMs": 611.8390420000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/i18n/guidedTaskMessageKeys.ts",
+      "startedAtMs": 525.516,
+      "completedAtMs": 614.615417,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/OpticalDepthStrip.tsx",
+      "startedAtMs": 517.638542,
+      "completedAtMs": 615.327917,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/obliqueTabletopTeachingGeometry.ts",
+      "startedAtMs": 517.661083,
+      "completedAtMs": 615.497583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/controls/ViewOptions.tsx",
+      "startedAtMs": 517.82075,
+      "completedAtMs": 615.5335,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/focusDistributionLayout.ts",
+      "startedAtMs": 525.185292,
+      "completedAtMs": 615.8300830000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassRenderer.tsx",
+      "startedAtMs": 517.815333,
+      "completedAtMs": 616.647792,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/FeedbackPanel.tsx",
+      "startedAtMs": 525.537,
+      "completedAtMs": 621.309542,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/GuidedLessonProgress.tsx",
+      "startedAtMs": 525.544625,
+      "completedAtMs": 621.591958,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/TaskPanel.tsx",
+      "startedAtMs": 525.55175,
+      "completedAtMs": 622.211542,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassBlur.ts",
+      "startedAtMs": 529.107625,
+      "completedAtMs": 622.491417,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/core/optics/scheimpflugConstruction.ts",
+      "startedAtMs": 529.115708,
+      "completedAtMs": 622.683208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/SceneOverlayControls.tsx",
+      "startedAtMs": 529.595542,
+      "completedAtMs": 623.9355,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerWebGpuDiagnostic.ts",
+      "startedAtMs": 529.601125,
+      "completedAtMs": 624.177167,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/SceneRenderer.tsx",
+      "startedAtMs": 529.589833,
+      "completedAtMs": 624.484542,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerBackend.ts",
+      "startedAtMs": 529.606375,
+      "completedAtMs": 624.6214170000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerOutputPolicy.ts",
+      "startedAtMs": 529.611125,
+      "completedAtMs": 624.9238330000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerSceneCompatibility.ts",
+      "startedAtMs": 529.616167,
+      "completedAtMs": 625.5237500000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/sceneViewFraming.ts",
+      "startedAtMs": 529.6264170000001,
+      "completedAtMs": 626.882875,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassProjection.ts",
+      "startedAtMs": 536.016875,
+      "completedAtMs": 627.69075,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassPipeline.ts",
+      "startedAtMs": 536.026958,
+      "completedAtMs": 627.91,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/scenes/focusTargetPresentationMetrics.ts",
+      "startedAtMs": 537.563833,
+      "completedAtMs": 628.0345,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/useObserverRendererLifecycle.ts",
+      "startedAtMs": 529.62125,
+      "completedAtMs": 629.034208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/core/tasks/calculateGroundGlassFrameBounds.ts",
+      "startedAtMs": 597.9565,
+      "completedAtMs": 632.4005,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/diagramHelpers.ts",
+      "startedAtMs": 601.809208,
+      "completedAtMs": 633.999333,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/labelPlacement.ts",
+      "startedAtMs": 611.464,
+      "completedAtMs": 635.740042,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/ProjectedCameraConstruction.tsx",
+      "startedAtMs": 611.470292,
+      "completedAtMs": 646.818542,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/scenes/mirrorShiftTeachingGeometry.ts",
+      "startedAtMs": 611.897167,
+      "completedAtMs": 646.940208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/sceneGeometryGuides.ts",
+      "startedAtMs": 611.475333,
+      "completedAtMs": 647.158292,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassFocusRing.tsx",
+      "startedAtMs": 616.685792,
+      "completedAtMs": 652.613417,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassPhysicalGrid.ts",
+      "startedAtMs": 616.764083,
+      "completedAtMs": 654.129167,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/postprocessing/DepthOfFieldPass.ts",
+      "startedAtMs": 616.8050000000001,
+      "completedAtMs": 654.153417,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassOverlays.tsx",
+      "startedAtMs": 616.680583,
+      "completedAtMs": 654.165208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassRenderSurface.tsx",
+      "startedAtMs": 616.6749580000001,
+      "completedAtMs": 654.359208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassStage.tsx",
+      "startedAtMs": 616.6682920000001,
+      "completedAtMs": 654.373708,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassFocusLabel.ts",
+      "startedAtMs": 616.81325,
+      "completedAtMs": 657.540583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/taskHelpers.ts",
+      "startedAtMs": 621.338958,
+      "completedAtMs": 657.75,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroBellowsExtensionTeachingContent.tsx",
+      "startedAtMs": 621.347625,
+      "completedAtMs": 657.7646669999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroDepthOfFieldTeachingContent.tsx",
+      "startedAtMs": 621.3535,
+      "completedAtMs": 657.8333749999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroObliquePlaneTeachingContent.tsx",
+      "startedAtMs": 621.358917,
+      "completedAtMs": 657.936042,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroCompoundMovementsTeachingContent.tsx",
+      "startedAtMs": 621.363833,
+      "completedAtMs": 658.1384170000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/sceneOverlayResponsive.ts",
+      "startedAtMs": 624.1455,
+      "completedAtMs": 659.7492500000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/sceneLegendHelpers.ts",
+      "startedAtMs": 625.129458,
+      "completedAtMs": 660.05475,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/core/optics/dofBlurModel.ts",
+      "startedAtMs": 622.597333,
+      "completedAtMs": 660.2155419999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/imageCircleGeometry.ts",
+      "startedAtMs": 625.13475,
+      "completedAtMs": 660.48575,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/scenePlaneOverlayGeometry.ts",
+      "startedAtMs": 625.140125,
+      "completedAtMs": 660.5906669999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/scheimpflugConstructionGeometry.ts",
+      "startedAtMs": 625.145167,
+      "completedAtMs": 683.512958,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/planeOrientation.ts",
+      "startedAtMs": 625.15,
+      "completedAtMs": 684.1719579999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/CameraBodyAssembly.tsx",
+      "startedAtMs": 625.154958,
+      "completedAtMs": 684.2632080000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/FocusFundamentalsTeachingCues.tsx",
+      "startedAtMs": 625.415792,
+      "completedAtMs": 684.62925,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/ConceptualViewCamera.tsx",
+      "startedAtMs": 625.407292,
+      "completedAtMs": 684.6514999999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/WorldIllumination.tsx",
+      "startedAtMs": 625.421542,
+      "completedAtMs": 693.1464169999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/observerWorldEnvironmentStatus.ts",
+      "startedAtMs": 625.427458,
+      "completedAtMs": 693.4165,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerRendererInitialization.ts",
+      "startedAtMs": 625.4325,
+      "completedAtMs": 693.669042,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyMaterialAuditProbe.tsx",
+      "startedAtMs": 625.437083,
+      "completedAtMs": 694.6765419999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/AnatomyGpuBlendIntermediateProbe.tsx",
+      "startedAtMs": 625.4417080000001,
+      "completedAtMs": 694.8916670000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/ObserverCanvasErrorBoundary.tsx",
+      "startedAtMs": 625.475958,
+      "completedAtMs": 698.912583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerVisualPipelineCapabilities.ts",
+      "startedAtMs": 625.502625,
+      "completedAtMs": 699.0687499999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassStageTransform.ts",
+      "startedAtMs": 654.492292,
+      "completedAtMs": 728.432667,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/focusStandardPresentation.ts",
+      "startedAtMs": 684.6868750000001,
+      "completedAtMs": 728.577583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyRenderableContribution.ts",
+      "startedAtMs": 694.7840000000001,
+      "completedAtMs": 777.5727079999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyProjectedBounds.ts",
+      "startedAtMs": 694.7779170000001,
+      "completedAtMs": 779.2625419999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyMaterialRoles.ts",
+      "startedAtMs": 694.789125,
+      "completedAtMs": 781.038292,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/conceptualBellowsGeometry.ts",
+      "startedAtMs": 684.6985830000001,
+      "completedAtMs": 782.286208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/conceptualCameraAnatomyGeometry.ts",
+      "startedAtMs": 684.705042,
+      "completedAtMs": 783.249208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/WorldEnvironment.tsx",
+      "startedAtMs": 693.3475000000001,
+      "completedAtMs": 783.417375,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsCompositingIntervention.ts",
+      "startedAtMs": 694.825,
+      "completedAtMs": 784.1981250000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsDisposalWitness.ts",
+      "startedAtMs": 694.829917,
+      "completedAtMs": 785.6609169999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyGpuBlendIntermediate.ts",
+      "startedAtMs": 695.067708,
+      "completedAtMs": 786.624292,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyGpuBlendCalibration.ts",
+      "startedAtMs": 695.0773750000001,
+      "completedAtMs": 787.504917,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsDrawMetadataCapture.ts",
+      "startedAtMs": 695.1564169999999,
+      "completedAtMs": 787.9670000000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyMaterialOutputIntervention.ts",
+      "startedAtMs": 695.171292,
+      "completedAtMs": 789.854,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyNativeWebGpuDrawBoundaryCapture.ts",
+      "startedAtMs": 695.1663329999999,
+      "completedAtMs": 790.656917,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsNativePipelineEvidence.ts",
+      "startedAtMs": 695.161625,
+      "completedAtMs": 790.7515000000001,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyNativeWebGpuDrawBoundary.ts",
+      "startedAtMs": 790.6949999999999,
+      "completedAtMs": 797.454917,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/observerWorldEnvironmentRig.ts",
+      "startedAtMs": 783.5089580000001,
+      "completedAtMs": 799.1034999999999,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyNativeFramebufferParity.ts",
+      "startedAtMs": 790.7157500000001,
+      "completedAtMs": 799.430875,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/node_modules/.vite/deps/three-stdlib.js",
+      "startedAtMs": 625.12275,
+      "completedAtMs": 836.6694580000001,
+      "status": 200
+    }
+  ],
+  "droppedEventCounts": {
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "failedRequests": 0,
+    "relevantResources": 315
+  },
+  "snapshotRetrievalError": null
+}

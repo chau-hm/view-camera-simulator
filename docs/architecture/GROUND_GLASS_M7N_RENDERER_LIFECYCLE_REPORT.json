@@ -1,0 +1,900 @@
+{
+  "schemaVersion": 1,
+  "reportId": "m7n-renderer-lifecycle-controlled-diagnosis-2026-11-06",
+  "evaluatorRevision": "m7n-renderer-lifecycle-evaluator-v1",
+  "baseCommitSha": "8a383e740d6a3f14b7673ae3adb18471b7d55d4c",
+  "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+  "instrumentationSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+  "toolingSourceCommitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+  "normalizationSourceCommitSha": "efdd29ddcea206b07a2dbd197ff813ccfb2479b1",
+  "evaluatorSourceCommitSha": "ef79ee9886dacc0a1402fd9271318564e7ccfae6",
+  "priorCaptureToolingSourceCommitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+  "sourceFiles": [
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/app/pages.tsx",
+      "sha256": "b51e0f6b85f7b1d0947589be85df9456f2fa1aa59c7bf29bbb3a5544ce8b69e0"
+    },
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/components/layout/SimulatorWorkspace.tsx",
+      "sha256": "43dbf9f5b2612a466097a6d247c40ace75eb5adadcb1edbc37284b2dc1bccb52"
+    },
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/components/simulator/SceneViewport.tsx",
+      "sha256": "4198c7cd07e2d3898458a4a80dcce443611701ae0692d847d98fe952dca14b6a"
+    },
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/components/simulator/useObserverRendererLifecycle.ts",
+      "sha256": "3936565d1ce69269cc0a055b9af41c6251d02e98488948715a565bc92f336b9f"
+    },
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/render/GroundGlassRenderHost.tsx",
+      "sha256": "8d5348db656bae36ed3d645cffb8c9506298a47f68501b30791c8b3403a20ffb"
+    },
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/render/SceneRenderer.tsx",
+      "sha256": "2f3100aa09c6a65de2e4e67824a0e1d5816e0856f3a5a46ab2b67d152abf9b88"
+    },
+    {
+      "role": "execution",
+      "commitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "path": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "sha256": "54c19c14a30827099366aa0e0342ebd31fa07cac8729d55b0edf341865a0f9af"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
+      "sha256": "16da59c6292f43c6dc72d0d220f8c78f05db86bf74978b970cfa229909024a14"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "sha256": "f2d3c88c1b5240aac777d16a7a95e76470b0584ede0e13172ed65a2b60d67ec9"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+      "sha256": "ec222e1601dc4414506ac27cc2a6f5f5edacc4ed53a43d0040da7b0f71e908b3"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "scripts/m7n-spa-generation-probe.mjs",
+      "sha256": "181b36ee57d23c319658d0cefa0e53b53c9454c4bc072b82b227216fa9b080c8"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "package.json",
+      "sha256": "4c33a3d93f33186ba636d7c0bfbb8fb55a3a01fe65c6e391674c7ee40cbd9ee9"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
+      "sha256": "3e07ca002e0aac4daf163c4e91d221e46c140b2db0dc799d0e42b41aeb062d1a"
+    },
+    {
+      "role": "capture-tooling",
+      "commitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+      "path": "src/tests/unit/m7nRendererLifecycleEvidence.test.ts",
+      "sha256": "9d8597fd3ef5e529a1aa9226de0c91870d92155dc72dd4189d4b7cfdd383f3d3"
+    },
+    {
+      "role": "prior-tooling",
+      "commitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+      "path": "src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
+      "sha256": "6c482f4f5ec518b4507cd2edb235338020c864626e0a82c8d040481f15425835"
+    },
+    {
+      "role": "evaluator",
+      "commitSha": "ef79ee9886dacc0a1402fd9271318564e7ccfae6",
+      "path": "scripts/evaluateM7nRendererLifecycle.ts",
+      "sha256": "d338a2c736e817ad894b33ec286f109aa8a405071eced9cec5f660ea7aa05a49"
+    },
+    {
+      "role": "evaluator",
+      "commitSha": "ef79ee9886dacc0a1402fd9271318564e7ccfae6",
+      "path": "scripts/run-m7n-renderer-lifecycle.mjs",
+      "sha256": "448f272404bb77baa11727b26360193de7a6679b3223c9f3a273c1029c536eaa"
+    },
+    {
+      "role": "normalizer",
+      "commitSha": "efdd29ddcea206b07a2dbd197ff813ccfb2479b1",
+      "path": "scripts/normalizeM7nRendererLifecycleCapture.mjs",
+      "sha256": "51e8fe048fee8b04ba8701f54ce10a9dc4abe8e4dc4a0f99d3e624e0da5f6283"
+    }
+  ],
+  "environment": {
+    "threeJsRevision": "187",
+    "nodeVersion": "v26.12.1",
+    "operatingSystem": {
+      "platform": "darwin",
+      "architecture": "arm64",
+      "macOSVersion": "27.0.1"
+    },
+    "browserName": "Chromium",
+    "browserVersion": "149.0.7827.55",
+    "projectName": "chromium",
+    "headless": true,
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "renderingPath": "production-default WebGL; no WebGPU research flags enabled",
+    "captureDate": "2026-11-06",
+    "vitePorts": [
+      4226,
+      4227,
+      4225,
+      4228
+    ],
+    "retryPolicy": 0
+  },
+  "historicalReferences": {
+    "m7k": {
+      "documentPath": "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION.md",
+      "reportPath": "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json",
+      "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+      "discovered": 278,
+      "passed": 121,
+      "unexpected": 82,
+      "skipped": 75,
+      "flaky": 0,
+      "incomplete": 0,
+      "broadE2eQualification": "not-qualified"
+    },
+    "m7l": {
+      "documentPath": "docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER_REMEDIATION.md",
+      "reportPath": "docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER_REMEDIATION_REPORT.json",
+      "selectedIdentities": 11,
+      "schedulingSensitive": true,
+      "verifiedFixes": 0
+    },
+    "m7m": {
+      "documentPath": "docs/architecture/GROUND_GLASS_M7M_SCENE_READINESS.md",
+      "reportPath": "docs/architecture/GROUND_GLASS_M7M_SCENE_READINESS_REPORT.json",
+      "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+      "retainedToolingSourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "selectedIdentities": 12,
+      "workerResults": {
+        "1": "11/12",
+        "2": "9/12",
+        "4": "4/12"
+      },
+      "lightweightPeerW4": "4/4",
+      "rendererHeavyPeerW4": "1/4",
+      "verifiedFixes": 0,
+      "limitation": "A missing Canvas at an assertion did not independently prove WebGL context creation failure."
+    }
+  },
+  "instrumentation": {
+    "enabledCondition": "import.meta.env.DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true",
+    "eventSchemaVersion": 1,
+    "eventBufferCapacity": 512,
+    "droppedEventCount": 0,
+    "productionDisabled": true,
+    "runtimeGlobal": "window.__m7nRendererLifecycleTrace.snapshot()",
+    "owners": [
+      {
+        "stage": "route-module",
+        "owner": "src/app/pages.tsx lazy module loader",
+        "signals": [
+          "workspace-module-load-started",
+          "workspace-module-load-completed"
+        ]
+      },
+      {
+        "stage": "route-component",
+        "owner": "SimulatorRoutePage",
+        "signals": [
+          "simulator-route-component-committed"
+        ]
+      },
+      {
+        "stage": "workspace-suspense",
+        "owner": "trace-only Suspense fallback",
+        "signals": [
+          "workspace-suspense-fallback-committed"
+        ]
+      },
+      {
+        "stage": "workspace",
+        "owner": "SimulatorWorkspace",
+        "signals": [
+          "simulator-workspace-committed",
+          "scene-route-initialization-started",
+          "scene-route-initialization-requested"
+        ]
+      },
+      {
+        "stage": "scene",
+        "owner": "SceneViewport and SceneRenderer",
+        "signals": [
+          "scene-renderer-component-committed",
+          "scene-asset-configuration-committed"
+        ]
+      },
+      {
+        "stage": "observer-request",
+        "owner": "SceneViewport backend selection and useObserverRendererLifecycle",
+        "signals": [
+          "observer-renderer-requested",
+          "observer-generation-authority-activated"
+        ]
+      },
+      {
+        "stage": "canvas-dom",
+        "owner": "SceneRenderer containerRef MutationObserver and passive browser DOM observer",
+        "signals": [
+          "observer-canvas-dom-attached"
+        ]
+      },
+      {
+        "stage": "r3f-renderer",
+        "owner": "R3F Canvas onCreated",
+        "signals": [
+          "observer-r3f-renderer-created"
+        ],
+        "limitation": "Records renderer availability and DOM connection; no separate context-acquired event is claimed."
+      },
+      {
+        "stage": "observer-active",
+        "owner": "ObserverRendererCapabilityReporter through useObserverRendererLifecycle",
+        "signals": [
+          "observer-capabilities-published"
+        ]
+      },
+      {
+        "stage": "ground-glass",
+        "owner": "GroundGlassRenderHost",
+        "signals": [
+          "ground-glass-generation-active",
+          "ground-glass-renderer-mounted",
+          "ground-glass-current-frame-published"
+        ]
+      }
+    ],
+    "disabledMode": "No application trace API or event buffer; passive Playwright observations remain separate.",
+    "productionCheck": "Production-preview test asserts that the M7N trace global is absent."
+  },
+  "experiments": [
+    {
+      "id": "target-solo-w1-trace-off",
+      "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "workload": "canvas-target-alone",
+      "configuredWorkers": 1,
+      "observedConcurrency": 1,
+      "actualWorkerIndices": [
+        0
+      ],
+      "retries": 0,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "targetOutcome": "passed",
+      "durationMs": 15215.310000000001,
+      "diagnosticSnapshotPhase": "after-test",
+      "traceEnabled": false,
+      "outcomesArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-solo-w1-trace-off.outcomes.json",
+      "outcomesArtifactSha256": "9798b816db410ec7debce46a6a8037ee883f9f4fbdc0b7ca94b54235df350e99",
+      "traceArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-solo-w1-trace-off.diagnostics.json",
+      "traceDigest": "65f04958de2a6b4a08e1a751d97eec6df66c03dbcb02ff92d2bf425c40c67e1c",
+      "traceArtifactSha256": "65f04958de2a6b4a08e1a751d97eec6df66c03dbcb02ff92d2bf425c40c67e1c",
+      "eventCount": 0,
+      "droppedEventCount": 0,
+      "rawCapture": {
+        "sha256": "851743920735971b53a682407c6f3d5e8ffee4694311a227c58d48bcddb39fe8",
+        "bytes": 48078,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      }
+    },
+    {
+      "id": "target-solo-w1-trace-on",
+      "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "workload": "canvas-target-alone",
+      "configuredWorkers": 1,
+      "observedConcurrency": 1,
+      "actualWorkerIndices": [
+        0
+      ],
+      "retries": 0,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "targetOutcome": "passed",
+      "durationMs": 15189.221000000001,
+      "diagnosticSnapshotPhase": "after-test",
+      "traceEnabled": true,
+      "outcomesArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-solo-w1-trace-on.outcomes.json",
+      "outcomesArtifactSha256": "b701942a74895c4087e4a7053b64b2e54dd5587781e63f8dad7a2d0fca9f59ec",
+      "traceArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-solo-w1-trace-on.diagnostics.json",
+      "traceDigest": "dc21ee640b85b73c5ee928f6e579c98e45dc22487c21b4f33749d5c1deb9c51d",
+      "traceArtifactSha256": "dc21ee640b85b73c5ee928f6e579c98e45dc22487c21b4f33749d5c1deb9c51d",
+      "eventCount": 77,
+      "droppedEventCount": 0,
+      "rawCapture": {
+        "sha256": "c51266f94d5897065505f7f469b110daa69702d18984a0d27b0ce0363be9a730",
+        "bytes": 138676,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      }
+    },
+    {
+      "id": "target-light-peers-w4",
+      "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "workload": "canvas-target-plus-three-light-peers",
+      "configuredWorkers": 4,
+      "observedConcurrency": 4,
+      "actualWorkerIndices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "retries": 0,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 3,
+        "unexpected": 1,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "targetOutcome": "unexpected",
+      "durationMs": 8061.518,
+      "diagnosticSnapshotPhase": "canvas-count-assertion-failure",
+      "traceEnabled": true,
+      "outcomesArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-light-peers-w4.outcomes.json",
+      "outcomesArtifactSha256": "cca55bd6b653300f33ef2b6dabfb7fc46535a9cc7eb8b9242a30cffdf562085f",
+      "traceArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-light-peers-w4.diagnostics.json",
+      "traceDigest": "0b107eb5674ff1bd626ed5c21614134b741d52df398ec889a40247a6f78248e7",
+      "traceArtifactSha256": "0b107eb5674ff1bd626ed5c21614134b741d52df398ec889a40247a6f78248e7",
+      "eventCount": 46,
+      "droppedEventCount": 0,
+      "rawCapture": {
+        "sha256": "35cddb5610051456868a2e4bab8ce7f1b46df4f594d9a52df8b18b87db017227",
+        "bytes": 192600,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      }
+    },
+    {
+      "id": "target-renderer-heavy-peers-w4",
+      "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "workload": "canvas-target-plus-three-renderer-heavy-peers",
+      "configuredWorkers": 4,
+      "observedConcurrency": 4,
+      "actualWorkerIndices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "retries": 0,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 1,
+        "unexpected": 3,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "targetOutcome": "unexpected",
+      "durationMs": 121172.046,
+      "diagnosticSnapshotPhase": "canvas-count-assertion-failure",
+      "traceEnabled": true,
+      "outcomesArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-renderer-heavy-peers-w4.outcomes.json",
+      "outcomesArtifactSha256": "48dfe4f2ca7684e9fa2276314e9faea0f8db14bc68a7680bbe9d27d9b4515ef2",
+      "traceArtifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-renderer-heavy-peers-w4.diagnostics.json",
+      "traceDigest": "480f0067c47787347607876714a331ae2972be158d796c971ecc0d248ec35458",
+      "traceArtifactSha256": "480f0067c47787347607876714a331ae2972be158d796c971ecc0d248ec35458",
+      "eventCount": 46,
+      "droppedEventCount": 0,
+      "rawCapture": {
+        "sha256": "44f4182b3fff5bb13af4e525583659a91133e77433eb8b4475f4bfd8f9d1fe7c",
+        "bytes": 198416,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      }
+    }
+  ],
+  "priorCaptureAttempts": [
+    {
+      "id": "target-solo-w1-trace-off-r1",
+      "captureId": "target-solo-w1-trace-off",
+      "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "toolingSourceCommitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+      "configuredWorkers": 1,
+      "observedConcurrency": 1,
+      "retries": 0,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0
+      },
+      "durationMs": 14880.447999999999,
+      "traceEnabled": false,
+      "traceEventCount": 0,
+      "droppedEventCount": 0,
+      "snapshotPhase": "after-test",
+      "normalizerStatus": "initial-normalization-failed-on-null-application-trace; raw capture retained and primary outcome replayed",
+      "normalizedArtifacts": [],
+      "rawCapture": {
+        "sha256": "08485e7817d3e4bdf637d8a9e3b07ab1bcae66286a3593a0e0748e352d03a2bc",
+        "bytes": 47550,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      },
+      "excludedFromPrimaryExperiments": true,
+      "exclusionReason": "Capture preceded the synchronous Canvas assertion failure snapshot and is retained as a preliminary attempt only."
+    },
+    {
+      "id": "target-solo-w1-trace-on-r1",
+      "captureId": "target-solo-w1-trace-on",
+      "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "toolingSourceCommitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+      "configuredWorkers": 1,
+      "observedConcurrency": 1,
+      "retries": 0,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "unexpected": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0
+      },
+      "durationMs": 11874.304,
+      "traceEnabled": true,
+      "traceEventCount": 66,
+      "droppedEventCount": 0,
+      "snapshotPhase": "after-test",
+      "normalizerStatus": "preliminary normalized artifacts retained; superseded by synchronous assertion-boundary capture",
+      "normalizedArtifacts": [
+        {
+          "path": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/preliminary-a5/target-solo-w1-trace-on.outcomes.json",
+          "sha256": "14a28734fa06edaf72f93189aeb6ac95d54f6a28e8f781bc3b9fa5ed661a9165"
+        },
+        {
+          "path": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/preliminary-a5/target-solo-w1-trace-on.diagnostics.json",
+          "sha256": "53055276a7c4ff65e7fee0ae46d344bddd3a257660586ff0f4b0ac511c1c1529"
+        }
+      ],
+      "rawCapture": {
+        "sha256": "a60b11c227b90fce261e382a4232ce0d42287b1ffb04482daeac5e34cb877627",
+        "bytes": 125223,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      },
+      "excludedFromPrimaryExperiments": true,
+      "exclusionReason": "Capture preceded the synchronous Canvas assertion failure snapshot and is retained as a preliminary attempt only."
+    },
+    {
+      "id": "target-light-peers-w4-r1",
+      "captureId": "target-light-peers-w4",
+      "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "toolingSourceCommitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+      "configuredWorkers": 4,
+      "observedConcurrency": 4,
+      "retries": 0,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 3,
+        "unexpected": 1,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0
+      },
+      "durationMs": 10983.038,
+      "traceEnabled": true,
+      "traceEventCount": 46,
+      "droppedEventCount": 0,
+      "snapshotPhase": "after-test",
+      "normalizerStatus": "preliminary normalized artifacts retained; superseded by synchronous assertion-boundary capture",
+      "normalizedArtifacts": [
+        {
+          "path": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/preliminary-a5/target-light-peers-w4.outcomes.json",
+          "sha256": "7eadd011a5aa0c5edfcfa325eb6a590113be8a86192d28e96afb721857b9dcfe"
+        },
+        {
+          "path": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/preliminary-a5/target-light-peers-w4.diagnostics.json",
+          "sha256": "cef053e7bb3088d1608e1889a1b9d04ed32153d6edd5f95c1f238577528d93f4"
+        }
+      ],
+      "rawCapture": {
+        "sha256": "68f27877d9b341ea0ddef2ba57827299ff7f4674372c9911d1ca7c588ef154d3",
+        "bytes": 104496,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      },
+      "excludedFromPrimaryExperiments": true,
+      "exclusionReason": "Capture preceded the synchronous Canvas assertion failure snapshot and is retained as a preliminary attempt only."
+    },
+    {
+      "id": "target-renderer-heavy-peers-w4-r1",
+      "captureId": "target-renderer-heavy-peers-w4",
+      "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+      "toolingSourceCommitSha": "a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07",
+      "configuredWorkers": 4,
+      "observedConcurrency": 4,
+      "retries": 0,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 2,
+        "unexpected": 2,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0
+      },
+      "durationMs": 113035.992,
+      "traceEnabled": true,
+      "traceEventCount": 46,
+      "droppedEventCount": 0,
+      "snapshotPhase": "after-test",
+      "normalizerStatus": "preliminary normalized artifacts retained; superseded by synchronous assertion-boundary capture",
+      "normalizedArtifacts": [
+        {
+          "path": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/preliminary-a5/target-renderer-heavy-peers-w4.outcomes.json",
+          "sha256": "7bd069ac93cf8834d63c434ccf45fd661dd86f12d2c32e4b5d751b74da1d1bfd"
+        },
+        {
+          "path": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/preliminary-a5/target-renderer-heavy-peers-w4.diagnostics.json",
+          "sha256": "77633acd52d4843d166a92b78d21c7aa57c8e65f64292f7e101b5f2a5a10760e"
+        }
+      ],
+      "rawCapture": {
+        "sha256": "bedeabad8fdcd0af530e0a7bc34ba887e7b72a0660cce787a1313b126f3b6561",
+        "bytes": 107414,
+        "retention": "private-local-only",
+        "offlineReplayAvailable": false
+      },
+      "excludedFromPrimaryExperiments": true,
+      "exclusionReason": "Capture preceded the synchronous Canvas assertion failure snapshot and is retained as a preliminary attempt only."
+    }
+  ],
+  "spaTransition": {
+    "artifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/diagnostics/a-b-a-spa.json",
+    "sha256": "1156be55dbf879f81bfe18b9bf8fbd1a9c7d64f2fac313678ba806fb6078c265",
+    "sourceCommitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+    "navigationModel": "one initial document navigation followed by two React Router scene-card navigations",
+    "sceneSequence": [
+      "architecture-rise",
+      "macro-bellows-extension",
+      "architecture-rise"
+    ],
+    "traceEventCount": 208,
+    "droppedEventCount": 0,
+    "staleObserverCallbacksRejected": 2,
+    "staleGroundGlassFrameResultsRejected": 45,
+    "uniqueArchitectureRiseViewportMountIdentities": [
+      "m7n-observer-viewport-1",
+      "m7n-observer-viewport-2",
+      "m7n-observer-viewport-3"
+    ],
+    "pageErrors": [],
+    "failedRequests": 0,
+    "steps": [
+      {
+        "sceneId": "architecture-rise",
+        "route": "/simulator/free/architecture-rise",
+        "transition": "initial document navigation",
+        "startedAtCaptureMs": 604.302125,
+        "observerReadyAtCaptureMs": 5540.196125,
+        "durationToObserverActiveMs": 4935.894,
+        "diagnostics": {
+          "sceneId": "architecture-rise",
+          "rendererStatus": "active",
+          "rendererFamily": "webgl-renderer",
+          "rendererGeneration": "0",
+          "canvasCount": 1
+        }
+      },
+      {
+        "sceneId": "macro-bellows-extension",
+        "route": "/simulator/free/macro-bellows-extension",
+        "transition": "SPA scene-card navigation",
+        "startedAtCaptureMs": 7729.642,
+        "observerReadyAtCaptureMs": 13795.574375,
+        "durationToObserverActiveMs": 6065.932375,
+        "diagnostics": {
+          "sceneId": "macro-bellows-extension",
+          "rendererStatus": "active",
+          "rendererFamily": "webgl-renderer",
+          "rendererGeneration": "1",
+          "canvasCount": 1
+        }
+      },
+      {
+        "sceneId": "architecture-rise",
+        "route": "/simulator/free/architecture-rise",
+        "transition": "SPA scene-card navigation",
+        "startedAtCaptureMs": 15897.724125,
+        "observerReadyAtCaptureMs": 23737.169458,
+        "durationToObserverActiveMs": 7839.445333,
+        "diagnostics": {
+          "sceneId": "architecture-rise",
+          "rendererStatus": "active",
+          "rendererFamily": "webgl-renderer",
+          "rendererGeneration": "1",
+          "canvasCount": 1
+        }
+      }
+    ]
+  },
+  "lifecycle": {
+    "observedEvents": [
+      "browser navigation timing and document-start-observed",
+      "workspace-suspense-fallback-committed / workspace-suspense-visible",
+      "simulator-workspace-committed / workspace-dom-mounted",
+      "scene-renderer-component-committed / scene identity observed",
+      "observer-renderer-requested",
+      "observer-canvas-dom-attached",
+      "observer-r3f-renderer-created with canvasDomAttached=true",
+      "observer-capabilities-published status=active",
+      "ground-glass-generation-active",
+      "ground-glass-renderer-mounted",
+      "ground-glass-current-frame-published"
+    ],
+    "lastVerifiedBoundary": {
+      "targetSolo": "Observer WebGL renderer created with a connected canvas, capabilities active, and Ground Glass frame published.",
+      "targetLightAndHeavyFailureSnapshots": "App traces reach Observer active and Ground Glass frame publication; the synchronous catch snapshot sees one attached Canvas and active status."
+    },
+    "firstMissingBoundary": "No stable missing application lifecycle boundary was established. Playwright error context reports zero canvases at the failed assertion; the synchronous catch snapshot and lifecycle events report an attached Canvas and active renderer. The discrepancy remains unresolved.",
+    "failureEvidence": {
+      "targetAssertion": "scene-canvas descendant canvas count expected 1, received 0 in Playwright failure context",
+      "failureBoundarySnapshot": "canvas-count-assertion-failure phase; observed scene architecture-rise, canvasCount=1, Observer status active, generation 0",
+      "rendererCreated": true,
+      "canvasDomConnectedAtR3fOnCreated": true,
+      "observerCapabilitiesPublishedActive": true,
+      "groundGlassCurrentFramePublished": true,
+      "browserErrors": 0,
+      "failedRequests": 0
+    },
+    "limitations": [
+      "React StrictMode effect replay produces duplicate mount/effect records; sequence and mount identities preserve ownership.",
+      "The page-local long-task observer does not attribute work to GPU contention.",
+      "Canvas insertion, R3F renderer creation, Observer publication, scene readiness, and Ground Glass publication are separate signals.",
+      "The Playwright assertion and immediate diagnostic snapshot conflict; no root cause is inferred from that conflict alone."
+    ]
+  },
+  "comparison": {
+    "lightweightWorkload": {
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+        "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+        "smoke.spec.ts::smoke: app boots at home"
+      ],
+      "configuredWorkers": 4,
+      "observedConcurrency": 4,
+      "outcome": "3/4 passed; target failed the Canvas count assertion",
+      "targetPageLongTasks": {
+        "count": 4,
+        "maximumDurationMs": 3895
+      }
+    },
+    "heavyWorkload": {
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed"
+      ],
+      "configuredWorkers": 4,
+      "observedConcurrency": 4,
+      "outcome": "1/4 passed; target, Macro Bellows, and Macro Compound failed; Mirror Shift passed",
+      "targetPageLongTasks": {
+        "count": 4,
+        "maximumDurationMs": 5680
+      }
+    },
+    "targetTestOutcomes": {
+      "target-solo-w1-trace-off": "passed",
+      "target-solo-w1-trace-on": "passed",
+      "target-light-peers-w4": "unexpected",
+      "target-renderer-heavy-peers-w4": "unexpected"
+    },
+    "instrumentationOverhead": {
+      "target-solo-w1-trace-off": {
+        "timings": {
+          "workspaceMountedMs": 571.5999999642372,
+          "canvasDomAttachedMs": 571.5999999642372,
+          "rendererActiveMs": 1294.199999988079
+        },
+        "durationMs": 15215.310000000001,
+        "outcome": {
+          "discovered": 1,
+          "passed": 1,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "incomplete": 0,
+          "retries": 0
+        }
+      },
+      "target-solo-w1-trace-on": {
+        "timings": {
+          "workspaceMountedMs": 567.4000000357628,
+          "canvasDomAttachedMs": 567.4000000357628,
+          "rendererActiveMs": 1287
+        },
+        "durationMs": 15189.221000000001,
+        "outcome": {
+          "discovered": 1,
+          "passed": 1,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "incomplete": 0,
+          "retries": 0
+        },
+        "eventCount": 77,
+        "droppedEventCount": 0
+      },
+      "durationDeltaMsTraceOnMinusOff": -26.088999999999942,
+      "durationDeltaPercentTraceOnMinusOff": -0.17146545157476212,
+      "assessment": "No material overhead is visible in this single matched pair; trace-on ran about 26 ms faster and milestone timings differed by a few milliseconds. One pair cannot estimate timing variance or failure-probability changes."
+    }
+  },
+  "diagnosis": {
+    "rootCause": "unresolved",
+    "primaryClassification": "unobservable-boundary",
+    "supportedFindings": [
+      "The target passes alone with tracing disabled and enabled.",
+      "The target failed in both four-worker cohorts at the existing Canvas assertion; the light cohort had 3/4 overall passes and the renderer-heavy cohort 1/4.",
+      "Both concurrent target traces record Canvas attachment, R3F WebGL renderer creation with a connected DOM element, active Observer capabilities, and a Ground Glass published frame.",
+      "Playwright failure context reports zero canvases at the assertion, while the synchronous catch snapshot reports one canvas and active Observer status.",
+      "A 3.895-second maximum page long task was observed in the light target page; the renderer-heavy target page recorded a 5.680-second maximum long task.",
+      "The A→B→A SPA probe retained route/scene and viewport mount identity; two delayed Observer callbacks were rejected against retired generations."
+    ],
+    "plausibleClassifications": [
+      "browser-main-thread-delay",
+      "test-synchronization-mismatch"
+    ],
+    "rejectedClaims": [
+      "WebGL context creation failure: not observed; R3F onCreated ran and the renderer canvas was connected.",
+      "Observer activation failure: not observed; active capabilities were published.",
+      "Ground Glass current-frame publication failure: not observed in the target captures.",
+      "GPU saturation, context allocation exhaustion, memory pressure, or renderer leak: not established.",
+      "Stale Observer or Ground Glass generation publication: not observed; stale callbacks/results were rejected."
+    ],
+    "unresolvedQuestions": [
+      "Why did the Playwright locator error context report zero canvases while the immediate diagnostic snapshot observed one?",
+      "Whether a short-lived DOM state, main-thread stall, or locator timing explains the conflicting boundary.",
+      "Whether renderer-heavy peers cause the discrepancy beyond the single-run difference from lightweight peers."
+    ],
+    "confidence": {
+      "lifecycleObservations": "high",
+      "causalAttribution": "low"
+    }
+  },
+  "remediation": {
+    "outcome": "instrumentation-only",
+    "changedApplicationFiles": [
+      "src/app/pages.tsx",
+      "src/components/layout/SimulatorWorkspace.tsx",
+      "src/components/simulator/SceneViewport.tsx",
+      "src/components/simulator/useObserverRendererLifecycle.ts",
+      "src/render/GroundGlassRenderHost.tsx",
+      "src/render/SceneRenderer.tsx",
+      "src/render/testing/m7nRendererLifecycleTrace.ts"
+    ],
+    "changedTestFiles": [
+      "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+      "src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
+      "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
+      "src/tests/unit/m7nRendererLifecycleEvidence.test.ts"
+    ],
+    "verifiedFixes": []
+  },
+  "qualification": {
+    "fullBroadE2e": "not-run",
+    "broadE2eQualification": "not-qualified",
+    "m7Overall": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "m5q": "partially-qualified",
+    "m6": "development-only",
+    "productionGroundGlass": "webgl-only",
+    "productionWebGpu": "disabled"
+  },
+  "validation": {
+    "focusedInstrumentationTests": {
+      "status": "passed",
+      "tests": 19,
+      "files": 3,
+      "nodeVersion": "v24.3.0"
+    },
+    "fullUnitIntegration": {
+      "status": "passed",
+      "tests": 3815,
+      "files": 322,
+      "nodeVersion": "v24.3.0"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "cssStructure": "passed",
+    "productionBuild": "passed",
+    "productionPreviewIsolation": {
+      "status": "passed",
+      "tests": 4,
+      "traceGlobalAbsent": true,
+      "webGpuActivationDenied": true
+    },
+    "evidenceChecks": {
+      "m7h": "passed",
+      "m7i": "passed",
+      "m7j": "passed",
+      "m7kSchemaV1": "passed",
+      "m7kSchemaV2Selected": "passed-incomplete-blocked",
+      "m7l": "passed",
+      "m7m": "passed",
+      "m7n": "passed"
+    },
+    "m7fReplay": {
+      "status": "passed",
+      "scenarios": 17
+    },
+    "m7gDiagnosticReport": {
+      "evidenceIntegrity": "passed",
+      "qualification": "partially-qualified",
+      "predecessorReplays": {
+        "m7e": true,
+        "m7f": true
+      }
+    },
+    "controlledBrowserCaptures": {
+      "status": "recorded",
+      "targetSoloTraceOff": "1/1 passed",
+      "targetSoloTraceOn": "1/1 passed",
+      "lightPeers": "3/4 passed",
+      "rendererHeavyPeers": "1/4 passed",
+      "retries": 0
+    },
+    "node26FullSuiteAttempt": {
+      "status": "environment-failed",
+      "failedTests": 53,
+      "reason": "The Node v26 test environment did not provide window.localStorage to localization integration tests; the supported Node v24.3.0 run passed all tests."
+    },
+    "hostedCi": "pending-final-head"
+  },
+  "normalizationCorrection": {
+    "reason": "A trace-disabled capture still has passive browser diagnostic JSON; its app lifecycle trace remains unavailable.",
+    "action": "Re-normalized all four unchanged primary raw captures with the corrected normalizer; raw capture SHA-256 values and test outcomes are unchanged.",
+    "supersededLocalNormalizedCopiesRetained": false
+  }
+}

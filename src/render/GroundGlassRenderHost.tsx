@@ -237,6 +237,7 @@ export const GroundGlassRenderHost = ({
     state.selection.selectedBackend === "webgpu";
 
   useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
     if (!generation || !activeForThisHost || !acceptedRequest) return;
     if (traceReportedGenerationIdRef.current === generation.generationId) return;
     traceReportedGenerationIdRef.current = generation.generationId;

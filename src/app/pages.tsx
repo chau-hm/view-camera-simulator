@@ -29,16 +29,18 @@ import { DesktopExperienceNotice } from "../components/marketing/DesktopExperien
 import { FaqSection } from "../components/marketing/FaqSection";
 
 const SimulatorWorkspace = lazy(() => {
-  const routeId = typeof window === "undefined" ? null : window.location.pathname;
+  const routeId = rendererLifecycleTraceEnabled && typeof window !== "undefined"
+    ? window.location.pathname
+    : null;
   const sceneId = routeId?.split("/")[3] ?? null;
-  recordRendererLifecycleEvent({
+  if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
     surface: "route",
     event: "workspace-module-load-started",
     routeId,
     sceneId,
   });
   return import("../components/layout/SimulatorWorkspace").then((module) => {
-    recordRendererLifecycleEvent({
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
       surface: "route",
       event: "workspace-module-load-completed",
       routeId,
@@ -186,7 +188,7 @@ export const SimulatorRoutePage = () => {
   );
 
   useEffect(() => {
-    if (!routeIsValid || !parsedMode) return;
+    if (!rendererLifecycleTraceEnabled || !routeIsValid || !parsedMode) return;
     recordRendererLifecycleEvent({
       surface: "route",
       event: "simulator-route-component-committed",

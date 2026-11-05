@@ -280,7 +280,9 @@ export const SceneViewport = ({
       message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
     });
   }, [scene.id, t]);
-  const routeId = typeof window === "undefined" ? null : window.location.pathname;
+  const routeId = rendererLifecycleTraceEnabled && typeof window !== "undefined"
+    ? window.location.pathname
+    : null;
   const rendererLifecycle = useObserverRendererLifecycle({
     sceneId: scene.id,
     routeId: routeId ?? `/simulator/${scene.id}`,
@@ -297,6 +299,7 @@ export const SceneViewport = ({
     : "trace-disabled";
 
   useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
     recordRendererLifecycleEvent({
       surface: "scene",
       event: "scene-viewport-effect-setup",
