@@ -4,8 +4,24 @@ import {
   type ObserverBackendSelection,
 } from "../../render/backend/observerBackend";
 import type { ObserverVisualPipelineCapabilities } from "../../render/backend/observerVisualPipelineCapabilities";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "../../render/testing/m7nRendererLifecycleTrace";
+
+type TraceGenerationIdentity = Readonly<{
+  routeId: string;
+  sceneId: string;
+  viewportMountId: string;
+  requestIdentity: string;
+  backendStatus: ObserverBackendSelection["status"];
+  rendererAttempt: ObserverBackendSelection["rendererAttempt"];
+}>;
 
 type ObserverRendererLifecycleOptions = Readonly<{
+  sceneId?: string;
+  routeId?: string;
+  viewportMountId?: string;
   requestIdentity: string;
   backendSelection: ObserverBackendSelection;
   rendererMountKey: number;
@@ -31,6 +47,9 @@ type ReportedCapabilities = Readonly<{
  * start renderer initialization.
  */
 export const useObserverRendererLifecycle = ({
+  sceneId = "unknown-scene",
+  routeId = "unknown-route",
+  viewportMountId = "unknown-viewport",
   requestIdentity,
   backendSelection,
   rendererMountKey,
@@ -61,11 +80,45 @@ export const useObserverRendererLifecycle = ({
     : attemptGenerationState.generation + 1;
 
   const activeGenerationRef = useRef<number | null>(null);
+  const traceGenerationIdentitiesRef = useRef<Map<number, TraceGenerationIdentity> | null>(null);
+  if (rendererLifecycleTraceEnabled) {
+    const identities = traceGenerationIdentitiesRef.current ?? new Map<number, TraceGenerationIdentity>();
+    identities.set(mountGeneration, {
+      routeId,
+      sceneId,
+      viewportMountId,
+      requestIdentity,
+      backendStatus: backendSelection.status,
+      rendererAttempt: backendSelection.rendererAttempt,
+    });
+    while (identities.size > 16) {
+      const oldestGeneration = identities.keys().next().value;
+      if (oldestGeneration === undefined) break;
+      identities.delete(oldestGeneration);
+    }
+    traceGenerationIdentitiesRef.current = identities;
+  }
   const failedWebGpuGenerationRef = useRef<number | null>(null);
   const failedOutputPolicyGenerationRef = useRef<number | null>(null);
   const fallbackRequestedGenerationRef = useRef<number | null>(null);
   useInsertionEffect(() => {
     activeGenerationRef.current = mountGeneration;
+    const traceIdentity = traceGenerationIdentitiesRef.current?.get(mountGeneration);
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-generation-authority-activated",
+      routeId: traceIdentity?.routeId,
+      sceneId: traceIdentity?.sceneId,
+      mountGeneration: traceIdentity?.viewportMountId,
+      rendererGeneration: mountGeneration,
+      status: "awaiting-capabilities",
+      detail: {
+        backendStatus: traceIdentity?.backendStatus ?? "unavailable",
+        rendererAttempt: traceIdentity?.rendererAttempt ?? null,
+        requestIdentity: traceIdentity?.requestIdentity ?? null,
+        generationNumber: mountGeneration,
+      },
+    });
     if (failedWebGpuGenerationRef.current !== mountGeneration) {
       failedWebGpuGenerationRef.current = null;
     }
@@ -82,6 +135,16 @@ export const useObserverRendererLifecycle = ({
       if (fallbackRequestedGenerationRef.current === mountGeneration) {
         fallbackRequestedGenerationRef.current = null;
       }
+      const retiredTraceIdentity = traceGenerationIdentitiesRef.current?.get(mountGeneration);
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: "observer-generation-authority-retired",
+        routeId: retiredTraceIdentity?.routeId,
+        sceneId: retiredTraceIdentity?.sceneId,
+        mountGeneration: retiredTraceIdentity?.viewportMountId,
+        rendererGeneration: mountGeneration,
+        status: "retired",
+      });
     };
   }, [mountGeneration]);
 
@@ -116,7 +179,33 @@ export const useObserverRendererLifecycle = ({
       generation: number,
       capabilities: ObserverVisualPipelineCapabilities | null,
     ) => {
-      if (activeGenerationRef.current !== generation) return;
+      const traceIdentity = traceGenerationIdentitiesRef.current?.get(generation);
+      if (activeGenerationRef.current !== generation) {
+        recordRendererLifecycleEvent({
+          surface: "observer",
+          event: "observer-stale-capability-callback-rejected",
+          routeId: traceIdentity?.routeId,
+          sceneId: traceIdentity?.sceneId,
+          mountGeneration: traceIdentity?.viewportMountId,
+          rendererGeneration: generation,
+          status: "rejected-stale",
+          detail: { activeGeneration: activeGenerationRef.current },
+        });
+        return;
+      }
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: capabilities ? "observer-capabilities-published" : "observer-capabilities-cleared",
+        routeId: traceIdentity?.routeId,
+        sceneId: traceIdentity?.sceneId,
+        mountGeneration: traceIdentity?.viewportMountId,
+        rendererGeneration: generation,
+        status: capabilities?.status ?? "cleared",
+        detail: capabilities ? {
+          rendererFamily: capabilities.rendererFamily,
+          executionBackend: capabilities.executionBackend,
+        } : undefined,
+      });
       setReportedCapabilities((current) => {
         // Recheck inside the state updater in case the report was queued just
         // before a newer Canvas generation became active.
@@ -179,6 +268,15 @@ export const useObserverRendererLifecycle = ({
 
   const onObserverCanvasError = useCallback(() => {
     if (activeGenerationRef.current !== mountGeneration) return;
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-canvas-error-boundary-reported",
+      routeId,
+      sceneId,
+      mountGeneration: viewportMountId,
+      rendererGeneration: mountGeneration,
+      status: "failed",
+    });
     if (fallbackRequestedGenerationRef.current === mountGeneration) return;
     const failedDuringWebGpuInitialization =
       failedWebGpuGenerationRef.current === mountGeneration;
@@ -200,6 +298,9 @@ export const useObserverRendererLifecycle = ({
     onApplicationFallback,
     onCanvasFailure,
     onFallbackRemount,
+    routeId,
+    sceneId,
+    viewportMountId,
   ]);
 
   return {

@@ -63,6 +63,7 @@ import type {
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
+import { recordRendererLifecycleEvent } from "../../render/testing/m7nRendererLifecycleTrace";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import { resolveMacroBellowsExtensionTeaching } from "../../scenes/macroBellowsExtensionTeaching";
 import { resolveMacroDepthOfFieldTeaching } from "../../scenes/macroDepthOfFieldTeaching";
@@ -150,6 +151,22 @@ export const SimulatorWorkspace = ({
   );
 
   useEffect(() => {
+    const routeId = `/simulator/${mode}/${sceneId}${taskId ? `/${taskId}` : ""}`;
+    const workspaceMountIdentity = `${mode}:${sceneId}:${taskId ?? "free"}`;
+    recordRendererLifecycleEvent({
+      surface: "simulator",
+      event: "simulator-workspace-committed",
+      routeId,
+      sceneId,
+      mountGeneration: workspaceMountIdentity,
+    });
+    recordRendererLifecycleEvent({
+      surface: "simulator",
+      event: "scene-route-initialization-started",
+      routeId,
+      sceneId,
+      mountGeneration: workspaceMountIdentity,
+    });
     // initialize route: apply scene presets (free) or task initialCameraState (guided) once when route changes
     const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
       const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
@@ -170,6 +187,23 @@ export const SimulatorWorkspace = ({
     };
 
     initRoute(mode, sceneId, taskId);
+    recordRendererLifecycleEvent({
+      surface: "simulator",
+      event: "scene-route-initialization-requested",
+      routeId,
+      sceneId,
+      mountGeneration: workspaceMountIdentity,
+    });
+
+    return () => {
+      recordRendererLifecycleEvent({
+        surface: "simulator",
+        event: "simulator-workspace-effect-cleanup",
+        routeId,
+        sceneId,
+        mountGeneration: workspaceMountIdentity,
+      });
+    };
   }, [
     calibrationEnabled,
     anatomyLessonEnabled,

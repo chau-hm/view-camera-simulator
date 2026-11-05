@@ -45,6 +45,10 @@ import {
   createGroundGlassRawWebGpuPolicyInput,
 } from "./webgpu/groundGlassRawWebGpuPolicyInput";
 import type { GroundGlassRenderOperationId } from "./groundGlassPassGraph";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "./testing/m7nRendererLifecycleTrace";
 
 const GroundGlassRenderHostStateContext = createContext<GroundGlassRenderHostState | null>(null);
 
@@ -146,6 +150,7 @@ export const GroundGlassRenderHost = ({
   const runtimeInfoChangeRef = useRef(onRuntimeInfoChange);
   const diagnosticsChangeRef = useRef(onDiagnosticsChange);
   const framePublishedRef = useRef(onFramePublished);
+  const traceReportedGenerationIdRef = useRef<string | null>(null);
   const lifecycleEffectEpochRef = useRef(0);
   runtimeInfoChangeRef.current = onRuntimeInfoChange;
   diagnosticsChangeRef.current = onDiagnosticsChange;
@@ -185,6 +190,19 @@ export const GroundGlassRenderHost = ({
     const acceptedState = owner.getSnapshot(channel);
     const acceptedRequest = acceptedState.activeHostId === hostId ? acceptedState.activeRequest : null;
     if (acceptedRequest) {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "ground-glass",
+        event: "ground-glass-request-accepted",
+        sceneId: acceptedRequest.identity.sceneId,
+        mountGeneration: hostId,
+        rendererGeneration: acceptedState.activeGeneration?.generationId ?? null,
+        status: "accepted",
+        detail: {
+          channel,
+          requestId: acceptedRequest.identity.requestId,
+          activeGenerationId: acceptedState.activeGeneration?.generationId ?? null,
+        },
+      });
       recordGroundGlassWebGpuTestEvent({
         kind: "host-request-accepted",
         channelId: channel,
@@ -194,6 +212,16 @@ export const GroundGlassRenderHost = ({
         activeGenerationId: acceptedState.activeGeneration?.generationId ?? null,
         latestAcceptedRequestId: acceptedRequest.identity.requestId,
         latestAcceptedSceneId: acceptedRequest.identity.sceneId,
+      });
+    }
+    if (!acceptedRequest) {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "ground-glass",
+        event: "ground-glass-request-not-active-after-acceptance",
+        sceneId: request.scene.id,
+        mountGeneration: hostId,
+        status: "not-active",
+        detail: { channel },
       });
     }
   }, [channel, fingerprint, hostId, owner, policyInput, policyInputIdentity, request]);
@@ -207,6 +235,24 @@ export const GroundGlassRenderHost = ({
   const shouldMountWebGpuAdapter = shouldMountAdapter &&
     state.selection?.status === "selected" &&
     state.selection.selectedBackend === "webgpu";
+
+  useEffect(() => {
+    if (!generation || !activeForThisHost || !acceptedRequest) return;
+    if (traceReportedGenerationIdRef.current === generation.generationId) return;
+    traceReportedGenerationIdRef.current = generation.generationId;
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+      surface: "ground-glass",
+      event: "ground-glass-generation-active",
+      sceneId: acceptedRequest.identity.sceneId,
+      mountGeneration: hostId,
+      rendererGeneration: generation.generationId,
+      status: "active",
+      detail: {
+        channel,
+        requestId: acceptedRequest.identity.requestId,
+      },
+    });
+  }, [acceptedRequest, activeForThisHost, channel, generation, hostId]);
 
   const isGenerationActive = useCallback(() => {
     const latest = owner.getSnapshot(channel);
@@ -284,6 +330,20 @@ export const GroundGlassRenderHost = ({
       mountedState.activeGeneration?.generationId === mountedGeneration.generationId &&
       mountedRuntime.status === "mounted"
     ) {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "ground-glass",
+        event: "ground-glass-renderer-mounted",
+        sceneId: mountedRequest.identity.sceneId,
+        mountGeneration: hostId,
+        rendererGeneration: mountedGeneration.generationId,
+        status: "mounted",
+        detail: {
+          channel,
+          requestId: mountedRequest.identity.requestId,
+          rendererFamily: mountedRuntime.rendererFamily,
+          executionApi: actualExecutionApi,
+        },
+      });
       recordGroundGlassWebGpuTestEvent({
         kind: "renderer-mounted",
         attemptId: createGroundGlassWebGpuAttemptIdentity(
@@ -375,7 +435,38 @@ export const GroundGlassRenderHost = ({
       }
       if (result.status === "completed") {
         const publishable = accepted && owner.canPublishFrameNow(channel, hostId, result);
-        if (publishable) framePublishedRef.current?.(result);
+        if (publishable) {
+          framePublishedRef.current?.(result);
+          if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+            surface: "ground-glass",
+            event: "ground-glass-current-frame-published",
+            sceneId: result.request.sceneId,
+            mountGeneration: hostId,
+            rendererGeneration: result.generation.generationId,
+            status: "published",
+            detail: {
+              channel,
+              requestId: result.request.requestId,
+              activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+            },
+          });
+        } else {
+          if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+            surface: "ground-glass",
+            event: "ground-glass-stale-frame-result-rejected",
+            sceneId: result.request.sceneId,
+            mountGeneration: hostId,
+            rendererGeneration: result.generation.generationId,
+            status: "rejected-stale",
+            detail: {
+              channel,
+              requestId: result.request.requestId,
+              acceptedByHost: accepted,
+              activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+              activeRequestId: beforeResult.activeRequest?.identity.requestId ?? null,
+            },
+          });
+        }
         recordGroundGlassWebGpuTestEvent({
           kind: "host-frame-result",
           attemptId: createGroundGlassWebGpuAttemptIdentity(
@@ -445,6 +536,20 @@ export const GroundGlassRenderHost = ({
       beforeCleanup.activeGeneration?.generationId === retiredGeneration.generationId;
     owner.reportAdapterDisposed(channel, retiredGeneration, outcome, reason);
     if (currentGeneration) {
+      const afterCleanup = owner.getSnapshot(channel);
+      const generationRetired =
+        afterCleanup.activeGeneration?.generationId !== retiredGeneration.generationId &&
+        afterCleanup.retiringGeneration?.generationId !== retiredGeneration.generationId;
+      if (generationRetired) {
+        if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+          surface: "ground-glass",
+          event: "ground-glass-generation-retired",
+          mountGeneration: hostId,
+          rendererGeneration: retiredGeneration.generationId,
+          status: outcome,
+          detail: { channel, reason: reason ?? null },
+        });
+      }
       recordGroundGlassWebGpuTestEvent({
         kind: "cleanup-acknowledged",
         channelId: channel,
@@ -477,6 +582,20 @@ export const GroundGlassRenderHost = ({
     const latest = owner.getSnapshot(channel);
     const latestRequest = latest.latestRequest ?? latest.activeRequest;
     if (!latestRequest) return;
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+      surface: "ground-glass",
+      event: "ground-glass-renderer-failure-reported",
+      sceneId: latestRequest.identity.sceneId,
+      mountGeneration: hostId,
+      rendererGeneration: activeGeneration.generationId,
+      status: "failed",
+      detail: {
+        channel,
+        requestId: latestRequest.identity.requestId,
+        failureStage: stage,
+        failedPass,
+      },
+    });
     const latestPolicyInput = createGroundGlassRawWebGpuPolicyInput(
       latestRequest,
       latest.retryState,
