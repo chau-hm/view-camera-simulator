@@ -3,6 +3,24 @@ import { expect, test, type Locator } from "@playwright/test";
 import { readFocusDistributionPercent } from "./helpers/focusDistribution";
 import { expectGroundGlassPhysicalScale } from "./helpers/groundGlass";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+import { installM7nRendererLifecycleCapture } from "./helpers/m7nRendererLifecycleCapture";
+
+let finishM7nCapture: (() => Promise<void>) | null = null;
+
+test.beforeEach(async ({ page }, testInfo) => {
+  if (process.env.M7N_CAPTURE_DIAGNOSTICS !== "1") return;
+  finishM7nCapture = await installM7nRendererLifecycleCapture(
+    page,
+    testInfo,
+    process.env.M7N_CAPTURE_RUN_ID ?? "unlabelled",
+  );
+});
+
+test.afterEach(async () => {
+  const finish = finishM7nCapture;
+  finishM7nCapture = null;
+  await finish?.();
+});
 
 const readVector = async (locator: Locator, attribute: string): Promise<[number, number, number]> => {
   const value = await locator.getAttribute(attribute);
