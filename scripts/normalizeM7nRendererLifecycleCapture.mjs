@@ -164,6 +164,7 @@ const diagnosticsPath = `${outputCaptureId}.diagnostics.json`;
 const outcomesPath = `${outputCaptureId}.outcomes.json`;
 const diagnosticsArtifactPath = relative(process.cwd(), join(outputDirectory, diagnosticsPath)).split(sep).join("/");
 const diagnosticsBody = lifecycleSnapshot ? `${JSON.stringify(lifecycleSnapshot, null, 2)}\n` : null;
+const applicationTrace = lifecycleSnapshot?.observed?.applicationTrace ?? null;
 const diagnosticsSha256 = diagnosticsBody
   ? createHash("sha256").update(diagnosticsBody).digest("hex")
   : null;
@@ -190,10 +191,10 @@ const report = {
   normalizedTrace: diagnosticsBody ? {
     artifactPath: diagnosticsArtifactPath,
     sha256: diagnosticsSha256,
-    eventSchemaVersion: lifecycleSnapshot.observed.applicationTrace?.schemaVersion ?? null,
-    eventCount: lifecycleSnapshot.observed.applicationTrace?.events.length ?? 0,
-    droppedEventCount: lifecycleSnapshot.observed.applicationTrace?.droppedEventCount ?? 0,
-    unavailable: false,
+    eventSchemaVersion: applicationTrace?.schemaVersion ?? null,
+    eventCount: applicationTrace?.events.length ?? 0,
+    droppedEventCount: applicationTrace?.droppedEventCount ?? 0,
+    unavailable: applicationTrace === null,
   } : {
     artifactPath: null,
     sha256: null,
