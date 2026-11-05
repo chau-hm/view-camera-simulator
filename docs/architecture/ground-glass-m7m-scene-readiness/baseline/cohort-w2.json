@@ -1,0 +1,220 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "cohort-w2",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "22b7a6d7e21282a48a1b2a7efd413a3dedd3125302ec61e52559b97ee7b5444b",
+    "bytes": 106031,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 2,
+    "configuredRetries": 0,
+    "testSeam": "controlled-webgl-failure-recovery"
+  },
+  "stats": {
+    "discovered": 12,
+    "passed": 9,
+    "failed": 3,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 2,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "durationMs": 257257
+  },
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 707,
+          "durationMs": 19167,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 712,
+          "durationMs": 70966,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 19969,
+          "durationMs": 104134,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 71770,
+          "durationMs": 44253,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 116077,
+          "durationMs": 29154,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 124112,
+          "durationMs": 831,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 215325,
+          "durationMs": 12024,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 227485,
+          "durationMs": 6254,
+          "failureSignature": "assertion-failed"
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 124958,
+          "durationMs": 89990,
+          "failureSignature": "test-timeout"
+        }
+      ]
+    },
+    {
+      "identity": "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 145259,
+          "durationMs": 45420,
+          "failureSignature": "expanded-viewport-ratio-mismatch"
+        }
+      ]
+    },
+    {
+      "identity": "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 2,
+          "startOffsetMs": 191040,
+          "durationMs": 717,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 2,
+          "startOffsetMs": 191871,
+          "durationMs": 65342,
+          "failureSignature": null
+        }
+      ]
+    }
+  ]
+}

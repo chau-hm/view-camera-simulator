@@ -1,0 +1,131 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "trace-subset-w4",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "419f5beb58c0b821f23b38b9978bc6d08691ec1bee318c55b684842d2eb71b35",
+    "bytes": 99307,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 4,
+    "configuredRetries": 0,
+    "testSeam": "controlled-webgl-failure-recovery"
+  },
+  "stats": {
+    "discovered": 6,
+    "passed": 3,
+    "failed": 3,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 4,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "durationMs": 86798
+  },
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 727,
+          "durationMs": 8513,
+          "failureSignature": "scene-canvas-mounted-without-canvas"
+        }
+      ]
+    },
+    {
+      "identity": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 748,
+          "durationMs": 57672,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 2,
+          "startOffsetMs": 723,
+          "durationMs": 7181,
+          "failureSignature": "three-d-scene-heading-not-visible"
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 4,
+          "startOffsetMs": 45400,
+          "durationMs": 21020,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 4,
+          "startOffsetMs": 66520,
+          "durationMs": 20221,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 715,
+          "durationMs": 43897,
+          "failureSignature": "assertion-failed"
+        }
+      ]
+    }
+  ]
+}

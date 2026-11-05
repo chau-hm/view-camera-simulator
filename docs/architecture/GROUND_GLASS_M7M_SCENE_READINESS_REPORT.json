@@ -1,0 +1,1039 @@
+{
+  "schemaVersion": 2,
+  "reportId": "ground-glass-m7m-scene-readiness",
+  "evaluatorRevision": "m7m-scene-readiness-evaluator-v2",
+  "normalizationImplementationRevision": "m7m-playwright-normalizer-v1",
+  "generatedAt": "2026-11-05T01:40:51.827Z",
+  "baseCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "candidateCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "candidateCommitMeaning": "M7M changes no application source or E2E assertions; candidate and baseline app behavior are the exact main source under investigation.",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "environment": {
+    "nodeVersion": "v24.3.0",
+    "npmVersion": "11.12.0",
+    "playwrightVersion": "1.61.1",
+    "chromiumVersion": "149.0.7827.55",
+    "threeJsVersion": "0.187.0",
+    "os": "macOS 27.0.1 (26A434)",
+    "architecture": "arm64",
+    "browser": "headless Chromium, chromium project, Playwright Desktop Chrome profile",
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "deviceScaleFactor": 1
+    },
+    "webgl": {
+      "version": "WebGL2",
+      "vendor": "Google",
+      "renderer": "ANGLE / SwiftShader (Vulkan)",
+      "nativeWebGpuRequested": false
+    },
+    "browserLaunchFlags": "Playwright default Chromium launch arguments; no custom flags or channel override.",
+    "vite": {
+      "command": "npm run dev -- --host 127.0.0.1 --port <isolated-port> --strictPort",
+      "basePath": "/",
+      "reuseExistingServer": false,
+      "ci": true
+    },
+    "testSeamPolicy": "The controlled material-aware fallback test uses GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1; other runs disable the seam. No native WebGPU capture.",
+    "retries": 0,
+    "suiteScope": "Exact selected ordinary Chromium identities only; no complete Broad E2E run."
+  },
+  "historicalM7k": {
+    "reportPath": "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json",
+    "reportSha256": "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f",
+    "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+    "fullSuiteCounts": {
+      "discovered": 278,
+      "passed": 121,
+      "unexpected": 82,
+      "skipped": 75,
+      "flaky": 0,
+      "incomplete": 0
+    },
+    "rawArtifacts": [
+      {
+        "id": "ordinary-playwright",
+        "sha256": "95a7abebfaa7abe53805be7171d0ff84166dbb9e3e3d45eaa134a68f098963de"
+      },
+      {
+        "id": "renderer-serial-playwright",
+        "sha256": "4be43aa1e68c5bd45d861092cf298db6f43e77576f3a338dc4533f162e32d71a"
+      }
+    ],
+    "candidateIdentityCount": 12,
+    "identityList": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+      "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+    ],
+    "historicalOutcomes": [
+      {
+        "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "historicalFailureSignature": "attribute-assertion",
+        "historicalFailureStage": "attribute assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "historicalFailureSignature": "visibility-assertion",
+        "historicalFailureStage": "visibility assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "historicalFailureSignature": "test-timeout",
+        "historicalFailureStage": "whole-test timeout",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "historicalFailureSignature": "predicate-timeout",
+        "historicalFailureStage": "wait predicate",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "historicalFailureSignature": "predicate-timeout",
+        "historicalFailureStage": "wait predicate",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "historicalFailureSignature": "other-assertion",
+        "historicalFailureStage": "other assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "historicalFailureSignature": "visibility-assertion",
+        "historicalFailureStage": "visibility assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      },
+      {
+        "identity": "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact",
+        "historicalFailureSignature": "visibility-assertion",
+        "historicalFailureStage": "visibility assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness"
+      }
+    ]
+  },
+  "historicalM7l": {
+    "reportPath": "docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER_REMEDIATION_REPORT.json",
+    "reportSha256": "d72698c8ad5e28f5a0fd9d9ba052e654e6d9aa1d90f0acec0a769e35c2616eed",
+    "inventoryPath": "docs/architecture/ground-glass-m7l-learning-drawer/historical-82-failure-inventory.json",
+    "inventorySha256": "ee7e6e0de2e280207f5b5e1935b812dcc19432922061c01cf57cfbc6fb25a647",
+    "priorCohortOutcomes": {
+      "oneWorker": {
+        "discovered": 11,
+        "passed": 11,
+        "failed": 0
+      },
+      "twoWorkers": {
+        "discovered": 11,
+        "passed": 9,
+        "failed": 2
+      },
+      "fourWorkers": {
+        "discovered": 11,
+        "passed": 4,
+        "failed": 7
+      },
+      "verifiedFixes": 0
+    },
+    "provenanceLimitations": {
+      "originalRawCaptureProvenance": "unverified",
+      "rawToNormalizedNormalization": "unverified",
+      "rawPlaywrightCapturesRetainedForOfflineReplay": false
+    }
+  },
+  "currentDiscovery": {
+    "ordinaryChromium": {
+      "discoveredTests": 274,
+      "specFiles": 80,
+      "discoveryListSha256": "1d24cc0fd985b3c2c41b83ab6c4880699eeeea81c1e4fb97bb8889a38736823d",
+      "discoveryListPath": "docs/architecture/ground-glass-m7m-scene-readiness/discovery/ordinary-chromium.txt",
+      "projectName": "chromium",
+      "originalOutputRole": "historical-original-playwright-list",
+      "verification": "verified-from-retained-original-bytes"
+    },
+    "rendererSerial": {
+      "discoveredTests": 4,
+      "specFiles": 4,
+      "discoveryListSha256": "1db87b1ae129b443f369d8ed2538f635ab2289dc73a2cf5d34491339104ec39d",
+      "discoveryListPath": "docs/architecture/ground-glass-m7m-scene-readiness/discovery/renderer-serial.txt",
+      "projectName": "chromium-renderer-serial",
+      "originalOutputRole": "historical-original-playwright-list",
+      "verification": "verified-from-retained-original-bytes"
+    },
+    "combinedDiscoveredTests": 278,
+    "exactSelectedIdentityCount": 12,
+    "exactSelectedIdentitySetMatchesHistoricalM7l": true,
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+      "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+    ],
+    "fullApplicationDiscoveryClaimed": false,
+    "originalDiscoveryReplay": "verified-from-retained-original-bytes",
+    "currentIdentityReconciliation": "verified",
+    "freshDiscoveryRun": "not-run",
+    "discoverySanitization": "none"
+  },
+  "cohort": {
+    "identities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+      "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+    ],
+    "outcomes": [
+      {
+        "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "historicalFailureSignature": "count-assertion",
+        "historicalFailureStage": "count assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "passed"
+        },
+        "classification": "currently-passed-not-verified-fixed",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "historicalFailureSignature": "attribute-assertion",
+        "historicalFailureStage": "attribute assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "historicalFailureSignature": "visibility-assertion",
+        "historicalFailureStage": "visibility assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "historicalFailureSignature": "test-timeout",
+        "historicalFailureStage": "whole-test timeout",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "failed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "historicalFailureSignature": "predicate-timeout",
+        "historicalFailureStage": "wait predicate",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "passed"
+        },
+        "classification": "currently-passed-not-verified-fixed",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "historicalFailureSignature": "predicate-timeout",
+        "historicalFailureStage": "wait predicate",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "failed",
+          "cohort-w4": "passed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "historicalFailureSignature": "other-assertion",
+        "historicalFailureStage": "other assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "failed",
+          "cohort-w2": "failed",
+          "cohort-w4": "failed"
+        },
+        "classification": "separate-failure-mechanism",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "historicalFailureSignature": "visibility-assertion",
+        "historicalFailureStage": "visibility assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "passed"
+        },
+        "classification": "currently-passed-not-verified-fixed",
+        "verifiedFixed": false
+      },
+      {
+        "identity": "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact",
+        "historicalFailureSignature": "visibility-assertion",
+        "historicalFailureStage": "visibility assertion",
+        "historicalSubsystem": "Scene mount / renderer readiness",
+        "workers": {
+          "cohort-w1": "passed",
+          "cohort-w2": "passed",
+          "cohort-w4": "failed"
+        },
+        "classification": "environment-sensitive",
+        "verifiedFixed": false
+      }
+    ]
+  },
+  "experiments": [
+    {
+      "id": "single-canvas-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/single-canvas-w1.json",
+      "artifactSha256": "f0ea1f946ad1d3299822b5f91fdeeaeef8da9118538141f3a0e1ce418016329b",
+      "role": "single historical missing-canvas identity",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "a1f0d0eab0d48b6d87b031158c94d9f086c2257fa8cbc4e174215f0685000b7c",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+      ]
+    },
+    {
+      "id": "single-route-heading-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/single-route-heading-w1.json",
+      "artifactSha256": "c7b7768acbd70abe239252c4586ba0a4cf780a7c660b577e358854c2f22a3f6f",
+      "role": "single historical route/heading identity",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "50cffa2594b62f791185a111c0180f27a8871613e782cf5936b8580b7cb15483",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page"
+      ]
+    },
+    {
+      "id": "single-camera-focus-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/single-camera-focus-w1.json",
+      "artifactSha256": "9edf89952366de816b6e2b88aca00945a954caacd9d0192b237c6fed11f12984",
+      "role": "single historical physical camera-anchor identity",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "face0defdffb09641cea0d03501778e741677eac9ad43ab915fd7c47bda62106",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor"
+      ]
+    },
+    {
+      "id": "single-renderer-identity-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/single-renderer-identity-w1.json",
+      "artifactSha256": "f680278b7fe10af2b0a01d3cb2a0744cac822416ae76f1cbf16c6feca3cebb52",
+      "role": "single controlled WebGL recovery identity",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "5e1913392ac1ed11b41cca00fd4be954c6823dd72f763a81890f672db7de6c5c",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "controlled-webgl-failure-recovery",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure"
+      ]
+    },
+    {
+      "id": "single-viewport-geometry-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/single-viewport-geometry-w1.json",
+      "artifactSha256": "7d63d304540a3e024276becaeb79467a64b5959fd55143fe06c31baaa7377865",
+      "role": "single historical viewport geometry identity",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "7e1d71996741fc6025026203aca898e8a096512d2816a71e7287ae8d2da61482",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases"
+      ]
+    },
+    {
+      "id": "five-representatives-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/five-representatives-w1.json",
+      "artifactSha256": "f5672503b2c7c46c9ba8de5805e6c7e797b8e5f4fa8bced6a98063a8efffdcd7",
+      "role": "five exact representative identities, sequential one-worker run",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "4716459832a62a7da050cf1292f0d66f53482656901b6c52b603540d08546624",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "controlled-webgl-failure-recovery",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 5,
+        "passed": 4,
+        "failed": 1,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases"
+      ]
+    },
+    {
+      "id": "cohort-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/cohort-w1.json",
+      "artifactSha256": "70a1f373788ff869a87a6e93d1f0d698e081e355183fc1004e75a0f3f097670e",
+      "role": "all twelve exact M7M identities at one worker",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "c5541d74a54aff8600d7cfb677614371f57602fec2c7f00c9cdb0c919f0936d7",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "controlled-webgl-failure-recovery",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 12,
+        "passed": 11,
+        "failed": 1,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ]
+    },
+    {
+      "id": "cohort-w2",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/cohort-w2.json",
+      "artifactSha256": "ecfb0a666ec463ff94e357ac34ed4d9d3ae36700bf0dfd9c1167cb571bde9d44",
+      "role": "all twelve exact M7M identities at two workers",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "22b7a6d7e21282a48a1b2a7efd413a3dedd3125302ec61e52559b97ee7b5444b",
+      "configuredWorkers": 2,
+      "configuredRetries": 0,
+      "testSeam": "controlled-webgl-failure-recovery",
+      "maxConcurrentTests": 2,
+      "outcomes": {
+        "discovered": 12,
+        "passed": 9,
+        "failed": 3,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ]
+    },
+    {
+      "id": "cohort-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/baseline/cohort-w4.json",
+      "artifactSha256": "459d8edc8674b613ca24a5ce5a72045a30dee116e93fe0e77132eafaaee51f78",
+      "role": "all twelve exact M7M identities at four workers",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "cc3611e166ff77cc8ab1d7dc8a29d6eac56274efb82f0973738b0ab65a8b357e",
+      "configuredWorkers": 4,
+      "configuredRetries": 0,
+      "testSeam": "controlled-webgl-failure-recovery",
+      "maxConcurrentTests": 4,
+      "outcomes": {
+        "discovered": 12,
+        "passed": 4,
+        "failed": 8,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ]
+    },
+    {
+      "id": "trace-subset-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/diagnostics/trace-subset-w4.json",
+      "artifactSha256": "f52c963b53ade2be9477dddd58a7a31b63f71d4d1aaff4eeb384e0298337e336",
+      "role": "six-test four-worker trace-on-failure diagnostic subset",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "419f5beb58c0b821f23b38b9978bc6d08691ec1bee318c55b684842d2eb71b35",
+      "configuredWorkers": 4,
+      "configuredRetries": 0,
+      "testSeam": "controlled-webgl-failure-recovery",
+      "maxConcurrentTests": 4,
+      "outcomes": {
+        "discovered": 6,
+        "passed": 3,
+        "failed": 3,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes"
+      ]
+    },
+    {
+      "id": "light-peer-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/comparison/light-peer-w4.json",
+      "artifactSha256": "3a748521129eea01690b0d6a826bba637899e4b51fc94f45cc5e7ffa39731d99",
+      "role": "canvas target plus three lightweight UI peers at four workers",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "89ba871ee8ec4c8d1b80cbacef7de8ef9d82fb5943f684f1ec1be1436ccbe0f9",
+      "configuredWorkers": 4,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 4,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+        "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+        "smoke.spec.ts::smoke: app boots at home"
+      ]
+    },
+    {
+      "id": "heavy-peer-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/comparison/heavy-peer-w4.json",
+      "artifactSha256": "c232274ed82c77314f1ca872dbbea86d23952d1fea1d63af3c229d21c8c34a8c",
+      "role": "canvas target plus three renderer-heavy peers at four workers",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "c7859db6ec761b04d687d9d5b53cd6f93eca2c3de05633cb4d0e604ee096f15c",
+      "configuredWorkers": 4,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 4,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 1,
+        "failed": 3,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed"
+      ]
+    },
+    {
+      "id": "lifecycle-rtt-spa-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/validation/lifecycle-rtt-spa-w1.json",
+      "artifactSha256": "58112f1418de1b80a569b244c8e9b7e2b2967abf780a2a5fc5701e636ed88f30",
+      "role": "contentful RTT and A-to-B-to-A lifecycle checks at one worker",
+      "projectName": "chromium",
+      "recordedSourceCaptureSha256": "ac3c375575044455d5d2d5472d2971879603c2b65132cf5ad4ae1548853d9e6d",
+      "configuredWorkers": 1,
+      "configuredRetries": 0,
+      "testSeam": "disabled",
+      "maxConcurrentTests": 1,
+      "outcomes": {
+        "discovered": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0
+      },
+      "selectedIdentities": [
+        "understanding-camera-movements.spec.ts::camera movements scene loads and renders valid Ground Glass content",
+        "understanding-camera-movements.spec.ts::canonical lattice remains stable across controls and SPA routes"
+      ]
+    }
+  ],
+  "rawCaptureProvenance": {
+    "persistedNormalizedIntegrity": "verified",
+    "originalRawCaptureProvenance": "unverified",
+    "rawToNormalizedReplay": "verified-locally-with-retained-normalizer",
+    "rawFilesRetainedForOfflineReplay": false,
+    "handling": "Original Playwright JSON remains private-local-only and uncommitted because it contains absolute filesystem paths and environment details. The matching private raw captures were replayed in this review-fix with the retained normalizer at the source commit above; all 13 normalized outputs matched their committed artifact bytes exactly. This verifies replay with the retained source but does not prove the exact capture-time normalizer implementation or allow independent replay without the private raw inputs."
+  },
+  "readinessLifecycle": {
+    "route": {
+      "observed": "The route test's URL assertion reached /simulator/free/architecture-rise. At the failed five-second heading assertion, the snapshot showed the Loading simulator workspace fallback: routing completed but the workspace had not mounted.",
+      "evidence": [
+        "trace-subset-w4"
+      ],
+      "rendererFailureProven": false
+    },
+    "sceneMount": {
+      "observed": "The failed Architecture Rise canvas check showed the simulator shell and 3D Scene heading; the scene-canvas container resolved but had zero descendant canvases at five seconds.",
+      "evidence": [
+        "trace-subset-w4"
+      ],
+      "containerMissing": false,
+      "canvasMissing": true
+    },
+    "renderer": {
+      "observed": "The controlled WebGL recovery test saw an empty renderer-family attribute at four workers; it passed alone and in the one/two-worker matrix. Its test seam deliberately injects a material-module failure.",
+      "rendererGenerationOrStatusAtFailure": "not captured",
+      "nativeWebGpu": false
+    },
+    "groundGlassRtt": {
+      "observed": "The one-worker lifecycle cases passed with valid contentful Ground Glass and checked current RTT identity, previous-node detachment, and fresh scene generation on A-to-B-to-A return.",
+      "evidence": [
+        "lifecycle-rtt-spa-w1"
+      ]
+    },
+    "spa": {
+      "observed": "Scene-focus A-to-B passed at one and four workers and timed out at two; the separate A-to-B-to-A lifecycle check passed with old scene/RTT nodes detached.",
+      "stalePublicationObserved": false
+    },
+    "cameraFocus": {
+      "observed": "The physical camera-anchor test passed at workers 1/2/4. Continuous viewpoint focus passed at one worker and failed at two/four; the two-worker SPA focus predicate failed.",
+      "cameraGeometryChanged": false
+    },
+    "viewportGeometry": {
+      "observed": "Expanded viewport ratio 1.1988203216292916 against 1.25 reproduced at one and two workers. Four workers failed earlier at canvas count.",
+      "separateFromRendererReadiness": true
+    },
+    "diagnosticLimits": [
+      "The trace subset is instrumented and excluded from clean outcome totals.",
+      "No renderer status/generation telemetry was added.",
+      "No GPU readback or native GPU capture was performed."
+    ]
+  },
+  "diagnosis": {
+    "hypotheses": [
+      {
+        "id": "route-or-react-mount-delay",
+        "result": "supported-as-observed-state-only",
+        "evidence": "Correct URL; workspace loading fallback at failing heading assertion."
+      },
+      {
+        "id": "renderer-init-failure",
+        "result": "unresolved",
+        "evidence": "Canvas was absent inside a mounted scene container; renderer status/context acquisition were not captured."
+      },
+      {
+        "id": "renderer-heavy-contention",
+        "result": "associated-not-causal",
+        "evidence": "Canvas target passed with three lightweight peers and failed with three renderer-heavy peers; both runs measured four concurrent tests."
+      },
+      {
+        "id": "stale-rtt-or-renderer-generation",
+        "result": "not-observed-in-focused-lifecycle-check",
+        "evidence": "A-to-B-to-A regression verified detached old nodes and fresh current scene generation."
+      },
+      {
+        "id": "observer-focus-regression",
+        "result": "not-reproduced-at-one-worker",
+        "evidence": "Physical anchor passed at workers 1/2/4; continuous focus remained worker-sensitive."
+      },
+      {
+        "id": "viewport-ratio-contract",
+        "result": "separate-unresolved-failure",
+        "evidence": "1.1988203216292916 observed against 1.25 at workers 1 and 2."
+      }
+    ],
+    "supportedCauses": [],
+    "sharedRootCauseEstablished": false,
+    "schedulingAssociation": "One matched four-test probe associated renderer-heavy peers with a missing canvas and two peer timeouts; this does not isolate a causal mechanism.",
+    "rejectedClaims": [
+      "Missing canvas proves WebGL context creation failed.",
+      "Missing heading is a renderer failure.",
+      "A passing A-to-B-to-A test proves all transitions stable.",
+      "Viewport ratio mismatch is caused by renderer readiness.",
+      "The controlled recovery test exercises native WebGPU."
+    ]
+  },
+  "remediation": {
+    "status": "no-implementation-change-justified",
+    "changedApplicationFiles": [],
+    "assertionsChanged": false,
+    "verifiedFixCount": 0,
+    "verifiedFixes": [],
+    "currentlyPassedNotVerifiedFixed": [
+      "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass"
+    ],
+    "changedBehaviorFiles": []
+  },
+  "remainingBacklog": {
+    "historicalUnexpectedCount": 82,
+    "m7lInvestigatedIdentityCount": 11,
+    "m7mCandidateIdentityCount": 12,
+    "remainingHistoricalIdentityCount": 59,
+    "inventoryPath": "docs/architecture/ground-glass-m7l-learning-drawer/historical-82-failure-inventory.json",
+    "inventorySha256": "ee7e6e0de2e280207f5b5e1935b812dcc19432922061c01cf57cfbc6fb25a647",
+    "nextStep": "Capture renderer status/generation and page errors from route navigation through canvas mount under matched lightweight/heavy load. Treat viewport ratio separately. Do not repeat the full suite until targeted mechanisms are resolved.",
+    "nextCandidateIdentitySet": []
+  },
+  "qualification": {
+    "cohortStatus": "worker-sensitive-unresolved",
+    "fullBroadE2eStatus": "not-qualified",
+    "fullBroadE2eRun": "not-run",
+    "m7Overall": "partially-qualified",
+    "m8Entry": "denied",
+    "externalGpuDeviceLoss": "blocked",
+    "m5q": "partially-qualified",
+    "m6": "development-only",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpuEnabled": false
+  },
+  "validation": {
+    "focusedRegression": {
+      "status": "passed",
+      "artifactPath": "docs/architecture/ground-glass-m7m-scene-readiness/validation/lifecycle-rtt-spa-w1.json",
+      "identities": [
+        "understanding-camera-movements.spec.ts::camera movements scene loads and renders valid Ground Glass content",
+        "understanding-camera-movements.spec.ts::canonical lattice remains stable across controls and SPA routes"
+      ]
+    },
+    "productionPreviewIsolation": {
+      "status": "passed",
+      "testCount": 4,
+      "retries": 0,
+      "commandOutputSha256": "14cf8d7c121dfc37cec2ea5e8f0bbeed5e88402d9b29d92b4e012f6ae0afa4e2",
+      "rawOutputRetainedForOfflineReplay": false
+    },
+    "mutationCoverage": {
+      "revision": "m7m-scene-readiness-evidence-mutations-v2",
+      "testCount": 56,
+      "focusedTestCount": 63,
+      "requiredCases": [
+        "m7k-report-digest-changed",
+        "m7k-full-suite-counts-changed",
+        "m7l-report-digest-changed",
+        "m7l-raw-provenance-overstated",
+        "historical-inventory-digest-changed",
+        "historical-candidate-identity-removed",
+        "historical-candidate-identity-invented",
+        "current-discovery-count-changed",
+        "current-discovery-digest-changed",
+        "execution-source-role-unavailable",
+        "execution-runner-tree-entry-missing",
+        "normalizer-source-sha-mismatch",
+        "normalizer-source-commit-unavailable",
+        "normalizer-source-content-mismatch",
+        "evaluator-source-sha-mismatch",
+        "evaluator-source-commit-unavailable",
+        "evaluator-source-content-mismatch",
+        "base-falsely-declared-as-normalizer-source",
+        "capture-time-normalizer-provenance-overstated",
+        "capture-time-evaluator-provenance-overstated",
+        "retained-normalizer-confused-with-capture-time-source",
+        "ordinary-discovery-bytes-missing",
+        "serial-discovery-bytes-missing",
+        "ordinary-discovery-digest-mismatch",
+        "serial-discovery-digest-mismatch",
+        "discovery-project-name-changed",
+        "discovery-identity-count-changed",
+        "discovery-spec-file-count-changed",
+        "discovery-duplicate-identity",
+        "selected-discovery-identity-missing",
+        "ordinary-and-serial-discovery-conflated",
+        "historical-discovery-claim-without-original-bytes",
+        "fresh-discovery-mislabeled-historical",
+        "sanitized-discovery-claimed-as-original",
+        "duplicate-cohort-identity",
+        "missing-cohort-identity",
+        "invented-cohort-identity",
+        "normalized-artifact-digest-changed",
+        "normalized-raw-digest-changed",
+        "captured-failure-promoted-to-pass",
+        "captured-pass-promoted-to-failure",
+        "missing-result-counted-as-success",
+        "wrong-project-identity",
+        "configured-workers-mismatch",
+        "actual-concurrency-mismatch",
+        "retry-added-to-zero-retry-capture",
+        "partial-matrix-called-complete",
+        "viewport-geometry-misclassified-as-readiness",
+        "current-pass-promoted-to-verified-fixed",
+        "single-capture-promoted-to-verified-fix",
+        "raw-provenance-overstated",
+        "normalizer-revision-changed",
+        "full-broad-e2e-qualified-from-cohort",
+        "m7-overall-promoted",
+        "m8-entry-enabled",
+        "production-webgpu-enabled"
+      ]
+    },
+    "repositoryChecks": {
+      "unitIntegration": {
+        "status": "passed",
+        "testFiles": 320,
+        "tests": 3799
+      },
+      "typecheck": "passed",
+      "lint": "passed",
+      "css": "passed",
+      "build": "passed",
+      "inheritedEvidence": {
+        "m7h": "passed",
+        "m7i": "passed",
+        "m7j": "passed",
+        "m7kSchemaV1": "passed",
+        "m7kSchemaV2Selected": "passed-integrity-incomplete-blocked",
+        "m7l": "passed",
+        "m7fReplay": "passed-17-of-17",
+        "m7gConsolidationReport": "passed-integrity-partially-qualified",
+        "m7m": "passed"
+      },
+      "normalizerOutputOverwrite": "rejected-existing-path-preserved",
+      "fullBroadE2e": "not-run",
+      "sourceProvenance": "passed-synthetic-post-squash-no-shared-object-store; exact-SHA fetch and retained-PR-ref fallback verified; unavailable retained ref fails closed",
+      "discoveryEvidence": "original outputs retained; SHA-256 and identities verified locally against 274 ordinary and 4 renderer-serial tests",
+      "normalizerReplay": "13/13 exact byte matches with retained normalizer; private raw inputs remain uncommitted"
+    },
+    "fullBroadE2e": "not-run"
+  },
+  "sourceProvenance": {
+    "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+    "executionSourceMeaning": "The exact M7L main revision containing the application and Playwright tests investigated by M7M.",
+    "playwrightRunner": {
+      "sourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+      "configurationPath": "playwright.config.ts",
+      "testDirectory": "src/tests/e2e",
+      "verification": "configuration and all test files named by retained ordinary and renderer-serial discovery outputs are present in this commit"
+    },
+    "retainedNormalizer": {
+      "sourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "path": "scripts/normalize-m7m-playwright-capture.mjs",
+      "fileSha256": "f80732345201f5bcbb0d9676e78d06c2b305cf6064eadc988ffeeb67b3410dc4",
+      "sourceRole": "retained-replay-implementation",
+      "captureTimeUse": "unverified"
+    },
+    "retainedEvaluator": {
+      "sourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "sourceRole": "initial-m7m-evaluator-implementation",
+      "files": {
+        "src/render/testing/groundGlassM7mSceneReadiness.ts": "523aea78cc9ca56a37250013a4c3de2fd15615e167a5789269cd415fd838f19b",
+        "scripts/evaluateM7mSceneReadiness.ts": "253e57b79ff9603612ed685bac3a316e4083e1ec60be3675c4e7f27ba90b60a0",
+        "scripts/run-m7m-scene-readiness.mjs": "aae96dfed7013087b4ba6a4627d03b2960845297077e8cef578db9881cf354e3"
+      },
+      "captureTimeUse": "unverified"
+    },
+    "captureTimeTooling": {
+      "normalizerSourceCommitSha": null,
+      "evaluatorSourceCommitSha": null,
+      "sourceIdentity": "unverified"
+    },
+    "normalizationReplay": {
+      "status": "verified-locally-byte-identical",
+      "retainedNormalizerSourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "normalizedArtifactsReproduced": 13,
+      "rawInputsAvailableOutsidePrivateLocalStorage": false
+    }
+  }
+}
