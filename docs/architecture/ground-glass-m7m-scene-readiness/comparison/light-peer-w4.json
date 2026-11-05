@@ -1,0 +1,100 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "light-peer-w4",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "89ba871ee8ec4c8d1b80cbacef7de8ef9d82fb5943f684f1ec1be1436ccbe0f9",
+    "bytes": 11647,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 4,
+    "configuredRetries": 0,
+    "testSeam": "disabled"
+  },
+  "stats": {
+    "discovered": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 4,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "durationMs": 16017
+  },
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 668,
+          "durationMs": 15200,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 668,
+          "durationMs": 1169,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 2,
+          "startOffsetMs": 668,
+          "durationMs": 10409,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "smoke.spec.ts::smoke: app boots at home",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 665,
+          "durationMs": 606,
+          "failureSignature": null
+        }
+      ]
+    }
+  ]
+}

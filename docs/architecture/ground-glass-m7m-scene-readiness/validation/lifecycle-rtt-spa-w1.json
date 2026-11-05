@@ -1,0 +1,67 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "lifecycle-rtt-spa-w1",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "ac3c375575044455d5d2d5472d2971879603c2b65132cf5ad4ae1548853d9e6d",
+    "bytes": 8874,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 1,
+    "configuredRetries": 0,
+    "testSeam": "disabled"
+  },
+  "stats": {
+    "discovered": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 1,
+    "actualWorkerIndices": [
+      0
+    ],
+    "durationMs": 99000
+  },
+  "tests": [
+    {
+      "identity": "understanding-camera-movements.spec.ts::camera movements scene loads and renders valid Ground Glass content",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 645,
+          "durationMs": 14419,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "understanding-camera-movements.spec.ts::canonical lattice remains stable across controls and SPA routes",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 15142,
+          "durationMs": 83822,
+          "failureSignature": null
+        }
+      ]
+    }
+  ]
+}

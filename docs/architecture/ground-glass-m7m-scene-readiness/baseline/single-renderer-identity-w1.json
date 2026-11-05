@@ -1,0 +1,52 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "single-renderer-identity-w1",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "5e1913392ac1ed11b41cca00fd4be954c6823dd72f763a81890f672db7de6c5c",
+    "bytes": 80048,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 1,
+    "configuredRetries": 0,
+    "testSeam": "controlled-webgl-failure-recovery"
+  },
+  "stats": {
+    "discovered": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 1,
+    "actualWorkerIndices": [
+      0
+    ],
+    "durationMs": 20743
+  },
+  "tests": [
+    {
+      "identity": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 711,
+          "durationMs": 19918,
+          "failureSignature": null
+        }
+      ]
+    }
+  ]
+}

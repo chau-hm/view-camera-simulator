@@ -47,6 +47,11 @@ jobs:
       - name: Fetch M7K execution source history
         run: node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
 
+      # M7M selected captures were run against the exact main commit below.
+      # Keep that source available for strict report provenance after history advances.
+      - name: Fetch M7M scene-readiness execution source history
+        run: node scripts/fetch-m7k-execution-source.mjs --sha=0c32f113c1e3d16a8fd42e7748c64909366c6ae8
+
       # Schema-v2 selected evidence also names its original tooling/evaluator
       # commit. It is an ancestor of PR #309, not necessarily of squash-merged
       # main, so fetch that exact commit or its retained PR history and verify
@@ -121,6 +126,9 @@ jobs:
 
       - name: Validate M7L Learning Drawer remediation evidence integrity
         run: npm run evidence:check:m7l
+
+      - name: Validate M7M Scene / Ground Glass readiness evidence integrity
+        run: npm run evidence:check:m7m
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
