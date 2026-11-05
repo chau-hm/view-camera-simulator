@@ -1,11 +1,16 @@
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import {
+  GROUND_GLASS_M7M_BASE_COMMIT_SHA,
+  GROUND_GLASS_M7M_DISCOVERY_PATHS,
   GROUND_GLASS_M7M_EVALUATOR_REVISION,
   GROUND_GLASS_M7M_MUTATION_SUITE_REVISION,
+  GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA,
   GROUND_GLASS_M7M_REQUIRED_COHORT_IDENTITIES,
   GROUND_GLASS_M7M_REQUIRED_EXPERIMENT_IDS,
   GROUND_GLASS_M7M_REQUIRED_MUTATION_CASES,
@@ -43,7 +48,18 @@ const loadFixture = (): Fixture => {
       historicalM7lSha256: digest(m7lBytes),
       historicalInventory: JSON.parse(inventoryBytes.toString("utf8")) as unknown,
       historicalInventorySha256: digest(inventoryBytes),
-      sourceCommitAvailable: true,
+      sourceVerification: {
+        executionCommitAvailable: true,
+        executionRunnerTreeEntriesVerified: true,
+        normalizerCommitAvailable: true,
+        normalizerContentVerified: true,
+        evaluatorCommitAvailable: true,
+        evaluatorContentVerified: true,
+      },
+      discoveryLists: {
+        ordinaryChromium: readBytes(GROUND_GLASS_M7M_DISCOVERY_PATHS.ordinaryChromium),
+        rendererSerial: readBytes(GROUND_GLASS_M7M_DISCOVERY_PATHS.rendererSerial),
+      },
       experiments: artifacts,
     },
   };
@@ -69,6 +85,81 @@ const outcomeRow = (fixture: Fixture, identity: string): RecordValue => {
   if (!found) throw new Error("Missing cohort outcome row " + identity);
   return found;
 };
+const git = (cwd: string, args: readonly string[], allowFailure = false) => {
+  const result = spawnSync("git", [...args], { cwd, encoding: "utf8" });
+  if (!allowFailure && result.status !== 0) throw new Error("git " + args.join(" ") + " failed: " + result.stderr);
+  return result;
+};
+const copyWorkingTreeSnapshot = (destination: string): void => {
+  mkdirSync(destination, { recursive: true });
+  const listing = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
+    cwd: process.cwd(),
+  });
+  if (listing.status !== 0 || !Buffer.isBuffer(listing.stdout)) throw new Error("Could not list current M7M snapshot files");
+  for (const file of listing.stdout.toString("utf8").split("\0").filter(Boolean)) {
+    const source = resolve(process.cwd(), file);
+    const target = resolve(destination, file);
+    if (!target.startsWith(destination + "/")) throw new Error("Snapshot path escaped its temporary repository");
+    mkdirSync(dirname(target), { recursive: true });
+    const stat = lstatSync(source);
+    if (stat.isSymbolicLink()) symlinkSync(readlinkSync(source), target);
+    else copyFileSync(source, target);
+  }
+};
+const copyCommitObjects = (
+  source: string,
+  destinationBare: string,
+  commits: readonly string[],
+  sourceFilesByCommit: Readonly<Record<string, readonly string[]>>,
+): void => {
+  const objectTypes = new Map<string, string>();
+  for (const commit of commits) {
+    objectTypes.set(commit, "commit");
+    const tree = git(source, ["rev-parse", commit + "^{tree}"]).stdout.trim();
+    objectTypes.set(tree, "tree");
+    const listing = spawnSync("git", ["ls-tree", "-r", "-t", "-z", "--full-tree", commit], { cwd: source, maxBuffer: 64 * 1024 * 1024 });
+    if (listing.status !== 0 || !Buffer.isBuffer(listing.stdout)) throw new Error("Could not inspect source commit tree " + commit);
+    for (const entry of listing.stdout.toString("utf8").split("\0").filter(Boolean)) {
+      const metadata = entry.slice(0, entry.indexOf("\t")).split(" ");
+      if (metadata.length === 3) objectTypes.set(metadata[2], metadata[1]);
+    }
+    for (const file of sourceFilesByCommit[commit] ?? []) {
+      const blob = git(source, ["rev-parse", commit + ":" + file]).stdout.trim();
+      objectTypes.set(blob, "blob");
+    }
+  }
+  const newline = String.fromCharCode(10);
+  const packed = spawnSync("git", ["pack-objects", "--stdout"], {
+    cwd: source,
+    input: Buffer.from([...objectTypes.keys()].join(newline) + newline),
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  if (packed.status !== 0 || !Buffer.isBuffer(packed.stdout)) throw new Error("Could not pack exact source Git objects: " + packed.stderr);
+  const indexed = spawnSync("git", ["index-pack", "--stdin"], {
+    cwd: destinationBare,
+    input: packed.stdout,
+    encoding: "utf8",
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  if (indexed.status !== 0) throw new Error("Could not import exact source Git objects: " + indexed.stderr);
+};
+const shallowClone = (remote: string, destination: string): void => {
+  const result = spawnSync("git", ["clone", "--depth=1", "--no-tags", "--branch", "main", pathToFileURL(remote).href, destination], {
+    cwd: tmpdir(),
+    encoding: "utf8",
+  });
+  if (result.status !== 0) throw new Error("Could not create isolated shallow post-squash clone: " + result.stderr);
+};
+const runM7mCli = (cwd: string, reportPath?: string) => spawnSync(process.execPath, [
+  join(cwd, "scripts/run-m7m-scene-readiness.mjs"),
+  ...(reportPath ? ["--report-path=" + reportPath] : []),
+], { cwd, encoding: "utf8" });
+const sourceVerification = (fixture: Fixture): RecordValue => fixture.evidence.sourceVerification as RecordValue;
+const discoveryBytes = (fixture: Fixture, lane: "ordinaryChromium" | "rendererSerial"): Buffer => {
+  const bytes = fixture.evidence.discoveryLists[lane];
+  if (!bytes) throw new Error("Missing retained discovery bytes for " + lane);
+  return Buffer.from(bytes);
+};
 
 const mutations: ReadonlyArray<readonly [string, (fixture: Fixture) => void, string]> = [
   ["m7k-report-digest-changed", (f) => { record(f.report.historicalM7k).reportSha256 = "0".repeat(64); }, "historical-m7k-report-identity-or-digest-mismatch"],
@@ -78,8 +169,33 @@ const mutations: ReadonlyArray<readonly [string, (fixture: Fixture) => void, str
   ["historical-inventory-digest-changed", (f) => { f.evidence = { ...f.evidence, historicalInventorySha256: "0".repeat(64) }; }, "historical-inventory-digest-mismatch"],
   ["historical-candidate-identity-removed", (f) => { record(f.report.historicalM7k).identityList = array(record(f.report.historicalM7k).identityList).slice(1); }, "historical-candidate-identity-claim-mismatch"],
   ["historical-candidate-identity-invented", (f) => { const ids = array(record(f.report.historicalM7k).identityList); ids[0] = "invented.spec.ts::not historical"; record(f.report.historicalM7k).identityList = ids; }, "historical-candidate-identity-claim-mismatch"],
-  ["current-discovery-count-changed", (f) => { record(record(f.report.currentDiscovery).ordinaryChromium).discoveredTests = 273; }, "current-discovery-identity-or-provenance-mismatch"],
-  ["current-discovery-digest-changed", (f) => { record(record(f.report.currentDiscovery).rendererSerial).discoveryListSha256 = "0".repeat(64); }, "current-discovery-identity-or-provenance-mismatch"],
+  ["current-discovery-count-changed", (f) => { record(record(f.report.currentDiscovery).ordinaryChromium).discoveredTests = 273; }, "discovery-identity-count-mismatch:ordinaryChromium"],
+  ["current-discovery-digest-changed", (f) => { record(record(f.report.currentDiscovery).rendererSerial).discoveryListSha256 = "0".repeat(64); }, "discovery-digest-mismatch:rendererSerial"],
+  ["execution-source-role-unavailable", (f) => { sourceVerification(f).executionCommitAvailable = false; }, "execution-source-commit-unavailable"],
+  ["execution-runner-tree-entry-missing", (f) => { sourceVerification(f).executionRunnerTreeEntriesVerified = false; }, "playwright-runner-tree-entries-unverified"],
+  ["normalizer-source-sha-mismatch", (f) => { record(record(f.report.sourceProvenance).retainedNormalizer).sourceCommitSha = GROUND_GLASS_M7M_BASE_COMMIT_SHA; }, "source-provenance-role-mismatch"],
+  ["normalizer-source-commit-unavailable", (f) => { sourceVerification(f).normalizerCommitAvailable = false; }, "retained-normalizer-source-commit-unavailable"],
+  ["normalizer-source-content-mismatch", (f) => { sourceVerification(f).normalizerContentVerified = false; }, "retained-normalizer-source-content-mismatch"],
+  ["evaluator-source-sha-mismatch", (f) => { record(record(f.report.sourceProvenance).retainedEvaluator).sourceCommitSha = GROUND_GLASS_M7M_BASE_COMMIT_SHA; }, "source-provenance-role-mismatch"],
+  ["evaluator-source-commit-unavailable", (f) => { sourceVerification(f).evaluatorCommitAvailable = false; }, "retained-evaluator-source-commit-unavailable"],
+  ["evaluator-source-content-mismatch", (f) => { sourceVerification(f).evaluatorContentVerified = false; }, "retained-evaluator-source-content-mismatch"],
+  ["base-falsely-declared-as-normalizer-source", (f) => { record(record(f.report.sourceProvenance).retainedNormalizer).sourceCommitSha = GROUND_GLASS_M7M_BASE_COMMIT_SHA; }, "source-provenance-role-mismatch"],
+  ["capture-time-normalizer-provenance-overstated", (f) => { record(record(f.report.sourceProvenance).captureTimeTooling).normalizerSourceCommitSha = GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA; }, "capture-time-tooling-provenance-overstated"],
+  ["capture-time-evaluator-provenance-overstated", (f) => { record(record(f.report.sourceProvenance).captureTimeTooling).evaluatorSourceCommitSha = GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA; }, "capture-time-tooling-provenance-overstated"],
+  ["retained-normalizer-confused-with-capture-time-source", (f) => { record(record(f.report.sourceProvenance).retainedNormalizer).captureTimeUse = "verified"; }, "retained-tooling-confused-with-capture-time-source"],
+  ["ordinary-discovery-bytes-missing", (f) => { f.evidence = { ...f.evidence, discoveryLists: { ...f.evidence.discoveryLists, ordinaryChromium: null } }; }, "original-discovery-bytes-missing:ordinaryChromium"],
+  ["serial-discovery-bytes-missing", (f) => { f.evidence = { ...f.evidence, discoveryLists: { ...f.evidence.discoveryLists, rendererSerial: null } }; }, "original-discovery-bytes-missing:rendererSerial"],
+  ["ordinary-discovery-digest-mismatch", (f) => { record(record(f.report.currentDiscovery).ordinaryChromium).discoveryListSha256 = "0".repeat(64); }, "discovery-digest-mismatch:ordinaryChromium"],
+  ["serial-discovery-digest-mismatch", (f) => { record(record(f.report.currentDiscovery).rendererSerial).discoveryListSha256 = "0".repeat(64); }, "discovery-digest-mismatch:rendererSerial"],
+  ["discovery-project-name-changed", (f) => { record(record(f.report.currentDiscovery).ordinaryChromium).projectName = "firefox"; }, "discovery-project-name-mismatch:ordinaryChromium"],
+  ["discovery-identity-count-changed", (f) => { record(record(f.report.currentDiscovery).ordinaryChromium).discoveredTests = 273; }, "discovery-identity-count-mismatch:ordinaryChromium"],
+  ["discovery-spec-file-count-changed", (f) => { record(record(f.report.currentDiscovery).rendererSerial).specFiles = 3; }, "discovery-spec-file-count-mismatch:rendererSerial"],
+  ["discovery-duplicate-identity", (f) => { const text = discoveryBytes(f, "ordinaryChromium").toString("utf8"); const rows = text.split("\n"); rows[2] = rows[1]; f.evidence = { ...f.evidence, discoveryLists: { ...f.evidence.discoveryLists, ordinaryChromium: Buffer.from(rows.join("\n")) } }; }, "discovery-duplicate-identity:ordinaryChromium"],
+  ["selected-discovery-identity-missing", (f) => { const text = discoveryBytes(f, "ordinaryChromium").toString("utf8").replace("simulator viewports expand in main without replacing their active canvases", "invented scene viewport identity"); f.evidence = { ...f.evidence, discoveryLists: { ...f.evidence.discoveryLists, ordinaryChromium: Buffer.from(text) } }; }, "selected-discovery-identity-missing"],
+  ["ordinary-and-serial-discovery-conflated", (f) => { record(record(f.report.currentDiscovery).rendererSerial).projectName = "chromium"; }, "ordinary-and-serial-discovery-conflated"],
+  ["historical-discovery-claim-without-original-bytes", (f) => { f.evidence = { ...f.evidence, discoveryLists: { ordinaryChromium: null, rendererSerial: null } }; }, "historical-discovery-claim-without-original-bytes:ordinaryChromium"],
+  ["fresh-discovery-mislabeled-historical", (f) => { record(f.report.currentDiscovery).freshDiscoveryRun = "executed-after-capture"; }, "fresh-discovery-mislabeled-historical"],
+  ["sanitized-discovery-claimed-as-original", (f) => { record(f.report.currentDiscovery).discoverySanitization = "sanitized"; }, "sanitized-discovery-claimed-as-original"],
   ["duplicate-cohort-identity", (f) => { const ids = array(record(f.report.cohort).identities); ids[1] = ids[0]; record(f.report.cohort).identities = ids; }, "cohort-identity-set-mismatch"],
   ["missing-cohort-identity", (f) => { record(f.report.cohort).identities = array(record(f.report.cohort).identities).slice(1); }, "cohort-identity-set-mismatch"],
   ["invented-cohort-identity", (f) => { const ids = array(record(f.report.cohort).identities); ids[0] = "invented.spec.ts::not discovered"; record(f.report.cohort).identities = ids; }, "cohort-identity-set-mismatch"],
@@ -111,6 +227,8 @@ describe("Ground Glass M7M Scene readiness evidence integrity", () => {
       passed: true,
       evidenceIntegrity: "passed",
       normalizedArtifactIntegrity: "passed",
+      sourceProvenanceIntegrity: "verified",
+      discoveryProvenance: "verified",
       executionCompleteness: "complete",
       cohortStatus: "worker-sensitive-unresolved",
       candidateIdentityCount: 12,
@@ -139,12 +257,12 @@ describe("Ground Glass M7M Scene readiness evidence integrity", () => {
     expect(coverage.testCount).toBe(GROUND_GLASS_M7M_REQUIRED_MUTATION_CASES.length);
     expect(mutations.map(([name]) => name)).toEqual(GROUND_GLASS_M7M_REQUIRED_MUTATION_CASES);
     expect(GROUND_GLASS_M7M_REQUIRED_EXPERIMENT_IDS).toHaveLength(13);
-    expect(GROUND_GLASS_M7M_EVALUATOR_REVISION).toBe("m7m-scene-readiness-evaluator-v1");
+    expect(GROUND_GLASS_M7M_EVALUATOR_REVISION).toBe("m7m-scene-readiness-evaluator-v2");
   });
 
   it("returns failure when the pinned execution commit is unavailable", () => {
     const fixture = loadFixture();
-    fixture.evidence = { ...fixture.evidence, sourceCommitAvailable: false };
+    fixture.evidence = { ...fixture.evidence, sourceVerification: { ...fixture.evidence.sourceVerification, executionCommitAvailable: false } };
     rejectFor(fixture, "execution-source-commit-unavailable");
   });
 
@@ -167,6 +285,134 @@ describe("Ground Glass M7M Scene readiness evidence integrity", () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it("fails the production CLI when retained tooling provenance is replaced with the execution source", () => {
+    const directory = mkdtempSync(join(process.cwd(), ".m7m-cli-source-negative-"));
+    const report = readJson(reportPath);
+    const mutatedPath = join(directory, "mutated-report.json");
+    try {
+      record(record(report.sourceProvenance).retainedNormalizer).sourceCommitSha = GROUND_GLASS_M7M_BASE_COMMIT_SHA;
+      writeFileSync(mutatedPath, JSON.stringify(report, null, 2) + "\n");
+      const result = spawnSync(process.execPath, [
+        resolve(process.cwd(), "scripts/run-m7m-scene-readiness.mjs"),
+        "--report-path=" + relative(process.cwd(), mutatedPath).replaceAll("\\", "/"),
+      ], { cwd: process.cwd(), encoding: "utf8" });
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain("source-provenance-role-mismatch");
+      expect(result.stdout).toContain("retained-normalizer-source-content-mismatch");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("retrieves retained M7M tooling and replays evidence from an isolated synthetic post-squash shallow checkout", () => {
+    const directory = mkdtempSync(join(tmpdir(), "m7m-post-squash-"));
+    const seed = join(directory, "squash-seed");
+    const remote = join(directory, "retained-pr-remote.git");
+    const exactClone = join(directory, "exact-fetch-clone");
+    const fallbackClone = join(directory, "retained-ref-clone");
+    const missingRemote = join(directory, "missing-retained-ref.git");
+    const missingClone = join(directory, "missing-ref-clone");
+    try {
+      copyWorkingTreeSnapshot(seed);
+      git(seed, ["init", "--quiet"]);
+      git(seed, ["config", "user.name", "M7M isolated fixture"]);
+      git(seed, ["config", "user.email", "m7m-fixture@example.invalid"]);
+      git(seed, ["add", "-A"]);
+      git(seed, ["commit", "--quiet", "-m", "synthetic squash snapshot"]);
+      git(seed, ["branch", "-M", "main"]);
+
+      git(directory, ["init", "--bare", "--quiet", remote]);
+      const specFiles = new Set<string>();
+      for (const lane of ["ordinaryChromium", "rendererSerial"] as const) {
+        const discovery = readBytes(GROUND_GLASS_M7M_DISCOVERY_PATHS[lane]).toString("utf8");
+        for (const line of discovery.split(/\r?\n/)) {
+          const match = line.match(/^ {2}\[[^\]]+\] › ([^:\r\n]+):\d+:\d+ › /);
+          if (match) specFiles.add("src/tests/e2e/" + match[1]);
+        }
+      }
+      copyCommitObjects(process.cwd(), remote, [GROUND_GLASS_M7M_BASE_COMMIT_SHA, GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA], {
+        [GROUND_GLASS_M7M_BASE_COMMIT_SHA]: ["playwright.config.ts", "scripts/e2e-spec-policy.mjs", ...specFiles],
+        [GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA]: [
+          "scripts/normalize-m7m-playwright-capture.mjs",
+          ...["src/render/testing/groundGlassM7mSceneReadiness.ts", "scripts/evaluateM7mSceneReadiness.ts", "scripts/run-m7m-scene-readiness.mjs"],
+        ],
+      });
+      writeFileSync(join(remote, "shallow"), GROUND_GLASS_M7M_BASE_COMMIT_SHA + "\n");
+      git(remote, ["update-ref", "refs/pull/311/head", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA]);
+      git(seed, ["remote", "add", "origin", remote]);
+      git(seed, ["push", "--quiet", "origin", "HEAD:refs/heads/main"]);
+
+      shallowClone(remote, exactClone);
+      expect(git(exactClone, ["rev-parse", "--is-shallow-repository"]).stdout.trim()).toBe("true");
+      expect(git(exactClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + "^{commit}"], true).status).not.toBe(0);
+      expect(git(exactClone, ["cat-file", "-e", GROUND_GLASS_M7M_BASE_COMMIT_SHA + "^{commit}"], true).status).not.toBe(0);
+      expect(git(exactClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + ":scripts/normalize-m7m-playwright-capture.mjs"], true).status).not.toBe(0);
+      const exactFetch = spawnSync(process.execPath, [
+        resolve(process.cwd(), "scripts/fetch-m7k-execution-source.mjs"),
+        "--sha=" + GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA,
+        "--retained-ref=refs/pull/311/head",
+        "--verify-path=scripts/normalize-m7m-playwright-capture.mjs",
+      ], { cwd: exactClone, encoding: "utf8" });
+      expect(exactFetch.status, exactFetch.stdout + exactFetch.stderr).toBe(0);
+      expect(git(exactClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + "^{commit}"]).status).toBe(0);
+
+      shallowClone(remote, fallbackClone);
+      expect(git(fallbackClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + "^{commit}"], true).status).not.toBe(0);
+      expect(git(fallbackClone, ["cat-file", "-e", GROUND_GLASS_M7M_BASE_COMMIT_SHA + "^{commit}"], true).status).not.toBe(0);
+      expect(existsSync(join(fallbackClone, ".git/objects/info/alternates"))).toBe(false);
+      symlinkSync(join(process.cwd(), "node_modules"), join(fallbackClone, "node_modules"), "dir");
+      const beforeFetch = runM7mCli(fallbackClone);
+      expect(beforeFetch.status).toBe(1);
+      expect(beforeFetch.stdout).toContain("retained-normalizer-source-commit-unavailable");
+      expect(beforeFetch.stdout).toContain("M7M evidence integrity: FAILED");
+
+      const retainedFetch = spawnSync(process.execPath, [
+        resolve(process.cwd(), "scripts/fetch-m7k-execution-source.mjs"),
+        "--sha=" + GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA,
+        "--retained-ref=refs/pull/311/head",
+        "--force-retained-ref",
+        "--verify-path=scripts/normalize-m7m-playwright-capture.mjs",
+        "--verify-path=src/render/testing/groundGlassM7mSceneReadiness.ts",
+        "--verify-path=scripts/evaluateM7mSceneReadiness.ts",
+        "--verify-path=scripts/run-m7m-scene-readiness.mjs",
+      ], { cwd: fallbackClone, encoding: "utf8" });
+      expect(retainedFetch.status).toBe(0);
+      expect(retainedFetch.stdout).toContain("retained-ref-history-fallback");
+      expect(git(fallbackClone, ["cat-file", "-e", GROUND_GLASS_M7M_BASE_COMMIT_SHA + "^{commit}"]).status).toBe(0);
+      expect(git(fallbackClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + ":scripts/normalize-m7m-playwright-capture.mjs"]).status).toBe(0);
+      expect(git(fallbackClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + ":src/render/testing/groundGlassM7mSceneReadiness.ts"]).status).toBe(0);
+      const afterFetch = runM7mCli(fallbackClone);
+      expect(afterFetch.status).toBe(0);
+      expect(afterFetch.stdout).toContain("M7M evidence integrity: PASSED");
+      expect(afterFetch.stdout).toContain("M7M original discovery evidence: VERIFIED");
+
+      const invalidReportPath = ".m7m-invalid-tooling-source.json";
+      const invalidReport = readJson(join(fallbackClone, reportPath));
+      record(record(invalidReport.sourceProvenance).retainedNormalizer).sourceCommitSha = GROUND_GLASS_M7M_BASE_COMMIT_SHA;
+      writeFileSync(join(fallbackClone, invalidReportPath), JSON.stringify(invalidReport, null, 2) + "\n");
+      const wrongSource = runM7mCli(fallbackClone, invalidReportPath);
+      expect(wrongSource.status).toBe(1);
+      expect(wrongSource.stdout).toContain("source-provenance-role-mismatch");
+
+      git(directory, ["init", "--bare", "--quiet", missingRemote]);
+      git(seed, ["remote", "add", "missing-origin", missingRemote]);
+      git(seed, ["push", "--quiet", "missing-origin", "HEAD:refs/heads/main"]);
+      shallowClone(missingRemote, missingClone);
+      expect(git(missingClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + "^{commit}"], true).status).not.toBe(0);
+      const failedFetch = spawnSync(process.execPath, [
+        resolve(process.cwd(), "scripts/fetch-m7k-execution-source.mjs"),
+        "--sha=" + GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA,
+        "--retained-ref=refs/pull/311/head",
+        "--force-retained-ref",
+      ], { cwd: missingClone, encoding: "utf8" });
+      expect(failedFetch.status).not.toBe(0);
+      expect(git(missingClone, ["cat-file", "-e", GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA + "^{commit}"], true).status).not.toBe(0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }, 120_000);
 
   it("preserves an existing normalized artifact instead of overwriting it", () => {
     const directory = mkdtempSync(join(process.cwd(), ".m7m-normalizer-negative-"));

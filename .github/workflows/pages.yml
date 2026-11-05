@@ -47,10 +47,27 @@ jobs:
       - name: Fetch M7K execution source history
         run: node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
 
-      # M7M selected captures were run against the exact main commit below.
-      # Keep that source available for strict report provenance after history advances.
+      # M7M selected captures were run against this exact main commit below.
+      # Keep that source and the full Playwright discovery/test tree available.
       - name: Fetch M7M scene-readiness execution source history
-        run: node scripts/fetch-m7k-execution-source.mjs --sha=0c32f113c1e3d16a8fd42e7748c64909366c6ae8
+        run: >-
+          node scripts/fetch-m7k-execution-source.mjs
+          --sha=0c32f113c1e3d16a8fd42e7748c64909366c6ae8
+          --verify-path=playwright.config.ts
+
+      # The retained normalizer and original M7M evaluator were introduced in
+      # PR #311. Keep their exact source revision retrievable after squash merge.
+      - name: Fetch M7M retained normalizer and evaluator source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=e6c139ef60974a544f75a45d062b92101d31d115 \
+            --retained-ref=refs/pull/311/head \
+            --verify-path=scripts/normalize-m7m-playwright-capture.mjs \
+            --verify-path=src/render/testing/groundGlassM7mSceneReadiness.ts \
+            --verify-path=scripts/evaluateM7mSceneReadiness.ts \
+            --verify-path=scripts/run-m7m-scene-readiness.mjs
+          git update-ref refs/m7m/retained-tooling e6c139ef60974a544f75a45d062b92101d31d115
+          git cat-file -e 'e6c139ef60974a544f75a45d062b92101d31d115^{commit}'
 
       # Schema-v2 selected evidence also names its original tooling/evaluator
       # commit. It is an ancestor of PR #309, not necessarily of squash-merged

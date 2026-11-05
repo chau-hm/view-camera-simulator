@@ -1,15 +1,13 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "reportId": "ground-glass-m7m-scene-readiness",
-  "evaluatorRevision": "m7m-scene-readiness-evaluator-v1",
+  "evaluatorRevision": "m7m-scene-readiness-evaluator-v2",
   "normalizationImplementationRevision": "m7m-playwright-normalizer-v1",
   "generatedAt": "2026-11-05T01:40:51.827Z",
   "baseCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
   "candidateCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
   "candidateCommitMeaning": "M7M changes no application source or E2E assertions; candidate and baseline app behavior are the exact main source under investigation.",
   "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
-  "toolingCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
-  "sourceCommitMeaning": "Current main app, Playwright tests, and runner configuration used for the captures; this PR adds evidence tooling only.",
   "environment": {
     "nodeVersion": "v24.3.0",
     "npmVersion": "11.12.0",
@@ -186,12 +184,20 @@
     "ordinaryChromium": {
       "discoveredTests": 274,
       "specFiles": 80,
-      "discoveryListSha256": "1d24cc0fd985b3c2c41b83ab6c4880699eeeea81c1e4fb97bb8889a38736823d"
+      "discoveryListSha256": "1d24cc0fd985b3c2c41b83ab6c4880699eeeea81c1e4fb97bb8889a38736823d",
+      "discoveryListPath": "docs/architecture/ground-glass-m7m-scene-readiness/discovery/ordinary-chromium.txt",
+      "projectName": "chromium",
+      "originalOutputRole": "historical-original-playwright-list",
+      "verification": "verified-from-retained-original-bytes"
     },
     "rendererSerial": {
       "discoveredTests": 4,
       "specFiles": 4,
-      "discoveryListSha256": "1db87b1ae129b443f369d8ed2538f635ab2289dc73a2cf5d34491339104ec39f"
+      "discoveryListSha256": "1db87b1ae129b443f369d8ed2538f635ab2289dc73a2cf5d34491339104ec39d",
+      "discoveryListPath": "docs/architecture/ground-glass-m7m-scene-readiness/discovery/renderer-serial.txt",
+      "projectName": "chromium-renderer-serial",
+      "originalOutputRole": "historical-original-playwright-list",
+      "verification": "verified-from-retained-original-bytes"
     },
     "combinedDiscoveredTests": 278,
     "exactSelectedIdentityCount": 12,
@@ -210,7 +216,11 @@
       "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
       "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
     ],
-    "fullApplicationDiscoveryClaimed": false
+    "fullApplicationDiscoveryClaimed": false,
+    "originalDiscoveryReplay": "verified-from-retained-original-bytes",
+    "currentIdentityReconciliation": "verified",
+    "freshDiscoveryRun": "not-run",
+    "discoverySanitization": "none"
   },
   "cohort": {
     "identities": [
@@ -752,9 +762,9 @@
   "rawCaptureProvenance": {
     "persistedNormalizedIntegrity": "verified",
     "originalRawCaptureProvenance": "unverified",
-    "rawToNormalizedReplay": "unverified",
+    "rawToNormalizedReplay": "verified-locally-with-retained-normalizer",
     "rawFilesRetainedForOfflineReplay": false,
-    "handling": "Original Playwright JSON was captured in mode-0600 private temporary files and hashed before normalization. Raw files were excluded from Git because they contain absolute paths and environment data; normalized artifacts retain their hashes but cannot independently replay the original bytes."
+    "handling": "Original Playwright JSON remains private-local-only and uncommitted because it contains absolute filesystem paths and environment details. The matching private raw captures were replayed in this review-fix with the retained normalizer at the source commit above; all 13 normalized outputs matched their committed artifact bytes exactly. This verifies replay with the retained source but does not prove the exact capture-time normalizer implementation or allow independent replay without the private raw inputs."
   },
   "readinessLifecycle": {
     "route": {
@@ -897,9 +907,9 @@
       "rawOutputRetainedForOfflineReplay": false
     },
     "mutationCoverage": {
-      "revision": "m7m-scene-readiness-evidence-mutations-v1",
-      "testCount": 31,
-      "focusedTestCount": 36,
+      "revision": "m7m-scene-readiness-evidence-mutations-v2",
+      "testCount": 56,
+      "focusedTestCount": 63,
       "requiredCases": [
         "m7k-report-digest-changed",
         "m7k-full-suite-counts-changed",
@@ -910,6 +920,31 @@
         "historical-candidate-identity-invented",
         "current-discovery-count-changed",
         "current-discovery-digest-changed",
+        "execution-source-role-unavailable",
+        "execution-runner-tree-entry-missing",
+        "normalizer-source-sha-mismatch",
+        "normalizer-source-commit-unavailable",
+        "normalizer-source-content-mismatch",
+        "evaluator-source-sha-mismatch",
+        "evaluator-source-commit-unavailable",
+        "evaluator-source-content-mismatch",
+        "base-falsely-declared-as-normalizer-source",
+        "capture-time-normalizer-provenance-overstated",
+        "capture-time-evaluator-provenance-overstated",
+        "retained-normalizer-confused-with-capture-time-source",
+        "ordinary-discovery-bytes-missing",
+        "serial-discovery-bytes-missing",
+        "ordinary-discovery-digest-mismatch",
+        "serial-discovery-digest-mismatch",
+        "discovery-project-name-changed",
+        "discovery-identity-count-changed",
+        "discovery-spec-file-count-changed",
+        "discovery-duplicate-identity",
+        "selected-discovery-identity-missing",
+        "ordinary-and-serial-discovery-conflated",
+        "historical-discovery-claim-without-original-bytes",
+        "fresh-discovery-mislabeled-historical",
+        "sanitized-discovery-claimed-as-original",
         "duplicate-cohort-identity",
         "missing-cohort-identity",
         "invented-cohort-identity",
@@ -938,7 +973,7 @@
       "unitIntegration": {
         "status": "passed",
         "testFiles": 320,
-        "tests": 3772
+        "tests": 3799
       },
       "typecheck": "passed",
       "lint": "passed",
@@ -956,8 +991,49 @@
         "m7m": "passed"
       },
       "normalizerOutputOverwrite": "rejected-existing-path-preserved",
-      "fullBroadE2e": "not-run"
+      "fullBroadE2e": "not-run",
+      "sourceProvenance": "passed-synthetic-post-squash-no-shared-object-store; exact-SHA fetch and retained-PR-ref fallback verified; unavailable retained ref fails closed",
+      "discoveryEvidence": "original outputs retained; SHA-256 and identities verified locally against 274 ordinary and 4 renderer-serial tests",
+      "normalizerReplay": "13/13 exact byte matches with retained normalizer; private raw inputs remain uncommitted"
     },
     "fullBroadE2e": "not-run"
+  },
+  "sourceProvenance": {
+    "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+    "executionSourceMeaning": "The exact M7L main revision containing the application and Playwright tests investigated by M7M.",
+    "playwrightRunner": {
+      "sourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+      "configurationPath": "playwright.config.ts",
+      "testDirectory": "src/tests/e2e",
+      "verification": "configuration and all test files named by retained ordinary and renderer-serial discovery outputs are present in this commit"
+    },
+    "retainedNormalizer": {
+      "sourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "path": "scripts/normalize-m7m-playwright-capture.mjs",
+      "fileSha256": "f80732345201f5bcbb0d9676e78d06c2b305cf6064eadc988ffeeb67b3410dc4",
+      "sourceRole": "retained-replay-implementation",
+      "captureTimeUse": "unverified"
+    },
+    "retainedEvaluator": {
+      "sourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "sourceRole": "initial-m7m-evaluator-implementation",
+      "files": {
+        "src/render/testing/groundGlassM7mSceneReadiness.ts": "523aea78cc9ca56a37250013a4c3de2fd15615e167a5789269cd415fd838f19b",
+        "scripts/evaluateM7mSceneReadiness.ts": "253e57b79ff9603612ed685bac3a316e4083e1ec60be3675c4e7f27ba90b60a0",
+        "scripts/run-m7m-scene-readiness.mjs": "aae96dfed7013087b4ba6a4627d03b2960845297077e8cef578db9881cf354e3"
+      },
+      "captureTimeUse": "unverified"
+    },
+    "captureTimeTooling": {
+      "normalizerSourceCommitSha": null,
+      "evaluatorSourceCommitSha": null,
+      "sourceIdentity": "unverified"
+    },
+    "normalizationReplay": {
+      "status": "verified-locally-byte-identical",
+      "retainedNormalizerSourceCommitSha": "e6c139ef60974a544f75a45d062b92101d31d115",
+      "normalizedArtifactsReproduced": 13,
+      "rawInputsAvailableOutsidePrivateLocalStorage": false
+    }
   }
 }

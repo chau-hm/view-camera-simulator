@@ -1,14 +1,29 @@
 import { createHash } from "node:crypto";
 
 export const GROUND_GLASS_M7M_REPORT_ID = "ground-glass-m7m-scene-readiness" as const;
-export const GROUND_GLASS_M7M_EVALUATOR_REVISION = "m7m-scene-readiness-evaluator-v1" as const;
-export const GROUND_GLASS_M7M_MUTATION_SUITE_REVISION = "m7m-scene-readiness-evidence-mutations-v1" as const;
+export const GROUND_GLASS_M7M_EVALUATOR_REVISION = "m7m-scene-readiness-evaluator-v2" as const;
+export const GROUND_GLASS_M7M_MUTATION_SUITE_REVISION = "m7m-scene-readiness-evidence-mutations-v2" as const;
 export const GROUND_GLASS_M7M_BASE_COMMIT_SHA = "0c32f113c1e3d16a8fd42e7748c64909366c6ae8" as const;
 export const GROUND_GLASS_M7M_EXECUTION_SOURCE_SHA = GROUND_GLASS_M7M_BASE_COMMIT_SHA;
+export const GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA = "e6c139ef60974a544f75a45d062b92101d31d115" as const;
 export const GROUND_GLASS_M7M_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f" as const;
 export const GROUND_GLASS_M7M_M7L_REPORT_SHA256 = "d72698c8ad5e28f5a0fd9d9ba052e654e6d9aa1d90f0acec0a769e35c2616eed" as const;
 export const GROUND_GLASS_M7M_M7L_INVENTORY_SHA256 = "ee7e6e0de2e280207f5b5e1935b812dcc19432922061c01cf57cfbc6fb25a647" as const;
 export const GROUND_GLASS_M7M_NORMALIZER_REVISION = "m7m-playwright-normalizer-v1" as const;
+export const GROUND_GLASS_M7M_DISCOVERY_PATHS = Object.freeze({
+  ordinaryChromium: "docs/architecture/ground-glass-m7m-scene-readiness/discovery/ordinary-chromium.txt",
+  rendererSerial: "docs/architecture/ground-glass-m7m-scene-readiness/discovery/renderer-serial.txt",
+});
+export const GROUND_GLASS_M7M_DISCOVERY_SHA256 = Object.freeze({
+  ordinaryChromium: "1d24cc0fd985b3c2c41b83ab6c4880699eeeea81c1e4fb97bb8889a38736823d",
+  rendererSerial: "1db87b1ae129b443f369d8ed2538f635ab2289dc73a2cf5d34491339104ec39d",
+});
+export const GROUND_GLASS_M7M_RETAINED_NORMALIZER_SHA256 = "f80732345201f5bcbb0d9676e78d06c2b305cf6064eadc988ffeeb67b3410dc4" as const;
+export const GROUND_GLASS_M7M_RETAINED_EVALUATOR_FILES = Object.freeze({
+  "src/render/testing/groundGlassM7mSceneReadiness.ts": "523aea78cc9ca56a37250013a4c3de2fd15615e167a5789269cd415fd838f19b",
+  "scripts/evaluateM7mSceneReadiness.ts": "253e57b79ff9603612ed685bac3a316e4083e1ec60be3675c4e7f27ba90b60a0",
+  "scripts/run-m7m-scene-readiness.mjs": "aae96dfed7013087b4ba6a4627d03b2960845297077e8cef578db9881cf354e3",
+});
 
 export const GROUND_GLASS_M7M_REQUIRED_COHORT_IDENTITIES = [
   "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
@@ -35,6 +50,31 @@ export const GROUND_GLASS_M7M_REQUIRED_MUTATION_CASES = [
   "historical-candidate-identity-invented",
   "current-discovery-count-changed",
   "current-discovery-digest-changed",
+  "execution-source-role-unavailable",
+  "execution-runner-tree-entry-missing",
+  "normalizer-source-sha-mismatch",
+  "normalizer-source-commit-unavailable",
+  "normalizer-source-content-mismatch",
+  "evaluator-source-sha-mismatch",
+  "evaluator-source-commit-unavailable",
+  "evaluator-source-content-mismatch",
+  "base-falsely-declared-as-normalizer-source",
+  "capture-time-normalizer-provenance-overstated",
+  "capture-time-evaluator-provenance-overstated",
+  "retained-normalizer-confused-with-capture-time-source",
+  "ordinary-discovery-bytes-missing",
+  "serial-discovery-bytes-missing",
+  "ordinary-discovery-digest-mismatch",
+  "serial-discovery-digest-mismatch",
+  "discovery-project-name-changed",
+  "discovery-identity-count-changed",
+  "discovery-spec-file-count-changed",
+  "discovery-duplicate-identity",
+  "selected-discovery-identity-missing",
+  "ordinary-and-serial-discovery-conflated",
+  "historical-discovery-claim-without-original-bytes",
+  "fresh-discovery-mislabeled-historical",
+  "sanitized-discovery-claimed-as-original",
   "duplicate-cohort-identity",
   "missing-cohort-identity",
   "invented-cohort-identity",
@@ -68,7 +108,18 @@ export type GroundGlassM7mEvidence = Readonly<{
   historicalM7lSha256: string;
   historicalInventory: unknown;
   historicalInventorySha256: string;
-  sourceCommitAvailable: boolean;
+  sourceVerification: Readonly<{
+    executionCommitAvailable: boolean;
+    executionRunnerTreeEntriesVerified: boolean;
+    normalizerCommitAvailable: boolean;
+    normalizerContentVerified: boolean;
+    evaluatorCommitAvailable: boolean;
+    evaluatorContentVerified: boolean;
+  }>;
+  discoveryLists: Readonly<{
+    ordinaryChromium: Uint8Array | null;
+    rendererSerial: Uint8Array | null;
+  }>;
   experiments: Readonly<Record<string, GroundGlassM7mArtifact>>;
 }>;
 export type GroundGlassM7mEvaluation = Readonly<{
@@ -76,6 +127,8 @@ export type GroundGlassM7mEvaluation = Readonly<{
   evaluatorRevision: string;
   passed: boolean;
   evidenceIntegrity: "passed" | "failed";
+  sourceProvenanceIntegrity: "verified" | "failed";
+  discoveryProvenance: "verified" | "failed";
   normalizedArtifactIntegrity: "passed" | "failed";
   executionCompleteness: "complete" | "incomplete";
   cohortStatus: "worker-sensitive-unresolved" | "incomplete";
@@ -145,6 +198,59 @@ const canonicalSha256 = (value: unknown): string => createHash("sha256")
   .update(JSON.stringify(value, null, 2) + "\n", "utf8")
   .digest("hex");
 
+type ParsedDiscovery = Readonly<{
+  sha256: string;
+  projectNames: readonly string[];
+  identities: readonly string[];
+  specFiles: readonly string[];
+  totalTests: number | null;
+  totalSpecFiles: number | null;
+  errors: readonly string[];
+}>;
+
+export const parseGroundGlassM7mDiscoveryList = (bytes: Uint8Array | null): ParsedDiscovery | null => {
+  if (!bytes) return null;
+  const errors: string[] = [];
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return { sha256: createHash("sha256").update(bytes).digest("hex"), projectNames: [], identities: [], specFiles: [], totalTests: null, totalSpecFiles: null, errors: ["invalid-utf8"] };
+  }
+  if (/\/Users\/|\/private\/|\/tmp\/|[A-Za-z]:\\/.test(text)) errors.push("machine-path-present");
+  const lines = text.split(/\r?\n/);
+  if (lines[lines.length - 1] === "") lines.pop();
+  if (lines.shift() !== "Listing tests:") errors.push("listing-header-invalid");
+  const footer = lines.pop() ?? "";
+  const footerMatch = footer.match(/^Total: (\d+) tests in (\d+) files$/);
+  const totalTests = footerMatch ? Number(footerMatch[1]) : null;
+  const totalSpecFiles = footerMatch ? Number(footerMatch[2]) : null;
+  if (!footerMatch) errors.push("listing-footer-invalid");
+  const projectNames: string[] = [];
+  const identities: string[] = [];
+  const specFiles: string[] = [];
+  for (const line of lines) {
+    const match = line.match(/^ {2}\[([^\]]+)\] › ([^:\r\n]+):(\d+):(\d+) › (.+)$/);
+    if (!match || !/^[A-Za-z0-9][A-Za-z0-9._-]*\.spec\.ts$/.test(match[2])) {
+      errors.push("listing-identity-invalid");
+      continue;
+    }
+    projectNames.push(match[1]);
+    specFiles.push(match[2]);
+    identities.push(match[2] + "::" + match[5]);
+  }
+  if (!unique(identities)) errors.push("duplicate-identities");
+  return {
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    projectNames: [...new Set(projectNames)],
+    identities,
+    specFiles: [...new Set(specFiles)],
+    totalTests,
+    totalSpecFiles,
+    errors,
+  };
+};
+
 type NormalizedTest = Readonly<{ identity: string; status: string; projectName: string; attempts: readonly JsonRecord[] }>;
 type NormalizedSummary = Readonly<{ discovered: number; passed: number; failed: number; skipped: number; flaky: number; incomplete: number; retries: number; maxConcurrentTests: number }>;
 
@@ -205,13 +311,48 @@ export const evaluateGroundGlassM7mSceneReadiness = (
   const inventory = isRecord(evidence.historicalInventory) ? evidence.historicalInventory : {};
   const integrityStart = issues.length;
 
-  if (report.schemaVersion !== 1 || report.reportId !== GROUND_GLASS_M7M_REPORT_ID) issueOnce(issues, "report-identity-mismatch");
+  if (report.schemaVersion !== 2 || report.reportId !== GROUND_GLASS_M7M_REPORT_ID) issueOnce(issues, "report-identity-mismatch");
   if (report.evaluatorRevision !== GROUND_GLASS_M7M_EVALUATOR_REVISION) issueOnce(issues, "evaluator-revision-mismatch");
   if (report.baseCommitSha !== GROUND_GLASS_M7M_BASE_COMMIT_SHA || report.candidateCommitSha !== GROUND_GLASS_M7M_BASE_COMMIT_SHA ||
-      report.executionSourceCommitSha !== GROUND_GLASS_M7M_EXECUTION_SOURCE_SHA || report.toolingCommitSha !== GROUND_GLASS_M7M_BASE_COMMIT_SHA) {
+      report.executionSourceCommitSha !== GROUND_GLASS_M7M_EXECUTION_SOURCE_SHA || Object.hasOwn(report, "toolingCommitSha")) {
     issueOnce(issues, "source-identity-mismatch");
   }
-  if (!evidence.sourceCommitAvailable) issueOnce(issues, "execution-source-commit-unavailable");
+  const source = isRecord(report.sourceProvenance) ? report.sourceProvenance : {};
+  const runnerSource = isRecord(source.playwrightRunner) ? source.playwrightRunner : {};
+  const normalizerSource = isRecord(source.retainedNormalizer) ? source.retainedNormalizer : {};
+  const evaluatorSource = isRecord(source.retainedEvaluator) ? source.retainedEvaluator : {};
+  const captureTimeSource = isRecord(source.captureTimeTooling) ? source.captureTimeTooling : {};
+  const normalizationReplay = isRecord(source.normalizationReplay) ? source.normalizationReplay : {};
+  const declaredEvaluatorFiles = isRecord(evaluatorSource.files) ? evaluatorSource.files : {};
+  if (source.executionSourceCommitSha !== GROUND_GLASS_M7M_EXECUTION_SOURCE_SHA ||
+      runnerSource.sourceCommitSha !== GROUND_GLASS_M7M_EXECUTION_SOURCE_SHA ||
+      runnerSource.configurationPath !== "playwright.config.ts" || runnerSource.testDirectory !== "src/tests/e2e" ||
+      normalizerSource.sourceCommitSha !== GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA ||
+      normalizerSource.path !== "scripts/normalize-m7m-playwright-capture.mjs" ||
+      normalizerSource.fileSha256 !== GROUND_GLASS_M7M_RETAINED_NORMALIZER_SHA256 ||
+      evaluatorSource.sourceCommitSha !== GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA ||
+      evaluatorSource.sourceRole !== "initial-m7m-evaluator-implementation" ||
+      Object.keys(declaredEvaluatorFiles).length !== Object.keys(GROUND_GLASS_M7M_RETAINED_EVALUATOR_FILES).length ||
+      Object.entries(GROUND_GLASS_M7M_RETAINED_EVALUATOR_FILES).some(([path, sha256]) => declaredEvaluatorFiles[path] !== sha256)) {
+    issueOnce(issues, "source-provenance-role-mismatch");
+  }
+  if (!evidence.sourceVerification.executionCommitAvailable) issueOnce(issues, "execution-source-commit-unavailable");
+  if (!evidence.sourceVerification.executionRunnerTreeEntriesVerified) issueOnce(issues, "playwright-runner-tree-entries-unverified");
+  if (!evidence.sourceVerification.normalizerCommitAvailable) issueOnce(issues, "retained-normalizer-source-commit-unavailable");
+  if (!evidence.sourceVerification.normalizerContentVerified) issueOnce(issues, "retained-normalizer-source-content-mismatch");
+  if (!evidence.sourceVerification.evaluatorCommitAvailable) issueOnce(issues, "retained-evaluator-source-commit-unavailable");
+  if (!evidence.sourceVerification.evaluatorContentVerified) issueOnce(issues, "retained-evaluator-source-content-mismatch");
+  if (captureTimeSource.normalizerSourceCommitSha !== null || captureTimeSource.evaluatorSourceCommitSha !== null ||
+      captureTimeSource.sourceIdentity !== "unverified") issueOnce(issues, "capture-time-tooling-provenance-overstated");
+  if (normalizerSource.captureTimeUse !== "unverified" || evaluatorSource.captureTimeUse !== "unverified") {
+    issueOnce(issues, "retained-tooling-confused-with-capture-time-source");
+  }
+  if (normalizationReplay.status !== "verified-locally-byte-identical" ||
+      normalizationReplay.retainedNormalizerSourceCommitSha !== GROUND_GLASS_M7M_RETAINED_TOOLING_SOURCE_SHA ||
+      normalizationReplay.normalizedArtifactsReproduced !== GROUND_GLASS_M7M_REQUIRED_EXPERIMENT_IDS.length ||
+      normalizationReplay.rawInputsAvailableOutsidePrivateLocalStorage !== false) {
+    issueOnce(issues, "retained-normalizer-replay-claim-mismatch");
+  }
   if (report.normalizationImplementationRevision !== GROUND_GLASS_M7M_NORMALIZER_REVISION) issueOnce(issues, "normalizer-revision-mismatch");
 
   const m7k = isRecord(report.historicalM7k) ? report.historicalM7k : {};
@@ -275,14 +416,78 @@ export const evaluateGroundGlassM7mSceneReadiness = (
   const ordinaryDiscovery = isRecord(discovery.ordinaryChromium) ? discovery.ordinaryChromium : {};
   const rendererSerialDiscovery = isRecord(discovery.rendererSerial) ? discovery.rendererSerial : {};
   const discoveredIdentities = asArray(discovery.selectedIdentities).filter((entry): entry is string => typeof entry === "string");
-  if (ordinaryDiscovery.discoveredTests !== 274 || ordinaryDiscovery.specFiles !== 80 ||
-      ordinaryDiscovery.discoveryListSha256 !== "1d24cc0fd985b3c2c41b83ab6c4880699eeeea81c1e4fb97bb8889a38736823d" ||
-      rendererSerialDiscovery.discoveredTests !== 4 || rendererSerialDiscovery.specFiles !== 4 ||
-      rendererSerialDiscovery.discoveryListSha256 !== "1db87b1ae129b443f369d8ed2538f635ab2289dc73a2cf5d34491339104ec39f" ||
-      discovery.combinedDiscoveredTests !== 278 ||
-      discovery.exactSelectedIdentityCount !== cohort.length || discovery.exactSelectedIdentitySetMatchesHistoricalM7l !== true ||
-      discovery.fullApplicationDiscoveryClaimed !== false || discoveredIdentities.length !== cohort.length ||
-      !sameStrings(discoveredIdentities, cohort)) issueOnce(issues, "current-discovery-identity-or-provenance-mismatch");
+  const discoveryIssueStart = issues.length;
+  const ordinaryBytes = evidence.discoveryLists.ordinaryChromium;
+  const serialBytes = evidence.discoveryLists.rendererSerial;
+  const ordinaryParsed = parseGroundGlassM7mDiscoveryList(ordinaryBytes);
+  const serialParsed = parseGroundGlassM7mDiscoveryList(serialBytes);
+  if (!ordinaryParsed) issueOnce(issues, "original-discovery-bytes-missing:ordinaryChromium");
+  if (!serialParsed) issueOnce(issues, "original-discovery-bytes-missing:rendererSerial");
+  const checkDiscovery = (
+    key: "ordinaryChromium" | "rendererSerial",
+    declared: JsonRecord,
+    parsed: ParsedDiscovery | null,
+    expected: Readonly<{ projectName: string; discoveredTests: number; specFiles: number; sha256: string; path: string }>,
+  ): void => {
+    if (!parsed) issueOnce(issues, "historical-discovery-claim-without-original-bytes:" + key);
+    if (declared.discoveryListPath !== expected.path || declared.originalOutputRole !== "historical-original-playwright-list" ||
+        declared.verification !== "verified-from-retained-original-bytes") issueOnce(issues, "historical-discovery-claim-without-original-bytes:" + key);
+    if (declared.discoveryListSha256 !== expected.sha256 || parsed && parsed.sha256 !== expected.sha256) {
+      issueOnce(issues, "discovery-digest-mismatch:" + key);
+    }
+    if (!parsed) return;
+    if (parsed.errors.includes("machine-path-present")) issueOnce(issues, "sanitized-discovery-claimed-as-original:" + key);
+    if (parsed.errors.includes("duplicate-identities")) issueOnce(issues, "discovery-duplicate-identity:" + key);
+    if (parsed.errors.some((error) => error !== "duplicate-identities")) issueOnce(issues, "discovery-list-format-invalid:" + key);
+    if (parsed.projectNames.length !== 1 || parsed.projectNames[0] !== expected.projectName) {
+      issueOnce(issues, "discovery-project-name-mismatch:" + key);
+    }
+    if (declared.projectName !== expected.projectName) issueOnce(issues, "discovery-project-name-mismatch:" + key);
+    if (parsed.identities.length !== expected.discoveredTests || parsed.totalTests !== expected.discoveredTests ||
+        declared.discoveredTests !== expected.discoveredTests) issueOnce(issues, "discovery-identity-count-mismatch:" + key);
+    if (parsed.specFiles.length !== expected.specFiles || parsed.totalSpecFiles !== expected.specFiles ||
+        declared.specFiles !== expected.specFiles) issueOnce(issues, "discovery-spec-file-count-mismatch:" + key);
+  };
+  checkDiscovery("ordinaryChromium", ordinaryDiscovery, ordinaryParsed, {
+    projectName: "chromium", discoveredTests: 274, specFiles: 80,
+    sha256: GROUND_GLASS_M7M_DISCOVERY_SHA256.ordinaryChromium,
+    path: GROUND_GLASS_M7M_DISCOVERY_PATHS.ordinaryChromium,
+  });
+  checkDiscovery("rendererSerial", rendererSerialDiscovery, serialParsed, {
+    projectName: "chromium-renderer-serial", discoveredTests: 4, specFiles: 4,
+    sha256: GROUND_GLASS_M7M_DISCOVERY_SHA256.rendererSerial,
+    path: GROUND_GLASS_M7M_DISCOVERY_PATHS.rendererSerial,
+  });
+  if (discovery.originalDiscoveryReplay !== "verified-from-retained-original-bytes" ||
+      discovery.currentIdentityReconciliation !== "verified" || discovery.freshDiscoveryRun !== "not-run") {
+    issueOnce(issues, "fresh-discovery-mislabeled-historical");
+  }
+  if (discovery.discoverySanitization !== "none") issueOnce(issues, "sanitized-discovery-claimed-as-original");
+  if (discovery.combinedDiscoveredTests !== 278 || discovery.exactSelectedIdentityCount !== cohort.length ||
+      discovery.exactSelectedIdentitySetMatchesHistoricalM7l !== true || discovery.fullApplicationDiscoveryClaimed !== false ||
+      discoveredIdentities.length !== cohort.length || !sameStrings(discoveredIdentities, cohort)) {
+    issueOnce(issues, "current-discovery-identity-or-provenance-mismatch");
+  }
+  if (ordinaryParsed && cohort.some((identity) => !ordinaryParsed.identities.includes(identity))) {
+    issueOnce(issues, "selected-discovery-identity-missing");
+  }
+  if (ordinaryParsed && serialParsed &&
+      (ordinaryParsed.projectNames[0] === serialParsed.projectNames[0] ||
+       (ordinaryParsed.identities.length > 0 && !ordinaryParsed.projectNames.includes("chromium")) ||
+       (serialParsed.identities.length > 0 && !serialParsed.projectNames.includes("chromium-renderer-serial")) ||
+       ordinaryDiscovery.projectName === rendererSerialDiscovery.projectName)) {
+    issueOnce(issues, "ordinary-and-serial-discovery-conflated");
+  }
+  const sourceProvenanceIntegrity = !issues.some((issue) =>
+    issue.startsWith("source-") || issue.startsWith("execution-source-") || issue.startsWith("playwright-runner-") ||
+    issue.startsWith("retained-normalizer-") || issue.startsWith("retained-evaluator-") || issue.startsWith("retained-tooling-") ||
+    issue.startsWith("capture-time-tooling-") || issue.startsWith("normalizer-revision-") ||
+    issue.startsWith("normalizer-source-") || issue.startsWith("evaluator-source-"));
+  const discoveryProvenance = !issues.slice(discoveryIssueStart).some((issue) =>
+    issue.startsWith("original-discovery-") || issue.startsWith("historical-discovery-") ||
+    issue.startsWith("discovery-") || issue.startsWith("current-discovery-") || issue.startsWith("selected-discovery-") ||
+    issue.startsWith("fresh-discovery-") || issue.startsWith("sanitized-discovery-") ||
+    issue.startsWith("ordinary-and-serial-discovery-"));
 
   const experimentRecords = asArray(report.experiments).filter(isRecord);
   const ids = experimentRecords.map((entry) => asString(entry.id));
@@ -360,7 +565,7 @@ export const evaluateGroundGlassM7mSceneReadiness = (
 
   const provenance = isRecord(report.rawCaptureProvenance) ? report.rawCaptureProvenance : {};
   if (provenance.persistedNormalizedIntegrity !== "verified" || provenance.originalRawCaptureProvenance !== "unverified" ||
-      provenance.rawToNormalizedReplay !== "unverified" || provenance.rawFilesRetainedForOfflineReplay !== false) {
+      provenance.rawToNormalizedReplay !== "verified-locally-with-retained-normalizer" || provenance.rawFilesRetainedForOfflineReplay !== false) {
     issueOnce(issues, "raw-capture-provenance-overstated");
   }
   const remediation = isRecord(report.remediation) ? report.remediation : {};
@@ -397,6 +602,8 @@ export const evaluateGroundGlassM7mSceneReadiness = (
     passed,
     evidenceIntegrity: passed ? "passed" : "failed",
     normalizedArtifactIntegrity: artifactIssues.length === 0 ? "passed" : "failed",
+    sourceProvenanceIntegrity: sourceProvenanceIntegrity ? "verified" : "failed",
+    discoveryProvenance: discoveryProvenance ? "verified" : "failed",
     executionCompleteness,
     cohortStatus: executionCompleteness === "complete" ? "worker-sensitive-unresolved" : "incomplete",
     candidateIdentityCount: cohort.length,
