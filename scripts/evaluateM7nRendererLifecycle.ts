@@ -88,10 +88,12 @@ export const evaluateM7nRendererLifecycleEvidence = async (
   const toolingSourceSha = stringValue(report.toolingSourceCommitSha);
   const normalizationSourceSha = stringValue(report.normalizationSourceCommitSha);
   const evaluatorSourceSha = stringValue(report.evaluatorSourceCommitSha);
+  const priorCaptureToolingSha = stringValue(report.priorCaptureToolingSourceCommitSha);
   if (!executionSourceSha || !shaPattern.test(executionSourceSha)) issue("m7n-execution-source-sha-invalid");
   if (!toolingSourceSha || !shaPattern.test(toolingSourceSha)) issue("m7n-tooling-source-sha-invalid");
   if (!normalizationSourceSha || !shaPattern.test(normalizationSourceSha)) issue("m7n-normalizer-source-sha-invalid");
   if (!evaluatorSourceSha || !shaPattern.test(evaluatorSourceSha)) issue("m7n-evaluator-source-sha-invalid");
+  if (!priorCaptureToolingSha || !shaPattern.test(priorCaptureToolingSha)) issue("m7n-prior-capture-tooling-source-sha-invalid");
 
   const gitExists = (sha: string) => {
     try {
@@ -112,6 +114,9 @@ export const evaluateM7nRendererLifecycleEvidence = async (
   }
   if (evaluatorSourceSha && shaPattern.test(evaluatorSourceSha) && !gitExists(evaluatorSourceSha)) {
     issue("m7n-evaluator-source-commit-unavailable");
+  }
+  if (priorCaptureToolingSha && shaPattern.test(priorCaptureToolingSha) && !gitExists(priorCaptureToolingSha)) {
+    issue("m7n-prior-capture-tooling-source-commit-unavailable");
   }
 
   const sourceFiles = asArray(report.sourceFiles);
@@ -146,7 +151,8 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     if (role === "capture-tooling" && sha !== toolingSourceSha) issue("m7n-tooling-source-file-role-mismatch");
     if (role === "normalizer" && sha !== normalizationSourceSha) issue("m7n-normalizer-source-file-role-mismatch");
     if (role === "evaluator" && sha !== evaluatorSourceSha) issue("m7n-evaluator-source-file-role-mismatch");
-    if (!["execution", "capture-tooling", "normalizer", "evaluator"].includes(role ?? "")) issue("m7n-source-file-role-invalid");
+    if (role === "prior-tooling" && sha !== priorCaptureToolingSha) issue("m7n-prior-tooling-source-file-role-mismatch");
+    if (!["execution", "capture-tooling", "normalizer", "evaluator", "prior-tooling"].includes(role ?? "")) issue("m7n-source-file-role-invalid");
     if (role && path) verifiedSourceRoles.add(`${role}:${path}`);
     if (path) verifiedSourcePaths.add(path);
   }
@@ -157,11 +163,45 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     "capture-tooling:src/tests/e2e/architecture-rise-focus-range.spec.ts",
     "capture-tooling:scripts/m7n-spa-generation-probe.mjs",
     "capture-tooling:scripts/run-m7n-renderer-lifecycle.mjs",
+    "prior-tooling:src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
     "normalizer:scripts/normalizeM7nRendererLifecycleCapture.mjs",
     "evaluator:scripts/evaluateM7nRendererLifecycle.ts",
   ];
   if (requiredSourceFiles.some((source) => !verifiedSourceRoles.has(source))) issue("m7n-required-source-provenance-missing");
   if (verifiedSourcePaths.size !== sourceFiles.length) issue("m7n-source-file-path-duplicated");
+
+  const priorAttempts = asArray(report.priorCaptureAttempts).map(asRecord).filter((attempt): attempt is JsonRecord => attempt !== null);
+  if (priorAttempts.length !== 4) issue("m7n-prior-capture-attempt-inventory-invalid");
+  const priorAttemptIds = new Set<string>();
+  for (const attempt of priorAttempts) {
+    const attemptId = stringValue(attempt.id);
+    const rawCapture = asRecord(attempt.rawCapture);
+    const executionSha = stringValue(attempt.executionSourceCommitSha);
+    const captureToolingSha = stringValue(attempt.toolingSourceCommitSha);
+    const outcomes = asRecord(attempt.outcomes);
+    if (!attemptId || priorAttemptIds.has(attemptId)) issue("m7n-prior-capture-attempt-identity-invalid");
+    if (attemptId) priorAttemptIds.add(attemptId);
+    if (
+      !rawCapture ||
+      !/^[0-9a-f]{64}$/i.test(stringValue(rawCapture.sha256) ?? "") ||
+      !(numberValue(rawCapture.bytes) && numberValue(rawCapture.bytes)! > 0) ||
+      rawCapture.retention !== "private-local-only" ||
+      rawCapture.offlineReplayAvailable !== false
+    ) issue("m7n-prior-capture-raw-provenance-invalid");
+    if (executionSha !== executionSourceSha || captureToolingSha !== priorCaptureToolingSha || !captureToolingSha || !shaPattern.test(captureToolingSha) || !gitExists(captureToolingSha)) {
+      issue("m7n-prior-capture-source-identity-invalid");
+    }
+    if (attempt.excludedFromPrimaryExperiments !== true || !stringValue(attempt.exclusionReason)) {
+      issue("m7n-prior-capture-boundary-not-disclosed");
+    }
+    if (
+      !outcomes ||
+      !Number.isInteger(numberValue(outcomes.discovered)) ||
+      !Number.isInteger(numberValue(outcomes.passed)) ||
+      !Number.isInteger(numberValue(outcomes.unexpected)) ||
+      outcomes.retries !== 0
+    ) issue("m7n-prior-capture-outcome-summary-invalid");
+  }
 
   const safeReadArtifact = async (artifactPath: unknown, expectedDigest: unknown) => {
     const path = stringValue(artifactPath);
