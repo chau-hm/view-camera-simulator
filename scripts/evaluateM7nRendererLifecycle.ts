@@ -60,7 +60,8 @@ type EvaluationResult = Readonly<{
 
 export const evaluateM7nRendererLifecycleEvidence = async (
   reportPath = "docs/architecture/GROUND_GLASS_M7N_RENDERER_LIFECYCLE_REPORT.json",
-  repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), ".."),
+  repoRoot = process.env.M7N_RENDERER_LIFECYCLE_REPO_ROOT ??
+    resolve(dirname(fileURLToPath(import.meta.url)), ".."),
 ): Promise<EvaluationResult> => {
   const issues = new Set<string>();
   const issue = (value: string) => issues.add(value);
@@ -162,10 +163,10 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     "capture-tooling:src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
     "capture-tooling:src/tests/e2e/architecture-rise-focus-range.spec.ts",
     "capture-tooling:scripts/m7n-spa-generation-probe.mjs",
-    "capture-tooling:scripts/run-m7n-renderer-lifecycle.mjs",
     "prior-tooling:src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts",
     "normalizer:scripts/normalizeM7nRendererLifecycleCapture.mjs",
     "evaluator:scripts/evaluateM7nRendererLifecycle.ts",
+    "evaluator:scripts/run-m7n-renderer-lifecycle.mjs",
   ];
   if (requiredSourceFiles.some((source) => !verifiedSourceRoles.has(source))) issue("m7n-required-source-provenance-missing");
   if (verifiedSourceRecords.size !== sourceFiles.length) issue("m7n-source-file-provenance-duplicated");
@@ -199,7 +200,7 @@ export const evaluateM7nRendererLifecycleEvidence = async (
       !Number.isInteger(numberValue(outcomes.discovered)) ||
       !Number.isInteger(numberValue(outcomes.passed)) ||
       !Number.isInteger(numberValue(outcomes.unexpected)) ||
-      outcomes.retries !== 0
+      attempt.retries !== 0
     ) issue("m7n-prior-capture-outcome-summary-invalid");
   }
 
@@ -474,7 +475,10 @@ export const evaluateM7nRendererLifecycleEvidence = async (
   return { passed: issues.size === 0, issues: [...issues].sort(), summary };
 };
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.env.M7N_RENDERER_LIFECYCLE_CLI === "1" ||
+  (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+) {
   const reportArgument = process.argv.slice(2).find((argument) => argument.startsWith("--report-path="));
   const reportPath = reportArgument?.slice("--report-path=".length) ?? "docs/architecture/GROUND_GLASS_M7N_RENDERER_LIFECYCLE_REPORT.json";
   const result = await evaluateM7nRendererLifecycleEvidence(reportPath);

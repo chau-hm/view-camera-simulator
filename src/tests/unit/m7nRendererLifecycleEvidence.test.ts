@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +10,14 @@ const acceptedReportPath = "docs/architecture/GROUND_GLASS_M7N_RENDERER_LIFECYCL
 type JsonRecord = Record<string, unknown>;
 
 describe("M7N renderer lifecycle evidence evaluator", () => {
+  it("reports a result through the production-facing evidence CLI", () => {
+    const output = execFileSync(process.execPath, ["scripts/run-m7n-renderer-lifecycle.mjs"], {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+    });
+    expect(output).toContain("M7N evidence integrity: PASS");
+  });
+
   it("accepts the retained report and rejects digest or causal-claim mutations", async () => {
     const report = JSON.parse(await readFile(resolve(repositoryRoot, acceptedReportPath), "utf8")) as JsonRecord;
     const fixtureDirectory = await mkdtemp(resolve(repositoryRoot, ".m7n-evidence-test-"));

@@ -21,6 +21,11 @@ try {
   });
   const result = spawnSync(process.execPath, [bundlePath, ...process.argv.slice(2)], {
     cwd: repoRoot,
+    env: {
+      ...process.env,
+      M7N_RENDERER_LIFECYCLE_CLI: "1",
+      M7N_RENDERER_LIFECYCLE_REPO_ROOT: repoRoot,
+    },
     stdio: "inherit",
   });
   if (result.error) throw result.error;
