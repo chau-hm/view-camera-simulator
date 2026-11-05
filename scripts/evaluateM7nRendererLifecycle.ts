@@ -121,7 +121,7 @@ export const evaluateM7nRendererLifecycleEvidence = async (
 
   const sourceFiles = asArray(report.sourceFiles);
   const verifiedSourceRoles = new Set<string>();
-  const verifiedSourcePaths = new Set<string>();
+  const verifiedSourceRecords = new Set<string>();
   for (const sourceFileValue of sourceFiles) {
     const sourceFile = asRecord(sourceFileValue);
     if (!sourceFile) {
@@ -154,7 +154,7 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     if (role === "prior-tooling" && sha !== priorCaptureToolingSha) issue("m7n-prior-tooling-source-file-role-mismatch");
     if (!["execution", "capture-tooling", "normalizer", "evaluator", "prior-tooling"].includes(role ?? "")) issue("m7n-source-file-role-invalid");
     if (role && path) verifiedSourceRoles.add(`${role}:${path}`);
-    if (path) verifiedSourcePaths.add(path);
+    if (role && sha && path) verifiedSourceRecords.add(`${role}:${sha}:${path}`);
   }
   const requiredSourceFiles = [
     "execution:src/render/testing/m7nRendererLifecycleTrace.ts",
@@ -168,7 +168,7 @@ export const evaluateM7nRendererLifecycleEvidence = async (
     "evaluator:scripts/evaluateM7nRendererLifecycle.ts",
   ];
   if (requiredSourceFiles.some((source) => !verifiedSourceRoles.has(source))) issue("m7n-required-source-provenance-missing");
-  if (verifiedSourcePaths.size !== sourceFiles.length) issue("m7n-source-file-path-duplicated");
+  if (verifiedSourceRecords.size !== sourceFiles.length) issue("m7n-source-file-provenance-duplicated");
 
   const priorAttempts = asArray(report.priorCaptureAttempts).map(asRecord).filter((attempt): attempt is JsonRecord => attempt !== null);
   if (priorAttempts.length !== 4) issue("m7n-prior-capture-attempt-inventory-invalid");
