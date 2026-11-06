@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, relative, resolve, sep } from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,6 +59,8 @@ const captureContracts = {
     ],
   },
 };
+const playwrightEntry = createRequire(import.meta.url).resolve("@playwright/test");
+const playwrightPackage = JSON.parse(await readFile(resolve(dirname(playwrightEntry), "package.json"), "utf8"));
 const contract = captureContracts[argumentsMap.get("condition")];
 if (!contract) throw new Error("--condition must be A, B, C, or D.");
 const configuredWorkers = Number(argumentsMap.get("configured-workers"));
@@ -186,7 +189,7 @@ const capture = {
   },
   diagnosticCapture,
   provenance: {
-    playwrightVersion: "1.61.1",
+    playwrightVersion: playwrightPackage.version,
     nodeVersion: process.version,
     normalizedAt: new Date().toISOString(),
   },

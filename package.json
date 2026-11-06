@@ -23,6 +23,7 @@
     "evidence:check:m7n": "node ./scripts/run-m7n-renderer-lifecycle.mjs",
     "e2e:capture:m7o": "node ./scripts/run-m7o-canvas-assertion-timing.mjs",
     "evidence:normalize:m7o": "node ./scripts/normalizeM7oCanvasAssertionTimingCapture.mjs",
+    "evidence:normalize:m7o:matrix": "node ./scripts/normalizeM7oCanvasAssertionTimingMatrix.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",
