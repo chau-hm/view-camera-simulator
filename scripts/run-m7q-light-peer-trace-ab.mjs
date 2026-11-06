@@ -357,11 +357,14 @@ for (const pair of pairs) {
         record.traceSizeBytesRecomputed = traceBytes.byteLength;
       }
       record.diagnosticCaptureComplete = capture.captureId === captureId
-        && capture.testIdentity === targetTitle
+      && typeof capture.testIdentity === "string"
+      && capture.testIdentity.endsWith(targetTitle)
         && record.diagnosticCapture.browserSnapshot?.lifecycleMutationObserverAvailable === true
         && record.diagnosticCapture.firstConnectedCanvasObservation !== null
         && Array.isArray(record.diagnosticCapture.nodeClockSyncBrackets)
-        && record.diagnosticCapture.nodeClockSyncBrackets.length >= 2
+        && (!tracingEnabled || record.diagnosticCapture.nodeClockSyncBrackets.length >= 2)
+        && Array.isArray(record.diagnosticCapture.publicEvaluationIntervals)
+        && record.diagnosticCapture.publicEvaluationIntervals.some((interval) => interval.label === "assertion-entry-anchor")
         && record.diagnosticCapture.trace.enabled === tracingEnabled
         && record.diagnosticCapture.trace.started === tracingEnabled
         && record.diagnosticCapture.trace.completed === tracingEnabled
