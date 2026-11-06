@@ -103,7 +103,7 @@ describe("M7P assertion scheduling evidence evaluator", () => {
   it("rejects a capture whose role-specific source identity disagrees with the report", async () => {
     const { report, summary } = await acceptedEvidence();
     const capture = findCapture(summary, "P2", 1);
-    (capture.source as JsonRecord).instrumentationCommitSha = (report.source as JsonRecord).executionSourceCommitSha;
+    (capture.source as JsonRecord).captureEvaluatorCommitSha = (report.source as JsonRecord).executionSourceCommitSha;
     const result = await evaluateMutation(report, summary);
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("m7p-capture-source-identity-mismatch");
