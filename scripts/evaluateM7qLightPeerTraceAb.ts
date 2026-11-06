@@ -483,7 +483,14 @@ const assertSafeRelativePath = (path: unknown, label: string, issues: string[]) 
   return path;
 };
 const runGit = (repositoryRoot: string, args: string[]) => spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });
-const verifyTreeEntries = (repositoryRoot: string, commit: unknown, paths: unknown, label: string, issues: string[]) => {
+const verifyTreeEntries = async (
+  repositoryRoot: string,
+  commit: unknown,
+  paths: unknown,
+  label: string,
+  issues: string[],
+  verifyWorkingContent: boolean,
+) => {
   if (typeof commit !== "string" || !commitPattern.test(commit)) {
     issues.push(`${label}-commit-invalid`);
     return;
@@ -493,6 +500,11 @@ const verifyTreeEntries = (repositoryRoot: string, commit: unknown, paths: unkno
   for (const path of asArray(paths)) {
     if (typeof path !== "string" || runGit(repositoryRoot, ["cat-file", "-e", `${commit}:${path}`]).status !== 0) {
       issues.push(`${label}-tree-entry-unavailable`);
+    } else if (verifyWorkingContent) {
+      const gitFile = spawnSync("git", ["show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "buffer" });
+      const currentFile = await readFile(resolve(repositoryRoot, path)).catch(() => null);
+      if (gitFile.status !== 0 || !currentFile || !Buffer.isBuffer(gitFile.stdout)
+        || hash(gitFile.stdout) !== hash(currentFile)) issues.push(`${label}-source-content-mismatch`);
     }
   }
 };
@@ -596,8 +608,8 @@ export const verifyM7qRawEvidence = async (
   const provenance = isRecord(report.provenance) ? report.provenance : {};
   const captureSourceCommit = provenance.captureRunnerSourceCommit;
   const analysisSourceCommit = provenance.analysisToolingSourceCommit;
-  verifyTreeEntries(repositoryRoot, captureSourceCommit, provenance.captureRunnerSourcePaths, "m7q-capture-source", issues);
-  verifyTreeEntries(repositoryRoot, analysisSourceCommit, provenance.analysisToolingSourcePaths, "m7q-analysis-source", issues);
+  await verifyTreeEntries(repositoryRoot, captureSourceCommit, provenance.captureRunnerSourcePaths, "m7q-capture-source", issues, false);
+  await verifyTreeEntries(repositoryRoot, analysisSourceCommit, provenance.analysisToolingSourcePaths, "m7q-analysis-source", issues, true);
   for (const pathValue of [provenance.normalizedCapturesPath, nested(report, "provenance", "historicalEvidence", "m7oReport", "path"), nested(report, "provenance", "historicalEvidence", "m7pReport", "path"), nested(report, "provenance", "historicalEvidence", "m7pNormalizedCapture", "path")]) {
     if (typeof pathValue !== "string" || !actualPathInsideRepository(repositoryRoot, pathValue)) issues.push("m7q-evidence-path-invalid");
   }
@@ -625,7 +637,7 @@ export const verifyM7qRawEvidence = async (
       const path = assertSafeRelativePath(artifact.retainedPath, `m7q-${captureId}-${kind}`, issues);
       if (!path) return null;
       const absolute = resolve(artifactRoot, path);
-      if (!actualPathInsideRepository(repositoryRoot, absolute)) {
+      if (!actualPathInsideRepository(artifactRoot, absolute)) {
         issues.push(`m7q-${captureId}-${kind}-path-escapes-repository`);
         return null;
       }
@@ -711,7 +723,7 @@ export const verifyM7qRawEvidence = async (
       const trace = isRecord(attempt.trace) ? attempt.trace : {};
       const relativePath = assertSafeRelativePath(trace.retainedPath, `m7q-${captureId}-chromium-trace`, issues);
       if (relativePath) {
-        const gzipBytes = await readFile(resolve(repositoryRoot, relativePath)).catch(() => null);
+        const gzipBytes = await readFile(resolve(artifactRoot, relativePath)).catch(() => null);
         if (!gzipBytes || hash(gzipBytes) !== trace.retainedGzipSha256) {
           issues.push(`m7q-${captureId}-retained-trace-gzip-digest-mismatch`);
         } else {
