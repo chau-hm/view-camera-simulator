@@ -138,6 +138,45 @@ jobs:
             --verify-path=scripts/run-m7o-evidence.mjs \
             --verify-path=src/tests/unit/m7oCanvasAssertionTimingEvidence.test.ts
 
+      # M7P's execution, normalizer, and evaluator sources are separately
+      # pinned. Fetch from this PR's retained head when squash merge removes
+      # those commits from main, and verify every declared source tree path.
+      - name: Fetch M7P assertion scheduling evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=3131da63a608a4591a345c3b03a072eafd1f8783 \
+            --retained-ref=refs/pull/314/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7p-assertion-scheduling.mjs \
+            --verify-path=scripts/normalizeM7pAssertionSchedulingCapture.mjs \
+            --verify-path=scripts/evaluateM7pAssertionScheduling.ts \
+            --verify-path=scripts/run-m7p-evidence.mjs \
+            --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=23743c882229d84c3f712cb6dd72346757e58790 \
+            --retained-ref=refs/pull/314/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7p-assertion-scheduling.mjs \
+            --verify-path=scripts/normalizeM7pAssertionSchedulingCapture.mjs \
+            --verify-path=scripts/evaluateM7pAssertionScheduling.ts \
+            --verify-path=scripts/run-m7p-evidence.mjs \
+            --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=32f169176324a6d67c81f3028d96d4aa36ca9c6f \
+            --retained-ref=refs/pull/314/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7p-assertion-scheduling.mjs \
+            --verify-path=scripts/normalizeM7pAssertionSchedulingCapture.mjs \
+            --verify-path=scripts/evaluateM7pAssertionScheduling.ts \
+            --verify-path=scripts/run-m7p-evidence.mjs \
+            --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
+
       # Schema-v2 selected evidence also names its original tooling/evaluator
       # commit. It is an ancestor of PR #309, not necessarily of squash-merged
       # main, so fetch that exact commit or its retained PR history and verify
@@ -221,6 +260,9 @@ jobs:
 
       - name: Validate M7O Canvas assertion timing evidence integrity
         run: npm run evidence:check:m7o
+
+      - name: Validate M7P assertion scheduling evidence integrity
+        run: npm run evidence:check:m7p
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
