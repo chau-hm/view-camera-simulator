@@ -617,6 +617,9 @@ export const verifyM7qRawEvidence = async (
     ? await readFile(resolve(artifactRoot, provenance.normalizedCapturesPath)).catch(() => null)
     : null;
   if (!capturesBytes || hash(capturesBytes) !== provenance.normalizedCapturesSha256) issues.push("m7q-normalized-capture-content-digest-mismatch");
+  const captureEvidenceDirectory = typeof provenance.normalizedCapturesPath === "string"
+    ? resolve(artifactRoot, provenance.normalizedCapturesPath, "..")
+    : artifactRoot;
   const historical = isRecord(provenance.historicalEvidence) ? provenance.historicalEvidence : {};
   for (const key of ["m7oReport", "m7pReport", "m7pNormalizedCapture"]) {
     const item = isRecord(historical[key]) ? historical[key] : {};
@@ -636,8 +639,8 @@ export const verifyM7qRawEvidence = async (
     const loadArtifact = async (artifact: JsonRecord, kind: string) => {
       const path = assertSafeRelativePath(artifact.retainedPath, `m7q-${captureId}-${kind}`, issues);
       if (!path) return null;
-      const absolute = resolve(artifactRoot, path);
-      if (!actualPathInsideRepository(artifactRoot, absolute)) {
+      const absolute = resolve(captureEvidenceDirectory, path);
+      if (!actualPathInsideRepository(captureEvidenceDirectory, absolute)) {
         issues.push(`m7q-${captureId}-${kind}-path-escapes-repository`);
         return null;
       }
@@ -723,7 +726,7 @@ export const verifyM7qRawEvidence = async (
       const trace = isRecord(attempt.trace) ? attempt.trace : {};
       const relativePath = assertSafeRelativePath(trace.retainedPath, `m7q-${captureId}-chromium-trace`, issues);
       if (relativePath) {
-        const gzipBytes = await readFile(resolve(artifactRoot, relativePath)).catch(() => null);
+        const gzipBytes = await readFile(resolve(captureEvidenceDirectory, relativePath)).catch(() => null);
         if (!gzipBytes || hash(gzipBytes) !== trace.retainedGzipSha256) {
           issues.push(`m7q-${captureId}-retained-trace-gzip-digest-mismatch`);
         } else {
