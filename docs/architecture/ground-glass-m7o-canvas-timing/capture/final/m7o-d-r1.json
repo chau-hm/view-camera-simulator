@@ -1,0 +1,1370 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+  "captureId": "m7o-d-r1",
+  "condition": "D",
+  "workload": "target-plus-three-renderer-heavy-peers",
+  "source": {
+    "executionSourceCommitSha": "e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb",
+    "toolingSourceCommitSha": "c1135c8f7be9c3530eaeaad030a98079457ff8c0",
+    "testSourcePath": "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+    "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+    "normalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
+    "matrixNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481"
+  },
+  "rawCapture": {
+    "sha256": "5a5c5d39c387e06e854b773743d78d402f9893c3a583be2c7d076285b9757e83",
+    "bytes": 78369,
+    "retention": "private-local-only",
+    "outputPath": null
+  },
+  "configuration": {
+    "project": "chromium",
+    "browserName": "Chromium",
+    "configuredWorkers": 4,
+    "retries": 0,
+    "diagnosticInstrumentationEnabled": true,
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed"
+    ]
+  },
+  "execution": {
+    "selectedTests": [
+      {
+        "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "projectName": "chromium",
+        "expectedStatus": "passed",
+        "outcome": "failed",
+        "retry": 0,
+        "workerIndex": 0,
+        "startTime": "2026-11-06T00:33:39.029Z",
+        "durationMs": 11334,
+        "errorSummary": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed"
+      },
+      {
+        "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "projectName": "chromium",
+        "expectedStatus": "passed",
+        "outcome": "timedOut",
+        "retry": 0,
+        "workerIndex": 1,
+        "startTime": "2026-11-06T00:33:39.038Z",
+        "durationMs": 75286,
+        "errorSummary": "\u001b[31mTest timeout of 75000ms exceeded.\u001b[39m"
+      },
+      {
+        "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "projectName": "chromium",
+        "expectedStatus": "passed",
+        "outcome": "passed",
+        "retry": 0,
+        "workerIndex": 2,
+        "startTime": "2026-11-06T00:33:39.040Z",
+        "durationMs": 118960,
+        "errorSummary": null
+      },
+      {
+        "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "projectName": "chromium",
+        "expectedStatus": "passed",
+        "outcome": "passed",
+        "retry": 0,
+        "workerIndex": 3,
+        "startTime": "2026-11-06T00:33:39.029Z",
+        "durationMs": 70476,
+        "errorSummary": null
+      }
+    ],
+    "discovered": 4,
+    "passed": 2,
+    "failed": 1,
+    "timedOut": 1,
+    "skipped": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "observedConcurrency": 4,
+    "workerIndices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "targetAssertionOutcome": "failed",
+    "targetFailureEvidence": {
+      "evidenceSource": "Playwright public assertion failure message and aggregated call log",
+      "matcher": "toHaveCount",
+      "expectedCount": 1,
+      "receivedCount": 0,
+      "timeoutMs": 5000,
+      "aggregatedLocatorResolutionsAtZero": 5,
+      "perObservationTimestampsAvailable": false,
+      "limitation": "The rendered call log aggregates repeated locator resolutions and does not expose an exact timestamped toHaveCount retry callback."
+    },
+    "processExitCode": 1
+  },
+  "diagnosticCapture": {
+    "schemaVersion": 1,
+    "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+    "captureId": "m7o-d-r1",
+    "source": {
+      "testFile": "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "assertionIdentity": "Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+    },
+    "testAttempt": {
+      "identity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "failed",
+      "expectedStatus": "passed",
+      "projectName": "chromium",
+      "workerIndex": 0,
+      "parallelIndex": 0,
+      "repeatEachIndex": 0,
+      "retry": 0,
+      "startedAtWallClock": "2026-11-06T00:33:39.199Z",
+      "captureStartedAtNodeMonotonicMs": 425.774417,
+      "durationMs": 9619
+    },
+    "assertion": {
+      "matcher": "toHaveCount(1)",
+      "locator": "[data-testid=\"scene-canvas\"] canvas",
+      "observationSemantics": "Playwright locator matcher retries internally; installed public API has no per-retry observation hook.",
+      "nodeCallEntryMonotonicMs": 957.491125,
+      "configuredTimeoutMs": 5000,
+      "inferredDeadlineNodeMonotonicMs": 5957.4911250000005,
+      "deadlineNature": "budget-derived, not an observed final matcher poll",
+      "settled": true,
+      "outcome": "failed",
+      "nodeCallSettlementMonotonicMs": 5963.968417,
+      "elapsedMs": 5006.477292,
+      "errorSummary": "\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed"
+    },
+    "assertionCatchBoundary": {
+      "label": "immediate-canvas-assertion-failure-snapshot",
+      "nodeRequestStartMs": 5963.990917,
+      "nodeResponseEndMs": 7506.83325,
+      "roundTripMs": 1542.8423329999996,
+      "browser": {
+        "sampledAtPageMonotonicMs": 7071.899999976158,
+        "performanceTimeOriginMs": 1793925219207.1,
+        "dom": {
+          "documentIdentity": "mw48ra13.3lq-sheqml5x",
+          "route": "/simulator/free/architecture-rise",
+          "documentReadyState": "complete",
+          "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+          "browserPlatform": "MacIntel",
+          "sceneContainers": [
+            {
+              "identity": "element-1",
+              "isConnected": true,
+              "sceneId": "architecture-rise",
+              "rendererStatus": "active",
+              "rendererGeneration": "0",
+              "canvases": [
+                {
+                  "identity": "element-2",
+                  "isConnected": true,
+                  "width": 900,
+                  "height": 718
+                }
+              ]
+            }
+          ],
+          "totalCanvasCount": 1,
+          "viewportMountIdentities": null,
+          "m7nTraceAvailable": false
+        },
+        "transitions": [
+          {
+            "reason": "document-start",
+            "observedAtPageMonotonicMs": 12.5,
+            "performanceTimeOriginMs": 1793925219207.1,
+            "previous": null,
+            "current": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "loading",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [],
+              "totalCanvasCount": 0,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            }
+          },
+          {
+            "reason": "mutation-observer-installed",
+            "observedAtPageMonotonicMs": 505.30000001192093,
+            "performanceTimeOriginMs": 1793925219207.1,
+            "previous": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "loading",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [],
+              "totalCanvasCount": 0,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            },
+            "current": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "interactive",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [],
+              "totalCanvasCount": 0,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            }
+          },
+          {
+            "reason": "relevant-mutation-observed",
+            "observedAtPageMonotonicMs": 1089.199999988079,
+            "performanceTimeOriginMs": 1793925219207.1,
+            "previous": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "interactive",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [],
+              "totalCanvasCount": 0,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            },
+            "current": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "complete",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [
+                {
+                  "identity": "element-1",
+                  "isConnected": true,
+                  "sceneId": "architecture-rise",
+                  "rendererStatus": "pending",
+                  "rendererGeneration": "0",
+                  "canvases": [
+                    {
+                      "identity": "element-2",
+                      "isConnected": true,
+                      "width": 300,
+                      "height": 150
+                    }
+                  ]
+                }
+              ],
+              "totalCanvasCount": 1,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            }
+          },
+          {
+            "reason": "relevant-mutation-observed",
+            "observedAtPageMonotonicMs": 1488.8999999761581,
+            "performanceTimeOriginMs": 1793925219207.1,
+            "previous": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "complete",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [
+                {
+                  "identity": "element-1",
+                  "isConnected": true,
+                  "sceneId": "architecture-rise",
+                  "rendererStatus": "pending",
+                  "rendererGeneration": "0",
+                  "canvases": [
+                    {
+                      "identity": "element-2",
+                      "isConnected": true,
+                      "width": 300,
+                      "height": 150
+                    }
+                  ]
+                }
+              ],
+              "totalCanvasCount": 1,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            },
+            "current": {
+              "documentIdentity": "mw48ra13.3lq-sheqml5x",
+              "route": "/simulator/free/architecture-rise",
+              "documentReadyState": "complete",
+              "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+              "browserPlatform": "MacIntel",
+              "sceneContainers": [
+                {
+                  "identity": "element-1",
+                  "isConnected": true,
+                  "sceneId": "architecture-rise",
+                  "rendererStatus": "active",
+                  "rendererGeneration": "0",
+                  "canvases": [
+                    {
+                      "identity": "element-2",
+                      "isConnected": true,
+                      "width": 900,
+                      "height": 718
+                    }
+                  ]
+                }
+              ],
+              "totalCanvasCount": 1,
+              "viewportMountIdentities": null,
+              "m7nTraceAvailable": false
+            }
+          }
+        ],
+        "longTasks": [
+          {
+            "startTimeMs": 447.30000001192093,
+            "durationMs": 58
+          },
+          {
+            "startTimeMs": 961.8999999761581,
+            "durationMs": 60
+          },
+          {
+            "startTimeMs": 1171.1000000238419,
+            "durationMs": 317
+          },
+          {
+            "startTimeMs": 1489.6000000238419,
+            "durationMs": 5560
+          }
+        ],
+        "heartbeatDelays": [
+          {
+            "expectedIntervalMs": 100,
+            "actualIntervalMs": 5946,
+            "excessDelayMs": 5846,
+            "browserMonotonicMs": 7071.100000023842
+          }
+        ],
+        "heartbeat": {
+          "available": true,
+          "expectedIntervalMs": 100,
+          "delayedCallbackThresholdMs": 50,
+          "callbackCount": 12,
+          "maxActualIntervalMs": 5946
+        },
+        "contextEvents": [],
+        "observers": {
+          "longTaskObserverAvailable": true,
+          "mutationObserverAvailable": true
+        },
+        "droppedEventCounts": {
+          "transitions": 0,
+          "longTasks": 0,
+          "heartbeatDelays": 0,
+          "contextEvents": 0
+        }
+      },
+      "error": null
+    },
+    "browserBoundaries": [
+      {
+        "label": "before-canvas-count-assertion",
+        "nodeRequestStartMs": 940.319834,
+        "nodeResponseEndMs": 957.420042,
+        "roundTripMs": 17.100207999999952,
+        "browser": {
+          "sampledAtPageMonotonicMs": 521.6000000238419,
+          "performanceTimeOriginMs": 1793925219207.1,
+          "dom": {
+            "documentIdentity": "mw48ra13.3lq-sheqml5x",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [],
+            "totalCanvasCount": 0,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 12.5,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 505.30000001192093,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [
+            {
+              "startTimeMs": 447.30000001192093,
+              "durationMs": 58
+            }
+          ],
+          "heartbeatDelays": [],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 5,
+            "maxActualIntervalMs": 107.40000003576279
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      },
+      {
+        "label": "immediate-canvas-assertion-failure-snapshot",
+        "nodeRequestStartMs": 5963.990917,
+        "nodeResponseEndMs": 7506.83325,
+        "roundTripMs": 1542.8423329999996,
+        "browser": {
+          "sampledAtPageMonotonicMs": 7071.899999976158,
+          "performanceTimeOriginMs": 1793925219207.1,
+          "dom": {
+            "documentIdentity": "mw48ra13.3lq-sheqml5x",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [
+              {
+                "identity": "element-1",
+                "isConnected": true,
+                "sceneId": "architecture-rise",
+                "rendererStatus": "active",
+                "rendererGeneration": "0",
+                "canvases": [
+                  {
+                    "identity": "element-2",
+                    "isConnected": true,
+                    "width": 900,
+                    "height": 718
+                  }
+                ]
+              }
+            ],
+            "totalCanvasCount": 1,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 12.5,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 505.30000001192093,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 1089.199999988079,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 1488.8999999761581,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "active",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 900,
+                        "height": 718
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [
+            {
+              "startTimeMs": 447.30000001192093,
+              "durationMs": 58
+            },
+            {
+              "startTimeMs": 961.8999999761581,
+              "durationMs": 60
+            },
+            {
+              "startTimeMs": 1171.1000000238419,
+              "durationMs": 317
+            },
+            {
+              "startTimeMs": 1489.6000000238419,
+              "durationMs": 5560
+            }
+          ],
+          "heartbeatDelays": [
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 5946,
+              "excessDelayMs": 5846,
+              "browserMonotonicMs": 7071.100000023842
+            }
+          ],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 12,
+            "maxActualIntervalMs": 5946
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      },
+      {
+        "label": "test-teardown-browser-snapshot",
+        "nodeRequestStartMs": 9996.805375,
+        "nodeResponseEndMs": 11197.875834,
+        "roundTripMs": 1201.0704590000005,
+        "browser": {
+          "sampledAtPageMonotonicMs": 10762.5,
+          "performanceTimeOriginMs": 1793925219207.1,
+          "dom": {
+            "documentIdentity": "mw48ra13.3lq-sheqml5x",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [
+              {
+                "identity": "element-1",
+                "isConnected": true,
+                "sceneId": "architecture-rise",
+                "rendererStatus": "active",
+                "rendererGeneration": "0",
+                "canvases": [
+                  {
+                    "identity": "element-2",
+                    "isConnected": true,
+                    "width": 900,
+                    "height": 718
+                  }
+                ]
+              }
+            ],
+            "totalCanvasCount": 1,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 12.5,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 505.30000001192093,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 1089.199999988079,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 1488.8999999761581,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "active",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 900,
+                        "height": 718
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [
+            {
+              "startTimeMs": 447.30000001192093,
+              "durationMs": 58
+            },
+            {
+              "startTimeMs": 961.8999999761581,
+              "durationMs": 60
+            },
+            {
+              "startTimeMs": 1171.1000000238419,
+              "durationMs": 317
+            },
+            {
+              "startTimeMs": 1489.6000000238419,
+              "durationMs": 5560
+            },
+            {
+              "startTimeMs": 7072.199999988079,
+              "durationMs": 2487
+            },
+            {
+              "startTimeMs": 9561.5,
+              "durationMs": 1200
+            }
+          ],
+          "heartbeatDelays": [
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 5946,
+              "excessDelayMs": 5846,
+              "browserMonotonicMs": 7071.100000023842
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 3691,
+              "excessDelayMs": 3591,
+              "browserMonotonicMs": 10762.100000023842
+            }
+          ],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 13,
+            "maxActualIntervalMs": 5946
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      }
+    ],
+    "diagnosticPoll": {
+      "implementation": "independent public expect.poll callback; never an internal toHaveCount retry trace",
+      "executed": true,
+      "observations": [
+        {
+          "nodeRequestStartMs": 7507.763792,
+          "nodeResponseEndMs": 9995.380125,
+          "browserMonotonicMs": 9561.399999976158,
+          "count": 1,
+          "documentIdentity": "mw48ra13.3lq-sheqml5x",
+          "sceneContainerIdentities": [
+            "element-1"
+          ],
+          "canvasIdentities": [
+            "element-2"
+          ]
+        }
+      ]
+    },
+    "browserAndNodeScheduling": {
+      "nodeHeartbeat": {
+        "expectedIntervalMs": 100,
+        "delayedCallbackThresholdMs": 50,
+        "callbackCount": 110,
+        "maxExcessDelayMs": 24.140041999999994,
+        "delays": []
+      },
+      "teardownBrowserBoundary": {
+        "label": "test-teardown-browser-snapshot",
+        "nodeRequestStartMs": 9996.805375,
+        "nodeResponseEndMs": 11197.875834,
+        "roundTripMs": 1201.0704590000005,
+        "browser": {
+          "sampledAtPageMonotonicMs": 10762.5,
+          "performanceTimeOriginMs": 1793925219207.1,
+          "dom": {
+            "documentIdentity": "mw48ra13.3lq-sheqml5x",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [
+              {
+                "identity": "element-1",
+                "isConnected": true,
+                "sceneId": "architecture-rise",
+                "rendererStatus": "active",
+                "rendererGeneration": "0",
+                "canvases": [
+                  {
+                    "identity": "element-2",
+                    "isConnected": true,
+                    "width": 900,
+                    "height": 718
+                  }
+                ]
+              }
+            ],
+            "totalCanvasCount": 1,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 12.5,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 505.30000001192093,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 1089.199999988079,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 1488.8999999761581,
+              "performanceTimeOriginMs": 1793925219207.1,
+              "previous": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ra13.3lq-sheqml5x",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "active",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 900,
+                        "height": 718
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [
+            {
+              "startTimeMs": 447.30000001192093,
+              "durationMs": 58
+            },
+            {
+              "startTimeMs": 961.8999999761581,
+              "durationMs": 60
+            },
+            {
+              "startTimeMs": 1171.1000000238419,
+              "durationMs": 317
+            },
+            {
+              "startTimeMs": 1489.6000000238419,
+              "durationMs": 5560
+            },
+            {
+              "startTimeMs": 7072.199999988079,
+              "durationMs": 2487
+            },
+            {
+              "startTimeMs": 9561.5,
+              "durationMs": 1200
+            }
+          ],
+          "heartbeatDelays": [
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 5946,
+              "excessDelayMs": 5846,
+              "browserMonotonicMs": 7071.100000023842
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 3691,
+              "excessDelayMs": 3591,
+              "browserMonotonicMs": 10762.100000023842
+            }
+          ],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 13,
+            "maxActualIntervalMs": 5946
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      }
+    },
+    "nodeTimeline": [
+      {
+        "event": "test-attempt-start",
+        "nodeMonotonicMs": 426.465584,
+        "detail": {
+          "captureId": "m7o-d-r1",
+          "testIdentity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+          "projectName": "chromium",
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "repeatEachIndex": 0,
+          "retry": 0
+        }
+      },
+      {
+        "event": "document-request",
+        "nodeMonotonicMs": 435.740084,
+        "detail": {
+          "method": "GET",
+          "path": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "document-response",
+        "nodeMonotonicMs": 444.217,
+        "detail": {
+          "status": 200,
+          "path": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "main-frame-navigated",
+        "nodeMonotonicMs": 445.330959,
+        "detail": {
+          "url": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "main-frame-navigated",
+        "nodeMonotonicMs": 939.161334,
+        "detail": {
+          "url": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "domcontentloaded-delivered-to-node",
+        "nodeMonotonicMs": 939.194292
+      },
+      {
+        "event": "load-delivered-to-node",
+        "nodeMonotonicMs": 940.097792
+      },
+      {
+        "event": "canvas-count-assertion-entered",
+        "nodeMonotonicMs": 957.504709,
+        "detail": {
+          "timeoutMs": 5000,
+          "inferredDeadlineNodeMonotonicMs": 5957.4911250000005
+        }
+      },
+      {
+        "event": "canvas-count-assertion-settled",
+        "nodeMonotonicMs": 5963.9875,
+        "detail": {
+          "outcome": "failed",
+          "errorSummary": "\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed"
+        }
+      },
+      {
+        "event": "separate-diagnostic-expect-poll-started",
+        "nodeMonotonicMs": 7506.866959,
+        "detail": {
+          "timeoutMs": 5000
+        }
+      },
+      {
+        "event": "separate-diagnostic-expect-poll-settled",
+        "nodeMonotonicMs": 9996.24425,
+        "detail": {
+          "result": "passed",
+          "errorSummary": null,
+          "primaryAssertionOutcomeUnchanged": "failed"
+        }
+      },
+      {
+        "event": "test-teardown-start",
+        "nodeMonotonicMs": 9996.802667
+      },
+      {
+        "event": "page-close-delivered-to-node",
+        "nodeMonotonicMs": 11702.744042
+      },
+      {
+        "event": "test-teardown-complete",
+        "nodeMonotonicMs": 11703.974792
+      }
+    ],
+    "droppedEventCounts": {
+      "nodeTimeline": 0,
+      "browserBoundaries": 0,
+      "diagnosticPollObservations": 0,
+      "nodeHeartbeatDelays": 0
+    }
+  },
+  "provenance": {
+    "playwrightVersion": "1.61.1",
+    "nodeVersion": "v24.3.0",
+    "normalizedAt": "2026-11-06T01:01:14.211Z"
+  },
+  "clockAlignment": {
+    "domains": [
+      "Node performance.now() monotonic",
+      "browser performance.now() monotonic"
+    ],
+    "conversion": "browser event interval = browser monotonic time + node-minus-browser offset bounds",
+    "browserTimeOriginRetainedPerObservation": true,
+    "anchors": [
+      {
+        "label": "before-canvas-count-assertion",
+        "browserMonotonicMs": 521.6000000238419,
+        "nodeRequestStartMs": 940.319834,
+        "nodeResponseEndMs": 957.420042,
+        "nodeMinusBrowserOffset": {
+          "minimumMs": 418.71983397615816,
+          "maximumMs": 435.8200419761581
+        }
+      },
+      {
+        "label": "immediate-canvas-assertion-failure-snapshot",
+        "browserMonotonicMs": 7071.899999976158,
+        "nodeRequestStartMs": 5963.990917,
+        "nodeResponseEndMs": 7506.83325,
+        "nodeMinusBrowserOffset": {
+          "minimumMs": -1107.909082976158,
+          "maximumMs": 434.93325002384154
+        }
+      },
+      {
+        "label": "test-teardown-browser-snapshot",
+        "browserMonotonicMs": 10762.5,
+        "nodeRequestStartMs": 9996.805375,
+        "nodeResponseEndMs": 11197.875834,
+        "nodeMinusBrowserOffset": {
+          "minimumMs": -765.6946250000001,
+          "maximumMs": 435.3758340000004
+        }
+      }
+    ],
+    "commonOffsetBounds": {
+      "minimumMs": 418.71983397615816,
+      "maximumMs": 434.93325002384154,
+      "uncertaintyMs": 16.21341604768338
+    },
+    "status": "bounded-by-overlapping-request-response-anchors",
+    "eventObservationsAreCallbackOrEvaluationTimes": true
+  }
+}

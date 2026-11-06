@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+  "captureId": "m7o-a-r1",
+  "condition": "A",
+  "workload": "target-alone-instrumentation-off",
+  "source": {
+    "executionSourceCommitSha": "e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb",
+    "toolingSourceCommitSha": "c1135c8f7be9c3530eaeaad030a98079457ff8c0",
+    "testSourcePath": "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+    "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+    "normalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
+    "matrixNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481"
+  },
+  "rawCapture": {
+    "sha256": "68b9dd8a7432a2754667cc95f47713017e82e6158632f2e2e564c8f14d4186c2",
+    "bytes": 7609,
+    "retention": "private-local-only",
+    "outputPath": null
+  },
+  "configuration": {
+    "project": "chromium",
+    "browserName": "Chromium",
+    "configuredWorkers": 1,
+    "retries": 0,
+    "diagnosticInstrumentationEnabled": false,
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+    ]
+  },
+  "execution": {
+    "selectedTests": [
+      {
+        "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "projectName": "chromium",
+        "expectedStatus": "passed",
+        "outcome": "passed",
+        "retry": 0,
+        "workerIndex": 0,
+        "startTime": "2026-11-06T00:30:59.078Z",
+        "durationMs": 14366,
+        "errorSummary": null
+      }
+    ],
+    "discovered": 1,
+    "passed": 1,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "observedConcurrency": 1,
+    "workerIndices": [
+      0
+    ],
+    "targetAssertionOutcome": "passed",
+    "targetFailureEvidence": null,
+    "processExitCode": 0
+  },
+  "diagnosticCapture": null,
+  "provenance": {
+    "playwrightVersion": "1.61.1",
+    "nodeVersion": "v24.3.0",
+    "normalizedAt": "2026-11-06T01:01:13.933Z"
+  },
+  "clockAlignment": {
+    "domains": [
+      "Node performance.now() monotonic",
+      "browser performance.now() monotonic"
+    ],
+    "conversion": "browser event interval = browser monotonic time + node-minus-browser offset bounds",
+    "browserTimeOriginRetainedPerObservation": true,
+    "anchors": [],
+    "commonOffsetBounds": null,
+    "status": "unavailable",
+    "eventObservationsAreCallbackOrEvaluationTimes": true
+  }
+}

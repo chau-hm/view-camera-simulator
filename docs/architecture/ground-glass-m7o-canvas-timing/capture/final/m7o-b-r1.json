@@ -1,0 +1,1217 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+  "captureId": "m7o-b-r1",
+  "condition": "B",
+  "workload": "target-alone-instrumentation-on",
+  "source": {
+    "executionSourceCommitSha": "e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb",
+    "toolingSourceCommitSha": "c1135c8f7be9c3530eaeaad030a98079457ff8c0",
+    "testSourcePath": "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+    "testIdentity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+    "normalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
+    "matrixNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481"
+  },
+  "rawCapture": {
+    "sha256": "d276642059fd78bc8b9a3045f88b2d21c5dc5f4c6efa79aaedc347a0dd6a7d11",
+    "bytes": 58274,
+    "retention": "private-local-only",
+    "outputPath": null
+  },
+  "configuration": {
+    "project": "chromium",
+    "browserName": "Chromium",
+    "configuredWorkers": 1,
+    "retries": 0,
+    "diagnosticInstrumentationEnabled": true,
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+    ]
+  },
+  "execution": {
+    "selectedTests": [
+      {
+        "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "projectName": "chromium",
+        "expectedStatus": "passed",
+        "outcome": "passed",
+        "retry": 0,
+        "workerIndex": 0,
+        "startTime": "2026-11-06T00:31:47.498Z",
+        "durationMs": 16042,
+        "errorSummary": null
+      }
+    ],
+    "discovered": 1,
+    "passed": 1,
+    "failed": 0,
+    "timedOut": 0,
+    "skipped": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "observedConcurrency": 1,
+    "workerIndices": [
+      0
+    ],
+    "targetAssertionOutcome": "passed",
+    "targetFailureEvidence": null,
+    "processExitCode": 0
+  },
+  "diagnosticCapture": {
+    "schemaVersion": 1,
+    "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+    "captureId": "m7o-b-r1",
+    "source": {
+      "testFile": "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "assertionIdentity": "Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+    },
+    "testAttempt": {
+      "identity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "passed",
+      "expectedStatus": "passed",
+      "projectName": "chromium",
+      "workerIndex": 0,
+      "parallelIndex": 0,
+      "repeatEachIndex": 0,
+      "retry": 0,
+      "startedAtWallClock": "2026-11-06T00:31:47.613Z",
+      "captureStartedAtNodeMonotonicMs": 334.860709,
+      "durationMs": 15277
+    },
+    "assertion": {
+      "matcher": "toHaveCount(1)",
+      "locator": "[data-testid=\"scene-canvas\"] canvas",
+      "observationSemantics": "Playwright locator matcher retries internally; installed public API has no per-retry observation hook.",
+      "nodeCallEntryMonotonicMs": 611.474042,
+      "configuredTimeoutMs": 5000,
+      "inferredDeadlineNodeMonotonicMs": 5611.474042,
+      "deadlineNature": "budget-derived, not an observed final matcher poll",
+      "settled": true,
+      "outcome": "passed",
+      "nodeCallSettlementMonotonicMs": 4600.340292,
+      "elapsedMs": 3988.86625
+    },
+    "assertionCatchBoundary": null,
+    "browserBoundaries": [
+      {
+        "label": "before-canvas-count-assertion",
+        "nodeRequestStartMs": 596.100667,
+        "nodeResponseEndMs": 611.424875,
+        "roundTripMs": 15.324207999999999,
+        "browser": {
+          "sampledAtPageMonotonicMs": 270.5999999642372,
+          "performanceTimeOriginMs": 1793925107618.2,
+          "dom": {
+            "documentIdentity": "mw48ovxe.77-laif13v8",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [],
+            "totalCanvasCount": 0,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 6,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 255.29999995231628,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [],
+          "heartbeatDelays": [],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 2,
+            "maxActualIntervalMs": 100.30000001192093
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      },
+      {
+        "label": "test-teardown-browser-snapshot",
+        "nodeRequestStartMs": 15579.43675,
+        "nodeResponseEndMs": 15961.996125,
+        "roundTripMs": 382.5593749999989,
+        "browser": {
+          "sampledAtPageMonotonicMs": 15620.399999976158,
+          "performanceTimeOriginMs": 1793925107618.2,
+          "dom": {
+            "documentIdentity": "mw48ovxe.77-laif13v8",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [
+              {
+                "identity": "element-1",
+                "isConnected": true,
+                "sceneId": "architecture-rise",
+                "rendererStatus": "active",
+                "rendererGeneration": "0",
+                "canvases": [
+                  {
+                    "identity": "element-2",
+                    "isConnected": true,
+                    "width": 900,
+                    "height": 718
+                  }
+                ]
+              }
+            ],
+            "totalCanvasCount": 1,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 6,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 255.29999995231628,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 627.0999999642372,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 956.5999999642372,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "active",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 900,
+                        "height": 718
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [
+            {
+              "startTimeMs": 515.8999999761581,
+              "durationMs": 53
+            },
+            {
+              "startTimeMs": 703.2999999523163,
+              "durationMs": 253
+            },
+            {
+              "startTimeMs": 957.1999999880791,
+              "durationMs": 3289
+            },
+            {
+              "startTimeMs": 4260.099999964237,
+              "durationMs": 946
+            },
+            {
+              "startTimeMs": 5209.599999964237,
+              "durationMs": 488
+            },
+            {
+              "startTimeMs": 5700.699999988079,
+              "durationMs": 363
+            },
+            {
+              "startTimeMs": 6064.899999976158,
+              "durationMs": 288
+            },
+            {
+              "startTimeMs": 6354.199999988079,
+              "durationMs": 281
+            },
+            {
+              "startTimeMs": 6636.599999964237,
+              "durationMs": 282
+            },
+            {
+              "startTimeMs": 6919.399999976158,
+              "durationMs": 288
+            },
+            {
+              "startTimeMs": 7208.199999988079,
+              "durationMs": 281
+            },
+            {
+              "startTimeMs": 7489.299999952316,
+              "durationMs": 279
+            },
+            {
+              "startTimeMs": 7768.799999952316,
+              "durationMs": 315
+            },
+            {
+              "startTimeMs": 8084,
+              "durationMs": 285
+            },
+            {
+              "startTimeMs": 8369.399999976158,
+              "durationMs": 287
+            },
+            {
+              "startTimeMs": 8658,
+              "durationMs": 285
+            },
+            {
+              "startTimeMs": 8943.599999964237,
+              "durationMs": 285
+            },
+            {
+              "startTimeMs": 9229.5,
+              "durationMs": 301
+            },
+            {
+              "startTimeMs": 9532,
+              "durationMs": 284
+            },
+            {
+              "startTimeMs": 9816.799999952316,
+              "durationMs": 288
+            },
+            {
+              "startTimeMs": 10105.699999988079,
+              "durationMs": 283
+            },
+            {
+              "startTimeMs": 10389.099999964237,
+              "durationMs": 281
+            },
+            {
+              "startTimeMs": 10671.199999988079,
+              "durationMs": 279
+            },
+            {
+              "startTimeMs": 10981.399999976158,
+              "durationMs": 397
+            },
+            {
+              "startTimeMs": 11379.399999976158,
+              "durationMs": 383
+            },
+            {
+              "startTimeMs": 11773.399999976158,
+              "durationMs": 387
+            },
+            {
+              "startTimeMs": 12164.099999964237,
+              "durationMs": 386
+            },
+            {
+              "startTimeMs": 12551.899999976158,
+              "durationMs": 396
+            },
+            {
+              "startTimeMs": 12949,
+              "durationMs": 383
+            },
+            {
+              "startTimeMs": 13332.399999976158,
+              "durationMs": 378
+            },
+            {
+              "startTimeMs": 13711.399999976158,
+              "durationMs": 379
+            },
+            {
+              "startTimeMs": 14091.099999964237,
+              "durationMs": 380
+            },
+            {
+              "startTimeMs": 14471.5,
+              "durationMs": 381
+            },
+            {
+              "startTimeMs": 14853.199999988079,
+              "durationMs": 385
+            },
+            {
+              "startTimeMs": 15238.399999976158,
+              "durationMs": 381
+            }
+          ],
+          "heartbeatDelays": [
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 3628.400000035763,
+              "excessDelayMs": 3528.400000035763,
+              "browserMonotonicMs": 4258
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 1440.5999999642372,
+              "excessDelayMs": 1340.5999999642372,
+              "browserMonotonicMs": 5698.599999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 654.8000000119209,
+              "excessDelayMs": 554.8000000119209,
+              "browserMonotonicMs": 6353.399999976158
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 565.5,
+              "excessDelayMs": 465.5,
+              "browserMonotonicMs": 6918.899999976158
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 570.3999999761581,
+              "excessDelayMs": 470.39999997615814,
+              "browserMonotonicMs": 7489.299999952316
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 594.7000000476837,
+              "excessDelayMs": 494.7000000476837,
+              "browserMonotonicMs": 8084
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 573.0999999642372,
+              "excessDelayMs": 473.0999999642372,
+              "browserMonotonicMs": 8657.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 572.1000000238419,
+              "excessDelayMs": 472.10000002384186,
+              "browserMonotonicMs": 9229.199999988079
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 587,
+              "excessDelayMs": 487,
+              "browserMonotonicMs": 9816.199999988079
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 572.8000000119209,
+              "excessDelayMs": 472.80000001192093,
+              "browserMonotonicMs": 10389
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 1374,
+              "excessDelayMs": 1274,
+              "browserMonotonicMs": 11763
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 788.0999999642372,
+              "excessDelayMs": 688.0999999642372,
+              "browserMonotonicMs": 12551.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 781,
+              "excessDelayMs": 681,
+              "browserMonotonicMs": 13332.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 759,
+              "excessDelayMs": 659,
+              "browserMonotonicMs": 14091.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 762.1000000238419,
+              "excessDelayMs": 662.1000000238419,
+              "browserMonotonicMs": 14853.199999988079
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 767.0999999642372,
+              "excessDelayMs": 667.0999999642372,
+              "browserMonotonicMs": 15620.299999952316
+            }
+          ],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 22,
+            "maxActualIntervalMs": 3628.400000035763
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      }
+    ],
+    "diagnosticPoll": {
+      "implementation": "independent public expect.poll callback; never an internal toHaveCount retry trace",
+      "executed": false,
+      "observations": []
+    },
+    "browserAndNodeScheduling": {
+      "nodeHeartbeat": {
+        "expectedIntervalMs": 100,
+        "delayedCallbackThresholdMs": 50,
+        "callbackCount": 156,
+        "maxExcessDelayMs": 13.083916999999929,
+        "delays": []
+      },
+      "teardownBrowserBoundary": {
+        "label": "test-teardown-browser-snapshot",
+        "nodeRequestStartMs": 15579.43675,
+        "nodeResponseEndMs": 15961.996125,
+        "roundTripMs": 382.5593749999989,
+        "browser": {
+          "sampledAtPageMonotonicMs": 15620.399999976158,
+          "performanceTimeOriginMs": 1793925107618.2,
+          "dom": {
+            "documentIdentity": "mw48ovxe.77-laif13v8",
+            "route": "/simulator/free/architecture-rise",
+            "documentReadyState": "complete",
+            "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+            "browserPlatform": "MacIntel",
+            "sceneContainers": [
+              {
+                "identity": "element-1",
+                "isConnected": true,
+                "sceneId": "architecture-rise",
+                "rendererStatus": "active",
+                "rendererGeneration": "0",
+                "canvases": [
+                  {
+                    "identity": "element-2",
+                    "isConnected": true,
+                    "width": 900,
+                    "height": 718
+                  }
+                ]
+              }
+            ],
+            "totalCanvasCount": 1,
+            "viewportMountIdentities": null,
+            "m7nTraceAvailable": false
+          },
+          "transitions": [
+            {
+              "reason": "document-start",
+              "observedAtPageMonotonicMs": 6,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": null,
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "mutation-observer-installed",
+              "observedAtPageMonotonicMs": 255.29999995231628,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "loading",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 627.0999999642372,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "interactive",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [],
+                "totalCanvasCount": 0,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            },
+            {
+              "reason": "relevant-mutation-observed",
+              "observedAtPageMonotonicMs": 956.5999999642372,
+              "performanceTimeOriginMs": 1793925107618.2,
+              "previous": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "pending",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 300,
+                        "height": 150
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              },
+              "current": {
+                "documentIdentity": "mw48ovxe.77-laif13v8",
+                "route": "/simulator/free/architecture-rise",
+                "documentReadyState": "complete",
+                "browserUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+                "browserPlatform": "MacIntel",
+                "sceneContainers": [
+                  {
+                    "identity": "element-1",
+                    "isConnected": true,
+                    "sceneId": "architecture-rise",
+                    "rendererStatus": "active",
+                    "rendererGeneration": "0",
+                    "canvases": [
+                      {
+                        "identity": "element-2",
+                        "isConnected": true,
+                        "width": 900,
+                        "height": 718
+                      }
+                    ]
+                  }
+                ],
+                "totalCanvasCount": 1,
+                "viewportMountIdentities": null,
+                "m7nTraceAvailable": false
+              }
+            }
+          ],
+          "longTasks": [
+            {
+              "startTimeMs": 515.8999999761581,
+              "durationMs": 53
+            },
+            {
+              "startTimeMs": 703.2999999523163,
+              "durationMs": 253
+            },
+            {
+              "startTimeMs": 957.1999999880791,
+              "durationMs": 3289
+            },
+            {
+              "startTimeMs": 4260.099999964237,
+              "durationMs": 946
+            },
+            {
+              "startTimeMs": 5209.599999964237,
+              "durationMs": 488
+            },
+            {
+              "startTimeMs": 5700.699999988079,
+              "durationMs": 363
+            },
+            {
+              "startTimeMs": 6064.899999976158,
+              "durationMs": 288
+            },
+            {
+              "startTimeMs": 6354.199999988079,
+              "durationMs": 281
+            },
+            {
+              "startTimeMs": 6636.599999964237,
+              "durationMs": 282
+            },
+            {
+              "startTimeMs": 6919.399999976158,
+              "durationMs": 288
+            },
+            {
+              "startTimeMs": 7208.199999988079,
+              "durationMs": 281
+            },
+            {
+              "startTimeMs": 7489.299999952316,
+              "durationMs": 279
+            },
+            {
+              "startTimeMs": 7768.799999952316,
+              "durationMs": 315
+            },
+            {
+              "startTimeMs": 8084,
+              "durationMs": 285
+            },
+            {
+              "startTimeMs": 8369.399999976158,
+              "durationMs": 287
+            },
+            {
+              "startTimeMs": 8658,
+              "durationMs": 285
+            },
+            {
+              "startTimeMs": 8943.599999964237,
+              "durationMs": 285
+            },
+            {
+              "startTimeMs": 9229.5,
+              "durationMs": 301
+            },
+            {
+              "startTimeMs": 9532,
+              "durationMs": 284
+            },
+            {
+              "startTimeMs": 9816.799999952316,
+              "durationMs": 288
+            },
+            {
+              "startTimeMs": 10105.699999988079,
+              "durationMs": 283
+            },
+            {
+              "startTimeMs": 10389.099999964237,
+              "durationMs": 281
+            },
+            {
+              "startTimeMs": 10671.199999988079,
+              "durationMs": 279
+            },
+            {
+              "startTimeMs": 10981.399999976158,
+              "durationMs": 397
+            },
+            {
+              "startTimeMs": 11379.399999976158,
+              "durationMs": 383
+            },
+            {
+              "startTimeMs": 11773.399999976158,
+              "durationMs": 387
+            },
+            {
+              "startTimeMs": 12164.099999964237,
+              "durationMs": 386
+            },
+            {
+              "startTimeMs": 12551.899999976158,
+              "durationMs": 396
+            },
+            {
+              "startTimeMs": 12949,
+              "durationMs": 383
+            },
+            {
+              "startTimeMs": 13332.399999976158,
+              "durationMs": 378
+            },
+            {
+              "startTimeMs": 13711.399999976158,
+              "durationMs": 379
+            },
+            {
+              "startTimeMs": 14091.099999964237,
+              "durationMs": 380
+            },
+            {
+              "startTimeMs": 14471.5,
+              "durationMs": 381
+            },
+            {
+              "startTimeMs": 14853.199999988079,
+              "durationMs": 385
+            },
+            {
+              "startTimeMs": 15238.399999976158,
+              "durationMs": 381
+            }
+          ],
+          "heartbeatDelays": [
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 3628.400000035763,
+              "excessDelayMs": 3528.400000035763,
+              "browserMonotonicMs": 4258
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 1440.5999999642372,
+              "excessDelayMs": 1340.5999999642372,
+              "browserMonotonicMs": 5698.599999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 654.8000000119209,
+              "excessDelayMs": 554.8000000119209,
+              "browserMonotonicMs": 6353.399999976158
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 565.5,
+              "excessDelayMs": 465.5,
+              "browserMonotonicMs": 6918.899999976158
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 570.3999999761581,
+              "excessDelayMs": 470.39999997615814,
+              "browserMonotonicMs": 7489.299999952316
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 594.7000000476837,
+              "excessDelayMs": 494.7000000476837,
+              "browserMonotonicMs": 8084
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 573.0999999642372,
+              "excessDelayMs": 473.0999999642372,
+              "browserMonotonicMs": 8657.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 572.1000000238419,
+              "excessDelayMs": 472.10000002384186,
+              "browserMonotonicMs": 9229.199999988079
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 587,
+              "excessDelayMs": 487,
+              "browserMonotonicMs": 9816.199999988079
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 572.8000000119209,
+              "excessDelayMs": 472.80000001192093,
+              "browserMonotonicMs": 10389
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 1374,
+              "excessDelayMs": 1274,
+              "browserMonotonicMs": 11763
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 788.0999999642372,
+              "excessDelayMs": 688.0999999642372,
+              "browserMonotonicMs": 12551.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 781,
+              "excessDelayMs": 681,
+              "browserMonotonicMs": 13332.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 759,
+              "excessDelayMs": 659,
+              "browserMonotonicMs": 14091.099999964237
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 762.1000000238419,
+              "excessDelayMs": 662.1000000238419,
+              "browserMonotonicMs": 14853.199999988079
+            },
+            {
+              "expectedIntervalMs": 100,
+              "actualIntervalMs": 767.0999999642372,
+              "excessDelayMs": 667.0999999642372,
+              "browserMonotonicMs": 15620.299999952316
+            }
+          ],
+          "heartbeat": {
+            "available": true,
+            "expectedIntervalMs": 100,
+            "delayedCallbackThresholdMs": 50,
+            "callbackCount": 22,
+            "maxActualIntervalMs": 3628.400000035763
+          },
+          "contextEvents": [],
+          "observers": {
+            "longTaskObserverAvailable": true,
+            "mutationObserverAvailable": true
+          },
+          "droppedEventCounts": {
+            "transitions": 0,
+            "longTasks": 0,
+            "heartbeatDelays": 0,
+            "contextEvents": 0
+          }
+        },
+        "error": null
+      }
+    },
+    "nodeTimeline": [
+      {
+        "event": "test-attempt-start",
+        "nodeMonotonicMs": 335.406959,
+        "detail": {
+          "captureId": "m7o-b-r1",
+          "testIdentity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+          "projectName": "chromium",
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "repeatEachIndex": 0,
+          "retry": 0
+        }
+      },
+      {
+        "event": "document-request",
+        "nodeMonotonicMs": 340.357625,
+        "detail": {
+          "method": "GET",
+          "path": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "document-response",
+        "nodeMonotonicMs": 343.873084,
+        "detail": {
+          "status": 200,
+          "path": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "main-frame-navigated",
+        "nodeMonotonicMs": 344.41475,
+        "detail": {
+          "url": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "main-frame-navigated",
+        "nodeMonotonicMs": 595.334625,
+        "detail": {
+          "url": "/simulator/free/architecture-rise"
+        }
+      },
+      {
+        "event": "domcontentloaded-delivered-to-node",
+        "nodeMonotonicMs": 595.351084
+      },
+      {
+        "event": "load-delivered-to-node",
+        "nodeMonotonicMs": 595.886209
+      },
+      {
+        "event": "canvas-count-assertion-entered",
+        "nodeMonotonicMs": 611.488584,
+        "detail": {
+          "timeoutMs": 5000,
+          "inferredDeadlineNodeMonotonicMs": 5611.474042
+        }
+      },
+      {
+        "event": "canvas-count-assertion-settled",
+        "nodeMonotonicMs": 4600.351167,
+        "detail": {
+          "outcome": "passed",
+          "errorSummary": null
+        }
+      },
+      {
+        "event": "test-teardown-start",
+        "nodeMonotonicMs": 15579.433709
+      },
+      {
+        "event": "page-close-delivered-to-node",
+        "nodeMonotonicMs": 16340.860334
+      },
+      {
+        "event": "test-teardown-complete",
+        "nodeMonotonicMs": 16341.36325
+      }
+    ],
+    "droppedEventCounts": {
+      "nodeTimeline": 0,
+      "browserBoundaries": 0,
+      "diagnosticPollObservations": 0,
+      "nodeHeartbeatDelays": 0
+    }
+  },
+  "provenance": {
+    "playwrightVersion": "1.61.1",
+    "nodeVersion": "v24.3.0",
+    "normalizedAt": "2026-11-06T01:01:14.026Z"
+  },
+  "clockAlignment": {
+    "domains": [
+      "Node performance.now() monotonic",
+      "browser performance.now() monotonic"
+    ],
+    "conversion": "browser event interval = browser monotonic time + node-minus-browser offset bounds",
+    "browserTimeOriginRetainedPerObservation": true,
+    "anchors": [
+      {
+        "label": "before-canvas-count-assertion",
+        "browserMonotonicMs": 270.5999999642372,
+        "nodeRequestStartMs": 596.100667,
+        "nodeResponseEndMs": 611.424875,
+        "nodeMinusBrowserOffset": {
+          "minimumMs": 325.50066703576283,
+          "maximumMs": 340.82487503576283
+        }
+      },
+      {
+        "label": "test-teardown-browser-snapshot",
+        "browserMonotonicMs": 15620.399999976158,
+        "nodeRequestStartMs": 15579.43675,
+        "nodeResponseEndMs": 15961.996125,
+        "nodeMinusBrowserOffset": {
+          "minimumMs": -40.963249976157385,
+          "maximumMs": 341.5961250238415
+        }
+      }
+    ],
+    "commonOffsetBounds": {
+      "minimumMs": 325.50066703576283,
+      "maximumMs": 340.82487503576283,
+      "uncertaintyMs": 15.324207999999999
+    },
+    "status": "bounded-by-overlapping-request-response-anchors",
+    "eventObservationsAreCallbackOrEvaluationTimes": true
+  }
+}

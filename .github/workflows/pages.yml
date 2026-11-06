@@ -109,6 +109,35 @@ jobs:
             --verify-path=scripts/evaluateM7nRendererLifecycle.ts \
             --verify-path=scripts/run-m7n-renderer-lifecycle.mjs
 
+      # M7O's capture, matrix normalizer, and evaluator use separate pinned
+      # commits. Retain each exact source through this PR head so evidence
+      # provenance remains checkable after a future squash merge.
+      - name: Fetch M7O Canvas assertion timing evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/components/simulator/SceneViewport.tsx
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=c1135c8f7be9c3530eaeaad030a98079457ff8c0 \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=src/tests/e2e/helpers/m7oCanvasAssertionTimingCapture.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=scripts/run-m7o-canvas-assertion-timing.mjs \
+            --verify-path=scripts/normalizeM7oCanvasAssertionTimingCapture.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=817f534dc0e61068cf20c586947ea3d6b4b5b481 \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=scripts/normalizeM7oCanvasAssertionTimingMatrix.mjs \
+            --verify-path=scripts/normalizeM7oCanvasAssertionTimingCapture.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=26a856a52e7d2809727588813e65dc40684abc97 \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=scripts/evaluateM7oCanvasAssertionTiming.ts \
+            --verify-path=scripts/run-m7o-evidence.mjs \
+            --verify-path=src/tests/unit/m7oCanvasAssertionTimingEvidence.test.ts
+
       # Schema-v2 selected evidence also names its original tooling/evaluator
       # commit. It is an ancestor of PR #309, not necessarily of squash-merged
       # main, so fetch that exact commit or its retained PR history and verify
@@ -189,6 +218,9 @@ jobs:
 
       - name: Validate M7N renderer lifecycle evidence integrity
         run: npm run evidence:check:m7n
+
+      - name: Validate M7O Canvas assertion timing evidence integrity
+        run: npm run evidence:check:m7o
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
