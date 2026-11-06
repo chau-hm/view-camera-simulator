@@ -557,10 +557,12 @@ export const evaluateM7oCanvasAssertionTimingEvidence = async (
   const hypotheses = asRecord(diagnosis?.hypotheses);
   const claims = asRecord(diagnosis?.claims);
   if (diagnosis?.rootCause !== "unresolved" || diagnosis?.remediationDecision !== "scheduling-pressure-supported-cause-unresolved") issue("m7o-causal-classification-overstates-evidence");
-  if (hypotheses?.H1 !== "supported-but-unproven" || hypotheses?.H2 !== "supported-but-unproven" || hypotheses?.H3 !== "contradicted" || hypotheses?.H4 !== "supported-but-unproven" || hypotheses?.H5 !== "inconclusive") {
+  if (hypotheses?.H1 !== "supported-but-unproven" || hypotheses?.H2 !== "supported-but-unproven" || hypotheses?.H3 !== "inconclusive" || hypotheses?.H4 !== "supported-but-unproven" || hypotheses?.H5 !== "inconclusive") {
     issue("m7o-hypothesis-classification-invalid");
   }
   if (claims?.exactInternalToHaveCountPolls === true) issue("m7o-internal-poll-claim-unsupported");
+  if (claims?.internalLocatorResolutionIdentityEvidence !== "unavailable") issue("m7o-internal-locator-identity-evidence-invalid");
+  if (claims?.allInternalPlaywrightLocatorResolutionsUsedRecordedCanvasIdentity === true) issue("m7o-internal-locator-identity-claim-unsupported");
   if (claims?.canvasAbsentAtFailureSnapshot === true && computed.failureAnalysis.failureSnapshotsWithOneCanvas > 0) issue("m7o-failure-snapshot-claim-contradicted");
   if (claims?.firstCanvasObservedBeforeBudgetDeadline !== computed.failureAnalysis.firstCanvasObservedBeforeBudgetDeadline) issue("m7o-canvas-deadline-claim-inconsistent");
   if (claims?.longTaskOverlapsAssertionWindow !== computed.failureAnalysis.failuresWithLongTaskOverlap) issue("m7o-long-task-overlap-claim-inconsistent");

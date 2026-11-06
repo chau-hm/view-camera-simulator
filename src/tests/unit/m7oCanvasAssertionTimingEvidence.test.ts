@@ -10,12 +10,34 @@ const acceptedReportPath = "docs/architecture/GROUND_GLASS_M7O_CANVAS_ASSERTION_
 type JsonRecord = Record<string, unknown>;
 
 describe("M7O Canvas assertion timing evidence evaluator", () => {
-  it("accepts the retained controlled capture matrix through the production CLI", () => {
+  it("accepts the retained controlled capture matrix through the production CLI", async () => {
+    const acceptedReport = JSON.parse(await readFile(resolve(repositoryRoot, acceptedReportPath), "utf8")) as JsonRecord;
+    const diagnosis = acceptedReport.diagnosis as JsonRecord;
+    const hypotheses = diagnosis.hypotheses as JsonRecord;
+    const claims = diagnosis.claims as JsonRecord;
+    expect(hypotheses.H3).toBe("inconclusive");
+    expect(claims.internalLocatorResolutionIdentityEvidence).toBe("unavailable");
     const output = execFileSync(process.execPath, ["scripts/run-m7o-evidence.mjs"], {
       cwd: repositoryRoot,
       encoding: "utf8",
     });
     expect(output).toContain("M7O evidence integrity: PASS");
+  });
+
+  it("rejects classifying H3 as contradicted when only recorded boundaries were observed", async () => {
+    const report = JSON.parse(await readFile(resolve(repositoryRoot, acceptedReportPath), "utf8")) as JsonRecord;
+    ((report.diagnosis as JsonRecord).hypotheses as JsonRecord).H3 = "contradicted";
+    const result = await evaluateMutation(report);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("m7o-hypothesis-classification-invalid");
+  });
+
+  it("rejects claiming all internal locator resolutions used the recorded Canvas identity", async () => {
+    const report = JSON.parse(await readFile(resolve(repositoryRoot, acceptedReportPath), "utf8")) as JsonRecord;
+    ((report.diagnosis as JsonRecord).claims as JsonRecord).allInternalPlaywrightLocatorResolutionsUsedRecordedCanvasIdentity = true;
+    const result = await evaluateMutation(report);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("m7o-internal-locator-identity-claim-unsupported");
   });
 
   it("rejects an unsupported claim that internal toHaveCount retries were observed", async () => {
