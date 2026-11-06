@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7q-light-peer-trace-ab-evaluator-v1",
+  "evidenceId": "m7q-matched-light-peer-trace-ab-v1",
+  "provenance": {
+    "captureRunnerSourceCommit": "cde9e31fb299bf436e9dd5afd6509e3409e6add1",
+    "retainedPullRequestRef": "refs/pull/315/head",
+    "captureRunnerSourcePaths": [
+      "playwright.config.ts",
+      "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "src/tests/e2e/home.spec.ts",
+      "src/tests/e2e/simulator-header.spec.ts",
+      "src/tests/e2e/smoke.spec.ts",
+      "src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts",
+      "scripts/run-m7q-light-peer-trace-ab.mjs"
+    ],
+    "analysisToolingSourceCommit": "2983129925f399b72dcf8ed92dac635a3f6608e0",
+    "analysisToolingSourcePaths": [
+      "scripts/normalizeM7qLightPeerTraceAb.mjs",
+      "scripts/evaluateM7qLightPeerTraceAb.ts",
+      "scripts/run-m7q-evidence.mjs",
+      "src/tests/unit/m7qLightPeerTraceAbEvidence.test.ts"
+    ],
+    "normalizedCapturesPath": "docs/architecture/ground-glass-m7q-light-peer-trace-ab/capture/final/normalized-captures.json",
+    "normalizedCapturesSha256": "3554ecf749e82033efea72ef5b0f37578df7afa50d964062f1d121a78195152a",
+    "historicalEvidence": {
+      "m7oReport": {
+        "path": "docs/architecture/GROUND_GLASS_M7O_CANVAS_ASSERTION_TIMING_REPORT.json",
+        "sha256": "9a8d99890cedd4c66efc6eba9c4be1f5390f5ef204e1d598c0d2c37cc2b39406"
+      },
+      "m7pReport": {
+        "path": "docs/architecture/GROUND_GLASS_M7P_ASSERTION_SCHEDULING_REPORT.json",
+        "sha256": "be57586de44242ec35ab4f9ff5269bd04811d7f2333bd6940d0df0713e64b822"
+      },
+      "m7pNormalizedCapture": {
+        "path": "docs/architecture/ground-glass-m7p-assertion-scheduling/capture/final/normalized-captures.json",
+        "sha256": "bbe87dbd2cff7975846d550b257294c889d9205f42e616d014f10d043eab2eb2"
+      }
+    }
+  },
+  "experiment": {
+    "question": "Under the same current source, environment, browser instrumentation, tests, and worker workload, does enabling CDP tracing materially change the Architecture Rise Canvas-count assertion outcome?",
+    "singleIntendedVariable": "M7P_TRACE_ENABLED",
+    "attemptsPlanned": 8,
+    "attemptsCaptured": 8,
+    "attemptsValidForMatchedComparison": 8,
+    "replacements": 0,
+    "conditions": {
+      "Q-off": {
+        "tracingEnabled": false,
+        "browserSideM7pInstrumentationEnabled": true,
+        "cdpSessionCreated": true,
+        "configuredWorkers": 4,
+        "retries": 0
+      },
+      "Q-on": {
+        "tracingEnabled": true,
+        "browserSideM7pInstrumentationEnabled": true,
+        "cdpSessionCreated": true,
+        "configuredWorkers": 4,
+        "retries": 0
+      }
+    },
+    "pairExecutionOrder": [
+      { "pairId": "pair-1", "order": ["off", "on"] },
+      { "pairId": "pair-2", "order": ["on", "off"] },
+      { "pairId": "pair-3", "order": ["on", "off"] },
+      { "pairId": "pair-4", "order": ["off", "on"] }
+    ],
+    "environment": {
+      "browser": "Chromium 149.0.7827.55",
+      "playwright": "1.61.1",
+      "node": "v24.3.0",
+      "host": "darwin 27.0.0 arm64",
+      "cpu": "Apple M4 Pro, 14 logical CPUs",
+      "rendererBackend": "application-default-WebGL",
+      "serverPolicy": "one fresh isolated strict-port development server per invocation; previous port confirmed closed before the next invocation"
+    },
+    "selectedTests": [
+      "src/tests/e2e/architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "src/tests/e2e/home.spec.ts::concept learning sections keep their responsive grids without overflow",
+      "src/tests/e2e/simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+      "src/tests/e2e/smoke.spec.ts::smoke: app boots at home"
+    ],
+    "captureValidity": "All eight attempts preserved exact test results, zero retries, four distinct worker indices, a non-empty four-test intersection including the Architecture Rise target, page diagnostics, correct trace mode, and successful server cleanup."
+  },
+  "comparison": {
+    "outcomesByArm": {
+      "off": {
+        "attempts": 4,
+        "targetPassed": 0,
+        "targetFailed": 4,
+        "valid": 4
+      },
+      "on": {
+        "attempts": 4,
+        "targetPassed": 0,
+        "targetFailed": 4,
+        "valid": 4
+      }
+    },
+    "targetFailureReproducedWithTracingDisabled": true,
+    "targetFailureReproducedWithTracingEnabled": true,
+    "allThreeLightPeersPassedInEveryAttempt": true,
+    "pairRowsSource": "normalized-captures.json contains each attempt's raw Playwright results, intervals, deadline bracket, observations, trace attribution, and raw artifact digests.",
+    "descriptiveTiming": {
+      "assertionEntryToSettlementMs": {
+        "off": { "minimum": 5009.802, "maximum": 5015.005, "mean": 5012.135 },
+        "on": { "minimum": 5010.004, "maximum": 5022.929, "mean": 5016.862 }
+      },
+      "largestBrowserLongTaskDuringAssertionWindowMs": {
+        "off": { "minimum": 4427, "maximum": 4736, "mean": 4543 },
+        "on": { "minimum": 4244, "maximum": 4577, "mean": 4423 }
+      },
+      "maximumBrowserHeartbeatGapDuringAssertionWindowMs": {
+        "off": { "minimum": 5236.5, "maximum": 5537.4 },
+        "on": { "minimum": 5044.8, "maximum": 5350.6 }
+      },
+      "maximumNodeHeartbeatIntervalDuringAssertionWindowMs": {
+        "off": { "minimum": 55.266, "maximum": 71.351 },
+        "on": { "minimum": 56.211, "maximum": 63.794 }
+      },
+      "assertionFailureCatchPublicEvaluationLatencyMs": {
+        "off": { "minimum": 864.026, "maximum": 1304.641, "mean": 1064.877 },
+        "on": { "minimum": 654.544, "maximum": 1039.204, "mean": 839.703 }
+      },
+      "fourTestOverlapDurationMs": {
+        "off": { "minimum": 752, "maximum": 1073 },
+        "on": { "minimum": 676, "maximum": 806 }
+      },
+      "canvasObservation": "All eight captures observed a connected Canvas before the entire browser deadline uncertainty interval. These are MutationObserver-driven samples, not exact insertion timestamps."
+    },
+    "traceOnOnly": {
+      "completeTraces": 4,
+      "dataLossOrTruncation": 0,
+      "attributedCrRendererMain": 4,
+      "capturesWithAtLeastOneTaskDefinitelySpanningDeadlineInterval": 4,
+      "statement": "Generic Chromium main-thread RunTask intervals establish scheduling activity on the target CrRendererMain thread. They do not identify application-frame execution, WebGL operations, GPU saturation, a resource leak, or Playwright's private matcher retry state."
+    },
+    "effectAssessment": "Both arms failed in all four matched pairs. This outcome is insensitive to the CDP trace toggle under this tested configuration; no per-pair outcome difference was observed. Four pairs do not support statistical significance claims or identify a trace-side mechanism."
+  },
+  "historicalReconciliation": {
+    "M7OlightPeers": "3/3 target attempts passed",
+    "M7P_P3TracingOn": "0/3 target attempts passed",
+    "M7Q_Qoff": "0/4 target attempts passed",
+    "M7Q_Qon": "0/4 target attempts passed",
+    "interpretation": "M7Q shows that CDP tracing is not necessary for the current failure reproduction. It does not identify why M7O passed while later M7P/M7Q cohorts failed. M7O and M7P/Q differ in capture implementation, instrumentation, source revision, and capture environment; historical outcomes remain immutable."
+  },
+  "primaryFinding": {
+    "decisionPath": "B",
+    "traceRequirement": "CDP tracing is not required to reproduce the target failure under this tested configuration",
+    "rendererSpecificCausation": "unresolved",
+    "gpuSaturationEstablished": false,
+    "matcherInternalRetryScheduleKnown": false,
+    "browserMainThreadSchedulingPressureObserved": true,
+    "applicationLifecycleDefectEstablished": false,
+    "testReadinessContractProvenInvalid": false
+  },
+  "diagnosticClosure": {
+    "m7nThroughM7qSchedulingSequence": "closed",
+    "anotherGeneralSchedulingInvestigationRecommended": false,
+    "nextAction": "M7 broad failure-cohort remediation and final qualification evaluation",
+    "backlogHandoff": [
+      "Refresh and classify current outcomes for the 82 historically unexpected M7K identities; do not assume each still fails or shares one cause.",
+      "Separate reproducible application defects from test infrastructure instability and address confirmed application failures with matched baseline/candidate evidence.",
+      "Review the 75 historical skip identities and define supported exclusions or required coverage explicitly.",
+      "Track spontaneous/external native GPU device loss as an independent blocked qualification item requiring native evidence.",
+      "Run a final M7 qualification evaluation only against predefined evidence and authorization requirements."
+    ],
+    "handlingPolicy": "Keep the four selected tests required and preserve the failing target as a qualification limitation until an independently justified test or application correction is reviewed. Do not add another open-ended timing campaign, increase timeout, add retries, or serialize the workload from this evidence alone."
+  },
+  "limitations": [
+    "Playwright's internal toHaveCount retry states and per-retry timestamps remain inaccessible through the supported public interface.",
+    "Trace-off captures contain no Chromium trace events by design; only common browser-page and Node observations are compared across both arms.",
+    "Four matched pairs describe this one host/browser/source configuration and do not establish broad environmental stability.",
+    "A MutationObserver callback reports an observation time, not the exact DOM insertion time.",
+    "CrRendererMain RunTask intervals do not prove renderer-specific, WebGL, or GPU causation."
+  ],
+  "qualificationBoundaries": {
+    "M7K": {
+      "discovered": 278,
+      "passed": 121,
+      "unexpected": 82,
+      "skipped": 75
+    },
+    "broadE2e": "not-qualified",
+    "M7": "partially-qualified",
+    "M8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled",
+    "M7QQualificationEffect": "diagnostic evidence only; selected tests do not qualify Broad E2E"
+  }
+}

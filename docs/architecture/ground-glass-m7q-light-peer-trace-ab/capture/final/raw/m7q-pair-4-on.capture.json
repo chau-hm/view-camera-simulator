@@ -1,0 +1,1811 @@
+{
+  "schemaVersion": 1,
+  "captureId": "m7q-pair-4-on",
+  "testIdentity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+  "testStatus": "passed",
+  "expectedStatus": "passed",
+  "nodeCaptureStartedAtMs": 552.423334,
+  "assertion": {
+    "nodeAssertionEntryMs": 1223.237042,
+    "timeoutBudgetMs": 5000,
+    "inferredNodeDeadlineMs": 6223.237042,
+    "outcome": "failed",
+    "nodeAssertionSettledMs": 6246.166084,
+    "errorSummary": "\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed"
+  },
+  "publicEvaluationIntervals": [
+    {
+      "label": "assertion-entry-anchor",
+      "requestStartedAtMs": 1202.069167,
+      "responseSettledAtMs": 1223.197125,
+      "browserResult": {
+        "browserMonotonicMs": 633.7000000476837,
+        "documentTimeOriginMs": 1793984994723.9,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+        "snapshot": {
+          "browserMonotonicMs": 633.7000000476837,
+          "documentTimeOriginMs": 1793984994723.9,
+          "route": "/simulator/free/architecture-rise",
+          "longTaskObserverAvailable": true,
+          "lifecycleMutationObserverAvailable": true,
+          "lifecycle": [
+            {
+              "browserMonotonicMs": 614,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": null,
+              "sceneConnected": false,
+              "canvasCount": 0,
+              "canvasIdentities": [],
+              "canvasConnected": [],
+              "rendererStatus": null,
+              "rendererGeneration": null
+            }
+          ],
+          "lifecycleDropped": 0,
+          "longTasks": [
+            {
+              "startMs": 551.1000000238419,
+              "endMs": 614.1000000238419,
+              "durationMs": 63,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 625.2999999523163
+            }
+          ],
+          "longTaskDropped": 0,
+          "heartbeat": [
+            {
+              "previousAtMs": 5.299999952316284,
+              "observedAtMs": 57.200000047683716,
+              "intervalMs": 51.90000009536743,
+              "excessOver50Ms": 1.9000000953674316
+            },
+            {
+              "previousAtMs": 57.200000047683716,
+              "observedAtMs": 107.39999997615814,
+              "intervalMs": 50.199999928474426,
+              "excessOver50Ms": 0.19999992847442627
+            },
+            {
+              "previousAtMs": 107.39999997615814,
+              "observedAtMs": 192,
+              "intervalMs": 84.60000002384186,
+              "excessOver50Ms": 34.60000002384186
+            },
+            {
+              "previousAtMs": 192,
+              "observedAtMs": 217.60000002384186,
+              "intervalMs": 25.600000023841858,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 217.60000002384186,
+              "observedAtMs": 256.2000000476837,
+              "intervalMs": 38.60000002384186,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 256.2000000476837,
+              "observedAtMs": 306.5,
+              "intervalMs": 50.299999952316284,
+              "excessOver50Ms": 0.2999999523162842
+            },
+            {
+              "previousAtMs": 306.5,
+              "observedAtMs": 355.2999999523163,
+              "intervalMs": 48.799999952316284,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 355.2999999523163,
+              "observedAtMs": 406.10000002384186,
+              "intervalMs": 50.800000071525574,
+              "excessOver50Ms": 0.8000000715255737
+            },
+            {
+              "previousAtMs": 406.10000002384186,
+              "observedAtMs": 456.39999997615814,
+              "intervalMs": 50.299999952316284,
+              "excessOver50Ms": 0.2999999523162842
+            },
+            {
+              "previousAtMs": 456.39999997615814,
+              "observedAtMs": 505.2999999523163,
+              "intervalMs": 48.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 505.2999999523163,
+              "observedAtMs": 625.2999999523163,
+              "intervalMs": 120,
+              "excessOver50Ms": 70
+            }
+          ],
+          "heartbeatDropped": 0,
+          "heartbeatIntervalMs": 50,
+          "currentState": {
+            "browserMonotonicMs": 633.7000000476837,
+            "route": "/simulator/free/architecture-rise",
+            "documentTimeOriginMs": 1793984994723.9,
+            "sceneIdentity": null,
+            "sceneConnected": false,
+            "canvasCount": 0,
+            "canvasIdentities": [],
+            "canvasConnected": [],
+            "rendererStatus": null,
+            "rendererGeneration": null
+          }
+        },
+        "scene": {
+          "sceneConnected": false,
+          "canvasCount": 0,
+          "canvasConnected": [],
+          "rendererStatus": null,
+          "rendererGeneration": null
+        }
+      }
+    },
+    {
+      "label": "assertion-failure-catch",
+      "requestStartedAtMs": 6246.17975,
+      "responseSettledAtMs": 6900.723709,
+      "browserResult": {
+        "browserMonotonicMs": 6304,
+        "documentTimeOriginMs": 1793984994723.9,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36",
+        "snapshot": {
+          "browserMonotonicMs": 6304,
+          "documentTimeOriginMs": 1793984994723.9,
+          "route": "/simulator/free/architecture-rise",
+          "longTaskObserverAvailable": true,
+          "lifecycleMutationObserverAvailable": true,
+          "lifecycle": [
+            {
+              "browserMonotonicMs": 614,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": null,
+              "sceneConnected": false,
+              "canvasCount": 0,
+              "canvasIdentities": [],
+              "canvasConnected": [],
+              "rendererStatus": null,
+              "rendererGeneration": null
+            },
+            {
+              "browserMonotonicMs": 1207.5,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": "element-1",
+              "sceneConnected": true,
+              "canvasCount": 1,
+              "canvasIdentities": [
+                "element-2"
+              ],
+              "canvasConnected": [
+                true
+              ],
+              "rendererStatus": "pending",
+              "rendererGeneration": "0"
+            },
+            {
+              "browserMonotonicMs": 2032.5,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": "element-1",
+              "sceneConnected": true,
+              "canvasCount": 1,
+              "canvasIdentities": [
+                "element-2"
+              ],
+              "canvasConnected": [
+                true
+              ],
+              "rendererStatus": "active",
+              "rendererGeneration": "0"
+            }
+          ],
+          "lifecycleDropped": 0,
+          "longTasks": [
+            {
+              "startMs": 551.1000000238419,
+              "endMs": 614.1000000238419,
+              "durationMs": 63,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 625.2999999523163
+            },
+            {
+              "startMs": 1059.6000000238419,
+              "endMs": 1127.6000000238419,
+              "durationMs": 68,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 1134.5
+            },
+            {
+              "startMs": 1296.2999999523163,
+              "endMs": 2032.2999999523163,
+              "durationMs": 736,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 6300.600000023842
+            },
+            {
+              "startMs": 2033.1000000238419,
+              "endMs": 6277.100000023842,
+              "durationMs": 4244,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 6300.600000023842
+            }
+          ],
+          "longTaskDropped": 0,
+          "heartbeat": [
+            {
+              "previousAtMs": 5.299999952316284,
+              "observedAtMs": 57.200000047683716,
+              "intervalMs": 51.90000009536743,
+              "excessOver50Ms": 1.9000000953674316
+            },
+            {
+              "previousAtMs": 57.200000047683716,
+              "observedAtMs": 107.39999997615814,
+              "intervalMs": 50.199999928474426,
+              "excessOver50Ms": 0.19999992847442627
+            },
+            {
+              "previousAtMs": 107.39999997615814,
+              "observedAtMs": 192,
+              "intervalMs": 84.60000002384186,
+              "excessOver50Ms": 34.60000002384186
+            },
+            {
+              "previousAtMs": 192,
+              "observedAtMs": 217.60000002384186,
+              "intervalMs": 25.600000023841858,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 217.60000002384186,
+              "observedAtMs": 256.2000000476837,
+              "intervalMs": 38.60000002384186,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 256.2000000476837,
+              "observedAtMs": 306.5,
+              "intervalMs": 50.299999952316284,
+              "excessOver50Ms": 0.2999999523162842
+            },
+            {
+              "previousAtMs": 306.5,
+              "observedAtMs": 355.2999999523163,
+              "intervalMs": 48.799999952316284,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 355.2999999523163,
+              "observedAtMs": 406.10000002384186,
+              "intervalMs": 50.800000071525574,
+              "excessOver50Ms": 0.8000000715255737
+            },
+            {
+              "previousAtMs": 406.10000002384186,
+              "observedAtMs": 456.39999997615814,
+              "intervalMs": 50.299999952316284,
+              "excessOver50Ms": 0.2999999523162842
+            },
+            {
+              "previousAtMs": 456.39999997615814,
+              "observedAtMs": 505.2999999523163,
+              "intervalMs": 48.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 505.2999999523163,
+              "observedAtMs": 625.2999999523163,
+              "intervalMs": 120,
+              "excessOver50Ms": 70
+            },
+            {
+              "previousAtMs": 625.2999999523163,
+              "observedAtMs": 655.5,
+              "intervalMs": 30.200000047683716,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 655.5,
+              "observedAtMs": 705.7000000476837,
+              "intervalMs": 50.200000047683716,
+              "excessOver50Ms": 0.20000004768371582
+            },
+            {
+              "previousAtMs": 705.7000000476837,
+              "observedAtMs": 755.6000000238419,
+              "intervalMs": 49.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 755.6000000238419,
+              "observedAtMs": 805.5,
+              "intervalMs": 49.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 805.5,
+              "observedAtMs": 857.2000000476837,
+              "intervalMs": 51.700000047683716,
+              "excessOver50Ms": 1.7000000476837158
+            },
+            {
+              "previousAtMs": 857.2000000476837,
+              "observedAtMs": 907.2999999523163,
+              "intervalMs": 50.09999990463257,
+              "excessOver50Ms": 0.09999990463256836
+            },
+            {
+              "previousAtMs": 907.2999999523163,
+              "observedAtMs": 956.6000000238419,
+              "intervalMs": 49.300000071525574,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 956.6000000238419,
+              "observedAtMs": 1005.8999999761581,
+              "intervalMs": 49.299999952316284,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 1005.8999999761581,
+              "observedAtMs": 1128.3999999761581,
+              "intervalMs": 122.5,
+              "excessOver50Ms": 72.5
+            },
+            {
+              "previousAtMs": 1128.3999999761581,
+              "observedAtMs": 1163.8999999761581,
+              "intervalMs": 35.5,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 1163.8999999761581,
+              "observedAtMs": 1245.3999999761581,
+              "intervalMs": 81.5,
+              "excessOver50Ms": 31.5
+            },
+            {
+              "previousAtMs": 1245.3999999761581,
+              "observedAtMs": 1255.7999999523163,
+              "intervalMs": 10.399999976158142,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 1255.7999999523163,
+              "observedAtMs": 6300.600000023842,
+              "intervalMs": 5044.800000071526,
+              "excessOver50Ms": 4994.800000071526
+            }
+          ],
+          "heartbeatDropped": 0,
+          "heartbeatIntervalMs": 50,
+          "currentState": {
+            "browserMonotonicMs": 6304,
+            "route": "/simulator/free/architecture-rise",
+            "documentTimeOriginMs": 1793984994723.9,
+            "sceneIdentity": "element-1",
+            "sceneConnected": true,
+            "canvasCount": 1,
+            "canvasIdentities": [
+              "element-2"
+            ],
+            "canvasConnected": [
+              true
+            ],
+            "rendererStatus": "active",
+            "rendererGeneration": "0"
+          }
+        },
+        "scene": {
+          "sceneConnected": true,
+          "canvasCount": 1,
+          "canvasConnected": [
+            true
+          ],
+          "rendererStatus": "active",
+          "rendererGeneration": "0"
+        }
+      }
+    },
+    {
+      "label": "catch-time-snapshot",
+      "requestStartedAtMs": 6900.951209,
+      "responseSettledAtMs": 7813.102417,
+      "browserResult": {
+        "browserMonotonicMs": 7219,
+        "documentTimeOriginMs": 1793984994723.9,
+        "snapshot": {
+          "browserMonotonicMs": 7218.899999976158,
+          "documentTimeOriginMs": 1793984994723.9,
+          "route": "/simulator/free/architecture-rise",
+          "longTaskObserverAvailable": true,
+          "lifecycleMutationObserverAvailable": true,
+          "lifecycle": [
+            {
+              "browserMonotonicMs": 614,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": null,
+              "sceneConnected": false,
+              "canvasCount": 0,
+              "canvasIdentities": [],
+              "canvasConnected": [],
+              "rendererStatus": null,
+              "rendererGeneration": null
+            },
+            {
+              "browserMonotonicMs": 1207.5,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": "element-1",
+              "sceneConnected": true,
+              "canvasCount": 1,
+              "canvasIdentities": [
+                "element-2"
+              ],
+              "canvasConnected": [
+                true
+              ],
+              "rendererStatus": "pending",
+              "rendererGeneration": "0"
+            },
+            {
+              "browserMonotonicMs": 2032.5,
+              "route": "/simulator/free/architecture-rise",
+              "documentTimeOriginMs": 1793984994723.9,
+              "sceneIdentity": "element-1",
+              "sceneConnected": true,
+              "canvasCount": 1,
+              "canvasIdentities": [
+                "element-2"
+              ],
+              "canvasConnected": [
+                true
+              ],
+              "rendererStatus": "active",
+              "rendererGeneration": "0"
+            }
+          ],
+          "lifecycleDropped": 0,
+          "longTasks": [
+            {
+              "startMs": 551.1000000238419,
+              "endMs": 614.1000000238419,
+              "durationMs": 63,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 625.2999999523163
+            },
+            {
+              "startMs": 1059.6000000238419,
+              "endMs": 1127.6000000238419,
+              "durationMs": 68,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 1134.5
+            },
+            {
+              "startMs": 1296.2999999523163,
+              "endMs": 2032.2999999523163,
+              "durationMs": 736,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 6300.600000023842
+            },
+            {
+              "startMs": 2033.1000000238419,
+              "endMs": 6277.100000023842,
+              "durationMs": 4244,
+              "name": "self",
+              "attribution": [
+                {
+                  "containerType": "window",
+                  "containerName": "",
+                  "containerId": "",
+                  "name": "unknown"
+                }
+              ],
+              "callbackDeliveredAtMs": 6300.600000023842
+            }
+          ],
+          "longTaskDropped": 0,
+          "heartbeat": [
+            {
+              "previousAtMs": 5.299999952316284,
+              "observedAtMs": 57.200000047683716,
+              "intervalMs": 51.90000009536743,
+              "excessOver50Ms": 1.9000000953674316
+            },
+            {
+              "previousAtMs": 57.200000047683716,
+              "observedAtMs": 107.39999997615814,
+              "intervalMs": 50.199999928474426,
+              "excessOver50Ms": 0.19999992847442627
+            },
+            {
+              "previousAtMs": 107.39999997615814,
+              "observedAtMs": 192,
+              "intervalMs": 84.60000002384186,
+              "excessOver50Ms": 34.60000002384186
+            },
+            {
+              "previousAtMs": 192,
+              "observedAtMs": 217.60000002384186,
+              "intervalMs": 25.600000023841858,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 217.60000002384186,
+              "observedAtMs": 256.2000000476837,
+              "intervalMs": 38.60000002384186,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 256.2000000476837,
+              "observedAtMs": 306.5,
+              "intervalMs": 50.299999952316284,
+              "excessOver50Ms": 0.2999999523162842
+            },
+            {
+              "previousAtMs": 306.5,
+              "observedAtMs": 355.2999999523163,
+              "intervalMs": 48.799999952316284,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 355.2999999523163,
+              "observedAtMs": 406.10000002384186,
+              "intervalMs": 50.800000071525574,
+              "excessOver50Ms": 0.8000000715255737
+            },
+            {
+              "previousAtMs": 406.10000002384186,
+              "observedAtMs": 456.39999997615814,
+              "intervalMs": 50.299999952316284,
+              "excessOver50Ms": 0.2999999523162842
+            },
+            {
+              "previousAtMs": 456.39999997615814,
+              "observedAtMs": 505.2999999523163,
+              "intervalMs": 48.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 505.2999999523163,
+              "observedAtMs": 625.2999999523163,
+              "intervalMs": 120,
+              "excessOver50Ms": 70
+            },
+            {
+              "previousAtMs": 625.2999999523163,
+              "observedAtMs": 655.5,
+              "intervalMs": 30.200000047683716,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 655.5,
+              "observedAtMs": 705.7000000476837,
+              "intervalMs": 50.200000047683716,
+              "excessOver50Ms": 0.20000004768371582
+            },
+            {
+              "previousAtMs": 705.7000000476837,
+              "observedAtMs": 755.6000000238419,
+              "intervalMs": 49.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 755.6000000238419,
+              "observedAtMs": 805.5,
+              "intervalMs": 49.89999997615814,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 805.5,
+              "observedAtMs": 857.2000000476837,
+              "intervalMs": 51.700000047683716,
+              "excessOver50Ms": 1.7000000476837158
+            },
+            {
+              "previousAtMs": 857.2000000476837,
+              "observedAtMs": 907.2999999523163,
+              "intervalMs": 50.09999990463257,
+              "excessOver50Ms": 0.09999990463256836
+            },
+            {
+              "previousAtMs": 907.2999999523163,
+              "observedAtMs": 956.6000000238419,
+              "intervalMs": 49.300000071525574,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 956.6000000238419,
+              "observedAtMs": 1005.8999999761581,
+              "intervalMs": 49.299999952316284,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 1005.8999999761581,
+              "observedAtMs": 1128.3999999761581,
+              "intervalMs": 122.5,
+              "excessOver50Ms": 72.5
+            },
+            {
+              "previousAtMs": 1128.3999999761581,
+              "observedAtMs": 1163.8999999761581,
+              "intervalMs": 35.5,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 1163.8999999761581,
+              "observedAtMs": 1245.3999999761581,
+              "intervalMs": 81.5,
+              "excessOver50Ms": 31.5
+            },
+            {
+              "previousAtMs": 1245.3999999761581,
+              "observedAtMs": 1255.7999999523163,
+              "intervalMs": 10.399999976158142,
+              "excessOver50Ms": 0
+            },
+            {
+              "previousAtMs": 1255.7999999523163,
+              "observedAtMs": 6300.600000023842,
+              "intervalMs": 5044.800000071526,
+              "excessOver50Ms": 4994.800000071526
+            }
+          ],
+          "heartbeatDropped": 0,
+          "heartbeatIntervalMs": 50,
+          "currentState": {
+            "browserMonotonicMs": 7219,
+            "route": "/simulator/free/architecture-rise",
+            "documentTimeOriginMs": 1793984994723.9,
+            "sceneIdentity": "element-1",
+            "sceneConnected": true,
+            "canvasCount": 1,
+            "canvasIdentities": [
+              "element-2"
+            ],
+            "canvasConnected": [
+              true
+            ],
+            "rendererStatus": "active",
+            "rendererGeneration": "0"
+          }
+        }
+      }
+    }
+  ],
+  "nodeHeartbeat": [
+    {
+      "previousAtMs": 557.827792,
+      "observedAtMs": 608.898,
+      "intervalMs": 51.07020799999998,
+      "excessOver50Ms": 1.0702079999999796
+    },
+    {
+      "previousAtMs": 608.898,
+      "observedAtMs": 659.879209,
+      "intervalMs": 50.98120899999992,
+      "excessOver50Ms": 0.9812089999999216
+    },
+    {
+      "previousAtMs": 659.879209,
+      "observedAtMs": 710.826375,
+      "intervalMs": 50.94716600000004,
+      "excessOver50Ms": 0.9471660000000384
+    },
+    {
+      "previousAtMs": 710.826375,
+      "observedAtMs": 761.551209,
+      "intervalMs": 50.72483399999999,
+      "excessOver50Ms": 0.7248339999999871
+    },
+    {
+      "previousAtMs": 761.551209,
+      "observedAtMs": 811.435042,
+      "intervalMs": 49.88383299999998,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 811.435042,
+      "observedAtMs": 860.672042,
+      "intervalMs": 49.23700000000008,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 860.672042,
+      "observedAtMs": 911.367542,
+      "intervalMs": 50.695499999999925,
+      "excessOver50Ms": 0.6954999999999245
+    },
+    {
+      "previousAtMs": 911.367542,
+      "observedAtMs": 960.741625,
+      "intervalMs": 49.37408300000004,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 960.741625,
+      "observedAtMs": 1010.717334,
+      "intervalMs": 49.97570900000005,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 1010.717334,
+      "observedAtMs": 1061.854,
+      "intervalMs": 51.13666599999999,
+      "excessOver50Ms": 1.136665999999991
+    },
+    {
+      "previousAtMs": 1061.854,
+      "observedAtMs": 1112.2095,
+      "intervalMs": 50.35549999999989,
+      "excessOver50Ms": 0.3554999999998927
+    },
+    {
+      "previousAtMs": 1112.2095,
+      "observedAtMs": 1161.975709,
+      "intervalMs": 49.76620900000012,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 1161.975709,
+      "observedAtMs": 1211.991167,
+      "intervalMs": 50.01545799999985,
+      "excessOver50Ms": 0.0154579999998532
+    },
+    {
+      "previousAtMs": 1211.991167,
+      "observedAtMs": 1262.37825,
+      "intervalMs": 50.387083000000075,
+      "excessOver50Ms": 0.3870830000000751
+    },
+    {
+      "previousAtMs": 1262.37825,
+      "observedAtMs": 1312.77375,
+      "intervalMs": 50.395500000000084,
+      "excessOver50Ms": 0.3955000000000837
+    },
+    {
+      "previousAtMs": 1312.77375,
+      "observedAtMs": 1364.087875,
+      "intervalMs": 51.314124999999876,
+      "excessOver50Ms": 1.3141249999998763
+    },
+    {
+      "previousAtMs": 1364.087875,
+      "observedAtMs": 1413.73175,
+      "intervalMs": 49.64387499999998,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 1413.73175,
+      "observedAtMs": 1464.871,
+      "intervalMs": 51.139250000000175,
+      "excessOver50Ms": 1.1392500000001746
+    },
+    {
+      "previousAtMs": 1464.871,
+      "observedAtMs": 1515.147084,
+      "intervalMs": 50.276083999999855,
+      "excessOver50Ms": 0.2760839999998552
+    },
+    {
+      "previousAtMs": 1515.147084,
+      "observedAtMs": 1566.538667,
+      "intervalMs": 51.39158300000008,
+      "excessOver50Ms": 1.3915830000000824
+    },
+    {
+      "previousAtMs": 1566.538667,
+      "observedAtMs": 1616.509584,
+      "intervalMs": 49.97091699999987,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 1616.509584,
+      "observedAtMs": 1667.523709,
+      "intervalMs": 51.01412500000015,
+      "excessOver50Ms": 1.0141250000001492
+    },
+    {
+      "previousAtMs": 1667.523709,
+      "observedAtMs": 1718.6005,
+      "intervalMs": 51.07679099999996,
+      "excessOver50Ms": 1.0767909999999574
+    },
+    {
+      "previousAtMs": 1718.6005,
+      "observedAtMs": 1769.373542,
+      "intervalMs": 50.77304200000003,
+      "excessOver50Ms": 0.7730420000000322
+    },
+    {
+      "previousAtMs": 1769.373542,
+      "observedAtMs": 1820.455834,
+      "intervalMs": 51.08229200000005,
+      "excessOver50Ms": 1.0822920000000522
+    },
+    {
+      "previousAtMs": 1820.455834,
+      "observedAtMs": 1871.023459,
+      "intervalMs": 50.56762499999991,
+      "excessOver50Ms": 0.5676249999999072
+    },
+    {
+      "previousAtMs": 1871.023459,
+      "observedAtMs": 1922.495834,
+      "intervalMs": 51.472375000000056,
+      "excessOver50Ms": 1.4723750000000564
+    },
+    {
+      "previousAtMs": 1922.495834,
+      "observedAtMs": 1972.612667,
+      "intervalMs": 50.11683300000004,
+      "excessOver50Ms": 0.11683300000004238
+    },
+    {
+      "previousAtMs": 1972.612667,
+      "observedAtMs": 2024.213459,
+      "intervalMs": 51.600791999999956,
+      "excessOver50Ms": 1.6007919999999558
+    },
+    {
+      "previousAtMs": 2024.213459,
+      "observedAtMs": 2075.29675,
+      "intervalMs": 51.08329099999992,
+      "excessOver50Ms": 1.0832909999999174
+    },
+    {
+      "previousAtMs": 2075.29675,
+      "observedAtMs": 2126.447792,
+      "intervalMs": 51.15104199999996,
+      "excessOver50Ms": 1.1510419999999613
+    },
+    {
+      "previousAtMs": 2126.447792,
+      "observedAtMs": 2177.570042,
+      "intervalMs": 51.122249999999894,
+      "excessOver50Ms": 1.1222499999998945
+    },
+    {
+      "previousAtMs": 2177.570042,
+      "observedAtMs": 2227.652,
+      "intervalMs": 50.08195800000021,
+      "excessOver50Ms": 0.08195800000021336
+    },
+    {
+      "previousAtMs": 2227.652,
+      "observedAtMs": 2278.726,
+      "intervalMs": 51.07400000000007,
+      "excessOver50Ms": 1.0740000000000691
+    },
+    {
+      "previousAtMs": 2278.726,
+      "observedAtMs": 2328.916417,
+      "intervalMs": 50.1904169999998,
+      "excessOver50Ms": 0.19041699999979755
+    },
+    {
+      "previousAtMs": 2328.916417,
+      "observedAtMs": 2379.991209,
+      "intervalMs": 51.07479199999989,
+      "excessOver50Ms": 1.0747919999998885
+    },
+    {
+      "previousAtMs": 2379.991209,
+      "observedAtMs": 2431.076375,
+      "intervalMs": 51.0851660000003,
+      "excessOver50Ms": 1.0851660000002994
+    },
+    {
+      "previousAtMs": 2431.076375,
+      "observedAtMs": 2482.175959,
+      "intervalMs": 51.09958400000005,
+      "excessOver50Ms": 1.0995840000000499
+    },
+    {
+      "previousAtMs": 2482.175959,
+      "observedAtMs": 2532.836917,
+      "intervalMs": 50.66095799999994,
+      "excessOver50Ms": 0.6609579999999369
+    },
+    {
+      "previousAtMs": 2532.836917,
+      "observedAtMs": 2584.279209,
+      "intervalMs": 51.442291999999725,
+      "excessOver50Ms": 1.4422919999997248
+    },
+    {
+      "previousAtMs": 2584.279209,
+      "observedAtMs": 2635.067417,
+      "intervalMs": 50.788208000000395,
+      "excessOver50Ms": 0.7882080000003953
+    },
+    {
+      "previousAtMs": 2635.067417,
+      "observedAtMs": 2686.138167,
+      "intervalMs": 51.07074999999986,
+      "excessOver50Ms": 1.0707499999998618
+    },
+    {
+      "previousAtMs": 2686.138167,
+      "observedAtMs": 2737.249709,
+      "intervalMs": 51.1115420000001,
+      "excessOver50Ms": 1.1115420000000995
+    },
+    {
+      "previousAtMs": 2737.249709,
+      "observedAtMs": 2788.324625,
+      "intervalMs": 51.07491600000003,
+      "excessOver50Ms": 1.0749160000000302
+    },
+    {
+      "previousAtMs": 2788.324625,
+      "observedAtMs": 2839.399417,
+      "intervalMs": 51.07479199999989,
+      "excessOver50Ms": 1.0747919999998885
+    },
+    {
+      "previousAtMs": 2839.399417,
+      "observedAtMs": 2890.797417,
+      "intervalMs": 51.39800000000014,
+      "excessOver50Ms": 1.3980000000001382
+    },
+    {
+      "previousAtMs": 2890.797417,
+      "observedAtMs": 2941.902875,
+      "intervalMs": 51.105458,
+      "excessOver50Ms": 1.1054579999999987
+    },
+    {
+      "previousAtMs": 2941.902875,
+      "observedAtMs": 2992.992625,
+      "intervalMs": 51.08974999999964,
+      "excessOver50Ms": 1.0897499999996398
+    },
+    {
+      "previousAtMs": 2992.992625,
+      "observedAtMs": 3043.808,
+      "intervalMs": 50.81537500000013,
+      "excessOver50Ms": 0.815375000000131
+    },
+    {
+      "previousAtMs": 3043.808,
+      "observedAtMs": 3094.877792,
+      "intervalMs": 51.069792000000234,
+      "excessOver50Ms": 1.0697920000002341
+    },
+    {
+      "previousAtMs": 3094.877792,
+      "observedAtMs": 3146.2175,
+      "intervalMs": 51.33970799999997,
+      "excessOver50Ms": 1.3397079999999733
+    },
+    {
+      "previousAtMs": 3146.2175,
+      "observedAtMs": 3197.292459,
+      "intervalMs": 51.07495899999958,
+      "excessOver50Ms": 1.0749589999995806
+    },
+    {
+      "previousAtMs": 3197.292459,
+      "observedAtMs": 3248.366459,
+      "intervalMs": 51.07400000000007,
+      "excessOver50Ms": 1.0740000000000691
+    },
+    {
+      "previousAtMs": 3248.366459,
+      "observedAtMs": 3299.44775,
+      "intervalMs": 51.081290999999965,
+      "excessOver50Ms": 1.0812909999999647
+    },
+    {
+      "previousAtMs": 3299.44775,
+      "observedAtMs": 3350.528667,
+      "intervalMs": 51.08091700000023,
+      "excessOver50Ms": 1.0809170000002268
+    },
+    {
+      "previousAtMs": 3350.528667,
+      "observedAtMs": 3401.204625,
+      "intervalMs": 50.67595799999981,
+      "excessOver50Ms": 0.6759579999998095
+    },
+    {
+      "previousAtMs": 3401.204625,
+      "observedAtMs": 3452.286667,
+      "intervalMs": 51.082042,
+      "excessOver50Ms": 1.0820420000000013
+    },
+    {
+      "previousAtMs": 3452.286667,
+      "observedAtMs": 3503.376584,
+      "intervalMs": 51.08991700000024,
+      "excessOver50Ms": 1.0899170000002414
+    },
+    {
+      "previousAtMs": 3503.376584,
+      "observedAtMs": 3554.447709,
+      "intervalMs": 51.07112499999994,
+      "excessOver50Ms": 1.0711249999999382
+    },
+    {
+      "previousAtMs": 3554.447709,
+      "observedAtMs": 3605.063625,
+      "intervalMs": 50.61591599999974,
+      "excessOver50Ms": 0.6159159999997428
+    },
+    {
+      "previousAtMs": 3605.063625,
+      "observedAtMs": 3656.13175,
+      "intervalMs": 51.06812500000024,
+      "excessOver50Ms": 1.0681250000002365
+    },
+    {
+      "previousAtMs": 3656.13175,
+      "observedAtMs": 3707.208625,
+      "intervalMs": 51.0768750000002,
+      "excessOver50Ms": 1.0768750000002
+    },
+    {
+      "previousAtMs": 3707.208625,
+      "observedAtMs": 3758.279959,
+      "intervalMs": 51.07133399999975,
+      "excessOver50Ms": 1.0713339999997515
+    },
+    {
+      "previousAtMs": 3758.279959,
+      "observedAtMs": 3808.366084,
+      "intervalMs": 50.08612499999981,
+      "excessOver50Ms": 0.08612499999981083
+    },
+    {
+      "previousAtMs": 3808.366084,
+      "observedAtMs": 3859.43275,
+      "intervalMs": 51.06666600000017,
+      "excessOver50Ms": 1.0666660000001684
+    },
+    {
+      "previousAtMs": 3859.43275,
+      "observedAtMs": 3910.509875,
+      "intervalMs": 51.07712500000025,
+      "excessOver50Ms": 1.077125000000251
+    },
+    {
+      "previousAtMs": 3910.509875,
+      "observedAtMs": 3961.607375,
+      "intervalMs": 51.097499999999854,
+      "excessOver50Ms": 1.0974999999998545
+    },
+    {
+      "previousAtMs": 3961.607375,
+      "observedAtMs": 4012.709667,
+      "intervalMs": 51.102292000000034,
+      "excessOver50Ms": 1.102292000000034
+    },
+    {
+      "previousAtMs": 4012.709667,
+      "observedAtMs": 4063.854417,
+      "intervalMs": 51.14474999999993,
+      "excessOver50Ms": 1.1447499999999309
+    },
+    {
+      "previousAtMs": 4063.854417,
+      "observedAtMs": 4114.970834,
+      "intervalMs": 51.11641699999973,
+      "excessOver50Ms": 1.1164169999997284
+    },
+    {
+      "previousAtMs": 4114.970834,
+      "observedAtMs": 4166.048792,
+      "intervalMs": 51.07795799999985,
+      "excessOver50Ms": 1.0779579999998532
+    },
+    {
+      "previousAtMs": 4166.048792,
+      "observedAtMs": 4217.11875,
+      "intervalMs": 51.06995800000004,
+      "excessOver50Ms": 1.0699580000000424
+    },
+    {
+      "previousAtMs": 4217.11875,
+      "observedAtMs": 4272.016584,
+      "intervalMs": 54.89783400000033,
+      "excessOver50Ms": 4.89783400000033
+    },
+    {
+      "previousAtMs": 4272.016584,
+      "observedAtMs": 4323.253292,
+      "intervalMs": 51.23670800000036,
+      "excessOver50Ms": 1.2367080000003625
+    },
+    {
+      "previousAtMs": 4323.253292,
+      "observedAtMs": 4374.402667,
+      "intervalMs": 51.149374999999964,
+      "excessOver50Ms": 1.1493749999999636
+    },
+    {
+      "previousAtMs": 4374.402667,
+      "observedAtMs": 4428.3655,
+      "intervalMs": 53.96283299999959,
+      "excessOver50Ms": 3.9628329999995913
+    },
+    {
+      "previousAtMs": 4428.3655,
+      "observedAtMs": 4481.575417,
+      "intervalMs": 53.20991700000013,
+      "excessOver50Ms": 3.2099170000001322
+    },
+    {
+      "previousAtMs": 4481.575417,
+      "observedAtMs": 4533.032959,
+      "intervalMs": 51.4575420000001,
+      "excessOver50Ms": 1.4575420000001031
+    },
+    {
+      "previousAtMs": 4533.032959,
+      "observedAtMs": 4584.568292,
+      "intervalMs": 51.53533299999981,
+      "excessOver50Ms": 1.5353329999998095
+    },
+    {
+      "previousAtMs": 4584.568292,
+      "observedAtMs": 4634.842125,
+      "intervalMs": 50.273833000000195,
+      "excessOver50Ms": 0.27383300000019517
+    },
+    {
+      "previousAtMs": 4634.842125,
+      "observedAtMs": 4685.323875,
+      "intervalMs": 50.48174999999992,
+      "excessOver50Ms": 0.48174999999991996
+    },
+    {
+      "previousAtMs": 4685.323875,
+      "observedAtMs": 4736.416875,
+      "intervalMs": 51.09299999999985,
+      "excessOver50Ms": 1.0929999999998472
+    },
+    {
+      "previousAtMs": 4736.416875,
+      "observedAtMs": 4787.503375,
+      "intervalMs": 51.08650000000034,
+      "excessOver50Ms": 1.086500000000342
+    },
+    {
+      "previousAtMs": 4787.503375,
+      "observedAtMs": 4838.582584,
+      "intervalMs": 51.07920899999954,
+      "excessOver50Ms": 1.079208999999537
+    },
+    {
+      "previousAtMs": 4838.582584,
+      "observedAtMs": 4889.6585,
+      "intervalMs": 51.07591599999978,
+      "excessOver50Ms": 1.0759159999997792
+    },
+    {
+      "previousAtMs": 4889.6585,
+      "observedAtMs": 4940.738209,
+      "intervalMs": 51.07970900000055,
+      "excessOver50Ms": 1.0797090000005483
+    },
+    {
+      "previousAtMs": 4940.738209,
+      "observedAtMs": 4992.243334,
+      "intervalMs": 51.50512499999968,
+      "excessOver50Ms": 1.5051249999996799
+    },
+    {
+      "previousAtMs": 4992.243334,
+      "observedAtMs": 5042.486292,
+      "intervalMs": 50.24295799999982,
+      "excessOver50Ms": 0.24295799999981682
+    },
+    {
+      "previousAtMs": 5042.486292,
+      "observedAtMs": 5093.389375,
+      "intervalMs": 50.90308300000015,
+      "excessOver50Ms": 0.9030830000001515
+    },
+    {
+      "previousAtMs": 5093.389375,
+      "observedAtMs": 5143.476959,
+      "intervalMs": 50.08758399999988,
+      "excessOver50Ms": 0.08758399999987887
+    },
+    {
+      "previousAtMs": 5143.476959,
+      "observedAtMs": 5196.252167,
+      "intervalMs": 52.77520800000002,
+      "excessOver50Ms": 2.7752080000000205
+    },
+    {
+      "previousAtMs": 5196.252167,
+      "observedAtMs": 5248.413209,
+      "intervalMs": 52.161042000000634,
+      "excessOver50Ms": 2.1610420000006343
+    },
+    {
+      "previousAtMs": 5248.413209,
+      "observedAtMs": 5298.391334,
+      "intervalMs": 49.978124999999636,
+      "excessOver50Ms": 0
+    },
+    {
+      "previousAtMs": 5298.391334,
+      "observedAtMs": 5349.490375,
+      "intervalMs": 51.0990410000004,
+      "excessOver50Ms": 1.0990410000003976
+    },
+    {
+      "previousAtMs": 5349.490375,
+      "observedAtMs": 5400.056625,
+      "intervalMs": 50.566249999999854,
+      "excessOver50Ms": 0.5662499999998545
+    },
+    {
+      "previousAtMs": 5400.056625,
+      "observedAtMs": 5451.1355,
+      "intervalMs": 51.07887500000015,
+      "excessOver50Ms": 1.0788750000001528
+    },
+    {
+      "previousAtMs": 5451.1355,
+      "observedAtMs": 5503.22325,
+      "intervalMs": 52.08774999999969,
+      "excessOver50Ms": 2.087749999999687
+    },
+    {
+      "previousAtMs": 5503.22325,
+      "observedAtMs": 5554.583292,
+      "intervalMs": 51.36004200000025,
+      "excessOver50Ms": 1.3600420000002487
+    },
+    {
+      "previousAtMs": 5554.583292,
+      "observedAtMs": 5605.912292,
+      "intervalMs": 51.32899999999972,
+      "excessOver50Ms": 1.3289999999997235
+    },
+    {
+      "previousAtMs": 5605.912292,
+      "observedAtMs": 5661.944167,
+      "intervalMs": 56.03187499999967,
+      "excessOver50Ms": 6.031874999999673
+    },
+    {
+      "previousAtMs": 5661.944167,
+      "observedAtMs": 5715.122625,
+      "intervalMs": 53.17845800000032,
+      "excessOver50Ms": 3.178458000000319
+    },
+    {
+      "previousAtMs": 5715.122625,
+      "observedAtMs": 5765.632834,
+      "intervalMs": 50.51020900000003,
+      "excessOver50Ms": 0.5102090000000317
+    },
+    {
+      "previousAtMs": 5765.632834,
+      "observedAtMs": 5816.723917,
+      "intervalMs": 51.09108300000025,
+      "excessOver50Ms": 1.0910830000002534
+    },
+    {
+      "previousAtMs": 5816.723917,
+      "observedAtMs": 5867.829709,
+      "intervalMs": 51.10579199999938,
+      "excessOver50Ms": 1.1057919999993828
+    },
+    {
+      "previousAtMs": 5867.829709,
+      "observedAtMs": 5918.925,
+      "intervalMs": 51.09529100000054,
+      "excessOver50Ms": 1.0952910000005431
+    },
+    {
+      "previousAtMs": 5918.925,
+      "observedAtMs": 5970.013917,
+      "intervalMs": 51.08891700000004,
+      "excessOver50Ms": 1.0889170000000377
+    },
+    {
+      "previousAtMs": 5970.013917,
+      "observedAtMs": 6020.845334,
+      "intervalMs": 50.83141699999942,
+      "excessOver50Ms": 0.8314169999994192
+    },
+    {
+      "previousAtMs": 6020.845334,
+      "observedAtMs": 6071.947709,
+      "intervalMs": 51.10237500000039,
+      "excessOver50Ms": 1.102375000000393
+    },
+    {
+      "previousAtMs": 6071.947709,
+      "observedAtMs": 6128.158209,
+      "intervalMs": 56.21050000000014,
+      "excessOver50Ms": 6.210500000000138
+    },
+    {
+      "previousAtMs": 6128.158209,
+      "observedAtMs": 6182.483875,
+      "intervalMs": 54.32566599999973,
+      "excessOver50Ms": 4.325665999999728
+    },
+    {
+      "previousAtMs": 6182.483875,
+      "observedAtMs": 6233.461167,
+      "intervalMs": 50.97729200000049,
+      "excessOver50Ms": 0.9772920000004888
+    },
+    {
+      "previousAtMs": 6233.461167,
+      "observedAtMs": 6284.335084,
+      "intervalMs": 50.87391699999989,
+      "excessOver50Ms": 0.8739169999998921
+    },
+    {
+      "previousAtMs": 6284.335084,
+      "observedAtMs": 6337.639167,
+      "intervalMs": 53.30408299999999,
+      "excessOver50Ms": 3.3040829999999914
+    },
+    {
+      "previousAtMs": 6337.639167,
+      "observedAtMs": 6388.737334,
+      "intervalMs": 51.0981670000001,
+      "excessOver50Ms": 1.0981670000001031
+    },
+    {
+      "previousAtMs": 6388.737334,
+      "observedAtMs": 6439.050792,
+      "intervalMs": 50.31345799999963,
+      "excessOver50Ms": 0.31345799999962765
+    },
+    {
+      "previousAtMs": 6439.050792,
+      "observedAtMs": 6490.160792,
+      "intervalMs": 51.10999999999967,
+      "excessOver50Ms": 1.1099999999996726
+    },
+    {
+      "previousAtMs": 6490.160792,
+      "observedAtMs": 6541.241917,
+      "intervalMs": 51.08112500000061,
+      "excessOver50Ms": 1.0811250000006112
+    },
+    {
+      "previousAtMs": 6541.241917,
+      "observedAtMs": 6592.376917,
+      "intervalMs": 51.13499999999931,
+      "excessOver50Ms": 1.1349999999993088
+    },
+    {
+      "previousAtMs": 6592.376917,
+      "observedAtMs": 6643.676209,
+      "intervalMs": 51.299292000000605,
+      "excessOver50Ms": 1.2992920000006052
+    },
+    {
+      "previousAtMs": 6643.676209,
+      "observedAtMs": 6695.888709,
+      "intervalMs": 52.212499999999636,
+      "excessOver50Ms": 2.212499999999636
+    },
+    {
+      "previousAtMs": 6695.888709,
+      "observedAtMs": 6746.681167,
+      "intervalMs": 50.7924579999999,
+      "excessOver50Ms": 0.7924579999998969
+    },
+    {
+      "previousAtMs": 6746.681167,
+      "observedAtMs": 6801.920417,
+      "intervalMs": 55.23925000000054,
+      "excessOver50Ms": 5.239250000000538
+    },
+    {
+      "previousAtMs": 6801.920417,
+      "observedAtMs": 6858.529334,
+      "intervalMs": 56.608916999999565,
+      "excessOver50Ms": 6.608916999999565
+    }
+  ],
+  "nodeHeartbeatDropped": 0,
+  "targetFrameId": "FF08C8457964173985CE6F1BFB1AA003",
+  "browserSnapshot": {
+    "browserMonotonicMs": 7219,
+    "documentTimeOriginMs": 1793984994723.9,
+    "snapshot": {
+      "browserMonotonicMs": 7218.899999976158,
+      "documentTimeOriginMs": 1793984994723.9,
+      "route": "/simulator/free/architecture-rise",
+      "longTaskObserverAvailable": true,
+      "lifecycleMutationObserverAvailable": true,
+      "lifecycle": [
+        {
+          "browserMonotonicMs": 614,
+          "route": "/simulator/free/architecture-rise",
+          "documentTimeOriginMs": 1793984994723.9,
+          "sceneIdentity": null,
+          "sceneConnected": false,
+          "canvasCount": 0,
+          "canvasIdentities": [],
+          "canvasConnected": [],
+          "rendererStatus": null,
+          "rendererGeneration": null
+        },
+        {
+          "browserMonotonicMs": 1207.5,
+          "route": "/simulator/free/architecture-rise",
+          "documentTimeOriginMs": 1793984994723.9,
+          "sceneIdentity": "element-1",
+          "sceneConnected": true,
+          "canvasCount": 1,
+          "canvasIdentities": [
+            "element-2"
+          ],
+          "canvasConnected": [
+            true
+          ],
+          "rendererStatus": "pending",
+          "rendererGeneration": "0"
+        },
+        {
+          "browserMonotonicMs": 2032.5,
+          "route": "/simulator/free/architecture-rise",
+          "documentTimeOriginMs": 1793984994723.9,
+          "sceneIdentity": "element-1",
+          "sceneConnected": true,
+          "canvasCount": 1,
+          "canvasIdentities": [
+            "element-2"
+          ],
+          "canvasConnected": [
+            true
+          ],
+          "rendererStatus": "active",
+          "rendererGeneration": "0"
+        }
+      ],
+      "lifecycleDropped": 0,
+      "longTasks": [
+        {
+          "startMs": 551.1000000238419,
+          "endMs": 614.1000000238419,
+          "durationMs": 63,
+          "name": "self",
+          "attribution": [
+            {
+              "containerType": "window",
+              "containerName": "",
+              "containerId": "",
+              "name": "unknown"
+            }
+          ],
+          "callbackDeliveredAtMs": 625.2999999523163
+        },
+        {
+          "startMs": 1059.6000000238419,
+          "endMs": 1127.6000000238419,
+          "durationMs": 68,
+          "name": "self",
+          "attribution": [
+            {
+              "containerType": "window",
+              "containerName": "",
+              "containerId": "",
+              "name": "unknown"
+            }
+          ],
+          "callbackDeliveredAtMs": 1134.5
+        },
+        {
+          "startMs": 1296.2999999523163,
+          "endMs": 2032.2999999523163,
+          "durationMs": 736,
+          "name": "self",
+          "attribution": [
+            {
+              "containerType": "window",
+              "containerName": "",
+              "containerId": "",
+              "name": "unknown"
+            }
+          ],
+          "callbackDeliveredAtMs": 6300.600000023842
+        },
+        {
+          "startMs": 2033.1000000238419,
+          "endMs": 6277.100000023842,
+          "durationMs": 4244,
+          "name": "self",
+          "attribution": [
+            {
+              "containerType": "window",
+              "containerName": "",
+              "containerId": "",
+              "name": "unknown"
+            }
+          ],
+          "callbackDeliveredAtMs": 6300.600000023842
+        }
+      ],
+      "longTaskDropped": 0,
+      "heartbeat": [
+        {
+          "previousAtMs": 5.299999952316284,
+          "observedAtMs": 57.200000047683716,
+          "intervalMs": 51.90000009536743,
+          "excessOver50Ms": 1.9000000953674316
+        },
+        {
+          "previousAtMs": 57.200000047683716,
+          "observedAtMs": 107.39999997615814,
+          "intervalMs": 50.199999928474426,
+          "excessOver50Ms": 0.19999992847442627
+        },
+        {
+          "previousAtMs": 107.39999997615814,
+          "observedAtMs": 192,
+          "intervalMs": 84.60000002384186,
+          "excessOver50Ms": 34.60000002384186
+        },
+        {
+          "previousAtMs": 192,
+          "observedAtMs": 217.60000002384186,
+          "intervalMs": 25.600000023841858,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 217.60000002384186,
+          "observedAtMs": 256.2000000476837,
+          "intervalMs": 38.60000002384186,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 256.2000000476837,
+          "observedAtMs": 306.5,
+          "intervalMs": 50.299999952316284,
+          "excessOver50Ms": 0.2999999523162842
+        },
+        {
+          "previousAtMs": 306.5,
+          "observedAtMs": 355.2999999523163,
+          "intervalMs": 48.799999952316284,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 355.2999999523163,
+          "observedAtMs": 406.10000002384186,
+          "intervalMs": 50.800000071525574,
+          "excessOver50Ms": 0.8000000715255737
+        },
+        {
+          "previousAtMs": 406.10000002384186,
+          "observedAtMs": 456.39999997615814,
+          "intervalMs": 50.299999952316284,
+          "excessOver50Ms": 0.2999999523162842
+        },
+        {
+          "previousAtMs": 456.39999997615814,
+          "observedAtMs": 505.2999999523163,
+          "intervalMs": 48.89999997615814,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 505.2999999523163,
+          "observedAtMs": 625.2999999523163,
+          "intervalMs": 120,
+          "excessOver50Ms": 70
+        },
+        {
+          "previousAtMs": 625.2999999523163,
+          "observedAtMs": 655.5,
+          "intervalMs": 30.200000047683716,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 655.5,
+          "observedAtMs": 705.7000000476837,
+          "intervalMs": 50.200000047683716,
+          "excessOver50Ms": 0.20000004768371582
+        },
+        {
+          "previousAtMs": 705.7000000476837,
+          "observedAtMs": 755.6000000238419,
+          "intervalMs": 49.89999997615814,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 755.6000000238419,
+          "observedAtMs": 805.5,
+          "intervalMs": 49.89999997615814,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 805.5,
+          "observedAtMs": 857.2000000476837,
+          "intervalMs": 51.700000047683716,
+          "excessOver50Ms": 1.7000000476837158
+        },
+        {
+          "previousAtMs": 857.2000000476837,
+          "observedAtMs": 907.2999999523163,
+          "intervalMs": 50.09999990463257,
+          "excessOver50Ms": 0.09999990463256836
+        },
+        {
+          "previousAtMs": 907.2999999523163,
+          "observedAtMs": 956.6000000238419,
+          "intervalMs": 49.300000071525574,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 956.6000000238419,
+          "observedAtMs": 1005.8999999761581,
+          "intervalMs": 49.299999952316284,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 1005.8999999761581,
+          "observedAtMs": 1128.3999999761581,
+          "intervalMs": 122.5,
+          "excessOver50Ms": 72.5
+        },
+        {
+          "previousAtMs": 1128.3999999761581,
+          "observedAtMs": 1163.8999999761581,
+          "intervalMs": 35.5,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 1163.8999999761581,
+          "observedAtMs": 1245.3999999761581,
+          "intervalMs": 81.5,
+          "excessOver50Ms": 31.5
+        },
+        {
+          "previousAtMs": 1245.3999999761581,
+          "observedAtMs": 1255.7999999523163,
+          "intervalMs": 10.399999976158142,
+          "excessOver50Ms": 0
+        },
+        {
+          "previousAtMs": 1255.7999999523163,
+          "observedAtMs": 6300.600000023842,
+          "intervalMs": 5044.800000071526,
+          "excessOver50Ms": 4994.800000071526
+        }
+      ],
+      "heartbeatDropped": 0,
+      "heartbeatIntervalMs": 50,
+      "currentState": {
+        "browserMonotonicMs": 7219,
+        "route": "/simulator/free/architecture-rise",
+        "documentTimeOriginMs": 1793984994723.9,
+        "sceneIdentity": "element-1",
+        "sceneConnected": true,
+        "canvasCount": 1,
+        "canvasIdentities": [
+          "element-2"
+        ],
+        "canvasConnected": [
+          true
+        ],
+        "rendererStatus": "active",
+        "rendererGeneration": "0"
+      }
+    }
+  },
+  "browserSnapshotError": null,
+  "syntheticStall": null,
+  "nodeClockSyncBrackets": [
+    {
+      "syncId": "m7q-pair-4-on-start",
+      "startedAtMs": 583.108625,
+      "settledAtMs": 584.101834
+    },
+    {
+      "syncId": "m7q-pair-4-on-end",
+      "startedAtMs": 8532.412917,
+      "settledAtMs": 8533.730959
+    }
+  ],
+  "trace": {
+    "enabled": true,
+    "started": true,
+    "completed": true,
+    "dataLossOccurred": false,
+    "stopError": null,
+    "overflowedByCollector": false,
+    "maxTraceEvents": 300000,
+    "traceEventCount": 71341,
+    "traceBufferSizeInKb": 32768,
+    "bufferUsageSamples": 7,
+    "maximumBufferPercent": 0.12827032804489136,
+    "categories": [
+      "blink.user_timing",
+      "devtools.timeline",
+      "toplevel"
+    ],
+    "availableCategoryCount": 301,
+    "rawTracePath": "/private/tmp/m7q-light-peer-trace-ab-cde9e31/artifacts/m7q-pair-4-on.trace.json",
+    "rawTraceSha256": "6aa114f44cba311af98f2d7af2606f944efae4a68c90119b77aa350d8a066037",
+    "rawTraceSizeBytes": 19004398,
+    "clockDomain": "Chromium trace clock in microseconds; page performance marks provide trace/page anchors; Node clock sync markers provide bracketed Node/trace alignment."
+  }
+}
