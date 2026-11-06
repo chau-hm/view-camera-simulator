@@ -8,7 +8,7 @@ export const M7O_EVIDENCE_EVALUATOR_REVISION = "m7o-canvas-assertion-timing-eval
 
 const repositoryRoot = resolve(process.env.M7O_CANVAS_TIMING_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const expectedExecutionSourceSha = "e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb";
-const expectedToolingSourceSha = "c1135c8bdeba2ba0e9cf86d68644bf5b6a957b97";
+const expectedToolingSourceSha = "c1135c8f7be9c3530eaeaad030a98079457ff8c0";
 const expectedMatrixNormalizerSourceSha = "817f534dc0e61068cf20c586947ea3d6b4b5b481";
 const shaPattern = /^[0-9a-f]{40}$/i;
 const digestPattern = /^[0-9a-f]{64}$/i;
