@@ -244,5 +244,35 @@
     "productionGroundGlass": "WebGL-only",
     "productionWebGpu": "disabled",
     "m7oVerifiedApplicationFixes": 0
+  },
+  "sourceAvailabilityReplay": {
+    "method": "isolated shallow GitHub main clone with a synthetic squash snapshot and no shared object alternate",
+    "baseCommit": "7c5b1892afedd50af4aa5718a1fa6ed19cb6ec1e",
+    "retainedRef": "refs/pull/314/head",
+    "initiallyAbsentSourceCommits": [
+      "3131da63a608a4591a345c3b03a072eafd1f8783",
+      "23743c882229d84c3f712cb6dd72346757e58790",
+      "32f169176324a6d67c81f3028d96d4aa36ca9c6f"
+    ],
+    "initialGitCatFileExitCode": 128,
+    "preFetchEvaluatorExitCode": 1,
+    "preFetchIssues": [
+      "m7p-source-commit-unavailable",
+      "m7p-source-tree-entry-missing"
+    ],
+    "fetchMode": "retained-ref-history-fallback",
+    "postFetchEvaluatorExitCode": 0,
+    "postFetchEvidenceIntegrity": "passed",
+    "postFetchUnavailableShaExitCode": 1,
+    "sourceTreePathsVerified": [
+      "playwright.config.ts",
+      "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts",
+      "scripts/run-m7p-assertion-scheduling.mjs",
+      "scripts/normalizeM7pAssertionSchedulingCapture.mjs",
+      "scripts/evaluateM7pAssertionScheduling.ts",
+      "scripts/run-m7p-evidence.mjs",
+      "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts"
+    ]
   }
 }

@@ -100,3 +100,9 @@ The accepted M7K full-suite record remains 278 discovered, 121 passed, 82 unexpe
 - Existing M7O evidence command: `npm run evidence:check:m7o`.
 
 The report pins execution and instrumentation to `3131da63a608a4591a345c3b03a072eafd1f8783`, normalizer to `23743c882229d84c3f712cb6dd72346757e58790`, and evaluator to `32f169176324a6d67c81f3028d96d4aa36ca9c6f`. The exact source role and tree-entry checks remain active for post-squash verification.
+
+### Synthetic post-squash source replay
+
+An isolated shallow clone of GitHub `main` started at `7c5b1892afedd50af4aa5718a1fa6ed19cb6ec1e`. The tracked PR tree was overlaid and committed as a synthetic squash snapshot; the clone had no shared-object alternate. Before fetching, `git cat-file -e '<sha>^{commit}'` returned exit 128 for each pinned M7P source commit (`3131da63a608a4591a345c3b03a072eafd1f8783`, `23743c882229d84c3f712cb6dd72346757e58790`, and `32f169176324a6d67c81f3028d96d4aa36ca9c6f`). The actual M7P checker exited 1 with `m7p-source-commit-unavailable` and `m7p-source-tree-entry-missing`.
+
+The source fetch helper was then run with `--retained-ref=refs/pull/314/head --force-retained-ref` and all eight declared source paths. The first fetch reported `retained-ref-history-fallback`; it made the exact capture commit and its normalizer/evaluator ancestors available and verified their source tree entries. The unchanged `npm run evidence:check:m7p` then passed in that same shallow checkout. A valid-looking unavailable SHA (`0000000000000000000000000000000000000000`) still made the fetch helper exit 1 after the retained ref was fetched. This verifies the fallback path against PR #314's real retained GitHub ref while preserving strict object and tree-entry checks.
