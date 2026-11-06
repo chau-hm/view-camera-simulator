@@ -325,7 +325,7 @@ describe("M7Q evidence contract", () => {
       mutatedReport.provenance = mutatedReport.provenance as Record<string, unknown>;
       (mutatedReport.provenance as Record<string, unknown>).normalizedCapturesSha256 = createHash("sha256").update(normalizedBytes).digest("hex");
       const timing = (mutatedReport.comparison as Record<string, unknown>).descriptiveTiming as Record<string, unknown>;
-      const nodeHeartbeatSummary = timing.maximumNodeHeartbeatIntervalDuringAssertionWindow as Record<string, unknown>;
+      const nodeHeartbeatSummary = timing.maximumNodeHeartbeatIntervalDuringAssertionWindowMs as Record<string, unknown>;
       nodeHeartbeatSummary.off = { minimum: 9_999, maximum: 9_999, mean: 9_999 };
       nodeHeartbeatSummary.on = { minimum: 9_999, maximum: 9_999, mean: 9_999 };
 
