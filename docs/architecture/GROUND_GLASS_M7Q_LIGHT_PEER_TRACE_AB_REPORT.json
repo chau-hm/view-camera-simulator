@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "evaluatorRevision": "m7q-light-peer-trace-ab-evaluator-v1",
+  "evaluatorRevision": "m7q-light-peer-trace-ab-evaluator-v2",
   "evidenceId": "m7q-matched-light-peer-trace-ab-v1",
   "provenance": {
     "captureRunnerSourceCommit": "cde9e31fb299bf436e9dd5afd6509e3409e6add1",
@@ -14,7 +14,7 @@
       "src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts",
       "scripts/run-m7q-light-peer-trace-ab.mjs"
     ],
-    "analysisToolingSourceCommit": "2983129925f399b72dcf8ed92dac635a3f6608e0",
+    "analysisToolingSourceCommit": "a33897808decbff0ccc7acc1a54d3e1497f5cd35",
     "analysisToolingSourcePaths": [
       "scripts/normalizeM7qLightPeerTraceAb.mjs",
       "scripts/evaluateM7qLightPeerTraceAb.ts",

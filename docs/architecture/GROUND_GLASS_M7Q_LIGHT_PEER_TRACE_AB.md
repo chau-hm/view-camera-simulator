@@ -91,6 +91,14 @@ A disposable local bare remote was prepared with a synthetic post-squash `main` 
 
 The existing source-fetch helper was then run with the retained-ref fallback forced, matching the post-squash case where exact-SHA fetching is unavailable. It fetched `refs/pull/315/head`, verified the runner and analysis source paths at their pinned commits, and made both commit objects available. The same unchanged `node scripts/run-m7q-evidence.mjs` then passed: 8/8 captures, Decision Path B, Broad E2E `not-qualified`. The temporary clone had no shared object store and no tracked evidence was changed.
 
+## Review-Fix Round 1 — Rederive Node heartbeat summaries
+
+Independent review found that the evaluator accepted a normalized Node-heartbeat maximum changed to 9,999 ms if the corresponding aggregate summary and normalized digest were changed with it, even though the retained raw heartbeat samples were unchanged. The evidence boundary now closes that gap.
+
+Evaluator v2 validates each normalized Node sample's timestamps, interval arithmetic, excess-over-50-ms value, and assertion-window membership, then recomputes each attempt's rounded maximum from the sample intervals. The raw-evidence verifier independently filters the retained M7P capture's Node heartbeat samples by that capture's original assertion entry/settlement, requires the normalized sample list to match, and recomputes the maximum from those raw samples. The report's per-arm timing summary is checked against the rederived per-attempt maxima.
+
+The mutation regression forges a self-consistent 9,999 ms normalized sample and summary, updates the normalized digest, and leaves the raw M7P captures unchanged. The pure evaluator accepts the internally consistent normalized fields, while the raw-evidence check identifies the sample mismatch and the production CLI exits nonzero. Capture reports, raw M7P samples, traces, and their digests remain unchanged. The corrected analysis-source pin (`a33897808decbff0ccc7acc1a54d3e1497f5cd35`) is recorded in the machine report and fetched by CI from the retained PR history.
+
 ## Historical reconciliation
 
 | Evidence | Light-peer target outcomes |
