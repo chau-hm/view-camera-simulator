@@ -31,7 +31,7 @@ A feasibility probe confirmed that the installed Chromium tracing session can co
 - Node `v24.3.0`; Playwright `1.61.1`; Chromium revision `chromium-1228`, browser `149.0.7827.55`.
 - macOS host, Playwright headless Chromium project, application-default WebGL backend. No production WebGPU flags were added.
 - Each test receives its own Playwright page/context; worker browser processes may be shared.
-- Every condition has three independent attempts and zero retries. The runner records actual test intervals and worker indexes; the four-worker conditions reached four overlapping tests on workers 0–3.
+- Every condition has three independent attempts and zero retries. Four-worker concurrency is reconstructed from each Playwright `startTime` and `durationMs`: all four expected identities, worker indexes 0–3, and parallel indexes 0–3 share a non-empty interval in every P3/P4 attempt.
 - P1 is a solo control with M7P's browser-side observers active and CDP tracing disabled. P2 enables CDP tracing over the same solo scenario. Thus “tracing off” does not mean the browser-side diagnostic observers were absent.
 - P3 uses the original three light peers. P4 uses the original Macro Bellows, Macro Compound Movements, and Mirror Shift Rig Lateral peers. P4 has a matched tracing-off and tracing-on arm.
 - P5 uses one worker and a bounded 5,400 ms synthetic browser-side busy task. It starts only after a connected Canvas is observed and after the assertion-entry marker; it does not run work on the Node test thread.
@@ -48,9 +48,11 @@ A feasibility probe confirmed that the installed Chromium tracing session can co
 | P4-trace — original heavy peers, four workers, tracing on | 0/3 passed | Macro Bellows 0/3; Macro Compound 0/3; Mirror Shift 3/3 | Four-way overlap was measured in every attempt; heavy peers also timed out. |
 | P5 — 5.4 s synthetic browser-main-thread task | 3/3 passed | — | Assertion settled 9.413–9.510 s after Node entry, after the inferred five-second deadline. |
 
-All 18 captures recorded a connected Canvas before the inferred browser deadline. For P1/P2 the first DOM scan observed Canvas about 0.36–0.39 s after the assertion-entry anchor; for P3, 0.45–0.54 s; for P4-off, 0.55–0.61 s; and for P4-trace, 0.58–0.63 s. P5 observed Canvas about 32–35 ms before assertion entry. These are observation times, not insertion times, and do not prove what the matcher observed.
+All 18 captures recorded a connected Canvas before the entire corrected browser deadline interval. For P1/P2 the first DOM scan observed Canvas about 0.36–0.39 s after the assertion-entry anchor; for P3, 0.45–0.54 s; for P4-off, 0.55–0.61 s; and for P4-trace, 0.58–0.63 s. P5 observed Canvas about 32–35 ms before assertion entry. The earliest plausible deadline remained 4.368–5.035 s after the recorded Canvas scan. These are observation times, not insertion times, and do not prove what the matcher observed.
 
-In the three traced P3 attempts, a target `CrRendererMain` `ThreadControllerImpl::RunTask` lasted 3.87–4.11 s and spanned the inferred browser deadline. In the three traced P4 attempts, the corresponding interval lasted 5.71–6.27 s and spanned the deadline. P4-off's Long Task observations reached 4.97–6.29 s. The Node heartbeat maximum across captures remained about 54–68 ms against a 50 ms cadence, so the Node event loop did not show a comparable multi-second stall.
+In the three traced P3 attempts, a target `CrRendererMain` `ThreadControllerImpl::RunTask` lasted 3.87–4.11 s and definitely spanned the complete browser deadline interval after trace/page clock uncertainty was included. In the three traced P4 attempts, the corresponding interval lasted 5.71–6.27 s and also definitely spanned it. The offline evaluator derives this result from each retained task's trace and page endpoints, duration, process/thread IDs, `CrRendererMain` metadata, and the corrected deadline bounds. P2 and P5 also have a definite spanning task in each trace-on attempt. P4-off's Long Task observations reached 4.97–6.29 s. The Node heartbeat maximum across captures remained about 54–68 ms against a 50 ms cadence, so the Node event loop did not show a comparable multi-second stall.
+
+The reconstructed common four-test overlap lasted 639–669 ms in P3, 11.562–12.394 s in P4-off, and 12.526–12.773 s in P4-trace. Each interval included the Architecture Rise target and one execution from each of the four expected files. Configured `--workers=4` and four distinct worker IDs are retained separately from this interval-derived proof.
 
 P4-trace-r1 provides an observable scheduling example without exposing matcher internals: Node recorded assertion failure at 6,109.7 ms. The subsequent public failure-catch `page.evaluate` request began at 6,109.7 ms and returned at 8,781.5 ms. The traced renderer task ended at page time 8,219.5 ms, and the page-side catch marker followed at 8,241.9 ms. This shows a public browser evaluation request returning only after the renderer main thread became serviceable. It does not reveal the earlier `toHaveCount()` retry schedule.
 
@@ -93,13 +95,35 @@ The accepted M7K full-suite record remains 278 discovered, 121 passed, 82 unexpe
 ## Evidence and validation
 
 - Machine-readable report: `docs/architecture/GROUND_GLASS_M7P_ASSERTION_SCHEDULING_REPORT.json`.
-- Normalized capture summary SHA-256: `090ed2e6732b4ca9455e99c459476776aebee6d302326a419f71176d65cb6a6c`.
-- Evaluator revision: `m7p-assertion-scheduling-evaluator-v1`.
+- Corrected normalized capture summary SHA-256: `e9e8fbb0a37c83d4a5d1ad77f5fe6829ccaba1ffd760957d4b3568fa5fb979ce`.
+- Evaluator revision: `m7p-assertion-scheduling-evaluator-v2`.
 - Evidence command: `npm run evidence:check:m7p`.
 - Focused mutation tests: `src/tests/unit/m7pAssertionSchedulingEvidence.test.ts`.
 - Existing M7O evidence command: `npm run evidence:check:m7o`.
 
-The report pins execution and instrumentation to `3131da63a608a4591a345c3b03a072eafd1f8783`, normalizer to `23743c882229d84c3f712cb6dd72346757e58790`, and evaluator to `32f169176324a6d67c81f3028d96d4aa36ca9c6f`. The exact source role and tree-entry checks remain active for post-squash verification.
+The report preserves execution and instrumentation at `3131da63a608a4591a345c3b03a072eafd1f8783`, pins the corrected normalizer to `97d17110fff4c6d412e156c9281deac5a44bdb11`, and pins evaluator v2 plus its final mutation tests to `8262e7bf49e0f5ff589c6d3f35059915c3b8a911`. The exact source role, tree-entry, and evaluator-content checks remain active for post-squash verification.
+
+## M7P Review-Fix Round 1 — Deadline and overlap evidence correction
+
+Review finding: [PR #314 deadline uncertainty interval](https://github.com/chau-hm/view-camera-simulator/pull/314#discussion_r4493780259).
+
+The review found that the earlier normalizer subtracted the anchor round trip a second time when constructing the browser deadline interval. The browser-at-entry estimate already uses the anchor response-end time and is the earliest plausible browser time under the bounded alignment model. With browser anchor `b`, Node request start `t0`, response end `t1`, Node assertion entry `ta`, and timeout `T`, the corrected calculation is:
+
+```text
+entry estimate = b + ta - t1
+deadline lower = entry estimate + T
+deadline upper = deadline lower + (t1 - t0)
+```
+
+Thus the uncertainty extends forward. The boundary oracle uses the review's values (`t0=100`, `t1=200`, `b=1000`, `ta=200`, `T=5000`) and expects `[6000, 6100]` ms: 5950 ms is before the interval, 6050 ms is uncertain, and 6150 ms is after it. Zero-width intervals, missing/invalid anchors, inverted bounds, and non-finite values are covered. Comparison includes a 0.001 ms rounding margin so equality or rounded edge values cannot become a definite before/after result.
+
+Before re-normalizing, the 18 raw Playwright JSON digests and 12 raw trace digests were checked against the retained summary and the capture source identity was checked against `3131da63a608a4591a345c3b03a072eafd1f8783`; every digest and identity matched. The raw files were not changed or recaptured. The corrected normalizer regenerated the 18-record summary from `/private/tmp/m7p-capture-3131da63`; the original Playwright and trace SHA-256 values remain unchanged.
+
+Evaluator v2 recomputes each deadline interval from its recorded anchor request/response timestamps and assertion entry. For every retained renderer-main-thread task it validates finite trace/page endpoints and duration, endpoint/duration consistency, page/trace conversion within the declared 0.002 ms endpoint tolerance, process/thread identity, and matching `CrRendererMain` metadata. It then compares the task against the full deadline interval with the measured trace/page offset uncertainty and requires the per-task and per-capture classifications to match the derived result. All 12 trace-on captures used by P2, P3, P4-trace, and P5 have at least one task classified `definitely-spans-deadline`; this does not identify a frame or operation and does not establish renderer or GPU causation. The generic `RunTask` event remains insufficient to identify WebGL work or Playwright's private matcher states.
+
+The evaluator separately reconstructs concurrency from the four Playwright test-result start times and durations. Each P3, P4-off, and P4-trace attempt contains exactly the expected four test identities and four distinct worker and parallel indexes, with a non-empty common interval that includes the Architecture Rise target. The recomputed peak concurrency and worker counts must agree with the retained summary; configured workers alone cannot satisfy this check.
+
+Focused regression coverage now has 53 passing tests, including a positive zero-width anchor interval control. It exercises deadline boundaries, malformed anchors, task interval and attribution mutations, false definite-overlap claims, unsupported GPU causation, and four-worker cases with too few worker IDs, non-overlap, only three simultaneous tests, missing target overlap, malformed timestamps, and invalid durations. The production-facing `npm run evidence:check:m7p` passes the corrected report; `npm run evidence:check:m7o`, typecheck, lint, and `git diff --check` pass as well. M7O and all M7K–M7O raw evidence remain unchanged. Final-head hosted CI is recorded in the machine-readable review-fix section after the branch update.
 
 ### Synthetic post-squash source replay
 

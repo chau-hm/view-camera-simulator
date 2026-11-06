@@ -155,7 +155,7 @@ jobs:
             --verify-path=scripts/run-m7p-evidence.mjs \
             --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
           node scripts/fetch-m7k-execution-source.mjs \
-            --sha=23743c882229d84c3f712cb6dd72346757e58790 \
+            --sha=97d17110fff4c6d412e156c9281deac5a44bdb11 \
             --retained-ref=refs/pull/314/head \
             --verify-path=playwright.config.ts \
             --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
@@ -166,7 +166,7 @@ jobs:
             --verify-path=scripts/run-m7p-evidence.mjs \
             --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
           node scripts/fetch-m7k-execution-source.mjs \
-            --sha=32f169176324a6d67c81f3028d96d4aa36ca9c6f \
+            --sha=8262e7bf49e0f5ff589c6d3f35059915c3b8a911 \
             --retained-ref=refs/pull/314/head \
             --verify-path=playwright.config.ts \
             --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \

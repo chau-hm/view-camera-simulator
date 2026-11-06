@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "evaluatorRevision": "m7p-assertion-scheduling-evaluator-v1",
+  "evaluatorRevision": "m7p-assertion-scheduling-evaluator-v2",
   "title": "M7P Playwright Assertion Scheduling and Browser Long-Task Causality",
   "captureSummary": {
     "artifactPath": "docs/architecture/ground-glass-m7p-assertion-scheduling/capture/final/normalized-captures.json",
-    "sha256": "090ed2e6732b4ca9455e99c459476776aebee6d302326a419f71176d65cb6a6c",
+    "sha256": "e9e8fbb0a37c83d4a5d1ad77f5fe6829ccaba1ffd760957d4b3568fa5fb979ce",
     "captureCount": 18
   },
   "source": {
     "executionSourceCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
     "instrumentationSourceCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
-    "normalizerSourceCommitSha": "23743c882229d84c3f712cb6dd72346757e58790",
-    "evaluatorSourceCommitSha": "32f169176324a6d67c81f3028d96d4aa36ca9c6f",
+    "normalizerSourceCommitSha": "97d17110fff4c6d412e156c9281deac5a44bdb11",
+    "evaluatorSourceCommitSha": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911",
     "sourceFiles": {
       "execution": [
         "playwright.config.ts",
@@ -119,7 +119,8 @@
         "name": "target-with-bounded-non-renderer-main-thread-stall",
         "purpose": "A 5.4-second synthetic browser-main-thread task after Canvas observation, initiated after assertion entry."
       }
-    ]
+    ],
+    "fourWorkerOverlapMeasuredFromRawPlaywrightStartAndDuration": true
   },
   "diagnosis": {
     "executiveFinding": "The selected light and renderer-heavy four-worker captures failed the Canvas assertion in all attempts, while solo controls and the synthetic stall control passed. Trace captures directly show long CrRendererMain RunTask intervals spanning the inferred assertion deadline, but the available interfaces do not expose the private matcher retries or prove that those intervals caused the zero-count resolutions. The synthetic stall delayed successful assertion settlement well beyond its five-second budget, showing that a main-thread stall can delay delivery without being sufficient to reproduce the failure when Canvas was observed before the stall.",
@@ -216,7 +217,53 @@
     },
     "nextAction": "D-further-targeted-investigation",
     "nextExperiment": "Run a matched light-peer four-worker pair with M7P browser observers unchanged and CDP tracing off/on. This isolates whether the P3 divergence from the accepted M7O light-peer result is associated with CDP tracing; retain the same test identities and zero-retry policy. Do not change the Canvas assertion or treat either outcome as proof of renderer causation.",
-    "stoppingRationale": "The required matrix and synthetic control are complete. The remaining distinction depends on matcher-internal state that supported public APIs do not expose; further diagnosis should first isolate the P3 trace-on divergence with one matched condition pair rather than expand the capture system."
+    "stoppingRationale": "The required matrix and synthetic control are complete. The remaining distinction depends on matcher-internal state that supported public APIs do not expose; further diagnosis should first isolate the P3 trace-on divergence with one matched condition pair rather than expand the capture system.",
+    "taskDeadlineOverlapByCondition": {
+      "P2": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ],
+      "P3": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ],
+      "P4-trace": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ],
+      "P5": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ]
+    },
+    "fourWorkerOverlapByCondition": {
+      "P3": [
+        true,
+        true,
+        true
+      ],
+      "P4-off": [
+        true,
+        true,
+        true
+      ],
+      "P4-trace": [
+        true,
+        true,
+        true
+      ]
+    },
+    "deadlineIntervalModel": {
+      "browserEntryEstimate": "browserAnchorMonotonicMs + nodeAssertionEntryMs - nodeAnchorResponseSettledAtMs",
+      "lowerBound": "browserAtNodeAssertionEntryEstimateMs + timeoutBudgetMs",
+      "upperBound": "lowerBound + requestResponseUncertaintyMs",
+      "comparisonRoundingToleranceMs": 0.001
+    },
+    "taskDeadlineInterpretation": "Generic RunTask timing is attributed to the target CrRendererMain process/thread only; it does not identify an application frame, WebGL operation, GPU cause, or private matcher retry."
   },
   "historicalEvidence": {
     "m7oCapturesChanged": false,
@@ -274,5 +321,147 @@
       "scripts/run-m7p-evidence.mjs",
       "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts"
     ]
+  },
+  "reviewFixRound1": {
+    "title": "Correct deadline bounds, trace-task validation, and four-worker overlap proof",
+    "evaluatorRevision": "m7p-assertion-scheduling-evaluator-v2",
+    "deadlineUncertainty": {
+      "formula": {
+        "browserEntryEstimate": "browserAnchorMonotonicMs + nodeAssertionEntryMs - nodeAnchorResponseSettledAtMs",
+        "lowerBound": "browserAtNodeAssertionEntryEstimateMs + timeoutBudgetMs",
+        "upperBound": "lowerBound + requestResponseUncertaintyMs"
+      },
+      "comparisonRoundingToleranceMs": 0.001,
+      "correctedIntervalWidthMs": [
+        4.170000000000073,
+        28.911000000000058
+      ],
+      "canvasObservationClassifications": {
+        "observed-before-deadline": 18
+      },
+      "independentBoundaryOracle": {
+        "input": {
+          "nodeRequestMs": 100,
+          "nodeResponseMs": 200,
+          "browserAnchorMs": 1000,
+          "nodeAssertionEntryMs": 200,
+          "timeoutMs": 5000
+        },
+        "expectedIntervalMs": [
+          6000,
+          6100
+        ],
+        "observations": {
+          "5950": "observed-before-deadline",
+          "6050": "unavailable-or-uncertain",
+          "6150": "observed-after-deadline"
+        }
+      }
+    },
+    "traceTaskDeadlineOverlap": {
+      "intervalRoundingToleranceMs": 0.002,
+      "tracePageOffsetUncertaintyApplied": true,
+      "classificationsByCondition": {
+        "P2": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ],
+        "P3": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ],
+        "P4-trace": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ],
+        "P5": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ]
+      },
+      "allTraceOnAttemptsHaveDefiniteSpan": true,
+      "claimBoundary": "RunTask supports renderer-process main-thread timing only; it identifies no application frame, WebGL operation, GPU cause, or private matcher retry."
+    },
+    "fourWorkerOverlap": {
+      "reconstructedFrom": [
+        "testResults.startTime",
+        "testResults.durationMs"
+      ],
+      "requiredConditions": [
+        "P3",
+        "P4-off",
+        "P4-trace"
+      ],
+      "attemptCount": 9,
+      "allFourExactTestsAndWorkerSlotsOverlap": true,
+      "commonOverlapDurationMsByCondition": {
+        "P3": [
+          639,
+          669,
+          657
+        ],
+        "P4-off": [
+          12028,
+          12394,
+          11562
+        ],
+        "P4-trace": [
+          12773,
+          12730,
+          12526
+        ]
+      }
+    },
+    "rawEvidence": {
+      "sourceExecutionCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
+      "rawPlaywrightReportCountDigestVerified": 18,
+      "rawTraceCountDigestVerified": 12,
+      "rawCaptureFilesRewritten": false,
+      "browserExperimentsRepeated": false
+    },
+    "regressionCoverage": {
+      "focusedM7pTests": 53,
+      "testResult": "passed",
+      "positiveControls": [
+        "retained M7P report accepted by CLI",
+        "four exact tests and four worker slots overlap",
+        "definite task spans derived from retained numerical evidence"
+      ],
+      "negativeControls": [
+        "deadline before/uncertain/after boundaries",
+        "missing or invalid anchors and inverted deadline",
+        "task intervals before/after deadline",
+        "inverted endpoints and duration mismatch",
+        "wrong process/thread or missing CrRendererMain metadata",
+        "shifted deadline and false definite overlap",
+        "unsupported GPU causation",
+        "two workers",
+        "four non-overlapping workers",
+        "only three concurrent tests",
+        "target absent from common overlap",
+        "duplicate workers",
+        "malformed timestamps",
+        "negative/zero/non-finite durations",
+        "summary mismatch"
+      ]
+    },
+    "confirmedValidation": {
+      "focusedM7pUnitTests": "53 passed",
+      "typecheck": "passed",
+      "m7pEvidenceCheck": "passed",
+      "m7oEvidenceCheck": "passed",
+      "lint": "passed",
+      "gitDiffCheck": "passed"
+    },
+    "reviewFinding": "https://github.com/chau-hm/view-camera-simulator/pull/314#discussion_r4493780259",
+    "fixCommits": {
+      "normalizer": "97d17110fff4c6d412e156c9281deac5a44bdb11",
+      "evaluator": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
+      "mutationTests": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911"
+    }
   }
 }
