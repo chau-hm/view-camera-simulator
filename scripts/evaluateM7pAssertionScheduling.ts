@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const M7P_EVIDENCE_EVALUATOR_REVISION = "m7p-assertion-scheduling-evaluator-v1";
+export const M7P_EVIDENCE_EVALUATOR_REVISION = "m7p-assertion-scheduling-evaluator-v2";
 const repositoryRoot = resolve(process.env.M7P_ASSERTION_SCHEDULING_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const shaPattern = /^[0-9a-f]{40}$/i;
 const digestPattern = /^[0-9a-f]{64}$/i;
@@ -57,6 +57,135 @@ const asString = (value: unknown): string | null => typeof value === "string" ? 
 const asNumber = (value: unknown): number | null => typeof value === "number" && Number.isFinite(value) ? value : null;
 const sameJson = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
 
+export type DeadlineObservationClassification = "observed-before-deadline" | "observed-after-deadline" | "unavailable-or-uncertain";
+export type TaskDeadlineOverlapClassification = "definitely-spans-deadline" | "possibly-overlaps-deadline" | "does-not-overlap" | "unverifiable";
+
+export const classifyM7pDeadlineObservation = (
+  observationMs: unknown,
+  deadlineIntervalMs: unknown,
+  roundingToleranceMs = 0.001,
+): DeadlineObservationClassification => {
+  if (asNumber(observationMs) === null || !Array.isArray(deadlineIntervalMs) || deadlineIntervalMs.length !== 2
+    || asNumber(deadlineIntervalMs[0]) === null || asNumber(deadlineIntervalMs[1]) === null
+    || (deadlineIntervalMs[0] as number) > (deadlineIntervalMs[1] as number)
+    || !Number.isFinite(roundingToleranceMs) || roundingToleranceMs < 0) return "unavailable-or-uncertain";
+  const observation = observationMs as number;
+  const [lower, upper] = deadlineIntervalMs as [number, number];
+  if (observation < lower - roundingToleranceMs) return "observed-before-deadline";
+  if (observation > upper + roundingToleranceMs) return "observed-after-deadline";
+  return "unavailable-or-uncertain";
+};
+
+export const classifyM7pTaskDeadlineOverlap = (
+  task: { startPageMs?: unknown; endPageMs?: unknown; durationMs?: unknown },
+  deadlineIntervalMs: unknown,
+  alignmentUncertaintyMs: unknown,
+  intervalRoundingToleranceMs = 0.002,
+  deadlineRoundingToleranceMs = 0.001,
+): TaskDeadlineOverlapClassification => {
+  const start = asNumber(task.startPageMs);
+  const end = asNumber(task.endPageMs);
+  const duration = asNumber(task.durationMs);
+  const uncertainty = asNumber(alignmentUncertaintyMs);
+  if (start === null || end === null || duration === null || start > end || duration < 0
+    || Math.abs((end - start) - duration) > intervalRoundingToleranceMs
+    || uncertainty === null || uncertainty < 0 || !Array.isArray(deadlineIntervalMs) || deadlineIntervalMs.length !== 2
+    || asNumber(deadlineIntervalMs[0]) === null || asNumber(deadlineIntervalMs[1]) === null
+    || (deadlineIntervalMs[0] as number) > (deadlineIntervalMs[1] as number)
+    || !Number.isFinite(intervalRoundingToleranceMs) || intervalRoundingToleranceMs < 0
+    || !Number.isFinite(deadlineRoundingToleranceMs) || deadlineRoundingToleranceMs < 0) return "unverifiable";
+  const [lower, upper] = deadlineIntervalMs as [number, number];
+  const uncertaintyBudget = uncertainty + deadlineRoundingToleranceMs;
+  if (start + uncertaintyBudget <= lower && end - uncertaintyBudget >= upper) return "definitely-spans-deadline";
+  if (start - uncertaintyBudget <= upper && end + uncertaintyBudget >= lower) return "possibly-overlaps-deadline";
+  return "does-not-overlap";
+};
+
+export type M7pWorkerTestResult = {
+  identity?: unknown;
+  file?: unknown;
+  startTime?: unknown;
+  durationMs?: unknown;
+  workerIndex?: unknown;
+  parallelIndex?: unknown;
+};
+
+export type M7pWorkerOverlapResult = {
+  valid: boolean;
+  peakConcurrency: number | null;
+  workerIds: number[];
+  parallelIds: number[];
+  fourTestOverlap: {
+    active: boolean;
+    startEpochMs: number | null;
+    endEpochMs: number | null;
+    durationMs: number;
+    testIdentities: string[];
+    workerIds: number[];
+    targetParticipated: boolean;
+  } | null;
+};
+
+export const reconstructM7pWorkerOverlap = (
+  testResults: M7pWorkerTestResult[],
+  expectedTestKeys: string[],
+  targetTestKey: string,
+  configuredWorkers: number,
+): M7pWorkerOverlapResult => {
+  const testKeys = testResults.map((result) => `${String(result.file)}::${String(result.identity)}`).sort();
+  const expectedKeys = [...expectedTestKeys].sort();
+  const exactIdentities = testResults.length === expectedKeys.length && sameJson(testKeys, expectedKeys);
+  const rows = testResults.map((result) => {
+    const startTime = typeof result.startTime === "string" ? Date.parse(result.startTime) : Number.NaN;
+    const durationMs = asNumber(result.durationMs);
+    const workerIndex = asNumber(result.workerIndex);
+    const parallelIndex = asNumber(result.parallelIndex);
+    return {
+      key: `${String(result.file)}::${String(result.identity)}`,
+      startMs: startTime,
+      endMs: durationMs === null ? Number.NaN : startTime + durationMs,
+      durationMs,
+      workerIndex,
+      parallelIndex,
+    };
+  });
+  const validRows = rows.length > 0 && rows.every((row) => Number.isFinite(row.startMs)
+    && row.durationMs !== null && row.durationMs > 0 && Number.isFinite(row.endMs) && row.endMs > row.startMs
+    && row.workerIndex !== null && Number.isSafeInteger(row.workerIndex) && row.workerIndex >= 0
+    && row.parallelIndex !== null && Number.isSafeInteger(row.parallelIndex) && row.parallelIndex >= 0
+    && row.parallelIndex < configuredWorkers);
+  if (!exactIdentities || !validRows) {
+    return { valid: false, peakConcurrency: null, workerIds: [], parallelIds: [], fourTestOverlap: null };
+  }
+  const workerIds = [...new Set(rows.map((row) => row.workerIndex as number))].sort((left, right) => left - right);
+  const parallelIds = [...new Set(rows.map((row) => row.parallelIndex as number))].sort((left, right) => left - right);
+  const events = rows.flatMap((row) => [{ timeMs: row.startMs, delta: 1 }, { timeMs: row.endMs, delta: -1 }])
+    .sort((left, right) => left.timeMs - right.timeMs || left.delta - right.delta);
+  let active = 0;
+  let peakConcurrency = 0;
+  for (const event of events) {
+    active += event.delta;
+    peakConcurrency = Math.max(peakConcurrency, active);
+  }
+  const fourTestOverlap = rows.length === 4
+    ? (() => {
+        const startMs = Math.max(...rows.map((row) => row.startMs));
+        const endMs = Math.min(...rows.map((row) => row.endMs));
+        const activeRows = endMs > startMs ? rows.filter((row) => row.startMs <= startMs && row.endMs >= endMs) : [];
+        return {
+          active: endMs > startMs && activeRows.length === 4 && workerIds.length === 4 && parallelIds.length === 4,
+          startEpochMs: Number.isFinite(startMs) ? Number(startMs.toFixed(3)) : null,
+          endEpochMs: Number.isFinite(endMs) ? Number(endMs.toFixed(3)) : null,
+          durationMs: Number.isFinite(endMs - startMs) ? Number(Math.max(0, endMs - startMs).toFixed(3)) : 0,
+          testIdentities: activeRows.map((row) => row.key).sort(),
+          workerIds: [...new Set(activeRows.map((row) => row.workerIndex as number))].sort((left, right) => left - right),
+          targetParticipated: activeRows.some((row) => row.key === targetTestKey),
+        };
+      })()
+    : null;
+  return { valid: true, peakConcurrency, workerIds, parallelIds, fourTestOverlap };
+};
+
 const runGit = (args: string[]) => spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });
 const hasCommit = (sha: string) => runGit(["cat-file", "-e", `${sha}^{commit}`]).status === 0;
 const hasTreePath = (sha: string, path: string) => runGit(["cat-file", "-e", `${sha}:${path}`]).status === 0;
@@ -100,7 +229,7 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
   const summaryRef = asRecord(report.captureSummary);
   const captureSummary = asRecord(await safeReadArtifact(summaryRef?.artifactPath, summaryRef?.sha256));
   if (!captureSummary) issue(issues, "m7p-normalized-capture-summary-integrity-invalid");
-  if (captureSummary?.schemaVersion !== 1 || captureSummary?.captureMatrixRevision !== "m7p-assertion-scheduling-matrix-v1") {
+  if (captureSummary?.schemaVersion !== 2 || captureSummary?.captureMatrixRevision !== "m7p-assertion-scheduling-matrix-v2") {
     issue(issues, "m7p-capture-summary-schema-invalid");
   }
 
@@ -137,6 +266,8 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
   if (new Set(captureIds).size !== expectedCaptureCount) issue(issues, "m7p-capture-identity-duplicate-or-missing");
 
   const outcomesByCondition: Record<string, string[]> = {};
+  const taskDeadlineOverlapByCondition: Record<string, string[]> = {};
+  const fourWorkerOverlapByCondition: Record<string, boolean[]> = {};
   for (const [conditionName, contract] of Object.entries(conditions)) {
     const conditionCaptures = captures.filter((capture) => capture.condition === conditionName);
     if (conditionCaptures.length !== contract.attempts) issue(issues, "m7p-required-capture-condition-missing");
@@ -159,9 +290,31 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
       if (!sameJson(observedTestIdentities, expectedTestIdentities)) issue(issues, "m7p-cohort-test-identities-invalid");
       if (testResults.some((entry) => entry.retry !== 0) || capture.retries !== 0) issue(issues, "m7p-unexpected-retry-observed");
       if (capture.configuredWorkers !== contract.configuredWorkers) issue(issues, "m7p-configured-worker-contract-invalid");
-      if (contract.configuredWorkers === 4
-        && ((asNumber(capture.actualConcurrency) ?? 0) < 2 || (asNumber(capture.actualWorkers) ?? 0) < 2)) {
-        issue(issues, "m7p-required-worker-overlap-unverified");
+      const workerEvidence = reconstructM7pWorkerOverlap(
+        testResults,
+        expectedTestIdentities,
+        `${targetTestFile}::${targetIdentity}`,
+        contract.configuredWorkers,
+      );
+      const reportedWorkerEvidence = asRecord(capture.workerOverlapEvidence);
+      if (!workerEvidence.valid
+        || capture.actualConcurrency !== workerEvidence.peakConcurrency
+        || capture.actualWorkers !== workerEvidence.workerIds.length
+        || !sameJson(reportedWorkerEvidence, workerEvidence)) {
+        issue(issues, "m7p-worker-overlap-evidence-invalid");
+      }
+      if (contract.configuredWorkers === 4) {
+        const fourWayOverlap = workerEvidence.fourTestOverlap;
+        const established = workerEvidence.valid
+          && workerEvidence.peakConcurrency === 4
+          && workerEvidence.workerIds.length === 4
+          && workerEvidence.parallelIds.length === 4
+          && fourWayOverlap?.active === true
+          && fourWayOverlap.targetParticipated === true
+          && fourWayOverlap.testIdentities.length === 4;
+        if (!established) issue(issues, "m7p-four-way-worker-overlap-not-established");
+        fourWorkerOverlapByCondition[conditionName] ??= [];
+        fourWorkerOverlapByCondition[conditionName]?.push(established);
       }
       for (const result of testResults) outcomesByCondition[conditionName]?.push(`${result.identity}:${result.status}`);
       const targetResult = targetResults[0];
@@ -180,16 +333,48 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
 
       const timing = asRecord(capture.clockAlignment);
       const anchorRtt = asNumber(timing?.requestResponseUncertaintyMs);
+      const browserAnchorMs = asNumber(timing?.browserAnchorMonotonicMs);
+      const anchorRequestStartMs = asNumber(timing?.nodeAnchorRequestStartedAtMs);
+      const anchorResponseEndMs = asNumber(timing?.nodeAnchorResponseSettledAtMs);
+      const browserEntryEstimateMs = asNumber(timing?.browserAtNodeAssertionEntryEstimateMs);
+      const deadlineIntervalValue = timing?.inferredBrowserDeadlineIntervalMs;
+      const deadlineInterval = Array.isArray(deadlineIntervalValue) && deadlineIntervalValue.length === 2
+        ? [asNumber(deadlineIntervalValue[0]), asNumber(deadlineIntervalValue[1])] as const
+        : null;
+      const deadlineRoundingToleranceMs = asNumber(timing?.deadlineRoundingToleranceMs);
+      const derivedAnchorRtt = anchorRequestStartMs !== null && anchorResponseEndMs !== null
+        ? anchorResponseEndMs - anchorRequestStartMs
+        : null;
+      const derivedBrowserEntry = browserAnchorMs !== null && anchorResponseEndMs !== null && entryMs !== null
+        ? browserAnchorMs + entryMs - anchorResponseEndMs
+        : null;
+      const derivedDeadlineLower = derivedBrowserEntry !== null ? derivedBrowserEntry + 5_000 : null;
+      const derivedDeadlineUpper = derivedDeadlineLower !== null && derivedAnchorRtt !== null
+        ? derivedDeadlineLower + derivedAnchorRtt
+        : null;
       if (timing?.domainsPreserved !== true || !asString(timing?.assertionAnchorLabel)
         || anchorRtt === null || anchorRtt < 0 || anchorRtt > 1_000
-        || !Array.isArray(timing?.inferredBrowserDeadlineIntervalMs)
-        || timing?.inferredBrowserDeadlineIntervalMs.length !== 2) {
+        || browserAnchorMs === null || anchorRequestStartMs === null || anchorResponseEndMs === null
+        || anchorResponseEndMs < anchorRequestStartMs || entryMs === null || anchorResponseEndMs > entryMs
+        || browserEntryEstimateMs === null || derivedBrowserEntry === null
+        || Math.abs(browserEntryEstimateMs - derivedBrowserEntry) > 0.003
+        || derivedAnchorRtt === null || Math.abs(anchorRtt - derivedAnchorRtt) > 0.001
+        || deadlineRoundingToleranceMs !== 0.001
+        || deadlineInterval === null || deadlineInterval[0] === null || deadlineInterval[1] === null
+        || (deadlineInterval[0] as number) > (deadlineInterval[1] as number)
+        || derivedDeadlineLower === null || derivedDeadlineUpper === null
+        || Math.abs((deadlineInterval?.[0] as number) - derivedDeadlineLower) > 0.003
+        || Math.abs((deadlineInterval?.[1] as number) - derivedDeadlineUpper) > 0.003) {
         issue(issues, "m7p-timestamp-domain-alignment-invalid");
       }
 
       const canvas = asRecord(capture.canvasAvailability);
       if (!new Set(["observed-before-deadline", "observed-after-deadline", "unavailable-or-uncertain"]).has(String(canvas?.classification))) {
         issue(issues, "m7p-canvas-availability-classification-invalid");
+      }
+      const canvasObservationMs = asNumber(canvas?.firstMutationObserverScanBrowserMonotonicMs);
+      if (canvas?.classification !== classifyM7pDeadlineObservation(canvasObservationMs, deadlineInterval, deadlineRoundingToleranceMs ?? 0.001)) {
+        issue(issues, "m7p-canvas-deadline-classification-inconsistent");
       }
       if (canvas?.firstObservationIsMutationTime !== false) issue(issues, "m7p-dom-insertion-time-overclaim");
 
@@ -221,6 +406,94 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
         if ((asNumber(timing?.tracePageOffsetSpreadMs) ?? 1) > 1
           || asRecord(capture.browserMainThread)?.targetRendererThreadName !== "CrRendererMain") {
           issue(issues, "m7p-target-renderer-thread-attribution-invalid");
+        }
+        const traceOffset = asNumber(timing?.tracePageOffsetMs);
+        const traceOffsetRangeValue = timing?.tracePageOffsetRangeMs;
+        const traceOffsetRange = Array.isArray(traceOffsetRangeValue) && traceOffsetRangeValue.length === 2
+          ? [asNumber(traceOffsetRangeValue[0]), asNumber(traceOffsetRangeValue[1])] as const
+          : null;
+        const traceOffsetUncertainty = asNumber(timing?.tracePageOffsetUncertaintyMs);
+        const traceOffsetSpread = asNumber(timing?.tracePageOffsetSpreadMs);
+        const expectedOffsetUncertainty = traceOffset !== null && traceOffsetRange !== null
+          && traceOffsetRange[0] !== null && traceOffsetRange[1] !== null
+          ? Math.max(Math.abs(traceOffset - (traceOffsetRange[0] as number)), Math.abs((traceOffsetRange[1] as number) - traceOffset))
+          : null;
+        if (traceOffset === null || traceOffsetRange === null || traceOffsetRange[0] === null || traceOffsetRange[1] === null
+          || traceOffsetRange[0] > traceOffsetRange[1] || traceOffset < traceOffsetRange[0] - 0.001
+          || traceOffset > traceOffsetRange[1] + 0.001 || traceOffsetUncertainty === null
+          || expectedOffsetUncertainty === null || Math.abs(traceOffsetUncertainty - expectedOffsetUncertainty) > 0.00001
+          || traceOffsetSpread === null || Math.abs(traceOffsetSpread - ((traceOffsetRange[1] as number) - (traceOffsetRange[0] as number))) > 0.00001) {
+          issue(issues, "m7p-task-trace-clock-uncertainty-invalid");
+        }
+        const browserMainThread = asRecord(capture.browserMainThread);
+        const processAttribution = asRecord(browserMainThread?.traceProcessAttribution);
+        const targetProcessId = asNumber(processAttribution?.processId);
+        const targetThreadId = asNumber(processAttribution?.mainThreadId);
+        const threadMetadata = asArray(processAttribution?.threadMetadata).map(asRecord).filter((entry): entry is JsonRecord => entry !== null);
+        const matchingMainThreadMetadata = threadMetadata.filter((entry) => entry.pid === targetProcessId && entry.tid === targetThreadId);
+        const processMetadata = asArray(processAttribution?.processMetadata).map(asRecord).filter((entry): entry is JsonRecord => entry !== null);
+        const targetRendererProcessNamed = processMetadata.some((entry) => entry.pid === targetProcessId && entry.name === "Renderer");
+        if (targetProcessId === null || targetThreadId === null || !targetRendererProcessNamed
+          || matchingMainThreadMetadata.length === 0
+          || matchingMainThreadMetadata.some((entry) => entry.name !== "CrRendererMain")
+          || browserMainThread?.targetRendererThreadName !== "CrRendererMain") {
+          issue(issues, "m7p-target-renderer-thread-attribution-invalid");
+        }
+        const taskTolerance = asNumber(browserMainThread?.taskIntervalRoundingToleranceMs);
+        const effectiveTaskTolerance = taskTolerance ?? 0.002;
+        const rendererTasks = asArray(browserMainThread?.rendererMainRunTasks).map(asRecord).filter((entry): entry is JsonRecord => entry !== null);
+        if (taskTolerance !== 0.002 || rendererTasks.length === 0 || traceOffset === null || traceOffsetUncertainty === null
+          || targetProcessId === null || targetThreadId === null || deadlineInterval === null) {
+          issue(issues, "m7p-renderer-main-task-evidence-missing");
+        }
+        const derivedTaskClassifications: TaskDeadlineOverlapClassification[] = [];
+        for (const task of rendererTasks) {
+          const traceStartMs = asNumber(task.traceStartMs);
+          const traceEndMs = asNumber(task.traceEndMs);
+          const traceDurationMs = asNumber(task.traceDurationMs);
+          const startPageMs = asNumber(task.startPageMs);
+          const endPageMs = asNumber(task.endPageMs);
+          const durationMs = asNumber(task.durationMs);
+          const taskShapeValid = traceStartMs !== null && traceEndMs !== null && traceDurationMs !== null
+            && startPageMs !== null && endPageMs !== null && durationMs !== null
+            && traceStartMs <= traceEndMs && traceDurationMs >= 0 && startPageMs <= endPageMs && durationMs >= 0
+            && Math.abs((traceEndMs - traceStartMs) - traceDurationMs) <= 0.002
+            && Math.abs((endPageMs - startPageMs) - durationMs) <= effectiveTaskTolerance
+            && Math.abs(durationMs - traceDurationMs) <= effectiveTaskTolerance
+            && traceOffset !== null
+            && Math.abs(startPageMs - (traceStartMs - traceOffset)) <= effectiveTaskTolerance
+            && Math.abs(endPageMs - (traceEndMs - traceOffset)) <= effectiveTaskTolerance;
+          const taskAttributionValid = task.name === "RunTask" || task.name === "ThreadControllerImpl::RunTask";
+          const taskIdentityValid = task.processId === targetProcessId && task.threadId === targetThreadId
+            && task.attributionScope === "renderer-main-thread-only"
+            && !Object.hasOwn(task, "frameId") && !Object.hasOwn(task, "applicationFrameId");
+          if (!taskShapeValid || !taskAttributionValid || !taskIdentityValid) {
+            issue(issues, "m7p-renderer-main-task-evidence-invalid");
+          }
+          const classification = classifyM7pTaskDeadlineOverlap(
+            { startPageMs, endPageMs, durationMs },
+            deadlineInterval,
+            traceOffsetUncertainty,
+            taskTolerance ?? 0.002,
+            deadlineRoundingToleranceMs ?? 0.001,
+          );
+          derivedTaskClassifications.push(classification);
+          if (task.deadlineOverlapClassification !== classification) issue(issues, "m7p-task-overlap-classification-inconsistent");
+        }
+        const derivedTaskOverlap = derivedTaskClassifications.includes("definitely-spans-deadline")
+          ? "definitely-spans-deadline"
+          : derivedTaskClassifications.includes("possibly-overlaps-deadline")
+            ? "possibly-overlaps-deadline"
+            : derivedTaskClassifications.length > 0 && derivedTaskClassifications.every((classification) => classification === "does-not-overlap")
+              ? "does-not-overlap"
+              : "unverifiable";
+        if (browserMainThread?.deadlineOverlapClassification !== derivedTaskOverlap) {
+          issue(issues, "m7p-task-deadline-summary-inconsistent");
+        }
+        taskDeadlineOverlapByCondition[conditionName] ??= [];
+        taskDeadlineOverlapByCondition[conditionName]?.push(derivedTaskOverlap);
+        if (browserMainThread?.gpuTraceCategoriesEnabled !== false || browserMainThread?.gpuCausationClaim !== "not-claimed") {
+          issue(issues, "m7p-unsupported-causal-claim");
         }
         const unsupported = asRecord(trace?.unsupportedObservation);
         if (unsupported?.matcherInternalRetryTimestamps !== true
@@ -270,6 +543,12 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
     issue(issues, "m7p-unsupported-causal-claim");
   }
   if (!sameJson(diagnosis?.outcomesByCondition, outcomesByCondition)) issue(issues, "m7p-diagnosis-outcome-summary-inconsistent");
+  if (!sameJson(diagnosis?.taskDeadlineOverlapByCondition, taskDeadlineOverlapByCondition)) {
+    issue(issues, "m7p-diagnosis-task-overlap-summary-inconsistent");
+  }
+  if (!sameJson(diagnosis?.fourWorkerOverlapByCondition, fourWorkerOverlapByCondition)) {
+    issue(issues, "m7p-diagnosis-four-worker-summary-inconsistent");
+  }
   if (!new Set(["A-test-synchronization-remediation", "B-application-lifecycle-remediation", "C-workload-infrastructure-remediation", "D-further-targeted-investigation", "E-accept-environmental-limitation"]).has(String(diagnosis?.nextAction))) {
     issue(issues, "m7p-next-action-invalid");
   }
@@ -296,6 +575,8 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
       captureCount: captures.length,
       conditionCounts: captureSummary?.attemptsPerCondition ?? null,
       outcomesByCondition,
+      taskDeadlineOverlapByCondition,
+      fourWorkerOverlapByCondition,
       nextAction: diagnosis?.nextAction ?? null,
       broadE2eQualification: qualification?.broadE2eQualification ?? null,
     },
