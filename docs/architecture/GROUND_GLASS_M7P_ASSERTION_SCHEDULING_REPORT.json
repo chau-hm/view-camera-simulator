@@ -1,0 +1,516 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7p-assertion-scheduling-evaluator-v2",
+  "title": "M7P Playwright Assertion Scheduling and Browser Long-Task Causality",
+  "captureSummary": {
+    "artifactPath": "docs/architecture/ground-glass-m7p-assertion-scheduling/capture/final/normalized-captures.json",
+    "sha256": "bbe87dbd2cff7975846d550b257294c889d9205f42e616d014f10d043eab2eb2",
+    "captureCount": 18
+  },
+  "source": {
+    "executionSourceCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
+    "instrumentationSourceCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
+    "normalizerSourceCommitSha": "97d17110fff4c6d412e156c9281deac5a44bdb11",
+    "evaluatorSourceCommitSha": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
+    "sourceFiles": {
+      "execution": [
+        "playwright.config.ts",
+        "src/tests/e2e/architecture-rise-focus-range.spec.ts"
+      ],
+      "instrumentation": [
+        "src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts"
+      ],
+      "runner": [
+        "scripts/run-m7p-assertion-scheduling.mjs"
+      ],
+      "normalizer": [
+        "scripts/normalizeM7pAssertionSchedulingCapture.mjs"
+      ],
+      "evaluator": [
+        "scripts/evaluateM7pAssertionScheduling.ts",
+        "scripts/run-m7p-evidence.mjs",
+        "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts"
+      ]
+    }
+  },
+  "environment": {
+    "nodeVersion": "v24.3.0",
+    "playwrightVersion": "1.61.1",
+    "browserName": "Chromium",
+    "browserRevision": "chromium-1228 / chromium_headless_shell-1228",
+    "operatingSystem": "27.0.0",
+    "platform": "darwin",
+    "browserStartupMode": "Playwright standard chromium project, headless",
+    "rendererBackend": "application default WebGL; WebGPU qualification flags remain disabled",
+    "ordinaryProject": "chromium",
+    "serialProjectUsed": false
+  },
+  "experiment": {
+    "attemptsPerCondition": {
+      "P1": 3,
+      "P2": 3,
+      "P3": 3,
+      "P4-off": 3,
+      "P4-trace": 3,
+      "P5": 3
+    },
+    "targetAssertion": "expect(scene.locator(\"canvas\")).toHaveCount(1, { timeout: 5_000 })",
+    "retries": 0,
+    "actualConcurrencyMeasuredFromPlaywrightIntervals": true,
+    "traceOverheadAssessment": {
+      "instrumentationHeldConstant": true,
+      "assertionElapsedMs": {
+        "P1TracingOff": [
+          4466.968,
+          4417.231,
+          4370.557
+        ],
+        "P2TracingOn": [
+          4525.095,
+          4354.939,
+          4409.166
+        ],
+        "medianOffMs": 4417.231,
+        "medianOnMs": 4409.166,
+        "medianDifferenceOnMinusOffMs": -8.0649999999996
+      },
+      "heavyWorkloadTargetOutcomes": {
+        "tracingOff": [
+          "failed",
+          "failed",
+          "failed"
+        ],
+        "tracingOn": [
+          "failed",
+          "failed",
+          "failed"
+        ]
+      },
+      "interpretation": "Descriptive repeated-capture comparison only; not a causal estimate of tracing overhead."
+    },
+    "conditions": [
+      {
+        "id": "P1",
+        "name": "target-solo-tracing-off",
+        "purpose": "Fresh solo control with M7P browser-side observers active and CDP tracing disabled."
+      },
+      {
+        "id": "P2",
+        "name": "target-solo-tracing-on",
+        "purpose": "Matched solo control with bounded CDP tracing enabled."
+      },
+      {
+        "id": "P3",
+        "name": "target-plus-light-peers-w4",
+        "purpose": "Target with the original three light peers and four measured overlapping workers."
+      },
+      {
+        "id": "P4-off",
+        "name": "target-plus-renderer-heavy-peers-w4-tracing-off",
+        "purpose": "Original heavy peer cohort with CDP tracing disabled."
+      },
+      {
+        "id": "P4-trace",
+        "name": "target-plus-renderer-heavy-peers-w4-tracing-on",
+        "purpose": "Original heavy peer cohort with bounded CDP tracing enabled."
+      },
+      {
+        "id": "P5",
+        "name": "target-with-bounded-non-renderer-main-thread-stall",
+        "purpose": "A 5.4-second synthetic browser-main-thread task after Canvas observation, initiated after assertion entry."
+      }
+    ],
+    "fourWorkerOverlapMeasuredFromRawPlaywrightStartAndDuration": true
+  },
+  "diagnosis": {
+    "executiveFinding": "The selected light and renderer-heavy four-worker captures failed the Canvas assertion in all attempts, while solo controls and the synthetic stall control passed. Trace captures directly show long CrRendererMain RunTask intervals spanning the inferred assertion deadline, but the available interfaces do not expose the private matcher retries or prove that those intervals caused the zero-count resolutions. The synthetic stall delayed successful assertion settlement well beyond its five-second budget, showing that a main-thread stall can delay delivery without being sufficient to reproduce the failure when Canvas was observed before the stall.",
+    "outcomesByCondition": {
+      "P1": [
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed"
+      ],
+      "P2": [
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed"
+      ],
+      "P3": [
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "concept learning sections keep their responsive grids without overflow:passed",
+        "concept learning sections keep their responsive grids without overflow:passed",
+        "concept learning sections keep their responsive grids without overflow:passed",
+        "keeps the active lesson context between the brand and desktop actions:passed",
+        "keeps the active lesson context between the brand and desktop actions:passed",
+        "keeps the active lesson context between the brand and desktop actions:passed",
+        "smoke: app boots at home:passed",
+        "smoke: app boots at home:passed",
+        "smoke: app boots at home:passed"
+      ],
+      "P4-off": [
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions:failed",
+        "Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions:timedOut",
+        "Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions:timedOut",
+        "Macro 4 teaches compound Tilt + Swing + Focus through the public route:passed",
+        "Macro 4 teaches compound Tilt + Swing + Focus through the public route:passed",
+        "Macro 4 teaches compound Tilt + Swing + Focus through the public route:timedOut",
+        "Mirror Shift Camera focus follows the rig while Scene focus stays fixed:passed",
+        "Mirror Shift Camera focus follows the rig while Scene focus stays fixed:passed",
+        "Mirror Shift Camera focus follows the rig while Scene focus stays fixed:passed"
+      ],
+      "P4-trace": [
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:failed",
+        "Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions:timedOut",
+        "Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions:timedOut",
+        "Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions:timedOut",
+        "Macro 4 teaches compound Tilt + Swing + Focus through the public route:timedOut",
+        "Macro 4 teaches compound Tilt + Swing + Focus through the public route:timedOut",
+        "Macro 4 teaches compound Tilt + Swing + Focus through the public route:timedOut",
+        "Mirror Shift Camera focus follows the rig while Scene focus stays fixed:passed",
+        "Mirror Shift Camera focus follows the rig while Scene focus stays fixed:passed",
+        "Mirror Shift Camera focus follows the rig while Scene focus stays fixed:passed"
+      ],
+      "P5": [
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed",
+        "Architecture Rise focus control stays within scene depth and preserves thin-lens extension:passed"
+      ]
+    },
+    "questions": {
+      "Q1_canvasAvailability": {
+        "classification": "observed-before-deadline",
+        "observation": "All 18 captures recorded a connected Canvas before the inferred deadline. The first MutationObserver scan is an observation boundary, not an exact DOM insertion timestamp."
+      },
+      "Q2_browserMainThread": {
+        "classification": "direct-stalls-observed; failure-service-causality-unresolved",
+        "observation": "In every P3 trace, a target CrRendererMain ThreadControllerImpl::RunTask interval of about 3.87–4.11 seconds spans the inferred browser deadline. In every P4-trace attempt, a 5.71–6.27 second interval spans the deadline. These events directly establish long renderer-main-thread task intervals; their underlying generic RunTask work is not frame-attributed, and the failure mechanism is not proven."
+      },
+      "Q3_playwrightScheduling": {
+        "classification": "public-boundaries-observed; matcher-internals-unobservable",
+        "observation": "Node assertion entry and settlement, public page.evaluate request/response intervals, clock-sync brackets, and trace markers are retained. In P4-trace-r1 the assertion failure settled at Node 6109.7 ms; the subsequent public failure-catch evaluation began at 6109.7 ms and returned at 8781.5 ms, after the traced renderer task ended. This demonstrates delayed servicing of that public evaluation, not internal toHaveCount retry timing."
+      },
+      "Q4_causality": {
+        "classification": "workload-correlation-observed; synthetic-stall-not-sufficient; renderer-specific-mechanism-unresolved",
+        "observation": "P3 and P4 target outcomes were 0/3 passed; P1, P2, and P5 were 3/3 passed. P5 produced a 5.4-second CrRendererMain task spanning the inferred deadline, yet Canvas was present before/after and the same assertion passed after 9.41–9.51 seconds. This counterexample does not establish the renderer-heavy causal path."
+      },
+      "Q5_testSynchronization": {
+        "classification": "no-synchronization-fix-justified",
+        "observation": "The records do not identify a semantic application-ready predicate that explains or safely replaces the current Canvas-count assertion. No timeout, retry, sleep, or serialization change is proposed."
+      }
+    },
+    "claims": {
+      "internalMatcherRetryTimestampsAvailable": false,
+      "perRetryLocatorResolutionResultsAvailable": false,
+      "exactDomInsertionTimeAvailable": false,
+      "genericRunTaskFrameAttributionAvailable": false,
+      "rendererSpecificMechanismEstablished": false,
+      "gpuSaturationEstablished": false,
+      "syntheticStallProvesRendererCausation": false,
+      "instrumentationOverheadCausalEstimate": false
+    },
+    "nextAction": "D-further-targeted-investigation",
+    "nextExperiment": "Run a matched light-peer four-worker pair with M7P browser observers unchanged and CDP tracing off/on. This isolates whether the P3 divergence from the accepted M7O light-peer result is associated with CDP tracing; retain the same test identities and zero-retry policy. Do not change the Canvas assertion or treat either outcome as proof of renderer causation.",
+    "stoppingRationale": "The required matrix and synthetic control are complete. The remaining distinction depends on matcher-internal state that supported public APIs do not expose; further diagnosis should first isolate the P3 trace-on divergence with one matched condition pair rather than expand the capture system.",
+    "taskDeadlineOverlapByCondition": {
+      "P2": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ],
+      "P3": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ],
+      "P4-trace": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ],
+      "P5": [
+        "definitely-spans-deadline",
+        "definitely-spans-deadline",
+        "definitely-spans-deadline"
+      ]
+    },
+    "fourWorkerOverlapByCondition": {
+      "P3": [
+        true,
+        true,
+        true
+      ],
+      "P4-off": [
+        true,
+        true,
+        true
+      ],
+      "P4-trace": [
+        true,
+        true,
+        true
+      ]
+    },
+    "deadlineIntervalModel": {
+      "browserEntryEstimate": "browserAnchorMonotonicMs + nodeAssertionEntryMs - nodeAnchorResponseSettledAtMs",
+      "lowerBound": "browserAtNodeAssertionEntryEstimateMs + timeoutBudgetMs",
+      "upperBound": "lowerBound + requestResponseUncertaintyMs",
+      "comparisonRoundingToleranceMs": 0.001
+    },
+    "taskDeadlineInterpretation": "Generic RunTask timing is attributed to the target CrRendererMain process/thread only; it does not identify an application frame, WebGL operation, GPU cause, or private matcher retry."
+  },
+  "historicalEvidence": {
+    "m7oCapturesChanged": false,
+    "m7oDigestsChanged": false,
+    "m7kFullSuite": {
+      "discovered": 278,
+      "passed": 121,
+      "unexpected": 82,
+      "skipped": 75,
+      "flaky": 0,
+      "incomplete": 0
+    },
+    "m7oVerifiedApplicationFixes": 0,
+    "m7oDecision": "scheduling-pressure-supported-cause-unresolved"
+  },
+  "qualification": {
+    "m7kBroadE2eDiscovered": 278,
+    "m7kBroadE2ePassed": 121,
+    "m7kBroadE2eUnexpected": 82,
+    "m7kBroadE2eSkipped": 75,
+    "broadE2eQualification": "not-qualified",
+    "m7Overall": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled",
+    "m7oVerifiedApplicationFixes": 0
+  },
+  "sourceAvailabilityReplay": {
+    "method": "isolated shallow GitHub main clone with a synthetic squash snapshot and no shared object alternate",
+    "baseCommit": "7c5b1892afedd50af4aa5718a1fa6ed19cb6ec1e",
+    "retainedRef": "refs/pull/314/head",
+    "initiallyAbsentSourceCommits": [
+      "3131da63a608a4591a345c3b03a072eafd1f8783",
+      "23743c882229d84c3f712cb6dd72346757e58790",
+      "32f169176324a6d67c81f3028d96d4aa36ca9c6f"
+    ],
+    "initialGitCatFileExitCode": 128,
+    "preFetchEvaluatorExitCode": 1,
+    "preFetchIssues": [
+      "m7p-source-commit-unavailable",
+      "m7p-source-tree-entry-missing"
+    ],
+    "fetchMode": "retained-ref-history-fallback",
+    "postFetchEvaluatorExitCode": 0,
+    "postFetchEvidenceIntegrity": "passed",
+    "postFetchUnavailableShaExitCode": 1,
+    "sourceTreePathsVerified": [
+      "playwright.config.ts",
+      "src/tests/e2e/architecture-rise-focus-range.spec.ts",
+      "src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts",
+      "scripts/run-m7p-assertion-scheduling.mjs",
+      "scripts/normalizeM7pAssertionSchedulingCapture.mjs",
+      "scripts/evaluateM7pAssertionScheduling.ts",
+      "scripts/run-m7p-evidence.mjs",
+      "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts"
+    ]
+  },
+  "reviewFixRound1": {
+    "title": "Correct deadline bounds, trace-task validation, and four-worker overlap proof",
+    "evaluatorRevision": "m7p-assertion-scheduling-evaluator-v2",
+    "deadlineUncertainty": {
+      "formula": {
+        "browserEntryEstimate": "browserAnchorMonotonicMs + nodeAssertionEntryMs - nodeAnchorResponseSettledAtMs",
+        "lowerBound": "browserAtNodeAssertionEntryEstimateMs + timeoutBudgetMs",
+        "upperBound": "lowerBound + requestResponseUncertaintyMs"
+      },
+      "comparisonRoundingToleranceMs": 0.001,
+      "correctedIntervalWidthMs": [
+        4.170000000000073,
+        28.911000000000058
+      ],
+      "canvasObservationClassifications": {
+        "observed-before-deadline": 18
+      },
+      "independentBoundaryOracle": {
+        "input": {
+          "nodeRequestMs": 100,
+          "nodeResponseMs": 200,
+          "browserAnchorMs": 1000,
+          "nodeAssertionEntryMs": 200,
+          "timeoutMs": 5000
+        },
+        "expectedIntervalMs": [
+          6000,
+          6100
+        ],
+        "observations": {
+          "5950": "observed-before-deadline",
+          "6050": "unavailable-or-uncertain",
+          "6150": "observed-after-deadline"
+        }
+      }
+    },
+    "traceTaskDeadlineOverlap": {
+      "intervalRoundingToleranceMs": 0.002,
+      "tracePageOffsetUncertaintyApplied": true,
+      "classificationsByCondition": {
+        "P2": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ],
+        "P3": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ],
+        "P4-trace": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ],
+        "P5": [
+          "definitely-spans-deadline",
+          "definitely-spans-deadline",
+          "definitely-spans-deadline"
+        ]
+      },
+      "allTraceOnAttemptsHaveDefiniteSpan": true,
+      "claimBoundary": "RunTask supports renderer-process main-thread timing only; it identifies no application frame, WebGL operation, GPU cause, or private matcher retry."
+    },
+    "fourWorkerOverlap": {
+      "reconstructedFrom": [
+        "testResults.startTime",
+        "testResults.durationMs"
+      ],
+      "requiredConditions": [
+        "P3",
+        "P4-off",
+        "P4-trace"
+      ],
+      "attemptCount": 9,
+      "allFourExactTestsAndWorkerSlotsOverlap": true,
+      "commonOverlapDurationMsByCondition": {
+        "P3": [
+          639,
+          669,
+          657
+        ],
+        "P4-off": [
+          12028,
+          12394,
+          11562
+        ],
+        "P4-trace": [
+          12773,
+          12730,
+          12526
+        ]
+      }
+    },
+    "rawEvidence": {
+      "sourceExecutionCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
+      "rawPlaywrightReportCountDigestVerified": 18,
+      "rawTraceCountDigestVerified": 12,
+      "rawCaptureFilesRewritten": false,
+      "browserExperimentsRepeated": false
+    },
+    "regressionCoverage": {
+      "focusedM7pTests": 53,
+      "testResult": "passed",
+      "positiveControls": [
+        "retained M7P report accepted by CLI",
+        "four exact tests and four worker slots overlap",
+        "definite task spans derived from retained numerical evidence"
+      ],
+      "negativeControls": [
+        "deadline before/uncertain/after boundaries",
+        "missing or invalid anchors and inverted deadline",
+        "task intervals before/after deadline",
+        "inverted endpoints and duration mismatch",
+        "wrong process/thread or missing CrRendererMain metadata",
+        "shifted deadline and false definite overlap",
+        "unsupported GPU causation",
+        "two workers",
+        "four non-overlapping workers",
+        "only three concurrent tests",
+        "target absent from common overlap",
+        "duplicate workers",
+        "malformed timestamps",
+        "negative/zero/non-finite durations",
+        "summary mismatch"
+      ]
+    },
+    "confirmedValidation": {
+      "focusedM7pUnitTests": "53 passed",
+      "typecheck": "passed",
+      "m7pEvidenceCheck": "passed",
+      "m7oEvidenceCheck": "passed",
+      "lint": "passed",
+      "gitDiffCheck": "passed"
+    },
+    "reviewFinding": "https://github.com/chau-hm/view-camera-simulator/pull/314#discussion_r4493780259",
+    "fixCommits": {
+      "normalizer": "97d17110fff4c6d412e156c9281deac5a44bdb11",
+      "evaluator": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
+      "mutationTests": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911"
+    },
+    "evaluatorSourcePin": {
+      "commitSha": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
+      "sourcePath": "scripts/evaluateM7pAssertionScheduling.ts",
+      "mutationTestsCommitSha": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911"
+    },
+    "postSquashReplay": {
+      "baseCommit": "7c5b1892afedd50af4aa5718a1fa6ed19cb6ec1e",
+      "sourceCommits": [
+        "3131da63a608a4591a345c3b03a072eafd1f8783",
+        "97d17110fff4c6d412e156c9281deac5a44bdb11",
+        "e9a65d31327cd1e8cd135aeae5ff444c39988e27"
+      ],
+      "sourceAvailabilityBeforeFetch": {
+        "shallow": true,
+        "sharedObjectAlternates": false,
+        "eachPinnedCommitCatFileExitCode": 128,
+        "requiredNormalizerAndEvaluatorTreeEntriesCatFileExitCode": 128,
+        "checkerExitCode": 1,
+        "checkerIssues": [
+          "m7p-evaluator-source-content-mismatch",
+          "m7p-source-commit-unavailable",
+          "m7p-source-tree-entry-missing"
+        ]
+      },
+      "exactShaFetch": {
+        "syntheticSnapshotCommit": "8ec8ab26917a99bb08b96ebbc28b799271921bcb",
+        "fetchRef": "refs/pull/314/head",
+        "resultBySourceCommit": {
+          "3131da63a608a4591a345c3b03a072eafd1f8783": "exact-commit-fetch",
+          "97d17110fff4c6d412e156c9281deac5a44bdb11": "exact-commit-fetch",
+          "e9a65d31327cd1e8cd135aeae5ff444c39988e27": "exact-commit-fetch"
+        },
+        "verifiedTreePathCountPerSource": 8,
+        "checkerExitCode": 0,
+        "evidenceIntegrity": "passed"
+      },
+      "retainedRefFallback": {
+        "syntheticSnapshotCommit": "912e909d691a0ae4277c6ede15c8eec36469eb70",
+        "fetchRef": "refs/pull/314/head",
+        "forcedFallback": true,
+        "initialCommitCatFileExitCode": 128,
+        "firstFetchResult": "retained-ref-history-fallback",
+        "subsequentSourceResults": "already-present",
+        "verifiedTreePathCountPerSource": 8,
+        "checkerExitCode": 0,
+        "evidenceIntegrity": "passed"
+      },
+      "rawCapturesChanged": false
+    }
+  }
+}
