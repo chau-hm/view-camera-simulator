@@ -93,6 +93,22 @@ describe("M7P timing and concurrency mathematics", () => {
     }
   });
 
+  it("accepts a valid zero-width anchor and deadline interval", async () => {
+    const { report, summary } = await acceptedEvidence();
+    const capture = findCapture(summary, "P1", 1);
+    const timing = capture.clockAlignment as JsonRecord;
+    timing.nodeAnchorResponseSettledAtMs = timing.nodeAnchorRequestStartedAtMs;
+    timing.requestResponseUncertaintyMs = 0;
+    const browserEntry = Number(timing.browserAnchorMonotonicMs)
+      + Number((capture.targetAssertion as JsonRecord).entryNodeMonotonicMs)
+      - Number(timing.nodeAnchorResponseSettledAtMs);
+    timing.browserAtNodeAssertionEntryEstimateMs = Number(browserEntry.toFixed(3));
+    const deadline = Number((browserEntry + 5_000).toFixed(3));
+    timing.inferredBrowserDeadlineIntervalMs = [deadline, deadline];
+    const result = await evaluateMutation(report, summary);
+    expect(result.passed).toBe(true);
+  });
+
   it("reconstructs a non-empty four-test overlap with the target and four workers", () => {
     const rows = workerRows();
     const result = reconstructM7pWorkerOverlap(rows, workerKeys, workerKeys[0]!, 4);
