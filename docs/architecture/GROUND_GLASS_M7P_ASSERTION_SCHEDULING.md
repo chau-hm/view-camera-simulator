@@ -95,13 +95,13 @@ The accepted M7K full-suite record remains 278 discovered, 121 passed, 82 unexpe
 ## Evidence and validation
 
 - Machine-readable report: `docs/architecture/GROUND_GLASS_M7P_ASSERTION_SCHEDULING_REPORT.json`.
-- Corrected normalized capture summary SHA-256: `e9e8fbb0a37c83d4a5d1ad77f5fe6829ccaba1ffd760957d4b3568fa5fb979ce`.
+- Corrected normalized capture summary SHA-256: `bbe87dbd2cff7975846d550b257294c889d9205f42e616d014f10d043eab2eb2`.
 - Evaluator revision: `m7p-assertion-scheduling-evaluator-v2`.
 - Evidence command: `npm run evidence:check:m7p`.
 - Focused mutation tests: `src/tests/unit/m7pAssertionSchedulingEvidence.test.ts`.
 - Existing M7O evidence command: `npm run evidence:check:m7o`.
 
-The report preserves execution and instrumentation at `3131da63a608a4591a345c3b03a072eafd1f8783`, pins the corrected normalizer to `97d17110fff4c6d412e156c9281deac5a44bdb11`, and pins evaluator v2 plus its final mutation tests to `8262e7bf49e0f5ff589c6d3f35059915c3b8a911`. The exact source role, tree-entry, and evaluator-content checks remain active for post-squash verification.
+The report preserves execution and instrumentation at `3131da63a608a4591a345c3b03a072eafd1f8783`, pins the corrected normalizer to `97d17110fff4c6d412e156c9281deac5a44bdb11`, and pins evaluator v2 to the commit that introduced that evaluator, `e9a65d31327cd1e8cd135aeae5ff444c39988e27`. The final mutation-test file, including the additional zero-width positive control, is at `8262e7bf49e0f5ff589c6d3f35059915c3b8a911`. The exact source role, tree-entry, and evaluator-content checks remain active for post-squash verification.
 
 ## M7P Review-Fix Round 1 — Deadline and overlap evidence correction
 

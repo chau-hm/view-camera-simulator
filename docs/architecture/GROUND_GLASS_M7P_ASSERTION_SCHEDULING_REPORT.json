@@ -4,14 +4,14 @@
   "title": "M7P Playwright Assertion Scheduling and Browser Long-Task Causality",
   "captureSummary": {
     "artifactPath": "docs/architecture/ground-glass-m7p-assertion-scheduling/capture/final/normalized-captures.json",
-    "sha256": "e9e8fbb0a37c83d4a5d1ad77f5fe6829ccaba1ffd760957d4b3568fa5fb979ce",
+    "sha256": "bbe87dbd2cff7975846d550b257294c889d9205f42e616d014f10d043eab2eb2",
     "captureCount": 18
   },
   "source": {
     "executionSourceCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
     "instrumentationSourceCommitSha": "3131da63a608a4591a345c3b03a072eafd1f8783",
     "normalizerSourceCommitSha": "97d17110fff4c6d412e156c9281deac5a44bdb11",
-    "evaluatorSourceCommitSha": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911",
+    "evaluatorSourceCommitSha": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
     "sourceFiles": {
       "execution": [
         "playwright.config.ts",
@@ -462,6 +462,11 @@
       "normalizer": "97d17110fff4c6d412e156c9281deac5a44bdb11",
       "evaluator": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
       "mutationTests": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911"
+    },
+    "evaluatorSourcePin": {
+      "commitSha": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
+      "sourcePath": "scripts/evaluateM7pAssertionScheduling.ts",
+      "mutationTestsCommitSha": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911"
     }
   }
 }
