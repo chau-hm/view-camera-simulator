@@ -46,6 +46,38 @@ const asString = (value: unknown): string | null => typeof value === "string" ? 
 const asNumber = (value: unknown): number | null => typeof value === "number" && Number.isFinite(value) ? value : null;
 const approximatelyEqual = (left: number, right: number, tolerance = 1e-5) => Math.abs(left - right) <= tolerance;
 
+const singleArchitectureCanvasIdentity = (value: unknown) => {
+  const snapshot = asRecord(value);
+  const scenes = asArray(snapshot?.sceneContainers).map(asRecord).filter((entry): entry is JsonRecord => entry !== null);
+  if (snapshot?.route !== "/simulator/free/architecture-rise" || snapshot.totalCanvasCount !== 1 || scenes.length !== 1) return null;
+  const scene = scenes[0];
+  const canvases = asArray(scene?.canvases).map(asRecord).filter((entry): entry is JsonRecord => entry !== null);
+  if (scene?.sceneId !== "architecture-rise" || scene.isConnected !== true || canvases.length !== 1 || canvases[0]?.isConnected !== true) return null;
+  const documentIdentity = asString(snapshot.documentIdentity);
+  const sceneIdentity = asString(scene.identity);
+  const canvasIdentity = asString(canvases[0].identity);
+  if (!documentIdentity || !sceneIdentity || !canvasIdentity) return null;
+  return {
+    documentIdentity,
+    sceneIdentity,
+    canvasIdentity,
+    rendererGeneration: scene.rendererGeneration ?? null,
+  };
+};
+
+export const hasStableSingleCanvasIdentity = (firstSnapshot: unknown, followingSnapshots: unknown[]) => {
+  const first = singleArchitectureCanvasIdentity(firstSnapshot);
+  if (!first) return false;
+  return followingSnapshots.every((snapshot) => {
+    const current = singleArchitectureCanvasIdentity(snapshot);
+    return current !== null
+      && current.documentIdentity === first.documentIdentity
+      && current.sceneIdentity === first.sceneIdentity
+      && current.canvasIdentity === first.canvasIdentity
+      && current.rendererGeneration === first.rendererGeneration;
+  });
+};
+
 const runGit = (args: string[]) => {
   const result = spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
@@ -366,27 +398,16 @@ export const evaluateM7oCanvasAssertionTimingEvidence = async (
       const firstCanvasTransition = firstCanvasTransitionIndex >= 0 ? transitions[firstCanvasTransitionIndex] : null;
       const firstCanvasBrowserMs = asNumber(firstCanvasTransition?.observedAtPageMonotonicMs);
       const firstCanvasDom = asRecord(firstCanvasTransition?.current);
-      const firstScene = asRecord(asArray(firstCanvasDom?.sceneContainers)[0]);
-      const firstCanvas = asRecord(asArray(firstScene?.canvases)[0]);
       if (safeOffset && failureDeadline !== null && firstCanvasBrowserMs !== null) {
         const firstCanvasInterval = mapBrowserEvent(firstCanvasBrowserMs);
         firstCanvasObservedBeforeDeadline = firstCanvasInterval !== null && firstCanvasInterval[1] < failureDeadline;
       }
-      const failureScene = asRecord(asArray(failureDom?.sceneContainers)[0]);
-      const failureCanvas = asRecord(asArray(failureScene?.canvases)[0]);
-      sameSceneCanvasIdentityAtFailure = firstScene?.identity === failureScene?.identity
-        && firstCanvas?.identity === failureCanvas?.identity
-        && firstScene?.sceneId === "architecture-rise"
-        && failureScene?.sceneId === "architecture-rise"
-        && failureScene?.isConnected === true
-        && failureCanvas?.isConnected === true;
+      sameSceneCanvasIdentityAtFailure = hasStableSingleCanvasIdentity(firstCanvasDom, [failureDom]);
       if (assertion?.outcome === "failed" && firstCanvasTransitionIndex >= 0) {
-        canvasRemovalOrReplacementObserved = transitions.slice(firstCanvasTransitionIndex + 1).some((transition) => {
-          const current = asRecord(transition.current);
-          const currentScenes = asArray(current?.sceneContainers).map(asRecord).filter((entry): entry is JsonRecord => entry !== null);
-          const currentCanvases = currentScenes.flatMap((scene) => asArray(scene.canvases).map(asRecord).filter((entry): entry is JsonRecord => entry !== null));
-          return currentCanvases.length !== 1 || currentScenes.length !== 1 || currentScenes[0]?.identity !== firstScene?.identity || currentCanvases[0]?.identity !== firstCanvas?.identity;
-        });
+        canvasRemovalOrReplacementObserved = !hasStableSingleCanvasIdentity(
+          firstCanvasDom,
+          transitions.slice(firstCanvasTransitionIndex + 1).map((transition) => asRecord(transition)?.current),
+        );
         if (!firstCanvasObservedBeforeDeadline || !sameSceneCanvasIdentityAtFailure || canvasRemovalOrReplacementObserved) issue("m7o-failure-dom-identity-evidence-invalid");
       }
 

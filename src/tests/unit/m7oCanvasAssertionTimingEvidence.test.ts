@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { evaluateM7oCanvasAssertionTimingEvidence } from "../../../scripts/evaluateM7oCanvasAssertionTiming";
+import { evaluateM7oCanvasAssertionTimingEvidence, hasStableSingleCanvasIdentity } from "../../../scripts/evaluateM7oCanvasAssertionTiming";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const acceptedReportPath = "docs/architecture/GROUND_GLASS_M7O_CANVAS_ASSERTION_TIMING_REPORT.json";
@@ -114,6 +114,36 @@ describe("M7O Canvas assertion timing evidence evaluator", () => {
     expect(result.issues).toContain("m7o-capture-environment-invalid");
     expect(result.issues).toContain("m7o-browser-version-provenance-invalid");
   });
+
+  it("requires one continuous document, scene, and Canvas identity through the failure boundary", () => {
+    const first = makeCanvasSnapshot("document-1", [makeScene("scene-1", [makeCanvas("canvas-1")])]);
+    const stable = makeCanvasSnapshot("document-1", [makeScene("scene-1", [makeCanvas("canvas-1")])]);
+    const detached = makeCanvasSnapshot("document-1", []);
+    const replaced = makeCanvasSnapshot("document-1", [makeScene("scene-1", [makeCanvas("canvas-2")])]);
+    const ambiguous = makeCanvasSnapshot("document-1", [makeScene("scene-1", [makeCanvas("canvas-1"), makeCanvas("canvas-2")])]);
+    const navigated = makeCanvasSnapshot("document-2", [makeScene("scene-1", [makeCanvas("canvas-1")])]);
+
+    expect(hasStableSingleCanvasIdentity(first, [stable])).toBe(true);
+    expect(hasStableSingleCanvasIdentity(first, [detached])).toBe(false);
+    expect(hasStableSingleCanvasIdentity(first, [replaced])).toBe(false);
+    expect(hasStableSingleCanvasIdentity(first, [ambiguous])).toBe(false);
+    expect(hasStableSingleCanvasIdentity(first, [navigated])).toBe(false);
+  });
+});
+
+const makeCanvas = (identity: string) => ({ identity, isConnected: true });
+const makeScene = (identity: string, canvases: Array<{ identity: string; isConnected: boolean }>) => ({
+  identity,
+  isConnected: true,
+  sceneId: "architecture-rise",
+  rendererGeneration: "0",
+  canvases,
+});
+const makeCanvasSnapshot = (documentIdentity: string, sceneContainers: Array<ReturnType<typeof makeScene>>) => ({
+  documentIdentity,
+  route: "/simulator/free/architecture-rise",
+  totalCanvasCount: sceneContainers.reduce((total, scene) => total + scene.canvases.length, 0),
+  sceneContainers,
 });
 
 const evaluateMutation = async (report: JsonRecord) => {
