@@ -467,6 +467,50 @@
       "commitSha": "e9a65d31327cd1e8cd135aeae5ff444c39988e27",
       "sourcePath": "scripts/evaluateM7pAssertionScheduling.ts",
       "mutationTestsCommitSha": "8262e7bf49e0f5ff589c6d3f35059915c3b8a911"
+    },
+    "postSquashReplay": {
+      "baseCommit": "7c5b1892afedd50af4aa5718a1fa6ed19cb6ec1e",
+      "sourceCommits": [
+        "3131da63a608a4591a345c3b03a072eafd1f8783",
+        "97d17110fff4c6d412e156c9281deac5a44bdb11",
+        "e9a65d31327cd1e8cd135aeae5ff444c39988e27"
+      ],
+      "sourceAvailabilityBeforeFetch": {
+        "shallow": true,
+        "sharedObjectAlternates": false,
+        "eachPinnedCommitCatFileExitCode": 128,
+        "requiredNormalizerAndEvaluatorTreeEntriesCatFileExitCode": 128,
+        "checkerExitCode": 1,
+        "checkerIssues": [
+          "m7p-evaluator-source-content-mismatch",
+          "m7p-source-commit-unavailable",
+          "m7p-source-tree-entry-missing"
+        ]
+      },
+      "exactShaFetch": {
+        "syntheticSnapshotCommit": "8ec8ab26917a99bb08b96ebbc28b799271921bcb",
+        "fetchRef": "refs/pull/314/head",
+        "resultBySourceCommit": {
+          "3131da63a608a4591a345c3b03a072eafd1f8783": "exact-commit-fetch",
+          "97d17110fff4c6d412e156c9281deac5a44bdb11": "exact-commit-fetch",
+          "e9a65d31327cd1e8cd135aeae5ff444c39988e27": "exact-commit-fetch"
+        },
+        "verifiedTreePathCountPerSource": 8,
+        "checkerExitCode": 0,
+        "evidenceIntegrity": "passed"
+      },
+      "retainedRefFallback": {
+        "syntheticSnapshotCommit": "912e909d691a0ae4277c6ede15c8eec36469eb70",
+        "fetchRef": "refs/pull/314/head",
+        "forcedFallback": true,
+        "initialCommitCatFileExitCode": 128,
+        "firstFetchResult": "retained-ref-history-fallback",
+        "subsequentSourceResults": "already-present",
+        "verifiedTreePathCountPerSource": 8,
+        "checkerExitCode": 0,
+        "evidenceIntegrity": "passed"
+      },
+      "rawCapturesChanged": false
     }
   }
 }
