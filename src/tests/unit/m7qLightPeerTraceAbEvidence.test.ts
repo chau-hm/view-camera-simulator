@@ -1,8 +1,9 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   classifyM7qCanvasObservation,
   classifyM7qTaskDeadlineRelationship,
@@ -10,6 +11,7 @@ import {
   deriveM7qFourWorkerOverlap,
   evaluateM7qLightPeerTraceAb,
   runM7qEvidenceCli,
+  verifyM7qRawEvidence,
 } from "../../../scripts/evaluateM7qLightPeerTraceAb";
 
 const reportPath = resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7Q_LIGHT_PEER_TRACE_AB_REPORT.json");
@@ -68,6 +70,13 @@ describe("M7Q evidence contract", () => {
       nodeAssertionEntryMs: 200,
       timeoutBudgetMs: 5_000,
     }).valid).toBe(false);
+  });
+
+  it("rejects a Node heartbeat maximum that disagrees with the retained normalized samples", () => {
+    const mutated = clone(validCaptures);
+    (attempt(mutated, "m7q-pair-1-off").browserObservations as Record<string, unknown>)
+      .maximumNodeHeartbeatDelayDuringAssertionWindowMs = 9_999;
+    expect(issuesFor(validReport, mutated)).toContain("m7q-attempt-m7q-pair-1-off-node-heartbeat-summary-invalid");
   });
 
   it("keeps possible deadline overlap distinct from definite coverage", () => {
@@ -285,6 +294,56 @@ describe("M7Q evidence contract", () => {
       await writeFile(tracePath, traceBytes);
       expect(await runM7qEvidenceCli(cliArgs)).toBe(1);
     } finally {
+      await rm(temporaryRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects coordinated heartbeat-summary changes when retained raw Node samples disagree", async () => {
+    const temporaryRoot = await mkdtemp(join(tmpdir(), "m7q-heartbeat-negative-"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const sourceEvidence = resolve(process.cwd(), "docs/architecture/ground-glass-m7q-light-peer-trace-ab/capture/final");
+      const destinationEvidence = resolve(temporaryRoot, "docs/architecture/ground-glass-m7q-light-peer-trace-ab/capture/final");
+      await cp(sourceEvidence, destinationEvidence, { recursive: true });
+      const normalizedPath = join(destinationEvidence, "normalized-captures.json");
+      const mutatedCaptures = JSON.parse(await readFile(normalizedPath, "utf8")) as Record<string, unknown>;
+      const captureAttempts = mutatedCaptures.attempts as Array<Record<string, unknown>>;
+      for (const captureAttempt of captureAttempts) {
+        const browserObservations = captureAttempt.browserObservations as Record<string, unknown>;
+        const heartbeat = browserObservations.nodeHeartbeatDuringAssertionWindow as Array<Record<string, unknown>>;
+        expect(heartbeat.length).toBeGreaterThan(0);
+        const forged = heartbeat[0];
+        forged.previousAtMs = Number(forged.observedAtMs) - 9_999;
+        forged.intervalMs = 9_999;
+        forged.excessOver50Ms = 9_949;
+        browserObservations.maximumNodeHeartbeatDelayDuringAssertionWindowMs = 9_999;
+      }
+      const normalizedBytes = Buffer.from(`${JSON.stringify(mutatedCaptures, null, 2)}\n`);
+      await writeFile(normalizedPath, normalizedBytes);
+
+      const mutatedReport = clone(validReport);
+      mutatedReport.provenance = mutatedReport.provenance as Record<string, unknown>;
+      (mutatedReport.provenance as Record<string, unknown>).normalizedCapturesSha256 = createHash("sha256").update(normalizedBytes).digest("hex");
+      const timing = (mutatedReport.comparison as Record<string, unknown>).descriptiveTiming as Record<string, unknown>;
+      const nodeHeartbeatSummary = timing.maximumNodeHeartbeatIntervalDuringAssertionWindow as Record<string, unknown>;
+      nodeHeartbeatSummary.off = { minimum: 9_999, maximum: 9_999, mean: 9_999 };
+      nodeHeartbeatSummary.on = { minimum: 9_999, maximum: 9_999, mean: 9_999 };
+
+      // The normalized samples and aggregate summary agree with each other;
+      // only rederivation from the immutable raw captures exposes the forgery.
+      expect(evaluateM7qLightPeerTraceAb(mutatedReport, mutatedCaptures).passed).toBe(true);
+      const rawResult = await verifyM7qRawEvidence(mutatedReport, mutatedCaptures, process.cwd(), temporaryRoot);
+      expect(rawResult.issues).toContain("m7q-m7q-pair-1-off-node-heartbeat-samples-not-rederived");
+
+      const temporaryReport = resolve(temporaryRoot, "GROUND_GLASS_M7Q_LIGHT_PEER_TRACE_AB_REPORT.json");
+      await writeFile(temporaryReport, `${JSON.stringify(mutatedReport, null, 2)}\n`);
+      expect(await runM7qEvidenceCli([
+        `--report-path=${temporaryReport}`,
+        `--evidence-root=${temporaryRoot}`,
+      ])).toBe(1);
+      expect(errorSpy.mock.calls.flat().join(" ")).toContain("node-heartbeat-samples-not-rederived");
+    } finally {
+      errorSpy.mockRestore();
       await rm(temporaryRoot, { recursive: true, force: true });
     }
   });

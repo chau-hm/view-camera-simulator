@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, relative, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7Q_EVALUATOR_REVISION = "m7q-light-peer-trace-ab-evaluator-v1";
+export const M7Q_EVALUATOR_REVISION = "m7q-light-peer-trace-ab-evaluator-v2";
 
 type JsonRecord = Record<string, unknown>;
 type DeadlineInterval = { lowerMs: number; upperMs: number };
@@ -45,6 +45,7 @@ const finite = (value: unknown): value is number => typeof value === "number" &&
 const sha256Pattern = /^[0-9a-f]{64}$/;
 const commitPattern = /^[0-9a-f]{40}$/;
 const approximatelyEqual = (left: unknown, right: number, tolerance = 0.01) => finite(left) && Math.abs(left - right) <= tolerance;
+const rounded = (value: number, digits = 3) => Number(value.toFixed(digits));
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const nested = (value: unknown, ...keys: string[]): unknown => keys.reduce<unknown>((current, key) => isRecord(current) ? current[key] : undefined, value);
 
@@ -311,6 +312,30 @@ export const evaluateM7qLightPeerTraceAb = (reportValue: unknown, capturesValue:
     if (browserObservations.lifecycleMutationObserverAvailable !== true || browserObservations.longTaskObserverAvailable !== true
       || !Array.isArray(browserObservations.longTasks) || !Array.isArray(browserObservations.pageHeartbeat)
       || !Array.isArray(browserObservations.nodeHeartbeatDuringAssertionWindow)) add(`m7q-attempt-${expected.captureId}-browser-instrumentation-incomplete`);
+    const nodeHeartbeatValues = asArray(browserObservations.nodeHeartbeatDuringAssertionWindow);
+    const nodeHeartbeatSamples = nodeHeartbeatValues.filter(isRecord);
+    const nodeHeartbeatWindowValid = finite(assertion.nodeEntryMs) && finite(assertion.nodeSettledMs)
+      && assertion.nodeSettledMs >= assertion.nodeEntryMs;
+    const nodeHeartbeatSamplesValid = nodeHeartbeatSamples.length > 0
+      && nodeHeartbeatSamples.length === nodeHeartbeatValues.length
+      && nodeHeartbeatWindowValid
+      && nodeHeartbeatSamples.every((sample) => finite(sample.previousAtMs)
+        && finite(sample.observedAtMs)
+        && finite(sample.intervalMs)
+        && finite(sample.excessOver50Ms)
+        && sample.observedAtMs >= sample.previousAtMs
+        && sample.observedAtMs >= (assertion.nodeEntryMs as number)
+        && sample.observedAtMs <= (assertion.nodeSettledMs as number)
+        && approximatelyEqual(sample.intervalMs, sample.observedAtMs - sample.previousAtMs, 0.000001)
+        && approximatelyEqual(sample.excessOver50Ms, Math.max(0, sample.intervalMs - 50), 0.000001));
+    const derivedNodeHeartbeatMaximumMs = nodeHeartbeatSamplesValid
+      ? rounded(Math.max(0, ...nodeHeartbeatSamples.map((sample) => sample.intervalMs as number)))
+      : null;
+    if (!nodeHeartbeatSamplesValid || !finite(browserObservations.maximumNodeHeartbeatDelayDuringAssertionWindowMs)
+      || derivedNodeHeartbeatMaximumMs === null
+      || !approximatelyEqual(browserObservations.maximumNodeHeartbeatDelayDuringAssertionWindowMs, derivedNodeHeartbeatMaximumMs, 0.001)) {
+      add(`m7q-attempt-${expected.captureId}-node-heartbeat-summary-invalid`);
+    }
 
     const trace = isRecord(attempt.trace) ? attempt.trace : {};
     if (expected.arm === "off") {
@@ -702,6 +727,34 @@ export const verifyM7qRawEvidence = async (
         || !approximatelyEqual(rawAssertion.nodeAssertionEntryMs, nested(attempt, "assertion", "nodeEntryMs") as number, 0.000001)
         || !approximatelyEqual(rawAssertion.nodeAssertionSettledMs, nested(attempt, "assertion", "nodeSettledMs") as number, 0.000001)
         || rawAssertion.timeoutBudgetMs !== 5_000) issues.push(`m7q-${captureId}-raw-assertion-not-verified`);
+      const rawNodeHeartbeatValues = asArray(rawCapture.nodeHeartbeat);
+      const rawNodeHeartbeatSamples = rawNodeHeartbeatValues.filter(isRecord);
+      const rawNodeHeartbeatSamplesValid = rawNodeHeartbeatSamples.length > 0
+        && rawNodeHeartbeatSamples.length === rawNodeHeartbeatValues.length
+        && rawNodeHeartbeatSamples.every((sample) => finite(sample.previousAtMs)
+          && finite(sample.observedAtMs)
+          && finite(sample.intervalMs)
+          && finite(sample.excessOver50Ms)
+          && sample.observedAtMs >= sample.previousAtMs
+          && approximatelyEqual(sample.intervalMs, sample.observedAtMs - sample.previousAtMs, 0.000001)
+          && approximatelyEqual(sample.excessOver50Ms, Math.max(0, sample.intervalMs - 50), 0.000001));
+      const rawNodeHeartbeatWindow = rawNodeHeartbeatSamples.filter((sample) =>
+        finite(rawAssertion.nodeAssertionEntryMs) && finite(rawAssertion.nodeAssertionSettledMs)
+        && finite(sample.observedAtMs)
+        && sample.observedAtMs >= (rawAssertion.nodeAssertionEntryMs as number)
+        && sample.observedAtMs <= (rawAssertion.nodeAssertionSettledMs as number));
+      const normalizedNodeHeartbeatWindow = asArray(nested(attempt, "browserObservations", "nodeHeartbeatDuringAssertionWindow"));
+      if (!rawNodeHeartbeatSamplesValid) issues.push(`m7q-${captureId}-raw-node-heartbeat-samples-invalid`);
+      if (JSON.stringify(rawNodeHeartbeatWindow) !== JSON.stringify(normalizedNodeHeartbeatWindow)) {
+        issues.push(`m7q-${captureId}-node-heartbeat-samples-not-rederived`);
+      }
+      const rawNodeHeartbeatMaximumMs = rounded(Math.max(0, ...rawNodeHeartbeatWindow
+        .filter(isRecord)
+        .map((sample) => finite(sample.intervalMs) ? sample.intervalMs : 0)));
+      if (rawNodeHeartbeatWindow.length === 0
+        || !approximatelyEqual(nested(attempt, "browserObservations", "maximumNodeHeartbeatDelayDuringAssertionWindowMs"), rawNodeHeartbeatMaximumMs, 0.001)) {
+        issues.push(`m7q-${captureId}-node-heartbeat-summary-not-rederived`);
+      }
       const rawTrace = isRecord(rawCapture.trace) ? rawCapture.trace : {};
       const expectedTrace = nested(attempt, "trace", "enabled");
       if (rawTrace.enabled !== expectedTrace || rawTrace.started !== expectedTrace || rawTrace.completed !== expectedTrace
