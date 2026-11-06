@@ -6,7 +6,7 @@
     "toolingSourceCommitSha": "c1135c8f7be9c3530eaeaad030a98079457ff8c0",
     "matrixNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
     "evidenceNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
-    "evaluationSourceCommitSha": "dddf0271980c80a41cde90cf6b79a2d40d1cdd28"
+    "evaluationSourceCommitSha": "26a856a52e7d2809727588813e65dc40684abc97"
   },
   "captureEnvironment": {
     "host": "macOS 27.0.1 (26A434), arm64",
@@ -68,12 +68,13 @@
     "hypotheses": {
       "H1": "supported-but-unproven",
       "H2": "supported-but-unproven",
-      "H3": "contradicted",
+      "H3": "inconclusive",
       "H4": "supported-but-unproven",
       "H5": "inconclusive"
     },
     "claims": {
       "exactInternalToHaveCountPolls": false,
+      "internalLocatorResolutionIdentityEvidence": "unavailable",
       "canvasAbsentAtFailureSnapshot": false,
       "firstCanvasObservedBeforeBudgetDeadline": 3,
       "longTaskOverlapsAssertionWindow": 3,

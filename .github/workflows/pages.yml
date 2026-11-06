@@ -132,7 +132,7 @@ jobs:
             --verify-path=scripts/normalizeM7oCanvasAssertionTimingMatrix.mjs \
             --verify-path=scripts/normalizeM7oCanvasAssertionTimingCapture.mjs
           node scripts/fetch-m7k-execution-source.mjs \
-            --sha=dddf0271980c80a41cde90cf6b79a2d40d1cdd28 \
+            --sha=26a856a52e7d2809727588813e65dc40684abc97 \
             --retained-ref=refs/pull/313/head \
             --verify-path=scripts/evaluateM7oCanvasAssertionTiming.ts \
             --verify-path=scripts/run-m7o-evidence.mjs \
