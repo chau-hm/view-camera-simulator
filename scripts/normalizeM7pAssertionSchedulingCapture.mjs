@@ -19,6 +19,79 @@ const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const round = (value, digits = 3) => Number.isFinite(value) ? Number(value.toFixed(digits)) : null;
 const clampWindow = (startMs, endMs, lowerMs, upperMs) => startMs <= upperMs && endMs >= lowerMs;
+const deadlineRoundingToleranceMs = 0.001;
+const taskIntervalRoundingToleranceMs = 0.002;
+const classifyDeadlineObservation = (observationMs, interval) => {
+  if (!Number.isFinite(observationMs) || !Array.isArray(interval) || interval.length !== 2
+    || !Number.isFinite(interval[0]) || !Number.isFinite(interval[1]) || interval[0] > interval[1]) {
+    return "unavailable-or-uncertain";
+  }
+  if (observationMs < interval[0] - deadlineRoundingToleranceMs) return "observed-before-deadline";
+  if (observationMs > interval[1] + deadlineRoundingToleranceMs) return "observed-after-deadline";
+  return "unavailable-or-uncertain";
+};
+const deriveWorkerOverlap = (testResults) => {
+  const rows = testResults.map((result) => {
+    const startMs = typeof result.startTime === "string" ? Date.parse(result.startTime) : Number.NaN;
+    const durationMs = result.durationMs;
+    return {
+      identity: `${result.file}::${result.identity}`,
+      startMs,
+      endMs: startMs + durationMs,
+      durationMs,
+      workerIndex: result.workerIndex,
+      parallelIndex: result.parallelIndex,
+    };
+  });
+  const valid = rows.length > 0 && rows.every((row) => Number.isFinite(row.startMs)
+    && Number.isFinite(row.durationMs) && row.durationMs > 0
+    && Number.isFinite(row.endMs) && row.endMs > row.startMs
+    && Number.isSafeInteger(row.workerIndex) && row.workerIndex >= 0
+    && Number.isSafeInteger(row.parallelIndex) && row.parallelIndex >= 0);
+  if (!valid) return { valid: false, peakConcurrency: null, workerIds: [], parallelIds: [], fourTestOverlap: null };
+  const workerIds = [...new Set(rows.map((row) => row.workerIndex))].sort((left, right) => left - right);
+  const parallelIds = [...new Set(rows.map((row) => row.parallelIndex))].sort((left, right) => left - right);
+  const events = rows.flatMap((row) => [{ timeMs: row.startMs, delta: 1 }, { timeMs: row.endMs, delta: -1 }])
+    .sort((left, right) => left.timeMs - right.timeMs || left.delta - right.delta);
+  let active = 0;
+  let peakConcurrency = 0;
+  for (const event of events) {
+    active += event.delta;
+    peakConcurrency = Math.max(peakConcurrency, active);
+  }
+  const fourTestOverlap = rows.length === 4
+    ? (() => {
+        const startMs = Math.max(...rows.map((row) => row.startMs));
+        const endMs = Math.min(...rows.map((row) => row.endMs));
+        const activeRows = endMs > startMs ? rows.filter((row) => row.startMs <= startMs && row.endMs >= endMs) : [];
+        return {
+          active: endMs > startMs && activeRows.length === 4 && workerIds.length === 4 && parallelIds.length === 4,
+          startEpochMs: round(startMs, 3),
+          endEpochMs: round(endMs, 3),
+          durationMs: round(Math.max(0, endMs - startMs), 3),
+          testIdentities: activeRows.map((row) => row.identity).sort(),
+          workerIds: [...new Set(activeRows.map((row) => row.workerIndex))].sort((left, right) => left - right),
+          targetParticipated: activeRows.some((row) => row.identity.endsWith("::Architecture Rise focus control stays within scene depth and preserves thin-lens extension")),
+        };
+      })()
+    : null;
+  return { valid: true, peakConcurrency, workerIds, parallelIds, fourTestOverlap };
+};
+const classifyTaskDeadlineOverlap = (task, deadlineInterval, alignmentUncertaintyMs) => {
+  if (!Number.isFinite(task.startPageMs) || !Number.isFinite(task.endPageMs)
+    || !Number.isFinite(task.durationMs) || task.startPageMs > task.endPageMs || task.durationMs < 0
+    || Math.abs((task.endPageMs - task.startPageMs) - task.durationMs) > taskIntervalRoundingToleranceMs
+    || !Number.isFinite(alignmentUncertaintyMs) || alignmentUncertaintyMs < 0
+    || !Array.isArray(deadlineInterval) || deadlineInterval.length !== 2
+    || !Number.isFinite(deadlineInterval[0]) || !Number.isFinite(deadlineInterval[1])
+    || deadlineInterval[0] > deadlineInterval[1]) return "unverifiable";
+  const uncertainty = alignmentUncertaintyMs + deadlineRoundingToleranceMs;
+  if (task.startPageMs + uncertainty <= deadlineInterval[0]
+    && task.endPageMs - uncertainty >= deadlineInterval[1]) return "definitely-spans-deadline";
+  if (task.startPageMs - uncertainty <= deadlineInterval[1]
+    && task.endPageMs + uncertainty >= deadlineInterval[0]) return "possibly-overlaps-deadline";
+  return "does-not-overlap";
+};
 
 const runner = await readJson(resolve(inputDirectory, "m7p-run-summary.json"));
 const normalizerSourceCommitSha = args.get("normalizer-source-commit") ?? runner.sourceCommit;
@@ -55,6 +128,12 @@ for (const run of runner.runs) {
     const pageTraceOffsetMs = pageTraceOffsets.length > 0
       ? pageTraceOffsets.reduce((sum, value) => sum + value, 0) / pageTraceOffsets.length
       : null;
+    const tracePageOffsetRangeMs = pageTraceOffsets.length > 0
+      ? [Math.min(...pageTraceOffsets), Math.max(...pageTraceOffsets)]
+      : null;
+    const tracePageOffsetUncertaintyMs = tracePageOffsetRangeMs !== null && pageTraceOffsetMs !== null
+      ? Math.max(Math.abs(pageTraceOffsetMs - tracePageOffsetRangeMs[0]), Math.abs(tracePageOffsetRangeMs[1] - pageTraceOffsetMs))
+      : null;
     const pageTraceOffsetSpreadMs = pageTraceOffsets.length > 0
       ? Math.max(...pageTraceOffsets) - Math.min(...pageTraceOffsets)
       : null;
@@ -77,29 +156,30 @@ for (const run of runner.runs) {
     const nodeAssertionDeadlineMs = assertion?.inferredNodeDeadlineMs;
     const anchorRequestStart = assertionAnchor?.requestStartedAtMs;
     const anchorResponseEnd = assertionAnchor?.responseSettledAtMs;
-    const anchorRoundTripMs = typeof anchorRequestStart === "number" && typeof anchorResponseEnd === "number"
+    const anchorRoundTripMs = Number.isFinite(anchorRequestStart) && Number.isFinite(anchorResponseEnd)
+      && anchorResponseEnd >= anchorRequestStart
       ? anchorResponseEnd - anchorRequestStart
       : null;
-    const browserAtAssertionEntry = typeof browserAnchorMs === "number"
-      && typeof nodeAssertionEntryMs === "number"
-      && typeof anchorResponseEnd === "number"
+    const timeoutBudgetMs = assertion?.timeoutBudgetMs;
+    const browserAtAssertionEntry = Number.isFinite(browserAnchorMs)
+      && Number.isFinite(nodeAssertionEntryMs)
+      && Number.isFinite(anchorResponseEnd)
+      && Number.isFinite(anchorRoundTripMs)
+      && Number.isFinite(timeoutBudgetMs)
+      && nodeAssertionEntryMs >= anchorResponseEnd
       ? browserAnchorMs + nodeAssertionEntryMs - anchorResponseEnd
       : null;
-    const browserDeadlineLowerMs = typeof browserAtAssertionEntry === "number" && typeof anchorRoundTripMs === "number"
-      ? browserAtAssertionEntry + 5_000 - anchorRoundTripMs
+    const browserDeadlineLowerMs = Number.isFinite(browserAtAssertionEntry) && Number.isFinite(timeoutBudgetMs)
+      ? browserAtAssertionEntry + timeoutBudgetMs
       : null;
-    const browserDeadlineUpperMs = typeof browserAtAssertionEntry === "number"
-      ? browserAtAssertionEntry + 5_000
+    const browserDeadlineUpperMs = Number.isFinite(browserDeadlineLowerMs) && Number.isFinite(anchorRoundTripMs)
+      ? browserDeadlineLowerMs + anchorRoundTripMs
       : null;
     const browserSnapshot = capture.browserSnapshot?.snapshot ?? null;
     const lifecycle = Array.isArray(browserSnapshot?.lifecycle) ? browserSnapshot.lifecycle : [];
     const firstCanvasObservation = lifecycle.find((entry) => entry.canvasCount > 0 && entry.canvasConnected?.includes(true)) ?? null;
     const canvasFirstBrowserMs = firstCanvasObservation?.browserMonotonicMs ?? null;
-    let canvasBeforeDeadline = "unavailable-or-uncertain";
-    if (typeof canvasFirstBrowserMs === "number" && typeof browserDeadlineLowerMs === "number" && typeof browserDeadlineUpperMs === "number") {
-      if (canvasFirstBrowserMs <= browserDeadlineLowerMs) canvasBeforeDeadline = "observed-before-deadline";
-      else if (canvasFirstBrowserMs > browserDeadlineUpperMs) canvasBeforeDeadline = "observed-after-deadline";
-    }
+    const canvasBeforeDeadline = classifyDeadlineObservation(canvasFirstBrowserMs, [browserDeadlineLowerMs, browserDeadlineUpperMs]);
     const assertionPageStartMs = browserAtAssertionEntry;
     const assertionPageEndMs = typeof browserSnapshot?.browserMonotonicMs === "number" ? browserSnapshot.browserMonotonicMs : null;
     const observationWindowStart = typeof assertionPageStartMs === "number" ? assertionPageStartMs - 200 : 0;
@@ -134,6 +214,7 @@ for (const run of runner.runs) {
       .filter((event) => event.ph === "M" && event.name === "thread_name")
       .map((event) => ({ pid: event.pid, tid: event.tid, name: event.args?.name }))
       .filter((event) => event.pid === targetRendererPid || event.name === "CrBrowserMain" || event.name === "CrGpuMain");
+    const targetRendererThreadName = threadMetadata.find((thread) => thread.pid === targetRendererPid && thread.tid === targetRendererTid)?.name ?? null;
     const processMetadata = traceEvents
       .filter((event) => event.ph === "M" && event.name === "process_name")
       .map((event) => ({ pid: event.pid, name: event.args?.name }));
@@ -141,16 +222,44 @@ for (const run of runner.runs) {
       if (!new Set(["RunTask", "ThreadControllerImpl::RunTask"]).has(event.name)
         || event.ph !== "X" || typeof event.ts !== "number" || typeof event.dur !== "number") return [];
       if (event.pid !== targetRendererPid || event.tid !== targetRendererTid || pageTraceOffsetMs === null) return [];
-      const startPageMs = event.ts / 1000 - pageTraceOffsetMs;
-      const endPageMs = (event.ts + event.dur) / 1000 - pageTraceOffsetMs;
+      const traceStartMs = event.ts / 1000;
+      const traceEndMs = (event.ts + event.dur) / 1000;
+      const traceDurationMs = event.dur / 1000;
+      const startPageMs = traceStartMs - pageTraceOffsetMs;
+      const endPageMs = traceEndMs - pageTraceOffsetMs;
       return clampWindow(startPageMs, endPageMs, observationWindowStart, observationWindowEnd)
-        ? [{ name: event.name, category: event.cat ?? null, startPageMs: round(startPageMs), endPageMs: round(endPageMs), durationMs: round(event.dur / 1000), processId: event.pid, threadId: event.tid, attribution: "renderer-process main thread; RunTask does not itself encode a frame ID" }]
+        ? [{
+            name: event.name,
+            category: event.cat ?? null,
+            traceStartMs: round(traceStartMs, 6),
+            traceEndMs: round(traceEndMs, 6),
+            traceDurationMs: round(traceDurationMs, 6),
+            startPageMs: round(startPageMs),
+            endPageMs: round(endPageMs),
+            durationMs: round(traceDurationMs),
+            processId: event.pid,
+            threadId: event.tid,
+            attributionScope: "renderer-main-thread-only",
+            deadlineOverlapClassification: classifyTaskDeadlineOverlap(
+              { startPageMs, endPageMs, durationMs: traceDurationMs },
+              [browserDeadlineLowerMs, browserDeadlineUpperMs],
+              tracePageOffsetUncertaintyMs,
+            ),
+          }]
         : [];
     });
     const selectedTargetMainRunTasks = [...targetMainRunTasks]
       .sort((left, right) => right.durationMs - left.durationMs)
       .slice(0, 80)
       .sort((left, right) => left.startPageMs - right.startPageMs);
+    const taskOverlapClasses = selectedTargetMainRunTasks.map((task) => task.deadlineOverlapClassification);
+    const taskDeadlineOverlapClassification = taskOverlapClasses.includes("definitely-spans-deadline")
+      ? "definitely-spans-deadline"
+      : taskOverlapClasses.includes("possibly-overlaps-deadline")
+        ? "possibly-overlaps-deadline"
+        : taskOverlapClasses.length > 0 && taskOverlapClasses.every((classification) => classification === "does-not-overlap")
+          ? "does-not-overlap"
+          : "unverifiable";
     const frameScopedEvents = traceEvents.flatMap((event) => {
       if (!new Set(["FunctionCall", "EvaluateScript", "UpdateLayoutTree", "Layout", "Paint"]).has(event.name)
         || event.ph !== "X" || typeof event.ts !== "number" || typeof event.dur !== "number") return [];
@@ -214,6 +323,7 @@ for (const run of runner.runs) {
       parallelIndex: item.parallelIndex,
       expectedStatus: item.expectedStatus,
     }));
+    const workerOverlapEvidence = deriveWorkerOverlap(testResults);
 
     captureRows.push({
       captureId,
@@ -224,6 +334,7 @@ for (const run of runner.runs) {
       configuredWorkers: run.configuredWorkers,
       actualConcurrency: run.peakConcurrentTests,
       actualWorkers: new Set(testResults.map((item) => item.workerIndex)).size,
+      workerOverlapEvidence,
       testResults,
       retries: testResults.reduce((total, item) => total + item.retry, 0),
       targetAssertion: {
@@ -243,11 +354,14 @@ for (const run of runner.runs) {
         nodeAnchorResponseSettledAtMs: round(anchorResponseEnd),
         requestResponseUncertaintyMs: round(anchorRoundTripMs),
         browserAtNodeAssertionEntryEstimateMs: round(browserAtAssertionEntry),
-        inferredBrowserDeadlineIntervalMs: browserDeadlineLowerMs !== null && browserDeadlineUpperMs !== null
+        inferredBrowserDeadlineIntervalMs: Number.isFinite(browserDeadlineLowerMs) && Number.isFinite(browserDeadlineUpperMs)
           ? [round(browserDeadlineLowerMs), round(browserDeadlineUpperMs)]
           : null,
+        deadlineRoundingToleranceMs,
         tracePageOffsetMs: round(pageTraceOffsetMs, 6),
         tracePageOffsetSpreadMs: round(pageTraceOffsetSpreadMs, 6),
+        tracePageOffsetRangeMs: tracePageOffsetRangeMs?.map((value) => round(value, 6)) ?? null,
+        tracePageOffsetUncertaintyMs: round(tracePageOffsetUncertaintyMs, 6),
         nodeTraceOffsetIntervals: nodeTraceOffsetIntervals.map((interval) => ({
           ...interval,
           minimumOffsetMs: round(interval.minimumOffsetMs, 6),
@@ -270,8 +384,10 @@ for (const run of runner.runs) {
         maximumHeartbeatIntervalMs: assertionHeartbeats.length > 0 ? round(Math.max(...assertionHeartbeats.map((beat) => beat.intervalMs))) : null,
         maximumHeartbeatExcessMs: assertionHeartbeats.length > 0 ? round(Math.max(...assertionHeartbeats.map((beat) => beat.excessOver50Ms))) : null,
         traceProcessAttribution: targetRendererPid === null ? null : { processId: targetRendererPid, mainThreadId: targetRendererTid, threadMetadata, processMetadata },
-        targetRendererThreadName: threadMetadata.find((thread) => thread.pid === targetRendererPid && thread.tid === targetRendererTid)?.name ?? null,
+        targetRendererThreadName,
         rendererMainRunTasks: selectedTargetMainRunTasks,
+        taskIntervalRoundingToleranceMs,
+        deadlineOverlapClassification: taskDeadlineOverlapClassification,
         frameScopedEvents: selectedFrameScopedEvents,
         nodeHeartbeatIntervalMs: 50,
         nodeHeartbeatSampleCount: assertionNodeHeartbeats.length,
@@ -352,8 +468,8 @@ const source = {
   },
 };
 const summary = {
-  schemaVersion: 1,
-  captureMatrixRevision: "m7p-assertion-scheduling-matrix-v1",
+  schemaVersion: 2,
+  captureMatrixRevision: "m7p-assertion-scheduling-matrix-v2",
   source,
   captureEnvironment: {
     nodeVersion: runner.nodeVersion,
