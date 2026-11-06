@@ -97,6 +97,7 @@ for (const { spec, file } of specs) {
         startTime: result.startTime,
         durationMs: result.duration,
         errorSummary: result.errors?.[0]?.message?.split("\n")[0]?.slice(0, 240) ?? null,
+        rawFailureMessage: result.errors?.[0]?.message ?? null,
         attachments: result.attachments ?? [],
       });
     }
@@ -112,6 +113,18 @@ if (tests.length !== expectedIdentities.length) throw new Error(`Condition ${con
 if (tests.some((test) => test.retry !== 0)) throw new Error(`Condition ${contract.id} must have zero retries.`);
 
 const targetTest = tests.find((test) => test.identity === contract.identities[0]);
+const plainTargetFailure = String(targetTest?.rawFailureMessage ?? "").replace(/\u001b\[[0-9;]*m/g, "");
+const parseCount = (pattern) => Number(plainTargetFailure.match(pattern)?.[1] ?? NaN);
+const targetFailureEvidence = targetTest?.outcome === "passed" ? null : {
+  evidenceSource: "Playwright public assertion failure message and aggregated call log",
+  matcher: plainTargetFailure.includes("toHaveCount") ? "toHaveCount" : null,
+  expectedCount: parseCount(/Expected:\s*(\d+)/),
+  receivedCount: parseCount(/Received:\s*(\d+)/),
+  timeoutMs: parseCount(/Timeout:\s*(\d+)ms/),
+  aggregatedLocatorResolutionsAtZero: parseCount(/(\d+)\s*[×x]\s*locator resolved to 0 elements/),
+  perObservationTimestampsAvailable: false,
+  limitation: "The rendered call log aggregates repeated locator resolutions and does not expose an exact timestamped toHaveCount retry callback.",
+};
 const captureAttachment = targetTest?.attachments.find((attachment) => attachment.name === `m7o-${argumentsMap.get("capture-id")}-canvas-assertion-timing.json`);
 let diagnosticCapture = null;
 if (captureAttachment?.body) {
@@ -174,7 +187,7 @@ const capture = {
     selectedIdentities: contract.identities,
   },
   execution: {
-    selectedTests: tests.map(({ attachments, ...test }) => test),
+    selectedTests: tests.map(({ attachments, rawFailureMessage, ...test }) => test),
     discovered: tests.length,
     passed: statusCounts.passed ?? 0,
     failed: statusCounts.failed ?? 0,
@@ -185,6 +198,7 @@ const capture = {
     observedConcurrency,
     workerIndices: [...new Set(tests.map((test) => test.workerIndex))].sort((left, right) => left - right),
     targetAssertionOutcome: assertionOutcome,
+    targetFailureEvidence,
     processExitCode: playwrightReport.stats?.unexpected > 0 ? 1 : 0,
   },
   diagnosticCapture,

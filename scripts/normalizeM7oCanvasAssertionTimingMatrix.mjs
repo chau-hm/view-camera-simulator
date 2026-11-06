@@ -22,6 +22,7 @@ if (!Array.isArray(runSummary.runs) || runSummary.runs.length !== 12) {
 }
 const normalizerPath = resolve(repositoryRoot, "scripts/normalizeM7oCanvasAssertionTimingCapture.mjs");
 const matrixNormalizerSourceCommitSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repositoryRoot, encoding: "utf8" }).trim();
+const evidenceNormalizerSourceCommitSha = matrixNormalizerSourceCommitSha;
 const manifestRows = [];
 for (const run of runSummary.runs) {
   const normalized = spawnSync(process.execPath, [
@@ -114,6 +115,7 @@ const manifest = {
     executionSourceCommitSha: argumentsMap.get("execution-source-sha"),
     toolingSourceCommitSha: argumentsMap.get("tooling-source-sha"),
     matrixNormalizerSourceCommitSha,
+    evidenceNormalizerSourceCommitSha,
   },
   artifacts: manifestRows,
 };
