@@ -85,6 +85,12 @@ The committed source pins and historical M7O/M7P report/normalized-capture diges
 | `m7q-pair-3-on` | 19,175,616 | `f313e227d2aa23ff5e365f30752d506927f215a15eabfe6564c722ea7e413605` | `de3e034f6876042ab73459218913086dd08d9bf7dee884a8a887f73ef00d516f` |
 | `m7q-pair-4-on` | 19,004,398 | `6aa114f44cba311af98f2d7af2606f944efae4a68c90119b77aa350d8a066037` | `dd60b3991864c9ba02a1689b0fce07b266eb4a3df6c7d4ee614a2226be8fd619` |
 
+## Squash-merge source replay
+
+A disposable local bare remote was prepared with a synthetic post-squash `main` commit whose tree contains the M7Q report and evidence, while `refs/pull/315/head` retained the original feature history. A fresh depth-1 clone used no shared object store. Initially, both pinned source commits and the runner tree entry were absent (`git cat-file -e` exit 128). The actual M7Q evidence CLI failed closed with exit 1 and reported missing capture and analysis source commits/tree entries.
+
+The existing source-fetch helper was then run with the retained-ref fallback forced, matching the post-squash case where exact-SHA fetching is unavailable. It fetched `refs/pull/315/head`, verified the runner and analysis source paths at their pinned commits, and made both commit objects available. The same unchanged `node scripts/run-m7q-evidence.mjs` then passed: 8/8 captures, Decision Path B, Broad E2E `not-qualified`. The temporary clone had no shared object store and no tracked evidence was changed.
+
 ## Historical reconciliation
 
 | Evidence | Light-peer target outcomes |
