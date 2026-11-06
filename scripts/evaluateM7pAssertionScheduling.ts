@@ -24,6 +24,12 @@ const requiredSourceFiles = {
   normalizer: ["scripts/normalizeM7pAssertionSchedulingCapture.mjs"],
   evaluator: ["scripts/evaluateM7pAssertionScheduling.ts", "scripts/run-m7p-evidence.mjs", "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts"],
 };
+const captureSourceFieldByReportField = {
+  executionSourceCommitSha: "executionCommitSha",
+  instrumentationSourceCommitSha: "instrumentationCommitSha",
+  normalizerSourceCommitSha: "normalizerCommitSha",
+  evaluatorSourceCommitSha: "captureEvaluatorCommitSha",
+} as const;
 const requiredTestFilesByCondition: Record<string, string[]> = {
   P1: ["architecture-rise-focus-range.spec.ts"],
   P2: ["architecture-rise-focus-range.spec.ts"],
@@ -230,7 +236,8 @@ export const evaluateM7pAssertionSchedulingEvidence = async (
 
       const source = asRecord(capture.source);
       for (const [field] of sourceRoles) {
-        if (source?.[field] !== reportSource?.[field]) issue(issues, "m7p-capture-source-identity-mismatch");
+        const captureField = captureSourceFieldByReportField[field as keyof typeof captureSourceFieldByReportField];
+        if (source?.[captureField] !== reportSource?.[field]) issue(issues, "m7p-capture-source-identity-mismatch");
       }
       const synthetic = asRecord(capture.syntheticControl);
       if (conditionName === "P5") {

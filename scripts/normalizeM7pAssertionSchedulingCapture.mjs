@@ -13,7 +13,7 @@ const args = new Map(process.argv.slice(2).map((argument) => {
 }));
 const inputDirectory = resolve(args.get("input-dir") ?? "");
 const outputPath = resolve(args.get("out") ?? resolve(repositoryRoot, "docs/architecture/ground-glass-m7p-assertion-scheduling/capture/final/normalized-captures.json"));
-if (!args.has("input-dir")) throw new Error("Usage: npm run evidence:normalize:m7p -- --input-dir=/private/tmp/m7p-run ... [--out=path].");
+if (!args.has("input-dir")) throw new Error("Usage: npm run evidence:normalize:m7p -- --input-dir=/private/tmp/m7p-run [--normalizer-source-commit=<sha>] [--evaluator-source-commit=<sha>] [--out=path].");
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -21,6 +21,12 @@ const round = (value, digits = 3) => Number.isFinite(value) ? Number(value.toFix
 const clampWindow = (startMs, endMs, lowerMs, upperMs) => startMs <= upperMs && endMs >= lowerMs;
 
 const runner = await readJson(resolve(inputDirectory, "m7p-run-summary.json"));
+const normalizerSourceCommitSha = args.get("normalizer-source-commit") ?? runner.sourceCommit;
+const evaluatorSourceCommitSha = args.get("evaluator-source-commit") ?? runner.sourceCommit;
+const sourceShaPattern = /^[0-9a-f]{40}$/i;
+if (!sourceShaPattern.test(normalizerSourceCommitSha) || !sourceShaPattern.test(evaluatorSourceCommitSha)) {
+  throw new Error("M7P normalizer and evaluator source identities must be full 40-character Git commit SHAs.");
+}
 const captureRows = [];
 for (const run of runner.runs) {
   for (const test of run.testResults) {
@@ -307,8 +313,8 @@ for (const run of runner.runs) {
       source: {
         executionCommitSha: runner.sourceCommit,
         instrumentationCommitSha: runner.sourceCommit,
-        normalizerCommitSha: runner.sourceCommit,
-        captureEvaluatorCommitSha: runner.sourceCommit,
+        normalizerCommitSha: normalizerSourceCommitSha,
+        captureEvaluatorCommitSha: evaluatorSourceCommitSha,
       },
       environment: {
         nodeVersion: runner.nodeVersion,
@@ -335,8 +341,8 @@ for (const run of runner.runs) {
 const source = {
   executionSourceCommitSha: runner.sourceCommit,
   instrumentationSourceCommitSha: runner.sourceCommit,
-  normalizerSourceCommitSha: runner.sourceCommit,
-  evaluatorSourceCommitSha: runner.sourceCommit,
+  normalizerSourceCommitSha,
+  evaluatorSourceCommitSha,
   sourceFiles: {
     execution: ["playwright.config.ts", "src/tests/e2e/architecture-rise-focus-range.spec.ts"],
     instrumentation: ["src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts"],
