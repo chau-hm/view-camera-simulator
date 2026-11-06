@@ -389,6 +389,13 @@ export const evaluateM7qLightPeerTraceAb = (reportValue: unknown, capturesValue:
       && rows.filter((test) => test.file !== expectedTests[0].file).every((test) => test.status === "passed");
   });
   if (!allPeersPassed || attempts.some((attempt) => nested(attempt, "outcomes", "target") !== "failed")) add("m7q-arm-outcome-matrix-invalid");
+  const experiment = isRecord(report.experiment) ? report.experiment : {};
+  if (experiment.attemptsPlanned !== 8 || experiment.attemptsCaptured !== 8
+    || experiment.attemptsValidForMatchedComparison !== attempts.filter((attempt) => nested(attempt, "validity", "validForComparison") === true).length
+    || experiment.replacements !== 0 || JSON.stringify(experiment.pairExecutionOrder) !== JSON.stringify(expectedPairs)
+    || JSON.stringify(experiment.selectedTests) !== JSON.stringify(expectedTestKeys.map((key) => `src/tests/e2e/${key}`))) {
+    add("m7q-experiment-summary-inconsistent");
+  }
 
   const summarize = (values: number[]) => values.length === 0 ? null : ({
     minimum: Math.min(...values),
@@ -403,12 +410,20 @@ export const evaluateM7qLightPeerTraceAb = (reportValue: unknown, capturesValue:
     const browserHeartbeatStats = summarize(armAttempts.map((attempt) => nested(attempt, "browserObservations", "maximumPageHeartbeatDelayDuringAssertionWindowMs")).filter(finite));
     const nodeHeartbeatStats = summarize(armAttempts.map((attempt) => nested(attempt, "browserObservations", "maximumNodeHeartbeatDelayDuringAssertionWindowMs")).filter(finite));
     const overlapStats = summarize(armAttempts.map((attempt) => nested(attempt, "workerExecution", "fourTestOverlap", "durationMs")).filter(finite));
+    const failureEvaluationStats = summarize(armAttempts.map((attempt) => {
+      const evaluations = asArray(nested(attempt, "assertion", "publicEvaluations")).filter(isRecord);
+      const failureCatch = evaluations.find((evaluation) => evaluation.label === "assertion-failure-catch");
+      return failureCatch && finite(failureCatch.requestStartedAtMs) && finite(failureCatch.responseSettledAtMs)
+        ? failureCatch.responseSettledAtMs - failureCatch.requestStartedAtMs
+        : Number.NaN;
+    }));
     for (const [metricKey, derived] of [
       ["assertionEntryToSettlementMs", assertionStats],
       ["largestBrowserLongTaskDuringAssertionWindowMs", longTaskStats],
       ["maximumBrowserHeartbeatGapDuringAssertionWindowMs", browserHeartbeatStats],
       ["maximumNodeHeartbeatIntervalDuringAssertionWindowMs", nodeHeartbeatStats],
       ["fourTestOverlapDurationMs", overlapStats],
+      ["assertionFailureCatchPublicEvaluationLatencyMs", failureEvaluationStats],
     ] as const) {
       const declaredArmStats = nested(timing, metricKey, arm);
       if (!derived || !isRecord(declaredArmStats)) {
