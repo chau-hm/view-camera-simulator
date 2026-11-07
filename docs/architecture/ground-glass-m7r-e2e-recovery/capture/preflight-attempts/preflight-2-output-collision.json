@@ -1,0 +1,18 @@
+{
+  "attemptId": "m7r-preflight-2-output-collision",
+  "attemptKind": "capture-runner-argument-validation",
+  "executionSourceCommitSha": "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8",
+  "captureRunnerSourceCommitSha": "ccae6bdd904d654fc73b12ec5875376575c3e16b",
+  "command": "node scripts/run-m7r-broad-e2e.mjs --execution-worktree=<M7R_EXECUTION_WORKTREE> --execution-sha=d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8 --output-dir=docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run",
+  "exitCode": 1,
+  "phase": "argument-validation",
+  "validForBaseline": false,
+  "supersededBy": "capture/main-d34fe8/full-run-attempt-2",
+  "playwrightProcessStarted": false,
+  "testLanesInvoked": false,
+  "error": {
+    "summary": "Runner correctly refused to overwrite the empty directory created by the earlier sandbox-blocked preflight",
+    "outputPath": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run"
+  },
+  "interpretation": "No discovery or test execution occurred; this is a safe output-collision refusal, not an E2E outcome."
+}
