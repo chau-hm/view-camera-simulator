@@ -65,6 +65,44 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
     expect(result.issues).toContain("m7r-unsupported-causal-or-qualification-claim");
   });
 
+  it("keeps per-identity causes unclassified and skip exclusions unapproved", () => {
+    const inventory = record(acceptedReport).testInventory;
+    expect(Array.isArray(inventory)).toBe(true);
+    expect((inventory as unknown[])).toHaveLength(278);
+    const skipped = (inventory as JsonRecord[]).filter((entry) => entry.currentActualStatus === "skipped");
+    const unexpected = (inventory as JsonRecord[]).filter((entry) => entry.currentActualStatus !== entry.currentExpectedStatus);
+    expect(skipped).toHaveLength(75);
+    expect(skipped.every((entry) => record(entry.currentSkipAudit).exclusionApproval === "unapproved")).toBe(true);
+    expect(unexpected.every((entry) => record(entry).rootCauseCategory === "insufficient-evidence"
+      && record(entry).rootCauseConfidence === "unclassified")).toBe(true);
+  });
+
+  it("reconciles all historical M7K outcomes without calling one-run passes fixes", () => {
+    const dispositions = record(record(acceptedReport).historicalReconciliation).dispositions;
+    expect(record(dispositions)).toMatchObject({
+      "expected-in-both": 181,
+      "historical-unexpected-now-expected": 12,
+      "new-current-unexpected": 15,
+      "unexpected-changed-signature": 23,
+      "unexpected-same-signature": 47,
+    });
+    const inventory = record(acceptedReport).testInventory as JsonRecord[];
+    expect(inventory.filter((entry) => entry.historicalDisposition === "historical-unexpected-now-expected")
+      .every((entry) => entry.recommendedAction === "record-current-pass-once; do-not-label-fixed")).toBe(true);
+  });
+
+  it("rejects an analyst promotion of an unverified root cause", () => {
+    const mutated = clone(acceptedReport);
+    const inventory = record(mutated).testInventory as JsonRecord[];
+    const unexpected = inventory.find((entry) => entry.currentActualStatus !== entry.currentExpectedStatus);
+    if (!unexpected) throw new Error("Expected at least one currently unexpected identity.");
+    unexpected.rootCauseCategory = "verified-application-regression";
+    unexpected.rootCauseConfidence = "verified";
+    const result = evaluateM7rBroadE2eRecovery(mutated);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("m7r-per-test-inventory-not-derived-from-raw");
+  });
+
   it("derives non-empty four-worker overlap from raw start and duration intervals", () => {
     const evidence = deriveM7rWorkerEvidence([
       workerInterval(0, 100, 100),

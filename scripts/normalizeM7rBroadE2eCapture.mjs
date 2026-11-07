@@ -204,6 +204,13 @@ const classifyError = (test) => {
   return message ? "other-assertion" : "no-error-message";
 };
 
+const classifySkipDisposition = (reason) => {
+  if (/dream-loop:capture|benchmark:scene-capacity/i.test(reason)) return "development-or-research-only";
+  if (/native|headed|gpu|webgpu|adapter|chrome-native/i.test(reason)) return "legitimate-platform-gated";
+  if (/development|research|test seam|feature flag/i.test(reason)) return "development-or-research-only";
+  return "requires-owner-decision";
+};
+
 const summarize = (tests) => {
   const actual = (status) => tests.filter((test) => test.actualStatus === status).length;
   const unexpected = tests.filter((test) => test.actualStatus !== test.expectedStatus).length;
@@ -383,14 +390,20 @@ const main = () => {
     const key = `${test.projectName}::${test.testId}`;
     const previous = historySkipByKey.get(key);
     const skipAnnotations = test.annotations.filter((annotation) => annotation.type === "skip");
+    const skipReason = skipAnnotations.map((annotation) => annotation.description).filter((value) => typeof value === "string" && value.length > 0).join(" | ") || "missing-skip-reason";
     return {
       identity: key,
+      sourceSpec: test.sourceSpec,
       lane: test.lane,
       expectedStatus: test.expectedStatus,
       annotations: skipAnnotations,
+      skipReason,
       priorM7KSkipReason: previous?.skipReason ?? null,
       priorApprovedExclusion: previous?.approvedExclusion ?? null,
       currentDisposition: previous ? "historical-skip-rechecked-no-new-exclusion" : "new-current-skip-requires-review",
+      proposedSkipCategory: skipReason === "missing-skip-reason" ? "unjustified-skip" : classifySkipDisposition(skipReason),
+      conditionality: "not-established-by-Playwright-result-annotation",
+      exclusionApproval: "unapproved",
       qualificationImpact: "blocks-qualification-unless-explicitly-accepted",
       approvedExclusion: null,
     };
@@ -398,17 +411,82 @@ const main = () => {
   const historicalSkipRechecks = [...historySkipByKey.entries()].map(([identity, previous]) => {
     const current = currentByKey.get(identity);
     const skipAnnotations = current?.annotations.filter((annotation) => annotation.type === "skip") ?? [];
+    const currentSkipReason = skipAnnotations.map((annotation) => annotation.description).filter((value) => typeof value === "string" && value.length > 0).join(" | ") || "missing-skip-reason";
     return {
       identity,
+      sourceSpec: current?.sourceSpec ?? null,
       priorM7KSkipReason: previous.skipReason,
+      currentSkipReason,
       currentLane: current?.lane ?? null,
       currentExpectedStatus: current?.expectedStatus ?? null,
       currentActualStatus: current?.actualStatus ?? "missing",
       skipAnnotations,
       stillSkipped: current?.actualStatus === "skipped",
       disposition: !current ? "missing-current-identity" : current.actualStatus === "skipped" ? "still-skipped-no-exclusion-approved" : "historical-skip-currently-not-skipped-requires-review",
+      proposedSkipCategory: currentSkipReason === "missing-skip-reason" ? "unjustified-skip" : classifySkipDisposition(currentSkipReason),
+      conditionality: "not-established-by-Playwright-result-annotation",
+      exclusionApproval: "unapproved",
       qualificationImpact: "blocks-qualification-unless-explicitly-accepted",
       approvedExclusion: null,
+    };
+  });
+  const reconciliationByIdentity = new Map(reconciliation.map((entry) => [entry.identity, entry]));
+  const currentSkipByIdentity = new Map(currentSkips.map((entry) => [entry.identity, entry]));
+  const testInventory = currentTests.map((test) => {
+    const identity = `${test.projectName}::${test.testId}`;
+    const historical = historicalByKey.get(identity);
+    const currentSkip = currentSkipByIdentity.get(identity);
+    const unexpected = test.actualStatus !== test.expectedStatus;
+    const signature = unexpected ? classifyError(test) : null;
+    const rawMessage = test.results.at(-1)?.errors?.[0]?.message ?? "";
+    const errorSummary = rawMessage.replaceAll(String.fromCharCode(27), "").split(/\r?\n/)[0]?.replace(/\[[0-9;]*m/g, "") || null;
+    return {
+      canonicalIdentity: identity,
+      project: test.projectName,
+      lane: test.lane,
+      specFile: test.sourceSpec,
+      titlePath: test.titlePath,
+      sourceLine: typeof test.location?.line === "number" ? test.location.line : null,
+      historicalM7KStatus: historical ? {
+        resultStatus: historical.resultStatus,
+        expectedStatus: historical.expectedStatus,
+        actualStatus: historical.actualStatus,
+        failureSignature: historical.errorSignature ?? null,
+      } : null,
+      historicalDisposition: reconciliationByIdentity.get(identity)?.disposition ?? "not-in-historical-inventory",
+      currentDiscoveryStatus: "discovered",
+      currentExpectedStatus: test.expectedStatus,
+      currentActualStatus: test.actualStatus,
+      currentRetryCount: test.retryCount,
+      failureSignature: signature,
+      observedFailureCohort: signature ? `observed-${signature}` : null,
+      errorSummary,
+      rootCauseCategory: unexpected ? "insufficient-evidence" : null,
+      rootCauseConfidence: unexpected ? "unclassified" : null,
+      currentSkipAudit: currentSkip ? {
+        reason: currentSkip.skipReason,
+        proposedCategory: currentSkip.proposedSkipCategory,
+        conditionality: currentSkip.conditionality,
+        exclusionApproval: currentSkip.exclusionApproval,
+        qualificationImpact: currentSkip.qualificationImpact,
+      } : null,
+      qualificationImpact: test.actualStatus === "skipped"
+        ? "blocks-unless-explicitly-approved-for-a-specific-lane"
+        : unexpected ? "unexpected-result-blocks-broad-qualification" : "no-failure-evidence-in-this-single-run",
+      recommendedAction: test.actualStatus === "skipped"
+        ? "adjudicate-lane-placement-and-explicit-exclusion; annotation-alone-is-not-approval"
+        : unexpected ? "retain-as-currently-unexpected; reproduce-and-classify-before-fix"
+          : historical?.resultStatus === "unexpected" ? "record-current-pass-once; do-not-label-fixed" : "retain-current-pass-evidence",
+      priorInvestigationRefs: test.testId === "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+        ? ["M7O", "M7P", "M7Q; scheduling sequence closed, not reopened by this baseline"] : [],
+      evidenceReferences: [{
+        kind: "raw-playwright-result",
+        lane: test.lane,
+        artifactPath: `${manifest.outputDirectory}/raw/${test.lane === "ordinary" ? "ordinary" : "renderer-serial"}-playwright.json`,
+        artifactSha256: test.lane === "ordinary" ? ordinary.rawSha256 : rendererSerial.rawSha256,
+        resultCount: test.results.length,
+        retryCount: test.retryCount,
+      }],
     };
   });
   const currentSkipReasons = new Map();
@@ -497,6 +575,7 @@ const main = () => {
       dispositions: Object.fromEntries([...new Set(reconciliation.map((item) => item.disposition))].sort().map((disposition) => [disposition, reconciliation.filter((item) => item.disposition === disposition).length])),
       tests: reconciliation,
     },
+    testInventory,
     currentSkipAudit: {
       count: currentSkips.length,
       historicalSkipIdentities: historicalSkipKeys.length,
