@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import { basename, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v7";
+export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v8";
 export const M7R_EXECUTION_SOURCE_SHA = "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8";
 export const M7R_CAPTURE_RUNNER_SHA = "ccae6bdd904d654fc73b12ec5875376575c3e16b";
+export const M7R_HISTORICAL_MANIFEST_SOURCE_SHA = "a731929ae377d5ff0d991179f6dcc5d34c318d26";
 export const M7R_HISTORICAL_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f";
 export const M7R_HISTORICAL_M7K_RAW_SHA256 = {
   ordinary: "95a7abebfaa7abe53805be7171d0ff84166dbb9e3e3d45eaa134a68f098963de",
@@ -17,9 +18,12 @@ export const M7R_ANALYSIS_SOURCE_PATHS = [
   "scripts/evaluateM7rBroadE2eRecovery.ts",
   "scripts/run-m7r-evidence.mjs",
   "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
-  "package.json",
 ];
 export const M7R_REQUIRED_EXECUTION_PATHS = ["package.json", "package-lock.json", "playwright.config.ts"];
+export const M7R_REQUIRED_PACKAGE_SCRIPTS = {
+  "evidence:check:m7r": "scripts/run-m7r-evidence.mjs",
+  "evidence:normalize:m7r": "scripts/normalizeM7rBroadE2eCapture.mjs",
+} as const;
 
 type JsonRecord = Record<string, unknown>;
 type TestResult = {
@@ -472,6 +476,51 @@ const verifySourceTreePath = (root: string, sha: string, sourcePath: string, con
   return result;
 };
 
+const verifyCommitAvailable = (root: string, sha: string): boolean => shaPattern.test(sha)
+  && git(root, ["cat-file", "-e", `${sha}^{commit}`], true).status === 0;
+
+const safeNodeFlags = new Set(["--enable-source-maps", "--trace-warnings", "--no-warnings"]);
+
+const commandTargetsNodeScript = (command: unknown, expectedTarget: string): boolean => {
+  if (typeof command !== "string" || !command.trim() || /[\r\n;&|<>`]/.test(command) || command.includes("$")) return false;
+  const tokens = command.trim().split(/\s+/);
+  if (tokens[0] !== "node") return false;
+  let targetIndex = 1;
+  while (safeNodeFlags.has(tokens[targetIndex] ?? "")) targetIndex += 1;
+  const target = (tokens[targetIndex] ?? "")
+    .replace(/^(["'])(.*)\1$/, "$2")
+    .replace(/^(?:\.\/)+/, "");
+  return target === expectedTarget;
+};
+
+const verifyCurrentPackageScriptContract = (root: string, issues: string[]): void => {
+  const packageFile = fileAt(root, "package.json");
+  if (!packageFile) {
+    issues.push("m7r-current-package-json-missing");
+    return;
+  }
+  let packageValue: unknown;
+  try {
+    packageValue = JSON.parse(packageFile.bytes.toString("utf8")) as unknown;
+  } catch {
+    issues.push("m7r-current-package-json-invalid");
+    return;
+  }
+  const scripts = recordAt(packageValue, "scripts");
+  for (const [scriptName, target] of Object.entries(M7R_REQUIRED_PACKAGE_SCRIPTS)) {
+    const command = scripts[scriptName];
+    if (typeof command !== "string") {
+      issues.push(`m7r-required-package-script-missing:${scriptName}`);
+      continue;
+    }
+    if (!commandTargetsNodeScript(command, target)) {
+      issues.push(`m7r-required-package-script-target-invalid:${scriptName}`);
+      continue;
+    }
+    if (!fileAt(root, target)) issues.push(`m7r-required-package-script-target-missing:${target}`);
+  }
+};
+
 const verifyRequiredWorkflowGate = (root: string): boolean => {
   const file = fileAt(root, ".github/workflows/pages.yml");
   if (!file) return false;
@@ -598,6 +647,13 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
   const analysisSha = provenance.analysisToolingSourceCommitSha;
   if (typeof analysisSha !== "string" || !shaPattern.test(analysisSha)) add("m7r-analysis-source-sha-invalid");
   if (stable(provenance.analysisToolingSourcePaths) !== stable(M7R_ANALYSIS_SOURCE_PATHS)) add("m7r-analysis-source-path-contract-invalid");
+  const historicalManifestSha = provenance.historicalPackageManifestSourceCommitSha;
+  if (historicalManifestSha !== M7R_HISTORICAL_MANIFEST_SOURCE_SHA) add("m7r-historical-package-manifest-source-sha-invalid");
+  if (typeof historicalManifestSha === "string" && shaPattern.test(historicalManifestSha)) {
+    if (!verifyCommitAvailable(repositoryRoot, historicalManifestSha)) add("m7r-historical-package-manifest-commit-unavailable");
+    if (!verifySourceTreePath(repositoryRoot, historicalManifestSha, "package.json", false)) add("m7r-historical-package-manifest-unavailable");
+  }
+  verifyCurrentPackageScriptContract(repositoryRoot, issues);
 
   const normalizedLoaded = loadJson(getArtifact("normalizedCapture"), "m7r-normalized-capture");
   const manifestLoaded = loadJson(getArtifact("captureManifest"), "m7r-capture-manifest");

@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { deriveM7rWorkerEvidence, evaluateM7rBroadE2eRecovery, M7R_EVALUATOR_REVISION } from "../../../scripts/evaluateM7rBroadE2eRecovery";
 
@@ -22,6 +23,39 @@ const workerInterval = (parallelIndex: number, startEpochMs: number, durationMs:
   startEpochMs,
   durationMs,
 });
+
+const createRepositoryFixture = (mutatePackage: (manifest: JsonRecord) => void = () => undefined): string => {
+  const repositoryRoot = process.cwd();
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "m7r-package-contract-"));
+  const gitDir = spawnSync("git", ["rev-parse", "--absolute-git-dir"], { cwd: repositoryRoot, encoding: "utf8" });
+  if (gitDir.status !== 0) throw new Error(gitDir.stderr || "Could not locate the current worktree Git directory.");
+  writeFileSync(join(fixtureRoot, ".git"), `gitdir: ${gitDir.stdout.trim()}\n`);
+  for (const entry of readdirSync(repositoryRoot)) {
+    if ([".git", "node_modules", ".worktrees", "package.json"].includes(entry)) continue;
+    const source = join(repositoryRoot, entry);
+    symlinkSync(source, join(fixtureRoot, entry), statSync(source).isDirectory() ? "dir" : "file");
+  }
+  const manifest = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8")) as JsonRecord;
+  mutatePackage(manifest);
+  writeFileSync(join(fixtureRoot, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  return fixtureRoot;
+};
+
+const withRepositoryFixture = (mutatePackage: (manifest: JsonRecord) => void, run: (fixtureRoot: string) => void): void => {
+  const fixtureRoot = createRepositoryFixture(mutatePackage);
+  try {
+    run(fixtureRoot);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+};
+
+const copyScriptsAndMutate = (fixtureRoot: string, mutate: (path: string) => void): void => {
+  const scriptsPath = join(fixtureRoot, "scripts");
+  rmSync(scriptsPath, { recursive: true, force: true });
+  cpSync(join(process.cwd(), "scripts"), scriptsPath, { recursive: true, dereference: true });
+  mutate(join(scriptsPath, "evaluateM7rBroadE2eRecovery.ts"));
+};
 
 describe("M7R broad E2E recovery evidence evaluator", () => {
   beforeAll(() => {
@@ -56,6 +90,97 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
     });
     expect(record(ordinary.correctedLegacyIdentityReconciliation).missing).toHaveLength(30);
     expect(record(ordinary.correctedLegacyIdentityReconciliation).extra).toHaveLength(30);
+  });
+
+  it("allows an unrelated npm script while preserving the M7R qualification result", () => {
+    withRepositoryFixture((manifest) => {
+      const scripts = record(manifest.scripts);
+      scripts["example:future-feature"] = "node ./scripts/example-future-feature.mjs";
+      scripts["evidence:check:m7r"] = "node --enable-source-maps scripts/run-m7r-evidence.mjs";
+    }, (fixtureRoot) => {
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed, result.issues.join(", ")).toBe(true);
+      expect(result.broadE2eQualification).toBe("not-qualified");
+    });
+  });
+
+  it("allows an unrelated dependency update without changing evidence validation", () => {
+    withRepositoryFixture((manifest) => {
+      const devDependencies = record(manifest.devDependencies);
+      devDependencies["example-future-contract"] = "1.2.3";
+    }, (fixtureRoot) => {
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed, result.issues.join(", ")).toBe(true);
+      expect(result.broadE2eQualification).toBe("not-qualified");
+    });
+  });
+
+  it("rejects removal of the required M7R evidence-check package script", () => {
+    withRepositoryFixture((manifest) => {
+      delete record(manifest.scripts)["evidence:check:m7r"];
+    }, (fixtureRoot) => {
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed).toBe(false);
+      expect(result.issues).toContain("m7r-required-package-script-missing:evidence:check:m7r");
+    });
+  });
+
+  it("rejects redirecting the required M7R evidence-check script to another evaluator", () => {
+    withRepositoryFixture((manifest) => {
+      record(manifest.scripts)["evidence:check:m7r"] = "node ./scripts/run-m7q-evidence.mjs";
+    }, (fixtureRoot) => {
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed).toBe(false);
+      expect(result.issues).toContain("m7r-required-package-script-target-invalid:evidence:check:m7r");
+    });
+  });
+
+  it("rejects a missing or redirected M7R normalization command", () => {
+    withRepositoryFixture((manifest) => {
+      delete record(manifest.scripts)["evidence:normalize:m7r"];
+    }, (fixtureRoot) => {
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed).toBe(false);
+      expect(result.issues).toContain("m7r-required-package-script-missing:evidence:normalize:m7r");
+    });
+    withRepositoryFixture((manifest) => {
+      record(manifest.scripts)["evidence:normalize:m7r"] = "node ./scripts/normalizeM7qLightPeerTraceAb.mjs";
+    }, (fixtureRoot) => {
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed).toBe(false);
+      expect(result.issues).toContain("m7r-required-package-script-target-invalid:evidence:normalize:m7r");
+    });
+  });
+
+  it("requires the pinned historical analysis source to remain available", () => {
+    const mutated = clone(acceptedReport);
+    record(record(mutated).provenance).analysisToolingSourceCommitSha = "f".repeat(40);
+    const result = evaluateM7rBroadE2eRecovery(mutated);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("m7r-analysis-source-missing-or-mismatched:scripts/evaluateM7rBroadE2eRecovery.ts");
+  });
+
+  it("rejects changed current evaluator content against its pinned analysis commit", () => {
+    const fixtureRoot = createRepositoryFixture(() => undefined);
+    try {
+      copyScriptsAndMutate(fixtureRoot, (path) => {
+        writeFileSync(path, `${readFileSync(path, "utf8")}\n// unpinned evaluator mutation\n`);
+      });
+      const result = evaluateM7rBroadE2eRecovery(acceptedReport, fixtureRoot);
+      expect(result.passed).toBe(false);
+      expect(result.issues).toContain("m7r-analysis-source-missing-or-mismatched:scripts/evaluateM7rBroadE2eRecovery.ts");
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("requires the separately pinned historical package manifest tree entry", () => {
+    const mutated = clone(acceptedReport);
+    record(record(mutated).provenance).historicalPackageManifestSourceCommitSha = "f".repeat(40);
+    const result = evaluateM7rBroadE2eRecovery(mutated);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("m7r-historical-package-manifest-commit-unavailable");
+    expect(result.issues).toContain("m7r-historical-package-manifest-unavailable");
   });
 
   it("rejects a claim that the current Broad E2E suite is qualified", () => {
