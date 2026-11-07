@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { basename, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v1";
+export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v2";
 export const M7R_EXECUTION_SOURCE_SHA = "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8";
 export const M7R_CAPTURE_RUNNER_SHA = "ccae6bdd904d654fc73b12ec5875376575c3e16b";
 export const M7R_HISTORICAL_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f";
@@ -275,7 +275,9 @@ const reconcileHistory = (currentTests: TestRow[], history: JsonRecord) => {
     if (current) {
       const currentUnexpected = current.actualStatus !== current.expectedStatus;
       const priorUnexpected = prior.resultStatus === "unexpected";
-      if (!priorUnexpected && !currentUnexpected) disposition = "expected-in-both";
+      if (prior.resultStatus === "skipped") disposition = current.actualStatus === "skipped"
+        ? "historical-skip-still-skipped" : "historical-skip-currently-unskipped-requires-review";
+      else if (!priorUnexpected && !currentUnexpected) disposition = "expected-in-both";
       else if (!priorUnexpected && currentUnexpected) disposition = "new-current-unexpected";
       else if (priorUnexpected && !currentUnexpected) disposition = "historical-unexpected-now-expected";
       else disposition = failureSignature(current) === prior.errorSignature ? "unexpected-same-signature" : "unexpected-changed-signature";
@@ -294,6 +296,26 @@ const reconcileHistory = (currentTests: TestRow[], history: JsonRecord) => {
       disposition,
     };
   });
+};
+
+const deriveTransitionMatrix = (reconciliation: ReturnType<typeof reconcileHistory>) => {
+  const matrix = {
+    historicalPassed: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 0, missingOrChanged: 0 },
+    historicalUnexpected: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 0, missingOrChanged: 0 },
+    historicalSkipped: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 0, missingOrChanged: 0 },
+  };
+  for (const row of reconciliation) {
+    const historicalRow = row.historicalResultStatus === "expected" ? "historicalPassed"
+      : row.historicalResultStatus === "unexpected" ? "historicalUnexpected"
+        : row.historicalResultStatus === "skipped" ? "historicalSkipped" : null;
+    if (!historicalRow) continue;
+    const currentColumn = row.disposition === "missing-current-identity" ? "missingOrChanged"
+      : row.currentActualStatus === "passed" ? "currentPassed"
+        : row.currentActualStatus === "skipped" ? "currentSkipped"
+          : row.currentActualStatus === null || row.currentActualStatus === "no-result" ? "missingOrChanged" : "currentUnexpected";
+    matrix[historicalRow][currentColumn] += 1;
+  }
+  return matrix;
 };
 
 const recheckSkips = (currentTests: TestRow[], history: JsonRecord) => {
@@ -658,12 +680,15 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
   const newCurrent = currentKeys.filter((key) => !historyByKey.has(key));
   if (historyTests.length !== 278 || missingHistory.length > 0 || newCurrent.length > 0) add("m7r-m7k-historical-test-identity-reconciliation-invalid");
   const recon = reconcileHistory(currentTests, history);
+  const transitionMatrix = deriveTransitionMatrix(recon);
   if (stable(normalizedHistoricalReconciliation.tests) !== stable(recon)) add("m7r-historical-outcome-reconciliation-not-derived-from-raw");
+  if (stable(normalizedHistoricalReconciliation.transitionMatrix) !== stable(transitionMatrix)) add("m7r-historical-transition-matrix-not-derived-from-raw");
   if (normalizedHistoricalReconciliation.compared !== recon.length || normalizedHistoricalReconciliation.missingHistoricalCount !== 0 || normalizedHistoricalReconciliation.newCurrentCount !== 0) add("m7r-historical-reconciliation-summary-invalid");
   const dispositions = Object.fromEntries([...new Set(recon.map((entry) => entry.disposition))].sort().map((disposition) => [disposition, recon.filter((entry) => entry.disposition === disposition).length]));
   if (stable(normalizedHistoricalReconciliation.dispositions) !== stable(dispositions)) add("m7r-historical-reconciliation-dispositions-invalid");
   const reportHistory = isRecord(report.historicalReconciliation) ? report.historicalReconciliation : {};
-  if (reportHistory.compared !== recon.length || stable(reportHistory.dispositions) !== stable(dispositions)) add("m7r-report-historical-reconciliation-invalid");
+  if (reportHistory.compared !== recon.length || stable(reportHistory.dispositions) !== stable(dispositions)
+    || stable(reportHistory.transitionMatrix) !== stable(transitionMatrix)) add("m7r-report-historical-reconciliation-invalid");
 
   const allSummary = {
     discovered: currentTests.length,

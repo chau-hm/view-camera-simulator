@@ -218,6 +218,26 @@ const classifySkipDisposition = (reason) => {
   return "requires-owner-decision";
 };
 
+const deriveTransitionMatrix = (reconciliation) => {
+  const matrix = {
+    historicalPassed: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 0, missingOrChanged: 0 },
+    historicalUnexpected: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 0, missingOrChanged: 0 },
+    historicalSkipped: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 0, missingOrChanged: 0 },
+  };
+  for (const row of reconciliation) {
+    const historicalRow = row.historicalResultStatus === "expected" ? "historicalPassed"
+      : row.historicalResultStatus === "unexpected" ? "historicalUnexpected"
+        : row.historicalResultStatus === "skipped" ? "historicalSkipped" : null;
+    if (!historicalRow) continue;
+    const currentColumn = row.disposition === "missing-current-identity" ? "missingOrChanged"
+      : row.currentActualStatus === "passed" ? "currentPassed"
+        : row.currentActualStatus === "skipped" ? "currentSkipped"
+          : row.currentActualStatus === null || row.currentActualStatus === "no-result" ? "missingOrChanged" : "currentUnexpected";
+    matrix[historicalRow][currentColumn] += 1;
+  }
+  return matrix;
+};
+
 const summarize = (tests) => {
   const actual = (status) => tests.filter((test) => test.actualStatus === status).length;
   const unexpected = tests.filter((test) => test.actualStatus !== test.expectedStatus).length;
@@ -375,7 +395,9 @@ const main = () => {
     if (current) {
       const currentUnexpected = current.actualStatus !== current.expectedStatus;
       const priorUnexpected = prior.resultStatus === "unexpected";
-      if (!priorUnexpected && !currentUnexpected) disposition = "expected-in-both";
+      if (prior.resultStatus === "skipped") disposition = current.actualStatus === "skipped"
+        ? "historical-skip-still-skipped" : "historical-skip-currently-unskipped-requires-review";
+      else if (!priorUnexpected && !currentUnexpected) disposition = "expected-in-both";
       else if (!priorUnexpected && currentUnexpected) disposition = "new-current-unexpected";
       else if (priorUnexpected && !currentUnexpected) disposition = "historical-unexpected-now-expected";
       else disposition = classifyError(current) === prior.errorSignature ? "unexpected-same-signature" : "unexpected-changed-signature";
@@ -581,6 +603,7 @@ const main = () => {
       missingHistoricalCount: missingHistorical.length,
       newCurrentCount: newCurrent.length,
       dispositions: Object.fromEntries([...new Set(reconciliation.map((item) => item.disposition))].sort().map((disposition) => [disposition, reconciliation.filter((item) => item.disposition === disposition).length])),
+      transitionMatrix: deriveTransitionMatrix(reconciliation),
       tests: reconciliation,
     },
     testInventory,

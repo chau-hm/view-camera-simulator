@@ -96,7 +96,8 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
   it("reconciles all historical M7K outcomes without calling one-run passes fixes", () => {
     const dispositions = record(record(acceptedReport).historicalReconciliation).dispositions;
     expect(record(dispositions)).toMatchObject({
-      "expected-in-both": 181,
+      "expected-in-both": 106,
+      "historical-skip-still-skipped": 75,
       "historical-unexpected-now-expected": 12,
       "new-current-unexpected": 15,
       "unexpected-changed-signature": 23,
@@ -105,6 +106,12 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
     const inventory = record(acceptedReport).testInventory as JsonRecord[];
     expect(inventory.filter((entry) => entry.historicalDisposition === "historical-unexpected-now-expected")
       .every((entry) => entry.recommendedAction === "record-current-pass-once; do-not-label-fixed")).toBe(true);
+    const transition = record(record(acceptedReport).historicalReconciliation).transitionMatrix as JsonRecord;
+    expect(transition).toEqual({
+      historicalPassed: { currentPassed: 106, currentUnexpected: 15, currentSkipped: 0, missingOrChanged: 0 },
+      historicalUnexpected: { currentPassed: 12, currentUnexpected: 70, currentSkipped: 0, missingOrChanged: 0 },
+      historicalSkipped: { currentPassed: 0, currentUnexpected: 0, currentSkipped: 75, missingOrChanged: 0 },
+    });
   });
 
   it("rejects an analyst promotion of an unverified root cause", () => {
