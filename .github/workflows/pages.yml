@@ -227,13 +227,16 @@ jobs:
             --retained-ref=refs/pull/316/head \
             --verify-path=scripts/run-m7r-broad-e2e.mjs
           node scripts/fetch-m7k-execution-source.mjs \
-            --sha=a731929ae377d5ff0d991179f6dcc5d34c318d26 \
+            --sha=df5bc305cb29be16c2ac7e0004ab4d56447cb924 \
             --retained-ref=refs/pull/316/head \
             --verify-path=scripts/run-m7r-broad-e2e.mjs \
             --verify-path=scripts/normalizeM7rBroadE2eCapture.mjs \
             --verify-path=scripts/evaluateM7rBroadE2eRecovery.ts \
             --verify-path=scripts/run-m7r-evidence.mjs \
-            --verify-path=src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts \
+            --verify-path=src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=a731929ae377d5ff0d991179f6dcc5d34c318d26 \
+            --retained-ref=refs/pull/316/head \
             --verify-path=package.json
 
       - name: Setup Node.js

@@ -15,8 +15,9 @@ This report prioritizes three bounded follow-up work packets: verify the shared 
 | Execution source | `d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8` |
 | Execution source tree | `483e20dc144961c6028f717fe2c4ab0ef18a8e16` |
 | Original two-lane capture runner | `ccae6bdd904d654fc73b12ec5875376575c3e16b` |
-| Corrected M7R analysis tooling/evaluator | `a731929ae377d5ff0d991179f6dcc5d34c318d26` |
-| Evaluator revision | `m7r-broad-e2e-recovery-evaluator-v7` |
+| Corrected M7R analysis tooling/evaluator | `df5bc305cb29be16c2ac7e0004ab4d56447cb924` |
+| Historical package-manifest provenance | `a731929ae377d5ff0d991179f6dcc5d34c318d26` (historical tree entry only) |
+| Evaluator revision | `m7r-broad-e2e-recovery-evaluator-v8` |
 
 The ordinary lane used Playwright 1.61.1 with Chromium 149.0.7827.55, Node 24.3.0, macOS arm64, headless Chromium, a 1280×720 viewport, and Three.js 0.187.0. The renderer was the application's default WebGL path using Chromium SwiftShader. Native WebGPU and native WebGPU feature gates were disabled. The ordinary lane used four configured workers and zero retries. The renderer-serial lane used one worker, zero retries, and disabled project dependencies. The two lanes ran sequentially on isolated strict ports; each prior listener was absent and each server was closed after its invocation.
 
@@ -131,6 +132,26 @@ M7R evidence-check success means only that this current capture and its interpre
 
 Hosted CI on evaluator v6 failed its positive M7R evidence check with `m7r-capture-artifact-manifest-invalid` and `m7r-normalized-artifact-digests-not-recomputed`, despite the local checker passing. Comparing all 171 manifest entries with Git's tracked paths identified four console logs that existed locally but matched the repository-wide `*.log` ignore rule, so a clean hosted checkout did not contain them. The four logs were checked for private absolute paths and their on-disk sizes and SHA-256 values matched the existing manifest. Evaluator v7 reports missing, size-mismatched, or digest-mismatched artifact paths individually, and the positive mutation test prints evaluator issues on failure.
 
-The normalized capture was regenerated from the unchanged redacted manifest and raw Playwright reports using analysis source `a731929ae377d5ff0d991179f6dcc5d34c318d26`; the only normalized changes are generation time and analysis-source provenance. Raw outcomes, the capture manifest, raw Playwright exports, and their recorded digests are unchanged. The four existing console logs were committed byte-for-byte so the full persisted artifact manifest is available in a clean checkout.
+The normalized capture was regenerated from the unchanged redacted manifest and raw Playwright reports using analysis source `df5bc305cb29be16c2ac7e0004ab4d56447cb924`; the only normalized changes are generation time and analysis-source provenance. Raw outcomes, the capture manifest, raw Playwright exports, and their recorded digests are unchanged. The four existing console logs were committed byte-for-byte so the full persisted artifact manifest is available in a clean checkout.
 
 The production-facing `npm run evidence:check:m7r` command passes and reports 118 passed, 85 unexpected, 75 skipped, zero retries, and `not-qualified`. The focused `src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts` suite passes all 15 tests, including the production CLI negative control. Final-head hosted CI on `183a8f4902acdfdd2fdae9b460c54093dbaaad93` passed in [workflow run 42340897734](https://github.com/chau-hm/view-camera-simulator/actions/runs/42340897734): all 3,914 tests across 326 files, lint, typecheck, ordinary Chromium smoke, production-preview WebGL isolation, and retained evidence checks through M7R. The deploy job was skipped for this PR. Local typecheck, lint, focused tests, evidence check, and `git diff --check` also pass.
+
+## M7R Review-Fix Round 1 — Live package manifest remains maintainable
+
+The reviewed v7 evaluator treated `package.json` like the pinned normalizer/evaluator implementation and required the working-tree manifest to be byte-identical to analysis source `a731929ae377d5ff0d991179f6dcc5d34c318d26`. That unnecessarily made future dependency and npm-script changes fail M7R evidence validation.
+
+Evaluator v8 separates the contracts. Analysis implementation files remain exact-content checked at the report's pinned analysis source. The old `a731…` commit remains separately recorded as the historical manifest provenance source, and the evaluator requires its Git commit and `package.json` tree entry to be available. It does not compare that historical manifest blob with the current working-tree file. CI fetches the exact v8 analysis source from retained `refs/pull/316/head` and separately retrieves `a731…` to verify the historical manifest entry.
+
+The current manifest is checked narrowly: `evidence:check:m7r` must invoke `scripts/run-m7r-evidence.mjs`, and `evidence:normalize:m7r` must invoke `scripts/normalizeM7rBroadE2eCapture.mjs`. The evaluator accepts harmless command formatting, `./` path prefixes, and a small set of safe Node flags; it rejects missing scripts, redirection to another tool, shell chaining, and missing targets. Tests mutate only temporary package manifests to demonstrate that unrelated npm-script/dependency changes pass while required-script and source-provenance mutations fail.
+
+The four P1 console logs remain committed at their original paths and are checked against the existing manifest's sizes and SHA-256 values. No M7R raw capture, manifest, outcome, or qualification value is changed by this correction. M7R remains 118 passed, 85 unexpected, 75 skipped and not-qualified; M7 remains partially-qualified, M8 denied, production Ground Glass WebGL-only, and production WebGPU disabled.
+
+### Review-fix validation
+
+- The focused M7R evaluator suite passes **23/23 tests**, including isolated unrelated-script and dependency changes, required-script removal/redirection, unavailable historical source, modified evaluator content, and the accepted report control.
+- `npm run evidence:check:m7r` passes with 278 complete identities, 118 passed, 85 unexpected, 75 skipped, zero retries, and Broad E2E `not-qualified`.
+- `npm run evidence:check:m7q` passes with 8/8 matched attempts and decision path B; `npm run evidence:check:m7k` passes the unchanged 278 / 121 / 82 / 75 historical baseline.
+- Typecheck and focused ESLint pass. The four P1 `.log` artifacts are tracked, and each current size and SHA-256 matches its retained capture-manifest entry.
+- The normalized capture was regenerated from the original manifest and raw reports with analysis source `df5bc305cb29be16c2ac7e0004ab4d56447cb924`. All material normalized content is unchanged after excluding generated time and analysis-source metadata; ordinary and renderer-serial raw SHA-256 values remain `24ae52f1143e4c95ba62d93ac02a056a866911454516c744ebdc61f4218cc201` and `766017bcdd512b712a60896e454cb62e18ac91b3d38f43d37cd4b29589f4f620`. The new normalized artifact SHA-256 is `14f71e5d0bc9d2cf8eef45d0589baa88add3c26c689a70ce6c36c9c972f70226`.
+
+The synthetic post-squash check used a fresh shallow clone made with `--no-local --no-hardlinks`; its synthetic `main` tree contained the final report but did not make evaluator source `df5bc305cb29be16c2ac7e0004ab4d56447cb924` or historical manifest source `a731929ae377d5ff0d991179f6dcc5d34c318d26` reachable. Both `git cat-file` checks failed before retrieval, and the actual evidence CLI exited 1 with the corresponding missing-source diagnostics. The M7R source-fetch helper then fetched the pinned evaluator through `refs/pull/316/head` using its retained-ref-history fallback and verified all five pinned analysis paths; the historical manifest commit and its `package.json` tree entry became available. The same CLI then passed with the unchanged not-qualified result. The hosted final-head CI result is recorded after publication.

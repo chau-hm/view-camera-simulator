@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "evidenceId": "m7r-current-source-broad-e2e-recovery-v1",
-  "evaluatorRevision": "m7r-broad-e2e-recovery-evaluator-v7",
+  "evaluatorRevision": "m7r-broad-e2e-recovery-evaluator-v8",
   "decision": {
     "code": "R1",
     "label": "Ready for targeted remediation PRs",
@@ -97,14 +97,14 @@
     ],
     "captureRunnerSourceCommitSha": "ccae6bdd904d654fc73b12ec5875376575c3e16b",
     "captureRunnerSourcePath": "scripts/run-m7r-broad-e2e.mjs",
-    "analysisToolingSourceCommitSha": "a731929ae377d5ff0d991179f6dcc5d34c318d26",
+    "analysisToolingSourceCommitSha": "df5bc305cb29be16c2ac7e0004ab4d56447cb924",
+    "historicalPackageManifestSourceCommitSha": "a731929ae377d5ff0d991179f6dcc5d34c318d26",
     "analysisToolingSourcePaths": [
       "scripts/run-m7r-broad-e2e.mjs",
       "scripts/normalizeM7rBroadE2eCapture.mjs",
       "scripts/evaluateM7rBroadE2eRecovery.ts",
       "scripts/run-m7r-evidence.mjs",
-      "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
-      "package.json"
+      "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts"
     ],
     "roles": {
       "execution": "M7Q merge/current-main source used for discovery and execution",
@@ -115,7 +115,7 @@
   "artifacts": {
     "normalizedCapture": {
       "path": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/final/normalized-capture.json",
-      "sha256": "3ea64e1fa325583dd87e5cdad56bf8d4231ca64d0062495723b0ba8777b540d5"
+      "sha256": "14f71e5d0bc9d2cf8eef45d0589baa88add3c26c689a70ce6c36c9c972f70226"
     },
     "captureManifest": {
       "path": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run-attempt-2/capture-manifest.json",
