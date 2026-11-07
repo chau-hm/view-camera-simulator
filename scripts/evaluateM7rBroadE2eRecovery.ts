@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { basename, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v6";
+export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v7";
 export const M7R_EXECUTION_SOURCE_SHA = "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8";
 export const M7R_CAPTURE_RUNNER_SHA = "ccae6bdd904d654fc73b12ec5875376575c3e16b";
 export const M7R_HISTORICAL_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f";
@@ -759,6 +759,9 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
   const checkedArtifacts = artifactManifest.map((entry) => {
     const path = typeof entry.path === "string" ? `${manifest.outputDirectory}/${entry.path}` : "";
     const file = fileAt(repositoryRoot, path);
+    if (!file) add(`m7r-capture-artifact-missing:${String(entry.path)}`);
+    else if (file.bytes.byteLength !== entry.sizeBytes) add(`m7r-capture-artifact-size-mismatch:${String(entry.path)}`);
+    else if (hash(file.bytes) !== entry.sha256) add(`m7r-capture-artifact-digest-mismatch:${String(entry.path)}`);
     return {
       path: entry.path,
       sizeBytes: file?.bytes.byteLength ?? null,

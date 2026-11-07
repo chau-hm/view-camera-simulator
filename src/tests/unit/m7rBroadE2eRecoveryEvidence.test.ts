@@ -35,7 +35,7 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
 
   it("accepts the complete, raw-linked M7R capture without promoting qualification", () => {
     const result = evaluateM7rBroadE2eRecovery(acceptedReport);
-    expect(result.passed).toBe(true);
+    expect(result.passed, result.issues.join(", ")).toBe(true);
     expect(result.issues).toEqual([]);
     expect(result.executionCompleteness).toBe("complete");
     expect(result.broadE2eQualification).toBe("not-qualified");
