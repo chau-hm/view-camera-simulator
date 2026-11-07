@@ -9,6 +9,7 @@ type JsonRecord = Record<string, unknown>;
 const reportPath = resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7R_BROAD_E2E_QUALIFICATION_RECOVERY_REPORT.json");
 let acceptedReport: JsonRecord;
 let temporaryReportPath: string | null = null;
+let temporaryNormalizedPath: string | null = null;
 
 const clone = <T>(value: T): T => structuredClone(value);
 const record = (value: unknown): JsonRecord => typeof value === "object" && value !== null && !Array.isArray(value) ? value as JsonRecord : {};
@@ -29,6 +30,7 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
 
   afterAll(() => {
     if (temporaryReportPath) unlinkSync(temporaryReportPath);
+    if (temporaryNormalizedPath) unlinkSync(temporaryNormalizedPath);
   });
 
   it("accepts the complete, raw-linked M7R capture without promoting qualification", () => {
@@ -91,6 +93,37 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
     expect(skipped.every((entry) => record(entry.currentSkipAudit).exclusionApproval === "unapproved")).toBe(true);
     expect(unexpected.every((entry) => record(entry).rootCauseCategory === "insufficient-evidence"
       && record(entry).rootCauseConfidence === "unclassified")).toBe(true);
+  });
+
+  it("accepts equivalent skip reason groups independent of host collation order", () => {
+    const normalizedClaim = record(record(acceptedReport.artifacts).normalizedCapture);
+    const normalizedPath = resolve(process.cwd(), String(normalizedClaim.path));
+    const normalized = JSON.parse(readFileSync(normalizedPath, "utf8")) as JsonRecord;
+    const currentSkipAudit = record(normalized.currentSkipAudit);
+    currentSkipAudit.reasonGroups = (currentSkipAudit.reasonGroups as JsonRecord[]).reverse();
+    temporaryNormalizedPath = resolve(process.cwd(), `.m7r-reordered-normalized-${process.pid}.json`);
+    writeFileSync(temporaryNormalizedPath, `${JSON.stringify(normalized, null, 2)}\n`, { flag: "wx" });
+    const mutated = clone(acceptedReport);
+    const normalizedArtifact = record(record(mutated.artifacts).normalizedCapture);
+    normalizedArtifact.path = basename(temporaryNormalizedPath);
+    normalizedArtifact.sha256 = sha256(readFileSync(temporaryNormalizedPath));
+    const reportSkipAudit = record(mutated.skipAudit);
+    reportSkipAudit.reasonGroups = (reportSkipAudit.reasonGroups as JsonRecord[]).reverse();
+    const result = evaluateM7rBroadE2eRecovery(mutated);
+    expect(result.passed, result.issues.join(", ")).toBe(true);
+    expect(result.issues).toEqual([]);
+    unlinkSync(temporaryNormalizedPath);
+    temporaryNormalizedPath = null;
+  });
+
+  it("rejects changed skip reason counts regardless of list ordering", () => {
+    const mutated = clone(acceptedReport);
+    const reportSkipAudit = record(mutated.skipAudit);
+    const groups = reportSkipAudit.reasonGroups as JsonRecord[];
+    groups[0].count = Number(groups[0].count) + 1;
+    const result = evaluateM7rBroadE2eRecovery(mutated);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("m7r-report-skip-audit-invalid");
   });
 
   it("reconciles all historical M7K outcomes without calling one-run passes fixes", () => {

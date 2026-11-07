@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { basename, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v5";
+export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v6";
 export const M7R_EXECUTION_SOURCE_SHA = "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8";
 export const M7R_CAPTURE_RUNNER_SHA = "ccae6bdd904d654fc73b12ec5875376575c3e16b";
 export const M7R_HISTORICAL_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f";
@@ -53,10 +53,13 @@ const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("h
 const isRecord = (value: unknown): value is JsonRecord => typeof value === "object" && value !== null && !Array.isArray(value);
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const recordAt = (value: unknown, key: string): JsonRecord => isRecord(value) && isRecord(value[key]) ? value[key] as JsonRecord : {};
+const compareCodeUnits = (left: string, right: string): number => left < right ? -1 : left > right ? 1 : 0;
 const stable = (value: unknown): string => JSON.stringify(value, (_key, item: unknown) => {
-  if (isRecord(item)) return Object.fromEntries(Object.entries(item).sort(([left], [right]) => left.localeCompare(right)));
+  if (isRecord(item)) return Object.fromEntries(Object.entries(item).sort(([left], [right]) => compareCodeUnits(left, right)));
   return item;
 });
+const unorderedArray = (value: unknown): string[] => asArray(value).map(stable).sort(compareCodeUnits);
+const sameUnorderedArray = (left: unknown, right: unknown): boolean => stable(unorderedArray(left)) === stable(unorderedArray(right));
 
 const git = (root: string, args: string[], allowFailure = false) => {
   const result = spawnSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
@@ -266,7 +269,7 @@ const summarize = (tests: TestRow[]) => {
     incomplete: tests.filter((test) => test.results.length !== 1 || test.actualStatus === "no-result").length,
     retries: tests.reduce((sum, test) => sum + test.retryCount, 0),
     workerEvidence,
-    failureGroups: [...failureGroups.entries()].map(([signature, identities]) => ({ signature, count: identities.length, identities })).sort((a, b) => b.count - a.count || a.signature.localeCompare(b.signature)),
+    failureGroups: [...failureGroups.entries()].map(([signature, identities]) => ({ signature, count: identities.length, identities })).sort((a, b) => b.count - a.count || compareCodeUnits(a.signature, b.signature)),
   };
 };
 
@@ -724,10 +727,10 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
     const reason = skip.annotations.map((annotation) => annotation.description).filter((value) => typeof value === "string" && value.length > 0).join(" | ") || "missing-skip-reason";
     skipReasonCounts.set(reason, (skipReasonCounts.get(reason) ?? 0) + 1);
   }
-  const skipReasonGroups = [...skipReasonCounts.entries()].map(([reason, count]) => ({ reason, count })).sort((left, right) => right.count - left.count || left.reason.localeCompare(right.reason));
+  const skipReasonGroups = [...skipReasonCounts.entries()].map(([reason, count]) => ({ reason, count })).sort((left, right) => right.count - left.count || compareCodeUnits(left.reason, right.reason));
   if (historicalSkipAudit.length !== 75 || stable(normalizedSkipAudit.historicalTests) !== stable(skipRechecks.historical)) add("m7r-historical-skips-not-individually-rechecked");
   if (stable(normalizedSkipAudit.tests) !== stable(skipRechecks.current)) add("m7r-current-skip-audit-not-derived-from-raw");
-  if (stable(normalizedSkipAudit.reasonGroups) !== stable(skipReasonGroups)) add("m7r-skip-reason-groups-not-derived-from-raw");
+  if (!sameUnorderedArray(normalizedSkipAudit.reasonGroups, skipReasonGroups)) add("m7r-skip-reason-groups-not-derived-from-raw");
   if (normalizedSkipAudit.historicalSkipRechecks !== 75 || normalizedSkipAudit.approvedExclusions !== 0
     || normalizedSkipAudit.count !== skipRechecks.current.length) add("m7r-skip-audit-summary-invalid");
   if (skipRechecks.current.some((entry) => entry.annotations.length === 0 || entry.annotations.some((annotation) => !annotation.description))) add("m7r-current-skip-reason-unverifiable");
@@ -735,7 +738,7 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
   const reportSkips = isRecord(report.skipAudit) ? report.skipAudit : {};
   if (reportSkips.historicalSkipped !== 75 || reportSkips.individuallyRechecked !== 75
     || reportSkips.currentSkipped !== skipRechecks.current.length || reportSkips.approvedExclusions !== 0
-    || stable(reportSkips.reasonGroups) !== stable(skipReasonGroups)) add("m7r-report-skip-audit-invalid");
+    || !sameUnorderedArray(reportSkips.reasonGroups, skipReasonGroups)) add("m7r-report-skip-audit-invalid");
 
   const currentFiles = [...new Set(currentTests.map((test) => `src/tests/e2e/${test.sourceSpec}`))].sort();
   const executionPaths = [...M7R_REQUIRED_EXECUTION_PATHS, ...currentFiles].sort();

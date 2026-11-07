@@ -13,9 +13,10 @@ const historyPath = "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_
 const shaPattern = /^[0-9a-f]{40}$/;
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+const compareCodeUnits = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 const fail = (message) => { throw new Error(message); };
 const stable = (value) => JSON.stringify(value, (_key, item) => {
-  if (isRecord(item)) return Object.fromEntries(Object.entries(item).sort(([left], [right]) => left.localeCompare(right)));
+  if (isRecord(item)) return Object.fromEntries(Object.entries(item).sort(([left], [right]) => compareCodeUnits(left, right)));
   return item;
 });
 const identityReconciliationCounts = (value) => ({
@@ -265,7 +266,7 @@ const summarize = (tests) => {
     incomplete,
     retries,
     workerEvidence: summarizeWorkerOverlap(tests),
-    failureGroups: [...failureGroups.entries()].map(([signature, identities]) => ({ signature, count: identities.length, identities })).sort((a, b) => b.count - a.count || a.signature.localeCompare(b.signature)),
+    failureGroups: [...failureGroups.entries()].map(([signature, identities]) => ({ signature, count: identities.length, identities })).sort((a, b) => b.count - a.count || compareCodeUnits(a.signature, b.signature)),
   };
 };
 
@@ -617,7 +618,7 @@ const main = () => {
       historicalSkipIdentities: historicalSkipKeys.length,
       historicalSkipRechecks: historicalSkipRechecks.length,
       approvedExclusions: currentSkips.filter((entry) => entry.approvedExclusion !== null).length,
-      reasonGroups: [...currentSkipReasons.entries()].map(([reason, count]) => ({ reason, count })).sort((left, right) => right.count - left.count || left.reason.localeCompare(right.reason)),
+      reasonGroups: [...currentSkipReasons.entries()].map(([reason, count]) => ({ reason, count })).sort((left, right) => right.count - left.count || compareCodeUnits(left.reason, right.reason)),
       tests: currentSkips,
       historicalTests: historicalSkipRechecks,
     },
