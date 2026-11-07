@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { basename, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v4";
+export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v5";
 export const M7R_EXECUTION_SOURCE_SHA = "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8";
 export const M7R_CAPTURE_RUNNER_SHA = "ccae6bdd904d654fc73b12ec5875376575c3e16b";
 export const M7R_HISTORICAL_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f";
@@ -651,12 +651,12 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
     const tests = flattenRawTests(raw);
     const discoveryKey = laneName === "ordinary" ? "ordinary" : "rendererSerial";
     const discovery = recordAt(recordAt(manifest, "discovery"), discoveryKey);
-    const discovered = asArray(discovery.identities).filter(isRecord).map((entry) => `${String(entry.projectName)}::${String(entry.testId)}`).sort();
+    const discovered = asArray(discovery.identities).filter(isRecord).map((entry) => `${String(entry.projectName)}::${String(entry.testId)}`);
     const summary = compareLane(laneClaim, manifestLane, raw, tests, discovered, laneLabel, issues);
     laneTests.set(laneName, tests);
     laneSummaries.set(laneName, summary as unknown as JsonRecord);
     const reported = tests.map((test) => `${test.projectName}::${test.testId}`).sort();
-    if (stable(discovered) !== stable(reported)) add(`m7r-${laneLabel}-discovery-and-raw-identities-differ`);
+    if (stable([...discovered].sort()) !== stable([...reported].sort())) add(`m7r-${laneLabel}-discovery-and-raw-identities-differ`);
     const reconciliation = isRecord(laneClaim.identityReconciliation) ? laneClaim.identityReconciliation : {};
     if (reconciliation.discovered !== discovered.length || reconciliation.reported !== reported.length
       || asArray(reconciliation.missing).length !== 0 || asArray(reconciliation.extra).length !== 0 || asArray(reconciliation.duplicates).length !== 0) add(`m7r-${laneLabel}-identity-reconciliation-invalid`);
