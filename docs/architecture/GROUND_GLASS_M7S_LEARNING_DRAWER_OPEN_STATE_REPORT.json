@@ -479,7 +479,7 @@
     "fullBroadE2e": "not run",
     "fullPlaywrightSuite": "not run",
     "productionPreviewIsolation": "not run; application/runtime and workflow files were not changed",
-    "hostedCi": "pending PR publication",
+    "hostedCi": "passed on implementation HEAD 9ee8a87173fa94de630f5f4de4ec6955b3ec0ca2 for both branch-push run https://github.com/chau-hm/view-camera-simulator/actions/runs/42393220326 and pull-request run https://github.com/chau-hm/view-camera-simulator/actions/runs/42393291579; ordinary Chromium smoke, production-preview WebGL isolation, and retained M7F-M7R evidence checks passed; deployment jobs were skipped for the PR event",
     "m7kEvidenceCheck": "passed; integrity passed; execution complete; qualification not-qualified",
     "defaultPlaywrightDiscovery": "diagnostic file excluded; default Playwright --list did not include it"
   },
