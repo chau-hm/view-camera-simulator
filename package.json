@@ -31,6 +31,8 @@
     "e2e:capture:m7q": "node ./scripts/run-m7q-light-peer-trace-ab.mjs",
     "evidence:normalize:m7q": "node ./scripts/normalizeM7qLightPeerTraceAb.mjs",
     "evidence:check:m7q": "node ./scripts/run-m7q-evidence.mjs",
+    "evidence:normalize:m7r": "node ./scripts/normalizeM7rBroadE2eCapture.mjs",
+    "evidence:check:m7r": "node ./scripts/run-m7r-evidence.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",

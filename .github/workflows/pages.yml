@@ -212,6 +212,33 @@ jobs:
           --verify-path=scripts/run-m7k-broad-e2e.mjs
           --verify-path=src/render/testing/groundGlassM7kBroadE2eQualification.ts
 
+      # M7R uses the M7Q merge source, while its original capture runner and
+      # corrected analysis tools may disappear from main after this PR is
+      # squash-merged. Fetch exact pinned commits from retained refs and
+      # verify their source tree entries before the evidence gate runs.
+      - name: Fetch M7R retained baseline and analysis source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8 \
+            --retained-ref=refs/pull/315/head \
+            --verify-path=playwright.config.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=ccae6bdd904d654fc73b12ec5875376575c3e16b \
+            --retained-ref=refs/pull/316/head \
+            --verify-path=scripts/run-m7r-broad-e2e.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=df5bc305cb29be16c2ac7e0004ab4d56447cb924 \
+            --retained-ref=refs/pull/316/head \
+            --verify-path=scripts/run-m7r-broad-e2e.mjs \
+            --verify-path=scripts/normalizeM7rBroadE2eCapture.mjs \
+            --verify-path=scripts/evaluateM7rBroadE2eRecovery.ts \
+            --verify-path=scripts/run-m7r-evidence.mjs \
+            --verify-path=src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=a731929ae377d5ff0d991179f6dcc5d34c318d26 \
+            --retained-ref=refs/pull/316/head \
+            --verify-path=package.json
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -289,6 +316,9 @@ jobs:
 
       - name: Validate M7Q matched light-peer tracing A/B evidence integrity
         run: npm run evidence:check:m7q
+
+      - name: Validate M7R broad E2E recovery evidence integrity
+        run: npm run evidence:check:m7r
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
