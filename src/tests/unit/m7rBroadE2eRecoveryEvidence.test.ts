@@ -114,6 +114,23 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
     });
   });
 
+  it("classifies failure signatures from the assertion that actually failed", () => {
+    const groups = record(acceptedReport.summary).ordinary as JsonRecord;
+    const failures = groups.failureGroups as JsonRecord[];
+    const counts = Object.fromEntries(failures.map((group) => [String(group.signature), group.count]));
+    expect(counts).toMatchObject({
+      "css-assertion": 13,
+      "count-assertion": 7,
+      "visibility-assertion": 8,
+      "attribute-assertion": 7,
+      "value-assertion": 1,
+      "text-assertion": 3,
+      "predicate-timeout": 2,
+      "equality-assertion": 3,
+      "checked-state-assertion": 1,
+    });
+  });
+
   it("rejects an analyst promotion of an unverified root cause", () => {
     const mutated = clone(acceptedReport);
     const inventory = record(mutated).testInventory as JsonRecord[];

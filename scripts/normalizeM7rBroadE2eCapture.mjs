@@ -199,15 +199,20 @@ const summarizeWorkerOverlap = (tests) => {
 const classifyError = (test) => {
   if (test.actualStatus === "timedOut") return "test-timeout";
   const message = test.results.at(-1)?.errors?.[0]?.message ?? "";
-  if (/toHaveCSS\(/.test(message)) return "css-assertion";
-  if (/toHaveCount\(/.test(message)) return "count-assertion";
-  if (/toBeVisible\(/.test(message)) return "visibility-assertion";
-  if (/toHaveAttribute\(/.test(message)) return "attribute-assertion";
-  if (/toHaveValue\(/.test(message)) return "value-assertion";
-  if (/toContainText\(/.test(message)) return "text-assertion";
-  if (/toBeEnabled\(/.test(message)) return "other-timeout";
-  if (/Timeout .* exceeded while waiting on the predicate/.test(message)) return "predicate-timeout";
-  if (/toBeCloseTo\(/.test(message)) return "numeric-assertion";
+  const firstLine = message.replaceAll(String.fromCharCode(27), "").split(/\r?\n/, 1)[0]?.replace(/\[[0-9;]*m/g, "") ?? "";
+  if (/toHaveCSS\(/.test(firstLine)) return "css-assertion";
+  if (/toHaveCount\(/.test(firstLine)) return "count-assertion";
+  if (/toBeVisible\(/.test(firstLine)) return "visibility-assertion";
+  if (/toHaveAttribute\(/.test(firstLine)) return "attribute-assertion";
+  if (/toHaveValue\(/.test(firstLine)) return "value-assertion";
+  if (/toContainText\(/.test(firstLine)) return "text-assertion";
+  if (/toBeEnabled\(/.test(firstLine)) return "enabled-state-assertion";
+  if (/toBeChecked\(/.test(firstLine)) return "checked-state-assertion";
+  if (/Timeout .* exceeded while waiting on the predicate/.test(firstLine)) return "predicate-timeout";
+  if (/toBeGreaterThan\(/.test(firstLine)) return "numeric-greater-than-assertion";
+  if (/toBeLessThan\(/.test(firstLine)) return "numeric-less-than-assertion";
+  if (/toBeCloseTo\(/.test(firstLine)) return "numeric-close-to-assertion";
+  if (/toBe\(/.test(firstLine)) return "equality-assertion";
   return message ? "other-assertion" : "no-error-message";
 };
 
