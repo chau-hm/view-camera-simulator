@@ -38,6 +38,22 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
     expect(result.executionCompleteness).toBe("complete");
     expect(result.broadE2eQualification).toBe("not-qualified");
     expect(result.evaluatorRevision).toBe(M7R_EVALUATOR_REVISION);
+    const normalizedClaim = record(record(acceptedReport.artifacts).normalizedCapture);
+    const normalized = JSON.parse(readFileSync(resolve(process.cwd(), String(normalizedClaim.path)), "utf8")) as JsonRecord;
+    const ordinary = record(record(normalized.lanes).ordinary);
+    expect(record(ordinary.normalizationCorrection)).toMatchObject({
+      applied: true,
+      correctionId: "m7r-playwright-json-repeated-file-suite-title-v1",
+      originalRunnerMismatchReproduced: true,
+      runnerMarkedInvalidForIdentityMismatch: true,
+    });
+    expect(record(ordinary.correctedLegacyIdentityReconciliation)).toMatchObject({
+      discovered: 274,
+      reported: 274,
+      duplicates: [],
+    });
+    expect(record(ordinary.correctedLegacyIdentityReconciliation).missing).toHaveLength(30);
+    expect(record(ordinary.correctedLegacyIdentityReconciliation).extra).toHaveLength(30);
   });
 
   it("rejects a claim that the current Broad E2E suite is qualified", () => {

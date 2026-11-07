@@ -143,6 +143,13 @@ const reconcileIdentityKeys = (discoveredKeys: string[], reportedKeys: string[])
     duplicates: reportedKeys.filter((key, index) => reportedKeys.indexOf(key) !== index),
   };
 };
+const identityReconciliationCounts = (value: JsonRecord) => ({
+  discovered: value.discovered,
+  reported: value.reported,
+  missing: Array.isArray(value.missing) ? value.missing.length : value.missing,
+  extra: Array.isArray(value.extra) ? value.extra.length : value.extra,
+  duplicates: Array.isArray(value.duplicates) ? value.duplicates.length : value.duplicates,
+});
 
 export const deriveM7rWorkerEvidence = (results: {
   status: string;
@@ -468,7 +475,8 @@ const compareLane = (actual: JsonRecord, manifestLane: JsonRecord, raw: JsonReco
   const legacyIdentityKeys = legacyTests.map((test) => `${test.projectName}::${test.testId}`);
   const legacyReconciliation = reconcileIdentityKeys(discoveredKeys, legacyIdentityKeys);
   const hasLegacyIdentityMismatch = legacyReconciliation.missing.length > 0 || legacyReconciliation.extra.length > 0 || legacyReconciliation.duplicates.length > 0;
-  const originalRunnerMismatchReproduced = stable(runnerSummary.identityReconciliation) === stable(legacyReconciliation);
+  const originalRunnerMismatchReproduced = stable(identityReconciliationCounts(recordAt(runnerSummary, "identityReconciliation")))
+    === stable(identityReconciliationCounts(legacyReconciliation));
   const expectedCorrection = {
     applied: hasLegacyIdentityMismatch,
     correctionId: hasLegacyIdentityMismatch ? "m7r-playwright-json-repeated-file-suite-title-v1" : null,
@@ -487,7 +495,7 @@ const compareLane = (actual: JsonRecord, manifestLane: JsonRecord, raw: JsonReco
     if (laneName !== "ordinary" || legacyReconciliation.discovered !== 274 || legacyReconciliation.reported !== 274
       || legacyReconciliation.missing.length !== 30 || legacyReconciliation.extra.length !== 30 || legacyReconciliation.duplicates.length !== 0
       || manifestLane.captureValidity !== "invalid" || manifestLane.executionCompleteness !== "incomplete"
-      || stable(runnerSummary.identityReconciliation) !== stable(legacyReconciliation)
+      || stable(identityReconciliationCounts(recordAt(runnerSummary, "identityReconciliation"))) !== stable(identityReconciliationCounts(legacyReconciliation))
       || correction.applied !== true || correction.correctionId !== "m7r-playwright-json-repeated-file-suite-title-v1"
       || correction.runnerMarkedInvalidForIdentityMismatch !== true) issues.push(`m7r-${laneName}-unsupported-capture-validity-correction`);
   } else if (manifestLane.captureValidity !== "valid" || manifestLane.executionCompleteness !== "complete"

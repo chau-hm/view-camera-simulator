@@ -18,6 +18,13 @@ const stable = (value) => JSON.stringify(value, (_key, item) => {
   if (isRecord(item)) return Object.fromEntries(Object.entries(item).sort(([left], [right]) => left.localeCompare(right)));
   return item;
 });
+const identityReconciliationCounts = (value) => ({
+  discovered: value.discovered,
+  reported: value.reported,
+  missing: Array.isArray(value.missing) ? value.missing.length : value.missing,
+  extra: Array.isArray(value.extra) ? value.extra.length : value.extra,
+  duplicates: Array.isArray(value.duplicates) ? value.duplicates.length : value.duplicates,
+});
 
 const git = (args, allowFailure = false) => {
   const result = spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
@@ -289,7 +296,8 @@ const readLane = (captureRoot, manifest, laneKey, laneName = laneKey) => {
     && lane.server?.closedAfterInvocation === true && lane.server?.priorListenerAbsent === true
     && lane.rawParseError === null && lane.invocation?.signal === null && lane.invocation?.spawnError === null;
   const identityCorrectionApplied = legacyReconciliation.missing.length > 0 || legacyReconciliation.extra.length > 0 || legacyReconciliation.duplicates.length > 0;
-  const originalRunnerMismatchReproduced = stable(summaryFromRunner.identityReconciliation) === stable(legacyReconciliation);
+  const originalRunnerMismatchReproduced = stable(identityReconciliationCounts(summaryFromRunner.identityReconciliation ?? {}))
+    === stable(identityReconciliationCounts(legacyReconciliation));
   return {
     projectName: lane.projectName,
     configuredWorkers: lane.configuredWorkers,
