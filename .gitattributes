@@ -1,2 +1,3 @@
 docs/architecture/ground-glass-m7k-broad-e2e/execution/**/*.log -diff
+docs/architecture/ground-glass-m7r-e2e-recovery/capture/**/*.log -diff
 docs/architecture/ground-glass-m7r-e2e-recovery/capture/**/error-context.md whitespace=-blank-at-eol

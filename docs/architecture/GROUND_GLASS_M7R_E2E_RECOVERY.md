@@ -15,8 +15,8 @@ This report prioritizes three bounded follow-up work packets: verify the shared 
 | Execution source | `d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8` |
 | Execution source tree | `483e20dc144961c6028f717fe2c4ab0ef18a8e16` |
 | Original two-lane capture runner | `ccae6bdd904d654fc73b12ec5875376575c3e16b` |
-| Corrected M7R analysis tooling/evaluator | `92e19dd5496fd013eec8f2e9143632253f568a3e` |
-| Evaluator revision | `m7r-broad-e2e-recovery-evaluator-v6` |
+| Corrected M7R analysis tooling/evaluator | `a731929ae377d5ff0d991179f6dcc5d34c318d26` |
+| Evaluator revision | `m7r-broad-e2e-recovery-evaluator-v7` |
 
 The ordinary lane used Playwright 1.61.1 with Chromium 149.0.7827.55, Node 24.3.0, macOS arm64, headless Chromium, a 1280×720 viewport, and Three.js 0.187.0. The renderer was the application's default WebGL path using Chromium SwiftShader. Native WebGPU and native WebGPU feature gates were disabled. The ordinary lane used four configured workers and zero retries. The renderer-serial lane used one worker, zero retries, and disabled project dependencies. The two lanes ran sequentially on isolated strict ports; each prior listener was absent and each server was closed after its invocation.
 
@@ -106,7 +106,7 @@ The original capture was private local evidence. Because this repository is publ
 | Ordinary Playwright report | `24ae52f1143e4c95ba62d93ac02a056a866911454516c744ebdc61f4218cc201` | `449c663cd4e475604f43a1cb5d7cb3c5ae749e1d91e8adb0152dc40bb90ff46c` |
 | Renderer-serial Playwright report | `766017bcdd512b712a60896e454cb62e18ac91b3d38f43d37cd4b29589f4f620` | `39f6b3438a9ae198532d438089aec759803b528689f03c0a0aab30e2983112ca` |
 | Capture manifest | `bcfcd28dcdeedd254e2185cda7de80a72ccffc1589e42702e32323c1f9d8d840` | `1acebf81b63ed2b80b7b0bd583c5cdece1f43acf0ab72030391cc2805af1a7e6` |
-| Normalized capture | `f0f2fb6a6d8977c8465ef8d223410e791d9286ad24ee24f3fba30915b81c3fac` | Generated from the retained redacted exports by the pinned analysis tooling |
+| Normalized capture | `3ea64e1fa325583dd87e5cdad56bf8d4231ca64d0062495723b0ba8777b540d5` | Regenerated from the retained redacted manifest and raw reports by the pinned analysis tooling |
 
 The M7K/M7G/M7I historical digest values remain unchanged, including the M7I report SHA-256 `486f1c7ac010cd4d4fbede55fdb669f448c26adfaaee6de5717814ddff9bccde`, M7G raw Playwright SHA-256 `393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6`, and M7K ordinary/serial report SHA-256 values `95a7abebfaa7abe53805be7171d0ff84166dbb9e3e3d45eaa134a68f098963de` and `4be43aa1e68c5bd45d861092cf298db6f43e77576f3a338dc4533f162e32d71a`.
 
@@ -129,6 +129,6 @@ M7R evidence-check success means only that this current capture and its interpre
 
 ## Validation
 
-The first hosted run exposed a local/hosted evaluator acceptance mismatch in the skip-reason summary. Evaluator v6 compares those rows as an order-independent multiset and the normalizer emits a deterministic code-unit order, so host locale cannot change evidence integrity. A focused mutation test reverses both retained row lists and confirms acceptance; another changes a count and confirms rejection. The normalized summary was regenerated from the unchanged redacted raw reports using analysis source `92e19dd5496fd013eec8f2e9143632253f568a3e`; no test outcome or raw capture digest changed.
+Hosted CI on evaluator v6 failed its positive M7R evidence check with `m7r-capture-artifact-manifest-invalid` and `m7r-normalized-artifact-digests-not-recomputed`, despite the local checker passing. Comparing all 171 manifest entries with Git's tracked paths identified four console logs that existed locally but matched the repository-wide `*.log` ignore rule, so a clean hosted checkout did not contain them. The four logs were checked for private absolute paths and their on-disk sizes and SHA-256 values matched the existing manifest. Evaluator v7 reports missing, size-mismatched, or digest-mismatched artifact paths individually, and the positive mutation test prints evaluator issues on failure.
 
-The production-facing `npm run evidence:check:m7r` command passes and reports 118 passed, 85 unexpected, 75 skipped, zero retries, and `not-qualified`. The focused `src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts` suite now passes all 15 tests, including the CLI negative control for contradictory qualification metadata and the cross-collation controls. The full local unit/integration run before the v6 correction passed 3,912 tests across 326 files; the v6-specific focused suite passes after the correction. Typecheck, lint, CSS structure, production build, and the existing M7K and M7Q evidence checks pass. Final-head hosted PR CI is recorded in the implementation handoff after the v6 run completes.
+The normalized capture was regenerated from the unchanged redacted manifest and raw Playwright reports using analysis source `a731929ae377d5ff0d991179f6dcc5d34c318d26`; the only normalized changes are generation time and analysis-source provenance. Raw outcomes, the capture manifest, raw Playwright exports, and their recorded digests are unchanged. The four existing console logs are being added byte-for-byte so the full persisted artifact manifest can be verified from a clean checkout. Local focused tests, the production-facing evidence CLI, and final-head hosted CI are recorded after the v7 run completes.

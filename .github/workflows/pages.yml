@@ -227,7 +227,7 @@ jobs:
             --retained-ref=refs/pull/316/head \
             --verify-path=scripts/run-m7r-broad-e2e.mjs
           node scripts/fetch-m7k-execution-source.mjs \
-            --sha=92e19dd5496fd013eec8f2e9143632253f568a3e \
+            --sha=a731929ae377d5ff0d991179f6dcc5d34c318d26 \
             --retained-ref=refs/pull/316/head \
             --verify-path=scripts/run-m7r-broad-e2e.mjs \
             --verify-path=scripts/normalizeM7rBroadE2eCapture.mjs \

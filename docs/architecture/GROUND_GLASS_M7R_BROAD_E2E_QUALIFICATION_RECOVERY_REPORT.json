@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "evidenceId": "m7r-current-source-broad-e2e-recovery-v1",
-  "evaluatorRevision": "m7r-broad-e2e-recovery-evaluator-v6",
+  "evaluatorRevision": "m7r-broad-e2e-recovery-evaluator-v7",
   "decision": {
     "code": "R1",
     "label": "Ready for targeted remediation PRs",
@@ -97,7 +97,7 @@
     ],
     "captureRunnerSourceCommitSha": "ccae6bdd904d654fc73b12ec5875376575c3e16b",
     "captureRunnerSourcePath": "scripts/run-m7r-broad-e2e.mjs",
-    "analysisToolingSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
+    "analysisToolingSourceCommitSha": "a731929ae377d5ff0d991179f6dcc5d34c318d26",
     "analysisToolingSourcePaths": [
       "scripts/run-m7r-broad-e2e.mjs",
       "scripts/normalizeM7rBroadE2eCapture.mjs",
@@ -115,7 +115,7 @@
   "artifacts": {
     "normalizedCapture": {
       "path": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/final/normalized-capture.json",
-      "sha256": "f0f2fb6a6d8977c8465ef8d223410e791d9286ad24ee24f3fba30915b81c3fac"
+      "sha256": "3ea64e1fa325583dd87e5cdad56bf8d4231ca64d0062495723b0ba8777b540d5"
     },
     "captureManifest": {
       "path": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run-attempt-2/capture-manifest.json",

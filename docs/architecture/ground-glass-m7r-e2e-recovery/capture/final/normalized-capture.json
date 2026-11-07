@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "evidenceId": "m7r-broad-e2e-current-source-recovery-v1",
-  "generatedAt": "2026-11-07T04:41:42.930Z",
+  "generatedAt": "2026-11-07T04:56:53.496Z",
   "provenance": {
     "executionSourceCommitSha": "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8",
     "executionSourceTreeSha": "483e20dc144961c6028f717fe2c4ab0ef18a8e16",
     "captureRunnerSourceCommitSha": "ccae6bdd904d654fc73b12ec5875376575c3e16b",
-    "normalizerSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
-    "correctedRunnerSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
-    "analysisToolingSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
+    "normalizerSourceCommitSha": "a731929ae377d5ff0d991179f6dcc5d34c318d26",
+    "correctedRunnerSourceCommitSha": "a731929ae377d5ff0d991179f6dcc5d34c318d26",
+    "analysisToolingSourceCommitSha": "a731929ae377d5ff0d991179f6dcc5d34c318d26",
     "captureId": "m7r-d34fe8b-2026-11-07T03-17-38.139Z",
     "captureManifestPath": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run-attempt-2/capture-manifest.json",
     "captureManifestSha256": "bcfcd28dcdeedd254e2185cda7de80a72ccffc1589e42702e32323c1f9d8d840",
