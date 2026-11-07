@@ -1,0 +1,501 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "M7S-LEARNING-DRAWER-OPEN-STATE-BASELINE-01",
+  "title": "M7S Learning Drawer Open-State Contract Verification",
+  "decision": "S3-no-justified-correction",
+  "provenance": {
+    "baseCommitSha": "25cfe4948a7cd4ff811f72b416673b26601c6aec",
+    "testedBehaviorSourceCommitSha": "25cfe4948a7cd4ff811f72b416673b26601c6aec",
+    "candidateBehaviorSourceCommitSha": "25cfe4948a7cd4ff811f72b416673b26601c6aec",
+    "applicationAndSharedHelperFilesChanged": false,
+    "diagnosticHarness": {
+      "path": "src/tests/e2e/m7s-learning-drawer-contract.diagnostic.ts",
+      "blobSha": "8d5910142f63227c6d6304e32cd802992bb79188"
+    },
+    "diagnosticPlaywrightConfig": {
+      "path": "playwright.m7s-diagnostic.config.ts",
+      "blobSha": "1ce82a6f923f793dcae55a9145858422ad528900"
+    },
+    "originalM7rReportSha256": "b39b3c4b4a0c56b8d62120ccc62dfcca509e37356c565538316d983dc44b4823",
+    "originalM7lReportSha256": "d72698c8ad5e28f5a0fd9d9ba052e654e6d9aa1d90f0acec0a769e35c2616eed",
+    "unchangedBehaviorSourceBlobs": {
+      "src/components/simulator/LearningOverlayPanel.tsx": "e6c0df19a648892815f594f823a52fca59ce9b37",
+      "src/index.css": "5d66a80f8b4d2dc5f936282fb892583c394ada6f",
+      "src/tests/e2e/helpers/learningOverlay.ts": "b074c2d7cac9836451858fb810023749a9f2f579"
+    },
+    "preservedM7rArtifacts": {
+      "normalizedCaptureSha256": "14f71e5d0bc9d2cf8eef45d0589baa88add3c26c689a70ce6c36c9c972f70226",
+      "captureManifestSha256": "bcfcd28dcdeedd254e2185cda7de80a72ccffc1589e42702e32323c1f9d8d840",
+      "captureManifestOriginalUnredactedSha256": "1acebf81b63ed2b80b7b0bd583c5cdece1f43acf0ab72030391cc2805af1a7e6",
+      "ordinaryRawReportSha256": "24ae52f1143e4c95ba62d93ac02a056a866911454516c744ebdc61f4218cc201",
+      "ordinaryOriginalCapturedSha256": "449c663cd4e475604f43a1cb5d7cb3c5ae749e1d91e8adb0152dc40bb90ff46c",
+      "rendererSerialRawReportSha256": "766017bcdd512b712a60896e454cb62e18ac91b3d38f43d37cd4b29589f4f620",
+      "rendererSerialOriginalCapturedSha256": "39f6b3438a9ae198532d438089aec759803b528689f03c0a0aab30e2983112ca"
+    }
+  },
+  "environment": {
+    "node": "v24.3.0",
+    "playwright": "1.61.1",
+    "chromium": "149.0.7827.55",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "osRelease": "27.0.0",
+    "rendererBackend": "application-default-WebGL",
+    "retries": 0
+  },
+  "publicOpenStateContract": {
+    "peek": {
+      "panelState": "peek",
+      "railExpanded": false,
+      "drawerAriaHidden": true,
+      "drawerVisibility": "hidden",
+      "desktopTransform": "translateX(calc(-100% - 8px))",
+      "interactive": false
+    },
+    "desktopTransientOrPinned": {
+      "semantic": "data-drawer-state transient or pinned; aria-expanded true; aria-hidden false",
+      "visualTransition": "190ms transform/visibility CSS transition",
+      "visualReady": "visible drawer at identity transform and in-stage bounds",
+      "interactiveReady": "Task/Feedback controls and pin/close actions are reachable after visual readiness",
+      "helperContract": "openLearningDrawer and openPinnedLearningDrawer wait for the desktop identity-transform condition; visibility alone is insufficient"
+    },
+    "narrowFlow": {
+      "breakpoint": "max-width 900px",
+      "geometry": "normal in-flow drawer, transform none, no desktop transition",
+      "interactive": true
+    },
+    "reducedMotion": {
+      "transition": "none",
+      "requiredBehavior": "the open helper completes without waiting for transition events"
+    }
+  },
+  "acceptedHistoricalContext": {
+    "m7r": {
+      "reportPath": "docs/architecture/GROUND_GLASS_M7R_BROAD_E2E_QUALIFICATION_RECOVERY_REPORT.json",
+      "discovered": 278,
+      "passed": 118,
+      "unexpected": 85,
+      "skipped": 75,
+      "candidateCohort": "M7R-CANDIDATE-01-LEARNING-DRAWER-OPEN-STATE",
+      "identities": [
+        "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "chromium::architecture-foreground-rise.spec.ts::Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+        "chromium::architecture-foreground.spec.ts::Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+        "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+        "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-003: rise task starts in failed state",
+        "chromium::table-tilt.spec.ts::Table Tilt calibrated controls complete the guided task"
+      ],
+      "historicalFinding": "11 retained raw failures at the shared open helper's non-identity transform assertion; this shows a common failure point, not a common root cause"
+    },
+    "m7l": {
+      "reportPath": "docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER_REMEDIATION_REPORT.json",
+      "historicalCohort": "different from the M7R eleven-identity cohort",
+      "results": {
+        "oneWorker": "11/11 passed",
+        "twoWorkers": "9/11 passed",
+        "fourWorkers": "4/11 passed"
+      },
+      "finding": "intermediate transforms and delayed transition observations occurred in that separate historical cohort; no verified application fix"
+    }
+  },
+  "experiment": {
+    "boundedPlan": {
+      "singleWorkerRepresentativeAttempts": 3,
+      "fourWorkerRepresentativeAttempts": 3,
+      "exactM7rElevenIdentityCohortAttempts": 1,
+      "focusedTransitionProbeTests": 3,
+      "retries": 0,
+      "replacements": 0,
+      "noFullBroadE2eRun": true
+    },
+    "captureArtifactPath": "docs/architecture/ground-glass-m7s-learning-drawer/capture/baseline-experiment.json",
+    "captureArtifactSha256": "4684ae1c3f15d4a2c4b5609ddfe8ca5cc483da29dd200d2c36c1c6214aa070c6",
+    "representativeResults": {
+      "singleWorker": {
+        "transientOpenAffectedIdentity": {
+          "outcome": "passed",
+          "durationMs": 16717,
+          "retries": 0
+        },
+        "pinnedOpenAffectedIdentity": {
+          "outcome": "passed",
+          "durationMs": 40343,
+          "retries": 0
+        },
+        "closedPeekAndPinControl": {
+          "outcome": "passed",
+          "durationMs": 57741,
+          "retries": 0
+        }
+      },
+      "fourWorkerLightPeerControls": {
+        "peers": [
+          "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+          "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+          "smoke.spec.ts::smoke: app boots at home"
+        ],
+        "transientOpenTarget": {
+          "outcome": "passed",
+          "testsPassed": 4,
+          "retries": 0,
+          "workersObserved": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "commonOverlapMs": 606,
+          "targetParticipated": true
+        },
+        "pinnedOpenTarget": {
+          "outcome": "passed",
+          "testsPassed": 4,
+          "retries": 0,
+          "workersObserved": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "commonOverlapMs": 956,
+          "targetParticipated": true
+        },
+        "diagnosticTransientTarget": {
+          "outcome": "passed",
+          "testsPassed": 4,
+          "retries": 0,
+          "workersObserved": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "commonOverlapMs": 675,
+          "targetParticipated": true
+        }
+      }
+    },
+    "exactM7rCohort": {
+      "configuredWorkers": 4,
+      "retries": 0,
+      "tests": 11,
+      "expectedIdentities": 11,
+      "passed": 8,
+      "differentFailures": 3,
+      "peakConcurrentTests": 4,
+      "peakWorkerIndices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "architectureForegroundTargetParticipated": true,
+      "identities": [
+        {
+          "identity": "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 112799,
+          "workerIndex": 0,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 124451,
+          "workerIndex": 1,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::architecture-foreground-rise.spec.ts::Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 90551,
+          "workerIndex": 2,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::architecture-foreground.spec.ts::Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 45946,
+          "workerIndex": 3,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+          "currentDisposition": "different-failure",
+          "currentOutcome": "failed",
+          "durationMs": 5654,
+          "workerIndex": 3,
+          "retry": 0,
+          "currentError": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected substring: \"Step 1 of 5\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n",
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+          "currentDisposition": "different-failure",
+          "currentOutcome": "failed",
+          "durationMs": 5407,
+          "workerIndex": 4,
+          "retry": 0,
+          "currentError": "Error: expect(locator).toBeEnabled() failed\n\nLocator: getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\nExpected: enabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" with timeout 5000ms\n  - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\n",
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+          "currentDisposition": "different-failure",
+          "currentOutcome": "timedOut",
+          "durationMs": 120183,
+          "workerIndex": 5,
+          "retry": 0,
+          "currentError": "Test timeout of 120000ms exceeded.",
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 75568,
+          "workerIndex": 2,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 90183,
+          "workerIndex": 2,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::phase13-guided-tasks.spec.ts::TST-E2E-003: rise task starts in failed state",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 27308,
+          "workerIndex": 0,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        },
+        {
+          "identity": "chromium::table-tilt.spec.ts::Table Tilt calibrated controls complete the guided task",
+          "currentDisposition": "passed-once-not-verified",
+          "currentOutcome": "passed",
+          "durationMs": 28294,
+          "workerIndex": 1,
+          "retry": 0,
+          "currentError": null,
+          "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+        }
+      ],
+      "cliExitCode": 1
+    },
+    "transitionTimeline": {
+      "observer": "Opt-in test-side MutationObserver and CSS transition listeners; no application runtime instrumentation",
+      "clocks": "Browser performance.now and Node hrtime/wall clock retained separately; no alignment asserted",
+      "limits": [
+        "MutationObserver callback times are not exact DOM mutation timestamps.",
+        "Transition listener times are callback delivery times and do not reconstruct every animation frame.",
+        "Playwright's internal toHaveCSS matcher retry schedule remains unobserved."
+      ],
+      "findings": [
+        "Transient under one worker and under four light peers: semantic state became transient while the observed transform was -288px; transitionrun/start/end were later observed and the helper settled at identity transform. Start/end callback timestamps were equal at available clock precision, so continuous progress was not measured.",
+        "Pinned under one worker: transition events began with a translated transform and transitionend was observed at identity geometry about 2.5 seconds after transitionstart; the pinned state remained open. This is a delayed event observation, not proof of its cause.",
+        "No transitioncancel or return-to-peek event was recorded in these probe captures.",
+        "Reduced-motion probe reported transitionDuration 0s, no transition events, and identity transform; the helper passed."
+      ],
+      "command": "M7S_DRAWER_CAPTURE=1 PLAYWRIGHT_WEB_SERVER_PORT=<isolated-port> npm run test:e2e -- --config=playwright.m7s-diagnostic.config.ts --project=chromium --workers=<1-or-4> --retries=0",
+      "defaultDiscovery": "The .diagnostic.ts file is not matched by the default Playwright test pattern; the dedicated config selects only this probe."
+    },
+    "rawRetention": {
+      "originalPlaywrightJsonCommitted": false,
+      "policy": "Only the sanitized normalized capture summary is committed. Its source report SHA-256 values are recorded in that artifact; the original reporter outputs are not replayable from the PR."
+    }
+  },
+  "hypothesisClassification": {
+    "caseA_expectedInProgressTransition": "observed in the bounded open-state probes: semantic openness preceded fully open geometry, then the helper returned after identity geometry; animation frame-by-frame progress is not proven",
+    "caseB_transitionStarvationOrPersistentIncompleteState": "possible under historical broad-suite conditions, but not independently distinguished by M7S captures",
+    "caseC_stateReversal": "not observed in the new probe captures; cannot exclude unobserved transient states in historical runs",
+    "caseD_geometryContractMismatch": "not supported; the documented desktop visual-ready contract is identity geometry, which the helper checks",
+    "caseE_insufficientEvidence": "applies to the historical M7R failures because they lack transition lifecycle timestamps and the bounded M7S conditions did not reproduce that transform assertion"
+  },
+  "cohortDisposition": {
+    "verifiedFixed": 0,
+    "passedOnceNotVerified": 8,
+    "stillFailingOriginalTransformSignature": 0,
+    "differentFailure": 3,
+    "notExecuted": 0,
+    "identities": [
+      {
+        "identity": "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 112799,
+        "workerIndex": 0,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 124451,
+        "workerIndex": 1,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::architecture-foreground-rise.spec.ts::Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 90551,
+        "workerIndex": 2,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::architecture-foreground.spec.ts::Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 45946,
+        "workerIndex": 3,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "currentDisposition": "different-failure",
+        "currentOutcome": "failed",
+        "durationMs": 5654,
+        "workerIndex": 3,
+        "retry": 0,
+        "currentError": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected substring: \"Step 1 of 5\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n",
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+        "currentDisposition": "different-failure",
+        "currentOutcome": "failed",
+        "durationMs": 5407,
+        "workerIndex": 4,
+        "retry": 0,
+        "currentError": "Error: expect(locator).toBeEnabled() failed\n\nLocator: getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\nExpected: enabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" with timeout 5000ms\n  - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\n",
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+        "currentDisposition": "different-failure",
+        "currentOutcome": "timedOut",
+        "durationMs": 120183,
+        "workerIndex": 5,
+        "retry": 0,
+        "currentError": "Test timeout of 120000ms exceeded.",
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 75568,
+        "workerIndex": 2,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 90183,
+        "workerIndex": 2,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::phase13-guided-tasks.spec.ts::TST-E2E-003: rise task starts in failed state",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 27308,
+        "workerIndex": 0,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      },
+      {
+        "identity": "chromium::table-tilt.spec.ts::Table Tilt calibrated controls complete the guided task",
+        "currentDisposition": "passed-once-not-verified",
+        "currentOutcome": "passed",
+        "durationMs": 28294,
+        "workerIndex": 1,
+        "retry": 0,
+        "currentError": null,
+        "historicalM7rSignature": "non-identity drawer transform assertion in learningOverlay.ts"
+      }
+    ]
+  },
+  "correction": {
+    "route": "none",
+    "rationale": "The M7R transform failure did not reproduce in the bounded M7S light-peer controls or the current exact eleven-identity cohort. The helper still rejects a materially translated desktop drawer and returns only after the full-open geometry is observed. No safe application or test synchronization correction is established.",
+    "applicationBehaviorChanged": false,
+    "sharedDrawerHelperChanged": false,
+    "assertionTimeoutChanged": false,
+    "retryOrWorkerPolicyChanged": false,
+    "decision": "S3-no-justified-correction"
+  },
+  "validation": {
+    "learningOverlayPanelUnitTests": "14 passed",
+    "viewportLearningOverlayE2e": "8 passed, 1 failed; the sole failure was the separate constrained desktop Scenes test expecting .scene-overlay-controls-wrap position static but receiving absolute at line 343; no drawer-state assertion failed",
+    "diagnosticCaptureTests": "3/3 passed under the dedicated config; reduced-motion assertions passed",
+    "focusedRepresentativeE2e": "3/3 single-worker representative runs passed; 3/3 four-worker peer comparisons passed with observed four-way overlap",
+    "exactElevenIdentityCohort": "11/11 identities executed once with 4 workers and zero retries; 8 passed, 3 different failures",
+    "typecheck": "passed",
+    "lint": "passed for the diagnostic source and config",
+    "m7rEvidenceCheck": "passed; evidence integrity passed; execution complete; 278 discovered, 118 passed, 85 unexpected, 75 skipped",
+    "m7lEvidenceCheck": "passed at normalized-artifact scope; historical raw capture provenance remains unverified",
+    "fullBroadE2e": "not run",
+    "fullPlaywrightSuite": "not run",
+    "productionPreviewIsolation": "not run; application/runtime and workflow files were not changed",
+    "hostedCi": "passed on implementation HEAD 9ee8a87173fa94de630f5f4de4ec6955b3ec0ca2 for both branch-push run https://github.com/chau-hm/view-camera-simulator/actions/runs/42393220326 and pull-request run https://github.com/chau-hm/view-camera-simulator/actions/runs/42393291579; passed again on report/status update HEAD aa3e7a907b23c4b053e9d2ed2db2940edeb7634d for both push and pull_request events; ordinary Chromium smoke, production-preview WebGL isolation, and retained M7F-M7R evidence checks passed; deployment jobs were skipped for both PR events",
+    "m7kEvidenceCheck": "passed; integrity passed; execution complete; qualification not-qualified",
+    "defaultPlaywrightDiscovery": "diagnostic file excluded; default Playwright --list did not include it"
+  },
+  "qualificationBoundary": {
+    "m7r": {
+      "discovered": 278,
+      "passed": 118,
+      "unexpected": 85,
+      "skipped": 75
+    },
+    "broadE2e": "not-qualified",
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled",
+    "m7sVerifiedApplicationFixes": 0
+  }
+}

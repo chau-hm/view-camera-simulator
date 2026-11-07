@@ -1,0 +1,942 @@
+{
+  "schema": "m7s-learning-drawer-capture-v1",
+  "evidenceId": "M7S-LEARNING-DRAWER-OPEN-STATE-BASELINE-01",
+  "executionSourceCommitSha": "25cfe4948a7cd4ff811f72b416673b26601c6aec",
+  "behaviorCandidateCommitSha": "25cfe4948a7cd4ff811f72b416673b26601c6aec",
+  "diagnosticHarnessBlobSha": "8d5910142f63227c6d6304e32cd802992bb79188",
+  "environment": {
+    "node": "v24.3.0",
+    "playwright": "1.61.1",
+    "chromium": "149.0.7827.55",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "osRelease": "27.0.0",
+    "rendererBackend": "application-default-WebGL",
+    "retries": 0
+  },
+  "peerTests": [
+    "home.spec.ts::concept learning sections keep their responsive grids without overflow",
+    "simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+    "smoke.spec.ts::smoke: app boots at home"
+  ],
+  "captures": {
+    "singleWorker": {
+      "transientAffectedIdentity": {
+        "rawReportSha256": "0bc9de94e2421c78bbbb29e45d6fe8558dfa8d9e0d9eafdab03aecffd0c97bda",
+        "rawReportCommitted": false,
+        "configuredWorkers": 1,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 1,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 1,
+          "workerIndices": [
+            0
+          ],
+          "titles": [
+            "Architecture + Foreground exposes the cumulative photographic problem in Free Practice"
+          ],
+          "targetParticipates": true
+        },
+        "allTestsCommonOverlapMs": 0,
+        "tests": [
+          {
+            "title": "Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+            "file": "architecture-foreground.spec.ts",
+            "status": "passed",
+            "durationMs": 16717,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:03:56.774Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 0
+      },
+      "pinnedAffectedIdentity": {
+        "rawReportSha256": "26e6888d3248ab4f908b576502fc293e516ff34b73be53373652238a76108e6a",
+        "rawReportCommitted": false,
+        "configuredWorkers": 1,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 1,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 1,
+          "workerIndices": [
+            0
+          ],
+          "titles": [
+            "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only"
+          ],
+          "targetParticipates": true
+        },
+        "allTestsCommonOverlapMs": 0,
+        "tests": [
+          {
+            "title": "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+            "file": "architecture-foreground-dof.spec.ts",
+            "status": "passed",
+            "durationMs": 39525,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:05:07.902Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 0
+      },
+      "closedPeekAndPinRegression": {
+        "rawReportSha256": "72965a9fb1e78152ae97ed9e40569af7c403a512917bdb6ba5982acb2cf5c720",
+        "rawReportCommitted": false,
+        "configuredWorkers": 1,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 1,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 1,
+          "workerIndices": [
+            0
+          ],
+          "titles": [
+            "Scene-local learning drawer leaves the paired workspace layout intact"
+          ],
+          "targetParticipates": false
+        },
+        "allTestsCommonOverlapMs": 0,
+        "tests": [
+          {
+            "title": "Scene-local learning drawer leaves the paired workspace layout intact",
+            "file": "viewport-learning-overlay.spec.ts",
+            "status": "passed",
+            "durationMs": 56927,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:06:01.174Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 0
+      }
+    },
+    "fourWorker": {
+      "transientAffectedIdentity": {
+        "rawReportSha256": "471df916b054e663ea23b78924cc05c827ac58ec987041ad88eece310977aef1",
+        "rawReportCommitted": false,
+        "configuredWorkers": 4,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 4,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 4,
+          "workerIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "titles": [
+            "keeps the active lesson context between the brand and desktop actions",
+            "smoke: app boots at home",
+            "Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+            "concept learning sections keep their responsive grids without overflow"
+          ],
+          "targetParticipates": true
+        },
+        "allTestsCommonOverlapMs": 606,
+        "tests": [
+          {
+            "title": "Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+            "file": "architecture-foreground.spec.ts",
+            "status": "passed",
+            "durationMs": 18401,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:07:15.848Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "concept learning sections keep their responsive grids without overflow",
+            "file": "home.spec.ts",
+            "status": "passed",
+            "durationMs": 1179,
+            "workerIndex": 1,
+            "startTime": "2026-11-07T16:07:15.851Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "keeps the active lesson context between the brand and desktop actions",
+            "file": "simulator-header.spec.ts",
+            "status": "passed",
+            "durationMs": 8850,
+            "workerIndex": 2,
+            "startTime": "2026-11-07T16:07:15.844Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "smoke: app boots at home",
+            "file": "smoke.spec.ts",
+            "status": "passed",
+            "durationMs": 612,
+            "workerIndex": 3,
+            "startTime": "2026-11-07T16:07:15.845Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 0
+      },
+      "pinnedAffectedIdentity": {
+        "rawReportSha256": "6bd8127b5d3a0faa7f2f299728f2644e934dcc702b8e0cbbcf1f16519f404ccd",
+        "rawReportCommitted": false,
+        "configuredWorkers": 4,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 4,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 4,
+          "workerIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "titles": [
+            "keeps the active lesson context between the brand and desktop actions",
+            "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+            "smoke: app boots at home",
+            "concept learning sections keep their responsive grids without overflow"
+          ],
+          "targetParticipates": true
+        },
+        "allTestsCommonOverlapMs": 956,
+        "tests": [
+          {
+            "title": "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+            "file": "architecture-foreground-dof.spec.ts",
+            "status": "passed",
+            "durationMs": 40649,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:09:38.050Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "concept learning sections keep their responsive grids without overflow",
+            "file": "home.spec.ts",
+            "status": "passed",
+            "durationMs": 1652,
+            "workerIndex": 1,
+            "startTime": "2026-11-07T16:09:38.061Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "keeps the active lesson context between the brand and desktop actions",
+            "file": "simulator-header.spec.ts",
+            "status": "passed",
+            "durationMs": 10070,
+            "workerIndex": 2,
+            "startTime": "2026-11-07T16:09:38.032Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "smoke: app boots at home",
+            "file": "smoke.spec.ts",
+            "status": "passed",
+            "durationMs": 966,
+            "workerIndex": 3,
+            "startTime": "2026-11-07T16:09:38.051Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 0
+      },
+      "optInTransitionProbe": {
+        "rawReportSha256": "a2cada2a69f0be29919372503f74a9d39fe7a92e5f12d5084a675d4b3229c9a5",
+        "rawReportCommitted": false,
+        "configuredWorkers": 4,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 4,
+          "unexpected": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 4,
+          "workerIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "titles": [
+            "concept learning sections keep their responsive grids without overflow",
+            "keeps the active lesson context between the brand and desktop actions",
+            "smoke: app boots at home",
+            "M7S diagnostic captures the transient open-state boundary"
+          ],
+          "targetParticipates": true
+        },
+        "allTestsCommonOverlapMs": 675,
+        "tests": [
+          {
+            "title": "concept learning sections keep their responsive grids without overflow",
+            "file": "home.spec.ts",
+            "status": "passed",
+            "durationMs": 1295,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:24:32.645Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "M7S diagnostic captures the transient open-state boundary",
+            "file": "m7s-learning-drawer-contract.spec.ts",
+            "status": "passed",
+            "durationMs": 9819,
+            "workerIndex": 1,
+            "startTime": "2026-11-07T16:24:32.650Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "keeps the active lesson context between the brand and desktop actions",
+            "file": "simulator-header.spec.ts",
+            "status": "passed",
+            "durationMs": 10064,
+            "workerIndex": 2,
+            "startTime": "2026-11-07T16:24:32.645Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "smoke: app boots at home",
+            "file": "smoke.spec.ts",
+            "status": "passed",
+            "durationMs": 677,
+            "workerIndex": 3,
+            "startTime": "2026-11-07T16:24:32.648Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 0
+      },
+      "exactM7rElevenIdentityCohort": {
+        "rawReportSha256": "9c8fb82d19e921cb348ed5e71cefa2aa07015340124cb20c8f3ab2710ffd4346",
+        "rawReportCommitted": false,
+        "configuredWorkers": 4,
+        "retriesConfigured": null,
+        "testTotals": {
+          "expected": 8,
+          "unexpected": 3,
+          "skipped": 0,
+          "flaky": 0,
+          "retryResults": 0
+        },
+        "peakOverlap": {
+          "count": 4,
+          "workerIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "titles": [
+            "Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+            "Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+            "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+            "Architecture + Foreground exposes the cumulative photographic problem in Free Practice"
+          ],
+          "targetParticipates": true
+        },
+        "allTestsCommonOverlapMs": 0,
+        "tests": [
+          {
+            "title": "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+            "file": "architecture-foreground-dof.spec.ts",
+            "status": "passed",
+            "durationMs": 112799,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:14:08.265Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+            "file": "architecture-foreground-guided-lesson.spec.ts",
+            "status": "passed",
+            "durationMs": 124451,
+            "workerIndex": 1,
+            "startTime": "2026-11-07T16:14:08.262Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+            "file": "architecture-foreground-rise.spec.ts",
+            "status": "passed",
+            "durationMs": 90551,
+            "workerIndex": 2,
+            "startTime": "2026-11-07T16:14:08.259Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+            "file": "architecture-foreground.spec.ts",
+            "status": "passed",
+            "durationMs": 45946,
+            "workerIndex": 3,
+            "startTime": "2026-11-07T16:14:08.266Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+            "file": "interior-corner-guided-lesson.spec.ts",
+            "status": "failed",
+            "durationMs": 5654,
+            "workerIndex": 3,
+            "startTime": "2026-11-07T16:14:54.516Z",
+            "retry": 0,
+            "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected substring: \"Step 1 of 5\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n"
+          },
+          {
+            "title": "Interior Corner free mode exposes reachable Rise composition feedback",
+            "file": "interior-corner-rise-composition.spec.ts",
+            "status": "failed",
+            "durationMs": 5407,
+            "workerIndex": 4,
+            "startTime": "2026-11-07T16:15:00.834Z",
+            "retry": 0,
+            "error": "Error: expect(locator).toBeEnabled() failed\n\nLocator: getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\nExpected: enabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" with timeout 5000ms\n  - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Rise' })\n"
+          },
+          {
+            "title": "Interior Corner free mode exposes public Swing + Focus wall alignment",
+            "file": "interior-corner-swing-focus.spec.ts",
+            "status": "timedOut",
+            "durationMs": 120183,
+            "workerIndex": 5,
+            "startTime": "2026-11-07T16:15:06.897Z",
+            "retry": 0,
+            "error": "Test timeout of 120000ms exceeded."
+          },
+          {
+            "title": "Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+            "file": "oblique-architecture.spec.ts",
+            "status": "passed",
+            "durationMs": 90183,
+            "workerIndex": 2,
+            "startTime": "2026-11-07T16:15:39.119Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+            "file": "oblique-architecture.spec.ts",
+            "status": "passed",
+            "durationMs": 75568,
+            "workerIndex": 2,
+            "startTime": "2026-11-07T16:17:09.310Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "TST-E2E-003: rise task starts in failed state",
+            "file": "phase13-guided-tasks.spec.ts",
+            "status": "passed",
+            "durationMs": 27308,
+            "workerIndex": 0,
+            "startTime": "2026-11-07T16:16:01.364Z",
+            "retry": 0,
+            "error": null
+          },
+          {
+            "title": "Table Tilt calibrated controls complete the guided task",
+            "file": "table-tilt.spec.ts",
+            "status": "passed",
+            "durationMs": 28294,
+            "workerIndex": 1,
+            "startTime": "2026-11-07T16:16:13.032Z",
+            "retry": 0,
+            "error": null
+          }
+        ],
+        "cliExitCode": 1
+      }
+    },
+    "transitionProbe": {
+      "singleWorker": {
+        "rawReportSha256": "f7bf0adb2d464196d644af518a35a716ba51b9cf89022c0dc236fcaeb49357a0",
+        "rawReportCommitted": false,
+        "testResults": [
+          {
+            "workflow": "transient",
+            "reducedMotion": false,
+            "outcome": "passed",
+            "nodeHelperElapsedMs": 6617,
+            "errorMessage": null,
+            "browserEvents": [
+              {
+                "browserTimeMs": 266.3,
+                "reason": "post-navigation",
+                "drawerState": null,
+                "ariaExpanded": null,
+                "ariaHidden": null,
+                "transform": null,
+                "left": null,
+                "transitionDuration": null,
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 681.4,
+                "reason": "mutation-observer-callback",
+                "drawerState": "peek",
+                "ariaExpanded": "false",
+                "ariaHidden": "true",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 6029.4,
+                "reason": "mutation-observer-callback",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 6604.8,
+                "reason": "transitionrun",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 6605,
+                "reason": "transitionstart",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 6605,
+                "reason": "transitionend",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 6605,
+                "reason": "transitionrun",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 6605,
+                "reason": "transitionstart",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 6605,
+                "reason": "transitionend",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 7141.2,
+                "reason": "after-helper-settled",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              }
+            ],
+            "clocksAligned": false
+          },
+          {
+            "workflow": "pinned",
+            "reducedMotion": false,
+            "outcome": "passed",
+            "nodeHelperElapsedMs": 7563,
+            "errorMessage": null,
+            "browserEvents": [
+              {
+                "browserTimeMs": 272.9,
+                "reason": "post-navigation",
+                "drawerState": null,
+                "ariaExpanded": null,
+                "ariaHidden": null,
+                "transform": null,
+                "left": null,
+                "transitionDuration": null,
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 631.3,
+                "reason": "mutation-observer-callback",
+                "drawerState": "peek",
+                "ariaExpanded": "false",
+                "ariaHidden": "true",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 643,
+                "reason": "mutation-observer-callback",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 648.3,
+                "reason": "transitionrun",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -277.215, 0)",
+                "left": -248.21466064453125,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 648.4,
+                "reason": "transitionstart",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -277.215, 0)",
+                "left": -248.21466064453125,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 648.5,
+                "reason": "transitionrun",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -277.215, 0)",
+                "left": -248.21466064453125,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 648.5,
+                "reason": "transitionstart",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -277.215, 0)",
+                "left": -248.21466064453125,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 3127.7,
+                "reason": "transitionend",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 3127.7,
+                "reason": "transitionend",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 6604.5,
+                "reason": "mutation-observer-callback",
+                "drawerState": "pinned",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 8139.1,
+                "reason": "after-helper-settled",
+                "drawerState": "pinned",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              }
+            ],
+            "clocksAligned": false
+          },
+          {
+            "workflow": "transient",
+            "reducedMotion": true,
+            "outcome": "passed",
+            "nodeHelperElapsedMs": 400,
+            "errorMessage": null,
+            "browserEvents": [
+              {
+                "browserTimeMs": 270.1,
+                "reason": "post-navigation",
+                "drawerState": null,
+                "ariaExpanded": null,
+                "ariaHidden": null,
+                "transform": null,
+                "left": null,
+                "transitionDuration": null,
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 626.1,
+                "reason": "mutation-observer-callback",
+                "drawerState": "peek",
+                "ariaExpanded": "false",
+                "ariaHidden": "true",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 666.5,
+                "reason": "mutation-observer-callback",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 670.9,
+                "reason": "after-helper-settled",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0s",
+                "propertyName": null
+              }
+            ],
+            "clocksAligned": false
+          }
+        ],
+        "cliExitCode": 0
+      },
+      "fourWorker": {
+        "rawReportSha256": "a2cada2a69f0be29919372503f74a9d39fe7a92e5f12d5084a675d4b3229c9a5",
+        "rawReportCommitted": false,
+        "testResults": [
+          {
+            "workflow": "transient",
+            "reducedMotion": false,
+            "outcome": "passed",
+            "nodeHelperElapsedMs": 8728,
+            "errorMessage": null,
+            "browserEvents": [
+              {
+                "browserTimeMs": 564.7,
+                "reason": "post-navigation",
+                "drawerState": null,
+                "ariaExpanded": null,
+                "ariaHidden": null,
+                "transform": null,
+                "left": null,
+                "transitionDuration": null,
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 1120.3,
+                "reason": "mutation-observer-callback",
+                "drawerState": "peek",
+                "ariaExpanded": "false",
+                "ariaHidden": "true",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 7652.1,
+                "reason": "mutation-observer-callback",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                "left": -259,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              },
+              {
+                "browserTimeMs": 8426.5,
+                "reason": "transitionrun",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 8426.6,
+                "reason": "transitionstart",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 8426.6,
+                "reason": "transitionend",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "transform"
+              },
+              {
+                "browserTimeMs": 8426.6,
+                "reason": "transitionrun",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 8426.6,
+                "reason": "transitionstart",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 8426.6,
+                "reason": "transitionend",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": "visibility"
+              },
+              {
+                "browserTimeMs": 9735.9,
+                "reason": "after-helper-settled",
+                "drawerState": "transient",
+                "ariaExpanded": "true",
+                "ariaHidden": "false",
+                "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                "left": 29,
+                "transitionDuration": "0.19s, 0.19s",
+                "propertyName": null
+              }
+            ],
+            "clocksAligned": false
+          }
+        ],
+        "cliExitCode": 0
+      }
+    }
+  }
+}
