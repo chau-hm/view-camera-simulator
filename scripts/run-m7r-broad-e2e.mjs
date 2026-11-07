@@ -303,7 +303,8 @@ const flattenRawTests = (raw) => {
   const visit = (suites, inheritedFile = "", titles = []) => {
     for (const suite of suites ?? []) {
       const sourceFile = suite.file ?? inheritedFile;
-      const nestedTitles = suite.file ? titles : suite.title ? [...titles, suite.title] : titles;
+      const isFileRoot = typeof suite.file === "string" && suite.title === basename(suite.file);
+      const nestedTitles = isFileRoot ? titles : suite.title ? [...titles, suite.title] : titles;
       for (const spec of suite.specs ?? []) {
         const testTitles = [...nestedTitles, spec.title].filter(Boolean);
         for (const test of spec.tests ?? []) {
@@ -327,6 +328,66 @@ const flattenRawTests = (raw) => {
   };
   visit(raw.suites);
   return tests;
+};
+
+const summarizeWorkerOverlap = (rawTests) => {
+  const testResults = rawTests.flatMap((test) => test.results.map((result) => ({
+    identity: test.testId,
+    status: result.status,
+    workerIndex: result.workerIndex,
+    parallelIndex: result.parallelIndex,
+    startEpochMs: typeof result.startTime === "string" ? Date.parse(result.startTime) : Number.NaN,
+    durationMs: result.duration,
+  })));
+  const executedResults = testResults.filter((result) => result.status !== "skipped");
+  const validIntervals = executedResults.filter((result) => Number.isFinite(result.startEpochMs)
+    && typeof result.durationMs === "number" && Number.isFinite(result.durationMs) && result.durationMs > 0
+    && Number.isSafeInteger(result.workerIndex) && result.workerIndex >= 0
+    && Number.isSafeInteger(result.parallelIndex) && result.parallelIndex >= 0);
+  const events = validIntervals.flatMap((interval) => [
+    { at: interval.startEpochMs, parallelIndex: interval.parallelIndex, delta: 1 },
+    { at: interval.startEpochMs + interval.durationMs, parallelIndex: interval.parallelIndex, delta: -1 },
+  ]).sort((left, right) => left.at - right.at || left.delta - right.delta);
+  const activeByParallelIndex = new Map();
+  const overlapSegments = [];
+  let peakConcurrentWorkers = 0;
+  let previousAt = events[0]?.at ?? null;
+  let eventIndex = 0;
+  while (eventIndex < events.length) {
+    const at = events[eventIndex].at;
+    if (previousAt !== null && at > previousAt && activeByParallelIndex.size >= 2) {
+      const activeWorkers = [...activeByParallelIndex.keys()].sort((left, right) => left - right);
+      peakConcurrentWorkers = Math.max(peakConcurrentWorkers, activeWorkers.length);
+      overlapSegments.push({ startEpochMs: previousAt, endEpochMs: at, activeWorkers });
+    } else if (previousAt !== null && at > previousAt) {
+      peakConcurrentWorkers = Math.max(peakConcurrentWorkers, activeByParallelIndex.size);
+    }
+    while (eventIndex < events.length && events[eventIndex].at === at && events[eventIndex].delta < 0) {
+      const event = events[eventIndex++];
+      const count = (activeByParallelIndex.get(event.parallelIndex) ?? 0) - 1;
+      if (count <= 0) activeByParallelIndex.delete(event.parallelIndex);
+      else activeByParallelIndex.set(event.parallelIndex, count);
+    }
+    while (eventIndex < events.length && events[eventIndex].at === at) {
+      const event = events[eventIndex++];
+      activeByParallelIndex.set(event.parallelIndex, (activeByParallelIndex.get(event.parallelIndex) ?? 0) + 1);
+    }
+    previousAt = at;
+  }
+  const longestOverlap = overlapSegments.reduce((best, segment) => {
+    const durationMs = segment.endEpochMs - segment.startEpochMs;
+    return durationMs > best.durationMs ? { ...segment, durationMs } : best;
+  }, { startEpochMs: null, endEpochMs: null, activeWorkers: [], durationMs: 0 });
+  return {
+    resultIntervals: testResults.length,
+    executedResultIntervals: executedResults.length,
+    validExecutionIntervals: validIntervals.length,
+    invalidExecutionIntervals: executedResults.length - validIntervals.length,
+    workerProcessGenerationIndexes: [...new Set(validIntervals.map((row) => row.workerIndex))].sort((left, right) => left - right),
+    parallelWorkerIndexes: [...new Set(validIntervals.map((row) => row.parallelIndex))].sort((left, right) => left - right),
+    peakConcurrentWorkers,
+    longestOverlap,
+  };
 };
 
 const runLane = async ({ executionRoot, outputRoot, laneName, project, workers, noDeps, port, discovery }) => {
@@ -377,14 +438,14 @@ const runLane = async ({ executionRoot, outputRoot, laneName, project, workers, 
     configWorkers: raw.config?.workers ?? null,
     retriesConfigured: raw.config?.retries ?? null,
     projectWorkers: projectConfig?.workers ?? null,
-    actualWorkers: projectConfig?.metadata?.actualWorkers ?? null,
+    configuredMetadataActualWorkersClaim: projectConfig?.metadata?.actualWorkers ?? null,
     stats: raw.stats ?? null,
     errors: raw.errors ?? [],
     resultCount: rawCount,
     retryFree,
     resultCountValid,
     identityReconciliation: { discovered: expectedIdentities.size, reported: rawCount, missing: missingIdentityCount, extra: extraIdentityCount, duplicates: duplicateIdentityCount },
-    workerIndexes: [...new Set(rawTests.flatMap((test) => test.results.map((result) => result.workerIndex).filter(Number.isInteger)))].sort((left, right) => left - right),
+    workerEvidence: summarizeWorkerOverlap(rawTests),
   } : null;
   const complete = rawAvailable && raw !== null && rawCount === discovery.identityCount &&
     missingIdentityCount === 0 && extraIdentityCount === 0 && duplicateIdentityCount === 0 &&
