@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "evidenceId": "m7r-broad-e2e-current-source-recovery-v1",
-  "generatedAt": "2026-11-07T04:25:11.776Z",
+  "generatedAt": "2026-11-07T04:41:42.930Z",
   "provenance": {
     "executionSourceCommitSha": "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8",
     "executionSourceTreeSha": "483e20dc144961c6028f717fe2c4ab0ef18a8e16",
     "captureRunnerSourceCommitSha": "ccae6bdd904d654fc73b12ec5875376575c3e16b",
-    "normalizerSourceCommitSha": "b4dcc8cb7dcc66564a49eadd83398bcbe8029421",
-    "correctedRunnerSourceCommitSha": "b4dcc8cb7dcc66564a49eadd83398bcbe8029421",
-    "analysisToolingSourceCommitSha": "b4dcc8cb7dcc66564a49eadd83398bcbe8029421",
+    "normalizerSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
+    "correctedRunnerSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
+    "analysisToolingSourceCommitSha": "92e19dd5496fd013eec8f2e9143632253f568a3e",
     "captureId": "m7r-d34fe8b-2026-11-07T03-17-38.139Z",
     "captureManifestPath": "docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run-attempt-2/capture-manifest.json",
     "captureManifestSha256": "bcfcd28dcdeedd254e2185cda7de80a72ccffc1589e42702e32323c1f9d8d840",
@@ -16564,6 +16564,10 @@
         "count": 1
       },
       {
+        "reason": "Requires OBSERVER_NATIVE_WEBGPU_REQUIRED=1 and headed Chrome native WebGPU",
+        "count": 1
+      },
+      {
         "reason": "Requires chrome-native-webgpu and both trusted M6 development flags",
         "count": 1
       },
@@ -16589,10 +16593,6 @@
       },
       {
         "reason": "Requires native-required r187 M3/M4/M5 qualification gates",
-        "count": 1
-      },
-      {
-        "reason": "Requires OBSERVER_NATIVE_WEBGPU_REQUIRED=1 and headed Chrome native WebGPU",
         "count": 1
       },
       {
