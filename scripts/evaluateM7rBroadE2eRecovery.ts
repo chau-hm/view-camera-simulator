@@ -272,7 +272,11 @@ const summarize = (tests: TestRow[]) => {
 
 const reconcileHistory = (currentTests: TestRow[], history: JsonRecord) => {
   const priorRows = asArray(isRecord(history.execution) ? history.execution.perTest : []).filter(isRecord)
-    .sort((left, right) => `${String(left.projectName)}::${String(left.testId)}`.localeCompare(`${String(right.projectName)}::${String(right.testId)}`));
+    .sort((left, right) => {
+      const leftKey = `${String(left.projectName)}::${String(left.testId)}`;
+      const rightKey = `${String(right.projectName)}::${String(right.testId)}`;
+      return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+    });
   const currentByKey = new Map(currentTests.map((test) => [`${test.projectName}::${test.testId}`, test]));
   return priorRows.map((prior) => {
     const identity = `${String(prior.projectName)}::${String(prior.testId)}`;
