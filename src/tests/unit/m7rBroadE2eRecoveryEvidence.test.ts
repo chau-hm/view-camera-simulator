@@ -100,8 +100,8 @@ describe("M7R broad E2E recovery evidence evaluator", () => {
       "historical-skip-still-skipped": 75,
       "historical-unexpected-now-expected": 12,
       "new-current-unexpected": 15,
-      "unexpected-changed-signature": 23,
-      "unexpected-same-signature": 47,
+      "unexpected-changed-signature": 24,
+      "unexpected-same-signature": 46,
     });
     const inventory = record(acceptedReport).testInventory as JsonRecord[];
     expect(inventory.filter((entry) => entry.historicalDisposition === "historical-unexpected-now-expected")

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { basename, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v3";
+export const M7R_EVALUATOR_REVISION = "m7r-broad-e2e-recovery-evaluator-v4";
 export const M7R_EXECUTION_SOURCE_SHA = "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8";
 export const M7R_CAPTURE_RUNNER_SHA = "ccae6bdd904d654fc73b12ec5875376575c3e16b";
 export const M7R_HISTORICAL_M7K_REPORT_SHA256 = "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f";
@@ -271,7 +271,8 @@ const summarize = (tests: TestRow[]) => {
 };
 
 const reconcileHistory = (currentTests: TestRow[], history: JsonRecord) => {
-  const priorRows = asArray(isRecord(history.execution) ? history.execution.perTest : []).filter(isRecord);
+  const priorRows = asArray(isRecord(history.execution) ? history.execution.perTest : []).filter(isRecord)
+    .sort((left, right) => `${String(left.projectName)}::${String(left.testId)}`.localeCompare(`${String(right.projectName)}::${String(right.testId)}`));
   const currentByKey = new Map(currentTests.map((test) => [`${test.projectName}::${test.testId}`, test]));
   return priorRows.map((prior) => {
     const identity = `${String(prior.projectName)}::${String(prior.testId)}`;
@@ -472,7 +473,7 @@ const verifyRequiredWorkflowGate = (root: string): boolean => {
   const starts = lines.flatMap((line, index) => line === stepName ? [index] : []);
   if (starts.length !== 1) return false;
   const start = starts[0];
-  const endOffset = lines.slice(start + 1).findIndex((line) => /^ {6}- name: /.test(line));
+  const endOffset = lines.slice(start + 1).findIndex((line) => /^ {6}- name: /.test(line) || /^ {2}[A-Za-z][\w-]*:/.test(line));
   const block = lines.slice(start, endOffset < 0 ? undefined : start + 1 + endOffset).join("\n");
   const deployIndex = lines.findIndex((line) => line === "  deploy:");
   const deploy = deployIndex < 0 ? "" : lines.slice(deployIndex, deployIndex + 12).join("\n");
@@ -650,7 +651,7 @@ export const evaluateM7rBroadE2eRecovery = (reportValue: unknown, repositoryRoot
     const tests = flattenRawTests(raw);
     const discoveryKey = laneName === "ordinary" ? "ordinary" : "rendererSerial";
     const discovery = recordAt(recordAt(manifest, "discovery"), discoveryKey);
-    const discovered = asArray(discovery.identities).filter(isRecord).map((entry) => `${String(entry.projectName)}::${String(entry.testId)}`);
+    const discovered = asArray(discovery.identities).filter(isRecord).map((entry) => `${String(entry.projectName)}::${String(entry.testId)}`).sort();
     const summary = compareLane(laneClaim, manifestLane, raw, tests, discovered, laneLabel, issues);
     laneTests.set(laneName, tests);
     laneSummaries.set(laneName, summary as unknown as JsonRecord);
