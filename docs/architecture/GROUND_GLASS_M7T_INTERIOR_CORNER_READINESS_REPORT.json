@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "M7T-INTERIOR-CORNER-READINESS-BASELINE-01",
+  "title": "M7T Interior Corner Public Route and Workspace Readiness",
+  "decision": "T3-no-justified-correction",
+  "provenance": {
+    "baseBranch": "main",
+    "baseCommitSha": "638b3b598f5aa6da930993c70f44d7d51e89e152",
+    "testedBehaviorCommitSha": "638b3b598f5aa6da930993c70f44d7d51e89e152",
+    "candidateBehaviorCommitSha": "638b3b598f5aa6da930993c70f44d7d51e89e152",
+    "applicationSourceChanged": false,
+    "testAssertionsChanged": false,
+    "captureSummaryPath": "docs/architecture/ground-glass-m7t-interior-corner/capture/final/attempt-summary.json"
+  },
+  "historicalContext": {
+    "m7r": {
+      "discovered": 278,
+      "passed": 118,
+      "unexpected": 85,
+      "skipped": 75,
+      "broadE2e": "not-qualified"
+    },
+    "m7s": {
+      "decision": "S3-no-justified-correction",
+      "exactElevenIdentityOutcomes": {
+        "passedOnceNotVerified": 8,
+        "differentFailure": 3,
+        "verifiedFixed": 0
+      }
+    }
+  },
+  "targetIdentities": [
+    {
+      "test": "Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "file": "src/tests/e2e/interior-corner-guided-lesson.spec.ts",
+      "route": "/simulator/free/interior-corner?lesson=1&rttDiagnostics=1",
+      "m7sSignature": "Step 1 of 5 expected; learning drawer element not found"
+    },
+    {
+      "test": "Interior Corner free mode exposes reachable Rise composition feedback",
+      "file": "src/tests/e2e/interior-corner-rise-composition.spec.ts",
+      "route": "/simulator/free/interior-corner?rttDiagnostics=1",
+      "m7sSignature": "Rise slider expected enabled; element not found"
+    },
+    {
+      "test": "Interior Corner free mode exposes public Swing + Focus wall alignment",
+      "file": "src/tests/e2e/interior-corner-swing-focus.spec.ts",
+      "route": "/simulator/free/interior-corner?rttDiagnostics=1",
+      "m7sSignature": "120000ms test timeout; last stage not retained"
+    }
+  ],
+  "routeContract": {
+    "freeRoute": "/simulator/free/interior-corner",
+    "lessonEntryRoute": "/simulator/free/interior-corner?lesson=1",
+    "lazyWorkspace": true,
+    "suspenseFallback": "Loading simulator workspace…",
+    "mountIsSeparateFromUrlResolution": true,
+    "lessonObserveStep": "Step 1 of 5",
+    "separateReadinessSignals": [
+      "valid route and selected scene",
+      "SimulatorWorkspace mounted",
+      "Camera Controls and scene-capable controls available",
+      "Learning Drawer and guided lesson state available",
+      "Ground Glass scene mounted and final-contentful"
+    ]
+  },
+  "results": {
+    "repositoryConfigSingleWorker": {
+      "outcome": "3/3 passed",
+      "durationMs": 204672.702,
+      "retries": 0
+    },
+    "repositoryConfigFourWorkers": {
+      "outcome": "4/4 passed",
+      "durationMs": 169729.958,
+      "retries": 0,
+      "distinctWorkerIndexes": [0, 1, 2, 3],
+      "actualAllFourTestOverlapMs": 1304,
+      "actualThreeTargetOverlapMs": 60526,
+      "scopeLimit": "Four-test overlap was brief because the public-page peer finished in 1.307s; this is not sustained broad-suite contention."
+    },
+    "traceEnabledDiagnostic": {
+      "role": "non-primary diagnostic run; temporary retain-on-failure config differed from repository config",
+      "singleWorker": "3/3 passed; per-test JSON timing was not recorded",
+      "fourWorkers": "3 passed, Swing + Focus timed out at 120000ms during step-based Swing input toward +3.6 degrees, with value 3.3 degrees observed",
+      "interpretation": "A single trace-enabled timeout and a repository-config pass do not establish trace causality or an application defect."
+    }
+  },
+  "dispositions": {
+    "guidedLessonEntry": "not-reproduced",
+    "riseComposition": "not-reproduced",
+    "swingFocus": "passed-once-not-verified"
+  },
+  "correction": {
+    "route": "T3-no-justified-correction",
+    "applicationChanges": [],
+    "testChanges": [],
+    "rationale": "No public-route, workspace-mount, lesson-state, or control-availability defect was established. The primary repository-config runs passed the exact target assertions."
+  },
+  "validation": {
+    "routeAvailabilityIntegration": "68 passed",
+    "learningDrawerClosedPeekPinKeyboardEscape": "2 passed",
+    "typecheck": "passed",
+    "targetedEslint": "passed",
+    "m7rEvidenceCheck": "passed; historical outcome counts unchanged",
+    "m7sCli": "no evidence:check:m7s script is registered",
+    "fullBroadE2e": "not run"
+  },
+  "preservedEvidence": {
+    "m7rReportSha256": "b39b3c4b4a0c56b8d62120ccc62dfcca509e37356c565538316d983dc44b4823",
+    "m7sReportSha256": "5671fafafee113139ab0e732fd04fee1f7713f99cdb36fb40e29d1cf29300c30",
+    "m7sBaselineExperimentSha256": "4684ae1c3f15d4a2c4b5609ddfe8ca5cc483da29dd200d2c36c1c6214aa070c6",
+    "newRawReportRetention": "raw Playwright JSON and diagnostic trace were temporary; public-safe attempt data is retained in the capture summary; no raw digest or raw-to-summary replay claim is made"
+  },
+  "qualificationBoundary": {
+    "broadE2e": "not-qualified",
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled"
+  }
+}
