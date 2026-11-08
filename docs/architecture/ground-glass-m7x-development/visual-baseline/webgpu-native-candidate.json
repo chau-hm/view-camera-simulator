@@ -1,0 +1,98 @@
+{
+  "sourceCommit": "69fcd6227e6a3ddf629ece88fd80124158b22d98",
+  "captureId": "m7x-webgpu-raw-architecture-rise-focus-step-f8",
+  "browser": {
+    "name": "Chrome",
+    "version": "157.0.8103.39",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
+  },
+  "runtime": {
+    "node": "v24.3.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "threeRevision": "187"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 900,
+    "deviceScaleFactor": 1
+  },
+  "buildProfile": {
+    "environment": "development",
+    "rawPilot": true,
+    "testSeam": true,
+    "physicalCocResearch": false,
+    "gatherResearch": false,
+    "m6Presentation": false,
+    "m6Qualification": false
+  },
+  "interaction": {
+    "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+    "rawDebug": true,
+    "focusBeforeMm": 8890,
+    "focusStepMm": 10,
+    "focusAfterMm": 8900,
+    "aperture": "f/8"
+  },
+  "diagnostics": {
+    "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+    "sceneId": "architecture-rise",
+    "threeRevision": "187",
+    "hostLifecycle": "ready",
+    "selectedBackend": "webgpu",
+    "policyEvidenceRevisions": "m3-architecture-rise-raw-rtt-native-r187-v1",
+    "rendererFamily": "webgpu-renderer",
+    "executionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": "not-observed",
+    "requestId": "gg-mw823dl5-lgtt4t2jimr-default-request-5",
+    "lastCompletedRequestId": "gg-mw823dl5-lgtt4t2jimr-default-request-5",
+    "frameStatus": "completed",
+    "rawDebug": "true",
+    "rawContentful": "true",
+    "finalContentful": "true",
+    "rawVariance": "3529.7760556371177",
+    "rawNonBackgroundPixels": "1024",
+    "targetDimensions": {
+      "logical": [
+        "450",
+        "360"
+      ],
+      "internal": [
+        "900",
+        "720"
+      ],
+      "color": [
+        "900",
+        "720"
+      ],
+      "final": [
+        "900",
+        "720"
+      ]
+    },
+    "focusDistanceMm": "8900",
+    "aperture": "8"
+  },
+  "pageErrors": [],
+  "screenshot": {
+    "path": "webgpu-raw-architecture-rise-focus-step-f8.png",
+    "byteLength": 45597,
+    "sha256": "c4fc8919a429000b77c4fca37efc1d1f2e5a76535bf2b85cd6091e6c68ba0a2e"
+  },
+  "comparisonLimit": "WebGL and native WebGPU captures are same scene-color/Raw RTT display stage only; not full photographic Ground Glass parity.",
+  "opticalState": {
+    "focusDistanceMm": 8900,
+    "apertureFNumber": 8,
+    "focalLengthMm": 150,
+    "frontRiseMm": 0,
+    "frontShiftMm": 0,
+    "frontTiltDeg": 0,
+    "frontSwingDeg": 0,
+    "rearRiseMm": 0,
+    "rearShiftMm": 0,
+    "rearTiltDeg": 0,
+    "rearSwingDeg": 0,
+    "otherValuesSource": "Architecture Rise cameraPreset in src/scenes/definitions/architecture-rise.ts; the screenshot runner set Focus and aperture, leaving other controls at route preset values."
+  }
+}
