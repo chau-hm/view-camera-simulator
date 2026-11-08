@@ -320,6 +320,17 @@ jobs:
       - name: Validate M7R broad E2E recovery evidence integrity
         run: npm run evidence:check:m7r
 
+      - name: Fetch M7V reviewed source-declaration baseline
+        run: >-
+          node scripts/fetch-m7k-execution-source.mjs
+          --sha=6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382
+          --verify-path=src/tests/e2e/smoke.spec.ts
+          --verify-path=src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts
+          --verify-path=src/tests/e2e/observer-environment-compatibility.spec.ts
+
+      - name: Validate M7V E2E qualification lane and skip governance policy
+        run: npm run evidence:check:m7v
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci
