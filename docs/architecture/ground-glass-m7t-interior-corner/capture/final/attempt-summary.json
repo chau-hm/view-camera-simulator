@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "M7T-INTERIOR-CORNER-READINESS-BASELINE-01",
+  "source": {
+    "testedBehaviorCommitSha": "638b3b598f5aa6da930993c70f44d7d51e89e152",
+    "candidateBehaviorCommitSha": "638b3b598f5aa6da930993c70f44d7d51e89e152",
+    "applicationOrTestSourceChanged": false,
+    "baseBranch": "main"
+  },
+  "environment": {
+    "os": "macOS 27.0.1",
+    "architecture": "arm64",
+    "node": "v24.3.0",
+    "playwright": "1.61.1",
+    "chromium": "149.0.7827.55",
+    "project": "chromium",
+    "rendererBackend": "application-default WebGL",
+    "retries": 0,
+    "repositoryPlaywrightTraceSetting": "on-first-retry; retries=0, so no primary-run trace"
+  },
+  "historicalM7sFailures": [
+    {
+      "identity": "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "outcome": "failed",
+      "durationMs": 5654,
+      "retry": 0,
+      "workerIndex": 3,
+      "signature": "learning-overlay drawer element not found while expecting Step 1 of 5"
+    },
+    {
+      "identity": "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+      "outcome": "failed",
+      "durationMs": 5407,
+      "retry": 0,
+      "workerIndex": 4,
+      "signature": "Rise slider element not found while expecting it enabled"
+    },
+    {
+      "identity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+      "outcome": "timedOut",
+      "durationMs": 120183,
+      "retry": 0,
+      "workerIndex": 5,
+      "signature": "120000ms test timeout; last stage not recorded"
+    }
+  ],
+  "primaryCaptures": {
+    "singleWorker": {
+      "playwrightConfig": "repository default",
+      "configuredWorkers": 1,
+      "startTimeUtc": "2026-11-07T18:24:44.549Z",
+      "durationMs": 204672.702,
+      "retries": 0,
+      "attempts": [
+        {
+          "identity": "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+          "outcome": "passed",
+          "workerIndex": 0,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:24:45.194Z",
+          "durationMs": 118325
+        },
+        {
+          "identity": "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+          "outcome": "passed",
+          "workerIndex": 0,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:26:43.612Z",
+          "durationMs": 21655
+        },
+        {
+          "identity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+          "outcome": "passed",
+          "workerIndex": 0,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:27:05.273Z",
+          "durationMs": 63912
+        }
+      ],
+      "result": "3/3 passed"
+    },
+    "fourWorker": {
+      "playwrightConfig": "repository default",
+      "configuredWorkers": 4,
+      "startTimeUtc": "2026-11-07T18:28:27.498Z",
+      "durationMs": 169729.958,
+      "retries": 0,
+      "attempts": [
+        {
+          "identity": "chromium::concept learning sections keep their responsive grids without overflow",
+          "path": "src/tests/e2e/home.spec.ts",
+          "outcome": "passed",
+          "workerIndex": 0,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:28:28.166Z",
+          "durationMs": 1307
+        },
+        {
+          "identity": "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+          "outcome": "passed",
+          "workerIndex": 1,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:28:28.169Z",
+          "durationMs": 168896
+        },
+        {
+          "identity": "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+          "outcome": "passed",
+          "workerIndex": 2,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:28:28.160Z",
+          "durationMs": 60535
+        },
+        {
+          "identity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+          "outcome": "passed",
+          "workerIndex": 3,
+          "retry": 0,
+          "startTimeUtc": "2026-11-07T18:28:28.166Z",
+          "durationMs": 116521
+        }
+      ],
+      "observedWorkers": [0, 1, 2, 3],
+      "distinctWorkerCount": 4,
+      "actualOverlap": {
+        "allFourTestsOverlapMs": 1304,
+        "threeInteriorCornerTargetsOverlapMs": 60526,
+        "limitation": "The fourth public-page peer finished quickly; four-way overlap was real but brief and does not represent sustained full-suite contention."
+      },
+      "result": "4/4 passed"
+    }
+  },
+  "diagnosticTraceEnabledCaptures": {
+    "role": "non-primary diagnostic; excluded from the comparison under repository-default Playwright configuration",
+    "configurationDifference": "temporary config used trace=retain-on-failure instead of repository trace=on-first-retry",
+    "singleWorker": {
+      "result": "3/3 passed",
+      "groupDurationApproximate": "5.9 minutes",
+      "perAttemptTimingMetadata": "not recorded by the line reporter"
+    },
+    "fourWorker": {
+      "startTimeUtc": "2026-11-07T18:18:11.326Z",
+      "durationMs": 267885.717,
+      "retries": 0,
+      "attempts": [
+        {
+          "identity": "chromium::concept learning sections keep their responsive grids without overflow",
+          "outcome": "passed",
+          "workerIndex": 0,
+          "durationMs": 2100
+        },
+        {
+          "identity": "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+          "outcome": "passed",
+          "workerIndex": 1,
+          "durationMs": 267000
+        },
+        {
+          "identity": "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+          "outcome": "passed",
+          "workerIndex": 2,
+          "durationMs": 98205
+        },
+        {
+          "identity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+          "outcome": "timedOut",
+          "workerIndex": 3,
+          "retry": 0,
+          "durationMs": 121130,
+          "stage": "step-based Swing input toward +3.6 degrees; timed out inside setStepRangeInput at the press operation with observed Swing value 3.3 degrees",
+          "observedPublicState": [
+            "Interior Corner free route remained active",
+            "Camera Controls and Swing slider were present",
+            "Learning Feedback content had been opened",
+            "Ground Glass reported final-contentful",
+            "Rise had reached 33",
+            "Swing had advanced to 3.3"
+          ]
+        }
+      ],
+      "observedWorkers": [0, 1, 2, 3],
+      "allFourTestsOverlapMs": 2086,
+      "result": "3 passed, 1 timed out"
+    },
+    "interpretation": "One trace-enabled four-worker attempt timed out where the repository-default four-worker attempt passed. The differing results are associated with the trace-enabled runner configuration, but one attempt per condition cannot distinguish trace overhead from run-to-run variability or establish tracing as the cause."
+  },
+  "dispositions": [
+    {
+      "identity": "Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "disposition": "not-reproduced",
+      "evidence": "passed under repository-default Playwright configuration at one and four workers; Step 1 of 5 and later lesson transitions remained asserted"
+    },
+    {
+      "identity": "Interior Corner free mode exposes reachable Rise composition feedback",
+      "disposition": "not-reproduced",
+      "evidence": "passed under repository-default Playwright configuration at one and four workers; the Rise slider and feedback assertions remained unchanged"
+    },
+    {
+      "identity": "Interior Corner free mode exposes public Swing + Focus wall alignment",
+      "disposition": "passed-once-not-verified",
+      "evidence": "passed once under repository-default four-worker configuration in 116521ms and once at one worker; the separate trace-enabled four-worker diagnostic timed out during Swing input, so historical reliability is unresolved"
+    }
+  ],
+  "decision": {
+    "classification": "T3-no-justified-correction",
+    "routeOrWorkspaceReadinessDefectEstablished": false,
+    "applicationChanged": false,
+    "testAssertionsChanged": false,
+    "testTimeoutsOrRetriesChanged": false,
+    "rationale": "The required route, workspace, control, lesson, feedback, and Ground Glass states were reached in the primary captures. The two absent-element failures did not recur. The Swing + Focus workflow completed under the repository-default four-worker configuration; its diagnostic trace-enabled timeout occurred later during Swing input and is not evidence of an initial readiness defect."
+  },
+  "validation": {
+    "routeAvailabilityIntegration": "68 passed",
+    "learningDrawerRegressions": "2 passed: closed/peek, pin/close, keyboard focus and Escape",
+    "typecheck": "passed",
+    "targetedEslint": "passed",
+    "m7rEvidenceCheck": "passed: 118 passed, 85 unexpected, 75 skipped, 0 retries",
+    "m7sEvidenceCli": "not available; M7S has no registered evidence:check:m7s package script",
+    "fullBroadE2e": "not run"
+  },
+  "preservedEvidence": {
+    "m7rReportSha256": "b39b3c4b4a0c56b8d62120ccc62dfcca509e37356c565538316d983dc44b4823",
+    "m7sReportSha256": "5671fafafee113139ab0e732fd04fee1f7713f99cdb36fb40e29d1cf29300c30",
+    "m7sBaselineExperimentSha256": "4684ae1c3f15d4a2c4b5609ddfe8ca5cc483da29dd200d2c36c1c6214aa070c6",
+    "newRawPlaywrightReports": "temporary files were used to produce this safe summary and are not committed; no raw artifact digest or raw-to-summary replay claim is made"
+  },
+  "qualificationBoundary": {
+    "m7rDiscovered": 278,
+    "m7rPassed": 118,
+    "m7rUnexpected": 85,
+    "m7rSkipped": 75,
+    "broadE2e": "not-qualified",
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled"
+  }
+}
