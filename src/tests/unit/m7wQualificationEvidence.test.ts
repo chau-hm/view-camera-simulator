@@ -47,20 +47,6 @@ function resultFor(fx: ReturnType<typeof fixture>) {
   return evaluateM7wEvidence(fx);
 }
 
-function distinctAttemptMetadata(raw: unknown, key: "workerIndex" | "parallelIndex") {
-  const values = new Set<number>();
-  const rows = flattenM7wPlaywrightReport(raw as Record<string, unknown>);
-  for (const row of rows) {
-    for (const attempt of row.attempts as Array<Record<string, unknown>>) {
-      const value = attempt[key];
-      if (attempt.status !== "skipped" && Number.isSafeInteger(value) && (value as number) >= 0) {
-        values.add(value as number);
-      }
-    }
-  }
-  return [...values].sort((a, b) => a - b);
-}
-
 type PlaywrightResultRecord = Record<string, unknown>;
 type PlaywrightTestRecord = { results?: PlaywrightResultRecord[] };
 type PlaywrightSpecRecord = { tests?: PlaywrightTestRecord[] };
@@ -68,6 +54,26 @@ type PlaywrightSuiteRecord = {
   suites?: PlaywrightSuiteRecord[];
   specs?: PlaywrightSpecRecord[];
 };
+
+function distinctAttemptMetadata(raw: unknown, key: "workerIndex" | "parallelIndex") {
+  const values = new Set<number>();
+  const visit = (suite: PlaywrightSuiteRecord) => {
+    for (const child of suite.suites ?? []) visit(child);
+    for (const spec of suite.specs ?? []) {
+      for (const test of spec.tests ?? []) {
+        for (const attempt of test.results ?? []) {
+          const value = attempt[key];
+          if (attempt.status !== "skipped" && Number.isSafeInteger(value) && (value as number) >= 0) {
+            values.add(value as number);
+          }
+        }
+      }
+    }
+  };
+  const report = raw as { suites?: PlaywrightSuiteRecord[] };
+  for (const suite of report.suites ?? []) visit(suite);
+  return [...values].sort((a, b) => a - b);
+}
 
 function mutateFirstExecutedWorkerIndex(raw: { suites?: PlaywrightSuiteRecord[] }, workerIndex: number | null): void {
   for (const suite of raw.suites ?? []) {
