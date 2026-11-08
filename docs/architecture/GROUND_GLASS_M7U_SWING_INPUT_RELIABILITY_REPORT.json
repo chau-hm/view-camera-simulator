@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "M7U-INTERIOR-CORNER-SWING-INPUT-01",
+  "source": {
+    "baselineBehaviorCommitSha": "2df452727c37f25743aa2c2574da379d12f07d14",
+    "candidateBehaviorCommitSha": "37af8b3f1da9040d00c752eabf69afdb48d036dd",
+    "applicationRuntimeChanged": false,
+    "testTimeoutMs": 120000,
+    "retries": 0
+  },
+  "environment": {
+    "os": "macOS 27.0.1",
+    "architecture": "arm64",
+    "node": "v24.3.0",
+    "playwright": "1.61.1",
+    "chromium": "149.0.7827.55",
+    "project": "chromium",
+    "rendererBackend": "application-default WebGL",
+    "playwrightTraceSetting": "on-first-retry; retries=0, so no trace was collected"
+  },
+  "inputContract": {
+    "control": "public Camera Controls range slider named Swing",
+    "inputType": "range",
+    "min": -10,
+    "max": 10,
+    "step": 0.1,
+    "reactChangeHandler": "onChange calls setSwing(Number(event.target.value))",
+    "directEvent": "bubbling input event",
+    "stateUpdateVerifiedBy": [
+      "public slider value assertion",
+      "Interior Corner feedback at +3.6 degrees",
+      "Interior Corner feedback at -3.6 degrees",
+      "visible movement readout after actual keyboard input"
+    ],
+    "primaryTestKeyboardPressesRemoved": 18,
+    "separateKeyboardRegressionPresses": 3
+  },
+  "experiment": {
+    "targetIdentity": "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+    "peerIdentities": [
+      "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+      "chromium::home.spec.ts::concept learning sections keep their responsive grids without overflow"
+    ],
+    "planned": {
+      "baseline": { "singleWorkerTargetRuns": 1, "fourWorkerCohorts": 2 },
+      "candidate": { "singleWorkerTargetRuns": 1, "fourWorkerCohorts": 2 }
+    },
+    "executionOrder": "Baseline runs first, then candidate runs; each four-worker cohort used a fresh isolated Vite port and the same four test identities.",
+    "configuredWorkers": 4,
+    "actualWorkers": 4,
+    "fourWayOverlapMs": {
+      "baselineAttempt1": 1344,
+      "baselineAttempt2": 1319,
+      "candidateAttempt1": 1289,
+      "candidateAttempt2": 1305
+    },
+    "threeInteriorCornerOverlapMs": {
+      "baselineAttempt1": 57414,
+      "baselineAttempt2": 59482,
+      "candidateAttempt1": 59330,
+      "candidateAttempt2": 59902
+    },
+    "stageMeasurement": "Playwright test.step boundaries wrapped identical workflow stages for baseline and candidate. The only behavioral intervention was replacing the two bulk Swing interactions."
+  },
+  "attempts": [
+    {
+      "id": "baseline-single-instrumented",
+      "arm": "baseline",
+      "workersConfigured": 1,
+      "workersObserved": 1,
+      "startTimeUtc": "2026-11-08T03:06:13.326Z",
+      "suiteDurationMs": 62155.494,
+      "target": {
+        "status": "passed",
+        "durationMs": 61375,
+        "retry": 0,
+        "workerIndex": 0,
+        "stagesMs": {
+          "routeNavigationAndUrlCheck": 267,
+          "openLearningFeedback": 10553,
+          "initialValuesAndFeedback": 1179,
+          "groundGlassFinalContentful": 286,
+          "rise0To33": 11946,
+          "swing0ToPlus3_6": 19238,
+          "focus8000To38140": 2018,
+          "swingPlus3_6ToMinus3_6": 15845
+        }
+      },
+      "peers": [],
+      "rawPlaywrightJsonSha256": "dc169873ed46bbb40d71117244781ad6382fc4ce88408c0ca85102c997dc2e54"
+    },
+    {
+      "id": "baseline-four-worker-attempt-1",
+      "arm": "baseline",
+      "workersConfigured": 4,
+      "workersObserved": 4,
+      "startTimeUtc": "2026-11-08T03:07:34.949Z",
+      "suiteDurationMs": 170862.882,
+      "expected": 3,
+      "unexpected": 1,
+      "target": {
+        "status": "timedOut",
+        "durationMs": 120203,
+        "retry": 0,
+        "workerIndex": 3,
+        "failureStage": "Swing +3.6 to -3.6",
+        "lastObservedSwingValue": "-2.4",
+        "failure": "locator.press timed out while attempting Shift+ArrowLeft"
+      },
+      "peers": [
+        { "identity": "home responsive-grid peer", "status": "passed", "durationMs": 1352, "retry": 0, "workerIndex": 0 },
+        { "identity": "Interior Corner Guided Lesson", "status": "passed", "durationMs": 169999, "retry": 0, "workerIndex": 1 },
+        { "identity": "Interior Corner Rise Composition", "status": "passed", "durationMs": 57420, "retry": 0, "workerIndex": 2 }
+      ],
+      "stagesMs": {
+        "routeNavigationAndUrlCheck": 520,
+        "openLearningFeedback": 19421,
+        "initialValuesAndFeedback": 2622,
+        "groundGlassFinalContentful": 1266,
+        "rise0To33": 37887,
+        "swing0ToPlus3_6": 32897,
+        "focus8000To38140": 5381,
+        "swingPlus3_6ToMinus3_6": 20156
+      },
+      "rawPlaywrightJsonSha256": "2092c87130b4bc11ccded9236e219f0d96f48d7418b4e4e25ff14589405b6fc5"
+    },
+    {
+      "id": "baseline-four-worker-attempt-2",
+      "arm": "baseline",
+      "workersConfigured": 4,
+      "workersObserved": 4,
+      "startTimeUtc": "2026-11-08T03:11:29.247Z",
+      "suiteDurationMs": 160892.442,
+      "expected": 3,
+      "unexpected": 1,
+      "target": {
+        "status": "timedOut",
+        "durationMs": 120277,
+        "retry": 0,
+        "workerIndex": 3,
+        "failureStage": "Swing +3.6 to -3.6",
+        "lastObservedSwingValue": "-2.4",
+        "failure": "locator.press timed out during Shift+ArrowLeft"
+      },
+      "peers": [
+        { "identity": "home responsive-grid peer", "status": "passed", "durationMs": 1330, "retry": 0, "workerIndex": 0 },
+        { "identity": "Interior Corner Guided Lesson", "status": "passed", "durationMs": 160041, "retry": 0, "workerIndex": 1 },
+        { "identity": "Interior Corner Rise Composition", "status": "passed", "durationMs": 59486, "retry": 0, "workerIndex": 2 }
+      ],
+      "stagesMs": {
+        "routeNavigationAndUrlCheck": 535,
+        "openLearningFeedback": 18213,
+        "initialValuesAndFeedback": 2450,
+        "groundGlassFinalContentful": 1259,
+        "rise0To33": 37947,
+        "swing0ToPlus3_6": 35186,
+        "focus8000To38140": 5453,
+        "swingPlus3_6ToMinus3_6": 19167
+      },
+      "rawPlaywrightJsonSha256": "42b7362916a05215a3ef31ad9e19bc7f74dfeaa3fc420fa42c4024c13560b854"
+    },
+    {
+      "id": "candidate-single-worker",
+      "arm": "candidate",
+      "workersConfigured": 1,
+      "workersObserved": 1,
+      "startTimeUtc": "2026-11-08T03:16:52.579Z",
+      "suiteDurationMs": 37648.064,
+      "target": {
+        "status": "passed",
+        "durationMs": 36841,
+        "retry": 0,
+        "workerIndex": 0,
+        "stagesMs": {
+          "routeNavigationAndUrlCheck": 361,
+          "openLearningFeedback": 10591,
+          "initialValuesAndFeedback": 1197,
+          "groundGlassFinalContentful": 588,
+          "rise0To33": 14536,
+          "swing0ToPlus3_6": 3826,
+          "focus8000To38140": 2921,
+          "swingPlus3_6ToMinus3_6": 2773
+        }
+      },
+      "peers": [],
+      "rawPlaywrightJsonSha256": "cc7bcc0820dcb3b83c1516d389c59224350e7d776d4a9ab90cc518b3fcecb7fc"
+    },
+    {
+      "id": "candidate-four-worker-attempt-1",
+      "arm": "candidate",
+      "workersConfigured": 4,
+      "workersObserved": 4,
+      "startTimeUtc": "2026-11-08T03:17:54.127Z",
+      "suiteDurationMs": 157088.832,
+      "expected": 4,
+      "unexpected": 0,
+      "target": {
+        "status": "passed",
+        "durationMs": 74603,
+        "retry": 0,
+        "workerIndex": 3,
+        "stagesMs": {
+          "routeNavigationAndUrlCheck": 539,
+          "openLearningFeedback": 18298,
+          "initialValuesAndFeedback": 2569,
+          "groundGlassFinalContentful": 1385,
+          "rise0To33": 36387,
+          "swing0ToPlus3_6": 5826,
+          "focus8000To38140": 5165,
+          "swingPlus3_6ToMinus3_6": 4381
+        }
+      },
+      "peers": [
+        { "identity": "home responsive-grid peer", "status": "passed", "durationMs": 1300, "retry": 0, "workerIndex": 0 },
+        { "identity": "Interior Corner Guided Lesson", "status": "passed", "durationMs": 156259, "retry": 0, "workerIndex": 1 },
+        { "identity": "Interior Corner Rise Composition", "status": "passed", "durationMs": 59330, "retry": 0, "workerIndex": 2 }
+      ],
+      "rawPlaywrightJsonSha256": "e3ff7372f929c739bad821042a8a1a17a728e76913ae7bf97513d2b885824fe0"
+    },
+    {
+      "id": "candidate-four-worker-attempt-2",
+      "arm": "candidate",
+      "workersConfigured": 4,
+      "workersObserved": 4,
+      "startTimeUtc": "2026-11-08T03:20:50.841Z",
+      "suiteDurationMs": 149359.581,
+      "expected": 4,
+      "unexpected": 0,
+      "target": {
+        "status": "passed",
+        "durationMs": 71880,
+        "retry": 0,
+        "workerIndex": 3,
+        "stagesMs": {
+          "routeNavigationAndUrlCheck": 522,
+          "openLearningFeedback": 17895,
+          "initialValuesAndFeedback": 2564,
+          "groundGlassFinalContentful": 1155,
+          "rise0To33": 36450,
+          "swing0ToPlus3_6": 5952,
+          "focus8000To38140": 4903,
+          "swingPlus3_6ToMinus3_6": 2365
+        }
+      },
+      "peers": [
+        { "identity": "home responsive-grid peer", "status": "passed", "durationMs": 1313, "retry": 0, "workerIndex": 0 },
+        { "identity": "Interior Corner Guided Lesson", "status": "passed", "durationMs": 148517, "retry": 0, "workerIndex": 1 },
+        { "identity": "Interior Corner Rise Composition", "status": "passed", "durationMs": 59907, "retry": 0, "workerIndex": 2 }
+      ],
+      "rawPlaywrightJsonSha256": "4a1bfabdfa50e7b4dc6c46406855be749ca756fee35b62fcbf68ec62d9d0861a"
+    }
+  ],
+  "additionalAttempts": [
+    {
+      "id": "baseline-single-uninstrumented-extra",
+      "validForTargetOutcome": true,
+      "status": "passed",
+      "workers": 1,
+      "durationDescription": "1.1m as displayed by Playwright's line reporter; no JSON export was retained",
+      "retries": 0
+    },
+    {
+      "id": "baseline-four-worker-selection-invalid",
+      "validForMatchedTargetComparison": false,
+      "reason": "Initial grep escaped the plus sign in the target title as regex syntax, so only the three peer tests were selected; no Swing target result was produced.",
+      "workersConfigured": 4,
+      "workersObserved": 3,
+      "durationMs": 136385.688,
+      "outcomes": "3 peers passed, zero retries",
+      "rawPlaywrightJsonSha256": "e8c114ff218f31269734e61a24b58aac0368d9ee78d582be7ffcd618df386c33"
+    },
+    {
+      "id": "candidate-keyboard-and-helper-controls",
+      "status": "passed",
+      "tests": 2,
+      "workers": 1,
+      "retries": 0,
+      "durationDescription": "32.4s shown by the line reporter; exact milliseconds were not retained",
+      "keyboardActions": ["ArrowRight", "ArrowRight", "ArrowLeft"],
+      "negativeControls": ["missing slider", "disabled slider", "off-grid target", "out-of-range target", "NaN target"]
+    }
+  ],
+  "analysis": {
+    "baselineFourWorkerTargetOutcomes": "0/2 passed; both hit the original 120-second test timeout at -2.4 degrees during the reverse Swing interaction",
+    "candidateFourWorkerTargetOutcomes": "2/2 passed; both reached -3.6 degrees and asserted the original reverse-state feedback",
+    "singleWorkerTargetDurationMs": { "baseline": 61375, "candidate": 36841, "difference": 24534, "reductionPercent": 39.97 },
+    "singleWorkerSwingStageMs": {
+      "baselinePositive": 19238,
+      "candidatePositive": 3826,
+      "baselineReverse": 15845,
+      "candidateReverse": 2773
+    },
+    "fourWorkerSwingStageMs": {
+      "baselinePositive": [32897, 35186],
+      "candidatePositive": [5826, 5952],
+      "baselineReverse": [20156, 19167],
+      "candidateReverse": [4381, 2365]
+    },
+    "causalBoundary": "The targeted input change reduces Playwright keyboard-call count and completed the matched tests; it does not establish the mechanism behind the earlier trace-enabled timeout or guarantee future full-suite reliability.",
+    "decision": "U1 — verified test-workload improvement; do not classify the historical broad-suite timeout as permanently fixed."
+  },
+  "validation": {
+    "primaryCandidateSingleWorker": "passed, zero retries",
+    "candidateFourWorkerCohorts": "2/2 passed, four actual workers each, zero retries",
+    "candidateKeyboardAndHelperControls": "2 passed, zero retries",
+    "interiorCornerGuidedLessonPeer": "passed in both candidate four-worker cohorts",
+    "interiorCornerRiseCompositionPeer": "passed in both candidate four-worker cohorts",
+    "routeAvailabilityIntegration": "68 passed",
+    "m7rEvidenceCheck": "passed; 118 passed, 85 unexpected, 75 skipped, zero retries",
+    "typecheck": "passed",
+    "targetedEslint": "passed",
+    "gitDiffCheck": "passed",
+    "fullBroadE2e": "not run"
+  },
+  "rawEvidenceHandling": {
+    "rawPlaywrightJsonCommitted": false,
+    "rawPlaywrightJsonDigestsRecorded": true,
+    "reason": "Full reporter JSON includes local runner configuration and absolute workspace paths.",
+    "rawToSummaryReplayAvailableToPrReviewers": false
+  },
+  "qualificationBoundary": {
+    "m7rDiscovered": 278,
+    "m7rPassed": 118,
+    "m7rUnexpected": 85,
+    "m7rSkipped": 75,
+    "broadE2e": "not-qualified",
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled"
+  }
+}
