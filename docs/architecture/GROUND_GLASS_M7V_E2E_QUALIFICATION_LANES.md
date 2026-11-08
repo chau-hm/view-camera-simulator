@@ -2,7 +2,7 @@
 
 ## Decision
 
-**V1 — Governance established, approvals pending.** M7V reconciles every M7R skipped identity with its current source-level guard, assigns each historical identity to a proposed lane, and adds a fail-closed policy check. The policy check passes. No lane execution or owner approval is claimed, so strict approval and qualification checks remain blocked.
+**V2 — Governance established, approvals pending.** M7V reconciles every M7R skipped identity with its current source-level guard, assigns each historical identity to a proposed lane, and adds a fail-closed policy check. The policy check passes. No lane execution or owner approval is claimed, so strict approval and qualification checks remain blocked.
 
 This is policy and inventory evidence. It does not qualify Broad E2E, M7, native WebGPU, or production WebGPU.
 
@@ -39,7 +39,7 @@ All approvals remain `pending` with `approvalEvidence: null`. A historical annot
 
 ### Source-level gate audit
 
-The evaluator parses the discovered test definitions and records applicable suite- and test-level `test.skip()` calls, including the literal predicate and reason. It follows local identifiers used by those predicates to record the referenced environment variables and `VITE_` build flags. Every one of the 75 historical identities has at least one source guard, and its matrix row is compared with current source on every policy check.
+The evaluator parses discovered test declarations and records static `test.skip()` and `test.fixme()` declarations, skipped/fixme suites, and applicable suite- and test-level conditional `test.skip(condition, reason)` calls. It follows local identifiers used by those predicates to record referenced environment variables and `VITE_` build flags. For all 280 standard identities, it compares the current skip-affecting declaration signature with the signature read from the pinned M7U source commit `6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382`. The pin is fetched in Pages CI and its source files are checked before policy validation. Unsupported dynamic skip patterns fail explicitly. Updating a policy snapshot alone cannot replace the pinned source declaration baseline.
 
 The matrix also records the current Playwright configuration's environment-to-build-flag contract as **conditional assignments per gate**. For example, the failure-integration gate enables `VITE_GROUND_GLASS_WEBGPU_TEST_SEAM`; the physical-research gate enables that seam and `VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH`; the gather-research gate enables the seam and `VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH`; the r187 gates select their matching qualification flags; and M6 sets its presentation/raw-pilot flags while explicitly holding research-only flags false. These assignments describe separate environment profiles and must not be flattened into one set of simultaneous values. Directly required `VITE_` values, such as Raw Pilot, are preserved separately per identity. The policy snapshot includes the standard project selection, native headed-Chrome selection, renderer-serial one-worker settings, production-preview project, and production spec suffix. A relevant config change therefore requires an updated, reviewed policy snapshot.
 
@@ -132,7 +132,23 @@ The first validates the historical identity matrix, source guards, current proje
 
 Policy integrity compares only the required M7V package scripts and their executable targets. It does not byte-pin `package.json` or dependencies, so unrelated manifest maintenance is allowed.
 
-Validation completed with 19/19 focused M7V policy tests, the repository unit suite (327 test files, 3,941 tests), typecheck, lint, and the M7R, M7Q, and M7K evidence checks passing. Both strict M7V commands returned exit code 1 as intended: the 75 owner decisions remain pending, and the ordinary, renderer-serial, native, and production-preview qualification evidence is not-run. This PR did not execute the full Broad E2E suite, native WebGPU lane, Dream Loop capture, or Scene Capacity benchmark.
+## M7V Review-Fix Round 1 — Three Fail-Closed Governance Bypasses
+
+The review identified three paths that could weaken the intended policy boundary: static `.skip`/`.fixme` declarations were not compared for every mandatory test; lane summaries could claim coverage and zero failures without the evaluator reading the referenced report; and approval fields were format-checked without authenticating the GitHub decision or the actor's authority.
+
+The corrected source audit compares skip-affecting declarations for every standard test identity against the pinned M7U source. Static skipped/fixme tests and suites are recorded as unconditional declarations; supported conditional test/suite gates remain explicit. New or changed exclusions fail policy integrity even when the identity count is unchanged or a mutable reconciliation file is edited. For artifact coverage, each lane's required identities are reconstructed from its actual discovery profile; the 73 native requirements use `chrome-native-webgpu` identities, not ordinary `chromium` project identifiers.
+
+Execution evidence is now read from files contained under the designated evidence directory, checked against the declared SHA-256, parsed as Playwright JSON, and evaluated from per-test result entries. Identities, statuses, retries, skips, failures, incompleteness, project selection, and linked runtime evidence are derived from those bytes. Native evidence must include the required WebGPU runtime identity; production-preview and ordinary WebGL evidence retain their renderer isolation checks. A local digest detects byte mismatch but does not authenticate who produced the artifact.
+
+Strict execution qualification additionally requires a matching successful GitHub Actions run and artifact from the dedicated workflow path `.github/workflows/m7v-lane-qualification.yml`, with the pinned source tree and downloaded artifact bytes verified. That dedicated lane workflow and real lane artifacts do not yet exist, so current lanes remain `not-run`; a self-reported report entry cannot qualify them.
+
+Owner approvals are verified through authenticated GitHub data: repository and PR identity, the latest matching approval for the current HEAD, a marker binding the approval to the policy revision and identity scope, and the actor's current repository `admin` or `maintain` permission. The real matrix still has 75 pending decisions and makes no approval claim. Missing credentials, unavailable GitHub data, stale or unrelated reviews, and unauthorized actors fail strict approval verification. The ordinary offline policy command does not call GitHub.
+
+The focused mutation suite includes actual TypeScript source edits for mandatory test and suite declarations, valid synthetic Playwright reports/runtime evidence, path/digest/project/outcome mutations, and mocked GitHub approval/provenance cases. These fixtures demonstrate the verification logic; they are not real runner artifacts or real owner approvals. A combined fabricated-snapshot, fabricated-approval-metadata, and missing-artifact case remains rejected.
+
+Validation on Node 24.3.0: 31/31 focused M7V policy tests passed; `npm test` passed 327 test files and 3,953 tests; typecheck, lint, M7V policy integrity, and M7R/M7Q/M7K evidence checks passed. `require-approved` returned exit 1 with `owner-approval-pending:75`. `require-qualified` returned exit 1 with the same pending approvals and all four required lanes `not-run`. Those strict failures are expected. Hosted CI on the final PR HEAD remains a separate required check; its result is recorded in the PR handoff and checks, not as lane-qualification evidence.
+
+The correction does not change qualification authorization or the historical M7R evidence. It does not run the 280-test E2E suite, a native WebGPU lane, Dream Loop capture, or Scene Capacity benchmark.
 
 ## Current result and next action
 

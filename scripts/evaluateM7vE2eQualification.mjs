@@ -1,14 +1,20 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
-import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
 
-export const M7V_POLICY_REVISION = "m7v-e2e-skip-governance-v1";
+export const M7V_POLICY_REVISION = "m7v-e2e-skip-governance-v2";
+export const M7V_SOURCE_DECLARATION_BASELINE_COMMIT = "6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382";
+export const M7V_REPOSITORY = "chau-hm/view-camera-simulator";
+export const M7V_REPOSITORY_OWNER = "chau-hm";
+export const M7V_RUNNER_WORKFLOW_PATH = ".github/workflows/m7v-lane-qualification.yml";
+export const M7V_EXECUTION_ARTIFACT_ROOT = "docs/architecture/ground-glass-m7v-skip-governance/execution-artifacts";
 export const M7V_LANES = [
   "ordinary-webgl",
   "renderer-serial",
@@ -262,6 +268,10 @@ export function collectM7vPlaywrightConfigurationEvidence(repositoryRoot = proje
 function callName(node) {
   if (ts.isIdentifier(node)) return node.text;
   if (ts.isPropertyAccessExpression(node)) return `${callName(node.expression)}.${node.name.text}`;
+  if (ts.isElementAccessExpression(node) && node.argumentExpression &&
+      (ts.isStringLiteral(node.argumentExpression) || ts.isNoSubstitutionTemplateLiteral(node.argumentExpression))) {
+    return `${callName(node.expression)}.${node.argumentExpression.text}`;
+  }
   return "";
 }
 
@@ -282,12 +292,41 @@ function isTestDefinition(call) {
 
 function isDescribeDefinition(call) {
   return ts.isCallExpression(call) &&
-    ["test.describe", "test.describe.serial", "test.describe.parallel"].includes(callName(call.expression)) &&
+    ["test.describe", "test.describe.serial", "test.describe.parallel", "test.describe.only", "test.describe.skip", "test.describe.fixme"].includes(callName(call.expression)) &&
     typeof call.arguments[0] !== "undefined" && callbackArgument(call, -1) !== null;
 }
 
 function isSkipGate(call) {
-  return ts.isCallExpression(call) && callName(call.expression) === "test.skip" && !callbackArgument(call, 1);
+  return ts.isCallExpression(call) && ["test.skip", "test.fixme"].includes(callName(call.expression)) && !callbackArgument(call, 1);
+}
+
+function staticTitle(node) {
+  if (!node) return null;
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+  return null;
+}
+
+function isStaticSkippedTest(call) {
+  return ["test.skip", "test.fixme"].includes(callName(call.expression)) && isTestDefinition(call);
+}
+
+function isStaticSkippedSuite(call) {
+  return ["test.describe.skip", "test.describe.fixme"].includes(callName(call.expression)) && isDescribeDefinition(call);
+}
+
+function isDynamicTestModifierCall(call) {
+  if (!ts.isCallExpression(call) || !ts.isElementAccessExpression(call.expression)) return false;
+  const modifier = call.expression.argumentExpression;
+  if (!modifier || ts.isStringLiteral(modifier) || ts.isNoSubstitutionTemplateLiteral(modifier)) return false;
+  const owner = callName(call.expression.expression);
+  return owner === "test" || owner === "test.describe";
+}
+
+function isUnsupportedSkipPattern(call) {
+  if (isDynamicTestModifierCall(call)) return true;
+  const name = callName(call.expression);
+  if (!/\.(?:skip|fixme)$/.test(name)) return false;
+  return !isTestDefinition(call) && !isDescribeDefinition(call) && !isSkipGate(call);
 }
 
 function sourceLine(sourceFile, node) {
@@ -296,6 +335,16 @@ function sourceLine(sourceFile, node) {
 
 function serializeSkipGate(gate, sourceFile) {
   const call = gate.node;
+  if (gate.kind === "static-skip-declaration") {
+    return {
+      kind: gate.kind,
+      line: sourceLine(sourceFile, call),
+      scope: gate.scope,
+      sourceText: callName(call.expression),
+      condition: "unconditional",
+      reason: null,
+    };
+  }
   return {
     line: sourceLine(sourceFile, call),
     scope: gate.scope,
@@ -305,53 +354,87 @@ function serializeSkipGate(gate, sourceFile) {
   };
 }
 
-function collectBodySkipGates(body) {
+function collectBodySkipGates(body, sourceFile) {
   const gates = [];
+  const unsupportedPatterns = [];
   const visit = (node) => {
     if (ts.isCallExpression(node) && (isTestDefinition(node) || isDescribeDefinition(node))) return;
     if (ts.isCallExpression(node) && isSkipGate(node)) gates.push({ node, scope: "test" });
+    else if (ts.isCallExpression(node) && isUnsupportedSkipPattern(node)) {
+      unsupportedPatterns.push(`unsupported-test-skip-pattern:${sourceLine(sourceFile, node)}:${node.getText(sourceFile)}`);
+    }
     ts.forEachChild(node, visit);
   };
   if (body) visit(body);
-  return gates;
+  return { gates, unsupportedPatterns };
 }
 
 function scanTestDefinitions(sourceFile) {
   const byLine = new Map();
-  const record = (call, inheritedGates) => {
+  const byTitlePath = new Map();
+  const unsupportedPatterns = [];
+  const record = (call, inheritedGates, suiteTitlePath) => {
     const body = callbackArgument(call, -1)?.body;
     const line = sourceLine(sourceFile, call);
+    const title = staticTitle(call.arguments[0]);
     const definition = {
       line,
       callName: callName(call.expression),
       titleExpression: call.arguments[0]?.getText(sourceFile) ?? "",
     };
+    const bodyEvidence = collectBodySkipGates(body, sourceFile);
+    unsupportedPatterns.push(...bodyEvidence.unsupportedPatterns);
+    const staticDeclaration = isStaticSkippedTest(call)
+      ? [{ node: call, scope: "test", kind: "static-skip-declaration" }]
+      : [];
     const gates = [
       ...inheritedGates,
-      ...collectBodySkipGates(body),
+      ...staticDeclaration,
+      ...bodyEvidence.gates,
     ].map((gate) => serializeSkipGate(gate, sourceFile));
+    const signature = normalizeDeclarationSignature(definition, gates);
     const entries = byLine.get(line) ?? [];
-    entries.push({ definition, skipConditions: gates });
+    entries.push({ definition, skipConditions: gates, signature });
     byLine.set(line, entries);
+    if (title !== null && title.trim() !== "") {
+      const titlePath = [...suiteTitlePath, title];
+      const key = titlePath.join("\u0000");
+      if (byTitlePath.has(key)) unsupportedPatterns.push(`duplicate-static-test-title-path:${titlePath.join("::")}`);
+      else byTitlePath.set(key, {
+        definition,
+        skipConditions: gates,
+        signature,
+      });
+    }
   };
-  const scanNested = (node, inheritedGates) => {
+  const scanNested = (node, inheritedGates, suiteTitlePath) => {
     if (ts.isBlock(node)) {
-      scanStatements(node.statements, inheritedGates);
+      scanStatements(node.statements, inheritedGates, suiteTitlePath);
       return;
     }
     if (ts.isCallExpression(node) && isDescribeDefinition(node)) {
       const body = callbackArgument(node, -1)?.body;
-      if (body && ts.isBlock(body)) scanStatements(body.statements, inheritedGates);
+      if (body && ts.isBlock(body)) {
+        const title = staticTitle(node.arguments[0]);
+        const suiteGate = isStaticSkippedSuite(node)
+          ? [{ node, scope: "suite", kind: "static-skip-declaration" }]
+          : [];
+        scanStatements(body.statements, [...inheritedGates, ...suiteGate], title === null ? suiteTitlePath : [...suiteTitlePath, title]);
+      }
       return;
     }
     if (ts.isCallExpression(node) && isTestDefinition(node)) {
-      record(node, inheritedGates);
+      record(node, inheritedGates, suiteTitlePath);
       return;
     }
     if (ts.isCallExpression(node) && isSkipGate(node)) return;
-    ts.forEachChild(node, (child) => scanNested(child, inheritedGates));
+    if (ts.isCallExpression(node) && isUnsupportedSkipPattern(node)) {
+      unsupportedPatterns.push(`unsupported-test-skip-pattern:${sourceLine(sourceFile, node)}:${node.getText(sourceFile)}`);
+      return;
+    }
+    ts.forEachChild(node, (child) => scanNested(child, inheritedGates, suiteTitlePath));
   };
-  const scanStatements = (statements, inheritedGates) => {
+  const scanStatements = (statements, inheritedGates, suiteTitlePath) => {
     let activeGates = [...inheritedGates];
     for (const statement of statements) {
       if (ts.isExpressionStatement(statement) && ts.isCallExpression(statement.expression) && isSkipGate(statement.expression)) {
@@ -360,18 +443,41 @@ function scanTestDefinitions(sourceFile) {
       }
       if (ts.isExpressionStatement(statement) && ts.isCallExpression(statement.expression) && isDescribeDefinition(statement.expression)) {
         const body = callbackArgument(statement.expression, -1)?.body;
-        if (body && ts.isBlock(body)) scanStatements(body.statements, activeGates);
+        if (body && ts.isBlock(body)) {
+          const title = staticTitle(statement.expression.arguments[0]);
+          const suiteGate = isStaticSkippedSuite(statement.expression)
+            ? [{ node: statement.expression, scope: "suite", kind: "static-skip-declaration" }]
+            : [];
+          scanStatements(body.statements, [...activeGates, ...suiteGate], title === null ? suiteTitlePath : [...suiteTitlePath, title]);
+        }
         continue;
       }
       if (ts.isExpressionStatement(statement) && ts.isCallExpression(statement.expression) && isTestDefinition(statement.expression)) {
-        record(statement.expression, activeGates);
+        record(statement.expression, activeGates, suiteTitlePath);
         continue;
       }
-      scanNested(statement, activeGates);
+      if (ts.isExpressionStatement(statement) && ts.isCallExpression(statement.expression) && isUnsupportedSkipPattern(statement.expression)) {
+        unsupportedPatterns.push(`unsupported-test-skip-pattern:${sourceLine(sourceFile, statement.expression)}:${statement.expression.getText(sourceFile)}`);
+        continue;
+      }
+      scanNested(statement, activeGates, suiteTitlePath);
     }
   };
-  scanStatements(sourceFile.statements, []);
-  return byLine;
+  scanStatements(sourceFile.statements, [], []);
+  return { byLine, byTitlePath, unsupportedPatterns: unique(unsupportedPatterns) };
+}
+
+function normalizeDeclarationSignature(definition, skipConditions) {
+  return {
+    callName: definition.callName,
+    skipConditions: skipConditions.map(({ kind = "conditional-skip-gate", scope, condition, reason, sourceText }) => ({
+      kind,
+      scope,
+      condition,
+      reason,
+      sourceText: String(sourceText ?? "").replace(/\s+/g, " ").trim(),
+    })),
+  };
 }
 
 function propertyChain(node) {
@@ -492,8 +598,26 @@ export function collectM7vTestSourceEvidence(repositoryRoot, discoveredTests) {
     }
     const entry = byFile.get(file);
     const line = test.sourceLine;
-    const definitions = entry.definitions.get(line) ?? [];
+    const definitions = entry.definitions.byLine.get(line) ?? [];
     if (definitions.length !== 1) {
+      if (definitions.length === 0 && entry.definitions.unsupportedPatterns.length > 0) {
+        const definition = {
+          line: line ?? 0,
+          callName: "unsupported-skip-affecting-declaration",
+          titleExpression: test.titlePath?.at(-1) ?? "",
+        };
+        evidenceByIdentity.set(test.identity, {
+          identity: test.identity,
+          sourcePath: file,
+          definition,
+          skipConditions: [],
+          declarationSignature: normalizeDeclarationSignature(definition, []),
+          unsupportedPatterns: entry.definitions.unsupportedPatterns,
+          requiredEnvironment: [],
+          requiredBuildFlags: [],
+        });
+        continue;
+      }
       throw new Error(`${test.identity} maps to ${definitions.length} source test definitions at ${file}:${line ?? "unknown"}.`);
     }
     const sourceEvidence = definitions[0];
@@ -505,10 +629,65 @@ export function collectM7vTestSourceEvidence(repositoryRoot, discoveredTests) {
       sourcePath: file,
       definition: sourceEvidence.definition,
       skipConditions: sourceEvidence.skipConditions,
+      declarationSignature: normalizeDeclarationSignature(sourceEvidence.definition, sourceEvidence.skipConditions),
+      unsupportedPatterns: entry.definitions.unsupportedPatterns,
       ...required,
     });
   }
   return evidenceByIdentity;
+}
+
+export function collectM7vSourceDeclarationBaseline(repositoryRoot, discoveredTests, currentSourceEvidence, commitSha = M7V_SOURCE_DECLARATION_BASELINE_COMMIT) {
+  const issues = [];
+  const byFile = new Map();
+  const declarationsByIdentity = new Map();
+  if (!/^[a-f0-9]{40}$/.test(commitSha)) {
+    return { commitSha, declarationsByIdentity, issues: ["m7v-source-policy-baseline-invalid-sha"] };
+  }
+  for (const test of discoveredTests) {
+    const relativeSpecPath = test.relativeSpecPath ?? test.specPath?.replace(/^src\/tests\/e2e\//, "") ?? test.specFile;
+    const file = `src/tests/e2e/${relativeSpecPath}`;
+    if (!byFile.has(file)) {
+      const result = spawnSync("git", ["show", `${commitSha}:${file}`], {
+        cwd: repositoryRoot,
+        encoding: "utf8",
+        maxBuffer: 16 * 1024 * 1024,
+      });
+      if (result.error || result.status !== 0) {
+        byFile.set(file, { missing: true });
+      } else {
+        const sourceFile = ts.createSourceFile(file, result.stdout, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+        byFile.set(file, sourceFile.parseDiagnostics.length > 0
+          ? { invalid: true }
+          : { definitions: scanTestDefinitions(sourceFile) });
+      }
+    }
+    const source = byFile.get(file);
+    if (!source || source.missing) {
+      issues.push(`m7v-source-policy-baseline-file-unavailable:${file}`);
+      continue;
+    }
+    if (source.invalid) {
+      issues.push(`m7v-source-policy-baseline-file-invalid:${file}`);
+      continue;
+    }
+    const titlePath = Array.isArray(test.titlePath) ? test.titlePath : [];
+    let definition = source.definitions.byTitlePath.get(titlePath.join("\u0000"));
+    if (!definition) {
+      const currentTitleExpression = currentSourceEvidence?.get(test.identity)?.definition?.titleExpression;
+      const matchingDefinitions = [...source.definitions.byLine.values()].flat().filter((entry) =>
+        entry.definition.titleExpression === currentTitleExpression);
+      const signatures = new Map(matchingDefinitions.map((entry) => [stable(entry.signature), entry]));
+      if (signatures.size === 1) definition = [...signatures.values()][0];
+    }
+    if (!definition) {
+      issues.push(`m7v-source-policy-baseline-identity-unavailable:${test.identity}`);
+      continue;
+    }
+    for (const pattern of source.definitions.unsupportedPatterns) issues.push(`m7v-source-policy-baseline-unsupported-pattern:${file}:${pattern}`);
+    declarationsByIdentity.set(test.identity, definition.signature);
+  }
+  return { commitSha, declarationsByIdentity, issues: unique(issues) };
 }
 
 function findSkipGateNode(sourceFile, line, text) {
@@ -584,40 +763,526 @@ function compareSourceEvidence(expected, actual) {
   });
 }
 
-function extractOutcomeCoverageIssues(lane, evidence, requiredIdentities) {
+function canonicalTestKey(identity) {
+  const separator = String(identity).indexOf("::");
+  return separator >= 0 ? String(identity).slice(separator + 2) : String(identity);
+}
+
+function laneProjectName(lane) {
+  return {
+    "ordinary-webgl": "chromium",
+    "renderer-serial": "chromium-renderer-serial",
+    "native-webgpu": "chrome-native-webgpu",
+    "production-preview": "chromium-production-preview",
+  }[lane] ?? null;
+}
+
+function normalizeExecutionSpecPath(file, report) {
+  const normalized = String(file ?? "").replaceAll("\\", "/");
+  const marker = normalized.lastIndexOf("src/tests/e2e/");
+  if (marker >= 0) return normalized.slice(marker + "src/tests/e2e/".length);
+  if (isAbsolute(normalized)) {
+    const configuredRoot = String(report?.config?.rootDir ?? "").replaceAll("\\", "/");
+    if (configuredRoot && isAbsolute(configuredRoot)) {
+      const candidate = relative(configuredRoot, normalized).replaceAll("\\", "/");
+      if (candidate && !candidate.startsWith("../") && candidate !== "..") return candidate;
+    }
+    return null;
+  }
+  return normalized.startsWith("../") || normalized === ".." || !normalized ? null : normalized.replace(/^\.\//, "");
+}
+
+function flattenPlaywrightExecutionReport(report) {
   const issues = [];
+  const tests = [];
+  if (!report || !Array.isArray(report.suites) || !Array.isArray(report.errors) || report.errors.length > 0) {
+    return { tests, issues: ["playwright-report-invalid-or-incomplete"] };
+  }
+  const visit = (suite, titlePath = [], isRoot = false) => {
+    const nextPath = isRoot ? titlePath : [...titlePath, String(suite.title ?? "")].filter(Boolean);
+    for (const spec of suite.specs ?? []) {
+      const specPath = normalizeExecutionSpecPath(spec.file ?? suite.file, report);
+      const title = String(spec.title ?? "");
+      if (!specPath || !title) {
+        issues.push("playwright-report-test-identity-invalid");
+        continue;
+      }
+      const fullTitlePath = [...nextPath, title];
+      for (const test of spec.tests ?? []) {
+        const projectName = String(test.projectName ?? test.projectId ?? "");
+        if (!projectName) {
+          issues.push("playwright-report-project-identity-missing");
+          continue;
+        }
+        const identity = `${projectName}::${specPath}::${fullTitlePath.join("::")}`;
+        const results = Array.isArray(test.results) ? test.results : null;
+        if (!results) {
+          issues.push(`playwright-report-results-invalid:${identity}`);
+          continue;
+        }
+        tests.push({
+          identity,
+          canonicalKey: canonicalTestKey(identity),
+          projectName,
+          expectedStatus: test.expectedStatus ?? null,
+          declaredStatus: test.status ?? null,
+          results,
+        });
+      }
+    }
+    for (const child of suite.suites ?? []) visit(child, nextPath, false);
+  };
+  for (const suite of report.suites) visit(suite, [], true);
+  const identities = tests.map((test) => test.identity);
+  if (new Set(identities).size !== identities.length) issues.push("playwright-report-duplicate-test-identities");
+  return { tests, issues: unique(issues) };
+}
+
+export function deriveM7vExecutionArtifactEvidence({ lane, artifact, requiredIdentities }) {
+  const issues = [];
+  const expectedProject = laneProjectName(lane);
+  if (!artifact || artifact.schemaVersion !== 1 || artifact.lane !== lane) {
+    return { issues: ["execution-artifact-schema-or-lane-invalid"], summary: null, passedIdentities: [] };
+  }
+  if (!/^[a-f0-9]{40}$/.test(String(artifact.sourceCommitSha ?? ""))) issues.push("execution-artifact-source-commit-invalid");
+  if (artifact.projectName !== expectedProject) issues.push("execution-artifact-project-mismatch");
+  if (!artifact.browser || artifact.browser.name !== "chromium" || typeof artifact.browser.version !== "string" || !artifact.browser.version) {
+    issues.push("execution-artifact-browser-identity-invalid");
+  }
+  if (typeof artifact.nodeVersion !== "string" || !/^v\d+\.\d+\.\d+$/.test(artifact.nodeVersion)) issues.push("execution-artifact-node-version-invalid");
+  const report = artifact.playwrightReport;
+  const reportVersion = report?.config?.version;
+  const projectConfig = Array.isArray(report?.config?.projects)
+    ? report.config.projects.find((project) => project.name === expectedProject)
+    : undefined;
+  if (!reportVersion || reportVersion !== artifact.playwrightVersion || !Array.isArray(report?.config?.projects) ||
+      !projectConfig || projectConfig.retries !== 0) {
+    issues.push("execution-artifact-playwright-project-or-version-invalid");
+  }
+  const flattened = flattenPlaywrightExecutionReport(report);
+  issues.push(...flattened.issues);
+  const executed = flattened.tests.filter((test) => test.results.length > 0);
+  const expectedByKey = new Map(requiredIdentities.map((identity) => [canonicalTestKey(identity), identity]));
+  if (expectedByKey.size !== requiredIdentities.length) issues.push("execution-required-identities-duplicate");
+  const actualRequired = [];
+  let retries = 0;
+  let flaky = 0;
+  let incomplete = 0;
+  let failed = 0;
+  let skipped = 0;
+  for (const requiredIdentity of requiredIdentities) {
+    const key = canonicalTestKey(requiredIdentity);
+    const matches = flattened.tests.filter((test) => test.canonicalKey === key);
+    if (matches.length !== 1) {
+      incomplete += 1;
+      issues.push(matches.length === 0 ? `execution-required-identity-missing:${requiredIdentity}` : `execution-required-identity-duplicated:${requiredIdentity}`);
+      continue;
+    }
+    const test = matches[0];
+    if (test.projectName !== expectedProject || test.identity !== `${expectedProject}::${key}`) {
+      issues.push(`execution-required-project-mismatch:${requiredIdentity}`);
+    }
+    if (!test.results.length && test.declaredStatus !== "skipped") {
+      issues.push(`execution-declared-status-without-results:${requiredIdentity}`);
+    }
+    if (test.expectedStatus !== "passed") issues.push(`execution-required-expected-status-invalid:${requiredIdentity}`);
+    if (test.results.length === 0) {
+      incomplete += 1;
+      issues.push(`execution-required-result-missing:${requiredIdentity}`);
+      continue;
+    }
+    const finalStatus = test.results.at(-1)?.status;
+    const derivedDeclaredStatus = finalStatus === "skipped"
+      ? "skipped"
+      : finalStatus === test.expectedStatus ? "expected" : "unexpected";
+    if (test.declaredStatus !== derivedDeclaredStatus) {
+      issues.push(`execution-declared-status-disagrees-with-results:${requiredIdentity}`);
+    }
+    if (test.results.length > 1) {
+      flaky += 1;
+      retries += test.results.slice(1).length;
+      issues.push(`execution-retried-or-flaky:${requiredIdentity}`);
+    }
+    const first = test.results[0];
+    if (first.retry !== 0) {
+      retries += 1;
+      issues.push(`execution-retry-nonzero:${requiredIdentity}`);
+    }
+    if (first.status === "skipped" || test.expectedStatus === "skipped") {
+      skipped += 1;
+      issues.push(`execution-required-test-skipped:${requiredIdentity}`);
+    } else if (test.results.some((result) => result.status !== "passed")) {
+      failed += 1;
+      issues.push(`execution-required-test-outcome-failed:${requiredIdentity}`);
+    }
+    if (!Number.isFinite(first.duration) || first.duration <= 0 || !Number.isInteger(first.workerIndex) ||
+        !Number.isInteger(first.parallelIndex) || (first.errors?.length ?? 0) > 0) {
+      incomplete += 1;
+      issues.push(`execution-result-incomplete:${requiredIdentity}`);
+    }
+    if (first.status === "passed" && test.results.length === 1 && test.expectedStatus === "passed" &&
+        Number.isFinite(first.duration) && first.duration > 0 && (first.errors?.length ?? 0) === 0) {
+      actualRequired.push(requiredIdentity);
+    }
+  }
+  for (const test of flattened.tests) {
+    if (!expectedByKey.has(test.canonicalKey)) issues.push(`execution-unexpected-identity:${test.identity}`);
+  }
+
+  const runtimeRows = Array.isArray(artifact.runtimeEvidence) ? artifact.runtimeEvidence : [];
+  const runtimeByKey = new Map();
+  for (const row of runtimeRows) {
+    const key = canonicalTestKey(row?.identity ?? "");
+    if (!key || runtimeByKey.has(key)) issues.push(`runtime-evidence-identity-duplicate-or-invalid:${String(row?.identity ?? "")}`);
+    else runtimeByKey.set(key, row);
+  }
+  for (const identity of requiredIdentities) {
+    const key = canonicalTestKey(identity);
+    const runtime = runtimeByKey.get(key);
+    const test = flattened.tests.find((entry) => entry.canonicalKey === key && entry.projectName === expectedProject);
+    const actualResult = test?.results?.[0];
+    if (!runtime || !test || runtime.projectName !== expectedProject || runtime.sourceCommitSha !== artifact.sourceCommitSha ||
+        runtime.retry !== 0 || runtime.workerIndex !== actualResult?.workerIndex || runtime.parallelIndex !== actualResult?.parallelIndex) {
+      issues.push(`runtime-evidence-not-linked-to-result:${identity}`);
+      continue;
+    }
+    if (lane === "native-webgpu") {
+      if (runtime.rendererFamily !== "webgpu-renderer" || runtime.executionApi !== "webgpu" ||
+          runtime.applicationFallback !== false || runtime.webglCompatibilityBackend !== false) {
+        issues.push(`native-runtime-identity-invalid:${identity}`);
+      }
+    } else if (runtime.rendererFamily !== "webgl-renderer" || runtime.executionApi !== "webgl2" ||
+        runtime.applicationFallback !== false || runtime.webglCompatibilityBackend !== false) {
+      issues.push(`webgl-runtime-identity-invalid:${identity}`);
+    }
+    if (lane === "production-preview" &&
+        (runtime.productionBundleWebGpuExcluded !== true || runtime.urlCannotEnableWebGpu !== true)) {
+      issues.push(`production-preview-isolation-unverified:${identity}`);
+    }
+  }
+  if (runtimeByKey.size !== requiredIdentities.length) issues.push("runtime-evidence-coverage-mismatch");
+
+  const summary = {
+    coveredIdentities: actualRequired.sort((a, b) => a.localeCompare(b)),
+    retries,
+    flaky,
+    incomplete,
+    failed,
+    skipped,
+    executedIdentities: executed.map((test) => test.identity).sort((a, b) => a.localeCompare(b)),
+  };
+  return { issues: unique(issues), summary, passedIdentities: summary.coveredIdentities };
+}
+
+export function verifyM7vRunnerArtifactProvenance({ lane, descriptor, artifact, artifactContentSha256, proof }) {
+  const issues = [];
+  if (!proof || proof.status !== "loaded") return ["lane-runner-provenance-unavailable"];
+  if (!descriptor || !artifact || !proof.run || !proof.artifact) return ["lane-runner-provenance-incomplete"];
+  const expectedSource = String(descriptor.sourceCommitSha ?? "");
+  if (proof.repository !== M7V_REPOSITORY || proof.run.repository?.full_name !== M7V_REPOSITORY) issues.push("lane-runner-repository-mismatch");
+  if (proof.run.path !== M7V_RUNNER_WORKFLOW_PATH) issues.push("lane-runner-workflow-untrusted");
+  if (proof.run.status !== "completed" || proof.run.conclusion !== "success") issues.push("lane-runner-run-not-successful");
+  if (proof.run.head_sha !== expectedSource || artifact.sourceCommitSha !== expectedSource || artifact.lane !== lane) issues.push("lane-runner-source-commit-mismatch");
+  if (proof.sourceTreeMatchesCurrent !== true) issues.push("lane-runner-source-tree-stale-or-unavailable");
+  if (proof.run.id !== descriptor.runId || proof.artifact.id !== descriptor.artifactId || proof.artifact.name !== descriptor.artifactName ||
+      proof.artifact.expired !== false) issues.push("lane-runner-artifact-reference-mismatch");
+  if (typeof descriptor.sourceCommitSha !== "string" || !/^[a-f0-9]{40}$/.test(descriptor.sourceCommitSha)) issues.push("lane-artifact-source-sha-invalid");
+  if (typeof descriptor.archiveSha256 !== "string" || !/^sha256:[a-f0-9]{64}$/.test(descriptor.archiveSha256) ||
+      proof.artifact.digest !== descriptor.archiveSha256) issues.push("lane-runner-archive-digest-unverified");
+  if (descriptor.contentSha256 !== artifactContentSha256) issues.push("lane-evidence-content-digest-mismatch");
+  return unique(issues);
+}
+
+export function verifyM7vApprovalReview({ identity, evidenceUrl, decision, currentHeadSha, proof }) {
+  const issues = [];
+  if (!proof || proof.status !== "loaded") return ["owner-approval-verification-unavailable"];
+  const match = /^https:\/\/github\.com\/chau-hm\/view-camera-simulator\/pull\/(\d+)$/.exec(String(evidenceUrl ?? ""));
+  if (!match || proof.repository !== M7V_REPOSITORY || proof.repositoryOwner !== M7V_REPOSITORY_OWNER ||
+      proof.pullNumber !== Number(match[1])) return ["owner-approval-reference-unverified"];
+  if (!decision || typeof decision.approver !== "string" || !["admin", "maintain"].includes(decision.authority) ||
+      decision.authority !== proof.actorPermission || decision.scope !== identity || decision.policyRevision !== M7V_POLICY_REVISION) {
+    issues.push("owner-approval-declaration-mismatch");
+  }
+  if (!/^[a-f0-9]{40}$/.test(String(currentHeadSha ?? ""))) return ["owner-approval-current-revision-unavailable"];
+  const ownerReviews = (proof.reviews ?? []).filter((review) => review.user?.login === decision?.approver &&
+    Number.isFinite(Date.parse(review.submitted_at ?? "")))
+    .sort((a, b) => Date.parse(a.submitted_at) - Date.parse(b.submitted_at));
+  const latest = ownerReviews.at(-1);
+  const marker = `M7V-APPROVE ${M7V_POLICY_REVISION} ${sha256(Buffer.from(identity))}`;
+  const bodyLines = String(latest?.body ?? "").split(/\r?\n/).map((line) => line.trim());
+  if (!decision?.approver || !["admin", "maintain"].includes(proof.actorPermission) ||
+      !latest || String(latest.state).toUpperCase() !== "APPROVED" || latest.commit_id !== currentHeadSha || !bodyLines.includes(marker)) {
+    issues.push("owner-approval-review-not-current-or-explicit");
+  }
+  return unique(issues);
+}
+
+export function extractOutcomeCoverageIssues(lane, evidence, requiredIdentities, loadedArtifact, runnerProof) {
+  const integrityIssues = [];
+  const qualificationIssues = [];
   if (!evidence || evidence.status !== "qualified") {
-    issues.push(`lane-not-qualified:${lane}:${evidence?.status ?? "missing"}`);
-    return issues;
+    if (!evidence || !["not-run", "blocked", "not-qualified"].includes(evidence.status)) integrityIssues.push(`lane-evidence-status-invalid:${lane}`);
+    if (evidence?.status === "not-run" && (evidence.artifact !== null || (evidence.coveredIdentities?.length ?? 0) > 0 ||
+        [evidence.retries, evidence.flaky, evidence.incomplete, evidence.failed, evidence.skipped].some((value) => value !== null))) {
+      integrityIssues.push(`lane-not-run-has-claimed-outcomes:${lane}`);
+    }
+    qualificationIssues.push(`lane-not-qualified:${lane}:${evidence?.status ?? "missing"}`);
+    return { integrityIssues, qualificationIssues };
   }
-  if (!evidence.artifact || !Array.isArray(evidence.coveredIdentities) ||
-      !identitySetEqual(requiredIdentities, evidence.coveredIdentities)) {
-    issues.push(`lane-evidence-coverage-incomplete:${lane}`);
+  const descriptor = evidence.artifact;
+  if (!descriptor || typeof descriptor !== "object" || !Number.isInteger(descriptor.runId) || !Number.isInteger(descriptor.artifactId) ||
+      typeof descriptor.artifactName !== "string" || typeof descriptor.storedPath !== "string" || typeof descriptor.artifactFile !== "string" ||
+      !/^([a-f0-9]{64})$/.test(descriptor.contentSha256 ?? "") ||
+      !/^[a-f0-9]{40}$/.test(descriptor.sourceCommitSha ?? "")) {
+    integrityIssues.push(`lane-artifact-descriptor-invalid:${lane}`);
   }
-  if (evidence.retries !== 0 || evidence.flaky !== 0 || evidence.incomplete !== 0 ||
-      evidence.failed !== 0 || evidence.skipped !== 0) {
-    issues.push(`lane-evidence-outcomes-invalid:${lane}`);
+  const actualArtifact = loadedArtifact instanceof Map ? loadedArtifact.get(lane) : loadedArtifact;
+  if (!actualArtifact || !actualArtifact.artifact) {
+    integrityIssues.push(`lane-execution-artifact-missing-or-unreadable:${lane}`);
+    qualificationIssues.push(`lane-execution-evidence-unverified:${lane}`);
+    return { integrityIssues, qualificationIssues };
   }
-  if (lane === "native-webgpu" && (
-    evidence.rendererFamily !== "webgpu-renderer" || evidence.executionApi !== "webgpu" ||
-    evidence.applicationFallback !== false || evidence.webglCompatibilityBackend !== false
-  )) {
-    issues.push("native-lane-runtime-identity-unverified");
+  if (actualArtifact.sha256 !== descriptor?.contentSha256) integrityIssues.push(`lane-execution-artifact-digest-mismatch:${lane}`);
+  const derived = deriveM7vExecutionArtifactEvidence({ lane, artifact: actualArtifact.artifact, requiredIdentities });
+  if (derived.issues.length) qualificationIssues.push(...derived.issues.map((issue) => `${issue}:${lane}`));
+  if (!identitySetEqual(requiredIdentities, derived.summary?.coveredIdentities ?? [])) qualificationIssues.push(`lane-evidence-coverage-incomplete:${lane}`);
+  for (const counter of ["retries", "flaky", "incomplete", "failed", "skipped"]) {
+    if (evidence[counter] !== derived.summary?.[counter]) integrityIssues.push(`lane-evidence-counter-not-derived:${lane}:${counter}`);
+    if (derived.summary?.[counter] !== 0) qualificationIssues.push(`lane-evidence-outcomes-invalid:${lane}:${counter}`);
   }
-  if (lane === "ordinary-webgl" && evidence.executionApi !== "webgl2") {
-    issues.push("ordinary-webgl-lane-runtime-identity-unverified");
+  if (!identitySetEqual(requiredIdentities, evidence.coveredIdentities ?? [])) integrityIssues.push(`lane-evidence-covered-identities-not-derived:${lane}`);
+  const provenanceIssues = verifyM7vRunnerArtifactProvenance({ lane, descriptor, artifact: actualArtifact.artifact,
+    artifactContentSha256: actualArtifact.sha256, proof: runnerProof });
+  if (provenanceIssues.length) qualificationIssues.push(...provenanceIssues.map((issue) => `${issue}:${lane}`));
+  return { integrityIssues: unique(integrityIssues), qualificationIssues: unique(qualificationIssues) };
+}
+
+function resolveContainedFile(repositoryRoot, relativePath, allowedRoot) {
+  if (typeof relativePath !== "string" || isAbsolute(relativePath)) return { path: null, issue: "outside" };
+  const root = resolve(repositoryRoot, allowedRoot);
+  const candidate = resolve(repositoryRoot, relativePath);
+  const lexicalRelative = relative(root, candidate);
+  if (!lexicalRelative || lexicalRelative.startsWith(`..${sep}`) || lexicalRelative === ".." || isAbsolute(lexicalRelative)) {
+    return { path: null, issue: "outside" };
   }
-  if (lane === "production-preview" && evidence.executionApi !== "webgl2") {
-    issues.push("production-preview-webgl-isolation-unverified");
+  try {
+    const realRoot = realpathSync(root);
+    const realCandidate = realpathSync(candidate);
+    const realRelative = relative(realRoot, realCandidate);
+    if (!realRelative || realRelative.startsWith(`..${sep}`) || realRelative === ".." || isAbsolute(realRelative)) {
+      return { path: null, issue: "outside" };
+    }
+    return { path: realCandidate, issue: null };
+  } catch {
+    return { path: null, issue: "missing" };
   }
-  return issues;
+}
+
+export function loadM7vExecutionArtifacts(repositoryRoot, governanceReport) {
+  const artifacts = new Map();
+  for (const [lane, evidence] of Object.entries(governanceReport?.laneEvidence ?? {})) {
+    const descriptor = evidence?.artifact;
+    if (!descriptor || evidence.status !== "qualified") continue;
+    const resolvedPath = resolveContainedFile(repositoryRoot, descriptor.storedPath, M7V_EXECUTION_ARTIFACT_ROOT);
+    if (!resolvedPath.path) {
+      const issue = resolvedPath.issue === "outside" ? "artifact-path-outside-policy" : "artifact-missing-or-invalid";
+      artifacts.set(lane, { artifact: null, sha256: null, issue: `${issue}:${lane}` });
+      continue;
+    }
+    try {
+      const bytes = readFileSync(resolvedPath.path);
+      const digest = sha256(bytes);
+      if (digest !== descriptor.contentSha256) {
+        artifacts.set(lane, { artifact: null, sha256: digest, issue: `artifact-content-digest-mismatch:${lane}` });
+        continue;
+      }
+      const artifact = JSON.parse(bytes.toString("utf8"));
+      artifacts.set(lane, { artifact, sha256: digest, bytes });
+    } catch {
+      artifacts.set(lane, { artifact: null, sha256: null, issue: `artifact-missing-or-invalid:${lane}` });
+    }
+  }
+  return artifacts;
+}
+
+function ghApi(path, paginate = false) {
+  const args = paginate ? ["api", "--paginate", "--slurp", path] : ["api", path];
+  const result = spawnSync("gh", args, { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
+  if (result.error || result.status !== 0) throw new Error("authenticated GitHub verification is unavailable");
+  try {
+    return JSON.parse(result.stdout);
+  } catch {
+    throw new Error("authenticated GitHub verification returned malformed JSON");
+  }
+}
+
+function currentGitHead(repositoryRoot) {
+  const result = spawnSync("git", ["rev-parse", "--verify", "HEAD"], { cwd: repositoryRoot, encoding: "utf8" });
+  const sha = result.status === 0 ? result.stdout.trim() : "";
+  return /^[a-f0-9]{40}$/.test(sha) ? sha : null;
+}
+
+function sourceTreeMatchesCurrent(repositoryRoot, sourceCommitSha) {
+  if (!/^[a-f0-9]{40}$/.test(String(sourceCommitSha ?? "")) || !currentGitHead(repositoryRoot)) return false;
+  const present = spawnSync("git", ["cat-file", "-e", `${sourceCommitSha}^{commit}`], { cwd: repositoryRoot });
+  if (present.status !== 0) return false;
+  const ancestor = spawnSync("git", ["merge-base", "--is-ancestor", sourceCommitSha, "HEAD"], { cwd: repositoryRoot });
+  if (ancestor.status !== 0) return false;
+  const diff = spawnSync("git", ["diff", "--quiet", sourceCommitSha, "--", "src", "playwright.config.ts", "playwright.production.config.ts"], { cwd: repositoryRoot });
+  if (diff.status !== 0) return false;
+  const cached = spawnSync("git", ["diff", "--cached", "--quiet", sourceCommitSha, "--", "src", "playwright.config.ts", "playwright.production.config.ts"], { cwd: repositoryRoot });
+  if (cached.status !== 0) return false;
+  const status = spawnSync("git", ["status", "--porcelain=v1", "--untracked-files=all", "--", "src", "playwright.config.ts", "playwright.production.config.ts"], { cwd: repositoryRoot, encoding: "utf8" });
+  return status.status === 0 && status.stdout.trim() === "";
+}
+
+function pullNumberFromEvidenceUrl(value) {
+  const match = /^https:\/\/github\.com\/chau-hm\/view-camera-simulator\/pull\/(\d+)$/.exec(String(value ?? ""));
+  return match ? Number(match[1]) : null;
+}
+
+function authenticateM7vApprovals(repositoryRoot, matrixRows) {
+  const approvedRows = matrixRows.filter((row) => row.approvalStatus === "approved");
+  const proofs = new Map();
+  if (!approvedRows.length) return { currentHeadSha: currentGitHead(repositoryRoot), proofs };
+  const urls = new Map();
+  for (const row of approvedRows) {
+    const pullNumber = pullNumberFromEvidenceUrl(row.approvalEvidence);
+    if (pullNumber) urls.set(pullNumber, row.approvalEvidence);
+    else proofs.set(row.identity, { status: "unavailable" });
+  }
+  let repository;
+  try {
+    repository = ghApi(`repos/${M7V_REPOSITORY}`);
+  } catch {
+    for (const row of approvedRows) if (!proofs.has(row.identity)) proofs.set(row.identity, { status: "unavailable" });
+    return { currentHeadSha: currentGitHead(repositoryRoot), proofs };
+  }
+  if (repository?.full_name !== M7V_REPOSITORY || repository?.owner?.login !== M7V_REPOSITORY_OWNER) {
+    for (const row of approvedRows) proofs.set(row.identity, { status: "unavailable" });
+    return { currentHeadSha: currentGitHead(repositoryRoot), proofs };
+  }
+  const pullData = new Map();
+  for (const [pullNumber] of urls) {
+    try {
+      const [pull, reviews] = [
+        ghApi(`repos/${M7V_REPOSITORY}/pulls/${pullNumber}`),
+        ghApi(`repos/${M7V_REPOSITORY}/pulls/${pullNumber}/reviews?per_page=100`, true),
+      ];
+      pullData.set(pullNumber, {
+        pull,
+        reviews: Array.isArray(reviews) ? reviews.flat(Infinity) : [],
+      });
+    } catch {
+      pullData.set(pullNumber, null);
+    }
+  }
+  const permissionCache = new Map();
+  for (const row of approvedRows) {
+    const pullNumber = pullNumberFromEvidenceUrl(row.approvalEvidence);
+    const data = pullData.get(pullNumber);
+    const login = String(row.approvalDecision?.approver ?? "");
+    if (!data || data.pull?.number !== pullNumber || data.pull?.base?.repo?.full_name !== M7V_REPOSITORY || !/^[A-Za-z0-9-]+$/.test(login)) {
+      proofs.set(row.identity, { status: "unavailable" });
+      continue;
+    }
+    if (!permissionCache.has(login)) {
+      try {
+        const result = ghApi(`repos/${M7V_REPOSITORY}/collaborators/${encodeURIComponent(login)}/permission`);
+        permissionCache.set(login, result?.permission ?? null);
+      } catch {
+        permissionCache.set(login, null);
+      }
+    }
+    const actorPermission = permissionCache.get(login);
+    proofs.set(row.identity, {
+      status: actorPermission ? "loaded" : "unavailable",
+      repository: M7V_REPOSITORY,
+      repositoryOwner: repository.owner.login,
+      pullNumber,
+      actorPermission,
+      reviews: data.reviews,
+    });
+  }
+  return { currentHeadSha: currentGitHead(repositoryRoot), proofs };
+}
+
+function authenticateM7vRunnerArtifact(repositoryRoot, lane, descriptor) {
+  if (!descriptor || !Number.isInteger(descriptor.runId) || !Number.isInteger(descriptor.artifactId) ||
+      !/^[A-Za-z0-9][A-Za-z0-9._-]{2,100}$/.test(String(descriptor.artifactName ?? ""))) return { status: "unavailable" };
+  let run;
+  let artifacts;
+  try {
+    run = ghApi(`repos/${M7V_REPOSITORY}/actions/runs/${descriptor.runId}`);
+    const response = ghApi(`repos/${M7V_REPOSITORY}/actions/runs/${descriptor.runId}/artifacts?per_page=100`);
+    artifacts = response?.artifacts ?? [];
+  } catch {
+    return { status: "unavailable" };
+  }
+  const matches = artifacts.filter((item) => item.id === descriptor.artifactId && item.name === descriptor.artifactName);
+  if (matches.length !== 1) return { status: "unavailable" };
+  const artifactInfo = matches[0];
+  const root = mkdtempSync(join(tmpdir(), "m7v-runner-artifact-"));
+  try {
+    const download = spawnSync("gh", ["run", "download", String(descriptor.runId), "--name", descriptor.artifactName, "--dir", root], {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    if (download.error || download.status !== 0) return { status: "unavailable" };
+    const artifactPath = resolveContainedFile(root, descriptor.artifactFile, ".").path;
+    const stored = loadM7vExecutionArtifacts(repositoryRoot, { laneEvidence: { [lane]: { status: "qualified", artifact: descriptor } } }).get(lane);
+    if (!artifactPath || !stored?.artifact || !stored.bytes) return { status: "unavailable" };
+    const downloadedBytes = readFileSync(artifactPath);
+    const downloadedDigest = sha256(downloadedBytes);
+    if (downloadedDigest !== descriptor.contentSha256 || !downloadedBytes.equals(stored.bytes)) return { status: "unavailable" };
+    let artifact;
+    try { artifact = JSON.parse(downloadedBytes.toString("utf8")); } catch { return { status: "unavailable" }; }
+    return {
+      status: "loaded",
+      repository: M7V_REPOSITORY,
+      sourceTreeMatchesCurrent: sourceTreeMatchesCurrent(repositoryRoot, descriptor.sourceCommitSha),
+      run,
+      artifact: artifactInfo,
+    };
+  } catch {
+    return { status: "unavailable" };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+export function loadM7vTrustedVerificationInputs(repositoryRoot, input, mode) {
+  const verifiedApprovalsByIdentity = new Map();
+  const verifiedRunnerArtifactsByLane = new Map();
+  if (!new Set(["require-approved", "require-qualified"]).has(mode)) {
+    return { currentHeadSha: currentGitHead(repositoryRoot), verifiedApprovalsByIdentity, verifiedRunnerArtifactsByLane };
+  }
+  const approvalEvidence = authenticateM7vApprovals(repositoryRoot, input.matrix?.identities ?? []);
+  for (const [identity, proof] of approvalEvidence.proofs) verifiedApprovalsByIdentity.set(identity, proof);
+  if (mode === "require-qualified") {
+    for (const lane of ["ordinary-webgl", "renderer-serial", "native-webgpu", "production-preview"]) {
+      const evidence = input.governanceReport?.laneEvidence?.[lane];
+      if (evidence?.status === "qualified") {
+        verifiedRunnerArtifactsByLane.set(lane, authenticateM7vRunnerArtifact(repositoryRoot, lane, evidence.artifact));
+      }
+    }
+  }
+  return {
+    currentHeadSha: approvalEvidence.currentHeadSha,
+    verifiedApprovalsByIdentity,
+    verifiedRunnerArtifactsByLane,
+  };
 }
 
 export function evaluateM7vE2eQualification(input) {
   const integrityIssues = [];
   const approvalIssues = [];
   const qualificationIssues = [];
-  const { historicalReport, historicalReportSha256, matrix, reconciliation, discoveryProfiles, sourceEvidenceByIdentity, packageManifest, governanceReport, playwrightConfigurationEvidence, mode = "validate-policy" } = input;
+  const { historicalReport, historicalReportSha256, matrix, reconciliation, discoveryProfiles, sourceEvidenceByIdentity,
+    sourceDeclarationBaselineByIdentity, sourceDeclarationBaselineCommitSha, sourceDeclarationBaselineIssues = [],
+    verifiedApprovalsByIdentity = new Map(), executionArtifactsByLane = new Map(), verifiedRunnerArtifactsByLane = new Map(),
+    currentHeadSha = null, packageManifest, governanceReport, playwrightConfigurationEvidence, mode = "validate-policy" } = input;
   const historicalIdentities = historicalReport?.actionPlan?.[2]?.affectedIdentities ?? [];
   const historicalRows = historicalReport?.testInventory ?? [];
   const historySkips = historicalRows.filter((row) => row.historicalM7KStatus?.actualStatus === "skipped").map((row) => row.canonicalIdentity);
@@ -627,6 +1292,14 @@ export function evaluateM7vE2eQualification(input) {
   addIssue(integrityIssues, historicalReportSha256 === matrix?.provenance?.historicalM7rReportSha256, "m7r-historical-report-digest-mismatch");
   addIssue(integrityIssues, historicalReport?.provenance?.executionSourceCommitSha === matrix?.provenance?.historicalM7rExecutionSourceCommitSha, "m7r-historical-execution-source-mismatch");
   addIssue(integrityIssues, stable(playwrightConfigurationEvidence) === stable(reconciliation?.playwrightConfigurationEvidence), "m7v-playwright-lane-or-build-flag-contract-drift");
+  addIssue(integrityIssues, sourceDeclarationBaselineCommitSha === M7V_SOURCE_DECLARATION_BASELINE_COMMIT &&
+    governanceReport?.provenance?.sourceDeclarationBaselineCommitSha === M7V_SOURCE_DECLARATION_BASELINE_COMMIT,
+  "m7v-source-declaration-baseline-revision-mismatch");
+  addIssue(integrityIssues, governanceReport?.schemaVersion === 2 &&
+    governanceReport?.policyRevision === M7V_POLICY_REVISION &&
+    governanceReport?.provenance?.evaluatorRevision === M7V_POLICY_REVISION,
+  "m7v-policy-revision-mismatch");
+  integrityIssues.push(...sourceDeclarationBaselineIssues);
   addIssue(integrityIssues, historicalReport?.summary?.discovered === 278 && historicalReport?.summary?.passed === 118 &&
     historicalReport?.summary?.unexpected === 85 && historicalReport?.summary?.skipped === 75 &&
     historicalReport?.summary?.retries === 0 && historicalReport?.summary?.incomplete === 0,
@@ -672,6 +1345,20 @@ export function evaluateM7vE2eQualification(input) {
   const actualStandardIds = discoveryProfiles?.standard?.map((test) => test.identity) ?? [];
   const expectedDefaultIds = currentDefaultIds;
   if (!identitySetEqual(actualStandardIds, expectedDefaultIds)) integrityIssues.push("m7v-default-test-inventory-drift");
+  for (const identity of actualStandardIds) {
+    const current = sourceEvidenceByIdentity.get(identity);
+    const baseline = sourceDeclarationBaselineByIdentity?.get(identity);
+    if (!current?.declarationSignature || !baseline) {
+      integrityIssues.push(`m7v-source-declaration-baseline-unavailable:${identity}`);
+      continue;
+    }
+    if (Array.isArray(current.unsupportedPatterns) && current.unsupportedPatterns.length > 0) {
+      for (const pattern of current.unsupportedPatterns) integrityIssues.push(`m7v-unsupported-source-skip-pattern:${identity}:${pattern}`);
+    }
+    if (stable(current.declarationSignature) !== stable(baseline)) {
+      integrityIssues.push(`m7v-source-declaration-changed-from-reviewed-baseline:${identity}`);
+    }
+  }
   const actualSourceSkipIds = sorted([...sourceEvidenceByIdentity.entries()]
     .filter(([, evidence]) => evidence.skipConditions.length > 0).map(([identity]) => identity));
   const profileGuardRows = reconciliation?.reconciliation?.sourceGuardAudit?.projectConditionalSkipGuards ?? [];
@@ -731,13 +1418,13 @@ export function evaluateM7vE2eQualification(input) {
     }
     if (row.approvalStatus === "approved" && (
       typeof row.approvalEvidence !== "string" ||
-      !/^https:\/\/github\.com\/chau-hm\/view-camera-simulator\/(?:pull|issues)\/\d+/.test(row.approvalEvidence) ||
+      !/^https:\/\/github\.com\/chau-hm\/view-camera-simulator\/pull\/\d+$/.test(row.approvalEvidence) ||
       !row.approvalDecision ||
       typeof row.approvalDecision.approver !== "string" || row.approvalDecision.approver.trim().length < 2 ||
-      typeof row.approvalDecision.authority !== "string" || row.approvalDecision.authority.trim().length < 3 ||
-      typeof row.approvalDecision.scope !== "string" || !row.approvalDecision.scope.includes(row.identity) ||
-      typeof row.approvalDecision.rationale !== "string" || row.approvalDecision.rationale.trim().length < 12 ||
-      !Number.isFinite(Date.parse(row.approvalDecision.decidedAt ?? ""))
+      !["admin", "maintain"].includes(row.approvalDecision.authority) ||
+      row.approvalDecision.scope !== row.identity ||
+      row.approvalDecision.policyRevision !== M7V_POLICY_REVISION ||
+      typeof row.approvalDecision.rationale !== "string" || row.approvalDecision.rationale.trim().length < 12
     )) {
       integrityIssues.push(`m7v-approval-evidence-missing:${row.identity}`);
     }
@@ -746,8 +1433,8 @@ export function evaluateM7vE2eQualification(input) {
     }
     if (row.approvalStatus === "rejected" && (
       typeof row.approvalEvidence !== "string" ||
-      !/^https:\/\/github\.com\/chau-hm\/view-camera-simulator\/(?:pull|issues)\/\d+/.test(row.approvalEvidence) ||
-      !row.approvalDecision || typeof row.approvalDecision.scope !== "string" || !row.approvalDecision.scope.includes(row.identity)
+      !/^https:\/\/github\.com\/chau-hm\/view-camera-simulator\/pull\/\d+$/.test(row.approvalEvidence) ||
+      !row.approvalDecision || row.approvalDecision.scope !== row.identity || row.approvalDecision.policyRevision !== M7V_POLICY_REVISION
     )) integrityIssues.push(`m7v-rejection-evidence-missing:${row.identity}`);
     if (!["pending", "approved", "rejected"].includes(row.approvalStatus)) integrityIssues.push(`m7v-invalid-approval-state:${row.identity}`);
     if (row.currentValidationStatus !== "not-run" && row.currentValidationStatus !== "blocked" &&
@@ -831,16 +1518,42 @@ export function evaluateM7vE2eQualification(input) {
   };
   if (pendingApprovals.length > 0) approvalIssues.push(`owner-approval-pending:${pendingApprovals.length}`);
   if (rejectedApprovals.length > 0) approvalIssues.push(`owner-approval-rejected:${rejectedApprovals.length}`);
+  for (const row of matrixRows.filter((entry) => entry.approvalStatus === "approved")) {
+    const proof = verifiedApprovalsByIdentity.get(row.identity);
+    const verification = verifyM7vApprovalReview({
+      identity: row.identity,
+      evidenceUrl: row.approvalEvidence,
+      decision: row.approvalDecision,
+      currentHeadSha,
+      proof,
+    });
+    if (verification.length) approvalIssues.push(...verification.map((issue) => `${issue}:${row.identity}`));
+  }
 
   const allCurrentTests = reconciliation?.profiles?.standard?.tests ?? [];
   const requiredIdentitiesByLane = Object.fromEntries(M7V_LANES.map((lane) => [
     lane,
     allCurrentTests.filter((test) => test.lane === lane).map((test) => test.identity),
   ]));
+  const nativeRequiredKeys = new Set(requiredIdentitiesByLane["native-webgpu"].map(canonicalTestKey));
+  requiredIdentitiesByLane["native-webgpu"] = expectedProfileIdentities(reconciliation?.profiles?.native)
+    .filter((identity) => nativeRequiredKeys.has(canonicalTestKey(identity)));
   requiredIdentitiesByLane["production-preview"] = expectedProfileIdentities(reconciliation?.profiles?.production);
   const laneEvidence = governanceReport?.laneEvidence ?? {};
+  for (const lane of M7V_LANES) {
+    if (!identitySetEqual(requiredIdentitiesByLane[lane] ?? [], laneEvidence[lane]?.requiredIdentities ?? [])) {
+      integrityIssues.push(`lane-required-identities-not-derived:${lane}`);
+    }
+  }
+  if (!identitySetEqual(requiredIdentitiesByLane["production-preview"], laneEvidence["production-preview"]?.requiredIdentities ?? [])) {
+    integrityIssues.push("lane-required-identities-not-derived:production-preview");
+  }
   for (const lane of ["ordinary-webgl", "renderer-serial", "native-webgpu", "production-preview"]) {
-    qualificationIssues.push(...extractOutcomeCoverageIssues(lane, laneEvidence[lane], requiredIdentitiesByLane[lane] ?? []));
+    const laneArtifact = executionArtifactsByLane instanceof Map ? executionArtifactsByLane.get(lane) : executionArtifactsByLane?.[lane];
+    const runnerProof = verifiedRunnerArtifactsByLane instanceof Map ? verifiedRunnerArtifactsByLane.get(lane) : verifiedRunnerArtifactsByLane?.[lane];
+    const laneIssues = extractOutcomeCoverageIssues(lane, laneEvidence[lane], requiredIdentitiesByLane[lane] ?? [], laneArtifact, runnerProof);
+    qualificationIssues.push(...laneIssues.qualificationIssues);
+    integrityIssues.push(...laneIssues.integrityIssues);
   }
   const qualificationStatus = governanceReport?.qualification?.broadE2e;
   if (qualificationStatus !== "not-qualified") qualificationIssues.push("broad-e2e-qualification-must-remain-not-qualified");

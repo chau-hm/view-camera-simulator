@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import {
   collectM7vPlaywrightInventories,
+  collectM7vSourceDeclarationBaseline,
   collectM7vTestSourceEvidence,
   evaluateM7vE2eQualification,
+  loadM7vExecutionArtifacts,
   loadM7vPolicyInputs,
+  loadM7vTrustedVerificationInputs,
 } from "./evaluateM7vE2eQualification.mjs";
 
 const modes = new Set(["validate-policy", "require-approved", "require-qualified"]);
@@ -13,10 +16,20 @@ try {
   if (!modes.has(mode)) throw new Error(`Unknown mode '${mode}'. Use validate-policy, require-approved, or require-qualified.`);
   const profiles = collectM7vPlaywrightInventories(process.cwd());
   const sourceEvidenceByIdentity = collectM7vTestSourceEvidence(process.cwd(), profiles.standard);
+  const sourceDeclarationBaseline = collectM7vSourceDeclarationBaseline(
+    process.cwd(), profiles.standard, sourceEvidenceByIdentity,
+  );
+  const policyInputs = loadM7vPolicyInputs(process.cwd());
+  const verificationInputs = loadM7vTrustedVerificationInputs(process.cwd(), policyInputs, mode);
   const result = evaluateM7vE2eQualification({
-    ...loadM7vPolicyInputs(process.cwd()),
+    ...policyInputs,
     discoveryProfiles: profiles,
     sourceEvidenceByIdentity,
+    sourceDeclarationBaselineByIdentity: sourceDeclarationBaseline.declarationsByIdentity,
+    sourceDeclarationBaselineCommitSha: sourceDeclarationBaseline.commitSha,
+    sourceDeclarationBaselineIssues: sourceDeclarationBaseline.issues,
+    executionArtifactsByLane: loadM7vExecutionArtifacts(process.cwd(), policyInputs.governanceReport),
+    ...verificationInputs,
     mode,
   });
 

@@ -1,4 +1,5 @@
 export type M7vSkipCondition = {
+  kind?: "conditional-skip-gate" | "static-skip-declaration";
   line: number;
   scope: "suite" | "test";
   sourceText: string;
@@ -26,6 +27,8 @@ export type M7vSourceEvidence = {
   skipConditions: M7vSkipCondition[];
   requiredEnvironment: string[];
   requiredBuildFlags: string[];
+  declarationSignature?: Record<string, unknown>;
+  unsupportedPatterns?: string[];
 };
 
 export type M7vMatrixIdentity = {
@@ -42,7 +45,7 @@ export type M7vMatrixIdentity = {
   laneRequirement: string;
   approvalStatus: "pending" | "approved" | "rejected";
   approvalEvidence: string | null;
-  approvalDecision: null | { approver: string; authority: string; scope: string; rationale: string; decidedAt: string };
+  approvalDecision: null | { approver: string; authority: "admin" | "maintain"; scope: string; policyRevision: string; rationale: string };
   [key: string]: unknown;
 };
 
@@ -107,6 +110,11 @@ export type M7vEvaluationResult = {
 };
 
 export declare const M7V_POLICY_REVISION: string;
+export declare const M7V_SOURCE_DECLARATION_BASELINE_COMMIT: string;
+export declare const M7V_REPOSITORY: string;
+export declare const M7V_REPOSITORY_OWNER: string;
+export declare const M7V_RUNNER_WORKFLOW_PATH: string;
+export declare const M7V_EXECUTION_ARTIFACT_ROOT: string;
 export declare const M7V_LANES: string[];
 export declare const M7V_M7U_ADDITIONS: string[];
 export declare const M7V_CONFIGURED_BUILD_FLAGS_BY_ENV: Record<string, Array<{ name: string; value: string }>>;
@@ -117,9 +125,46 @@ export declare function deriveM7vBuildFlagRequirements(requiredEnvironment: stri
 export declare function collectM7vPlaywrightInventories(repositoryRoot?: string): M7vDiscoveryProfiles;
 export declare function collectM7vPlaywrightConfigurationEvidence(repositoryRoot?: string): Record<string, unknown>;
 export declare function collectM7vTestSourceEvidence(repositoryRoot: string, discoveredTests: M7vTestIdentity[]): Map<string, M7vSourceEvidence>;
+export declare function collectM7vSourceDeclarationBaseline(
+  repositoryRoot: string,
+  discoveredTests: M7vTestIdentity[],
+  currentSourceEvidence: Map<string, M7vSourceEvidence>,
+  commitSha?: string,
+): { commitSha: string; declarationsByIdentity: Map<string, unknown>; issues: string[] };
+export declare function deriveM7vExecutionArtifactEvidence(input: {
+  lane: string;
+  artifact: unknown;
+  requiredIdentities: string[];
+}): {
+  issues: string[];
+  summary: null | { coveredIdentities: string[]; retries: number; flaky: number; incomplete: number; failed: number; skipped: number; executedIdentities: string[] };
+  passedIdentities: string[];
+};
+export declare function extractOutcomeCoverageIssues(
+  lane: string,
+  evidence: Record<string, unknown>,
+  requiredIdentities: string[],
+  loadedArtifact: unknown,
+  runnerProof: unknown,
+): { integrityIssues: string[]; qualificationIssues: string[] };
+export declare function verifyM7vRunnerArtifactProvenance(input: Record<string, unknown>): string[];
+export declare function verifyM7vApprovalReview(input: Record<string, unknown>): string[];
+export declare function loadM7vExecutionArtifacts(repositoryRoot: string, governanceReport: unknown): Map<string, unknown>;
+export declare function loadM7vTrustedVerificationInputs(repositoryRoot: string, input: M7vPolicyInput, mode: string): {
+  currentHeadSha: string | null;
+  verifiedApprovalsByIdentity: Map<string, unknown>;
+  verifiedRunnerArtifactsByLane: Map<string, unknown>;
+};
 export declare function evaluateM7vE2eQualification(input: M7vPolicyInput & {
   discoveryProfiles: M7vDiscoveryProfiles;
   sourceEvidenceByIdentity: Map<string, M7vSourceEvidence>;
+  sourceDeclarationBaselineByIdentity?: Map<string, unknown>;
+  sourceDeclarationBaselineCommitSha?: string;
+  sourceDeclarationBaselineIssues?: string[];
+  verifiedApprovalsByIdentity?: Map<string, unknown>;
+  executionArtifactsByLane?: Map<string, unknown>;
+  verifiedRunnerArtifactsByLane?: Map<string, unknown>;
+  currentHeadSha?: string | null;
   mode?: "validate-policy" | "require-approved" | "require-qualified";
 }): M7vEvaluationResult;
 export declare function loadM7vPolicyInputs(repositoryRoot?: string): M7vPolicyInput;
