@@ -10,7 +10,10 @@ import {
 } from "./evaluateM7wQualification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const reportPath = resolve(root, "docs/architecture/GROUND_GLASS_M7W_WEBGL_QUALIFICATION_REPORT.json");
+const reportArgument = process.argv.find((argument) => argument.startsWith("--report-path="));
+const reportPath = reportArgument
+  ? resolve(root, reportArgument.slice("--report-path=".length))
+  : resolve(root, "docs/architecture/GROUND_GLASS_M7W_WEBGL_QUALIFICATION_REPORT.json");
 const governancePath = resolve(root, "docs/architecture/GROUND_GLASS_M7V_E2E_SKIP_GOVERNANCE_REPORT.json");
 const inventoryPath = resolve(root, "docs/architecture/ground-glass-m7v-skip-governance/current-inventory-reconciliation.json");
 const manifestPath = resolve(root, "docs/architecture/ground-glass-m7w-qualification/capture/execution-manifest.json");

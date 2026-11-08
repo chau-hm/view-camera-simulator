@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   evaluateM7wEvidence,
@@ -125,6 +128,24 @@ describe("M7W execution evidence integrity", () => {
     expect(resultFor(fx).issues).toContain("ordinary-mandatory-summary-mismatch");
   });
 
+  it("returns nonzero from the production CLI for a contradictory passing summary", () => {
+    const mutated = clone(originalReport);
+    mutated.decision.ordinaryWebgl.requiredIdentityCounts.passed = 201;
+    mutated.decision.ordinaryWebgl.requiredIdentityCounts.unexpected = 0;
+    const directory = mkdtempSync(join(tmpdir(), "m7w-cli-negative-"));
+    const mutatedPath = join(directory, "report.json");
+    try {
+      writeFileSync(mutatedPath, JSON.stringify(mutated));
+      const result = spawnSync(process.execPath, ["scripts/run-m7w-evidence.mjs", "--report-path=" + mutatedPath], {
+        encoding: "utf8",
+      });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("ordinary-mandatory-summary-mismatch");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("rejects a renderer-serial report if any required identity is no longer passed", () => {
     const fx = fixture();
     fx.report.captures.rendererSerial.results[0].status = "failed";
@@ -164,7 +185,7 @@ describe("M7W execution evidence integrity", () => {
       fourWayOverlapMs: 0,
     });
     const invalidRows = clone(rows);
-    invalidRows[0].attempts[0].startTime = null;
+    Reflect.set(invalidRows[0].attempts[0], "startTime", null);
     expect(measureM7wConcurrency(invalidRows).unverifiableExecutionIntervals).toBe(1);
   });
 
