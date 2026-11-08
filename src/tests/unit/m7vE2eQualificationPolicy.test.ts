@@ -18,6 +18,7 @@ const clone = <T>(value: T): T => structuredClone(value);
 let accepted: M7vInput;
 
 describe("M7V E2E qualification lane and skip governance", () => {
+  // Three Playwright --list subprocesses can exceed Vitest's default hook limit on a loaded CI runner.
   beforeAll(() => {
     const discoveryProfiles = collectM7vPlaywrightInventories(process.cwd());
     accepted = {
@@ -25,7 +26,7 @@ describe("M7V E2E qualification lane and skip governance", () => {
       discoveryProfiles,
       sourceEvidenceByIdentity: collectM7vTestSourceEvidence(process.cwd(), discoveryProfiles.standard),
     };
-  });
+  }, 60_000);
 
   it("accepts the reconciled 75-identity matrix without claiming a lane or broad-suite qualification", () => {
     const result = evaluateM7vE2eQualification(accepted);
