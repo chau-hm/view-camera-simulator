@@ -36,6 +36,8 @@
     "evidence:check:m7v": "node ./scripts/run-m7v-qualification.mjs validate-policy",
     "evidence:require-approved:m7v": "node ./scripts/run-m7v-qualification.mjs require-approved",
     "evidence:require-qualified:m7v": "node ./scripts/run-m7v-qualification.mjs require-qualified",
+    "evidence:normalize:m7w": "node ./scripts/normalizeM7wQualificationCapture.mjs",
+    "evidence:check:m7w": "node ./scripts/run-m7w-evidence.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",

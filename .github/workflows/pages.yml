@@ -331,6 +331,21 @@ jobs:
       - name: Validate M7V E2E qualification lane and skip governance policy
         run: npm run evidence:check:m7v
 
+      # M7W pins its offline analysis code to a commit introduced in this PR.
+      # Preserve strict source/tree verification after squash merge by fetching
+      # the exact commit first and falling back to the retained PR head history.
+      - name: Fetch M7W offline analysis source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=32a919a68f52e3fa4bb1c2d0c63eae2af8cb660c \
+            --retained-ref=refs/pull/321/head \
+            --verify-path=scripts/evaluateM7wQualification.mjs \
+            --verify-path=scripts/normalizeM7wQualificationCapture.mjs \
+            --verify-path=scripts/run-m7w-evidence.mjs
+
+      - name: Validate M7W Ordinary WebGL and Renderer-Serial execution evidence
+        run: npm run evidence:check:m7w
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: ci
