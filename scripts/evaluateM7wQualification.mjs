@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
 
-export const M7W_EVALUATOR_REVISION = "m7w-webgl-qualification-evaluator-v1";
+export const M7W_EVALUATOR_REVISION = "m7w-webgl-qualification-evaluator-v2";
 export const M7W_EXECUTION_SOURCE_SHA = "17a4ccb9f4ae08069defaa9a1eac9938833412ae";
 export const M7W_REPRESENTATIVE_IDENTITIES = [
   "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
@@ -100,6 +100,7 @@ function parseIntervals(rows) {
       }
       intervals.push({
         identity: row.identity + "#" + attemptIndex,
+        workerIndex: attempt.workerIndex,
         parallelIndex: attempt.parallelIndex,
         startMs,
         endMs: startMs + durationMs,

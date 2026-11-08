@@ -47,6 +47,52 @@ function resultFor(fx: ReturnType<typeof fixture>) {
   return evaluateM7wEvidence(fx);
 }
 
+function distinctAttemptMetadata(raw: unknown, key: "workerIndex" | "parallelIndex") {
+  const values = new Set<number>();
+  const rows = flattenM7wPlaywrightReport(raw as Record<string, unknown>);
+  for (const row of rows) {
+    for (const attempt of row.attempts as Array<Record<string, unknown>>) {
+      const value = attempt[key];
+      if (attempt.status !== "skipped" && Number.isSafeInteger(value) && (value as number) >= 0) {
+        values.add(value as number);
+      }
+    }
+  }
+  return [...values].sort((a, b) => a - b);
+}
+
+type PlaywrightResultRecord = Record<string, unknown>;
+type PlaywrightTestRecord = { results?: PlaywrightResultRecord[] };
+type PlaywrightSpecRecord = { tests?: PlaywrightTestRecord[] };
+type PlaywrightSuiteRecord = {
+  suites?: PlaywrightSuiteRecord[];
+  specs?: PlaywrightSpecRecord[];
+};
+
+function mutateFirstExecutedWorkerIndex(raw: { suites?: PlaywrightSuiteRecord[] }, workerIndex: number | null): void {
+  for (const suite of raw.suites ?? []) {
+    const found = mutateSuiteFirstExecutedWorkerIndex(suite, workerIndex);
+    if (found) return;
+  }
+  throw new Error("No executed Playwright result found");
+}
+
+function mutateSuiteFirstExecutedWorkerIndex(suite: PlaywrightSuiteRecord, workerIndex: number | null): boolean {
+  for (const child of suite.suites ?? []) {
+    if (mutateSuiteFirstExecutedWorkerIndex(child, workerIndex)) return true;
+  }
+  for (const spec of suite.specs ?? []) {
+    for (const test of spec.tests ?? []) {
+      const result = (test.results ?? []).find((attempt) => attempt.status !== "skipped");
+      if (result) {
+        result.workerIndex = workerIndex;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 describe("M7W execution evidence integrity", () => {
   it("accepts the retained complete lane captures and their M7V-derived identity projection", () => {
     expect(resultFor(fixture())).toEqual({ passed: true, issues: [] });
@@ -171,6 +217,8 @@ describe("M7W execution evidence integrity", () => {
       }],
     }));
     expect(measureM7wConcurrency(rows)).toMatchObject({
+      actualWorkerIndexes: [0, 1, 2, 3],
+      actualWorkerSlots: [0, 1, 2, 3],
       actualWorkers: 4,
       peakConcurrency: 4,
       fourWayOverlapMs: 1000,
@@ -187,6 +235,130 @@ describe("M7W execution evidence integrity", () => {
     const invalidRows = clone(rows);
     Reflect.set(invalidRows[0].attempts[0], "startTime", null);
     expect(measureM7wConcurrency(invalidRows).unverifiableExecutionIntervals).toBe(1);
+  });
+
+  it("keeps worker-process identities separate from parallel slots when workers are replaced", () => {
+    const rows = [0, 1, 2, 3].map((parallelIndex) => ({
+      identity: "initial-" + parallelIndex,
+      attempts: [{
+        status: "passed",
+        startTime: "2026-11-08T00:00:00.000Z",
+        durationMs: 1000,
+        workerIndex: parallelIndex,
+        parallelIndex,
+      }],
+    }));
+    rows.push(
+      {
+        identity: "replacement-4",
+        attempts: [{
+          status: "passed",
+          startTime: "2026-11-08T00:00:02.000Z",
+          durationMs: 500,
+          workerIndex: 4,
+          parallelIndex: 0,
+        }],
+      },
+      {
+        identity: "replacement-5",
+        attempts: [{
+          status: "passed",
+          startTime: "2026-11-08T00:00:02.000Z",
+          durationMs: 500,
+          workerIndex: 5,
+          parallelIndex: 2,
+        }],
+      },
+    );
+    expect(measureM7wConcurrency(rows)).toMatchObject({
+      actualWorkerIndexes: [0, 1, 2, 3, 4, 5],
+      actualWorkerSlots: [0, 1, 2, 3],
+      actualWorkers: 4,
+      peakConcurrency: 4,
+      fourWayOverlapMs: 1000,
+    });
+  });
+
+  it("records one worker process and one slot for serial execution", () => {
+    const rows = [0, 1, 2, 3].map((index) => ({
+      identity: "serial-" + index,
+      attempts: [{
+        status: "passed",
+        startTime: new Date(Date.parse("2026-11-08T00:00:00.000Z") + index * 1000).toISOString(),
+        durationMs: 500,
+        workerIndex: 0,
+        parallelIndex: 0,
+      }],
+    }));
+    expect(measureM7wConcurrency(rows)).toMatchObject({
+      actualWorkerIndexes: [0],
+      actualWorkerSlots: [0],
+      actualWorkers: 1,
+      peakConcurrency: 1,
+      fourWayOverlapMs: 0,
+    });
+  });
+
+  it.each([null, -1])("rejects invalid worker identity metadata (%s)", (workerIndex) => {
+    const rows = [{
+      identity: "invalid-worker",
+      attempts: [{
+        status: "passed",
+        startTime: "2026-11-08T00:00:00.000Z",
+        durationMs: 1000,
+        workerIndex,
+        parallelIndex: 0,
+      }],
+    }];
+    expect(measureM7wConcurrency(rows).unverifiableExecutionIntervals).toBe(1);
+
+    const fx = fixture();
+    mutateFirstExecutedWorkerIndex(fx.rawCaptures.ordinary, workerIndex);
+    expect(resultFor(fx).issues).toContain("ordinary-execution-interval-invalid");
+  });
+
+  it("recomputes worker-process and parallel-slot identities from retained public reporters", () => {
+    const cases = [
+      ["ordinary", ordinaryRaw, originalReport.captures.ordinary.summary, [0, 1, 2, 3]],
+      ["renderer serial", serialRaw, originalReport.captures.rendererSerial.summary, [0]],
+      ["representative single", representativeRaw, originalReport.captures.representativeSingle.summary, [0]],
+    ] as const;
+
+    for (const [name, raw, summary, expectedSlots] of cases) {
+      const expectedWorkers = distinctAttemptMetadata(raw, "workerIndex");
+      const expectedParallelSlots = distinctAttemptMetadata(raw, "parallelIndex");
+      expect(summary.actualWorkerIndexes, name).toEqual(expectedWorkers);
+      expect(summary.actualWorkerSlots, name).toEqual(expectedParallelSlots);
+      expect(summary.actualWorkerIndexes.every(Number.isSafeInteger), name).toBe(true);
+      expect(summary.actualWorkerIndexes).not.toContain(null);
+      expect(expectedParallelSlots, name).toEqual(expectedSlots);
+    }
+    expect(originalReport.captures.ordinary.summary.actualWorkerIndexes).toEqual(
+      Array.from({ length: 87 }, (_, index) => index),
+    );
+  });
+
+  it("rejects a worker identity summary that disagrees with retained reporter attempts", () => {
+    const fx = fixture();
+    fx.report.captures.ordinary.summary.actualWorkerIndexes = [0];
+    expect(resultFor(fx).issues).toContain("ordinary-summary-mismatch");
+  });
+
+  it("returns nonzero from the production CLI for a worker identity summary mutation", () => {
+    const mutated = clone(originalReport);
+    mutated.captures.ordinary.summary.actualWorkerIndexes = [0];
+    const directory = mkdtempSync(join(tmpdir(), "m7w-worker-cli-negative-"));
+    const mutatedPath = join(directory, "report.json");
+    try {
+      writeFileSync(mutatedPath, JSON.stringify(mutated));
+      const result = spawnSync(process.execPath, ["scripts/run-m7w-evidence.mjs", "--report-path=" + mutatedPath], {
+        encoding: "utf8",
+      });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("ordinary-summary-mismatch");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("preserves all 75 conditional skips outside the mandatory projection", () => {

@@ -1,4 +1,4 @@
-export declare const M7W_EVALUATOR_REVISION: "m7w-webgl-qualification-evaluator-v1";
+export declare const M7W_EVALUATOR_REVISION: "m7w-webgl-qualification-evaluator-v2";
 export declare const M7W_EXECUTION_SOURCE_SHA: "17a4ccb9f4ae08069defaa9a1eac9938833412ae";
 export declare const M7W_REPRESENTATIVE_IDENTITIES: string[];
 export declare function flattenM7wPlaywrightReport(report: Record<string, unknown>): Array<Record<string, unknown>>;
