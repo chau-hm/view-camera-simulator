@@ -74,13 +74,19 @@ The new M7W evidence check is an offline integrity gate over retained artifacts.
 
 ## Evidence integrity verification
 
-`npm run evidence:check:m7w` passes against the committed M7V policy/inventory, source-pinned analysis implementation, public redacted Playwright exports, and referenced attachment artifacts. The focused M7W mutation suite passes 17 tests, including a production-CLI control that mutates the mandatory summary to claim 201 passes and verifies that the actual command exits nonzero with `ordinary-mandatory-summary-mismatch`.
+`npm run evidence:check:m7w` passes against the committed M7V policy/inventory, source-pinned analysis implementation, public redacted Playwright exports, and referenced attachment artifacts. The focused M7W mutation suite now passes 24 tests, including production-CLI controls for contradictory mandatory outcomes and worker-identity summaries.
+
+## M7W Review-Fix Round 1 — Worker-process identity preservation
+
+The first report derived distinct worker-process IDs from intervals, but interval construction retained only `parallelIndex` after validating `workerIndex`. The summary therefore serialized an undefined worker identity as `[null]`. Evaluator v2 now carries the validated `workerIndex` into every interval. The normalizer regenerated only the derived report from the existing retained public Playwright exports; capture outcomes, execution timestamps, retry counts, raw-source digests, public-export digests, and attachment bytes remain unchanged.
+
+The corrected Ordinary summary derives 87 worker-process identities (`0–86`) across the run and four parallel slots (`0–3`). `actualWorkers` continues to mean observed parallel slots, not distinct worker processes. Peak concurrency remains four and the longest continuous four-way overlap remains 97,599 ms. Renderer-Serial and the representative single-worker capture both derive worker process `[0]`, slot `[0]`, and peak concurrency one. Tests cover worker replacement, serial execution, invalid worker metadata, real retained reporter consistency, and a production-CLI summary mutation that exits nonzero.
 
 The separate M7V, M7R, M7Q, and M7K evidence checks also pass without modifying their historical reports or qualification decisions. M7V policy validation still reports the Ordinary WebGL and Renderer-Serial formal lanes as `not-run`; M7W's locally captured results do not satisfy the absent authenticated lane-artifact workflow/runtime-evidence contract.
 
 ## Squash-safe source provenance
 
-The report pins its analysis implementation to `a868a137cd2d92a3c1f0a2ad736816658705c09d`; the M7V execution source remains `17a4ccb9f4ae08069defaa9a1eac9938833412ae`. Pages CI fetches the exact analysis commit first and uses the existing strict fetch helper with retained-ref fallback `refs/pull/321/head`. The workflow verifies the evaluator, normalizer, and evidence CLI tree entries before running the M7W gate. The CLI then checks the exact source-file content digests.
+The report pins evaluator v2 and its analysis implementation to `32a919a68f52e3fa4bb1c2d0c63eae2af8cb660c`; the M7V execution source remains `17a4ccb9f4ae08069defaa9a1eac9938833412ae`. Pages CI fetches the exact analysis commit first and uses the existing strict fetch helper with retained-ref fallback `refs/pull/321/head`. The workflow verifies the evaluator, normalizer, and evidence CLI tree entries before running the M7W gate. The CLI then checks the exact source-file content digests.
 
 A synthetic post-squash test used a no-shared-object bare remote and a shallow clone at a synthetic squash commit containing the M7W tree. Before retrieval, `git cat-file -e a868a137cd2d92a3c1f0a2ad736816658705c09d^{commit}` failed with exit 128; the M7W checker exited 1 and reported the analysis source unavailable. Retrieval through the workflow helper succeeded in both the exact-SHA path and a second forced retained-PR-ref fallback. Both runs verified the pinned source files, and `npm run evidence:check:m7w` passed afterward with the unchanged report and capture artifacts.
 

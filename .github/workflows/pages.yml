@@ -337,7 +337,7 @@ jobs:
       - name: Fetch M7W offline analysis source history
         run: |
           node scripts/fetch-m7k-execution-source.mjs \
-            --sha=a868a137cd2d92a3c1f0a2ad736816658705c09d \
+            --sha=32a919a68f52e3fa4bb1c2d0c63eae2af8cb660c \
             --retained-ref=refs/pull/321/head \
             --verify-path=scripts/evaluateM7wQualification.mjs \
             --verify-path=scripts/normalizeM7wQualificationCapture.mjs \
