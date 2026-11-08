@@ -78,6 +78,12 @@ The new M7W evidence check is an offline integrity gate over retained artifacts.
 
 The separate M7V, M7R, M7Q, and M7K evidence checks also pass without modifying their historical reports or qualification decisions. M7V policy validation still reports the Ordinary WebGL and Renderer-Serial formal lanes as `not-run`; M7W's locally captured results do not satisfy the absent authenticated lane-artifact workflow/runtime-evidence contract.
 
+## Squash-safe source provenance
+
+The report pins its analysis implementation to `a868a137cd2d92a3c1f0a2ad736816658705c09d`; the M7V execution source remains `17a4ccb9f4ae08069defaa9a1eac9938833412ae`. Pages CI fetches the exact analysis commit first and uses the existing strict fetch helper with retained-ref fallback `refs/pull/321/head`. The workflow verifies the evaluator, normalizer, and evidence CLI tree entries before running the M7W gate. The CLI then checks the exact source-file content digests.
+
+A synthetic post-squash test used a no-shared-object bare remote and a shallow clone at a synthetic squash commit containing the M7W tree. Before retrieval, `git cat-file -e a868a137cd2d92a3c1f0a2ad736816658705c09d^{commit}` failed with exit 128; the M7W checker exited 1 and reported the analysis source unavailable. Retrieval through the workflow helper succeeded in both the exact-SHA path and a second forced retained-PR-ref fallback. Both runs verified the pinned source files, and `npm run evidence:check:m7w` passed afterward with the unchanged report and capture artifacts.
+
 ## Recommended next remediation cohort
 
 Prioritize a bounded review of the eight learningOverlay.ts open-position assertion identities. Start with exact reproduction on the immutable M7V source and preserve the closed/peek and materially translated drawer negative controls. If baseline evidence supports a helper-contract correction, compare the same identities on a candidate while preserving meaningful geometry and Task/Feedback assertions. Do not infer a product defect from this M7W report, and route the separate helper timeout and other assertion surfaces independently.
