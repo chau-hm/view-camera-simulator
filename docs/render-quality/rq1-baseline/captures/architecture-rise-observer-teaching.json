@@ -2,7 +2,7 @@
   "schemaVersion": "rq1-capture-metadata-v1",
   "captureId": "architecture-rise-observer-teaching",
   "stateId": "architecture-rise-observer-dream-loop-reference",
-  "sourceCommit": "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c",
+  "sourceCommit": "5f756620d373fe9bb1a34f7e770beb9dbe126ad9",
   "sceneId": "architecture-rise",
   "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
   "rendererFamily": "webgl-renderer",

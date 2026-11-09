@@ -124,4 +124,4 @@ The useful focused regression gates are the RQ1 capture/check scripts, affected 
 
 RQ1 changes no qualification or backend authorization: M7 remains partially qualified; M8 entry denied; M9 unauthorized; M7V owner approvals pending; native WebGPU development remains Architecture Rise M3 Raw only; M4/M5 remain separately gated research; M6 photographic quality remains unqualified; production Ground Glass remains WebGL-only; production WebGPU remains disabled.
 
-Local validation results, final source commit, hosted CI, and independent review are summarized in `RQ1_BASELINE_REPORT.json`. Hosted CI and external review are pending until this branch is published as a PR.
+Local validation results and the capture-source commit are summarized in `RQ1_BASELINE_REPORT.json`. The PR handoff records the final feature-branch HEAD. Hosted CI and external review are pending until this branch is published as a PR.
