@@ -2,9 +2,9 @@
   "schemaVersion": "rq1-capture-metadata-v1",
   "captureId": "architecture-rise-observer-teaching",
   "stateId": "architecture-rise-observer-dream-loop-reference",
-  "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
-  "captureRunId": "3dbef7c3-f24d-4c13-8961-e29b8d24153b",
-  "captureRunSourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+  "sourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
+  "captureRunId": "54ca35f6-a053-4475-8f5b-2b2789d7393c",
+  "captureRunSourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
   "captureSourceCommitFallback": null,
   "sceneId": "architecture-rise",
   "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
@@ -70,7 +70,7 @@
   "dreamLoopSource": {
     "pilotId": "architecture-rise",
     "assetKey": "architecture-rise-subject",
-    "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+    "sourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
     "optimizationSurface": "observer-scene-viewport",
     "hiddenDomControls": [
       "Expand 3D Scene",

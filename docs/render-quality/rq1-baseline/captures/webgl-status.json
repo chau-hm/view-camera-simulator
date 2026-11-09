@@ -1,7 +1,7 @@
 {
   "status": "captured",
-  "captureRunId": "3dbef7c3-f24d-4c13-8961-e29b8d24153b",
-  "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+  "captureRunId": "54ca35f6-a053-4475-8f5b-2b2789d7393c",
+  "sourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
   "command": "npm run render-quality:rq1:capture",
   "backend": "webgl-renderer/webgl2",
   "exitCode": 0,
