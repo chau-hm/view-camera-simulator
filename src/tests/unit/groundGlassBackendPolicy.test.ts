@@ -2,16 +2,18 @@ import { describe, expect, it } from "vitest";
 import { selectGroundGlassBackend } from "../../render/backend/groundGlassBackendPolicy";
 import type { GroundGlassFeatureCompatibility } from "../../render/backend/groundGlassSceneCompatibility";
 import {
+  ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
   ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
-  ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
   GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+  GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY,
   resolveGroundGlassRawWebGpuCompatibility,
   resolveGroundGlassRawWebGpuEvidenceRevision,
   requireGroundGlassRawWebGpuEvidenceRevision,
@@ -88,25 +90,62 @@ describe("Ground Glass backend policy", () => {
     expect(result).toMatchObject({ status: "selected", selectedBackend: "webgpu" });
   });
 
-  it("selects revision-bound Raw RTT evidence and keeps unsupported revisions fail-closed", () => {
+  it("resolves Raw RTT evidence only when it matches the active scene source", () => {
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("r186"))
-      .toBe(ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION);
+      .toBeNull();
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("r187"))
-      .toBe(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION);
+      .toBeNull();
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("r188")).toBeNull();
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("unknown")).toBeNull();
     expect(() => requireGroundGlassRawWebGpuEvidenceRevision("r188"))
       .toThrow("Ground Glass Raw RTT is not qualified for renderer r188");
+    expect(() => requireGroundGlassRawWebGpuEvidenceRevision("r186"))
+      .toThrow("Ground Glass Raw RTT is not qualified for renderer r186");
+    expect(() => requireGroundGlassRawWebGpuEvidenceRevision("r187"))
+      .toThrow("Ground Glass Raw RTT is not qualified for renderer r187");
     expect(() => requireGroundGlassRawWebGpuEvidenceRevision("unknown"))
       .toThrow("Ground Glass Raw RTT is not qualified for renderer unknown");
 
     const r187Compatibility = resolveGroundGlassRawWebGpuCompatibility("r187");
     expect(r187Compatibility).toBeTruthy();
+    expect(ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION).toBe("architecture-rise-raw-rtt-v2");
+    expect(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION)
+      .toBe("m3-architecture-rise-raw-rtt-native-r187-v2");
+    expect(GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.sourceRevision).toBe(ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1);
+    expect(GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "raw-rtt",
+    )).toMatchObject({
+      status: "verified",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+      testedContext: { rendererRevision: "r186" },
+    });
+    expect(resolveGroundGlassRawWebGpuCompatibility("r186")).toBeNull();
+
+    const historicalR186Result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["raw-rtt"],
+      sceneCompatibility: resolveGroundGlassRawWebGpuCompatibility("r186"),
+      expectedCandidateRendererRevision: "r186",
+    }));
+    expect(historicalR186Result.selectedBackend).toBe("webgl");
+    expect(historicalR186Result.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: ["unknown-scene"] },
+    });
+
+    expect(GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY.features.find(
+      (feature) => feature.feature === "raw-rtt",
+    )).toMatchObject({
+      status: "verified",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+      evidenceRevision: "m3-architecture-rise-raw-rtt-native-r187-v1",
+    });
+    expect(r187Compatibility?.sourceRevision).toBe(ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION);
     expect(r187Compatibility?.features.find((feature) => feature.feature === "raw-rtt"))
       .toMatchObject({
-        status: "verified",
-        evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
-        testedContext: { rendererRevision: "r187" },
+        status: "not-evaluated",
+        sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+        knownIncompatibilities: [expect.stringContaining("has not been revalidated")],
       });
     const rawResult = selectGroundGlassBackend(createWebGpuPolicyInput({
       sceneId: "architecture-rise",
@@ -115,13 +154,12 @@ describe("Ground Glass backend policy", () => {
       expectedCandidateRendererRevision: "r187",
     }));
     expect(rawResult).toMatchObject({
-      status: "selected",
-      selectedBackend: "webgpu",
+      selectedBackend: "webgl",
       policyDecision: {
-        status: "authorized",
+        status: "denied",
         sceneEligibility: {
-          status: "eligible",
-          evidenceRevisions: [ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION],
+          status: "denied",
+          reasons: expect.arrayContaining(["feature-not-evaluated"]),
         },
       },
     });
@@ -137,6 +175,7 @@ describe("Ground Glass backend policy", () => {
       (feature) => feature.feature === "physical-coc",
     )).toMatchObject({
       status: "research-only",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
       evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
       testedContext: { rendererRevision: "r187", executionApi: "webgpu" },
       knownIncompatibilities: expect.arrayContaining([

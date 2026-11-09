@@ -99,7 +99,7 @@ describe("Observer world illumination component", () => {
     expect(lightElement.props).toMatchObject({
       name: "architecture-rise-daylight",
       color: "#fff8ee",
-      intensity: 0.8,
+      intensity: 1,
       castShadow: false,
       position: light.position,
       target: targetObject,

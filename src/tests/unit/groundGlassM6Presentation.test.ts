@@ -377,7 +377,7 @@ describe("M6 development-only compatibility policy", () => {
     expect(isGroundGlassM6R187QualificationBuildAuthorizedForFlags(m6R187QualificationFlags, "188")).toBe(false);
   });
 
-  it("accepts the scoped r187 presentation record only after its evidence is verified", () => {
+  it("keeps the historical M6 presentation record fail-closed for the RQ2 scene source", () => {
     const unqualifiedCompatibility: GroundGlassSceneCompatibility = {
       sceneId: architectureRiseScene.id,
       sourceRevision: ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION,
@@ -398,16 +398,16 @@ describe("M6 development-only compatibility policy", () => {
       m6R187QualificationFlags,
       unqualifiedCompatibility,
       "r187",
-    )).toBe(true);
+    )).toBe(false);
     expect(isGroundGlassM6R187PresentationEvidenceMatched(
       GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
       "r187",
-    )).toBe(true);
+    )).toBe(false);
     expect(isGroundGlassM6PresentationBuildEnabledForRevision(
       { ...m6R187QualificationFlags, qualificationFlag: "false" },
       GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
       "r187",
-    )).toBe(true);
+    )).toBe(false);
     expect(isGroundGlassM6R187PresentationEvidenceMatched(
       { ...acceptedM6R187PresentationCompatibility, features: [{
         ...acceptedM6R187PresentationCompatibility.features[0],
@@ -423,7 +423,7 @@ describe("M6 development-only compatibility policy", () => {
       m6R187QualificationFlags,
       GROUND_GLASS_M6_R187_PRESENTATION_COMPATIBILITY,
       "187",
-    )).toBe(true);
+    )).toBe(false);
     expect(isGroundGlassM6R187SessionAuthorizedForRequest(
       makeRequest({ scene: understandingCameraMovementsScene }),
       m6R187QualificationFlags,

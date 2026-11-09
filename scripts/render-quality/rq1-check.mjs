@@ -6,24 +6,36 @@ import { nativeCaptureStatusErrors } from "./rq1-native-capture-status.mjs";
 
 const repositoryRoot = process.cwd();
 const baselineRelative = "docs/render-quality/rq1-baseline";
-const workingRelative = "docs/render-quality/.rq1-runs/current";
+const workingRelative = {
+  rq1: "docs/render-quality/.rq1-runs/current",
+  rq2: "docs/render-quality/.rq2-runs/current",
+};
 const baselineDirectory = resolve(repositoryRoot, baselineRelative);
-const M3_EVIDENCE = "m3-architecture-rise-raw-rtt-native-r187-v1";
 const REQUIRED_CAMERA_KEYS = [
   "focalLengthMm", "focusDistanceMm", "apertureFNumber", "frontRiseMm", "frontShiftMm",
   "frontTiltDeg", "frontSwingDeg", "rearRiseMm", "rearShiftMm", "rearTiltDeg", "rearSwingDeg",
 ];
 
 function parseArguments(args) {
+  let profile = "rq1";
+  let profileWasSet = false;
   let mode = "working";
-  let outputDirectory = resolve(repositoryRoot, workingRelative);
+  let outputDirectory = null;
   let outputWasSet = false;
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--help" || argument === "-h") {
-      console.log("Usage: npm run render-quality:rq1:check -- [--baseline | --output-dir docs/render-quality/<name>]");
+      console.log("Usage: node scripts/render-quality/rq1-check.mjs [--profile rq1|rq2] [--baseline | --output-dir docs/render-quality/<name>]");
       process.exit(0);
+    } else if (argument === "--profile" && args[index + 1]) {
+      if (profileWasSet) throw new Error("--profile may only be provided once");
+      profileWasSet = true;
+      profile = args[index + 1];
+      index += 1;
+      if (!(profile in workingRelative)) throw new Error("--profile must be rq1 or rq2");
+      if (mode === "baseline" && profile !== "rq1") throw new Error("--baseline applies only to the rq1 profile");
     } else if (argument === "--baseline") {
+      if (profile !== "rq1") throw new Error("--baseline applies only to the rq1 profile");
       if (mode !== "working" || outputWasSet) throw new Error("--baseline cannot be combined with --output-dir or repeated");
       mode = "baseline";
       outputDirectory = baselineDirectory;
@@ -42,10 +54,11 @@ function parseArguments(args) {
         throw new Error("--output-dir must stay under docs/render-quality/");
       }
     } else {
-      throw new Error("Usage: npm run render-quality:rq1:check -- [--baseline | --output-dir docs/render-quality/<name>]");
+      throw new Error("Usage: npm run render-quality:rq1:check -- [--profile rq1|rq2] [--baseline | --output-dir docs/render-quality/<name>]");
     }
   }
-  return { mode, outputDirectory };
+  if (!outputDirectory) outputDirectory = resolve(repositoryRoot, workingRelative[profile]);
+  return { profile, mode, outputDirectory };
 }
 
 async function assertNoSymlinkPath(outputDirectory) {
@@ -62,24 +75,42 @@ async function assertNoSymlinkPath(outputDirectory) {
   }
 }
 
-const { mode, outputDirectory } = parseArguments(process.argv.slice(2));
+const { profile, mode, outputDirectory } = parseArguments(process.argv.slice(2));
+if (mode === "working" && outputDirectory === baselineDirectory) {
+  throw new Error("Use --baseline to validate the immutable committed RQ1 reference.");
+}
 await assertNoSymlinkPath(outputDirectory);
-const manifest = JSON.parse(await readFile(resolve(repositoryRoot, "docs/render-quality/rq1-baseline/states.json"), "utf8"));
+const manifestPath = resolve(
+  repositoryRoot,
+  profile === "rq2"
+    ? "docs/render-quality/rq2-architecture-rise/states.json"
+    : "docs/render-quality/rq1-baseline/states.json",
+);
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+const M3_EVIDENCE = manifest.nativeRevalidation?.featureEvidenceRevision ??
+  manifest.states.flatMap((state) => state.captures)
+    .find((capture) => capture.rendererFamily === "webgpu-renderer")?.featureEvidenceRevision;
+if (!M3_EVIDENCE) throw new Error(`Capture profile ${profile} has no M3 evidence revision.`);
 const errors = [];
 const captureRun = await readJsonIfExists(resolve(outputDirectory, "captures/capture-run.json"));
 const nativeStatus = await readJson(resolve(outputDirectory, "captures/native-status.json"));
 const webglStatus = await readJson(resolve(outputDirectory, "captures/webgl-status.json"));
-const report = await readJsonIfExists(resolve(repositoryRoot, "docs/render-quality/RQ1_BASELINE_REPORT.json"));
+const report = profile === "rq1"
+  ? await readJsonIfExists(resolve(repositoryRoot, "docs/render-quality/RQ1_BASELINE_REPORT.json"))
+  : null;
 
 if (!captureRun?.captureRunId || !/^[0-9a-f-]{36}$/.test(captureRun.captureRunId) || !/^[0-9a-f]{40}$/i.test(captureRun.sourceCommit ?? "")) {
   errors.push("capture-run.json must identify the current capture invocation and a full source commit SHA");
 }
-const allowedRunStatuses = mode === "baseline" ? ["captured"] : ["captured", "native-blocked"];
+const allowedRunStatuses = mode === "baseline" ? ["captured"] : profile === "rq2"
+  ? ["captured", "native-blocked", "native-not-evaluated"]
+  : ["captured", "native-blocked"];
 if (!captureRun || !allowedRunStatuses.includes(captureRun.status)) {
   errors.push("capture run did not complete with a status allowed for this validation mode");
 }
 if (mode === "working" && (
   captureRun?.schemaVersion !== "rq1-capture-run-v2" ||
+  captureRun?.captureProfile !== profile ||
   captureRun?.sourceTree?.status !== "clean" ||
   captureRun?.sourceTree?.commitReproducible !== true ||
   !Array.isArray(captureRun?.sourceTree?.dirtyPaths) ||
@@ -98,12 +129,20 @@ for (const [label, status] of [["WebGL", webglStatus], ["native", nativeStatus]]
 if (captureRun?.webglStatus !== webglStatus.status || captureRun?.nativeStatus !== nativeStatus.status) {
   errors.push("capture-run status summary does not match backend status records");
 }
+if (mode === "working" && (
+  webglStatus.captureProfile !== profile || nativeStatus.captureProfile !== profile
+)) {
+  errors.push("backend status capture profiles do not match the selected validation profile");
+}
 if (mode === "working" && captureRun?.nativeReasonClass !== nativeStatus.reasonClass) {
   errors.push("capture-run native reason summary does not match the native status record");
 }
 
-if (manifest.acceptedBaselineCommit !== "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c") {
-  errors.push("state manifest accepted baseline commit does not match M7X");
+const expectedBaselineCommit = profile === "rq2"
+  ? "fc01c023ab8621c8f0f796b000a3b82ad137b54c"
+  : "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c";
+if (manifest.acceptedBaselineCommit !== expectedBaselineCommit) {
+  errors.push(`state manifest accepted baseline commit does not match the ${profile.toUpperCase()} reference`);
 }
 if (manifest.sceneId !== "architecture-rise" || manifest.rendererRevision !== "r187") {
   errors.push("state manifest scene/renderer binding is not Architecture Rise / r187");
@@ -155,6 +194,9 @@ if (nativeStatus.authorization?.feature !== "Architecture Rise M3 Raw RTT only" 
   nativeStatus.authorization?.m6Qualification !== false) {
   errors.push("native capture status does not preserve the M3-only authorization boundary");
 }
+if (mode === "working" && nativeStatus.authorization?.sourceRevision !== manifest.sceneSourceRevision) {
+  errors.push("native capture status source revision does not match the selected state manifest");
+}
 
 const expected = [
   { captureId: "architecture-rise-observer-clean", path: "observer/observer-clean.png", role: "observer" },
@@ -176,9 +218,14 @@ for (const item of expected) {
   const imagePath = resolve(outputDirectory, item.path);
   const isPresent = await fileExists(imagePath);
   if (!metadata || !isPresent || !captureBelongsToRun(metadata, captureRun)) {
-    const nativeBlocked = mode === "working" && item.role === "native" && nativeStatus.status === "blocked";
-    if (!nativeBlocked) errors.push(`${item.captureId}: current-run screenshot or metadata is missing`);
+    const nativeUnavailable = mode === "working" && item.role === "native" &&
+      (nativeStatus.status === "blocked" || (profile === "rq2" && nativeStatus.status === "not-evaluated"));
+    if (!nativeUnavailable) errors.push(`${item.captureId}: current-run screenshot or metadata is missing`);
     continue;
+  }
+
+  if (mode === "working" && metadata.captureProfile !== profile) {
+    errors.push(`${item.captureId}: capture metadata profile does not match the selected validation profile`);
   }
 
   const image = await readFile(imagePath);
@@ -286,6 +333,43 @@ if (mode === "baseline") {
     captureRun?.sourceCommit !== report?.sourceCommit) {
     errors.push("committed baseline capture-run identity/source does not match the accepted report");
   }
+} else if (profile === "rq2" && nativeStatus.status === "not-evaluated") {
+  const expectedMissing = nativeExpectedIds;
+  const nativeTest = nativeStatus.nativeTest ?? {};
+  if (manifest.nativeRevalidation?.status !== "not-evaluated" ||
+    manifest.nativeRevalidation?.reasonClass !== "source-revision-unverified" ||
+    manifest.nativeRevalidation?.sourceRevision !== manifest.sceneSourceRevision ||
+    manifest.nativeRevalidation?.featureEvidenceRevision !== M3_EVIDENCE) {
+    errors.push("RQ2 native status is not bound to an explicit, unevaluated source-revision attestation");
+  }
+  if (nativeStatus.schemaVersion !== "rq2-native-status-v1" ||
+    nativeStatus.reasonClass !== "source-revision-unverified" ||
+    nativeStatus.captureRunId !== captureRun?.captureRunId ||
+    nativeStatus.sourceCommit !== captureRun?.sourceCommit ||
+    nativeStatus.backend !== "webgpu-renderer/webgpu" ||
+    nativeStatus.authorization?.sourceRevision !== manifest.sceneSourceRevision ||
+    nativeStatus.authorization?.evidenceRevision !== M3_EVIDENCE ||
+    nativeStatus.authorization?.feature !== "Architecture Rise M3 Raw RTT only" ||
+    nativeStatus.authorization?.rawPilot !== true ||
+    nativeStatus.authorization?.physicalCocResearch !== false ||
+    nativeStatus.authorization?.apertureGatherResearch !== false ||
+    nativeStatus.authorization?.m6Presentation !== false ||
+    nativeStatus.authorization?.m6Qualification !== false) {
+    errors.push("RQ2 not-evaluated native status has missing or contradictory authorization provenance");
+  }
+  if (nativeStatus.command !== null || nativeStatus.preflight !== null ||
+    nativeTest.captureAttempted !== false || nativeTest.exitCode !== null || nativeTest.signal !== null ||
+    nativeTest.error !== null || nativeStatus.exitCode !== null || nativeStatus.signal !== null ||
+    nativeStatus.error !== null || nativeStatus.failureSummary !== null) {
+    errors.push("RQ2 not-evaluated native status must prove that no native process was attempted");
+  }
+  if (!sameOrderedIds(nativeStatus.capturedCaptureIds, []) ||
+    !sameOrderedIds(nativeStatus.missingCaptureIds, expectedMissing) || nativeArtifactsPresent || currentNativeIds.length > 0) {
+    errors.push("RQ2 not-evaluated native status must contain no native artifacts and list every required identity as missing");
+  }
+  if (captureRun?.status !== "native-not-evaluated") {
+    errors.push("capture-run status does not identify the native source attestation as not evaluated");
+  }
 } else {
   errors.push(...nativeCaptureStatusErrors(nativeStatus, captureRun, nativeExpectedIds, currentNativeIds, nativeArtifactsPresent));
   const expectedRunStatus = nativeStatus.status === "blocked" ? "native-blocked"
@@ -314,13 +398,15 @@ if (!sameIdSet(captureRun?.capturedCaptureIds, currentExpectedIds)) {
 }
 
 if (errors.length > 0) {
-  console.error("RQ1 evidence check failed:");
+  console.error(`${profile.toUpperCase()} evidence check failed:`);
   for (const error of [...new Set(errors)]) console.error(`- ${error}`);
   process.exit(1);
 }
 
 if (mode === "baseline") {
   console.log(`RQ1 committed baseline valid: ${captured.length} captures; native M3 captured; source ${captureRun.sourceCommit}.`);
+} else if (profile === "rq2" && nativeStatus.status === "not-evaluated") {
+  console.log(`RQ2 working evidence valid: ${captured.length} captures; WebGL evidence valid; native M3 not evaluated for source ${manifest.sceneSourceRevision} (source attestation pending).`);
 } else if (nativeStatus.status === "blocked") {
   console.log(`RQ1 limited reproduction valid: ${captured.length} captures; WebGL evidence valid; native environment unavailable (${nativeStatus.preflight.probeStatus}). Native rendering was not validated.`);
 } else {

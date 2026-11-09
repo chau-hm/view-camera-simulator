@@ -28,6 +28,61 @@ import type {
 import type { GroundGlassFrameRequest } from "../../render/groundGlassFrameRequest";
 import type { GroundGlassRenderOperationId } from "../../render/groundGlassPassGraph";
 
+const rawPolicyTestHarness = vi.hoisted(() => ({ syntheticR187Compatibility: false }));
+
+vi.mock("../../render/webgpu/groundGlassRawWebGpuPolicyInput", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../render/webgpu/groundGlassRawWebGpuPolicyInput")>();
+  return {
+    ...actual,
+    createGroundGlassRawWebGpuPolicyInput: (...args: Parameters<typeof actual.createGroundGlassRawWebGpuPolicyInput>) => {
+      if (!rawPolicyTestHarness.syntheticR187Compatibility) {
+        return actual.createGroundGlassRawWebGpuPolicyInput(...args);
+      }
+      const [request, retryState, pilotSessionIdOverride] = args;
+      const sourceRevision = "architecture-rise-raw-rtt-v2-test-fixture";
+      return {
+        requestedBackend: "webgpu",
+        environment: "test",
+        authorization: {
+          status: "authorized",
+          source: "application-configuration",
+          pilotSessionId: pilotSessionIdOverride ?? retryState?.pilotSessionId ?? "rq2-host-lifecycle-test",
+        },
+        channelId: request.channel,
+        sceneId: request.scene.id,
+        requestedFeatures: ["raw-rtt"],
+        sceneCompatibility: {
+          sceneId: request.scene.id,
+          sourceRevision,
+          features: [{
+            feature: "raw-rtt",
+            status: "verified",
+            sourceRevision,
+            evidenceRevision: "rq2-host-lifecycle-test-only",
+            testedContext: {
+              rendererFamily: "webgpu-renderer",
+              executionApi: "webgpu",
+              rendererRevision: "r187",
+              runtimeDescription: "synthetic unit-test policy fixture; no native rendering evidence",
+            },
+            verificationEvidence: ["synthetic lifecycle test only"],
+            requiredCapabilities: { adapterFeatures: [], textureStorageFormats: [] },
+            knownIncompatibilities: [],
+          }],
+        },
+        expectedCandidateRendererRevision: "r187",
+        capabilityPreflight: {
+          webgpuAvailability: "reported-available",
+          adapterFeatures: [],
+          textureStorageFormats: [],
+        },
+        retryState,
+        webglAvailable: true,
+      };
+    },
+  };
+});
+
 type MockWebGpuAdapterProps = Readonly<{
   request: GroundGlassFrameRequest;
   generation: GroundGlassRendererGenerationIdentity;
@@ -230,6 +285,7 @@ afterEach(() => {
   webGpuHarness.propsByGeneration.clear();
   webGpuHarness.cleanupCallbacks.length = 0;
   recoveryActionHarness.handlers.clear();
+  rawPolicyTestHarness.syntheticR187Compatibility = false;
   vi.unstubAllEnvs();
   Object.defineProperty(navigator, "gpu", { value: undefined, configurable: true });
 });
@@ -558,6 +614,7 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
   });
 
   it("routes explicit retry and new-session actions through the app owner and preserves failed epochs", async () => {
+    rawPolicyTestHarness.syntheticR187Compatibility = true;
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_RAW_PILOT", "true");
     Object.defineProperty(navigator, "gpu", { value: {}, configurable: true });
     const owner = new GroundGlassRenderHostState();
@@ -665,6 +722,21 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     });
     expect(owner.getDiagnostics("default")?.pilotRecoveryAction).toEqual(newSession);
     expect(firstFallbackGeneration.generationId).not.toBe(initialGeneration.generationId);
+    view.unmount();
+  });
+
+  it("does not mount the native pilot while the RQ2 M3 scene source is unverified", async () => {
+    vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_RAW_PILOT", "true");
+    Object.defineProperty(navigator, "gpu", { value: {}, configurable: true });
+    const owner = new GroundGlassRenderHostState();
+    const view = render(hostTree(owner, createGroundGlassRequestInput({ rawDebug: true })));
+
+    await waitFor(() => expect(adapterHarness.propsByGeneration.size).toBe(1));
+    expect(owner.getSnapshot("default").selection).toMatchObject({
+      status: "selected",
+      selectedBackend: "webgl",
+    });
+    expect(webGpuHarness.propsByGeneration.size).toBe(0);
     view.unmount();
   });
 

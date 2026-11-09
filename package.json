@@ -46,6 +46,8 @@
     "dream-loop:guard": "node ./scripts/dream-loop/guard.mjs",
     "render-quality:rq1:capture": "node ./scripts/render-quality/rq1-capture.mjs",
     "render-quality:rq1:check": "node ./scripts/render-quality/rq1-check.mjs",
+    "render-quality:rq2:capture": "node ./scripts/render-quality/rq1-capture.mjs --profile rq2",
+    "render-quality:rq2:check": "node ./scripts/render-quality/rq1-check.mjs --profile rq2",
     "test": "node ./scripts/test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

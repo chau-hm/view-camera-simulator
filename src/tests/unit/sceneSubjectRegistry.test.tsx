@@ -899,6 +899,11 @@ describe("scene subject registry", () => {
     });
   });
 
+  it("aligns Architecture Rise presentation shadows with the scene daylight direction", () => {
+    const lighting = getSceneSubjectRegistration("architecture-rise")?.presentationLighting;
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -3, y: 4, z: -4.5 });
+  });
+
   it.each([
     "architecture-rise",
     "table-tilt",

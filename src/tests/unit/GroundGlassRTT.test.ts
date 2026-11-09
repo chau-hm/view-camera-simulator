@@ -454,7 +454,7 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(daylight.parent).toBe(sourceScene);
     expect(daylight.target.parent).toBe(sourceScene);
     expect(daylight.color.equals(new THREE.Color("#fff8ee"))).toBe(true);
-    expect(daylight.intensity).toBe(0.8);
+    expect(daylight.intensity).toBe(1);
     expect(daylight.castShadow).toBe(false);
     const dispose = vi.spyOn(daylight, "dispose");
 

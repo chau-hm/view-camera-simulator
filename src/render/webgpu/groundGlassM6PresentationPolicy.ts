@@ -4,12 +4,13 @@ import { REVISION } from "three";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import {
   ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
   resolveGroundGlassRawWebGpuCompatibility,
 } from "./groundGlassRawWebGpuCompatibility";
 
-/** A new attestation binds the unchanged scene source to the M6 display implementation. */
+/** Historical M6 evidence remains bound to v1 and is stale for the RQ2 scene source. */
 export const ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION =
-  `${ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION}+m6-presentation-v1`;
+  `${ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1}+m6-presentation-v1`;
 export const ARCHITECTURE_RISE_M6_PRESENTATION_EVIDENCE_REVISION =
   "m6-architecture-rise-native-presentation-v1";
 export const ARCHITECTURE_RISE_M6_R187_PRESENTATION_EVIDENCE_REVISION =
@@ -117,7 +118,8 @@ export const isGroundGlassM6R187PresentationEvidenceMatched = (
   const matches = compatibility.features.filter((feature) => feature.feature === "full-presentation");
   if (matches.length !== 1) return false;
   const [feature] = matches;
-  return rendererRevision === "r187" &&
+  return String(ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION) === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 &&
+    rendererRevision === "r187" &&
     compatibility.sceneId === architectureRiseScene.id &&
     compatibility.sourceRevision === ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION &&
     feature?.status === "implementation-verified" &&
@@ -140,7 +142,8 @@ export const isGroundGlassM6PresentationBuildEnabledForRevision = (
   rendererRevision: string,
 ): boolean => {
   const revision = rendererRevision.replace(/^r/, "");
-  return isGroundGlassM6BuildAuthorizedForFlags(flags) && (
+  return String(ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION) === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 &&
+    isGroundGlassM6BuildAuthorizedForFlags(flags) && (
     revision === "186" ||
     (revision === "187" && (
       isGroundGlassM6R187QualificationBuildAuthorizedForFlags(flags, revision) ||

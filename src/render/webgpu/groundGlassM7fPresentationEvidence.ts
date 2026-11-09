@@ -21,7 +21,7 @@ import {
 } from "./groundGlassPresentationReference";
 import type { GroundGlassM6cReadbackIdentity } from "../groundGlassM6cAlphaConformance";
 import type { GroundGlassPresentationNodeState } from "./groundGlassPresentationNodes";
-import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "./groundGlassRawWebGpuCompatibility";
+import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 } from "./groundGlassRawWebGpuCompatibility";
 
 export const GROUND_GLASS_M7F_EVALUATOR_REVISION = "m7f-r187-presentation-evaluator-v2";
 export const GROUND_GLASS_M7F_REPORT_ID = "ground-glass-m7f-r187-presentation";
@@ -273,7 +273,7 @@ const m6dIssues = (artifact: JsonRecord | null): string[] => {
       registered.rendererFamily !== "webgpu-renderer" ||
       registered.actualExecutionApi !== "webgpu" ||
       registered.internalFallback !== "none" ||
-      registered.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION ||
+      registered.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 ||
       registered.compositeTargetFormat !== "rgba16float" ||
       !stringArray(registered.completedPasses).includes("researchComposite")) {
     issues.push("registered-m5-composite-identity-invalid");
@@ -835,7 +835,7 @@ const registeredAppIssues = (artifact: JsonRecord | null): string[] => {
   const fingerprints = asRecord(optical?.inputFingerprints);
   if (!optical || optical.exactIdentityMatch !== true ||
       optical.requestId !== artifact.requestId || optical.rendererGenerationId !== artifact.rendererGenerationId ||
-      optical.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION ||
+      optical.sourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 ||
       !requiredPasses.every((pass) => stringArray(optical.completedPasses).includes(pass)) ||
       formats?.composite !== "rgba16float" || formats.physical !== "rgba16float" ||
       formats.validity !== "rgba8unorm" || !text(optical.physicalDataFingerprint) ||
@@ -1223,10 +1223,10 @@ export const evaluateGroundGlassM7fPresentationEvidence = (
     ...(artifacts.app?.opticalReadback && asRecord(artifacts.app.opticalReadback)?.exactIdentityMatch === true
       ? [] : ["current-m5-composite-identity-not-confirmed"]),
     ...(artifacts.app?.opticalReadback &&
-      asRecord(artifacts.app.opticalReadback)?.sourceRevision === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION
+      asRecord(artifacts.app.opticalReadback)?.sourceRevision === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1
       ? [] : ["m5-source-revision-invalid"]),
     ...(artifacts.m6d?.registeredM5Capture &&
-      asRecord(artifacts.m6d.registeredM5Capture)?.sourceRevision === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION
+      asRecord(artifacts.m6d.registeredM5Capture)?.sourceRevision === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1
       ? [] : ["m6d-m5-source-revision-invalid"]),
   ]);
   remember("m6d-opaque-composite", m6d);

@@ -378,7 +378,7 @@ export const sceneSubjectRegistry = {
       disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group),
     presentationLighting: {
       targetMm: architectureLightingTargetMm,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2 },
+      keyOffsetWorld: { x: -3, y: 4, z: -4.5 },
     },
   },
   "architecture-foreground": {
