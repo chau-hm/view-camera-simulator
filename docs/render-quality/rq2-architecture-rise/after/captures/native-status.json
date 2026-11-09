@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "rq2-native-status-v1",
+  "status": "not-evaluated",
+  "captureProfile": "rq2",
+  "reasonClass": "source-revision-unverified",
+  "captureRunId": "9ca5487b-7725-41b5-925b-8b652b7c1ad5",
+  "sourceCommit": "29947360228f761e6eacbb04e4095532f25086be",
+  "command": null,
+  "backend": "webgpu-renderer/webgpu",
+  "authorization": {
+    "feature": "Architecture Rise M3 Raw RTT only",
+    "sourceRevision": "architecture-rise-raw-rtt-v2",
+    "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+    "rawPilot": true,
+    "physicalCocResearch": false,
+    "apertureGatherResearch": false,
+    "m6Presentation": false,
+    "m6Qualification": false
+  },
+  "preflight": null,
+  "nativeTest": {
+    "captureAttempted": false,
+    "exitCode": null,
+    "signal": null,
+    "error": null
+  },
+  "exitCode": null,
+  "signal": null,
+  "error": null,
+  "capturedCaptureIds": [],
+  "missingCaptureIds": [
+    "architecture-rise-neutral-webgpu-raw",
+    "architecture-rise-front-rise-webgpu-raw"
+  ],
+  "blocker": "The active M3 r187 compatibility record is not-evaluated for the changed v2 scene source. No native capture was attempted; v1 evidence remains historical.",
+  "failureSummary": null
+}

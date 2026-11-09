@@ -3,6 +3,7 @@ import {
   ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
   GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
+  GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY,
 } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
 import { GROUND_GLASS_M6_PRESENTATION_COMPATIBILITY } from "../../render/webgpu/groundGlassM6PresentationPolicy";
 import {
@@ -33,11 +34,15 @@ const trustedR187M4PolicyInput = {
 } as const;
 
 describe("Ground Glass Physical CoC revision research policy", () => {
-  it("does not reuse historical r186 M4 research evidence for r187", () => {
+  it("rejects historical r187 M4 records for the changed v2 source", () => {
+    expect(isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
+      GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY,
+      "r187",
+    )).toBe(false);
     expect(isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
       GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY,
       "r187",
-    )).toBe(true);
+    )).toBe(false);
     expect(isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
       GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
       "r187",
@@ -45,8 +50,8 @@ describe("Ground Glass Physical CoC revision research policy", () => {
     expect(isGroundGlassPhysicalCocResearchEvidenceRevisionMatched(
       GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
       "r186",
-    )).toBe(true);
-    expect(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY.features.find(
+    )).toBe(false);
+    expect(GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY.features.find(
       (feature) => feature.feature === "physical-coc",
     )).toMatchObject({
       evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,

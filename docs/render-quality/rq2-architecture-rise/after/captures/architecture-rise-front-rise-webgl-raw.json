@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "rq1-capture-metadata-v1",
+  "captureProfile": "rq2",
+  "captureId": "architecture-rise-front-rise-webgl-raw",
+  "stateId": "architecture-rise-front-rise",
+  "captureRunId": "9ca5487b-7725-41b5-925b-8b652b7c1ad5",
+  "captureRunSourceCommit": "29947360228f761e6eacbb04e4095532f25086be",
+  "sourceCommit": "29947360228f761e6eacbb04e4095532f25086be",
+  "sceneId": "architecture-rise",
+  "sceneSourceRevision": "architecture-rise-raw-rtt-v2",
+  "rendererFamily": "webgl-renderer",
+  "actualExecutionApi": "webgl2",
+  "selectedBackend": "webgl",
+  "rendererRevision": "r187",
+  "threeRevision": "187",
+  "featureEvidenceRevision": null,
+  "mountedFeatureEvidenceRevision": null,
+  "applicationFallback": "not-observed",
+  "internalFallback": null,
+  "browser": {
+    "name": "chromium",
+    "version": "149.0.7827.55",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36"
+  },
+  "operatingSystem": {
+    "platform": "darwin",
+    "release": "27.0.0",
+    "architecture": "arm64",
+    "nodeVersion": "v24.3.0"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 900,
+    "devicePixelRatio": 1
+  },
+  "devicePixelRatio": 1,
+  "cameraPresetIdentity": "architecture-rise-canonical-public-preset",
+  "cameraState": {
+    "focalLengthMm": 150,
+    "focusDistanceMm": 8900,
+    "apertureFNumber": 8,
+    "frontRiseMm": 20,
+    "frontShiftMm": 0,
+    "frontTiltDeg": 0,
+    "frontSwingDeg": 0,
+    "rearRiseMm": 0,
+    "rearShiftMm": 0,
+    "rearTiltDeg": 0,
+    "rearSwingDeg": 0
+  },
+  "opticalState": {
+    "focusDistanceMm": 8900,
+    "apertureFNumber": 8,
+    "focalLengthMm": 150,
+    "previewMode": "raw",
+    "movementProvenance": "Front rise/tilt/swing were read from public range controls. Front shift and rear movements have no public controls on this scene; a fresh free route starts from the canonical scene preset, which declares those fields as zero."
+  },
+  "renderQuality": "standard",
+  "previewMode": "raw",
+  "viewOptions": {
+    "grid": false
+  },
+  "rawDebug": true,
+  "pipelineStage": "webgl-raw-debug-display",
+  "displayPipelineNotes": "Raw Debug bypasses CoC and gathers, sets photographic throughput gain to 1, and disables natural illumination and coverage, then uses the WebGL composite/display implementation.",
+  "frameStatus": "completed",
+  "requestId": "gg-mw9eotoc-799uuxujb7j-default-request-10",
+  "lastCompletedRequestId": "gg-mw9eotoc-799uuxujb7j-default-request-10",
+  "acceptedByHost": true,
+  "contentful": true,
+  "contentfulness": {
+    "width": 450,
+    "height": 360,
+    "nonBlackPixels": 156359,
+    "distinctSrgbBuckets": 121,
+    "meanSrgbLuminance": 137.02016855823393,
+    "contentful": true
+  },
+  "contentfulnessEvidence": "decoded displayed-canvas pixels plus the mounted WebGL Raw/final contentfulness diagnostic",
+  "runtimeDiagnostics": {
+    "sceneId": "architecture-rise",
+    "selectedBackend": "webgl",
+    "rendererFamily": "webgl-renderer",
+    "actualExecutionApi": "webgl2",
+    "threeRevision": "187",
+    "mountedRendererRevision": null,
+    "featureEvidenceRevision": null,
+    "mountedFeatureEvidenceRevision": null,
+    "applicationFallback": "not-observed",
+    "internalFallback": null,
+    "hostLifecycle": "ready",
+    "frameRequestId": "gg-mw9eotoc-799uuxujb7j-default-request-10",
+    "lastCompletedRequestId": "gg-mw9eotoc-799uuxujb7j-default-request-10",
+    "frameStatus": "completed",
+    "finalVariance": "4365.669187213549",
+    "finalNonBackgroundPixels": "1024",
+    "logicalOutputDimensions": [
+      "450",
+      "360"
+    ],
+    "internalTargetDimensions": [
+      "574",
+      "459"
+    ],
+    "adapterTargetDimensions": null,
+    "rawDebug": "true",
+    "previewMode": "raw",
+    "focalLengthMm": "150",
+    "rawContentful": "true",
+    "finalContentful": "true",
+    "rawVariance": "4365.6691872134215",
+    "rawNonBackgroundPixels": "1024",
+    "naturalIlluminationEnabled": "false",
+    "naturalIlluminationKind": "parallel-cos4",
+    "illuminanceGain": "1",
+    "coverageEnabled": "false",
+    "coverageKind": "parallel-circle"
+  },
+  "imagePath": "docs/render-quality/rq2-architecture-rise/after/ground-glass/front-rise-webgl-raw.png",
+  "imageWidth": 450,
+  "imageHeight": 360,
+  "captureRegionCss": {
+    "x": 527,
+    "y": 200,
+    "width": 450,
+    "height": 360
+  },
+  "imageSha256": "58222b21e03fe3920b483b93d9a408d452ebdd31457648c6c0cbb0db9bdd5cd5",
+  "hiddenDomControls": [
+    "Ground glass preview8900.0 mm focus / CoC 0.000 mm (100%)",
+    "ground-glass-focus-label",
+    "Focus loupe · 4× Ground Glass view",
+    "Expand Ground Glass"
+  ],
+  "captureBoundary": "Ground Glass canvas screenshot with only overlapping DOM controls, focus label, fixed preview overlays, and native pilot status temporarily hidden; canvas output remains rendered.",
+  "referenceRole": "bounded-raw-display-comparison",
+  "comparisonLimit": "WebGL Raw Debug and native M3 Raw use different display implementations; this is a bounded Raw display comparison, not strict pixel parity."
+}
