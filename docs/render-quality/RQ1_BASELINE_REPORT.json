@@ -299,7 +299,9 @@
     "headBranch": "feature/render-quality-rq1-baseline",
     "baseBranch": "main",
     "title": "RQ1: Establish reproducible visual baselines for render-quality development",
-    "status": "pending-publication",
+    "number": 323,
+    "url": "https://github.com/chau-hm/view-camera-simulator/pull/323",
+    "status": "open",
     "merged": false,
     "deployed": false
   }
