@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "rq1-capture-metadata-v1",
+  "captureId": "architecture-rise-observer-clean",
+  "stateId": "architecture-rise-observer-dream-loop-reference",
+  "sourceCommit": "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c",
+  "sceneId": "architecture-rise",
+  "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+  "rendererFamily": "webgl-renderer",
+  "actualExecutionApi": "webgl2",
+  "rendererRevision": "r187",
+  "threeRevision": "187",
+  "featureEvidenceRevision": null,
+  "applicationFallback": "none",
+  "internalFallback": null,
+  "browser": {
+    "name": "chromium",
+    "version": "149.0.7827.55",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.55 Safari/537.36"
+  },
+  "operatingSystem": {
+    "platform": "darwin",
+    "release": "27.0.0",
+    "architecture": "arm64",
+    "nodeVersion": "v24.3.0"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "devicePixelRatio": 1
+  },
+  "devicePixelRatio": 1,
+  "cameraPresetIdentity": "architecture-rise-canonical-public-preset",
+  "cameraState": {
+    "focalLengthMm": 150,
+    "focusDistanceMm": 3090,
+    "apertureFNumber": 11,
+    "frontRiseMm": 0,
+    "frontShiftMm": 0,
+    "frontTiltDeg": 0,
+    "frontSwingDeg": 0,
+    "rearRiseMm": 0,
+    "rearShiftMm": 0,
+    "rearTiltDeg": 0,
+    "rearSwingDeg": 0
+  },
+  "renderQuality": "standard",
+  "previewMode": "not-applicable",
+  "rawDebug": false,
+  "pipelineStage": "observer-scene-canvas",
+  "displayPipelineNotes": "Observer clean is the Dream Loop appearance reference; Observer teaching enables the public teaching overlays. Its actual camera state is recorded independently and is not treated as matched to Ground Glass.",
+  "frameStatus": "active",
+  "requestId": null,
+  "lastCompletedRequestId": null,
+  "acceptedByHost": null,
+  "contentful": true,
+  "contentfulness": {
+    "ready": true,
+    "width": 514,
+    "height": 411,
+    "distinctSampleColors": 41,
+    "nonDominantSampleFraction": 0.50390625
+  },
+  "imagePath": "docs/render-quality/rq1-baseline/observer/observer-clean.png",
+  "imageWidth": 514,
+  "imageHeight": 411,
+  "imageSha256": "336936b366c0822b794c570625fde937047b4afa2c165d26a48a7abe7921b4f8",
+  "captureRole": "optimization-target",
+  "dreamLoopSource": {
+    "pilotId": "architecture-rise",
+    "assetKey": "architecture-rise-subject",
+    "optimizationSurface": "observer-scene-viewport",
+    "hiddenDomControls": [
+      "Expand 3D Scene",
+      "layersView overlays▴Focus planeDOF regionLegendsOptical geometry",
+      "layersView overlays▴",
+      "Show Focus plane",
+      "Show DOF region",
+      "Show Legends",
+      "Show Optical geometry",
+      "Open Task and Feedback"
+    ],
+    "overlays": [
+      {
+        "label": "Show Focus plane",
+        "visible": false
+      },
+      {
+        "label": "Show DOF region",
+        "visible": false
+      },
+      {
+        "label": "Show Legends",
+        "visible": false
+      },
+      {
+        "label": "Show Optical geometry",
+        "visible": false
+      }
+    ],
+    "subject": {
+      "sceneId": "architecture-rise",
+      "mounted": true,
+      "evidenceSource": "sceneCapacitySnapshot.viewportSubject from TeachingShadowParticipation subject root",
+      "objectCount": 369,
+      "meshCount": 335,
+      "renderableMeshCount": 335,
+      "effectiveTriangleCount": 4478,
+      "renderableEffectiveTriangleCount": 4478
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": "captured",
+  "command": "npm run render-quality:rq1:capture",
+  "backend": "webgl-renderer/webgl2",
+  "exitCode": 0,
+  "error": null,
+  "failureSummary": null
+}

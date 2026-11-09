@@ -86,6 +86,11 @@ test("Dream Loop pilot captures teaching and clean observer views", async ({ pag
   await expect(scene).toHaveAttribute("data-scene-subject-id", manifest.sceneId);
   await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
   await expect(scene).toHaveAttribute("data-view-focus", "scene");
+  await expect(scene).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
+  await expect(scene).toHaveAttribute("data-observer-renderer-family", /.+/);
+  await expect(scene).toHaveAttribute("data-observer-execution-backend", /.+/);
+  await expect(scene).toHaveAttribute("data-observer-three-revision", "187");
+  await expect(scene).toHaveAttribute("data-observer-application-fallback", "none");
 
   const renderQuality = page.getByLabel(/Render quality/i);
   await expect(renderQuality).toBeVisible();
@@ -394,6 +399,21 @@ test("Dream Loop pilot captures teaching and clean observer views", async ({ pag
           viewport,
           renderQuality: manifest.capture.renderQuality,
           deterministicState,
+          runtime: {
+            status: await scene.getAttribute("data-observer-renderer-status"),
+            rendererFamily: await scene.getAttribute("data-observer-renderer-family"),
+            executionApi: await scene.getAttribute("data-observer-execution-backend"),
+            rendererRevision: await scene.getAttribute("data-observer-three-revision"),
+            applicationFallback: await scene.getAttribute("data-observer-application-fallback"),
+            browserName: page.context().browser()?.browserType().name() ?? null,
+            browserVersion: page.context().browser()?.version() ?? null,
+            userAgent: await page.evaluate(() => navigator.userAgent),
+            operatingSystem: {
+              platform: process.platform,
+              architecture: process.arch,
+              nodeVersion: process.version,
+            },
+          },
           subject: subjectEvidence,
           overlays,
           canvas: content,

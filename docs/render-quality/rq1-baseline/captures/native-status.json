@@ -1,0 +1,23 @@
+{
+  "status": "captured",
+  "command": "npm run render-quality:rq1:capture",
+  "backend": "webgpu-renderer/webgpu",
+  "authorization": {
+    "feature": "Architecture Rise M3 Raw RTT only",
+    "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+    "rawPilot": true,
+    "physicalCocResearch": false,
+    "apertureGatherResearch": false,
+    "m6Presentation": false,
+    "m6Qualification": false
+  },
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "capturedCaptureIds": [
+    "architecture-rise-neutral-webgpu-raw",
+    "architecture-rise-front-rise-webgpu-raw"
+  ],
+  "missingCaptureIds": [],
+  "blocker": null
+}
