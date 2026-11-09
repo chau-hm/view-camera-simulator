@@ -197,6 +197,14 @@ if (nativeStatus.authorization?.feature !== "Architecture Rise M3 Raw RTT only" 
 if (mode === "working" && nativeStatus.authorization?.sourceRevision !== manifest.sceneSourceRevision) {
   errors.push("native capture status source revision does not match the selected state manifest");
 }
+if (mode === "working" && profile === "rq2" && nativeStatus.status !== "not-evaluated" &&
+  manifest.nativeRevalidation?.status === "not-evaluated" && (
+    captureRun?.nativeRevalidation?.mode !== "explicit-rq2.1-source-revalidation" ||
+    captureRun?.nativeRevalidation?.sourceRevision !== manifest.sceneSourceRevision ||
+    captureRun?.nativeRevalidation?.evidenceRevision !== M3_EVIDENCE
+  )) {
+  errors.push("RQ2 native revalidation lacks an explicit run identity bound to the existing scene source and M3 evidence");
+}
 
 const expected = [
   { captureId: "architecture-rise-observer-clean", path: "observer/observer-clean.png", role: "observer" },
@@ -286,6 +294,9 @@ for (const item of expected) {
     if (item.role === "native") {
       if (metadata.selectedBackend !== "webgpu" || metadata.internalFallback !== "none") {
         errors.push(`${item.captureId}: native runtime identity/fallback/accepted-frame proof is invalid`);
+      }
+      if (metadata.runtimeDiagnostics?.sceneSourceRevision !== manifest.sceneSourceRevision) {
+        errors.push(`${item.captureId}: mounted runtime scene-source revision does not match the RQ2 manifest`);
       }
       if (metadata.featureEvidenceRevision !== M3_EVIDENCE || metadata.mountedFeatureEvidenceRevision !== M3_EVIDENCE) {
         errors.push(`${item.captureId}: native capture is not bound to the accepted M3 r187 evidence`);
@@ -408,7 +419,10 @@ if (mode === "baseline") {
 } else if (profile === "rq2" && nativeStatus.status === "not-evaluated") {
   console.log(`RQ2 working evidence valid: ${captured.length} captures; WebGL evidence valid; native M3 not evaluated for source ${manifest.sceneSourceRevision} (source attestation pending).`);
 } else if (nativeStatus.status === "blocked") {
-  console.log(`RQ1 limited reproduction valid: ${captured.length} captures; WebGL evidence valid; native environment unavailable (${nativeStatus.preflight.probeStatus}). Native rendering was not validated.`);
+  const prefix = profile === "rq2" ? "RQ2 limited reproduction valid" : "RQ1 limited reproduction valid";
+  console.log(`${prefix}: ${captured.length} captures; WebGL evidence valid; native environment unavailable (${nativeStatus.preflight.probeStatus}). Native rendering was not validated.`);
+} else if (profile === "rq2") {
+  console.log(`RQ2 working evidence valid: ${captured.length} captures; native M3 v2 Raw captured; source ${captureRun.sourceCommit} (clean and commit-reproducible).`);
 } else {
   console.log(`RQ1 working evidence valid: ${captured.length} captures; native M3 captured; source ${captureRun.sourceCommit} (clean and commit-reproducible).`);
 }

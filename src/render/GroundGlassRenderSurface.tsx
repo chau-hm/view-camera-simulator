@@ -90,6 +90,7 @@ export const GroundGlassRenderSurface = ({
           : "unavailable"}
         data-policy-evidence-revisions={import.meta.env.DEV ? policyEvidenceRevisions : undefined}
         data-mounted-renderer-revision={import.meta.env.DEV ? webGpuBackendDetails?.rendererRevision : undefined}
+        data-mounted-scene-source-revision={import.meta.env.DEV ? webGpuBackendDetails?.sceneSourceRevision : undefined}
         data-mounted-verification-evidence-revision={import.meta.env.DEV
           ? webGpuBackendDetails?.verificationEvidenceRevision
           : undefined}

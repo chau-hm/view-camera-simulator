@@ -19,13 +19,15 @@ function parseArguments(args) {
   let outputDirectory = null;
   let skipObserver = false;
   let outputWasSet = false;
+  let nativeRevalidationRequested = false;
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--help" || argument === "-h") {
       console.log([
-        "Usage: node scripts/render-quality/rq1-capture.mjs [--profile rq1|rq2] [--skip-observer] [--output-dir docs/render-quality/<name>]",
+        "Usage: node scripts/render-quality/rq1-capture.mjs [--profile rq1|rq2] [--native-revalidation] [--skip-observer] [--output-dir docs/render-quality/<name>]",
         "RQ1 default output: docs/render-quality/.rq1-runs/current (Git-ignored).",
         "RQ2 default output: docs/render-quality/.rq2-runs/current (Git-ignored).",
+        "RQ2 native revalidation is opt-in; --native-revalidation captures only the already-declared Architecture Rise v2 M3 Raw states.",
         "Capture requires a clean source tree; the committed rq1-baseline directory is read-only.",
       ].join("\n"));
       process.exit(0);
@@ -37,6 +39,8 @@ function parseArguments(args) {
       if (!(profile in defaultOutputs)) throw new Error("--profile must be rq1 or rq2");
     } else if (argument === "--skip-observer") {
       skipObserver = true;
+    } else if (argument === "--native-revalidation") {
+      nativeRevalidationRequested = true;
     } else if (argument === "--output-dir" && args[index + 1]) {
       if (outputWasSet) throw new Error("--output-dir may only be provided once");
       outputWasSet = true;
@@ -54,11 +58,14 @@ function parseArguments(args) {
         throw new Error("--output-dir must stay under docs/render-quality/");
       }
     } else {
-      throw new Error("Usage: npm run render-quality:rq1:capture -- [--profile rq1|rq2] [--skip-observer] [--output-dir docs/render-quality/<name>]");
+      throw new Error("Usage: npm run render-quality:rq2:capture -- --native-revalidation [--skip-observer] [--output-dir docs/render-quality/<name>]");
     }
   }
+  if (nativeRevalidationRequested && profile !== "rq2") {
+    throw new Error("--native-revalidation is available only with the RQ2 Architecture Rise profile");
+  }
   if (!outputDirectory) outputDirectory = resolve(repositoryRoot, defaultOutputs[profile]);
-  return { profile, outputDirectory, skipObserver };
+  return { profile, outputDirectory, skipObserver, nativeRevalidationRequested };
 }
 
 async function assertSafeOutputDirectory(outputDirectory) {
@@ -166,6 +173,11 @@ function cleanCaptureEnvironment(backend, outputDirectory, captureRun) {
   // Enable the existing test-only frame acceptance diagnostics for both
   // renderers. No failure point is invoked and this does not select WebGPU.
   env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION = "1";
+  if (backend === "webgpu" && captureRun.captureProfile === "rq2") {
+    env.GROUND_GLASS_M3_SOURCE_PROFILE = "v2";
+  } else {
+    delete env.GROUND_GLASS_M3_SOURCE_PROFILE;
+  }
 
   if (backend === "webgpu") {
     env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED = "1";
@@ -277,7 +289,7 @@ async function copyObserverEvidence(outputDirectory, captureRun, manifest) {
   return captureRecords;
 }
 
-const { profile, outputDirectory, skipObserver } = parseArguments(process.argv.slice(2));
+const { profile, outputDirectory, skipObserver, nativeRevalidationRequested } = parseArguments(process.argv.slice(2));
 await assertSafeOutputDirectory(outputDirectory);
 const sourceTree = requireCleanSource(outputDirectory);
 const manifestPath = resolve(
@@ -300,6 +312,15 @@ if (!activeSourceMatch || activeSourceMatch[1] !== manifest.sceneSourceRevision)
     `Capture profile ${profile} is bound to ${manifest.sceneSourceRevision}, but the active scene-source revision is ${activeSourceMatch?.[1] ?? "unavailable"}.`,
   );
 }
+if (nativeRevalidationRequested && (
+  profile !== "rq2" ||
+  manifest.nativeRevalidation?.sourceRevision !== manifest.sceneSourceRevision ||
+  manifest.nativeRevalidation?.featureEvidenceRevision !==
+    (manifest.states.flatMap((state) => state.captures)
+      .find((capture) => capture.rendererFamily === "webgpu-renderer")?.featureEvidenceRevision)
+)) {
+  throw new Error("Explicit native revalidation requires the existing RQ2 states and M3 evidence to bind to the active source revision.");
+}
 const captureRun = {
   schemaVersion: "rq1-capture-run-v2",
   captureProfile: profile,
@@ -308,6 +329,13 @@ const captureRun = {
   sourceTree,
   observerCaptureMode: skipObserver ? "reused-dream-loop-output" : "dream-loop-captured",
   observerSourceCommits: [],
+  ...(nativeRevalidationRequested ? {
+    nativeRevalidation: {
+      mode: "explicit-rq2.1-source-revalidation",
+      sourceRevision: manifest.sceneSourceRevision,
+      evidenceRevision: manifest.nativeRevalidation.featureEvidenceRevision,
+    },
+  } : {}),
   status: "running",
 };
 const expectedM3Evidence = manifest.nativeRevalidation?.featureEvidenceRevision ??
@@ -413,7 +441,7 @@ let nativeStatus;
 let nativeCaptureIds = [];
 let missingNativeCaptureIds = nativeCaptureSpecs.map((capture) => capture.captureId);
 let preflight = null;
-if (profile === "rq2" && manifest.nativeRevalidation?.status === "not-evaluated") {
+if (profile === "rq2" && manifest.nativeRevalidation?.status === "not-evaluated" && !nativeRevalidationRequested) {
   console.warn("[RQ2] Native M3 capture not attempted: the v2 scene-source attestation is not evaluated.");
   const nativeArtifactsPresent = await anyNativeArtifacts(outputDirectory, nativeCaptureSpecs);
   if (nativeArtifactsPresent) {
@@ -479,7 +507,11 @@ if (profile === "rq2" && manifest.nativeRevalidation?.status === "not-evaluated"
     reasonClass: nativeOutcome.reasonClass,
     captureRunId: captureRun.captureRunId,
     sourceCommit: captureRun.sourceCommit,
-    command: profile === "rq2" ? "npm run render-quality:rq2:capture" : "npm run render-quality:rq1:capture",
+    command: profile === "rq2"
+      ? nativeRevalidationRequested
+        ? "npm run render-quality:rq2:capture -- --native-revalidation"
+        : "npm run render-quality:rq2:capture"
+      : "npm run render-quality:rq1:capture",
     backend: "webgpu-renderer/webgpu",
     authorization: {
       feature: "Architecture Rise M3 Raw RTT only",

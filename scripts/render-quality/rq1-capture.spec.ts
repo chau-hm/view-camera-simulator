@@ -150,6 +150,7 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
       await expect(glass).toHaveAttribute("data-actual-execution-api", "webgpu", { timeout: 120_000 });
       await expect(glass).toHaveAttribute("data-policy-evidence-revisions", nativeEvidenceRevision);
       await expect(glass).toHaveAttribute("data-mounted-renderer-revision", "r187");
+      await expect(glass).toHaveAttribute("data-mounted-scene-source-revision", manifest.sceneSourceRevision);
       await expect(glass).toHaveAttribute("data-mounted-verification-evidence-revision", nativeEvidenceRevision);
       await expect(glass).toHaveAttribute("data-application-fallback", "not-observed");
       const pilot = glass.getByTestId("ground-glass-webgpu-pilot");
@@ -248,6 +249,7 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
         actualExecutionApi: attr("data-actual-execution-api"),
         threeRevision: attr("data-three-revision"),
         mountedRendererRevision: attr("data-mounted-renderer-revision"),
+        sceneSourceRevision: attr("data-mounted-scene-source-revision"),
         featureEvidenceRevision: attr("data-policy-evidence-revisions"),
         mountedFeatureEvidenceRevision: attr("data-mounted-verification-evidence-revision"),
         applicationFallback: attr("data-application-fallback"),

@@ -179,14 +179,27 @@ const architectureRiseRawRttR187V1Feature: Extract<
 
 const architectureRiseRawRttR187Feature: Extract<
   GroundGlassFeatureCompatibility,
-  { status: "not-evaluated" }
+  { status: "verified" }
 > = {
   feature: "raw-rtt",
-  status: "not-evaluated",
+  status: "verified",
   sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
-  knownIncompatibilities: [
-    "RQ2 changed Architecture Rise materials and lighting; the v2 M3 Raw source has not been revalidated",
+  evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Google Chrome 157.0.8103.40 on macOS 27.0.1 arm64",
+  },
+  verificationEvidence: [
+    "RQ2.1 two-stage native-required application test observed the source-bound v2 M3 evidence revision on WebGPURenderer/webgpu with no internal or application fallback",
+    "Architecture Rise Raw RTT remained contentful and the current request completed and was accepted after focus, f/8 aperture, and Front Rise updates",
+    "SPA scene transition confirmed native-generation cleanup before the next unsupported scene mounted through WebGL2",
+    "the native r187 Raw RTT raster fixture passed asymmetric landmark orientation, off-center crop, and source-correspondence checks",
+    "RQ2.1 native capture run produced the exact neutral and Front Rise states with current-frame, host-acceptance, and contentfulness evidence",
   ],
+  requiredCapabilities: { adapterFeatures: [], textureStorageFormats: [] },
+  knownIncompatibilities: [],
 };
 
 const architectureRisePhysicalCocR187Feature: Extract<
