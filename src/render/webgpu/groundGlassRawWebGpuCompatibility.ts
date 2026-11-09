@@ -4,12 +4,11 @@ import {
   type GroundGlassSceneCompatibility,
 } from "../backend/groundGlassSceneCompatibility";
 
-/**
- * Manual scene-source revision for the narrowly verified Architecture Rise Raw RTT path.
- * Update this when any file listed in the M3 roadmap's source-binding note changes.
- */
-export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION =
-  "architecture-rise-raw-rtt-v1";
+/** Frozen source revision for accepted r186 and historical r187 evidence. */
+export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 = "architecture-rise-raw-rtt-v1";
+
+/** Current raster inputs after RQ2; advance this with bounded M3 revalidation. */
+export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION = "architecture-rise-raw-rtt-v2";
 
 /** Verification evidence is bound to the installed r186 renderer API/runtime. */
 export const ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION = "r186";
@@ -17,8 +16,10 @@ export const ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION = "r186";
 /** Native r187 evidence is separate and qualifies only the Raw RTT feature. */
 export const ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION = "r187";
 
-export const ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION =
+export const ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION =
   "m3-architecture-rise-raw-rtt-native-r187-v1";
+export const ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION =
+  "m3-architecture-rise-raw-rtt-native-r187-v2";
 
 export const ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION =
   "m3-architecture-rise-raw-rtt-native-v1";
@@ -52,12 +53,12 @@ export const ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION =
  */
 export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibility = {
   sceneId: "architecture-rise",
-  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
   features: [
     {
       feature: "raw-rtt",
       status: "verified",
-      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
       evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
       testedContext: {
         rendererFamily: "webgpu-renderer",
@@ -79,7 +80,7 @@ export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibilit
     {
       feature: "physical-coc",
       status: "research-only",
-      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
       evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
       testedContext: {
         rendererFamily: "webgpu-renderer",
@@ -102,7 +103,7 @@ export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibilit
     {
       feature: "aperture-gather",
       status: "research-only",
-      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
       evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
       testedContext: {
         rendererFamily: "webgpu-renderer",
@@ -126,7 +127,7 @@ export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibilit
     {
       feature: "far-reconstruction-b1",
       status: "research-only",
-      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
       evidenceRevision: ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
       testedContext: {
         rendererFamily: "webgpu-renderer",
@@ -150,14 +151,14 @@ export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibilit
   ],
 };
 
-const architectureRiseRawRttR187Feature: Extract<
+const architectureRiseRawRttR187V1Feature: Extract<
   GroundGlassFeatureCompatibility,
   { status: "verified" }
 > = {
   feature: "raw-rtt",
   status: "verified",
-  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
-  evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION,
   testedContext: {
     rendererFamily: "webgpu-renderer",
     executionApi: "webgpu",
@@ -176,13 +177,25 @@ const architectureRiseRawRttR187Feature: Extract<
   knownIncompatibilities: [],
 };
 
+const architectureRiseRawRttR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "not-evaluated" }
+> = {
+  feature: "raw-rtt",
+  status: "not-evaluated",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  knownIncompatibilities: [
+    "RQ2 changed Architecture Rise materials and lighting; the v2 M3 Raw source has not been revalidated",
+  ],
+};
+
 const architectureRisePhysicalCocR187Feature: Extract<
   GroundGlassFeatureCompatibility,
   { status: "research-only" }
 > = {
   feature: "physical-coc",
   status: "research-only",
-  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
   evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
   testedContext: {
     rendererFamily: "webgpu-renderer",
@@ -215,7 +228,7 @@ const architectureRiseApertureGatherR187Feature: Extract<
 > = {
   feature: "aperture-gather",
   status: "research-only",
-  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
   evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
   testedContext: {
     rendererFamily: "webgpu-renderer",
@@ -246,7 +259,7 @@ const architectureRiseB1R187Feature: Extract<
 > = {
   feature: "far-reconstruction-b1",
   status: "research-only",
-  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
   evidenceRevision: ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
   testedContext: {
     rendererFamily: "webgpu-renderer",
@@ -276,6 +289,7 @@ const architectureRiseB1R187Feature: Extract<
  */
 export const GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY: GroundGlassSceneCompatibility = {
   ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
   features: [
     architectureRiseRawRttR187Feature,
     architectureRisePhysicalCocR187Feature,
@@ -287,6 +301,18 @@ export const GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY: GroundGlassSceneCompati
         && feature.feature !== "aperture-gather"
         && feature.feature !== "far-reconstruction-b1",
     ),
+  ],
+};
+
+/** Historical r187 records remain bound to the original v1 Architecture Rise raster inputs. */
+export const GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY: GroundGlassSceneCompatibility = {
+  ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  features: [
+    architectureRiseRawRttR187V1Feature,
+    architectureRisePhysicalCocR187Feature,
+    architectureRiseApertureGatherR187Feature,
+    architectureRiseB1R187Feature,
   ],
 };
 

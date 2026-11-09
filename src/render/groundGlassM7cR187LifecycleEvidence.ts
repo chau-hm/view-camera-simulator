@@ -1,5 +1,5 @@
 import {
-  ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+  ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
 } from "./webgpu/groundGlassRawWebGpuCompatibility";
 import { validateGroundGlassLifecycleScenarioContracts } from "./groundGlassM7bLifecycleEvidence";
@@ -145,7 +145,7 @@ const validateNativeRuntime = (scenario: M7cScenario, errors: string[]): void =>
     mount.sceneId !== identity.sceneId || mount.rendererFamily !== observed.rendererFamily ||
     mount.executionApi !== observed.executionApi || mount.internalFallback !== observed.internalFallback
   )) errors.push(`native-mounted-runtime-contradiction:${id}`);
-  if (scenario.policyEvidenceRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION) {
+  if (scenario.policyEvidenceRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION) {
     errors.push(`r187-policy-evidence-mismatch:${id}`);
   }
   const provenance = scenario.provenance;
@@ -642,7 +642,7 @@ const validateWebGl2NegativeControl = (scenario: M7cScenario, errors: string[]):
     scenario.fallbackOutcome !== "webgl-mounted" || scenario.applicationFallback !== true ||
     scenario.cleanupOutcome !== "confirmed"
   ) errors.push("webgl2-control-misclassified-as-native-webgpu:" + scenario.id);
-  if (scenario.policyEvidenceRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION) {
+  if (scenario.policyEvidenceRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION) {
     errors.push("r187-policy-evidence-mismatch:" + scenario.id);
   }
 };
@@ -916,7 +916,7 @@ export const evaluateGroundGlassM7cR187LifecycleEvidence = (input: unknown): Gro
   if (input.qualification !== qualification) errors.push("qualification-mismatch");
   const revisionBoundary = input.revisionBoundary;
   if (!isObject(revisionBoundary) || revisionBoundary.rawRttRendererRevision !== "r187" ||
-      revisionBoundary.rawRttEvidenceRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION ||
+      revisionBoundary.rawRttEvidenceRevision !== ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION ||
       revisionBoundary.productionGroundGlass !== "webgl-only" ||
       revisionBoundary.r187DofAuthorization !== "denied") errors.push("r187-authorization-boundary-mismatch");
   return { valid: errors.length === 0, errors, qualification, counts };

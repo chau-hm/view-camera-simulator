@@ -1,5 +1,5 @@
 import { evaluateGroundGlassM7cR187LifecycleEvidence } from "../groundGlassM7cR187LifecycleEvidence";
-import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "./groundGlassRawWebGpuCompatibility";
+import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 } from "./groundGlassRawWebGpuCompatibility";
 import { evaluateGroundGlassM7dPhysicalCocReport } from "./groundGlassM7dPhysicalCocEvidence";
 
 export const GROUND_GLASS_M7G_REPORT_ID = "ground-glass-m7g-r187-lifecycle-consolidation" as const;
@@ -647,7 +647,7 @@ const evaluateHeldComposite = (captureValue: unknown, issues: string[]): GroundG
   const completedPasses = Array.isArray(captureSummary?.completedPasses) ? captureSummary.completedPasses : [];
   const r1DiagnosticsAtHold = record(capture.r1DiagnosticsAtHold);
   if (capture.route !== "/simulator/free/architecture-rise" || !captureSummary ||
-      captureSummary.sceneSourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION ||
+      captureSummary.sceneSourceRevision !== ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 ||
       captureSummary.requestId !== r2 || captureSummary.rendererGenerationId !== generationId ||
       captureSummary.rendererRevision !== "r187" || captureSummary.actualExecutionApi !== "webgpu" ||
       captureSummary.rendererFamily !== "webgpu-renderer" || captureSummary.internalFallback !== "none" ||

@@ -340,12 +340,19 @@ describe("RQ1 capture run provenance and native classification", () => {
 
   it("keeps the normal capture destination outside the committed baseline", async () => {
     const script = await readFile(resolve(process.cwd(), "scripts/render-quality/rq1-capture.mjs"), "utf8");
-    expect(script).toContain('const defaultOutput = "docs/render-quality/.rq1-runs/current";');
-    const ignoreResult = spawnSync("git", ["check-ignore", "-q", "docs/render-quality/.rq1-runs/current/captures/capture-run.json"], {
+    expect(script).toContain('rq1: "docs/render-quality/.rq1-runs/current"');
+    expect(script).toContain('rq2: "docs/render-quality/.rq2-runs/current"');
+    expect(script).toContain('const baselineOutput = resolve(repositoryRoot, "docs/render-quality/rq1-baseline")');
+    const rq1IgnoreResult = spawnSync("git", ["check-ignore", "-q", "docs/render-quality/.rq1-runs/current/captures/capture-run.json"], {
       cwd: process.cwd(),
       encoding: "utf8",
     });
-    expect(ignoreResult.status).toBe(0);
+    const rq2IgnoreResult = spawnSync("git", ["check-ignore", "-q", "docs/render-quality/.rq2-runs/current/captures/capture-run.json"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    });
+    expect(rq1IgnoreResult.status).toBe(0);
+    expect(rq2IgnoreResult.status).toBe(0);
   });
 
   it("rejects capture output symlinks before writing outside the repository namespace", async () => {
@@ -374,6 +381,7 @@ async function createCheckerFixture() {
   for (const captureId of allCaptureIds) {
     const metadataPath = resolve(directory, "captures", `${captureId}.json`);
     const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
+    metadata.captureProfile = "rq1";
     metadata.imagePath = metadata.imagePath.replace(
       "docs/render-quality/rq1-baseline/",
       `${relative(process.cwd(), directory)}/`,
@@ -424,6 +432,7 @@ async function writeRunStatus(directory: string, run: typeof currentRun, nativeS
 
   webglStatus.captureRunId = run.captureRunId;
   webglStatus.sourceCommit = run.sourceCommit;
+  webglStatus.captureProfile = "rq1";
   webglStatus.status = "captured";
   webglStatus.exitCode = 0;
   webglStatus.signal = null;
@@ -432,8 +441,10 @@ async function writeRunStatus(directory: string, run: typeof currentRun, nativeS
   await writeFile(webglStatusPath, JSON.stringify(webglStatus, null, 2) + "\n");
 
   nativeStatus.schemaVersion = "rq1-native-status-v1";
+  nativeStatus.captureProfile = "rq1";
   nativeStatus.captureRunId = run.captureRunId;
   nativeStatus.sourceCommit = run.sourceCommit;
+  nativeStatus.authorization.sourceRevision = "architecture-rise-raw-rtt-v1";
   nativeStatus.status = nativeStatusValue;
   nativeStatus.reasonClass = nativeStatusValue === "blocked" ? "environment-unavailable" : null;
   nativeStatus.preflight = nativeStatusValue === "blocked" ? unavailablePreflight(run) : availablePreflight(run);
@@ -448,6 +459,7 @@ async function writeRunStatus(directory: string, run: typeof currentRun, nativeS
 
   const captureRun = {
     schemaVersion: "rq1-capture-run-v2",
+    captureProfile: "rq1",
     captureRunId: run.captureRunId,
     sourceCommit: run.sourceCommit,
     sourceTree: { status: "clean", commitReproducible: true, dirtyPaths: [] },

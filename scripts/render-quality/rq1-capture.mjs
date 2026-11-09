@@ -6,24 +6,35 @@ import { findCurrentCaptureIds } from "./rq1-capture-provenance.mjs";
 import { classifyNativeCaptureOutcome, classifyNativePreflight } from "./rq1-native-capture-status.mjs";
 
 const repositoryRoot = process.cwd();
-const defaultOutput = "docs/render-quality/.rq1-runs/current";
+const defaultOutputs = {
+  rq1: "docs/render-quality/.rq1-runs/current",
+  rq2: "docs/render-quality/.rq2-runs/current",
+};
 const baselineOutput = resolve(repositoryRoot, "docs/render-quality/rq1-baseline");
-const stateManifestPath = resolve(repositoryRoot, "docs/render-quality/rq1-baseline/states.json");
 const dreamLoopDirectory = resolve(repositoryRoot, ".dream-loop/architecture-rise");
 
 function parseArguments(args) {
-  let outputDirectory = resolve(repositoryRoot, defaultOutput);
+  let profile = "rq1";
+  let profileWasSet = false;
+  let outputDirectory = null;
   let skipObserver = false;
   let outputWasSet = false;
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--help" || argument === "-h") {
       console.log([
-        "Usage: npm run render-quality:rq1:capture -- [--skip-observer] [--output-dir docs/render-quality/<name>]",
-        "Default output: docs/render-quality/.rq1-runs/current (Git-ignored).",
+        "Usage: node scripts/render-quality/rq1-capture.mjs [--profile rq1|rq2] [--skip-observer] [--output-dir docs/render-quality/<name>]",
+        "RQ1 default output: docs/render-quality/.rq1-runs/current (Git-ignored).",
+        "RQ2 default output: docs/render-quality/.rq2-runs/current (Git-ignored).",
         "Capture requires a clean source tree; the committed rq1-baseline directory is read-only.",
       ].join("\n"));
       process.exit(0);
+    } else if (argument === "--profile" && args[index + 1]) {
+      if (profileWasSet) throw new Error("--profile may only be provided once");
+      profileWasSet = true;
+      profile = args[index + 1];
+      index += 1;
+      if (!(profile in defaultOutputs)) throw new Error("--profile must be rq1 or rq2");
     } else if (argument === "--skip-observer") {
       skipObserver = true;
     } else if (argument === "--output-dir" && args[index + 1]) {
@@ -43,10 +54,11 @@ function parseArguments(args) {
         throw new Error("--output-dir must stay under docs/render-quality/");
       }
     } else {
-      throw new Error("Usage: npm run render-quality:rq1:capture -- [--skip-observer] [--output-dir docs/render-quality/<name>]");
+      throw new Error("Usage: npm run render-quality:rq1:capture -- [--profile rq1|rq2] [--skip-observer] [--output-dir docs/render-quality/<name>]");
     }
   }
-  return { outputDirectory, skipObserver };
+  if (!outputDirectory) outputDirectory = resolve(repositoryRoot, defaultOutputs[profile]);
+  return { profile, outputDirectory, skipObserver };
 }
 
 async function assertSafeOutputDirectory(outputDirectory) {
@@ -148,6 +160,7 @@ function cleanCaptureEnvironment(backend, outputDirectory, captureRun) {
   env.GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED = "0";
   env.PLAYWRIGHT_WEB_SERVER_PORT = backend === "webgpu" ? "4174" : "4173";
   env.RQ1_CAPTURE_BACKEND = backend;
+  env.RQ_CAPTURE_PROFILE = captureRun.captureProfile;
   env.RQ1_CAPTURE_OUTPUT_DIR = outputDirectory;
   env.RQ1_CAPTURE_RUN_ID = captureRun.captureRunId;
   // Enable the existing test-only frame acceptance diagnostics for both
@@ -193,6 +206,7 @@ async function copyObserverEvidence(outputDirectory, captureRun, manifest) {
     const sceneMovement = cameraState.movements ?? {};
     const metadata = {
       schemaVersion: "rq1-capture-metadata-v1",
+      captureProfile: captureRun.captureProfile,
       captureId: `architecture-rise-${view}`,
       stateId: "architecture-rise-observer-dream-loop-reference",
       sourceCommit,
@@ -263,13 +277,32 @@ async function copyObserverEvidence(outputDirectory, captureRun, manifest) {
   return captureRecords;
 }
 
-const { outputDirectory, skipObserver } = parseArguments(process.argv.slice(2));
+const { profile, outputDirectory, skipObserver } = parseArguments(process.argv.slice(2));
 await assertSafeOutputDirectory(outputDirectory);
 const sourceTree = requireCleanSource(outputDirectory);
-const manifest = JSON.parse(await readFile(stateManifestPath, "utf8"));
+const manifestPath = resolve(
+  repositoryRoot,
+  profile === "rq2"
+    ? "docs/render-quality/rq2-architecture-rise/states.json"
+    : "docs/render-quality/rq1-baseline/states.json",
+);
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const sourceCommit = runGit(["rev-parse", "HEAD"]);
+const compatibilitySource = await readFile(
+  resolve(repositoryRoot, "src/render/webgpu/groundGlassRawWebGpuCompatibility.ts"),
+  "utf8",
+);
+const activeSourceMatch = compatibilitySource.match(
+  /export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION\s*=\s*["']([^"']+)["']/,
+);
+if (!activeSourceMatch || activeSourceMatch[1] !== manifest.sceneSourceRevision) {
+  throw new Error(
+    `Capture profile ${profile} is bound to ${manifest.sceneSourceRevision}, but the active scene-source revision is ${activeSourceMatch?.[1] ?? "unavailable"}.`,
+  );
+}
 const captureRun = {
   schemaVersion: "rq1-capture-run-v2",
+  captureProfile: profile,
   captureRunId: randomUUID(),
   sourceCommit,
   sourceTree,
@@ -277,9 +310,12 @@ const captureRun = {
   observerSourceCommits: [],
   status: "running",
 };
-const expectedM3Evidence = "m3-architecture-rise-raw-rtt-native-r187-v1";
+const expectedM3Evidence = manifest.nativeRevalidation?.featureEvidenceRevision ??
+  manifest.states.flatMap((state) => state.captures)
+    .find((capture) => capture.rendererFamily === "webgpu-renderer")?.featureEvidenceRevision;
+if (!expectedM3Evidence) throw new Error(`Capture profile ${profile} does not declare a native M3 evidence revision.`);
 if (manifest.sceneId !== "architecture-rise" || manifest.rendererRevision !== "r187") {
-  throw new Error("RQ1 state manifest does not match the accepted Architecture Rise r187 baseline.");
+  throw new Error(`Capture profile ${profile} does not match Architecture Rise / r187.`);
 }
 for (const state of manifest.states) {
   if (state.captures.some((capture) => capture.rendererFamily === "webgpu-renderer" && capture.featureEvidenceRevision !== expectedM3Evidence)) {
@@ -355,9 +391,10 @@ const missingWebglCaptureIds = webglCaptureSpecs
   .filter((captureId) => !webglCaptureIds.includes(captureId));
 const webglStatus = {
   status: webgl.status === 0 && missingWebglCaptureIds.length === 0 ? "captured" : "invalid",
+  captureProfile: profile,
   captureRunId: captureRun.captureRunId,
   sourceCommit: captureRun.sourceCommit,
-  command: "npm run render-quality:rq1:capture",
+  command: profile === "rq2" ? "npm run render-quality:rq2:capture" : "npm run render-quality:rq1:capture",
   backend: "webgl-renderer/webgl2",
   exitCode: webgl.exitCode,
   signal: webgl.signal,
@@ -368,66 +405,110 @@ const webglStatus = {
 };
 await writeFile(resolve(outputDirectory, "captures/webgl-status.json"), JSON.stringify(webglStatus, null, 2) + "\n");
 
-const native = run(
-  "authorized native WebGPU M3 Raw captures",
-  process.execPath,
-  [...commonArgs, "--project=chrome-native-webgpu"],
-  cleanCaptureEnvironment("webgpu", outputDirectory, captureRun),
-);
 const nativeCaptureSpecs = manifest.states.flatMap((state) =>
   state.captures.filter((capture) => capture.rendererFamily === "webgpu-renderer"),
 );
-const nativeCaptureIds = await findCurrentCaptureIds(nativeCaptureSpecs, outputDirectory, captureRun);
-const missingNativeCaptureIds = nativeCaptureSpecs
-  .map((capture) => capture.captureId)
-  .filter((captureId) => !nativeCaptureIds.includes(captureId));
-const preflight = await readJsonIfExists(resolve(outputDirectory, "captures/native-preflight.json"));
-const nativeArtifactsPresent = await anyNativeArtifacts(outputDirectory, nativeCaptureSpecs);
-const preflightStatus = classifyNativePreflight(preflight, captureRun);
-const nativeOutcome = classifyNativeCaptureOutcome({
-  preflight,
-  captureRun,
-  processExitCode: native.exitCode,
-  processSignal: native.signal,
-  captureAttempted: preflightStatus === "available",
-  expectedCaptureIds: nativeCaptureSpecs.map((capture) => capture.captureId),
-  currentCaptureIds: nativeCaptureIds,
-  nativeArtifactsPresent,
-});
-const nativeStatus = {
-  schemaVersion: "rq1-native-status-v1",
-  status: nativeOutcome.status,
-  reasonClass: nativeOutcome.reasonClass,
-  captureRunId: captureRun.captureRunId,
-  sourceCommit: captureRun.sourceCommit,
-  command: "npm run render-quality:rq1:capture",
-  backend: "webgpu-renderer/webgpu",
-  authorization: {
-    feature: "Architecture Rise M3 Raw RTT only",
-    evidenceRevision: expectedM3Evidence,
-    rawPilot: true,
-    physicalCocResearch: false,
-    apertureGatherResearch: false,
-    m6Presentation: false,
-    m6Qualification: false,
-  },
-  preflight,
-  nativeTest: {
+let native = null;
+let nativeStatus;
+let nativeCaptureIds = [];
+let missingNativeCaptureIds = nativeCaptureSpecs.map((capture) => capture.captureId);
+let preflight = null;
+if (profile === "rq2" && manifest.nativeRevalidation?.status === "not-evaluated") {
+  console.warn("[RQ2] Native M3 capture not attempted: the v2 scene-source attestation is not evaluated.");
+  const nativeArtifactsPresent = await anyNativeArtifacts(outputDirectory, nativeCaptureSpecs);
+  if (nativeArtifactsPresent) {
+    throw new Error("RQ2 native artifacts exist despite the not-evaluated status; use a fresh working output directory.");
+  }
+  nativeStatus = {
+    schemaVersion: "rq2-native-status-v1",
+    status: "not-evaluated",
+    captureProfile: profile,
+    reasonClass: "source-revision-unverified",
+    captureRunId: captureRun.captureRunId,
+    sourceCommit: captureRun.sourceCommit,
+    command: null,
+    backend: "webgpu-renderer/webgpu",
+    authorization: {
+      feature: "Architecture Rise M3 Raw RTT only",
+      sourceRevision: manifest.nativeRevalidation.sourceRevision,
+      evidenceRevision: expectedM3Evidence,
+      rawPilot: true,
+      physicalCocResearch: false,
+      apertureGatherResearch: false,
+      m6Presentation: false,
+      m6Qualification: false,
+    },
+    preflight: null,
+    nativeTest: { captureAttempted: false, exitCode: null, signal: null, error: null },
+    exitCode: null,
+    signal: null,
+    error: null,
+    capturedCaptureIds: [],
+    missingCaptureIds: missingNativeCaptureIds,
+    blocker: manifest.nativeRevalidation.blocker,
+    failureSummary: null,
+  };
+} else {
+  native = run(
+    "authorized native WebGPU M3 Raw captures",
+    process.execPath,
+    [...commonArgs, "--project=chrome-native-webgpu"],
+    cleanCaptureEnvironment("webgpu", outputDirectory, captureRun),
+  );
+  nativeCaptureIds = await findCurrentCaptureIds(nativeCaptureSpecs, outputDirectory, captureRun);
+  missingNativeCaptureIds = nativeCaptureSpecs
+    .map((capture) => capture.captureId)
+    .filter((captureId) => !nativeCaptureIds.includes(captureId));
+  preflight = await readJsonIfExists(resolve(outputDirectory, "captures/native-preflight.json"));
+  const nativeArtifactsPresent = await anyNativeArtifacts(outputDirectory, nativeCaptureSpecs);
+  const preflightStatus = classifyNativePreflight(preflight, captureRun);
+  const nativeOutcome = classifyNativeCaptureOutcome({
+    preflight,
+    captureRun,
+    processExitCode: native.exitCode,
+    processSignal: native.signal,
     captureAttempted: preflightStatus === "available",
+    expectedCaptureIds: nativeCaptureSpecs.map((capture) => capture.captureId),
+    currentCaptureIds: nativeCaptureIds,
+    nativeArtifactsPresent,
+  });
+  nativeStatus = {
+    schemaVersion: "rq1-native-status-v1",
+    status: nativeOutcome.status,
+    captureProfile: profile,
+    reasonClass: nativeOutcome.reasonClass,
+    captureRunId: captureRun.captureRunId,
+    sourceCommit: captureRun.sourceCommit,
+    command: profile === "rq2" ? "npm run render-quality:rq2:capture" : "npm run render-quality:rq1:capture",
+    backend: "webgpu-renderer/webgpu",
+    authorization: {
+      feature: "Architecture Rise M3 Raw RTT only",
+      sourceRevision: manifest.sceneSourceRevision,
+      evidenceRevision: expectedM3Evidence,
+      rawPilot: true,
+      physicalCocResearch: false,
+      apertureGatherResearch: false,
+      m6Presentation: false,
+      m6Qualification: false,
+    },
+    preflight,
+    nativeTest: {
+      captureAttempted: preflightStatus === "available",
+      exitCode: native.exitCode,
+      signal: native.signal,
+      error: native.error,
+    },
     exitCode: native.exitCode,
     signal: native.signal,
     error: native.error,
-  },
-  exitCode: native.exitCode,
-  signal: native.signal,
-  error: native.error,
-  capturedCaptureIds: nativeCaptureIds,
-  missingCaptureIds: missingNativeCaptureIds,
-  blocker: nativeOutcome.status === "blocked" ? `Native prerequisite unavailable: ${preflight.probeStatus}.` : null,
-  failureSummary: nativeOutcome.status === "invalid"
-    ? (native.stderr || native.stdout || native.error || "Native capture failed without process output.").slice(-12000)
-    : null,
-};
+    capturedCaptureIds: nativeCaptureIds,
+    missingCaptureIds: missingNativeCaptureIds,
+    blocker: nativeOutcome.status === "blocked" ? `Native prerequisite unavailable: ${preflight.probeStatus}.` : null,
+    failureSummary: nativeOutcome.status === "invalid"
+      ? (native.stderr || native.stdout || native.error || "Native capture failed without process output.").slice(-12000)
+      : null,
+  };
+}
 await writeFile(resolve(outputDirectory, "captures/native-status.json"), JSON.stringify(nativeStatus, null, 2) + "\n");
 
 captureRun.capturedCaptureIds = [...new Set([...observerCaptures.map((capture) => capture.captureId), ...webglCaptureIds, ...nativeCaptureIds])];
@@ -438,6 +519,8 @@ captureRun.status = webglStatus.status !== "captured"
   ? "invalid"
   : nativeStatus.status === "blocked"
     ? "native-blocked"
+    : nativeStatus.status === "not-evaluated"
+      ? "native-not-evaluated"
     : nativeStatus.status === "captured"
       ? "captured"
       : "invalid";
@@ -447,12 +530,14 @@ if (webglStatus.status !== "captured") {
   throw new Error(`WebGL capture is ${webglStatus.status}; see ${relative(repositoryRoot, resolve(outputDirectory, "captures/webgl-status.json"))}.`);
 }
 if (nativeStatus.status === "blocked") {
-  console.warn(`[RQ1] Native environment unavailable (${preflight.probeStatus}). WebGL evidence is available; native rendering was not validated.`);
+  console.warn(`[${profile.toUpperCase()}] Native environment unavailable (${preflight.probeStatus}). WebGL evidence is available; native rendering was not validated.`);
+} else if (nativeStatus.status === "not-evaluated") {
+  console.warn(`[RQ2] WebGL evidence is valid; native M3 was not evaluated for source ${manifest.sceneSourceRevision}.`);
 } else if (nativeStatus.status === "invalid") {
-  throw new Error(`Native capture is invalid (process exit ${String(native.exitCode)}${native.signal ? `, signal ${native.signal}` : ""}); see ${relative(repositoryRoot, resolve(outputDirectory, "captures/native-status.json"))}.`);
+  throw new Error(`Native capture is invalid (process exit ${String(native?.exitCode)}${native?.signal ? `, signal ${native.signal}` : ""}); see ${relative(repositoryRoot, resolve(outputDirectory, "captures/native-status.json"))}.`);
 }
 
-console.log(`\n[RQ1] Evidence written under ${relative(repositoryRoot, outputDirectory)} (source HEAD ${sourceCommit}).`);
+console.log(`\n[${profile.toUpperCase()}] Evidence written under ${relative(repositoryRoot, outputDirectory)} (source HEAD ${sourceCommit}).`);
 
 function runGit(args) {
   const result = spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });

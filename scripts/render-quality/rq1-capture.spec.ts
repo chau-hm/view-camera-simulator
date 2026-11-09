@@ -44,12 +44,13 @@ type StateManifest = {
   groundGlassOutputSizeCss: { width: number; height: number };
   states: CaptureState[];
   additionalReferences: CaptureSpec[];
+  nativeRevalidation?: { featureEvidenceRevision: string; status: string };
 };
 
 const backend = process.env.RQ1_CAPTURE_BACKEND;
 const outputDirectory = process.env.RQ1_CAPTURE_OUTPUT_DIR;
 const repositoryRoot = process.cwd();
-const nativeEvidenceRevision = "m3-architecture-rise-raw-rtt-native-r187-v1";
+const captureProfile = process.env.RQ_CAPTURE_PROFILE ?? "rq1";
 const comparisonLimit =
   "WebGL Raw Debug and native M3 Raw use different display implementations; this is a bounded Raw display comparison, not strict pixel parity.";
 
@@ -61,8 +62,17 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
   expect(REVISION).toBe("187");
 
   const manifest = JSON.parse(
-    await readFile(resolve(repositoryRoot, "docs/render-quality/rq1-baseline/states.json"), "utf8"),
+    await readFile(resolve(
+      repositoryRoot,
+      captureProfile === "rq2"
+        ? "docs/render-quality/rq2-architecture-rise/states.json"
+        : "docs/render-quality/rq1-baseline/states.json",
+    ), "utf8"),
   ) as StateManifest;
+  const nativeEvidenceRevision = manifest.nativeRevalidation?.featureEvidenceRevision ??
+    manifest.states.flatMap((state) => state.captures)
+      .find((capture) => capture.rendererFamily === "webgpu-renderer")?.featureEvidenceRevision;
+  if (!nativeEvidenceRevision) throw new Error("Capture state manifest has no native M3 evidence revision.");
   expect(manifest.sceneId).toBe("architecture-rise");
   expect(manifest.states.map((state) => state.stateId)).toEqual([
     "architecture-rise-neutral",
@@ -273,6 +283,7 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
     await writeFile(imagePath, image);
     const metadata = {
       schemaVersion: "rq1-capture-metadata-v1",
+      captureProfile,
       captureId: spec.captureId,
       stateId: state.stateId,
       captureRunId,

@@ -17,7 +17,7 @@ const child = spawn(
       ...process.env,
       SCENE_CAPACITY_BENCHMARK: "1",
       SCENE_CAPACITY_BENCHMARK_COMMIT: commitSha,
-      SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR: "test-results",
+      SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR: process.env.SCENE_CAPACITY_BENCHMARK_OUTPUT_DIR ?? "test-results",
     },
   },
 );

@@ -38,9 +38,9 @@ describe("Architecture Rise glazing material", () => {
       if (!(glass instanceof THREE.MeshStandardMaterial)) return;
 
       expect(sideGlazing?.material).toBe(glass);
-      expect(glass.color.getHex()).toBe(0x182d37);
-      expect(glass.roughness).toBe(0.24);
-      expect(glass.metalness).toBe(0.08);
+      expect(glass.color.getHex()).toBe(0x233b43);
+      expect(glass.roughness).toBe(0.3);
+      expect(glass.metalness).toBe(0.12);
 
       glass.addEventListener("dispose", () => {
         glassDisposed = true;

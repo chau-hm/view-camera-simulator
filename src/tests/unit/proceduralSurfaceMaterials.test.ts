@@ -12,11 +12,11 @@ import {
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 
 const materialOptions = {
-  color: "#d7c19c",
+  color: "#cfb992",
   pattern: "limestone",
-  repeat: [3, 3] as const,
-  roughness: 0.94,
-  normalStrength: 0.3,
+  repeat: [4, 4] as const,
+  roughness: 0.9,
+  normalStrength: 0.38,
 } as const;
 
 const surfacePatterns = [
@@ -80,17 +80,17 @@ describe("procedural surface materials", () => {
         expect(texture?.magFilter).toBe(THREE.LinearFilter);
         expect(texture?.minFilter).toBe(THREE.LinearMipmapLinearFilter);
         expect(texture?.generateMipmaps).toBe(true);
-        expect(texture?.repeat.x).toBe(3);
-        expect(texture?.repeat.y).toBe(3);
+        expect(texture?.repeat.x).toBe(4);
+        expect(texture?.repeat.y).toBe(4);
       });
 
       expect(albedo?.colorSpace).toBe(THREE.SRGBColorSpace);
       expect(roughness?.colorSpace).toBe(THREE.NoColorSpace);
       expect(normal?.colorSpace).toBe(THREE.NoColorSpace);
-      expect(material.roughness).toBe(0.94);
+      expect(material.roughness).toBe(0.9);
       expect(material.metalness).toBe(0);
-      expect(material.normalScale.x).toBe(0.3);
-      expect(material.normalScale.y).toBe(0.3);
+      expect(material.normalScale.x).toBe(0.38);
+      expect(material.normalScale.y).toBe(0.38);
     } finally {
       disposeMaterial(material);
     }
@@ -133,10 +133,10 @@ describe("procedural surface materials", () => {
       presentation: ARCHITECTURE_RISE_PRESENTATION,
     });
     const expectedSurfaces = [
-      { name: "architecture-rise-primary-facade", repeat: [3, 3], normalStrength: 0.3 },
-      { name: "architecture-rise-roof-parapet", repeat: [1, 1], normalStrength: 0.14 },
-      { name: "architecture-rise-roof-coping-front", repeat: [1, 1], normalStrength: 0.12 },
-      { name: "architecture-rise-sidewalk-slab", repeat: [10, 8], normalStrength: 0.1 },
+      { name: "architecture-rise-primary-facade", repeat: [4, 4], normalStrength: 0.38 },
+      { name: "architecture-rise-roof-parapet", repeat: [1, 1], normalStrength: 0.18 },
+      { name: "architecture-rise-roof-coping-front", repeat: [1, 1], normalStrength: 0.09 },
+      { name: "architecture-rise-sidewalk-slab", repeat: [12, 10], normalStrength: 0.14 },
     ] as const;
 
     try {

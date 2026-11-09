@@ -36,7 +36,7 @@ const architectureRiseDaylightSource = Object.freeze({
   category: "natural" as const,
   kind: "directional" as const,
   color: "#fff8ee",
-  intensity: 0.8,
+  intensity: 1,
   // Directional-light endpoints are a render-space ray definition, not a model
   // of the Sun's astronomical distance.
   positionMm: Object.freeze({
@@ -55,7 +55,7 @@ const architectureRiseEnvironment = Object.freeze({
   skyHorizonColor: "#737d80",
   groundHorizonColor: "#686b65",
   nadirColor: "#3f4540",
-  intensity: 0.95,
+  intensity: 0.72,
 });
 
 const ARCHITECTURE_RISE_WORLD_ILLUMINATION: ResolvedWorldIllumination = Object.freeze({

@@ -62,7 +62,7 @@ describe("world illumination contract", () => {
       category: "natural",
       kind: "directional",
       color: "#fff8ee",
-      intensity: 0.8,
+      intensity: 1,
       castsShadow: false,
       positionMm: {
         x: targetMm.x - 6000,
@@ -73,7 +73,7 @@ describe("world illumination contract", () => {
     });
     expect(worldIlluminationDirectionalToWorld(source)).toEqual({
       color: "#fff8ee",
-      intensity: 0.8,
+      intensity: 1,
       position: [
         (targetMm.x - 6000) / 1000,
         (targetMm.y + 8000) / 1000,
@@ -93,7 +93,7 @@ describe("world illumination contract", () => {
       skyHorizonColor: "#737d80",
       groundHorizonColor: "#686b65",
       nadirColor: "#3f4540",
-      intensity: 0.95,
+      intensity: 0.72,
     });
     expect(Object.isFrozen(architecture)).toBe(true);
     expect(Object.isFrozen(architecture.sources)).toBe(true);
