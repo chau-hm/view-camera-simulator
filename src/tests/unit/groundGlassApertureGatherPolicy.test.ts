@@ -40,6 +40,7 @@ const baseEligibilityInput = (): GroundGlassApertureGatherEligibilityInput => {
     physicalStatus: "completed",
     physicalRequestId: request.identity.requestId,
     expectedRendererRevision: "r186",
+    compatibility: GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
   };
 };
 

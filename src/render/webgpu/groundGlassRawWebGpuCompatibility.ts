@@ -316,15 +316,22 @@ export const GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY: GroundGlassSceneComp
   ],
 };
 
-/** Selects renderer evidence by the installed Three.js revision; unknown revisions fail closed. */
+/**
+ * Selects only evidence bound to the active Architecture Rise raster source. Historical renderer
+ * records remain available as immutable evidence objects, but cannot authorize a changed scene.
+ */
 export const resolveGroundGlassRawWebGpuCompatibility = (
   rendererRevision: string,
 ): GroundGlassSceneCompatibility | null => {
-  if (rendererRevision === "r186") return GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY;
-  if (rendererRevision === ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION) {
-    return GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY;
-  }
-  return null;
+  const compatibility = rendererRevision === "r186"
+    ? GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY
+    : rendererRevision === ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION
+      ? GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY
+      : null;
+
+  return compatibility?.sourceRevision === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION
+    ? compatibility
+    : null;
 };
 
 /** Returns only a Raw RTT qualification whose tested renderer revision matches the request. */
