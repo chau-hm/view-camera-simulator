@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { captureBelongsToRun, currentRunCaptureIds } from "../../../scripts/render-quality/rq1-capture-provenance.mjs";
+import { captureBelongsToRun, currentRunCaptureIds, findCurrentCaptureIds } from "../../../scripts/render-quality/rq1-capture-provenance.mjs";
 
 const currentRun = {
   captureRunId: randomUUID(),
@@ -53,6 +53,22 @@ describe("RQ1 capture run provenance", () => {
       { neutral: previousRunCapture },
       currentRun,
     )).toEqual([]);
+  });
+
+  it("excludes previous-run native files from the capture runner inventory", async () => {
+    const fixture = await createCheckerFixture();
+    try {
+      const manifest = JSON.parse(await readFile(resolve(process.cwd(), "docs/render-quality/rq1-baseline/states.json"), "utf8"));
+      const nativeSpecs = manifest.states.flatMap((state: { captures: Array<{ captureId: string; path: string; rendererFamily: string }> }) =>
+        state.captures.filter((capture) => capture.rendererFamily === "webgpu-renderer"),
+      );
+
+      const discoveredCaptureIds = await findCurrentCaptureIds(nativeSpecs, fixture.directory, currentRun);
+      expect(nativeSpecs).toHaveLength(2);
+      expect(discoveredCaptureIds).toEqual([]);
+    } finally {
+      await rm(fixture.directory, { recursive: true, force: true });
+    }
   });
 
   it("checks a newer reproduction against its own source commit instead of the baseline report", async () => {

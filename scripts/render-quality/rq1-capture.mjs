@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { currentRunCaptureIds } from "./rq1-capture-provenance.mjs";
+import { findCurrentCaptureIds } from "./rq1-capture-provenance.mjs";
 
 const repositoryRoot = process.cwd();
 const defaultOutput = "docs/render-quality/rq1-baseline";
@@ -352,23 +352,6 @@ if (nativeStatus.status === "blocked") {
 }
 
 console.log(`\n[RQ1] Evidence written under ${relative(repositoryRoot, outputDirectory)} (source HEAD ${sourceCommit}).`);
-
-async function findCurrentCaptureIds(captureSpecs, outputDirectory, captureRun) {
-  const metadataById = {};
-  for (const capture of captureSpecs) {
-    try {
-      const metadata = JSON.parse(await readFile(
-        resolve(outputDirectory, "captures", `${capture.captureId}.json`),
-        "utf8",
-      ));
-      await readFile(resolve(outputDirectory, capture.path));
-      metadataById[capture.captureId] = metadata;
-    } catch {
-      // Missing paths and stale sidecars are excluded from the current run inventory.
-    }
-  }
-  return currentRunCaptureIds(captureSpecs.map((capture) => capture.captureId), metadataById, captureRun);
-}
 
 function runGit(args) {
   const result = spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });

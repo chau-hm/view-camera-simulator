@@ -9,6 +9,11 @@ export interface CaptureMetadata {
   sourceCommit?: string;
 }
 
+export interface CaptureSpec {
+  captureId: string;
+  path: string;
+}
+
 export function captureBelongsToRun(
   metadata: CaptureMetadata | null | undefined,
   captureRun: CaptureRun | null | undefined,
@@ -19,3 +24,9 @@ export function currentRunCaptureIds(
   metadataById: Record<string, CaptureMetadata | undefined>,
   captureRun: CaptureRun,
 ): string[];
+
+export function findCurrentCaptureIds(
+  captureSpecs: CaptureSpec[],
+  outputDirectory: string,
+  captureRun: CaptureRun,
+): Promise<string[]>;
