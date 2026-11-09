@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { currentRunCaptureIds } from "./rq1-capture-provenance.mjs";
 
 const repositoryRoot = process.cwd();
 const defaultOutput = "docs/render-quality/rq1-baseline";
@@ -48,7 +49,7 @@ function run(label, command, args, env) {
   };
 }
 
-function cleanCaptureEnvironment(backend, outputDirectory) {
+function cleanCaptureEnvironment(backend, outputDirectory, captureRun) {
   const env = { ...process.env };
   for (const key of [
     "OBSERVER_NATIVE_WEBGPU_REQUIRED",
@@ -79,6 +80,7 @@ function cleanCaptureEnvironment(backend, outputDirectory) {
   env.PLAYWRIGHT_WEB_SERVER_PORT = backend === "webgpu" ? "4174" : "4173";
   env.RQ1_CAPTURE_BACKEND = backend;
   env.RQ1_CAPTURE_OUTPUT_DIR = outputDirectory;
+  env.RQ1_CAPTURE_RUN_ID = captureRun.captureRunId;
   // Enable the existing test-only frame acceptance diagnostics for both
   // renderers. No failure point is invoked and this does not select WebGPU.
   env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION = "1";
@@ -91,7 +93,7 @@ function cleanCaptureEnvironment(backend, outputDirectory) {
   return env;
 }
 
-async function copyObserverEvidence(outputDirectory, sourceCommit, manifest) {
+async function copyObserverEvidence(outputDirectory, captureRun, manifest) {
   const captureRecords = [];
   for (const view of ["observer-clean", "observer-teaching"]) {
     const sourceImage = resolve(dreamLoopDirectory, `${view}.png`);
@@ -105,6 +107,9 @@ async function copyObserverEvidence(outputDirectory, sourceCommit, manifest) {
     const image = await readFile(targetImage);
     const sidecar = JSON.parse(await readFile(sourceMetadata, "utf8"));
     const runtime = sidecar.runtime ?? {};
+    const sourceCommit = typeof sidecar.sourceCommit === "string"
+      ? sidecar.sourceCommit
+      : manifest.acceptedBaselineCommit;
     const cameraState = sidecar.deterministicState ?? {};
     if (
       runtime.status !== "active" ||
@@ -122,6 +127,9 @@ async function copyObserverEvidence(outputDirectory, sourceCommit, manifest) {
       captureId: `architecture-rise-${view}`,
       stateId: "architecture-rise-observer-dream-loop-reference",
       sourceCommit,
+      captureRunId: captureRun.captureRunId,
+      captureRunSourceCommit: captureRun.sourceCommit,
+      captureSourceCommitFallback: sidecar.sourceCommit ? null : "accepted-baseline-commit; legacy Dream Loop sidecar had no sourceCommit field",
       sceneId: manifest.sceneId,
       sceneSourceRevision: manifest.sceneSourceRevision,
       rendererFamily: runtime.rendererFamily,
@@ -173,6 +181,7 @@ async function copyObserverEvidence(outputDirectory, sourceCommit, manifest) {
       dreamLoopSource: {
         pilotId: sidecar.pilotId,
         assetKey: sidecar.assetKey,
+        sourceCommit,
         optimizationSurface: sidecar.optimizationSurface,
         hiddenDomControls: sidecar.hiddenDomControls,
         overlays: sidecar.overlays,
@@ -180,7 +189,7 @@ async function copyObserverEvidence(outputDirectory, sourceCommit, manifest) {
       },
     };
     await writeFile(targetMetadata, JSON.stringify(metadata, null, 2) + "\n");
-    captureRecords.push(targetMetadata);
+    captureRecords.push(metadata);
   }
   return captureRecords;
 }
@@ -191,6 +200,14 @@ const outputArgs = captureArgs.filter((argument) => argument !== "--skip-observe
 const outputDirectory = parseOutputDirectory(outputArgs);
 const manifest = JSON.parse(await readFile(stateManifestPath, "utf8"));
 const sourceCommit = runGit(["rev-parse", "HEAD"]);
+const captureRun = {
+  schemaVersion: "rq1-capture-run-v1",
+  captureRunId: randomUUID(),
+  sourceCommit,
+  observerCaptureMode: skipObserver ? "reused-dream-loop-output" : "dream-loop-captured",
+  observerSourceCommits: [],
+  status: "running",
+};
 const expectedM3Evidence = "m3-architecture-rise-raw-rtt-native-r187-v1";
 if (manifest.sceneId !== "architecture-rise" || manifest.rendererRevision !== "r187") {
   throw new Error("RQ1 state manifest does not match the accepted Architecture Rise r187 baseline.");
@@ -202,8 +219,12 @@ for (const state of manifest.states) {
 }
 
 await mkdir(outputDirectory, { recursive: true });
+const captureRunPath = resolve(outputDirectory, "captures/capture-run.json");
+await mkdir(dirname(captureRunPath), { recursive: true });
+await writeFile(captureRunPath, JSON.stringify(captureRun, null, 2) + "\n");
 const dreamLoopEnv = {
   ...process.env,
+  DREAM_LOOP_SOURCE_COMMIT: sourceCommit,
   VITE_BASE_PATH: "/",
   GROUND_GLASS_NATIVE_WEBGPU_REQUIRED: "0",
   GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION: "0",
@@ -219,7 +240,10 @@ if (!skipObserver) {
 } else {
   console.log("[RQ1] Reusing the existing .dream-loop Architecture Rise Observer capture as explicitly requested.");
 }
-await copyObserverEvidence(outputDirectory, sourceCommit, manifest);
+const observerCaptures = await copyObserverEvidence(outputDirectory, captureRun, manifest);
+captureRun.observerSourceCommits = [...new Set(observerCaptures.map((capture) => capture.sourceCommit))];
+captureRun.status = "capturing-ground-glass";
+await writeFile(captureRunPath, JSON.stringify(captureRun, null, 2) + "\n");
 
 const playwrightCli = resolve(repositoryRoot, "node_modules/playwright/cli.js");
 const commonArgs = [
@@ -235,13 +259,29 @@ const webgl = run(
   "WebGL Raw and processed captures",
   process.execPath,
   [...commonArgs, "--project=chromium"],
-  cleanCaptureEnvironment("webgl", outputDirectory),
+  cleanCaptureEnvironment("webgl", outputDirectory, captureRun),
 );
+const webglCaptureSpecs = [
+  ...manifest.states.flatMap((state) => state.captures.filter((capture) => capture.rendererFamily === "webgl-renderer")),
+  ...manifest.additionalReferences.filter((capture) => capture.rendererFamily === "webgl-renderer"),
+];
+const webglCaptureIds = await findCurrentCaptureIds(webglCaptureSpecs, outputDirectory, captureRun);
+const missingWebglCaptureIds = webglCaptureSpecs
+  .map((capture) => capture.captureId)
+  .filter((captureId) => !webglCaptureIds.includes(captureId));
 const webglStatus = {
-  status: webgl.status === 0 ? "captured" : "blocked",
+  status: webgl.status === 0 && missingWebglCaptureIds.length === 0
+    ? "captured"
+    : missingWebglCaptureIds.length > 0
+      ? "blocked"
+      : "invalid",
+  captureRunId: captureRun.captureRunId,
+  sourceCommit: captureRun.sourceCommit,
   command: "npm run render-quality:rq1:capture",
   backend: "webgl-renderer/webgl2",
   exitCode: webgl.status,
+  capturedCaptureIds: webglCaptureIds,
+  missingCaptureIds: missingWebglCaptureIds,
   error: webgl.error,
   failureSummary: webgl.status === 0 ? null : (webgl.stderr || webgl.stdout).slice(-8000),
 };
@@ -251,20 +291,12 @@ const native = run(
   "authorized native WebGPU M3 Raw captures",
   process.execPath,
   [...commonArgs, "--project=chrome-native-webgpu"],
-  cleanCaptureEnvironment("webgpu", outputDirectory),
+  cleanCaptureEnvironment("webgpu", outputDirectory, captureRun),
 );
 const nativeCaptureSpecs = manifest.states.flatMap((state) =>
   state.captures.filter((capture) => capture.rendererFamily === "webgpu-renderer"),
 );
-const nativeCaptureIds = [];
-for (const capture of nativeCaptureSpecs) {
-  try {
-    await readFile(resolve(outputDirectory, "captures", `${capture.captureId}.json`));
-    nativeCaptureIds.push(capture.captureId);
-  } catch {
-    // A capture is listed only when the test wrote its validated PNG and metadata.
-  }
-}
+const nativeCaptureIds = await findCurrentCaptureIds(nativeCaptureSpecs, outputDirectory, captureRun);
 const missingNativeCaptureIds = nativeCaptureSpecs
   .map((capture) => capture.captureId)
   .filter((captureId) => !nativeCaptureIds.includes(captureId));
@@ -274,6 +306,8 @@ const nativeStatus = {
     : missingNativeCaptureIds.length > 0
       ? "blocked"
       : "invalid",
+  captureRunId: captureRun.captureRunId,
+  sourceCommit: captureRun.sourceCommit,
   command: "npm run render-quality:rq1:capture",
   backend: "webgpu-renderer/webgpu",
   authorization: {
@@ -296,7 +330,19 @@ const nativeStatus = {
 };
 await writeFile(resolve(outputDirectory, "captures/native-status.json"), JSON.stringify(nativeStatus, null, 2) + "\n");
 
-if (webgl.status !== 0) {
+captureRun.capturedCaptureIds = [...new Set([...observerCaptures.map((capture) => capture.captureId), ...webglCaptureIds, ...nativeCaptureIds])];
+captureRun.webglStatus = webglStatus.status;
+captureRun.nativeStatus = nativeStatus.status;
+captureRun.status = webglStatus.status !== "captured"
+  ? "invalid"
+  : nativeStatus.status === "blocked"
+    ? "native-blocked"
+    : nativeStatus.status === "captured"
+      ? "captured"
+      : "invalid";
+await writeFile(captureRunPath, JSON.stringify(captureRun, null, 2) + "\n");
+
+if (webglStatus.status !== "captured") {
   throw new Error(`WebGL capture is ${webglStatus.status}; see ${relative(repositoryRoot, resolve(outputDirectory, "captures/webgl-status.json"))}.`);
 }
 if (nativeStatus.status === "blocked") {
@@ -306,6 +352,23 @@ if (nativeStatus.status === "blocked") {
 }
 
 console.log(`\n[RQ1] Evidence written under ${relative(repositoryRoot, outputDirectory)} (source HEAD ${sourceCommit}).`);
+
+async function findCurrentCaptureIds(captureSpecs, outputDirectory, captureRun) {
+  const metadataById = {};
+  for (const capture of captureSpecs) {
+    try {
+      const metadata = JSON.parse(await readFile(
+        resolve(outputDirectory, "captures", `${capture.captureId}.json`),
+        "utf8",
+      ));
+      await readFile(resolve(outputDirectory, capture.path));
+      metadataById[capture.captureId] = metadata;
+    } catch {
+      // Missing paths and stale sidecars are excluded from the current run inventory.
+    }
+  }
+  return currentRunCaptureIds(captureSpecs.map((capture) => capture.captureId), metadataById, captureRun);
+}
 
 function runGit(args) {
   const result = spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });

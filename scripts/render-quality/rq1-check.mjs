@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { captureBelongsToRun } from "./rq1-capture-provenance.mjs";
 
 const repositoryRoot = process.cwd();
 const defaultOutput = "docs/render-quality/rq1-baseline";
@@ -26,10 +27,26 @@ function outputPath(args) {
 const outputDirectory = outputPath(process.argv.slice(2));
 const manifest = JSON.parse(await readFile(resolve(repositoryRoot, "docs/render-quality/rq1-baseline/states.json"), "utf8"));
 const errors = [];
+const captureRun = await readJsonIfExists(resolve(outputDirectory, "captures/capture-run.json"));
 const nativeStatus = await readJson(resolve(outputDirectory, "captures/native-status.json"));
 const webglStatus = await readJson(resolve(outputDirectory, "captures/webgl-status.json"));
 const reportPath = resolve(repositoryRoot, "docs/render-quality/RQ1_BASELINE_REPORT.json");
 const report = await readJsonIfExists(reportPath);
+
+if (!captureRun?.captureRunId || !/^[0-9a-f-]{36}$/.test(captureRun.captureRunId) || !captureRun.sourceCommit) {
+  errors.push("capture-run.json must identify the current capture invocation and source commit");
+}
+if (!captureRun || !["captured", "native-blocked"].includes(captureRun.status)) {
+  errors.push("capture run did not complete or has an invalid status");
+}
+for (const [label, status] of [["WebGL", webglStatus], ["native", nativeStatus]]) {
+  if (status.captureRunId !== captureRun?.captureRunId || status.sourceCommit !== captureRun?.sourceCommit) {
+    errors.push(`${label} status provenance does not match the current capture run`);
+  }
+}
+if (captureRun?.webglStatus !== webglStatus.status || captureRun?.nativeStatus !== nativeStatus.status) {
+  errors.push("capture-run status summary does not match backend status records");
+}
 
 if (manifest.acceptedBaselineCommit !== "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c") {
   errors.push("state manifest accepted baseline commit does not match M7X");
@@ -98,9 +115,9 @@ for (const item of expected) {
   const metadata = await readJsonIfExists(metadataPath);
   const imagePath = resolve(outputDirectory, item.path);
   const isPresent = await fileExists(imagePath);
-  if (!metadata || !isPresent) {
+  if (!metadata || !isPresent || !captureBelongsToRun(metadata, captureRun)) {
     const nativeBlocked = item.role === "native" && nativeStatus.status === "blocked" && nativeStatus.missingCaptureIds?.includes(item.captureId);
-    if (!nativeBlocked) errors.push(`${item.captureId}: screenshot or metadata is missing`);
+    if (!nativeBlocked) errors.push(`${item.captureId}: current-run screenshot or metadata is missing`);
     continue;
   }
 
@@ -124,8 +141,12 @@ for (const item of expected) {
   if (!metadata.browser?.name || !metadata.browser?.version || !metadata.operatingSystem?.platform) {
     errors.push(`${item.captureId}: browser or operating-system provenance is missing`);
   }
-  if (metadata.sourceCommit !== report?.captureRunSourceCommit && report?.captureRunSourceCommit) {
-    errors.push(`${item.captureId}: source commit differs from the baseline report`);
+  if (item.role !== "observer" && metadata.sourceCommit !== captureRun.sourceCommit) {
+    errors.push(`${item.captureId}: source commit differs from the current capture run`);
+  }
+  if (item.role === "observer" && captureRun.observerCaptureMode === "dream-loop-captured" &&
+    metadata.sourceCommit !== captureRun.sourceCommit) {
+    errors.push(`${item.captureId}: newly captured Observer source differs from the current run`);
   }
 
   if (item.role === "observer") {
@@ -183,12 +204,25 @@ if (nativeStatus.status === "blocked") {
 
 if (report) {
   if (report.acceptedBaselineCommit !== manifest.acceptedBaselineCommit) errors.push("report accepted baseline commit mismatch");
-  if (report.captureRunSourceCommit && expected.some((item) => item.role === "native" && captured.includes(item.captureId)) && report.nativeStatus !== nativeStatus.status) {
+  if (report.captureRunId === captureRun?.captureRunId && report.captureRunSourceCommit !== captureRun?.sourceCommit) {
+    errors.push("committed baseline run source does not match its capture-run record");
+  }
+  if (report.captureRunId === captureRun?.captureRunId &&
+    expected.some((item) => item.role === "native" && captured.includes(item.captureId)) &&
+    report.nativeStatus !== nativeStatus.status) {
     errors.push("report native status differs from native capture status");
   }
   if (report.captureRunSourceCommit && report.sourceCommit !== report.captureRunSourceCommit) {
     errors.push("report sourceCommit and captureRunSourceCommit must be the same pinned capture source");
   }
+}
+
+const currentExpectedIds = expected
+  .filter((item) => captured.includes(item.captureId))
+  .map((item) => item.captureId)
+  .sort();
+if (JSON.stringify([...(captureRun?.capturedCaptureIds ?? [])].sort()) !== JSON.stringify(currentExpectedIds)) {
+  errors.push("capture-run capturedCaptureIds do not match validated current-run images");
 }
 
 if (errors.length > 0) {

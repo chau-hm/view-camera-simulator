@@ -71,6 +71,12 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
   expect(manifest.viewport).toEqual({ width: 1280, height: 900, devicePixelRatio: 1 });
 
   const pageErrors: string[] = [];
+  const captureRunId = process.env.RQ1_CAPTURE_RUN_ID;
+  const captureRunSourceCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  }).trim();
+  expect(captureRunId).toMatch(/^[0-9a-f-]{36}$/);
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.addInitScript(() => {
     const testWindow = window as Window & {
@@ -260,7 +266,9 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
       schemaVersion: "rq1-capture-metadata-v1",
       captureId: spec.captureId,
       stateId: state.stateId,
-      sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: repositoryRoot, encoding: "utf8" }).trim(),
+      captureRunId,
+      captureRunSourceCommit,
+      sourceCommit: captureRunSourceCommit,
       sceneId: manifest.sceneId,
       sceneSourceRevision: manifest.sceneSourceRevision,
       rendererFamily: runtime.rendererFamily,

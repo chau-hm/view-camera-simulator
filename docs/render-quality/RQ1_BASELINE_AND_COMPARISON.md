@@ -91,7 +91,9 @@ npm run render-quality:rq1:check
 
 The capture command reuses the existing Dream Loop pilot for Observer output, captures WebGL Raw and processed WebGL, then launches the native-required headed Chrome M3 Raw run with the accepted raw-pilot flag. It writes PNGs and per-capture metadata under `docs/render-quality/rq1-baseline/`. If iterating only on Ground Glass captures after the Observer pilot has already been run, `npm run render-quality:rq1:capture -- --skip-observer` reuses the local `.dream-loop/architecture-rise` output without changing Dream Loop's retention policy. The native step records an explicit blocked status if native capture cannot be obtained; it does not relabel old M7X images as new captures.
 
-`npm run render-quality:rq1:check` validates state IDs and exact camera values, the M3-only boundary, runtime and frame identity, contentfulness, PNG dimensions and SHA-256 digests. A blocked native run is accepted only when missing capture IDs and the environment blocker are recorded.
+Each invocation writes `captures/capture-run.json` with a fresh run ID, source commit, and Observer reuse/capture mode. Per-capture and backend sidecars carry that run ID. `npm run render-quality:rq1:check` validates state IDs and exact camera values, the M3-only boundary, runtime and frame identity, contentfulness, PNG dimensions and SHA-256 digests, and accepts only artifacts produced by the recorded invocation. The committed baseline report remains pinned to its original run; a later reproduction is checked against its own run record.
+
+If native capture is unavailable, the runner records the native capture IDs that are missing from that invocation. Older native PNGs and sidecars may remain in the evidence directory, but their earlier run IDs prevent them from being counted as new captures. The checker accepts this only with an explicit native blocker and its missing IDs.
 
 ## RQ2 implementation handoff
 

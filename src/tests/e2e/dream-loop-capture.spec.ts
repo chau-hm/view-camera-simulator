@@ -398,6 +398,7 @@ test("Dream Loop pilot captures teaching and clean observer views", async ({ pag
           route: manifest.optimizationSurface.route,
           viewport,
           renderQuality: manifest.capture.renderQuality,
+          sourceCommit: process.env.DREAM_LOOP_SOURCE_COMMIT ?? null,
           deterministicState,
           runtime: {
             status: await scene.getAttribute("data-observer-renderer-status"),

@@ -57,6 +57,7 @@ process.exit(2);
 }
 
 const repositoryRoot = gitText(["rev-parse", "--show-toplevel"], process.cwd());
+const sourceCommit = gitText(["rev-parse", "HEAD"], repositoryRoot);
 const cleanOutputPath = resolveDreamLoopOutput(manifest.capture.outputPath);
 const teachingOutputPath = resolveDreamLoopOutput(manifest.capture.teachingOutputPath);
 if (!cleanOutputPath || !teachingOutputPath || cleanOutputPath === teachingOutputPath) {
@@ -95,6 +96,7 @@ const child = spawn(
       DREAM_LOOP_CAPTURE_MANIFEST: manifestPath,
       DREAM_LOOP_CAPTURE_OUTPUT: cleanOutputPath,
       DREAM_LOOP_CAPTURE_TEACHING_OUTPUT: teachingOutputPath,
+      DREAM_LOOP_SOURCE_COMMIT: sourceCommit,
       VITE_BASE_PATH: "/",
     },
   },
