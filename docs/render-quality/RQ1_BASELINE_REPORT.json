@@ -1,8 +1,9 @@
 {
   "schemaVersion": "rq1-baseline-report-v1",
   "acceptedBaselineCommit": "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c",
-  "captureRunSourceCommit": "5f756620d373fe9bb1a34f7e770beb9dbe126ad9",
-  "sourceCommit": "5f756620d373fe9bb1a34f7e770beb9dbe126ad9",
+  "captureRunId": "3dbef7c3-f24d-4c13-8961-e29b8d24153b",
+  "captureRunSourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+  "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
   "sceneId": "architecture-rise",
   "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
   "rendererRevision": "r187",

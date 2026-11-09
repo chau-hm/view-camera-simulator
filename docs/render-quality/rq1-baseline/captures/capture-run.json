@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "rq1-capture-run-v1",
+  "captureRunId": "3dbef7c3-f24d-4c13-8961-e29b8d24153b",
+  "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+  "observerCaptureMode": "dream-loop-captured",
+  "observerSourceCommits": [
+    "a3eb1c4684e77d4fa82de311437413045ed6104a"
+  ],
+  "status": "captured",
+  "capturedCaptureIds": [
+    "architecture-rise-observer-clean",
+    "architecture-rise-observer-teaching",
+    "architecture-rise-neutral-webgl-raw",
+    "architecture-rise-front-rise-webgl-raw",
+    "architecture-rise-processed-webgl-reference",
+    "architecture-rise-neutral-webgpu-raw",
+    "architecture-rise-front-rise-webgpu-raw"
+  ],
+  "webglStatus": "captured",
+  "nativeStatus": "captured"
+}

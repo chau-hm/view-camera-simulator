@@ -2,7 +2,10 @@
   "schemaVersion": "rq1-capture-metadata-v1",
   "captureId": "architecture-rise-observer-clean",
   "stateId": "architecture-rise-observer-dream-loop-reference",
-  "sourceCommit": "5f756620d373fe9bb1a34f7e770beb9dbe126ad9",
+  "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+  "captureRunId": "3dbef7c3-f24d-4c13-8961-e29b8d24153b",
+  "captureRunSourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
+  "captureSourceCommitFallback": null,
   "sceneId": "architecture-rise",
   "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
   "rendererFamily": "webgl-renderer",
@@ -19,7 +22,6 @@
   },
   "operatingSystem": {
     "platform": "darwin",
-    "release": "27.0.0",
     "architecture": "arm64",
     "nodeVersion": "v24.3.0"
   },
@@ -68,6 +70,7 @@
   "dreamLoopSource": {
     "pilotId": "architecture-rise",
     "assetKey": "architecture-rise-subject",
+    "sourceCommit": "a3eb1c4684e77d4fa82de311437413045ed6104a",
     "optimizationSurface": "observer-scene-viewport",
     "hiddenDomControls": [
       "Expand 3D Scene",
