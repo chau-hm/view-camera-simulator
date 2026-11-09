@@ -1,0 +1,16 @@
+{
+  "status": "captured",
+  "captureRunId": "54ca35f6-a053-4475-8f5b-2b2789d7393c",
+  "sourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
+  "command": "npm run render-quality:rq1:capture",
+  "backend": "webgl-renderer/webgl2",
+  "exitCode": 0,
+  "capturedCaptureIds": [
+    "architecture-rise-neutral-webgl-raw",
+    "architecture-rise-front-rise-webgl-raw",
+    "architecture-rise-processed-webgl-reference"
+  ],
+  "missingCaptureIds": [],
+  "error": null,
+  "failureSummary": null
+}

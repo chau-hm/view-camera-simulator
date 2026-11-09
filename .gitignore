@@ -29,6 +29,7 @@ playwright-report/
 test-results/
 .test-results/
 .dream-loop/
+/docs/render-quality/.rq1-runs/
 .m7g-predecessor-replay-*/
 .m7g-consolidation-*/
 

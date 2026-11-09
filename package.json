@@ -44,6 +44,8 @@
     "benchmark:scene-capacity:hardware": "node ./scripts/run-scene-capacity-hardware-benchmark.mjs",
     "dream-loop:capture": "node ./scripts/dream-loop/capture.mjs",
     "dream-loop:guard": "node ./scripts/dream-loop/guard.mjs",
+    "render-quality:rq1:capture": "node ./scripts/render-quality/rq1-capture.mjs",
+    "render-quality:rq1:check": "node ./scripts/render-quality/rq1-check.mjs",
     "test": "node ./scripts/test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

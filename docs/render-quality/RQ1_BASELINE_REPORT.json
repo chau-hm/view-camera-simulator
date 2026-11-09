@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "rq1-baseline-report-v1",
+  "acceptedBaselineCommit": "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c",
+  "captureRunId": "54ca35f6-a053-4475-8f5b-2b2789d7393c",
+  "captureRunSourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
+  "sourceCommit": "c4bba9cfeb5b8206f0aabaae012b556d0f959bd9",
+  "sceneId": "architecture-rise",
+  "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+  "rendererRevision": "r187",
+  "nativeStatus": "captured",
+  "stateManifest": "docs/render-quality/rq1-baseline/states.json",
+  "comparisonReport": "docs/render-quality/RQ1_BASELINE_AND_COMPARISON.md",
+  "captureCommand": "npm run render-quality:rq1:capture",
+  "captureCheckCommand": "npm run render-quality:rq1:check",
+  "captureStates": [
+    {
+      "stateId": "architecture-rise-neutral",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "previewMode": "raw",
+      "renderQuality": "standard",
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1,
+        "groundGlassOutputWidth": 450,
+        "groundGlassOutputHeight": 360
+      }
+    },
+    {
+      "stateId": "architecture-rise-front-rise",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "frontRiseMm": 20,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "previewMode": "raw",
+      "renderQuality": "standard",
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1,
+        "groundGlassOutputWidth": 450,
+        "groundGlassOutputHeight": 360
+      }
+    }
+  ],
+  "captureInventory": [
+    {
+      "captureId": "architecture-rise-neutral-webgl-raw",
+      "stateId": "architecture-rise-neutral",
+      "imagePath": "docs/render-quality/rq1-baseline/ground-glass/neutral/webgl-raw.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-neutral-webgl-raw.json",
+      "imageSha256": "3c46dd7bbc5dc70e0a9615e07cf7cdd210f33e8cbc1b364be6a046ee369e3fbd",
+      "dimensions": [450, 360],
+      "rendererFamily": "webgl-renderer",
+      "actualExecutionApi": "webgl2",
+      "featureEvidenceRevision": null,
+      "rawDebug": true,
+      "pipelineStage": "webgl-raw-debug-display",
+      "requestCompletedAndAccepted": true,
+      "contentful": true
+    },
+    {
+      "captureId": "architecture-rise-neutral-webgpu-raw",
+      "stateId": "architecture-rise-neutral",
+      "imagePath": "docs/render-quality/rq1-baseline/ground-glass/neutral/webgpu-raw.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-neutral-webgpu-raw.json",
+      "imageSha256": "bcb56855d243984939bcd9a86080c6c0babc4d96e60cbd959a42203f65adb7e3",
+      "dimensions": [450, 360],
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "featureEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+      "rawDebug": true,
+      "pipelineStage": "m3-raw-rtt-display",
+      "internalFallback": "none",
+      "requestCompletedAndAccepted": true,
+      "contentful": true
+    },
+    {
+      "captureId": "architecture-rise-front-rise-webgl-raw",
+      "stateId": "architecture-rise-front-rise",
+      "imagePath": "docs/render-quality/rq1-baseline/ground-glass/front-rise/webgl-raw.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-front-rise-webgl-raw.json",
+      "imageSha256": "426d75314ea294f5dccb8c8b1c27a5527c4a6aedd77f09bb8b775cbc191df166",
+      "dimensions": [450, 360],
+      "rendererFamily": "webgl-renderer",
+      "actualExecutionApi": "webgl2",
+      "featureEvidenceRevision": null,
+      "rawDebug": true,
+      "pipelineStage": "webgl-raw-debug-display",
+      "requestCompletedAndAccepted": true,
+      "contentful": true
+    },
+    {
+      "captureId": "architecture-rise-front-rise-webgpu-raw",
+      "stateId": "architecture-rise-front-rise",
+      "imagePath": "docs/render-quality/rq1-baseline/ground-glass/front-rise/webgpu-raw.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-front-rise-webgpu-raw.json",
+      "imageSha256": "deca5c9514982e44aaad37e6fd8843e4fec5ff33f15b64a04b86c2b0d662013e",
+      "dimensions": [450, 360],
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "featureEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+      "rawDebug": true,
+      "pipelineStage": "m3-raw-rtt-display",
+      "internalFallback": "none",
+      "requestCompletedAndAccepted": true,
+      "contentful": true
+    },
+    {
+      "captureId": "architecture-rise-processed-webgl-reference",
+      "stateId": "architecture-rise-neutral",
+      "imagePath": "docs/render-quality/rq1-baseline/ground-glass/processed/webgl-processed.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-processed-webgl-reference.json",
+      "imageSha256": "674181db1a39746a1443312c49d82eeb28c64d3698c4fff63923a312e9fedd93",
+      "dimensions": [450, 360],
+      "rendererFamily": "webgl-renderer",
+      "actualExecutionApi": "webgl2",
+      "featureEvidenceRevision": null,
+      "rawDebug": false,
+      "pipelineStage": "webgl-photographic-ground-glass",
+      "requestCompletedAndAccepted": true,
+      "contentful": true
+    },
+    {
+      "captureId": "architecture-rise-observer-clean",
+      "stateId": "architecture-rise-observer-dream-loop-reference",
+      "imagePath": "docs/render-quality/rq1-baseline/observer/observer-clean.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-observer-clean.json",
+      "imageSha256": "336936b366c0822b794c570625fde937047b4afa2c165d26a48a7abe7921b4f8",
+      "dimensions": [514, 411],
+      "rendererFamily": "webgl-renderer",
+      "actualExecutionApi": "webgl2",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 3090,
+        "apertureFNumber": 11,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "contentful": true
+    },
+    {
+      "captureId": "architecture-rise-observer-teaching",
+      "stateId": "architecture-rise-observer-dream-loop-reference",
+      "imagePath": "docs/render-quality/rq1-baseline/observer/observer-teaching.png",
+      "metadataPath": "docs/render-quality/rq1-baseline/captures/architecture-rise-observer-teaching.json",
+      "imageSha256": "cdfd5e3ba0b1714d28b1dc987d3950f41cd3a9a741bcc711e446ec54e905a9ff",
+      "dimensions": [514, 411],
+      "rendererFamily": "webgl-renderer",
+      "actualExecutionApi": "webgl2",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 3090,
+        "apertureFNumber": 11,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "contentful": true
+    }
+  ],
+  "runtimeEnvironment": {
+    "hostOperatingSystem": "macOS arm64 (capture process platform darwin, Node v24.3.0)",
+    "webglBrowser": "Playwright Chromium 149.0.7827.55",
+    "nativeBrowser": "headed Chrome 157 on macOS",
+    "webglRuntime": {
+      "rendererFamily": "webgl-renderer",
+      "actualExecutionApi": "webgl2",
+      "rendererRevision": "r187",
+      "applicationFallback": "not-observed",
+      "internalFallback": null
+    },
+    "nativeRuntime": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "rendererRevision": "r187",
+      "featureEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+      "applicationFallback": "not-observed",
+      "internalFallback": "none"
+    }
+  },
+  "comparison": {
+    "rawPairsAre": "bounded Raw display comparisons",
+    "rawPairsAreNot": [
+      "literal identical rendering pipelines",
+      "strict pixel parity evidence",
+      "a diagnosis of lighting, display, or WebGPU defects"
+    ],
+    "processedReference": "WebGL photographic Ground Glass with standard CoC/gather/composite, separate from Raw",
+    "observations": [
+      "Corresponding facade, window, checker-chart, pole, and hanging-sign landmarks appear in both backend Raw frames at each state.",
+      "Front Rise 20 mm moves those landmarks down the displayed composition and reveals more of the building base in both backends.",
+      "Selected WebGPU Raw regions appear lighter and less brown than WebGL Raw Debug; screenshots do not establish cause.",
+      "Facade fine surface variation is subtle at the captured size; checker and window patterns dominate.",
+      "Broad shading/shadow regions are visible, while small contact-shadow detail is difficult to distinguish in these crops.",
+      "Observer teaching output retains the focus plane and optical rays."
+    ],
+    "possibleColorDifferenceCauses": ["display pipeline", "color space", "tone mapping", "scene rendering"],
+    "attributionEstablished": false,
+    "imageNormalizationApplied": false
+  },
+  "authorization": {
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "m9": "not-authorized",
+    "m7vOwnerApprovals": "pending",
+    "nativeWebGpuDevelopment": "Architecture Rise M3 Raw RTT only",
+    "m4M5": "separately gated research",
+    "m6PhotographicQuality": "unqualified",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled",
+    "qualificationChanged": false
+  },
+  "rq2Handoff": {
+    "title": "RQ2 — Architecture Rise Lighting, Materials & Scene Quality Upgrade",
+    "priorities": [
+      "lighting hierarchy",
+      "soft readable contact shadows",
+      "physically plausible roughness response",
+      "deterministic normal/roughness variation",
+      "visible surface detail",
+      "tonal/spatial separation for focus teaching"
+    ],
+    "existingSystemsToEvaluate": [
+      "src/scenes/illumination/sceneWorldIllumination.ts",
+      "src/render/presentationLightingContract.ts",
+      "src/render/TeachingLighting.tsx",
+      "src/render/ArchitectureRiseSubjectFactory.tsx",
+      "src/render/ProceduralSurfaceMaterials.ts",
+      "src/render/groundGlassSceneProfiles.ts",
+      "src/render/sceneSubjectRegistry.tsx"
+    ],
+    "m3ProtectedSourceRevision": "architecture-rise-raw-rtt-v1",
+    "revisionOwner": "src/render/webgpu/groundGlassRawWebGpuCompatibility.ts",
+    "sourceDriftPolicy": "Any changed input that can alter the M3 Raw raster requires advancing the manual scene-source revision and matching compatibility/feature records before native requalification. Stale or mismatched source evidence fails closed as feature-source-revision-mismatch.",
+    "boundedRequalification": [
+      "src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts with native-required M3 Raw flags",
+      "the RQ1 two-state capture and evidence checker"
+    ],
+    "beforeAfterStates": ["architecture-rise-neutral", "architecture-rise-front-rise"],
+    "acceptance": [
+      "recognizable surface texture and more natural shading transitions",
+      "shadows communicate placement",
+      "teaching objects remain visible",
+      "canonical geometry and Ground Glass orientation remain unchanged",
+      "material compatibility stays bounded and any resource/frame-time cost is explained"
+    ]
+  },
+  "validation": {
+    "rq1CaptureAndMetadataCheck": "passed",
+    "dreamLoopArchitectureRiseObserverCapture": "passed; run once; retained original .dream-loop policy",
+    "architectureRiseFocusRangeE2e": "passed (2 tests)",
+    "nativeM3AppPilotLifecycleE2e": "passed (1 bounded test)",
+    "groundGlassUnitTests": "passed (57 tests across policy, orientation, pipeline, scene selection)",
+    "m7vPolicyIntegrity": "passed; qualification and 75 pending owner approvals unchanged",
+    "m7wEvidenceIntegrity": "passed; broad qualification remains not-qualified",
+    "typecheck": "passed",
+    "lint": "passed",
+    "diffCheck": "passed",
+    "productionPreviewIsolation": "not rerun; RQ1 changes no production renderer or backend policy; accepted M7X evidence and unchanged boundary cited",
+    "ordinarySuite": "not run per task boundary",
+    "fullNativeConditionalSuite": "not run per task boundary",
+    "m7gStrictReplay": "not run per task boundary",
+    "hostedCi": "pending final-head PR CI",
+    "independentReview": "pending external PR review"
+  },
+  "pullRequest": {
+    "headBranch": "feature/render-quality-rq1-baseline",
+    "baseBranch": "main",
+    "title": "RQ1: Establish reproducible visual baselines for render-quality development",
+    "number": 323,
+    "url": "https://github.com/chau-hm/view-camera-simulator/pull/323",
+    "status": "open",
+    "merged": false,
+    "deployed": false
+  }
+}
