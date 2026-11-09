@@ -77,6 +77,15 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
     encoding: "utf8",
   }).trim();
   expect(captureRunId).toMatch(/^[0-9a-f-]{36}$/);
+  if (backend === "webgpu") {
+    const preflight = await runNativeEnvironmentPreflight(page, captureRunId, captureRunSourceCommit);
+    if (preflight.status === "environment-unavailable") {
+      test.skip(true, `Native WebGPU prerequisite unavailable: ${preflight.probeStatus}`);
+    }
+    if (preflight.status !== "available") {
+      throw new Error(`Native WebGPU preflight is invalid: ${preflight.probeStatus}`);
+    }
+  }
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.addInitScript(() => {
     const testWindow = window as Window & {
@@ -368,6 +377,84 @@ test("RQ1 captures public Architecture Rise Ground Glass reference states", asyn
     }
   }
 });
+
+async function runNativeEnvironmentPreflight(page: Page, captureRunId: string, sourceCommit: string) {
+  const browserLaunched = page.context().browser() !== null;
+  let localPageLoaded = false;
+  let secureContext = false;
+  let navigatorGpuPresent: boolean | null = null;
+  let adapterAvailable: boolean | null = null;
+  let probeStatus = "local-page-load-failed";
+  let diagnostic: string | null = null;
+
+  try {
+    await page.goto("/");
+    localPageLoaded = true;
+    const probe = await page.evaluate(async () => {
+      const gpu = (navigator as Navigator & {
+        gpu?: { requestAdapter: () => PromiseLike<unknown | null> };
+      }).gpu;
+      if (!window.isSecureContext) return { secureContext: false, navigatorGpuPresent: Boolean(gpu), adapter: "insecure-context" };
+      if (!gpu || typeof gpu.requestAdapter !== "function") {
+        return { secureContext: true, navigatorGpuPresent: false, adapter: "webgpu-api-absent" };
+      }
+
+      let timeoutHandle: number | undefined;
+      try {
+        const adapter = await Promise.race([
+          Promise.resolve(gpu.requestAdapter()).then(
+            (value) => value === null ? "adapter-unavailable" as const
+              : typeof value === "object" ? "adapter-available" as const
+                : "adapter-result-invalid" as const,
+            () => "adapter-request-rejected" as const,
+          ),
+          new Promise<"adapter-request-timeout">((resolve) => {
+            timeoutHandle = window.setTimeout(() => resolve("adapter-request-timeout"), 5_000);
+          }),
+        ]);
+        return { secureContext: true, navigatorGpuPresent: true, adapter };
+      } finally {
+        if (timeoutHandle !== undefined) window.clearTimeout(timeoutHandle);
+      }
+    });
+    secureContext = probe.secureContext;
+    navigatorGpuPresent = probe.navigatorGpuPresent;
+    adapterAvailable = probe.adapter === "adapter-available" ? true
+      : probe.adapter === "adapter-unavailable" ? false
+        : null;
+    probeStatus = probe.adapter;
+  } catch (error) {
+    diagnostic = error instanceof Error ? error.message.slice(0, 2_000) : String(error).slice(0, 2_000);
+    probeStatus = localPageLoaded ? "probe-failed" : "local-page-load-failed";
+  }
+
+  const isEnvironmentUnavailable = secureContext &&
+    (probeStatus === "webgpu-api-absent" || probeStatus === "adapter-unavailable");
+  const status = isEnvironmentUnavailable ? "environment-unavailable"
+    : probeStatus === "adapter-available" && navigatorGpuPresent && adapterAvailable ? "available"
+      : "invalid";
+  const preflight = {
+    schemaVersion: "rq1-native-preflight-v1",
+    captureRunId,
+    sourceCommit,
+    browserProject: "chrome-native-webgpu",
+    browserLaunched,
+    localPageLoaded,
+    secureContext,
+    navigatorGpuPresent,
+    adapterAvailable,
+    probeStatus,
+    status,
+    browserVersion: page.context().browser()?.version() ?? null,
+    diagnostic,
+  };
+  const outputDirectory = process.env.RQ1_CAPTURE_OUTPUT_DIR;
+  if (!outputDirectory) throw new Error("RQ1 output directory is missing while recording native preflight.");
+  const preflightPath = resolve(outputDirectory, "captures/native-preflight.json");
+  await mkdir(dirname(preflightPath), { recursive: true });
+  await writeFile(preflightPath, JSON.stringify(preflight, null, 2) + "\n");
+  return preflight;
+}
 
 async function readScreenshotStats(page: Page, png: Buffer) {
   return page.evaluate(async (base64) => {

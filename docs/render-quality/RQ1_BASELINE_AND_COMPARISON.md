@@ -87,13 +87,18 @@ Install the repository's pinned dependencies and run from the repository root:
 ```bash
 npm run render-quality:rq1:capture
 npm run render-quality:rq1:check
+npm run render-quality:rq1:check -- --baseline
 ```
 
-The capture command reuses the existing Dream Loop pilot for Observer output, captures WebGL Raw and processed WebGL, then launches the native-required headed Chrome M3 Raw run with the accepted raw-pilot flag. It writes PNGs and per-capture metadata under `docs/render-quality/rq1-baseline/`. If iterating only on Ground Glass captures after the Observer pilot has already been run, `npm run render-quality:rq1:capture -- --skip-observer` reuses the local `.dream-loop/architecture-rise` output without changing Dream Loop's retention policy. The native step records an explicit blocked status if native capture cannot be obtained; it does not relabel old M7X images as new captures.
+The first check validates the latest working reproduction under the Git-ignored `docs/render-quality/.rq1-runs/current/` directory. The second explicitly validates the committed RQ1 Before baseline under `docs/render-quality/rq1-baseline/`. Ordinary capture commands cannot write to or replace the committed baseline. An explicit `--output-dir docs/render-quality/<name>` remains available for a separate working destination; the selected destination is treated as the output of the new run.
 
-Each invocation writes `captures/capture-run.json` with a fresh run ID, source commit, and Observer reuse/capture mode. Per-capture and backend sidecars carry that run ID. `npm run render-quality:rq1:check` validates state IDs and exact camera values, the M3-only boundary, runtime and frame identity, contentfulness, PNG dimensions and SHA-256 digests, and accepts only artifacts produced by the recorded invocation. The committed baseline report remains pinned to its original run; a later reproduction is checked against its own run record.
+Capture requires a clean, commit-reproducible source tree before it creates or replaces any output. It records the source HEAD and `sourceTree.status: clean`; ignored capture output is excluded from Git status. Dirty exploratory changes must first be committed before they can become accepted capture evidence. This avoids claiming that an uncommitted render can be reproduced from its base commit.
 
-If native capture is unavailable, the runner records the native capture IDs that are missing from that invocation. Older native PNGs and sidecars may remain in the evidence directory, but their earlier run IDs prevent them from being counted as new captures. The checker accepts this only with an explicit native blocker and its missing IDs.
+Each invocation writes a fresh run ID and per-capture/backend provenance. The runner clears the expected output files in the selected working destination before capture, so old PNGs cannot be mistaken for artifacts from a new invocation. Reused Dream Loop Observer images keep their original `sourceCommit`; `capture-run.json` records their source commit separately from the Ground Glass run commit.
+
+The native-required Playwright project runs a bounded WebGPU preflight in the same headed Chrome configuration used for capture. A native environment blocker is recorded only when the secure local page is loaded and `navigator.gpu` is absent or `requestAdapter()` returns `null`. That run must skip native rendering and have no native output artifacts. A browser launch failure, probe rejection or timeout, renderer fallback, assertion failure, process crash, partial capture, missing provenance, or unknown result is invalid and exits nonzero. A valid blocked reproduction means **WebGL evidence valid; native environment unavailable**; it does not validate native rendering.
+
+The checker validates exact capture identities, per-run metadata, runtime and frame identity, contentfulness, PNG dimensions and SHA-256 digests. It rejects unsupported blocked claims, failed native processes, partial native output, stale identities, and capture-run/backend status disagreement. A later working reproduction is validated against its own run ID and source commit; the committed baseline report remains pinned to the accepted baseline run. The baseline check does not require the old RQ1 run record to use the newer working-run source-cleanliness schema.
 
 ## RQ2 implementation handoff
 

@@ -1,31 +1,99 @@
 import { spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { findCurrentCaptureIds } from "./rq1-capture-provenance.mjs";
+import { classifyNativeCaptureOutcome, classifyNativePreflight } from "./rq1-native-capture-status.mjs";
 
 const repositoryRoot = process.cwd();
-const defaultOutput = "docs/render-quality/rq1-baseline";
+const defaultOutput = "docs/render-quality/.rq1-runs/current";
+const baselineOutput = resolve(repositoryRoot, "docs/render-quality/rq1-baseline");
 const stateManifestPath = resolve(repositoryRoot, "docs/render-quality/rq1-baseline/states.json");
 const dreamLoopDirectory = resolve(repositoryRoot, ".dream-loop/architecture-rise");
 
-function parseOutputDirectory(args) {
-  if (args.length === 0) return resolve(repositoryRoot, defaultOutput);
-  if (args.length !== 2 || args[0] !== "--output-dir" || !args[1]) {
-    throw new Error("Usage: npm run render-quality:rq1:capture -- [--skip-observer] [--output-dir docs/render-quality/<name>]");
+function parseArguments(args) {
+  let outputDirectory = resolve(repositoryRoot, defaultOutput);
+  let skipObserver = false;
+  let outputWasSet = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--help" || argument === "-h") {
+      console.log([
+        "Usage: npm run render-quality:rq1:capture -- [--skip-observer] [--output-dir docs/render-quality/<name>]",
+        "Default output: docs/render-quality/.rq1-runs/current (Git-ignored).",
+        "Capture requires a clean source tree; the committed rq1-baseline directory is read-only.",
+      ].join("\n"));
+      process.exit(0);
+    } else if (argument === "--skip-observer") {
+      skipObserver = true;
+    } else if (argument === "--output-dir" && args[index + 1]) {
+      if (outputWasSet) throw new Error("--output-dir may only be provided once");
+      outputWasSet = true;
+      const outputArgument = args[index + 1];
+      index += 1;
+      if (isAbsolute(outputArgument)) throw new Error("--output-dir must be a repository-relative docs/render-quality path");
+      outputDirectory = resolve(repositoryRoot, outputArgument);
+      const outputRelative = relative(repositoryRoot, outputDirectory);
+      if (
+        outputRelative === ".." ||
+        outputRelative.startsWith(".." + sep) ||
+        isAbsolute(outputRelative) ||
+        !outputRelative.startsWith("docs" + sep + "render-quality" + sep)
+      ) {
+        throw new Error("--output-dir must stay under docs/render-quality/");
+      }
+    } else {
+      throw new Error("Usage: npm run render-quality:rq1:capture -- [--skip-observer] [--output-dir docs/render-quality/<name>]");
+    }
   }
-  if (isAbsolute(args[1])) throw new Error("--output-dir must be a repository-relative docs/render-quality path");
-  const output = resolve(repositoryRoot, args[1]);
-  const outputRelative = relative(repositoryRoot, output);
+  return { outputDirectory, skipObserver };
+}
+
+async function assertSafeOutputDirectory(outputDirectory) {
+  const outputRelativeToBaseline = relative(baselineOutput, outputDirectory);
   if (
-    outputRelative === ".." ||
-    outputRelative.startsWith(".." + sep) ||
-    isAbsolute(outputRelative) ||
-    !outputRelative.startsWith("docs" + sep + "render-quality" + sep)
+    outputDirectory === baselineOutput ||
+    (outputRelativeToBaseline !== ".." && !outputRelativeToBaseline.startsWith(".." + sep) && !isAbsolute(outputRelativeToBaseline))
   ) {
-    throw new Error("--output-dir must stay under docs/render-quality/");
+    throw new Error("The committed RQ1 baseline is immutable; capture into docs/render-quality/.rq1-runs/ or another non-baseline directory.");
   }
-  return output;
+
+  const outputRelative = relative(repositoryRoot, outputDirectory);
+  let current = repositoryRoot;
+  for (const segment of outputRelative.split(sep)) {
+    current = resolve(current, segment);
+    try {
+      const info = await lstat(current);
+      if (info.isSymbolicLink()) throw new Error("--output-dir may not pass through symlinks");
+      if (current !== outputDirectory && !info.isDirectory()) throw new Error("--output-dir parent component is not a directory");
+      if (current === outputDirectory && !info.isDirectory()) throw new Error("--output-dir must be a directory");
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") break;
+      throw error;
+    }
+  }
+}
+
+function requireCleanSource(outputDirectory) {
+  const outputRelative = relative(repositoryRoot, outputDirectory).split(sep).join("/");
+  const trackedOutput = spawnSync("git", ["ls-files", "--", outputRelative], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  if (trackedOutput.status !== 0) throw new Error(trackedOutput.stderr || "Unable to inspect capture output path in Git.");
+  if (trackedOutput.stdout.trim()) throw new Error("Capture output directory overlaps tracked files; choose an untracked docs/render-quality directory.");
+
+  const status = spawnSync("git", [
+    "status", "--porcelain=v1", "--untracked-files=all", "--", ".",
+    `:(exclude,top)${outputRelative}`,
+    `:(exclude,top)${outputRelative}/**`,
+  ], { cwd: repositoryRoot, encoding: "utf8" });
+  if (status.status !== 0) throw new Error(status.stderr || "Unable to verify source-tree cleanliness.");
+  if (status.stdout.trim()) {
+    const paths = status.stdout.trim().split("\n").map((line) => line.slice(3));
+    throw new Error(`RQ1 capture requires a clean source tree for commit-reproducible evidence. Dirty paths: ${paths.join(", ")}`);
+  }
+  return { status: "clean", commitReproducible: true, dirtyPaths: [] };
 }
 
 function run(label, command, args, env) {
@@ -41,6 +109,7 @@ function run(label, command, args, env) {
   if (stdout) process.stdout.write(stdout);
   if (stderr) process.stderr.write(stderr);
   return {
+    exitCode: result.status,
     status: result.status ?? 1,
     signal: result.signal ?? null,
     stdout,
@@ -194,16 +263,16 @@ async function copyObserverEvidence(outputDirectory, captureRun, manifest) {
   return captureRecords;
 }
 
-const captureArgs = process.argv.slice(2);
-const skipObserver = captureArgs.includes("--skip-observer");
-const outputArgs = captureArgs.filter((argument) => argument !== "--skip-observer");
-const outputDirectory = parseOutputDirectory(outputArgs);
+const { outputDirectory, skipObserver } = parseArguments(process.argv.slice(2));
+await assertSafeOutputDirectory(outputDirectory);
+const sourceTree = requireCleanSource(outputDirectory);
 const manifest = JSON.parse(await readFile(stateManifestPath, "utf8"));
 const sourceCommit = runGit(["rev-parse", "HEAD"]);
 const captureRun = {
-  schemaVersion: "rq1-capture-run-v1",
+  schemaVersion: "rq1-capture-run-v2",
   captureRunId: randomUUID(),
   sourceCommit,
+  sourceTree,
   observerCaptureMode: skipObserver ? "reused-dream-loop-output" : "dream-loop-captured",
   observerSourceCommits: [],
   status: "running",
@@ -219,6 +288,21 @@ for (const state of manifest.states) {
 }
 
 await mkdir(outputDirectory, { recursive: true });
+const allCaptureSpecs = [
+  ...manifest.states.flatMap((state) => state.captures),
+  ...manifest.additionalReferences,
+];
+for (const capture of allCaptureSpecs) {
+  await rm(resolve(outputDirectory, capture.path), { force: true });
+  await rm(resolve(outputDirectory, "captures", `${capture.captureId}.json`), { force: true });
+}
+for (const id of ["architecture-rise-observer-clean", "architecture-rise-observer-teaching"]) {
+  await rm(resolve(outputDirectory, "observer", `${id.replace("architecture-rise-", "")}.png`), { force: true });
+  await rm(resolve(outputDirectory, "captures", `${id}.json`), { force: true });
+}
+for (const filename of ["webgl-status.json", "native-status.json", "native-preflight.json"]) {
+  await rm(resolve(outputDirectory, "captures", filename), { force: true });
+}
 const captureRunPath = resolve(outputDirectory, "captures/capture-run.json");
 await mkdir(dirname(captureRunPath), { recursive: true });
 await writeFile(captureRunPath, JSON.stringify(captureRun, null, 2) + "\n");
@@ -270,16 +354,13 @@ const missingWebglCaptureIds = webglCaptureSpecs
   .map((capture) => capture.captureId)
   .filter((captureId) => !webglCaptureIds.includes(captureId));
 const webglStatus = {
-  status: webgl.status === 0 && missingWebglCaptureIds.length === 0
-    ? "captured"
-    : missingWebglCaptureIds.length > 0
-      ? "blocked"
-      : "invalid",
+  status: webgl.status === 0 && missingWebglCaptureIds.length === 0 ? "captured" : "invalid",
   captureRunId: captureRun.captureRunId,
   sourceCommit: captureRun.sourceCommit,
   command: "npm run render-quality:rq1:capture",
   backend: "webgl-renderer/webgl2",
-  exitCode: webgl.status,
+  exitCode: webgl.exitCode,
+  signal: webgl.signal,
   capturedCaptureIds: webglCaptureIds,
   missingCaptureIds: missingWebglCaptureIds,
   error: webgl.error,
@@ -300,12 +381,23 @@ const nativeCaptureIds = await findCurrentCaptureIds(nativeCaptureSpecs, outputD
 const missingNativeCaptureIds = nativeCaptureSpecs
   .map((capture) => capture.captureId)
   .filter((captureId) => !nativeCaptureIds.includes(captureId));
+const preflight = await readJsonIfExists(resolve(outputDirectory, "captures/native-preflight.json"));
+const nativeArtifactsPresent = await anyNativeArtifacts(outputDirectory, nativeCaptureSpecs);
+const preflightStatus = classifyNativePreflight(preflight, captureRun);
+const nativeOutcome = classifyNativeCaptureOutcome({
+  preflight,
+  captureRun,
+  processExitCode: native.exitCode,
+  processSignal: native.signal,
+  captureAttempted: preflightStatus === "available",
+  expectedCaptureIds: nativeCaptureSpecs.map((capture) => capture.captureId),
+  currentCaptureIds: nativeCaptureIds,
+  nativeArtifactsPresent,
+});
 const nativeStatus = {
-  status: native.status === 0 && missingNativeCaptureIds.length === 0
-    ? "captured"
-    : missingNativeCaptureIds.length > 0
-      ? "blocked"
-      : "invalid",
+  schemaVersion: "rq1-native-status-v1",
+  status: nativeOutcome.status,
+  reasonClass: nativeOutcome.reasonClass,
   captureRunId: captureRun.captureRunId,
   sourceCommit: captureRun.sourceCommit,
   command: "npm run render-quality:rq1:capture",
@@ -319,20 +411,29 @@ const nativeStatus = {
     m6Presentation: false,
     m6Qualification: false,
   },
-  exitCode: native.status,
+  preflight,
+  nativeTest: {
+    captureAttempted: preflightStatus === "available",
+    exitCode: native.exitCode,
+    signal: native.signal,
+    error: native.error,
+  },
+  exitCode: native.exitCode,
   signal: native.signal,
   error: native.error,
   capturedCaptureIds: nativeCaptureIds,
   missingCaptureIds: missingNativeCaptureIds,
-  blocker: native.status === 0 && missingNativeCaptureIds.length === 0
-    ? null
-    : (native.stderr || native.stdout || native.error || "Native capture failed without process output.").slice(-12000),
+  blocker: nativeOutcome.status === "blocked" ? `Native prerequisite unavailable: ${preflight.probeStatus}.` : null,
+  failureSummary: nativeOutcome.status === "invalid"
+    ? (native.stderr || native.stdout || native.error || "Native capture failed without process output.").slice(-12000)
+    : null,
 };
 await writeFile(resolve(outputDirectory, "captures/native-status.json"), JSON.stringify(nativeStatus, null, 2) + "\n");
 
 captureRun.capturedCaptureIds = [...new Set([...observerCaptures.map((capture) => capture.captureId), ...webglCaptureIds, ...nativeCaptureIds])];
 captureRun.webglStatus = webglStatus.status;
 captureRun.nativeStatus = nativeStatus.status;
+captureRun.nativeReasonClass = nativeStatus.reasonClass;
 captureRun.status = webglStatus.status !== "captured"
   ? "invalid"
   : nativeStatus.status === "blocked"
@@ -346,9 +447,9 @@ if (webglStatus.status !== "captured") {
   throw new Error(`WebGL capture is ${webglStatus.status}; see ${relative(repositoryRoot, resolve(outputDirectory, "captures/webgl-status.json"))}.`);
 }
 if (nativeStatus.status === "blocked") {
-  console.warn(`[RQ1] Native WebGPU capture is explicitly blocked. Missing: ${missingNativeCaptureIds.join(", ") || "none"}.`);
+  console.warn(`[RQ1] Native environment unavailable (${preflight.probeStatus}). WebGL evidence is available; native rendering was not validated.`);
 } else if (nativeStatus.status === "invalid") {
-  throw new Error("Native capture process failed even though it wrote all expected captures; inspect its runtime log before accepting them.");
+  throw new Error(`Native capture is invalid (process exit ${String(native.exitCode)}${native.signal ? `, signal ${native.signal}` : ""}); see ${relative(repositoryRoot, resolve(outputDirectory, "captures/native-status.json"))}.`);
 }
 
 console.log(`\n[RQ1] Evidence written under ${relative(repositoryRoot, outputDirectory)} (source HEAD ${sourceCommit}).`);
@@ -357,4 +458,30 @@ function runGit(args) {
   const result = spawnSync("git", args, { cwd: repositoryRoot, encoding: "utf8" });
   if (result.status !== 0) throw new Error(result.stderr || `git ${args.join(" ")} failed`);
   return result.stdout.trim();
+}
+
+async function readJsonIfExists(path) {
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function anyNativeArtifacts(outputDirectory, captures) {
+  for (const capture of captures) {
+    for (const path of [
+      resolve(outputDirectory, capture.path),
+      resolve(outputDirectory, "captures", `${capture.captureId}.json`),
+    ]) {
+      try {
+        await lstat(path);
+        return true;
+      } catch (error) {
+        if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) throw error;
+      }
+    }
+  }
+  return false;
 }
