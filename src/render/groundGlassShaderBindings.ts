@@ -192,12 +192,27 @@ export const bindGroundGlassPhysicalStateToComposite = (
   const cos4 = illumination.enabled && illumination.geometry?.kind === "parallel-cos4"
     ? illumination.geometry
     : null;
+  const nonparallel = illumination.enabled && illumination.geometry?.kind === "nonparallel-geometric"
+    ? illumination.geometry
+    : null;
 
   material.uniforms.groundGlassIlluminanceGain.value = state.relativeIlluminanceGain;
-  material.uniforms.groundGlassNaturalIlluminationEnabled.value = cos4 ? 1 : 0;
-  material.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value = cos4?.imageDistanceMm ?? 0;
+  material.uniforms.groundGlassNaturalIlluminationEnabled.value = cos4 || nonparallel ? 1 : 0;
+  material.uniforms.groundGlassNaturalIlluminationModel.value = cos4 ? 1 : nonparallel ? 2 : 0;
+  material.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value =
+    cos4?.imageDistanceMm ?? nonparallel?.referenceImageDistanceMm ?? 0;
   material.uniforms.groundGlassNaturalIlluminationOffsetXMm.value = cos4?.opticalAxisOffsetXMm ?? 0;
   material.uniforms.groundGlassNaturalIlluminationOffsetYMm.value = cos4?.opticalAxisOffsetYMm ?? 0;
+  material.uniforms.groundGlassNaturalIlluminationLensToFilmCenterLocalMm.value.set(
+    ...(nonparallel?.lensToFilmCenterLocalMm ?? [0, 0, 0]),
+  );
+  material.uniforms.groundGlassNaturalIlluminationImageSideAxisLocal.value.set(
+    ...(nonparallel?.imageSideAxisLocal ?? [0, 0, 0]),
+  );
+  material.uniforms.groundGlassNaturalIlluminationReferenceFilmIncidenceCosine.value =
+    nonparallel?.referenceFilmIncidenceCosine ?? 0;
+  material.uniforms.groundGlassNaturalIlluminationFilmNormalTowardLensSign.value =
+    nonparallel?.filmNormalTowardLensSign ?? 0;
 
   material.uniforms.groundGlassCoverageEnabled.value = coverage.active ? 1 : 0;
   material.uniforms.groundGlassCoverageMode.value = circle ? 1 : conic ? 2 : 0;

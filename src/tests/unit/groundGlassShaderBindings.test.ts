@@ -97,9 +97,14 @@ const createCompositeMaterial = () => new THREE.ShaderMaterial({
   uniforms: {
     groundGlassIlluminanceGain: { value: 1 },
     groundGlassNaturalIlluminationEnabled: { value: 0 },
+    groundGlassNaturalIlluminationModel: { value: 0 },
     groundGlassNaturalIlluminationImageDistanceMm: { value: 0 },
     groundGlassNaturalIlluminationOffsetXMm: { value: 0 },
     groundGlassNaturalIlluminationOffsetYMm: { value: 0 },
+    groundGlassNaturalIlluminationLensToFilmCenterLocalMm: { value: new THREE.Vector3() },
+    groundGlassNaturalIlluminationImageSideAxisLocal: { value: new THREE.Vector3() },
+    groundGlassNaturalIlluminationReferenceFilmIncidenceCosine: { value: 0 },
+    groundGlassNaturalIlluminationFilmNormalTowardLensSign: { value: 0 },
     groundGlassCoverageEnabled: { value: 0 },
     groundGlassCoverageMode: { value: 0 },
     groundGlassCoverageRadiusMm: { value: 0 },
@@ -281,6 +286,7 @@ describe("Ground Glass semantic state and current GLSL binding", () => {
 
     expect(material.uniforms.groundGlassIlluminanceGain.value).toBe(0.25);
     expect(material.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(material.uniforms.groundGlassNaturalIlluminationModel.value).toBe(1);
     expect(material.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBe(150);
     expect(material.uniforms.groundGlassNaturalIlluminationOffsetXMm.value).toBe(18);
     expect(material.uniforms.groundGlassCoverageEnabled.value).toBe(1);
@@ -291,6 +297,40 @@ describe("Ground Glass semantic state and current GLSL binding", () => {
     expect(material.uniforms.groundGlassCoverageEdgeFeatherMm.value).toBe(0.05);
     expect(material.uniforms.groundGlassFilmWindowCenterXMm.value).toBe(47.625);
     expect(material.uniforms.groundGlassFilmWindowHeightMm.value).toBe(25.4);
+    material.dispose();
+  });
+
+  it("binds the derived non-parallel film-local ray geometry without changing the aperture gain", () => {
+    const material = createCompositeMaterial();
+    const filmWindow = { centerXMm: 0, centerYMm: 0, widthMm: 127, heightMm: 101.6 };
+    const state: GroundGlassPhysicalRenderState = {
+      dof: null,
+      coverage: { active: false, kind: "parallel-circle", geometry: null, edgeFeatherMm: 0, filmWindow },
+      naturalIllumination: {
+        enabled: true,
+        geometry: {
+          kind: "nonparallel-geometric",
+          referenceImageDistanceMm: 150,
+          referenceFilmIncidenceCosine: Math.cos(Math.PI / 36),
+          lensToFilmCenterLocalMm: [0, 13.073, -149.429],
+          imageSideAxisLocal: [0, Math.sin(Math.PI / 36), -Math.cos(Math.PI / 36)],
+          filmNormalTowardLensSign: 1,
+        },
+        filmWindow,
+      },
+      relativeIlluminanceGain: 0.25,
+    };
+    bindGroundGlassPhysicalStateToComposite(material, state);
+    expect(material.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(material.uniforms.groundGlassNaturalIlluminationModel.value).toBe(2);
+    expect(material.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value).toBe(150);
+    expect(material.uniforms.groundGlassNaturalIlluminationLensToFilmCenterLocalMm.value.toArray())
+      .toEqual([0, 13.073, -149.429]);
+    expect(material.uniforms.groundGlassNaturalIlluminationImageSideAxisLocal.value.toArray()[1])
+      .toBeCloseTo(Math.sin(Math.PI / 36), 12);
+    expect(material.uniforms.groundGlassNaturalIlluminationReferenceFilmIncidenceCosine.value)
+      .toBeCloseTo(Math.cos(Math.PI / 36), 12);
+    expect(material.uniforms.groundGlassIlluminanceGain.value).toBe(0.25);
     material.dispose();
   });
 });

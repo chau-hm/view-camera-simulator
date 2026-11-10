@@ -143,10 +143,12 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   groundGlassIlluminanceGain?: number;
   /** Whether the physical parallel-film cos^4 factor is enabled in the composite. */
   groundGlassNaturalIlluminationEnabled?: boolean;
-  groundGlassNaturalIlluminationKind?: "parallel-cos4" | "neutral";
+  groundGlassNaturalIlluminationKind?: "parallel-cos4" | "nonparallel-geometric" | "neutral";
   groundGlassNaturalIlluminationImageDistanceMm?: number;
   groundGlassNaturalIlluminationOffsetXMm?: number;
   groundGlassNaturalIlluminationOffsetYMm?: number;
+  groundGlassNaturalIlluminationReferenceFilmIncidenceCosine?: number;
+  groundGlassNaturalIlluminationStateJson?: string;
   /** Whether the finite coverage mask is enabled in the final composite. */
   groundGlassCoverageEnabled?: boolean;
   groundGlassCoverageKind?: "parallel-circle" | "nonparallel-conic" | "unbounded" | "neutral";

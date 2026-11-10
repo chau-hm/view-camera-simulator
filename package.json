@@ -49,6 +49,7 @@
     "render-quality:rq3a:capture": "GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 playwright test --config=playwright.rq3a.config.ts --project=chromium --workers=1 --retries=0 --output=docs/render-quality/.rq3a-runs/current src/tests/render-quality/e2e/render-quality-rq3a-capture.spec.ts",
     "render-quality:rq3a:verify": "GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 playwright test --config=playwright.rq3a.config.ts --project=chromium --workers=1 --retries=0 src/tests/render-quality/e2e/ground-glass-dof-edge.spec.ts",
     "render-quality:rq3b:capture": "GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 playwright test --config=playwright.rq3a.config.ts --project=chromium --workers=1 --retries=0 --output=docs/render-quality/.rq3b-runs/current src/tests/render-quality/e2e/rq3b-nonparallel-illumination-capture.spec.ts",
+    "render-quality:rq3b:gpu-verify": "GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 playwright test --config=playwright.rq3a.config.ts --project=chromium --workers=1 --retries=0 --output=docs/render-quality/.rq3b-runs/current src/tests/render-quality/e2e/ground-glass-natural-illumination-gpu.spec.ts",
     "render-quality:rq2:capture": "node ./scripts/render-quality/rq1-capture.mjs --profile rq2",
     "render-quality:rq2:check": "node ./scripts/render-quality/rq1-check.mjs --profile rq2",
     "test": "node ./scripts/test.mjs",

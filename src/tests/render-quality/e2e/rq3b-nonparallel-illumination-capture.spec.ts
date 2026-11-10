@@ -17,21 +17,22 @@ const sourceCommit = execFileSync("git", ["rev-parse", "--verify", "HEAD"], {
 type CaptureState = Readonly<{
   stateId: string;
   sceneId: string;
+  focalLengthMm: number;
   focusDistanceMm: number;
   apertureFNumber: number;
-  movement: Readonly<{ riseMm?: number; swingDeg?: number; tiltDeg?: number }>;
+  movement: Readonly<{ riseMm?: number; shiftMm?: number; swingDeg?: number; tiltDeg?: number }>;
 }>;
 
 const states: readonly CaptureState[] = [
-  { stateId: "oblique-architecture-a1-parallel", sceneId: "oblique-architecture", focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 0, swingDeg: 0 } },
-  { stateId: "oblique-architecture-a2-rise40", sceneId: "oblique-architecture", focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 40, swingDeg: 0 } },
-  { stateId: "oblique-architecture-a3-rise40-swing-plus5", sceneId: "oblique-architecture", focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 40, swingDeg: 5 } },
-  { stateId: "oblique-architecture-a4-rise40-swing-minus5", sceneId: "oblique-architecture", focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 40, swingDeg: -5 } },
-  { stateId: "macro-oblique-plane-b1-neutral", sceneId: "macro-oblique-plane", focusDistanceMm: 400, apertureFNumber: 5.6, movement: { tiltDeg: 0 } },
-  { stateId: "macro-oblique-plane-b2-tilt-plus5", sceneId: "macro-oblique-plane", focusDistanceMm: 400, apertureFNumber: 5.6, movement: { tiltDeg: 5 } },
-  { stateId: "macro-bellows-extension-c1-focus900", sceneId: "macro-bellows-extension", focusDistanceMm: 900, apertureFNumber: 5.6, movement: {} },
-  { stateId: "macro-bellows-extension-c2-focus300", sceneId: "macro-bellows-extension", focusDistanceMm: 300, apertureFNumber: 5.6, movement: {} },
-  { stateId: "architecture-rise-d-rq2-neutral", sceneId: "architecture-rise", focusDistanceMm: 8900, apertureFNumber: 8, movement: {} },
+  { stateId: "oblique-architecture-a1-parallel", sceneId: "oblique-architecture", focalLengthMm: 150, focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 0, swingDeg: 0 } },
+  { stateId: "oblique-architecture-a2-rise40", sceneId: "oblique-architecture", focalLengthMm: 150, focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 40, swingDeg: 0 } },
+  { stateId: "oblique-architecture-a3-rise40-swing-plus5", sceneId: "oblique-architecture", focalLengthMm: 150, focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 40, swingDeg: 5 } },
+  { stateId: "oblique-architecture-a4-rise40-swing-minus5", sceneId: "oblique-architecture", focalLengthMm: 150, focusDistanceMm: 13200, apertureFNumber: 11, movement: { riseMm: 40, swingDeg: -5 } },
+  { stateId: "macro-oblique-plane-b1-neutral", sceneId: "macro-oblique-plane", focalLengthMm: 150, focusDistanceMm: 400, apertureFNumber: 5.6, movement: { tiltDeg: 0 } },
+  { stateId: "macro-oblique-plane-b2-tilt-plus5", sceneId: "macro-oblique-plane", focalLengthMm: 150, focusDistanceMm: 400, apertureFNumber: 5.6, movement: { tiltDeg: 5 } },
+  { stateId: "macro-bellows-extension-c1-focus900", sceneId: "macro-bellows-extension", focalLengthMm: 150, focusDistanceMm: 900, apertureFNumber: 5.6, movement: {} },
+  { stateId: "macro-bellows-extension-c2-focus300", sceneId: "macro-bellows-extension", focalLengthMm: 150, focusDistanceMm: 300, apertureFNumber: 5.6, movement: {} },
+  { stateId: "architecture-rise-d-rq2-neutral", sceneId: "architecture-rise", focalLengthMm: 150, focusDistanceMm: 8900, apertureFNumber: 8, movement: {} },
 ];
 
 const setPublicFocus = async (focus: Locator, target: number): Promise<void> => {
@@ -100,7 +101,11 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
   await page.setViewportSize({ width: 1280, height: 900 });
   const browser = page.context().browser();
   const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
   const captures: Array<Record<string, unknown>> = [];
 
   for (const state of states) {
@@ -211,14 +216,47 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
       };
     });
     const attrs = runtime.attributes;
+    const actualFocalLengthMm = Number(attrs["data-rtt-focal-length-mm"]);
+    const movementControls = actualState.movements.filter((movement) =>
+      /\b(rise|shift|tilt|swing)\b/i.test(movement.label ?? ""),
+    );
+    const expectedMovementByFamily = {
+      rise: state.movement.riseMm ?? 0,
+      shift: state.movement.shiftMm ?? 0,
+      tilt: state.movement.tiltDeg ?? 0,
+      swing: state.movement.swingDeg ?? 0,
+    };
+    const movementStateMatches = movementControls.every((movement) => {
+      const family = movement.label?.toLowerCase().match(/\b(rise|shift|tilt|swing)\b/)?.[1] as
+        keyof typeof expectedMovementByFamily | undefined;
+      return family !== undefined && movement.value === expectedMovementByFamily[family];
+    }) && Object.entries(state.movement).every(([key]) => {
+      const family = key.startsWith("rise") ? "rise"
+        : key.startsWith("shift") ? "shift"
+          : key.startsWith("tilt") ? "tilt" : "swing";
+      return movementControls.some((movement) =>
+        movement.label?.toLowerCase().includes(family) &&
+        movement.value === expectedMovementByFamily[family],
+      );
+    });
+    const expectsNonparallelIllumination =
+      (state.movement.swingDeg !== undefined && state.movement.swingDeg !== 0) ||
+      (state.movement.tiltDeg !== undefined && state.movement.tiltDeg !== 0);
+    const expectedIlluminationKind = expectsNonparallelIllumination
+      ? "nonparallel-geometric"
+      : "parallel-cos4";
     if (attrs["data-actual-execution-api"] !== "webgl2" ||
       attrs["data-mounted-renderer-family"] !== "webgl-renderer" ||
       attrs["data-application-fallback"] !== "not-observed" ||
       attrs["data-internal-fallback"] !== "none" ||
       attrs["data-rtt-final-contentful"] !== "true" ||
-      !(await rawPreview.isChecked()) || await rawDebug.isChecked() || pageErrors.length > 0 ||
-      actualState.focusDistanceMm !== state.focusDistanceMm || actualState.apertureFNumber !== state.apertureFNumber) {
-      throw new Error(`${state.stateId} failed runtime/state validation: ${JSON.stringify({ attrs, actualState, pageErrors })}`);
+      attrs["data-rtt-natural-illumination-kind"] !== expectedIlluminationKind ||
+      attrs["data-rtt-natural-illumination-enabled"] !== "true" ||
+      actualFocalLengthMm !== state.focalLengthMm || !movementStateMatches ||
+      !(await rawPreview.isChecked()) || await rawDebug.isChecked() || pageErrors.length > 0 || consoleErrors.length > 0 ||
+      actualState.focusDistanceMm !== state.focusDistanceMm || actualState.apertureFNumber !== state.apertureFNumber ||
+      image.readUInt32BE(16) !== 450 || image.readUInt32BE(20) !== 360) {
+      throw new Error(`${state.stateId} failed runtime/state validation: ${JSON.stringify({ attrs, actualState, actualFocalLengthMm, movementStateMatches, pageErrors, consoleErrors })}`);
     }
 
     captures.push({
@@ -230,7 +268,7 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
       sourceTreeStatus: "clean",
       captureRunId,
       requestedState: state,
-      observedPublicCameraState: actualState,
+      observedPublicCameraState: { focalLengthMm: actualFocalLengthMm, ...actualState },
       renderQuality: "standard",
       previewMode: "Raw",
       rawDebug: false,
@@ -246,6 +284,9 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
       naturalIllumination: {
         enabled: attrs["data-rtt-natural-illumination-enabled"],
         kind: attrs["data-rtt-natural-illumination-kind"],
+        state: attrs["data-rtt-natural-illumination-state"]
+          ? JSON.parse(attrs["data-rtt-natural-illumination-state"])
+          : null,
       },
       coverage: {
         enabled: attrs["data-rtt-coverage-enabled"],
@@ -268,6 +309,7 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
       },
       hiddenDomControls,
       pageErrors: [...pageErrors],
+      consoleErrors: [...consoleErrors],
     });
   }
 
