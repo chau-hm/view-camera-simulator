@@ -161,7 +161,8 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
     await expect(rtt).toHaveAttribute("data-rtt-scene-id", state.sceneId, { timeout: 60_000 });
     await page.getByRole("combobox", { name: "Render quality", exact: true })
       .selectOption({ label: "Standard" });
-    await page.getByRole("radio", { name: "Raw Ground Glass", exact: true }).check();
+    const rawPreview = page.getByRole("radio", { name: "Raw Ground Glass", exact: true });
+    await rawPreview.check();
     const rawDebug = page.getByLabel("Raw RTT — bypass DOF", { exact: true });
     if (await rawDebug.isChecked()) await rawDebug.uncheck();
     const grid = page.getByRole("checkbox", { name: "Grid", exact: true });
@@ -183,13 +184,53 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
     if (!bounds || Math.abs(bounds.width - 450) > 1 || Math.abs(bounds.height - 360) > 1) {
       throw new Error(`Unexpected Ground Glass display size for ${state.stateId}`);
     }
+    const hiddenDomControls = await canvas.evaluate((canvasElement) => {
+      const canvasBounds = canvasElement.getBoundingClientRect();
+      const candidates = Array.from(document.querySelectorAll<HTMLElement>(
+        "button, a[href], [role='button'], [data-testid='ground-glass-focus-label'], " +
+        "[data-testid='ground-glass-webgpu-pilot-status'], [data-testid='ground-glass-image-layer'] + div",
+      ));
+      const hidden: string[] = [];
+      for (const candidate of candidates) {
+        if (candidate === canvasElement || candidate.contains(canvasElement) || canvasElement.contains(candidate)) continue;
+        const forcedOverlay = candidate.matches(
+          "[data-testid='ground-glass-focus-label'], [data-testid='ground-glass-webgpu-pilot-status'], " +
+          "[data-testid='ground-glass-image-layer'] + div",
+        );
+        const candidateBounds = candidate.getBoundingClientRect();
+        const overlaps = candidateBounds.width > 0 && candidateBounds.height > 0 &&
+          candidateBounds.left < canvasBounds.right && candidateBounds.right > canvasBounds.left &&
+          candidateBounds.top < canvasBounds.bottom && candidateBounds.bottom > canvasBounds.top;
+        if (!forcedOverlay && !overlaps) continue;
+        candidate.dataset.rq3aCaptureHidden = "true";
+        hidden.push(candidate.getAttribute("aria-label") ?? candidate.getAttribute("data-testid") ??
+          (candidate.textContent?.trim() || String(candidate.className) || candidate.tagName));
+      }
+      const style = document.createElement("style");
+      style.dataset.rq3aCaptureStyles = "true";
+      style.textContent = "[data-rq3a-capture-hidden='true'] { visibility: hidden !important; pointer-events: none !important; }";
+      document.head.append(style);
+      return hidden;
+    });
     await page.evaluate(() => new Promise<void>((resolveFrame) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()));
     }));
-    const image = await canvas.screenshot({
-      path: testInfo.outputPath(state.filename),
-      animations: "disabled",
-    });
+    const captureRegionCss = { x: Math.round(bounds.x), y: Math.round(bounds.y), width: 450, height: 360 };
+    let image: Buffer;
+    try {
+      image = await page.screenshot({
+        path: testInfo.outputPath(state.filename),
+        clip: captureRegionCss,
+        scale: "css",
+        animations: "disabled",
+      });
+    } finally {
+      await page.evaluate(() => {
+        document.querySelector("[data-rq3a-capture-styles='true']")?.remove();
+        document.querySelectorAll<HTMLElement>("[data-rq3a-capture-hidden='true']")
+          .forEach((element) => delete element.dataset.rq3aCaptureHidden);
+      });
+    }
     const runtime = await rtt.evaluate((element) => {
       const attributes: Record<string, string> = {};
       for (const attribute of element.attributes) {
@@ -213,7 +254,7 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
         } : null,
       };
     });
-    const cameraState = await page.evaluate(() => {
+    const publicCameraState = await page.evaluate(() => {
       const rttElement = document.querySelector('[data-testid="ground-glass-rtt"]');
       const focusInput = document.querySelector<HTMLInputElement>('input[aria-label="Focus distance"]');
       const apertureElement = document.querySelector('[role="radiogroup"][aria-label="Aperture"]');
@@ -231,13 +272,24 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
         focusDistanceMm: focusInput ? Number(focusInput.value) : null,
         apertureFNumber: Number(apertureElement?.getAttribute("data-selected-aperture")),
         movements: publicRanges.filter((range) => range.label !== "Focus distance"),
-        previewMode: document.querySelector<HTMLInputElement>('input[aria-label="Raw Ground Glass"]')?.checked
-          ? "Raw"
-          : "unexpected",
-        rawDebug: document.querySelector<HTMLInputElement>('input[aria-label="Raw RTT — bypass DOF"]')?.checked ?? null,
         publicRanges,
       };
     });
+    const cameraState = {
+      ...publicCameraState,
+      previewMode: await rawPreview.isChecked() ? "Raw" : "unexpected",
+      rawDebug: await rawDebug.isChecked(),
+      scenePresetMovementsMmDeg: {
+        frontRiseMm: 0,
+        frontShiftMm: 0,
+        frontTiltDeg: 0,
+        frontSwingDeg: 0,
+        rearRiseMm: 0,
+        rearShiftMm: 0,
+        rearTiltDeg: 0,
+        rearSwingDeg: 0,
+      },
+    };
     const attrs = runtime.attributes;
     const actualImage = {
       path: state.filename,
@@ -311,6 +363,8 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
       operatingSystem: { platform: platform(), release: release(), architecture: arch() },
       runtime,
       image: actualImage,
+      captureRegionCss,
+      hiddenDomControls,
       pageErrors: [...pageErrors],
       consoleErrors: [...consoleErrors],
     });
