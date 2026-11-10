@@ -128,6 +128,9 @@ void main(){
     centerExtentPx = centerScalarRadiusPx;
   }
   bool nearLayer = gatherLayer > 0.5;
+  float centerFarDepthToleranceMm = nearLayer
+    ? 0.0
+    : farDepthToleranceMm(depthDistanceMm(centerDepth));
 
   // A near center surface is already represented by the near layer. Do not
   // let a far gather pull background through its opaque silhouette.
@@ -159,7 +162,7 @@ void main(){
 
   float centerWeight = nearLayer
     ? calculateNearSampleWeight(centerDepth, centerDepth, centerSignedCocMm, centerSignedCocMm)
-    : calculateFarSampleWeight(centerDepth, centerDepth, centerSignedCocMm);
+    : calculateFarSampleWeight(centerDepth, centerDepth, centerSignedCocMm, centerFarDepthToleranceMm);
   if(centerWeight > 1e-6){
     accum += sharpColor.rgb * centerWeight;
     total += centerWeight;
@@ -190,7 +193,7 @@ void main(){
     float sampleSignedCocMm = decodeStoredSignedCoCDiameterMm(sampleFootprint.r);
     float depthWeight = nearLayer
       ? calculateNearSampleWeight(centerDepth, sampleDepth, centerSignedCocMm, sampleSignedCocMm)
-      : calculateFarSampleWeight(centerDepth, sampleDepth, sampleSignedCocMm);
+      : calculateFarSampleWeight(centerDepth, sampleDepth, sampleSignedCocMm, centerFarDepthToleranceMm);
     float footprintWeight = 1.0;
     vec2 sampleMajorAxisPx = vec2(0.0);
     vec2 sampleMinorAxisPx = vec2(0.0);

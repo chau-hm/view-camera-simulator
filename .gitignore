@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+# Some worktrees link the shared dependency tree instead of using a directory.
+/node_modules
 
 # Build output
 dist/
@@ -31,6 +33,7 @@ test-results/
 .dream-loop/
 /docs/render-quality/.rq1-runs/
 /docs/render-quality/.rq2-runs/
+/docs/render-quality/.rq3a-runs/
 .m7g-predecessor-replay-*/
 .m7g-consolidation-*/
 
