@@ -183,6 +183,8 @@ describe("GroundGlass DOF shader source", () => {
   });
 
   test("near/far visibility policy keeps occlusion asymmetric", () => {
+    const farTolerance = extractFunctionBody(groundGlassSharedGlsl, "farDepthToleranceMm");
+    const nearTolerance = extractFunctionBody(groundGlassSharedGlsl, "depthToleranceMm");
     const farPolicy = extractFunctionBody(groundGlassSharedGlsl, "calculateFarSampleWeight");
     const nearPolicy = extractFunctionBody(groundGlassSharedGlsl, "calculateNearSampleWeight");
     const unresolvedPolicy = extractFunctionBody(
@@ -192,6 +194,14 @@ describe("GroundGlass DOF shader source", () => {
 
     expect(farPolicy).toContain("sampleSignedCocMm < -0.00001");
     expect(farPolicy).toContain("sampleUmm < centerUmm - toleranceMm");
+    expect(farPolicy).toContain("farDepthToleranceMm(centerUmm)");
+    expect(nearPolicy).toContain("depthToleranceMm(centerUmm)");
+    expect(farTolerance).toContain("65535.0");
+    expect(farTolerance).toContain("farDistanceMm - nearDistanceMm");
+    expect(farTolerance).not.toContain("max(20.0");
+    expect(farTolerance).not.toContain("centerDistanceMm * 0.015");
+    expect(nearTolerance).toContain("max(20.0");
+    expect(nearTolerance).toContain("centerDistanceMm * 0.015");
     expect(nearPolicy).toContain("sampleSignedCocMm >= -0.00001");
     expect(nearPolicy).toContain("sampleUmm > centerUmm + toleranceMm");
     expect(unresolvedPolicy).toContain("return 0.0");
