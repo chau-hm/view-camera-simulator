@@ -141,7 +141,48 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
     }
 
     const fileName = `${state.stateId}.png`;
-    const image = await canvas.screenshot({ path: testInfo.outputPath(fileName), scale: "css", animations: "disabled" });
+    const hiddenDomControls = await canvas.evaluate((canvasElement) => {
+      const canvasBounds = canvasElement.getBoundingClientRect();
+      const candidates = Array.from(document.querySelectorAll<HTMLElement>(
+        "button, a[href], [role='button'], [data-testid='ground-glass-focus-label'], " +
+        "[data-testid='ground-glass-webgpu-pilot-status'], [data-testid='ground-glass-image-layer'] + div",
+      ));
+      const hidden: string[] = [];
+      for (const candidate of candidates) {
+        if (candidate === canvasElement || candidate.contains(canvasElement) || canvasElement.contains(candidate)) continue;
+        const forcedOverlay = candidate.matches(
+          "[data-testid='ground-glass-focus-label'], [data-testid='ground-glass-webgpu-pilot-status'], " +
+          "[data-testid='ground-glass-image-layer'] + div",
+        );
+        const bounds = candidate.getBoundingClientRect();
+        const overlaps = bounds.width > 0 && bounds.height > 0 && bounds.left < canvasBounds.right &&
+          bounds.right > canvasBounds.left && bounds.top < canvasBounds.bottom && bounds.bottom > canvasBounds.top;
+        if (!forcedOverlay && !overlaps) continue;
+        candidate.dataset.rq3bCaptureHidden = "true";
+        hidden.push(candidate.getAttribute("aria-label") ?? candidate.getAttribute("data-testid") ??
+          (candidate.textContent?.trim() || String(candidate.className) || candidate.tagName));
+      }
+      const style = document.createElement("style");
+      style.dataset.rq3bCaptureStyles = "true";
+      style.textContent = "[data-rq3b-capture-hidden='true'] { visibility: hidden !important; pointer-events: none !important; }";
+      document.head.append(style);
+      return hidden;
+    });
+    let image: Buffer;
+    try {
+      image = await page.screenshot({
+        path: testInfo.outputPath(fileName),
+        clip: { x: Math.round(bounds.x), y: Math.round(bounds.y), width: 450, height: 360 },
+        scale: "css",
+        animations: "disabled",
+      });
+    } finally {
+      await page.evaluate(() => {
+        document.querySelector("[data-rq3b-capture-styles='true']")?.remove();
+        document.querySelectorAll<HTMLElement>("[data-rq3b-capture-hidden='true']")
+          .forEach((element) => delete element.dataset.rq3bCaptureHidden);
+      });
+    }
     const runtime = await rtt.evaluate((element) => {
       const attributes: Record<string, string> = {};
       for (const attribute of element.attributes) if (attribute.name.startsWith("data-")) attributes[attribute.name] = attribute.value;
@@ -225,6 +266,7 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
         width: image.readUInt32BE(16), height: image.readUInt32BE(20),
         sha256: createHash("sha256").update(image).digest("hex"),
       },
+      hiddenDomControls,
       pageErrors: [...pageErrors],
     });
   }

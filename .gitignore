@@ -34,6 +34,7 @@ test-results/
 /docs/render-quality/.rq1-runs/
 /docs/render-quality/.rq2-runs/
 /docs/render-quality/.rq3a-runs/
+/docs/render-quality/.rq3b-runs/
 .m7g-predecessor-replay-*/
 .m7g-consolidation-*/
 
