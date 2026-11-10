@@ -22,7 +22,7 @@ The fixture renders the production physical CoC and Far/Near gather shaders in W
 
 ## Matched real-scene captures
 
-The Before run is pinned to accepted base `1ffb9c715012d5d922aa503525eebd3a8e08a490`. The After run was captured from `132515260a0051742bde883fb077788ab360ebb9`. Both use Chromium 149 on macOS 27 arm64, WebGL2, a 1280×900 viewport at DPR 1, Standard quality, Raw preview with Raw Debug off, and an exact 450×360 Ground Glass crop. Each current frame was completed and accepted by the host. Runtime diagnostics report `webgl-renderer / webgl2`, no internal fallback, and no application fallback. The browser's unmasked renderer string identifies ANGLE/Vulkan SwiftShader; these captures do not establish hardware acceleration or serve as performance measurements.
+The Before run is pinned to accepted base `1ffb9c715012d5d922aa503525eebd3a8e08a490`. The After run was captured from clean commit `e09caad2c08e9fe61c8dbaac45c80a0305924b4e` (run `ebebbfeb-f6bf-4533-9246-f43cbd2c3579`). Both use Chromium 149 on macOS 27 arm64, WebGL2, a 1280×900 viewport at DPR 1, Standard quality, Raw preview with Raw Debug off, and an exact 450×360 Ground Glass crop. Each current frame was completed and accepted by the host. Runtime diagnostics report `webgl-renderer / webgl2`, no internal fallback, and no application fallback. The browser's unmasked renderer string identifies ANGLE/Vulkan SwiftShader; these captures do not establish hardware acceleration or serve as performance measurements.
 
 | State | Before | After |
 |---|---|---|
