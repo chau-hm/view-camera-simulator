@@ -194,7 +194,13 @@ describe("GroundGlass DOF shader source", () => {
 
     expect(farPolicy).toContain("sampleSignedCocMm < -0.00001");
     expect(farPolicy).toContain("sampleUmm < centerUmm - toleranceMm");
-    expect(farPolicy).toContain("farDepthToleranceMm(centerUmm)");
+    expect(farPolicy).toContain("!isFiniteFloat(toleranceMm) || toleranceMm < 0.0");
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "farDepthToleranceMm(depthDistanceMm(centerDepth))",
+    );
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "sampleSignedCocMm, centerFarDepthToleranceMm",
+    );
     expect(nearPolicy).toContain("depthToleranceMm(centerUmm)");
     expect(farTolerance).toContain("65535.0");
     expect(farTolerance).toContain("farDistanceMm - nearDistanceMm");

@@ -522,13 +522,14 @@ float farDepthToleranceMm(float centerDistanceMm){
 float calculateFarSampleWeight(
   float centerDepth,
   float sampleDepth,
-  float sampleSignedCocMm
+  float sampleSignedCocMm,
+  float toleranceMm
 ){
   if(!isFiniteFloat(centerDepth) || !isFiniteFloat(sampleDepth)) return 0.0;
   float centerUmm = depthDistanceMm(centerDepth);
   float sampleUmm = depthDistanceMm(sampleDepth);
-  if(centerUmm <= 0.0 || sampleUmm <= 0.0 || !isFiniteFloat(sampleSignedCocMm)) return 0.0;
-  float toleranceMm = farDepthToleranceMm(centerUmm);
+  if(centerUmm <= 0.0 || sampleUmm <= 0.0 || !isFiniteFloat(sampleSignedCocMm) ||
+     !isFiniteFloat(toleranceMm) || toleranceMm < 0.0) return 0.0;
   if(sampleSignedCocMm < -0.00001 || sampleUmm < centerUmm - toleranceMm) return 0.0;
   return 1.0;
 }
