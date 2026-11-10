@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "rq3a-visual-states-v1",
+  "beforeSourceCommit": "1ffb9c715012d5d922aa503525eebd3a8e08a490",
+  "afterCaptureSourceCommit": "132515260a0051742bde883fb077788ab360ebb9",
+  "capture": {
+    "browser": "Chromium 149.0.7827.55",
+    "operatingSystem": "macOS 27.0.0 arm64",
+    "rendererFamily": "webgl-renderer",
+    "executionApi": "webgl2",
+    "devicePixelRatio": 1,
+    "viewport": { "width": 1280, "height": 900 },
+    "groundGlassCropCss": { "width": 450, "height": 360 },
+    "renderQuality": "standard",
+    "previewMode": "Raw",
+    "rawDebug": false,
+    "pipeline": [
+      "scene-color-and-depth",
+      "physical-coc",
+      "far-gather",
+      "near-gather",
+      "composite-display"
+    ],
+    "fallback": "none"
+  },
+  "states": [
+    {
+      "stateId": "macro-m1-middle-shallow",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "camera": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "purpose": "Middle-focus shallow-depth reference"
+    },
+    {
+      "stateId": "macro-m2-near-focus",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "camera": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 390,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "purpose": "Near-focus state with two farther surfaces within the former 20 mm depth window"
+    },
+    {
+      "stateId": "macro-m3-far-focus",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "camera": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 410,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "purpose": "Far-focus near-layer regression reference"
+    },
+    {
+      "stateId": "macro-m4-stopped-down",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "camera": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 32,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "purpose": "Low-blur control"
+    },
+    {
+      "stateId": "interior-corner-canonical-start",
+      "sceneId": "interior-corner",
+      "route": "/simulator/free/interior-corner?rttDiagnostics=1",
+      "camera": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8000,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "purpose": "Different-geometry regression reference"
+    },
+    {
+      "stateId": "architecture-rise-rq2-neutral-regression",
+      "sceneId": "architecture-rise",
+      "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+      "camera": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "purpose": "RQ2-accepted neutral-scene regression reference"
+    }
+  ]
+}

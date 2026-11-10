@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+# Some worktrees link the shared dependency tree instead of using a directory.
+/node_modules
 
 # Build output
 dist/

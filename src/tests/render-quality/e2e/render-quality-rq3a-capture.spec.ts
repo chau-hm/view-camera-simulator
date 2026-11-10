@@ -6,24 +6,12 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const captureRunId = randomUUID();
 const sourceCommit = execFileSync("git", ["rev-parse", "--verify", "HEAD"], {
   cwd: repositoryRoot,
   encoding: "utf8",
 }).trim();
-const dirtySource = execFileSync("git", [
-  "status",
-  "--porcelain=v1",
-  "--untracked-files=all",
-  "--",
-  ".",
-  ":(exclude,top)node_modules",
-  ":(exclude,top)node_modules/**",
-], { cwd: repositoryRoot, encoding: "utf8" }).trim();
-
-if (dirtySource) throw new Error(`RQ3A captures require a clean source tree:\n${dirtySource}`);
-
 type CaptureState = Readonly<{
   stateId: string;
   sceneId: string;
@@ -140,6 +128,17 @@ const waitForAcceptedWebGlFrame = async (
 };
 
 test("capture the RQ3A WebGL Ground Glass Before/After reference states", async ({ page }, testInfo) => {
+  const dirtySource = execFileSync("git", [
+    "status",
+    "--porcelain=v1",
+    "--untracked-files=all",
+    "--",
+    ".",
+    ":(exclude,top)node_modules",
+    ":(exclude,top)node_modules/**",
+  ], { cwd: repositoryRoot, encoding: "utf8" }).trim();
+  if (dirtySource) throw new Error(`RQ3A captures require a clean source tree:\n${dirtySource}`);
+
   test.setTimeout(240_000);
   await page.addInitScript(() => {
     window.__groundGlassWebGpuM3TestControl = { adapterEvents: [] };
