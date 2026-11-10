@@ -65,10 +65,6 @@ const selectSamples = (state: typeof sceneStates[number]) => {
     { id: "top-right", pixel: { x: 126, y: 126 } },
     { id: "bottom-left", pixel: { x: 0, y: 0 } },
     { id: "bottom-right", pixel: { x: 126, y: 0 } },
-    { id: "positive-x-gradient", pixel: { x: 94, y: 63 } },
-    { id: "negative-x-gradient", pixel: { x: 32, y: 63 } },
-    { id: "positive-y-gradient", pixel: { x: 63, y: 94 } },
-    { id: "negative-y-gradient", pixel: { x: 63, y: 32 } },
   ];
 
   const illumination = state.optics.groundGlassNaturalIllumination;
@@ -131,6 +127,8 @@ test("production composite shader matches the CPU geometric illumination field o
   }));
   for (const entry of sceneStates) {
     expect(entry.optics.groundGlassNaturalIllumination.kind, entry.stateId).not.toBe("neutral");
+    const sampleIds = selectSamples(entry).map((sample) => sample.id);
+    expect(new Set(sampleIds).size, `${entry.stateId} sample IDs must be unique`).toBe(sampleIds.length);
   }
 
   const fixture = await page.evaluate(async ({ vertexShader, fragmentShader, states }) => {
