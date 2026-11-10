@@ -749,9 +749,14 @@ function OffscreenRenderer({
         flipDisplayY: { value: 1.0 },
         groundGlassIlluminanceGain: { value: 1.0 },
         groundGlassNaturalIlluminationEnabled: { value: 0.0 },
+        groundGlassNaturalIlluminationModel: { value: 0.0 },
         groundGlassNaturalIlluminationImageDistanceMm: { value: 0.0 },
         groundGlassNaturalIlluminationOffsetXMm: { value: 0.0 },
         groundGlassNaturalIlluminationOffsetYMm: { value: 0.0 },
+        groundGlassNaturalIlluminationLensToFilmCenterLocalMm: { value: new THREE.Vector3() },
+        groundGlassNaturalIlluminationImageSideAxisLocal: { value: new THREE.Vector3() },
+        groundGlassNaturalIlluminationReferenceFilmIncidenceCosine: { value: 0.0 },
+        groundGlassNaturalIlluminationFilmNormalTowardLensSign: { value: 0.0 },
         groundGlassCoverageEnabled: { value: 0.0 },
         groundGlassCoverageMode: { value: 0.0 },
         groundGlassCoverageRadiusMm: { value: 0.0 },
@@ -1396,6 +1401,7 @@ function OffscreenRenderer({
       filmWidthMm: CAMERA_CONSTANTS.filmWidthMm,
       filmHeightMm: CAMERA_CONSTANTS.filmHeightMm,
       inspectionWindow,
+      allowNonparallelGeometric: true,
     });
     const coverageRenderState = resolveGroundGlassCoverageRenderState({
       state: opticsState.groundGlassCoverage,
@@ -1814,6 +1820,13 @@ function OffscreenRenderer({
             opticsState.groundGlassCoverage.axial.constant,
           ].map((value) => value.toPrecision(12)).join(",")
         : undefined;
+      const naturalIlluminationState = opticsState.groundGlassNaturalIllumination;
+      const naturalIlluminationStateJson = JSON.stringify(naturalIlluminationState);
+      const naturalIlluminationReferenceDistanceMm = naturalIlluminationState.kind === "parallel-cos4"
+        ? naturalIlluminationState.imageDistanceMm
+        : naturalIlluminationState.kind === "nonparallel-geometric"
+          ? naturalIlluminationState.referenceImageDistanceMm
+          : undefined;
       if (
         currentIlluminanceInfo &&
         (
@@ -1821,11 +1834,10 @@ function OffscreenRenderer({
           currentIlluminanceInfo.groundGlassNaturalIlluminationEnabled !==
             naturalIlluminationRenderState.enabled ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationKind !==
-            opticsState.groundGlassNaturalIllumination.kind ||
+            naturalIlluminationState.kind ||
+          currentIlluminanceInfo.groundGlassNaturalIlluminationStateJson !== naturalIlluminationStateJson ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationImageDistanceMm !==
-            (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
-              ? opticsState.groundGlassNaturalIllumination.imageDistanceMm
-              : undefined) ||
+            naturalIlluminationReferenceDistanceMm ||
           currentIlluminanceInfo.groundGlassNaturalIlluminationOffsetXMm !==
             (opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
               ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetXMm
@@ -1864,19 +1876,20 @@ function OffscreenRenderer({
           ...currentIlluminanceInfo,
           groundGlassIlluminanceGain,
           groundGlassNaturalIlluminationEnabled: naturalIlluminationRenderState.enabled,
-          groundGlassNaturalIlluminationKind:
-            opticsState.groundGlassNaturalIllumination.kind,
-          groundGlassNaturalIlluminationImageDistanceMm:
-            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
-              ? opticsState.groundGlassNaturalIllumination.imageDistanceMm
-              : undefined,
+          groundGlassNaturalIlluminationKind: naturalIlluminationState.kind,
+          groundGlassNaturalIlluminationStateJson: naturalIlluminationStateJson,
+          groundGlassNaturalIlluminationImageDistanceMm: naturalIlluminationReferenceDistanceMm,
           groundGlassNaturalIlluminationOffsetXMm:
-            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
-              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetXMm
+            naturalIlluminationState.kind === "parallel-cos4"
+              ? naturalIlluminationState.opticalAxisOffsetXMm
               : undefined,
           groundGlassNaturalIlluminationOffsetYMm:
-            opticsState.groundGlassNaturalIllumination.kind === "parallel-cos4"
-              ? opticsState.groundGlassNaturalIllumination.opticalAxisOffsetYMm
+            naturalIlluminationState.kind === "parallel-cos4"
+              ? naturalIlluminationState.opticalAxisOffsetYMm
+              : undefined,
+          groundGlassNaturalIlluminationReferenceFilmIncidenceCosine:
+            naturalIlluminationState.kind === "nonparallel-geometric"
+              ? naturalIlluminationState.referenceFilmIncidenceCosine
               : undefined,
           groundGlassCoverageEnabled: coverageRenderState.active,
           groundGlassCoverageKind: opticsState.groundGlassCoverage.kind,

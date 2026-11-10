@@ -984,8 +984,16 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
     expect(diagnostics.get()?.groundGlassCoverageConicQuadratic?.split(",")).toHaveLength(6);
     expect(diagnostics.get()?.groundGlassCoverageConicAxial?.split(",")).toHaveLength(3);
-    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
-    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("neutral");
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationModel.value).toBe(2);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("nonparallel-geometric");
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationStateJson)
+      .toBe(JSON.stringify(optics.groundGlassNaturalIllumination));
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationReferenceFilmIncidenceCosine.value)
+      .toBeCloseTo(optics.groundGlassNaturalIllumination.kind === "nonparallel-geometric"
+        ? optics.groundGlassNaturalIllumination.referenceFilmIncidenceCosine
+        : 0, 12);
 
     const canonicalDiagnostic = diagnostics.get()?.groundGlassCoverageConicQuadratic;
     view.rerender(React.createElement(UnconnectedGroundGlassRTT, { ...props, rawDebug: true }));
@@ -995,6 +1003,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(false);
     expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
     expect(diagnostics.get()?.groundGlassCoverageConicQuadratic).toBe(canonicalDiagnostic);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationModel.value).toBe(0);
 
     view.unmount();
   });

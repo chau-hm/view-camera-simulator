@@ -266,9 +266,14 @@ uniform float flipDisplayX;
 uniform float flipDisplayY;
 uniform float groundGlassIlluminanceGain;
 uniform float groundGlassNaturalIlluminationEnabled;
+uniform float groundGlassNaturalIlluminationModel;
 uniform float groundGlassNaturalIlluminationImageDistanceMm;
 uniform float groundGlassNaturalIlluminationOffsetXMm;
 uniform float groundGlassNaturalIlluminationOffsetYMm;
+uniform vec3 groundGlassNaturalIlluminationLensToFilmCenterLocalMm;
+uniform vec3 groundGlassNaturalIlluminationImageSideAxisLocal;
+uniform float groundGlassNaturalIlluminationReferenceFilmIncidenceCosine;
+uniform float groundGlassNaturalIlluminationFilmNormalTowardLensSign;
 uniform float groundGlassCoverageEnabled;
 uniform float groundGlassCoverageMode;
 uniform float groundGlassCoverageRadiusMm;
@@ -289,6 +294,22 @@ float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
   if (groundGlassNaturalIlluminationEnabled < 0.5) return 1.0;
 
   float imageDistanceMm = groundGlassNaturalIlluminationImageDistanceMm;
+  if (groundGlassNaturalIlluminationModel > 1.5) {
+    float referenceIncidence = groundGlassNaturalIlluminationReferenceFilmIncidenceCosine;
+    float normalSign = groundGlassNaturalIlluminationFilmNormalTowardLensSign;
+    vec3 lensToFilmPointLocalMm = groundGlassNaturalIlluminationLensToFilmCenterLocalMm +
+      vec3(filmPointMm, 0.0);
+    float distanceSquared = dot(lensToFilmPointLocalMm, lensToFilmPointLocalMm);
+    float projectedPupil = dot(groundGlassNaturalIlluminationImageSideAxisLocal, lensToFilmPointLocalMm);
+    float filmIncidence = -normalSign * lensToFilmPointLocalMm.z;
+    if (imageDistanceMm <= 0.0 || referenceIncidence <= 0.0 || distanceSquared <= 1e-18) return 1.0;
+    if (projectedPupil <= 0.0 || filmIncidence <= 0.0) return 0.0;
+    float gain = imageDistanceMm * imageDistanceMm * projectedPupil * filmIncidence /
+      (distanceSquared * distanceSquared * referenceIncidence);
+    if (!(gain >= 0.0) || gain > 1e20) return 1.0;
+    return gain;
+  }
+
   float imageDistanceSquared = imageDistanceMm * imageDistanceMm;
   vec2 offsetMm = vec2(
     groundGlassNaturalIlluminationOffsetXMm,
