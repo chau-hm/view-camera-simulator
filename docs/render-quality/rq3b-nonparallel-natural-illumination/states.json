@@ -1,0 +1,959 @@
+{
+  "schemaVersion": "rq3b-state-manifest-v1",
+  "baseCommit": "7a0b8fccb4b252017f53fb1730c57c9b76959e79",
+  "before": {
+    "captureRunId": "e7287315-e58e-4d32-9250-a0634b890301",
+    "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e",
+    "sourceTreeStatus": "clean"
+  },
+  "after": {
+    "captureRunId": "139213d4-ecbf-46c1-8e90-7fad21ba5298",
+    "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a",
+    "sourceTreeStatus": "clean"
+  },
+  "gpuVerification": {
+    "sourceCommit": "9acddf5c0c249ba2356f644b95c12d7d068d2490",
+    "sourceTreeStatus": "clean",
+    "executionApi": "webgl2",
+    "sampleCount": 39,
+    "tolerance": 2
+  },
+  "captureContract": {
+    "rendererFamily": "webgl-renderer",
+    "executionApi": "webgl2",
+    "viewport": {
+      "width": 1280,
+      "height": 900,
+      "devicePixelRatio": 1
+    },
+    "renderQuality": "standard",
+    "previewMode": "Raw",
+    "rawDebug": false,
+    "displaySize": {
+      "width": 450,
+      "height": 360
+    },
+    "captureTarget": "Ground Glass canvas CSS crop"
+  },
+  "states": [
+    {
+      "stateId": "oblique-architecture-a1-parallel",
+      "sceneId": "oblique-architecture",
+      "route": "/simulator/free/oblique-architecture?rttDiagnostics=1",
+      "requested": {
+        "stateId": "oblique-architecture-a1-parallel",
+        "sceneId": "oblique-architecture",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movement": {
+          "riseMm": 0,
+          "swingDeg": 0
+        }
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movements": [
+          {
+            "control": "Rise",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "step": 1
+          },
+          {
+            "control": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "control": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "parallel-cos4",
+        "state": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 151.72413793103448,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "parallel-circle"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayxl43-dapfp5z9r37-default-request-3",
+        "lastCompletedRequestId": "gg-mwayxl43-dapfp5z9r37-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/oblique-architecture-a1-parallel.png",
+        "sha256": "f8d3cda201432b14ffa6c519b1084fb1cd6cc568403e8149782bc2d5ca8c7994",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/oblique-architecture-a1-parallel.png",
+        "sha256": "f8d3cda201432b14ffa6c519b1084fb1cd6cc568403e8149782bc2d5ca8c7994",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": true
+    },
+    {
+      "stateId": "oblique-architecture-a2-rise40",
+      "sceneId": "oblique-architecture",
+      "route": "/simulator/free/oblique-architecture?rttDiagnostics=1",
+      "requested": {
+        "stateId": "oblique-architecture-a2-rise40",
+        "sceneId": "oblique-architecture",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movement": {
+          "riseMm": 40,
+          "swingDeg": 0
+        }
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movements": [
+          {
+            "control": "Rise",
+            "value": 40,
+            "min": 0,
+            "max": 40,
+            "step": 1
+          },
+          {
+            "control": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "control": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "parallel-cos4",
+        "state": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 151.72413793103448,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 40
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "parallel-circle"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayxu31-0te8xrrtcbl-default-request-7",
+        "lastCompletedRequestId": "gg-mwayxu31-0te8xrrtcbl-default-request-7",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/oblique-architecture-a2-rise40.png",
+        "sha256": "2685487c8962af9054e48263d04b0dadca3fe8899dcc5c48e56fd22fee932e63",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/oblique-architecture-a2-rise40.png",
+        "sha256": "2685487c8962af9054e48263d04b0dadca3fe8899dcc5c48e56fd22fee932e63",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": true
+    },
+    {
+      "stateId": "oblique-architecture-a3-rise40-swing-plus5",
+      "sceneId": "oblique-architecture",
+      "route": "/simulator/free/oblique-architecture?rttDiagnostics=1",
+      "requested": {
+        "stateId": "oblique-architecture-a3-rise40-swing-plus5",
+        "sceneId": "oblique-architecture",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movement": {
+          "riseMm": 40,
+          "swingDeg": 5
+        }
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movements": [
+          {
+            "control": "Rise",
+            "value": 40,
+            "min": 0,
+            "max": 40,
+            "step": 1
+          },
+          {
+            "control": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "control": "Swing",
+            "value": 5,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "nonparallel-geometric",
+        "state": {
+          "kind": "nonparallel-geometric",
+          "referenceImageDistanceMm": 151.72413793103448,
+          "referenceFilmIncidenceCosine": 0.9961946980917455,
+          "lensToFilmCenterLocalMm": [
+            0,
+            -40,
+            -151.14678177943725
+          ],
+          "imageSideAxisLocal": [
+            -0.08715574274765817,
+            0,
+            -0.9961946980917455
+          ],
+          "filmNormalTowardLensSign": 1
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "nonparallel-conic"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayy5pd-ytgmhquyfq-default-request-12",
+        "lastCompletedRequestId": "gg-mwayy5pd-ytgmhquyfq-default-request-12",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/oblique-architecture-a3-rise40-swing-plus5.png",
+        "sha256": "915a9f883a58b4a49c4cf636c4bb926caf6b13085fc2fef9fe5402a5488a2cc8",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/oblique-architecture-a3-rise40-swing-plus5.png",
+        "sha256": "1da6c679cc26d868b5f171e6cb46649411161fd188a8e77b767fc529df4bf0f6",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": false
+    },
+    {
+      "stateId": "oblique-architecture-a4-rise40-swing-minus5",
+      "sceneId": "oblique-architecture",
+      "route": "/simulator/free/oblique-architecture?rttDiagnostics=1",
+      "requested": {
+        "stateId": "oblique-architecture-a4-rise40-swing-minus5",
+        "sceneId": "oblique-architecture",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movement": {
+          "riseMm": 40,
+          "swingDeg": -5
+        }
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 13200,
+        "apertureFNumber": 11,
+        "movements": [
+          {
+            "control": "Rise",
+            "value": 40,
+            "min": 0,
+            "max": 40,
+            "step": 1
+          },
+          {
+            "control": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "control": "Swing",
+            "value": -5,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "nonparallel-geometric",
+        "state": {
+          "kind": "nonparallel-geometric",
+          "referenceImageDistanceMm": 151.72413793103448,
+          "referenceFilmIncidenceCosine": 0.9961946980917455,
+          "lensToFilmCenterLocalMm": [
+            0,
+            -40,
+            -151.14678177943725
+          ],
+          "imageSideAxisLocal": [
+            0.08715574274765817,
+            0,
+            -0.9961946980917455
+          ],
+          "filmNormalTowardLensSign": 1
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "nonparallel-conic"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayylde-yh5k3q1scn-default-request-12",
+        "lastCompletedRequestId": "gg-mwayylde-yh5k3q1scn-default-request-12",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/oblique-architecture-a4-rise40-swing-minus5.png",
+        "sha256": "92ac0c74a41f0111dcf7b09b24d25c590cee28ae39574a5d01e77a1e2b1741f6",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/oblique-architecture-a4-rise40-swing-minus5.png",
+        "sha256": "7a8b96005caf1403ddd2e7756a55231bd1183aa02ddcc6ac380a83ec51769684",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": false
+    },
+    {
+      "stateId": "macro-oblique-plane-b1-neutral",
+      "sceneId": "macro-oblique-plane",
+      "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1",
+      "requested": {
+        "stateId": "macro-oblique-plane-b1-neutral",
+        "sceneId": "macro-oblique-plane",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "movement": {
+          "tiltDeg": 0
+        }
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "control": "Front Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "parallel-cos4",
+        "state": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 240,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "parallel-circle"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayz2wb-jrqh8j1dby-default-request-3",
+        "lastCompletedRequestId": "gg-mwayz2wb-jrqh8j1dby-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/macro-oblique-plane-b1-neutral.png",
+        "sha256": "45ae1aa822f36a3c72cb68f351ac6ca3bd72803d73f89a15a597f320d2100c68",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/macro-oblique-plane-b1-neutral.png",
+        "sha256": "45ae1aa822f36a3c72cb68f351ac6ca3bd72803d73f89a15a597f320d2100c68",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": true
+    },
+    {
+      "stateId": "macro-oblique-plane-b2-tilt-plus5",
+      "sceneId": "macro-oblique-plane",
+      "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1",
+      "requested": {
+        "stateId": "macro-oblique-plane-b2-tilt-plus5",
+        "sceneId": "macro-oblique-plane",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "movement": {
+          "tiltDeg": 5
+        }
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "control": "Front Tilt",
+            "value": 5,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "nonparallel-geometric",
+        "state": {
+          "kind": "nonparallel-geometric",
+          "referenceImageDistanceMm": 240,
+          "referenceFilmIncidenceCosine": 0.9961946980917455,
+          "lensToFilmCenterLocalMm": [
+            0,
+            0,
+            -239.08672754201893
+          ],
+          "imageSideAxisLocal": [
+            0,
+            0.08715574274765817,
+            -0.9961946980917455
+          ],
+          "filmNormalTowardLensSign": 1
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "nonparallel-conic"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayzd8h-1zq5yuymc2u-default-request-8",
+        "lastCompletedRequestId": "gg-mwayzd8h-1zq5yuymc2u-default-request-8",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/macro-oblique-plane-b2-tilt-plus5.png",
+        "sha256": "a94b99aa29a222f8b5adbb56dd9b1e54b7ee8fabcdfb60516457586837d87d5f",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/macro-oblique-plane-b2-tilt-plus5.png",
+        "sha256": "219d715c095c5fe047a12c6fafab9ff2b9b859ac7892c7ec82c076e3b80b3cd5",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": false
+    },
+    {
+      "stateId": "macro-bellows-extension-c1-focus900",
+      "sceneId": "macro-bellows-extension",
+      "route": "/simulator/free/macro-bellows-extension?rttDiagnostics=1",
+      "requested": {
+        "stateId": "macro-bellows-extension-c1-focus900",
+        "sceneId": "macro-bellows-extension",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 900,
+        "apertureFNumber": 5.6,
+        "movement": {}
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 900,
+        "apertureFNumber": 5.6,
+        "movements": []
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "parallel-cos4",
+        "state": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 180,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "parallel-circle"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwayzt1t-pbnyhq1thp-default-request-3",
+        "lastCompletedRequestId": "gg-mwayzt1t-pbnyhq1thp-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/macro-bellows-extension-c1-focus900.png",
+        "sha256": "4e9e6052db0f16a2dc0cd957806337a0a01eff748673459e769848f5519be7a6",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/macro-bellows-extension-c1-focus900.png",
+        "sha256": "4e9e6052db0f16a2dc0cd957806337a0a01eff748673459e769848f5519be7a6",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": true
+    },
+    {
+      "stateId": "macro-bellows-extension-c2-focus300",
+      "sceneId": "macro-bellows-extension",
+      "route": "/simulator/free/macro-bellows-extension?rttDiagnostics=1",
+      "requested": {
+        "stateId": "macro-bellows-extension-c2-focus300",
+        "sceneId": "macro-bellows-extension",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 300,
+        "apertureFNumber": 5.6,
+        "movement": {}
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 300,
+        "apertureFNumber": 5.6,
+        "movements": []
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "parallel-cos4",
+        "state": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 300,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "parallel-circle"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwaz030d-e0ogejbdm9q-default-request-4",
+        "lastCompletedRequestId": "gg-mwaz030d-e0ogejbdm9q-default-request-4",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/macro-bellows-extension-c2-focus300.png",
+        "sha256": "1a04d8518be1fbc450b80b7d28201f7db3f46558df9b2f35731b031173ed6163",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/macro-bellows-extension-c2-focus300.png",
+        "sha256": "1a04d8518be1fbc450b80b7d28201f7db3f46558df9b2f35731b031173ed6163",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": true
+    },
+    {
+      "stateId": "architecture-rise-d-rq2-neutral",
+      "sceneId": "architecture-rise",
+      "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+      "requested": {
+        "stateId": "architecture-rise-d-rq2-neutral",
+        "sceneId": "architecture-rise",
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "movement": {}
+      },
+      "observed": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "movements": [
+          {
+            "control": "Rise",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "step": 1
+          },
+          {
+            "control": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "control": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "naturalIllumination": {
+        "enabled": "true",
+        "kind": "parallel-cos4",
+        "state": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 152.57142857142858,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        }
+      },
+      "coverage": {
+        "enabled": "true",
+        "kind": "parallel-circle"
+      },
+      "captureTarget": "Displayed Ground Glass canvas crop",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwaz0ftd-elg0jqh7skn-default-request-5",
+        "lastCompletedRequestId": "gg-mwaz0ftd-elg0jqh7skn-default-request-5",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "cssWidth": 450,
+        "cssHeight": 360,
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "before": {
+        "image": "before/architecture-rise-d-rq2-neutral.png",
+        "sha256": "ff892a522b24723f82fd89b4ffc100ce05169013a6a9ee9c49bbab6908b31c4f",
+        "sourceCommit": "8319460dc2556b0f07d04b08a826d54cb6d4fd6e"
+      },
+      "after": {
+        "image": "after/architecture-rise-d-rq2-neutral.png",
+        "sha256": "ff892a522b24723f82fd89b4ffc100ce05169013a6a9ee9c49bbab6908b31c4f",
+        "sourceCommit": "2541f280b08d14ef4be09cd136f8e6f956080c8a"
+      },
+      "identicalToBefore": true
+    }
+  ]
+}

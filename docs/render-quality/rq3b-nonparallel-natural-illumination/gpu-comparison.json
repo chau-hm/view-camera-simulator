@@ -1,0 +1,802 @@
+{
+  "schemaVersion": "rq3b-geometric-illumination-gpu-v1",
+  "sourceCommit": "9acddf5c0c249ba2356f644b95c12d7d068d2490",
+  "sourceTreeStatus": "clean",
+  "runtime": {
+    "rendererFamily": "webgl-renderer",
+    "executionApi": "webgl2",
+    "contextVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "vendor": "WebKit",
+    "renderer": "WebKit WebGL",
+    "browser": {
+      "name": "Chromium (Playwright)",
+      "version": "149.0.7827.55"
+    },
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64"
+    }
+  },
+  "uniformRadianceByte": 128,
+  "readback": "WebGLRenderTarget RGBA8 readRenderTargetPixels; test-only",
+  "tolerance": {
+    "absoluteOutputByteDifference": 2
+  },
+  "states": [
+    {
+      "stateId": "oblique-rise40-swing0",
+      "cameraMovements": {
+        "frontRiseMm": 40,
+        "frontSwingDeg": 0
+      },
+      "naturalIllumination": {
+        "kind": "parallel-cos4",
+        "imageDistanceMm": 151.72413793103448,
+        "opticalAxisOffsetXMm": 0,
+        "opticalAxisOffsetYMm": 40
+      },
+      "coverageKind": "parallel-circle",
+      "edgeFeatherMm": 1,
+      "samples": [
+        {
+          "sampleId": "film-center",
+          "filmPointMm": {
+            "x": 0,
+            "y": 0
+          },
+          "cpuNaturalGain": 0.8742488429876963,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 112,
+          "gpuObservedRgba": [
+            112,
+            112,
+            112,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.42863441573122923,
+          "cpuCoverageGain": 0.5704509231106243,
+          "cpuExpectedRed": 31,
+          "gpuObservedRgba": [
+            31,
+            31,
+            31,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.42863441573122923,
+          "cpuCoverageGain": 0.5704509231106243,
+          "cpuExpectedRed": 31,
+          "gpuObservedRgba": [
+            31,
+            31,
+            31,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.7217126245879103,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 92,
+          "gpuObservedRgba": [
+            92,
+            92,
+            92,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.7217126245879103,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 92,
+          "gpuObservedRgba": [
+            92,
+            92,
+            92,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "optical-axis-intersection",
+          "filmPointMm": {
+            "x": 0,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 1,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 128,
+          "gpuObservedRgba": [
+            128,
+            128,
+            128,
+            255
+          ],
+          "absoluteDifference": 0
+        }
+      ]
+    },
+    {
+      "stateId": "oblique-rise40-swing-plus5",
+      "cameraMovements": {
+        "frontRiseMm": 40,
+        "frontSwingDeg": 5
+      },
+      "naturalIllumination": {
+        "kind": "nonparallel-geometric",
+        "referenceImageDistanceMm": 151.72413793103448,
+        "referenceFilmIncidenceCosine": 0.9961946980917455,
+        "lensToFilmCenterLocalMm": [
+          0,
+          -40,
+          -151.14678177943725
+        ],
+        "imageSideAxisLocal": [
+          -0.08715574274765817,
+          0,
+          -0.9961946980917455
+        ],
+        "filmNormalTowardLensSign": 1
+      },
+      "coverageKind": "nonparallel-conic",
+      "edgeFeatherMm": 1,
+      "samples": [
+        {
+          "sampleId": "film-center",
+          "filmPointMm": {
+            "x": 0,
+            "y": 0
+          },
+          "cpuNaturalGain": 0.8800648178577203,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 113,
+          "gpuObservedRgba": [
+            113,
+            113,
+            113,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.4453086966062657,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 57,
+          "gpuObservedRgba": [
+            57,
+            57,
+            57,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.41397372157857876,
+          "cpuCoverageGain": 0,
+          "cpuExpectedRed": 0,
+          "gpuObservedRgba": [
+            0,
+            0,
+            0,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.7520233589937764,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 96,
+          "gpuObservedRgba": [
+            96,
+            96,
+            96,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.6991058360397104,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 89,
+          "gpuObservedRgba": [
+            89,
+            89,
+            89,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "optical-axis-intersection",
+          "filmPointMm": {
+            "x": 13.000000000000005,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 0.9854382298960127,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 126,
+          "gpuObservedRgba": [
+            126,
+            126,
+            126,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "positive-x-gradient",
+          "filmPointMm": {
+            "x": 23,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 0.9497459186103695,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 122,
+          "gpuObservedRgba": [
+            122,
+            122,
+            122,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "negative-x-gradient",
+          "filmPointMm": {
+            "x": 2.9999999999999947,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 1.0051123866538674,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 129,
+          "gpuObservedRgba": [
+            129,
+            129,
+            129,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "finite-coverage-boundary",
+          "filmPointMm": {
+            "x": 57.99999999999999,
+            "y": -38.4
+          },
+          "cpuNaturalGain": 0.48547773338865924,
+          "cpuCoverageGain": 0.47774513580422595,
+          "cpuExpectedRed": 30,
+          "gpuObservedRgba": [
+            30,
+            30,
+            30,
+            255
+          ],
+          "absoluteDifference": 0
+        }
+      ]
+    },
+    {
+      "stateId": "oblique-rise40-swing-minus5",
+      "cameraMovements": {
+        "frontRiseMm": 40,
+        "frontSwingDeg": -5
+      },
+      "naturalIllumination": {
+        "kind": "nonparallel-geometric",
+        "referenceImageDistanceMm": 151.72413793103448,
+        "referenceFilmIncidenceCosine": 0.9961946980917455,
+        "lensToFilmCenterLocalMm": [
+          0,
+          -40,
+          -151.14678177943725
+        ],
+        "imageSideAxisLocal": [
+          0.08715574274765817,
+          0,
+          -0.9961946980917455
+        ],
+        "filmNormalTowardLensSign": 1
+      },
+      "coverageKind": "nonparallel-conic",
+      "edgeFeatherMm": 1,
+      "samples": [
+        {
+          "sampleId": "film-center",
+          "filmPointMm": {
+            "x": 0,
+            "y": 0
+          },
+          "cpuNaturalGain": 0.8800648178577203,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 113,
+          "gpuObservedRgba": [
+            113,
+            113,
+            113,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.41397372157857876,
+          "cpuCoverageGain": 0,
+          "cpuExpectedRed": 0,
+          "gpuObservedRgba": [
+            0,
+            0,
+            0,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.4453086966062657,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 57,
+          "gpuObservedRgba": [
+            57,
+            57,
+            57,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.6991058360397104,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 89,
+          "gpuObservedRgba": [
+            89,
+            89,
+            89,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.7520233589937764,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 96,
+          "gpuObservedRgba": [
+            96,
+            96,
+            96,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "optical-axis-intersection",
+          "filmPointMm": {
+            "x": -12.999999999999998,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 0.9854382298960127,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 126,
+          "gpuObservedRgba": [
+            126,
+            126,
+            126,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "positive-x-gradient",
+          "filmPointMm": {
+            "x": -3.0000000000000018,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 1.0051123866538674,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 129,
+          "gpuObservedRgba": [
+            129,
+            129,
+            129,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "negative-x-gradient",
+          "filmPointMm": {
+            "x": -23,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 0.9497459186103695,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 122,
+          "gpuObservedRgba": [
+            122,
+            122,
+            122,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "finite-coverage-boundary",
+          "filmPointMm": {
+            "x": -58,
+            "y": -38.4
+          },
+          "cpuNaturalGain": 0.48547773338865924,
+          "cpuCoverageGain": 0.4777451358042166,
+          "cpuExpectedRed": 30,
+          "gpuObservedRgba": [
+            30,
+            30,
+            30,
+            255
+          ],
+          "absoluteDifference": 0
+        }
+      ]
+    },
+    {
+      "stateId": "macro-oblique-tilt-plus5",
+      "cameraMovements": {
+        "frontTiltDeg": 5
+      },
+      "naturalIllumination": {
+        "kind": "nonparallel-geometric",
+        "referenceImageDistanceMm": 240,
+        "referenceFilmIncidenceCosine": 0.9961946980917455,
+        "lensToFilmCenterLocalMm": [
+          0,
+          0,
+          -239.08672754201893
+        ],
+        "imageSideAxisLocal": [
+          0,
+          0.08715574274765817,
+          -0.9961946980917455
+        ],
+        "filmNormalTowardLensSign": 1
+      },
+      "coverageKind": "nonparallel-conic",
+      "edgeFeatherMm": 1,
+      "samples": [
+        {
+          "sampleId": "film-center",
+          "filmPointMm": {
+            "x": 0,
+            "y": 0
+          },
+          "cpuNaturalGain": 1.0076542662455523,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 129,
+          "gpuObservedRgba": [
+            129,
+            129,
+            129,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.7971814561110664,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 102,
+          "gpuObservedRgba": [
+            102,
+            102,
+            102,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.7971814561110664,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 102,
+          "gpuObservedRgba": [
+            102,
+            102,
+            102,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.8271384631303661,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 106,
+          "gpuObservedRgba": [
+            106,
+            106,
+            106,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.8271384631303661,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 106,
+          "gpuObservedRgba": [
+            106,
+            106,
+            106,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "optical-axis-intersection",
+          "filmPointMm": {
+            "x": 0,
+            "y": -20.799999999999997
+          },
+          "cpuNaturalGain": 0.9850178491113563,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 126,
+          "gpuObservedRgba": [
+            126,
+            126,
+            126,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "positive-y-gradient",
+          "filmPointMm": {
+            "x": 0,
+            "y": -11.200000000000003
+          },
+          "cpuNaturalGain": 0.999134588684919,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 128,
+          "gpuObservedRgba": [
+            128,
+            128,
+            128,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "negative-y-gradient",
+          "filmPointMm": {
+            "x": 0,
+            "y": -31.2
+          },
+          "cpuNaturalGain": 0.9630697014574676,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 123,
+          "gpuObservedRgba": [
+            123,
+            123,
+            123,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "finite-coverage-boundary",
+          "filmPointMm": {
+            "x": -63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.7971814561110664,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 102,
+          "gpuObservedRgba": [
+            102,
+            102,
+            102,
+            255
+          ],
+          "absoluteDifference": 0
+        }
+      ]
+    },
+    {
+      "stateId": "architecture-rise-neutral",
+      "cameraMovements": {},
+      "naturalIllumination": {
+        "kind": "parallel-cos4",
+        "imageDistanceMm": 152.57437070938215,
+        "opticalAxisOffsetXMm": 0,
+        "opticalAxisOffsetYMm": 0
+      },
+      "coverageKind": "parallel-circle",
+      "edgeFeatherMm": 1,
+      "samples": [
+        {
+          "sampleId": "film-center",
+          "filmPointMm": {
+            "x": 0,
+            "y": 0
+          },
+          "cpuNaturalGain": 1,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 128,
+          "gpuObservedRgba": [
+            128,
+            128,
+            128,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.6107180898021956,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 78,
+          "gpuObservedRgba": [
+            78,
+            78,
+            78,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "top-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": -50.4
+          },
+          "cpuNaturalGain": 0.6107180898021956,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 78,
+          "gpuObservedRgba": [
+            78,
+            78,
+            78,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-left",
+          "filmPointMm": {
+            "x": -63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.6107180898021956,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 78,
+          "gpuObservedRgba": [
+            78,
+            78,
+            78,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "bottom-right",
+          "filmPointMm": {
+            "x": 63,
+            "y": 50.4
+          },
+          "cpuNaturalGain": 0.6107180898021956,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 78,
+          "gpuObservedRgba": [
+            78,
+            78,
+            78,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "optical-axis-intersection",
+          "filmPointMm": {
+            "x": 0,
+            "y": 0
+          },
+          "cpuNaturalGain": 1,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 128,
+          "gpuObservedRgba": [
+            128,
+            128,
+            128,
+            255
+          ],
+          "absoluteDifference": 0
+        }
+      ]
+    }
+  ]
+}
