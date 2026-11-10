@@ -124,10 +124,14 @@ test("capture RQ3B matched WebGL Ground Glass states", async ({ page }, testInfo
     if (state.movement.swingDeg !== undefined) await setStepRangeInput(page, "Swing", state.movement.swingDeg);
     if (state.movement.tiltDeg !== undefined) await setStepRangeInput(page, "Tilt", state.movement.tiltDeg);
 
-    const aperture = Number(await page.getByRole("radiogroup", { name: "Aperture", exact: true })
-      .getAttribute("data-selected-aperture"));
+    const apertureGroup = page.getByRole("radiogroup", { name: "Aperture", exact: true });
+    const aperture = Number(await apertureGroup.getAttribute("data-selected-aperture"));
     if (aperture !== state.apertureFNumber) {
-      throw new Error(`${state.stateId}: preset aperture ${aperture} does not match ${state.apertureFNumber}`);
+      await apertureGroup.getByRole("radio", { name: `f/${state.apertureFNumber}`, exact: true }).check();
+    }
+    const appliedAperture = Number(await apertureGroup.getAttribute("data-selected-aperture"));
+    if (appliedAperture !== state.apertureFNumber) {
+      throw new Error(`${state.stateId}: aperture ${appliedAperture} does not match ${state.apertureFNumber}`);
     }
     const frame = await waitForAcceptedFrame(page, rtt, state.sceneId);
     const canvas = rtt.locator("canvas").first();
