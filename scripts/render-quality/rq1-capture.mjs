@@ -173,12 +173,6 @@ function cleanCaptureEnvironment(backend, outputDirectory, captureRun) {
   // Enable the existing test-only frame acceptance diagnostics for both
   // renderers. No failure point is invoked and this does not select WebGPU.
   env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION = "1";
-  if (backend === "webgpu" && captureRun.captureProfile === "rq2") {
-    env.GROUND_GLASS_M3_SOURCE_PROFILE = "v2";
-  } else {
-    delete env.GROUND_GLASS_M3_SOURCE_PROFILE;
-  }
-
   if (backend === "webgpu") {
     env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED = "1";
   } else {

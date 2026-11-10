@@ -295,7 +295,7 @@ for (const item of expected) {
       if (metadata.selectedBackend !== "webgpu" || metadata.internalFallback !== "none") {
         errors.push(`${item.captureId}: native runtime identity/fallback/accepted-frame proof is invalid`);
       }
-      if (metadata.runtimeDiagnostics?.sceneSourceRevision !== manifest.sceneSourceRevision) {
+      if (profile === "rq2" && metadata.runtimeDiagnostics?.sceneSourceRevision !== manifest.sceneSourceRevision) {
         errors.push(`${item.captureId}: mounted runtime scene-source revision does not match the RQ2 manifest`);
       }
       if (metadata.featureEvidenceRevision !== M3_EVIDENCE || metadata.mountedFeatureEvidenceRevision !== M3_EVIDENCE) {
