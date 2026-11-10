@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "rq1-capture-run-v2",
+  "captureProfile": "rq2",
+  "captureRunId": "617cc26b-05c7-4281-b99e-ed835edab1d3",
+  "sourceCommit": "fcd995f04b19a6b434785653cc4833bf28a6e082",
+  "sourceTree": {
+    "status": "clean",
+    "commitReproducible": true,
+    "dirtyPaths": []
+  },
+  "observerCaptureMode": "dream-loop-captured",
+  "observerSourceCommits": [
+    "fcd995f04b19a6b434785653cc4833bf28a6e082"
+  ],
+  "nativeRevalidation": {
+    "mode": "explicit-rq2.1-source-revalidation",
+    "sourceRevision": "architecture-rise-raw-rtt-v2",
+    "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2"
+  },
+  "status": "captured",
+  "capturedCaptureIds": [
+    "architecture-rise-observer-clean",
+    "architecture-rise-observer-teaching",
+    "architecture-rise-neutral-webgl-raw",
+    "architecture-rise-front-rise-webgl-raw",
+    "architecture-rise-processed-webgl-reference",
+    "architecture-rise-neutral-webgpu-raw",
+    "architecture-rise-front-rise-webgpu-raw"
+  ],
+  "webglStatus": "captured",
+  "nativeStatus": "captured",
+  "nativeReasonClass": null
+}
