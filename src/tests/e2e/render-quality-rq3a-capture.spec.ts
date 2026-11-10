@@ -141,6 +141,9 @@ const waitForAcceptedWebGlFrame = async (
 
 test("capture the RQ3A WebGL Ground Glass Before/After reference states", async ({ page }, testInfo) => {
   test.setTimeout(240_000);
+  await page.addInitScript(() => {
+    window.__groundGlassWebGpuM3TestControl = { adapterEvents: [] };
+  });
   await page.setViewportSize({ width: 1280, height: 900 });
   const browser = page.context().browser();
   const pageErrors: string[] = [];
