@@ -79,7 +79,9 @@ All three controls are byte-identical to Before. The observed bellows illuminanc
 
 ## Controlled WebGL2 check
 
-[gpu-comparison.json](rq3b-nonparallel-natural-illumination/gpu-comparison.json) records the production composite running in a bounded uniform-radiance WebGL2 fixture. It covers 39 physical-film samples across parallel, Rise, both Swing signs, non-parallel Tilt, and the RQ2 Architecture Rise control. Samples include corners, optical-axis intersections, opposing gradient points, and conic-boundary points.
+[gpu-comparison.json](rq3b-nonparallel-natural-illumination/gpu-comparison.json) records the production composite running in a bounded uniform-radiance WebGL2 fixture. The regenerated v2 record is pinned to clean source `546ee53af090ed594e8cbef5529c2a4e4bf3a4d7`. It covers 39 physical-film samples across parallel, Rise, both Swing signs, non-parallel Tilt, and the RQ2 Architecture Rise control. Samples include corners, optical-axis intersections, opposing gradient points, and conic-boundary points.
+
+For non-parallel states, the film-plane intersection uses `t = lensToFilmCenterLocalMm.z / imageSideAxisLocal.z`; the fixture records that exact point and samples its nearest output pixel. It asserts the sample is within half a pixel diagonal and the normalized natural-illumination gain is approximately one. This corrects the earlier fixture's sign error, which placed the labeled samples across the axis instead of at the plane intersection.
 
 The readback used RGBA8 `readRenderTargetPixels`. All 39 GPU output bytes matched the CPU natural-illumination and coverage calculation exactly (maximum absolute difference: 0 bytes; allowed tolerance: 2 bytes). Runtime identity was Three.js WebGLRenderer/WebGL2 in Chromium 149 on macOS 27 arm64. The reported WebGL renderer string is `WebKit WebGL`; no hardware-acceleration claim is made.
 
@@ -89,7 +91,7 @@ The readback used RGBA8 `readRenderTargetPixels`. All 39 GPU output bytes matche
 - `npm run test` under Node 24.3.0: 329 files, 4030 passed, 31 skipped.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
-- Controlled GPU fixture: 1 passed, 39 sample comparisons.
+- Controlled GPU fixture: 1 passed, 39 sample comparisons; regenerated report schema v2 at clean source `546ee53a` after correcting and asserting the non-parallel optical-axis intersection.
 - Nine-state After capture: 1 passed, 9 accepted frames.
 - `nonparallel-coverage.spec.ts`: 3 passed.
 - Selected Raw/Upright orientation and Focus Loupe crop browser tests: 2 passed.

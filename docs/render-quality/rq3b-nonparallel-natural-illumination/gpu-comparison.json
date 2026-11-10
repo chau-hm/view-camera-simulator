@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "rq3b-geometric-illumination-gpu-v1",
-  "sourceCommit": "9acddf5c0c249ba2356f644b95c12d7d068d2490",
+  "schemaVersion": "rq3b-geometric-illumination-gpu-v2",
+  "sourceCommit": "546ee53af090ed594e8cbef5529c2a4e4bf3a4d7",
   "sourceTreeStatus": "clean",
   "runtime": {
     "rendererFamily": "webgl-renderer",
@@ -36,11 +36,19 @@
         "opticalAxisOffsetXMm": 0,
         "opticalAxisOffsetYMm": 40
       },
+      "opticalAxisIntersectionFilmMm": {
+        "xMm": 0,
+        "yMm": 40
+      },
       "coverageKind": "parallel-circle",
       "edgeFeatherMm": 1,
       "samples": [
         {
           "sampleId": "film-center",
+          "pixel": {
+            "x": 63,
+            "y": 63
+          },
           "filmPointMm": {
             "x": 0,
             "y": 0
@@ -58,6 +66,10 @@
         },
         {
           "sampleId": "top-left",
+          "pixel": {
+            "x": 0,
+            "y": 126
+          },
           "filmPointMm": {
             "x": -63,
             "y": -50.4
@@ -75,6 +87,10 @@
         },
         {
           "sampleId": "top-right",
+          "pixel": {
+            "x": 126,
+            "y": 126
+          },
           "filmPointMm": {
             "x": 63,
             "y": -50.4
@@ -92,6 +108,10 @@
         },
         {
           "sampleId": "bottom-left",
+          "pixel": {
+            "x": 0,
+            "y": 0
+          },
           "filmPointMm": {
             "x": -63,
             "y": 50.4
@@ -109,6 +129,10 @@
         },
         {
           "sampleId": "bottom-right",
+          "pixel": {
+            "x": 126,
+            "y": 0
+          },
           "filmPointMm": {
             "x": 63,
             "y": 50.4
@@ -126,6 +150,10 @@
         },
         {
           "sampleId": "optical-axis-intersection",
+          "pixel": {
+            "x": 63,
+            "y": 13
+          },
           "filmPointMm": {
             "x": 0,
             "y": 39.99999999999999
@@ -165,11 +193,19 @@
         ],
         "filmNormalTowardLensSign": 1
       },
+      "opticalAxisIntersectionFilmMm": {
+        "xMm": -13.223629934127445,
+        "yMm": 40
+      },
       "coverageKind": "nonparallel-conic",
       "edgeFeatherMm": 1,
       "samples": [
         {
           "sampleId": "film-center",
+          "pixel": {
+            "x": 63,
+            "y": 63
+          },
           "filmPointMm": {
             "x": 0,
             "y": 0
@@ -187,6 +223,10 @@
         },
         {
           "sampleId": "top-left",
+          "pixel": {
+            "x": 0,
+            "y": 126
+          },
           "filmPointMm": {
             "x": -63,
             "y": -50.4
@@ -204,6 +244,10 @@
         },
         {
           "sampleId": "top-right",
+          "pixel": {
+            "x": 126,
+            "y": 126
+          },
           "filmPointMm": {
             "x": 63,
             "y": -50.4
@@ -221,6 +265,10 @@
         },
         {
           "sampleId": "bottom-left",
+          "pixel": {
+            "x": 0,
+            "y": 0
+          },
           "filmPointMm": {
             "x": -63,
             "y": 50.4
@@ -238,6 +286,10 @@
         },
         {
           "sampleId": "bottom-right",
+          "pixel": {
+            "x": 126,
+            "y": 0
+          },
           "filmPointMm": {
             "x": 63,
             "y": 50.4
@@ -255,45 +307,36 @@
         },
         {
           "sampleId": "optical-axis-intersection",
+          "pixel": {
+            "x": 50,
+            "y": 13
+          },
           "filmPointMm": {
-            "x": 13.000000000000005,
+            "x": -12.999999999999998,
             "y": 39.99999999999999
           },
-          "cpuNaturalGain": 0.9854382298960127,
+          "cpuNaturalGain": 1.000381167345962,
           "cpuCoverageGain": 1,
-          "cpuExpectedRed": 126,
+          "cpuExpectedRed": 128,
           "gpuObservedRgba": [
-            126,
-            126,
-            126,
+            128,
+            128,
+            128,
             255
           ],
           "absoluteDifference": 0
         },
         {
           "sampleId": "positive-x-gradient",
+          "pixel": {
+            "x": 60,
+            "y": 13
+          },
           "filmPointMm": {
-            "x": 23,
+            "x": -3.0000000000000018,
             "y": 39.99999999999999
           },
-          "cpuNaturalGain": 0.9497459186103695,
-          "cpuCoverageGain": 1,
-          "cpuExpectedRed": 122,
-          "gpuObservedRgba": [
-            122,
-            122,
-            122,
-            255
-          ],
-          "absoluteDifference": 0
-        },
-        {
-          "sampleId": "negative-x-gradient",
-          "filmPointMm": {
-            "x": 2.9999999999999947,
-            "y": 39.99999999999999
-          },
-          "cpuNaturalGain": 1.0051123866538674,
+          "cpuNaturalGain": 1.008609208928944,
           "cpuCoverageGain": 1,
           "cpuExpectedRed": 129,
           "gpuObservedRgba": [
@@ -305,7 +348,32 @@
           "absoluteDifference": 0
         },
         {
+          "sampleId": "negative-x-gradient",
+          "pixel": {
+            "x": 40,
+            "y": 13
+          },
+          "filmPointMm": {
+            "x": -23,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 0.9753753401142263,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 125,
+          "gpuObservedRgba": [
+            125,
+            125,
+            125,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
           "sampleId": "finite-coverage-boundary",
+          "pixel": {
+            "x": 121,
+            "y": 111
+          },
           "filmPointMm": {
             "x": 57.99999999999999,
             "y": -38.4
@@ -345,11 +413,19 @@
         ],
         "filmNormalTowardLensSign": 1
       },
+      "opticalAxisIntersectionFilmMm": {
+        "xMm": 13.223629934127445,
+        "yMm": 40
+      },
       "coverageKind": "nonparallel-conic",
       "edgeFeatherMm": 1,
       "samples": [
         {
           "sampleId": "film-center",
+          "pixel": {
+            "x": 63,
+            "y": 63
+          },
           "filmPointMm": {
             "x": 0,
             "y": 0
@@ -367,6 +443,10 @@
         },
         {
           "sampleId": "top-left",
+          "pixel": {
+            "x": 0,
+            "y": 126
+          },
           "filmPointMm": {
             "x": -63,
             "y": -50.4
@@ -384,6 +464,10 @@
         },
         {
           "sampleId": "top-right",
+          "pixel": {
+            "x": 126,
+            "y": 126
+          },
           "filmPointMm": {
             "x": 63,
             "y": -50.4
@@ -401,6 +485,10 @@
         },
         {
           "sampleId": "bottom-left",
+          "pixel": {
+            "x": 0,
+            "y": 0
+          },
           "filmPointMm": {
             "x": -63,
             "y": 50.4
@@ -418,6 +506,10 @@
         },
         {
           "sampleId": "bottom-right",
+          "pixel": {
+            "x": 126,
+            "y": 0
+          },
           "filmPointMm": {
             "x": 63,
             "y": 50.4
@@ -435,28 +527,57 @@
         },
         {
           "sampleId": "optical-axis-intersection",
+          "pixel": {
+            "x": 76,
+            "y": 13
+          },
           "filmPointMm": {
-            "x": -12.999999999999998,
+            "x": 13.000000000000005,
             "y": 39.99999999999999
           },
-          "cpuNaturalGain": 0.9854382298960127,
+          "cpuNaturalGain": 1.000381167345962,
           "cpuCoverageGain": 1,
-          "cpuExpectedRed": 126,
+          "cpuExpectedRed": 128,
           "gpuObservedRgba": [
-            126,
-            126,
-            126,
+            128,
+            128,
+            128,
             255
           ],
           "absoluteDifference": 0
         },
         {
           "sampleId": "positive-x-gradient",
+          "pixel": {
+            "x": 86,
+            "y": 13
+          },
           "filmPointMm": {
-            "x": -3.0000000000000018,
+            "x": 23,
             "y": 39.99999999999999
           },
-          "cpuNaturalGain": 1.0051123866538674,
+          "cpuNaturalGain": 0.9753753401142263,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 125,
+          "gpuObservedRgba": [
+            125,
+            125,
+            125,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "negative-x-gradient",
+          "pixel": {
+            "x": 66,
+            "y": 13
+          },
+          "filmPointMm": {
+            "x": 2.9999999999999947,
+            "y": 39.99999999999999
+          },
+          "cpuNaturalGain": 1.008609208928944,
           "cpuCoverageGain": 1,
           "cpuExpectedRed": 129,
           "gpuObservedRgba": [
@@ -468,24 +589,11 @@
           "absoluteDifference": 0
         },
         {
-          "sampleId": "negative-x-gradient",
-          "filmPointMm": {
-            "x": -23,
-            "y": 39.99999999999999
-          },
-          "cpuNaturalGain": 0.9497459186103695,
-          "cpuCoverageGain": 1,
-          "cpuExpectedRed": 122,
-          "gpuObservedRgba": [
-            122,
-            122,
-            122,
-            255
-          ],
-          "absoluteDifference": 0
-        },
-        {
           "sampleId": "finite-coverage-boundary",
+          "pixel": {
+            "x": 5,
+            "y": 111
+          },
           "filmPointMm": {
             "x": -58,
             "y": -38.4
@@ -524,11 +632,19 @@
         ],
         "filmNormalTowardLensSign": 1
       },
+      "opticalAxisIntersectionFilmMm": {
+        "xMm": 0,
+        "yMm": 20.91737825943796
+      },
       "coverageKind": "nonparallel-conic",
       "edgeFeatherMm": 1,
       "samples": [
         {
           "sampleId": "film-center",
+          "pixel": {
+            "x": 63,
+            "y": 63
+          },
           "filmPointMm": {
             "x": 0,
             "y": 0
@@ -546,6 +662,10 @@
         },
         {
           "sampleId": "top-left",
+          "pixel": {
+            "x": 0,
+            "y": 126
+          },
           "filmPointMm": {
             "x": -63,
             "y": -50.4
@@ -563,6 +683,10 @@
         },
         {
           "sampleId": "top-right",
+          "pixel": {
+            "x": 126,
+            "y": 126
+          },
           "filmPointMm": {
             "x": 63,
             "y": -50.4
@@ -580,6 +704,10 @@
         },
         {
           "sampleId": "bottom-left",
+          "pixel": {
+            "x": 0,
+            "y": 0
+          },
           "filmPointMm": {
             "x": -63,
             "y": 50.4
@@ -597,6 +725,10 @@
         },
         {
           "sampleId": "bottom-right",
+          "pixel": {
+            "x": 126,
+            "y": 0
+          },
           "filmPointMm": {
             "x": 63,
             "y": 50.4
@@ -614,28 +746,15 @@
         },
         {
           "sampleId": "optical-axis-intersection",
+          "pixel": {
+            "x": 63,
+            "y": 37
+          },
           "filmPointMm": {
             "x": 0,
-            "y": -20.799999999999997
+            "y": 20.8
           },
-          "cpuNaturalGain": 0.9850178491113563,
-          "cpuCoverageGain": 1,
-          "cpuExpectedRed": 126,
-          "gpuObservedRgba": [
-            126,
-            126,
-            126,
-            255
-          ],
-          "absoluteDifference": 0
-        },
-        {
-          "sampleId": "positive-y-gradient",
-          "filmPointMm": {
-            "x": 0,
-            "y": -11.200000000000003
-          },
-          "cpuNaturalGain": 0.999134588684919,
+          "cpuNaturalGain": 1.0001274134118798,
           "cpuCoverageGain": 1,
           "cpuExpectedRed": 128,
           "gpuObservedRgba": [
@@ -647,24 +766,53 @@
           "absoluteDifference": 0
         },
         {
-          "sampleId": "negative-y-gradient",
+          "sampleId": "positive-y-gradient",
+          "pixel": {
+            "x": 63,
+            "y": 24
+          },
           "filmPointMm": {
             "x": 0,
-            "y": -31.2
+            "y": 31.2
           },
-          "cpuNaturalGain": 0.9630697014574676,
+          "cpuNaturalGain": 0.9853143461735754,
           "cpuCoverageGain": 1,
-          "cpuExpectedRed": 123,
+          "cpuExpectedRed": 126,
           "gpuObservedRgba": [
-            123,
-            123,
-            123,
+            126,
+            126,
+            126,
+            255
+          ],
+          "absoluteDifference": 0
+        },
+        {
+          "sampleId": "negative-y-gradient",
+          "pixel": {
+            "x": 63,
+            "y": 49
+          },
+          "filmPointMm": {
+            "x": 0,
+            "y": 11.200000000000003
+          },
+          "cpuNaturalGain": 1.0073579977950358,
+          "cpuCoverageGain": 1,
+          "cpuExpectedRed": 129,
+          "gpuObservedRgba": [
+            129,
+            129,
+            129,
             255
           ],
           "absoluteDifference": 0
         },
         {
           "sampleId": "finite-coverage-boundary",
+          "pixel": {
+            "x": 0,
+            "y": 126
+          },
           "filmPointMm": {
             "x": -63,
             "y": -50.4
@@ -691,11 +839,19 @@
         "opticalAxisOffsetXMm": 0,
         "opticalAxisOffsetYMm": 0
       },
+      "opticalAxisIntersectionFilmMm": {
+        "xMm": 0,
+        "yMm": 0
+      },
       "coverageKind": "parallel-circle",
       "edgeFeatherMm": 1,
       "samples": [
         {
           "sampleId": "film-center",
+          "pixel": {
+            "x": 63,
+            "y": 63
+          },
           "filmPointMm": {
             "x": 0,
             "y": 0
@@ -713,6 +869,10 @@
         },
         {
           "sampleId": "top-left",
+          "pixel": {
+            "x": 0,
+            "y": 126
+          },
           "filmPointMm": {
             "x": -63,
             "y": -50.4
@@ -730,6 +890,10 @@
         },
         {
           "sampleId": "top-right",
+          "pixel": {
+            "x": 126,
+            "y": 126
+          },
           "filmPointMm": {
             "x": 63,
             "y": -50.4
@@ -747,6 +911,10 @@
         },
         {
           "sampleId": "bottom-left",
+          "pixel": {
+            "x": 0,
+            "y": 0
+          },
           "filmPointMm": {
             "x": -63,
             "y": 50.4
@@ -764,6 +932,10 @@
         },
         {
           "sampleId": "bottom-right",
+          "pixel": {
+            "x": 126,
+            "y": 0
+          },
           "filmPointMm": {
             "x": 63,
             "y": 50.4
@@ -781,6 +953,10 @@
         },
         {
           "sampleId": "optical-axis-intersection",
+          "pixel": {
+            "x": 63,
+            "y": 63
+          },
           "filmPointMm": {
             "x": 0,
             "y": 0
