@@ -245,17 +245,35 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
       height: image.readUInt32BE(20),
       sha256: createHash("sha256").update(image).digest("hex"),
     };
-    if (
-      cameraState.focusDistanceMm !== state.focusDistanceMm ||
-      cameraState.apertureFNumber !== state.apertureFNumber ||
-      cameraState.previewMode !== "Raw" ||
-      cameraState.rawDebug !== false ||
-      attrs["data-application-fallback"] !== "not-observed" ||
-      attrs["data-internal-fallback"] !== "none" ||
-      !actualImage.width || !actualImage.height ||
-      pageErrors.length > 0 || consoleErrors.length > 0
-    ) {
-      throw new Error(`Capture state validation failed for ${state.stateId}`);
+    const failedChecks = {
+      focusMatches: cameraState.focusDistanceMm === state.focusDistanceMm,
+      apertureMatches: cameraState.apertureFNumber === state.apertureFNumber,
+      rawPreview: cameraState.previewMode === "Raw",
+      rawDebugDisabled: cameraState.rawDebug === false,
+      noApplicationFallback: attrs["data-application-fallback"] === "not-observed",
+      noInternalFallback: attrs["data-internal-fallback"] === "none",
+      imageHasDimensions: actualImage.width > 0 && actualImage.height > 0,
+      noPageErrors: pageErrors.length === 0,
+      noConsoleErrors: consoleErrors.length === 0,
+    };
+    if (Object.values(failedChecks).some((passed) => !passed)) {
+      throw new Error(`Capture state validation failed for ${state.stateId}: ${JSON.stringify({
+        failedChecks,
+        cameraState,
+        rendererIdentity: {
+          rendererFamily: attrs["data-mounted-renderer-family"],
+          executionApi: attrs["data-actual-execution-api"],
+          applicationFallback: attrs["data-application-fallback"],
+          internalFallback: attrs["data-internal-fallback"],
+          frameStatus: attrs["data-frame-result-status"],
+          requestId: attrs["data-frame-request-id"],
+          lastCompletedRequestId: attrs["data-last-completed-request-id"],
+          contentful: attrs["data-rtt-final-contentful"],
+        },
+        image: actualImage,
+        pageErrors,
+        consoleErrors,
+      })}`);
     }
 
     captures.push({
