@@ -725,18 +725,18 @@ describe("GroundGlassRenderHost request and lifecycle authority", () => {
     view.unmount();
   });
 
-  it("does not mount the native pilot while the RQ2 M3 scene source is unverified", async () => {
+  it("mounts the native pilot for the source-bound RQ2 M3 v2 evidence", async () => {
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_RAW_PILOT", "true");
     Object.defineProperty(navigator, "gpu", { value: {}, configurable: true });
     const owner = new GroundGlassRenderHostState();
     const view = render(hostTree(owner, createGroundGlassRequestInput({ rawDebug: true })));
 
-    await waitFor(() => expect(adapterHarness.propsByGeneration.size).toBe(1));
+    await waitFor(() => expect(webGpuHarness.propsByGeneration.size).toBe(1));
     expect(owner.getSnapshot("default").selection).toMatchObject({
       status: "selected",
-      selectedBackend: "webgl",
+      selectedBackend: "webgpu",
     });
-    expect(webGpuHarness.propsByGeneration.size).toBe(0);
+    expect(adapterHarness.propsByGeneration.size).toBe(0);
     view.unmount();
   });
 

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "rq1-native-status-v1",
+  "status": "captured",
+  "captureProfile": "rq2",
+  "reasonClass": null,
+  "captureRunId": "617cc26b-05c7-4281-b99e-ed835edab1d3",
+  "sourceCommit": "fcd995f04b19a6b434785653cc4833bf28a6e082",
+  "command": "npm run render-quality:rq2:capture -- --native-revalidation",
+  "backend": "webgpu-renderer/webgpu",
+  "authorization": {
+    "feature": "Architecture Rise M3 Raw RTT only",
+    "sourceRevision": "architecture-rise-raw-rtt-v2",
+    "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+    "rawPilot": true,
+    "physicalCocResearch": false,
+    "apertureGatherResearch": false,
+    "m6Presentation": false,
+    "m6Qualification": false
+  },
+  "preflight": {
+    "schemaVersion": "rq1-native-preflight-v1",
+    "captureRunId": "617cc26b-05c7-4281-b99e-ed835edab1d3",
+    "sourceCommit": "fcd995f04b19a6b434785653cc4833bf28a6e082",
+    "browserProject": "chrome-native-webgpu",
+    "browserLaunched": true,
+    "localPageLoaded": true,
+    "secureContext": true,
+    "navigatorGpuPresent": true,
+    "adapterAvailable": true,
+    "probeStatus": "adapter-available",
+    "status": "available",
+    "browserVersion": "157.0.8103.40",
+    "diagnostic": null
+  },
+  "nativeTest": {
+    "captureAttempted": true,
+    "exitCode": 0,
+    "signal": null,
+    "error": null
+  },
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "capturedCaptureIds": [
+    "architecture-rise-neutral-webgpu-raw",
+    "architecture-rise-front-rise-webgpu-raw"
+  ],
+  "missingCaptureIds": [],
+  "blocker": null,
+  "failureSummary": null
+}

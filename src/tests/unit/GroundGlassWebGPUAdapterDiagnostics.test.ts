@@ -9,6 +9,7 @@ import {
   makeGroundGlassWebGpuPresentationDiagnostic,
 } from "../../render/webgpu/groundGlassWebGpuDiagnostics";
 import {
+  ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
   ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
   resolveGroundGlassRawWebGpuEvidenceRevision,
 } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
@@ -48,7 +49,7 @@ const createRawRttDiagnosticFixture = () => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
-  it("keeps the changed r187 Raw RTT source ineligible until M3 revalidation", () => {
+  it("publishes source-bound diagnostics for the revalidated r187 v2 Raw RTT feature", () => {
     const { input, request, runtime, expectedEvidenceRevision } = createRawRttDiagnosticFixture();
     const target = new THREE.WebGLRenderTarget(input.widthPx, input.heightPx);
 
@@ -56,8 +57,8 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
       expect(REVISION).toBe("187");
       expect(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION)
         .toBe("m3-architecture-rise-raw-rtt-native-r187-v2");
-      expect(expectedEvidenceRevision).toBeNull();
-      expect(() => makeGroundGlassWebGpuDiagnosticDetails({
+      expect(expectedEvidenceRevision).toBe(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION);
+      expect(makeGroundGlassWebGpuDiagnosticDetails({
         request,
         target,
         camera: { left: -1, right: 1, top: 1, bottom: -1, near: 0.1, far: 100 },
@@ -70,17 +71,22 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
           },
         },
         completedPasses: ["sceneRender", "textureDisplay"],
-      })).toThrow("Ground Glass Raw RTT is not qualified for renderer r187");
+      })).toMatchObject({
+        sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+        verificationEvidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+        actualExecutionApi: "webgpu",
+        internalFallback: "none",
+      });
     } finally {
       target.dispose();
     }
   });
 
-  it("does not publish r187 presentation diagnostics against unverified M3 evidence", () => {
+  it("publishes r187 Raw display diagnostics against the verified M3 evidence", () => {
     const { request, generation, expectedEvidenceRevision } = createRawRttDiagnosticFixture();
     expect(REVISION).toBe("187");
-    expect(expectedEvidenceRevision).toBeNull();
-    expect(() => makeGroundGlassWebGpuPresentationDiagnostic({
+    expect(expectedEvidenceRevision).toBe(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION);
+    expect(makeGroundGlassWebGpuPresentationDiagnostic({
       request,
       generation,
       status: "completed",
@@ -88,10 +94,14 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
       throughputGain: null,
       naturalIllumination: "bypassed",
       coverage: "bypassed",
-    })).toThrow("Ground Glass Raw RTT is not qualified for renderer r187");
+    })).toMatchObject({
+      sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+      verificationEvidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+      mode: "raw-diagnostic",
+    });
   });
 
-  it("keeps historical M6 evidence fail-closed after the Architecture Rise source change", () => {
+  it("keeps M6 disabled and its historical evidence separate after M3 v2 revalidation", () => {
     vi.stubEnv("DEV", true);
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_RAW_PILOT", "true");
     vi.stubEnv("VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION", "true");
@@ -119,7 +129,7 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
       expect(ARCHITECTURE_RISE_M6_PRESENTATION_SOURCE_REVISION)
         .toBe("architecture-rise-raw-rtt-v1+m6-presentation-v1");
       expect(isGroundGlassM6PresentationBuildEnabled()).toBe(false);
-      expect(() => makeGroundGlassWebGpuDiagnosticDetails({
+      expect(makeGroundGlassWebGpuDiagnosticDetails({
         request,
         target,
         camera: { left: -1, right: 1, top: 1, bottom: -1, near: 0.1, far: 100 },
@@ -127,8 +137,11 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
         runtime,
         backend: {},
         completedPasses: ["sceneRender", "presentation"],
-      })).toThrow("Ground Glass Raw RTT is not qualified for renderer r187");
-      expect(() => makeGroundGlassWebGpuPresentationDiagnostic({
+      })).toMatchObject({
+        sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+        verificationEvidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+      });
+      expect(makeGroundGlassWebGpuPresentationDiagnostic({
         request,
         generation,
         status: "completed",
@@ -136,7 +149,11 @@ describe("GroundGlassWebGPUAdapter diagnostic evidence attribution", () => {
         throughputGain: null,
         naturalIllumination: "bypassed",
         coverage: "bypassed",
-      })).toThrow("Ground Glass Raw RTT is not qualified for renderer r187");
+      })).toMatchObject({
+        mode: "raw-diagnostic",
+        sceneSourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+        verificationEvidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+      });
     } finally {
       target.dispose();
     }

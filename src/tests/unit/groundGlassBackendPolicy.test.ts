@@ -94,15 +94,15 @@ describe("Ground Glass backend policy", () => {
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("r186"))
       .toBeNull();
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("r187"))
-      .toBeNull();
+      .toBe(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION);
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("r188")).toBeNull();
     expect(resolveGroundGlassRawWebGpuEvidenceRevision("unknown")).toBeNull();
     expect(() => requireGroundGlassRawWebGpuEvidenceRevision("r188"))
       .toThrow("Ground Glass Raw RTT is not qualified for renderer r188");
     expect(() => requireGroundGlassRawWebGpuEvidenceRevision("r186"))
       .toThrow("Ground Glass Raw RTT is not qualified for renderer r186");
-    expect(() => requireGroundGlassRawWebGpuEvidenceRevision("r187"))
-      .toThrow("Ground Glass Raw RTT is not qualified for renderer r187");
+    expect(requireGroundGlassRawWebGpuEvidenceRevision("r187"))
+      .toBe(ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION);
     expect(() => requireGroundGlassRawWebGpuEvidenceRevision("unknown"))
       .toThrow("Ground Glass Raw RTT is not qualified for renderer unknown");
 
@@ -120,6 +120,7 @@ describe("Ground Glass backend policy", () => {
       testedContext: { rendererRevision: "r186" },
     });
     expect(resolveGroundGlassRawWebGpuCompatibility("r186")).toBeNull();
+    expect(resolveGroundGlassRawWebGpuCompatibility("r187")).toBe(GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY);
 
     const historicalR186Result = selectGroundGlassBackend(createWebGpuPolicyInput({
       sceneId: "architecture-rise",
@@ -140,12 +141,32 @@ describe("Ground Glass backend policy", () => {
       sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
       evidenceRevision: "m3-architecture-rise-raw-rtt-native-r187-v1",
     });
+    const staleR187V1ForActiveSource = {
+      ...GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY,
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+    };
+    const historicalR187V1Result = selectGroundGlassBackend(createWebGpuPolicyInput({
+      sceneId: "architecture-rise",
+      requestedFeatures: ["raw-rtt"],
+      sceneCompatibility: staleR187V1ForActiveSource,
+      expectedCandidateRendererRevision: "r187",
+    }));
+    expect(historicalR187V1Result.selectedBackend).toBe("webgl");
+    expect(historicalR187V1Result.policyDecision).toMatchObject({
+      status: "denied",
+      sceneEligibility: { status: "denied", reasons: expect.arrayContaining(["feature-source-revision-mismatch"]) },
+    });
     expect(r187Compatibility?.sourceRevision).toBe(ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION);
     expect(r187Compatibility?.features.find((feature) => feature.feature === "raw-rtt"))
       .toMatchObject({
-        status: "not-evaluated",
+        status: "verified",
         sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
-        knownIncompatibilities: [expect.stringContaining("has not been revalidated")],
+        evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+        testedContext: {
+          rendererFamily: "webgpu-renderer",
+          executionApi: "webgpu",
+          rendererRevision: "r187",
+        },
       });
     const rawResult = selectGroundGlassBackend(createWebGpuPolicyInput({
       sceneId: "architecture-rise",
@@ -154,14 +175,21 @@ describe("Ground Glass backend policy", () => {
       expectedCandidateRendererRevision: "r187",
     }));
     expect(rawResult).toMatchObject({
+      selectedBackend: "webgpu",
+      policyDecision: { status: "authorized", sceneEligibility: { status: "eligible" } },
+    });
+
+    const productionResult = selectGroundGlassBackend(createWebGpuPolicyInput({
+      environment: "production",
+      sceneId: "architecture-rise",
+      requestedBackend: "webgpu",
+      requestedFeatures: ["raw-rtt"],
+      sceneCompatibility: r187Compatibility,
+      expectedCandidateRendererRevision: "r187",
+    }));
+    expect(productionResult).toMatchObject({
       selectedBackend: "webgl",
-      policyDecision: {
-        status: "denied",
-        sceneEligibility: {
-          status: "denied",
-          reasons: expect.arrayContaining(["feature-not-evaluated"]),
-        },
-      },
+      policyDecision: { status: "denied", reasons: ["production-webgpu-forbidden"] },
     });
 
     expect(GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.find(

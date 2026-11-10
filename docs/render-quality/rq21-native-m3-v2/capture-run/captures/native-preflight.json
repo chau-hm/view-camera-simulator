@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "rq1-native-preflight-v1",
+  "captureRunId": "617cc26b-05c7-4281-b99e-ed835edab1d3",
+  "sourceCommit": "fcd995f04b19a6b434785653cc4833bf28a6e082",
+  "browserProject": "chrome-native-webgpu",
+  "browserLaunched": true,
+  "localPageLoaded": true,
+  "secureContext": true,
+  "navigatorGpuPresent": true,
+  "adapterAvailable": true,
+  "probeStatus": "adapter-available",
+  "status": "available",
+  "browserVersion": "157.0.8103.40",
+  "diagnostic": null
+}
