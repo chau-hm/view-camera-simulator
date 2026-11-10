@@ -50,6 +50,21 @@ const toPixel = (xMm: number, yMm: number) => ({
   y: Math.max(0, Math.min(height - 1, Math.round((0.5 - yMm / filmHeightMm) * height - 0.5))),
 });
 
+const resolveOpticalAxisIntersectionFilmMm = (
+  illumination: typeof sceneStates[number]["optics"]["groundGlassNaturalIllumination"],
+) => {
+  if (illumination.kind === "parallel-cos4") {
+    return { xMm: illumination.opticalAxisOffsetXMm, yMm: illumination.opticalAxisOffsetYMm };
+  }
+  if (illumination.kind !== "nonparallel-geometric") return null;
+
+  const axisParameter = illumination.lensToFilmCenterLocalMm[2] / illumination.imageSideAxisLocal[2];
+  return {
+    xMm: axisParameter * illumination.imageSideAxisLocal[0] - illumination.lensToFilmCenterLocalMm[0],
+    yMm: axisParameter * illumination.imageSideAxisLocal[1] - illumination.lensToFilmCenterLocalMm[1],
+  };
+};
+
 const conicDistanceMm = (coverage: Extract<typeof sceneStates[number]["optics"]["groundGlassCoverage"], { kind: "nonparallel-conic" }>, x: number, y: number) => {
   const q = coverage.quadratic;
   const value = q.a * x * x + q.b * x * y + q.c * y * y + q.d * x + q.e * y + q.f;
@@ -68,18 +83,10 @@ const selectSamples = (state: typeof sceneStates[number]) => {
   ];
 
   const illumination = state.optics.groundGlassNaturalIllumination;
-  let axisX = 0;
-  let axisY = 0;
-  if (illumination.kind === "parallel-cos4") {
-    axisX = illumination.opticalAxisOffsetXMm;
-    axisY = illumination.opticalAxisOffsetYMm;
-    samples.push({ id: "optical-axis-intersection", pixel: toPixel(axisX, axisY) });
-  } else if (illumination.kind === "nonparallel-geometric") {
-    const axisParameter = -illumination.lensToFilmCenterLocalMm[2] / illumination.imageSideAxisLocal[2];
-    axisX = axisParameter * illumination.imageSideAxisLocal[0] - illumination.lensToFilmCenterLocalMm[0];
-    axisY = axisParameter * illumination.imageSideAxisLocal[1] - illumination.lensToFilmCenterLocalMm[1];
-    samples.push({ id: "optical-axis-intersection", pixel: toPixel(axisX, axisY) });
-  }
+  const axisIntersection = resolveOpticalAxisIntersectionFilmMm(illumination);
+  const axisX = axisIntersection?.xMm ?? 0;
+  const axisY = axisIntersection?.yMm ?? 0;
+  if (axisIntersection) samples.push({ id: "optical-axis-intersection", pixel: toPixel(axisX, axisY) });
   if (state.movement.frontSwingDeg) {
     samples.push({ id: "positive-x-gradient", pixel: toPixel(axisX + 10, axisY) });
     samples.push({ id: "negative-x-gradient", pixel: toPixel(axisX - 10, axisY) });
@@ -294,6 +301,20 @@ test("production composite shader matches the CPU geometric illumination field o
         filmPoint.xMm,
         filmPoint.yMm,
       );
+      const opticalAxisIntersection = resolveOpticalAxisIntersectionFilmMm(
+        entry.optics.groundGlassNaturalIllumination,
+      );
+      if (sample.id === "optical-axis-intersection" && opticalAxisIntersection) {
+        const residualMm = Math.hypot(
+          filmPoint.xMm - opticalAxisIntersection.xMm,
+          filmPoint.yMm - opticalAxisIntersection.yMm,
+        );
+        const halfPixelDiagonalMm = Math.hypot(filmWidthMm / width, filmHeightMm / height) / 2;
+        expect(residualMm, `${entry.stateId} optical-axis sample is nearest to the actual plane intersection`)
+          .toBeLessThanOrEqual(halfPixelDiagonalMm + 1e-6);
+        expect(naturalGain, `${entry.stateId} illumination is normalized at the optical-axis intersection`)
+          .toBeCloseTo(1, 2);
+      }
       const coverageGain = calculateGroundGlassCoverageRenderGain(
         { ...coverageRenderState, edgeFeatherMm },
         filmPoint.xMm,
@@ -306,6 +327,7 @@ test("production composite shader matches the CPU geometric illumination field o
       expect(absoluteDifference, `${entry.stateId}/${sample.id} CPU/GPU difference`).toBeLessThanOrEqual(2);
       return {
         sampleId: sample.id,
+        pixel: sample.pixel,
         filmPointMm: { x: filmPoint.xMm, y: filmPoint.yMm },
         cpuNaturalGain: naturalGain,
         cpuCoverageGain: coverageGain,
@@ -318,6 +340,9 @@ test("production composite shader matches the CPU geometric illumination field o
       stateId: entry.stateId,
       cameraMovements: entry.movement,
       naturalIllumination: entry.optics.groundGlassNaturalIllumination,
+      opticalAxisIntersectionFilmMm: resolveOpticalAxisIntersectionFilmMm(
+        entry.optics.groundGlassNaturalIllumination,
+      ),
       coverageKind: entry.optics.groundGlassCoverage.kind,
       edgeFeatherMm: coverageRenderState.edgeFeatherMm,
       samples: expectedSamples,
@@ -326,7 +351,7 @@ test("production composite shader matches the CPU geometric illumination field o
 
   const browser = page.context().browser();
   const report = {
-    schemaVersion: "rq3b-geometric-illumination-gpu-v1",
+    schemaVersion: "rq3b-geometric-illumination-gpu-v2",
     sourceCommit,
     sourceTreeStatus: "clean",
     runtime: {
