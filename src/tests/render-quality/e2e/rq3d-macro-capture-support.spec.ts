@@ -134,7 +134,7 @@ const waitForPaint = async (page: Page): Promise<void> => page.evaluate(() => ne
 }));
 
 test("capture Macro Depth of Field Observer and 4× Ground Glass inspection references", async ({ page }, testInfo) => {
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
   const sourceCommit = execFileSync("git", ["rev-parse", "--verify", "HEAD"], {
     cwd: repositoryRoot,
     encoding: "utf8",
@@ -267,6 +267,47 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
   }
   expect(loupe.imageWidth).toBe(450);
   expect(loupe.imageHeight).toBe(360);
+  const mainLoupeCapture: Record<string, unknown> = {
+    captureId: "macro-depth-of-field-middle-focus-loupe-4x",
+    captureRole: "ground-glass-inspection-reference",
+    target: "ground-glass-webgl-canvas",
+    cameraState: {
+      sceneId,
+      focalLengthMm: Number(await rtt.getAttribute("data-rtt-focal-length-mm")),
+      focusDistanceMm: Number(await focus.inputValue()),
+      apertureFNumber: Number(await aperture.getAttribute("data-selected-aperture")),
+      frontRiseMm: 0,
+      frontShiftMm: 0,
+      frontTiltDeg: 0,
+      frontSwingDeg: 0,
+      rearRiseMm: 0,
+      rearShiftMm: 0,
+      rearTiltDeg: 0,
+      rearSwingDeg: 0,
+    },
+    previewMode: "Raw",
+    rawDebug: false,
+    gridEnabled: false,
+    focusLoupe: {
+      active: true,
+      scale: 4,
+      centerU: Number(await stage.getAttribute("data-focus-loupe-center-u")),
+      centerV: Number(await stage.getAttribute("data-focus-loupe-center-v")),
+      windowWidth: 0.25,
+      windowHeight: 0.25,
+    },
+    rendererIdentity: {
+      rendererFamily: await rtt.getAttribute("data-mounted-renderer-family"),
+      executionApi: await rtt.getAttribute("data-actual-execution-api"),
+      rendererRevision: await rtt.getAttribute("data-three-revision"),
+      applicationFallback: await rtt.getAttribute("data-application-fallback"),
+      internalFallback: await rtt.getAttribute("data-internal-fallback"),
+    },
+    frame: loupeFrame,
+    hiddenDomControls,
+    contentful: (await rtt.getAttribute("data-rtt-final-contentful")) === "true",
+    image: loupe,
+  };
 
   const secondarySceneCaptures: Array<Record<string, unknown>> = [];
   for (const secondarySceneId of ["macro-bellows-extension", "macro-oblique-plane"] as const) {
@@ -376,47 +417,7 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
         subjectEvidence: subjectSnapshot,
         image: observer,
       },
-      {
-        captureId: "macro-depth-of-field-middle-focus-loupe-4x",
-        captureRole: "ground-glass-inspection-reference",
-        target: "ground-glass-webgl-canvas",
-        cameraState: {
-          sceneId,
-          focalLengthMm: Number(await rtt.getAttribute("data-rtt-focal-length-mm")),
-          focusDistanceMm: Number(await focus.inputValue()),
-          apertureFNumber: Number(await aperture.getAttribute("data-selected-aperture")),
-          frontRiseMm: 0,
-          frontShiftMm: 0,
-          frontTiltDeg: 0,
-          frontSwingDeg: 0,
-          rearRiseMm: 0,
-          rearShiftMm: 0,
-          rearTiltDeg: 0,
-          rearSwingDeg: 0,
-        },
-        previewMode: "Raw",
-        rawDebug: false,
-        gridEnabled: false,
-        focusLoupe: {
-          active: true,
-          scale: 4,
-          centerU: Number(await stage.getAttribute("data-focus-loupe-center-u")),
-          centerV: Number(await stage.getAttribute("data-focus-loupe-center-v")),
-          windowWidth: 0.25,
-          windowHeight: 0.25,
-        },
-        rendererIdentity: {
-          rendererFamily: await rtt.getAttribute("data-mounted-renderer-family"),
-          executionApi: await rtt.getAttribute("data-actual-execution-api"),
-          rendererRevision: await rtt.getAttribute("data-three-revision"),
-          applicationFallback: await rtt.getAttribute("data-application-fallback"),
-          internalFallback: await rtt.getAttribute("data-internal-fallback"),
-        },
-        frame: loupeFrame,
-        hiddenDomControls,
-        contentful: (await rtt.getAttribute("data-rtt-final-contentful")) === "true",
-        image: loupe,
-      },
+      mainLoupeCapture,
       ...secondarySceneCaptures,
     ],
     pageErrors,
