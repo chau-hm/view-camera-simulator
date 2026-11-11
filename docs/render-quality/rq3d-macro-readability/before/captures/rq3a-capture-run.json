@@ -1,0 +1,1319 @@
+{
+  "schemaVersion": "rq3a-capture-run-v1",
+  "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+  "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+  "sceneRasterSourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+  "sourceTreeStatus": "clean",
+  "browser": {
+    "name": "Chromium (Playwright)",
+    "version": "149.0.7827.55"
+  },
+  "operatingSystem": {
+    "platform": "darwin",
+    "release": "27.0.0",
+    "architecture": "arm64"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 900,
+    "devicePixelRatio": 1
+  },
+  "renderQuality": "standard",
+  "previewMode": "Raw",
+  "rawDebug": false,
+  "captureMethod": "Playwright screenshot of the actual visible WebGL Ground Glass canvas",
+  "captures": [
+    {
+      "captureId": "rq3a-a1a1b80c-6dd9-4c82-b292-fde1a0ecce26-macro-m1-middle-shallow",
+      "stateId": "macro-m1-middle-shallow",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+      "sourceTreeStatus": "clean",
+      "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "movements": [],
+        "publicRanges": [
+          {
+            "label": "Focus distance",
+            "value": 400,
+            "min": 360,
+            "max": 440,
+            "step": 10,
+            "disabled": false
+          }
+        ],
+        "previewMode": "Raw",
+        "rawDebug": false,
+        "scenePresetMovementsMmDeg": {
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0
+        }
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "pipeline": [
+        "scene-color-and-depth",
+        "physical-coc",
+        "far-gather",
+        "near-gather",
+        "composite-display"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwc6fi2c-m550u5mf28-default-request-3",
+        "lastCompletedRequestId": "gg-mwc6fi2c-m550u5mf28-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459",
+        "gatherScale": "1",
+        "resolutionScale": "0.85"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "runtime": {
+        "attributes": {
+          "data-testid": "ground-glass-rtt",
+          "data-three-revision": "187",
+          "data-rtt-channel": "default",
+          "data-rtt-scene-id": "macro-depth-of-field",
+          "data-policy-requested-backend": "default",
+          "data-policy-selected-backend": "webgl",
+          "data-pilot-retry-status": "none",
+          "data-application-fallback": "not-observed",
+          "data-renderer-generation": "gg-mwc6fi2c-m550u5mf28-default-generation-1",
+          "data-frame-request-id": "gg-mwc6fi2c-m550u5mf28-default-request-3",
+          "data-frame-channel-id": "default",
+          "data-frame-scene-id": "macro-depth-of-field",
+          "data-attempted-backend": "webgl",
+          "data-backend-attempt-status": "mounted",
+          "data-render-host-lifecycle": "ready",
+          "data-frame-result-status": "completed",
+          "data-render-cleanup-status": "not-required",
+          "data-rtt-depth-available": "true",
+          "data-rtt-resource-generation": "1",
+          "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+          "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+          "data-rtt-logical-width": "450",
+          "data-rtt-logical-height": "360",
+          "data-rtt-resolution-scale": "0.85",
+          "data-rtt-effective-device-pixel-ratio": "1.5",
+          "data-rtt-internal-width": "574",
+          "data-rtt-internal-height": "459",
+          "data-rtt-canvas-css-width": "450",
+          "data-rtt-canvas-css-height": "360",
+          "data-rtt-color-target-width": "574",
+          "data-rtt-color-target-height": "459",
+          "data-rtt-depth-target-width": "574",
+          "data-rtt-depth-target-height": "459",
+          "data-rtt-blur-target-width": "574",
+          "data-rtt-blur-target-height": "459",
+          "data-rtt-gather-scale": "1",
+          "data-rtt-final-target-width": "574",
+          "data-rtt-final-target-height": "459",
+          "data-rtt-horizontal-shader-width": "574",
+          "data-rtt-horizontal-shader-height": "459",
+          "data-rtt-vertical-shader-width": "574",
+          "data-rtt-vertical-shader-height": "459",
+          "data-rtt-was-clamped": "false",
+          "data-rtt-inspection-window-active": "false",
+          "data-rtt-inspection-center-u": "0.5",
+          "data-rtt-inspection-center-v": "0.5",
+          "data-rtt-sampled-film-width-mm": "127",
+          "data-rtt-sampled-film-height-mm": "101.6",
+          "data-rtt-profiling-enabled": "false",
+          "data-rtt-profiling-backend": "disabled",
+          "data-mounted-renderer-family": "webgl-renderer",
+          "data-actual-execution-api": "webgl2",
+          "data-internal-fallback": "none",
+          "data-rtt-camera-ok": "true",
+          "data-rtt-uniforms-finite": "true",
+          "data-rtt-dof-mode": "parallel-thin-lens",
+          "data-rtt-raw-contentful": "true",
+          "data-rtt-final-contentful": "true",
+          "data-rtt-raw-variance": "2800.442693154255",
+          "data-rtt-final-variance": "4489.867466487121",
+          "data-rtt-raw-non-background": "1024",
+          "data-rtt-final-non-background": "1024",
+          "data-rtt-focal-length-mm": "150",
+          "data-rtt-ground-glass-illuminance-gain": "1.5071946747448983",
+          "data-rtt-natural-illumination-enabled": "true",
+          "data-rtt-natural-illumination-kind": "parallel-cos4",
+          "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":240,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "data-rtt-natural-illumination-image-distance-mm": "240",
+          "data-rtt-natural-illumination-offset-x-mm": "0",
+          "data-rtt-natural-illumination-offset-y-mm": "0",
+          "data-rtt-coverage-enabled": "true",
+          "data-rtt-coverage-kind": "parallel-circle",
+          "data-rtt-coverage-radius-mm": "174.3702067212866",
+          "data-rtt-coverage-offset-x-mm": "0",
+          "data-rtt-coverage-offset-y-mm": "0",
+          "data-rtt-camera-position": "0,0,0",
+          "data-rtt-camera-up": "0,1,0",
+          "data-rtt-camera-forward": "0,0,1",
+          "data-rtt-sanity-state": "1|macro-depth-of-field|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-240.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-240.000000|0.000000:0.000000:1.000000|-63.500000:50.800000:-240.000000|63.500000:50.800000:-240.000000|-63.500000:-50.800000:-240.000000|63.500000:-50.800000:-240.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|174.370207|0.000000|0.000000|null|null|0.000000:0.000000:400.000000|0.000000:0.000000:1.000000|0.000000:0.000000:397.535645|0.000000:0.000000:1.000000|0.000000:0.000000:402.495099|0.000000:0.000000:1.000000|3.779528,0.000000,0.000000,0.000000,0.000000,4.724409,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+          "data-last-completed-request-id": "gg-mwc6fi2c-m550u5mf28-default-request-3"
+        },
+        "canvas": {
+          "backingWidth": 675,
+          "backingHeight": 540,
+          "cssRect": {
+            "x": 527,
+            "y": 200.390625,
+            "width": 450,
+            "height": 360
+          },
+          "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "webglVendor": "Google Inc. (Google)",
+          "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        }
+      },
+      "image": {
+        "path": "macro-m1-middle-shallow.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "350e4f578e45d8bd706af8ed61406521bd81b3c146f21fcada4a312c356cb728"
+      },
+      "captureRegionCss": {
+        "x": 527,
+        "y": 200,
+        "width": 450,
+        "height": 360
+      },
+      "hiddenDomControls": [
+        "Ground glass preview400.0 mm focus / CoC 0.412 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe · 4× Ground Glass view",
+        "Expand Ground Glass"
+      ],
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "captureId": "rq3a-a1a1b80c-6dd9-4c82-b292-fde1a0ecce26-macro-m2-near-focus",
+      "stateId": "macro-m2-near-focus",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+      "sourceTreeStatus": "clean",
+      "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 390,
+        "apertureFNumber": 5.6,
+        "movements": [],
+        "publicRanges": [
+          {
+            "label": "Focus distance",
+            "value": 390,
+            "min": 360,
+            "max": 440,
+            "step": 10,
+            "disabled": false
+          }
+        ],
+        "previewMode": "Raw",
+        "rawDebug": false,
+        "scenePresetMovementsMmDeg": {
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0
+        }
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "pipeline": [
+        "scene-color-and-depth",
+        "physical-coc",
+        "far-gather",
+        "near-gather",
+        "composite-display"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwc6fxmi-xwym952fy7-default-request-4",
+        "lastCompletedRequestId": "gg-mwc6fxmi-xwym952fy7-default-request-4",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459",
+        "gatherScale": "1",
+        "resolutionScale": "0.85"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "runtime": {
+        "attributes": {
+          "data-testid": "ground-glass-rtt",
+          "data-three-revision": "187",
+          "data-rtt-channel": "default",
+          "data-rtt-scene-id": "macro-depth-of-field",
+          "data-policy-requested-backend": "default",
+          "data-policy-selected-backend": "webgl",
+          "data-pilot-retry-status": "none",
+          "data-application-fallback": "not-observed",
+          "data-renderer-generation": "gg-mwc6fxmi-xwym952fy7-default-generation-1",
+          "data-frame-request-id": "gg-mwc6fxmi-xwym952fy7-default-request-4",
+          "data-frame-channel-id": "default",
+          "data-frame-scene-id": "macro-depth-of-field",
+          "data-attempted-backend": "webgl",
+          "data-backend-attempt-status": "mounted",
+          "data-render-host-lifecycle": "ready",
+          "data-frame-result-status": "completed",
+          "data-render-cleanup-status": "not-required",
+          "data-rtt-depth-available": "true",
+          "data-rtt-resource-generation": "1",
+          "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+          "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+          "data-rtt-logical-width": "450",
+          "data-rtt-logical-height": "360",
+          "data-rtt-resolution-scale": "0.85",
+          "data-rtt-effective-device-pixel-ratio": "1.5",
+          "data-rtt-internal-width": "574",
+          "data-rtt-internal-height": "459",
+          "data-rtt-canvas-css-width": "450",
+          "data-rtt-canvas-css-height": "360",
+          "data-rtt-color-target-width": "574",
+          "data-rtt-color-target-height": "459",
+          "data-rtt-depth-target-width": "574",
+          "data-rtt-depth-target-height": "459",
+          "data-rtt-blur-target-width": "574",
+          "data-rtt-blur-target-height": "459",
+          "data-rtt-gather-scale": "1",
+          "data-rtt-final-target-width": "574",
+          "data-rtt-final-target-height": "459",
+          "data-rtt-horizontal-shader-width": "574",
+          "data-rtt-horizontal-shader-height": "459",
+          "data-rtt-vertical-shader-width": "574",
+          "data-rtt-vertical-shader-height": "459",
+          "data-rtt-was-clamped": "false",
+          "data-rtt-inspection-window-active": "false",
+          "data-rtt-inspection-center-u": "0.5",
+          "data-rtt-inspection-center-v": "0.5",
+          "data-rtt-sampled-film-width-mm": "127",
+          "data-rtt-sampled-film-height-mm": "101.6",
+          "data-rtt-profiling-enabled": "false",
+          "data-rtt-profiling-backend": "disabled",
+          "data-mounted-renderer-family": "webgl-renderer",
+          "data-actual-execution-api": "webgl2",
+          "data-internal-fallback": "none",
+          "data-rtt-camera-ok": "true",
+          "data-rtt-uniforms-finite": "true",
+          "data-rtt-dof-mode": "parallel-thin-lens",
+          "data-rtt-raw-contentful": "true",
+          "data-rtt-final-contentful": "true",
+          "data-rtt-raw-variance": "3005.0869904843967",
+          "data-rtt-final-variance": "4720.098466190189",
+          "data-rtt-raw-non-background": "1024",
+          "data-rtt-final-non-background": "1024",
+          "data-rtt-focal-length-mm": "150",
+          "data-rtt-ground-glass-illuminance-gain": "1.461176186450912",
+          "data-rtt-natural-illumination-enabled": "true",
+          "data-rtt-natural-illumination-kind": "parallel-cos4",
+          "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":243.75,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "data-rtt-natural-illumination-image-distance-mm": "243.75",
+          "data-rtt-natural-illumination-offset-x-mm": "0",
+          "data-rtt-natural-illumination-offset-y-mm": "0",
+          "data-rtt-coverage-enabled": "true",
+          "data-rtt-coverage-kind": "parallel-circle",
+          "data-rtt-coverage-radius-mm": "177.0947412013067",
+          "data-rtt-coverage-offset-x-mm": "0",
+          "data-rtt-coverage-offset-y-mm": "0",
+          "data-rtt-camera-position": "0,0,0",
+          "data-rtt-camera-up": "0,1,0",
+          "data-rtt-camera-forward": "0,0,1",
+          "data-rtt-sanity-state": "1|macro-depth-of-field|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-243.750000|0.000000:0.000000:1.000000|0.000000:0.000000:-243.750000|0.000000:0.000000:1.000000|-63.500000:50.800000:-243.750000|63.500000:50.800000:-243.750000|-63.500000:-50.800000:-243.750000|63.500000:-50.800000:-243.750000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|177.094741|0.000000|0.000000|null|null|0.000000:0.000000:390.000000|0.000000:0.000000:1.000000|0.000000:0.000000:387.692795|0.000000:0.000000:1.000000|0.000000:0.000000:392.334830|0.000000:0.000000:1.000000|3.838583,0.000000,0.000000,0.000000,0.000000,4.798228,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+          "data-last-completed-request-id": "gg-mwc6fxmi-xwym952fy7-default-request-4"
+        },
+        "canvas": {
+          "backingWidth": 675,
+          "backingHeight": 540,
+          "cssRect": {
+            "x": 527,
+            "y": 200.390625,
+            "width": 450,
+            "height": 360
+          },
+          "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "webglVendor": "Google Inc. (Google)",
+          "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        }
+      },
+      "image": {
+        "path": "macro-m2-near-focus.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "36bcac86da459ca96b401d355561401538c659e4191339a42a318066ff515f39"
+      },
+      "captureRegionCss": {
+        "x": 527,
+        "y": 200,
+        "width": 450,
+        "height": 360
+      },
+      "hiddenDomControls": [
+        "Ground glass preview390.0 mm focus / CoC 0.000 mm (100%)",
+        "ground-glass-focus-label",
+        "Focus loupe · 4× Ground Glass view",
+        "Expand Ground Glass"
+      ],
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "captureId": "rq3a-a1a1b80c-6dd9-4c82-b292-fde1a0ecce26-macro-m3-far-focus",
+      "stateId": "macro-m3-far-focus",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+      "sourceTreeStatus": "clean",
+      "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 410,
+        "apertureFNumber": 5.6,
+        "movements": [],
+        "publicRanges": [
+          {
+            "label": "Focus distance",
+            "value": 410,
+            "min": 360,
+            "max": 440,
+            "step": 10,
+            "disabled": false
+          }
+        ],
+        "previewMode": "Raw",
+        "rawDebug": false,
+        "scenePresetMovementsMmDeg": {
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0
+        }
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "pipeline": [
+        "scene-color-and-depth",
+        "physical-coc",
+        "far-gather",
+        "near-gather",
+        "composite-display"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwc6gafk-fbj1raoyyxp-default-request-4",
+        "lastCompletedRequestId": "gg-mwc6gafk-fbj1raoyyxp-default-request-4",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459",
+        "gatherScale": "1",
+        "resolutionScale": "0.85"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "runtime": {
+        "attributes": {
+          "data-testid": "ground-glass-rtt",
+          "data-three-revision": "187",
+          "data-rtt-channel": "default",
+          "data-rtt-scene-id": "macro-depth-of-field",
+          "data-policy-requested-backend": "default",
+          "data-policy-selected-backend": "webgl",
+          "data-pilot-retry-status": "none",
+          "data-application-fallback": "not-observed",
+          "data-renderer-generation": "gg-mwc6gafk-fbj1raoyyxp-default-generation-1",
+          "data-frame-request-id": "gg-mwc6gafk-fbj1raoyyxp-default-request-4",
+          "data-frame-channel-id": "default",
+          "data-frame-scene-id": "macro-depth-of-field",
+          "data-attempted-backend": "webgl",
+          "data-backend-attempt-status": "mounted",
+          "data-render-host-lifecycle": "ready",
+          "data-frame-result-status": "completed",
+          "data-render-cleanup-status": "not-required",
+          "data-rtt-depth-available": "true",
+          "data-rtt-resource-generation": "1",
+          "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+          "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+          "data-rtt-logical-width": "450",
+          "data-rtt-logical-height": "360",
+          "data-rtt-resolution-scale": "0.85",
+          "data-rtt-effective-device-pixel-ratio": "1.5",
+          "data-rtt-internal-width": "574",
+          "data-rtt-internal-height": "459",
+          "data-rtt-canvas-css-width": "450",
+          "data-rtt-canvas-css-height": "360",
+          "data-rtt-color-target-width": "574",
+          "data-rtt-color-target-height": "459",
+          "data-rtt-depth-target-width": "574",
+          "data-rtt-depth-target-height": "459",
+          "data-rtt-blur-target-width": "574",
+          "data-rtt-blur-target-height": "459",
+          "data-rtt-gather-scale": "1",
+          "data-rtt-final-target-width": "574",
+          "data-rtt-final-target-height": "459",
+          "data-rtt-horizontal-shader-width": "574",
+          "data-rtt-horizontal-shader-height": "459",
+          "data-rtt-vertical-shader-width": "574",
+          "data-rtt-vertical-shader-height": "459",
+          "data-rtt-was-clamped": "false",
+          "data-rtt-inspection-window-active": "false",
+          "data-rtt-inspection-center-u": "0.5",
+          "data-rtt-inspection-center-v": "0.5",
+          "data-rtt-sampled-film-width-mm": "127",
+          "data-rtt-sampled-film-height-mm": "101.6",
+          "data-rtt-profiling-enabled": "false",
+          "data-rtt-profiling-backend": "disabled",
+          "data-mounted-renderer-family": "webgl-renderer",
+          "data-actual-execution-api": "webgl2",
+          "data-internal-fallback": "none",
+          "data-rtt-camera-ok": "true",
+          "data-rtt-uniforms-finite": "true",
+          "data-rtt-dof-mode": "parallel-thin-lens",
+          "data-rtt-raw-contentful": "true",
+          "data-rtt-final-contentful": "true",
+          "data-rtt-raw-variance": "2766.8546103124536",
+          "data-rtt-final-variance": "4447.013998370661",
+          "data-rtt-raw-non-background": "1024",
+          "data-rtt-final-non-background": "1024",
+          "data-rtt-focal-length-mm": "150",
+          "data-rtt-ground-glass-illuminance-gain": "1.5516304677730701",
+          "data-rtt-natural-illumination-enabled": "true",
+          "data-rtt-natural-illumination-kind": "parallel-cos4",
+          "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":236.53846153846155,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "data-rtt-natural-illumination-image-distance-mm": "236.53846153846155",
+          "data-rtt-natural-illumination-offset-x-mm": "0",
+          "data-rtt-natural-illumination-offset-y-mm": "0",
+          "data-rtt-coverage-enabled": "true",
+          "data-rtt-coverage-kind": "parallel-circle",
+          "data-rtt-coverage-radius-mm": "171.85525181665267",
+          "data-rtt-coverage-offset-x-mm": "0",
+          "data-rtt-coverage-offset-y-mm": "0",
+          "data-rtt-camera-position": "0,0,0",
+          "data-rtt-camera-up": "0,1,0",
+          "data-rtt-camera-forward": "0,0,1",
+          "data-rtt-sanity-state": "1|macro-depth-of-field|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-236.538462|0.000000:0.000000:1.000000|0.000000:0.000000:-236.538462|0.000000:0.000000:1.000000|-63.500000:50.800000:-236.538462|63.500000:50.800000:-236.538462|-63.500000:-50.800000:-236.538462|63.500000:-50.800000:-236.538462|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|171.855252|0.000000|0.000000|null|null|0.000000:0.000000:410.000000|0.000000:0.000000:1.000000|0.000000:0.000000:407.373645|0.000000:0.000000:1.000000|0.000000:0.000000:412.660439|0.000000:0.000000:1.000000|3.725015,0.000000,0.000000,0.000000,0.000000,4.656269,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+          "data-last-completed-request-id": "gg-mwc6gafk-fbj1raoyyxp-default-request-4"
+        },
+        "canvas": {
+          "backingWidth": 675,
+          "backingHeight": 540,
+          "cssRect": {
+            "x": 527,
+            "y": 200.390625,
+            "width": 450,
+            "height": 360
+          },
+          "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "webglVendor": "Google Inc. (Google)",
+          "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        }
+      },
+      "image": {
+        "path": "macro-m3-far-focus.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "c61bbe9056e18e91f4f17fcb9a394eab99ac0695abb6c5c9d8b8b256479d860b"
+      },
+      "captureRegionCss": {
+        "x": 527,
+        "y": 200,
+        "width": 450,
+        "height": 360
+      },
+      "hiddenDomControls": [
+        "Ground glass preview410.0 mm focus / CoC 0.792 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe · 4× Ground Glass view",
+        "Expand Ground Glass"
+      ],
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "captureId": "rq3a-a1a1b80c-6dd9-4c82-b292-fde1a0ecce26-macro-m4-stopped-down",
+      "stateId": "macro-m4-stopped-down",
+      "sceneId": "macro-depth-of-field",
+      "route": "/simulator/free/macro-depth-of-field?rttDiagnostics=1",
+      "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+      "sourceTreeStatus": "clean",
+      "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 32,
+        "movements": [],
+        "publicRanges": [
+          {
+            "label": "Focus distance",
+            "value": 400,
+            "min": 360,
+            "max": 440,
+            "step": 10,
+            "disabled": false
+          }
+        ],
+        "previewMode": "Raw",
+        "rawDebug": false,
+        "scenePresetMovementsMmDeg": {
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0
+        }
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "pipeline": [
+        "scene-color-and-depth",
+        "physical-coc",
+        "far-gather",
+        "near-gather",
+        "composite-display"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwc6gr5r-5b922l7h2xj-default-request-4",
+        "lastCompletedRequestId": "gg-mwc6gr5r-5b922l7h2xj-default-request-4",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459",
+        "gatherScale": "1",
+        "resolutionScale": "0.85"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "runtime": {
+        "attributes": {
+          "data-testid": "ground-glass-rtt",
+          "data-three-revision": "187",
+          "data-rtt-channel": "default",
+          "data-rtt-scene-id": "macro-depth-of-field",
+          "data-policy-requested-backend": "default",
+          "data-policy-selected-backend": "webgl",
+          "data-pilot-retry-status": "none",
+          "data-application-fallback": "not-observed",
+          "data-renderer-generation": "gg-mwc6gr5r-5b922l7h2xj-default-generation-1",
+          "data-frame-request-id": "gg-mwc6gr5r-5b922l7h2xj-default-request-4",
+          "data-frame-channel-id": "default",
+          "data-frame-scene-id": "macro-depth-of-field",
+          "data-attempted-backend": "webgl",
+          "data-backend-attempt-status": "mounted",
+          "data-render-host-lifecycle": "ready",
+          "data-frame-result-status": "completed",
+          "data-render-cleanup-status": "not-required",
+          "data-rtt-depth-available": "true",
+          "data-rtt-resource-generation": "1",
+          "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+          "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+          "data-rtt-logical-width": "450",
+          "data-rtt-logical-height": "360",
+          "data-rtt-resolution-scale": "0.85",
+          "data-rtt-effective-device-pixel-ratio": "1.5",
+          "data-rtt-internal-width": "574",
+          "data-rtt-internal-height": "459",
+          "data-rtt-canvas-css-width": "450",
+          "data-rtt-canvas-css-height": "360",
+          "data-rtt-color-target-width": "574",
+          "data-rtt-color-target-height": "459",
+          "data-rtt-depth-target-width": "574",
+          "data-rtt-depth-target-height": "459",
+          "data-rtt-blur-target-width": "574",
+          "data-rtt-blur-target-height": "459",
+          "data-rtt-gather-scale": "1",
+          "data-rtt-final-target-width": "574",
+          "data-rtt-final-target-height": "459",
+          "data-rtt-horizontal-shader-width": "574",
+          "data-rtt-horizontal-shader-height": "459",
+          "data-rtt-vertical-shader-width": "574",
+          "data-rtt-vertical-shader-height": "459",
+          "data-rtt-was-clamped": "false",
+          "data-rtt-inspection-window-active": "false",
+          "data-rtt-inspection-center-u": "0.5",
+          "data-rtt-inspection-center-v": "0.5",
+          "data-rtt-sampled-film-width-mm": "127",
+          "data-rtt-sampled-film-height-mm": "101.6",
+          "data-rtt-profiling-enabled": "false",
+          "data-rtt-profiling-backend": "disabled",
+          "data-mounted-renderer-family": "webgl-renderer",
+          "data-actual-execution-api": "webgl2",
+          "data-internal-fallback": "none",
+          "data-rtt-camera-ok": "true",
+          "data-rtt-uniforms-finite": "true",
+          "data-rtt-dof-mode": "parallel-thin-lens",
+          "data-rtt-raw-contentful": "true",
+          "data-rtt-final-contentful": "true",
+          "data-rtt-raw-variance": "2800.442693154255",
+          "data-rtt-final-variance": "5.4010712406120405",
+          "data-rtt-raw-non-background": "1024",
+          "data-rtt-final-non-background": "1024",
+          "data-rtt-focal-length-mm": "150",
+          "data-rtt-ground-glass-illuminance-gain": "0.0461578369140625",
+          "data-rtt-natural-illumination-enabled": "true",
+          "data-rtt-natural-illumination-kind": "parallel-cos4",
+          "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":240,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "data-rtt-natural-illumination-image-distance-mm": "240",
+          "data-rtt-natural-illumination-offset-x-mm": "0",
+          "data-rtt-natural-illumination-offset-y-mm": "0",
+          "data-rtt-coverage-enabled": "true",
+          "data-rtt-coverage-kind": "parallel-circle",
+          "data-rtt-coverage-radius-mm": "174.3702067212866",
+          "data-rtt-coverage-offset-x-mm": "0",
+          "data-rtt-coverage-offset-y-mm": "0",
+          "data-rtt-camera-position": "0,0,0",
+          "data-rtt-camera-up": "0,1,0",
+          "data-rtt-camera-forward": "0,0,1",
+          "data-rtt-sanity-state": "1|macro-depth-of-field|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|32|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-240.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-240.000000|0.000000:0.000000:1.000000|-63.500000:50.800000:-240.000000|63.500000:50.800000:-240.000000|-63.500000:-50.800000:-240.000000|63.500000:-50.800000:-240.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|174.370207|0.000000|0.000000|null|null|0.000000:0.000000:400.000000|0.000000:0.000000:1.000000|0.000000:0.000000:386.543314|0.000000:0.000000:1.000000|0.000000:0.000000:414.427412|0.000000:0.000000:1.000000|3.779528,0.000000,0.000000,0.000000,0.000000,4.724409,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+          "data-last-completed-request-id": "gg-mwc6gr5r-5b922l7h2xj-default-request-4"
+        },
+        "canvas": {
+          "backingWidth": 675,
+          "backingHeight": 540,
+          "cssRect": {
+            "x": 527,
+            "y": 200.390625,
+            "width": 450,
+            "height": 360
+          },
+          "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "webglVendor": "Google Inc. (Google)",
+          "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        }
+      },
+      "image": {
+        "path": "macro-m4-stopped-down.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "4cb79242ba286bcb983fbb58da4735788c12768b47f1d3840abe32049068ed59"
+      },
+      "captureRegionCss": {
+        "x": 527,
+        "y": 200,
+        "width": 450,
+        "height": 360
+      },
+      "hiddenDomControls": [
+        "Ground glass preview400.0 mm focus / CoC 0.072 mm (28%)",
+        "ground-glass-focus-label",
+        "Focus loupe · 4× Ground Glass view",
+        "Expand Ground Glass"
+      ],
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "captureId": "rq3a-a1a1b80c-6dd9-4c82-b292-fde1a0ecce26-interior-corner-canonical-start",
+      "stateId": "interior-corner-canonical-start",
+      "sceneId": "interior-corner",
+      "route": "/simulator/free/interior-corner?rttDiagnostics=1",
+      "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+      "sourceTreeStatus": "clean",
+      "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8000,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "label": "Rise",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "step": 1,
+            "disabled": false
+          },
+          {
+            "label": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": true
+          },
+          {
+            "label": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": false
+          }
+        ],
+        "publicRanges": [
+          {
+            "label": "Rise",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "step": 1,
+            "disabled": false
+          },
+          {
+            "label": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": true
+          },
+          {
+            "label": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": false
+          },
+          {
+            "label": "Focus distance",
+            "value": 8000,
+            "min": 4000,
+            "max": 40000,
+            "step": 10,
+            "disabled": false
+          }
+        ],
+        "previewMode": "Raw",
+        "rawDebug": false,
+        "scenePresetMovementsMmDeg": {
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0
+        }
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "pipeline": [
+        "scene-color-and-depth",
+        "physical-coc",
+        "far-gather",
+        "near-gather",
+        "composite-display"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwc6h6cg-ubswf5ekx0e-default-request-3",
+        "lastCompletedRequestId": "gg-mwc6h6cg-ubswf5ekx0e-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459",
+        "gatherScale": "1",
+        "resolutionScale": "0.85"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "runtime": {
+        "attributes": {
+          "data-testid": "ground-glass-rtt",
+          "data-three-revision": "187",
+          "data-rtt-channel": "default",
+          "data-rtt-scene-id": "interior-corner",
+          "data-policy-requested-backend": "default",
+          "data-policy-selected-backend": "webgl",
+          "data-pilot-retry-status": "none",
+          "data-application-fallback": "not-observed",
+          "data-renderer-generation": "gg-mwc6h6cg-ubswf5ekx0e-default-generation-1",
+          "data-frame-request-id": "gg-mwc6h6cg-ubswf5ekx0e-default-request-3",
+          "data-frame-channel-id": "default",
+          "data-frame-scene-id": "interior-corner",
+          "data-attempted-backend": "webgl",
+          "data-backend-attempt-status": "mounted",
+          "data-render-host-lifecycle": "ready",
+          "data-frame-result-status": "completed",
+          "data-render-cleanup-status": "not-required",
+          "data-rtt-depth-available": "true",
+          "data-rtt-resource-generation": "1",
+          "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+          "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+          "data-rtt-logical-width": "450",
+          "data-rtt-logical-height": "360",
+          "data-rtt-resolution-scale": "0.85",
+          "data-rtt-effective-device-pixel-ratio": "1.5",
+          "data-rtt-internal-width": "574",
+          "data-rtt-internal-height": "459",
+          "data-rtt-canvas-css-width": "450",
+          "data-rtt-canvas-css-height": "360",
+          "data-rtt-color-target-width": "574",
+          "data-rtt-color-target-height": "459",
+          "data-rtt-depth-target-width": "574",
+          "data-rtt-depth-target-height": "459",
+          "data-rtt-blur-target-width": "574",
+          "data-rtt-blur-target-height": "459",
+          "data-rtt-gather-scale": "1",
+          "data-rtt-final-target-width": "574",
+          "data-rtt-final-target-height": "459",
+          "data-rtt-horizontal-shader-width": "574",
+          "data-rtt-horizontal-shader-height": "459",
+          "data-rtt-vertical-shader-width": "574",
+          "data-rtt-vertical-shader-height": "459",
+          "data-rtt-was-clamped": "false",
+          "data-rtt-inspection-window-active": "false",
+          "data-rtt-inspection-center-u": "0.5",
+          "data-rtt-inspection-center-v": "0.5",
+          "data-rtt-sampled-film-width-mm": "127",
+          "data-rtt-sampled-film-height-mm": "101.6",
+          "data-rtt-profiling-enabled": "false",
+          "data-rtt-profiling-backend": "disabled",
+          "data-mounted-renderer-family": "webgl-renderer",
+          "data-actual-execution-api": "webgl2",
+          "data-internal-fallback": "none",
+          "data-rtt-camera-ok": "true",
+          "data-rtt-uniforms-finite": "true",
+          "data-rtt-dof-mode": "parallel-thin-lens",
+          "data-rtt-raw-contentful": "true",
+          "data-rtt-final-contentful": "true",
+          "data-rtt-raw-variance": "3416.6071957770537",
+          "data-rtt-final-variance": "5187.978477454446",
+          "data-rtt-raw-non-background": "1024",
+          "data-rtt-final-non-background": "1024",
+          "data-rtt-focal-length-mm": "150",
+          "data-rtt-ground-glass-illuminance-gain": "3.715084153778699",
+          "data-rtt-natural-illumination-enabled": "true",
+          "data-rtt-natural-illumination-kind": "parallel-cos4",
+          "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":152.86624203821657,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "data-rtt-natural-illumination-image-distance-mm": "152.86624203821657",
+          "data-rtt-natural-illumination-offset-x-mm": "0",
+          "data-rtt-natural-illumination-offset-y-mm": "0",
+          "data-rtt-coverage-enabled": "true",
+          "data-rtt-coverage-kind": "parallel-circle",
+          "data-rtt-coverage-radius-mm": "111.06382593712522",
+          "data-rtt-coverage-offset-x-mm": "0",
+          "data-rtt-coverage-offset-y-mm": "0",
+          "data-rtt-camera-position": "0,0,0",
+          "data-rtt-camera-up": "0,1,0",
+          "data-rtt-camera-forward": "0,0,1",
+          "data-rtt-sanity-state": "1|interior-corner|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-152.866242|0.000000:0.000000:1.000000|0.000000:0.000000:-152.866242|0.000000:0.000000:1.000000|-63.500000:50.800000:-152.866242|63.500000:50.800000:-152.866242|-63.500000:-50.800000:-152.866242|63.500000:-50.800000:-152.866242|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|111.063826|0.000000|0.000000|null|null|0.000000:0.000000:8000.000000|0.000000:0.000000:1.000000|0.000000:0.000000:6696.515938|0.000000:0.000000:1.000000|0.000000:0.000000:9933.582582|0.000000:0.000000:1.000000|2.407342,0.000000,0.000000,0.000000,0.000000,3.009178,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+          "data-last-completed-request-id": "gg-mwc6h6cg-ubswf5ekx0e-default-request-3"
+        },
+        "canvas": {
+          "backingWidth": 675,
+          "backingHeight": 540,
+          "cssRect": {
+            "x": 527,
+            "y": 200.390625,
+            "width": 450,
+            "height": 360
+          },
+          "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "webglVendor": "Google Inc. (Google)",
+          "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        }
+      },
+      "image": {
+        "path": "interior-corner-canonical-start.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "a0f19b1d7b2617a1432de020ec3b1a118712d035d70bd2e5b9bd48ca8ae8d470"
+      },
+      "captureRegionCss": {
+        "x": 527,
+        "y": 200,
+        "width": 450,
+        "height": 360
+      },
+      "hiddenDomControls": [
+        "Ground glass preview8000.0 mm focus / CoC 0.221 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe · 4× Ground Glass view",
+        "Expand Ground Glass"
+      ],
+      "pageErrors": [],
+      "consoleErrors": []
+    },
+    {
+      "captureId": "rq3a-a1a1b80c-6dd9-4c82-b292-fde1a0ecce26-architecture-rise-rq2-neutral-regression",
+      "stateId": "architecture-rise-rq2-neutral-regression",
+      "sceneId": "architecture-rise",
+      "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+      "sourceCommit": "53c7af6fd8099ec7c0ff4ee7c21a30dabf739713",
+      "sourceTreeStatus": "clean",
+      "captureRunId": "a1a1b80c-6dd9-4c82-b292-fde1a0ecce26",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "movements": [
+          {
+            "label": "Rise",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "step": 1,
+            "disabled": false
+          },
+          {
+            "label": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": false
+          },
+          {
+            "label": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": false
+          }
+        ],
+        "publicRanges": [
+          {
+            "label": "Rise",
+            "value": 0,
+            "min": 0,
+            "max": 40,
+            "step": 1,
+            "disabled": false
+          },
+          {
+            "label": "Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": false
+          },
+          {
+            "label": "Swing",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1,
+            "disabled": false
+          },
+          {
+            "label": "Focus distance",
+            "value": 8900,
+            "min": 3090,
+            "max": 13000,
+            "step": 10,
+            "disabled": false
+          }
+        ],
+        "previewMode": "Raw",
+        "rawDebug": false,
+        "scenePresetMovementsMmDeg": {
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0
+        }
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "pipeline": [
+        "scene-color-and-depth",
+        "physical-coc",
+        "far-gather",
+        "near-gather",
+        "composite-display"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "threeRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwc6hi81-n09didm0z1-default-request-5",
+        "lastCompletedRequestId": "gg-mwc6hi81-n09didm0z1-default-request-5",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900,
+        "devicePixelRatio": 1
+      },
+      "display": {
+        "backingWidth": 675,
+        "backingHeight": 540,
+        "rttWidth": "574",
+        "rttHeight": "459",
+        "gatherScale": "1",
+        "resolutionScale": "0.85"
+      },
+      "browser": {
+        "name": "Chromium (Playwright)",
+        "version": "149.0.7827.55"
+      },
+      "operatingSystem": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "architecture": "arm64"
+      },
+      "runtime": {
+        "attributes": {
+          "data-testid": "ground-glass-rtt",
+          "data-three-revision": "187",
+          "data-rtt-channel": "default",
+          "data-rtt-scene-id": "architecture-rise",
+          "data-policy-requested-backend": "default",
+          "data-policy-selected-backend": "webgl",
+          "data-pilot-retry-status": "none",
+          "data-application-fallback": "not-observed",
+          "data-renderer-generation": "gg-mwc6hi81-n09didm0z1-default-generation-1",
+          "data-frame-request-id": "gg-mwc6hi81-n09didm0z1-default-request-5",
+          "data-frame-channel-id": "default",
+          "data-frame-scene-id": "architecture-rise",
+          "data-attempted-backend": "webgl",
+          "data-backend-attempt-status": "mounted",
+          "data-render-host-lifecycle": "ready",
+          "data-frame-result-status": "completed",
+          "data-render-cleanup-status": "not-required",
+          "data-rtt-depth-available": "true",
+          "data-rtt-resource-generation": "1",
+          "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+          "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+          "data-rtt-logical-width": "450",
+          "data-rtt-logical-height": "360",
+          "data-rtt-resolution-scale": "0.85",
+          "data-rtt-effective-device-pixel-ratio": "1.5",
+          "data-rtt-internal-width": "574",
+          "data-rtt-internal-height": "459",
+          "data-rtt-canvas-css-width": "450",
+          "data-rtt-canvas-css-height": "360",
+          "data-rtt-color-target-width": "574",
+          "data-rtt-color-target-height": "459",
+          "data-rtt-depth-target-width": "574",
+          "data-rtt-depth-target-height": "459",
+          "data-rtt-blur-target-width": "574",
+          "data-rtt-blur-target-height": "459",
+          "data-rtt-gather-scale": "1",
+          "data-rtt-final-target-width": "574",
+          "data-rtt-final-target-height": "459",
+          "data-rtt-horizontal-shader-width": "574",
+          "data-rtt-horizontal-shader-height": "459",
+          "data-rtt-vertical-shader-width": "574",
+          "data-rtt-vertical-shader-height": "459",
+          "data-rtt-was-clamped": "false",
+          "data-rtt-inspection-window-active": "false",
+          "data-rtt-inspection-center-u": "0.5",
+          "data-rtt-inspection-center-v": "0.5",
+          "data-rtt-sampled-film-width-mm": "127",
+          "data-rtt-sampled-film-height-mm": "101.6",
+          "data-rtt-profiling-enabled": "false",
+          "data-rtt-profiling-backend": "disabled",
+          "data-mounted-renderer-family": "webgl-renderer",
+          "data-actual-execution-api": "webgl2",
+          "data-internal-fallback": "none",
+          "data-rtt-camera-ok": "true",
+          "data-rtt-uniforms-finite": "true",
+          "data-rtt-dof-mode": "parallel-thin-lens",
+          "data-rtt-raw-contentful": "true",
+          "data-rtt-final-contentful": "true",
+          "data-rtt-raw-variance": "3808.5249097293654",
+          "data-rtt-final-variance": "5411.892163749359",
+          "data-rtt-raw-non-background": "1023",
+          "data-rtt-final-non-background": "1019",
+          "data-rtt-focal-length-mm": "150",
+          "data-rtt-ground-glass-illuminance-gain": "1.8274331089824516",
+          "data-rtt-natural-illumination-enabled": "true",
+          "data-rtt-natural-illumination-kind": "parallel-cos4",
+          "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":152.57142857142858,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "data-rtt-natural-illumination-image-distance-mm": "152.57142857142858",
+          "data-rtt-natural-illumination-offset-x-mm": "0",
+          "data-rtt-natural-illumination-offset-y-mm": "0",
+          "data-rtt-coverage-enabled": "true",
+          "data-rtt-coverage-kind": "parallel-circle",
+          "data-rtt-coverage-radius-mm": "110.84963141567505",
+          "data-rtt-coverage-offset-x-mm": "0",
+          "data-rtt-coverage-offset-y-mm": "0",
+          "data-rtt-camera-position": "0,0,0",
+          "data-rtt-camera-up": "0,1,0",
+          "data-rtt-camera-forward": "0,0,1",
+          "data-rtt-sanity-state": "1|architecture-rise|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|8|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-152.571429|0.000000:0.000000:1.000000|0.000000:0.000000:-152.571429|0.000000:0.000000:1.000000|-63.500000:50.800000:-152.571429|63.500000:50.800000:-152.571429|-63.500000:-50.800000:-152.571429|63.500000:-50.800000:-152.571429|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|110.849631|0.000000|0.000000|null|null|0.000000:0.000000:8900.000000|0.000000:0.000000:1.000000|0.000000:0.000000:6796.691425|0.000000:0.000000:1.000000|0.000000:0.000000:12888.476312|0.000000:0.000000:1.000000|2.402700,0.000000,0.000000,0.000000,0.000000,3.003375,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+          "data-last-completed-request-id": "gg-mwc6hi81-n09didm0z1-default-request-5"
+        },
+        "canvas": {
+          "backingWidth": 675,
+          "backingHeight": 540,
+          "cssRect": {
+            "x": 527,
+            "y": 200.390625,
+            "width": 450,
+            "height": 360
+          },
+          "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "webglVendor": "Google Inc. (Google)",
+          "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        }
+      },
+      "image": {
+        "path": "architecture-rise-neutral.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "ff892a522b24723f82fd89b4ffc100ce05169013a6a9ee9c49bbab6908b31c4f"
+      },
+      "captureRegionCss": {
+        "x": 527,
+        "y": 200,
+        "width": 450,
+        "height": 360
+      },
+      "hiddenDomControls": [
+        "Ground glass preview8900.0 mm focus / CoC 0.000 mm (100%)",
+        "ground-glass-focus-label",
+        "Focus loupe · 4× Ground Glass view",
+        "Expand Ground Glass"
+      ],
+      "pageErrors": [],
+      "consoleErrors": []
+    }
+  ]
+}
