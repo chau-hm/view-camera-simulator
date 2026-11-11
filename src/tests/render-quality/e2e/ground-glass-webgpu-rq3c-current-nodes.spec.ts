@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { REVISION } from "three";
 
-const FIXTURE_PATH = "/src/tests/e2e/fixtures/ground-glass-webgpu-rq3c.html";
+const FIXTURE_PATH = "/src/tests/render-quality/e2e/fixtures/ground-glass-webgpu-rq3c.html";
 const nativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
 
 type Rq3cWindow = Window & {

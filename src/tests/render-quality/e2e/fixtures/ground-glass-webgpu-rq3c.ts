@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { MeshBasicNodeMaterial, WebGPURenderer } from "three/webgpu";
 import { Fn, texture, uv, vec2, vec4 } from "three/tsl";
-import { resolveObserverRendererRuntime } from "../../../render/backend/observerVisualPipelineCapabilities";
+import { resolveObserverRendererRuntime } from "../../../../render/backend/observerVisualPipelineCapabilities";
 import {
   createGroundGlassApertureGatherNodes,
   createGroundGlassB1ReconstructionNodes,
@@ -10,7 +10,7 @@ import {
   createGroundGlassResearchCompositeNode,
   createGroundGlassSelectedGatherProvenanceNode,
   createGroundGlassSourceIdentityNode,
-} from "../../../render/webgpu/groundGlassApertureGatherNodes";
+} from "../../../../render/webgpu/groundGlassApertureGatherNodes";
 
 const SOURCE_WIDTH = 128;
 const SOURCE_HEIGHT = 96;
