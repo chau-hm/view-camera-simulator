@@ -1,0 +1,639 @@
+{
+  "schemaVersion": 1,
+  "evidenceClass": "synthetic-shared-tsl-research",
+  "sourceCommit": "dc0ea4146b106f205b6d883ad88ff714ac0fa268",
+  "sourceTreeDirty": false,
+  "sceneSourceRevision": null,
+  "rendererRevision": "187",
+  "runtime": {
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": "not-applicable"
+  },
+  "coordinateContract": {
+    "sourcePixels": "integer top-origin",
+    "gatherPixels": "integer top-origin",
+    "fullscreenTextureUv": "(u, 1-v)",
+    "targetReadbackOrigin": "top",
+    "targetReadbackConversion": "identity-verified origin; reverse rows only when bottom-origin",
+    "filter": "nearest, clamp-to-edge, no mipmaps"
+  },
+  "controlledInputs": {
+    "dimensions": {
+      "widthPx": 128,
+      "heightPx": 96
+    },
+    "nearMask": "x + y >= 96",
+    "sourceColor": {
+      "near": [
+        0.9,
+        0.03,
+        0.02,
+        1
+      ],
+      "far": [
+        0.025,
+        0.08,
+        0.85,
+        1
+      ],
+      "farFeature": [
+        1,
+        0.85,
+        0.05,
+        1
+      ]
+    },
+    "signedPhysicalCocMm": {
+      "near": -1.5615,
+      "far": 0.9258
+    },
+    "depthMap": "synthetic normalized depth values: near 0.45, far 0.62",
+    "validityCode": 1,
+    "filmMm": [
+      36,
+      24
+    ],
+    "maxRadiusPx": 12
+  },
+  "scenarios": [
+    {
+      "scenarioId": "full32",
+      "gatherSize": {
+        "widthPx": 128,
+        "heightPx": 96
+      },
+      "sampleCount": 32,
+      "stagesAtProbe": {
+        "sourcePixelTopOrigin": [
+          68,
+          26
+        ],
+        "sourceColorAndDepthGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          0.6200000047683716
+        ],
+        "sourceIdentityGpu": [
+          68,
+          26,
+          0,
+          1
+        ],
+        "sourcePhysicalAndValidityGpu": [
+          0.92578125,
+          1.19921875,
+          1.19921875,
+          1
+        ],
+        "selectedGatherTexelTopOrigin": [
+          68,
+          26
+        ],
+        "selectedGatherTexelIdentityGpu": [
+          68,
+          26,
+          0,
+          1
+        ],
+        "observedGatherCenterSourceIdentityGpu": [
+          68,
+          26,
+          0.53515625,
+          0.2760416865348816
+        ],
+        "selectedProvenanceGpu": [
+          68,
+          26,
+          68,
+          26
+        ],
+        "observedNearCenterSourceTopOrigin": [
+          69,
+          27
+        ],
+        "nearCenterColorAndDepthGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          0.44999998807907104
+        ],
+        "nearCenterPhysicalAndValidityGpu": [
+          -1.560546875,
+          1.19921875,
+          1.19921875,
+          1
+        ],
+        "farGatherAtSelectedTexelGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          1
+        ],
+        "nearGatherAndCoverageAtSelectedTexelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          0.35595703125
+        ],
+        "mappedFarB0AtSourcePixelGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          1
+        ],
+        "b1FarAtSourcePixelGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          1
+        ],
+        "b1DecisionAtSourcePixelGpu": [
+          0.003921568859368563,
+          0,
+          0.003921568859368563,
+          1
+        ],
+        "finalResearchCompositeB0AtSourcePixelGpu": [
+          0.336181640625,
+          0.062164306640625,
+          0.55419921875,
+          1
+        ],
+        "finalResearchCompositeB1AtSourcePixelGpu": [
+          0.336181640625,
+          0.062164306640625,
+          0.55419921875,
+          1
+        ],
+        "nearCoverageAtSourcePixel": 0.35595703125,
+        "physicalCocSource": "controlled M4-like synthetic texture; no M4 equation or registered scene claim",
+        "farFeatureProbeGpu": {
+          "sourcePixelTopOrigin": [
+            62,
+            23
+          ],
+          "sourceColorAndDepth": [
+            1,
+            0.849609375,
+            0.04998779296875,
+            0.6200000047683716
+          ],
+          "sourcePhysicalAndValidity": [
+            0.92578125,
+            1.19921875,
+            1.19921875,
+            1
+          ],
+          "selectedProvenance": [
+            62,
+            23,
+            62,
+            23
+          ],
+          "selectedGatherIdentity": [
+            62,
+            23,
+            0,
+            1
+          ],
+          "observedGatherCenterSourceIdentity": [
+            62,
+            23,
+            0.48828125,
+            0.2447916865348816
+          ],
+          "farGatherAtSelectedTexel": [
+            0.4384765625,
+            0.40625,
+            0.51025390625,
+            1
+          ],
+          "mappedFarB0AtSourcePixel": [
+            0.4384765625,
+            0.40625,
+            0.51025390625,
+            1
+          ],
+          "b1FarAtSourcePixel": [
+            0.4384765625,
+            0.40625,
+            0.51025390625,
+            1
+          ]
+        }
+      },
+      "metrics": {
+        "farEdgeLeakPixelsB0": 0,
+        "farEdgeLeakEnergyB0": 0,
+        "farEdgeLeakPixelsB1": 0,
+        "farEdgeLeakEnergyB1": 0,
+        "compositeFarEdgeLeakPixelsB0": 0,
+        "compositeFarEdgeLeakEnergyB0": 0,
+        "compositeFarEdgeLeakPixelsB1": 0,
+        "compositeFarEdgeLeakEnergyB1": 0,
+        "nearSpreadPixels": 192,
+        "nearCoverageEnergy": 80.0145263671875,
+        "farFeatureSpreadPixelsB0": 118,
+        "farFeatureSpreadEnergyB0": 14.690563964843724,
+        "farFeatureSpreadPixelsB1": 118,
+        "farFeatureSpreadEnergyB1": 14.690563964843724
+      },
+      "timings": {
+        "renderAndReadbackMs": 53.5,
+        "gpuTimestampDurationMs": null
+      }
+    },
+    {
+      "scenarioId": "half32",
+      "gatherSize": {
+        "widthPx": 64,
+        "heightPx": 48
+      },
+      "sampleCount": 32,
+      "stagesAtProbe": {
+        "sourcePixelTopOrigin": [
+          68,
+          26
+        ],
+        "sourceColorAndDepthGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          0.6200000047683716
+        ],
+        "sourceIdentityGpu": [
+          68,
+          26,
+          0,
+          1
+        ],
+        "sourcePhysicalAndValidityGpu": [
+          0.92578125,
+          1.19921875,
+          1.19921875,
+          1
+        ],
+        "selectedGatherTexelTopOrigin": [
+          34,
+          13
+        ],
+        "selectedGatherTexelIdentityGpu": [
+          34,
+          13,
+          0,
+          1
+        ],
+        "observedGatherCenterSourceIdentityGpu": [
+          69,
+          27,
+          0.5390625,
+          0.2812500596046448
+        ],
+        "selectedProvenanceGpu": [
+          34,
+          13,
+          69,
+          27
+        ],
+        "observedNearCenterSourceTopOrigin": [
+          69,
+          27
+        ],
+        "nearCenterColorAndDepthGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          0.44999998807907104
+        ],
+        "nearCenterPhysicalAndValidityGpu": [
+          -1.560546875,
+          1.19921875,
+          1.19921875,
+          1
+        ],
+        "farGatherAtSelectedTexelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "nearGatherAndCoverageAtSelectedTexelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "mappedFarB0AtSourcePixelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "b1FarAtSourcePixelGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          1
+        ],
+        "b1DecisionAtSourcePixelGpu": [
+          0,
+          0.01568627543747425,
+          0,
+          1
+        ],
+        "finalResearchCompositeB0AtSourcePixelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "finalResearchCompositeB1AtSourcePixelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "nearCoverageAtSourcePixel": 1,
+        "physicalCocSource": "controlled M4-like synthetic texture; no M4 equation or registered scene claim",
+        "farFeatureProbeGpu": {
+          "sourcePixelTopOrigin": [
+            62,
+            23
+          ],
+          "sourceColorAndDepth": [
+            1,
+            0.849609375,
+            0.04998779296875,
+            0.6200000047683716
+          ],
+          "sourcePhysicalAndValidity": [
+            0.92578125,
+            1.19921875,
+            1.19921875,
+            1
+          ],
+          "selectedProvenance": [
+            31,
+            11,
+            63,
+            23
+          ],
+          "selectedGatherIdentity": [
+            31,
+            11,
+            0,
+            1
+          ],
+          "observedGatherCenterSourceIdentity": [
+            63,
+            23,
+            0.4921875,
+            0.23958337306976318
+          ],
+          "farGatherAtSelectedTexel": [
+            0.37939453125,
+            0.359619140625,
+            0.55859375,
+            1
+          ],
+          "mappedFarB0AtSourcePixel": [
+            0.37939453125,
+            0.359619140625,
+            0.55859375,
+            1
+          ],
+          "b1FarAtSourcePixel": [
+            0.37939453125,
+            0.359619140625,
+            0.55859375,
+            1
+          ]
+        }
+      },
+      "metrics": {
+        "farEdgeLeakPixelsB0": 144,
+        "farEdgeLeakEnergyB0": 126.06386718749967,
+        "farEdgeLeakPixelsB1": 0,
+        "farEdgeLeakEnergyB1": 0.0779296875,
+        "compositeFarEdgeLeakPixelsB0": 0,
+        "compositeFarEdgeLeakEnergyB0": 0.06233520507812501,
+        "compositeFarEdgeLeakPixelsB1": 0,
+        "compositeFarEdgeLeakEnergyB1": 0.06233520507812501,
+        "nearSpreadPixels": 332,
+        "nearCoverageEnergy": 181.10888671875,
+        "farFeatureSpreadPixelsB0": 118,
+        "farFeatureSpreadEnergyB0": 14.576635742187474,
+        "farFeatureSpreadPixelsB1": 118,
+        "farFeatureSpreadEnergyB1": 14.571636962890599
+      },
+      "timings": {
+        "renderAndReadbackMs": 21.800000071525574,
+        "gpuTimestampDurationMs": null
+      }
+    },
+    {
+      "scenarioId": "half64",
+      "gatherSize": {
+        "widthPx": 64,
+        "heightPx": 48
+      },
+      "sampleCount": 64,
+      "stagesAtProbe": {
+        "sourcePixelTopOrigin": [
+          68,
+          26
+        ],
+        "sourceColorAndDepthGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          0.6200000047683716
+        ],
+        "sourceIdentityGpu": [
+          68,
+          26,
+          0,
+          1
+        ],
+        "sourcePhysicalAndValidityGpu": [
+          0.92578125,
+          1.19921875,
+          1.19921875,
+          1
+        ],
+        "selectedGatherTexelTopOrigin": [
+          34,
+          13
+        ],
+        "selectedGatherTexelIdentityGpu": [
+          34,
+          13,
+          0,
+          1
+        ],
+        "observedGatherCenterSourceIdentityGpu": [
+          69,
+          27,
+          0.5390625,
+          0.2812500596046448
+        ],
+        "selectedProvenanceGpu": [
+          34,
+          13,
+          69,
+          27
+        ],
+        "observedNearCenterSourceTopOrigin": [
+          69,
+          27
+        ],
+        "nearCenterColorAndDepthGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          0.44999998807907104
+        ],
+        "nearCenterPhysicalAndValidityGpu": [
+          -1.560546875,
+          1.19921875,
+          1.19921875,
+          1
+        ],
+        "farGatherAtSelectedTexelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "nearGatherAndCoverageAtSelectedTexelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "mappedFarB0AtSourcePixelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "b1FarAtSourcePixelGpu": [
+          0.024993896484375,
+          0.0799560546875,
+          0.849609375,
+          1
+        ],
+        "b1DecisionAtSourcePixelGpu": [
+          0,
+          0.01568627543747425,
+          0,
+          1
+        ],
+        "finalResearchCompositeB0AtSourcePixelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "finalResearchCompositeB1AtSourcePixelGpu": [
+          0.89990234375,
+          0.029998779296875,
+          0.019989013671875,
+          1
+        ],
+        "nearCoverageAtSourcePixel": 1,
+        "physicalCocSource": "controlled M4-like synthetic texture; no M4 equation or registered scene claim",
+        "farFeatureProbeGpu": {
+          "sourcePixelTopOrigin": [
+            62,
+            23
+          ],
+          "sourceColorAndDepth": [
+            1,
+            0.849609375,
+            0.04998779296875,
+            0.6200000047683716
+          ],
+          "sourcePhysicalAndValidity": [
+            0.92578125,
+            1.19921875,
+            1.19921875,
+            1
+          ],
+          "selectedProvenance": [
+            31,
+            11,
+            63,
+            23
+          ],
+          "selectedGatherIdentity": [
+            31,
+            11,
+            0,
+            1
+          ],
+          "observedGatherCenterSourceIdentity": [
+            63,
+            23,
+            0.4921875,
+            0.23958337306976318
+          ],
+          "farGatherAtSelectedTexel": [
+            0.39990234375,
+            0.3759765625,
+            0.5419921875,
+            1
+          ],
+          "mappedFarB0AtSourcePixel": [
+            0.39990234375,
+            0.3759765625,
+            0.5419921875,
+            1
+          ],
+          "b1FarAtSourcePixel": [
+            0.39990234375,
+            0.3759765625,
+            0.5419921875,
+            1
+          ]
+        }
+      },
+      "metrics": {
+        "farEdgeLeakPixelsB0": 144,
+        "farEdgeLeakEnergyB0": 126.04683837890592,
+        "farEdgeLeakPixelsB1": 0,
+        "farEdgeLeakEnergyB1": 0.06090087890625,
+        "compositeFarEdgeLeakPixelsB0": 0,
+        "compositeFarEdgeLeakEnergyB0": 0.04866333007812501,
+        "compositeFarEdgeLeakPixelsB1": 0,
+        "compositeFarEdgeLeakEnergyB1": 0.04866333007812501,
+        "nearSpreadPixels": 378,
+        "nearCoverageEnergy": 190.188720703125,
+        "farFeatureSpreadPixelsB0": 117,
+        "farFeatureSpreadEnergyB0": 15.026824951171847,
+        "farFeatureSpreadPixelsB1": 117,
+        "farFeatureSpreadEnergyB1": 15.021826171874972
+      },
+      "timings": {
+        "renderAndReadbackMs": 19.5,
+        "gpuTimestampDurationMs": null
+      }
+    }
+  ],
+  "environment": {
+    "browser": "Chrome 157.0.8103.40",
+    "operatingSystem": "darwin 27.0.0 (arm64)",
+    "nodeVersion": "v24.3.0",
+    "playwrightProject": "chrome-native-webgpu",
+    "workers": 1,
+    "retries": 0,
+    "testExecuted": true,
+    "testSkipped": false,
+    "pageErrors": [],
+    "adapterIdentity": "not exposed by this fixture",
+    "hardwareAcceleration": "not established"
+  }
+}
