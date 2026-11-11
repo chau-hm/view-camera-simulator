@@ -49,10 +49,26 @@ const readFrame = async (
 };
 
 const captureCanvas = async (
+  page: Page,
   canvas: Locator,
   outputPath: string,
+  cssClip?: Readonly<{ width: number; height: number }>,
 ): Promise<Readonly<{ imagePath: string; imageWidth: number; imageHeight: number; sha256: string }>> => {
-  const image = await canvas.screenshot({ path: outputPath, animations: "disabled" });
+  const bounds = await canvas.boundingBox();
+  if (!bounds) throw new Error(`Canvas is not visible for capture: ${outputPath}`);
+  const image = cssClip
+    ? await page.screenshot({
+      path: outputPath,
+      clip: {
+        x: Math.round(bounds.x),
+        y: Math.round(bounds.y),
+        width: cssClip.width,
+        height: cssClip.height,
+      },
+      scale: "css",
+      animations: "disabled",
+    })
+    : await canvas.screenshot({ path: outputPath, animations: "disabled" });
   return {
     imagePath: relative(repositoryRoot, outputPath),
     imageWidth: image.readUInt32BE(16),
@@ -115,6 +131,7 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
   expect(observerCameraPose.cameraPosition).toBeTruthy();
   expect(observerCameraPose.orbitTarget).toBeTruthy();
   const observer = await captureCanvas(
+    page,
     scene.locator("canvas").first(),
     testInfo.outputPath("macro-depth-of-field-observer.png"),
   );
@@ -153,8 +170,10 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
   expect(loupeBounds?.width).toBe(450);
   expect(loupeBounds?.height).toBe(360);
   const loupe = await captureCanvas(
+    page,
     rtt.locator("canvas").first(),
     testInfo.outputPath("macro-depth-of-field-middle-focus-loupe-4x.png"),
+    { width: 450, height: 360 },
   );
   expect(loupe.imageWidth).toBe(450);
   expect(loupe.imageHeight).toBe(360);
