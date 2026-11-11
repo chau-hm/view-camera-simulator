@@ -22,7 +22,7 @@ const TOP_UV = vec2(uv().x, uv().y.oneMinus());
 
 type Rgba = readonly [number, number, number, number];
 type ScenarioId = "full32" | "half32" | "half64";
-type LayerId = "far-b0" | "far-b1" | "near" | "composite";
+type LayerId = "far-b0" | "far-b1" | "near" | "composite-b0" | "composite-b1";
 
 type ScenarioResult = Readonly<{
   scenarioId: ScenarioId;
@@ -328,7 +328,8 @@ const main = async (): Promise<void> => {
       const b0Target = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.HalfFloatType);
       const b1Target = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.HalfFloatType);
       const nearSourceTarget = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.HalfFloatType);
-      const compositeTarget = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.HalfFloatType);
+      const compositeB0Target = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.HalfFloatType);
+      const compositeB1Target = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.HalfFloatType);
       const decisionTarget = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.UnsignedByteType);
       const sourceIdentityTarget = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.FloatType);
       const gatherIdentityTarget = makeRenderTarget(gatherWidth, gatherHeight, THREE.FloatType);
@@ -337,11 +338,11 @@ const main = async (): Promise<void> => {
       const inputProbeTarget = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.FloatType);
       const physicalProbeTarget = makeRenderTarget(SOURCE_WIDTH, SOURCE_HEIGHT, THREE.FloatType);
       targets.push(
-        farTarget, nearTarget, b0Target, b1Target, nearSourceTarget, compositeTarget, decisionTarget,
+        farTarget, nearTarget, b0Target, b1Target, nearSourceTarget, compositeB0Target, compositeB1Target, decisionTarget,
         sourceIdentityTarget, gatherIdentityTarget, centerProvenanceTarget,
         selectedProvenanceTarget, inputProbeTarget, physicalProbeTarget,
       );
-      targets.slice(-13).forEach((target) => renderer.initRenderTarget(target));
+      targets.slice(-14).forEach((target) => renderer.initRenderTarget(target));
 
       const gatherNodes = createGroundGlassApertureGatherNodes({
         sourceColorTexture: inputs.source,
@@ -408,7 +409,11 @@ const main = async (): Promise<void> => {
         ["far-b1", b1Nodes.farOutput],
         ["b1-decision", b1Nodes.decisionOutput],
         ["near-source-grid", nearSourceNode],
-        ["research-composite", createGroundGlassResearchCompositeNode({
+        ["research-composite-b0", createGroundGlassResearchCompositeNode({
+          farTexture: b0Target.texture,
+          nearTexture: nearTarget.texture,
+        })],
+        ["research-composite-b1", createGroundGlassResearchCompositeNode({
           farTexture: b1Target.texture,
           nearTexture: nearTarget.texture,
         })],
@@ -441,7 +446,8 @@ const main = async (): Promise<void> => {
       renderNamed("far-b1", b1Target);
       renderNamed("b1-decision", decisionTarget);
       renderNamed("near-source-grid", nearSourceTarget);
-      renderNamed("research-composite", compositeTarget);
+      renderNamed("research-composite-b0", compositeB0Target);
+      renderNamed("research-composite-b1", compositeB1Target);
       renderNamed("input-probe", inputProbeTarget);
       renderNamed("physical-probe", physicalProbeTarget);
       const sourceIdentityReadback = await renderer.readRenderTargetPixelsAsync(
@@ -483,7 +489,7 @@ const main = async (): Promise<void> => {
       ]);
       const [sourceIdentityAtProbe, gatherIdentityAtSelected, centerProvenanceAtSelected,
         selectedProvenanceAtProbe, farTargetAtSelected, nearTargetAtSelected,
-        b0AtProbe, b1AtProbe, decisionAtProbe, compositeAtProbe] = await Promise.all([
+        b0AtProbe, b1AtProbe, decisionAtProbe, compositeB0AtProbe, compositeB1AtProbe] = await Promise.all([
         readPixel(sourceIdentityTarget, ...PROBE_SOURCE),
         readPixel(gatherIdentityTarget, Math.floor((PROBE_SOURCE[0] + 0.5) * gatherWidth / SOURCE_WIDTH),
           Math.floor((PROBE_SOURCE[1] + 0.5) * gatherHeight / SOURCE_HEIGHT)),
@@ -500,16 +506,23 @@ const main = async (): Promise<void> => {
         readPixel(b0Target, ...PROBE_SOURCE),
         readPixel(b1Target, ...PROBE_SOURCE),
         readPixel(decisionTarget, ...PROBE_SOURCE),
-        readPixel(compositeTarget, ...PROBE_SOURCE),
+        readPixel(compositeB0Target, ...PROBE_SOURCE),
+        readPixel(compositeB1Target, ...PROBE_SOURCE),
       ]);
 
       const b0 = await readTopImage(renderer, b0Target, readbackOrigin);
       const b1 = await readTopImage(renderer, b1Target, readbackOrigin);
       const near = await readTopImage(renderer, nearSourceTarget, readbackOrigin);
+      const compositeB0 = await readTopImage(renderer, compositeB0Target, readbackOrigin);
+      const compositeB1 = await readTopImage(renderer, compositeB1Target, readbackOrigin);
       let farEdgeLeakPixelsB0 = 0;
       let farEdgeLeakEnergyB0 = 0;
       let farEdgeLeakPixelsB1 = 0;
       let farEdgeLeakEnergyB1 = 0;
+      let compositeFarEdgeLeakPixelsB0 = 0;
+      let compositeFarEdgeLeakEnergyB0 = 0;
+      let compositeFarEdgeLeakPixelsB1 = 0;
+      let compositeFarEdgeLeakEnergyB1 = 0;
       let nearSpreadPixels = 0;
       let nearCoverageEnergy = 0;
       let farFeatureSpreadPixelsB0 = 0;
@@ -528,6 +541,15 @@ const main = async (): Promise<void> => {
             if (redB1 > 0.25) farEdgeLeakPixelsB1 += 1;
             farEdgeLeakEnergyB0 += redB0;
             farEdgeLeakEnergyB1 += redB1;
+            const nearAlpha = Math.min(1, Math.max(0, near[offset + 3] ?? 0));
+            const expectedRed = (inputs.farColor[0] ?? 0) * (1 - nearAlpha)
+              + (inputs.nearColor[0] ?? 0) * nearAlpha;
+            const compositeLeakB0 = Math.max(0, (compositeB0[offset] ?? 0) - expectedRed);
+            const compositeLeakB1 = Math.max(0, (compositeB1[offset] ?? 0) - expectedRed);
+            if (compositeLeakB0 > 0.25) compositeFarEdgeLeakPixelsB0 += 1;
+            if (compositeLeakB1 > 0.25) compositeFarEdgeLeakPixelsB1 += 1;
+            compositeFarEdgeLeakEnergyB0 += compositeLeakB0;
+            compositeFarEdgeLeakEnergyB1 += compositeLeakB1;
           }
           const nearAlpha = near[(yTop * SOURCE_WIDTH + x) * 4 + 3] ?? 0;
           if (!isNear && nearDistance <= 4 && nearAlpha > 0.01) {
@@ -570,7 +592,9 @@ const main = async (): Promise<void> => {
         mappedFarB0AtSourcePixelGpu: b0AtProbe,
         b1FarAtSourcePixelGpu: b1AtProbe,
         b1DecisionAtSourcePixelGpu: decisionAtProbe,
-        finalResearchCompositeAtSourcePixelGpu: compositeAtProbe,
+        finalResearchCompositeB0AtSourcePixelGpu: compositeB0AtProbe,
+        finalResearchCompositeB1AtSourcePixelGpu: compositeB1AtProbe,
+        nearCoverageAtSourcePixel: near[PROBE_SOURCE[1] * SOURCE_WIDTH * 4 + PROBE_SOURCE[0] * 4 + 3] ?? 0,
         physicalCocSource: "controlled M4-like synthetic texture; no M4 equation or registered scene claim",
         farFeatureProbeGpu: {
           sourcePixelTopOrigin: FAR_FEATURE_SOURCE,
@@ -594,6 +618,10 @@ const main = async (): Promise<void> => {
           farEdgeLeakEnergyB0,
           farEdgeLeakPixelsB1,
           farEdgeLeakEnergyB1,
+          compositeFarEdgeLeakPixelsB0,
+          compositeFarEdgeLeakEnergyB0,
+          compositeFarEdgeLeakPixelsB1,
+          compositeFarEdgeLeakEnergyB1,
           nearSpreadPixels,
           nearCoverageEnergy,
           farFeatureSpreadPixelsB0,
@@ -610,7 +638,8 @@ const main = async (): Promise<void> => {
       displayTargets.set(`${scenario.id}:far-b0`, b0Target);
       displayTargets.set(`${scenario.id}:far-b1`, b1Target);
       displayTargets.set(`${scenario.id}:near`, nearSourceTarget);
-      displayTargets.set(`${scenario.id}:composite`, compositeTarget);
+      displayTargets.set(`${scenario.id}:composite-b0`, compositeB0Target);
+      displayTargets.set(`${scenario.id}:composite-b1`, compositeB1Target);
     }
 
     const result: Rq3cResult = {

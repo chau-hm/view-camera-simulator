@@ -34,14 +34,14 @@ type Rq3cWindow = Window & {
         timings: Record<string, number | null>;
       }>;
     };
-    display: (scenarioId: "full32" | "half32" | "half64", layer: "far-b0" | "far-b1" | "near" | "composite") => Promise<void>;
+    display: (scenarioId: "full32" | "half32" | "half64", layer: "far-b0" | "far-b1" | "near" | "composite-b0" | "composite-b1") => Promise<void>;
     dispose: () => Promise<void>;
   };
 };
 
 const readStatus = (page: Page) => page.getByTestId("rq3c-status").textContent();
 
-test("native r187 shared B1 fallback contains a controlled half-resolution edge mismatch", async ({ page, browser }, testInfo) => {
+test("native r187 shared nodes reproduce the legacy Far edge leak and measure B1 composite behavior", async ({ page, browser }, testInfo) => {
   test.skip(!nativeWebGpuRequired, "RQ3C shared-node GPU evidence requires the headed native WebGPU project");
   test.setTimeout(240_000);
   const pageErrors: string[] = [];
@@ -83,6 +83,9 @@ test("native r187 shared B1 fallback contains a controlled half-resolution edge 
   expect(half32.metrics.farEdgeLeakEnergyB0).toBeGreaterThan(100);
   expect(half32.metrics.farEdgeLeakPixelsB1).toBe(0);
   expect(half32.metrics.farEdgeLeakEnergyB1).toBeLessThan(half32.metrics.farEdgeLeakEnergyB0 * 0.001);
+  expect(half32.metrics.compositeFarEdgeLeakPixelsB0).toBe(0);
+  expect(half32.metrics.compositeFarEdgeLeakPixelsB1).toBe(0);
+  expect(half32.metrics.compositeFarEdgeLeakEnergyB1).toBeCloseTo(half32.metrics.compositeFarEdgeLeakEnergyB0, 4);
   expect(half64.metrics.farEdgeLeakPixelsB0).toBeGreaterThan(100);
   expect(half64.metrics.farEdgeLeakPixelsB1).toBe(0);
   expect(half32.metrics.farFeatureSpreadPixelsB1).toBeGreaterThan(0);
@@ -118,13 +121,14 @@ test("native r187 shared B1 fallback contains a controlled half-resolution edge 
   await writeFile(artifactPath, JSON.stringify(evidence, null, 2));
   await testInfo.attach("rq3c-current-shared-node-readbacks.json", { path: artifactPath, contentType: "application/json" });
 
-  const screenshots: Array<{ scenarioId: "full32" | "half32" | "half64"; layer: "far-b0" | "far-b1" | "near" | "composite" }> = [
+  const screenshots: Array<{ scenarioId: "full32" | "half32" | "half64"; layer: "far-b0" | "far-b1" | "near" | "composite-b0" | "composite-b1" }> = [
     { scenarioId: "full32", layer: "far-b1" },
     { scenarioId: "half32", layer: "far-b0" },
     { scenarioId: "half32", layer: "far-b1" },
     { scenarioId: "half64", layer: "far-b1" },
     { scenarioId: "half32", layer: "near" },
-    { scenarioId: "half32", layer: "composite" },
+    { scenarioId: "half32", layer: "composite-b0" },
+    { scenarioId: "half32", layer: "composite-b1" },
   ];
   for (const screenshot of screenshots) {
     await page.evaluate(async ({ scenarioId, layer }) => {
