@@ -41,7 +41,7 @@ type Rq3cWindow = Window & {
 
 const readStatus = (page: Page) => page.getByTestId("rq3c-status").textContent();
 
-test("native r187 shared nodes reproduce the legacy Far edge leak and measure B1 composite behavior", async ({ page, browser }, testInfo) => {
+test("native r187 shared nodes exercise a controlled half-resolution Far edge mismatch and B1 composite behavior", async ({ page, browser }, testInfo) => {
   test.skip(!nativeWebGpuRequired, "RQ3C shared-node GPU evidence requires the headed native WebGPU project");
   test.setTimeout(240_000);
   const pageErrors: string[] = [];
