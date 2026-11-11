@@ -13,6 +13,7 @@ const captureRunId = randomUUID();
 const readFrame = async (
   page: Page,
   rtt: Locator,
+  expectedSceneId = sceneId,
 ): Promise<Readonly<{ requestId: string; lastCompletedRequestId: string; acceptedByHost: boolean }>> => {
   await expect.poll(async () => {
     const attrs = await rtt.evaluate((element) => ({
@@ -25,7 +26,7 @@ const readFrame = async (
       requestId: element.getAttribute("data-frame-request-id"),
       completedRequestId: element.getAttribute("data-last-completed-request-id"),
     }));
-    return attrs.sceneId === sceneId &&
+    return attrs.sceneId === expectedSceneId &&
       attrs.rendererFamily === "webgl-renderer" &&
       attrs.executionApi === "webgl2" &&
       attrs.lifecycle === "ready" &&
@@ -267,6 +268,84 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
   expect(loupe.imageWidth).toBe(450);
   expect(loupe.imageHeight).toBe(360);
 
+  const secondarySceneCaptures: Array<Record<string, unknown>> = [];
+  for (const secondarySceneId of ["macro-bellows-extension", "macro-oblique-plane"] as const) {
+    await page.goto(`/simulator/free/${secondarySceneId}?rttDiagnostics=1`, {
+      waitUntil: "domcontentloaded",
+    });
+    const secondaryScene = page.getByTestId("scene-canvas");
+    const secondaryRtt = page.getByTestId("ground-glass-rtt").first();
+    await expect(secondaryScene).toHaveAttribute("data-scene-subject-id", secondarySceneId);
+    await expect(secondaryRtt).toHaveAttribute("data-rtt-scene-id", secondarySceneId);
+    await page.getByRole("combobox", { name: "Render quality", exact: true })
+      .selectOption({ label: "Standard" });
+    const secondaryRawPreview = page.getByRole("radio", { name: "Raw Ground Glass", exact: true });
+    await secondaryRawPreview.check();
+    const secondaryRawDebug = page.getByLabel("Raw RTT — bypass DOF", { exact: true });
+    if (await secondaryRawDebug.isChecked()) await secondaryRawDebug.uncheck();
+    const secondaryGrid = page.getByRole("checkbox", { name: "Grid", exact: true });
+    if (await secondaryGrid.isChecked()) await secondaryGrid.uncheck();
+    const secondaryFrame = await readFrame(page, secondaryRtt, secondarySceneId);
+    const secondaryCanvas = secondaryRtt.locator("canvas").first();
+    const secondaryBounds = await secondaryCanvas.boundingBox();
+    expect(secondaryBounds?.width).toBe(450);
+    expect(secondaryBounds?.height).toBe(360);
+    const secondaryHiddenDomControls = await hideCaptureDom(secondaryCanvas, true);
+    await waitForPaint(page);
+    let secondaryImage: Awaited<ReturnType<typeof captureCanvas>>;
+    try {
+      secondaryImage = await captureCanvas(
+        page,
+        secondaryCanvas,
+        testInfo.outputPath(`${secondarySceneId}-regression.png`),
+        { width: 450, height: 360 },
+      );
+    } finally {
+      await restoreCaptureDom(page);
+    }
+    const secondaryRanges = await page.locator('input[type="range"]').evaluateAll((inputs) =>
+      inputs.map((input) => {
+        const range = input as HTMLInputElement;
+        return {
+          label: range.getAttribute("aria-label"),
+          value: Number(range.value),
+          min: Number(range.min),
+          max: Number(range.max),
+          step: Number(range.step),
+          disabled: range.disabled,
+        };
+      }),
+    );
+    secondarySceneCaptures.push({
+      captureId: `${secondarySceneId}-canonical-regression`,
+      captureRole: "secondary-macro-regression-reference",
+      sceneId: secondarySceneId,
+      route: `/simulator/free/${secondarySceneId}?rttDiagnostics=1`,
+      cameraState: {
+        focalLengthMm: Number(await secondaryRtt.getAttribute("data-rtt-focal-length-mm")),
+        focusDistanceMm: Number(await page.getByRole("slider", { name: "Focus distance", exact: true }).inputValue()),
+        apertureFNumber: Number(await page.getByRole("radiogroup", { name: "Aperture", exact: true })
+          .getAttribute("data-selected-aperture")),
+        movements: secondaryRanges.filter((range) => range.label !== "Focus distance"),
+      },
+      renderQuality: "standard",
+      previewMode: await secondaryRawPreview.isChecked() ? "Raw" : "unexpected",
+      rawDebug: await secondaryRawDebug.isChecked(),
+      gridEnabled: false,
+      rendererIdentity: {
+        rendererFamily: await secondaryRtt.getAttribute("data-mounted-renderer-family"),
+        executionApi: await secondaryRtt.getAttribute("data-actual-execution-api"),
+        rendererRevision: await secondaryRtt.getAttribute("data-three-revision"),
+        applicationFallback: await secondaryRtt.getAttribute("data-application-fallback"),
+        internalFallback: await secondaryRtt.getAttribute("data-internal-fallback"),
+      },
+      frame: secondaryFrame,
+      contentful: (await secondaryRtt.getAttribute("data-rtt-final-contentful")) === "true",
+      hiddenDomControls: secondaryHiddenDomControls,
+      image: secondaryImage,
+    });
+  }
+
   expect(pageErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
   const run = {
@@ -338,6 +417,7 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
         contentful: (await rtt.getAttribute("data-rtt-final-contentful")) === "true",
         image: loupe,
       },
+      ...secondarySceneCaptures,
     ],
     pageErrors,
     consoleErrors,
