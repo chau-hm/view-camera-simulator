@@ -83,5 +83,6 @@ Validation completed:
 - M7V policy and M7W evidence checks: passed without changing authorization.
 - Before and After screenshot SHA-256 manifests: all files verified.
 - Full unit/integration suite: 4,030 tests passed across 329 files; Vitest additionally reported one worker `onTaskUpdate` timeout as an unhandled runner error under suite load. The slow M7M evidence test passed when rerun by itself (22.2 seconds). This is unrelated to the Macro changes and remains noted as a full-suite runner limitation.
+- Hosted CI for initial review head `3187fb2b9f8d678f37978b18df0311dc48aa7921`: both the branch-push and PR runs, plus one retry, failed while installing Playwright browser dependencies because the Ubuntu package mirror DNS lookups failed. The project test steps were not reached and deployment was skipped. See [run 43043500015](https://github.com/chau-hm/view-camera-simulator/actions/runs/43043500015) and [run 43043599669](https://github.com/chau-hm/view-camera-simulator/actions/runs/43043599669). This is a hosted-runner infrastructure failure, not a reported RQ3D test failure.
 
 The candidate changes only the Macro Depth of Field subject appearance. Production remains WebGL-only, Architecture Rise v2 native M3 authorization is untouched, and no WebGPU photographic feature was enabled.
