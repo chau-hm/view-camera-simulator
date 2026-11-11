@@ -77,6 +77,61 @@ const captureCanvas = async (
   };
 };
 
+const hideCaptureDom = async (
+  canvas: Locator,
+  hideGroundGlassGuides = false,
+): Promise<string[]> => canvas.evaluate((canvasElement, hideGuides) => {
+  const canvasBounds = canvasElement.getBoundingClientRect();
+  const candidates = Array.from(document.querySelectorAll<HTMLElement>(
+    "button, a[href], [role='button'], [data-testid='ground-glass-focus-label'], " +
+    "[data-testid='ground-glass-webgpu-pilot-status'], [data-testid='ground-glass-image-layer'] + div",
+  ));
+  const hidden: string[] = [];
+  const markHidden = (candidate: HTMLElement, description: string) => {
+    candidate.dataset.rq3dCaptureHidden = "true";
+    hidden.push(description);
+  };
+
+  for (const candidate of candidates) {
+    if (candidate === canvasElement || candidate.contains(canvasElement) || canvasElement.contains(candidate)) continue;
+    const forcedOverlay = candidate.matches(
+      "[data-testid='ground-glass-focus-label'], [data-testid='ground-glass-webgpu-pilot-status'], " +
+      "[data-testid='ground-glass-image-layer'] + div",
+    );
+    const bounds = candidate.getBoundingClientRect();
+    const overlaps = bounds.width > 0 && bounds.height > 0 &&
+      bounds.left < canvasBounds.right && bounds.right > canvasBounds.left &&
+      bounds.top < canvasBounds.bottom && bounds.bottom > canvasBounds.top;
+    if (forcedOverlay || overlaps) {
+      markHidden(candidate, candidate.getAttribute("aria-label") ?? candidate.getAttribute("data-testid") ??
+        (candidate.textContent?.trim() || String(candidate.className) || candidate.tagName));
+    }
+  }
+
+  if (hideGuides) {
+    const imageLayer = document.querySelector<HTMLElement>("[data-testid='ground-glass-image-layer']");
+    const guideElements = Array.from(imageLayer?.querySelectorAll<HTMLElement>("div") ?? [])
+      .filter((element) => Boolean(element.style.borderLeft || element.style.borderTop));
+    guideElements.forEach((element, index) => markHidden(element, `ground-glass-center-guide-${index + 1}`));
+  }
+
+  const style = document.createElement("style");
+  style.dataset.rq3dCaptureStyles = "true";
+  style.textContent = "[data-rq3d-capture-hidden='true'] { visibility: hidden !important; pointer-events: none !important; }";
+  document.head.append(style);
+  return hidden;
+}, hideGroundGlassGuides);
+
+const restoreCaptureDom = async (page: Page): Promise<void> => page.evaluate(() => {
+  document.querySelector("[data-rq3d-capture-styles='true']")?.remove();
+  document.querySelectorAll<HTMLElement>("[data-rq3d-capture-hidden='true']")
+    .forEach((element) => delete element.dataset.rq3dCaptureHidden);
+});
+
+const waitForPaint = async (page: Page): Promise<void> => page.evaluate(() => new Promise<void>((resolveFrame) => {
+  requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()));
+}));
+
 test("capture Macro Depth of Field Observer and 4× Ground Glass inspection references", async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   const sourceCommit = execFileSync("git", ["rev-parse", "--verify", "HEAD"], {
@@ -142,11 +197,23 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
   }));
   expect(observerCameraPose.cameraPosition).toBeTruthy();
   expect(observerCameraPose.orbitTarget).toBeTruthy();
-  const observer = await captureCanvas(
-    page,
-    scene.locator("canvas").first(),
-    testInfo.outputPath("macro-depth-of-field-observer.png"),
-  );
+  const observerCanvas = scene.locator("canvas").first();
+  const observerBounds = await observerCanvas.boundingBox();
+  expect(observerBounds).not.toBeNull();
+  if (!observerBounds) throw new Error("Observer canvas is not visible");
+  const observerHiddenDomControls = await hideCaptureDom(observerCanvas);
+  await waitForPaint(page);
+  let observer: Awaited<ReturnType<typeof captureCanvas>>;
+  try {
+    observer = await captureCanvas(
+      page,
+      observerCanvas,
+      testInfo.outputPath("macro-depth-of-field-observer.png"),
+      { width: Math.round(observerBounds.width), height: Math.round(observerBounds.height) },
+    );
+  } finally {
+    await restoreCaptureDom(page);
+  }
   expect(observer.imageWidth).toBeGreaterThan(0);
   expect(observer.imageHeight).toBeGreaterThan(0);
 
@@ -183,53 +250,19 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
   const loupeBounds = await rtt.locator("canvas").first().boundingBox();
   expect(loupeBounds?.width).toBe(450);
   expect(loupeBounds?.height).toBe(360);
-  const hiddenDomControls = await page.evaluate(() => {
-    const canvasElement = document.querySelector('[data-testid="ground-glass-rtt"] canvas');
-    if (!canvasElement) throw new Error("Ground Glass canvas is unavailable for the inspection capture");
-    const canvasBounds = canvasElement.getBoundingClientRect();
-    const candidates = Array.from(document.querySelectorAll<HTMLElement>(
-      "button, a[href], [role='button'], [data-testid='ground-glass-focus-label'], " +
-      "[data-testid='ground-glass-webgpu-pilot-status'], [data-testid='ground-glass-image-layer'] + div",
-    ));
-    const hidden: string[] = [];
-    for (const candidate of candidates) {
-      if (candidate === canvasElement || candidate.contains(canvasElement) || canvasElement.contains(candidate)) continue;
-      const forcedOverlay = candidate.matches(
-        "[data-testid='ground-glass-focus-label'], [data-testid='ground-glass-webgpu-pilot-status'], " +
-        "[data-testid='ground-glass-image-layer'] + div",
-      );
-      const bounds = candidate.getBoundingClientRect();
-      const overlaps = bounds.width > 0 && bounds.height > 0 &&
-        bounds.left < canvasBounds.right && bounds.right > canvasBounds.left &&
-        bounds.top < canvasBounds.bottom && bounds.bottom > canvasBounds.top;
-      if (!forcedOverlay && !overlaps) continue;
-      candidate.dataset.rq3dCaptureHidden = "true";
-      hidden.push(candidate.getAttribute("aria-label") ?? candidate.getAttribute("data-testid") ??
-        (candidate.textContent?.trim() || String(candidate.className) || candidate.tagName));
-    }
-    const style = document.createElement("style");
-    style.dataset.rq3dCaptureStyles = "true";
-    style.textContent = "[data-rq3d-capture-hidden='true'] { visibility: hidden !important; pointer-events: none !important; }";
-    document.head.append(style);
-    return hidden;
-  });
-  await page.evaluate(() => new Promise<void>((resolveFrame) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()));
-  }));
+  const loupeCanvas = rtt.locator("canvas").first();
+  const hiddenDomControls = await hideCaptureDom(loupeCanvas, true);
+  await waitForPaint(page);
   let loupe: Awaited<ReturnType<typeof captureCanvas>>;
   try {
     loupe = await captureCanvas(
       page,
-      rtt.locator("canvas").first(),
+      loupeCanvas,
       testInfo.outputPath("macro-depth-of-field-middle-focus-loupe-4x.png"),
       { width: 450, height: 360 },
     );
   } finally {
-    await page.evaluate(() => {
-      document.querySelector("[data-rq3d-capture-styles='true']")?.remove();
-      document.querySelectorAll<HTMLElement>("[data-rq3d-capture-hidden='true']")
-        .forEach((element) => delete element.dataset.rq3dCaptureHidden);
-    });
+    await restoreCaptureDom(page);
   }
   expect(loupe.imageWidth).toBe(450);
   expect(loupe.imageHeight).toBe(360);
@@ -254,6 +287,7 @@ test("capture Macro Depth of Field Observer and 4× Ground Glass inspection refe
         target: "observer-canvas",
         cameraPose: observerCameraPose,
         overlaysAtCapture: overlayStates,
+        hiddenDomControls: observerHiddenDomControls,
         rendererIdentity: {
           rendererFamily: "webgl-renderer",
           executionApi: "webgl2",
