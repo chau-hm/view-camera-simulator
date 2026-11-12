@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "rq3e-macro-oblique-states-v1",
+  "sceneId": "macro-oblique-plane",
+  "sceneSourceRevision": "captured source commit and registered scene subject at that commit",
+  "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1",
+  "cameraPreset": {
+    "focalLengthMm": 150,
+    "apertureFNumber": 5.6,
+    "allMovementsZero": true
+  },
+  "capture": {
+    "target": "production WebGL Ground Glass photographic composite",
+    "previewMode": "Raw",
+    "rawDebug": false,
+    "renderQuality": "Standard",
+    "viewport": { "width": 1280, "height": 900 },
+    "devicePixelRatio": 1,
+    "displayedGroundGlass": { "width": 450, "height": 360 },
+    "expectedRendererFamily": "webgl-renderer",
+    "expectedExecutionApi": "webgl2",
+    "fallbacks": { "application": "not-observed", "internal": "none" },
+    "frameRequirements": [
+      "request ID equals last completed request ID",
+      "contentful final output",
+      "host accepted the current request",
+      "current request differs from the prior state request after control changes"
+    ]
+  },
+  "states": [
+    {
+      "stateId": "o1-neutral",
+      "role": "middle focus, zero tilt",
+      "cameraState": {
+        "focusDistanceMm": 400,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      }
+    },
+    {
+      "stateId": "o2-focus-near-no-tilt",
+      "role": "near focus, no tilt",
+      "cameraState": {
+        "focusDistanceMm": 390,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      }
+    },
+    {
+      "stateId": "o3-partial-alignment",
+      "role": "existing two-target alignment criterion",
+      "cameraState": {
+        "focusDistanceMm": 390,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 6.2,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      }
+    },
+    {
+      "stateId": "o4-aligned",
+      "role": "existing all-sharp alignment criterion",
+      "cameraState": {
+        "focusDistanceMm": 390,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 6.3,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      }
+    }
+  ],
+  "inspectionReference": {
+    "stateId": "o4-aligned-focus-loupe-4x",
+    "focusLoupeScale": 4,
+    "center": "public default loupe center"
+  },
+  "observerReference": {
+    "cameraPose": "Reset 3D view public control",
+    "overlays": "disabled through public overlay controls"
+  }
+}

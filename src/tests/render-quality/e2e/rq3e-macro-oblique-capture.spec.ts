@@ -168,7 +168,7 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
   });
   const captures: Array<Record<string, unknown>> = [];
 
-  await page.goto(`/simulator/free/${mainSceneId}?rttDiagnostics=1`, { waitUntil: "domcontentloaded" });
+  await page.goto(`/simulator/free/${mainSceneId}?rttDiagnostics=1&sceneCapacityProfiling=1`, { waitUntil: "domcontentloaded" });
   const scene = page.getByTestId("scene-canvas");
   const rtt = page.getByTestId("ground-glass-rtt").first();
   await expect(scene).toHaveAttribute("data-scene-subject-id", mainSceneId);
@@ -177,6 +177,10 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
   await expect(scene).toHaveAttribute("data-observer-execution-backend", "webgl2");
   await expect(scene).toHaveAttribute("data-observer-three-revision", "187");
   await expect(scene).toHaveAttribute("data-observer-application-fallback", "none");
+  const capacitySnapshot = page.getByTestId("scene-capacity-snapshot");
+  await expect.poll(async () => capacitySnapshot.textContent()).toContain('"sceneId":"macro-oblique-plane"');
+  const subjectSnapshot = JSON.parse(await capacitySnapshot.textContent() ?? "null") as Record<string, unknown>;
+  expect(subjectSnapshot).not.toBeNull();
   await page.getByRole("combobox", { name: "Render quality", exact: true }).selectOption({ label: "Standard" });
   await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
   await expect(scene).toHaveAttribute("data-view-focus", "scene");
@@ -282,7 +286,7 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
       captureId: `rq3e-${captureRunId}-${state.stateId}`,
       stateId: state.stateId,
       sceneId: mainSceneId,
-      route: `/simulator/free/${mainSceneId}?rttDiagnostics=1`,
+      route: `/simulator/free/${mainSceneId}?rttDiagnostics=1&sceneCapacityProfiling=1`,
       captureRole: "photographic-ground-glass-reference",
       cameraState: {
         focalLengthMm: Number(await rtt.getAttribute("data-rtt-focal-length-mm")),
@@ -439,11 +443,22 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
     browser: { name: "Chromium (Playwright)", version: browser?.version() ?? "unknown" },
     operatingSystem: { platform: platform(), release: release(), architecture: arch() },
     captureMethod: "Playwright screenshots of public Observer and actual WebGL Ground Glass canvases",
+    subjectEvidence: subjectSnapshot,
     captures,
     pageErrors,
     consoleErrors,
   };
   await writeFile(testInfo.outputPath("capture-run.json"), `${JSON.stringify(run, null, 2)}\n`);
   expect(captures.filter((capture) => capture.captureRole === "photographic-ground-glass-reference")).toHaveLength(4);
-  console.info("RQ3E Macro Oblique captures:", JSON.stringify({ captureRunId, sourceCommit, captures }));
+  console.info("RQ3E Macro Oblique captures:", JSON.stringify({
+    captureRunId,
+    capturePhase,
+    sourceCommit,
+    captures: captures.map((capture) => ({
+      stateId: capture.stateId,
+      role: capture.captureRole,
+      image: capture.image,
+    })),
+    subjectEvidence: subjectSnapshot,
+  }));
 });
