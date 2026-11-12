@@ -52,9 +52,9 @@ export function createMacroDepthOfFieldGroup({
   });
   const stationBody = createMacroMaterial({
     color: "#66808a",
-    roughness: 0.38,
-    // Exposed machined station body, distinct from the coated chassis.
-    metalness: 0.82,
+    roughness: 0.46,
+    // Satin-finished body keeps broad shape response under the bounded rig.
+    metalness: 0.3,
     seed: 47,
     roughnessVariation: 0.16,
     repeat: [8, 3],
@@ -62,9 +62,9 @@ export function createMacroDepthOfFieldGroup({
   });
   const face = createMacroMaterial({
     color: "#d6e0e1",
-    roughness: 0.34,
-    // Bare machined face plate; relief is carried by geometry and highlights.
-    metalness: 0.84,
+    roughness: 0.42,
+    // Satin machined face keeps its relief legible without an environment map.
+    metalness: 0.25,
     seed: 53,
     roughnessVariation: 0.14,
     repeat: [10, 10],
@@ -72,9 +72,9 @@ export function createMacroDepthOfFieldGroup({
   });
   const detail = createMacroMaterial({
     color: "#e0a451",
-    roughness: 0.36,
-    // Bare brass-like detail parts and fasteners.
-    metalness: 0.88,
+    roughness: 0.44,
+    // Warm plated details retain a metal response while remaining readable.
+    metalness: 0.6,
     seed: 59,
     roughnessVariation: 0.16,
     repeat: [8, 6],

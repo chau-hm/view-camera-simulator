@@ -83,9 +83,12 @@ describe("Macro Scene 2 physical renderer contract", () => {
       return (object as THREE.Mesh).material as THREE.MeshStandardMaterial;
     };
     expect(materialFor("chassis").metalness).toBeLessThan(0.2);
-    expect(materialFor("station-1-body").metalness).toBeGreaterThan(0.8);
-    expect(materialFor("station-1-face").metalness).toBeGreaterThan(materialFor("chassis").metalness);
-    expect(materialFor("station-1-face-fastener-0").metalness).toBeGreaterThan(0.8);
+    expect(materialFor("station-1-body").metalness).toBe(0.3);
+    expect(materialFor("station-1-body").roughness).toBe(0.46);
+    expect(materialFor("station-1-face").metalness).toBe(0.25);
+    expect(materialFor("station-1-face").roughness).toBe(0.42);
+    expect(materialFor("station-1-face-fastener-0").metalness).toBe(0.6);
+    expect(materialFor("station-1-face-fastener-0").roughness).toBe(0.44);
     expect(materialFor("station-1-face-fastener-slot-0").metalness).toBeLessThan(0.2);
     expect(materialFor("station-1-inner-ring").metalness).toBeLessThan(0.3);
 

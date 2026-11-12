@@ -205,6 +205,13 @@ test("capture the RQ3A WebGL Ground Glass Before/After reference states", async 
         hidden.push(candidate.getAttribute("aria-label") ?? candidate.getAttribute("data-testid") ??
           (candidate.textContent?.trim() || String(candidate.className) || candidate.tagName));
       }
+      const imageLayer = document.querySelector<HTMLElement>("[data-testid='ground-glass-image-layer']");
+      const guideElements = Array.from(imageLayer?.querySelectorAll<HTMLElement>("div") ?? [])
+        .filter((element) => Boolean(element.style.borderLeft || element.style.borderTop));
+      guideElements.forEach((element, index) => {
+        element.dataset.rq3aCaptureHidden = "true";
+        hidden.push(`ground-glass-center-guide-${index + 1}`);
+      });
       const style = document.createElement("style");
       style.dataset.rq3aCaptureStyles = "true";
       style.textContent = "[data-rq3a-capture-hidden='true'] { visibility: hidden !important; pointer-events: none !important; }";

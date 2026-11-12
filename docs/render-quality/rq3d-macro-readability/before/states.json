@@ -1,0 +1,189 @@
+{
+  "schemaVersion": "rq3d-macro-before-state-manifest-v1",
+  "acceptedBase": "5a6f5f6e97ba7199e0e9942b541c0f837eb35708",
+  "sceneId": "macro-depth-of-field",
+  "sceneSourceRevision": null,
+  "captureEnvironment": {
+    "browser": "Chromium 149.0.7827.55 (Playwright)",
+    "operatingSystem": "darwin 27.0 arm64",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "devicePixelRatio": 1,
+    "groundGlassSize": {
+      "width": 450,
+      "height": 360
+    },
+    "renderQuality": "standard",
+    "rendererFamily": "webgl-renderer",
+    "executionApi": "webgl2",
+    "threeRevision": "187",
+    "previewMode": "Raw",
+    "rawDebug": false,
+    "movementsMmDeg": {
+      "frontRiseMm": 0,
+      "frontShiftMm": 0,
+      "frontTiltDeg": 0,
+      "frontSwingDeg": 0,
+      "rearRiseMm": 0,
+      "rearShiftMm": 0,
+      "rearTiltDeg": 0,
+      "rearSwingDeg": 0
+    },
+    "sampledFilmWidthMm": 127
+  },
+  "groundGlassStates": [
+    {
+      "stateId": "macro-m1-middle-shallow",
+      "focusDistanceMm": 400,
+      "apertureFNumber": 5.6,
+      "captureRunId": "e1ee0cf3-767a-499f-a8f2-8f9e6b63f7f5",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7poul-zpclzwn3bzc-default-request-3",
+      "image": {
+        "path": "ground-glass/macro-m1-middle-shallow.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "d41876fc1af04e23784737fc1210a7a9231b745a9a6592e678a0ba3a339c0634"
+      }
+    },
+    {
+      "stateId": "macro-m2-near-focus",
+      "focusDistanceMm": 390,
+      "apertureFNumber": 5.6,
+      "captureRunId": "e1ee0cf3-767a-499f-a8f2-8f9e6b63f7f5",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7q1fh-62kir03i10c-default-request-4",
+      "image": {
+        "path": "ground-glass/macro-m2-near-focus.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "f9a326fa86fd0d8c00aad721c5d58f446ae03213ca9486b8dcd2691c90d052a1"
+      }
+    },
+    {
+      "stateId": "macro-m3-far-focus",
+      "focusDistanceMm": 410,
+      "apertureFNumber": 5.6,
+      "captureRunId": "e1ee0cf3-767a-499f-a8f2-8f9e6b63f7f5",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7qel4-l9ogzgszsi-default-request-4",
+      "image": {
+        "path": "ground-glass/macro-m3-far-focus.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "d3fc7493e06e821fae2760df64058cbdfc43df252e15b4bf899eea0a26622c53"
+      }
+    },
+    {
+      "stateId": "macro-m4-stopped-down",
+      "focusDistanceMm": 400,
+      "apertureFNumber": 32,
+      "captureRunId": "e1ee0cf3-767a-499f-a8f2-8f9e6b63f7f5",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7qv4i-qxi70f3hgoe-default-request-4",
+      "image": {
+        "path": "ground-glass/macro-m4-stopped-down.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "e07cc566d1bf2f765dd988ce0d7a24e86198b61549caf7b65b60d0d48cfd1548"
+      }
+    }
+  ],
+  "supplementaryStates": [
+    {
+      "captureId": "macro-depth-of-field-observer-default-pose",
+      "target": "observer-canvas",
+      "cameraPosition": "-0.220000,0.130000,-0.500000",
+      "orbitTarget": "0.000000,0.030000,0.260000",
+      "overlaysAtCapture": [],
+      "captureRunId": "80b986a5-6af0-4151-b570-6ac8cfe7e456",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "image": {
+        "path": "observer/macro-depth-of-field-observer.png",
+        "width": 450,
+        "height": 359,
+        "sha256": "4cbb1ce34f8def7d3cb8750adc19d405524978a5d6d30dd0a03d117afbb167e0"
+      }
+    },
+    {
+      "captureId": "macro-depth-of-field-middle-focus-loupe-4x",
+      "captureRole": "ground-glass-inspection-reference",
+      "sceneId": "macro-depth-of-field",
+      "focalLengthMm": 150,
+      "focusDistanceMm": 400,
+      "apertureFNumber": 5.6,
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "focusLoupe": {
+        "active": true,
+        "scale": 4,
+        "centerU": 0.5,
+        "centerV": 0.5,
+        "windowWidth": 0.25,
+        "windowHeight": 0.25
+      },
+      "captureRunId": "80b986a5-6af0-4151-b570-6ac8cfe7e456",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7s68c-gwtxyvmp0v-default-request-4",
+      "image": {
+        "path": "inspection/macro-depth-of-field-middle-focus-loupe-4x.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "89259714a73939917895150884ab51fd51d8c04cc7f6afd958185a53bb311dbf"
+      }
+    },
+    {
+      "captureId": "macro-bellows-extension-canonical-regression",
+      "sceneId": "macro-bellows-extension",
+      "focalLengthMm": 150,
+      "focusDistanceMm": 900,
+      "apertureFNumber": 5.6,
+      "renderQuality": "standard",
+      "captureRunId": "80b986a5-6af0-4151-b570-6ac8cfe7e456",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7t4py-j3k0f3vaa7h-default-request-3",
+      "image": {
+        "path": "secondary/macro-bellows-extension-regression.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "7a0a621ae8b7fc47756fcd914774f1902c611b54888c84eaad72ba5fa334439c"
+      }
+    },
+    {
+      "captureId": "macro-oblique-plane-canonical-regression",
+      "sceneId": "macro-oblique-plane",
+      "focalLengthMm": 150,
+      "focusDistanceMm": 400,
+      "apertureFNumber": 5.6,
+      "frontTiltDeg": 0,
+      "renderQuality": "standard",
+      "captureRunId": "80b986a5-6af0-4151-b570-6ac8cfe7e456",
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "sourceTreeStatus": "clean",
+      "requestAccepted": true,
+      "frameRequestId": "gg-mwc7tghu-ejzife44s2j-default-request-3",
+      "image": {
+        "path": "secondary/macro-oblique-plane-regression.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "265239febfd2ca82ebcf6eb3b10bb634d18c4ddf3e32acea3968a20781d53f91"
+      }
+    }
+  ],
+  "provenanceNote": "All Before captures were taken from the clean source commit e48f429cf7786b0cf5a11492dc96e47e6a1362a3. The only change from the render-quality baseline commit was a capture-test change that hides the two Ground Glass center-guide DOM overlays; no renderer, scene, material, optical, or lighting input changed."
+}

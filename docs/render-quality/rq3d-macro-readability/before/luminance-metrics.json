@@ -1,0 +1,602 @@
+{
+  "schemaVersion": "rq3d-macro-luminance-metrics-v1",
+  "method": {
+    "luminance": "linear Rec.709 luminance decoded from the PNG sRGB values",
+    "stationCenters": "perspective projection of the canonical focus-zone centers using f=150 mm, source distance 390/400/410 mm, sampled film width 127 mm, and the captured 450 px width",
+    "detailRegion": "annulus from 3.5 mm to 7.0 mm radius on each canonical station face",
+    "faceRegion": "disk through the 8.45 mm face-trim radius",
+    "backgroundRegion": "x=75..374, y=55..109 in the 450x360 capture",
+    "edgeContrast": "mean centered luminance-gradient magnitude in the detail annulus; it mixes material contrast and optical blur and is not a standalone physical-sharpness measure",
+    "thresholds": {
+      "nearBlackLinearLuma": 0.01,
+      "clippedLinearLuma": 0.95
+    },
+    "limitations": "ROI metrics are image diagnostics; focus ranking is validated separately by the existing public scene/teaching tests."
+  },
+  "captures": [
+    {
+      "stateId": "macro-m1-middle-shallow",
+      "focusDistanceMm": 400,
+      "apertureFNumber": 5.6,
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "image": {
+        "path": "ground-glass/macro-m1-middle-shallow.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "d41876fc1af04e23784737fc1210a7a9231b745a9a6592e678a0ba3a339c0634"
+      },
+      "stationMetrics": [
+        {
+          "stationId": "near",
+          "geometryMm": {
+            "x": -40,
+            "y": 5,
+            "surfaceZ": 390
+          },
+          "roiCenterPx": {
+            "x": 136.417,
+            "y": 191.073
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.751,
+            "outerRadius": 15.502
+          },
+          "faceDiskRadiusPx": 18.713,
+          "detailLuma": {
+            "pixels": 565,
+            "mean": 0.02057,
+            "p10": 0.0045,
+            "median": 0.0206,
+            "p90": 0.03653,
+            "standardDeviation": 0.01144,
+            "nearBlackFraction": 0.22301,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02721,
+          "detailP10ToP90Range": 0.03203,
+          "detailRmsContrast": 0.55615,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00888,
+            "pixels": 433
+          }
+        },
+        {
+          "stationId": "middle",
+          "geometryMm": {
+            "x": 0,
+            "y": 5,
+            "surfaceZ": 400
+          },
+          "roiCenterPx": {
+            "x": 225,
+            "y": 190.63
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.441,
+            "outerRadius": 14.882
+          },
+          "faceDiskRadiusPx": 17.965,
+          "detailLuma": {
+            "pixels": 517,
+            "mean": 0.01991,
+            "p10": 0.00391,
+            "median": 0.01962,
+            "p90": 0.03552,
+            "standardDeviation": 0.01252,
+            "nearBlackFraction": 0.27079,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02754,
+          "detailP10ToP90Range": 0.03161,
+          "detailRmsContrast": 0.62883,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00973,
+            "pixels": 391
+          }
+        },
+        {
+          "stationId": "far",
+          "geometryMm": {
+            "x": 40,
+            "y": 5,
+            "surfaceZ": 410
+          },
+          "roiCenterPx": {
+            "x": 306.769,
+            "y": 190.221
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.155,
+            "outerRadius": 14.31
+          },
+          "faceDiskRadiusPx": 17.274,
+          "detailLuma": {
+            "pixels": 485,
+            "mean": 0.01869,
+            "p10": 0.00687,
+            "median": 0.01709,
+            "p90": 0.03211,
+            "standardDeviation": 0.01002,
+            "nearBlackFraction": 0.21649,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02515,
+          "detailP10ToP90Range": 0.02524,
+          "detailRmsContrast": 0.53612,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00674,
+            "pixels": 363
+          }
+        }
+      ],
+      "backgroundReference": {
+        "roiPx": {
+          "x": 75,
+          "y": 55,
+          "width": 300,
+          "height": 55
+        },
+        "pixels": 16500,
+        "mean": 1,
+        "p10": 1,
+        "median": 1,
+        "p90": 1,
+        "standardDeviation": 0,
+        "nearBlackFraction": 0,
+        "clippedFraction": 1
+      },
+      "backgroundSubjectSeparation": [
+        {
+          "stationId": "near",
+          "backgroundMinusFaceLuma": 0.97279
+        },
+        {
+          "stationId": "middle",
+          "backgroundMinusFaceLuma": 0.97246
+        },
+        {
+          "stationId": "far",
+          "backgroundMinusFaceLuma": 0.97485
+        }
+      ]
+    },
+    {
+      "stateId": "macro-m2-near-focus",
+      "focusDistanceMm": 390,
+      "apertureFNumber": 5.6,
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "image": {
+        "path": "ground-glass/macro-m2-near-focus.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "f9a326fa86fd0d8c00aad721c5d58f446ae03213ca9486b8dcd2691c90d052a1"
+      },
+      "stationMetrics": [
+        {
+          "stationId": "near",
+          "geometryMm": {
+            "x": -40,
+            "y": 5,
+            "surfaceZ": 390
+          },
+          "roiCenterPx": {
+            "x": 136.417,
+            "y": 191.073
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.751,
+            "outerRadius": 15.502
+          },
+          "faceDiskRadiusPx": 18.713,
+          "detailLuma": {
+            "pixels": 565,
+            "mean": 0.01923,
+            "p10": 0.00468,
+            "median": 0.01917,
+            "p90": 0.0331,
+            "standardDeviation": 0.01091,
+            "nearBlackFraction": 0.25487,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02553,
+          "detailP10ToP90Range": 0.02842,
+          "detailRmsContrast": 0.56734,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00886,
+            "pixels": 433
+          }
+        },
+        {
+          "stationId": "middle",
+          "geometryMm": {
+            "x": 0,
+            "y": 5,
+            "surfaceZ": 400
+          },
+          "roiCenterPx": {
+            "x": 225,
+            "y": 190.63
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.441,
+            "outerRadius": 14.882
+          },
+          "faceDiskRadiusPx": 17.965,
+          "detailLuma": {
+            "pixels": 517,
+            "mean": 0.01797,
+            "p10": 0.00632,
+            "median": 0.01728,
+            "p90": 0.02965,
+            "standardDeviation": 0.00896,
+            "nearBlackFraction": 0.2089,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02474,
+          "detailP10ToP90Range": 0.02333,
+          "detailRmsContrast": 0.49861,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00654,
+            "pixels": 391
+          }
+        },
+        {
+          "stationId": "far",
+          "geometryMm": {
+            "x": 40,
+            "y": 5,
+            "surfaceZ": 410
+          },
+          "roiCenterPx": {
+            "x": 306.769,
+            "y": 190.221
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.155,
+            "outerRadius": 14.31
+          },
+          "faceDiskRadiusPx": 17.274,
+          "detailLuma": {
+            "pixels": 485,
+            "mean": 0.01806,
+            "p10": 0.00887,
+            "median": 0.01724,
+            "p90": 0.02886,
+            "standardDeviation": 0.0076,
+            "nearBlackFraction": 0.15464,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02282,
+          "detailP10ToP90Range": 0.01999,
+          "detailRmsContrast": 0.42082,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00472,
+            "pixels": 363
+          }
+        }
+      ],
+      "backgroundReference": {
+        "roiPx": {
+          "x": 75,
+          "y": 55,
+          "width": 300,
+          "height": 55
+        },
+        "pixels": 16500,
+        "mean": 0.99961,
+        "p10": 1,
+        "median": 1,
+        "p90": 1,
+        "standardDeviation": 0.00147,
+        "nearBlackFraction": 0,
+        "clippedFraction": 1
+      },
+      "backgroundSubjectSeparation": [
+        {
+          "stationId": "near",
+          "backgroundMinusFaceLuma": 0.97408
+        },
+        {
+          "stationId": "middle",
+          "backgroundMinusFaceLuma": 0.97487
+        },
+        {
+          "stationId": "far",
+          "backgroundMinusFaceLuma": 0.97679
+        }
+      ]
+    },
+    {
+      "stateId": "macro-m3-far-focus",
+      "focusDistanceMm": 410,
+      "apertureFNumber": 5.6,
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "image": {
+        "path": "ground-glass/macro-m3-far-focus.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "d3fc7493e06e821fae2760df64058cbdfc43df252e15b4bf899eea0a26622c53"
+      },
+      "stationMetrics": [
+        {
+          "stationId": "near",
+          "geometryMm": {
+            "x": -40,
+            "y": 5,
+            "surfaceZ": 390
+          },
+          "roiCenterPx": {
+            "x": 136.417,
+            "y": 191.073
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.751,
+            "outerRadius": 15.502
+          },
+          "faceDiskRadiusPx": 18.713,
+          "detailLuma": {
+            "pixels": 565,
+            "mean": 0.02211,
+            "p10": 0.00497,
+            "median": 0.02222,
+            "p90": 0.03848,
+            "standardDeviation": 0.01243,
+            "nearBlackFraction": 0.22478,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02786,
+          "detailP10ToP90Range": 0.03351,
+          "detailRmsContrast": 0.56219,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00916,
+            "pixels": 433
+          }
+        },
+        {
+          "stationId": "middle",
+          "geometryMm": {
+            "x": 0,
+            "y": 5,
+            "surfaceZ": 400
+          },
+          "roiCenterPx": {
+            "x": 225,
+            "y": 190.63
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.441,
+            "outerRadius": 14.882
+          },
+          "faceDiskRadiusPx": 17.965,
+          "detailLuma": {
+            "pixels": 517,
+            "mean": 0.02274,
+            "p10": 0.00504,
+            "median": 0.02303,
+            "p90": 0.03803,
+            "standardDeviation": 0.01319,
+            "nearBlackFraction": 0.20116,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.03046,
+          "detailP10ToP90Range": 0.03299,
+          "detailRmsContrast": 0.58004,
+          "edgeContrast": {
+            "meanLumaGradient": 0.01016,
+            "pixels": 391
+          }
+        },
+        {
+          "stationId": "far",
+          "geometryMm": {
+            "x": 40,
+            "y": 5,
+            "surfaceZ": 410
+          },
+          "roiCenterPx": {
+            "x": 306.769,
+            "y": 190.221
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.155,
+            "outerRadius": 14.31
+          },
+          "faceDiskRadiusPx": 17.274,
+          "detailLuma": {
+            "pixels": 485,
+            "mean": 0.02078,
+            "p10": 0.00574,
+            "median": 0.01993,
+            "p90": 0.0357,
+            "standardDeviation": 0.01189,
+            "nearBlackFraction": 0.20619,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.02748,
+          "detailP10ToP90Range": 0.02996,
+          "detailRmsContrast": 0.57218,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00943,
+            "pixels": 363
+          }
+        }
+      ],
+      "backgroundReference": {
+        "roiPx": {
+          "x": 75,
+          "y": 55,
+          "width": 300,
+          "height": 55
+        },
+        "pixels": 16500,
+        "mean": 1,
+        "p10": 1,
+        "median": 1,
+        "p90": 1,
+        "standardDeviation": 0,
+        "nearBlackFraction": 0,
+        "clippedFraction": 1
+      },
+      "backgroundSubjectSeparation": [
+        {
+          "stationId": "near",
+          "backgroundMinusFaceLuma": 0.97214
+        },
+        {
+          "stationId": "middle",
+          "backgroundMinusFaceLuma": 0.96954
+        },
+        {
+          "stationId": "far",
+          "backgroundMinusFaceLuma": 0.97252
+        }
+      ]
+    },
+    {
+      "stateId": "macro-m4-stopped-down",
+      "focusDistanceMm": 400,
+      "apertureFNumber": 32,
+      "sourceCommit": "e48f429cf7786b0cf5a11492dc96e47e6a1362a3",
+      "image": {
+        "path": "ground-glass/macro-m4-stopped-down.png",
+        "width": 450,
+        "height": 360,
+        "sha256": "e07cc566d1bf2f765dd988ce0d7a24e86198b61549caf7b65b60d0d48cfd1548"
+      },
+      "stationMetrics": [
+        {
+          "stationId": "near",
+          "geometryMm": {
+            "x": -40,
+            "y": 5,
+            "surfaceZ": 390
+          },
+          "roiCenterPx": {
+            "x": 136.417,
+            "y": 191.073
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.751,
+            "outerRadius": 15.502
+          },
+          "faceDiskRadiusPx": 18.713,
+          "detailLuma": {
+            "pixels": 565,
+            "mean": 0.00024,
+            "p10": 0,
+            "median": 0.0003,
+            "p90": 0.00037,
+            "standardDeviation": 0.00016,
+            "nearBlackFraction": 1,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.00035,
+          "detailP10ToP90Range": 0.00037,
+          "detailRmsContrast": 0.66667,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00013,
+            "pixels": 433
+          }
+        },
+        {
+          "stationId": "middle",
+          "geometryMm": {
+            "x": 0,
+            "y": 5,
+            "surfaceZ": 400
+          },
+          "roiCenterPx": {
+            "x": 225,
+            "y": 190.63
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.441,
+            "outerRadius": 14.882
+          },
+          "faceDiskRadiusPx": 17.965,
+          "detailLuma": {
+            "pixels": 517,
+            "mean": 0.00022,
+            "p10": 0,
+            "median": 0.0003,
+            "p90": 0.00035,
+            "standardDeviation": 0.00016,
+            "nearBlackFraction": 1,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.00034,
+          "detailP10ToP90Range": 0.00035,
+          "detailRmsContrast": 0.72727,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00013,
+            "pixels": 391
+          }
+        },
+        {
+          "stationId": "far",
+          "geometryMm": {
+            "x": 40,
+            "y": 5,
+            "surfaceZ": 410
+          },
+          "roiCenterPx": {
+            "x": 306.769,
+            "y": 190.221
+          },
+          "detailAnnulusPx": {
+            "innerRadius": 7.155,
+            "outerRadius": 14.31
+          },
+          "faceDiskRadiusPx": 17.274,
+          "detailLuma": {
+            "pixels": 485,
+            "mean": 0.00022,
+            "p10": 0,
+            "median": 0.00024,
+            "p90": 0.00035,
+            "standardDeviation": 0.00016,
+            "nearBlackFraction": 1,
+            "clippedFraction": 0
+          },
+          "faceMeanLuma": 0.00032,
+          "detailP10ToP90Range": 0.00035,
+          "detailRmsContrast": 0.72727,
+          "edgeContrast": {
+            "meanLumaGradient": 0.00013,
+            "pixels": 363
+          }
+        }
+      ],
+      "backgroundReference": {
+        "roiPx": {
+          "x": 75,
+          "y": 55,
+          "width": 300,
+          "height": 55
+        },
+        "pixels": 16500,
+        "mean": 0.00267,
+        "p10": 0.00267,
+        "median": 0.00267,
+        "p90": 0.00269,
+        "standardDeviation": 0.00006,
+        "nearBlackFraction": 1,
+        "clippedFraction": 0
+      },
+      "backgroundSubjectSeparation": [
+        {
+          "stationId": "near",
+          "backgroundMinusFaceLuma": 0.00232
+        },
+        {
+          "stationId": "middle",
+          "backgroundMinusFaceLuma": 0.00233
+        },
+        {
+          "stationId": "far",
+          "backgroundMinusFaceLuma": 0.00235
+        }
+      ]
+    }
+  ]
+}
