@@ -369,6 +369,15 @@ test("capture RQ3G matched Macro Bellows Extension WebGL references", async ({ p
     captures.push(capture);
   }
 
+  if (await aperture.getAttribute("data-selected-aperture") !== "5.6") {
+    previousRequestId = await rtt.getAttribute("data-frame-request-id") ?? previousRequestId;
+    await aperture.getByRole("radio", { name: "f/5.6", exact: true }).check();
+  }
+  await expect(focus).toHaveValue("300");
+  await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
+  const loupeSourceFrame = await readAcceptedFrame(page, rtt, mainSceneId, previousRequestId);
+  previousRequestId = loupeSourceFrame.requestId;
+
   const loupeButton = page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true });
   await loupeButton.click();
   const loupeStage = page.locator('[data-focus-loupe-active="true"]').first();
