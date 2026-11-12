@@ -904,11 +904,17 @@ describe("scene subject registry", () => {
     expect(lighting?.keyOffsetWorld).toEqual({ x: -3, y: 4, z: -4.5 });
   });
 
+  it("uses the scene-specific front-raked key for Macro Oblique Plane", () => {
+    const lighting = getSceneSubjectRegistration("macro-oblique-plane")?.presentationLighting;
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -4.5 });
+  });
+
   it.each([
     "architecture-rise",
     "table-tilt",
     "interior-corner",
     "macro-depth-of-field",
+    "macro-oblique-plane",
   ] as const)(
     "%s uses one presentation placement and recipe on Observer and Ground Glass",
     (sceneId) => {
