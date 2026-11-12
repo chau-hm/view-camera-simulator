@@ -96,6 +96,36 @@
               "nearBlackFraction": 0.0058823529411764705,
               "clippedHighlightFraction": 0
             },
+            "goldPad": {
+              "pixelBounds": {
+                "x": 247,
+                "y": 66,
+                "width": 15,
+                "height": 11
+              },
+              "pixelCount": 165,
+              "meanLinearLuminance": 0.04124547504049582,
+              "p10LinearLuminance": 0.002831311974051698,
+              "p90LinearLuminance": 0.09989107262205435,
+              "meanLocalLuminanceGradient": 0.025358307760268203,
+              "nearBlackFraction": 0.2606060606060606,
+              "clippedHighlightFraction": 0
+            },
+            "via": {
+              "pixelBounds": {
+                "x": 158,
+                "y": 109,
+                "width": 11,
+                "height": 11
+              },
+              "pixelCount": 121,
+              "meanLinearLuminance": 0.017578162413694993,
+              "p10LinearLuminance": 0.005818658898035327,
+              "p90LinearLuminance": 0.02478333141829201,
+              "meanLocalLuminanceGradient": 0.0027531185815349657,
+              "nearBlackFraction": 0.11570247933884298,
+              "clippedHighlightFraction": 0
+            },
             "silkscreen": {
               "pixelBounds": {
                 "x": 140,
@@ -201,6 +231,36 @@
               "p90LinearLuminance": 0.020748467266535873,
               "meanLocalLuminanceGradient": 0.0014649699902525557,
               "nearBlackFraction": 0,
+              "clippedHighlightFraction": 0
+            },
+            "goldPad": {
+              "pixelBounds": {
+                "x": 248,
+                "y": 62,
+                "width": 16,
+                "height": 11
+              },
+              "pixelCount": 176,
+              "meanLinearLuminance": 0.03550802840345319,
+              "p10LinearLuminance": 0.0026142294754175695,
+              "p90LinearLuminance": 0.12491622020690428,
+              "meanLocalLuminanceGradient": 0.021792716554965345,
+              "nearBlackFraction": 0.3352272727272727,
+              "clippedHighlightFraction": 0
+            },
+            "via": {
+              "pixelBounds": {
+                "x": 155,
+                "y": 106,
+                "width": 11,
+                "height": 11
+              },
+              "pixelCount": 121,
+              "meanLinearLuminance": 0.016473027387397126,
+              "p10LinearLuminance": 0.003884431026561449,
+              "p90LinearLuminance": 0.018937626133738842,
+              "meanLocalLuminanceGradient": 0.0024000072619306764,
+              "nearBlackFraction": 0.11570247933884298,
               "clippedHighlightFraction": 0
             },
             "silkscreen": {
@@ -310,6 +370,36 @@
               "nearBlackFraction": 0.010752688172043012,
               "clippedHighlightFraction": 0
             },
+            "goldPad": {
+              "pixelBounds": {
+                "x": 248,
+                "y": 62,
+                "width": 16,
+                "height": 11
+              },
+              "pixelCount": 176,
+              "meanLinearLuminance": 0.03918070659136592,
+              "p10LinearLuminance": 0.002757282593011868,
+              "p90LinearLuminance": 0.06993387975797716,
+              "meanLocalLuminanceGradient": 0.032672411868530905,
+              "nearBlackFraction": 0.3125,
+              "clippedHighlightFraction": 0
+            },
+            "via": {
+              "pixelBounds": {
+                "x": 155,
+                "y": 106,
+                "width": 11,
+                "height": 11
+              },
+              "pixelCount": 121,
+              "meanLinearLuminance": 0.01808329078544508,
+              "p10LinearLuminance": 0.0031702286346388642,
+              "p90LinearLuminance": 0.02374905646036032,
+              "meanLocalLuminanceGradient": 0.002512623903482494,
+              "nearBlackFraction": 0.11570247933884298,
+              "clippedHighlightFraction": 0
+            },
             "silkscreen": {
               "pixelBounds": {
                 "x": 136,
@@ -415,6 +505,36 @@
               "p90LinearLuminance": 0.023209957610827885,
               "meanLocalLuminanceGradient": 0.0023801713547982706,
               "nearBlackFraction": 0.010752688172043012,
+              "clippedHighlightFraction": 0
+            },
+            "goldPad": {
+              "pixelBounds": {
+                "x": 248,
+                "y": 62,
+                "width": 16,
+                "height": 11
+              },
+              "pixelCount": 176,
+              "meanLinearLuminance": 0.0399313290748331,
+              "p10LinearLuminance": 0.002831311974051698,
+              "p90LinearLuminance": 0.06993387975797716,
+              "meanLocalLuminanceGradient": 0.03266188842317037,
+              "nearBlackFraction": 0.26136363636363635,
+              "clippedHighlightFraction": 0
+            },
+            "via": {
+              "pixelBounds": {
+                "x": 155,
+                "y": 106,
+                "width": 11,
+                "height": 11
+              },
+              "pixelCount": 121,
+              "meanLinearLuminance": 0.018098556023271702,
+              "p10LinearLuminance": 0.009873557743430777,
+              "p90LinearLuminance": 0.02374905646036032,
+              "meanLocalLuminanceGradient": 0.0025203789526340083,
+              "nearBlackFraction": 0.10743801652892562,
               "clippedHighlightFraction": 0
             },
             "silkscreen": {

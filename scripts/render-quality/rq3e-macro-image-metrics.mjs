@@ -174,6 +174,8 @@ const projectedRois = (capture) => {
       middle: roiFromWorld([18, 0], 38, 28),
       far: roiFromWorld([0, 40], 80, 14),
       copperTrace: roiFromWorld([-11.5, 15], 28, 8),
+      goldPad: roiFromWorld([14, -51], 7, 5),
+      via: roiFromWorld([-29, -31], 5, 5),
       silkscreen: roiFromWorld([-25, -42], 30, 10),
       backgroundControl: { x: 16, y: 16, width: 56, height: 40 },
     },
