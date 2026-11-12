@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
@@ -170,8 +170,25 @@ const summarizeRoi = (image, roi) => {
   };
 };
 
+const resolveCaptureImagePath = async (captureRunPath, imagePath) => {
+  const candidates = [
+    resolve(repositoryRoot, imagePath),
+    resolve(dirname(captureRunPath), imagePath),
+  ];
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  throw new Error(`Capture PNG not found from repository root or capture run directory: ${imagePath}`);
+};
+
 const measureRun = async (runPath) => {
-  const run = JSON.parse(await readFile(resolve(repositoryRoot, runPath), "utf8"));
+  const resolvedRunPath = resolve(repositoryRoot, runPath);
+  const run = JSON.parse(await readFile(resolvedRunPath, "utf8"));
   if (run.schemaVersion !== "rq3f-macro-compound-capture-v1" || run.sourceTreeStatus !== "clean") {
     throw new Error(`Unsupported or non-clean capture run: ${runPath}`);
   }
@@ -196,7 +213,7 @@ const measureRun = async (runPath) => {
       capture.rendererIdentity?.internalFallback !== "none" || capture.rendererIdentity?.applicationFallback !== "not-observed") {
       throw new Error(`Unexpected renderer identity in ${capture.stateId}`);
     }
-    const imagePath = resolve(repositoryRoot, capture.image.imagePath);
+    const imagePath = await resolveCaptureImagePath(resolvedRunPath, capture.image.imagePath);
     const bytes = await readFile(imagePath);
     const sha256 = createHash("sha256").update(bytes).digest("hex");
     if (sha256 !== capture.image.sha256) throw new Error(`PNG SHA-256 mismatch: ${imagePath}`);

@@ -82,6 +82,8 @@ npm run render-quality:rq3f:measure -- \
   --output=docs/render-quality/rq3f-macro-compound/comparison-metrics.json
 ```
 
+The metrics command accepts image paths relative to the repository root for retained evidence and paths relative to each `capture-run.json` for fresh Playwright output.
+
 Validation on the implementation source:
 
 - RQ3F WebGL capture: passed, 1 executed test, 0 retries, both matched runs.
