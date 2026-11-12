@@ -178,7 +178,14 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
   await expect(scene).toHaveAttribute("data-observer-three-revision", "187");
   await expect(scene).toHaveAttribute("data-observer-application-fallback", "none");
   const capacitySnapshot = page.getByTestId("scene-capacity-snapshot");
-  await expect.poll(async () => capacitySnapshot.textContent()).toContain('"sceneId":"macro-oblique-plane"');
+  await expect.poll(async () => {
+    const text = await capacitySnapshot.textContent();
+    try {
+      return text ? (JSON.parse(text) as { sceneId?: string }).sceneId : null;
+    } catch {
+      return null;
+    }
+  }).toBe("macro-oblique-plane");
   const subjectSnapshot = JSON.parse(await capacitySnapshot.textContent() ?? "null") as Record<string, unknown>;
   expect(subjectSnapshot).not.toBeNull();
   await page.getByRole("combobox", { name: "Render quality", exact: true }).selectOption({ label: "Standard" });
