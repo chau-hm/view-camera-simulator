@@ -292,7 +292,7 @@ export const sceneSubjectRegistry = {
     rttBounds: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsSubjectBoundsMm,
     presentationLighting: {
       targetMm: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsLightingTargetMm,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -4.5 },
     },
   },
   "view-camera-anatomy": {

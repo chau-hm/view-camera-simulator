@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "rq3f-macro-compound-states-v1",
+  "sceneId": "macro-compound-movements",
+  "route": "/simulator/free/macro-compound-movements",
+  "cameraPreset": "macro-compound-movements-default",
+  "optics": {
+    "focalLengthMm": 150,
+    "apertureFNumber": 5.6
+  },
+  "capture": {
+    "viewport": { "width": 1280, "height": 900 },
+    "devicePixelRatio": 1,
+    "groundGlass": { "width": 450, "height": 360 },
+    "renderQuality": "Standard",
+    "previewMode": "Raw",
+    "rawDebug": false,
+    "rendererFamily": "webgl-renderer",
+    "executionApi": "webgl2",
+    "appearanceRole": "matched production WebGL photographic Ground Glass reference"
+  },
+  "states": [
+    { "stateId": "c1-neutral", "focusDistanceMm": 500, "frontTiltDeg": 0, "frontSwingDeg": 0, "purpose": "Default focus distribution" },
+    { "stateId": "c2-tilt-only", "focusDistanceMm": 490, "frontTiltDeg": 3.4, "frontSwingDeg": 0, "purpose": "Isolate vertical alignment" },
+    { "stateId": "c3-swing-only", "focusDistanceMm": 490, "frontTiltDeg": 0, "frontSwingDeg": -2.8, "purpose": "Isolate lateral alignment" },
+    { "stateId": "c4-partial-alignment", "focusDistanceMm": 490, "frontTiltDeg": 3.3, "frontSwingDeg": -2.7, "purpose": "Accepted two-target refinement state" },
+    { "stateId": "c5-aligned", "focusDistanceMm": 490, "frontTiltDeg": 3.4, "frontSwingDeg": -2.8, "purpose": "Accepted all-three-target alignment state" }
+  ],
+  "additionalReferences": [
+    "fixed-default-observer",
+    "c5-focus-loupe-4x",
+    "macro-depth-of-field-control",
+    "macro-oblique-plane-control",
+    "macro-bellows-extension-control"
+  ]
+}
