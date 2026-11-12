@@ -118,7 +118,7 @@ describe("Macro Scene 4 compound subject", () => {
     const registration = getSceneSubjectRegistration("macro-compound-movements");
     expect(registration?.presentationLighting).toEqual({
       targetMm: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsLightingTargetMm,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -4.5 },
     });
     disposeMacroCompoundMovementsGroup(group);
   });
