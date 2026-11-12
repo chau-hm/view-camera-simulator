@@ -55,7 +55,7 @@ Metrics use linear Rec.709 luminance decoded from screenshot sRGB values, with f
 
 The improved relief, radial-tick and fastener gradients support a local detail-contrast gain rather than uniform image brightening. The outer-rim gradient decreases as its highlights broaden; no ROI clips. The face plate remains below the near-black threshold throughout, and the central inset remains mostly dark. The candidate improves visible separation but does not make every fine feature bright or individually resolvable at this display size.
 
-The full state measurements, region definitions, exact source SHA values, run identities and screenshot hashes are in [`comparison-metrics.json`](rq3g-macro-bellows/comparison-metrics.json).
+Optics, capture provenance, and screenshot hashes for all five states are in [`comparison-metrics.json`](rq3g-macro-bellows/comparison-metrics.json). Geometry-based ROIs are measured only in the life-size states B3–B5, where the 1:1 screen projection matches the fixed specimen regions. B1 and B2 remain visual and optics controls without ROI measurements because their different magnifications move those regions to different screen coordinates.
 
 ## Bellows and camera behavior
 

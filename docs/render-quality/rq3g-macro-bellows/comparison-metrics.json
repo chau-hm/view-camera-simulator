@@ -18,7 +18,7 @@
       "clippedHighlightLinearLuminance": 0.95
     },
     "localGradient": "mean forward luminance gradient within the ROI; material contrast and optical blur both affect it, so it is not physical sharpness",
-    "comparisonLimits": "one controlled visual metric for the accepted physical subject; not a photographic ground-truth score"
+    "comparisonLimits": "geometry-based ROIs are measured only for 1:1 states; B1/B2 are retained as optical and visual controls without ROI metrics; the B3 measures are readability diagnostics, not photographic ground truth"
   },
   "captures": {
     "before": {
@@ -62,88 +62,8 @@
             "height": 360,
             "sha256": "7a0a621ae8b7fc47756fcd914774f1902c611b54888c84eaad72ba5fa334439c"
           },
-          "rois": {
-            "wholeSpecimen": {
-              "pixels": 79852,
-              "meanLinearLuminance": 0.6469950493413812,
-              "p10LinearLuminance": 0.009289304725825787,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0.9907106952741742,
-              "meanLocalLuminanceGradient": 0.007540900157690534,
-              "nearBlackFraction": 0.10759905825777688,
-              "clippedHighlightFraction": 0.6344862996543605
-            },
-            "outerMetallicRim": {
-              "pixels": 4912,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "raisedFacePlate": {
-              "pixels": 8136,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "darkCentralInset": {
-              "pixels": 35984,
-              "meanLinearLuminance": 0.21664764006247136,
-              "p10LinearLuminance": 0.005969783291220665,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0.9940302167087793,
-              "meanLocalLuminanceGradient": 0.01679051210326732,
-              "nearBlackFraction": 0.2387727879057359,
-              "clippedHighlightFraction": 0.18888950644730992
-            },
-            "centralAsymmetricReliefBounds": {
-              "pixels": 8364,
-              "meanLinearLuminance": 0.015377576513115018,
-              "p10LinearLuminance": 0.004648088943213224,
-              "p90LinearLuminance": 0.03589270636439323,
-              "p10ToP90Range": 0.031244617421180003,
-              "meanLocalLuminanceGradient": 0.003212707748608728,
-              "nearBlackFraction": 0.5184122429459589,
-              "clippedHighlightFraction": 0
-            },
-            "radialTicks": {
-              "pixels": 13844,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "fastenersAndSlots": {
-              "pixels": 1392,
-              "meanLinearLuminance": 0.03272238522286302,
-              "p10LinearLuminance": 0.015095262695103882,
-              "p90LinearLuminance": 0.05471596531569958,
-              "p10ToP90Range": 0.0396207026205957,
-              "meanLocalLuminanceGradient": 0.010943565039989934,
-              "nearBlackFraction": 0.0014367816091954023,
-              "clippedHighlightFraction": 0
-            },
-            "backgroundControl": {
-              "pixels": 1156,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            }
-          }
+          "roiMeasurementNote": "Geometry ROIs are only defined for the 1:1 image projection.",
+          "rois": null
         },
         {
           "stateId": "b2-intermediate",
@@ -173,88 +93,8 @@
             "height": 360,
             "sha256": "b1f15aa1d7cf499a95bd834fd63739f238df15a5007bd4c06eb01902432092c4"
           },
-          "rois": {
-            "wholeSpecimen": {
-              "pixels": 79852,
-              "meanLinearLuminance": 0.4298143455886061,
-              "p10LinearLuminance": 0.0028449411038309336,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0.9971550588961691,
-              "meanLocalLuminanceGradient": 0.009417904747802021,
-              "nearBlackFraction": 0.3849246105294795,
-              "clippedHighlightFraction": 0.39059760557030504
-            },
-            "outerMetallicRim": {
-              "pixels": 4912,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "raisedFacePlate": {
-              "pixels": 8136,
-              "meanLinearLuminance": 0.06970911031756495,
-              "p10LinearLuminance": 0.007055469322949648,
-              "p90LinearLuminance": 0.1543486937880516,
-              "p10ToP90Range": 0.14729322446510196,
-              "meanLocalLuminanceGradient": 0.03874773955375321,
-              "nearBlackFraction": 0.3142822025565388,
-              "clippedHighlightFraction": 0.0020894788593903636
-            },
-            "darkCentralInset": {
-              "pixels": 35984,
-              "meanLinearLuminance": 0.008858078826583281,
-              "p10LinearLuminance": 0.0026799733750522137,
-              "p90LinearLuminance": 0.021626990288496017,
-              "p10ToP90Range": 0.018947016913443804,
-              "meanLocalLuminanceGradient": 0.0024328043049110966,
-              "nearBlackFraction": 0.7568085815918186,
-              "clippedHighlightFraction": 0
-            },
-            "centralAsymmetricReliefBounds": {
-              "pixels": 8364,
-              "meanLinearLuminance": 0.011341148695845241,
-              "p10LinearLuminance": 0.0028449411038309336,
-              "p90LinearLuminance": 0.03190437965095041,
-              "p10ToP90Range": 0.029059438547119475,
-              "meanLocalLuminanceGradient": 0.002210892618245321,
-              "nearBlackFraction": 0.6489717838354854,
-              "clippedHighlightFraction": 0
-            },
-            "radialTicks": {
-              "pixels": 13844,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "fastenersAndSlots": {
-              "pixels": 1392,
-              "meanLinearLuminance": 0.011373555407813889,
-              "p10LinearLuminance": 0.004891302436590195,
-              "p90LinearLuminance": 0.024396687746047974,
-              "p10ToP90Range": 0.01950538530945778,
-              "meanLocalLuminanceGradient": 0.003678383749130214,
-              "nearBlackFraction": 0.694683908045977,
-              "clippedHighlightFraction": 0
-            },
-            "backgroundControl": {
-              "pixels": 1156,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            }
-          }
+          "roiMeasurementNote": "Geometry ROIs are only defined for the 1:1 image projection.",
+          "rois": null
         },
         {
           "stateId": "b3-life-size",
@@ -284,6 +124,7 @@
             "height": 360,
             "sha256": "1854efea91fa86ba4ea094f08fe0d96fa49af4fe0ecb7d59c24de3daf9ff349c"
           },
+          "roiMeasurementNote": "Geometry ROIs measured at the verified 1:1 image projection.",
           "rois": {
             "wholeSpecimen": {
               "pixels": 79852,
@@ -395,6 +236,7 @@
             "height": 360,
             "sha256": "b31a4b5da67d0de0168452cf96f926dc2a1b8d091dac360cee69aa9756efda9a"
           },
+          "roiMeasurementNote": "Geometry ROIs measured at the verified 1:1 image projection.",
           "rois": {
             "wholeSpecimen": {
               "pixels": 79852,
@@ -506,6 +348,7 @@
             "height": 360,
             "sha256": "8407a871083b0b79b2fc004294a5cdb4f02809414959fc467b4a29ce35c2a3ce"
           },
+          "roiMeasurementNote": "Geometry ROIs measured at the verified 1:1 image projection.",
           "rois": {
             "wholeSpecimen": {
               "pixels": 79852,
@@ -632,88 +475,8 @@
             "height": 360,
             "sha256": "ac8276f0d939e2c5ea29e76c211d79be08e66004a43aab776251ea3f8bcfc8fc"
           },
-          "rois": {
-            "wholeSpecimen": {
-              "pixels": 79852,
-              "meanLinearLuminance": 0.6521119248875187,
-              "p10LinearLuminance": 0.01308433711528778,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0.9869156628847122,
-              "meanLocalLuminanceGradient": 0.008171787369762658,
-              "nearBlackFraction": 0.07703000551019386,
-              "clippedHighlightFraction": 0.6345990081651054
-            },
-            "outerMetallicRim": {
-              "pixels": 4912,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "raisedFacePlate": {
-              "pixels": 8136,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "darkCentralInset": {
-              "pixels": 35984,
-              "meanLinearLuminance": 0.2280024851633542,
-              "p10LinearLuminance": 0.006951899267733097,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0.9930481007322669,
-              "meanLocalLuminanceGradient": 0.018195240868876347,
-              "nearBlackFraction": 0.1709370831480658,
-              "clippedHighlightFraction": 0.1891396176078257
-            },
-            "centralAsymmetricReliefBounds": {
-              "pixels": 8364,
-              "meanLinearLuminance": 0.023675071822459547,
-              "p10LinearLuminance": 0.004648088943213224,
-              "p90LinearLuminance": 0.06535913795232773,
-              "p10ToP90Range": 0.060711049009114504,
-              "meanLocalLuminanceGradient": 0.0047484833768493264,
-              "nearBlackFraction": 0.4634146341463415,
-              "clippedHighlightFraction": 0
-            },
-            "radialTicks": {
-              "pixels": 13844,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "fastenersAndSlots": {
-              "pixels": 1392,
-              "meanLinearLuminance": 0.05631153238134395,
-              "p10LinearLuminance": 0.0315442081540823,
-              "p90LinearLuminance": 0.08770395070314407,
-              "p10ToP90Range": 0.056159742549061774,
-              "meanLocalLuminanceGradient": 0.015631027803097594,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 0
-            },
-            "backgroundControl": {
-              "pixels": 1156,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            }
-          }
+          "roiMeasurementNote": "Geometry ROIs are only defined for the 1:1 image projection.",
+          "rois": null
         },
         {
           "stateId": "b2-intermediate",
@@ -743,88 +506,8 @@
             "height": 360,
             "sha256": "de346c9fe30e566e0a0b17a23646e83428acc16a67a0f3754667d3826b81d5ae"
           },
-          "rois": {
-            "wholeSpecimen": {
-              "pixels": 79852,
-              "meanLinearLuminance": 0.4346119797644121,
-              "p10LinearLuminance": 0.0028449411038309336,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0.9971550588961691,
-              "meanLocalLuminanceGradient": 0.009891461678876393,
-              "nearBlackFraction": 0.24041977658668537,
-              "clippedHighlightFraction": 0.3907478835846316
-            },
-            "outerMetallicRim": {
-              "pixels": 4912,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "raisedFacePlate": {
-              "pixels": 8136,
-              "meanLinearLuminance": 0.08290112157648287,
-              "p10LinearLuminance": 0.013535530772060156,
-              "p90LinearLuminance": 0.18032751977443695,
-              "p10ToP90Range": 0.1667919890023768,
-              "meanLocalLuminanceGradient": 0.04083871508697611,
-              "nearBlackFraction": 0.028269419862340217,
-              "clippedHighlightFraction": 0.0022123893805309734
-            },
-            "darkCentralInset": {
-              "pixels": 35984,
-              "meanLinearLuminance": 0.014013726668485904,
-              "p10LinearLuminance": 0.0026799733750522137,
-              "p90LinearLuminance": 0.032580990344285965,
-              "p10ToP90Range": 0.02990101696923375,
-              "meanLocalLuminanceGradient": 0.003357934792135629,
-              "nearBlackFraction": 0.5213150289017341,
-              "clippedHighlightFraction": 0
-            },
-            "centralAsymmetricReliefBounds": {
-              "pixels": 8364,
-              "meanLinearLuminance": 0.018394689539417138,
-              "p10LinearLuminance": 0.0028449411038309336,
-              "p90LinearLuminance": 0.05807804688811302,
-              "p10ToP90Range": 0.05523310578428209,
-              "meanLocalLuminanceGradient": 0.003180720612062864,
-              "nearBlackFraction": 0.6178861788617886,
-              "clippedHighlightFraction": 0
-            },
-            "radialTicks": {
-              "pixels": 13844,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            },
-            "fastenersAndSlots": {
-              "pixels": 1392,
-              "meanLinearLuminance": 0.018101535779330345,
-              "p10LinearLuminance": 0.008051696233451366,
-              "p90LinearLuminance": 0.033317092806100845,
-              "p10ToP90Range": 0.02526539657264948,
-              "meanLocalLuminanceGradient": 0.0047510130809020655,
-              "nearBlackFraction": 0.1968390804597701,
-              "clippedHighlightFraction": 0
-            },
-            "backgroundControl": {
-              "pixels": 1156,
-              "meanLinearLuminance": 1,
-              "p10LinearLuminance": 1,
-              "p90LinearLuminance": 1,
-              "p10ToP90Range": 0,
-              "meanLocalLuminanceGradient": 0,
-              "nearBlackFraction": 0,
-              "clippedHighlightFraction": 1
-            }
-          }
+          "roiMeasurementNote": "Geometry ROIs are only defined for the 1:1 image projection.",
+          "rois": null
         },
         {
           "stateId": "b3-life-size",
@@ -854,6 +537,7 @@
             "height": 360,
             "sha256": "e32e2e25783397870af12774bd291d2cdfac5ecd4464ec9aea4ef59addd5b219"
           },
+          "roiMeasurementNote": "Geometry ROIs measured at the verified 1:1 image projection.",
           "rois": {
             "wholeSpecimen": {
               "pixels": 79852,
@@ -965,6 +649,7 @@
             "height": 360,
             "sha256": "f29fade1925eed9473cce224ad284805d1678345e246b152ea37d5e990f1e70d"
           },
+          "roiMeasurementNote": "Geometry ROIs measured at the verified 1:1 image projection.",
           "rois": {
             "wholeSpecimen": {
               "pixels": 79852,
@@ -1076,6 +761,7 @@
             "height": 360,
             "sha256": "f3824559127b7cd7b52f42fa10ed2bbe3e958e55cce8b68a4c7e6331b153c337"
           },
+          "roiMeasurementNote": "Geometry ROIs measured at the verified 1:1 image projection.",
           "rois": {
             "wholeSpecimen": {
               "pixels": 79852,

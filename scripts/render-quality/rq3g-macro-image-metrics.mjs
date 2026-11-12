@@ -211,41 +211,46 @@ const measureRun = async (runPath) => {
     if (sha256 !== capture.image.sha256) fail(`PNG digest mismatch in ${expected.stateId}`);
     const image = decodePng(pngBytes);
     if (image.width !== 450 || image.height !== 360) fail(`PNG dimensions mismatch in ${expected.stateId}`);
-    const scale = image.width / camera.sampledFilmWidthMm;
-    const centerX = image.width / 2;
-    const centerY = image.height / 2;
-    const physicalXY = (x, y) => ({ xMm: (x - centerX) / scale, yMm: (y - centerY) / scale });
-    const radius = (x, y) => {
-      const point = physicalXY(x, y);
-      return Math.hypot(point.xMm, point.yMm);
-    };
-    const fastenerCenters = Array.from({ length: 8 }, (_, index) => {
-      const angle = (index * Math.PI * 2) / 8 + Math.PI / 8;
-      return { xMm: sourceGeometry.fastenerOrbitRadiusMm * Math.sin(angle), yMm: sourceGeometry.fastenerOrbitRadiusMm * Math.cos(angle) };
-    });
-    const roiPredicates = {
-      wholeSpecimen: (x, y) => radius(x, y) <= 45,
-      outerMetallicRim: (x, y) => radius(x, y) >= sourceGeometry.outerRimRadiusMm - 0.8 && radius(x, y) <= 45,
-      raisedFacePlate: (x, y) => {
-        const value = radius(x, y);
-        return value >= sourceGeometry.facePlateRadiiMm.inner && value <= sourceGeometry.facePlateRadiiMm.outer;
-      },
-      darkCentralInset: (x, y) => radius(x, y) <= sourceGeometry.insetRadiusMm - 0.6,
-      centralAsymmetricReliefBounds: (x, y) => {
+    let rois = null;
+    let roiMeasurementNote = "Geometry ROIs are only defined for the 1:1 image projection.";
+    if (closeTo(measuredMagnification, 1, 0.005)) {
+      const scale = image.width / camera.sampledFilmWidthMm;
+      const centerX = image.width / 2;
+      const centerY = image.height / 2;
+      const physicalXY = (x, y) => ({ xMm: (x - centerX) / scale, yMm: (y - centerY) / scale });
+      const radius = (x, y) => {
         const point = physicalXY(x, y);
-        return Math.abs(point.xMm) <= 11.5 && Math.abs(point.yMm) <= 14.5;
-      },
-      radialTicks: (x, y) => {
-        const value = radius(x, y);
-        return value >= sourceGeometry.radialTickRadiusMm - 2.2 && value <= sourceGeometry.radialTickRadiusMm + 2.2;
-      },
-      fastenersAndSlots: (x, y) => {
-        const point = physicalXY(x, y);
-        return fastenerCenters.some((center) => Math.hypot(point.xMm - center.xMm, point.yMm - center.yMm) <= 2.1);
-      },
-      backgroundControl: (x, y) => x >= 18 && x < 52 && y >= 18 && y < 52,
-    };
-    const rois = Object.fromEntries(Object.entries(roiPredicates).map(([id, predicate]) => [id, summarizeRoi(image, predicate)]));
+        return Math.hypot(point.xMm, point.yMm);
+      };
+      const fastenerCenters = Array.from({ length: 8 }, (_, index) => {
+        const angle = (index * Math.PI * 2) / 8 + Math.PI / 8;
+        return { xMm: sourceGeometry.fastenerOrbitRadiusMm * Math.sin(angle), yMm: sourceGeometry.fastenerOrbitRadiusMm * Math.cos(angle) };
+      });
+      const roiPredicates = {
+        wholeSpecimen: (x, y) => radius(x, y) <= 45,
+        outerMetallicRim: (x, y) => radius(x, y) >= sourceGeometry.outerRimRadiusMm - 0.8 && radius(x, y) <= 45,
+        raisedFacePlate: (x, y) => {
+          const value = radius(x, y);
+          return value >= sourceGeometry.facePlateRadiiMm.inner && value <= sourceGeometry.facePlateRadiiMm.outer;
+        },
+        darkCentralInset: (x, y) => radius(x, y) <= sourceGeometry.insetRadiusMm - 0.6,
+        centralAsymmetricReliefBounds: (x, y) => {
+          const point = physicalXY(x, y);
+          return Math.abs(point.xMm) <= 11.5 && Math.abs(point.yMm) <= 14.5;
+        },
+        radialTicks: (x, y) => {
+          const value = radius(x, y);
+          return value >= sourceGeometry.radialTickRadiusMm - 2.2 && value <= sourceGeometry.radialTickRadiusMm + 2.2;
+        },
+        fastenersAndSlots: (x, y) => {
+          const point = physicalXY(x, y);
+          return fastenerCenters.some((center) => Math.hypot(point.xMm - center.xMm, point.yMm - center.yMm) <= 2.1);
+        },
+        backgroundControl: (x, y) => x >= 18 && x < 52 && y >= 18 && y < 52,
+      };
+      rois = Object.fromEntries(Object.entries(roiPredicates).map(([id, predicate]) => [id, summarizeRoi(image, predicate)]));
+      roiMeasurementNote = "Geometry ROIs measured at the verified 1:1 image projection.";
+    }
     const measurement = {
       stateId: expected.stateId,
       focusDistanceMm: expected.focusDistanceMm,
@@ -259,6 +264,7 @@ const measureRun = async (runPath) => {
       rendererIdentity: renderer,
       frame: capture.frame,
       image: { path: capture.image.imagePath, width: image.width, height: image.height, sha256 },
+      roiMeasurementNote,
       rois,
     };
     measurements.push(measurement);
@@ -342,7 +348,7 @@ const output = {
     },
     thresholds: { nearBlackLinearLuminance: nearBlackThreshold, clippedHighlightLinearLuminance: clippedHighlightThreshold },
     localGradient: "mean forward luminance gradient within the ROI; material contrast and optical blur both affect it, so it is not physical sharpness",
-    comparisonLimits: "one controlled visual metric for the accepted physical subject; not a photographic ground-truth score",
+    comparisonLimits: "geometry-based ROIs are measured only for 1:1 states; B1/B2 are retained as optical and visual controls without ROI metrics; the B3 measures are readability diagnostics, not photographic ground truth",
   },
   captures: {
     before: { captureRunId: before.run.captureRunId, sourceCommit: before.run.sourceCommit, browser: before.run.browser, operatingSystem: before.run.operatingSystem, states: before.measurements },
