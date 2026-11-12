@@ -277,7 +277,7 @@ export const sceneSubjectRegistry = {
     rttBounds: MACRO_OBLIQUE_PLANE_PRESENTATION.geometry.macroObliquePlaneSubjectBoundsMm,
     presentationLighting: {
       targetMm: MACRO_OBLIQUE_PLANE_PRESENTATION.geometry.MACRO_OBLIQUE_PLATE_CENTER_MM,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -4.5 },
     },
   },
   "macro-compound-movements": {
