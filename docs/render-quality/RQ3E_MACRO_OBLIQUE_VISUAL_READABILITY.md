@@ -106,4 +106,4 @@ Validation results:
 - SHA-256 and PNG dimensions were checked for all 16 retained capture images. Both secondary-scene controls are byte-identical.
 - `git diff --check`: passed before evidence staging; final staged diff is checked in the PR handoff.
 
-Final-head hosted CI and independent review are pending PR publication.
+Hosted CI results are tracked on [PR #330](https://github.com/chau-hm/view-camera-simulator/pull/330); independent review is pending.
