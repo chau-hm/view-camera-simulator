@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "rq3g-macro-bellows-states-v1",
+  "sceneId": "macro-bellows-extension",
+  "route": "/simulator/free/macro-bellows-extension",
+  "cameraPreset": "scene-definition:macro-bellows-extension.cameraPreset",
+  "optics": {
+    "focalLengthMm": 150,
+    "movements": {
+      "frontRiseMm": 0,
+      "frontShiftMm": 0,
+      "frontTiltDeg": 0,
+      "frontSwingDeg": 0,
+      "rearRiseMm": 0,
+      "rearShiftMm": 0,
+      "rearTiltDeg": 0,
+      "rearSwingDeg": 0
+    }
+  },
+  "capture": {
+    "viewport": { "width": 1280, "height": 900 },
+    "devicePixelRatio": 1,
+    "groundGlass": { "width": 450, "height": 360 },
+    "renderQuality": "Standard",
+    "previewMode": "Raw",
+    "rawDebug": false,
+    "grid": false,
+    "photographicComposite": true,
+    "rendererFamily": "webgl-renderer",
+    "executionApi": "webgl2",
+    "appearanceRole": "matched production WebGL Ground Glass reference"
+  },
+  "states": [
+    {
+      "stateId": "b1-initial",
+      "focusDistanceMm": 900,
+      "apertureFNumber": 5.6,
+      "imageDistanceMm": 180,
+      "magnification": 0.2,
+      "imageCircleDiameterMm": 261.56,
+      "groundGlassGain": 2.6794572,
+      "purpose": "Intentional initial defocus"
+    },
+    {
+      "stateId": "b2-intermediate",
+      "focusDistanceMm": 450,
+      "apertureFNumber": 5.6,
+      "imageDistanceMm": 225,
+      "magnification": 0.5,
+      "imageCircleDiameterMm": 326.94,
+      "groundGlassGain": 1.7148526,
+      "purpose": "Intermediate magnification and focus transition"
+    },
+    {
+      "stateId": "b3-life-size",
+      "focusDistanceMm": 300,
+      "apertureFNumber": 5.6,
+      "imageDistanceMm": 300,
+      "magnification": 1,
+      "imageCircleDiameterMm": 435.93,
+      "groundGlassGain": 0.9646046,
+      "purpose": "Primary 1:1 material-quality reference"
+    },
+    {
+      "stateId": "b4-life-size-f11",
+      "focusDistanceMm": 300,
+      "apertureFNumber": 11,
+      "imageDistanceMm": 300,
+      "magnification": 1,
+      "imageCircleDiameterMm": 435.93,
+      "groundGlassGain": 0.25,
+      "purpose": "Physical aperture-throughput control"
+    },
+    {
+      "stateId": "b5-life-size-f22",
+      "focusDistanceMm": 300,
+      "apertureFNumber": 22,
+      "imageDistanceMm": 300,
+      "magnification": 1,
+      "imageCircleDiameterMm": 435.93,
+      "groundGlassGain": 0.0625,
+      "purpose": "Further physical aperture-throughput control"
+    }
+  ],
+  "additionalReferences": [
+    "fixed-default-observer-reverse-side",
+    "b3-focus-loupe-4x",
+    "macro-depth-of-field-canonical-control",
+    "macro-oblique-plane-canonical-control",
+    "macro-compound-movements-canonical-control"
+  ]
+}
