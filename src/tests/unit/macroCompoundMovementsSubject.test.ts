@@ -87,4 +87,39 @@ describe("Macro Scene 4 compound subject", () => {
 
     disposeMacroCompoundMovementsGroup(group);
   });
+
+  it("keeps differentiated, scene-local PBR roles under the existing presentation light", () => {
+    const group = createMacroCompoundMovementsGroup({ presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION });
+    const materialFor = (meshName: string): THREE.MeshStandardMaterial => {
+      const mesh = group.getObjectByName(meshName);
+      expect(mesh, `${meshName} exists`).toBeInstanceOf(THREE.Mesh);
+      const material = (mesh as THREE.Mesh).material;
+      expect(material, `${meshName} uses one owned standard material`).toBeInstanceOf(THREE.MeshStandardMaterial);
+      return material as THREE.MeshStandardMaterial;
+    };
+
+    const bronze = materialFor("macro-compound-near-left-gear-rim");
+    const brass = materialFor("macro-compound-centre-outer-bezel");
+    const machined = materialFor("macro-compound-near-left-focus-face");
+    const ivory = materialFor("macro-compound-centre-focus-face");
+    const accent = materialFor("macro-compound-far-right-pad-0-1");
+
+    expect(bronze.metalness).toBe(0.62);
+    expect(bronze.roughness).toBe(0.38);
+    expect(brass.metalness).toBe(0.72);
+    expect(brass.roughness).toBe(0.36);
+    expect(machined.metalness).toBe(0.62);
+    expect(machined.roughness).toBe(0.4);
+    expect(ivory.metalness).toBe(0.05);
+    expect(accent.metalness).toBe(0.28);
+    expect(new Set([bronze, brass, machined, ivory, accent]).size).toBe(5);
+    expect(new Set([bronze, brass, machined, ivory, accent].map((material) => material.roughnessMap)).size).toBe(5);
+
+    const registration = getSceneSubjectRegistration("macro-compound-movements");
+    expect(registration?.presentationLighting).toEqual({
+      targetMm: MACRO_COMPOUND_MOVEMENTS_PRESENTATION.geometry.macroCompoundMovementsLightingTargetMm,
+      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+    });
+    disposeMacroCompoundMovementsGroup(group);
+  });
 });

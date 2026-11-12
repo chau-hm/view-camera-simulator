@@ -378,24 +378,24 @@ export function createMacroCompoundMovementsGroup({
   });
   const machined = createMacroMaterial({
     color: "#9aa6a8",
-    roughness: 0.34,
-    metalness: 0.86,
+    roughness: 0.4,
+    metalness: 0.62,
     seed: 223,
     roughnessVariation: 0.1,
     repeat: [9, 7],
   });
   const bronze = createMacroMaterial({
     color: "#c98d45",
-    roughness: 0.3,
-    metalness: 0.92,
+    roughness: 0.38,
+    metalness: 0.62,
     seed: 227,
     roughnessVariation: 0.1,
     repeat: [8, 6],
   });
   const brass = createMacroMaterial({
     color: "#e2b45d",
-    roughness: 0.28,
-    metalness: 0.94,
+    roughness: 0.36,
+    metalness: 0.72,
     seed: 229,
     roughnessVariation: 0.08,
     repeat: [7, 7],
