@@ -67,7 +67,10 @@ const readAcceptedFrame = async (
   return { ...frame, acceptedByHost };
 };
 
-const hideOverlappingDom = async (canvas: Locator): Promise<string[]> => canvas.evaluate((canvasElement) => {
+const hideOverlappingDom = async (
+  canvas: Locator,
+  hideGroundGlassGuides = false,
+): Promise<string[]> => canvas.evaluate((canvasElement, hideGuides) => {
   const bounds = canvasElement.getBoundingClientRect();
   const hidden: string[] = [];
   const candidates = Array.from(document.querySelectorAll<HTMLElement>(
@@ -89,12 +92,21 @@ const hideOverlappingDom = async (canvas: Locator): Promise<string[]> => canvas.
     hidden.push(candidate.getAttribute("aria-label") ?? candidate.getAttribute("data-testid") ??
       (candidate.textContent?.trim() || String(candidate.className) || candidate.tagName));
   }
+  if (hideGuides) {
+    const imageLayer = document.querySelector<HTMLElement>("[data-testid='ground-glass-image-layer']");
+    const guides = Array.from(imageLayer?.querySelectorAll<HTMLElement>("div") ?? [])
+      .filter((element) => Boolean(element.style.borderLeft || element.style.borderTop));
+    guides.forEach((element, index) => {
+      element.dataset.rq3eCaptureHidden = "true";
+      hidden.push(`ground-glass-center-guide-${index + 1}`);
+    });
+  }
   const style = document.createElement("style");
   style.dataset.rq3eCaptureStyles = "true";
   style.textContent = "[data-rq3e-capture-hidden='true'] { visibility: hidden !important; pointer-events: none !important; }";
   document.head.append(style);
   return hidden;
-});
+}, hideGroundGlassGuides);
 
 const restoreDom = async (page: Page): Promise<void> => page.evaluate(() => {
   document.querySelector("[data-rq3e-capture-styles='true']")?.remove();
@@ -267,7 +279,7 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
     if (!bounds || Math.abs(bounds.width - 450) > 1 || Math.abs(bounds.height - 360) > 1) {
       throw new Error(`Unexpected 450 × 360 Ground Glass display size for ${state.stateId}`);
     }
-    const hiddenDomControls = await hideOverlappingDom(canvas);
+    const hiddenDomControls = await hideOverlappingDom(canvas, true);
     await waitForPaint(page);
     const filename = `${state.stateId}.png`;
     let image;
@@ -346,7 +358,7 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
   const loupeFrame = await readAcceptedFrame(page, rtt, mainSceneId, previousRequestId);
   previousRequestId = loupeFrame.requestId;
   const loupeCanvas = rtt.locator("canvas").first();
-  const loupeHidden = await hideOverlappingDom(loupeCanvas);
+  const loupeHidden = await hideOverlappingDom(loupeCanvas, true);
   await waitForPaint(page);
   let loupeImage;
   try {
@@ -403,7 +415,7 @@ test("capture RQ3E matched Macro Oblique Plane WebGL references", async ({ page 
     if (!bounds || Math.abs(bounds.width - 450) > 1 || Math.abs(bounds.height - 360) > 1) {
       throw new Error(`Unexpected Ground Glass display size in ${sceneId}`);
     }
-    const hiddenDomControls = await hideOverlappingDom(canvas);
+    const hiddenDomControls = await hideOverlappingDom(canvas, true);
     await waitForPaint(page);
     const imageName = `${sceneId}-regression.png`;
     let image;
