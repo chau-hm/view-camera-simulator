@@ -87,7 +87,7 @@ npm run render-quality:rq3g:measure -- \
   --output=docs/render-quality/rq3g-macro-bellows/comparison-metrics.json
 ```
 
-Validation on this branch:
+Validation on the RQ3G implementation branch:
 
 - RQ3G capture: 1 executed Playwright test, 0 retries; completed for all ten references with no page or console errors.
 - Macro Bellows Extension E2E: 3/3 passed, including canonical Image Circle/gain, aperture, Focus Loupe and Raw/Upright grid checks.
@@ -98,4 +98,4 @@ Validation on this branch:
 - M7V policy integrity: passed; owner approvals remain pending and M8 entry remains denied.
 - M7W evidence integrity: passed; broad E2E remains not-qualified.
 
-Production Ground Glass remains WebGL-only. No WebGPU authorization or Architecture Rise evidence was changed. Hosted CI and independent PR review are tracked on the PR.
+PR #332 was merged to `main` as `d13e502f4bc29459a2648f47e91ec9cde2f87322`; its hosted CI passed in [run 43270376098](https://github.com/chau-hm/view-camera-simulator/actions/runs/43270376098), with deployment skipped. This report retains the original implementation-stage validation; current-main Macro acceptance is recorded in [the consolidated RQ3 review](RQ3_MACRO_SCENES_VISUAL_ACCEPTANCE.md). Production Ground Glass remains WebGL-only. No WebGPU authorization or Architecture Rise evidence was changed.

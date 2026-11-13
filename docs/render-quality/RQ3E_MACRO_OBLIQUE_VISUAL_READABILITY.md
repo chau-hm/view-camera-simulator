@@ -106,4 +106,4 @@ Validation results:
 - SHA-256 and PNG dimensions were checked for all 16 retained capture images. Both secondary-scene controls are byte-identical.
 - `git diff --check`: passed before evidence staging; final staged diff is checked in the PR handoff.
 
-Hosted CI results are tracked on [PR #330](https://github.com/chau-hm/view-camera-simulator/pull/330); independent review is pending.
+PR #330 was subsequently merged to `main` as `fd5bc73fd21b752e9251fa135e83a30db704bea9`. This report retains the original implementation-stage validation; current-main Macro acceptance is recorded in [the consolidated RQ3 review](RQ3_MACRO_SCENES_VISUAL_ACCEPTANCE.md).
