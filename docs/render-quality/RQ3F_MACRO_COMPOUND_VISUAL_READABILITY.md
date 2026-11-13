@@ -97,4 +97,4 @@ Validation on the implementation source:
 - PNG dimensions and SHA-256 values: verified for all 20 retained images; all three other-scene control images match byte-for-byte.
 - `git diff --check`: passed on the final staged change.
 
-Hosted CI and independent external review are tracked on the PR. No WebGPU eligibility or production backend policy changed; production Ground Glass remains WebGL-only.
+PR #331 was subsequently merged to `main` as `a23b437d7ca382bde34ee1de3a88c8f1e40ebd53`. This report retains the original implementation-stage validation; current-main Macro acceptance is recorded in [the consolidated RQ3 review](RQ3_MACRO_SCENES_VISUAL_ACCEPTANCE.md). No WebGPU eligibility or production backend policy changed; production Ground Glass remains WebGL-only.
