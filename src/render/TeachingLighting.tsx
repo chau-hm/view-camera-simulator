@@ -24,6 +24,9 @@ const SHADOW_HELPER_NAME =
   /(?:line|guide|overlay|axis|crosshair|scheimpflug|lattice|construction|ray|frustum|measurement|legend|diagnostic|dof)/i;
 const SHADOW_RECEIVER_NAME =
   /(?:ground|floor|tabletop|wall|backdrop|rug|surface|room|roof|plinth)/i;
+// Interior Corner keeps its visible ceiling lit, but the broad overhead slab
+// should not cast the distracting diagonal shadow onto the room walls.
+const NON_CASTING_SCENE_MESH_NAMES = new Set(["interior-corner-ceiling"]);
 const TeachingShadowParticipationRefreshContext = createContext<(() => void) | null>(null);
 const NOOP = (): void => undefined;
 
@@ -69,7 +72,8 @@ export const configureTeachingShadowParticipation = (
       !helper &&
       (SHADOW_RECEIVER_NAME.test(object.name) || object.geometry instanceof THREE.PlaneGeometry);
 
-    object.castShadow = lit && !helper;
+    object.castShadow =
+      lit && !helper && !NON_CASTING_SCENE_MESH_NAMES.has(object.name);
     object.receiveShadow = receiver;
 
     if (object.castShadow) casterCount += 1;

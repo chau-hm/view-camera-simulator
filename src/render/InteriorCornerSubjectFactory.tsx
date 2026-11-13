@@ -375,7 +375,7 @@ export const createInteriorCornerGroup = (
     fabric: createProceduralSurfaceMaterial({
       color: "#6d7b78",
       pattern: "fabric",
-      repeat: [2, 2],
+      repeat: [0.5, 0.5],
       roughness: 0.98,
       normalStrength: 0.18,
     }),
