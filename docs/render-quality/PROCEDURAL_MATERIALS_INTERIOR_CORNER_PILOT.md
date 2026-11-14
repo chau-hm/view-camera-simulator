@@ -4,7 +4,7 @@
 
 **PASS**
 
-This is the final decision after reviewing the actual-browser A/B evidence and Review-Fix Round 1. At the normal 514 × 411 Observer canvas, `[0.5, 0.5]` gives the bench modest additional surface structure over `[2, 2]`; individual threads are still too small to resolve clearly at this distance. The texture remains plausible and subordinate, with no oversized weave or checker effect. The ceiling shadow comparison confirms the distracting diagonal is removed while the ceiling stays visible and localized shadows remain. Paper, wood, plaster, rug, geometry, camera, optics, lighting rig, and teaching behavior are preserved.
+This is the final decision after reviewing the controlled real-browser A/B on the final implementation and Review-Fix Round 1. At the normal 514 × 411 Observer canvas, `[0.5, 0.5]` adds a subtle, low-contrast surface cue over `[2, 2]`; individual threads are not resolved at this distance. The texture remains plausible and subordinate, with no oversized weave or checker effect. The ceiling shadow comparison confirms the distracting diagonal is removed while the ceiling stays visible and localized shadows remain. Paper, wood, plaster, rug, geometry, camera, optics, lighting rig, and teaching behavior are preserved.
 
 No further material tuning was warranted. The fabric's remaining scale limitation is documented below.
 
@@ -121,7 +121,7 @@ The previous review identified insufficient ordinary-size bench-weave readabilit
 | Selected | `[0.5, 0.5]` | casts | Modest additional surface structure is visible; individual threads remain below clear resolution at this scene size. No oversized weave or obvious checker appearance. |
 | Final scene | `[0.5, 0.5]` | ceiling excluded | Same selected fabric scale, with the diagonal wall shadow removed. |
 
-Every fabric candidate kept color `#6d7b78`, roughness `0.98`, and normal strength `0.18`; only repeat changed. The A/B contact sheet compares the original `[2, 2]` recipe against `[0.5, 0.5]` at the original 514 × 411 Observer size. Both panels use the same route, viewport (1440 × 1000), DPR 1, Standard quality, camera/orbit, focus (8000 mm), aperture (f/5.6), neutral movements, WebGL2/r187 backend, and ceiling-casting state. The sidecars match those capture-state fields. At this distance the bench occupies few pixels, so individual yarns are not resolved; the final texture adds a restrained surface cue without becoming visually loud. This supports PASS for the integration at ordinary scene scale, with the pixel-scale limitation retained. No further texture tuning was performed.
+Every fabric candidate kept color `#6d7b78`, roughness `0.98`, and normal strength `0.18`; only repeat changed. The first published A/B came from separate capture attempts and its sidecars recorded public UI state, but not live scene caster flags or shadow-camera state. Review reported visibly different wall-shadow boundaries, so that sheet was withdrawn as controlled evidence. The checked-in source PNGs and sheet could not reproduce that background difference in a byte-level audit, and the old runtime state was not recorded well enough to establish a cause. The replacement comparison and findings are in **Final Evidence Correction — Controlled Fabric A/B** below. No additional material tuning was performed.
 
 The shadow cause was the shared `configureTeachingShadowParticipation()` policy, which opts every lit non-helper subject mesh into shadow casting. This round adds an exact-name exclusion for `interior-corner-ceiling` in `TeachingLighting.tsx`. The ceiling remains a visible `MeshStandardMaterial` surface; the lighting rig and all other caster/receiver decisions remain unchanged. A focused unit test proves that the ceiling does not cast while the wall still casts and receives, and that the ceiling remains visible and lit. The same registered subject and helper serve Observer and Ground Glass.
 
@@ -129,13 +129,11 @@ The shadow cause was the shared `configureTeachingShadowParticipation()` policy,
 
 The final clean Observer capture at 514 × 411 shows the ceiling shadow removed from the walls. The room reads more evenly while contact shadows under the bench and furniture and shadows around the wall trim/art remain. Teaching Observer overlays remain present and legible.
 
-The three published contact sheets below use the actual browser canvas captures as panels at their native 514 × 411 pixels (1:1). The contact-sheet labels and margins are added around those panels; the source screenshots remain untouched in the ignored directory and the displayed panels are not cropped, resized, or reoriented. Raw captures and sidecars remain in `.dream-loop/interior-corner/review-fix-1/`.
+The published contact sheets below use actual browser canvas captures as panels at their native 514 × 411 pixels (1:1). The ceiling-shadow and Clean/Teaching sheets remain unchanged from the accepted Review-Fix Round 1 evidence. The fabric sheet was replaced with the controlled final-state comparison documented below. Raw captures and sidecars remain in the ignored `.dream-loop/interior-corner/review-fix-1/` directory.
 
 #### Fabric A/B — original `[2, 2]` versus selected `[0.5, 0.5]`
 
-![Clean Observer fabric repeat A/B at 514 by 411](evidence/pr334/observer-fabric-ab.png)
-
-The right panel was captured during the `[0.5, 0.5]` worktree candidate based on reviewed HEAD `865ed077e4414da274a3a10f40d17806220c4890`; that temporary change became the final bench assignment in implementation commit `097c587619641332a364e7198c70aec34d3f0ac6`. Its sidecar's `sourceCommit` records the Git base for the capture, not a hash of the temporary working-tree edit. The left panel is the original `[2, 2]` recipe. The script that generated the labels and the matched sidecars remain in the ignored worktree for provenance.
+The earlier sidecar-based A/B was superseded after review. The corrected sheet and its runtime and pixel evidence appear in **Final Evidence Correction — Controlled Fabric A/B** below.
 
 #### Ceiling shadow — before versus after
 
@@ -195,6 +193,28 @@ The benchmark found no additional texture, geometry, material, or renderer-resou
 - The final report and three image files are also outside the visual-worker allowlist by explicit authorization for this documentation/evidence closeout. The cumulative A1-based guard was not rerun: its diff includes prior report content and cannot isolate the Round 1 correction. Do not treat the historical A2 guard command above as a passing validation for the completed PR or claim that the final cumulative guard passes.
 - GitHub Actions on the original reviewed PR head `865ed077e4414da274a3a10f40d17806220c4890` and implementation commit `097c587619641332a364e7198c70aec34d3f0ac6` completed successfully. The implementation run was workflow run `43473665553` (run 2029). The exact current-head checks for this final report/evidence package are recorded in the PR handoff after publication.
 
+## Final Evidence Correction — Controlled Fabric A/B
+
+### Previous mismatch diagnosis
+
+The prior sheet was not accepted as controlled proof because the reviewer observed different wall-shadow shapes while its sidecars contained no actual mesh shadow flags, light placement, or shadow-camera state. Source commits `46705e79ea70ed6c1607bd5ecf87604f18f34206` and `865ed077e4414da274a3a10f40d17806220c4890` differ only by the pilot-report commit; the scene-factory and shadow-policy code is the same in both. A post-hoc byte-level comparison of the tracked prior sheet's two source panels and their saved PNGs found 2,285 changed pixels, all inside the projected bench region, with zero changes among 206,666 pixels outside it (maximum channel difference 4). The reported wall-shadow discrepancy could not be reproduced from those stored bytes, so its runtime cause remains **unestablished**. The old panel is superseded regardless, because the prior capture did not record the live rendering state needed to rule out a stale frame or initialization difference.
+
+### Controlled capture state and provenance
+
+Both replacement panels were captured in one Playwright Chromium page against the final PR source commit `fdb5b6461fecc2effa2c05080f921b626f300b2d`, using the public route `/simulator/free/interior-corner?sceneCapacityProfiling=1`, viewport 1440 × 1000, browser DPR 1, Standard quality, Clean Observer, focus 8000 mm, f/5.6, neutral Rise/Tilt/Swing, camera position `(-6.6, 2.9, -5.6)`, and orbit target `(0.45, 0.85, 6.7)`. The browser-only override changed only the bench material's `map`, `roughnessMap`, and `normalMap` repeats from `[0.5, 0.5]` to `[2, 2]` for panel A, then back to the final `[0.5, 0.5]` for panel B. Color `#6d7b78`, roughness `0.98`, normal strength `0.18`, texture data, geometry, and all other materials remained unchanged; the production source remained at `[0.5, 0.5]` throughout.
+
+The live R3F snapshot confirmed the ceiling remained visible with its `MeshStandardMaterial`, `castShadow: false`, and `receiveShadow: false` for both captures. The same scene had 68 mesh casters and 29 receivers. The teaching fill was a HemisphereLight at intensity `0.55`; the directional key remained at `(-0.108, 5.35, 5.5)`, aimed at `(2.392, 1.85, 8)`, intensity `1.15`, with its 1024 × 1024 PCF shadow map, bias `-0.0002`, normal bias `0.015`, and camera bounds `[-8, 8] × [-8, 8]` / near `0.1` / far `32`. The Interior Corner practical point light remained at `(0.42, -0.09, 8.3)`, intensity `5`, distance `7.5`, decay `2`, with shadow casting disabled. The renderer was active WebGL2 / Three.js r187 with Standard output, ACES Filmic, exposure `1`, sRGB output. The runtime snapshots matched for camera state, object transforms and geometry, all casters/receivers, all lights and shadow-camera settings, renderer configuration, and UI controls; the only intended state difference was the three bench texture repeats. Each saved canvas image stabilized across three consecutive identical captures, was 514 × 411, and the page reported no errors. The final repeat was restored after capture.
+
+The bench ROI is `(x=258, y=230, width=74, height=62)`, derived from the projected bounds of the registered bench seat and back plus 3 px padding. On the two genuine screenshot pixel buffers, 2,282 pixels differ inside that ROI (mean absolute RGB-channel difference `0.46/255`, maximum `4/255`); **0 of 206,666 pixels outside it differ**. Background walls, shadows, object edges, and composition are pixel-aligned. The texture-scale change is subtle but credible at ordinary size: `[0.5, 0.5]` adds a faint surface variation, while individual threads remain unresolved. There is no oversized weave, checker appearance, or visible aliasing. This supports the limited claim of improved surface structure, not resolved yarn detail.
+
+![Controlled Clean Observer fabric A/B at 514 by 411; both panels use final ceiling-shadow exclusion](evidence/pr334/observer-fabric-ab.png)
+
+The compact contact sheet is 1072 × 511 and is directly published at [`evidence/pr334/observer-fabric-ab.png`](evidence/pr334/observer-fabric-ab.png). Its two 514 × 411 panels preserve the captured screenshot pixel bytes exactly, with no resizing, crop, reorientation, or image enhancement. Ignored provenance files are `.dream-loop/interior-corner/review-fix-1/controlled-final-shadow/capture-diagnostics.json`, `pixel-difference-raw-bytes.json`, `observer-fabric-repeat-2x2.png`, and `observer-fabric-repeat-0_5x0_5.png`. The browser-only capture harness and pixel comparison script also remain ignored in that directory; no temporary scripts or raw screenshots are committed.
+
+### Reused validation
+
+This correction changes only the report and one compact evidence image. Production code is unchanged, so the accepted nine-state Focus/Aperture matrix, Processed/Raw/Upright and Rise/Swing regressions, ceiling-shadow comparison, scene-capacity benchmark, and Review-Fix Round 1 tests remain the applicable implementation evidence. Current-head GitHub CI is recorded in the PR handoff after publication.
+
 ## Final Acceptance
 
 **PASS — ready for final human approval.** This decision uses the ordinary-size fabric A/B and the final ceiling-shadow and Clean/Teaching Observer evidence linked above. It does not require individual yarns to remain visible when the bench occupies only a small part of the canvas.
@@ -203,12 +223,12 @@ The benchmark found no additional texture, geometry, material, or renderer-resou
 | --- | --- | --- |
 | Shared paper/fabric library | PASS | Deterministic shared API and existing ownership remain intact. |
 | Legacy pattern preservation | PASS | Existing limestone, cut-stone, concrete, plaster, and wood output hashes remain unchanged. |
-| Fabric integration | PASS | `[0.5, 0.5]` adds modest surface structure versus `[2, 2]` without an oversized weave, checker pattern, or teaching-scene distraction. Individual threads are not resolved at 514 × 411. |
+| Fabric integration | PASS | The controlled A/B confines all pixel differences to the bench ROI; `[0.5, 0.5]` adds a subtle, low-contrast surface cue without oversized weave, checker pattern, or teaching-scene distraction. Individual threads are not resolved at 514 × 411. |
 | Ceiling shadow | PASS | The diagonal wall shadow is removed; the ceiling remains visible/lit and localized furniture/object shadows remain. |
 | Observer / Teaching | PASS | Clean Observer remains clear and Teaching Observer retains its focus, DOF, and optical overlays. |
 | Ground Glass | PASS | The validated focus/aperture matrix, Processed, Raw, Upright, Rise, and Swing captures remain contentful with expected orientation. |
 | Resources / performance | PASS | Scene counts are unchanged from A2; timing changes are small SwiftShader observations, not GPU measurements. |
 | Tests / CI | PASS | The Review-Fix implementation validation passed (164 focused tests and 4,065 full tests); final-head hosted CI passed after this report/evidence-only update. Exact current-head runs are listed in the PR handoff. |
-| Visual evidence | PASS | All three compact contact sheets are checked into `evidence/pr334/` and linked directly in this report and PR description. Raw captures remain ignored. |
+| Visual evidence | PASS | The corrected controlled Fabric A/B is checked into `evidence/pr334/`; the accepted ceiling-shadow and Clean/Teaching sheets are unchanged. All three are linked directly in this report and PR description. Raw captures remain ignored. |
 
-The original A2 results (156 focused tests and 4,064 full tests) remain under **Original Pilot Validation (A2)** as historical evidence; they are not the current Review-Fix result. This final closeout changes only the pilot report and the three compact evidence images. It does not change production rendering or broaden the Dream Loop manifest.
+The original A2 results (156 focused tests and 4,064 full tests) remain under **Original Pilot Validation (A2)** as historical evidence; they are not the current Review-Fix result. This final evidence correction changes only the pilot report and the Fabric A/B contact sheet. It does not change production rendering or broaden the Dream Loop manifest.
