@@ -673,8 +673,9 @@ export function createArchitectureRiseGroup(
     [-1, 1].forEach((sign) => {
       addBox({
         name: `architecture-rise-${id}-return-${sign}`,
-        size: [overhang, height, geometry.building.depth + 100],
-        position: [sign * (halfWidth + overhang / 2), y, geometry.building.center.z],
+        // Butt against the front course instead of overlapping its top face.
+        size: [overhang, height, geometry.building.depth + overhang / 2],
+        position: [sign * (halfWidth + overhang / 2), y, geometry.building.center.z + 50 - overhang / 4],
         material: resources.trim,
         parent: masonryDetail,
       });
@@ -696,27 +697,28 @@ export function createArchitectureRiseGroup(
     const panelWidth = geometry.building.width / 2 - 210;
     const panelX = sign * geometry.building.width / 4;
     const panelY = geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
-    // Raised rims on the existing parapet leave its original material visible
-    // as the inset field, without introducing a new surface or texture.
+    // Keep the rim's exposed face while embedding its rear 4 mm into the
+    // parapet. Butt the rails between the stiles to avoid coplanar overlaps.
     [-1, 1].forEach((edge) => {
       addBox({
         name: `architecture-rise-parapet-panel-${sign}-horizontal-${edge}`,
-        size: [panelWidth, 26, 28],
-        position: [panelX, panelY + edge * panelHeight / 2, front - 64],
+        size: [panelWidth - 26, 26, 42],
+        position: [panelX, panelY + edge * panelHeight / 2, front - 57],
         material: resources.building,
         parent: masonryDetail,
       });
       addBox({
         name: `architecture-rise-parapet-panel-${sign}-vertical-${edge}`,
-        size: [26, panelHeight, 28],
-        position: [panelX + edge * panelWidth / 2, panelY, front - 64],
+        size: [26, panelHeight + 26, 42],
+        position: [panelX + edge * panelWidth / 2, panelY, front - 57],
         material: resources.building,
         parent: masonryDetail,
       });
     });
     addBox({
       name: `architecture-rise-roof-coping-return-${sign}`,
-      size: [120, 70, geometry.building.depth + 160],
+      // Fit between the existing front/back coping bars without overlapping.
+      size: [120, 70, geometry.building.depth + 40],
       position: [sign * (halfWidth + 50), geometry.facade.parapetTopY + 35, geometry.building.center.z],
       material: resources.trim,
       parent: masonryDetail,
