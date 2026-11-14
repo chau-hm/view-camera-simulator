@@ -600,11 +600,13 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
     const groundGlassLearning = screen.getByTestId("learning-overlay-panel");
     expect(screen.getAllByTestId("learning-overlay-panel")).toHaveLength(1);
-    expect(groundGlassLearning).toHaveAttribute("data-drawer-state", "peek");
+    expect(groundGlassLearning).toHaveAttribute("data-drawer-state", "pinned");
     expect(groundGlassLearning.closest(".groundglass-viewport-frame")).toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Close Task and Feedback" }));
+    expect(screen.getByTestId("learning-overlay-panel")).toHaveAttribute("data-drawer-state", "peek");
     fireEvent.click(groundGlassLearning.querySelector(".learning-overlay-panel__rail") as HTMLButtonElement);
     expect(screen.getByTestId("learning-overlay-panel")).toHaveAttribute("data-drawer-state", "transient");
     expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toBeInTheDocument();
