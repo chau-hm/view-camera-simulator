@@ -7,14 +7,15 @@ random substreams for presentation-only choices. It keeps canonical scene
 geometry, focus and composition targets, camera presets and movement limits,
 task criteria, and lesson/calibration semantics authoritative.
 
-**This PR establishes infrastructure only. It does not yet randomize the appearance of production scenes.** No published scene opts in, and no current subject consumes a variation descriptor.
+The Scene Variation Foundation is infrastructure; the Interior Corner Seeded Materials Pilot is its first production consumer. Only Interior Corner Free Practice opts in. **This milestone varies selected material texture realizations only; it does not randomize scene layout, geometry, targets, camera behavior, or lighting.**
 
 ## Capability and identity
 
 A scene opts in by adding `sceneVariation: { enabled: true, schemaVersion: 1 }`
-to its existing `SceneDefinition`. The route never infers support from the
-presence of a `seed` query parameter. Scenes without this capability, and all
-Guided routes, remain canonical.
+to its existing `SceneDefinition`. Interior Corner is currently the only
+production opt-in. The route never infers support from the presence of a `seed`
+query parameter. Other scenes, Guided routes, and the Interior Corner lesson
+Observe entry (`?lesson=1`) remain canonical.
 
 `SceneVariantIdentity` is the serializable tuple:
 
@@ -57,22 +58,31 @@ browser renderers.
 signs, leading zeroes (except `0`), fractions, exponent notation, `NaN`, empty
 values, duplicates, trailing characters, and overflow.
 
-For an opted-in Free Mode route:
+For an eligible Free Practice route, the canonical URL is
+`?seed=284719&sv=1`. The schema version accepts one canonical positive decimal
+integer.
+
+For an opted-in Free Practice route:
 
 - A valid URL seed is authoritative and is used exactly.
-- A missing or invalid seed creates one new value with
-  `crypto.getRandomValues()` and replaces the current history entry with a
-  canonical `seed` parameter.
+- A legacy bare `?seed=284719` link is interpreted as schema v1 and replace-
+  normalized to include `sv=1` without changing its seed.
+- A missing or malformed seed creates one new value with
+  `crypto.getRandomValues()` and replace-normalizes both `seed` and `sv`.
+- A malformed, duplicated, mismatched, or unsupported `sv` does not activate a
+  variant. The canonical scene is shown with an explanatory status, and the
+  requested `seed`/`sv` values remain in the URL so the app does not claim a
+  different version reproduced the link.
 - Unrelated query parameters and the hash are preserved.
 - Repeated effects for the same router location reuse the established identity.
 - A newly entered route location without a seed starts a new implicit variant.
   Browser Back/Forward replays the seeds recorded in its history entries.
 - Reloading a canonical URL reproduces the same identity.
 
-For Guided Mode, unsupported capability versions, and scenes without the
-capability, `seed` is removed from the route and no variant is activated. Other
-query parameters remain. This makes a seed unable to opt a canonical-only scene
-into variation.
+For Guided Mode, lesson Observe, and scenes without the capability, `seed` and
+`sv` are removed from the route and no variant is activated. Other query
+parameters and the hash remain. This makes a seed unable to opt a canonical-
+only scene or teaching entry into variation.
 
 Entropy acquisition is isolated in `createSceneVariationSeed`. The PRNG,
 substream derivation, URL parser, and route policy have no time or browser-global
@@ -80,19 +90,20 @@ dependency. Deterministic generation never calls `Math.random()`.
 
 ## Route and store ownership
 
-`SceneVariationRouteSync` reads the router location and writes only
-`sceneVariantIdentity` and `sceneVariantRouteKey` in the app store. The URL is
-the source of truth for explicit and regenerated seeds; the store is the active
-runtime copy. Automatic URL normalization uses replace navigation. A future
-Regenerate action can call `useRegenerateSceneVariant()` from
-`src/app/useRegenerateSceneVariant.ts`, which creates a fresh seeded URL and
-pushes it so Back/Forward can restore the prior identity.
+`SceneVariationRouteSync` reads the router location and writes
+`sceneVariantIdentity`, `sceneVariantRouteKey`, and `sceneVariantRouteStatus` in
+the app store. The URL is the source of truth for explicit and regenerated
+seeds; the store is the active runtime copy. Automatic URL normalization uses
+replace navigation. The Free Practice control uses
+`useRegenerateSceneVariant()` from `src/app/useRegenerateSceneVariant.ts`, which
+creates a fresh seeded URL and pushes it so Back/Forward can restore the prior
+identity.
 
 The existing `initializeSimulatorRoute` and `lastInitializedRouteKey` remain
 camera/task/lesson initialization guards. Seed changes are not added to that
 key and do not invoke camera initialization. Reset Movements and task restart
-leave the variant identity alone. Guided route initialization clears it, and
-Guided restart keeps the existing teaching state behavior.
+leave the variant identity alone. Guided route initialization and lesson
+Observe clear it; Guided restart keeps the existing teaching state behavior.
 
 ## Registered subject seam
 
@@ -104,11 +115,25 @@ existing per-instance disposal rules; do not share live render resources or add
 a global texture cache. Subject generation belongs at the registered factory
 boundary, not in camera-frame updates or optics derivation.
 
-The first consumer PR should resolve one descriptor from the Free Mode
-Interior Corner definition and active identity, then pass it to both the
-Observer and Ground Glass registered subject paths. It should keep geometry,
-layout, focus targets, lighting, and camera controls fixed for the material
-pilot.
+The Interior Corner consumer resolves one descriptor from the scene definition
+and active identity, then passes it to both Observer and Ground Glass
+registered subject paths. Its stable material-role IDs are `wall-plaster`,
+`ceiling-plaster`, `floor-wood`, `trim-plaster`, `furniture-wood`,
+`artwork-paper`, and `bench-fabric`. Each renderer creates and disposes its own
+materials and textures from the same role streams. A seed change replaces the
+owned subject resources without resetting camera controls or remounting the
+WebGL Ground Glass renderer/targets. Focus/aperture updates do not rebuild the
+subject. The experimental WebGPU path keeps its existing capability/fallback
+policy and swaps only the Interior Corner subject when it is active.
+
+This pilot does not vary props, layout, room dimensions, focus/composition
+targets, camera presets, lighting, or task semantics. A later schema algorithm
+change must use a new explicitly supported version; unsupported versions are
+never silently mapped to v1. The reproducibility guarantee is for the
+`(sceneId, seed, schemaVersion)` variation descriptor and generated material
+data under the current implementation. It does not promise permanent visual
+pixel identity across future geometry, shader, material, or browser-renderer
+changes.
 
 ## API and reproduction
 
@@ -121,11 +146,19 @@ pilot.
   `src/state/appStore.ts`
 - Subject input: `SceneVariationSubjectInput` in
   `src/types/sceneVariation.ts`
+- Interior Corner material role seeds:
+  `src/scenes/interiorCornerMaterialVariation.ts`
+- Compact Free Practice controls:
+  `src/components/simulator/SceneVariationControls.tsx`
 
 Focused checks:
 
 ```bash
-npm test -- src/tests/unit/sceneVariation.test.ts src/tests/unit/sceneVariationUrl.test.ts src/tests/unit/sceneVariationRoute.test.ts src/tests/unit/sceneVariationStore.test.ts src/tests/integration/sceneVariationRoute.test.tsx
+npm test -- src/tests/unit/sceneVariation.test.ts src/tests/unit/sceneVariationUrl.test.ts src/tests/unit/sceneVariationRoute.test.ts src/tests/unit/sceneVariationStore.test.ts src/tests/unit/proceduralSurfaceMaterials.test.ts src/tests/unit/interiorCornerFoundation.test.ts src/tests/integration/sceneVariationRoute.test.tsx
 npm run typecheck
-npm run test:e2e -- src/tests/e2e/scene-switching.spec.ts
+npm run test:e2e -- --config=playwright.scene-variation.config.ts src/tests/scene-variation-e2e/interior-corner-seeded-materials.spec.ts
 ```
+
+The first production consumer's visual, optics, URL, and regeneration results
+are recorded in
+[`render-quality/INTERIOR_CORNER_SEEDED_MATERIALS_PILOT.md`](render-quality/INTERIOR_CORNER_SEEDED_MATERIALS_PILOT.md).
