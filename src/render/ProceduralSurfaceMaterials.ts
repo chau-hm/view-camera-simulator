@@ -7,7 +7,9 @@ export type ProceduralSurfacePattern =
   | "cut-stone"
   | "concrete"
   | "plaster"
-  | "wood";
+  | "wood"
+  | "paper"
+  | "fabric";
 
 export type ProceduralSurfaceMaterialOptions = Readonly<{
   color: THREE.ColorRepresentation;
@@ -91,6 +93,34 @@ export const createProceduralSurfaceMaterial = ({
   const isLimestone = pattern === "limestone";
 
   const surfaceSample = (x: number, y: number) => {
+    if (pattern === "paper") {
+      const broadNoise = tileableNoise(x, y, 32, 101) - 0.5;
+      const fiberNoise = tileableNoise(x, y, 2, 103) - 0.5;
+      const grainNoise = tileableNoise(x, y, 4, 107) - 0.5;
+      return {
+        joint: false,
+        blockTint: 0,
+        relief: broadNoise * 0.012 + fiberNoise * 0.006 + grainNoise * 0.002,
+        variation: broadNoise * 4.2 + fiberNoise * 4 + grainNoise * 1.6,
+      };
+    }
+
+    if (pattern === "fabric") {
+      const broadNoise = tileableNoise(x, y, 16, 131) - 0.5;
+      const threadNoise = tileableNoise(x, y, 4, 137) - 0.5;
+      const threadDrift = tileableNoise(x, y, 8, 139) - 0.5;
+      const phaseOffset = threadDrift * 0.55;
+      const warp = Math.sin(twoPi * 32 * x / SURFACE_TEXTURE_SIZE + phaseOffset);
+      const weft = Math.sin(twoPi * 32 * y / SURFACE_TEXTURE_SIZE - phaseOffset);
+      const weave = warp * 0.46 + weft * 0.46 + warp * weft * 0.08;
+      return {
+        joint: false,
+        blockTint: 0,
+        relief: weave * 0.009 + broadNoise * 0.01 + threadNoise * 0.004,
+        variation: weave * 5 + broadNoise * 3 + threadNoise * 2,
+      };
+    }
+
     if (pattern === "plaster") {
       const broadNoise = tileableNoise(x, y, 16, 71) - 0.5;
       const fineNoise = tileableNoise(x, y, 4, 73) - 0.5;
@@ -173,7 +203,9 @@ export const createProceduralSurfaceMaterial = ({
       albedo[offset + 3] = 255;
 
       const roughnessValue =
-        pattern === "cut-stone" ? 224 :
+        pattern === "paper" ? 250 :
+          pattern === "fabric" ? 246 :
+            pattern === "cut-stone" ? 224 :
           pattern === "concrete" ? 236 :
             pattern === "plaster" ? 244 :
               pattern === "wood" ? 211 : 239;

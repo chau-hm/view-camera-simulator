@@ -215,6 +215,38 @@ describe("shared presentation lighting", () => {
     expect(summary).toEqual({ casterCount: 2, receiverCount: 1 });
   });
 
+  it("keeps the Interior Corner ceiling visible while excluding only it as a caster", () => {
+    const root = new THREE.Group();
+    const ceiling = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 0.1, 1),
+      new THREE.MeshStandardMaterial({ color: "#e8e3d9" }),
+    );
+    ceiling.name = "interior-corner-ceiling";
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 0.1),
+      new THREE.MeshStandardMaterial(),
+    );
+    wall.name = "interior-corner-back-wall";
+    root.add(ceiling, wall);
+
+    try {
+      const summary = configureTeachingShadowParticipation(root);
+
+      expect(ceiling.visible).toBe(true);
+      expect(ceiling.material).toBeInstanceOf(THREE.MeshStandardMaterial);
+      expect(ceiling.castShadow).toBe(false);
+      expect(ceiling.receiveShadow).toBe(false);
+      expect(wall.castShadow).toBe(true);
+      expect(wall.receiveShadow).toBe(true);
+      expect(summary).toEqual({ casterCount: 1, receiverCount: 1 });
+    } finally {
+      ceiling.geometry.dispose();
+      (ceiling.material as THREE.Material).dispose();
+      wall.geometry.dispose();
+      (wall.material as THREE.Material).dispose();
+    }
+  });
+
   it("configures only the explicit photographic subject root", () => {
     const scene = new THREE.Scene();
     const camera = new THREE.Mesh(

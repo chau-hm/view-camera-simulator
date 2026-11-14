@@ -364,14 +364,20 @@ export const createInteriorCornerGroup = (
       roughness: 0.8,
       normalStrength: 0.18,
     }),
-    artwork: createStandardMaterial("#66808a", 0.72),
+    artwork: createProceduralSurfaceMaterial({
+      color: "#66808a",
+      pattern: "paper",
+      repeat: [1, 1],
+      roughness: 0.96,
+      normalStrength: 0.035,
+    }),
     artworkAccent: createStandardMaterial("#c48b62", 0.7),
-    fabric: createFocusFriendlyMaterial({
-      pattern: "subtle-checker",
-      primaryColor: "#6d7b78",
-      secondaryColor: "#707d79",
-      repeat: [8, 8],
-      roughness: 0.99,
+    fabric: createProceduralSurfaceMaterial({
+      color: "#6d7b78",
+      pattern: "fabric",
+      repeat: [0.5, 0.5],
+      roughness: 0.98,
+      normalStrength: 0.18,
     }),
     rug: createFocusFriendlyMaterial({
       pattern: "subtle-checker",
