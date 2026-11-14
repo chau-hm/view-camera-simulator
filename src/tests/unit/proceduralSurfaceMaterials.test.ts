@@ -164,6 +164,47 @@ describe("procedural surface materials", () => {
     }
   });
 
+  it.each(["plaster", "wood", "paper", "fabric"] as const)(
+    "generates stable but seed-distinct %s maps",
+    (pattern) => {
+      const seeds = [0, 1, 284719, 0xffff_ffff];
+      const materials = seeds.map((variationSeed) =>
+        createProceduralSurfaceMaterial({ ...materialOptions, pattern, variationSeed }),
+      );
+      const replay = createProceduralSurfaceMaterial({
+        ...materialOptions,
+        pattern,
+        variationSeed: 284719,
+      });
+      const canonical = createProceduralSurfaceMaterial({ ...materialOptions, pattern });
+
+      try {
+        const signatures = materials.map((material) => mapBytes(material)
+          .map((bytes) => createHash("sha256").update(bytes).digest("hex")).join(":"));
+        expect(new Set(signatures).size).toBe(seeds.length);
+        expect(mapBytes(materials[2]!)).toEqual(mapBytes(replay));
+        expect(signatures[2]).not.toBe(mapBytes(canonical)
+          .map((bytes) => createHash("sha256").update(bytes).digest("hex")).join(":"));
+        expect(materials[2]?.map?.image).toMatchObject({ width: 128, height: 128 });
+      } finally {
+        materials.forEach(disposeMaterial);
+        disposeMaterial(replay);
+        disposeMaterial(canonical);
+      }
+    },
+  );
+
+  it("rejects non-uint32 variation seeds", () => {
+    expect(() => createProceduralSurfaceMaterial({
+      ...materialOptions,
+      variationSeed: -1,
+    })).toThrow(/unsigned 32-bit integer/);
+    expect(() => createProceduralSurfaceMaterial({
+      ...materialOptions,
+      variationSeed: 1.5,
+    })).toThrow(/unsigned 32-bit integer/);
+  });
+
   it.each(["paper", "fabric"] as const)("keeps the %s texture wrap boundary continuous", (pattern) => {
     const material = createProceduralSurfaceMaterial({ ...materialOptions, pattern });
 
