@@ -81,7 +81,7 @@ export const LearningOverlayPanel = ({
   const narrowLayout = useNarrowLayout();
   const [activeView, setActiveView] = useState<LearningOverlayView>("task");
   const [drawerState, setDrawerState] = useState<LearningDrawerState>(() =>
-    resolveNarrowLayout() ? "flow" : "peek",
+    resolveNarrowLayout() ? "flow" : mode === "guided" ? "pinned" : "peek",
   );
   const panelId = useId();
   const drawerId = `${panelId}-drawer`;
@@ -112,7 +112,7 @@ export const LearningOverlayPanel = ({
   useEffect(() => {
     setActiveView("task");
     stableTouchRef.current = false;
-    updateDrawerState(narrowLayout ? "flow" : "peek");
+    updateDrawerState(narrowLayout ? "flow" : mode === "guided" ? "pinned" : "peek");
     suppressRailFocusRef.current = false;
   }, [mode, narrowLayout, sceneId, task?.id, updateDrawerState]);
 
