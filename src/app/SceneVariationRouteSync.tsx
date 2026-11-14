@@ -61,4 +61,3 @@ export const SceneVariationRouteSync = ({
 
   return null;
 };
-
