@@ -14,7 +14,9 @@ import type {
   CameraMovementField,
   SceneFocalLengthCapability,
   SceneFocusStandardCapability,
+  SceneVariationCapability,
 } from "../types/scene";
+import type { SceneVariantIdentity } from "../types/sceneVariation";
 import type { TaskEvaluation } from "../types/task";
 import {
   CAMERA_CONSTANTS,
@@ -57,6 +59,12 @@ import {
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
 import { getPublicSceneEntryById } from "../app/publicScenes";
+import type { ParsedSceneSeed } from "../app/sceneVariationUrl";
+import {
+  resolveSceneVariantRoute as resolveSceneVariantRoutePolicy,
+  type SceneVariantRouteResolution,
+} from "../app/sceneVariationRoute";
+import { createSceneVariationSeed } from "../scenes/sceneVariationSeed";
 import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedLesson";
 import { INTERIOR_CORNER_CALIBRATION_APERTURE } from "../scenes/interiorCornerSwingFocus";
 import {
@@ -525,6 +533,10 @@ export type AppStore = {
   selectedMovement: CameraMovementField | null;
   /** Route-based initialization key. */
   lastInitializedRouteKey?: string | null;
+  /** Variant identity is separate from canonical camera, optics, and task state. */
+  sceneVariantIdentity: SceneVariantIdentity | null;
+  /** Router location key used to make implicit seed creation idempotent per entry. */
+  sceneVariantRouteKey: string | null;
   /** Optional runtime diagnostics for RTT scenes. */
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
   groundGlassRttRuntimeInfoByChannel?: Partial<
@@ -565,6 +577,15 @@ export type AppStore = {
     calibrationEnabled?: boolean;
     lessonEntry?: boolean;
   }) => void;
+  /** Resolve URL-owned Free Mode variation state without initializing camera or task state. */
+  resolveSceneVariantRoute: (input: {
+    mode: SimulatorMode;
+    sceneId: string;
+    capability?: SceneVariationCapability;
+    routeKey: string;
+    seed: ParsedSceneSeed;
+    createSeed?: () => number;
+  }) => SceneVariantRouteResolution;
 
   /** Set the currently active movement for single-active scenes. Zeros all canonical standard movements first. */
   setSelectedMovement: (movement: CameraMovementField) => void;
@@ -619,7 +640,7 @@ const createCalibrationSession = (
   };
 };
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppStore>((set, get) => ({
   camera: DEFAULT_CAMERA_STATE,
   scene: {
     activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
@@ -639,6 +660,8 @@ export const useAppStore = create<AppStore>((set) => ({
   },
   selectedMovement: null,
   lastInitializedRouteKey: null,
+  sceneVariantIdentity: null,
+  sceneVariantRouteKey: null,
   groundGlassRttRuntimeInfo: null,
   groundGlassRttRuntimeInfoByChannel: {},
   interactiveLatticeRuntimeInfo: null,
@@ -1349,6 +1372,31 @@ export const useAppStore = create<AppStore>((set) => ({
       };
     }),
 
+  resolveSceneVariantRoute: (input) => {
+    const state = get();
+    const resolution = resolveSceneVariantRoutePolicy({
+      ...input,
+      previousIdentity: state.sceneVariantIdentity,
+      previousRouteKey: state.sceneVariantRouteKey,
+      createSeed: input.createSeed ?? createSceneVariationSeed,
+    });
+    const sameIdentity =
+      resolution.status === "resolved" &&
+      state.sceneVariantIdentity?.sceneId === resolution.identity.sceneId &&
+      state.sceneVariantIdentity.seed === resolution.identity.seed &&
+      state.sceneVariantIdentity.schemaVersion === resolution.identity.schemaVersion;
+    const stableResolution =
+      sameIdentity && state.sceneVariantIdentity
+        ? { ...resolution, identity: state.sceneVariantIdentity }
+        : resolution;
+
+    set({
+      sceneVariantIdentity: stableResolution.identity,
+      sceneVariantRouteKey: input.routeKey,
+    });
+    return stableResolution;
+  },
+
   setSelectedMovement: (movement) =>
     set((state) =>
       isMovementLocked(state.camera.activeSceneId)
@@ -1911,6 +1959,8 @@ export const useAppStore = create<AppStore>((set) => ({
       },
       selectedMovement: null,
       lastInitializedRouteKey: null,
+      sceneVariantIdentity: null,
+      sceneVariantRouteKey: null,
       cameraMovementCalibrationSession: createCalibrationSession(
         false,
         state.cameraMovementCalibrationSession.draftResetGeneration + 1,
