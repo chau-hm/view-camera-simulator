@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { getGuidedLessonContext } from "../../app/guidedLesson";
@@ -356,13 +356,36 @@ describe("LearningOverlayPanel", () => {
     renderPanel("guided", completedEvaluation);
     await i18n.changeLanguage("zh-HK");
 
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
+    expect(getPanel()).toHaveAttribute("data-pinned", "true");
     expect(screen.getByRole("region", { name: "任務及回饋" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^任務$/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "回饋 — 任務完成" })).toHaveAttribute(
+    const views = screen.getByRole("group", { name: "任務及回饋檢視" });
+    expect(within(views).getByRole("button", { name: /^任務$/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    const feedback = within(views).getByRole("button", { name: "回饋 — 任務完成" });
+    expect(feedback).toHaveAttribute("aria-pressed", "false");
+    expect(feedback).toHaveAttribute(
       "data-status",
       "completed",
     );
-    expect(screen.getByRole("button", { name: "保持任務及回饋開啟" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "任務" })).toBeInTheDocument();
+
+    const unpin = screen.getByRole("button", { name: "允許任務及回饋自動隱藏" });
+    expect(unpin).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "關閉任務及回饋" })).toBeInTheDocument();
+
+    fireEvent.click(unpin);
+    const pin = screen.getByRole("button", { name: "保持任務及回饋開啟" });
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "transient");
+    expect(pin).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(pin);
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
+    expect(screen.getByRole("button", { name: "允許任務及回饋自動隱藏" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });
