@@ -11,6 +11,7 @@ import {
 } from "../scenes/interiorCornerGuidedLesson";
 import { useAppStore } from "../state/appStore";
 import { getGroupedPublicSceneEntries, getPublicSceneEntryById } from "./publicScenes";
+import { SceneVariationRouteSync } from "./SceneVariationRouteSync";
 import { isValidSimulatorRoute } from "./simulatorRouteValidation";
 import type { SimulatorMode } from "../types/camera";
 import {
@@ -225,6 +226,7 @@ export const SimulatorRoutePage = () => {
 
   return (
     <AppShell title="" fullBleed>
+      <SceneVariationRouteSync mode={parsedMode} scene={scene} />
       <Suspense fallback={rendererLifecycleTraceEnabled
         ? <WorkspaceSuspenseFallback
             routeId={`/simulator/${parsedMode}/${resolvedSceneId}`}

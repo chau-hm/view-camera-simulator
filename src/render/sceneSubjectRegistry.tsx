@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import * as THREE from "three";
 import type { Bounds3 } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationSubjectInput } from "../types/sceneVariation";
 import architectureRiseGeometry from "../scenes/architectureRiseGeometry";
 import tableTiltGeometry from "../scenes/tableTiltGeometry";
 import shelfSwingGeometry from "../scenes/shelfSwingGeometry";
@@ -86,7 +87,7 @@ import obliqueTabletopGeometry from "../scenes/obliqueTabletopGeometry";
 import interiorCornerGeometry from "../scenes/interiorCornerGeometry";
 import { resolveMirrorShiftPresentationLighting } from "./mirrorShiftLighting";
 
-export type RegisteredSceneSubjectProps = {
+export type RegisteredSceneSubjectProps = SceneVariationSubjectInput & {
   scene: SceneDefinition;
 };
 
@@ -120,7 +121,7 @@ export type SceneSubjectRegistration = SceneSubjectRegistrationBase & {
   disposeRttGroup: (group: THREE.Group) => void;
 };
 
-export type SceneSubjectRttOptions = {
+export type SceneSubjectRttOptions = SceneVariationSubjectInput & {
   presentationRegion?: CameraMovementPresentationRegion;
   cameraMovementPresentation?: CameraMovementLatticePresentation;
 };
