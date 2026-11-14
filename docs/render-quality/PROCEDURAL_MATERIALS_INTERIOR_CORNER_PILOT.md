@@ -4,9 +4,9 @@
 
 **PASS**
 
-Review-Fix Round 1 resolves the two remaining visual blockers. At the normal 514 × 411 Observer canvas, the bench's low-contrast crossed threads are discernible at the selected `[0.5, 0.5]` repeat while remaining subordinate to the teaching targets. The exact Interior Corner ceiling mesh remains visible and lit, but no longer casts the large diagonal shadow onto the walls. Wall and furniture contact shadows remain. The original paper, wood, plaster, rug, geometry, camera, optics, and teaching behavior are preserved.
+This is the final decision after reviewing the actual-browser A/B evidence and Review-Fix Round 1. At the normal 514 × 411 Observer canvas, `[0.5, 0.5]` gives the bench modest additional surface structure over `[2, 2]`; individual threads are still too small to resolve clearly at this distance. The texture remains plausible and subordinate, with no oversized weave or checker effect. The ceiling shadow comparison confirms the distracting diagonal is removed while the ceiling stays visible and localized shadows remain. Paper, wood, plaster, rug, geometry, camera, optics, lighting rig, and teaching behavior are preserved.
 
-The rug retains its previous checker recipe because the procedural fabric sample remained flat at ordinary size. No shared texture-generator changes were needed in this review-fix round.
+No further material tuning was warranted. The fabric's remaining scale limitation is documented below.
 
 ## Source and implementation
 
@@ -30,11 +30,13 @@ Interior Corner assignments:
 
 The new library recipes are suitable for reuse by other registered teaching subjects. `InteriorCornerSubjectFactory` still supplies the one shared subject consumed by Observer and Ground Glass.
 
-## Matched visual and optical evidence
+## Original Pilot Findings (A2)
+
+This section preserves the findings recorded before Review-Fix Round 1. Its observations, benchmark values, and test counts describe the original A2 pilot stage; the current acceptance is recorded at the end of this report.
 
 Baseline and final captures used `/simulator/free/interior-corner`, 1440 × 1000 viewport, DPR 1, Standard quality, Chromium, WebGL2 and Three.js r187. The browser selected the existing WebGL Ground Glass RTT/GLSL DOF path with no application fallback. The baseline Observer state was scene view, camera `(-6.6, 2.9, -5.6)`, orbit target `(0.45, 0.85, 6.7)`, focus 8000 mm, f/5.6, and neutral movements. The final capture sidecars record matching Before/After camera, focus, aperture, movement, preview, canvas size and renderer identity for each shared capture ID.
 
-- **Observer clean:** plaster and wood retain their previous appearance; paper stays subordinate to the colored art and accents. The rug retains its prior texture. Bench color stays stable, but its weave does not read clearly enough at the normal canvas size, which is the remaining material-quality blocker.
+- **Observer clean (original finding):** plaster and wood retain their previous appearance; paper stays subordinate to the colored art and accents. The rug retains its prior texture. With the original `[2, 2]` repeat, the bench weave did not read clearly enough at the normal canvas size. That was the original pilot's blocker and is reassessed against the A/B evidence in Review-Fix Round 1 below.
 - **Observer teaching:** the same subject and teaching overlays render. Focus, DOF, legends and optical overlays remain available; no overlay or composition changes were made.
 - **Ground Glass:** Processed uses Raw orientation with DOF enabled; Raw uses the existing Raw RTT bypass control; Upright uses Upright Assist with DOF enabled. Film-image orientation was not normalized or edited. All three modes render contentfully with the current completed frame request.
 - **Movements:** public Front Rise `33 mm` and Front Swing `3.6°` states were captured in Observer and Ground Glass. Swing used its established public focus value, `38140 mm`.
@@ -51,9 +53,11 @@ The targets share the receding wall's x/y position at `x = 2392 mm`, `y = 1850 m
 
 All nine records have distinct image hashes, focus/aperture states that match their labels, and Ground Glass request IDs equal to the last completed request both before and after screenshot capture. All frames were contentful and reported the same `webgl-renderer / webgl2 / r187` identity. Focus and aperture controls did not change any optics, sharpness scoring, movement policy or task code. Fine surface patterns remain low contrast in these views; no prominent moiré or material detail that obscures the focus comparison was observed at the captured size.
 
-The complete Before/After captures, request metadata, image hashes and baseline lock are under the Git-ignored `.dream-loop/interior-corner/` directory. Screenshot artifacts are intentionally not committed.
+The original pilot's full Before/After captures, request metadata, image hashes, and baseline lock remain in the Git-ignored `.dream-loop/interior-corner/` directory. Only the three compact, final review contact sheets are published later in this report; raw captures and the nine-state capture corpus remain ignored.
 
-## Resources and performance
+## Original Pilot Resources and Performance (A2)
+
+These are the original-main-to-A2 comparison values, before the scene-specific repeat and ceiling-caster correction. The final A2-to-Review-Fix comparison appears below.
 
 The repository scene-capacity benchmark ran with 60 fresh samples for Processed and Processed Loupe, and its existing isolated Raw RTT sample. Both runs used Chromium 149, viewport 1440 × 1000 at DPR 1, WebGL with ANGLE/SwiftShader, the CPU-fallback profiler and `cpu-submit-ms` timings.
 
@@ -73,11 +77,13 @@ The repository scene-capacity benchmark ran with 60 fresh samples for Processed 
 
 Approximate frame cadence was 2.05 → 2.10 FPS for Processed, 1.73 → 1.94 FPS for Loupe, and 15.87 → 18.81 FPS for Raw RTT. These are software-rendered frame cadence estimates, not hardware FPS. GPU timers were unavailable, so GPU execution times are `null`. The five extra renderer textures are attributable to the paper maps and the fabric maps replacing the former single upholstery texture; meshes, geometry, triangles and material count did not increase. CPU-submit changes are at most 0.1 ms at p95 in this run.
 
-## Validation
+## Original Pilot Validation (A2)
+
+The following counts and guard result belong to the original A2 validation stage, not the Review-Fix Round 1 final result.
 
 - Procedural material tests: **39 passed**. These cover deterministic bytes, legacy output hashes, distinct signatures, 128 × 128 maps, color spaces, wrapping/filtering, normal construction, restrained variation, boundary continuity and subject-owned disposal.
 - Focused scene/render/optics set: **156 passed across 9 files**, including Interior Corner registration/disposal, shared subject remount lifecycle, focus reachability, focus calibration, optics derivation and Ground Glass stage/renderer tests.
-- `npm test`: **330 files, 4064 tests passed** on the final full run. One earlier full run had a temporary synthetic-checkout `ENOENT` in the unrelated M7M readiness test; its file passed alone (63 tests), and the subsequent full run passed.
+- `npm test`: **330 files, 4064 tests passed** on the final full run for the A2 stage. One earlier full run had a temporary synthetic-checkout `ENOENT` in the unrelated M7M readiness test; its file passed alone (63 tests), and the subsequent A2 full run passed.
 - `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`: passed.
 - `npm run dream-loop:capture -- --pilot interior-corner`: passed for the final Observer clean/teaching pair.
 - Ground Glass browser matrix: 16 real-app captures including the 9-state focus matrix, three Ground Glass modes and Rise/Swing Observer plus Ground Glass states; 14 frames validated complete/contentful with no page errors.
@@ -87,7 +93,10 @@ Approximate frame cadence was 2.05 → 2.10 FPS for Processed, 1.73 → 1.94 FPS
 
 `npm run ci:local:e2e` was not run: renderer selection, shaders, RTT ownership and scene lifecycle were unchanged; the requested Ground Glass states were exercised directly through the public route and controls in the real-browser capture. GPU timing and hardware-renderer performance were unavailable because this environment used SwiftShader.
 
-## Reproduction
+## Historical A2 Reproduction (Factory-Only Guard)
+
+This command block documents the original isolated A2 scene-factory iteration. Its A1 baseline makes it appropriate for that historical change; it is **not** a cumulative guard pass for the completed PR, because Review-Fix Round 1 adds an explicitly authorized shared shadow-helper exception and this final review package adds documentation evidence.
+To reproduce that historical state, use A2 commit `46705e79ea70ed6c1607bd5ecf87604f18f34206`; running the capture command on the current branch produces the Review-Fix Round 1 scene instead.
 
 ```bash
 npm run dream-loop:capture -- --pilot interior-corner
@@ -96,7 +105,7 @@ npm run benchmark:scene-capacity
 npm test -- --run src/tests/unit/proceduralSurfaceMaterials.test.ts
 ```
 
-The broader final suite also ran `npm test`, `npm run typecheck`, `npm run lint`, `npm run check:css` and `npm run build`.
+The broader A2 suite also ran `npm test`, `npm run typecheck`, `npm run lint`, `npm run check:css` and `npm run build`.
 
 ## Review-Fix Round 1
 
@@ -106,13 +115,13 @@ The previous review identified insufficient ordinary-size bench-weave readabilit
 
 | Candidate | Fabric repeat | Ceiling state | Ordinary Observer result |
 | --- | ---: | --- | --- |
-| PR #334 HEAD | `[2, 2]` | casts | The fine weave is difficult to distinguish on the small, dark bench. |
+| Original recipe | `[2, 2]` | casts | Fine weave detail mostly disappears on the small, dark bench. |
 | First candidate | `[1, 1]` | casts | Slightly larger surface detail, still too subtle at 514 × 411. |
 | Second candidate | `[0.75, 0.75]` | casts | The weave continues to filter out at ordinary size. |
-| Selected | `[0.5, 0.5]` | casts | Faint crossed threads become discernible without increasing contrast or relief; no obvious checker appearance. |
+| Selected | `[0.5, 0.5]` | casts | Modest additional surface structure is visible; individual threads remain below clear resolution at this scene size. No oversized weave or obvious checker appearance. |
 | Final scene | `[0.5, 0.5]` | ceiling excluded | Same selected fabric scale, with the diagonal wall shadow removed. |
 
-Every fabric candidate kept color `#6d7b78`, roughness `0.98`, and normal strength `0.18`. The selected repeat changes only texture scale. A diagnostic 4× crop confirms the thread structure; ordinary-size Observer captures remain the primary decision evidence.
+Every fabric candidate kept color `#6d7b78`, roughness `0.98`, and normal strength `0.18`; only repeat changed. The A/B contact sheet compares the original `[2, 2]` recipe against `[0.5, 0.5]` at the original 514 × 411 Observer size. Both panels use the same route, viewport (1440 × 1000), DPR 1, Standard quality, camera/orbit, focus (8000 mm), aperture (f/5.6), neutral movements, WebGL2/r187 backend, and ceiling-casting state. The sidecars match those capture-state fields. At this distance the bench occupies few pixels, so individual yarns are not resolved; the final texture adds a restrained surface cue without becoming visually loud. This supports PASS for the integration at ordinary scene scale, with the pixel-scale limitation retained. No further texture tuning was performed.
 
 The shadow cause was the shared `configureTeachingShadowParticipation()` policy, which opts every lit non-helper subject mesh into shadow casting. This round adds an exact-name exclusion for `interior-corner-ceiling` in `TeachingLighting.tsx`. The ceiling remains a visible `MeshStandardMaterial` surface; the lighting rig and all other caster/receiver decisions remain unchanged. A focused unit test proves that the ceiling does not cast while the wall still casts and receives, and that the ceiling remains visible and lit. The same registered subject and helper serve Observer and Ground Glass.
 
@@ -120,17 +129,25 @@ The shadow cause was the shared `configureTeachingShadowParticipation()` policy,
 
 The final clean Observer capture at 514 × 411 shows the ceiling shadow removed from the walls. The room reads more evenly while contact shadows under the bench and furniture and shadows around the wall trim/art remain. Teaching Observer overlays remain present and legible.
 
-Small actual-browser contact sheets (each source panel is the original 514 × 411 canvas at 1:1) are in the ignored local evidence directory:
+The three published contact sheets below use the actual browser canvas captures as panels at their native 514 × 411 pixels (1:1). The contact-sheet labels and margins are added around those panels; the source screenshots remain untouched in the ignored directory and the displayed panels are not cropped, resized, or reoriented. Raw captures and sidecars remain in `.dream-loop/interior-corner/review-fix-1/`.
 
-- Fabric A/B: `.dream-loop/interior-corner/review-fix-1/observer-fabric-ab.png` — PR HEAD `[2, 2]` versus selected `[0.5, 0.5]`, with the ceiling casting in both.
-- Ceiling A/B: `.dream-loop/interior-corner/review-fix-1/observer-ceiling-shadow-ab.png` — `[0.5, 0.5]` with ceiling casting versus the same material with the ceiling excluded.
-- Final Clean/Teaching pair: `.dream-loop/interior-corner/review-fix-1/observer-final-clean-teaching.png`.
+#### Fabric A/B — original `[2, 2]` versus selected `[0.5, 0.5]`
 
-The browser images are real application captures; no target image or screenshot content was generated or edited. The GitHub connector does not support image upload, so these images were not attached to the PR. They can be attached manually from this worktree with:
+![Clean Observer fabric repeat A/B at 514 by 411](evidence/pr334/observer-fabric-ab.png)
 
-```bash
-swift -module-cache-path .dream-loop/interior-corner/review-fix-1/swift-module-cache .dream-loop/interior-corner/review-fix-1/make-contact-sheets.swift
-```
+The right panel was captured during the `[0.5, 0.5]` worktree candidate based on reviewed HEAD `865ed077e4414da274a3a10f40d17806220c4890`; that temporary change became the final bench assignment in implementation commit `097c587619641332a364e7198c70aec34d3f0ac6`. Its sidecar's `sourceCommit` records the Git base for the capture, not a hash of the temporary working-tree edit. The left panel is the original `[2, 2]` recipe. The script that generated the labels and the matched sidecars remain in the ignored worktree for provenance.
+
+#### Ceiling shadow — before versus after
+
+![Clean Observer ceiling shadow before and after at 514 by 411](evidence/pr334/observer-ceiling-shadow-ab.png)
+
+Both panels use the `[0.5, 0.5]` fabric recipe; the right panel excludes the ceiling from shadow casting while retaining the visible, lit ceiling. The diagonal wall shadow is removed and localized furniture/object shadows remain.
+
+#### Clean Observer versus Teaching Observer
+
+![Final Clean Observer and Teaching Observer at 514 by 411](evidence/pr334/observer-final-clean-teaching.png)
+
+The second panel retains the focus-plane, DOF-region, and optical-geometry overlays. Capture sidecars identify the actual public route, viewport, renderer, subject, and active overlay state.
 
 ### Focus, aperture, and Ground Glass
 
@@ -174,8 +191,24 @@ The benchmark found no additional texture, geometry, material, or renderer-resou
 - Final `npm run dream-loop:capture -- --pilot interior-corner`: passed for Clean and Teaching Observer.
 - Final 16-capture browser matrix: passed; 14 Ground Glass requests were completed/contentful and all request IDs matched at screenshot time.
 - Final `npm run benchmark:scene-capacity`: passed with 60 samples per principal mode.
-- The per-pilot guard passed during the isolated factory-only fabric iteration against reviewed HEAD `865ed077e4414da274a3a10f40d17806220c4890`. After the authorized ceiling fix, the same guard reported only `src/render/TeachingLighting.tsx` and `src/tests/unit/teachingLighting.test.ts` outside the existing allowlist. The manifest was not changed; this exact shared-helper/test exception is necessary because the helper reapplies caster state to both Observer and RTT subjects.
-- The original A1-based cumulative guard was not rerun: its full diff already includes the existing report document outside the allowlist, so it cannot isolate Round 1. The reviewed-HEAD baseline was used for the new round.
-- GitHub Actions on the previously reviewed PR head `865ed077e4414da274a3a10f40d17806220c4890` and review-fix implementation commit `097c587619641332a364e7198c70aec34d3f0ac6` completed successfully. The implementation run was workflow run `43473665553` (run 2029); the final documentation-only PR head check is recorded in the PR handoff.
+- During the fabric-only iteration against reviewed HEAD `865ed077e4414da274a3a10f40d17806220c4890`, the guard passed with only the permitted scene-factory edit. Once the authorized ceiling fix was added, the guard correctly failed closed and reported `src/render/TeachingLighting.tsx` and `src/tests/unit/teachingLighting.test.ts` as outside the existing allowlist. The exact shared-helper/test exception is necessary because the helper reapplies caster state to both Observer and RTT subjects. The manifest was not widened.
+- The final report and three image files are also outside the visual-worker allowlist by explicit authorization for this documentation/evidence closeout. The cumulative A1-based guard was not rerun: its diff includes prior report content and cannot isolate the Round 1 correction. Do not treat the historical A2 guard command above as a passing validation for the completed PR or claim that the final cumulative guard passes.
+- GitHub Actions on the original reviewed PR head `865ed077e4414da274a3a10f40d17806220c4890` and implementation commit `097c587619641332a364e7198c70aec34d3f0ac6` completed successfully. The implementation run was workflow run `43473665553` (run 2029). The exact current-head checks for this final report/evidence package are recorded in the PR handoff after publication.
 
-The remaining limitation is that the weave is intentionally low-contrast and subtle. The selected texture scale makes it discernible on the normal canvas without making the small bench visually dominant.
+## Final Acceptance
+
+**PASS — ready for final human approval.** This decision uses the ordinary-size fabric A/B and the final ceiling-shadow and Clean/Teaching Observer evidence linked above. It does not require individual yarns to remain visible when the bench occupies only a small part of the canvas.
+
+| Review area | Result | Final finding |
+| --- | --- | --- |
+| Shared paper/fabric library | PASS | Deterministic shared API and existing ownership remain intact. |
+| Legacy pattern preservation | PASS | Existing limestone, cut-stone, concrete, plaster, and wood output hashes remain unchanged. |
+| Fabric integration | PASS | `[0.5, 0.5]` adds modest surface structure versus `[2, 2]` without an oversized weave, checker pattern, or teaching-scene distraction. Individual threads are not resolved at 514 × 411. |
+| Ceiling shadow | PASS | The diagonal wall shadow is removed; the ceiling remains visible/lit and localized furniture/object shadows remain. |
+| Observer / Teaching | PASS | Clean Observer remains clear and Teaching Observer retains its focus, DOF, and optical overlays. |
+| Ground Glass | PASS | The validated focus/aperture matrix, Processed, Raw, Upright, Rise, and Swing captures remain contentful with expected orientation. |
+| Resources / performance | PASS | Scene counts are unchanged from A2; timing changes are small SwiftShader observations, not GPU measurements. |
+| Tests / CI | PASS | The Review-Fix implementation validation passed (164 focused tests and 4,065 full tests); final-head hosted CI passed after this report/evidence-only update. Exact current-head runs are listed in the PR handoff. |
+| Visual evidence | PASS | All three compact contact sheets are checked into `evidence/pr334/` and linked directly in this report and PR description. Raw captures remain ignored. |
+
+The original A2 results (156 focused tests and 4,064 full tests) remain under **Original Pilot Validation (A2)** as historical evidence; they are not the current Review-Fix result. This final closeout changes only the pilot report and the three compact evidence images. It does not change production rendering or broaden the Dream Loop manifest.
