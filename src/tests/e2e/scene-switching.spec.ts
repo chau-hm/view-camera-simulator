@@ -70,6 +70,13 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken =
       `${Date.now()}-${Math.random()}`;
   });
+  await page.goto("/simulator/free/architecture-rise?keep=one&seed=123&other=two");
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/simulator/free/architecture-rise" &&
+    url.searchParams.get("seed") === null &&
+    url.searchParams.get("keep") === "one" &&
+    url.searchParams.get("other") === "two",
+  );
   await page.goto("/scenes");
   const visits = await discoverPublicSceneVisits(page);
   const discoveredSceneIds = visits.map(({ sceneId }) => sceneId);
