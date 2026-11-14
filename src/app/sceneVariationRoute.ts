@@ -4,7 +4,10 @@ import {
   createSceneVariantIdentity,
   isSupportedSceneVariationSchemaVersion,
 } from "../scenes/sceneVariation";
-import type { ParsedSceneSeed } from "./sceneVariationUrl";
+import type {
+  ParsedSceneSeed,
+  ParsedSceneVariationSchema,
+} from "./sceneVariationUrl";
 
 export type SceneVariantRouteResolution =
   | Readonly<{
@@ -12,7 +15,10 @@ export type SceneVariantRouteResolution =
       identity: SceneVariantIdentity;
       seedSource: "explicit-url" | "generated-missing" | "generated-invalid" | "reused-location";
     }>
-  | Readonly<{ status: "disabled" | "unsupported-schema"; identity: null }>;
+  | Readonly<{
+      status: "disabled" | "unsupported-schema" | "invalid-schema";
+      identity: null;
+    }>;
 
 /**
  * Resolve one router location without coupling it to camera initialization.
@@ -24,6 +30,8 @@ export const resolveSceneVariantRoute = (options: {
   capability?: SceneVariationCapability;
   routeKey: string;
   seed: ParsedSceneSeed;
+  schema?: ParsedSceneVariationSchema;
+  eligible?: boolean;
   previousIdentity: SceneVariantIdentity | null;
   previousRouteKey: string | null;
   createSeed: () => number;
@@ -34,15 +42,24 @@ export const resolveSceneVariantRoute = (options: {
     capability,
     routeKey,
     seed,
+    schema = { kind: "missing" },
+    eligible = true,
     previousIdentity,
     previousRouteKey,
     createSeed,
   } = options;
 
-  if (mode !== "free" || !capability?.enabled) {
+  if (mode !== "free" || !eligible || !capability?.enabled) {
     return { status: "disabled", identity: null };
   }
-  if (!isSupportedSceneVariationSchemaVersion(capability.schemaVersion)) {
+  if (schema.kind === "invalid") {
+    return { status: "invalid-schema", identity: null };
+  }
+  if (
+    schema.kind === "unsupported" ||
+    !isSupportedSceneVariationSchemaVersion(capability.schemaVersion) ||
+    (schema.kind === "valid" && schema.schemaVersion !== capability.schemaVersion)
+  ) {
     return { status: "unsupported-schema", identity: null };
   }
   if (routeKey.length === 0) throw new TypeError("Scene variation route key cannot be empty");

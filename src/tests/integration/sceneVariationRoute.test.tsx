@@ -25,9 +25,10 @@ type HarnessProps = { createSeed: () => number };
 const Probe = () => {
   const location = useLocation();
   const identity = useAppStore((state) => state.sceneVariantIdentity);
+  const status = useAppStore((state) => state.sceneVariantRouteStatus);
   return (
     <output data-testid="route-state">
-      {JSON.stringify({ pathname: location.pathname, search: location.search, identity })}
+      {JSON.stringify({ pathname: location.pathname, search: location.search, identity, status })}
     </output>
   );
 };
@@ -35,13 +36,21 @@ const Probe = () => {
 const VariationRouteHarness = ({ createSeed }: HarnessProps) => {
   const { mode: routeMode } = useParams();
   const mode = routeMode === "guided" ? "guided" : "free";
+  const location = useLocation();
   const navigate = useNavigate();
+  const guidedLessonEntry = new URLSearchParams(location.search).get("lesson") === "1";
   const regenerate = useRegenerateSceneVariant({ mode, scene: fixtureScene, createSeed });
   return (
     <>
-      <SceneVariationRouteSync mode={mode} scene={fixtureScene} createSeed={createSeed} />
+      <SceneVariationRouteSync
+        mode={mode}
+        scene={fixtureScene}
+        guidedLessonEntry={guidedLessonEntry}
+        createSeed={createSeed}
+      />
       <Probe />
       <button type="button" onClick={() => navigate("/simulator/free/interior-corner?keep=two")}>new-entry</button>
+      <button type="button" onClick={() => navigate("/simulator/free/interior-corner?lesson=1&seed=71&sv=1")}>lesson-entry</button>
       <button type="button" onClick={() => navigate(-1)}>back</button>
       <button type="button" onClick={() => navigate(1)}>forward</button>
       <button type="button" onClick={() => regenerate()}>regenerate</button>
@@ -67,6 +76,7 @@ const readRouteState = () => JSON.parse(screen.getByTestId("route-state").textCo
   pathname: string;
   search: string;
   identity: { sceneId: string; seed: number; schemaVersion: number } | null;
+  status: string;
 };
 
 afterEach(() => {
@@ -82,18 +92,19 @@ describe("scene variation React Router lifecycle", () => {
     await waitFor(() => {
       expect(readRouteState()).toMatchObject({
         pathname: "/simulator/free/interior-corner",
-        search: "?keep=one&other=two&seed=284719",
+        search: "?keep=one&other=two&seed=284719&sv=1",
         identity: { sceneId: "interior-corner", seed: 284719, schemaVersion: 1 },
+        status: "resolved",
       });
     });
     expect(createSeed).toHaveBeenCalledTimes(1);
   });
 
-  it("uses a direct URL seed exactly without requesting entropy", async () => {
+  it("uses a direct legacy URL seed exactly and replace-normalizes schema v1 without entropy", async () => {
     const createSeed = vi.fn(() => 44);
     renderRoute(["/simulator/free/interior-corner?seed=0&keep=one"], createSeed);
     await waitFor(() => expect(readRouteState().identity?.seed).toBe(0));
-    expect(readRouteState().search).toBe("?seed=0&keep=one");
+    expect(readRouteState().search).toBe("?keep=one&seed=0&sv=1");
     expect(createSeed).not.toHaveBeenCalled();
   });
 
@@ -108,13 +119,13 @@ describe("scene variation React Router lifecycle", () => {
     fireEvent.click(screen.getByRole("button", { name: "back" }));
     await waitFor(() => {
       expect(readRouteState().identity?.seed).toBe(11);
-      expect(readRouteState().search).toBe("?seed=11");
+      expect(readRouteState().search).toBe("?seed=11&sv=1");
     });
 
     fireEvent.click(screen.getByRole("button", { name: "forward" }));
     await waitFor(() => {
       expect(readRouteState().identity?.seed).toBe(12);
-      expect(readRouteState().search).toBe("?seed=12");
+      expect(readRouteState().search).toBe("?seed=12&sv=1");
     });
     expect(createSeed).not.toHaveBeenCalled();
   });
@@ -127,14 +138,14 @@ describe("scene variation React Router lifecycle", () => {
     fireEvent.click(screen.getByRole("button", { name: "new-entry" }));
     await waitFor(() => {
       expect(readRouteState().identity?.seed).toBe(91);
-      expect(readRouteState().search).toBe("?keep=two&seed=91");
+      expect(readRouteState().search).toBe("?keep=two&seed=91&sv=1");
     });
     expect(createSeed).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: "back" }));
     await waitFor(() => {
       expect(readRouteState().identity?.seed).toBe(7);
-      expect(readRouteState().search).toBe("?seed=7");
+      expect(readRouteState().search).toBe("?seed=7&sv=1");
     });
   });
 
@@ -149,11 +160,41 @@ describe("scene variation React Router lifecycle", () => {
     fireEvent.click(screen.getByRole("button", { name: "regenerate" }));
     await waitFor(() => {
       expect(readRouteState()).toMatchObject({
-        search: "?seed=55&keep=one",
+        search: "?keep=one&seed=55&sv=1",
         identity: { sceneId: "interior-corner", seed: 55, schemaVersion: 1 },
       });
     });
     expect(useAppStore.getState().camera).toEqual(cameraBefore);
     expect(createSeed).toHaveBeenCalledTimes(1);
   });
+
+  it("preserves canonical guided lesson Observe and clears a previous variant", async () => {
+    const createSeed = vi.fn(() => 21);
+    renderRoute(["/simulator/free/interior-corner?seed=19&sv=1"], createSeed);
+    await waitFor(() => expect(readRouteState().identity?.seed).toBe(19));
+
+    fireEvent.click(screen.getByRole("button", { name: "lesson-entry" }));
+    await waitFor(() => {
+      expect(readRouteState().search).toBe("?lesson=1");
+      expect(readRouteState().identity).toBeNull();
+      expect(readRouteState().status).toBe("disabled");
+    });
+    expect(createSeed).not.toHaveBeenCalled();
+  });
+
+  it.each(["?seed=8&sv=2", "?seed=8&sv=1&sv=1", "?seed=8&sv="])(
+    "fails closed on unsupported or malformed schema versions %s",
+    async (search) => {
+      const createSeed = vi.fn(() => 21);
+      renderRoute([`/simulator/free/interior-corner${search}&keep=one`], createSeed);
+      await waitFor(() => {
+        expect(readRouteState().identity).toBeNull();
+        expect(readRouteState().search).toContain("keep=one");
+        expect(readRouteState().status).toBe(
+          search.includes("sv=2") ? "unsupported-schema" : "invalid-schema",
+        );
+      });
+      expect(createSeed).not.toHaveBeenCalled();
+    },
+  );
 });

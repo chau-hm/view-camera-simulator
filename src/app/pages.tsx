@@ -226,7 +226,11 @@ export const SimulatorRoutePage = () => {
 
   return (
     <AppShell title="" fullBleed>
-      <SceneVariationRouteSync mode={parsedMode} scene={scene} />
+      <SceneVariationRouteSync
+        mode={parsedMode}
+        scene={scene}
+        guidedLessonEntry={guidedLessonEnabled}
+      />
       <Suspense fallback={rendererLifecycleTraceEnabled
         ? <WorkspaceSuspenseFallback
             routeId={`/simulator/${parsedMode}/${resolvedSceneId}`}

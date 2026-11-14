@@ -7,6 +7,16 @@ export const simulatorMessageKeys = {
     title: "simulator.task.title",
     freePractice: "simulator.task.freePractice",
   },
+  variation: {
+    groupLabel: "simulator.variation.groupLabel",
+    activeSeed: "simulator.variation.activeSeed",
+    regenerate: "simulator.variation.regenerate",
+    copyUrl: "simulator.variation.copyUrl",
+    copied: "simulator.variation.copied",
+    copyFailed: "simulator.variation.copyFailed",
+    unsupportedSchema: "simulator.variation.unsupportedSchema",
+    invalidSchema: "simulator.variation.invalidSchema",
+  },
   feedback: {
     title: "simulator.feedback.title",
     liveObservation: "simulator.feedback.liveObservation",

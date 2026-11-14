@@ -12,6 +12,7 @@ import { resolveGroundGlassPhysicalGrid } from "./groundGlassPhysicalGrid";
 import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 export { projectWorldPointToGroundGlass } from "./groundGlassProjection";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS } from "../utils/constants";
@@ -46,6 +47,7 @@ export type GroundGlassRendererProps = {
   renderQuality: RenderQualityProfile;
   /** Explicit scene definition for focus-target projection and RTT framing. */
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   // previewMode is controlled by the parent GroundGlassViewport and REQUIRED
   previewMode: "raw" | "upright";
   // rawDebug (developer-only) is controlled at workspace and passed down
@@ -99,6 +101,7 @@ export const GroundGlassRenderer = ({
   aperture,
   renderQuality,
   scene,
+  variationDescriptor,
   previewMode,
   rawDebug,
   focusMetric = "patch",
@@ -307,6 +310,7 @@ export const GroundGlassRenderer = ({
           opticsState={opticsState}
           focalLengthMm={focalLengthMm}
           scene={scene}
+          variationDescriptor={variationDescriptor}
           apertureNumber={apertureNumber}
           previewMode={previewMode}
           rawDebug={rawDebug}

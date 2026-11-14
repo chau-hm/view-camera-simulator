@@ -18,6 +18,7 @@ import { resolveObserverSceneCompatibility } from "../../render/backend/observer
 import { useObserverRendererLifecycle } from "./useObserverRendererLifecycle";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
+import type { SceneVariationDescriptor } from "../../types/sceneVariation";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
 import "../../i18n";
@@ -40,6 +41,7 @@ import {
 
 type SceneViewportProps = {
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   routeSceneId?: string;
   developmentArchitectureRiseWebGpuVerification?: boolean;
   opticsState: DerivedOpticsState;
@@ -73,6 +75,7 @@ return "high";
 
 export const SceneViewport = ({
   scene,
+  variationDescriptor,
   routeSceneId = scene.id,
   developmentArchitectureRiseWebGpuVerification = false,
   opticsState,
@@ -494,6 +497,7 @@ export const SceneViewport = ({
             onObserverCanvasError={rendererLifecycle.onObserverCanvasError}
             outputPolicySelection={outputPolicySelection}
             scene={scene}
+            variationDescriptor={variationDescriptor}
             opticsState={opticsState}
             attempt={attempt}
             showFocusPlaneOverlay={suppressOpticalOverlays ? false : showFocusPlaneOverlay}

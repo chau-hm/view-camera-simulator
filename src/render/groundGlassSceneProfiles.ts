@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 import type { DerivedOpticsState, Bounds3 } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import {
   updateMirrorShiftCameraReflection,
 } from "./MirrorShiftSubjectFactory";
@@ -25,6 +26,7 @@ export type GroundGlassSceneProfileContext = Readonly<{
   scene: SceneDefinition;
   cameraMovementPresentation: CameraMovementLatticePresentation;
   presentationRegion: CameraMovementPresentationRegion;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 export type GroundGlassSceneProfileUpdateContext =
@@ -90,7 +92,10 @@ const createProfile = (
     definition.configureRttShadowParticipation?.(group);
   },
   mountSubject: (scene, context) => {
-    const options = definition.resolveSubjectOptions?.(context);
+    const resolvedOptions = definition.resolveSubjectOptions?.(context);
+    const options = context.variationDescriptor
+      ? { ...resolvedOptions, variationDescriptor: context.variationDescriptor }
+      : resolvedOptions;
     if (definition.mountSubject) {
       return definition.mountSubject(scene, context, options);
     }

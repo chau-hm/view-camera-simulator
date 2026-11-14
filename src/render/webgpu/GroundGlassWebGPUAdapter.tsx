@@ -1237,6 +1237,7 @@ const makeCamera = (
     scene: sceneDefinition,
     cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
     presentationRegion: request.presentationRegion,
+    variationDescriptor: request.variationDescriptor,
   } as const;
   const sceneBounds = profile.resolveRenderBounds(profileContext);
   const effectiveScene = { ...sceneDefinition, bounds: sceneBounds };
@@ -1950,6 +1951,8 @@ export const GroundGlassWebGPUAdapter = ({
     let actualValidityStorageFormat: string | null = null;
     let physicalCompletedPasses: Array<"sceneDepth" | "physicalCoc" | "validity"> = [];
     let scene: THREE.Scene | null = null;
+    let sceneProfile: ReturnType<typeof getGroundGlassSceneProfile> | null = null;
+    let sceneDefinition: SceneDefinition | null = null;
     let camera: THREE.PerspectiveCamera | null = null;
     let display: GroundGlassDisplayScene | null = null;
     let calibrationSourceTexture: THREE.DataTexture | null = null;
@@ -1978,6 +1981,7 @@ export const GroundGlassWebGPUAdapter = ({
     };
     let presentationDiagnostic: GroundGlassPresentationDiagnosticDetails | null = null;
     let subject: MountedSubject = null;
+    let mountedSubjectVariationIdentity: string | null = null;
     let presentationLighting: ReturnType<typeof createPresentationLightingRig> | null = null;
     let worldLighting: ReturnType<typeof createWorldIlluminationRig> | null = null;
     let environmentRig: WorldEnvironmentRig | null = null;
@@ -2091,6 +2095,37 @@ export const GroundGlassWebGPUAdapter = ({
         sourceTexture,
         state,
       });
+    };
+
+    const ensureSceneSubjectVariation = (acceptedRequest: GroundGlassFrameRequest): void => {
+      if (
+        !scene ||
+        acceptedRequest.identity.sceneId !== "interior-corner" ||
+        sceneDefinition?.id !== "interior-corner"
+      ) return;
+      const identity = acceptedRequest.variationDescriptor?.identity;
+      const nextIdentityKey = identity ? JSON.stringify(identity) : null;
+      if (nextIdentityKey === mountedSubjectVariationIdentity) return;
+
+      const previousSubject = subject;
+      subject = null;
+      previousSubject?.dispose();
+
+      const nextSceneDefinition = acceptedRequest.scene as unknown as SceneDefinition;
+      const nextProfile = getGroundGlassSceneProfile(nextSceneDefinition);
+      const nextSubject = nextProfile.mountSubject(scene, {
+        scene: nextSceneDefinition,
+        cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+        presentationRegion: acceptedRequest.presentationRegion,
+        variationDescriptor: acceptedRequest.variationDescriptor,
+      });
+      if (!nextSubject) throw new Error("Registered Interior Corner RTT subject was not created");
+      nextProfile.configureRttShadowParticipation(nextSubject.group);
+      sceneDefinition = nextSceneDefinition;
+      sceneProfile = nextProfile;
+      subject = nextSubject;
+      mountedSubjectVariationIdentity = nextIdentityKey;
+      setSceneSubjectEvidence({ mounted: true, childCount: nextSubject.group.children.length });
     };
 
     const disposeOwned = (): Promise<void> => {
@@ -2598,6 +2633,7 @@ export const GroundGlassWebGPUAdapter = ({
         }>> = [];
         let failedPass: GroundGlassRenderOperationId | null = null;
         try {
+          ensureSceneSubjectVariation(latest);
           const dimensions = resolveGroundGlassRttDimensions({
             logicalWidth: latest.widthPx,
             logicalHeight: latest.heightPx,
@@ -4439,19 +4475,23 @@ export const GroundGlassWebGPUAdapter = ({
         }
 
         const currentRequest = requestRef.current;
-        const sceneDefinition = currentRequest.scene as unknown as SceneDefinition;
-        const profile = getGroundGlassSceneProfile(sceneDefinition);
+        sceneDefinition = currentRequest.scene as unknown as SceneDefinition;
+        sceneProfile = getGroundGlassSceneProfile(sceneDefinition);
         const profileContext = {
           scene: sceneDefinition,
           cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
           presentationRegion: currentRequest.presentationRegion,
+          variationDescriptor: currentRequest.variationDescriptor,
         } as const;
         scene = new THREE.Scene();
         scene.background = SKY_COLOR;
-        subject = profile.mountSubject(scene, profileContext);
+        subject = sceneProfile.mountSubject(scene, profileContext);
         if (!subject) throw new Error("Registered Architecture Rise RTT subject was not created");
+        mountedSubjectVariationIdentity = currentRequest.variationDescriptor
+          ? JSON.stringify(currentRequest.variationDescriptor.identity)
+          : null;
         setSceneSubjectEvidence({ mounted: true, childCount: subject.group.children.length });
-        profile.configureRttShadowParticipation(subject.group);
+        sceneProfile.configureRttShadowParticipation(subject.group);
         const presentation = resolveScenePresentationLighting(sceneDefinition.id, {
           surface: "ground-glass",
           cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,

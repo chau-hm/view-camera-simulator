@@ -5,12 +5,15 @@ import type { SimulatorMode } from "../types/camera";
 import { useAppStore } from "../state/appStore";
 import {
   parseSceneSeedFromSearch,
-  withSceneSeedInSearch,
+  parseSceneVariationSchemaFromSearch,
+  withSceneVariantInSearch,
 } from "./sceneVariationUrl";
 
 type SceneVariationRouteProps = {
   mode: SimulatorMode;
   scene: Pick<SceneDefinition, "id" | "sceneVariation">;
+  /** Lesson Observe is a canonical presentation even though its route is Free Mode. */
+  guidedLessonEntry?: boolean;
   /** Optional deterministic seed source for route lifecycle tests. */
   createSeed?: () => number;
 };
@@ -19,6 +22,7 @@ type SceneVariationRouteProps = {
 export const SceneVariationRouteSync = ({
   mode,
   scene,
+  guidedLessonEntry = false,
   createSeed,
 }: SceneVariationRouteProps) => {
   const location = useLocation();
@@ -34,12 +38,15 @@ export const SceneVariationRouteSync = ({
       capability: scene.sceneVariation,
       routeKey: `${location.key}:${location.pathname}:${mode}:${scene.id}`,
       seed: parseSceneSeedFromSearch(location.search),
+      schema: parseSceneVariationSchemaFromSearch(location.search),
+      eligible: !guidedLessonEntry,
       createSeed,
     });
-    const nextSearch = withSceneSeedInSearch(
-      location.search,
-      resolution.identity?.seed ?? null,
-    );
+    const nextSearch = resolution.status === "resolved"
+      ? withSceneVariantInSearch(location.search, resolution.identity)
+      : resolution.status === "disabled"
+        ? withSceneVariantInSearch(location.search, null)
+        : location.search;
     if (nextSearch !== location.search) {
       navigate(
         { pathname: location.pathname, search: nextSearch, hash: location.hash },
@@ -48,6 +55,7 @@ export const SceneVariationRouteSync = ({
     }
   }, [
     createSeed,
+    guidedLessonEntry,
     location.hash,
     location.key,
     location.pathname,

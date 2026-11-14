@@ -8,6 +8,12 @@ export type ParsedSceneSeed =
   | Readonly<{ kind: "valid"; seed: number }>
   | Readonly<{ kind: "invalid"; rawValues: readonly string[] }>;
 
+export type ParsedSceneVariationSchema =
+  | Readonly<{ kind: "missing" }>
+  | Readonly<{ kind: "valid"; schemaVersion: number }>
+  | Readonly<{ kind: "invalid"; rawValues: readonly string[] }>
+  | Readonly<{ kind: "unsupported"; schemaVersion: number }>;
+
 export type SceneVariationLocation = Readonly<{
   pathname: string;
   search: string;
@@ -32,6 +38,25 @@ export const parseSceneSeedFromSearch = (search: string): ParsedSceneSeed => {
   return { kind: "valid", seed };
 };
 
+/** Parse one canonical positive decimal variation schema version. */
+export const parseSceneVariationSchemaFromSearch = (
+  search: string,
+): ParsedSceneVariationSchema => {
+  const values = readSearchParams(search).getAll("sv");
+  if (values.length === 0) return { kind: "missing" };
+  if (values.length !== 1 || !/^[1-9][0-9]*$/.test(values[0]!)) {
+    return { kind: "invalid", rawValues: values };
+  }
+
+  const schemaVersion = Number(values[0]);
+  if (!Number.isSafeInteger(schemaVersion) || schemaVersion > 0xffff_ffff) {
+    return { kind: "invalid", rawValues: values };
+  }
+  return isSupportedSceneVariationSchemaVersion(schemaVersion)
+    ? { kind: "valid", schemaVersion }
+    : { kind: "unsupported", schemaVersion };
+};
+
 /** Set or remove only the scene seed, preserving other decoded query parameters. */
 export const withSceneSeedInSearch = (
   search: string,
@@ -53,6 +78,27 @@ export const withSceneSeedInSearch = (
   return encoded.length > 0 ? `?${encoded}` : "";
 };
 
+/** Set or remove the complete variation identity while preserving other URL state. */
+export const withSceneVariantInSearch = (
+  search: string,
+  identity: Readonly<{ seed: number; schemaVersion: number }> | null,
+): string => {
+  const params = readSearchParams(search);
+  if (identity === null) {
+    params.delete("seed");
+    params.delete("sv");
+  } else {
+    const seed = String(normalizeSceneSeed(identity.seed));
+    const schemaVersion = String(identity.schemaVersion);
+    params.delete("seed");
+    params.delete("sv");
+    params.append("seed", seed);
+    params.append("sv", schemaVersion);
+  }
+  const encoded = params.toString();
+  return encoded.length > 0 ? `?${encoded}` : "";
+};
+
 /**
  * Build the URL used by a future Regenerate Scene action. Call navigate(path)
  * without `replace` so Back/Forward can replay the previous seed. Entry
@@ -62,12 +108,14 @@ export const createSceneVariantRegenerationLocation = (options: {
   mode: "free" | "guided";
   scene: Pick<SceneDefinition, "id" | "sceneVariation">;
   location: SceneVariationLocation;
+  eligible?: boolean;
   createSeed?: () => number;
 }): SceneVariationLocation | null => {
-  const { mode, scene, location } = options;
+  const { mode, scene, location, eligible = true } = options;
   const capability = scene.sceneVariation;
   if (
     mode !== "free" ||
+    !eligible ||
     !capability?.enabled ||
     !isSupportedSceneVariationSchemaVersion(capability.schemaVersion)
   ) {
@@ -81,6 +129,9 @@ export const createSceneVariantRegenerationLocation = (options: {
   }
   return {
     ...location,
-    search: withSceneSeedInSearch(location.search, seed),
+    search: withSceneVariantInSearch(location.search, {
+      seed,
+      schemaVersion: capability.schemaVersion,
+    }),
   };
 };

@@ -47,6 +47,7 @@ import {
 } from "./groundGlassDofShaderSources";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type { WebGLRenderer } from "three";
 import { getRenderQualitySettings } from "./renderQuality";
@@ -142,6 +143,7 @@ export type GroundGlassRTTProps = {
   channel?: GroundGlassRttChannel;
   /** Explicit visual lattice presentation for comparison panes. */
   presentationRegion?: CameraMovementPresentationRegion;
+  variationDescriptor?: SceneVariationDescriptor;
   /** Effective calibration selected by the application boundary. */
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
   /** Application-owned diagnostics adapter. */
@@ -194,6 +196,7 @@ function OffscreenRenderer({
   channel = "default",
   inspectionWindow: explicitInspectionWindow,
   presentationRegion: explicitPresentationRegion,
+  variationDescriptor,
   effectiveCameraMovementCalibration,
   onRuntimeInfoChange,
   onRuntimeObservation,
@@ -214,6 +217,7 @@ function OffscreenRenderer({
   const reportedCameraConfigurationErrorRef = React.useRef<string | null>(null);
   const lastRenderSanityStateKeyRef = React.useRef<string | null>(null);
   const sceneSubjectGenerationRef = React.useRef(0);
+  const mountedSceneVariationIdentityRef = React.useRef<string | null>(null);
   const renderTarget = useRef<THREE.WebGLRenderTarget | null>(null);
   const offscreenScene = useRef<THREE.Scene | null>(null);
   const groundGlassCamera = useRef<THREE.PerspectiveCamera | null>(null);
@@ -240,6 +244,9 @@ function OffscreenRenderer({
   acceptedRequestIdentityRef.current = acceptedRequestIdentity;
 
   const { gl } = useThree();
+  const variationIdentityKey = variationDescriptor
+    ? JSON.stringify(variationDescriptor.identity)
+    : null;
   const reportCleanupOwnerAcquired = React.useCallback((owner: GroundGlassCleanupOwner) => {
     onCleanupOwnerAcquiredRef.current?.(owner);
   }, []);
@@ -1035,6 +1042,7 @@ function OffscreenRenderer({
       scene: sceneDefinition,
       cameraMovementPresentation,
       presentationRegion: presentationRegionRef.current,
+      variationDescriptor,
     };
     const lightingRig = lightingRigRef.current;
     if (lightingRig) {
@@ -1066,6 +1074,7 @@ function OffscreenRenderer({
         clearSubjectScopedDiagnostics(false, subjectRequestIdentity);
       };
     }
+    mountedSceneVariationIdentityRef.current = variationIdentityKey;
     reportCleanupOwnerAcquired("scene-subject");
     try {
     sceneProfile.configureRttShadowParticipation(mounted.group);
@@ -1152,6 +1161,9 @@ function OffscreenRenderer({
       if (mountedSceneSubjectRef.current === mounted) {
         mountedSceneSubjectRef.current = null;
       }
+      if (mountedSceneVariationIdentityRef.current === variationIdentityKey) {
+        mountedSceneVariationIdentityRef.current = null;
+      }
       let cleanupOutcome: GroundGlassCleanupOutcome = "confirmed";
       let cleanupReason: string | undefined;
       try {
@@ -1182,12 +1194,16 @@ function OffscreenRenderer({
         cleanupReason = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
       } finally {
         if (mountedSceneSubjectRef.current === mounted) mountedSceneSubjectRef.current = null;
+        if (mountedSceneVariationIdentityRef.current === variationIdentityKey) {
+          mountedSceneVariationIdentityRef.current = null;
+        }
         reportCleanupOwnerCompleted("scene-subject", cleanupOutcome, cleanupReason);
       }
       throw error;
     }
   }, [
     cameraMovementPresentation,
+    variationDescriptor,
     sceneDefinition,
     sceneProfile,
     readRuntimeInfo,
@@ -1197,6 +1213,7 @@ function OffscreenRenderer({
     gl,
     reportCleanupOwnerAcquired,
     reportCleanupOwnerCompleted,
+    variationIdentityKey,
   ]);
 
   // Scene profiles own any scene-specific mutation of their mounted subject.
@@ -1371,6 +1388,10 @@ function OffscreenRenderer({
   useFrame((_state, frameDelta) => {
     const sourceRenderTarget = renderTarget.current;
     if (!sourceRenderTarget || !offscreenScene.current) return;
+    // A new accepted seed becomes visible to this frame loop before passive
+    // effect cleanup replaces the owned scene subject. Do not publish or draw
+    // an old-seed subject as a completed frame for the new request.
+    if (mountedSceneVariationIdentityRef.current !== variationIdentityKey) return;
     const frameGeneration = rendererGeneration;
     const frameRequest = acceptedRequestIdentity;
     const renderer = gl as WebGLRenderer;
@@ -1419,6 +1440,7 @@ function OffscreenRenderer({
       scene: sceneDefinition,
       cameraMovementPresentation,
       presentationRegion,
+      variationDescriptor,
     };
     const effectiveBounds = sceneProfile.resolveRenderBounds(profileContext);
     const sceneDef =
@@ -2147,6 +2169,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
   channel = "default",
   inspectionWindow,
   presentationRegion,
+  variationDescriptor,
   effectiveCameraMovementCalibration,
   onRuntimeInfoChange,
   onRuntimeObservation,
@@ -2226,6 +2249,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
           channel={channel}
           inspectionWindow={inspectionWindow}
           presentationRegion={presentationRegion}
+          variationDescriptor={variationDescriptor}
           effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
           rendererGeneration={rendererGeneration}
           acceptedRequestIdentity={acceptedRequestIdentity}

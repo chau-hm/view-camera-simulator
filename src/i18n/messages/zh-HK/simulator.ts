@@ -10,6 +10,16 @@ export const simulatorMessages = {
     title: "任務",
     freePractice: "自由練習",
   },
+  variation: {
+    groupLabel: "場景變化",
+    activeSeed: "種子 {{seed}} · 結構版本 v{{version}}",
+    regenerate: "重新生成場景",
+    copyUrl: "複製分享網址",
+    copied: "已複製分享網址",
+    copyFailed: "無法複製分享網址",
+    unsupportedSchema: "不支援此場景變化版本，現正顯示標準場景。",
+    invalidSchema: "此場景變化版本無效，現正顯示標準場景。",
+  },
   feedback: {
     title: "回饋",
     liveObservation: "即時觀察",
