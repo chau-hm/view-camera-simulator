@@ -154,6 +154,38 @@ const addWindowBay = (
     });
   });
 
+  // Masonry surrounds sit outside the canonical opening; their stepped
+  // depth gives the same construction relief from either scene camera.
+  [-1, 1].forEach((sign) => {
+    addBox({
+      name: `${windowGroup.name}-stone-jamb-${sign}`,
+      size: [54, bay.height + 100, 76],
+      position: [bay.x + sign * (bay.width / 2 + 64), bay.y, front - 66],
+      material: resources.trim,
+      parent: sillDetail,
+    });
+    addBox({
+      name: `${windowGroup.name}-sill-bracket-${sign}`,
+      size: [52, 68, 92],
+      position: [bay.x + sign * bay.width * 0.35, bay.y - bay.height / 2 - 116, front - 82],
+      material: resources.trim,
+      parent: sillDetail,
+    });
+  });
+  [
+    { id: "lintel", width: bay.width + 172, height: 54, y: bay.height / 2 + 74, depth: 100 },
+    { id: "lintel-cap", width: bay.width + 204, height: 22, y: bay.height / 2 + 112, depth: 130 },
+    { id: "sill-apron", width: bay.width + 152, height: 38, y: -bay.height / 2 - 65, depth: 120 },
+  ].forEach(({ id, width, height, y, depth }) => {
+    addBox({
+      name: `${windowGroup.name}-${id}`,
+      size: [width, height, depth],
+      position: [bay.x, bay.y + y, front - 82],
+      material: resources.trim,
+      parent: sillDetail,
+    });
+  });
+
   // Shallow stone sills give the openings a construction detail without
   // changing the canonical glazing, frame, or facade placements.
   addBox({
@@ -617,6 +649,91 @@ export function createArchitectureRiseGroup(
       parent: root,
     }),
   );
+
+  const masonryDetail = new THREE.Group();
+  masonryDetail.name = "architecture-rise-masonry-relief";
+  masonryDetail.userData.resources = resources;
+  root.add(masonryDetail);
+  const front = geometry.facade.frontFacadeZ;
+  const halfWidth = geometry.building.width / 2;
+  // Continuous roof courses return around both sides, rather than ending
+  // as a camera-facing strip at the facade corners.
+  [
+    { id: "cornice-bed", y: geometry.facade.mainBodyTopY - 130, height: 50, overhang: 70 },
+    { id: "cornice-crown", y: geometry.facade.mainBodyTopY - 26, height: 48, overhang: 120 },
+    { id: "coping-underlip", y: geometry.facade.parapetTopY - 16, height: 28, overhang: 90 },
+  ].forEach(({ id, y, height, overhang }) => {
+    addBox({
+      name: `architecture-rise-${id}-front`,
+      size: [geometry.building.width + overhang * 2, height, 100],
+      position: [0, y, front - overhang / 2],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+    [-1, 1].forEach((sign) => {
+      addBox({
+        name: `architecture-rise-${id}-return-${sign}`,
+        size: [overhang, height, geometry.building.depth + 100],
+        position: [sign * (halfWidth + overhang / 2), y, geometry.building.center.z],
+        material: resources.trim,
+        parent: masonryDetail,
+      });
+    });
+  });
+  const dentilCount = Math.floor(geometry.building.width / 190);
+  for (let index = 0; index < dentilCount; index += 1) {
+    addBox({
+      name: `architecture-rise-cornice-dentil-${index + 1}`,
+      size: [66, 62, 90],
+      position: [-halfWidth + (index + 0.5) * geometry.building.width / dentilCount,
+        geometry.facade.mainBodyTopY - 78, front - 72],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+  }
+  const panelHeight = Math.max(60, geometry.building.topHeight - 180);
+  [-1, 1].forEach((sign) => {
+    const panelWidth = geometry.building.width / 2 - 210;
+    const panelX = sign * geometry.building.width / 4;
+    const panelY = geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
+    // Raised rims on the existing parapet leave its original material visible
+    // as the inset field, without introducing a new surface or texture.
+    [-1, 1].forEach((edge) => {
+      addBox({
+        name: `architecture-rise-parapet-panel-${sign}-horizontal-${edge}`,
+        size: [panelWidth, 26, 28],
+        position: [panelX, panelY + edge * panelHeight / 2, front - 64],
+        material: resources.building,
+        parent: masonryDetail,
+      });
+      addBox({
+        name: `architecture-rise-parapet-panel-${sign}-vertical-${edge}`,
+        size: [26, panelHeight, 28],
+        position: [panelX + edge * panelWidth / 2, panelY, front - 64],
+        material: resources.building,
+        parent: masonryDetail,
+      });
+    });
+    addBox({
+      name: `architecture-rise-roof-coping-return-${sign}`,
+      size: [120, 70, geometry.building.depth + 160],
+      position: [sign * (halfWidth + 50), geometry.facade.parapetTopY + 35, geometry.building.center.z],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+  });
+  [
+    { id: "base-foot", y: 25, height: 50, width: 3560, depth: 310 },
+    { id: "base-cap", y: 196, height: 38, width: 3540, depth: 290 },
+  ].forEach(({ id, y, height, width, depth }) => {
+    addBox({
+      name: `architecture-rise-${id}`,
+      size: [width, height, depth],
+      position: [0, geometry.ground.y + y, front - 180],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+  });
 
   const divisions = geometry.building.facadeVerticalDivisionCount;
   for (let index = 0; index < divisions; index += 1) {
