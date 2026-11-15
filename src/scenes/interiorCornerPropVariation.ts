@@ -475,4 +475,3 @@ export const getInteriorCornerPropVariationPlanSafetyIssues = (
 export const serializeInteriorCornerPropVariationPlan = (
   plan: InteriorCornerPropVariationPlan,
 ): string => JSON.stringify(plan);
-
