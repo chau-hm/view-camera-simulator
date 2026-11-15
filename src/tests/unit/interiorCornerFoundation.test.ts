@@ -68,7 +68,7 @@ const collectDisposableSpies = (group: THREE.Group) => {
   ];
 };
 
-const createAcceptedV1SubjectSignature = (group: THREE.Group): string => {
+const createSubjectSignature = (group: THREE.Group): string => {
   group.updateMatrixWorld(true);
   const entries: unknown[] = [];
   group.traverse((object) => {
@@ -184,7 +184,38 @@ const ACCEPTED_V1_SUBJECT_SIGNATURES: Readonly<Record<number, string>> = {
   [0xffff_ffff]: "202e14ae54416b3e44dedcb3a504014a91c685228b6b3e94ee233d87a91dfc7e",
 };
 
+// Captured before extraction from accepted PR #340 HEAD 38e3fbe2689e55a65a037139ad4619f29f72bfcc.
+// The compared planner, geometry, and subject-factory source files are unchanged at base 48bfc7e5.
+const ACCEPTED_V2_SUBJECT_SIGNATURES: Readonly<Record<number, string>> = {
+  0: "5b1c65e6c50b00576c3541b092432b975ab2fcf78752cf8cf3fd01b24d1e5677",
+  1: "7d242d78302ab8b3bd2e250639bc1e4b2ef417a5da01328cc377db5f54375c4a",
+  284719: "c519afbffa0bec32e215aee41e054402bde974e92b274f233582612fe657cfd3",
+  [0xffff_ffff]: "fb9961a77c384c0d8a716722c4de8aede8e83d7fb3fb211fcfe5358922bf6145",
+};
+
 describe("Interior Corner scene foundation", () => {
+  it.each(Object.entries(ACCEPTED_V2_SUBJECT_SIGNATURES))(
+    "preserves the accepted v2 full subject signature and seeded-props group for seed %s",
+    (seedText, expectedSignature) => {
+      const seed = Number(seedText);
+      const descriptor = resolveSceneVariationDescriptor(
+        interiorCornerScene,
+        createSceneVariantIdentity("interior-corner", seed, 2),
+      );
+      if (!descriptor) throw new Error("Expected the v2 Interior Corner descriptor");
+      const group = createInteriorCornerGroup({
+        presentation: INTERIOR_CORNER_PRESENTATION,
+        variationDescriptor: descriptor,
+      });
+      try {
+        expect(createSubjectSignature(group)).toBe(expectedSignature);
+        expect(group.getObjectByName("interior-corner-seeded-props")).toBeInstanceOf(THREE.Group);
+      } finally {
+        disposeInteriorCornerGroup(group);
+      }
+    },
+  );
+
   it.each(Object.entries(ACCEPTED_V1_SUBJECT_SIGNATURES))(
     "preserves accepted v1 scene and material signature for seed %s",
     (seedText, expectedSignature) => {
@@ -198,7 +229,7 @@ describe("Interior Corner scene foundation", () => {
         variationDescriptor: descriptor,
       });
       try {
-        expect(createAcceptedV1SubjectSignature(group)).toBe(expectedSignature);
+        expect(createSubjectSignature(group)).toBe(expectedSignature);
         expect(group.getObjectByName("interior-corner-console-vase")).toBeInstanceOf(THREE.Mesh);
         expect(group.getObjectByName("interior-corner-bench-cushion-left")).toBeUndefined();
       } finally {

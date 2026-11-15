@@ -20,6 +20,7 @@ const createPlan = (seed: number) => {
   return { descriptor, plan };
 };
 
+// Accepted plan serialization baseline from merged PR #340 source 38e3fbe2689e55a65a037139ad4619f29f72bfcc.
 const V2_PLAN_SIGNATURES: Readonly<Record<number, string>> = {
   0: "f75ec88d9ff3e410a92e9c04a2811d843b4e0b2c223cc81c0e8a0f943d68b279",
   1: "a2444f7294ce17a3bb26e1f701ff90773519ba26cb1beb96cff7b88ed54233c1",
