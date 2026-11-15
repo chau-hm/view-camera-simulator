@@ -118,12 +118,12 @@ test("Interior Corner variation controls follow Free Practice and protect canoni
   await expect(page).toHaveURL(/lesson=1#observe$/);
   await expect(page.getByRole("button", { name: "Regenerate scene" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Copy share URL" })).toHaveCount(0);
-  await page.goto(`/simulator/free/interior-corner?seed=${FIXED_SEED}&sv=2`);
+  await page.goto(`/simulator/free/interior-corner?seed=${FIXED_SEED}&sv=3`);
   await expect(page.getByTestId("scene-variation-controls").getByRole("status")).toContainText(
     "This variation version is unsupported",
   );
   await expect(page.getByRole("button", { name: "Regenerate scene" })).toHaveCount(0);
-  await expect(page).toHaveURL(/seed=284719&sv=2$/);
+  await expect(page).toHaveURL(/seed=284719&sv=3$/);
   await page.goto(`/simulator/free/interior-corner?seed=${FIXED_SEED}&sv=1&sv=1`);
   await expect(page.getByTestId("scene-variation-controls").getByRole("status")).toContainText(
     "This variation version is invalid",

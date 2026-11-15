@@ -14,8 +14,8 @@ import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
 import {
-  isSupportedSceneVariationSchemaVersion,
   resolveSceneVariationDescriptor,
+  supportsSceneVariationSchemaVersion,
 } from "../../scenes/sceneVariation";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
@@ -315,11 +315,10 @@ export const SimulatorWorkspace = ({
     if (
       !sceneVariationEligible ||
       !capability?.enabled ||
-      !isSupportedSceneVariationSchemaVersion(capability.schemaVersion) ||
       sceneVariantRouteStatus !== "resolved" ||
       !sceneVariantIdentity ||
       sceneVariantIdentity.sceneId !== safeScene.id ||
-      sceneVariantIdentity.schemaVersion !== capability.schemaVersion
+      !supportsSceneVariationSchemaVersion(capability, sceneVariantIdentity.schemaVersion)
     ) return undefined;
     return resolveSceneVariationDescriptor(safeScene, sceneVariantIdentity) ?? undefined;
   }, [

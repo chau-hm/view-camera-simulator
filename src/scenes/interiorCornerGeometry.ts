@@ -31,6 +31,25 @@ export const room = {
   interiorSideSurfaceX: sideWallX - wallThickness / 2,
 } as const;
 
+/** Existing furniture surfaces used as bounded supports by the v2 prop planner. */
+export const furnitureSupportSurfacesMm = {
+  consoleTop: {
+    center: { x: -1050, y: floorY + 655, z: 9850 },
+    size: { x: 1850, y: 70, z: 500 },
+    topY: floorY + 690,
+  },
+  benchSeat: {
+    center: { x: -850, y: floorY + 430, z: 6500 },
+    size: { x: 1750, y: 420, z: 560 },
+    topY: floorY + 640,
+  },
+  rug: {
+    center: { x: 180, y: floorY + 12, z: 5900 },
+    size: { x: 2200, y: 24, z: 3300 },
+    topY: floorY + 24,
+  },
+} as const;
+
 export type InteriorCornerWallDetail = {
   id: "interior-wall-near" | "interior-wall-middle" | "interior-wall-far";
   label: string;
@@ -169,6 +188,7 @@ export const upperArchitectureFocusPoint: Vec3 = {
 
 export default {
   room,
+  furnitureSupportSurfacesMm,
   wallDetails,
   focusTargets,
   canonicalFocusDistanceMm,

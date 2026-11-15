@@ -4,7 +4,10 @@ const port = process.env.PLAYWRIGHT_SCENE_VARIATION_PRODUCTION_PORT ?? "4176";
 
 export default defineConfig({
   testDir: "./src/tests/scene-variation-e2e",
-  testMatch: ["interior-corner-seeded-materials-production.spec.ts"],
+  testMatch: [
+    "interior-corner-seeded-materials-production.spec.ts",
+    "interior-corner-seeded-props-production.spec.ts",
+  ],
   timeout: 30_000,
   use: {
     baseURL: `http://127.0.0.1:${port}`,

@@ -142,8 +142,10 @@ export type SceneMacroTeachingCapability =
 /** Opt-in contract for seeded Free Mode scene presentation variation. */
 export type SceneVariationCapability = {
   enabled: true;
-  /** Identifies the deterministic variation contract accepted by this scene. */
+  /** Current contract selected for new implicit variants. */
   schemaVersion: number;
+  /** Historical contracts this scene still resolves explicitly. Omitted means current only. */
+  supportedSchemaVersions?: readonly number[];
 };
 
 export type SceneDefinition = {

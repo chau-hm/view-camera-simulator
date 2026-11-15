@@ -2,7 +2,8 @@ import type { SceneVariationCapability } from "../types/scene";
 import type { SceneVariantIdentity } from "../types/sceneVariation";
 import {
   createSceneVariantIdentity,
-  isSupportedSceneVariationSchemaVersion,
+  LEGACY_SEED_ONLY_SCHEMA_VERSION,
+  supportsSceneVariationSchemaVersion,
 } from "../scenes/sceneVariation";
 import type {
   ParsedSceneSeed,
@@ -55,16 +56,22 @@ export const resolveSceneVariantRoute = (options: {
   if (schema.kind === "invalid") {
     return { status: "invalid-schema", identity: null };
   }
-  if (
-    schema.kind === "unsupported" ||
-    !isSupportedSceneVariationSchemaVersion(capability.schemaVersion) ||
-    (schema.kind === "valid" && schema.schemaVersion !== capability.schemaVersion)
-  ) {
+  if (schema.kind === "unsupported" || !supportsSceneVariationSchemaVersion(capability, capability.schemaVersion)) {
+    return { status: "unsupported-schema", identity: null };
+  }
+  if (schema.kind === "valid" && !supportsSceneVariationSchemaVersion(capability, schema.schemaVersion)) {
     return { status: "unsupported-schema", identity: null };
   }
   if (routeKey.length === 0) throw new TypeError("Scene variation route key cannot be empty");
 
-  const schemaVersion = capability.schemaVersion;
+  const schemaVersion = schema.kind === "valid"
+    ? schema.schemaVersion
+    : seed.kind === "valid"
+      ? LEGACY_SEED_ONLY_SCHEMA_VERSION
+      : capability.schemaVersion;
+  if (!supportsSceneVariationSchemaVersion(capability, schemaVersion)) {
+    return { status: "unsupported-schema", identity: null };
+  }
   if (seed.kind === "valid") {
     return {
       status: "resolved",

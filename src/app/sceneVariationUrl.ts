@@ -1,5 +1,8 @@
 import type { SceneDefinition } from "../types/scene";
-import { isSupportedSceneVariationSchemaVersion } from "../scenes/sceneVariation";
+import {
+  isSupportedSceneVariationSchemaVersion,
+  supportsSceneVariationSchemaVersion,
+} from "../scenes/sceneVariation";
 import { createSceneVariationSeed } from "../scenes/sceneVariationSeed";
 import { normalizeSceneSeed } from "../scenes/sceneVariation";
 
@@ -109,15 +112,19 @@ export const createSceneVariantRegenerationLocation = (options: {
   scene: Pick<SceneDefinition, "id" | "sceneVariation">;
   location: SceneVariationLocation;
   eligible?: boolean;
+  /** Preserves an explicitly opened historical schema during regeneration. */
+  activeSchemaVersion?: number;
   createSeed?: () => number;
 }): SceneVariationLocation | null => {
   const { mode, scene, location, eligible = true } = options;
   const capability = scene.sceneVariation;
+  const schemaVersion = options.activeSchemaVersion ?? capability?.schemaVersion;
   if (
     mode !== "free" ||
     !eligible ||
     !capability?.enabled ||
-    !isSupportedSceneVariationSchemaVersion(capability.schemaVersion)
+    schemaVersion === undefined ||
+    !supportsSceneVariationSchemaVersion(capability, schemaVersion)
   ) {
     return null;
   }
@@ -131,7 +138,7 @@ export const createSceneVariantRegenerationLocation = (options: {
     ...location,
     search: withSceneVariantInSearch(location.search, {
       seed,
-      schemaVersion: capability.schemaVersion,
+      schemaVersion,
     }),
   };
 };

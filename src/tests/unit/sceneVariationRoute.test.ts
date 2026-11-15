@@ -3,7 +3,11 @@ import { resolveSceneVariantRoute } from "../../app/sceneVariationRoute";
 import type { ParsedSceneSeed } from "../../app/sceneVariationUrl";
 import { createSceneVariantIdentity } from "../../scenes/sceneVariation";
 
-const capability = { enabled: true as const, schemaVersion: 1 };
+const capability = {
+  enabled: true as const,
+  schemaVersion: 2,
+  supportedSchemaVersions: [1, 2],
+};
 const missingSeed: ParsedSceneSeed = { kind: "missing" };
 
 describe("scene variation route policy", () => {
@@ -15,6 +19,7 @@ describe("scene variation route policy", () => {
       capability,
       routeKey: "entry-a",
       seed: { kind: "valid", seed: 0xffff_ffff },
+      schema: { kind: "valid", schemaVersion: 2 },
       previousIdentity: null,
       previousRouteKey: null,
       createSeed,
@@ -22,7 +27,7 @@ describe("scene variation route policy", () => {
     expect(result).toMatchObject({
       status: "resolved",
       seedSource: "explicit-url",
-      identity: { sceneId: "interior-corner", seed: 0xffff_ffff, schemaVersion: 1 },
+      identity: { sceneId: "interior-corner", seed: 0xffff_ffff, schemaVersion: 2 },
     });
     expect(createSeed).not.toHaveBeenCalled();
   });
@@ -49,7 +54,11 @@ describe("scene variation route policy", () => {
       previousRouteKey: "location-a",
       createSeed,
     });
-    expect(first).toMatchObject({ status: "resolved", seedSource: "generated-missing" });
+    expect(first).toMatchObject({
+      status: "resolved",
+      seedSource: "generated-missing",
+      identity: { schemaVersion: 2 },
+    });
     expect(replay).toMatchObject({ status: "resolved", seedSource: "reused-location" });
     expect(replay.identity).toBe(first.identity);
     expect(createSeed).toHaveBeenCalledTimes(1);
@@ -70,8 +79,30 @@ describe("scene variation route policy", () => {
     expect(result).toMatchObject({
       status: "resolved",
       seedSource: "generated-missing",
-      identity: { sceneId: "interior-corner", seed: 13 },
+      identity: { sceneId: "interior-corner", seed: 13, schemaVersion: 2 },
     });
+  });
+
+  it("keeps a legacy bare-seed URL on v1 and honors explicit v1", () => {
+    const resolve = (schema?: { kind: "valid"; schemaVersion: number }) =>
+      resolveSceneVariantRoute({
+        mode: "free",
+        sceneId: "interior-corner",
+        capability,
+        routeKey: schema ? "explicit-v1" : "legacy-v1",
+        seed: { kind: "valid", seed: 284719 },
+        schema,
+        previousIdentity: null,
+        previousRouteKey: null,
+        createSeed: () => 99,
+      });
+
+    expect(resolve().identity).toEqual({
+      sceneId: "interior-corner",
+      seed: 284719,
+      schemaVersion: 1,
+    });
+    expect(resolve({ kind: "valid", schemaVersion: 1 }).identity?.schemaVersion).toBe(1);
   });
 
   it("replaces invalid seeds with one generated value", () => {
@@ -113,13 +144,13 @@ describe("scene variation route policy", () => {
     expect(resolveSceneVariantRoute({
       ...common,
       mode: "free",
-      capability: { enabled: true, schemaVersion: 2 },
+      capability: { enabled: true, schemaVersion: 3 },
     })).toEqual({ status: "unsupported-schema", identity: null });
     expect(resolveSceneVariantRoute({
       ...common,
       mode: "free",
       capability,
-      schema: { kind: "unsupported", schemaVersion: 2 },
+      schema: { kind: "unsupported", schemaVersion: 3 },
     })).toEqual({ status: "unsupported-schema", identity: null });
     expect(resolveSceneVariantRoute({
       ...common,
