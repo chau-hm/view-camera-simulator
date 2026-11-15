@@ -23,6 +23,30 @@ const guidedContext = getGuidedLessonContext({
 });
 if (!guidedContext) throw new Error("Expected guided lesson context");
 
+const interiorCornerEntry = getPublicSceneEntryById("interior-corner");
+if (!interiorCornerEntry) throw new Error("Missing Interior Corner public scene entry");
+
+const interiorCornerComposeTask = getTaskById("interior-corner-compose-01");
+if (!interiorCornerComposeTask) throw new Error("Missing Interior Corner Compose task");
+
+const interiorCornerObserveContext = getGuidedLessonContext({
+  entry: interiorCornerEntry,
+  mode: "free",
+  sceneId: interiorCornerEntry.id,
+  taskId: null,
+  search: "?lesson=1",
+});
+if (!interiorCornerObserveContext) throw new Error("Expected Interior Corner Observe context");
+
+const interiorCornerComposeContext = getGuidedLessonContext({
+  entry: interiorCornerEntry,
+  mode: "guided",
+  sceneId: interiorCornerEntry.id,
+  taskId: interiorCornerComposeTask.id,
+  search: "?lesson=1",
+});
+if (!interiorCornerComposeContext) throw new Error("Expected Interior Corner Compose context");
+
 const completedEvaluation: TaskEvaluation = {
   taskId: guidedTask.id,
   status: "passed",
@@ -46,6 +70,7 @@ const renderPanel = (
   evaluation: TaskEvaluation | null = null,
   sceneId = "oblique-architecture",
   task = mode === "guided" ? guidedTask : null,
+  guidedLessonContext = mode === "guided" ? guidedContext : null,
 ) =>
   render(
     <MemoryRouter>
@@ -54,7 +79,7 @@ const renderPanel = (
         sceneId={sceneId}
         task={task}
         evaluation={evaluation}
-        guidedLessonContext={mode === "guided" ? guidedContext : null}
+        guidedLessonContext={guidedLessonContext}
       />
     </MemoryRouter>,
   );
@@ -107,6 +132,129 @@ describe("LearningOverlayPanel", () => {
     fireEvent.focus(getRail());
     expect(getPanel()).toHaveAttribute("data-drawer-state", "transient");
     expect(getRail()).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("starts a Free-mode guided lesson Observe stage pinned with Continue visible", () => {
+    renderPanel("free", null, interiorCornerEntry.id, null, interiorCornerObserveContext);
+
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
+    expect(getPanel()).toHaveAttribute("data-pinned", "true");
+    expect(getRail()).toHaveAttribute("aria-expanded", "true");
+    expect(getDrawer()).toHaveAttribute("aria-hidden", "false");
+    expect(screen.getByRole("button", { name: /^Task$/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Guided lesson progress" })).toHaveAttribute(
+      "data-guided-lesson-stage",
+      "observe",
+    );
+    expect(screen.getByRole("link", { name: "Continue" })).toBeVisible();
+  });
+
+  it("applies drawer defaults when switching between Free Practice and guided lesson stages", () => {
+    const { rerender } = renderPanel("free", null, interiorCornerEntry.id, null, null);
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "peek");
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="free"
+          sceneId={interiorCornerEntry.id}
+          task={null}
+          evaluation={null}
+          guidedLessonContext={interiorCornerObserveContext}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
+    fireEvent.click(screen.getByRole("button", { name: /^Feedback$/ }));
+    expect(screen.getByRole("button", { name: /^Feedback$/ })).toHaveAttribute("aria-pressed", "true");
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="guided"
+          sceneId={interiorCornerEntry.id}
+          task={interiorCornerComposeTask}
+          evaluation={null}
+          guidedLessonContext={interiorCornerComposeContext}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "pinned");
+    expect(screen.getByRole("button", { name: /^Task$/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("region", { name: "Guided lesson progress" })).toHaveAttribute(
+      "data-guided-lesson-stage",
+      "compose",
+    );
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="free"
+          sceneId={interiorCornerEntry.id}
+          task={null}
+          evaluation={null}
+          guidedLessonContext={null}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "peek");
+    expect(getPanel()).toHaveAttribute("data-pinned", "false");
+    expect(getDrawer()).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("keeps a closed Observe drawer collapsed after evaluation updates", () => {
+    const { rerender } = renderPanel("free", null, interiorCornerEntry.id, null, interiorCornerObserveContext);
+
+    fireEvent.click(screen.getByRole("button", { name: "Close Task and Feedback" }));
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "peek");
+    expect(getDrawer()).toHaveAttribute("aria-hidden", "true");
+
+    rerender(
+      <MemoryRouter>
+        <LearningOverlayPanel
+          mode="free"
+          sceneId={interiorCornerEntry.id}
+          task={null}
+          evaluation={{ ...completedEvaluation, taskId: interiorCornerComposeTask.id }}
+          guidedLessonContext={interiorCornerObserveContext}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(getPanel()).toHaveAttribute("data-drawer-state", "peek");
+    expect(getDrawer()).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("keeps guided lesson Observe in flow on narrow layouts", () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: (query: string) => ({
+        matches: query === "(max-width: 900px)",
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => false,
+      }),
+    });
+
+    try {
+      renderPanel("free", null, interiorCornerEntry.id, null, interiorCornerObserveContext);
+      expect(getPanel()).toHaveAttribute("data-drawer-state", "flow");
+      expect(getDrawer()).toHaveAttribute("aria-hidden", "false");
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        value: originalMatchMedia,
+      });
+    }
   });
 
   it("switches between Task and Feedback without changing the selected view on evaluation updates", () => {
