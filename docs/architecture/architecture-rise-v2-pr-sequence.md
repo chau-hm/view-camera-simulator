@@ -8,11 +8,11 @@ This sequence keeps the public Architecture Rise scene production-safe at each m
 
 ## PR B1 — Optional layout-authority extraction
 
-**Recommendation: do not create a standalone PR B1 by default.** The appearance-only front window arrays and side-window arrays currently have a small consumer set: the Architecture Rise factory and a Ground Glass host E2E landmark fixture. Moving these values alone would add a behavior-neutral PR and then require another change to consume them.
+**Recommendation: do not create a standalone PR B1 by default.** The front/side arrays have three direct data consumers (the Architecture Rise factory, Ground Glass host landmark fixture, and Observer backend comparison benchmark) plus runtime verification, glazing-material, reflection, planar/probe, and raster-orientation consumers tied to generated names or sampled locations. Moving the data alone would leave those consumers stale and add a behavior-neutral PR before the actual rebuild.
 
-PR B should make the presentation separation as one cohesive, tested step: move the rebuildable bay/opening layout into the Architecture Rise presentation layout; keep focus, target, bounds, composition and probes in canonical geometry; update the existing window-landmark fixture to read the presentation layout. Do not change SceneDefinition output during this extraction.
+PR B should make the presentation separation as one cohesive, tested step: move the rebuildable front/side opening layout into the Architecture Rise presentation layer; keep focus, target, bounds, composition and probes in canonical geometry; migrate every direct and indirect consumer listed in the [window-layout audit](architecture-rise-v2-contract-map.md#window-layout-consumer-audit). Use descriptive IDs for real v2 windows. Do not change SceneDefinition output during this extraction.
 
-Only split out PR B1 if implementation proves that the layout extraction cannot be reviewed independently from the geometry rebuild. If split, its write scope is limited to the presentation data owner, the factory’s read-only adaptation, and the exact Ground Glass fixture that reads the old arrays. Its acceptance is unchanged SceneDefinition, focus range, composition target, focus-chart geometry, asset registration and runtime capture. It must not alter architectureRiseGeometry.ts semantic values or Dream Loop manifest permissions.
+Only split out PR B1 if implementation proves that layout extraction cannot be reviewed independently from the geometry rebuild. If split, its write scope must include the presentation owner, factory adaptation, and every direct array/name/landmark consumer in the audit; moving only the exported arrays is not a complete extraction. Its acceptance is unchanged SceneDefinition, focus range, composition target, focus-chart geometry, asset registration, benchmark ROI validity and runtime capture. It must not alter architectureRiseGeometry.ts semantic values or Dream Loop manifest permissions.
 
 ## PR B — Clean-sheet procedural architecture
 
@@ -21,22 +21,25 @@ Only split out PR B1 if implementation proves that the layout extraction cannot 
 ### Write scope
 
 - src/render/ArchitectureRiseSubjectFactory.tsx
+- src/render/SceneRenderer.tsx only for its Architecture Rise verification-inventory glazing selectors; no backend, output or lifecycle changes
 - src/scenes/presentation/architectureRise.ts and, if needed, one focused renderer-neutral presentation-layout module
 - src/scenes/architectureRiseGeometry.ts only to remove/move explicitly presentation-only window arrays; do not change canonical values
-- Exact regression files needed for focus-ray visibility, architecture geometry, current window landmarks, materials, scene definition and Ground Glass behavior; prefer focused files over a broad test-directory allowance
-- No scene registry/public route, optics, Ground Glass implementation, lighting, task threshold, shared procedural-material API or Dream Loop manifest changes
+- src/tests/benchmarks/observer-backend-comparison.bench.ts and src/tests/e2e/ground-glass-webgpu-host.spec.ts for the two additional direct layout consumers
+- Only the exact glazing/pane/name/raster regression files enumerated in the [contract-map consumer audit](architecture-rise-v2-contract-map.md#window-layout-consumer-audit); no broad test-directory allowance
+- No scene registry/public route, optics, Ground Glass implementation, shared renderer backend/lifecycle, lighting, task threshold, shared procedural-material API or Dream Loop manifest changes
 
-This is a normal implementation PR, not a Dream Loop pilot edit. The manifest does not authorize src/scenes/**, tests or renderer changes. Do not run dream-loop:guard by broadening that manifest. If PR B needs any protected shared contract, stop and open a separate scoped proposal first.
+This is a normal implementation PR, not a Dream Loop pilot edit. The manifest does not authorize src/scenes/**, tests or renderer paths, so the explicitly listed layout, diagnostic and regression edits belong to this normal PR B scope. Do not run dream-loop:guard by broadening that manifest. If PR B needs any shared optics, RTT, lighting or renderer-lifecycle contract change, stop and open a separate scoped proposal first.
 
 ### Dependencies and implementation order
 
 1. Reproduce the 8a8b4287 source values from the [contract map](architecture-rise-v2-contract-map.md) in focused contract assertions before replacing geometry.
-2. Move only the front/side window presentation arrays to the presentation layout and update their one E2E landmark consumer. Prove no scene definition, target, bounds, focus range or task value changed.
-3. Build the complete masses and connected side return; then cut openings into the wall construction; then add entrance, windows, roof courses and surface detail. Integrate both canonical focus regions at their existing coordinates.
+2. Move the front/side presentation arrays to the presentation layout; migrate every direct and indirect consumer in the audit, replacing legacy bay IDs and prefixes with descriptive IDs for real v2 openings. Prove no scene definition, target, bounds, focus range or task value changed.
+3. Build the complete masses and connected side return using the revised [upper-facade coordinate schedule](architecture-rise-v2-design-spec.md#upper-facade-coordinate-and-clearance-schedule); then cut openings into the wall construction; then add entrance, windows, roof courses and surface detail. Integrate both canonical focus regions at their existing coordinates.
 4. Add tracked geometric checks against the actual mounted factory group. Ray from the derived physical lens center through all mounted meshes to the canonical checkerboard and full fine-detail assembly. Check default, focus endpoints, Rise task boundaries and a reachable mixed movement state. Keep every decorative mesh in the intersection set. Add a deliberate test-only blocker and assert that the regression assertion catches it.
-5. Run the focused Architecture Rise, focus-chart, focus-detail, glazing/reflected-world, task, asset lifecycle and Ground Glass tests; then run relevant focus/Rise and Ground Glass browser coverage.
+5. Run the focused Architecture Rise, focus-chart, focus-detail, glazing/reflected-world, task, asset lifecycle and Ground Glass tests listed in the consumer audit; then run the affected focus/Rise, WebGPU inventory and Ground Glass browser coverage. Recheck the world-space host landmarks and Raw/Upright raster samples against actual v2 windows while keeping the orientation transforms independent of window identity.
 6. Capture matched clean Observer, teaching Observer, close-front, both oblique sides, side, above-roof, and Ground Glass Processed/Raw/Upright states. Use actual public controls for movement and focus. Retain screenshots only in ignored experiment artifacts.
 7. Measure the same 60-sample Architecture Rise scene-capacity fields captured on current main, at the same browser, viewport, DPR, quality, route and public state. Report effective renderables/triangles, viewport and RTT subjects, renderer resources, CPU-submit timing, available GPU timing and frame cadence separately.
+8. Run the existing npm run benchmark:observer-backends path and verify the Architecture Rise glazing ROI for each paired WebGL/WebGPU capture. The selected v2 target must exist, project to a non-null ROI and contain meaningful window pixels; an absent target or ROI invalidates the pair instead of silently omitting the comparison. Keep the existing glazing region/capture keys and report metrics; include the selected window ID in run metadata, and label the ROI identity change so results are not presented as identical to historical bay-3-3 measurements.
 
 The approved brief allows exploring roughly 2–4× the current visible subject mesh instances if useful. Treat that only as a planning hypothesis: mesh count is neither a minimum nor a hard ceiling. Compare the visual gain with effective renderables, likely draw-call implications, shared renderer resources, RTT cost and observed browser performance.
 
@@ -45,6 +48,7 @@ The approved brief allows exploring roughly 2–4× the current visible subject 
 - Scene ID, route, architecture-rise-subject, focus range/reset, camera/lens/film configuration, movement signs/limits/steps, focus target, checkerboard and marker, complete fine-detail panel, reference probes, scene bounds, composition regions and rise-01 thresholds match current main.
 - The door and every window aperture are separate. The service wing meets the main wall and roof, and remains attached in both side views.
 - The checkerboard and complete fine-detail frame/grid/six-line assembly have no newly introduced physical-lens ray obstruction in the checked states. The test-only negative control fails.
+- The Observer backend comparison keeps its glazing ROI for a real v2 pane, produces a non-null/contentful region for both backends, and records the pane ID. The changed pane identity is explicit in the report.
 - No detached trim, visible wall gap, floating window, inconsistent return, hidden target or newly exposed roof gap appears in front, side, corner or above-roof views.
 - Observer and Ground Glass render the same registered asset. Processed, Raw and Upright Assist retain their existing film mapping, focus/blur behavior and resource lifecycle.
 - Performance reporting distinguishes renderable count/draw-call implications, shared renderer resources, CPU-submit measurements and hardware GPU timings. The targeted 472-mesh/6122-triangle snapshot was captured at 48bfc7e and remains applicable to 8a8b4287 because PR #341 did not change the Architecture Rise subject or capture path; PR B must still capture its own current-main parent as the matched baseline. No mesh multiplier is a quota or upper limit.

@@ -22,17 +22,42 @@ The canonical focus chart occupies X −375…375 and Y 525…1275 mm around (0,
 | Main townhouse | Retain X −1400…1400, Y −1200…3650, Z 8900…10100. | Continuous masonry shell with true corner returns; no freestanding front sheet or disconnected trim strip. |
 | Rusticated base | Main facade, Y −1200…0. | Pale stone blocks and a continuous plinth; openings and doorway are built into the wall assembly rather than placed over a solid face. |
 | Brick shaft | Main facade, Y 0…2820. | Warm brick-colored masonry with a consistent course rhythm. Do not invent a new shared brick material API in PR B: current shared patterns are limestone, cut-stone, concrete, plaster, wood, paper and fabric. Reuse an appropriate existing recipe or model restrained brick courses with shared/instanced geometry. |
-| Main cornice and parapet | Cornice around Y 2820…3040; parapet remains Y 3000…3650. | Seat each course into the wall with consistent returns and coping. The 20 mm band overlap is deliberate assembly overlap, not coincident separated faces. |
+| Main cornice and parapet | Cornice front course X −1400…1400, Y 2920…3040, Z 8780…9060; parapet remains Y 3000…3650. | Use a deep, continuous cornice with front projection and connected returns. It overlaps the main wall and parapet assembly intentionally; do not move the building envelope or composition targets. |
 | Attached service return | X 1400…1900, Y −1200…1800, Z 9600…10500. | Attach directly to the main east wall at X=1400 with a shared Z overlap from 9600…10100. Continue the wall/roof connection into the rear extension; no gap or separate silhouette block. Keep its roof below the main parapet. |
 | Ground-floor entrance | Center X=0; opening about 500 mm wide, from Y≈−1180 to Y≈180. | A single arched or framed door with threshold/step and continuous jambs. Its opening is separate from every window and leaves the focus chart’s lower edge clear. |
 | Ground-floor windows | Centers X≈−900 and +900, Y≈−500; openings about 420×500. | Keep clear of the central entry. Recess glass behind the masonry plane; connect jambs, sill and lintel to the wall. |
-| Lower upper-storey row | Centers X≈−950, 0 and +950, Y≈1620; openings about 420×420. | Align across the facade. Keep the lower surround at least 75 mm above the checkerboard’s upper edge and the upper surround at least 75 mm below the fine panel’s lower edge. |
-| Upper-storey row | Centers X≈−950, 0 and +950, Y≈2710; openings about 420×360. | Align with the lower row. Keep its sill/surround at least 50 mm above the fine panel and its lintel below the cornice. |
-| Fine-detail quiet zone | Existing X 640…1000, Y 1990…2410, at canonical Z. | Reserve the spandrel between upper rows. In this zone the existing focus panel and its own frame/grid are the only added relief. No window glass, lintel, sill, cornice, wall fixture or trim may cross its lens-origin rays. |
+| Middle upper-storey row | Centers X −900, 0 and +900, Y 1600; openings 420×330. | Align all three openings. The right opening remains below the protected fine-detail spandrel, with the complete sill/lintel envelope at least 75 mm below its clearance zone. |
+| Top-storey windows | Centers X −900 and 0, Y 2600; openings 420×360. The upper-right bay has no window. | Keep the right bay as a quiet masonry spandrel around the canonical fine-detail panel. This is a deliberate third-bay exception; the cornice remains continuous above all three bays. |
+| Fine-detail quiet zone | Existing assembly X 640…1000, Y 1990…2410 at helper-derived Z; reserve X 565…1075, Y 1915…2485. | Keep only the canonical panel/frame/grid/lines inside this protected projection. No new window, trim, wall fixture or applied relief enters the reserved area. |
 | Checkerboard quiet zone | Existing X −375…375, Y 525…1275, at canonical Z. | Keep a calm central spandrel above the doorway. Do not place an opening, lintel, sign, pilaster or applied material panel in front of it. |
 | Street stage and sign | Keep current street-context coordinates and extents by default. | Refine sidewalk slabs, curb joints and sign detail in place. Keep the existing depth-reference props readable. |
 
-Opening sizes and floor centers above are proposed presentation values, not canonical constants. A PR B worker may refine them after a mounted geometry review. Preserve the minimum quiet-zone clearances and avoid adding openings behind the checkerboard or fine panel. The three-bay upper rhythm is a coherent target interpretation, not a required exact count.
+Opening sizes and floor centers above are proposed presentation values, not canonical constants. The three vertical bay axes remain X=−900, 0 and +900; omitting the upper-right opening makes that bay a deliberate focus-panel spandrel rather than forcing a window through the teaching target's protected projection. A PR B worker may refine appearance-only dimensions after mounted geometry review, while preserving the clearances and canonical targets below. Exact window/floor count is not an acceptance criterion.
+
+### Upper facade coordinate and clearance schedule
+
+All coordinates are millimetres. The front wall plane is the canonical Z=8900 datum; smaller Z is nearer the lens. Opening envelopes below are 2D front-elevation extents. The trim envelopes add 75 mm on each edge: up to 50 mm of sill/lintel/jamb relief plus a 25 mm construction and placement reserve.
+
+| Opening set / presentation IDs | Centers (X,Y) | Clear opening size | Opening extents | Complete trim/tolerance envelope |
+|---|---|---|---|---|
+| Middle upper row: upper-middle-left, upper-middle-center, upper-middle-right | (−900,1600), (0,1600), (+900,1600) | 420×330 | X: [−1110,−690], [−210,210], [690,1110]; Y: [1435,1765] | X centers ±285: [−1185,−615], [−285,285], [615,1185]; Y: [1360,1840] |
+| Top-storey row: upper-top-left, upper-top-center | (−900,2600), (0,2600) | 420×360 | X: [−1110,−690], [−210,210]; Y: [2420,2780] | X centers ±285: [−1185,−615], [−285,285]; Y: [2345,2855] |
+| Upper-right protected bay | No opening | — | No glazing aperture in the protected projection | Quiet masonry only within X [565,1075], Y [1915,2485]; the canonical fine-detail assembly occupies X [640,1000], Y [1990,2410] at its helper-derived Z |
+
+| Protected edge pair | Numeric clearance | Derivation |
+|---|---:|---|
+| Middle-row center sill envelope → focus-chart upper edge | 85 mm vertically | 1360 − 1275 |
+| Middle-row right lintel envelope → fine-detail quiet-zone lower edge | 75 mm vertically | 1915 − 1840 |
+| Top-center surround → fine-detail quiet-zone left edge | 280 mm horizontally | 565 − 285; their Y ranges overlap, so this horizontal gap is required |
+| Top-left surround → fine-detail quiet-zone left edge | 1180 mm horizontally | 565 − (−615) |
+| Top-row complete surround → cornice lower edge | 65 mm vertically | 2920 − 2855 |
+| Fine-detail quiet-zone upper edge → cornice lower edge | 435 mm vertically | 2920 − 2485 |
+
+The proposed cornice front-course envelope is X [−1400,1400], Y [2920,3040], Z [8780,9060]. Relative to the fixed façade plane, it projects 120 mm toward the lens and extends 160 mm into the main wall. The 3040 mm top lies within the existing parapet volume (3000…3650); wrap the cornice around both main-mass corners onto the side elevations, and terminate the lower service-wing coping against the main wall below it. Keep the opening and trim envelopes inside the main-body X/Y bounds. Preserve the existing scene bounds and Rise composition targets.
+
+Build window openings through the wall thickness. Keep the canonical front plane at Z=8900, and place each glazing pane's lens-facing surface at Z≥8980 (at least 80 mm into the building); return the reveal from the front wall plane to the glass. The exact glass depth remains a presentation-layout value shared by the factory, landmarks and ROI calculation.
+
+These projected extents are a design preflight only. They do not prove lens-ray visibility. PR B must raycast the complete mounted geometry from deriveOpticsState(...).lensCenterWorld to all canonical focus samples at reset and reachable movement/focus states. If mounted geometry needs more clearance, PR B may refine the presentation-only opening or trim dimensions while preserving the canonical targets, task outcomes and the protected margin.
 
 ### Wall thickness and window assembly
 
@@ -51,7 +76,7 @@ Keep parapet/cornice/coping returns continuous around all exposed corners. Low r
 ## Geometry, material and lifecycle ownership
 
 - Keep the same architecture-rise-subject asset registration and createArchitectureRiseGroup/paired disposer path. Observer and Ground Glass must consume the same registered asset.
-- Move window-bay definitions out of canonical geometry into an explicit renderer-neutral Architecture Rise presentation layout. Current front/side arrays are presentation-only, but the Ground Glass host test currently reads the front array for window landmarks; update that fixture to the new layout instead of retaining semantic authority in the old file.
+- Move both front and side window definitions out of canonical geometry into an explicit renderer-neutral Architecture Rise presentation layout. Migrate every direct and indirect consumer in the [window-layout audit](architecture-rise-v2-contract-map.md#window-layout-consumer-audit), including the Ground Glass host fixture and Observer backend glazing ROI; do not leave legacy array or bay-ID assumptions behind.
 - Keep canonical building/focus/composition data in the canonical geometry module. Do not copy those constants into the presentation layout.
 - Prefer the existing shared box geometry and shared materials for repeating courses; use instancing only where the current subject/lifecycle path can own it safely. Mesh count is evidence, not a design goal.
 - Use existing subject-owned procedural material factories. Do not add a global brick pattern, environmental lighting, lantern emissives, reflection system or renderer policy as a hidden dependency of this geometry PR.
