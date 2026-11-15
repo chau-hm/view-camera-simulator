@@ -4,6 +4,10 @@ import { useTranslation } from "react-i18next";
 import type { SceneDefinition } from "../../types/scene";
 import type { SceneVariantIdentity } from "../../types/sceneVariation";
 import type { SceneVariantRouteResolution } from "../../app/sceneVariationRoute";
+import {
+  parseSceneSeedFromSearch,
+  parseSceneVariationSchemaFromSearch,
+} from "../../app/sceneVariationUrl";
 import { useRegenerateSceneVariant } from "../../app/useRegenerateSceneVariant";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 
@@ -30,21 +34,41 @@ export const SceneVariationControls = ({
   });
 
   const copyShareUrl = useCallback(async () => {
-    if (!identity || typeof window === "undefined" || !navigator.clipboard?.writeText) {
+    if (
+      !identity ||
+      routeStatus !== "resolved" ||
+      identity.sceneId !== scene.id ||
+      typeof window === "undefined" ||
+      !navigator.clipboard?.writeText
+    ) {
       setCopyStatus("failed");
       return;
     }
-    const shareUrl = new URL(
-      `${location.pathname}${location.search}${location.hash}`,
-      window.location.origin,
-    ).toString();
+
+    const browserUrl = new URL(window.location.href);
+    const browserSeed = parseSceneSeedFromSearch(browserUrl.search);
+    const browserSchema = parseSceneVariationSchemaFromSearch(browserUrl.search);
+    if (
+      browserUrl.search !== location.search ||
+      browserUrl.hash !== location.hash ||
+      browserSeed.kind !== "valid" ||
+      browserSeed.seed !== identity.seed ||
+      browserSchema.kind !== "valid" ||
+      browserSchema.schemaVersion !== identity.schemaVersion
+    ) {
+      setCopyStatus("failed");
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      // The browser URL includes Vite's deployment base path; Router location
+      // paths are basename-relative, so do not reconstruct the absolute URL.
+      await navigator.clipboard.writeText(window.location.href);
       setCopyStatus("copied");
     } catch {
       setCopyStatus("failed");
     }
-  }, [identity, location.hash, location.pathname, location.search]);
+  }, [identity, location.hash, location.search, routeStatus, scene.id]);
 
   const statusMessage = routeStatus === "unsupported-schema"
     ? t(simulatorMessageKeys.variation.unsupportedSchema)

@@ -15,6 +15,7 @@ test("production preview resolves seeded Free Practice and keeps lesson Observe 
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/simulator/free/interior-corner?seed=284719&sv=1");
 
   const observer = page.getByTestId("scene-canvas");
@@ -33,6 +34,35 @@ test("production preview resolves seeded Free Practice and keeps lesson Observe 
   const seededUrl = new URL(page.url());
   expect(seededUrl.searchParams.get("seed")).toBe("284719");
   expect(seededUrl.searchParams.get("sv")).toBe("1");
+  await page.getByRole("button", { name: "Copy share URL" }).click();
+  await expect(page.getByTestId("scene-variation-controls").getByRole("status"))
+    .toContainText("Share URL copied");
+  const copiedShareUrl = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copiedShareUrl).toBe(page.url());
+  expect(new URL(copiedShareUrl).pathname).toBe("/simulator/free/interior-corner");
+  await page.goto(copiedShareUrl);
+  await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", {
+    timeout: 90_000,
+  });
+  await expect(page.getByTestId("scene-variation-controls")).toHaveAttribute(
+    "data-active-seed",
+    "284719",
+  );
+  await waitForCurrentFrame(rtt);
+  expect(page.url()).toBe(copiedShareUrl);
+  await testInfo.attach("root-share-url-validation.json", {
+    body: Buffer.from(JSON.stringify({
+      buildBaseUrl: "/",
+      browserRoute: "/simulator/free/interior-corner?seed=284719&sv=1",
+      actualBrowserUrl: page.url(),
+      clipboardUrl: copiedShareUrl,
+      activeSeed: 284719,
+      schemaVersion: 1,
+      replayedSameSeed: true,
+      status: "passed",
+    }, null, 2)),
+    contentType: "application/json",
+  });
 
   const observerCapture = await observer.locator("canvas").first().screenshot();
   const groundGlassCapture = await rtt.locator("canvas").first().screenshot();

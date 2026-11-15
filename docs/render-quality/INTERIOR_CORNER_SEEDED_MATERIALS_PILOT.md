@@ -195,6 +195,40 @@ Playwright configs because the repository's default M7V inventory is pinned to
 a historical source baseline. No M7V inventory or qualification evidence was
 changed. WebGPU visual qualification was not part of this pilot.
 
+### Review-fix round 1: deployment basename
+
+The original production-preview checks above used `VITE_BASE_PATH=/` and did
+not qualify Copy Share URL under the default `/view-camera-simulator/`
+deployment base. Review found that the control rebuilt an absolute URL from
+React Router's basename-relative path, omitting the deployment base.
+
+Copy Share URL now uses the browser's effective URL after verifying that the
+resolved route and active scene variant identity agree with the URL's seed and
+schema. It therefore retains the browser origin, deployment path, query
+parameters, and hash, and refuses to report success while route/identity
+normalization is incomplete.
+
+Newly performed Chromium production-preview checks:
+
+| Build base | Entry route | Copied URL and replay | Result |
+| --- | --- | --- | --- |
+| `/` | `http://127.0.0.1:4176/simulator/free/interior-corner?seed=284719&sv=1` | `http://127.0.0.1:4176/simulator/free/interior-corner?seed=284719&sv=1`; replay kept seed `284719`, schema `1`, and mounted Observer and Ground Glass. | Passed |
+| `/view-camera-simulator/` | `http://127.0.0.1:4177/view-camera-simulator/simulator/free/interior-corner?seed=284719&sv=1&keep=one#pilot` | `http://127.0.0.1:4177/view-camera-simulator/simulator/free/interior-corner?keep=one&seed=284719&sv=1#pilot`; replay kept seed `284719`, schema `1`, `keep=one`, and `#pilot`, with Observer and Ground Glass active. | Passed |
+
+The subpath browser check also regenerated a new seed, copied its URL, used
+Back to restore seed `284719`, then Forward to restore the regenerated seed.
+The copied URLs retained the deployment base and unrelated query/hash state.
+These checks validate URL and route identity behavior; they do not repeat or
+replace the material appearance, nine-state Ground Glass, or resource-capacity
+evidence recorded above.
+
+Commands for these review-fix checks:
+
+```bash
+PLAYWRIGHT_SCENE_VARIATION_PRODUCTION_PORT=4176 npm run test:e2e -- --config=playwright.scene-variation.production.config.ts --project=chromium-scene-variation-production --workers=1 --retries=0 src/tests/scene-variation-e2e/interior-corner-seeded-materials-production.spec.ts
+PLAYWRIGHT_SCENE_VARIATION_SUBPATH_PORT=4177 npm run test:e2e -- --config=playwright.scene-variation.subpath-production.config.ts --project=chromium-scene-variation-subpath-production --workers=1 --retries=0 src/tests/scene-variation-e2e/interior-corner-seeded-materials-subpath-production.spec.ts
+```
+
 ## Limitations
 
 - Material differences are intentionally low contrast at normal Observer size;
