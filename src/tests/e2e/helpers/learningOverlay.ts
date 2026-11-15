@@ -12,7 +12,7 @@ export const getLearningDrawer = (page: Page): Locator =>
 export const openLearningDrawer = async (page: Page): Promise<Locator> => {
   const overlay = getLearningOverlay(page);
   const drawer = getLearningDrawer(page);
-  if (!(await drawer.isVisible())) {
+  if (await overlay.getAttribute("data-drawer-state") === "peek") {
     await getLearningRail(page).hover();
   }
   await expect(drawer).toBeVisible();

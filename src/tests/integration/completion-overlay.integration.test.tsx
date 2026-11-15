@@ -41,8 +41,15 @@ describe("phase 12 completion overlay", () => {
         <SimulatorWorkspace mode="guided" sceneId="architecture-rise" taskId="rise-01" simulateAssetFailure={false} />
       </MemoryRouter>,
     );
-    expect(screen.getByTestId("learning-overlay-task-view")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Task and Feedback/ }));
+    const learning = screen.getByTestId("learning-overlay-panel");
+    const drawer = screen.getByTestId("learning-overlay-drawer");
+    expect(learning).toHaveAttribute("data-drawer-state", "pinned");
+    expect(drawer).toBeVisible();
+    expect(screen.getByTestId("learning-overlay-task-view")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Task" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     const feedbackButton = screen.getByRole("button", {
       name: "Feedback — Task completed",
     });
