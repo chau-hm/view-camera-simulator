@@ -19,7 +19,7 @@ const PROBE_A_ORIGIN = new THREE.Vector3(-1.2725, 1.5, 6.972);
 const PROBE_FAR = 100;
 const PROBE_NEAR = 0.05;
 const CLEARANCE_M = PROBE_NEAR * 1.25;
-const FRONT_PANE_PREFIX = "architecture-rise-facade-window-bay-";
+const FRONT_PANE_PREFIX = "architecture-rise-window-";
 const SAMPLE_FRACTIONS = [0.1, 0.3, 0.7, 0.9] as const;
 const WIDTH = 514;
 const HEIGHT = 411;
@@ -314,7 +314,9 @@ const createPerspectiveCamera = (position: THREE.Vector3, target: THREE.Vector3)
 };
 
 const isFrontGlazing = (mesh: THREE.Mesh): boolean =>
-  mesh.name.startsWith(FRONT_PANE_PREFIX) && mesh.name.endsWith("-glazing");
+  mesh.name.startsWith(FRONT_PANE_PREFIX) &&
+  !mesh.name.includes("service-east-") &&
+  mesh.name.endsWith("-glazing");
 const isGlazing = (mesh: THREE.Mesh): boolean => mesh.name.endsWith("-glazing");
 
 const collectMeshes = (root: THREE.Object3D): THREE.Mesh[] => {

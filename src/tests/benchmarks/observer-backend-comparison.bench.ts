@@ -6,7 +6,11 @@ import { performance } from "node:perf_hooks";
 import { PerspectiveCamera, REVISION, Vector3 } from "three";
 import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
-import architectureRiseGeometry, { architectureRiseWindowBays } from "../../scenes/architectureRiseGeometry";
+import architectureRiseGeometry from "../../scenes/architectureRiseGeometry";
+import {
+  ARCHITECTURE_RISE_PRESENTATION_LAYOUT,
+  getArchitectureRiseGlazingBoundsMm,
+} from "../../scenes/presentation/architectureRiseLayout";
 import { toWorld } from "../../render/rttUtils";
 import { setStepRangeInput } from "../e2e/helpers/stepRangeInput";
 import {
@@ -52,6 +56,7 @@ const orbitSequence = [
   { deltaX: -56, deltaY: -14, steps: 8 },
 ] as const;
 const benchmarkScenes = ["view-camera-anatomy", "architecture-rise"] as const;
+const ARCHITECTURE_RISE_GLAZING_ROI_WINDOW_ID = "middle-right";
 
 type Vector3Tuple = readonly [number, number, number];
 type ObserverView = Readonly<{ position: Vector3Tuple | null; target: Vector3Tuple | null }>;
@@ -67,6 +72,7 @@ type CapturedView = Readonly<{
   screenshotPath: string;
   screenshotRelativePath: string;
   subjectRegionName: string;
+  glazingRoiWindowId: string | null;
   regions: Record<string, ImageRegionEvidence>;
 }>;
 type VisualComparison = Readonly<{
@@ -292,11 +298,21 @@ const getNamedRegions = (
     min: { x: -building.width / 2, y: facade.mainBodyBottomY, z: facade.frontFacadeZ - 20 },
     max: { x: building.width / 2, y: facade.mainBodyTopY, z: facade.backFacadeZ + 20 },
   });
-  const bay = architectureRiseWindowBays.find((entry) => entry.id === "bay-3-3");
-  const glazing = bay ? mmBoundsToWorld({
-    min: { x: bay.x - bay.width / 2, y: bay.y - bay.height / 2, z: facade.frontFacadeZ - bay.depth },
-    max: { x: bay.x + bay.width / 2, y: bay.y + bay.height / 2, z: facade.frontFacadeZ + 2 },
-  }) : null;
+  const glazingWindow = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.windows.find(
+    (window) => window.id === ARCHITECTURE_RISE_GLAZING_ROI_WINDOW_ID && window.elevation === "front",
+  );
+  if (!glazingWindow || glazingWindow.elevation !== "front") {
+    throw new Error("Architecture Rise glazing ROI requires the v2 middle-right front window");
+  }
+  const glazingBounds = getArchitectureRiseGlazingBoundsMm(glazingWindow);
+  const glazing = mmBoundsToWorld({
+    min: { x: glazingBounds.minXMm, y: glazingBounds.minYMm, z: glazingBounds.minZMm },
+    max: { x: glazingBounds.maxXMm, y: glazingBounds.maxYMm, z: glazingBounds.maxZMm },
+  });
+  const glazingRegion = projectWorldBounds(glazing, width, height, view);
+  if (!glazingRegion) {
+    throw new Error("Architecture Rise v2 middle-right glazing ROI is outside the captured Observer view");
+  }
   const roofParapet = mmBoundsToWorld({
     min: { x: -building.width / 2, y: facade.parapetBottomY, z: facade.frontFacadeZ },
     max: { x: building.width / 2, y: facade.parapetTopY, z: facade.backFacadeZ },
@@ -309,7 +325,7 @@ const getNamedRegions = (
     subjectRegionName: "primaryFacade",
     regions: {
       primaryFacade: projectWorldBounds(primaryFacade, width, height, view),
-      glazing: glazing ? projectWorldBounds(glazing, width, height, view) : null,
+      glazing: glazingRegion,
       shadowedSubjectRegion: projectWorldBounds(shadowZone, width, height, view),
       roofParapet: projectWorldBounds(roofParapet, width, height, view),
       backgroundReference: percentRegion(width, height),
@@ -343,6 +359,15 @@ const captureObserverView = async (
       screenshot: region ? summarizePixelRegion(decoded, region) : null,
     },
   ]));
+  if (sceneId === "architecture-rise") {
+    const glazingEvidence = regionEvidence.glazing;
+    if (
+      !glazingEvidence?.bounds ||
+      !subjectRoiHasMeaningfulPixels(glazingEvidence.screenshot)
+    ) {
+      throw new Error("Architecture Rise middle-right glazing ROI was unavailable or not contentful");
+    }
+  }
   const screenshotRelativePath = join(
     "screenshots",
     `${sceneId}-${backend}-trial-${testNumber}-${viewName}.png`,
@@ -357,6 +382,7 @@ const captureObserverView = async (
     screenshotPath,
     screenshotRelativePath: screenshotRelativePath.replaceAll("\\", "/"),
     subjectRegionName: namedRegions.subjectRegionName,
+    glazingRoiWindowId: sceneId === "architecture-rise" ? ARCHITECTURE_RISE_GLAZING_ROI_WINDOW_ID : null,
     regions: regionEvidence,
   };
 };

@@ -23,7 +23,7 @@ type FocusCase = {
     maxLinearSumDifference: number;
     finalDisplayRgba: readonly [number, number, number, number];
   };
-  reflectedSignSharpness: { crop: { minX: number; minYBottom: number; maxX: number; maxYBottom: number }; edgeGradientEnergy: number; sampleCount: number };
+  reflectedTargetSharpness: { crop: { minX: number; minYBottom: number; maxX: number; maxYBottom: number }; edgeGradientEnergy: number; sampleCount: number };
   reflectionSourceHash: string;
   reflectionOnlyHash: string;
   combinedDisplayHash: string;
@@ -58,20 +58,20 @@ test("Architecture Rise planar reflection follows independent Ground Glass focus
   });
   expect(proof.backend.floatProbeValue).toBeCloseTo(1.25, 5);
   expect(proof.backend.radianceFilter).toMatch(/LinearFilter|NearestFilter/);
-  expect(proof.sample.pane).toBe("architecture-rise-facade-window-bay-bay-2-1-glazing");
+  expect(proof.sample.pane).toBe("architecture-rise-window-top-left-glazing");
   expect(proof.sample.uv).toEqual({ u: 0.3, v: 0.3 });
-  expect(proof.sample.panePoint[0]).toBeCloseTo(-1.14, 3);
-  expect(proof.sample.panePoint[1]).toBeCloseTo(1.014, 3);
-  expect(proof.sample.panePoint[2]).toBeCloseTo(8.836, 3);
+  expect(proof.sample.panePoint[0]).toBeCloseTo(-0.9768, 4);
+  expect(proof.sample.panePoint[1]).toBeCloseTo(2.5352, 4);
+  expect(proof.sample.panePoint[2]).toBeCloseTo(9.0, 4);
   expect(proof.sample.normal).toEqual([0, 0, -1]);
   expect(proof.sample.paneMaskActive).toBe(true);
-  expect(proof.sample.reflectionObject).toBe("architecture-rise-street-sign-face-back");
-  expect(proof.sample.cpuQ[0]).toBeCloseTo(-1.523311, 3);
-  expect(proof.sample.cpuQ[1]).toBeCloseTo(1.354945, 3);
-  expect(proof.sample.cpuQ[2]).toBeCloseTo(5.865, 3);
-  expect(proof.sample.cpuQVirtual[0]).toBeCloseTo(-1.523311, 3);
-  expect(proof.sample.cpuQVirtual[1]).toBeCloseTo(1.354945, 3);
-  expect(proof.sample.cpuQVirtual[2]).toBeCloseTo(11.807, 3);
+  expect(proof.sample.reflectionObject).toBe("architecture-rise-test-reflection-target");
+  expect(proof.sample.cpuQ[0]).toBeCloseTo(-1.301315, 4);
+  expect(proof.sample.cpuQ[1]).toBeCloseTo(3.37745, 4);
+  expect(proof.sample.cpuQ[2]).toBeCloseTo(6.01, 4);
+  expect(proof.sample.cpuQVirtual[0]).toBeCloseTo(-1.301315, 4);
+  expect(proof.sample.cpuQVirtual[1]).toBeCloseTo(3.37745, 4);
+  expect(proof.sample.cpuQVirtual[2]).toBeCloseTo(11.99, 4);
   expect(proof.sample.reflectedRadiance.some((value: number) => value > 0)).toBe(true);
   expect(proof.sample.sourcePixel.x).toBeGreaterThanOrEqual(0);
   expect(proof.sample.sourcePixel.x).toBeLessThan(proof.resources.resolution[0]);
@@ -86,7 +86,7 @@ test("Architecture Rise planar reflection follows independent Ground Glass focus
   expect(proof.sample.gpuQ).toHaveLength(3);
   expect(proof.sample.cpuQVirtual).toHaveLength(3);
   expect(proof.sample.gpuQVirtual).toHaveLength(3);
-  expect(proof.sample.gpuQInsideSignFace).toBe(true);
+  expect(proof.sample.gpuQInsideTargetFace).toBe(true);
   expect(proof.sample.cpuQ.every((value: number) => Number.isFinite(value))).toBe(true);
   expect(proof.sample.gpuQ.every((value: number) => Number.isFinite(value))).toBe(true);
   expect(proof.sample.cpuQVirtual.every((value: number) => Number.isFinite(value))).toBe(true);
@@ -101,8 +101,8 @@ test("Architecture Rise planar reflection follows independent Ground Glass focus
   expect(proof.sample.reflectedPixel.x).toBe(Math.floor(proof.sample.reflectedUv.x * proof.resources.resolution[0]));
   expect(proof.sample.reflectedPixel.yBottom).toBe(Math.floor(proof.sample.reflectedUv.y * proof.resources.resolution[1]));
   expect(proof.sample.euclideanGeometricRangeMm).toBeGreaterThan(11_900);
-  expect(proof.sample.opticalAxisFocusDistanceMm).toBeCloseTo(11_807, 0);
-  expect(proof.sample.roundedReflectionFocusMm).toBe(11_810);
+  expect(proof.sample.opticalAxisFocusDistanceMm).toBeCloseTo(11_990, 0);
+  expect(proof.sample.roundedReflectionFocusMm).toBe(11_990);
   expect(proof.groundGlassCamera.pose.positionWorld).toEqual(proof.groundGlassCamera.lensCenterWorldM);
   expect(proof.groundGlassCamera.opticalAxisOriginWorldM).toEqual(proof.groundGlassCamera.lensCenterWorldM);
   expect(proof.groundGlassCamera.pose.forwardWorld[0]).toBeCloseTo(proof.groundGlassCamera.opticalAxisDirection[0], 6);
@@ -125,7 +125,7 @@ test("Architecture Rise planar reflection follows independent Ground Glass focus
   const paneFocus = proof.cases.paneFocus as FocusCase;
   const reflectionFocus = proof.cases.reflectionFocus as FocusCase;
   expect(paneFocus.focusDistanceMm).toBe(8_890);
-  expect(reflectionFocus.focusDistanceMm).toBe(11_810);
+  expect(reflectionFocus.focusDistanceMm).toBe(11_990);
   expect(Math.abs(paneFocus.cpu.reflectedCoC.signedCoCDiameterMm)).toBeGreaterThan(0.05);
   expect(Math.abs(reflectionFocus.cpu.reflectedCoC.signedCoCDiameterMm)).toBeLessThan(0.005);
   expect(Math.abs(paneFocus.gpu.directCoC.signedCoCDiameterMm)).toBeLessThan(0.005);
@@ -149,9 +149,9 @@ test("Architecture Rise planar reflection follows independent Ground Glass focus
     .toBeGreaterThan(0.02);
   expect(Math.abs(paneFocus.gpu.directCoC.signedCoCDiameterMm))
     .toBeLessThan(Math.abs(reflectionFocus.gpu.directCoC.signedCoCDiameterMm));
-  expect(reflectionFocus.reflectedSignSharpness.edgeGradientEnergy)
-    .toBeGreaterThan(paneFocus.reflectedSignSharpness.edgeGradientEnergy * 1.1);
-  expect(reflectionFocus.reflectedSignSharpness.sampleCount).toBeGreaterThan(0);
+  expect(reflectionFocus.reflectedTargetSharpness.edgeGradientEnergy)
+    .toBeGreaterThan(paneFocus.reflectedTargetSharpness.edgeGradientEnergy * 1.1);
+  expect(reflectionFocus.reflectedTargetSharpness.sampleCount).toBeGreaterThan(0);
   expect(paneFocus.reflectionSourceHash).toMatch(/^[0-9a-f]{8}$/);
   expect(reflectionFocus.reflectionSourceHash).toMatch(/^[0-9a-f]{8}$/);
   expect(paneFocus.reflectionOnlyHash).not.toBe(reflectionFocus.reflectionOnlyHash);

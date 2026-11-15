@@ -24,20 +24,6 @@ import {
 } from "../../utils/constants";
 import { roundToStep } from "../../utils/roundToStep";
 
-type PaneSample = {
-  pane: string;
-  row: number;
-  column: number;
-  u: number;
-  v: number;
-  point: THREE.Vector3;
-  normal: THREE.Vector3;
-  incident: THREE.Vector3;
-  reflected: THREE.Vector3;
-};
-
-const sampleFractions = [0.1, 0.3, 0.7, 0.9] as const;
-const baselineFractions = [0.1, 0.5, 0.9] as const;
 const publicFocusRangeMm = architectureRiseScene.focusDistanceRangeMm;
 if (!publicFocusRangeMm) throw new Error("Architecture Rise must declare its public focus range");
 
@@ -63,66 +49,10 @@ const configuredGroundGlassCamera = (focusDistanceMm: number) => {
   return { camera, optics, config };
 };
 
-const paneSamples = (
-  root: THREE.Group,
-  camera: THREE.Camera,
-  side: boolean,
-  fractions: readonly number[],
-): PaneSample[] => {
-  const panes: THREE.Mesh[] = [];
-  root.traverse((object) => {
-    if (
-      object instanceof THREE.Mesh &&
-      object.name.endsWith("-glazing") &&
-      (side
-        ? object.name.startsWith("architecture-rise-side-return-window-bay-")
-        : object.name.startsWith("architecture-rise-facade-window-bay-"))
-    ) {
-      panes.push(object);
-    }
-  });
-  const lens = camera.position.clone();
-  return panes.flatMap((pane) => {
-    const bounds = new THREE.Box3().setFromObject(pane);
-    const normal = side ? new THREE.Vector3(-1, 0, 0) : new THREE.Vector3(0, 0, -1);
-    return fractions.flatMap((v, row) => fractions.map((u, column) => {
-      const point = side
-        ? new THREE.Vector3(
-            bounds.min.x,
-            bounds.min.y + v * (bounds.max.y - bounds.min.y),
-            bounds.min.z + u * (bounds.max.z - bounds.min.z),
-          )
-        : new THREE.Vector3(
-            bounds.min.x + u * (bounds.max.x - bounds.min.x),
-            bounds.min.y + v * (bounds.max.y - bounds.min.y),
-            bounds.min.z,
-          );
-      const incident = point.clone().sub(lens).normalize();
-      return {
-        pane: pane.name,
-        row,
-        column,
-        u,
-        v,
-        point,
-        normal,
-        incident,
-        reflected: incident.clone().reflect(normal).normalize(),
-      };
-    }));
-  });
-};
-
-const sceneMeshesExcludingWindowAssemblies = (root: THREE.Group): THREE.Mesh[] => {
+const mountedMeshesForTest = (root: THREE.Group): THREE.Mesh[] => {
   const meshes: THREE.Mesh[] = [];
   root.traverse((object) => {
-    if (
-      object instanceof THREE.Mesh &&
-      !object.name.startsWith("architecture-rise-facade-window-bay-") &&
-      !object.name.startsWith("architecture-rise-side-return-window-bay-")
-    ) {
-      meshes.push(object);
-    }
+    if (object instanceof THREE.Mesh) meshes.push(object);
   });
   return meshes;
 };
@@ -138,24 +68,6 @@ const castFirstHit = (
   raycaster.near = 0;
   raycaster.far = maximumDistance;
   return raycaster.intersectObjects(meshes, false)[0] ?? null;
-};
-
-const maximumAdjacent2x2 = (hitKeys: Set<string>, paneNames: string[]) => {
-  let maximum = 0;
-  for (const pane of paneNames) {
-    for (let row = 0; row < sampleFractions.length - 1; row += 1) {
-      for (let column = 0; column < sampleFractions.length - 1; column += 1) {
-        const cluster = [
-          `${pane}|${row}|${column}`,
-          `${pane}|${row + 1}|${column}`,
-          `${pane}|${row}|${column + 1}`,
-          `${pane}|${row + 1}|${column + 1}`,
-        ].filter((key) => hitKeys.has(key)).length;
-        maximum = Math.max(maximum, cluster);
-      }
-    }
-  }
-  return maximum;
 };
 
 const screenBounds = (camera: THREE.PerspectiveCamera, bounds: THREE.Box3) => {
@@ -214,9 +126,6 @@ const physicalFootprintAt = (optics: DerivedOpticsState, objectPointWorldM: THRE
     apertureFNumber: architectureRiseScene.cameraPreset.aperture ?? 11,
   });
 };
-
-const isFrontWindowAssembly = (mesh: THREE.Mesh) =>
-  mesh.name.startsWith("architecture-rise-facade-window-bay-");
 
 const targetWindowMesh = (root: THREE.Group, name: string) => {
   const mesh = root.getObjectByName(name);
@@ -280,9 +189,9 @@ describe("Architecture Rise reflected-world context", () => {
     }
   });
 
-  it("provides a clear front-pane sample with an in-range optical-axis focus point", () => {
-    const paneFocusMm = architectureRiseScene.cameraPreset.focusDistanceMm ?? 8890;
-    const { camera, optics: paneFocusedOptics, config } = configuredGroundGlassCamera(paneFocusMm);
+  it("provides an unobstructed inset glazing sample with an in-range focus point", () => {
+    const presetFocusMm = architectureRiseScene.cameraPreset.focusDistanceMm ?? 8890;
+    const { camera, optics: presetOptics, config } = configuredGroundGlassCamera(presetFocusMm);
     expect(config.ok).toBe(true);
     expect(config.pose.positionWorld.every((value) => Math.abs(value) < 1e-12)).toBe(true);
     expect(config.pose.forwardWorld[0]).toBeCloseTo(0, 12);
@@ -295,115 +204,72 @@ describe("Architecture Rise reflected-world context", () => {
       const sign = group.getObjectByName("architecture-rise-street-sign");
       const chart = group.getObjectByName("architecture-rise-focus-chart");
       const facade = group.getObjectByName("architecture-rise-primary-facade");
+      const pane = targetWindowMesh(group, "architecture-rise-window-top-left-glazing");
       expect(sign).toBeInstanceOf(THREE.Group);
+      expect(chart).toBeInstanceOf(THREE.Group);
       if (!sign || !chart || !facade) throw new Error("Expected Architecture Rise context and teaching geometry");
+
+      const panes = { front: [] as THREE.Mesh[], side: [] as THREE.Mesh[] };
+      group.traverse((object) => {
+        if (!(object instanceof THREE.Mesh) || !object.name.endsWith("-glazing")) return;
+        if (object.name.includes("service-east-")) panes.side.push(object);
+        else panes.front.push(object);
+      });
+      expect(panes.front).toHaveLength(7);
+      expect(panes.side).toHaveLength(2);
+      expect(new Set([...panes.front, ...panes.side].map((mesh) => mesh.material)).size).toBe(1);
+
+      const paneBounds = new THREE.Box3().setFromObject(pane);
+      const panePoint = new THREE.Vector3(
+        paneBounds.min.x + 0.3 * (paneBounds.max.x - paneBounds.min.x),
+        paneBounds.min.y + 0.3 * (paneBounds.max.y - paneBounds.min.y),
+        paneBounds.min.z,
+      );
+      const sceneMeshes = mountedMeshesForTest(group);
+      const paneRay = panePoint.clone().sub(camera.position);
+      const paneDistanceM = paneRay.length();
+      const raycaster = new THREE.Raycaster(camera.position, paneRay.normalize(), 0, paneDistanceM + 1e-4);
+      const paneHit = raycaster.intersectObjects(sceneMeshes, false)[0];
+      expect(paneHit?.object.name).toBe(pane.name);
+
+      const lensCenterWorld = new THREE.Vector3(
+        toWorld(presetOptics.lensCenterWorld.x),
+        toWorld(presetOptics.lensCenterWorld.y),
+        toWorld(presetOptics.lensCenterWorld.z),
+      );
+      expect(lensCenterWorld.distanceTo(camera.position)).toBeCloseTo(0, 12);
+      const opticalAxisDirection = new THREE.Vector3(
+        presetOptics.opticalAxis.direction.x,
+        presetOptics.opticalAxis.direction.y,
+        presetOptics.opticalAxis.direction.z,
+      ).normalize();
+      const paneAxisDistanceMm = panePoint.clone().sub(lensCenterWorld).dot(opticalAxisDirection) * 1000;
+      const paneFocusControlMm = roundToStep(paneAxisDistanceMm, CAMERA_CONTROL_STEPS.focusDistanceMm);
+      expect(paneAxisDistanceMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
+      expect(paneAxisDistanceMm).toBeLessThanOrEqual(publicFocusRangeMm.max);
+      expect(paneFocusControlMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
+      expect(paneFocusControlMm).toBeLessThanOrEqual(publicFocusRangeMm.max);
+
+      const presetFootprint = physicalFootprintAt(presetOptics, panePoint);
+      const paneFocusedOptics = deriveOpticsState(cameraStateAtFocus(paneFocusControlMm), architectureRiseScene);
+      const paneFocusedFootprint = physicalFootprintAt(paneFocusedOptics, panePoint);
+      expect(presetFootprint.valid).toBe(true);
+      expect(paneFocusedFootprint.valid).toBe(true);
+      expect(Math.abs(presetFootprint.signedCoCDiameterMm)).toBeGreaterThan(0.001);
+      expect(Math.abs(paneFocusedFootprint.signedCoCDiameterMm))
+        .toBeLessThan(Math.abs(presetFootprint.signedCoCDiameterMm));
 
       const signMeshes: THREE.Mesh[] = [];
       sign.traverse((object) => {
         if (object instanceof THREE.Mesh) signMeshes.push(object);
       });
-      const sceneMeshes = sceneMeshesExcludingWindowAssemblies(group);
-      const raycaster = new THREE.Raycaster();
-      const coarseFrontSamples = paneSamples(group, camera, false, baselineFractions);
-      const coarseSideSamples = paneSamples(group, camera, true, baselineFractions);
-      const coarseFrontSceneHits = coarseFrontSamples.filter((sample) =>
-        castFirstHit(
-          raycaster,
-          sceneMeshes,
-          sample.point.clone().addScaledVector(sample.reflected, 0.12),
-          sample.reflected,
-        ) !== null,
-      );
-      const coarseSideSceneHits = coarseSideSamples.filter((sample) =>
-        castFirstHit(
-          raycaster,
-          sceneMeshes,
-          sample.point.clone().addScaledVector(sample.reflected, 0.12),
-          sample.reflected,
-        ) !== null,
-      );
-      expect(coarseFrontSamples).toHaveLength(144);
-      expect(coarseSideSamples).toHaveLength(36);
-      expect(coarseFrontSceneHits.length).toBeGreaterThan(0);
-
-      const fineSamples = paneSamples(group, camera, false, sampleFractions);
-      const fineHits = fineSamples.flatMap((sample) => {
-        const origin = sample.point.clone().addScaledVector(sample.reflected, 0.12);
-        const hit = castFirstHit(raycaster, sceneMeshes, origin, sample.reflected);
-        return hit && hit.object.name.startsWith("architecture-rise-street-sign-")
-          ? [{ sample, hit }]
-          : [];
-      });
-      const clusterKeys = new Set(fineHits.map(({ sample }) => `${sample.pane}|${sample.row}|${sample.column}`));
-      const frontPaneNames = [...new Set(fineSamples.map((sample) => sample.pane))];
-      expect(fineHits.length).toBeGreaterThanOrEqual(12);
-      expect(maximumAdjacent2x2(clusterKeys, frontPaneNames)).toBe(4);
-
-      const knownSample = fineSamples.find((sample) =>
-        sample.pane === "architecture-rise-facade-window-bay-bay-2-1-glazing" &&
-        sample.u === 0.3 && sample.v === 0.3,
-      );
-      expect(knownSample).toBeDefined();
-      if (!knownSample) throw new Error("The named reflected sample should exist");
-      const reflectedOrigin = knownSample.point.clone().addScaledVector(knownSample.reflected, 0.12);
-      const knownHit = castFirstHit(raycaster, sceneMeshes, reflectedOrigin, knownSample.reflected);
-      expect(knownHit).not.toBeNull();
-      expect(knownHit?.object.name).toBe("architecture-rise-street-sign-face-back");
-      if (!knownHit) throw new Error("The known reflected ray should hit the sign face");
-
-      const realQ = knownHit.point.clone();
-      const signedPaneDistance = realQ.clone().sub(knownSample.point).dot(knownSample.normal);
-      const virtualQ = realQ.clone().addScaledVector(knownSample.normal, -2 * signedPaneDistance);
-      const lensCenterWorld = new THREE.Vector3(
-        toWorld(paneFocusedOptics.opticalAxis.origin.x),
-        toWorld(paneFocusedOptics.opticalAxis.origin.y),
-        toWorld(paneFocusedOptics.opticalAxis.origin.z),
-      );
-      expect(lensCenterWorld.distanceTo(camera.position)).toBeCloseTo(0, 12);
-      const toVirtualQ = virtualQ.clone().sub(lensCenterWorld);
-      const virtualGeometricRangeMm = toVirtualQ.length() * 1000;
-      const opticalAxisDirection = new THREE.Vector3(
-        paneFocusedOptics.opticalAxis.direction.x,
-        paneFocusedOptics.opticalAxis.direction.y,
-        paneFocusedOptics.opticalAxis.direction.z,
-      );
-      expect(opticalAxisDirection.length()).toBeCloseTo(1, 12);
-      const cameraForward = new THREE.Vector3(...config.pose.forwardWorld).normalize();
-      expect(opticalAxisDirection.dot(cameraForward)).toBeCloseTo(1, 12);
-      const virtualFocusAxisDistanceMm = toVirtualQ.dot(opticalAxisDirection) * 1000;
-      const qvFocusMm = roundToStep(
-        virtualFocusAxisDistanceMm,
-        CAMERA_CONTROL_STEPS.focusDistanceMm,
-      );
-      expect([realQ.x, realQ.y, realQ.z, virtualQ.x, virtualQ.y, virtualQ.z].every(Number.isFinite)).toBe(true);
-      expect(virtualGeometricRangeMm).toBeGreaterThan(virtualFocusAxisDistanceMm);
-      expect(virtualFocusAxisDistanceMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
-      expect(virtualFocusAxisDistanceMm).toBeLessThanOrEqual(publicFocusRangeMm.max - 1000);
-      expect(virtualFocusAxisDistanceMm).toBeCloseTo(11807, 6);
-      expect(qvFocusMm).toBe(11810);
-
-      const windowAssemblies: THREE.Mesh[] = [];
-      group.traverse((object) => {
-        if (object instanceof THREE.Mesh && isFrontWindowAssembly(object)) windowAssemblies.push(object);
-      });
-      const pathToPane = realQ.distanceTo(knownSample.point);
-      const unoccludedPanePath = castFirstHit(
-        raycaster,
-        windowAssemblies,
-        realQ.clone().addScaledVector(knownSample.reflected, -0.002),
-        knownSample.reflected.clone().negate(),
-        Math.max(0, pathToPane - 0.01),
-      );
-      expect(unoccludedPanePath).toBeNull();
-
-      const directPanePath = castFirstHit(
+      expect(castFirstHit(
         raycaster,
         signMeshes,
         camera.position.clone(),
-        knownSample.incident,
-        knownSample.point.distanceTo(camera.position),
-      );
-      expect(directPanePath).toBeNull();
+        panePoint.clone().sub(camera.position).normalize(),
+        paneDistanceM,
+      )).toBeNull();
 
       const observer = new THREE.PerspectiveCamera(45, 514 / 411, 0.01, 200);
       const observerPlacement = architectureRiseScene.cameraPlacement;
@@ -424,47 +290,15 @@ describe("Architecture Rise reflected-world context", () => {
       expect(screenOverlapFraction(signBounds, chartBounds)).toBe(0);
       expect(screenOverlapFraction(signBounds, facadeBounds)).toBe(0);
 
-      expect(qvFocusMm).toBeGreaterThanOrEqual(publicFocusRangeMm.min);
-      expect(qvFocusMm).toBeLessThanOrEqual(publicFocusRangeMm.max);
-      const reflectedFocusedOptics = deriveOpticsState(cameraStateAtFocus(qvFocusMm), architectureRiseScene);
-      const qvAtPaneFocus = physicalFootprintAt(paneFocusedOptics, virtualQ);
-      const qvAtReflectedFocus = physicalFootprintAt(reflectedFocusedOptics, virtualQ);
-      expect(qvAtPaneFocus.valid).toBe(true);
-      expect(qvAtReflectedFocus.valid).toBe(true);
-      expect(Math.abs(qvAtPaneFocus.signedCoCDiameterMm)).toBeGreaterThan(0.05);
-      expect(Math.abs(qvAtPaneFocus.signedCoCDiameterMm)).toBeGreaterThan(
-        Math.abs(qvAtReflectedFocus.signedCoCDiameterMm) * 10,
-      );
-
       console.log(JSON.stringify({
-        coarseFrontHits: coarseFrontSceneHits.length,
-        coarseFrontSamples: coarseFrontSamples.length,
-        coarseSideHits: coarseSideSceneHits.length,
-        coarseSideSamples: coarseSideSamples.length,
-        frontHitSamples: fineHits.length,
-        frontSampleCount: fineSamples.length,
-        cluster2x2: maximumAdjacent2x2(clusterKeys, frontPaneNames),
-        knownPaneSample: knownSample.point.toArray(),
-        panePlane: { point: knownSample.point.toArray(), normal: knownSample.normal.toArray() },
-        hitObject: knownHit.object.name,
-        Q: realQ.toArray(),
-        QVirtual: virtualQ.toArray(),
-        virtualGeometricRangeMm,
-        virtualFocusAxisDistanceMm,
-        reflectedFocusControlMm: qvFocusMm,
-        focusRangeMm: publicFocusRangeMm,
-        focusDomainMarginMm: publicFocusRangeMm.max - virtualFocusAxisDistanceMm,
-        roundedControlMarginMm: publicFocusRangeMm.max - qvFocusMm,
-        paneFocusedCoCMm: qvAtPaneFocus.signedCoCDiameterMm,
-        paneFocusedFootprintRadiiMm: {
-          major: qvAtPaneFocus.majorRadiusMm,
-          minor: qvAtPaneFocus.minorRadiusMm,
-        },
-        reflectedFocusedCoCMm: qvAtReflectedFocus.signedCoCDiameterMm,
-        reflectedFocusedFootprintRadiiMm: {
-          major: qvAtReflectedFocus.majorRadiusMm,
-          minor: qvAtReflectedFocus.minorRadiusMm,
-        },
+        frontPaneCount: panes.front.length,
+        servicePaneCount: panes.side.length,
+        directFirstHit: paneHit?.object.name,
+        paneWorldPosition: panePoint.toArray(),
+        paneFocusAxisDistanceMm: paneAxisDistanceMm,
+        paneFocusControlMm,
+        presetCoCMm: presetFootprint.signedCoCDiameterMm,
+        paneFocusedCoCMm: paneFocusedFootprint.signedCoCDiameterMm,
         observerFocusChartOverlap: screenOverlapFraction(signBounds, chartBounds),
         observerFacadeOverlap: screenOverlapFraction(signBounds, facadeBounds),
       }, null, 2));
@@ -477,9 +311,11 @@ describe("Architecture Rise reflected-world context", () => {
     const group = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
     try {
       group.updateMatrixWorld(true);
-      const pane = targetWindowMesh(group, "architecture-rise-facade-window-bay-bay-2-1-glazing");
+      const pane = targetWindowMesh(group, "architecture-rise-window-top-left-glazing");
       const paneBounds = new THREE.Box3().setFromObject(pane);
-      expect(paneBounds.min.z * 1000).toBeCloseTo(8836, 6);
+      expect(paneBounds.min.z).toBeGreaterThanOrEqual(
+        toWorld(architectureRiseGeometry.facade.frontFacadeZ + 80),
+      );
       expect(publicFocusRangeMm).toEqual({ min: 3090, max: 13000 });
     } finally {
       disposeArchitectureRiseGroup(group);

@@ -241,43 +241,6 @@ export const facadeFineDetail = {
   surfaceGap: 2,
 } as const;
 
-/**
- * Presentation-only window bays for the richer Architecture Rise façade.
- * These deliberately leave the canonical focus chart's central band open so
- * the chart remains the authoritative focus target.
- */
-export type ArchitectureRiseWindowBay = {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  depth: number;
-};
-
-const architectureRiseWindowColumns = [-1080, -540, 540, 1080] as const;
-const architectureRiseWindowRows = [300, 1100, 1900, 2700] as const;
-
-export const architectureRiseWindowBays: ArchitectureRiseWindowBay[] =
-  architectureRiseWindowRows.flatMap((y, row) =>
-    architectureRiseWindowColumns.map((x, column) => ({
-      id: `bay-${row + 1}-${column + 1}`,
-      x,
-      y,
-      width: 300,
-      height: 430,
-      depth: 20,
-    })),
-  );
-
-/** Additional shallow windows on the articulated side-return volume. */
-export const architectureRiseSideWindowBays: ArchitectureRiseWindowBay[] = [
-  { id: "side-1", x: 1628, y: 150, width: 300, height: 460, depth: 24 },
-  { id: "side-2", x: 1628, y: 900, width: 300, height: 460, depth: 24 },
-  { id: "side-3", x: 1628, y: 1650, width: 300, height: 460, depth: 24 },
-  { id: "side-4", x: 1628, y: 2400, width: 300, height: 460, depth: 24 },
-];
-
 export type ArchitectureFacadeFineDetailPiece = {
   id: string;
   role: "panel" | "frame" | "fine";
@@ -527,8 +490,6 @@ export default {
   mullionWidthMm,
   horizontalStripeHeightMm,
   facadeFineDetail,
-  architectureRiseWindowBays,
-  architectureRiseSideWindowBays,
   streetContext,
   getArchitectureFacadeFineDetailPieces,
   getArchitectureRisePrimaryFacadePlacement,

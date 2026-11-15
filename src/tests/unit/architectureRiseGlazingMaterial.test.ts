@@ -22,10 +22,10 @@ describe("Architecture Rise glazing material", () => {
       });
 
       const frontGlazing = glazingMeshes.find((mesh) =>
-        mesh.name.startsWith("architecture-rise-facade-window-bay-"),
+        mesh.name.startsWith("architecture-rise-window-") && !mesh.name.includes("service-east-"),
       );
       const sideGlazing = glazingMeshes.find((mesh) =>
-        mesh.name.startsWith("architecture-rise-side-return-window-bay-"),
+        mesh.name.startsWith("architecture-rise-window-service-east-"),
       );
 
       expect(frontGlazing).toBeDefined();

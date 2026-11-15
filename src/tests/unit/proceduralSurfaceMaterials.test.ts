@@ -303,7 +303,7 @@ describe("procedural surface materials", () => {
       presentation: ARCHITECTURE_RISE_PRESENTATION,
     });
     const expectedSurfaces = [
-      { name: "architecture-rise-primary-facade", repeat: [4, 4], normalStrength: 0.38 },
+      { name: "architecture-rise-primary-facade", repeat: [5, 8], normalStrength: 0.24 },
       { name: "architecture-rise-roof-parapet", repeat: [1, 1], normalStrength: 0.18 },
       { name: "architecture-rise-roof-coping-front", repeat: [1, 1], normalStrength: 0.09 },
       { name: "architecture-rise-sidewalk-slab", repeat: [12, 10], normalStrength: 0.14 },
