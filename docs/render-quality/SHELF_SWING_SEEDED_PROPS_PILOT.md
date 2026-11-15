@@ -154,7 +154,7 @@ Validation ran with Node 24, matching the repository's GitHub workflow.
   regeneration, and Back/Forward restoration under `/view-camera-simulator/`:
   passed. Pixel-identical replay is separately asserted on the root route.
 - `git diff --check`: passed before publication.
-- GitHub CI: pending final PR publication.
+- GitHub CI: triggered by PR #343; see the PR for the current-head result.
 
 Key tests include:
 
