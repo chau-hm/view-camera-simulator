@@ -161,3 +161,6 @@ The accepted schema-v1 material evidence is recorded in
 [`render-quality/INTERIOR_CORNER_SEEDED_MATERIALS_PILOT.md`](render-quality/INTERIOR_CORNER_SEEDED_MATERIALS_PILOT.md).
 The schema-v2 props/layout evidence is recorded in
 [`render-quality/INTERIOR_CORNER_SEEDED_PROPS_LAYOUT_PILOT.md`](render-quality/INTERIOR_CORNER_SEEDED_PROPS_LAYOUT_PILOT.md).
+Reusable renderer-neutral placement geometry and constraint guidance is
+documented in
+[`architecture/REUSABLE_PROP_VARIATION_PATTERN.md`](architecture/REUSABLE_PROP_VARIATION_PATTERN.md).

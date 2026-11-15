@@ -2,6 +2,20 @@ import type { Vec3 } from "../types/optics";
 import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { SCENE_VARIATION_SCHEMA_V2 } from "./sceneVariation";
 import { furnitureSupportSurfacesMm, room, wallDetails } from "./interiorCornerGeometry";
+import {
+  areBounds3Finite,
+  findPairwiseIntersections,
+  hasPositiveFiniteBoxDimensionsMm,
+  intersectsProtectedRegionXZ,
+  isOutsideBounds3,
+  isSupportedAtHeightMm,
+  isWithinBoundsXZ,
+} from "./variation/placementConstraints";
+import {
+  getBoundsXZMm,
+  getSupportSurfaceBoundsXZMm,
+  getYawRotatedBoxBoundsMm,
+} from "./variation/placementGeometry";
 
 export type InteriorCornerVaseProfile = "bottle" | "round" | "flared";
 export type InteriorCornerPropPalette =
@@ -341,7 +355,7 @@ export const resolveInteriorCornerPropVariationPlan = (
   return fallbackPlan;
 };
 
-const footprint = (prop: InteriorCornerPropPlacement) => {
+const placementBounds = (prop: InteriorCornerPropPlacement) => {
   const dimensions = prop.kind === "vase"
     ? {
         width: Math.max(prop.baseRadiusMm, prop.topRadiusMm) * 2,
@@ -349,22 +363,12 @@ const footprint = (prop: InteriorCornerPropPlacement) => {
         height: prop.heightMm,
       }
     : { width: prop.dimensionsMm.width, depth: prop.dimensionsMm.depth, height: prop.dimensionsMm.height };
-  const angle = (prop.kind === "vase" || prop.kind === "sculpture")
-    ? 0
-    : (prop.rotationYDeg * Math.PI) / 180;
-  const halfWidth = Math.abs(Math.cos(angle)) * dimensions.width / 2 +
-    Math.abs(Math.sin(angle)) * dimensions.depth / 2;
-  const halfDepth = Math.abs(Math.sin(angle)) * dimensions.width / 2 +
-    Math.abs(Math.cos(angle)) * dimensions.depth / 2;
-  const halfHeight = dimensions.height / 2;
-  return {
-    minX: prop.positionMm.x - halfWidth,
-    maxX: prop.positionMm.x + halfWidth,
-    minY: prop.positionMm.y - halfHeight,
-    maxY: prop.positionMm.y + halfHeight,
-    minZ: prop.positionMm.z - halfDepth,
-    maxZ: prop.positionMm.z + halfDepth,
-  };
+  const rotationYDeg = (prop.kind === "vase" || prop.kind === "sculpture") ? 0 : prop.rotationYDeg;
+  return getYawRotatedBoxBoundsMm(prop.positionMm, {
+    width: dimensions.width,
+    height: dimensions.height,
+    depth: dimensions.depth,
+  }, rotationYDeg);
 };
 
 /** Domain-specific constraint audit used by tests and deterministic safe fallback selection. */
@@ -377,55 +381,56 @@ export const getInteriorCornerPropVariationPlanSafetyIssues = (
   const console = furnitureSupportSurfacesMm.consoleTop;
   const bench = furnitureSupportSurfacesMm.benchSeat;
   const rug = furnitureSupportSurfacesMm.rug;
+  const roomBounds = {
+    min: { x: roomXMin, y: room.floorY, z: room.nearZ },
+    max: { x: roomXMax, y: room.ceilingY, z: room.farZ },
+  };
   const consoleItems = plan.props.filter((prop) =>
     prop.kind === "vase" || prop.kind === "book" || prop.kind === "sculpture",
   );
-  const supportBounds = (centerX: number, centerZ: number, width: number, depth: number) => ({
-    minX: centerX - width / 2,
-    maxX: centerX + width / 2,
-    minZ: centerZ - depth / 2,
-    maxZ: centerZ + depth / 2,
-  });
-  const within = (child: ReturnType<typeof footprint>, bounds: ReturnType<typeof supportBounds>) =>
-    child.minX >= bounds.minX && child.maxX <= bounds.maxX &&
-    child.minZ >= bounds.minZ && child.maxZ <= bounds.maxZ;
+  const consoleBounds = getSupportSurfaceBoundsXZMm(console);
+  const benchBounds = getSupportSurfaceBoundsXZMm(bench);
 
   plan.props.forEach((prop) => {
-    const bounds = footprint(prop);
+    const bounds = placementBounds(prop);
     const dimensions = prop.kind === "vase"
       ? [prop.heightMm, prop.baseRadiusMm, prop.topRadiusMm]
       : [prop.dimensionsMm.width, prop.dimensionsMm.height, prop.dimensionsMm.depth];
-    if (!dimensions.every((value) => Number.isFinite(value) && value > 0)) {
+    const positiveFiniteDimensions = prop.kind === "vase"
+      ? dimensions.every((value) => Number.isFinite(value) && value > 0)
+      : hasPositiveFiniteBoxDimensionsMm({
+          width: prop.dimensionsMm.width,
+          height: prop.dimensionsMm.height,
+          depth: prop.dimensionsMm.depth,
+        });
+    if (!positiveFiniteDimensions) {
       issues.push(`${prop.id}: dimensions must be positive and finite`);
     }
-    if (![bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, bounds.minZ, bounds.maxZ]
-      .every(Number.isFinite)) issues.push(`${prop.id}: non-finite bounds`);
-    if (bounds.minX < roomXMin || bounds.maxX > roomXMax ||
-      bounds.minY < room.floorY || bounds.maxY > room.ceilingY ||
-      bounds.minZ < room.nearZ || bounds.maxZ > room.farZ) {
+    if (!areBounds3Finite(bounds)) issues.push(`${prop.id}: non-finite bounds`);
+    if (isOutsideBounds3(bounds, roomBounds)) {
       issues.push(`${prop.id}: outside room bounds`);
     }
     if (prop.kind === "vase" || prop.kind === "book" || prop.kind === "sculpture") {
-      if (!within(bounds, supportBounds(console.center.x, console.center.z, console.size.x, console.size.z))) {
+      if (!isWithinBoundsXZ(getBoundsXZMm(bounds), consoleBounds)) {
         issues.push(`${prop.id}: outside console top footprint`);
       }
-      if (prop.kind !== "book" && Math.abs(bounds.minY - console.topY) > 1e-6) {
+      if (prop.kind !== "book" && !isSupportedAtHeightMm(bounds.min.y, console.topY, 1e-6)) {
         issues.push(`${prop.id}: not supported by console top`);
       }
     }
     if (prop.kind === "cushion") {
-      if (!within(bounds, supportBounds(bench.center.x, bench.center.z, bench.size.x, bench.size.z))) {
+      if (!isWithinBoundsXZ(getBoundsXZMm(bounds), benchBounds)) {
         issues.push(`${prop.id}: outside bench seat footprint`);
       }
-      if (Math.abs(bounds.minY - bench.topY) > 1e-6) {
+      if (!isSupportedAtHeightMm(bounds.min.y, bench.topY, 1e-6)) {
         issues.push(`${prop.id}: not supported by bench seat`);
       }
-      if (bounds.maxZ > 6690) {
+      if (bounds.max.z > 6690) {
         issues.push(`${prop.id}: intersects the fixed bench back`);
       }
     }
     if (prop.kind === "rug") {
-      if (Math.abs(bounds.minY - room.floorY) > 1e-6 ||
+      if (!isSupportedAtHeightMm(bounds.min.y, room.floorY, 1e-6) ||
         Math.abs(prop.positionMm.x - rug.center.x) > 80 ||
         Math.abs(prop.positionMm.z - rug.center.z) > 90 ||
         Math.abs(prop.rotationYDeg) > 1.5) {
@@ -433,40 +438,38 @@ export const getInteriorCornerPropVariationPlanSafetyIssues = (
       }
     }
     const focusTargetX = room.interiorSideSurfaceX - 18;
-    if (bounds.maxX >= focusTargetX - 250 &&
-      wallDetails.some((detail) => bounds.maxZ >= detail.z - detail.width / 2 && bounds.minZ <= detail.z + detail.width / 2)) {
+    if (wallDetails.some((detail) => intersectsProtectedRegionXZ(getBoundsXZMm(bounds), {
+      minX: focusTargetX - 250,
+      minZ: detail.z - detail.width / 2,
+      maxZ: detail.z + detail.width / 2,
+    }))) {
       issues.push(`${prop.id}: overlaps a protected focus-target region`);
     }
   });
 
   const books = consoleItems.filter((prop) => prop.kind === "book").sort(
-    (left, right) => footprint(left).minY - footprint(right).minY,
+    (left, right) => placementBounds(left).min.y - placementBounds(right).min.y,
   );
-  if (books.length > 0 && Math.abs(footprint(books[0]!).minY - console.topY) > 1e-6) {
+  if (books.length > 0 && !isSupportedAtHeightMm(placementBounds(books[0]!).min.y, console.topY, 1e-6)) {
     issues.push("console book stack is not supported by the console top");
   }
   for (let index = 1; index < books.length; index += 1) {
-    if (Math.abs(footprint(books[index]!).minY - footprint(books[index - 1]!).maxY) > 1e-6) {
+    if (!isSupportedAtHeightMm(
+      placementBounds(books[index]!).min.y,
+      placementBounds(books[index - 1]!).max.y,
+      1e-6,
+    )) {
       issues.push(`${books[index]!.id}: not supported by the preceding book`);
     }
   }
 
-  const checkIntersections = (items: readonly InteriorCornerPropPlacement[]) => {
-    for (let leftIndex = 0; leftIndex < items.length; leftIndex += 1) {
-      const left = items[leftIndex]!;
-      const leftBounds = footprint(left);
-      for (let rightIndex = leftIndex + 1; rightIndex < items.length; rightIndex += 1) {
-        const right = items[rightIndex]!;
-        const rightBounds = footprint(right);
-      const intersects = leftBounds.minX < rightBounds.maxX && leftBounds.maxX > rightBounds.minX &&
-        leftBounds.minY < rightBounds.maxY && leftBounds.maxY > rightBounds.minY &&
-        leftBounds.minZ < rightBounds.maxZ && leftBounds.maxZ > rightBounds.minZ;
-        if (intersects) issues.push(`${left.id} intersects ${right.id}`);
-      }
-    }
+  const appendIntersectionIssues = (items: readonly InteriorCornerPropPlacement[]) => {
+    findPairwiseIntersections(items, placementBounds).forEach(({ left, right }) => {
+      issues.push(`${left.id} intersects ${right.id}`);
+    });
   };
-  checkIntersections(consoleItems);
-  checkIntersections(plan.props.filter((prop) => prop.kind === "cushion"));
+  appendIntersectionIssues(consoleItems);
+  appendIntersectionIssues(plan.props.filter((prop) => prop.kind === "cushion"));
 
   return Object.freeze(issues);
 };
