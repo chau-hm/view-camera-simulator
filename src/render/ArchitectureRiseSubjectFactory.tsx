@@ -116,6 +116,20 @@ const addWindowBay = (
 
   const frame = 34;
   const front = geometry.facade.frontFacadeZ;
+  const overlapsFineDetailProjection = (
+    centerX: number,
+    width: number,
+    centerY: number,
+    height: number,
+  ): boolean => {
+    const detail = geometry.facadeFineDetail;
+    return (
+      centerX - width / 2 < detail.center.x + detail.width / 2 &&
+      centerX + width / 2 > detail.center.x - detail.width / 2 &&
+      centerY - height / 2 < detail.center.y + detail.height / 2 &&
+      centerY + height / 2 > detail.center.y - detail.height / 2
+    );
+  };
   addBox({
     name: `${windowGroup.name}-recess`,
     size: [bay.width + 88, bay.height + 88, 52],
@@ -157,13 +171,17 @@ const addWindowBay = (
   // Masonry surrounds sit outside the canonical opening; their stepped
   // depth gives the same construction relief from either scene camera.
   [-1, 1].forEach((sign) => {
-    addBox({
-      name: `${windowGroup.name}-stone-jamb-${sign}`,
-      size: [54, bay.height + 100, 76],
-      position: [bay.x + sign * (bay.width / 2 + 64), bay.y, front - 66],
-      material: resources.trim,
-      parent: sillDetail,
-    });
+    const jambX = bay.x + sign * (bay.width / 2 + 64);
+    const jambHeight = bay.height + 100;
+    if (!overlapsFineDetailProjection(jambX, 54, bay.y, jambHeight)) {
+      addBox({
+        name: `${windowGroup.name}-stone-jamb-${sign}`,
+        size: [54, jambHeight, 76],
+        position: [jambX, bay.y, front - 66],
+        material: resources.trim,
+        parent: sillDetail,
+      });
+    }
     addBox({
       name: `${windowGroup.name}-sill-bracket-${sign}`,
       size: [52, 68, 92],
@@ -177,6 +195,18 @@ const addWindowBay = (
     { id: "lintel-cap", width: bay.width + 204, height: 22, y: bay.height / 2 + 112, depth: 130 },
     { id: "sill-apron", width: bay.width + 152, height: 38, y: -bay.height / 2 - 65, depth: 120 },
   ].forEach(({ id, width, height, y, depth }) => {
+    const detailCenterY = bay.y + y;
+
+    // Keep the canonical focus-detail patch clear. The test raycasts from the
+    // physical lens origin because a simple planar bounds check cannot prove
+    // visibility along the actual view path.
+    if (
+      (id === "lintel" || id === "lintel-cap") &&
+      overlapsFineDetailProjection(bay.x, width, detailCenterY, height)
+    ) {
+      return;
+    }
+
     addBox({
       name: `${windowGroup.name}-${id}`,
       size: [width, height, depth],
