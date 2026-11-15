@@ -12,6 +12,7 @@ import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const expectLessonStage = async (page: Page, step: string, label: string) => {
+  await expect(getLearningOverlay(page)).toBeVisible({ timeout: 15_000 });
   const drawer = getLearningDrawer(page);
   await expect(drawer).toContainText(step);
   await openPinnedLearningDrawer(page);
