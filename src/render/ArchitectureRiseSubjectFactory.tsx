@@ -182,13 +182,17 @@ const addWindowBay = (
         parent: sillDetail,
       });
     }
-    addBox({
-      name: `${windowGroup.name}-sill-bracket-${sign}`,
-      size: [52, 68, 92],
-      position: [bay.x + sign * bay.width * 0.35, bay.y - bay.height / 2 - 116, front - 82],
-      material: resources.trim,
-      parent: sillDetail,
-    });
+    const bracketX = bay.x + sign * bay.width * 0.35;
+    const bracketY = bay.y - bay.height / 2 - 116;
+    if (!overlapsFineDetailProjection(bracketX, 52, bracketY, 68)) {
+      addBox({
+        name: `${windowGroup.name}-sill-bracket-${sign}`,
+        size: [52, 68, 92],
+        position: [bracketX, bracketY, front - 82],
+        material: resources.trim,
+        parent: sillDetail,
+      });
+    }
   });
   [
     { id: "lintel", width: bay.width + 172, height: 54, y: bay.height / 2 + 74, depth: 100 },
@@ -197,13 +201,9 @@ const addWindowBay = (
   ].forEach(({ id, width, height, y, depth }) => {
     const detailCenterY = bay.y + y;
 
-    // Keep the canonical focus-detail patch clear. The test raycasts from the
-    // physical lens origin because a simple planar bounds check cannot prove
-    // visibility along the actual view path.
-    if (
-      (id === "lintel" || id === "lintel-cap") &&
-      overlapsFineDetailProjection(bay.x, width, detailCenterY, height)
-    ) {
+    // Keep the full canonical focus-detail assembly clear of masonry; the
+    // physical-lens ray audit verifies the resulting sightlines in 3D.
+    if (overlapsFineDetailProjection(bay.x, width, detailCenterY, height)) {
       return;
     }
 
