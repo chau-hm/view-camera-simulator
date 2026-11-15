@@ -14,7 +14,11 @@ import type { SceneDefinition } from "../../types/scene";
 
 const variationScene = {
   id: "test-interior",
-  sceneVariation: { enabled: true, schemaVersion: CURRENT_SCENE_VARIATION_SCHEMA_VERSION },
+  sceneVariation: {
+    enabled: true,
+    schemaVersion: CURRENT_SCENE_VARIATION_SCHEMA_VERSION,
+    supportedSchemaVersions: [1, 2],
+  },
 } satisfies Pick<SceneDefinition, "id" | "sceneVariation">;
 
 describe("scene variation deterministic core", () => {
@@ -87,12 +91,19 @@ describe("scene variation deterministic core", () => {
     expect(materialsSeed).not.toBe(
       deriveSceneSubstreamSeed(19, "test-interior", "materials", "wall-plaster"),
     );
+    expect(deriveSceneSubstreamSeed(
+      19,
+      "test-interior",
+      "materials",
+      "bench-seat",
+      1,
+    )).not.toBe(materialsSeed);
     expect(() => deriveSceneSubstreamSeed(
       19,
       "test-interior",
       "materials",
       "bench-seat",
-      2,
+      3,
     )).toThrow(UnsupportedSceneVariationSchemaError);
     expect(createSceneVariantIdentity("test-interior", 19, 2).schemaVersion).not.toBe(
       createSceneVariantIdentity("test-interior", 19, 1).schemaVersion,
@@ -141,9 +152,21 @@ describe("scene variation deterministic core", () => {
     expect(JSON.parse(JSON.stringify(identity))).toEqual(identity);
     expect(identity.schemaVersion).toBe(CURRENT_SCENE_VARIATION_SCHEMA_VERSION);
     expect(resolveSceneVariationDescriptor({ id: "test-interior" }, identity)).toBeNull();
+    expect(resolveSceneVariationDescriptor(
+      variationScene,
+      createSceneVariantIdentity("test-interior", 5, 1),
+    )).not.toBeNull();
+    expect(resolveSceneVariationDescriptor(
+      variationScene,
+      createSceneVariantIdentity("test-interior", 5, 2),
+    )).not.toBeNull();
     expect(() => resolveSceneVariationDescriptor(
       { ...variationScene, sceneVariation: { enabled: true, schemaVersion: 2 } },
-      createSceneVariantIdentity("test-interior", 5, 2),
+      createSceneVariantIdentity("test-interior", 5, 1),
+    )).toThrow(/not supported by the scene capability/);
+    expect(() => resolveSceneVariationDescriptor(
+      variationScene,
+      createSceneVariantIdentity("test-interior", 5, 3),
     )).toThrow(UnsupportedSceneVariationSchemaError);
     expect(() => resolveSceneVariationDescriptor(
       variationScene,

@@ -17,7 +17,7 @@ import type { SceneDefinition } from "../../types/scene";
 
 const fixtureScene: Pick<SceneDefinition, "id" | "sceneVariation"> = {
   ...interiorCornerScene,
-  sceneVariation: { enabled: true, schemaVersion: 1 },
+  sceneVariation: { enabled: true, schemaVersion: 2, supportedSchemaVersions: [1, 2] },
 };
 
 type HarnessProps = { createSeed: () => number };
@@ -92,8 +92,8 @@ describe("scene variation React Router lifecycle", () => {
     await waitFor(() => {
       expect(readRouteState()).toMatchObject({
         pathname: "/simulator/free/interior-corner",
-        search: "?keep=one&other=two&seed=284719&sv=1",
-        identity: { sceneId: "interior-corner", seed: 284719, schemaVersion: 1 },
+        search: "?keep=one&other=two&seed=284719&sv=2",
+        identity: { sceneId: "interior-corner", seed: 284719, schemaVersion: 2 },
         status: "resolved",
       });
     });
@@ -105,6 +105,19 @@ describe("scene variation React Router lifecycle", () => {
     renderRoute(["/simulator/free/interior-corner?seed=0&keep=one"], createSeed);
     await waitFor(() => expect(readRouteState().identity?.seed).toBe(0));
     expect(readRouteState().search).toBe("?keep=one&seed=0&sv=1");
+    expect(createSeed).not.toHaveBeenCalled();
+  });
+
+  it("replays an explicit v2 URL without entropy and keeps its schema", async () => {
+    const createSeed = vi.fn(() => 44);
+    renderRoute(["/simulator/free/interior-corner?seed=284719&sv=2&keep=one"], createSeed);
+    await waitFor(() => {
+      expect(readRouteState()).toMatchObject({
+        search: "?keep=one&seed=284719&sv=2",
+        identity: { seed: 284719, schemaVersion: 2 },
+        status: "resolved",
+      });
+    });
     expect(createSeed).not.toHaveBeenCalled();
   });
 
@@ -138,7 +151,7 @@ describe("scene variation React Router lifecycle", () => {
     fireEvent.click(screen.getByRole("button", { name: "new-entry" }));
     await waitFor(() => {
       expect(readRouteState().identity?.seed).toBe(91);
-      expect(readRouteState().search).toBe("?keep=two&seed=91&sv=1");
+      expect(readRouteState().search).toBe("?keep=two&seed=91&sv=2");
     });
     expect(createSeed).toHaveBeenCalledTimes(1);
 
@@ -182,7 +195,7 @@ describe("scene variation React Router lifecycle", () => {
     expect(createSeed).not.toHaveBeenCalled();
   });
 
-  it.each(["?seed=8&sv=2", "?seed=8&sv=1&sv=1", "?seed=8&sv="])(
+  it.each(["?seed=8&sv=3", "?seed=8&sv=1&sv=1", "?seed=8&sv="])(
     "fails closed on unsupported or malformed schema versions %s",
     async (search) => {
       const createSeed = vi.fn(() => 21);
@@ -191,7 +204,7 @@ describe("scene variation React Router lifecycle", () => {
         expect(readRouteState().identity).toBeNull();
         expect(readRouteState().search).toContain("keep=one");
         expect(readRouteState().status).toBe(
-          search.includes("sv=2") ? "unsupported-schema" : "invalid-schema",
+          search.includes("sv=3") ? "unsupported-schema" : "invalid-schema",
         );
       });
       expect(createSeed).not.toHaveBeenCalled();

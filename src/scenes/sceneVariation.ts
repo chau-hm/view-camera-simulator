@@ -6,10 +6,13 @@ import type {
   SceneVariantIdentity,
 } from "../types/sceneVariation";
 
-export const CURRENT_SCENE_VARIATION_SCHEMA_VERSION = 1;
+export const SCENE_VARIATION_SCHEMA_V1 = 1;
+export const SCENE_VARIATION_SCHEMA_V2 = 2;
+export const LEGACY_SEED_ONLY_SCHEMA_VERSION = SCENE_VARIATION_SCHEMA_V1;
+export const CURRENT_SCENE_VARIATION_SCHEMA_VERSION = SCENE_VARIATION_SCHEMA_V2;
 export const UINT32_MAX = 0xffff_ffff;
 const UINT32_RANGE = 0x1_0000_0000;
-const SUPPORTED_SCHEMA_VERSIONS = new Set([CURRENT_SCENE_VARIATION_SCHEMA_VERSION]);
+const SUPPORTED_SCHEMA_VERSIONS = new Set([SCENE_VARIATION_SCHEMA_V1, SCENE_VARIATION_SCHEMA_V2]);
 
 const variationDomains = new Set<SceneVariationDomain>([
   "materials",
@@ -68,6 +71,21 @@ const assertSupportedSchemaVersion = (schemaVersion: number): void => {
 export const isSupportedSceneVariationSchemaVersion = (
   schemaVersion: number,
 ): boolean => SUPPORTED_SCHEMA_VERSIONS.has(schemaVersion);
+
+/** A scene must explicitly advertise historical schemas it can still reproduce. */
+export const supportsSceneVariationSchemaVersion = (
+  capability: SceneVariationCapability | undefined,
+  schemaVersion: number,
+): boolean => {
+  if (!capability?.enabled || !isSupportedSceneVariationSchemaVersion(schemaVersion)) return false;
+  const versions = capability.supportedSchemaVersions ?? [capability.schemaVersion];
+  return Number.isInteger(capability.schemaVersion) &&
+    isSupportedSceneVariationSchemaVersion(capability.schemaVersion) &&
+    versions.includes(capability.schemaVersion) &&
+    new Set(versions).size === versions.length &&
+    versions.every(isSupportedSceneVariationSchemaVersion) &&
+    versions.includes(schemaVersion);
+};
 
 const assertIdentityShape = (identity: SceneVariantIdentity): SceneVariantIdentity =>
   createSceneVariantIdentity(
@@ -180,10 +198,10 @@ export const resolveSceneVariationDescriptor = (
   if (normalizedIdentity.sceneId !== scene.id) {
     throw new RangeError("Scene variation identity does not match the canonical scene ID");
   }
-  if (normalizedIdentity.schemaVersion !== schemaVersion) {
-    throw new RangeError("Scene variation identity schema version does not match scene capability");
-  }
   assertSupportedSchemaVersion(normalizedIdentity.schemaVersion);
+  if (!supportsSceneVariationSchemaVersion(capability, normalizedIdentity.schemaVersion)) {
+    throw new RangeError("Scene variation identity schema version is not supported by the scene capability");
+  }
 
   return Object.freeze({
     identity: normalizedIdentity,

@@ -67,7 +67,102 @@ const collectDisposableSpies = (group: THREE.Group) => {
   ];
 };
 
+const createAcceptedV1SubjectSignature = (group: THREE.Group): string => {
+  group.updateMatrixWorld(true);
+  const entries: unknown[] = [];
+  group.traverse((object) => {
+    const entry: Record<string, unknown> = {
+      type: object.type,
+      name: object.name,
+      matrix: object.matrix.elements.map((value) => Number(value.toPrecision(12))),
+    };
+    if (object instanceof THREE.Mesh) {
+      const geometryAttributes = object.geometry.attributes as Record<string, THREE.BufferAttribute>;
+      entry.geometry = Object.entries(geometryAttributes)
+        .map(([name, attribute]) => {
+          const view = new Uint8Array(
+            attribute.array.buffer,
+            attribute.array.byteOffset,
+            attribute.array.byteLength,
+          );
+          return [
+            name,
+            createHash("sha256").update(view).digest("hex"),
+            attribute.itemSize,
+            attribute.count,
+          ];
+        })
+        .sort(([a], [b]) => String(a).localeCompare(String(b)));
+      const index = object.geometry.index;
+      if (index) {
+        const view = new Uint8Array(index.array.buffer, index.array.byteOffset, index.array.byteLength);
+        entry.index = createHash("sha256").update(view).digest("hex");
+      }
+      const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
+      entry.materials = meshMaterials.map((material) => {
+        const result: Record<string, unknown> = {
+          type: material.type,
+          name: material.name,
+          transparent: material.transparent,
+          opacity: material.opacity,
+        };
+        if (material instanceof THREE.MeshStandardMaterial) {
+          result.color = material.color.getHexString();
+          result.roughness = material.roughness;
+          result.metalness = material.metalness;
+          result.normalScale = material.normalScale.toArray();
+        }
+        const candidate = material as THREE.Material & Record<string, unknown>;
+        result.textures = ["map", "normalMap", "roughnessMap"].map((slot) => {
+          const texture = candidate[slot];
+          if (!(texture instanceof THREE.DataTexture)) return [slot, null];
+          const data = texture.image.data as Uint8Array;
+          return [
+            slot,
+            createHash("sha256").update(data).digest("hex"),
+            texture.image.width,
+            texture.image.height,
+          ];
+        });
+        return result;
+      });
+    }
+    entries.push(entry);
+  });
+  return createHash("sha256").update(JSON.stringify(entries)).digest("hex");
+};
+
+// Captured before edits from accepted PR #337 reviewed HEAD 22ed40b1bbc4696de109f2c6fd2acebfe8f0628c.
+const ACCEPTED_V1_SUBJECT_SIGNATURES: Readonly<Record<number, string>> = {
+  0: "2fe78f16df3a0a5f1a959c8fba50169cd1553dbeedd20d4a1cdd57dee8d7f9fd",
+  1: "4344861526dd05bb3e96837af505aafc947b4ce6f0d350870915e6f5e486b1f1",
+  284719: "76e86cab45f0cd07709e1e815874852e09cdbddd3932b9c56749ed58979d0268",
+  [0xffff_ffff]: "202e14ae54416b3e44dedcb3a504014a91c685228b6b3e94ee233d87a91dfc7e",
+};
+
 describe("Interior Corner scene foundation", () => {
+  it.each(Object.entries(ACCEPTED_V1_SUBJECT_SIGNATURES))(
+    "preserves accepted v1 scene and material signature for seed %s",
+    (seedText, expectedSignature) => {
+      const descriptor = resolveSceneVariationDescriptor(
+        interiorCornerScene,
+        createSceneVariantIdentity("interior-corner", Number(seedText), 1),
+      );
+      if (!descriptor) throw new Error("Expected the v1 Interior Corner descriptor");
+      const group = createInteriorCornerGroup({
+        presentation: INTERIOR_CORNER_PRESENTATION,
+        variationDescriptor: descriptor,
+      });
+      try {
+        expect(createAcceptedV1SubjectSignature(group)).toBe(expectedSignature);
+        expect(group.getObjectByName("interior-corner-console-vase")).toBeInstanceOf(THREE.Mesh);
+        expect(group.getObjectByName("interior-corner-bench-cushion-left")).toBeUndefined();
+      } finally {
+        disposeInteriorCornerGroup(group);
+      }
+    },
+  );
+
   it("defines a free-only neutral scene with level Rise/Swing controls", () => {
     expect(interiorCornerScene).toMatchObject({
       id: "interior-corner",

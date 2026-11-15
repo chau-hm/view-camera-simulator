@@ -11,7 +11,7 @@ import type { SceneDefinition } from "../../types/scene";
 
 const variationScene = {
   id: "interior-corner",
-  sceneVariation: { enabled: true, schemaVersion: 1 },
+  sceneVariation: { enabled: true, schemaVersion: 2, supportedSchemaVersions: [1, 2] },
 } satisfies Pick<SceneDefinition, "id" | "sceneVariation">;
 
 describe("scene variation URL contract", () => {
@@ -46,7 +46,8 @@ describe("scene variation URL contract", () => {
 
   it.each([
     ["?sv=1", { kind: "valid", schemaVersion: 1 }],
-    ["?sv=2", { kind: "unsupported", schemaVersion: 2 }],
+    ["?sv=2", { kind: "valid", schemaVersion: 2 }],
+    ["?sv=3", { kind: "unsupported", schemaVersion: 3 }],
   ])("parses explicit schema version %s", (search, expected) => {
     expect(parseSceneVariationSchemaFromSearch(search)).toEqual(expected);
   });
@@ -88,7 +89,7 @@ describe("scene variation URL contract", () => {
       createSeed,
     })).toEqual({
       ...location,
-      search: "?keep=one&seed=284719&sv=1",
+      search: "?keep=one&seed=284719&sv=2",
     });
     expect(createSeed).toHaveBeenCalledTimes(1);
 
@@ -106,7 +107,7 @@ describe("scene variation URL contract", () => {
     })).toBeNull();
     expect(createSceneVariantRegenerationLocation({
       mode: "free",
-      scene: { id: "future", sceneVariation: { enabled: true, schemaVersion: 2 } },
+      scene: { id: "future", sceneVariation: { enabled: true, schemaVersion: 3 } },
       location,
       createSeed,
     })).toBeNull();
@@ -124,6 +125,25 @@ describe("scene variation URL contract", () => {
       },
       createSeed: () => 5,
     });
-    expect(regenerated?.search).toBe("?keep=one&seed=6&sv=1");
+    expect(regenerated?.search).toBe("?keep=one&seed=6&sv=2");
+  });
+
+  it("preserves the active historical schema when regenerating", () => {
+    const regenerated = createSceneVariantRegenerationLocation({
+      mode: "free",
+      scene: variationScene,
+      location: {
+        pathname: "/simulator/free/interior-corner",
+        search: "?seed=5&sv=1&keep=one",
+        hash: "#observer",
+      },
+      activeSchemaVersion: 1,
+      createSeed: () => 6,
+    });
+    expect(regenerated).toEqual({
+      pathname: "/simulator/free/interior-corner",
+      search: "?keep=one&seed=6&sv=1",
+      hash: "#observer",
+    });
   });
 });

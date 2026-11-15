@@ -161,7 +161,7 @@ describe("scene variation store lifecycle", () => {
     const result = useAppStore.getState().resolveSceneVariantRoute({
       mode: "free",
       sceneId: "interior-corner",
-      capability: { enabled: true, schemaVersion: 2 },
+      capability: { enabled: true, schemaVersion: 3 },
       routeKey: "future-version",
       seed: { kind: "valid", seed: 19 },
       createSeed,

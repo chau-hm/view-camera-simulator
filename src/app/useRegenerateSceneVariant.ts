@@ -35,6 +35,9 @@ export const useRegenerateSceneVariant = (options: {
       scene,
       location,
       eligible,
+      activeSchemaVersion: currentState.sceneVariantIdentity?.sceneId === scene.id
+        ? currentState.sceneVariantIdentity.schemaVersion
+        : undefined,
       createSeed,
     });
     if (!nextLocation) return false;
