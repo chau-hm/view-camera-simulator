@@ -391,6 +391,24 @@ button {
   margin-bottom: 14px;
 }
 
+.scene-variation-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.scene-variation-controls__identity,
+.scene-variation-controls__feedback {
+  margin: 0;
+  color: var(--sim-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
 /* Right-aligned header actions for simulator */
 .sim-header-actions {
   margin-left: auto;
@@ -1139,6 +1157,12 @@ button {
 }
 
 @media (max-width: 900px) {
+  .scene-variation-controls {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
   .simulator-viewport-grid:not(.simulator-viewport-grid--expanded) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:

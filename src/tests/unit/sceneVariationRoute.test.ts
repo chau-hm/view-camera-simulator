@@ -115,6 +115,24 @@ describe("scene variation route policy", () => {
       mode: "free",
       capability: { enabled: true, schemaVersion: 2 },
     })).toEqual({ status: "unsupported-schema", identity: null });
+    expect(resolveSceneVariantRoute({
+      ...common,
+      mode: "free",
+      capability,
+      schema: { kind: "unsupported", schemaVersion: 2 },
+    })).toEqual({ status: "unsupported-schema", identity: null });
+    expect(resolveSceneVariantRoute({
+      ...common,
+      mode: "free",
+      capability,
+      schema: { kind: "invalid", rawValues: ["1", "1"] },
+    })).toEqual({ status: "invalid-schema", identity: null });
+    expect(resolveSceneVariantRoute({
+      ...common,
+      mode: "free",
+      capability,
+      eligible: false,
+    })).toEqual({ status: "disabled", identity: null });
     expect(createSeed).not.toHaveBeenCalled();
   });
 });

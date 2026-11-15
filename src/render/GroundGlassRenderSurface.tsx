@@ -6,6 +6,7 @@ import type { GroundGlassBackendDiagnostics } from "./backend/groundGlassBackend
 import { normalizeGroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type {
   GroundGlassRttChannel,
@@ -18,6 +19,7 @@ export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   apertureNumber: number;
   previewMode: "raw" | "upright";
   rawDebug?: boolean;
@@ -40,6 +42,7 @@ export const GroundGlassRenderSurface = ({
   opticsState,
   focalLengthMm,
   scene,
+  variationDescriptor,
   apertureNumber,
   previewMode,
   rawDebug,
@@ -227,6 +230,7 @@ export const GroundGlassRenderSurface = ({
             opticsState,
             focalLengthMm,
             scene,
+            variationDescriptor,
             widthPx,
             heightPx,
             aperture: apertureNumber,

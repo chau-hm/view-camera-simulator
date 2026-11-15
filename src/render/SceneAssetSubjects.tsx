@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import type * as THREE from "three";
 import {
@@ -31,6 +31,7 @@ import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
@@ -238,12 +239,22 @@ export const ArchitectureForegroundSubject = () => (
   />
 );
 
-export const InteriorCornerSubject = () => (
-  <RegisteredSceneAsset
-    assetKey={INTERIOR_CORNER_ASSET_KEY}
-    request={interiorCornerRequest}
-  />
-);
+export const InteriorCornerSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...interiorCornerRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset
+      assetKey={INTERIOR_CORNER_ASSET_KEY}
+      request={request}
+    />
+  );
+};
 
 export const ObliqueTabletopSubject = () => (
   <RegisteredSceneAsset

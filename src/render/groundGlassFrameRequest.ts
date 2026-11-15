@@ -1,6 +1,7 @@
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type { DerivedOpticsState, Vec3 } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import type { RenderQualityProfile } from "../types/ui";
 import type { GroundGlassAcceptedRequestIdentity } from "./backend/groundGlassBackendContracts";
 import type { GroundGlassRttChannel } from "./groundGlassRttDimensions";
@@ -34,6 +35,7 @@ export type GroundGlassFrameRequestInput = Readonly<{
   opticsState: GroundGlassDeepReadonly<DerivedOpticsState>;
   focalLengthMm: number;
   scene: GroundGlassDeepReadonly<SceneDefinition>;
+  variationDescriptor?: SceneVariationDescriptor;
   widthPx: number;
   heightPx: number;
   aperture: number;
@@ -84,6 +86,13 @@ export const createGroundGlassFrameRequestFingerprint = (
   return JSON.stringify([
     input.channel,
     createGroundGlassSceneFingerprint(input.scene),
+    input.variationDescriptor
+      ? [
+          input.variationDescriptor.identity.sceneId,
+          input.variationDescriptor.identity.seed,
+          input.variationDescriptor.identity.schemaVersion,
+        ]
+      : null,
     input.focalLengthMm,
     input.aperture,
     input.previewMode,

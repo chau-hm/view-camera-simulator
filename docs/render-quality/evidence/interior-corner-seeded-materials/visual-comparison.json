@@ -1,0 +1,216 @@
+{
+  "source": "Real Playwright Chromium canvas screenshots; contact sheets preserve each panel at native CSS-pixel scale.",
+  "browser": "Chromium headless, DPR 1",
+  "ordinaryObserver": {
+    "viewport": "1440 × 1000",
+    "pngSize": "514 × 411",
+    "files": [
+      {
+        "file": "observer-ordinary-size-canonical-lesson.png",
+        "label": "Canonical lesson Observe · 514 × 411",
+        "sha256": "6b96d1db0ebf8467cd44112d9569e3e6835228293c3a011bd88a9bfc3e06b90d"
+      },
+      {
+        "file": "observer-ordinary-size-seed-284719.png",
+        "label": "Free Practice · seed 284719 · schema v1",
+        "sha256": "f00ce80db42f1fa655de53ef5e83cbcc1f0d43e1189e0f2c0bf9008686559cb0"
+      },
+      {
+        "file": "observer-ordinary-size-seed-4294967295.png",
+        "label": "Free Practice · seed 4294967295 · schema v1",
+        "sha256": "b143f30be333ce7e5cdb8fa6252931666265fc661fbe428a56599770a7f6507b"
+      }
+    ]
+  },
+  "pixelComparisons": [
+    {
+      "a": "canonical",
+      "b": "seed-284719",
+      "dimensions": {
+        "width": 514,
+        "height": 411
+      },
+      "changedPixels": 67480,
+      "totalPixels": 211254,
+      "changedPercent": 31.9426,
+      "meanOfPerPixelMaximumChannelDelta": 0.4018,
+      "maxChannelDelta": 5
+    },
+    {
+      "a": "canonical",
+      "b": "seed-4294967295",
+      "dimensions": {
+        "width": 514,
+        "height": 411
+      },
+      "changedPixels": 67012,
+      "totalPixels": 211254,
+      "changedPercent": 31.7211,
+      "meanOfPerPixelMaximumChannelDelta": 0.3987,
+      "maxChannelDelta": 5
+    },
+    {
+      "a": "seed-284719",
+      "b": "seed-4294967295",
+      "dimensions": {
+        "width": 514,
+        "height": 411
+      },
+      "changedPixels": 67306,
+      "totalPixels": 211254,
+      "changedPercent": 31.8602,
+      "meanOfPerPixelMaximumChannelDelta": 0.394,
+      "maxChannelDelta": 5
+    },
+    {
+      "a": "seed-284719-450",
+      "b": "direct-replay-450",
+      "dimensions": {
+        "width": 450,
+        "height": 360
+      },
+      "changedPixels": 0,
+      "totalPixels": 162000,
+      "changedPercent": 0,
+      "meanOfPerPixelMaximumChannelDelta": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "a": "seed-284719-450",
+      "b": "reload-450",
+      "dimensions": {
+        "width": 450,
+        "height": 360
+      },
+      "changedPixels": 0,
+      "totalPixels": 162000,
+      "changedPercent": 0,
+      "meanOfPerPixelMaximumChannelDelta": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "a": "seed-284719-450",
+      "b": "back-450",
+      "dimensions": {
+        "width": 450,
+        "height": 360
+      },
+      "changedPixels": 0,
+      "totalPixels": 162000,
+      "changedPercent": 0,
+      "meanOfPerPixelMaximumChannelDelta": 0,
+      "maxChannelDelta": 0
+    }
+  ],
+  "contactSheets": [
+    {
+      "path": "docs/render-quality/evidence/interior-corner-seeded-materials/observer-material-variants-ordinary-size.png",
+      "width": 1620,
+      "height": 457,
+      "panels": [
+        {
+          "file": "observer-ordinary-size-canonical-lesson.png",
+          "label": "Canonical lesson Observe · 514 × 411"
+        },
+        {
+          "file": "observer-ordinary-size-seed-284719.png",
+          "label": "Free Practice · seed 284719 · schema v1"
+        },
+        {
+          "file": "observer-ordinary-size-seed-4294967295.png",
+          "label": "Free Practice · seed 4294967295 · schema v1"
+        }
+      ]
+    },
+    {
+      "path": "docs/render-quality/evidence/interior-corner-seeded-materials/observer-seed-replay-identity.png",
+      "width": 948,
+      "height": 824,
+      "panels": [
+        {
+          "file": "observer-seed-284719.png",
+          "label": "Seed 284719 · direct entry"
+        },
+        {
+          "file": "observer-direct-replay-284719.png",
+          "label": "Seed 284719 · direct URL replay"
+        },
+        {
+          "file": "observer-reload-284719.png",
+          "label": "Seed 284719 · page reload"
+        },
+        {
+          "file": "observer-back-restored-284719.png",
+          "label": "Seed 284719 · browser Back"
+        }
+      ]
+    },
+    {
+      "path": "docs/render-quality/evidence/interior-corner-seeded-materials/ground-glass-seed-284719-nine-state-matrix.png",
+      "width": 1428,
+      "height": 1245,
+      "panels": [
+        {
+          "file": "ground-glass-seed-284719-focus-5800-f-5.6.png",
+          "label": "Seed 284719 · focus 5800 mm · f/5.6"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-5800-f-11.png",
+          "label": "Seed 284719 · focus 5800 mm · f/11"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-5800-f-22.png",
+          "label": "Seed 284719 · focus 5800 mm · f/22"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-8000-f-5.6.png",
+          "label": "Seed 284719 · focus 8000 mm · f/5.6"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-8000-f-11.png",
+          "label": "Seed 284719 · focus 8000 mm · f/11"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-8000-f-22.png",
+          "label": "Seed 284719 · focus 8000 mm · f/22"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-10400-f-5.6.png",
+          "label": "Seed 284719 · focus 10400 mm · f/5.6"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-10400-f-11.png",
+          "label": "Seed 284719 · focus 10400 mm · f/11"
+        },
+        {
+          "file": "ground-glass-seed-284719-focus-10400-f-22.png",
+          "label": "Seed 284719 · focus 10400 mm · f/22"
+        }
+      ]
+    },
+    {
+      "path": "docs/render-quality/evidence/interior-corner-seeded-materials/ground-glass-seed-4294967295-states.png",
+      "width": 948,
+      "height": 826,
+      "panels": [
+        {
+          "file": "ground-glass-seed-4294967295-upright.png",
+          "label": "Seed 4294967295 · Upright"
+        },
+        {
+          "file": "ground-glass-seed-4294967295-raw.png",
+          "label": "Seed 4294967295 · Raw"
+        },
+        {
+          "file": "ground-glass-seed-4294967295-front-rise.png",
+          "label": "Seed 4294967295 · Front Rise 33 mm"
+        },
+        {
+          "file": "ground-glass-seed-4294967295-front-swing.png",
+          "label": "Seed 4294967295 · Front Swing 3.6°"
+        }
+      ]
+    }
+  ],
+  "rawCaptureDirectory": "docs/render-quality/.interior-corner-seeded-materials-runs/current (git-ignored)"
+}

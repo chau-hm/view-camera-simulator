@@ -8,6 +8,7 @@ import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
+import type { SceneVariationDescriptor } from "../../types/sceneVariation";
 import type { SceneDefinition } from "../../types/scene";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
@@ -44,6 +45,7 @@ const useNarrowLayout = (): boolean => {
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   runtimeInfoByChannel: GroundGlassRttRuntimeInfoByChannel;
   onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler;
   groundGlassAssistEnabled: boolean;
@@ -79,6 +81,7 @@ type GroundGlassViewportProps = {
 export const GroundGlassViewport = ({
   opticsState,
   scene,
+  variationDescriptor,
   groundGlassAssistEnabled,
   onGroundGlassAssistEnabledChange,
   gridEnabled,
@@ -170,6 +173,7 @@ export const GroundGlassViewport = ({
         </p>
           <GroundGlassRenderer
           scene={scene}
+          variationDescriptor={variationDescriptor}
           opticsState={layer.opticsState}
           assistEnabled={layer.opticsState.groundGlassProjection.assistModeEnabled}
           gridEnabled={gridEnabled}
@@ -202,7 +206,7 @@ export const GroundGlassViewport = ({
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, preservesFocusLoupeOnPreviewChange, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, preservesFocusLoupeOnPreviewChange, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, variationDescriptor],
   );
 
   useEffect(() => {
@@ -315,6 +319,7 @@ export const GroundGlassViewport = ({
             {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
             <GroundGlassRenderer
               scene={scene}
+              variationDescriptor={variationDescriptor}
               opticsState={opticsState}
               assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
               gridEnabled={gridEnabled}

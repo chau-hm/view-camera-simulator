@@ -4,6 +4,7 @@ import type { EffectiveCameraMovementCalibration } from "../../scenes/cameraMove
 import type { CameraState } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
+import type { SceneVariationDescriptor } from "../../types/sceneVariation";
 import type { RenderQualityProfile } from "../../types/ui";
 import {
   normalizeGroundGlassFrameRequestInput,
@@ -29,6 +30,7 @@ export type GroundGlassRequestFixtureOptions = Readonly<{
   inspectionWindow?: GroundGlassInspectionWindow;
   presentationRegion?: CameraMovementPresentationRegion;
   effectiveCameraMovementCalibration?: EffectiveCameraMovementCalibration;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 export const createGroundGlassRequestInput = (
@@ -45,6 +47,7 @@ export const createGroundGlassRequestInput = (
     opticsState: options.opticsState ?? deriveOpticsState(camera, scene),
     focalLengthMm: options.focalLengthMm ?? camera.focalLengthMm,
     scene,
+    variationDescriptor: options.variationDescriptor,
     widthPx: options.widthPx ?? 500,
     heightPx: options.heightPx ?? 400,
     aperture: options.aperture ?? camera.aperture,

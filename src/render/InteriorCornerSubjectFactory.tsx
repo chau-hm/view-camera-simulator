@@ -6,6 +6,8 @@ import {
   disposeTeachingSubjectResources,
 } from "./TeachingMaterials";
 import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
+import { resolveInteriorCornerMaterialVariationSeeds } from "../scenes/interiorCornerMaterialVariation";
 
 type InteriorCornerMaterials = {
   wall: THREE.Material;
@@ -26,6 +28,7 @@ const createStandardMaterial = (color: string, roughness = 0.88) =>
 type InteriorCornerGeometry = InteriorCornerPresentation["geometry"];
 export type InteriorCornerAssetRequest = Readonly<{
   presentation: InteriorCornerPresentation;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 const addBox = ({
@@ -325,6 +328,9 @@ export const createInteriorCornerGroup = (
   request: InteriorCornerAssetRequest,
 ): THREE.Group => {
   const { geometry } = request.presentation;
+  const variationSeeds = resolveInteriorCornerMaterialVariationSeeds(
+    request.variationDescriptor,
+  );
   const root = new THREE.Group();
   root.name = "interior-corner-subject";
 
@@ -335,6 +341,7 @@ export const createInteriorCornerGroup = (
       repeat: [3, 5],
       roughness: 0.96,
       normalStrength: 0.18,
+      variationSeed: variationSeeds?.wall,
     }),
     ceiling: createProceduralSurfaceMaterial({
       color: "#e8e3d9",
@@ -342,6 +349,7 @@ export const createInteriorCornerGroup = (
       repeat: [2, 3],
       roughness: 0.98,
       normalStrength: 0.1,
+      variationSeed: variationSeeds?.ceiling,
     }),
     floor: createProceduralSurfaceMaterial({
       color: "#8e7963",
@@ -349,6 +357,7 @@ export const createInteriorCornerGroup = (
       repeat: [0.8, 1.7],
       roughness: 0.985,
       normalStrength: 0.035,
+      variationSeed: variationSeeds?.floor,
     }),
     trim: createProceduralSurfaceMaterial({
       color: "#f0ece3",
@@ -356,6 +365,7 @@ export const createInteriorCornerGroup = (
       repeat: [2, 4],
       roughness: 0.84,
       normalStrength: 0.1,
+      variationSeed: variationSeeds?.trim,
     }),
     wood: createProceduralSurfaceMaterial({
       color: "#665244",
@@ -363,6 +373,7 @@ export const createInteriorCornerGroup = (
       repeat: [1.8, 7],
       roughness: 0.8,
       normalStrength: 0.18,
+      variationSeed: variationSeeds?.wood,
     }),
     artwork: createProceduralSurfaceMaterial({
       color: "#66808a",
@@ -370,6 +381,7 @@ export const createInteriorCornerGroup = (
       repeat: [1, 1],
       roughness: 0.96,
       normalStrength: 0.035,
+      variationSeed: variationSeeds?.artwork,
     }),
     artworkAccent: createStandardMaterial("#c48b62", 0.7),
     fabric: createProceduralSurfaceMaterial({
@@ -378,6 +390,7 @@ export const createInteriorCornerGroup = (
       repeat: [0.5, 0.5],
       roughness: 0.98,
       normalStrength: 0.18,
+      variationSeed: variationSeeds?.fabric,
     }),
     rug: createFocusFriendlyMaterial({
       pattern: "subtle-checker",

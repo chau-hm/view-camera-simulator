@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
+import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
 import type { EffectiveCameraMovementCalibration } from "../../scenes/cameraMovementEffectiveCalibration";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { SceneDefinition } from "../../types/scene";
@@ -61,6 +63,40 @@ describe("Ground Glass accepted frame requests", () => {
     changedInputs.forEach((input) => {
       expect(createGroundGlassFrameRequestFingerprint(input)).not.toBe(baseKey);
     });
+  });
+
+  it("treats the variation identity as a render-relevant subject request input", () => {
+    const firstDescriptor = resolveSceneVariationDescriptor(
+      interiorCornerScene,
+      createSceneVariantIdentity("interior-corner", 1, 1),
+    );
+    const secondDescriptor = resolveSceneVariationDescriptor(
+      interiorCornerScene,
+      createSceneVariantIdentity("interior-corner", 2, 1),
+    );
+    if (!firstDescriptor || !secondDescriptor) throw new Error("Expected scene variation descriptors");
+    const first = createGroundGlassRequestInput({
+      scene: interiorCornerScene,
+      variationDescriptor: firstDescriptor,
+    });
+    const replay = createGroundGlassRequestInput({
+      scene: interiorCornerScene,
+      variationDescriptor: resolveSceneVariationDescriptor(
+        interiorCornerScene,
+        createSceneVariantIdentity("interior-corner", 1, 1),
+      ) ?? undefined,
+    });
+    const nextSeed = createGroundGlassRequestInput({
+      scene: interiorCornerScene,
+      variationDescriptor: secondDescriptor,
+    });
+
+    expect(createGroundGlassFrameRequestFingerprint(first)).toBe(
+      createGroundGlassFrameRequestFingerprint(replay),
+    );
+    expect(createGroundGlassFrameRequestFingerprint(first)).not.toBe(
+      createGroundGlassFrameRequestFingerprint(nextSeed),
+    );
   });
 
   it("preserves exact small canonical changes in the request fingerprint", () => {

@@ -59,7 +59,10 @@ import {
   resolveCameraMovementLessonState,
 } from "../scenes/cameraMovementLessonState";
 import { getPublicSceneEntryById } from "../app/publicScenes";
-import type { ParsedSceneSeed } from "../app/sceneVariationUrl";
+import type {
+  ParsedSceneSeed,
+  ParsedSceneVariationSchema,
+} from "../app/sceneVariationUrl";
 import {
   resolveSceneVariantRoute as resolveSceneVariantRoutePolicy,
   type SceneVariantRouteResolution,
@@ -537,6 +540,8 @@ export type AppStore = {
   sceneVariantIdentity: SceneVariantIdentity | null;
   /** Router location key used to make implicit seed creation idempotent per entry. */
   sceneVariantRouteKey: string | null;
+  /** Explains canonical fallback when a URL requests an unreadable schema version. */
+  sceneVariantRouteStatus: SceneVariantRouteResolution["status"];
   /** Optional runtime diagnostics for RTT scenes. */
   groundGlassRttRuntimeInfo?: GroundGlassRttRuntimeInfo | null;
   groundGlassRttRuntimeInfoByChannel?: Partial<
@@ -584,6 +589,8 @@ export type AppStore = {
     capability?: SceneVariationCapability;
     routeKey: string;
     seed: ParsedSceneSeed;
+    schema?: ParsedSceneVariationSchema;
+    eligible?: boolean;
     createSeed?: () => number;
   }) => SceneVariantRouteResolution;
 
@@ -662,6 +669,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   lastInitializedRouteKey: null,
   sceneVariantIdentity: null,
   sceneVariantRouteKey: null,
+  sceneVariantRouteStatus: "disabled",
   groundGlassRttRuntimeInfo: null,
   groundGlassRttRuntimeInfoByChannel: {},
   interactiveLatticeRuntimeInfo: null,
@@ -1393,6 +1401,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({
       sceneVariantIdentity: stableResolution.identity,
       sceneVariantRouteKey: input.routeKey,
+      sceneVariantRouteStatus: stableResolution.status,
     });
     return stableResolution;
   },
@@ -1961,6 +1970,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       lastInitializedRouteKey: null,
       sceneVariantIdentity: null,
       sceneVariantRouteKey: null,
+      sceneVariantRouteStatus: "disabled",
       cameraMovementCalibrationSession: createCalibrationSession(
         false,
         state.cameraMovementCalibrationSession.draftResetGeneration + 1,

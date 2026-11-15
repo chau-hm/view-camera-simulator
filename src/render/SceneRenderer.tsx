@@ -12,6 +12,7 @@ import { OrbitControls as OrbitControlsController } from "three-stdlib";
 import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
 import "../i18n";
@@ -119,6 +120,7 @@ type SceneRendererProps = {
   outputPolicySelection: ObserverOutputPolicySelection;
   onObserverCanvasError: (error: Error, info: ErrorInfo) => void;
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   opticsState: DerivedOpticsState;
   attempt: number;
   showFocusPlaneOverlay: boolean;
@@ -1359,6 +1361,7 @@ const ArchitectureRiseVerificationProbe = () => {
 
 const SceneContent = ({
   scene,
+  variationDescriptor,
   cameraMovementPresentation,
   opticsState,
   lensCoverageGeometry,
@@ -1379,6 +1382,7 @@ const SceneContent = ({
   architectureRiseVerificationHarness,
 }: {
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   cameraMovementPresentation?: CameraMovementLatticePresentation;
   opticsState: DerivedOpticsState;
   lensCoverageGeometry: PhysicalLensCoverageRenderGeometry | null;
@@ -1494,7 +1498,7 @@ const SceneContent = ({
       onCapacityChange={onSubjectCapacityChange}
     >
       {RegisteredSubject ? (
-        <RegisteredSubject scene={scene} />
+        <RegisteredSubject scene={scene} variationDescriptor={variationDescriptor} />
       ) : (
         scene.focusTargets.map((target) => (
           <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
@@ -1578,6 +1582,7 @@ export const SceneRenderer = ({
   outputPolicySelection,
   onObserverCanvasError,
   scene,
+  variationDescriptor,
   opticsState,
   attempt,
   showFocusPlaneOverlay,
@@ -2270,6 +2275,7 @@ export const SceneRenderer = ({
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} lensCoverageGeometry={renderedLensCoverageGeometry} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
         {canRenderMaterialAwareScene ? <SceneContent
           scene={{ ...renderScene, assets: activeAssets }}
+          variationDescriptor={variationDescriptor}
           cameraMovementPresentation={cameraMovementPresentation}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}

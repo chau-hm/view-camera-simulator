@@ -13,10 +13,11 @@ import { createSceneVariantRegenerationLocation } from "./sceneVariationUrl";
 export const useRegenerateSceneVariant = (options: {
   mode: SimulatorMode;
   scene: Pick<SceneDefinition, "id" | "sceneVariation">;
+  eligible?: boolean;
   /** Optional deterministic seed source for route lifecycle tests. */
   createSeed?: () => number;
 }): (() => boolean) => {
-  const { mode, scene, createSeed } = options;
+  const { mode, scene, eligible = true, createSeed } = options;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -24,6 +25,7 @@ export const useRegenerateSceneVariant = (options: {
     const currentState = useAppStore.getState();
     if (
       currentState.ui.mode !== "free" ||
+      !eligible ||
       currentState.scene.activeSceneId !== scene.id
     ) {
       return false;
@@ -32,10 +34,11 @@ export const useRegenerateSceneVariant = (options: {
       mode,
       scene,
       location,
+      eligible,
       createSeed,
     });
     if (!nextLocation) return false;
     navigate(nextLocation);
     return true;
-  }, [createSeed, location, mode, navigate, scene]);
+  }, [createSeed, eligible, location, mode, navigate, scene]);
 };

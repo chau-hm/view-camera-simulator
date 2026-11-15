@@ -17,6 +17,8 @@ export type ProceduralSurfaceMaterialOptions = Readonly<{
   repeat: readonly [number, number];
   roughness: number;
   normalStrength: number;
+  /** Optional stable role seed; omitted preserves the established canonical maps byte for byte. */
+  variationSeed?: number;
 }>;
 
 const clampByte = (value: number): number => Math.max(0, Math.min(255, Math.round(value)));
@@ -77,7 +79,14 @@ export const createProceduralSurfaceMaterial = ({
   repeat,
   roughness,
   normalStrength,
+  variationSeed,
 }: ProceduralSurfaceMaterialOptions): THREE.MeshStandardMaterial => {
+  if (
+    variationSeed !== undefined &&
+    (!Number.isInteger(variationSeed) || variationSeed < 0 || variationSeed > 0xffff_ffff)
+  ) {
+    throw new RangeError("Procedural surface variation seed must be an unsigned 32-bit integer");
+  }
   const base = new THREE.Color(color).convertLinearToSRGB();
   const baseRgb: [number, number, number] = [
     base.r * 255,
@@ -91,12 +100,17 @@ export const createProceduralSurfaceMaterial = ({
   const heights = new Float32Array(pixelCount);
   const twoPi = Math.PI * 2;
   const isLimestone = pattern === "limestone";
+  const noiseSeed = (baseSeed: number): number => variationSeed === undefined
+    ? baseSeed
+    : Math.imul(variationSeed ^ baseSeed, 0x9e3779b1) >>> 0;
+  const sampleNoise = (x: number, y: number, cellSize: number, baseSeed: number): number =>
+    tileableNoise(x, y, cellSize, noiseSeed(baseSeed));
 
   const surfaceSample = (x: number, y: number) => {
     if (pattern === "paper") {
-      const broadNoise = tileableNoise(x, y, 32, 101) - 0.5;
-      const fiberNoise = tileableNoise(x, y, 2, 103) - 0.5;
-      const grainNoise = tileableNoise(x, y, 4, 107) - 0.5;
+      const broadNoise = sampleNoise(x, y, 32, 101) - 0.5;
+      const fiberNoise = sampleNoise(x, y, 2, 103) - 0.5;
+      const grainNoise = sampleNoise(x, y, 4, 107) - 0.5;
       return {
         joint: false,
         blockTint: 0,
@@ -106,9 +120,9 @@ export const createProceduralSurfaceMaterial = ({
     }
 
     if (pattern === "fabric") {
-      const broadNoise = tileableNoise(x, y, 16, 131) - 0.5;
-      const threadNoise = tileableNoise(x, y, 4, 137) - 0.5;
-      const threadDrift = tileableNoise(x, y, 8, 139) - 0.5;
+      const broadNoise = sampleNoise(x, y, 16, 131) - 0.5;
+      const threadNoise = sampleNoise(x, y, 4, 137) - 0.5;
+      const threadDrift = sampleNoise(x, y, 8, 139) - 0.5;
       const phaseOffset = threadDrift * 0.55;
       const warp = Math.sin(twoPi * 32 * x / SURFACE_TEXTURE_SIZE + phaseOffset);
       const weft = Math.sin(twoPi * 32 * y / SURFACE_TEXTURE_SIZE - phaseOffset);
@@ -122,8 +136,8 @@ export const createProceduralSurfaceMaterial = ({
     }
 
     if (pattern === "plaster") {
-      const broadNoise = tileableNoise(x, y, 16, 71) - 0.5;
-      const fineNoise = tileableNoise(x, y, 4, 73) - 0.5;
+      const broadNoise = sampleNoise(x, y, 16, 71) - 0.5;
+      const fineNoise = sampleNoise(x, y, 4, 73) - 0.5;
       const trowel =
         Math.sin(twoPi * (x + 2 * y) / SURFACE_TEXTURE_SIZE + 0.5) * 0.35 +
         Math.sin(twoPi * (4 * x + 5 * y) / SURFACE_TEXTURE_SIZE + 1.8) * 0.15;
@@ -136,8 +150,8 @@ export const createProceduralSurfaceMaterial = ({
     }
 
     if (pattern === "wood") {
-      const broadNoise = tileableNoise(x, y, 16, 83) - 0.5;
-      const fineNoise = tileableNoise(x, y, 4, 97) - 0.5;
+      const broadNoise = sampleNoise(x, y, 16, 83) - 0.5;
+      const fineNoise = sampleNoise(x, y, 4, 97) - 0.5;
       const grain = Math.sin(
         twoPi * (
           3 * y +
@@ -158,8 +172,8 @@ export const createProceduralSurfaceMaterial = ({
       Math.sin(twoPi * (2 * x + 3 * y) / SURFACE_TEXTURE_SIZE + 0.8) * 0.42 +
       Math.sin(twoPi * (5 * x - y) / SURFACE_TEXTURE_SIZE + 2.1) * 0.27 +
       Math.sin(twoPi * (3 * x + 6 * y) / SURFACE_TEXTURE_SIZE + 4.3) * 0.2;
-    const broadNoise = tileableNoise(x, y, 16, isLimestone ? 13 : 29) - 0.5;
-    const fineNoise = tileableNoise(x, y, 4, isLimestone ? 41 : 53) - 0.5;
+    const broadNoise = sampleNoise(x, y, 16, isLimestone ? 13 : 29) - 0.5;
+    const fineNoise = sampleNoise(x, y, 4, isLimestone ? 41 : 53) - 0.5;
     let joint = false;
     let blockTint = 0;
     let relief = wave * 0.045 + broadNoise * 0.055 + fineNoise * 0.02;
@@ -174,7 +188,7 @@ export const createProceduralSurfaceMaterial = ({
       // Let adjacent limestone blocks read at the pilot's normal viewport
       // size while keeping the variation subordinate to the teaching marks.
       blockTint =
-        (hashNoise(Math.floor(shiftedX / 64), course, 67) - 0.5) * 14;
+        (hashNoise(Math.floor(shiftedX / 64), course, noiseSeed(67)) - 0.5) * 14;
       if (joint) relief -= 0.13;
     } else if (pattern === "cut-stone") {
       relief *= 0.62;

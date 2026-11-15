@@ -463,9 +463,10 @@ export const sceneSubjectRegistry = {
   },
   "interior-corner": {
     SceneSubject: InteriorCornerSubject,
-    createRttGroup: () =>
+    createRttGroup: (options) =>
       createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
         presentation: INTERIOR_CORNER_PRESENTATION,
+        variationDescriptor: options?.variationDescriptor,
       }),
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, group),

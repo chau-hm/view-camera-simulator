@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createSceneVariantRegenerationLocation,
   parseSceneSeedFromSearch,
+  parseSceneVariationSchemaFromSearch,
   withSceneSeedInSearch,
+  withSceneVariantInSearch,
 } from "../../app/sceneVariationUrl";
 import { UINT32_MAX } from "../../scenes/sceneVariation";
 import type { SceneDefinition } from "../../types/scene";
@@ -42,6 +44,28 @@ describe("scene variation URL contract", () => {
     expect(withSceneSeedInSearch(once, null)).toBe("?keep=one&other=two");
   });
 
+  it.each([
+    ["?sv=1", { kind: "valid", schemaVersion: 1 }],
+    ["?sv=2", { kind: "unsupported", schemaVersion: 2 }],
+  ])("parses explicit schema version %s", (search, expected) => {
+    expect(parseSceneVariationSchemaFromSearch(search)).toEqual(expected);
+  });
+
+  it.each(["?sv=", "?sv=0", "?sv=-1", "?sv=1.5", "?sv=1e0", "?sv=4294967296", "?sv=1&sv=1"])(
+    "rejects malformed schema version query %s",
+    (search) => expect(parseSceneVariationSchemaFromSearch(search).kind).toBe("invalid"),
+  );
+
+  it("canonicalizes both parts of the identity idempotently and preserves the hash boundary", () => {
+    const normalized = withSceneVariantInSearch("?keep=one&seed=bad&sv=2&keep=two", {
+      seed: 284719,
+      schemaVersion: 1,
+    });
+    expect(normalized).toBe("?keep=one&keep=two&seed=284719&sv=1");
+    expect(withSceneVariantInSearch(normalized, { seed: 284719, schemaVersion: 1 })).toBe(normalized);
+    expect(withSceneVariantInSearch(normalized, null)).toBe("?keep=one&keep=two");
+  });
+
   it("preserves unrelated repeated query parameters and their values", () => {
     const normalized = withSceneSeedInSearch("?tag=a&tag=b&caption=wood+grain", 7);
     const params = new URLSearchParams(normalized);
@@ -64,7 +88,7 @@ describe("scene variation URL contract", () => {
       createSeed,
     })).toEqual({
       ...location,
-      search: "?keep=one&seed=284719",
+      search: "?keep=one&seed=284719&sv=1",
     });
     expect(createSeed).toHaveBeenCalledTimes(1);
 
@@ -100,6 +124,6 @@ describe("scene variation URL contract", () => {
       },
       createSeed: () => 5,
     });
-    expect(regenerated?.search).toBe("?seed=6&keep=one");
+    expect(regenerated?.search).toBe("?keep=one&seed=6&sv=1");
   });
 });

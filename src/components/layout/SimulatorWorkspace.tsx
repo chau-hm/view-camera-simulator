@@ -13,6 +13,10 @@ import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
+import {
+  isSupportedSceneVariationSchemaVersion,
+  resolveSceneVariationDescriptor,
+} from "../../scenes/sceneVariation";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
 import {
@@ -45,6 +49,7 @@ import { LearningOverlayPanel } from "../simulator/LearningOverlayPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
+import { SceneVariationControls } from "../simulator/SceneVariationControls";
 import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
 import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
@@ -124,6 +129,8 @@ export const SimulatorWorkspace = ({
     useState<SceneGraphCapacityMetrics | null>(null);
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const sceneVariantIdentity = useAppStore((state) => state.sceneVariantIdentity);
+  const sceneVariantRouteStatus = useAppStore((state) => state.sceneVariantRouteStatus);
   const calibrationSession = useAppStore(
     (state) => state.cameraMovementCalibrationSession,
   );
@@ -296,6 +303,31 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const sceneVariationEligible =
+    mode === "free" &&
+    task === null &&
+    !guidedLessonEnabled &&
+    !anatomyLessonEnabled &&
+    !calibrationEnabled &&
+    Boolean(safeScene.sceneVariation?.enabled);
+  const sceneVariationDescriptor = useMemo(() => {
+    const capability = safeScene.sceneVariation;
+    if (
+      !sceneVariationEligible ||
+      !capability?.enabled ||
+      !isSupportedSceneVariationSchemaVersion(capability.schemaVersion) ||
+      sceneVariantRouteStatus !== "resolved" ||
+      !sceneVariantIdentity ||
+      sceneVariantIdentity.sceneId !== safeScene.id ||
+      sceneVariantIdentity.schemaVersion !== capability.schemaVersion
+    ) return undefined;
+    return resolveSceneVariationDescriptor(safeScene, sceneVariantIdentity) ?? undefined;
+  }, [
+    safeScene,
+    sceneVariationEligible,
+    sceneVariantIdentity,
+    sceneVariantRouteStatus,
+  ]);
   useEffect(() => {
     setViewportSubjectCapacity(null);
   }, [safeScene.id]);
@@ -772,11 +804,20 @@ export const SimulatorWorkspace = ({
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
                 </div>
                 <h2 className="simulator-card-title">{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
+                {sceneVariationEligible ? (
+                  <SceneVariationControls
+                    scene={safeScene}
+                    identity={sceneVariantIdentity}
+                    routeStatus={sceneVariantRouteStatus}
+                    eligible={sceneVariationEligible}
+                  />
+                ) : null}
               </div>
 
               <SceneViewport
                 overlayMenuResetGeneration={overlayMenuResetGeneration}
                 scene={safeScene}
+                variationDescriptor={sceneVariationDescriptor}
                 routeSceneId={sceneId}
                 developmentArchitectureRiseWebGpuVerification={
                   developmentArchitectureRiseWebGpuVerification
@@ -823,6 +864,7 @@ export const SimulatorWorkspace = ({
               <GroundGlassViewport
                 opticsState={opticsState}
                 scene={safeScene}
+                variationDescriptor={sceneVariationDescriptor}
                 runtimeInfoByChannel={groundGlassRuntimeInfoByChannel}
                 onRuntimeInfoChange={onGroundGlassRuntimeInfoChange}
                 groundGlassAssistEnabled={camera.groundGlassAssistEnabled}

@@ -41,6 +41,7 @@ export const GroundGlassWebGLAdapter = ({
     opticsState={request.opticsState as unknown as DerivedOpticsState}
     focalLengthMm={request.focalLengthMm}
     scene={request.scene as unknown as SceneDefinition}
+    variationDescriptor={request.variationDescriptor}
     widthPx={request.widthPx}
     heightPx={request.heightPx}
     aperture={request.aperture}

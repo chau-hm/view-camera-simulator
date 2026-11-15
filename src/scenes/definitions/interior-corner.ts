@@ -3,6 +3,7 @@ import geometry from "../interiorCornerGeometry";
 
 export const interiorCornerScene: SceneDefinition = {
   id: "interior-corner",
+  sceneVariation: { enabled: true, schemaVersion: 1 },
   name: "Interior Corner — Rise + Swing",
   description:
     "Explore a neutral interior corner where upper architectural detail presses against the frame and one receding wall creates a future Front Swing and Focus problem.",
