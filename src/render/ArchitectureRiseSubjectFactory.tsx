@@ -116,6 +116,20 @@ const addWindowBay = (
 
   const frame = 34;
   const front = geometry.facade.frontFacadeZ;
+  const overlapsFineDetailProjection = (
+    centerX: number,
+    width: number,
+    centerY: number,
+    height: number,
+  ): boolean => {
+    const detail = geometry.facadeFineDetail;
+    return (
+      centerX - width / 2 < detail.center.x + detail.width / 2 &&
+      centerX + width / 2 > detail.center.x - detail.width / 2 &&
+      centerY - height / 2 < detail.center.y + detail.height / 2 &&
+      centerY + height / 2 > detail.center.y - detail.height / 2
+    );
+  };
   addBox({
     name: `${windowGroup.name}-recess`,
     size: [bay.width + 88, bay.height + 88, 52],
@@ -151,6 +165,54 @@ const addWindowBay = (
       position: [bay.x + offset[0], bay.y + offset[1], front - 76],
       material: resources.trim,
       parent: windowGroup,
+    });
+  });
+
+  // Masonry surrounds sit outside the canonical opening; their stepped
+  // depth gives the same construction relief from either scene camera.
+  [-1, 1].forEach((sign) => {
+    const jambX = bay.x + sign * (bay.width / 2 + 64);
+    const jambHeight = bay.height + 100;
+    if (!overlapsFineDetailProjection(jambX, 54, bay.y, jambHeight)) {
+      addBox({
+        name: `${windowGroup.name}-stone-jamb-${sign}`,
+        size: [54, jambHeight, 76],
+        position: [jambX, bay.y, front - 66],
+        material: resources.trim,
+        parent: sillDetail,
+      });
+    }
+    const bracketX = bay.x + sign * bay.width * 0.35;
+    const bracketY = bay.y - bay.height / 2 - 116;
+    if (!overlapsFineDetailProjection(bracketX, 52, bracketY, 68)) {
+      addBox({
+        name: `${windowGroup.name}-sill-bracket-${sign}`,
+        size: [52, 68, 92],
+        position: [bracketX, bracketY, front - 82],
+        material: resources.trim,
+        parent: sillDetail,
+      });
+    }
+  });
+  [
+    { id: "lintel", width: bay.width + 172, height: 54, y: bay.height / 2 + 74, depth: 100 },
+    { id: "lintel-cap", width: bay.width + 204, height: 22, y: bay.height / 2 + 112, depth: 130 },
+    { id: "sill-apron", width: bay.width + 152, height: 38, y: -bay.height / 2 - 65, depth: 120 },
+  ].forEach(({ id, width, height, y, depth }) => {
+    const detailCenterY = bay.y + y;
+
+    // Keep the full canonical focus-detail assembly clear of masonry; the
+    // physical-lens ray audit verifies the resulting sightlines in 3D.
+    if (overlapsFineDetailProjection(bay.x, width, detailCenterY, height)) {
+      return;
+    }
+
+    addBox({
+      name: `${windowGroup.name}-${id}`,
+      size: [width, height, depth],
+      position: [bay.x, bay.y + y, front - 82],
+      material: resources.trim,
+      parent: sillDetail,
     });
   });
 
@@ -617,6 +679,93 @@ export function createArchitectureRiseGroup(
       parent: root,
     }),
   );
+
+  const masonryDetail = new THREE.Group();
+  masonryDetail.name = "architecture-rise-masonry-relief";
+  masonryDetail.userData.resources = resources;
+  root.add(masonryDetail);
+  const front = geometry.facade.frontFacadeZ;
+  const halfWidth = geometry.building.width / 2;
+  // Continuous roof courses return around both sides, rather than ending
+  // as a camera-facing strip at the facade corners.
+  [
+    { id: "cornice-bed", y: geometry.facade.mainBodyTopY - 130, height: 50, overhang: 70 },
+    { id: "cornice-crown", y: geometry.facade.mainBodyTopY - 26, height: 48, overhang: 120 },
+    { id: "coping-underlip", y: geometry.facade.parapetTopY - 16, height: 28, overhang: 90 },
+  ].forEach(({ id, y, height, overhang }) => {
+    addBox({
+      name: `architecture-rise-${id}-front`,
+      size: [geometry.building.width + overhang * 2, height, 100],
+      position: [0, y, front - overhang / 2],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+    [-1, 1].forEach((sign) => {
+      addBox({
+        name: `architecture-rise-${id}-return-${sign}`,
+        // Butt against the front course instead of overlapping its top face.
+        size: [overhang, height, geometry.building.depth + overhang / 2],
+        position: [sign * (halfWidth + overhang / 2), y, geometry.building.center.z + 50 - overhang / 4],
+        material: resources.trim,
+        parent: masonryDetail,
+      });
+    });
+  });
+  const dentilCount = Math.floor(geometry.building.width / 190);
+  for (let index = 0; index < dentilCount; index += 1) {
+    addBox({
+      name: `architecture-rise-cornice-dentil-${index + 1}`,
+      size: [66, 62, 90],
+      position: [-halfWidth + (index + 0.5) * geometry.building.width / dentilCount,
+        geometry.facade.mainBodyTopY - 78, front - 72],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+  }
+  const panelHeight = Math.max(60, geometry.building.topHeight - 180);
+  [-1, 1].forEach((sign) => {
+    const panelWidth = geometry.building.width / 2 - 210;
+    const panelX = sign * geometry.building.width / 4;
+    const panelY = geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
+    // Keep the rim's exposed face while embedding its rear 4 mm into the
+    // parapet. Butt the rails between the stiles to avoid coplanar overlaps.
+    [-1, 1].forEach((edge) => {
+      addBox({
+        name: `architecture-rise-parapet-panel-${sign}-horizontal-${edge}`,
+        size: [panelWidth - 26, 26, 42],
+        position: [panelX, panelY + edge * panelHeight / 2, front - 57],
+        material: resources.building,
+        parent: masonryDetail,
+      });
+      addBox({
+        name: `architecture-rise-parapet-panel-${sign}-vertical-${edge}`,
+        size: [26, panelHeight + 26, 42],
+        position: [panelX + edge * panelWidth / 2, panelY, front - 57],
+        material: resources.building,
+        parent: masonryDetail,
+      });
+    });
+    addBox({
+      name: `architecture-rise-roof-coping-return-${sign}`,
+      // Fit between the existing front/back coping bars without overlapping.
+      size: [120, 70, geometry.building.depth + 40],
+      position: [sign * (halfWidth + 50), geometry.facade.parapetTopY + 35, geometry.building.center.z],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+  });
+  [
+    { id: "base-foot", y: 25, height: 50, width: 3560, depth: 310 },
+    { id: "base-cap", y: 196, height: 38, width: 3540, depth: 290 },
+  ].forEach(({ id, y, height, width, depth }) => {
+    addBox({
+      name: `architecture-rise-${id}`,
+      size: [width, height, depth],
+      position: [0, geometry.ground.y + y, front - 180],
+      material: resources.trim,
+      parent: masonryDetail,
+    });
+  });
 
   const divisions = geometry.building.facadeVerticalDivisionCount;
   for (let index = 0; index < divisions; index += 1) {
