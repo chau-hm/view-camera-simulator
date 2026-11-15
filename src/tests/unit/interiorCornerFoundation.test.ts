@@ -12,9 +12,10 @@ import {
   disposeRegisteredRttSubject,
 } from "../../render/sceneSubjectRegistry";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
-import geometry from "../../scenes/interiorCornerGeometry";
+import geometry, { furnitureSupportSurfacesMm } from "../../scenes/interiorCornerGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { toWorld } from "../../render/rttUtils";
 import {
   createSceneVariantIdentity,
   resolveSceneVariationDescriptor,
@@ -253,6 +254,34 @@ describe("Interior Corner scene foundation", () => {
     const spies = collectDisposableSpies(group);
     disposeInteriorCornerGroup(group);
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it("keeps variation support data aligned with the rendered console, bench, and rug surfaces", () => {
+    const group = createInteriorCornerGroup({ presentation: INTERIOR_CORNER_PRESENTATION });
+    const surfaces = [
+      ["interior-corner-console-top", furnitureSupportSurfacesMm.consoleTop],
+      ["interior-corner-bench-seat", furnitureSupportSurfacesMm.benchSeat],
+      ["interior-corner-rug", furnitureSupportSurfacesMm.rug],
+    ] as const;
+    try {
+      surfaces.forEach(([name, support]) => {
+        const mesh = group.getObjectByName(name);
+        expect(mesh).toBeInstanceOf(THREE.Mesh);
+        const supportedMesh = mesh as THREE.Mesh<THREE.BoxGeometry>;
+        expect(supportedMesh.position.toArray()).toEqual([
+          toWorld(support.center.x),
+          toWorld(support.center.y),
+          toWorld(support.center.z),
+        ]);
+        expect(supportedMesh.geometry.parameters).toMatchObject({
+          width: toWorld(support.size.x),
+          height: toWorld(support.size.y),
+          depth: toWorld(support.size.z),
+        });
+      });
+    } finally {
+      disposeInteriorCornerGroup(group);
+    }
   });
 
   it.each([0, 1, 284719, 0xffff_ffff])(

@@ -310,7 +310,12 @@ const addInteriorFurnitureStructure = (
     materials.artworkAccent,
   );
   vase.name = "interior-corner-console-vase";
-  vase.position.set(toWorld(-1050), toWorld(geometry.room.floorY + 820), toWorld(9850));
+  const consoleSupport = geometry.furnitureSupportSurfacesMm.consoleTop;
+  vase.position.set(
+    toWorld(consoleSupport.center.x),
+    toWorld(consoleSupport.topY + 130),
+    toWorld(consoleSupport.center.z),
+  );
   structure.add(vase);
 
   const finial = new THREE.Mesh(
@@ -477,11 +482,13 @@ export const createInteriorCornerGroup = (
   );
   addBackArtwork(geometry, root, materials);
 
+  const { consoleTop, benchSeat, rug } = geometry.furnitureSupportSurfacesMm;
+
   addBox({
     root,
     name: "interior-corner-rug",
-    size: [2200, 24, 3300],
-    position: [180, geometry.room.floorY + 12, 5900],
+    size: [rug.size.x, rug.size.y, rug.size.z],
+    position: [rug.center.x, rug.center.y, rug.center.z],
     material: materials.rug,
   });
   addBox({
@@ -496,15 +503,15 @@ export const createInteriorCornerGroup = (
   addBox({
     root,
     name: "interior-corner-console-top",
-    size: [1850, 70, 500],
-    position: [-1050, geometry.room.floorY + 655, 9850],
+    size: [consoleTop.size.x, consoleTop.size.y, consoleTop.size.z],
+    position: [consoleTop.center.x, consoleTop.center.y, consoleTop.center.z],
     material: materials.trim,
   });
   addBox({
     root,
     name: "interior-corner-bench-seat",
-    size: [1750, 420, 560],
-    position: [-850, geometry.room.floorY + 430, 6500],
+    size: [benchSeat.size.x, benchSeat.size.y, benchSeat.size.z],
+    position: [benchSeat.center.x, benchSeat.center.y, benchSeat.center.z],
     material: materials.fabric,
   });
   addBox({
