@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { resolveSceneVariantRoute } from "../../app/sceneVariationRoute";
-import type { ParsedSceneSeed } from "../../app/sceneVariationUrl";
+import {
+  createSceneVariantRegenerationLocation,
+  type ParsedSceneSeed,
+} from "../../app/sceneVariationUrl";
 import { createSceneVariantIdentity } from "../../scenes/sceneVariation";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 
 const capability = {
   enabled: true as const,
@@ -11,6 +15,75 @@ const capability = {
 const missingSeed: ParsedSceneSeed = { kind: "missing" };
 
 describe("scene variation route policy", () => {
+  it("uses Shelf Swing schema v1 for explicit, legacy, and implicit Free Practice identities", () => {
+    const explicit = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-explicit",
+      seed: { kind: "valid", seed: 284719 },
+      schema: { kind: "valid", schemaVersion: 1 },
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 5,
+    });
+    const legacy = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-legacy",
+      seed: { kind: "valid", seed: 284719 },
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 5,
+    });
+    const implicit = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-implicit",
+      seed: missingSeed,
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 9,
+    });
+    expect(explicit.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 });
+    expect(legacy.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 });
+    expect(implicit.identity).toEqual({ sceneId: "shelf-swing", seed: 9, schemaVersion: 1 });
+  });
+
+  it("fails closed on Shelf Swing schema v2 and preserves other URL state on regeneration", () => {
+    const unsupported = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-unsupported",
+      seed: { kind: "valid", seed: 284719 },
+      schema: { kind: "valid", schemaVersion: 2 },
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 5,
+    });
+    expect(unsupported).toEqual({ status: "unsupported-schema", identity: null });
+
+    const location = createSceneVariantRegenerationLocation({
+      mode: "free",
+      scene: shelfSwingScene,
+      activeSchemaVersion: 1,
+      location: {
+        pathname: "/simulator/free/shelf-swing",
+        search: "?keep=two&seed=284719&sv=1",
+        hash: "#observer",
+      },
+      createSeed: () => 91,
+    });
+    expect(location).toEqual({
+      pathname: "/simulator/free/shelf-swing",
+      search: "?keep=two&seed=91&sv=1",
+      hash: "#observer",
+    });
+  });
+
   it("uses a valid URL seed exactly and never asks for entropy", () => {
     const createSeed = vi.fn(() => 9);
     const result = resolveSceneVariantRoute({

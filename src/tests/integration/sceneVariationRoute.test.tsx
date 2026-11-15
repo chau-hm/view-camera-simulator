@@ -12,6 +12,7 @@ import {
 import { SceneVariationRouteSync } from "../../app/SceneVariationRouteSync";
 import { useRegenerateSceneVariant } from "../../app/useRegenerateSceneVariant";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { useAppStore } from "../../state/appStore";
 import type { SceneDefinition } from "../../types/scene";
 
@@ -20,7 +21,10 @@ const fixtureScene: Pick<SceneDefinition, "id" | "sceneVariation"> = {
   sceneVariation: { enabled: true, schemaVersion: 2, supportedSchemaVersions: [1, 2] },
 };
 
-type HarnessProps = { createSeed: () => number };
+type HarnessProps = {
+  createSeed: () => number;
+  scene?: Pick<SceneDefinition, "id" | "sceneVariation">;
+};
 
 const Probe = () => {
   const location = useLocation();
@@ -28,29 +32,29 @@ const Probe = () => {
   const status = useAppStore((state) => state.sceneVariantRouteStatus);
   return (
     <output data-testid="route-state">
-      {JSON.stringify({ pathname: location.pathname, search: location.search, identity, status })}
+      {JSON.stringify({ pathname: location.pathname, search: location.search, hash: location.hash, identity, status })}
     </output>
   );
 };
 
-const VariationRouteHarness = ({ createSeed }: HarnessProps) => {
+const VariationRouteHarness = ({ createSeed, scene = fixtureScene }: HarnessProps) => {
   const { mode: routeMode } = useParams();
   const mode = routeMode === "guided" ? "guided" : "free";
   const location = useLocation();
   const navigate = useNavigate();
   const guidedLessonEntry = new URLSearchParams(location.search).get("lesson") === "1";
-  const regenerate = useRegenerateSceneVariant({ mode, scene: fixtureScene, createSeed });
+  const regenerate = useRegenerateSceneVariant({ mode, scene, createSeed });
   return (
     <>
       <SceneVariationRouteSync
         mode={mode}
-        scene={fixtureScene}
+        scene={scene}
         guidedLessonEntry={guidedLessonEntry}
         createSeed={createSeed}
       />
       <Probe />
-      <button type="button" onClick={() => navigate("/simulator/free/interior-corner?keep=two")}>new-entry</button>
-      <button type="button" onClick={() => navigate("/simulator/free/interior-corner?lesson=1&seed=71&sv=1")}>lesson-entry</button>
+      <button type="button" onClick={() => navigate(`/simulator/free/${scene.id}?keep=two`)}>new-entry</button>
+      <button type="button" onClick={() => navigate(`/simulator/free/${scene.id}?lesson=1&seed=71&sv=1`)}>lesson-entry</button>
       <button type="button" onClick={() => navigate(-1)}>back</button>
       <button type="button" onClick={() => navigate(1)}>forward</button>
       <button type="button" onClick={() => regenerate()}>regenerate</button>
@@ -58,13 +62,18 @@ const VariationRouteHarness = ({ createSeed }: HarnessProps) => {
   );
 };
 
-const renderRoute = (initialEntries: string[], createSeed: () => number, strict = false) => {
+const renderRoute = (
+  initialEntries: string[],
+  createSeed: () => number,
+  strict = false,
+  scene: Pick<SceneDefinition, "id" | "sceneVariation"> = fixtureScene,
+) => {
   const tree = (
     <MemoryRouter initialEntries={initialEntries}>
       <Routes>
         <Route
           path="/simulator/:mode/:sceneId"
-          element={<VariationRouteHarness createSeed={createSeed} />}
+          element={<VariationRouteHarness createSeed={createSeed} scene={scene} />}
         />
       </Routes>
     </MemoryRouter>
@@ -75,6 +84,7 @@ const renderRoute = (initialEntries: string[], createSeed: () => number, strict 
 const readRouteState = () => JSON.parse(screen.getByTestId("route-state").textContent ?? "{}") as {
   pathname: string;
   search: string;
+  hash: string;
   identity: { sceneId: string; seed: number; schemaVersion: number } | null;
   status: string;
 };
@@ -85,6 +95,97 @@ afterEach(() => {
 });
 
 describe("scene variation React Router lifecycle", () => {
+  it("normalizes implicit Shelf Swing Free Practice to schema v1 once under StrictMode", async () => {
+    const createSeed = vi.fn(() => 284719);
+    renderRoute(
+      ["/simulator/free/shelf-swing?keep=one"],
+      createSeed,
+      true,
+      shelfSwingScene,
+    );
+    await waitFor(() => {
+      expect(readRouteState()).toMatchObject({
+        pathname: "/simulator/free/shelf-swing",
+        search: "?keep=one&seed=284719&sv=1",
+        identity: { sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 },
+        status: "resolved",
+      });
+    });
+    expect(createSeed).toHaveBeenCalledTimes(1);
+  });
+
+  it("replays Shelf Swing seed-only and explicit schema-v1 URLs and rejects schema v2", async () => {
+    const createSeed = vi.fn(() => 91);
+    const view = renderRoute(
+      ["/simulator/free/shelf-swing?seed=284719"],
+      createSeed,
+      false,
+      shelfSwingScene,
+    );
+    await waitFor(() => {
+      expect(readRouteState()).toMatchObject({
+        search: "?seed=284719&sv=1",
+        identity: { sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 },
+      });
+    });
+    expect(createSeed).not.toHaveBeenCalled();
+
+    view.unmount();
+    renderRoute(
+      ["/simulator/free/shelf-swing?seed=284719&sv=1"],
+      createSeed,
+      false,
+      shelfSwingScene,
+    );
+    await waitFor(() => expect(readRouteState().identity?.schemaVersion).toBe(1));
+
+    cleanup();
+    renderRoute(
+      ["/simulator/free/shelf-swing?seed=284719&sv=2"],
+      createSeed,
+      false,
+      shelfSwingScene,
+    );
+    await waitFor(() => {
+      expect(readRouteState().identity).toBeNull();
+      expect(readRouteState().status).toBe("unsupported-schema");
+    });
+    expect(createSeed).not.toHaveBeenCalled();
+  });
+
+  it("regenerates and restores Shelf Swing variants through browser history", async () => {
+    const createSeed = vi.fn(() => 55);
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+    });
+    renderRoute(
+      ["/simulator/free/shelf-swing?keep=two&seed=284719&sv=1#observer"],
+      createSeed,
+      false,
+      shelfSwingScene,
+    );
+    await waitFor(() => expect(readRouteState().identity?.seed).toBe(284719));
+
+    fireEvent.click(screen.getByRole("button", { name: "regenerate" }));
+    await waitFor(() => {
+      expect(readRouteState()).toMatchObject({
+        search: "?keep=two&seed=55&sv=1",
+        hash: "#observer",
+        identity: { sceneId: "shelf-swing", seed: 55, schemaVersion: 1 },
+      });
+    });
+    expect(createSeed).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "back" }));
+    await waitFor(() => {
+      expect(readRouteState().identity?.seed).toBe(284719);
+      expect(readRouteState().hash).toBe("#observer");
+    });
+    fireEvent.click(screen.getByRole("button", { name: "forward" }));
+    await waitFor(() => expect(readRouteState().identity?.seed).toBe(55));
+  });
+
   it("normalizes one implicit seed under StrictMode and preserves other query parameters", async () => {
     const createSeed = vi.fn(() => 284719);
     renderRoute(["/simulator/free/interior-corner?keep=one&other=two"], createSeed, true);
