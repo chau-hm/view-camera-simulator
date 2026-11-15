@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import {
@@ -19,10 +20,18 @@ const createPlan = (seed: number) => {
   return { descriptor, plan };
 };
 
+const V2_PLAN_SIGNATURES: Readonly<Record<number, string>> = {
+  0: "f75ec88d9ff3e410a92e9c04a2811d843b4e0b2c223cc81c0e8a0f943d68b279",
+  1: "a2444f7294ce17a3bb26e1f701ff90773519ba26cb1beb96cff7b88ed54233c1",
+  284719: "6cc1bfe1ffde90045f99c01af4bfeb7bee74fc05c6f0b262c3875ceb676cec95",
+  [0xffff_ffff]: "fcca3b1d9ddb2ab6a315d90e7c0f53e5f755ac4fc38289a246ebb294b461e552",
+};
+
 describe("Interior Corner deterministic prop variation plan", () => {
-  it.each([0, 1, 284719, 0xffff_ffff])(
-    "produces a stable, serializable safe plan for seed %s",
-    (seed) => {
+  it.each(Object.entries(V2_PLAN_SIGNATURES))(
+    "produces its fixed schema-v2 plan signature and a safe plan for seed %s",
+    (seedText, expectedSignature) => {
+      const seed = Number(seedText);
       const first = createPlan(seed).plan;
       const second = createPlan(seed).plan;
       expect(second).toEqual(first);
@@ -30,6 +39,8 @@ describe("Interior Corner deterministic prop variation plan", () => {
         serializeInteriorCornerPropVariationPlan(first),
       );
       expect(JSON.parse(JSON.stringify(first))).toEqual(first);
+      expect(createHash("sha256").update(JSON.stringify(first)).digest("hex"))
+        .toBe(expectedSignature);
       expect(getInteriorCornerPropVariationPlanSafetyIssues(first)).toEqual([]);
       expect(first.schemaVersion).toBe(2);
       expect(Object.isFrozen(first)).toBe(true);

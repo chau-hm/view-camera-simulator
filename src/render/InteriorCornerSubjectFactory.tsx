@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { InteriorCornerPresentation } from "../scenes/presentation/interiorCorner";
 import { toWorld } from "./rttUtils";
 import {
@@ -8,6 +9,12 @@ import {
 import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { resolveInteriorCornerMaterialVariationSeeds } from "../scenes/interiorCornerMaterialVariation";
+import {
+  resolveInteriorCornerPropVariationPlan,
+  type InteriorCornerPropPalette,
+  type InteriorCornerPropPlacement,
+  type InteriorCornerPropVariationPlan,
+} from "../scenes/interiorCornerPropVariation";
 
 type InteriorCornerMaterials = {
   wall: THREE.Material;
@@ -22,8 +29,41 @@ type InteriorCornerMaterials = {
   metal: THREE.Material;
 };
 
-const createStandardMaterial = (color: string, roughness = 0.88) =>
-  new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
+const createStandardMaterial = (color: string, roughness = 0.88, flatShading = false) =>
+  new THREE.MeshStandardMaterial({ color, roughness, metalness: 0, flatShading });
+
+const variationPaletteColors: Readonly<Record<InteriorCornerPropPalette, string>> = {
+  clay: "#a97662",
+  sage: "#738078",
+  ochre: "#a58b63",
+  slate: "#687c84",
+  linen: "#c7bba5",
+  charcoal: "#68655f",
+  ivory: "#d0c8b8",
+};
+
+const rugPaletteColors: Readonly<Record<InteriorCornerPropPalette, readonly [string, string]>> = {
+  clay: ["#b6a08c", "#9b806e"],
+  sage: ["#aeb0a0", "#888f83"],
+  ochre: ["#b6a184", "#927c65"],
+  slate: ["#a6a69c", "#828783"],
+  linen: ["#b7a995", "#9c8d79"],
+  charcoal: ["#a6a096", "#817d74"],
+  ivory: ["#bdb2a0", "#988a77"],
+};
+
+const createVariationPaletteMaterialResolver = () => {
+  const materials = new Map<string, THREE.MeshStandardMaterial>();
+  return (palette: InteriorCornerPropPalette, roughness: number, flatShading = false) => {
+    const key = `${palette}:${roughness}:${flatShading}`;
+    let material = materials.get(key);
+    if (!material) {
+      material = createStandardMaterial(variationPaletteColors[palette], roughness, flatShading);
+      materials.set(key, material);
+    }
+    return material;
+  };
+};
 
 type InteriorCornerGeometry = InteriorCornerPresentation["geometry"];
 export type InteriorCornerAssetRequest = Readonly<{
@@ -244,10 +284,155 @@ const addFocusProbes = (geometry: InteriorCornerGeometry, root: THREE.Object3D) 
   });
 };
 
+const addInteriorCornerVariationProps = (
+  root: THREE.Group,
+  plan: InteriorCornerPropVariationPlan,
+  rugMaterial: THREE.Material,
+): void => {
+  const propsRoot = new THREE.Group();
+  propsRoot.name = "interior-corner-seeded-props";
+  root.add(propsRoot);
+  const paletteMaterial = createVariationPaletteMaterialResolver();
+
+  const addPlannedMesh = (
+    prop: InteriorCornerPropPlacement,
+    geometry: THREE.BufferGeometry,
+    material: THREE.Material,
+    options: { castShadow?: boolean; receiveShadow?: boolean; scale?: readonly [number, number, number] } = {},
+  ) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = `interior-corner-${prop.id}`;
+    mesh.position.set(
+      toWorld(prop.positionMm.x),
+      toWorld(prop.positionMm.y),
+      toWorld(prop.positionMm.z),
+    );
+    if ("rotationYDeg" in prop) mesh.rotation.y = (prop.rotationYDeg * Math.PI) / 180;
+    if (options.scale) mesh.scale.set(...options.scale);
+    mesh.castShadow = options.castShadow ?? true;
+    mesh.receiveShadow = options.receiveShadow ?? true;
+    propsRoot.add(mesh);
+    return mesh;
+  };
+
+  plan.props.forEach((prop) => {
+    if (prop.kind === "vase") {
+      addPlannedMesh(
+        prop,
+        new THREE.CylinderGeometry(
+          toWorld(prop.topRadiusMm),
+          toWorld(prop.baseRadiusMm),
+          toWorld(prop.heightMm),
+          18,
+        ),
+        paletteMaterial(prop.palette, 0.72),
+      );
+      return;
+    }
+    if (prop.kind === "book") {
+      addPlannedMesh(
+        prop,
+        new THREE.BoxGeometry(
+          toWorld(prop.dimensionsMm.width),
+          toWorld(prop.dimensionsMm.height),
+          toWorld(prop.dimensionsMm.depth),
+        ),
+        paletteMaterial(prop.palette, 0.86),
+      );
+      return;
+    }
+    if (prop.kind === "sculpture") {
+      const geometry = prop.shape === "orb"
+        ? new THREE.SphereGeometry(toWorld(1), 16, 12)
+        : new THREE.DodecahedronGeometry(toWorld(1), 0);
+      addPlannedMesh(
+        prop,
+        geometry,
+        paletteMaterial(prop.palette, 0.68, prop.shape === "faceted"),
+        {
+          scale: [
+            prop.dimensionsMm.width / 2,
+            prop.dimensionsMm.height / 2,
+            prop.dimensionsMm.depth / 2,
+          ],
+        },
+      );
+      return;
+    }
+    if (prop.kind === "cushion") {
+      addPlannedMesh(
+        prop,
+        new RoundedBoxGeometry(
+          toWorld(prop.dimensionsMm.width),
+          toWorld(prop.dimensionsMm.height),
+          toWorld(prop.dimensionsMm.depth),
+          3,
+          toWorld(Math.min(prop.dimensionsMm.width, prop.dimensionsMm.height, prop.dimensionsMm.depth) * 0.18),
+        ),
+        paletteMaterial(prop.palette, 0.96),
+      );
+      return;
+    }
+
+    const rugGroup = new THREE.Group();
+    rugGroup.name = "interior-corner-rug-arrangement";
+    rugGroup.position.set(
+      toWorld(prop.positionMm.x),
+      toWorld(prop.positionMm.y),
+      toWorld(prop.positionMm.z),
+    );
+    rugGroup.rotation.y = (prop.rotationYDeg * Math.PI) / 180;
+    propsRoot.add(rugGroup);
+    const rug = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        toWorld(prop.dimensionsMm.width),
+        toWorld(prop.dimensionsMm.height),
+        toWorld(prop.dimensionsMm.depth),
+      ),
+      rugMaterial,
+    );
+    rug.name = "interior-corner-rug";
+    rug.receiveShadow = true;
+    rugGroup.add(rug);
+
+    const addPatternStrip = (
+      name: string,
+      size: [number, number, number],
+      position: [number, number, number],
+    ) => {
+      const strip = addBox({
+        root: rugGroup,
+        name: `interior-corner-rug-${name}`,
+        size,
+        position,
+        material: paletteMaterial(prop.palette, 0.98),
+      });
+      strip.receiveShadow = true;
+    };
+    const width = prop.dimensionsMm.width;
+    const depth = prop.dimensionsMm.depth;
+    const stripHeight = 6;
+    const surfaceY = prop.dimensionsMm.height / 2 + stripHeight / 2;
+    if (prop.pattern === "bordered") {
+      const inset = 150;
+      const rail = 28;
+      addPatternStrip("border-near", [width - inset * 2, stripHeight, rail], [0, surfaceY, -depth / 2 + inset]);
+      addPatternStrip("border-far", [width - inset * 2, stripHeight, rail], [0, surfaceY, depth / 2 - inset]);
+      addPatternStrip("border-left", [rail, stripHeight, depth - inset * 2], [-width / 2 + inset, surfaceY, 0]);
+      addPatternStrip("border-right", [rail, stripHeight, depth - inset * 2], [width / 2 - inset, surfaceY, 0]);
+    } else if (prop.pattern === "striped") {
+      [-520, 0, 520].forEach((z, index) => {
+        addPatternStrip(`stripe-${index + 1}`, [width - 280, stripHeight, 74], [0, surfaceY, z]);
+      });
+    }
+  });
+};
+
 const addInteriorFurnitureStructure = (
   geometry: InteriorCornerGeometry,
   root: THREE.Group,
   materials: InteriorCornerMaterials,
+  keepCanonicalVase: boolean,
 ): void => {
   const structure = new THREE.Group();
   structure.name = "interior-corner-furniture-structure";
@@ -305,18 +490,20 @@ const addInteriorFurnitureStructure = (
     structure.add(joint);
   });
 
-  const vase = new THREE.Mesh(
-    new THREE.CylinderGeometry(toWorld(85), toWorld(110), toWorld(260), 16),
-    materials.artworkAccent,
-  );
-  vase.name = "interior-corner-console-vase";
-  const consoleSupport = geometry.furnitureSupportSurfacesMm.consoleTop;
-  vase.position.set(
-    toWorld(consoleSupport.center.x),
-    toWorld(consoleSupport.topY + 130),
-    toWorld(consoleSupport.center.z),
-  );
-  structure.add(vase);
+  if (keepCanonicalVase) {
+    const vase = new THREE.Mesh(
+      new THREE.CylinderGeometry(toWorld(85), toWorld(110), toWorld(260), 16),
+      materials.artworkAccent,
+    );
+    vase.name = "interior-corner-console-vase";
+    const consoleSupport = geometry.furnitureSupportSurfacesMm.consoleTop;
+    vase.position.set(
+      toWorld(consoleSupport.center.x),
+      toWorld(consoleSupport.topY + 130),
+      toWorld(consoleSupport.center.z),
+    );
+    structure.add(vase);
+  }
 
   const finial = new THREE.Mesh(
     new THREE.CylinderGeometry(toWorld(32), toWorld(42), toWorld(90), 12),
@@ -333,6 +520,11 @@ export const createInteriorCornerGroup = (
   request: InteriorCornerAssetRequest,
 ): THREE.Group => {
   const { geometry } = request.presentation;
+  const propVariationPlan = resolveInteriorCornerPropVariationPlan(request.variationDescriptor);
+  const plannedRug = propVariationPlan?.props.find((prop) => prop.kind === "rug");
+  const rugColors = plannedRug
+    ? rugPaletteColors[plannedRug.palette]
+    : ["#b7a995", "#9c8d79"] as const;
   const variationSeeds = resolveInteriorCornerMaterialVariationSeeds(
     request.variationDescriptor,
   );
@@ -399,8 +591,8 @@ export const createInteriorCornerGroup = (
     }),
     rug: createFocusFriendlyMaterial({
       pattern: "subtle-checker",
-      primaryColor: "#b7a995",
-      secondaryColor: "#9c8d79",
+      primaryColor: rugColors[0],
+      secondaryColor: rugColors[1],
       repeat: [10, 10],
       roughness: 1,
     }),
@@ -484,13 +676,15 @@ export const createInteriorCornerGroup = (
 
   const { consoleTop, benchSeat, rug } = geometry.furnitureSupportSurfacesMm;
 
-  addBox({
-    root,
-    name: "interior-corner-rug",
-    size: [rug.size.x, rug.size.y, rug.size.z],
-    position: [rug.center.x, rug.center.y, rug.center.z],
-    material: materials.rug,
-  });
+  if (!propVariationPlan) {
+    addBox({
+      root,
+      name: "interior-corner-rug",
+      size: [rug.size.x, rug.size.y, rug.size.z],
+      position: [rug.center.x, rug.center.y, rug.center.z],
+      material: materials.rug,
+    });
+  }
   addBox({
     root,
     name: "interior-corner-console",
@@ -536,7 +730,10 @@ export const createInteriorCornerGroup = (
     material: materials.artworkAccent,
   });
 
-  addInteriorFurnitureStructure(geometry, root, materials);
+  addInteriorFurnitureStructure(geometry, root, materials, !propVariationPlan);
+  if (propVariationPlan) {
+    addInteriorCornerVariationProps(root, propVariationPlan, materials.rug);
+  }
   addFocusProbes(geometry, root);
   return root;
 };

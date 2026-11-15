@@ -5,7 +5,10 @@ const basePath = "/view-camera-simulator/";
 
 export default defineConfig({
   testDir: "./src/tests/scene-variation-e2e",
-  testMatch: ["interior-corner-seeded-materials-subpath-production.spec.ts"],
+  testMatch: [
+    "interior-corner-seeded-materials-subpath-production.spec.ts",
+    "interior-corner-seeded-props-subpath-production.spec.ts",
+  ],
   timeout: 30_000,
   use: {
     baseURL: `http://127.0.0.1:${port}${basePath}`,
