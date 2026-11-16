@@ -14,7 +14,9 @@ import {
   type RuntimeProbeCandidate,
 } from "./multi-probe-runtime-selector";
 
-const BASE_SHA = "635fd868063759e61c284046d0bac0515ee82632";
+const V2_GEOMETRY_BASELINE_ID = "architecture-rise-v2-seven-front-pane-east-mullion-exterior";
+const V2_FIXTURE_VERSION = "multiprobe-cpu-study-v2-r1";
+const HISTORICAL_PR_S_BASE_SHA = "635fd868063759e61c284046d0bac0515ee82632";
 const PROBE_A_ORIGIN = new THREE.Vector3(-1.2725, 1.5, 6.972);
 const PROBE_FAR = 100;
 const PROBE_NEAR = 0.05;
@@ -26,6 +28,62 @@ const HEIGHT = 411;
 const PROBE_A_ID = "probe-a-pr-s-r";
 const DUPLICATE_ORIGIN_TOLERANCE_M = 0.1;
 const GRID_SIZE = { x: 5, y: 4, z: 4 } as const;
+const V2_FRONT_PANE_IDS = [
+  "architecture-rise-window-ground-left-glazing",
+  "architecture-rise-window-ground-right-glazing",
+  "architecture-rise-window-middle-center-glazing",
+  "architecture-rise-window-middle-left-glazing",
+  "architecture-rise-window-middle-right-glazing",
+  "architecture-rise-window-top-center-glazing",
+  "architecture-rise-window-top-left-glazing",
+] as const;
+const V2_VIEW_DEFINITIONS: GeometryBaselineIdentity["views"] = {
+  A: { positionM: [6.5, 3, -6.5], targetM: [0, 0.9, 5.6000000000000005], fovDeg: 45, nearM: 0.01, farM: 200 },
+  B: { positionM: [11.037666, 3, 0.323947], targetM: [0, 0.9, 5.6000000000000005], fovDeg: 45, nearM: 0.01, farM: 200 },
+  C: { positionM: [8.768833, 3, -3.0880265], targetM: [0, 0.9, 5.6000000000000005], fovDeg: 45, nearM: 0.01, farM: 200 },
+};
+const V2_EXPECTED_BASELINE_IDENTITY: GeometryBaselineIdentity = {
+  id: V2_GEOMETRY_BASELINE_ID,
+  fixtureVersion: V2_FIXTURE_VERSION,
+  modelIdentity: "architecture-rise:registered-architecture-rise-subject",
+  paneIds: [...V2_FRONT_PANE_IDS],
+  sampledPaneIdsByView: {
+    A: [...V2_FRONT_PANE_IDS],
+    B: [...V2_FRONT_PANE_IDS],
+    C: [...V2_FRONT_PANE_IDS],
+  },
+  sampleCountsByPaneByView: {
+    A: {
+      "architecture-rise-window-ground-left-glazing": 9,
+      "architecture-rise-window-ground-right-glazing": 12,
+      "architecture-rise-window-middle-left-glazing": 9,
+      "architecture-rise-window-middle-center-glazing": 9,
+      "architecture-rise-window-middle-right-glazing": 12,
+      "architecture-rise-window-top-left-glazing": 9,
+      "architecture-rise-window-top-center-glazing": 9,
+    },
+    B: Object.fromEntries(V2_FRONT_PANE_IDS.map((id) => [id, 6])),
+    C: Object.fromEntries(V2_FRONT_PANE_IDS.map((id) => [id, 9])),
+  },
+  sampleFractions: SAMPLE_FRACTIONS,
+  views: V2_VIEW_DEFINITIONS,
+  probeAOriginM: [-1.2725, 1.5, 6.972],
+  historicalReference: {
+    id: "PR S corrected Probe A — historical-only",
+    baseSha: HISTORICAL_PR_S_BASE_SHA,
+    source: "docs/LOCAL_REFLECTION_TECHNIQUE_DECISION.md, PR S section",
+  },
+};
+const V2_EXPECTED_SAMPLE_DOMAIN: StudySampleDomain = {
+  A: { paneCount: 7, totalPaneSamples: 112, visibleFrontFaceSamples: 69, physicalFiniteHitCount: 35, physicalNoHitCount: 34, sampleFractions: SAMPLE_FRACTIONS },
+  B: { paneCount: 7, totalPaneSamples: 112, visibleFrontFaceSamples: 42, physicalFiniteHitCount: 42, physicalNoHitCount: 0, sampleFractions: SAMPLE_FRACTIONS },
+  C: { paneCount: 7, totalPaneSamples: 112, visibleFrontFaceSamples: 63, physicalFiniteHitCount: 20, physicalNoHitCount: 43, sampleFractions: SAMPLE_FRACTIONS },
+};
+const V2_EXPECTED_PROBE_A_METRICS = {
+  A: { sampleCount: 69, physicalFiniteHitCount: 35, physicalNoHitCount: 34, candidateValidCount: 11, candidateNoHitCount: 58, sameObjectHitCount: 5, wrongObjectCount: 4, falsePositiveCount: 2, falseNegativeCount: 26, medianQErrorM: 0.980505, p95QErrorM: 3.317413, medianAngularErrorDeg: 1.113515, p95AngularErrorDeg: 3.58267 },
+  B: { sampleCount: 42, physicalFiniteHitCount: 42, physicalNoHitCount: 0, candidateValidCount: 0, candidateNoHitCount: 42, sameObjectHitCount: 0, wrongObjectCount: 0, falsePositiveCount: 0, falseNegativeCount: 42, medianQErrorM: null, p95QErrorM: null, medianAngularErrorDeg: null, p95AngularErrorDeg: null },
+  C: { sampleCount: 63, physicalFiniteHitCount: 20, physicalNoHitCount: 43, candidateValidCount: 3, candidateNoHitCount: 60, sameObjectHitCount: 2, wrongObjectCount: 1, falsePositiveCount: 0, falseNegativeCount: 17, medianQErrorM: 5.735586, p95QErrorM: 5.755903, medianAngularErrorDeg: 10.762997, p95AngularErrorDeg: 11.53403 },
+} as const;
 
 type ViewId = "A" | "B" | "C";
 type Vec3Tuple = readonly [number, number, number];
@@ -71,6 +129,47 @@ type GeometryMetrics = {
   p95QErrorM: number | null;
   medianAngularErrorDeg: number | null;
   p95AngularErrorDeg: number | null;
+};
+
+type StudyViewDefinition = {
+  positionM: Vec3Tuple;
+  targetM: Vec3Tuple;
+  fovDeg: number;
+  nearM: number;
+  farM: number;
+};
+
+type StudySampleDomain = Record<ViewId, {
+  paneCount: number;
+  totalPaneSamples: number;
+  visibleFrontFaceSamples: number;
+  physicalFiniteHitCount: number;
+  physicalNoHitCount: number;
+  sampleFractions: readonly number[];
+}>;
+
+type GeometryBaselineIdentity = {
+  id: string;
+  fixtureVersion: string;
+  modelIdentity: string;
+  paneIds: string[];
+  sampledPaneIdsByView: Record<ViewId, string[]>;
+  sampleCountsByPaneByView: Record<ViewId, Record<string, number>>;
+  sampleFractions: readonly number[];
+  views: Record<ViewId, StudyViewDefinition>;
+  probeAOriginM: Vec3Tuple;
+  historicalReference: {
+    id: "PR S corrected Probe A — historical-only";
+    baseSha: string;
+    source: "docs/LOCAL_REFLECTION_TECHNIQUE_DECISION.md, PR S section";
+  };
+};
+
+type DiagnosticProof = {
+  mode: "diagnostic";
+  geometryBaseline: GeometryBaselineIdentity;
+  sampleDomain: StudySampleDomain;
+  probeAOnly: Record<ViewId, GeometryMetrics>;
 };
 
 type ObserverView = {
@@ -152,7 +251,8 @@ type PublicConfiguration = {
 };
 
 type CoverageProof = {
-  baseSha: string;
+  mode: "full";
+  geometryBaseline: GeometryBaselineIdentity;
   phase: "CPU ideal one-step Probe study; no color or distance cube is allocated";
   probeContract: {
     probeAOriginM: Vec3Tuple;
@@ -164,15 +264,8 @@ type CoverageProof = {
     selectionUsesPhysicalHitObject: false;
     blending: false;
   };
-  views: Record<ViewId, { positionM: Vec3Tuple; targetM: Vec3Tuple; fovDeg: number; nearM: number; farM: number }>;
-  sampleDomain: Record<ViewId, {
-    paneCount: number;
-    totalPaneSamples: number;
-    visibleFrontFaceSamples: number;
-    physicalFiniteHitCount: number;
-    physicalNoHitCount: number;
-    sampleFractions: readonly number[];
-  }>;
+  views: Record<ViewId, StudyViewDefinition>;
+  sampleDomain: StudySampleDomain;
   search: {
     derivation: readonly string[];
     boundsM: { x: AxisBounds; y: AxisBounds; z: AxisBounds };
@@ -284,11 +377,30 @@ type CoverageProof = {
 
 declare global {
   interface Window {
-    __architectureRiseMultiProbeCoverage?: { proof: CoverageProof };
+    __architectureRiseMultiProbeCoverage?: { proof: unknown };
   }
 }
 
 const tuple = (value: THREE.Vector3): Vec3Tuple => [value.x, value.y, value.z];
+const stableJson = (value: unknown): string => JSON.stringify(value, (_key, nested) => {
+  if (!nested || typeof nested !== "object" || Array.isArray(nested)) return nested;
+  return Object.fromEntries(Object.entries(nested as Record<string, unknown>).sort(([left], [right]) => left.localeCompare(right)));
+});
+const baselineMetrics = (metrics: GeometryMetrics) => ({
+  sampleCount: metrics.sampleCount,
+  physicalFiniteHitCount: metrics.physicalFiniteHitCount,
+  physicalNoHitCount: metrics.physicalNoHitCount,
+  candidateValidCount: metrics.candidateValidCount,
+  candidateNoHitCount: metrics.candidateNoHitCount,
+  sameObjectHitCount: metrics.sameObjectHitCount,
+  wrongObjectCount: metrics.wrongObjectCount,
+  falsePositiveCount: metrics.falsePositiveCount,
+  falseNegativeCount: metrics.falseNegativeCount,
+  medianQErrorM: metrics.medianQErrorM === null ? null : Number(metrics.medianQErrorM.toFixed(6)),
+  p95QErrorM: metrics.p95QErrorM === null ? null : Number(metrics.p95QErrorM.toFixed(6)),
+  medianAngularErrorDeg: metrics.medianAngularErrorDeg === null ? null : Number(metrics.medianAngularErrorDeg.toFixed(6)),
+  p95AngularErrorDeg: metrics.p95AngularErrorDeg === null ? null : Number(metrics.p95AngularErrorDeg.toFixed(6)),
+});
 const sortNumbers = (values: readonly number[]): number[] => [...values].sort((a, b) => a - b);
 const median = (values: readonly number[]): number | null => {
   if (values.length === 0) return null;
@@ -796,7 +908,10 @@ const compareTripleRanks = (left: TripleRank, right: TripleRank): number => {
   return 0;
 };
 
-const runStudy = (): CoverageProof => {
+const runStudy = (options: {
+  diagnosticOnly?: boolean;
+  expectedBaselineIdentity?: string;
+} = {}): CoverageProof | DiagnosticProof => {
   const scene = new THREE.Scene();
   const subject = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
   try {
@@ -864,15 +979,80 @@ const runStudy = (): CoverageProof => {
   }
 
   const probeAOnly = evaluateConfiguration(probeAData, [PROBE_A_ID]);
-  const a = probeAOnly.byView.A.metrics;
+  const viewsProof = {} as GeometryBaselineIdentity["views"];
+  const sampleDomain = {} as StudySampleDomain;
+  for (const viewId of ["A", "B", "C"] as const) {
+    const view = views[viewId];
+    const samples = viewSamples[viewId];
+    const finiteCount = samples.filter((sample) => sample.physicalQ).length;
+    viewsProof[viewId] = {
+      positionM: tuple(view.position),
+      targetM: tuple(view.target),
+      fovDeg: 45,
+      nearM: 0.01,
+      farM: 200,
+    };
+    sampleDomain[viewId] = {
+      paneCount: frontPanes.length,
+      totalPaneSamples: frontPanes.length * SAMPLE_FRACTIONS.length ** 2,
+      visibleFrontFaceSamples: samples.length,
+      physicalFiniteHitCount: finiteCount,
+      physicalNoHitCount: samples.length - finiteCount,
+      sampleFractions: SAMPLE_FRACTIONS,
+    };
+  }
+  const geometryBaseline: GeometryBaselineIdentity = {
+    id: V2_GEOMETRY_BASELINE_ID,
+    fixtureVersion: V2_FIXTURE_VERSION,
+    modelIdentity: `${ARCHITECTURE_RISE_PRESENTATION.sceneId}:registered-architecture-rise-subject`,
+    paneIds: frontPanes.map((pane) => pane.name).sort(),
+    sampledPaneIdsByView: Object.fromEntries((Object.keys(views) as ViewId[]).map((viewId) => [
+      viewId,
+      [...new Set(viewSamples[viewId].map((sample) => sample.pane))].sort(),
+    ])) as Record<ViewId, string[]>,
+    sampleCountsByPaneByView: Object.fromEntries((Object.keys(views) as ViewId[]).map((viewId) => {
+      const counts = Object.fromEntries(frontPanes.map((pane) => [pane.name, 0]));
+      viewSamples[viewId].forEach((sample) => { counts[sample.pane] = (counts[sample.pane] ?? 0) + 1; });
+      return [viewId, counts];
+    })) as Record<ViewId, Record<string, number>>,
+    sampleFractions: SAMPLE_FRACTIONS,
+    views: viewsProof,
+    probeAOriginM: tuple(PROBE_A_ORIGIN),
+    historicalReference: {
+      id: "PR S corrected Probe A — historical-only",
+      baseSha: HISTORICAL_PR_S_BASE_SHA,
+      source: "docs/LOCAL_REFLECTION_TECHNIQUE_DECISION.md, PR S section",
+    },
+  };
+  const diagnostic: DiagnosticProof = {
+    mode: "diagnostic",
+    geometryBaseline,
+    sampleDomain,
+    probeAOnly: {
+      A: probeAOnly.byView.A.metrics,
+      B: probeAOnly.byView.B.metrics,
+      C: probeAOnly.byView.C.metrics,
+    },
+  };
+  if (options.diagnosticOnly) return diagnostic;
+  const expectedBaselineIdentity = options.expectedBaselineIdentity ?? V2_GEOMETRY_BASELINE_ID;
+  if (expectedBaselineIdentity !== geometryBaseline.id) {
+    throw new Error(
+      `Multi-Probe geometry baseline identity mismatch: expected ${expectedBaselineIdentity}; measured ${geometryBaseline.id}`,
+    );
+  }
   const b = probeAOnly.byView.B.metrics;
+  const actualProbeA = {
+    A: baselineMetrics(probeAOnly.byView.A.metrics),
+    B: baselineMetrics(probeAOnly.byView.B.metrics),
+    C: baselineMetrics(probeAOnly.byView.C.metrics),
+  };
   const baselinePassed =
-    a.sampleCount === 238 && a.physicalFiniteHitCount === 54 && a.physicalNoHitCount === 184 &&
-    a.sameObjectHitCount === 22 && a.wrongObjectCount === 24 && a.falsePositiveCount === 46 && a.falseNegativeCount === 8 &&
-    b.sampleCount === 171 && b.physicalFiniteHitCount === 29 && b.physicalNoHitCount === 142 &&
-    b.candidateValidCount === 0 && b.falseNegativeCount === 29;
+    stableJson(geometryBaseline) === stableJson(V2_EXPECTED_BASELINE_IDENTITY) &&
+    stableJson(sampleDomain) === stableJson(V2_EXPECTED_SAMPLE_DOMAIN) &&
+    stableJson(actualProbeA) === stableJson(V2_EXPECTED_PROBE_A_METRICS);
   if (!baselinePassed) {
-    throw new Error("PR S CPU Probe A baseline did not reproduce; bounded placement scoring stopped before multi-Probe conclusions");
+    throw new Error("Architecture Rise v2 CPU geometry baseline did not reproduce; bounded placement scoring stopped before multi-Probe conclusions");
   }
 
   const validCandidates = [...grid.candidates].sort((left, right) => left.gridIndex - right.gridIndex);
@@ -1113,36 +1293,14 @@ const runStudy = (): CoverageProof => {
   const globalTripleDiffersFromGreedyExtension =
     bestThreeCandidateIds.join("|") !== greedyExtensionCandidateIds.join("|");
 
-  const viewProof = {} as CoverageProof["views"];
-  const sampleDomain = {} as CoverageProof["sampleDomain"];
-  for (const viewId of ["A", "B", "C"] as const) {
-    const view = views[viewId];
-    const samples = viewSamples[viewId];
-    const finiteCount = samples.filter((sample) => sample.physicalQ).length;
-    viewProof[viewId] = {
-      positionM: tuple(view.position),
-      targetM: tuple(view.target),
-      fovDeg: 45,
-      nearM: 0.01,
-      farM: 200,
-    };
-    sampleDomain[viewId] = {
-      paneCount: frontPanes.length,
-      totalPaneSamples: frontPanes.length * SAMPLE_FRACTIONS.length ** 2,
-      visibleFrontFaceSamples: samples.length,
-      physicalFiniteHitCount: finiteCount,
-      physicalNoHitCount: samples.length - finiteCount,
-      sampleFractions: SAMPLE_FRACTIONS,
-    };
-  }
-
   const chosenProbeOrigins = selectedProbeIds.map((probeId) => ({
     id: probeId,
     originM: selectedOrigins.get(probeId) as Vec3Tuple,
   }));
   const selectedNominalMebibytes = selectedProbeIds.length * 1.5;
   const proof: CoverageProof = {
-    baseSha: BASE_SHA,
+    mode: "full",
+    geometryBaseline,
     phase: "CPU ideal one-step Probe study; no color or distance cube is allocated",
     probeContract: {
       probeAOriginM: tuple(PROBE_A_ORIGIN),
@@ -1154,7 +1312,7 @@ const runStudy = (): CoverageProof => {
       selectionUsesPhysicalHitObject: false,
       blending: false,
     },
-    views: viewProof,
+    views: viewsProof,
     sampleDomain,
     search: {
       derivation: [
@@ -1190,7 +1348,7 @@ const runStudy = (): CoverageProof => {
       trainingAB: probeAOnly.trainingAB.metrics,
       baselineGate: {
         passed: baselinePassed,
-        expectedAuthority: "PR S CPU corrected Probe A: View A 22 same/24 wrong/46 false positives/8 false negatives; View B 0 valid/29 false negatives",
+        expectedAuthority: `${V2_GEOMETRY_BASELINE_ID} measured from the mounted seven-pane v2 subject; PR S remains historical-only`,
       },
     },
     placement: {
@@ -1272,15 +1430,17 @@ const runStudy = (): CoverageProof => {
       basis: [
         `training A+B same-object hits changed from ${aTrain.sameObjectHitCount} with Probe A to ${selectedTrain.sameObjectHitCount} with the selected configuration`,
         `View B false negatives changed from ${b.falseNegativeCount} to ${selectedB.falseNegativeCount}`,
+        `View B selected same-object hits are ${selectedB.sameObjectHitCount} and wrong-object hits are ${selectedB.wrongObjectCount}`,
         `combined training false-positive rate is ${selectedTrain.falsePositiveRate === null ? "unavailable" : (selectedTrain.falsePositiveRate * 100).toFixed(2) + "%"}`,
         `holdout C same-object hits changed from ${holdoutA.sameObjectHitCount} to ${selectedC.sameObjectHitCount}`,
         `holdout C false negatives changed from ${holdoutA.falseNegativeCount} to ${selectedC.falseNegativeCount}`,
+        `the third Probe changes training same-object hits by ${threeProbeMarginal.sameObjectHits} and reduces false negatives by ${threeProbeMarginal.falseNegatives}`,
       ],
       gpuValidationPerformed: false,
       recommendation: classification === "BOUNDED MULTI-PROBE GEOMETRY PROMISING"
         ? "Run a separately scoped normal-scale multi-Probe GPU geometry/appearance validation; do not productionize."
         : classification === "MULTI-PROBE COVERAGE IMPROVES BUT COMPLEXITY / VALIDITY IS NOT JUSTIFIED"
-          ? "Close Probe planning for the current Architecture Rise production path and resume the technique decision between Planar, another candidate, or no local reflection."
+          ? "Do not productionize this candidate: the two-Probe configuration improves held-out View C, but training View B still maps reflected samples to wrong objects and the third Probe fails the fixed complexity gate."
           : "Close Probe research for the current Architecture Rise Observer production path; do not add more Probes. Reopen only with new evidence or requirements.",
     },
   };
@@ -1295,9 +1455,14 @@ const start = (): void => {
   const body = document.body;
   const output = document.getElementById("measurements");
   try {
-    const proof = runStudy();
+    const parameters = new URLSearchParams(window.location.search);
+    const proof = runStudy({
+      diagnosticOnly: parameters.get("mode") === "diagnostic",
+      expectedBaselineIdentity: parameters.get("expectedBaselineIdentity") ?? undefined,
+    });
     window.__architectureRiseMultiProbeCoverage = { proof };
     if (output) output.textContent = JSON.stringify(proof, null, 2);
+    body.dataset.proofMode = proof.mode;
     body.dataset.proofReady = "true";
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

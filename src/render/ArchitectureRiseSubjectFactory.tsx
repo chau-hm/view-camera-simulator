@@ -339,10 +339,14 @@ const addEastWindow = (
       parent,
     }),
   );
+  const mullionDepthMm = 18;
+  const mullionEngagementMm = 4;
+  const glassExteriorXmm = x + window.glazingDepthMm / 2;
+  const mullionCenterXmm = glassExteriorXmm + mullionDepthMm / 2 - mullionEngagementMm;
   addBox({
     name: `${name}-mullion`,
-    size: [18, glassHeight, window.mullionWidthMm],
-    position: [x - window.glazingDepthMm / 2 - 4, window.centerYMm, window.centerZMm],
+    size: [mullionDepthMm, glassHeight, window.mullionWidthMm],
+    position: [mullionCenterXmm, window.centerYMm, window.centerZMm],
     material: resources.trim,
     parent,
   });

@@ -245,6 +245,102 @@ describe("Architecture Rise mounted geometry visibility", () => {
     }
   });
 
+  it("keeps east mullions outside the glazing and first-hit from the service elevation", () => {
+    const root = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
+    const raycaster = new THREE.Raycaster();
+    try {
+      root.updateMatrixWorld(true);
+      const serviceBounds = new THREE.Box3().setFromObject(
+        root.getObjectByName("architecture-rise-attached-service-return")!,
+      );
+      const returnLayout = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn;
+      const eastWindows = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.windows.filter(
+        (window) => window.elevation === "east",
+      );
+      expect(eastWindows).toHaveLength(2);
+
+      const evidence = eastWindows.map((window) => {
+        const prefix = `architecture-rise-window-${window.id}`;
+        const glass = root.getObjectByName(`${prefix}-glazing`);
+        const mullion = root.getObjectByName(`${prefix}-mullion`);
+        if (!(glass instanceof THREE.Mesh) || !(mullion instanceof THREE.Mesh)) {
+          throw new Error(`${window.id} must mount glazing and a mullion mesh`);
+        }
+        const glassBounds = new THREE.Box3().setFromObject(glass);
+        const mullionBounds = new THREE.Box3().setFromObject(mullion);
+        const expectedBoundsWithinReturn = [glass, mullion, ...mountedMeshes(root).filter((mesh) =>
+          mesh.name.startsWith(`${prefix}-reveal-`),
+        )].map((mesh) => new THREE.Box3().setFromObject(mesh));
+        expectedBoundsWithinReturn.forEach((bounds) => {
+          expect(bounds.min.x).toBeGreaterThanOrEqual(serviceBounds.min.x - 1e-6);
+          expect(bounds.max.x).toBeLessThanOrEqual(serviceBounds.max.x + 1e-6);
+          expect(bounds.min.y).toBeGreaterThanOrEqual(serviceBounds.min.y - 1e-6);
+          expect(bounds.max.y).toBeLessThanOrEqual(serviceBounds.max.y + 1e-6);
+          expect(bounds.min.z).toBeGreaterThanOrEqual(toWorld(returnLayout.minZMm) - 1e-6);
+          expect(bounds.max.z).toBeLessThanOrEqual(toWorld(returnLayout.maxZMm) + 1e-6);
+        });
+
+        expect(mullionBounds.min.x).toBeLessThan(glassBounds.max.x);
+        expect(mullionBounds.max.x).toBeGreaterThan(glassBounds.max.x);
+        expect(mullionBounds.min.y).toBeCloseTo(glassBounds.min.y, 6);
+        expect(mullionBounds.max.y).toBeCloseTo(glassBounds.max.y, 6);
+        expect(mullion.getWorldPosition(new THREE.Vector3()).z)
+          .toBeCloseTo(glass.getWorldPosition(new THREE.Vector3()).z, 6);
+        expect(mullionBounds.max.z - mullionBounds.min.z)
+          .toBeLessThan(glassBounds.max.z - glassBounds.min.z);
+
+        const origin = new THREE.Vector3(
+          toWorld(returnLayout.maxXMm + 60),
+          toWorld(window.centerYMm),
+          toWorld(window.centerZMm),
+        );
+        const direction = new THREE.Vector3(-1, 0, 0);
+        const firstHitName = (): string | undefined => {
+          raycaster.set(origin, direction);
+          raycaster.near = 0;
+          raycaster.far = toWorld(returnLayout.maxXMm - returnLayout.minXMm + 100);
+          return raycaster.intersectObjects(mountedMeshes(root), false)[0]?.object.name;
+        };
+
+        // Recreate the reviewed offset on the mounted mesh as a negative control.
+        const reviewedCenterXmm = returnLayout.maxXMm - window.glazingInsetMm - window.glazingDepthMm / 2 - 4;
+        const correctedPositionX = mullion.position.x;
+        mullion.position.x = toWorld(reviewedCenterXmm);
+        root.updateMatrixWorld(true);
+        const reviewedFirstHit = firstHitName();
+        expect(reviewedFirstHit, `${window.id} reviewed offset is hidden by the glass`).toBe(glass.name);
+
+        mullion.position.x = correctedPositionX;
+        root.updateMatrixWorld(true);
+        const correctedFirstHit = firstHitName();
+        expect(correctedFirstHit, `${window.id} mullion must be visible before the glass`).toBe(mullion.name);
+
+        const adjacentPaneOrigin = origin.clone();
+        adjacentPaneOrigin.z += toWorld(window.mullionWidthMm / 2 + 40);
+        raycaster.set(adjacentPaneOrigin, direction);
+        const adjacentPaneHit = raycaster.intersectObjects(mountedMeshes(root), false)[0]?.object.name;
+        expect(adjacentPaneHit, `${window.id} adjacent pane remains unobstructed`).toBe(glass.name);
+
+        return {
+          window: window.id,
+          glassBoundsMm: glassBounds.clone().min.multiplyScalar(1000).toArray().concat(
+            glassBounds.clone().max.multiplyScalar(1000).toArray(),
+          ),
+          mullionBoundsMm: mullionBounds.clone().min.multiplyScalar(1000).toArray().concat(
+            mullionBounds.clone().max.multiplyScalar(1000).toArray(),
+          ),
+          reviewedFirstHit,
+          correctedFirstHit,
+          adjacentPaneHit,
+        };
+      });
+
+      console.info(JSON.stringify({ eastMullionExteriorRayEvidence: evidence }));
+    } finally {
+      disposeArchitectureRiseGroup(root);
+    }
+  });
+
   it("keeps all canonical focus samples clear from each derived physical lens center", () => {
     const root = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
     const samples = canonicalFocusSamples();
