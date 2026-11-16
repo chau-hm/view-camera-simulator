@@ -1,6 +1,12 @@
 import * as THREE from "three";
 import type { ShelfSwingSubjectDefinition } from "../scenes/shelfSwingGeometry";
 import type { ShelfSwingPresentation } from "../scenes/presentation/shelfSwing";
+import {
+  resolveShelfSwingPropVariationPlan,
+  type ShelfSwingPropVariation,
+  type ShelfSwingStationVariation,
+} from "../scenes/shelfSwingPropVariation";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
@@ -188,9 +194,58 @@ const addStationContext = (
   station.add(context);
 };
 
+const createVariationPropGeometry = (prop: ShelfSwingPropVariation): THREE.BufferGeometry => {
+  const { width, height, depth } = prop.dimensionsMm;
+  if (prop.family === "box") {
+    return new THREE.BoxGeometry(toWorld(width), toWorld(height), toWorld(depth));
+  }
+  if (prop.family === "cylinder") {
+    const radius = toWorld(width / 2);
+    return new THREE.CylinderGeometry(radius, radius, toWorld(height), 16);
+  }
+
+  const radius = Math.min(width, depth) / 2;
+  const points = [
+    new THREE.Vector2(0, -height / 2),
+    new THREE.Vector2(radius * 0.58, -height / 2),
+    new THREE.Vector2(radius * 0.88, -height * 0.3),
+    new THREE.Vector2(radius * 0.68, height * 0.18),
+    new THREE.Vector2(radius, height * 0.42),
+    new THREE.Vector2(radius * 0.9, height / 2),
+  ].map((point) => new THREE.Vector2(toWorld(point.x), toWorld(point.y)));
+  return new THREE.LatheGeometry(points, 12);
+};
+
+const addVariationProps = (
+  station: THREE.Group,
+  subject: ShelfSwingSubjectDefinition,
+  variation: ShelfSwingStationVariation,
+): void => {
+  variation.props.forEach((prop) => {
+    const displayObject = new THREE.Mesh(
+      createVariationPropGeometry(prop),
+      standardMaterial(prop.palette.body, 0.76),
+    );
+    displayObject.name = `${subject.semanticName}-variation-object-${prop.id}`;
+    displayObject.position.set(
+      toWorld(prop.positionMm.x),
+      toWorld(prop.positionMm.y),
+      toWorld(prop.positionMm.z),
+    );
+    displayObject.rotation.y = degreesToRadians(prop.rotationYDeg);
+    displayObject.userData = {
+      variationPropId: prop.id,
+      family: prop.family,
+      dimensionsMm: { ...prop.dimensionsMm },
+    };
+    station.add(displayObject);
+  });
+};
+
 const createStation = (
   subject: ShelfSwingSubjectDefinition,
   presentation: ShelfSwingPresentation,
+  variation: ShelfSwingStationVariation | undefined,
 ): THREE.Group => {
   const station = new THREE.Group();
   station.name = subject.semanticName;
@@ -268,29 +323,33 @@ const createStation = (
 
   addStationContext(station, subject, presentation, frameMaterial);
 
-  subject.displayObjects.forEach((definition) => {
-    const objectGeometry =
-      definition.shape === "cylinder"
-        ? new THREE.CylinderGeometry(
-            toWorld(definition.dimensions.x / 2),
-            toWorld(definition.dimensions.z / 2),
-            toWorld(definition.dimensions.y),
-            24,
-          )
-        : new THREE.BoxGeometry(
-            toWorld(definition.dimensions.x),
-            toWorld(definition.dimensions.y),
-            toWorld(definition.dimensions.z),
-          );
-    const displayObject = new THREE.Mesh(objectGeometry, standardMaterial(definition.color, 0.74));
-    displayObject.name = `${subject.semanticName}-object-${definition.id}`;
-    displayObject.position.set(
-      toWorld(definition.localPosition.x),
-      toWorld(definition.localPosition.y),
-      toWorld(definition.localPosition.z),
-    );
-    station.add(displayObject);
-  });
+  if (variation) {
+    addVariationProps(station, subject, variation);
+  } else {
+    subject.displayObjects.forEach((definition) => {
+      const objectGeometry =
+        definition.shape === "cylinder"
+          ? new THREE.CylinderGeometry(
+              toWorld(definition.dimensions.x / 2),
+              toWorld(definition.dimensions.z / 2),
+              toWorld(definition.dimensions.y),
+              24,
+            )
+          : new THREE.BoxGeometry(
+              toWorld(definition.dimensions.x),
+              toWorld(definition.dimensions.y),
+              toWorld(definition.dimensions.z),
+            );
+      const displayObject = new THREE.Mesh(objectGeometry, standardMaterial(definition.color, 0.74));
+      displayObject.name = `${subject.semanticName}-object-${definition.id}`;
+      displayObject.position.set(
+        toWorld(definition.localPosition.x),
+        toWorld(definition.localPosition.y),
+        toWorld(definition.localPosition.z),
+      );
+      station.add(displayObject);
+    });
+  }
 
   const chartGroup = new THREE.Group();
   chartGroup.name = chart.semanticName;
@@ -345,14 +404,16 @@ const createStation = (
 
 export type ShelfSwingAssetRequest = Readonly<{
   presentation: ShelfSwingPresentation;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
-/** Create the canonical Shelf Swing subject for interactive and RTT use. */
+/** Create a canonical subject or a descriptor-backed Free Practice prop variant. */
 export function createShelfSwingGroup(
   request: ShelfSwingAssetRequest,
 ): THREE.Group {
   const { presentation } = request;
   const { geometry } = presentation;
+  const variationPlan = resolveShelfSwingPropVariationPlan(request.variationDescriptor);
   const root = new THREE.Group();
   root.name = "shelf-swing-subject";
 
@@ -369,9 +430,10 @@ export function createShelfSwingGroup(
   );
   root.add(floorMesh);
 
-  geometry.subjects.forEach((subject) =>
-    root.add(createStation(subject, presentation)),
-  );
+  geometry.subjects.forEach((subject) => {
+    const variation = variationPlan?.stations.find((station) => station.stationId === subject.id);
+    root.add(createStation(subject, presentation, variation));
+  });
   return root;
 }
 

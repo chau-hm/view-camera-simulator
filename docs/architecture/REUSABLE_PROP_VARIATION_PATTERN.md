@@ -8,10 +8,12 @@ knows only box bounds, support surfaces, and geometric relationships. Each
 scene still decides which objects exist, how to arrange them, and what to do
 when its own checks fail.
 
-The current production example is Interior Corner schema v2. The Shelf Display
-example is a test-only fixture that demonstrates reuse; it is not a published
-scene. The extraction preserves the accepted schema-v1 material-only and
-schema-v2 material-and-props outputs.
+The production examples are Interior Corner schema v2 and Shelf Swing schema
+v1. Each scene has its own catalog, placement constraints, protected teaching
+regions, and fallback policy. The test-only Shelf Display fixture remains as a
+small helper-level example; it is not a published scene. The foundation
+preserves the accepted Interior Corner schema-v1 material-only and schema-v2
+material-and-props outputs.
 
 ## Architecture boundaries
 
@@ -104,12 +106,30 @@ console and bench slots, room-specific focus protection, arrangement IDs, and
 schema-v2 safe fallback. It resolves one pure millimetre-based plan and audits
 that plan using shared checks plus its own room and teaching-context rules.
 
+The Shelf Swing planner owns a separate schema-v1 catalog of boxes, cylinders,
+and low-poly ceramic-like vessels. Stable IDs identify the left/right display
+slot at each of the front, middle, and back stations. It puts one or two props
+on each station's supported lower shelf, inside the central display zone and
+behind the chart. Existing contextual books, station frames, backdrops, focus
+charts, probes, and samples remain authored and fixed. The planner validates
+support height and footprint, station and scene bounds, frame clearance,
+backdrop and chart backing, the full focus-chart volume, the chart's protected
+front-facing view, authored book footprints, and pairwise prop intersections.
+Its deterministic fallback uses one small box on each lower shelf and records
+the generated candidate's issue codes. It uses no random retries.
+
+Shelf Swing's station-local prop centers are converted through
+`subjectLocalToWorld()`. World bounds include the station yaw plus the prop yaw
+once; tests compare generated mesh world centers against the canonical
+transform. The observer remains on the chart-facing side. The planner also
+checks canonical `sceneBounds` before a prop can reach the registered factory.
+
 A future planner follows the same division: generate one deterministic
 candidate from named streams, validate it, then apply that scene's explicit
 fallback policy. The shared layer reports geometry; it never chooses the
 fallback. Do not add random retries to address invalid candidates.
 
-## Test-only second consumer
+## Test-only placement fixture
 
 `src/tests/unit/fixtures/shelfDisplayPlacementFixture.ts` models two items on a
 hypothetical shelf. It has its own support dimensions, two semantic slots, and
@@ -117,8 +137,8 @@ a protected center region. It uses the shared geometry and constraint modules
 and the normal variation descriptor. Its tests verify stable plans, valid
 alternative choices, support containment, unsupported placement detection,
 protected-region detection, and overlap detection. The fixture imports neither
-Interior Corner planner code nor Three.js and is not registered in the scene
-catalog.
+production planner nor Three.js and is not registered in the scene catalog.
+The production second-consumer proof is Shelf Swing.
 
 ## Registered subjects and ownership
 
@@ -130,23 +150,28 @@ Do not share live Three.js resources or introduce a global resource cache.
 Resolve plans at subject creation or variation resolution, not in camera-frame
 updates, focus/aperture derivation, or Ground Glass frame requests.
 
-The Interior Corner factory and registry lifecycle are unchanged by this
-extraction. The accepted subject signature tests cover independent subject
-instances and retain the existing disposal checks.
+Both registered factories resolve plans at subject creation. Observer and
+Ground Glass each own independent geometry and materials; seed regeneration
+replaces those subjects while preserving the mounted WebGL renderer and RTT
+targets. Shelf Swing's canonical no-descriptor factory signature remains
+pinned. Its visual and lifecycle evidence is recorded in
+[`../render-quality/SHELF_SWING_SEEDED_PROPS_PILOT.md`](../render-quality/SHELF_SWING_SEEDED_PROPS_PILOT.md).
 
 ## Versioned reproducibility
 
 Schema version is part of the variation identity. Current accepted contracts
-are Interior Corner schema v1 (material-only) and schema v2 (materials plus
-decorative props and bounded rug micro-layout). Unsupported versions must not be
-silently mapped to another algorithm. The extraction does not add a schema
-version or migration framework.
+are Interior Corner schema v1 (material-only), Interior Corner schema v2
+(materials plus decorative props and bounded rug micro-layout), and Shelf
+Swing schema v1 (decorative props). Schema numbers are scene-scoped.
+Unsupported versions must not be silently mapped to another algorithm. The
+extraction does not add a schema migration framework.
 
 For the current implementation, the planner data contract is reproducible for
-`(sceneId, seed, schemaVersion)`. The tests pin plan serializations and subject
-signatures for seeds `0`, `1`, `284719`, and `4294967295`. This does not promise
-permanent pixel identity across future geometry, shader, material, browser, or
-renderer changes.
+`(sceneId, seed, schemaVersion)`. Interior Corner plan serializations and
+Shelf Swing plan serializations and subject signatures are pinned for seeds
+`0`, `1`, `284719`, and `4294967295`. This does not promise permanent pixel
+identity across future geometry, shader, material, browser, or renderer
+changes.
 
 ## Example for a future scene
 
@@ -184,7 +209,8 @@ subject. Three.js construction stays inside that scene's registered factory.
   planner; do not update accepted hashes to hide output changes.
 - Sweep a bounded range of seeds and label it as sampled coverage, not
   exhaustive coverage of all uint32 values.
-- Test any second consumer without registering a production scene.
+- Keep helper-only fixtures unregistered; production consumers should be
+  validated through their actual registered Observer and Ground Glass paths.
 - For subject tests, compare semantic geometry/material signatures while
   ignoring renderer UUIDs, and verify independent ownership and disposal.
 
@@ -193,5 +219,6 @@ subject. Three.js construction stays inside that scene's registered factory.
 The shared footprint model is box-based and supports yaw around Y only. The
 protected-region helper checks X/Z overlap, not arbitrary 3D volumes. Scene
 planners remain responsible for vertical policy, canonical room semantics,
-fallback selection, and authored object catalogs. No new production variation
-consumer or visible scene change is included in this milestone.
+fallback selection, and authored object catalogs. The pilot adds Shelf Swing
+as a production consumer without changing Interior Corner output or the optics
+engine.

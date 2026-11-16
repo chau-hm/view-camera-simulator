@@ -3,6 +3,7 @@ import geometry from "../shelfSwingGeometry";
 
 export const shelfSwingScene: SceneDefinition = {
   id: "shelf-swing",
+  sceneVariation: { enabled: true, schemaVersion: 1 },
   name: "Shelf Swing",
   description:
     "Use front swing to rotate the vertical plane of sharp focus through three subjects arranged diagonally from front-left to back-right.",

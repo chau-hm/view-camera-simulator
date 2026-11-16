@@ -228,9 +228,19 @@ export const TableTiltSubject = () => (
   <RegisteredSceneAsset assetKey={TABLE_TILT_ASSET_KEY} request={tableTiltRequest} />
 );
 
-export const ShelfSwingSubject = () => (
-  <RegisteredSceneAsset assetKey={SHELF_SWING_ASSET_KEY} request={shelfSwingRequest} />
-);
+export const ShelfSwingSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...shelfSwingRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset assetKey={SHELF_SWING_ASSET_KEY} request={request} />
+  );
+};
 
 export const ArchitectureForegroundSubject = () => (
   <RegisteredSceneAsset

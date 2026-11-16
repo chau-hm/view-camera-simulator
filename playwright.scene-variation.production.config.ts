@@ -7,6 +7,7 @@ export default defineConfig({
   testMatch: [
     "interior-corner-seeded-materials-production.spec.ts",
     "interior-corner-seeded-props-production.spec.ts",
+    "shelf-swing-seeded-props-production.spec.ts",
   ],
   timeout: 30_000,
   use: {

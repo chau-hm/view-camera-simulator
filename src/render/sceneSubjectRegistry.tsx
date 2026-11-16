@@ -423,9 +423,10 @@ export const sceneSubjectRegistry = {
   },
   "shelf-swing": {
     SceneSubject: ShelfSwingSubject,
-    createRttGroup: () =>
+    createRttGroup: (options) =>
       createRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, {
         presentation: SHELF_SWING_PRESENTATION,
+        variationDescriptor: options?.variationDescriptor,
       }),
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(SHELF_SWING_ASSET_KEY, group),

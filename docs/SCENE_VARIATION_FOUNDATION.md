@@ -7,19 +7,24 @@ stable random substreams for presentation-only choices. Canonical geometry,
 focus and composition targets, camera presets and movement limits, task
 criteria, and lesson/calibration semantics remain authoritative.
 
-Interior Corner is the only production opt-in. Its schema-v1 contract preserves
-the accepted material-only scene; schema v2 adds bounded decorative props and
-rug micro-layout. Guided Mode, lesson Observe, other scenes, and all teaching
-contracts remain canonical. New implicit Interior Corner Free Practice
-sessions use v2; historical seed-only links continue to resolve as v1.
+Interior Corner and Shelf Swing are the two production opt-ins. Interior
+Corner's schema-v1 contract preserves the accepted material-only scene; schema
+v2 adds bounded decorative props and rug micro-layout. Shelf Swing uses its
+own schema-v1 contract for bounded decorative props. Schema numbers identify a
+scene-specific plan and do not imply the same catalog or output across scenes.
+Guided Mode, lesson Observe, other scenes, and all teaching contracts remain
+canonical. New implicit Interior Corner Free Practice sessions use v2; new
+Shelf Swing Free Practice sessions use v1. Historical seed-only links continue
+to resolve according to each scene's accepted v1 contract.
 
 ## Capability and identity
 
-A scene opts in through its existing `SceneDefinition`. Interior Corner declares
-`sceneVariation: { enabled: true, schemaVersion: 2, supportedSchemaVersions:
-[1, 2] }`: version 2 is current and version 1 is explicitly retained for
-historical links. The route never infers support from the presence of a `seed`
-query parameter.
+A scene opts in through its existing `SceneDefinition`. Interior Corner
+declares `sceneVariation: { enabled: true, schemaVersion: 2,
+supportedSchemaVersions: [1, 2] }`: version 2 is current and version 1 is
+explicitly retained for historical links. Shelf Swing declares
+`sceneVariation: { enabled: true, schemaVersion: 1 }`. The route never infers
+support from the presence of a `seed` query parameter.
 
 `SceneVariantIdentity` is the serializable tuple:
 
@@ -33,11 +38,13 @@ task evaluation, and lesson state.
 
 ## Version and deterministic core
 
-Schema v1 remains the accepted material-only variation contract. Schema v2
-adds the deterministic Interior Corner decorative-prop plan without changing
-v1 material maps or its subject graph. These are the only implemented schema
-versions. Interior Corner supports both and declares v2 current; unsupported
-versions fail closed and are never mapped to another algorithm.
+Schema versions are scoped to their scene. Interior Corner schema v1 remains
+the accepted material-only variation contract, and schema v2 adds its
+deterministic decorative-prop plan without changing the v1 material maps or
+subject graph. Shelf Swing schema v1 is a separate props-only plan. These are
+the production contracts; Interior Corner supports both and declares v2
+current, while Shelf Swing supports v1 only. Unsupported versions fail closed
+and are never mapped to another algorithm.
 
 Both versions use a small Mulberry32 stream with explicit unsigned 32-bit
 arithmetic. `nextFloat()` returns `[0, 1)`, `nextInt(min, max)` returns an
@@ -65,8 +72,14 @@ duplicates, trailing characters, and overflow are rejected.
 
 For an opted-in Free Practice route:
 
-- `?seed=284719&sv=1` reproduces the accepted material-only schema v1.
-- `?seed=284719&sv=2` reproduces the material-plus-props schema v2.
+- Shelf Swing `?seed=284719&sv=1` reproduces the Shelf Swing schema-v1 prop
+  arrangement; a legacy seed-only Shelf Swing link also resolves to v1.
+- A missing Shelf Swing seed generates an identity under schema v1 and
+  replace-normalizes both `seed` and `sv`.
+- Interior Corner `?seed=284719&sv=1` reproduces the accepted material-only
+  schema v1.
+- Interior Corner `?seed=284719&sv=2` reproduces the material-plus-props
+  schema v2.
 - A legacy `?seed=284719` link is interpreted as v1 and replace-normalized to
   include `sv=1` without changing its seed.
 - A missing seed with an explicit supported `sv` generates a seed under that
@@ -116,6 +129,27 @@ console, bench, rug, room, and focus-target bounds, with a deterministic safe
 fallback. The existing registered factory constructs separate renderer-owned
 resources from that plan.
 
+Shelf Swing is the second production consumer. Its independent schema-v1
+planner varies one or two lower-shelf display objects per station using
+scene/station/slot semantic IDs and the station's existing material hints. The
+catalog is limited to boxes, 16-sided cylinders, and 12-segment ceramic-like
+vessels. The planner uses the shared yaw bounds, support-surface, containment,
+collision, and protected-region helpers while retaining Shelf Swing-specific
+station, frame, book, backdrop, chart, visibility, and fallback rules. It
+places objects in station-local millimetres, computes world bounds after the
+canonical station transform with station yaw applied once, and verifies the
+canonical camera remains on the chart-facing side. Without a variation
+descriptor, the factory keeps the accepted canonical subject signature. With a
+descriptor, it replaces only the authored display objects; station structure,
+books, charts, probes, samples, and calibration remain fixed.
+
+Observer and Ground Glass receive the same descriptor through the existing
+registered-subject seams and independently create and dispose their own Three.js
+resources. Seed changes replace the subject while keeping the WebGL Ground
+Glass renderer and render targets mounted. The Shelf Swing pilot and browser
+captures are documented in
+[`render-quality/SHELF_SWING_SEEDED_PROPS_PILOT.md`](render-quality/SHELF_SWING_SEEDED_PROPS_PILOT.md).
+
 A seed change replaces the owned subject while keeping the WebGL Ground Glass
 renderer/targets mounted. Focus/aperture changes do not change the variant
 identity. The experimental WebGPU path keeps its existing capability/fallback
@@ -141,9 +175,15 @@ renderers.
   `src/scenes/interiorCornerMaterialVariation.ts`
 - Interior Corner v2 prop planner:
   `src/scenes/interiorCornerPropVariation.ts`
+- Shelf Swing schema-v1 prop planner:
+  `src/scenes/shelfSwingPropVariation.ts`
 - Shared canonical support surfaces:
   `src/scenes/interiorCornerGeometry.ts`
 - Registered subject integration: `src/render/InteriorCornerSubjectFactory.tsx`
+- Shelf Swing registered subject integration:
+  `src/render/ShelfSwingSubjectFactory.tsx`,
+  `src/render/SceneAssetSubjects.tsx`, and
+  `src/render/sceneSubjectRegistry.tsx`
 - Compact Free Practice controls:
   `src/components/simulator/SceneVariationControls.tsx`
 
@@ -157,7 +197,7 @@ npm run test:e2e -- --config=playwright.scene-variation.production.config.ts --p
 npm run test:e2e -- --config=playwright.scene-variation.subpath-production.config.ts --project=chromium-scene-variation-subpath-production
 ```
 
-The accepted schema-v1 material evidence is recorded in
+The accepted Interior Corner schema-v1 material evidence is recorded in
 [`render-quality/INTERIOR_CORNER_SEEDED_MATERIALS_PILOT.md`](render-quality/INTERIOR_CORNER_SEEDED_MATERIALS_PILOT.md).
 The schema-v2 props/layout evidence is recorded in
 [`render-quality/INTERIOR_CORNER_SEEDED_PROPS_LAYOUT_PILOT.md`](render-quality/INTERIOR_CORNER_SEEDED_PROPS_LAYOUT_PILOT.md).

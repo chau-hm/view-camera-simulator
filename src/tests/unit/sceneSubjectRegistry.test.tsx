@@ -104,6 +104,7 @@ import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
@@ -357,6 +358,79 @@ describe("scene subject registry", () => {
       expect(group?.getObjectByName(subject.focusChart.semanticName)).toBeInstanceOf(THREE.Group);
     });
     disposeRegisteredRttSubject("shelf-swing", group!);
+  });
+
+  it("routes the same Shelf Swing variation identity to independent Observer and RTT resources", () => {
+    const descriptorA = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", 284719, 1),
+    )!;
+    const descriptorB = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", 4294967295, 1),
+    )!;
+    const factory = vi.spyOn(shelfSwingAsset, "createShelfSwingGroup");
+    const disposer = vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup");
+    const collectVariation = (group: THREE.Group) => {
+      const variation: Array<{
+        id: string;
+        family: string;
+        position: number[];
+        color: string;
+      }> = [];
+      group.traverse((object) => {
+        if (!(object instanceof THREE.Mesh) || !object.userData.variationPropId) return;
+        const material = Array.isArray(object.material) ? object.material[0]! : object.material;
+        variation.push({
+          id: object.userData.variationPropId,
+          family: object.userData.family,
+          position: object.position.toArray(),
+          color: (material as THREE.MeshStandardMaterial).color.getHexString(),
+        });
+      });
+      return variation;
+    };
+
+    const view = render(<ShelfSwingSubject variationDescriptor={descriptorA} />);
+    const observerA = factory.mock.results[0]?.value as THREE.Group;
+    view.rerender(<ShelfSwingSubject variationDescriptor={descriptorA} />);
+    expect(factory).toHaveBeenCalledTimes(1);
+    const rttA = createRegisteredRttSubject("shelf-swing", {
+      variationDescriptor: descriptorA,
+    })!;
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory.mock.calls[0]?.[0].variationDescriptor?.identity)
+      .toEqual(factory.mock.calls[1]?.[0].variationDescriptor?.identity);
+    expect(collectVariation(observerA)).toEqual(collectVariation(rttA));
+
+    const observerMeshesA: THREE.Mesh[] = [];
+    const rttMeshesA: THREE.Mesh[] = [];
+    observerA.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.variationPropId) observerMeshesA.push(object);
+    });
+    rttA.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.variationPropId) rttMeshesA.push(object);
+    });
+    expect(observerMeshesA.map((mesh) => mesh.geometry)).not.toEqual(
+      rttMeshesA.map((mesh) => mesh.geometry),
+    );
+    expect(observerMeshesA.map((mesh) => mesh.material)).not.toEqual(
+      rttMeshesA.map((mesh) => mesh.material),
+    );
+
+    disposeRegisteredRttSubject("shelf-swing", rttA);
+    view.rerender(<ShelfSwingSubject variationDescriptor={descriptorB} />);
+    const observerB = factory.mock.results[2]?.value as THREE.Group;
+    const rttB = createRegisteredRttSubject("shelf-swing", {
+      variationDescriptor: descriptorB,
+    })!;
+    expect(collectVariation(observerB)).toEqual(collectVariation(rttB));
+    expect(collectVariation(observerB)).not.toEqual(collectVariation(observerA));
+    expect(disposer.mock.calls.some(([group]) => group === observerA)).toBe(true);
+    view.unmount();
+    disposeRegisteredRttSubject("shelf-swing", rttB);
+    expect(disposer.mock.calls.some(([group]) => group === observerB)).toBe(true);
+    expect(disposer.mock.calls.some(([group]) => group === rttB)).toBe(true);
   });
 
   it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
