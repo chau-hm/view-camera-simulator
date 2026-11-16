@@ -1,0 +1,1655 @@
+{
+  "generatedAt": "2026-11-16T17:15:27.713Z",
+  "sourceCommit": "126ef906f76c468346c20a9add4e1de4d092a2a5",
+  "browser": "Playwright Chromium 149.0.7827.55",
+  "application": "Vite production preview",
+  "viewportCssPx": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScaleFactor": 1,
+  "renderQuality": "standard",
+  "observerImagePx": {
+    "width": 514,
+    "height": 411
+  },
+  "observerOverlays": "Disabled through public controls; each captured DOM data flag asserted false.",
+  "canvasExportMethod": "Copied the rendered WebGL2 Observer canvas to an in-page temporary 2D canvas sized to the visible CSS bounds (fractional dimensions rounded up to match the browser element screenshot); PNG contains scene canvas pixels only, with no DOM overlays or retouching.",
+  "groundGlassReadiness": "Every capture waited for the current RTT request ID to complete; only the two fixed seed 284719 variant rows are designated sanity checks.",
+  "sampleSelectionPredatedVisualInspection": true,
+  "sampleCountByScene": {
+    "interiorCorner": 12,
+    "shelfSwing": 12
+  },
+  "captureCount": 29,
+  "replayHashes": {
+    "interior-corner": "9ab1d2de16993a2c1c4919011a0039fb542ea55253556e18d4924428638f5402",
+    "shelf-swing": "1f43d0dc5bf2505d3d2b0b34e24619a3e1d907f16e08daf9b10ea5b53e8e95a6"
+  },
+  "captures": [
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": null,
+      "seed": null,
+      "route": "/simulator/guided/interior-corner/interior-corner-compose-01",
+      "baselineKind": "canonical-guided",
+      "file": "canonical-guided.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 232.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "c679e7d4ab4dd48a182ec3bceb675ef02ab6a53292b799bd0e42407bfc04a9ae",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjibfe0-cwpnygasjof-default-request-3",
+        "completedRequestId": "gg-mwjibfe0-cwpnygasjof-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 1,
+      "seed": 284719,
+      "route": "/simulator/free/interior-corner?seed=284719&sv=1",
+      "baselineKind": "historical-material-only",
+      "file": "schema-v1-seed-284719.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "bfc52b4a1b0c2ab3725bc70fd0bf0537e3459d0f6aec54985461fd4d9085f076",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjic7l3-k830tmxnjtn-default-request-3",
+        "completedRequestId": "gg-mwjic7l3-k830tmxnjtn-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 0,
+      "route": "/simulator/free/interior-corner?seed=0&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-0.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 217.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "39e640a671031ba9e331eb787aa1377d3228dd591e0665177754b6e7b15ef913",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjicvt6-7zw877l8ifc-default-request-3",
+        "completedRequestId": "gg-mwjicvt6-7zw877l8ifc-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 1,
+      "route": "/simulator/free/interior-corner?seed=1&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-1.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 217.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "45415ac332b5a2e4ff976cab929d96722d5af5e4f50681cd2267dfbb7812a12b",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjidlro-pwmwpgl135r-default-request-3",
+        "completedRequestId": "gg-mwjidlro-pwmwpgl135r-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 284719,
+      "route": "/simulator/free/interior-corner?seed=284719&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-284719.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "9ab1d2de16993a2c1c4919011a0039fb542ea55253556e18d4924428638f5402",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjienmj-let8l2ly0a-default-request-3",
+        "completedRequestId": "gg-mwjienmj-let8l2ly0a-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": true
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 4294967295,
+      "route": "/simulator/free/interior-corner?seed=4294967295&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-4294967295.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "e5cdbb3895fbf560e1a02966287fb724a1e5a093f2d7f28df192a7d1526f5ef3",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjifd3v-jqrovomlv2i-default-request-3",
+        "completedRequestId": "gg-mwjifd3v-jqrovomlv2i-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 3079748268,
+      "route": "/simulator/free/interior-corner?seed=3079748268&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-3079748268.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "d96688615ffdf13889a3531c81f6aa4b2be9731019912483db538a0d0e38d031",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjigb5e-7n8kbgc91ps-default-request-3",
+        "completedRequestId": "gg-mwjigb5e-7n8kbgc91ps-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 654013979,
+      "route": "/simulator/free/interior-corner?seed=654013979&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-654013979.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "71f722a5349bdcdf023979bd48773c110f086a5aa516f356f329476ed6ae1b4c",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjih6x6-dnhzibrxpaj-default-request-3",
+        "completedRequestId": "gg-mwjih6x6-dnhzibrxpaj-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 4041585854,
+      "route": "/simulator/free/interior-corner?seed=4041585854&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-4041585854.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "7ab018b2e44b4cd5821b8919837f0e6f12aaa479d5dc758e8076fcf2ea52c129",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjii6f8-ift0ro3en7k-default-request-3",
+        "completedRequestId": "gg-mwjii6f8-ift0ro3en7k-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 2762659077,
+      "route": "/simulator/free/interior-corner?seed=2762659077&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-2762659077.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "b15c95339e6983b4babbff5ef13f9c3c1f1d5ddd2899c9f211bb1ebb6d84e9fd",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiiz91-uyklx0sz9mk-default-request-3",
+        "completedRequestId": "gg-mwjiiz91-uyklx0sz9mk-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 2004402848,
+      "route": "/simulator/free/interior-corner?seed=2004402848&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-2004402848.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "6bfee2e8e0f7ced2723cb41a0185747ed6788a63ed7ca71532a1f19610999cf1",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjijvq6-zdwur0ym8dn-default-request-3",
+        "completedRequestId": "gg-mwjijvq6-zdwur0ym8dn-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 1824298367,
+      "route": "/simulator/free/interior-corner?seed=1824298367&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-1824298367.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "448b339242eb1668cdcf6ece1cc87fa93d8fefa897944a94644f83c4b30aae99",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiksmo-eqve83p9byq-default-request-3",
+        "completedRequestId": "gg-mwjiksmo-eqve83p9byq-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 2130322642,
+      "route": "/simulator/free/interior-corner?seed=2130322642&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-2130322642.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "185090fb862879975edcee760f765bf6b6f09b00211d666deadcc1c1aae0ca3c",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjilij8-2xe6lmh4ul4-default-request-3",
+        "completedRequestId": "gg-mwjilij8-2xe6lmh4ul4-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 4065361417,
+      "route": "/simulator/free/interior-corner?seed=4065361417&sv=2",
+      "baselineKind": "variant",
+      "file": "schema-v2-seed-4065361417.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "ac1e8c398a860950e430669666792c963ed6837c5c51618de421efb4283e1ea6",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjim756-ucvqd1ipxcn-default-request-3",
+        "completedRequestId": "gg-mwjim756-ucvqd1ipxcn-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "interior-corner",
+      "schemaVersion": 2,
+      "seed": 284719,
+      "route": "/simulator/free/interior-corner?seed=284719&sv=2",
+      "baselineKind": "same-seed-replay",
+      "file": "schema-v2-seed-284719-replay.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "9ab1d2de16993a2c1c4919011a0039fb542ea55253556e18d4924428638f5402",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "interior-corner",
+        "cameraPosition": "-6.600000,2.900000,-5.600000",
+        "orbitTarget": "0.450000,0.850000,6.700000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "8000",
+        "riseMm": "0",
+        "frontSwingDeg": "0",
+        "apertureFNumber": "5.6",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "interior-corner",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjimtu8-9bjn2d5qx3c-default-request-3",
+        "completedRequestId": "gg-mwjimtu8-9bjn2d5qx3c-default-request-3",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": null,
+      "seed": null,
+      "route": "/simulator/guided/shelf-swing/swing-01",
+      "baselineKind": "canonical-guided",
+      "file": "canonical-guided.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 232.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "148aec657104ec86632a9970cc4d1a10c27457dd6b7fb1f75db834d8a0a9e944",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjinnmd-ormwwz52ap-default-request-5",
+        "completedRequestId": "gg-mwjinnmd-ormwwz52ap-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 0,
+      "route": "/simulator/free/shelf-swing?seed=0&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-0.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 217.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "3c7a82df3f4fae2ff0ac9cb6be44285b7d24c34a2ccc29f8708dfbb3004a71c2",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiogwj-ki5727qdnpl-default-request-5",
+        "completedRequestId": "gg-mwjiogwj-ki5727qdnpl-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 1,
+      "route": "/simulator/free/shelf-swing?seed=1&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-1.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 217.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "33c313c252ab79e66fcd6a85cf94aac2a2f91827372c52c572a505bd4bf482f3",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjipcci-7tky7h7vu6-default-request-5",
+        "completedRequestId": "gg-mwjipcci-7tky7h7vu6-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 284719,
+      "route": "/simulator/free/shelf-swing?seed=284719&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-284719.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "1f43d0dc5bf2505d3d2b0b34e24619a3e1d907f16e08daf9b10ea5b53e8e95a6",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjipzg2-uo9hggn3a4-default-request-5",
+        "completedRequestId": "gg-mwjipzg2-uo9hggn3a4-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": true
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 4294967295,
+      "route": "/simulator/free/shelf-swing?seed=4294967295&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-4294967295.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "1cddd9d8f02f2467c35c3df2c73056d320aefafa0eff644d472dcbee30e053fe",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiqlx8-9l7sd5bv68g-default-request-5",
+        "completedRequestId": "gg-mwjiqlx8-9l7sd5bv68g-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 3079748268,
+      "route": "/simulator/free/shelf-swing?seed=3079748268&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-3079748268.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "6f5551b44ec494c29c18ed415641115f2b15786b98a4ad828c19f3aa88a09fe1",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjir7yk-9u4f5qi0vmp-default-request-5",
+        "completedRequestId": "gg-mwjir7yk-9u4f5qi0vmp-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 654013979,
+      "route": "/simulator/free/shelf-swing?seed=654013979&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-654013979.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "f1e198df765a5fd70c065567801b3376cd3e6978c80de9a512c3187a5c1474f6",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjirxl0-vcujy4utaps-default-request-5",
+        "completedRequestId": "gg-mwjirxl0-vcujy4utaps-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 4041585854,
+      "route": "/simulator/free/shelf-swing?seed=4041585854&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-4041585854.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "245c2bcb3966ffadd521c34e4bf9090d19de372888b2a36f2aaf6c17e8e3f5e1",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiskyt-o3kkvqwy1t-default-request-5",
+        "completedRequestId": "gg-mwjiskyt-o3kkvqwy1t-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 2762659077,
+      "route": "/simulator/free/shelf-swing?seed=2762659077&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-2762659077.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "6c854b2f273c6eea6f4d7c6600997b6712c7f8faf5e687ca557b397a0553bdef",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjit8ex-i8hugbn22p-default-request-5",
+        "completedRequestId": "gg-mwjit8ex-i8hugbn22p-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 2004402848,
+      "route": "/simulator/free/shelf-swing?seed=2004402848&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-2004402848.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "e18ce6635b1aee5c523d09d7d9b3996caace00b3a98f04fbeaa47c99f35b14b4",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiu364-pxolhguycia-default-request-5",
+        "completedRequestId": "gg-mwjiu364-pxolhguycia-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 1824298367,
+      "route": "/simulator/free/shelf-swing?seed=1824298367&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-1824298367.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "da42574c4b55dad9a0d3a01a896cbbc901901e5fc8eb0855e567ba3583a97f42",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiuzrk-66zjfnjo4pe-default-request-5",
+        "completedRequestId": "gg-mwjiuzrk-66zjfnjo4pe-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 2130322642,
+      "route": "/simulator/free/shelf-swing?seed=2130322642&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-2130322642.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "3afcb01ec6cb7ee9ddf300ee1007945375ba02262ba3ae081b53bdc7173014d3",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjivmro-dmur7uvhorw-default-request-5",
+        "completedRequestId": "gg-mwjivmro-dmur7uvhorw-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 4065361417,
+      "route": "/simulator/free/shelf-swing?seed=4065361417&sv=1",
+      "baselineKind": "variant",
+      "file": "schema-v1-seed-4065361417.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "1dc01511f466435b1f64eabfdf456466fcf3fe09cee2735579c9ac39fa07bc70",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjiwcuo-mbinzk4n5ek-default-request-5",
+        "completedRequestId": "gg-mwjiwcuo-mbinzk4n5ek-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    },
+    {
+      "sceneId": "shelf-swing",
+      "schemaVersion": 1,
+      "seed": 284719,
+      "route": "/simulator/free/shelf-swing?seed=284719&sv=1",
+      "baselineKind": "same-seed-replay",
+      "file": "schema-v1-seed-284719-replay.png",
+      "httpStatus": 200,
+      "deviceScaleFactor": 1,
+      "canvasCssBounds": {
+        "x": 31,
+        "y": 236.39,
+        "width": 514,
+        "height": 410.39
+      },
+      "canvasNativePx": {
+        "width": 514,
+        "height": 411
+      },
+      "canvasBackingBufferPx": {
+        "width": 771,
+        "height": 615
+      },
+      "sha256": "1f43d0dc5bf2505d3d2b0b34e24619a3e1d907f16e08daf9b10ea5b53e8e95a6",
+      "observer": {
+        "rendererStatus": "active",
+        "rendererFamily": "webgl-renderer",
+        "executionBackend": "webgl2",
+        "sceneSubjectId": "shelf-swing",
+        "cameraPosition": "4.200000,1.450000,1.400000",
+        "orbitTarget": "0.000000,-0.040000,3.850000",
+        "overlays": {
+          "data-optical-geometry-visible": "false",
+          "data-focus-overlay-visible": "false",
+          "data-dof-overlay-visible": "false"
+        }
+      },
+      "controls": {
+        "focusDistanceMm": "3400",
+        "riseMm": "0",
+        "frontSwingDeg": "-4",
+        "apertureFNumber": "11",
+        "renderQuality": "standard"
+      },
+      "groundGlass": {
+        "sceneId": "shelf-swing",
+        "executionApi": "webgl2",
+        "rendererFamily": "webgl-renderer",
+        "requestId": "gg-mwjix9s6-sc4wa9202rt-default-request-5",
+        "completedRequestId": "gg-mwjix9s6-sc4wa9202rt-default-request-5",
+        "resultStatus": "completed",
+        "completed": true,
+        "sanityCheck": false
+      },
+      "pageErrors": []
+    }
+  ]
+}
