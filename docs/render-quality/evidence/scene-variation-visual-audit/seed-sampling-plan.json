@@ -1,0 +1,48 @@
+{
+  "seedGridLockedAt": "2026-11-16T16:18:17.705Z",
+  "additionalSeedSampler": "LCG32",
+  "initialState": "0x53435641",
+  "recurrence": "state=(1664525*state+1013904223) mod 2^32; emit each unsigned state",
+  "referenceSeeds": [
+    0,
+    1,
+    284719,
+    4294967295
+  ],
+  "additionalSeeds": [
+    3079748268,
+    654013979,
+    4041585854,
+    2762659077,
+    2004402848,
+    1824298367,
+    2130322642,
+    4065361417
+  ],
+  "completeGrid": [
+    0,
+    1,
+    284719,
+    4294967295,
+    3079748268,
+    654013979,
+    4041585854,
+    2762659077,
+    2004402848,
+    1824298367,
+    2130322642,
+    4065361417
+  ],
+  "schemas": {
+    "interiorCorner": 2,
+    "shelfSwing": 1
+  },
+  "blindPairs": {
+    "selectionStage": "before visual inspection of new variation captures",
+    "algorithm": "Fisher-Yates over each frozen seed grid; LCG32 recurrence as above; pair adjacent shuffled entries",
+    "interiorCornerInitialState": "0x424c4901",
+    "shelfSwingInitialState": "0x424c4902",
+    "pairCountPerScene": 6,
+    "answerKeyFile": "blind-pair-answer-key.md"
+  }
+}
