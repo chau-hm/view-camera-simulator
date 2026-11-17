@@ -49,9 +49,9 @@ const createResources = (
   facade: createProceduralSurfaceMaterial({
     color: "#9d513c",
     pattern: "limestone",
-    repeat: [5, 12],
+    repeat: [5, 8],
     roughness: 0.9,
-    normalStrength: 0.18,
+    normalStrength: 0.28,
   }),
   base: createProceduralSurfaceMaterial({
     color: "#d6c8ae",
@@ -252,7 +252,7 @@ const addFrontWindow = (
 
   const frameZ = z - window.glazingDepthMm / 2 - 4;
   const frameDepth = 18;
-  const stoneDepth = 56;
+  const stoneDepth = 72;
   const stoneZ = front - stoneDepth / 2 + 12;
   [-1, 1].forEach((sign) => {
     addBox({
@@ -327,7 +327,7 @@ const addEastWindow = (
       parent,
     }),
   );
-  const stoneDepth = 56;
+  const stoneDepth = 72;
   const stoneX = eastFace + stoneDepth / 2 - 12;
   [-1, 1].forEach((sign) =>
     addBox({
@@ -519,7 +519,7 @@ const addArchitectureContext = (
       parent: entryGroup,
     }),
   );
-  const surroundDepth = 78;
+  const surroundDepth = 92;
   const surroundZ = front - surroundDepth / 2 + 10;
   [-1, 1].forEach((sign) =>
     addBox({
@@ -851,6 +851,60 @@ export function createArchitectureRiseGroup(
     material: resources.trim,
     parent: masonryDetail,
   });
+
+  const corbelWidth = 92;
+  const corbelHeight = 70;
+  const corbelDepth = 160;
+  const corbelTopY = corniceY - cornice.height / 2 - 10;
+  const corbelBottomY = corbelTopY - corbelHeight;
+  const canonicalDetailTopY = Math.max(
+    ...geometry.getArchitectureFacadeFineDetailPieces().map((piece) => piece.y + piece.height / 2),
+    ...geometry.getArchitectureFocusChartCells().map((cell) => cell.y + cell.height / 2),
+    ...geometry.getArchitectureFocusChartBars().map((bar) => bar.y + bar.height / 2),
+  );
+  const corbelsClearCanonicalDetails = corbelBottomY > canonicalDetailTopY + 100;
+  if (corbelsClearCanonicalDetails) {
+    const windowClearance = corbelWidth / 2;
+    const facadeHalfSpan = halfWidth - 80 - corbelWidth / 2;
+    const upperWindows = frontWindows
+      .filter((window) => {
+        const windowBottom = window.centerYMm - window.openingHeightMm / 2 - window.trimWidthMm;
+        const windowTop = window.centerYMm + window.openingHeightMm / 2 + window.trimWidthMm;
+        return windowTop >= corbelBottomY && windowBottom <= corbelTopY;
+      })
+      .map((window) => ({
+        minX: window.centerXMm - window.openingWidthMm / 2 - window.trimWidthMm - windowClearance,
+        maxX: window.centerXMm + window.openingWidthMm / 2 + window.trimWidthMm + windowClearance,
+      }))
+      .sort((a, b) => a.minX - b.minX);
+    const clearIntervals: Array<readonly [number, number]> = [];
+    let clearStart = -facadeHalfSpan;
+    upperWindows.forEach((window) => {
+      const blockedStart = Math.max(-facadeHalfSpan, window.minX);
+      const blockedEnd = Math.min(facadeHalfSpan, window.maxX);
+      if (blockedStart > clearStart) clearIntervals.push([clearStart, blockedStart]);
+      clearStart = Math.max(clearStart, blockedEnd);
+    });
+    if (clearStart < facadeHalfSpan) clearIntervals.push([clearStart, facadeHalfSpan]);
+
+    clearIntervals.forEach(([minX, maxX]) => {
+      const intervalWidth = maxX - minX;
+      const corbelCount = Math.floor(intervalWidth / 170);
+      for (let index = 1; index <= corbelCount; index += 1) {
+        const x = minX + intervalWidth * index / (corbelCount + 1);
+        const corbel = addBox({
+          name: `architecture-rise-cornice-corbel-${Math.round(x)}`,
+          size: [corbelWidth, corbelHeight, corbelDepth],
+          position: [x, corbelTopY - corbelHeight / 2, front - corbelDepth / 2],
+          material: resources.trim,
+          parent: masonryDetail,
+        });
+        corbel.castShadow = true;
+        corbel.receiveShadow = true;
+      }
+    });
+  }
+
   [-1, 1].forEach((sign) =>
     addBox({
       name: `architecture-rise-cornice-underband-return-${sign < 0 ? "west" : "east"}`,
